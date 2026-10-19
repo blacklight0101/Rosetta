@@ -119,7 +119,7 @@ export class BuildPlan implements RunExecutor {
   private async plan(execution: RunExecution): Promise<RunOutcome> {
     const { run, signal } = execution;
     const named = execution.manifest.options['sourceRunId'];
-    const inputs = await planInputs(this.deps, run, typeof named === 'string' ? named : undefined);
+    const inputs = await planInputs(this.deps, run, named, this.deps.manifests);
     if (!inputs.ok) return this.fail(run, inputs.error.code, inputs.error.message);
     const updates = new ManifestUpdates(this.deps.manifests, scopeOf(run));
     const { catalogue, prompts } = await this.loadFiles();

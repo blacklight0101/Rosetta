@@ -59,6 +59,7 @@
     "tests/e2e/start-run-limits.spec.ts",
     "tests/e2e/start-run.spec.ts",
     "tests/e2e/visual/sweep-public.spec.ts",
-    "tests/e2e/visual/sweep-runs.spec.ts"
+    "tests/e2e/visual/sweep-runs.spec.ts",
+    "tests/e2e/projects-upload.spec.ts"
   ]
 }

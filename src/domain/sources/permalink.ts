@@ -26,7 +26,8 @@ export function isRepositoryPath(path: string): boolean {
   return pathSegments(path) !== undefined;
 }
 
-function validLines(startLine: number, endLine: number): boolean {
+/** True for whole line numbers from 1 with the end not before the start. */
+export function isLineRange(startLine: number, endLine: number): boolean {
   return (
     Number.isInteger(startLine) &&
     Number.isInteger(endLine) &&
@@ -40,7 +41,7 @@ function validLines(startLine: number, endLine: number): boolean {
 export function buildPermalink(input: PermalinkInput): Result<string, PermalinkProblem> {
   const segments = pathSegments(input.path);
   if (segments === undefined) return err('invalid-path');
-  if (!validLines(input.startLine, input.endLine)) return err('invalid-lines');
+  if (!isLineRange(input.startLine, input.endLine)) return err('invalid-lines');
   const encodedPath = segments.map((segment) => encodeURIComponent(segment)).join('/');
   const lines = `L${String(input.startLine)}-L${String(input.endLine)}`;
   return ok(`${repositoryUrl(input)}/blob/${input.commitSha.value}/${encodedPath}#${lines}`);

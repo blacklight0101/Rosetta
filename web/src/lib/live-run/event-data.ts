@@ -91,6 +91,11 @@ export const startedData = z.looseObject({
       repo: text,
       subpath: text.optional(),
       commitSha: text.nullable().optional(),
+      // RF-131: an upload run's manifest source names the zip; owner and repo are empty.
+      kind: z.enum(['github', 'upload']).optional(),
+      fileName: text.optional(),
+      uploadedAt: text.optional(),
+      snapshotHash: text.nullable().optional(),
     })
     .optional(),
   caps: z.looseObject({ run: capPair }).optional(),

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CLAIM_STATUSES } from '../../domain/cards/card-vocabulary.js';
 import type { Overview } from '../../domain/overview/overview.js';
+import type { UploadFacts } from '../../domain/sources/upload-facts.js';
 import type { MapLevel } from '../../domain/code-map/map-level.js';
 import type { ReportCardDetail } from './card-detail.js';
 import type { ReportDiagram } from './report-diagrams.js';
@@ -121,6 +122,20 @@ export interface ReportDownloadNames {
   readonly handoff?: string | undefined;
 }
 
+/** RF-504: a GitHub run's repository address and commit; absent `kind` means GitHub. */
+export interface GithubReportSource {
+  readonly kind?: 'github' | undefined;
+  readonly url: string;
+  readonly commitSha: string | null;
+}
+
+/** RF-131: an uploaded run's zip, upload date and snapshot hash; no repository, no commit. */
+export interface UploadReportSource extends UploadFacts {
+  readonly kind: 'upload';
+}
+
+export type ReportSource = GithubReportSource | UploadReportSource;
+
 interface ReportTotals {
   readonly inputTokens: number;
   readonly outputTokens: number;
@@ -134,7 +149,7 @@ export interface ReportModel {
   readonly endState: string | null;
   readonly startedAt: string | null;
   readonly endedAt: string | null;
-  readonly source: { readonly url: string; readonly commitSha: string | null } | null;
+  readonly source: ReportSource | null;
   readonly totals: ReportTotals | null;
   readonly documents: ReportDocuments;
   readonly cards: readonly ReportCard[];

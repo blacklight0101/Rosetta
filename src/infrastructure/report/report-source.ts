@@ -1,4 +1,5 @@
 import type { Citation } from '../../domain/cards/citation.js';
+import type { GithubReportSource } from '../../application/report/report-model.js';
 import { buildPermalink } from '../../domain/sources/permalink.js';
 import { parseCommitSha } from '../../domain/sources/commit-sha.js';
 
@@ -10,15 +11,20 @@ const REPOSITORY =
   /^https:[/][/]github[.]com[/](?![.]{1,2}[/])([A-Za-z0-9_.-]+)[/](?![.]{1,2}$)([A-Za-z0-9_.-]+)$/u;
 const COMMIT = /^[0-9a-f]{40}$/u;
 
+/** RF-131: whether the run is on an uploaded zip. */
+export function isUploadModel(model: {
+  readonly source: { readonly kind?: string | undefined } | null;
+}): boolean {
+  return model.source?.kind === 'upload';
+}
+
 export interface SourceLink {
   readonly label: string;
   readonly href: string;
 }
 
 /** The link to the tree of the commit, or undefined when the address or the commit is unusable. */
-export function sourceLink(
-  source: { readonly url: string; readonly commitSha: string | null } | null,
-): SourceLink | undefined {
+export function sourceLink(source: GithubReportSource | null): SourceLink | undefined {
   if (source === null) return undefined;
   const { url, commitSha } = source;
   if (commitSha === null || !COMMIT.test(commitSha)) return undefined;
@@ -36,7 +42,7 @@ export function sourceLink(
  * wrote; undefined when the address, the commit or the citation is unusable.
  */
 export function citationPermalink(
-  source: { readonly url: string; readonly commitSha: string | null } | null,
+  source: GithubReportSource | null,
   citation: Citation,
 ): string | undefined {
   const sha = source?.commitSha;

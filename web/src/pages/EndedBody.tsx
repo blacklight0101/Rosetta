@@ -55,6 +55,11 @@ type TabId = (typeof tabIds)[number];
 
 const tabOf = (id: string): TabId => tabIds.find((each) => each === id) ?? 'evidence';
 
+/** RF-131: a report built from this page counts for the links of an uploaded project at once. */
+function reportSeen(source: SourceState | undefined, built: boolean): SourceState | undefined {
+  return source?.kind === 'upload' && built ? { ...source, reportBuilt: true } : source;
+}
+
 /** RF-504, P1-130: whether the run has a report; one built from this page counts at once. */
 function useReportBuilt(run: RunRow): { readonly built: boolean; readonly onBuilt: () => void } {
   const [builtHere, setBuiltHere] = useState(false);
@@ -162,7 +167,8 @@ function Panels(props: PanelsProps): JSX.Element | null {
       />
     );
   }
-  if (results.tab === 'evidence') return <EvidenceTab {...props} state={shown} />;
+  if (results.tab === 'evidence')
+    return <EvidenceTab {...props} state={shown} source={reportSeen(props.source, props.built)} />;
   return (
     <>
       <ActivityTab state={shown} runId={run.id} />
