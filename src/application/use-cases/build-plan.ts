@@ -6,6 +6,7 @@ import { assemblePlan, type PlanAssembly } from '../../domain/planning/plan-cont
 import { methodPrinciples } from '../../domain/planning/task-method.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
 import { recordManifestBrief } from '../../domain/runs/manifest-brief.js';
+import { recordManifestSourceRun } from '../../domain/runs/manifest-source-run.js';
 import {
   recordManifestCatalogue,
   recordManifestCodeMap,
@@ -36,13 +37,11 @@ import { scopeOf } from '../runs/run-scope.js';
 import { runProviderSinks, type RunSinkDependencies } from '../understand/run-sinks.js';
 
 // RF-601..RF-604, RNF-004, ADR-005, ADR-018, DEC-80: the executor of the `plan` stage. It reads the
-// project's saved planning brief and the newest completed understand run, records the brief, the
-// catalogue version and its SHA-256, and the planner's prompt version in the manifest, asks the
-// planner once through the guarded provider the factory builds for the run, checks the answer
-// against the supported cards, asks it a second time for the product requirements document (RF-621,
-// its own versioned prompt), a third time for the target data model (RF-623), a fourth for the target flows (RF-625), a fifth for the API contract when the front end
-// is separate (RF-624), a sixth for the user-interface material when a `SCRN` card is verified (RF-626),
-// a seventh for the items each task card builds (RF-627), and writes `handoff/` (an item no card builds: RST-1806). Only `Supported` claims and answered questions reach the planner. The cost report is written at every end.
+// saved planning brief and the source understand run (RF-614; else the newest completed one), records
+// them with the catalogue and prompt versions, asks the planner through the guarded provider (RF-621,
+// RF-623..RF-627 add the PRD, data model, flows, API contract, user interface and task items) and writes
+// `handoff/` (an item no card builds: RST-1806). Only `Supported` claims and answered questions reach
+// the planner. The cost report is written at every end.
 
 export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDependencies {
   readonly users: UserRepository;
@@ -118,7 +117,8 @@ export class BuildPlan implements RunExecutor {
 
   private async plan(execution: RunExecution): Promise<RunOutcome> {
     const { run, signal } = execution;
-    const inputs = await planInputs(this.deps, run);
+    const named = execution.manifest.options['sourceRunId'];
+    const inputs = await planInputs(this.deps, run, typeof named === 'string' ? named : undefined);
     if (!inputs.ok) return this.fail(run, inputs.error.code, inputs.error.message);
     const updates = new ManifestUpdates(this.deps.manifests, scopeOf(run));
     const { catalogue, prompts } = await this.loadFiles();
@@ -224,11 +224,11 @@ export class BuildPlan implements RunExecutor {
       ]),
     );
     await updates.update((manifest) => recordManifestBrief(manifest, inputs.brief));
+    await updates.update((manifest) => recordManifestSourceRun(manifest, inputs.sourceRun.runKey));
     await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));
     await updates.update((manifest) => ok(recordPromptVersions(manifest, versions)));
-    const { sourceRun } = inputs;
-    const source = await this.deps.manifests.read(scopeOf(sourceRun));
-    const { commitSha, snapshotKey } = sourceRun;
+    const source = await this.deps.manifests.read(scopeOf(inputs.sourceRun));
+    const { commitSha, snapshotKey } = inputs.sourceRun;
     const snapshotHash = source?.source.snapshotHash ?? null;
     if (commitSha !== null && snapshotKey !== null && snapshotHash !== null)
       await execution.recordSource({ commitSha, snapshotKey, snapshotHash });

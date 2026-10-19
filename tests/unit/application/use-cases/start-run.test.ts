@@ -19,6 +19,7 @@ async function setup(settings: ProjectSettings, ollamaHost?: string) {
   await projects.insertOrFind(project);
   const startRun = new StartRun({
     projects,
+    runs: harness.runs,
     briefs: new MemoryBriefStore(),
     submit: harness.submit,
     ...(ollamaHost === undefined ? {} : { ollamaHost }),

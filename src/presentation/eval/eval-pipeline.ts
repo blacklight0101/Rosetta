@@ -199,6 +199,7 @@ export function composePipeline(parts: PipelineParts): Pipeline {
     queue,
     startRun: new StartRun({
       projects,
+      runs,
       briefs: new FilePlanningBriefStore({ writer, masker }),
       submit,
     }),

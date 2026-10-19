@@ -7,6 +7,7 @@ import {
   localProject,
   planEstimate,
   planOptions,
+  planSource,
   unsavedBrief,
   savedBrief,
 } from './plan-setup-fixtures.js';
@@ -24,6 +25,7 @@ const baseAnswers: Readonly<Record<string, Answer>> = {
   [`PUT ${base}/planning-brief`]: json(200, savedBrief),
   [`POST ${base}/plan-options`]: json(200, planOptions),
   [`GET ${base}/plan-estimate`]: json(200, planEstimate),
+  [`GET ${base}/plan-source`]: json(200, planSource),
 };
 
 export const renderPlan = (answers: Readonly<Record<string, Answer>> = {}): RenderedPage =>

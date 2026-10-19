@@ -69,7 +69,7 @@ export interface PlanHarness {
   /** Starts a plan run with these options as the queue does and waits for its end. */
   plan(options?: Readonly<Record<string, unknown>>): Promise<Run>;
   /** The plan estimate of the project, as the plan page shows it before the run starts. */
-  estimate(): Promise<PlanEstimate>;
+  estimate(sourceRunId?: string): Promise<PlanEstimate>;
   /** Stops every running run, as the owner's stop does. */
   stopRunning(): Promise<void>;
   /** The folder of the run under the data folder. */
@@ -98,7 +98,11 @@ const goneScans: ScanResults = {
     Promise.reject(new RosettaError(ERROR_CODES.codeMapMissing, 'The scan has no code map.')),
 };
 
-function planExecutor(s: Stores, providers: UnderstandProviders, scans: ScanResults): BuildPlan {
+export function planExecutor(
+  s: Stores,
+  providers: UnderstandProviders,
+  scans: ScanResults,
+): BuildPlan {
   const { writer, masker, logger, manifests, runs, projects } = s;
   return new BuildPlan({
     ...{ projects, runs, manifests, logger, users: s.users },
@@ -184,7 +188,11 @@ interface HarnessParts {
   readonly queue: RunQueue;
 }
 
-async function estimateOf(s: Stores, project: Project): Promise<PlanEstimate> {
+async function estimateOf(
+  s: Stores,
+  project: Project,
+  sourceRunId?: string,
+): Promise<PlanEstimate> {
   const { writer, masker, clock, runs, projects, users } = s;
   const estimate = new EstimatePlan({
     ...{ projects, runs, users, clock, priceTable: budgetTable, serverKeys: { has: () => true } },
@@ -202,7 +210,10 @@ async function estimateOf(s: Stores, project: Project): Promise<PlanEstimate> {
     uxPrompt: () => loadUxPrompt('prompts'),
     coveragePrompt: () => loadCoveragePrompt('prompts'),
   });
-  const outcome = await estimate.execute({ actor, projectId: project.id });
+  const request = { actor, projectId: project.id };
+  const outcome = await estimate.execute(
+    sourceRunId === undefined ? request : { ...request, sourceRunId },
+  );
   if (!outcome.ok) throw new Error(`The plan estimate was refused: ${outcome.error}`);
   return outcome.value;
 }
@@ -242,7 +253,7 @@ function harnessOf(parts: HarnessParts): PlanHarness {
       if (manifest === undefined) throw new Error('The run has no manifest');
       return manifest;
     },
-    estimate: () => estimateOf(s, project),
+    estimate: (sourceRunId) => estimateOf(s, project, sourceRunId),
     async stopRunning() {
       for (const run of await s.runs.listRunning()) await queue.stop(run.userId, run.id);
     },

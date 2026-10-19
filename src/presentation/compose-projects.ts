@@ -9,6 +9,7 @@ import { GetProject } from '../application/use-cases/get-project.js';
 import { GetProjectCost } from '../application/use-cases/get-project-cost.js';
 import { ListProjects } from '../application/use-cases/list-projects.js';
 import { OpenWorkspace } from '../application/use-cases/open-workspace.js';
+import { GetPlanSource } from '../application/use-cases/get-plan-source.js';
 import { GetPlanningBrief } from '../application/use-cases/get-planning-brief.js';
 import { SavePlanningBrief } from '../application/use-cases/save-planning-brief.js';
 import { UpdateProjectSettings } from '../application/use-cases/update-project-settings.js';
@@ -119,6 +120,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       ...plannerPrompts(parts.promptsFolder),
     }),
     catalogue,
+    getPlanSource: new GetPlanSource({ projects, runs, cards: new FileRunCards(writer) }),
     // RF-428, RF-1010: the cost page and the totals pill.
     getProjectCost: new GetProjectCost({ projects, costs }),
     getAccountTotals: new GetAccountTotals({ costs, caps }),

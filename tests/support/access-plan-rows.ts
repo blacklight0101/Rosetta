@@ -16,6 +16,24 @@ export const planRows: Readonly<Record<string, readonly Probe[]>> = {
   'HEAD /api/plan/catalogue': [
     { method: 'HEAD', url: () => '/api/plan/catalogue', expected: active(401, 200) },
   ],
+  // RF-614: the matrix project has no understand run, so the owner's answer is RST-1802 (409); a
+  // run id of no run is not found (404) whoever asks.
+  'GET /api/projects/:id/plan-source': [
+    { method: 'GET', url: projectUrl('/plan-source'), expected: ownerOnly(409) },
+    {
+      method: 'GET',
+      url: projectUrl('/plan-source?run=00000000-0000-4000-b000-000000000000'),
+      expected: ownerOnly(404),
+    },
+    {
+      method: 'GET',
+      url: () => '/api/projects/not-a-uuid/plan-source',
+      expected: active(401, 404),
+    },
+  ],
+  'HEAD /api/projects/:id/plan-source': [
+    { method: 'HEAD', url: projectUrl('/plan-source'), expected: ownerOnly(409) },
+  ],
   // RF-608: the matrix project has no understand run, so the owner's answer is RST-1802 (409).
   'POST /api/projects/:id/plan-options': [
     {

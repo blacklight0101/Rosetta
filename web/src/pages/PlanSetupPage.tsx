@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
-import type { BriefView, Catalogue } from '../api/plan-schemas.js';
+import type { ApiFailure } from '../api/client.js';
+import type { BriefView, Catalogue, PlanSource } from '../api/plan-schemas.js';
 import type { Project } from '../api/project-schemas.js';
 import { useRouteParams } from '../app/route-params.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
@@ -8,11 +9,12 @@ import { PlanEstimateCard } from './PlanEstimateCard.js';
 import { PlanRecorded } from './PlanRecorded.js';
 import { PlanStepBody } from './PlanStepBody.js';
 import { PlanStepButtons } from './PlanStepButtons.js';
+import { PlanSourcePanel } from './PlanSourcePanel.js';
 import { PlanSteps } from './PlanSteps.js';
 import { usePlanSession } from './use-plan-session.js';
 import { usePlanSetupLoad } from './use-plan-setup-load.js';
 
-// RF-605, RF-608, RF-609, RF-613, design-system.md section 14 (Plan setup): `/projects/:projectId/
+// RF-605, RF-608, RF-609, RF-613, RF-614, design-system.md section 14 (Plan setup): `/projects/:projectId/
 // plan-setup`, the interview Rosetta runs before it plans. Six steps, each question with its
 // default and the reason it matters; the options of the architecture and the stack come from the
 // planner; "What I recorded" and the estimate sit under the step; "Write the package" starts `plan`.
@@ -31,21 +33,38 @@ function OutOfDate(): JSX.Element {
   );
 }
 
+/** The title, what the page does and the understand run it plans from (RF-614). */
+function Head(props: {
+  readonly source: PlanSource | undefined;
+  readonly error: ApiFailure | undefined;
+}): JSX.Element {
+  return (
+    <>
+      <div>
+        <h1 class="rst-page__title">Plan setup</h1>
+        <p class="rst-settings__lead">{lead}</p>
+      </div>
+      <PlanSourcePanel source={props.source} error={props.error} />
+    </>
+  );
+}
+
 interface BodyProps {
   readonly projectId: string;
   readonly catalogue: Catalogue;
   readonly view: BriefView;
   readonly project: Project;
+  readonly source: PlanSource | undefined;
+  readonly sourceError: ApiFailure | undefined;
+  readonly sourceRunId: string | undefined;
 }
 
-function PlanSetupBody({ projectId, catalogue, view, project }: BodyProps): JSX.Element {
-  const session = usePlanSession(projectId, view, project);
+function PlanSetupBody(props: BodyProps): JSX.Element {
+  const { projectId, catalogue, view, project, source, sourceError, sourceRunId } = props;
+  const session = usePlanSession({ projectId, sourceRunId }, view, project);
   return (
     <div class="rst-plan">
-      <div>
-        <h1 class="rst-page__title">Plan setup</h1>
-        <p class="rst-settings__lead">{lead}</p>
-      </div>
+      <Head source={source} error={sourceError} />
       {session.outOfDate ? <OutOfDate /> : null}
       <PlanSteps current={session.step} onOpen={session.goTo} />
       <section class="rst-plan-card">
@@ -78,6 +97,8 @@ function PlanSetupBody({ projectId, catalogue, view, project }: BodyProps): JSX.
       <PlanRecorded draft={session.draft} catalogue={catalogue} />
       <PlanEstimateCard
         projectId={projectId}
+        sourceRunId={sourceRunId}
+        sourceRefused={sourceError !== undefined}
         load={session.estimate}
         blockers={session.blockers}
         consent={session.consent}
@@ -113,6 +134,9 @@ export function PlanSetupPage(): JSX.Element {
       catalogue={load.catalogue}
       view={load.view}
       project={load.project}
+      source={load.source}
+      sourceError={load.sourceError}
+      sourceRunId={load.sourceRunId}
     />
   );
 }

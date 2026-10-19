@@ -1,5 +1,5 @@
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
-import { RunQueue } from '../../src/application/runs/run-queue.js';
+import { RunQueue, type RunQueueDependencies } from '../../src/application/runs/run-queue.js';
 import { RunScan } from '../../src/application/use-cases/run-scan.js';
 import { RunUnderstand } from '../../src/application/use-cases/run-understand.js';
 import { FileCostReportWriter } from '../../src/infrastructure/budget/cost-report-files.js';
@@ -156,6 +156,8 @@ export async function queueOf(
   s: Stores,
   providers: UnderstandProviders,
   cardWritesFail: () => boolean = () => false,
+  /** Executors of other stages (the plan stage of the documentation-set journey, P3-22). */
+  more: RunQueueDependencies['executors'] = {},
 ): Promise<RunQueue> {
   const { runs, manifests, log, clock, logger, projects, writer, masker } = s;
   const pipeline = new SnapshotScanPipeline({
@@ -173,6 +175,7 @@ export async function queueOf(
     executors: {
       scan: new RunScan({ fetcher, projects, pipeline, manifests, clock, logger }),
       understand: understandExecutor(s, providers, cardWritesFail),
+      ...more,
     },
     maxRunning: 2,
   });

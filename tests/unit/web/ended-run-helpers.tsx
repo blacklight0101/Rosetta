@@ -71,16 +71,25 @@ const finishedEvents = [
 ];
 
 /** The same events, for a run of this stage that ended as it did. */
-function eventsOf(options: Pick<EndedOptions, 'stage' | 'endState'>): typeof finishedEvents {
+function eventsOf(
+  options: Pick<EndedOptions, 'stage' | 'endState' | 'judged'>,
+): typeof finishedEvents {
   const { stage = 'understand', endState = 'Completed' } = options;
+  const judged =
+    options.judged === undefined
+      ? []
+      : [ev(8, 'verify.claim.judged', { claimId: 'BR-001.c1', status: options.judged })];
   return [
     ev(1, 'run.started', { ...startedData, stage }),
     ...finishedEvents.slice(1, -1),
-    runEnded(8, endState, endState === 'Failed' ? 'RST-2006' : undefined),
+    ...judged,
+    runEnded(9, endState, endState === 'Failed' ? 'RST-2006' : undefined),
   ];
 }
 
 export interface EndedOptions {
+  /** RF-614: the verdict of the judgement step on the first claim of BR-001; none by default. */
+  readonly judged?: 'Supported' | 'Rejected';
   readonly questions?: readonly QuestionRow[];
   readonly overviewBody?: Response;
   /** How the run ended; Completed unless a test says otherwise. */

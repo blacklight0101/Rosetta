@@ -1,5 +1,5 @@
 import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
-import { MemoryBriefStore } from './memory-brief-store.js';
+import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
 import type { AnswersFile } from '../../src/application/ports/answers-file.js';
 import type { ArchiveWriter } from '../../src/application/ports/archive-writer.js';
 import type { Clock } from '../../src/application/ports/clock.js';
@@ -113,6 +113,8 @@ export function runOutputs(given: RunOutputGiven): {
 interface ObservedFiles {
   readonly callFiles: MemoryOutputWriter;
   readonly masker: TextMasker;
+  /** RF-614: the saved briefs `StartRun` reads (RST-1801). */
+  readonly briefs: PlanningBriefStore;
   readonly logDir?: string | undefined;
 }
 
@@ -221,7 +223,7 @@ export function runServices(
     buildReport: reportOf(runs, outputs, { answers, clock }),
     ...answerServices(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
-    startRun: new StartRun({ projects, briefs: new MemoryBriefStore(), submit: runs.submit }),
+    startRun: new StartRun({ ...runs, projects, briefs: stores.briefs }),
     ...deepenServices(runs, { projects, keys }),
     suggestPlanOptions: planOptionsService({
       ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },
