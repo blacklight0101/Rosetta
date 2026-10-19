@@ -4,6 +4,7 @@ import type { BriefView, Catalogue, PlanSource } from '../api/plan-schemas.js';
 import type { Project } from '../api/project-schemas.js';
 import { useRouteParams } from '../app/route-params.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
+import { JourneyPanel } from './JourneyPanel.js';
 import { PlanConsentNotice } from './PlanConsentNotice.js';
 import { PlanEstimateCard } from './PlanEstimateCard.js';
 import { PlanRecorded } from './PlanRecorded.js';
@@ -65,6 +66,7 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
   return (
     <div class="rst-plan">
       <Head source={source} error={sourceError} />
+      <JourneyPanel {...{ projectId, runId: sourceRunId }} refresh={String(session.savedVersion)} />
       {session.outOfDate ? <OutOfDate /> : null}
       <PlanSteps current={session.step} onOpen={session.goTo} />
       <section class="rst-plan-card">

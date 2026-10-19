@@ -11,7 +11,9 @@ import { stepperOf } from '../lib/live-run/run-stepper.js';
 import { ActivityTab } from './ActivityTab.js';
 import { AppOverview, sectionAnchor } from './AppOverview.js';
 import { EvidenceTab } from './EvidenceTab.js';
+import { UnderstandJourney } from './JourneyPlacement.js';
 import { FailedAreas } from './FailedAreas.js';
+
 import { RunAnswers } from './RunAnswers.js';
 import { RunDownloads } from './RunDownloads.js';
 import { RunFailure } from './RunFailure.js';
@@ -41,6 +43,8 @@ export interface EndedBodyProps {
   readonly costMicros: number;
   readonly estimate: RunEstimate | undefined;
   readonly source: SourceState | undefined;
+  /** RF-006: called once the server has queued the run again; the page follows it anew. */
+  readonly onResumed: () => void;
 }
 
 const tabIds = ['overview', 'questions', 'evidence', 'activity'] as const;
@@ -191,6 +195,12 @@ function Rail(props: RailProps): JSX.Element {
   );
 }
 
+/** How many questions wait for an answer; none known until they are read. */
+function openQuestions(answers: AnswersLoad): number | undefined {
+  if (answers.status !== 'ready') return undefined;
+  return answers.questions.filter((each) => each.state === 'Open').length;
+}
+
 // RF-1015
 export function EndedBody(props: EndedBodyProps): JSX.Element {
   const { run, state, shown, phase, stage } = props;
@@ -200,10 +210,10 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
   const overview = useRunOverview(run.id, asks);
   const answers = useRunAnswers(run.id, asks);
   const results = useResultsTab(asks);
-  const open =
-    answers.load.status === 'ready'
-      ? answers.load.questions.filter((each) => each.state === 'Open').length
-      : undefined;
+  const open = openQuestions(answers.load);
+  const showQuestions = (): void => {
+    results.show('questions');
+  };
   return (
     <>
       <RunStepper
@@ -215,6 +225,9 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
       />
       {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
       <FailedAreas state={shown} projectId={run.projectId} />
+      <UnderstandJourney
+        {...{ run, stage, phase, open, onResumed: props.onResumed, onAnswer: showQuestions }}
+      />
       <div class="rst-p170-grid">
         <section class="rst-card rst-p170-main" aria-label="Results">
           <Tabs
@@ -232,9 +245,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
           state={shown}
           costMicros={props.costMicros}
           report={report}
-          onAnswer={() => {
-            results.show('questions');
-          }}
+          onAnswer={showQuestions}
         />
       </div>
     </>
