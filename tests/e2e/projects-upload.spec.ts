@@ -10,12 +10,36 @@ import { signInAs } from './support/sign-in.js';
 // 1 MB through the session answer, so a file above it is small enough to build in a test.
 
 const zip = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
+const role = { provider: 'ollama', model: 'gemma4:e4b', maxOutputTokens: 2048 };
+const settings = {
+  providers: {
+    ollama: {
+      kind: 'ollama',
+      keySource: 'user-then-server',
+      toolMode: 'native',
+      timeoutSeconds: 120,
+      maxRetries: 3,
+    },
+  },
+  roles: { reader: role, verifier: role, planner: role, summariser: role },
+  budget: {
+    run: { maxCostMicros: 500_000, maxTokens: 2_000_000 },
+    confirmAboveCostMicros: 250_000,
+    allowUnpriced: false,
+  },
+  scan: { maxFileBytes: 1_000_000, areaTokenBudget: 60_000, excerptMaxLines: 400, ignoreRules: '' },
+  agents: { parallelism: 1 },
+};
 const project = {
   id: 'p-zip',
   name: 'OrderDesk',
   sourceUrl: '',
   ref: '',
   subpath: '',
+  settings,
+  settingsVersion: 1,
+  createdAt: '2026-10-19T08:00:00.000Z',
+  updatedAt: '2026-10-19T08:00:00.000Z',
   sourceKind: 'upload',
   source: { fileName: 'OrderDesk.zip', uploadedAt: '2026-10-19T08:00:00.000Z' },
 };
