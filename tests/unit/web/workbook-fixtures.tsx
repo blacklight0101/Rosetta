@@ -103,3 +103,14 @@ export function formOf(): HTMLFormElement {
   if (form === null) throw new Error('The workbook field is not in a form.');
   return form;
 }
+
+/** The paths of the POST requests the page made, in order. */
+export const posts = (view: {
+  readonly calls: readonly { readonly method: string; readonly path: string }[];
+}): string[] => view.calls.filter((call) => call.method === 'POST').map((call) => call.path);
+
+/** Clicks the button and answers the first `count` file requests with success. */
+export async function sendAll(server: FakeUploadServer, count = 3): Promise<void> {
+  fireEvent.click(sendButton());
+  for (let index = 1; index <= count; index += 1) await answerFile(server, index);
+}
