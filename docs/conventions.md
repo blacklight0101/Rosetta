@@ -100,24 +100,24 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 registry, `src/domain/errors/codes.ts`, one code per line, so two parallel pull requests that take the same number
 conflict visibly; the codes already shown on the design board are reserved there first (DEC-112):
 
-| Range          | Area                                                                            |
-| -------------- | ------------------------------------------------------------------------------- |
-| RST-1000..1099 | configuration: server environment and project settings (CLI usage until DEC-59) |
-| RST-1100..1199 | file system, ignore rules, output folder                                        |
-| RST-1200..1299 | scan and language packs                                                         |
-| RST-1300..1399 | agent loop, tools and card parsing                                              |
-| RST-1400..1499 | verifier                                                                        |
-| RST-1500..1599 | providers                                                                       |
-| RST-1600..1699 | budget and cost                                                                 |
-| RST-1700..1799 | report and export                                                               |
-| RST-1800..1899 | plan                                                                            |
-| RST-1900..1999 | sources: GitHub (URL, ref resolution, download, rate limits) and uploaded zips  |
-| RST-2000..2099 | web UI and HTTP server (routes, validation, CSRF, headers)                      |
-| RST-2100..2199 | logging and observability                                                       |
-| RST-2200..2299 | accounts, sign-in, sessions, roles and audit (RF-1100..RF-1109)                 |
-| RST-2300..2399 | provider keys, caps and the run queue (RF-1104, RF-1106, RF-1108)               |
-| RST-2400..2499 | database and migrations (RF-1302)                                               |
-| RST-2500..2599 | deployment, start-up and health (RF-1300..RF-1306)                              |
+| Range          | Area                                                                                               |
+| -------------- | -------------------------------------------------------------------------------------------------- |
+| RST-1000..1099 | configuration: server environment and project settings (CLI usage until DEC-59)                    |
+| RST-1100..1199 | file system, ignore rules, output folder                                                           |
+| RST-1200..1299 | scan and language packs                                                                            |
+| RST-1300..1399 | agent loop, tools and card parsing                                                                 |
+| RST-1400..1499 | verifier                                                                                           |
+| RST-1500..1599 | providers                                                                                          |
+| RST-1600..1699 | budget and cost                                                                                    |
+| RST-1700..1799 | report and export                                                                                  |
+| RST-1800..1899 | plan                                                                                               |
+| RST-1900..1999 | sources: GitHub (URL, ref resolution, download, rate limits) and uploaded zips and Excel workbooks |
+| RST-2000..2099 | web UI and HTTP server (routes, validation, CSRF, headers)                                         |
+| RST-2100..2199 | logging and observability                                                                          |
+| RST-2200..2299 | accounts, sign-in, sessions, roles and audit (RF-1100..RF-1109)                                    |
+| RST-2300..2399 | provider keys, caps and the run queue (RF-1104, RF-1106, RF-1108)                                  |
+| RST-2400..2499 | database and migrations (RF-1302)                                                                  |
+| RST-2500..2599 | deployment, start-up and health (RF-1300..RF-1306)                                                 |
 
 RST-2009 is the web client's own code (`web/src/api/client.ts`) for a request that got no answer at all (a network failure or a timeout, status 0); the server never sends it. RST-2010 is the same client's code for a request the caller cancelled itself, status 0, also never sent by the server. A request to a path outside `/api/` is refused by the client with RST-2006 before anything is sent.
 

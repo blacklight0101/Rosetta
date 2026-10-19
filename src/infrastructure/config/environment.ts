@@ -30,6 +30,12 @@ export interface Environment {
   readonly scanParseBudgetMs: number;
   /** The largest zip a user may upload, in MB (RF-129, DEC-149). */
   readonly uploadMaxMb: number;
+  /** Most workbooks in one upload (RF-151, Q-32). */
+  readonly workbookMaxFiles: number;
+  /** Most sheets in one workbook (RF-151, Q-32). */
+  readonly workbookMaxSheets: number;
+  /** Most non-empty cells across the workbooks of a project (RF-151, Q-32). */
+  readonly workbookMaxCells: number;
   readonly appDbPassword: string | undefined;
   readonly migratorDbPassword: string | undefined;
   readonly dbAdminPassword: string | undefined;
@@ -210,6 +216,9 @@ function toEnvironment(parsed: Parsed): Environment {
     trustProxy: parsed.ROSETTA_TRUST_PROXY ?? 0,
     scanParseBudgetMs: parsed.ROSETTA_SCAN_PARSE_BUDGET_MS ?? defaultParseBudgetMs,
     uploadMaxMb: parsed.ROSETTA_UPLOAD_MAX_MB ?? MAX_UPLOAD_MB,
+    workbookMaxFiles: 20,
+    workbookMaxSheets: 200,
+    workbookMaxCells: 2_000_000,
     appDbPassword: parsed.ROSETTA_APP_DB_PASSWORD,
     migratorDbPassword: parsed.ROSETTA_MIGRATOR_DB_PASSWORD,
     dbAdminPassword: parsed.ROSETTA_DB_ADMIN_PASSWORD,
