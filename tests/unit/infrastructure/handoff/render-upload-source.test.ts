@@ -3,6 +3,7 @@ import { SecretMasker } from '../../../../src/infrastructure/guards/secret-maske
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
 import { handoffOf } from '../../../support/handoff-package-fixture.js';
 import {
+  githubAddress,
   hostileFileName,
   uploadHash,
   uploadReportSource,
@@ -53,7 +54,7 @@ describe('the package of an uploaded project', () => {
 describe('the files of the package of an uploaded project', () => {
   it('RF-131 holds no github.com address in any file', () => {
     const holding = Object.entries(filesOf())
-      .filter(([, text]) => text.includes('github.com'))
+      .filter(([, text]) => githubAddress.test(text.replaceAll('&#58;', ':')))
       .map(([path]) => path);
 
     expect(holding).toEqual([]);

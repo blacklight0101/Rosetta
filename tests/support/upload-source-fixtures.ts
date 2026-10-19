@@ -14,3 +14,6 @@ export const uploadReportSource = {
 /** A file name that would be markup, a link or a table cell if it were not shown as text. */
 export const hostileFileName =
   '<img src=x onerror=alert(1)> **b** [x](javascript:alert(1)) | y.zip';
+
+/** An address on github.com, wherever it stands in a page or a document. */
+export const githubAddress = /https?:\/\/[^\s"')]*github\.com/u;

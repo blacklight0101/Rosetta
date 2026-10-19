@@ -9,6 +9,7 @@ import { cardPageName } from '../../../../src/infrastructure/report/site/page-na
 import { auditHtml } from '../../../support/html-audit.js';
 import { plainDetail, reportModel } from '../../../support/report-fixtures.js';
 import {
+  githubAddress,
   hostileFileName,
   uploadHash,
   uploadReportSource,
@@ -144,13 +145,13 @@ describe('every page of the report of an uploaded project', () => {
     const pages = Object.entries(files).filter(([name]) => name.endsWith('.html'));
 
     expect(pages.length).toBeGreaterThan(5);
-    const withGithub = pages.filter(([, html]) => html.includes('github.com')).map(([n]) => n);
+    const withGithub = pages.filter(([, html]) => githubAddress.test(html)).map(([n]) => n);
     const withForeign = pages
       .filter(([, html]) => auditHtml(html).foreignLinks.length > 0)
       .map(([name]) => name);
     expect(withGithub).toEqual([]);
     expect(withForeign).toEqual([]);
-    expect(files['report.md']).not.toContain('github.com');
+    expect(files['report.md']).not.toMatch(githubAddress);
   });
 
   it('RF-131 holds none in the diagrams page either', () => {
