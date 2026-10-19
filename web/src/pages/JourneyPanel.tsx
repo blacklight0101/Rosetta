@@ -27,7 +27,7 @@ export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
   const load = useJourney({ projectId, runId }, refresh);
   if (load.status === 'loading') return null;
   if (load.status === 'failed') {
-    return <p class="rst-journey-note">{`The journey could not be read (${load.error.code}).`}</p>;
+    return <p class="rst-road-note">{`The journey could not be read (${load.error.code}).`}</p>;
   }
   const view = journeyOf(load.facts, projectId);
   const source = load.facts.source;

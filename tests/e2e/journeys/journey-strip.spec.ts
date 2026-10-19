@@ -33,7 +33,7 @@ const stepOf = (page: Page, title: string): Locator =>
   journey(page)
     .getByRole('listitem')
     .filter({
-      has: page.locator('.rst-journey__title', { hasText: new RegExp(`^${title}$`, 'u') }),
+      has: page.locator('.rst-road__title', { hasText: new RegExp(`^${title}$`, 'u') }),
     });
 
 /** Nothing of the page is beside the viewport. */

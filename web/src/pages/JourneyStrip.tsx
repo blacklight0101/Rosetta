@@ -16,7 +16,7 @@ import { ResumeButton } from './ResumeButton.js';
 // package as an ordered list. Each step says its state in a word and a glyph (never colour alone),
 // gives its reason or its code and its cost, and is a link only when it has a page the user may open.
 // The step that holds the next action is marked `aria-current="step"` and says so in text. One next
-// action sits under the list. All the styles are under `.rst-journey`.
+// action sits under the list. All the styles are under `.rst-road`.
 
 export interface JourneyStripProps {
   readonly view: JourneyView;
@@ -48,22 +48,20 @@ function StepItem({ step }: { readonly step: JourneyStep }): JSX.Element {
   const { state } = step;
   return (
     <li
-      class={`rst-journey__step rst-journey__step--${state}`}
+      class={`rst-road__step rst-road__step--${state}`}
       data-state={state}
       aria-current={step.here ? 'step' : undefined}
     >
-      <span class="rst-journey__mark">
+      <span class="rst-road__mark">
         <Glyph name={glyphs[state]} />
       </span>
-      <span class="rst-journey__title">
+      <span class="rst-road__title">
         {step.href === undefined ? step.title : <Link href={step.href}>{step.title}</Link>}
       </span>{' '}
-      <span class="rst-journey__state">{words[state]}</span>{' '}
-      {step.here && state !== 'current' ? (
-        <span class="rst-journey__here">Current step</span>
-      ) : null}{' '}
-      <span class="rst-journey__detail">{step.detail}</span>{' '}
-      <span class="rst-journey__cost">{step.cost}</span>
+      <span class="rst-road__state">{words[state]}</span>{' '}
+      {step.here && state !== 'current' ? <span class="rst-road__here">Current step</span> : null}{' '}
+      <span class="rst-road__detail">{step.detail}</span>{' '}
+      <span class="rst-road__cost">{step.cost}</span>
     </li>
   );
 }
@@ -96,18 +94,18 @@ function Action(props: {
 export function JourneyStrip(props: JourneyStripProps): JSX.Element {
   const { view } = props;
   return (
-    <section class="rst-card rst-journey" aria-labelledby="rst-journey-title">
-      <h2 class="rst-live-section__title" id="rst-journey-title">
+    <section class="rst-card rst-road" aria-labelledby="rst-road-title">
+      <h2 class="rst-live-section__title" id="rst-road-title">
         Journey from code to package
       </h2>
-      <ol class="rst-journey__steps">
+      <ol class="rst-road__steps">
         {view.steps.map((step) => (
           <StepItem key={step.key} step={step} />
         ))}
       </ol>
-      <div class="rst-journey__foot">
+      <div class="rst-road__foot">
         <Action action={view.action} onResumed={props.onResumed} onAnswer={props.onAnswer} />
-        <p class="rst-journey__total">{`Total so far ${costLabel(view.totalCostMicros)}`}</p>
+        <p class="rst-road__total">{`Total so far ${costLabel(view.totalCostMicros)}`}</p>
       </div>
     </section>
   );

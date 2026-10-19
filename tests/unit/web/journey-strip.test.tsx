@@ -23,7 +23,7 @@ const journey = (): HTMLElement =>
 const item = (title: string): HTMLElement => {
   const found = within(journey())
     .getAllByRole('listitem')
-    .find((each) => each.querySelector('.rst-journey__title')?.textContent === title);
+    .find((each) => each.querySelector('.rst-road__title')?.textContent === title);
   if (found === undefined) throw new Error(`No step called ${title}`);
   return found;
 };
@@ -33,7 +33,7 @@ it('RF-615 lists the seven steps in order', () => {
 
   const titles = within(journey())
     .getAllByRole('listitem')
-    .map((each) => each.querySelector('.rst-journey__title')?.textContent);
+    .map((each) => each.querySelector('.rst-road__title')?.textContent);
   expect(titles).toEqual([
     'Scan',
     'Understand',
@@ -55,7 +55,7 @@ it.each([
 ] as const)('RF-615 on the %s road the %s step says %s in words', (road, title, word) => {
   strip(road);
 
-  expect(item(title).querySelector('.rst-journey__state')?.textContent).toBe(word);
+  expect(item(title).querySelector('.rst-road__state')?.textContent).toBe(word);
 });
 
 it('RF-615 every step has a glyph that assistive technology skips', () => {
@@ -194,7 +194,7 @@ it('RF-615 a step that is current by its state says so once, not twice', () => {
   strip('estimate');
 
   const here = item('Estimate');
-  expect(here.querySelector('.rst-journey__state')?.textContent).toBe('Current');
+  expect(here.querySelector('.rst-road__state')?.textContent).toBe('Current');
   expect(here.getAttribute('aria-current')).toBe('step');
-  expect(here.querySelector('.rst-journey__here')).toBeNull();
+  expect(here.querySelector('.rst-road__here')).toBeNull();
 });
