@@ -219,7 +219,8 @@ it('RF-132 a failed switch keeps the notice and shows the error', async () => {
 
   fireEvent.click(screen.getByRole('button', { name: switchName }));
 
-  await screen.findByText(/RST-1007/u);
+  const banner = await screen.findByTestId('error-banner');
+  expect(banner.textContent).toContain('RST-1007');
   expect(screen.getByRole('region', { name: noticeName })).not.toBeNull();
 });
 

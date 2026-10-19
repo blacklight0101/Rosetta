@@ -12,6 +12,9 @@ export interface StartGateInput {
   /** Names of the providers whose notice must be confirmed; empty when none is needed. */
   readonly consentNeeded: string;
   readonly consentGiven: boolean;
+  /** RF-132: the project is an upload and its roles send code to a cloud provider. */
+  readonly privateNeeded?: boolean;
+  readonly privateGiven?: boolean;
   /** RF-113: the code map is out of date and its use has not been confirmed. */
   readonly oldMapUnconfirmed?: boolean;
   /** RF-1018: library areas are chosen and the user has not confirmed reading them. */
@@ -33,7 +36,7 @@ function understandReason(input: StartGateInput): string | undefined {
   return undefined;
 }
 
-// RF-1001, RF-143
+// RF-1001, RF-143, RF-132
 export function startGate(input: StartGateInput): StartGate {
   const plain: StartGate = { label: 'Start run', reason: undefined };
   if (input.noSource === true) {
@@ -48,9 +51,17 @@ export function startGate(input: StartGateInput): StartGate {
   if (input.libraryUnconfirmed === true) {
     return { label: plain.label, reason: 'Confirm the library areas, or choose own code only.' };
   }
-  if (input.consentNeeded === '' || input.consentGiven) return plain;
-  return {
-    label: `Start run (confirm the ${input.consentNeeded} notice)`,
-    reason: `Confirm the ${input.consentNeeded} notice above to start the run`,
-  };
+  if (input.consentNeeded !== '' && !input.consentGiven) {
+    return {
+      label: `Start run (confirm the ${input.consentNeeded} notice)`,
+      reason: `Confirm the ${input.consentNeeded} notice above to start the run`,
+    };
+  }
+  if (input.privateNeeded === true && input.privateGiven !== true) {
+    return {
+      label: 'Start run (confirm the private code notice)',
+      reason: 'Confirm the private code notice above to start the run',
+    };
+  }
+  return plain;
 }
