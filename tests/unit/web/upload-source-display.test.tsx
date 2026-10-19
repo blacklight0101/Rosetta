@@ -171,3 +171,30 @@ it('RF-128 the start page form keeps the project it has: no name field to make a
   });
   expect(screen.queryByLabelText('Project name')).toBeNull();
 });
+
+it('RF-128 the date and name the server reports for the stored zip are the ones shown', async () => {
+  const server = installFakeUploadServer();
+  renderStartOf(sourceless);
+  await screen.findByText(/has no source\. Upload a zip to start/u);
+  fireEvent.change(screen.getByLabelText('Zip file'), {
+    target: { files: [zipFile('OrderDesk.zip')] },
+  });
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Upload zip' }).hasAttribute('disabled')).toBe(false);
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Upload zip' }));
+  await waitFor(() => {
+    expect(server.requests).toHaveLength(1);
+  });
+
+  server.pending().respond(201, {
+    files: 1,
+    size: 10,
+    skipped: 0,
+    snapshotHash: 'b'.repeat(64),
+    fileName: 'OrderDesk.zip',
+    uploadedAt: '2026-01-02T03:04:05.000Z',
+  });
+
+  expect(await screen.findByText('OrderDesk (zip, 2 Jan 2026)')).not.toBeNull();
+});

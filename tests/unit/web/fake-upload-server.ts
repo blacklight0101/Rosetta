@@ -16,6 +16,8 @@ interface PendingUpload extends UploadRequest {
   readonly respond: (status: number, body: unknown) => void;
   readonly failNetwork: () => void;
   readonly failTimeout: () => void;
+  /** The page gave up on this upload (XMLHttpRequest.abort). */
+  readonly wasAborted: () => boolean;
 }
 
 export interface FakeUploadServer {
@@ -55,7 +57,10 @@ class FakeRequest {
     FakeRequest.all.push(this);
   }
 
+  aborted = false;
+
   abort(): void {
+    this.aborted = true;
     this.onabort?.();
   }
 }
@@ -84,6 +89,7 @@ export function installFakeUploadServer(): FakeUploadServer {
         failNetwork() {
           request.onerror?.();
         },
+        wasAborted: () => request.aborted,
         failTimeout() {
           request.ontimeout?.();
         },

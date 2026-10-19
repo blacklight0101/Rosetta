@@ -3,14 +3,15 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { failure, json } from './fake-api.js';
 import { installFakeUploadServer } from './fake-upload-server.js';
 import {
-  chooseFile,
+  chooseValid,
+  nameField,
+  sendOne,
   overview,
   renderUploadTab,
   sourceless,
   summaryBody,
   uploadButton,
   withSource,
-  zipFile,
 } from './zip-fixtures.js';
 
 // RF-128, RF-134, RFC-004 sections 4.2 and 4.5: the Upload a zip tab of the New project form
@@ -20,27 +21,6 @@ afterEach(() => {
   vi.unstubAllGlobals();
   window.history.pushState({}, '', '/');
 });
-
-function nameField(): HTMLInputElement {
-  const field = screen.getByLabelText('Project name');
-  if (!(field instanceof HTMLInputElement)) throw new Error('The name field is not an input.');
-  return field;
-}
-
-/** Chooses a zip and waits until the form accepts it. */
-async function chooseValid(name = 'OrderDesk.zip'): Promise<void> {
-  chooseFile(zipFile(name));
-  await waitFor(() => {
-    expect(uploadButton().hasAttribute('disabled')).toBe(false);
-  });
-}
-
-async function sendOne(server: { readonly requests: readonly unknown[] }): Promise<void> {
-  fireEvent.click(uploadButton());
-  await waitFor(() => {
-    expect(server.requests.length).toBeGreaterThan(0);
-  });
-}
 
 it('RF-128 the form has the tabs GitHub repository and Upload a zip', () => {
   renderUploadTab();

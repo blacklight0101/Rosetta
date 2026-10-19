@@ -1,4 +1,5 @@
-import { fireEvent, screen } from '@testing-library/preact';
+import { fireEvent, screen, waitFor } from '@testing-library/preact';
+import { expect } from 'vitest';
 import { ProjectsPage } from '../../../web/src/pages/ProjectsPage.js';
 import { json, renderPage, type Answer, type RenderedPage } from './fake-api.js';
 import { overviewRow, projectOf } from './project-fixtures.js';
@@ -58,3 +59,24 @@ export const uploadButton = (): HTMLElement => screen.getByRole('button', { name
 
 export const overview = (...projects: Record<string, unknown>[]): Response =>
   json(200, { projects: projects.map((project) => overviewRow(project)), truncated: false });
+
+export function nameField(): HTMLInputElement {
+  const field = screen.getByLabelText('Project name');
+  if (!(field instanceof HTMLInputElement)) throw new Error('The name field is not an input.');
+  return field;
+}
+
+/** Chooses a zip and waits until the form accepts it. */
+export async function chooseValid(name = 'OrderDesk.zip'): Promise<void> {
+  chooseFile(zipFile(name));
+  await waitFor(() => {
+    expect(uploadButton().hasAttribute('disabled')).toBe(false);
+  });
+}
+
+export async function sendOne(server: { readonly requests: readonly unknown[] }): Promise<void> {
+  fireEvent.click(uploadButton());
+  await waitFor(() => {
+    expect(server.requests.length).toBeGreaterThan(0);
+  });
+}
