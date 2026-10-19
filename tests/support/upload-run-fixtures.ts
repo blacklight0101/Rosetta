@@ -12,6 +12,13 @@ const UPLOAD_PROJECT_ID = '00000000-0000-4000-a000-0000000000d1';
 
 export const UPLOAD_KEY = uploadSnapshotKey(UPLOAD_PROJECT_ID, UPLOAD_HASH);
 
+/** The zip an upload project holds, for the tests of a start that need a source to exist. */
+export const heldZip = {
+  fileName: 'OrderDesk.zip',
+  uploadedAt: Date.parse(UPLOADED_AT),
+  snapshotKey: UPLOAD_KEY,
+};
+
 /** Project fields of an upload project that holds a zip. */
 export const uploadProjectFields: Partial<Project> = {
   id: UPLOAD_PROJECT_ID,
@@ -20,11 +27,7 @@ export const uploadProjectFields: Partial<Project> = {
   sourceUrl: '',
   ref: '',
   subpath: '',
-  upload: {
-    fileName: 'OrderDesk.zip',
-    uploadedAt: Date.parse(UPLOADED_AT),
-    snapshotKey: UPLOAD_KEY,
-  },
+  upload: heldZip,
 };
 
 /** The snapshot an upload store answers for the key, with the C# fixture repository as its tree. */

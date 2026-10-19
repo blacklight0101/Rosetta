@@ -1,3 +1,4 @@
+import { heldZip } from '../../../support/upload-run-fixtures.js';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
@@ -23,7 +24,7 @@ async function setup() {
   current = test;
   const amyUser = await addUser(test, { userName: 'amy' });
   const owner = { userId: amyUser.account.id, settings: cloudReader };
-  const project = sampleProject({ ...owner, sourceKind: 'upload', sourceUrl: '' });
+  const project = sampleProject({ ...owner, sourceKind: 'upload', sourceUrl: '', upload: heldZip });
   await test.projects.insertOrFind(project);
   const amy = await signedInBrowser(test.server, amyUser);
   const started = await amy.request({

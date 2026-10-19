@@ -75,15 +75,25 @@ export class StartRun {
     const project = await this.deps.projects.find(actor.userId, projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
     if (!STARTABLE_STAGES.includes(stage)) return err(ERROR_CODES.runStageNotAvailable);
-    // RF-128: an upload project reads its zip, so a run needs one; no run is created without it.
-    if (project.sourceKind === 'upload' && project.upload === undefined) {
-      return err(ERROR_CODES.projectNoSource);
-    }
     if (stage === 'understand') return this.understand(request, project);
     if (stage === 'plan') return this.plan(request, project);
     // The scan settings of this moment are the run's: an edit while it waits does not change it.
     const options = { scanSettings: project.settings.scan };
-    return this.deps.submit.execute({ actor, project, stage, options });
+    return this.submit({ actor, project, stage, options });
+  }
+
+  /**
+   * RF-128: an upload project reads its zip, so a run needs one; no run is created without it. The
+   * confirmations of the request are judged first, so the owner is asked for each thing once.
+   */
+  private submit(
+    input: Parameters<SubmitRun['execute']>[0],
+  ): Promise<Result<SubmittedRun, StartRunProblem>> {
+    const { project } = input;
+    if (project.sourceKind === 'upload' && project.upload === undefined) {
+      return Promise.resolve(err(ERROR_CODES.projectNoSource));
+    }
+    return this.deps.submit.execute(input);
   }
 
   // RF-143, RF-604: a plan run calls the planner only, so only the planner needs the consent; the
@@ -116,7 +126,7 @@ export class StartRun {
       if (request.privateCodeConfirmed !== true) return err(ERROR_CODES.privateCodeNotConfirmed);
     }
     const options = { cloudConsent, ...(sourceRunId === undefined ? {} : { sourceRunId }) };
-    return this.deps.submit.execute({ actor, project, stage: 'plan', options });
+    return this.submit({ actor, project, stage: 'plan', options });
   }
 
   // RF-143, RF-132, RF-200
@@ -138,7 +148,7 @@ export class StartRun {
       return err(ERROR_CODES.privateCodeNotConfirmed);
     }
     const { actor } = request;
-    return this.deps.submit.execute({
+    return this.submit({
       actor,
       project,
       stage: 'understand',
