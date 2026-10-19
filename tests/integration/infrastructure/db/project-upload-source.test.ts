@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { PgProjectRepository } from '../../../../src/infrastructure/db/pg-project-repository.js';
 import type { DatabasePool } from '../../../../src/infrastructure/db/pool.js';
 import { insert, newId, outcomeOf, run, user, type Insert } from '../../../support/db-rows.js';
+import { sampleProject } from '../../../support/project-fixtures.js';
 import { hasTestDatabase, useTestDatabase } from '../../../support/postgres.js';
 
 // RF-128, data-model.md section 4 (`projects`): an upload project records the snapshot, the file
@@ -31,7 +32,7 @@ function projectOf(source: Source): Insert {
       source.kind === 'github' ? 'https://github.com/o/r' : '',
       '',
       '',
-      { schemaVersion: 1 },
+      sampleProject().settings,
       at,
       at,
       source.key ?? null,
