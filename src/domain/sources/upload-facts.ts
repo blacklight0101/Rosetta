@@ -18,10 +18,10 @@ export interface UploadFacts {
 }
 
 /** What a header says when the manifest holds no file name. */
-export const UNNAMED_ZIP = 'An uploaded zip (its name was not recorded)';
+const UNNAMED_ZIP = 'An uploaded zip (its name was not recorded)';
 
 /** What a header says when the manifest of a workbook run holds no workbook name. */
-export const UNNAMED_WORKBOOKS = 'Excel workbooks (their names were not recorded)';
+const UNNAMED_WORKBOOKS = 'Excel workbooks (their names were not recorded)';
 
 /** `A.xlsx`, `A.xlsx and B.xlsm`, `A.xlsx, B.xlsx and C.xlsm`. */
 function listOf(names: readonly string[]): string {
@@ -31,7 +31,7 @@ function listOf(names: readonly string[]): string {
 }
 
 /** What a header says before the workbook names. */
-export const WORKBOOKS_PREFIX = 'Excel workbooks: ';
+const WORKBOOKS_PREFIX = 'Excel workbooks: ';
 
 function workbooksSentence(facts: UploadFacts, names: readonly string[]): string {
   const known = [
