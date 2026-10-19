@@ -44,7 +44,7 @@ export interface UploadSource {
 }
 
 /** What was counted in one workbook when it was rendered (RFC-005 section 4.1). */
-export interface WorkbookCounts {
+interface WorkbookCounts {
   readonly sheets: number;
   readonly nonEmptyCells: number;
   readonly formulas: number;

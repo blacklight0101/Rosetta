@@ -52,6 +52,3 @@ export interface SourceFetcher {
 
 /** A cached, read-only snapshot of an uploaded zip (RF-130). */
 export type UploadSnapshot = UploadSnapshotInfo & SnapshotLocation;
-
-/** A cached, read-only snapshot of rendered workbooks (RF-152). */
-export type WorkbookSnapshot = WorkbookSnapshotInfo & SnapshotLocation;

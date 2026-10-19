@@ -40,6 +40,10 @@ describe('workbook snapshot key', () => {
 
   it.each([
     ['a project id that is not a UUID', 'workbook__not-a-uuid@0123456789abcdef'],
+    [
+      'a short first group in the project id',
+      'workbook__0000-0000-4000-a000-000000000001@0123456789abcdef',
+    ],
     ['15 hex characters', `workbook__${PROJECT_ID}@0123456789abcde`],
     ['17 hex characters', `workbook__${PROJECT_ID}@0123456789abcdef0`],
     ['upper-case hex', `workbook__${PROJECT_ID}@0123456789ABCDEF`],
