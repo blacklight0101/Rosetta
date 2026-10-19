@@ -12,7 +12,9 @@ import { ActivityTab } from './ActivityTab.js';
 import { AppOverview, sectionAnchor } from './AppOverview.js';
 import { DeepenProgress } from './DeepenProgress.js';
 import { EvidenceTab } from './EvidenceTab.js';
+import { UnderstandJourney } from './JourneyPlacement.js';
 import { FailedAreas } from './FailedAreas.js';
+
 import { RunAnswers } from './RunAnswers.js';
 import { RunDownloads } from './RunDownloads.js';
 import { RunFailure } from './RunFailure.js';
@@ -44,6 +46,8 @@ export interface EndedBodyProps {
   readonly costMicros: number;
   readonly estimate: RunEstimate | undefined;
   readonly source: SourceState | undefined;
+  /** RF-006: called once the server has queued the run again; the page follows it anew. */
+  readonly onResumed: () => void;
 }
 
 const tabIds = ['overview', 'questions', 'evidence', 'activity'] as const;
@@ -198,8 +202,20 @@ function Rail(props: RailProps): JSX.Element {
   );
 }
 
+/** How many questions wait for an answer; none known until they are read. */
+function openQuestions(answers: AnswersLoad): number | undefined {
+  if (answers.status !== 'ready') return undefined;
+  return answers.questions.filter((each) => each.state === 'Open').length;
+}
+
 /** The stepper, what failed, the areas that failed and, for a Deepen run, its rounds. */
-function Header(props: EndedBodyProps & { readonly reportBuilt: boolean }): JSX.Element {
+function Header(
+  props: EndedBodyProps & {
+    readonly reportBuilt: boolean;
+    readonly open: number | undefined;
+    readonly onAnswer: () => void;
+  },
+): JSX.Element {
   const { run, state, shown, phase, stage } = props;
   const built = { stage, commitSha: run.commitSha, reportBuilt: props.reportBuilt };
   return (
@@ -208,6 +224,10 @@ function Header(props: EndedBodyProps & { readonly reportBuilt: boolean }): JSX.
       {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
       <FailedAreas state={shown} projectId={run.projectId} />
       {shown.deepen === undefined ? null : <DeepenProgress progress={shown.deepen} />}
+      <UnderstandJourney
+        {...{ run, stage, phase, open: props.open, onResumed: props.onResumed }}
+        onAnswer={props.onAnswer}
+      />
     </>
   );
 }
@@ -222,13 +242,13 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
   const answers = useRunAnswers(run.id, asks);
   const understanding = useUnderstanding(run.id, asks);
   const results = useResultsTab(asks);
-  const open =
-    answers.load.status === 'ready'
-      ? answers.load.questions.filter((each) => each.state === 'Open').length
-      : undefined;
+  const open = openQuestions(answers.load);
+  const showQuestions = (): void => {
+    results.show('questions');
+  };
   return (
     <>
-      <Header {...props} reportBuilt={report.built} />
+      <Header {...props} reportBuilt={report.built} open={open} onAnswer={showQuestions} />
       <div class="rst-p170-grid">
         <section class="rst-card rst-p170-main" aria-label="Results">
           <Tabs
@@ -251,9 +271,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
           state={shown}
           costMicros={props.costMicros}
           report={report}
-          onAnswer={() => {
-            results.show('questions');
-          }}
+          onAnswer={showQuestions}
         />
       </div>
     </>

@@ -5,6 +5,7 @@
     "tests/e2e/journeys/admin-and-cap.spec.ts",
     "tests/e2e/journeys/cap-resume.spec.ts",
     "tests/e2e/journeys/consolidation.spec.ts",
+    "tests/e2e/journeys/journey-strip.spec.ts",
     "tests/e2e/journeys/server-key-cap.spec.ts",
     "tests/e2e/journeys/two-users.spec.ts",
     "tests/e2e/live-run.spec.ts",

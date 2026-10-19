@@ -9,6 +9,7 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { EndedBody } from './EndedBody.js';
+import { PlanJourney } from './JourneyPlacement.js';
 import { PauseUpdates } from './PauseUpdates.js';
 import { ResumeControl } from './ResumeControl.js';
 import { RunStatusBar } from './RunStatusBar.js';
@@ -111,9 +112,10 @@ export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps)
         }
       />
       <Connection stream={stream} />
+      <PlanJourney {...{ run, stage, phase, onResumed }} />
       {phase.kind === 'ended' ? (
         <EndedBody
-          {...{ run, state, phase, stage, estimate }}
+          {...{ run, state, phase, stage, estimate, onResumed }}
           shown={view.shown}
           costMicros={costOf(state, run)}
           source={sourceOf(state, run)}

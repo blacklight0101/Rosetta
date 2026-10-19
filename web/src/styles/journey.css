@@ -1,0 +1,128 @@
+/* RF-615, RNF-010, design-system.md section 14 (journey strip): the seven steps from code to package.
+   Each step carries its state as a glyph and a word, never colour alone. Tokens only, so both colour
+   schemes follow the theme. On a phone the steps stack in one column and nothing scrolls sideways. */
+
+.rst-road {
+  display: grid;
+  gap: var(--rst-sp-4);
+  min-inline-size: 0;
+}
+
+.rst-road__steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: var(--rst-sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rst-road__step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-content: start;
+  column-gap: var(--rst-sp-2);
+  row-gap: var(--rst-sp-1);
+  min-inline-size: 0;
+  padding: var(--rst-sp-3);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface);
+  font-size: var(--rst-fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.rst-road__step > :not(.rst-road__mark):not(.rst-road__title) {
+  grid-column: 2;
+}
+
+.rst-road__step[aria-current='step'] {
+  border: 2px solid var(--rst-brand);
+  padding: calc(var(--rst-sp-3) - 1px);
+}
+
+.rst-road__mark {
+  display: inline-flex;
+  align-items: center;
+}
+
+.rst-road__title {
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-road__state {
+  justify-self: start;
+  padding: 0 var(--rst-sp-2);
+  border-radius: var(--rst-radius-pill);
+  font-weight: var(--rst-fw-label);
+  background: var(--rst-neutral-bg);
+  color: var(--rst-neutral-ink);
+}
+
+.rst-road__step--done .rst-road__state {
+  background: var(--rst-ok-bg);
+  color: var(--rst-ok-ink);
+}
+
+.rst-road__step--current .rst-road__state {
+  background: var(--rst-info-solid);
+  color: var(--rst-info-solid-ink);
+}
+
+.rst-road__step--failed .rst-road__state {
+  background: var(--rst-danger-bg);
+  color: var(--rst-danger-ink);
+}
+
+.rst-road__step--out-of-date .rst-road__state {
+  background: var(--rst-warn-bg);
+  color: var(--rst-warn-ink);
+}
+
+.rst-road__step--locked {
+  color: var(--rst-ink-soft);
+  border-style: dashed;
+}
+
+.rst-road__here {
+  justify-self: start;
+  padding: 0 var(--rst-sp-2);
+  border-radius: var(--rst-radius-pill);
+  font-weight: var(--rst-fw-label);
+  background: var(--rst-brand);
+  color: var(--rst-brand-ink);
+}
+
+.rst-road__detail {
+  color: var(--rst-ink-soft);
+}
+
+.rst-road__cost {
+  font-variant-numeric: tabular-nums;
+  color: var(--rst-ink-muted);
+}
+
+.rst-road__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-3);
+}
+
+.rst-road__total {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--rst-ink-soft);
+}
+
+.rst-road-note {
+  margin: 0;
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+}
+
+@media (max-width: 480px) {
+  .rst-road__steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

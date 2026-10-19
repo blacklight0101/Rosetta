@@ -46,6 +46,7 @@ import type { StreamRegistry } from './web/event-stream.js';
 import { composeDeepen, composeResume } from './compose-deepen.js';
 import { composeObservability } from './compose-observability.js';
 import { composePlan } from './compose-plan.js';
+import { composeJourney } from './compose-journey.js';
 import { composeBuildReport } from './compose-report.js';
 import { composePlanOptions } from './compose-plan-options.js';
 import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-understand.js';
@@ -182,6 +183,7 @@ function runServices(service: ServiceParts): RunServices {
       priceTable: parts.priceTable,
     }),
     getRun: new GetRun({ runs, queue, files: new FileRunTextFiles(writer) }),
+    getJourney: composeJourney({ ...service, priorCards: cards }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
     stopRun: new StopRun({ queue }),
     resumeRun: composeResume({

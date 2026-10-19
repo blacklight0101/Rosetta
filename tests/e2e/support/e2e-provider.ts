@@ -6,7 +6,12 @@ import type {
 } from '../../../src/application/ports/llm-provider.js';
 import type { Recording } from '../../../src/infrastructure/providers/fake/recording.js';
 import { loadRecording } from '../../../src/infrastructure/providers/fake/recording.js';
-import { answerMarker, consolidateModel, heldReaderModel } from './journey-models.js';
+import {
+  answerMarker,
+  consolidateModel,
+  heldReaderModel,
+  planFailsModel,
+} from './journey-models.js';
 import { OVERVIEW_CALL_USAGE } from './overview-call.js';
 import { AnsweringProvider } from '../../support/answering-provider.js';
 import { ScriptedProvider, type ScriptedOptions } from '../../support/scripted-provider.js';
@@ -116,9 +121,12 @@ function plannerOf(
   request: LlmRequest,
 ): LlmResponse | undefined {
   if (request.context.role !== 'planner') return undefined;
-  const name = request.context.agentTaskId === 'planner-options' ? 'options' : 'package';
-  const attempt = recordings[name]?.calls[0]?.attempts[0];
-  return attempt !== undefined && 'response' in attempt ? attempt.response : undefined;
+  const options = request.context.agentTaskId === 'planner-options';
+  const attempt = recordings[options ? 'options' : 'package']?.calls[0]?.attempts[0];
+  if (attempt === undefined || !('response' in attempt)) return undefined;
+  // RF-615: this model answers the package in prose, which the plan run refuses (RST-1803).
+  const prose = request.model === planFailsModel && !options;
+  return prose ? { ...attempt.response, text: 'I could not write the package.' } : attempt.response;
 }
 
 /** Each recorded call waits this long, so a page can be seen between the steps of an agent. */

@@ -33,6 +33,8 @@ export interface PlanSession extends PlanSetupState, PlanSetupActions {
   readonly stepReason: string | undefined;
   /** Saves the draft, taking the architecture the page showed as chosen when it was not touched. */
   readonly save: () => void;
+  /** RF-615: how many times the brief was saved on this page, so the journey reads again. */
+  readonly savedVersion: number;
 }
 
 const OPTION_STEPS: readonly string[] = ['architecture', 'stack'];
@@ -67,11 +69,13 @@ export function usePlanSession(
 ): PlanSession {
   const { projectId, sourceRunId } = request;
   const [saved, setSaved] = useState(view.saved);
+  const [savedVersion, setSavedVersion] = useState(0);
   const estimate = usePlanEstimate(request, saved);
   const [consent, setConsent] = useState(false);
   const { reload } = estimate;
   const onSaved = useCallback(() => {
     setSaved(true);
+    setSavedVersion((count) => count + 1);
     reload();
   }, [reload]);
   const setup = usePlanSetup(projectId, view, onSaved);
@@ -99,6 +103,7 @@ export function usePlanSession(
     options: options.load,
     askAgain: options.askAgain,
     stepReason: stepReasonOf(setup.finished, cloud, consent),
+    savedVersion,
     save: () => {
       setup.saveAndContinue(accepted);
     },

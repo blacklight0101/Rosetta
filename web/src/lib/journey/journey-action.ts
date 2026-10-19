@@ -1,0 +1,69 @@
+import { phaseOf, type Context, type StepKey } from './journey-context.js';
+
+// RF-615, RF-614, RF-006, DEC-143 Q-F: the one next action of the journey and the step that holds it.
+// In order: start a run; wait while a run works; Resume a run that stopped (the plan steps stay
+// locked); a new run when nothing can be planned; answer the open questions; set up the plan;
+// review the estimate; wait while the plan works; Try the plan again after a failed plan (a failed
+// plan is not resumed: it starts a new run after a new estimate); a new estimate when the package is
+// out of date; open the package.
+
+export type JourneyAction =
+  | { readonly kind: 'link'; readonly label: string; readonly href: string }
+  /** Opens the questions; the page that can show them does so, any other page opens the run. */
+  | { readonly kind: 'answer'; readonly label: string; readonly href: string }
+  | { readonly kind: 'resume'; readonly label: string; readonly runId: string };
+
+export interface Next {
+  readonly action: JourneyAction | undefined;
+  readonly here: StepKey;
+}
+
+const link = (label: string, href: string): JourneyAction => ({ kind: 'link', label, href });
+
+function afterTheRun(c: Context): Next | undefined {
+  const { source } = c;
+  if (source === null) return undefined;
+  const phase = phaseOf(source);
+  if (phase === 'working') return { action: undefined, here: 'understand' };
+  if (phase === 'stopped') {
+    return {
+      action: { kind: 'resume', label: 'Resume this run', runId: source.id },
+      here: 'understand',
+    };
+  }
+  if (source.supportedClaims === 0) {
+    return {
+      action: link('Start a new run', `/projects/${c.projectId}/start`),
+      here: 'understand',
+    };
+  }
+  if (source.openQuestions === 0) return undefined;
+  const count = source.openQuestions;
+  const label = `Answer ${String(count)} question${count === 1 ? '' : 's'}`;
+  return { action: { kind: 'answer', label, href: `/runs/${source.id}` }, here: 'questions' };
+}
+
+function afterThePlan(c: Context, setUp: string): Next {
+  const { plan, facts } = c;
+  if (plan === null) return { action: link('Review the estimate', setUp), here: 'estimate' };
+  const phase = phaseOf(plan);
+  if (phase === 'working') return { action: undefined, here: 'plan' };
+  if (phase === 'stopped') return { action: link('Try the plan again', setUp), here: 'plan' };
+  if (facts.handoff?.outOfDate === true) {
+    return { action: link('Review the new estimate', setUp), here: 'estimate' };
+  }
+  const written = facts.handoff;
+  if (written === null) return { action: link('Review the estimate', setUp), here: 'estimate' };
+  return { action: link('Open the package', `/runs/${written.runId}`), here: 'package' };
+}
+
+// RF-615
+export function nextOf(c: Context): Next {
+  if (c.source === null || c.setUp === undefined) {
+    return { action: link('Start a run', `/projects/${c.projectId}/start`), here: 'scan' };
+  }
+  const early = afterTheRun(c);
+  if (early !== undefined) return early;
+  if (!c.facts.briefSaved) return { action: link('Set up the plan', c.setUp), here: 'brief' };
+  return afterThePlan(c, c.setUp);
+}

@@ -1,0 +1,53 @@
+import type {
+  JourneyFacts,
+  JourneyRunFacts,
+  JourneySourceFacts,
+} from '../../api/journey-schemas.js';
+
+// RF-615, RST-1802: what every step of the journey reads: the facts, the two runs and the page of
+// Plan setup, and the questions the facts answer (is a run working, did it complete, did it stop,
+// why can the plan not be taken).
+
+export type StepKey =
+  'scan' | 'understand' | 'questions' | 'brief' | 'estimate' | 'plan' | 'package';
+
+export interface Context {
+  readonly facts: JourneyFacts;
+  readonly projectId: string;
+  readonly source: JourneySourceFacts | null;
+  readonly plan: JourneyRunFacts | null;
+  /** Plan setup for the source run; none while the project has no understand run. */
+  readonly setUp: string | undefined;
+}
+
+export type RunPhase = 'working' | 'completed' | 'stopped';
+
+type RunState = Pick<JourneyRunFacts, 'queueState' | 'endState'>;
+
+export function phaseOf(run: RunState): RunPhase {
+  if (run.queueState !== 'Ended') return 'working';
+  return run.endState === 'Completed' ? 'completed' : 'stopped';
+}
+
+export const workingText = (run: Pick<JourneyRunFacts, 'queueState'>): string =>
+  run.queueState === 'Queued' ? 'Waiting in the queue' : 'Running now';
+
+/** How a run that stopped ended, with the code it ended with. */
+export function endText(run: Pick<JourneyRunFacts, 'endState' | 'errorCode'>): string {
+  const code = run.errorCode === null ? '' : ` (${run.errorCode})`;
+  if (run.endState === 'CapReached') return `Stopped at its cap${code}`;
+  return run.endState === 'Failed' ? `Failed${code}` : `Interrupted${code}`;
+}
+
+/**
+ * Why the brief, the estimate and the plan cannot be taken from this understand run, or undefined
+ * when they can (RF-615, DEC-143 Q-B): the run is missing, still working, stopped (it is resumed
+ * first) or holds no Supported claim (RST-1802).
+ */
+export function lockReason(source: JourneySourceFacts | null): string | undefined {
+  if (source === null) return 'Needs an understand run';
+  const phase = phaseOf(source);
+  if (phase === 'working') return 'Needs the finished run';
+  if (phase === 'stopped') return 'Needs a completed run: resume it first';
+  return source.supportedClaims === 0 ? 'Nothing to plan from (RST-1802)' : undefined;
+}

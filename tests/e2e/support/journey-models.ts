@@ -9,6 +9,12 @@ export const heldReaderModel = 'gemma4:e4b';
 /** A reader model that is not held: the run replays the recorded webforms run to the end. */
 export const fullRunModel = 'e2e-full';
 
+/**
+ * RF-615: a planner model whose package answer is not JSON, so a plan run ends Failed (RST-1803) and
+ * the journey shows a failed plan (e2e-provider.ts). Plan setup is answered as for any other model.
+ */
+export const planFailsModel = 'e2e-plan-fails';
+
 /** The reader and summariser model that replays the run whose cards are merged (RF-250). */
 export const consolidateModel = 'e2e-consolidate';
 
