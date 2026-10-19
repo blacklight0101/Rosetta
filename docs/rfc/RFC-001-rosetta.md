@@ -77,7 +77,7 @@ a hand-off package a team can build from.
   non-goal "a hosted web service, accounts or a database").
 - A Claude Code plugin run mode: out of scope until after the 2026-10-26 hand-in (DEC-60).
 - Public sign-up, e-mail password reset or multi-factor sign-in: the administrator creates every account (DEC-62).
-- Local folders or private repositories as input: only public GitHub repositories (DEC-48).
+- Local folders or private repositories as input: only public GitHub repositories (DEC-48). (Changed by DEC-148: an uploaded zip is a second source, RFC-004; private GitHub repositories stay out.)
 - Modifying, refactoring or running the legacy code: tools are read-only (DEC-17).
 - Analysing the owner's employer's code in this public project (DEC-03).
 - Training or fine-tuning models.

@@ -79,3 +79,4 @@ We choose option 1.
   from a container behind sign-in. Locally the port is published on `127.0.0.1` only. The live view, the event
   stream, the always-visible cost and the GitHub-only sources of this ADR stand.
 - 2026-10-11 (review): snapshots are cached in `<data>/sources/<owner>__<repo>@<sha>/` (ADR-016), not under `rosetta-out/`; extraction uses `tar` (ADR-019).
+- 2026-10-19 (DEC-148, RFC-004): a project may also come from an uploaded zip, extracted under ADR-022 into a read-only snapshot identified by its content hash; its citations link to Rosetta's evidence pages. GitHub sources are unchanged and private GitHub repositories are still refused.
