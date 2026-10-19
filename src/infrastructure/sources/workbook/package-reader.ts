@@ -49,13 +49,16 @@ class SheetPartReader implements XmlVisitor {
   }
 }
 
+/** Only the file name of a link target: no folder, host, query or fragment, encoded or not. */
 function fileNameOf(target: string): string {
-  const last = target.split(/[\\/]/).pop() ?? target;
+  const bare = (text: string): string => text.split(/[?#]/)[0] ?? '';
+  let decoded = bare(target);
   try {
-    return decodeURIComponent(last);
+    decoded = decodeURIComponent(decoded);
   } catch {
-    return last;
+    // An undecodable name is kept as written.
   }
+  return bare(decoded).split(/[\\/]/).pop() ?? '';
 }
 
 export class PackageReader {
@@ -135,6 +138,7 @@ export class PackageReader {
     const part = relationship.target;
     const cells = new CellReader({
       part,
+      fileName: this.fileName,
       strings,
       formatOf: (style) => styles.formatOf(style),
       budget: this.budget,

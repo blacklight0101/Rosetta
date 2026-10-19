@@ -1,6 +1,7 @@
 import type { LimitCounter } from '../entry-guards.js';
-import { columnIndexOf, columnName } from './cell-address.js';
-import { workbookNotReadable, workbookTooLarge } from './workbook-errors.js';
+import { columnName, MAX_COLUMNS, MAX_ROWS, parseAddress, parseRowNumber } from './cell-address.js';
+import type { RosettaError } from '../../../domain/errors/rosetta-error.js';
+import { quoted, workbookNotReadable, workbookTooLarge } from './workbook-errors.js';
 import type { CellFormula, CellValue, FormulaKind, WorkbookCell } from './workbook-model.js';
 import type { Attributes, XmlVisitor } from './xml-stream.js';
 
@@ -9,6 +10,8 @@ import type { Attributes, XmlVisitor } from './xml-stream.js';
 
 export interface CellContext {
   readonly part: string;
+  /** The workbook's file name, for the message of a refusal. */
+  readonly fileName: string;
   readonly strings: readonly string[];
   readonly formatOf: (style: number | undefined) => string | undefined;
   /** The cells of the whole project, shared by the workbooks of one upload. */
@@ -50,8 +53,7 @@ export class CellReader implements XmlVisitor {
 
   open(name: string, attributes: Attributes): void {
     if (name === 'row') {
-      this.row = attributes['r'] === undefined ? this.row + 1 : Number(attributes['r']);
-      this.nextColumn = 0;
+      this.startRow(attributes['r']);
     } else if (name === 'c') {
       this.startCell(attributes);
     } else if (this.draft !== undefined) {
@@ -59,9 +61,23 @@ export class CellReader implements XmlVisitor {
     }
   }
 
+  private startRow(number: string | undefined): void {
+    const row = number === undefined ? this.row + 1 : parseRowNumber(number);
+    if (row === undefined || row > MAX_ROWS) throw this.outside('a row number');
+    this.row = row;
+    this.nextColumn = 0;
+  }
+
+  private outside(what: string): RosettaError {
+    const { part, fileName } = this.context;
+    return workbookNotReadable(part, `${what} is outside the sheet (workbook ${quoted(fileName)})`);
+  }
+
   private startCell(attributes: Attributes): void {
-    const address = attributes['r'] ?? `${columnName(this.nextColumn)}${String(this.row)}`;
-    this.nextColumn = columnIndexOf(address) + 1;
+    const given = attributes['r'];
+    const position = this.positionOf(given);
+    const address = given ?? `${columnName(position.column)}${String(this.row)}`;
+    this.nextColumn = position.column + 1;
     const style = attributes['s'] === undefined ? undefined : Number(attributes['s']);
     this.draft = {
       address,
@@ -72,6 +88,16 @@ export class CellReader implements XmlVisitor {
       valueText: '',
       inlineText: '',
     };
+  }
+
+  private positionOf(given: string | undefined): { column: number; row: number } {
+    if (given === undefined) {
+      if (this.nextColumn >= MAX_COLUMNS || this.row === 0) throw this.outside('a cell position');
+      return { column: this.nextColumn, row: this.row };
+    }
+    const parsed = parseAddress(given);
+    if (parsed === undefined) throw this.outside('a cell address');
+    return parsed;
   }
 
   private openInCell(draft: Draft, name: string, attributes: Attributes): void {

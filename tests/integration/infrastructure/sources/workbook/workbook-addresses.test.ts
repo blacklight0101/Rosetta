@@ -51,7 +51,17 @@ it('RF-151 reads row 1048576, the last one, and refuses 1048577', async () => {
 it('RF-151 refuses a cell without an address that falls after the last column', async () => {
   const cells = '<c r="XFD1"/><c><v>1</v></c>';
 
-  expect((await refusalOf(`<row r="1">${cells}</row>`)).code).toBe('RST-1927');
+  const failure = await refusalOf(`<row r="1">${cells}</row>`);
+
+  expect(failure.code).toBe('RST-1927');
+  expect(failure.message).toContain('Grid.xlsx');
+});
+
+it('RF-151 refuses a row without a number that follows the last row', async () => {
+  const failure = await refusalOf('<row r="1048576"/><row><c><v>1</v></c></row>');
+
+  expect(failure.code).toBe('RST-1927');
+  expect(failure.message).toContain('Grid.xlsx');
 });
 
 it('RF-151 refuses a row number that is not a whole number or is zero', async () => {
