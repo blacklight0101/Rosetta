@@ -7,7 +7,7 @@ Rules of the road for anyone (including Claude) working in this repository. The 
 
 Rosetta is a new open-source web application (it replaces no system) that turns a legacy codebase into a verified
 functional specification and a tool-agnostic modernisation hand-off package:
-public GitHub repository URL (pinned to a commit) -> `scan` (deterministic code map) -> `understand` (agents write evidence-cited cards, a verifier
+public GitHub repository URL (pinned to a commit) or an uploaded zip (DEC-148) -> `scan` (deterministic code map) -> `understand` (agents write evidence-cited cards, a verifier
 checks them) -> owner answers open questions -> `report` (HTML) -> `plan` (architecture, ADRs, roadmap, task cards).
 Release 1 is the whole pipeline as a web application with accounts and cost control; the first milestone
 (2026-10-26) is a `scan` + `understand` slice on the demo app, run locally with Docker Compose and hosted for the
@@ -74,9 +74,9 @@ applied, and fixing it is part of applying the decision.
 
 ## Hard rules specific to this system
 
-- **Never write to a snapshot.** Legacy code comes only from public GitHub repositories, pinned to a commit and
-  cached read-only; agent tools are read-only; every output goes to the run output folder. (DEC-17, DEC-48,
-  [ADR-006](docs/adr/ADR-006-read-only-tools-and-data-egress.md), [ADR-012](docs/adr/ADR-012-local-web-ui-and-github-sources.md), RF-005, RF-122)
+- **Never write to a snapshot.** Legacy code comes only from public GitHub repositories, pinned to a commit, or from
+  a zip the user uploads (DEC-148, RFC-004), and is cached read-only; agent tools are read-only; every output goes to the run output folder. (DEC-17, DEC-48,
+  [ADR-006](docs/adr/ADR-006-read-only-tools-and-data-egress.md), [ADR-012](docs/adr/ADR-012-local-web-ui-and-github-sources.md), [ADR-022](docs/adr/ADR-022-zip-extraction-with-yauzl.md), RF-005, RF-122, RF-129)
 - **Analysed code and model output are untrusted.** Repository content reaches a model only inside labelled data
   blocks; model and repository text is rendered as text, never HTML; every guard fails closed and logs a security
   event. ([ADR-013](docs/adr/ADR-013-untrusted-code-and-model-output.md), [threat model](docs/security/threat-model.md),

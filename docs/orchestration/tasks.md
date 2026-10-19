@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 35      | 5         | 28         | 2         | 0                  | 8       | 25      | 2      | 8          | 0         |
-| **Total**               | **252** | **77**    | **148**    | **27**    | **0**              | **124** | **116** | **12** | **143**    | **0**     |
+| P3 Report and plan      | 42      | 5         | 35         | 2         | 0                  | 12      | 28      | 2      | 8          | 0         |
+| **Total**               | **259** | **77**    | **155**    | **27**    | **0**              | **128** | **119** | **12** | **143**    | **0**     |
 
 ## Conventions for every card
 
@@ -3374,3 +3374,107 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: test-first guard changes with bad-matrix cases, the stronger journey checks and the corrected matrix.
 - **Done when**: each guard gap has a test that fails on the bad matrix; both journeys assert the defaults and the stack; `npm run verify` and CI are green.
 - **Refs**: RNF-005, RF-604, RF-611, RF-612, P3-12 (#593) verifier, issue #595, PR #596.
+
+### P3-36 - Two kinds of source: GitHub and upload
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-004 sections 4.1 and 4.2; `src/application/ports/source-fetcher.ts`; `src/application/projects/project.ts`; `src/domain/sources/`; `src/application/understand/pinned-source.ts`; `docs/data-model.md` sections 3.3 and 4 (`projects`); RF-126, RF-130.
+- **Do**: make the source a union of `github` and `upload` in the domain and the `Snapshot` record (RFC-004 table 4.1); `snapshot.json` gains `kind`, `fileName`, `uploadedAt`, and a record without `kind` reads as `github`; a migration adds `projects.source_kind` (default `github`) with `source_url` empty for an upload; the run manifest records the kind and the hash (RF-126). No behaviour change for GitHub projects: every existing test passes unchanged.
+- **Review probes**: an old `snapshot.json` with no `kind`; an `upload` record with GitHub fields present (refused at parse); a project row with `source_kind = 'upload'` and a non-empty `source_url`; the manifest of a GitHub run (byte-identical to main).
+- **Behaviour to preserve**: GitHub projects, snapshots, manifests and citations exactly as on main.
+- **Delivers**: domain and port types, migration, repository changes, data-model.md and architecture.md updates, tests.
+- **Done when**: every RF-130 scenario about the record has a passing test; `npm run verify` green with no GitHub test changed.
+- **Refs**: RF-126, RF-130, ADR-012, ADR-016, DEC-148.
+
+### P3-37 - Safe zip extraction
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-36
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-004 section 4.3; ADR-022; `src/infrastructure/github/tarball-extractor.ts` (the guards to share); RF-122, RF-127, RF-129, RF-140, RF-147.
+- **Do**: add `yauzl` 3.4.0 (pinned, ADR-022) and a zip extractor behind the extraction port; move the shared checks (paths, device names, counting, deny list) into one module used by both extractors; central-directory limits before writing, written-byte counting, ratio limit, refusal of encrypted and unsupported entries, symlinks skipped and counted, `.git/`, `node_modules/`, `bin/`, `obj/` left out and counted, the top-level folder rule (RF-130); a failure deletes the partial folder. New RST-19xx codes in the catalogue and `docs/conventions.md`.
+- **Review probes**: the RF-129 fixture list (oversize, many entries, ratio bomb, a central directory that understates sizes, `../a`, `/etc/x`, `C:\x`, `a\..\b`, NUL in a name, a symlink, an encrypted entry, `aux.c`, `node_modules/`); a zip whose only content is denied; a zip with two top-level folders (no stripping); a ZIP64 archive; an empty zip.
+- **Behaviour to preserve**: tarball extraction results identical to main (same skipped counts, same hashes).
+- **Delivers**: extractor, shared guard module, fixtures built in tests (no committed binary from any employer), error codes, tests.
+- **Done when**: every RF-129 scenario and the RF-130 path rule have a passing test that fails when its guard is removed; `npm run verify` green.
+- **Refs**: RF-122, RF-127, RF-129, RF-130, RF-140, RF-147, ADR-013, ADR-022, DEC-148.
+
+### P3-38 - Upload endpoint and storage
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-36, P3-37
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-004 sections 4.2 and 4.4; the projects routes and repository; `src/presentation/` route conventions (session, CSRF, `Origin`, body limits); RF-010, RF-128, RF-130, RF-133, RF-1009, RF-1105.
+- **Do**: create a project of kind `upload`; `PUT /api/projects/:id/source` checks free space first (at least twice `ROSETTA_UPLOAD_MAX_MB`, DEC-149) and streams `application/zip` to a temporary file with that limit (default 500, the hosted deployment sets 100), extracts (P3-37), hashes, writes the snapshot and deletes the zip; replacing the source makes a new snapshot and keeps the ones earlier runs use; the project page data says when the code changed since the last run; deleting the project deletes its snapshots; an audit row per upload (name, size, hash). Every refusal returns its code and message.
+- **Review probes**: free space just under twice the limit (refused before storing); `ROSETTA_UPLOAD_MAX_MB` empty, 0, negative or not a number (start-up refuses or uses the default, as other settings do); no session; no CSRF token; another user's project (404); a body larger than the limit with and without `Content-Length`; an aborted upload (no temporary file left); two uploads at once to one project; a run started on a project with no source; delete during a running scan.
+- **Behaviour to preserve**: GitHub project creation and its body limits unchanged.
+- **Delivers**: use case, route, storage, audit row, tests.
+- **Done when**: every RF-128 (server side), RF-130 and RF-133 scenario has a passing test; `npm run verify` green.
+- **Refs**: RF-010, RF-128, RF-130, RF-133, RF-1009, RF-1105, ADR-015, ADR-016, DEC-148.
+
+### P3-39 - New-project form: upload a zip
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-36
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-004 section 4.5; the projects page and new-project form; `docs/design-system.md`; RF-128, RF-134.
+- **Do**: two tabs on the new-project form, "GitHub repository" and "Upload a zip": file field, the size limit and the zip how-to, a size and type check before sending, upload progress, the summary (files kept, size, entries left out) and "Upload again" on failure; the projects list and header show `<name> (zip, <date>)`; the "code changed since the last run" note. The page calls the P3-38 endpoint; until it merges, tests use a fake server.
+- **Review probes**: a 0-byte file; a `.zip` that is really text; a file above the limit (refused before sending); keyboard only; 360 px wide; a 60-character file name; a name holding HTML.
+- **Behaviour to preserve**: the GitHub tab works exactly as the form does on main.
+- **Delivers**: components, page changes, design-system update, tests.
+- **Done when**: every RF-134 scenario and the RF-128 form scenarios have a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-128, RF-134, RNF-010, ADR-012, DEC-148.
+
+### P3-40 - Citations and report of an uploaded project
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-36
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/domain/sources/permalink.ts`; `src/infrastructure/cards/citation-link.ts`; the report header and package writers; the evidence pages (P3-02); RF-125, RF-131.
+- **Do**: the citation link depends on the source kind: GitHub permalink for `github`, Rosetta's evidence page for `upload`; report, package and run-page headers name the zip, the upload date and the hash for an upload.
+- **Review probes**: a citation in every place a link is drawn (run page, evidence page, report, package Markdown, diagrams' captions); a report of an uploaded project searched for `github.com` (none); a GitHub project's report (byte-identical to main).
+- **Behaviour to preserve**: GitHub citations and headers unchanged.
+- **Delivers**: link and header changes, tests.
+- **Done when**: every RF-131 scenario has a passing test; `npm run verify` green.
+- **Refs**: RF-125, RF-131, ADR-005, ADR-012, DEC-148.
+
+### P3-41 - Second confirmation before private code goes to a cloud provider
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-36
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the start page consent (RF-143, RF-1001); the start-run API validation; RF-132.
+- **Do**: on a project of kind `upload` with any non-local role, a second, separate confirmation naming the project and each cloud provider, with a link that switches every role to Ollama; Start disabled until both are ticked; the API refuses a start without it with a new error code.
+- **Review probes**: all roles local (no confirmation); one cloud role; Ollama on a non-loopback host (counts as cloud, DEC-118); the API without the field; a GitHub project (unchanged).
+- **Behaviour to preserve**: the RF-143 consent and its error code unchanged.
+- **Delivers**: page and API changes, tests.
+- **Done when**: every RF-132 scenario has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-132, RF-143, RF-1001, ADR-006, DEC-118, DEC-148.
+
+### P3-42 - Journey: analyse a project from a zip
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-38, P3-39, P3-40, P3-41
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the existing end-to-end journeys (P1-46, P2-13, P3-12); `docs/verification/r1-matrix.md`; RF-128..RF-134.
+- **Do**: an end-to-end journey that zips a small first-party fixture project in the test (no employer code, no committed binary), uploads it, scans, runs understand with the fake provider, opens the report and the package, and checks that every citation opens an evidence page and no link leaves Rosetta; add RF-128..RF-134 to the R1 matrix; the runbook explains how to make a zip.
+- **Review probes**: the journey on Windows and Linux CI; an upload replaced between two runs (the second run's report names the new hash).
+- **Delivers**: journey, matrix rows, runbook text.
+- **Done when**: the journey passes in CI; the R1 matrix guard passes with the new rows; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-128..RF-134, RNF-005, DEC-148.
