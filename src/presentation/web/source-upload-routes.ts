@@ -1,3 +1,4 @@
+import type { IncomingMessage } from 'node:http';
 import type { FastifyInstance } from 'fastify';
 import type { StoreUpload } from '../../application/use-cases/store-upload.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -33,6 +34,31 @@ function fileNameOf(header: string | string[] | undefined): string | undefined {
   return typeof header === 'string' ? header : undefined;
 }
 
+/**
+ * The body as chunks. Leaving early (the limit, a bad zip) must not destroy the request, which would
+ * destroy the connection before the refusal is sent; the route throws the rest away after the answer instead.
+ */
+async function* chunksOf(raw: IncomingMessage): AsyncGenerator<Uint8Array> {
+  for await (const chunk of raw.iterator({ destroyOnReturn: false })) {
+    if (typeof chunk === 'string') yield Buffer.from(chunk);
+    else if (chunk instanceof Uint8Array) yield chunk;
+  }
+}
+
+/** How long the rest of a refused body is read and thrown away before the connection is cut. */
+const DISCARD_MS = 10_000;
+
+function discard(raw: IncomingMessage): void {
+  raw.resume();
+  const timer = setTimeout(() => {
+    raw.destroy();
+  }, DISCARD_MS);
+  timer.unref();
+  raw.once('close', () => {
+    clearTimeout(timer);
+  });
+}
+
 // RF-128
 export function registerSourceUploadRoutes(
   server: FastifyInstance,
@@ -54,17 +80,24 @@ export function registerSourceUploadRoutes(
       reply.raw.once('close', () => {
         if (!reply.raw.writableFinished) aborted.abort();
       });
-      const outcome = await services.storeUpload.execute({
-        actor: signedInOf(request).actor,
-        projectId: request.params.id,
-        fileName: fileNameOf(request.headers['x-file-name']),
-        body: request.raw,
-        declaredBytes: declaredBytesOf(request.headers['content-length']),
-        ip: request.ip,
-        signal: aborted.signal,
-      });
-      if (!outcome.ok) throw new RosettaError(outcome.error);
-      return reply.status(201).send(outcome.value);
+      try {
+        const outcome = await services.storeUpload.execute({
+          actor: signedInOf(request).actor,
+          projectId: request.params.id,
+          fileName: fileNameOf(request.headers['x-file-name']),
+          body: chunksOf(request.raw),
+          declaredBytes: declaredBytesOf(request.headers['content-length']),
+          ip: request.ip,
+          signal: aborted.signal,
+        });
+        if (!outcome.ok) throw new RosettaError(outcome.error);
+        return await reply.status(201).send(outcome.value);
+      } catch (error) {
+        // A refusal can come before the whole body is read: the rest is thrown away, for a while, so the
+        // sender can still read the answer instead of meeting a reset connection.
+        discard(request.raw);
+        throw error;
+      }
     },
   );
 }

@@ -25,6 +25,8 @@ export interface Probe {
   readonly url: string | ((context: Context) => string);
   /** The body, given the column's own credentials (undefined for anonymous). */
   readonly payload?: (user: TestUser | undefined) => InjectOptions['payload'];
+  /** Request headers, for a body that is not JSON. */
+  readonly headers?: Readonly<Record<string, string>>;
   readonly expected: Readonly<Record<Column, number>>;
 }
 

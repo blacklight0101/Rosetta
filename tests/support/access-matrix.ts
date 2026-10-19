@@ -101,6 +101,7 @@ export function describeAccessMatrix(
         method: probe.method,
         url: typeof probe.url === 'string' ? probe.url : probe.url(context),
         ...(probe.payload === undefined ? {} : { payload: probe.payload(user) }),
+        ...(probe.headers === undefined ? {} : { headers: probe.headers }),
       });
 
       expect(response.statusCode).toBe(probe.expected[column]);
