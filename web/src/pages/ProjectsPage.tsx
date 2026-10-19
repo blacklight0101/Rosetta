@@ -58,14 +58,15 @@ export function ProjectsPage(): JSX.Element {
       <div>
         <h1 class="rst-page__title">Projects</h1>
         <p class="rst-settings__lead">
-          Each project is one public GitHub repository. Only you can see your projects.
+          Each project is one public GitHub repository or one zip of your code. Only you can see
+          your projects.
         </p>
       </div>
       <section class="rst-card rst-settings__section" aria-labelledby="new-project">
         <h2 id="new-project" class="rst-settings__heading">
           New project
         </h2>
-        <NewProjectForm url={url} onUrl={setUrl} onCreated={add} />
+        <NewProjectForm url={url} onUrl={setUrl} onCreated={add} onStored={reload} />
       </section>
       <section class="rst-card rst-settings__section" aria-labelledby="your-projects">
         <h2 id="your-projects" class="rst-settings__heading">

@@ -66,6 +66,8 @@ export interface StartForm {
   readonly warnings: readonly CapWarning[];
   readonly gate: StartGate;
   readonly actions: StartActions;
+  /** The project as the page now knows it (a zip was stored in it). */
+  readonly setProject: (project: Project) => void;
 }
 
 /** RF-143: the cloud roles, or, once the server asked for the consent, the Ollama roles too. */
@@ -143,11 +145,12 @@ export function useStartForm(loaded: Project): StartForm {
     chosenAreas: choice.chosen.length,
     oldMapUnconfirmed: isOutdated(estimate) && !oldMapConfirmed,
     libraryUnconfirmed: libraryChosen && !libraryConfirmed,
+    noSource: project.sourceKind === 'upload' && project.source === null,
   });
   return {
     ...{ project, choice, stage, setStage, url, setUrl, capText, setCapText, capMicros },
     ...{ thresholdText, thresholdMicros, setThresholdText },
-    ...{ consent: { roles, names, checked, set: setChecked }, warnings, gate, actions },
+    ...{ consent: { roles, names, checked, set: setChecked }, warnings, gate, actions, setProject },
     rerun: { answered, checked: rerunChecked, set: setRerunChecked },
     library: { chosen: libraryChosen, confirmed: libraryConfirmed, set: setLibraryConfirmed },
     oldMap: { outdated: isOutdated(estimate), confirmed: oldMapConfirmed, set: setOldMapConfirmed },

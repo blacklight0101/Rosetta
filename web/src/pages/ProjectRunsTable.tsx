@@ -1,8 +1,10 @@
 import type { JSX } from 'preact';
+import type { Project } from '../api/project-schemas.js';
 import type { LastRun, ProjectOverviewRow } from '../api/overview-schemas.js';
 import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
 import { StatusBadge } from '../components/StatusBadge.js';
+import { sourceLabel } from '../lib/source-label.js';
 import { tokensText, totalCostText } from '../lib/cost-text.js';
 import { mayHaveMeasures } from '../lib/understanding/measure-text.js';
 import { RunMeasures } from './RunMeasures.js';
@@ -65,17 +67,33 @@ function Actions({ row }: { readonly row: ProjectOverviewRow }): JSX.Element {
   );
 }
 
+function SourceNote({ project }: { readonly project: Project }): JSX.Element {
+  if (project.sourceKind !== 'upload') {
+    return (
+      <span class="rst-table__sub rst-p1105-note">
+        <span>{project.ref === '' ? 'default branch' : project.ref}</span>
+        {' · '}
+        <span>{project.subpath === '' ? 'whole repository' : project.subpath}</span>
+      </span>
+    );
+  }
+  if (project.source === null) {
+    return <span class="rst-table__sub rst-p1105-note">Upload a zip to start.</span>;
+  }
+  return project.codeChangedSinceLastRun ? (
+    <span class="rst-table__sub rst-p1105-note">Code changed since the last run.</span>
+  ) : (
+    <span class="rst-table__sub rst-p1105-note">{project.source.fileName}</span>
+  );
+}
+
 function ProjectRow({ row }: { readonly row: ProjectOverviewRow }): JSX.Element {
   const { project, lastRun, totals } = row;
   return (
     <tr>
       <td data-label="Repository">
-        <span class="rst-mono">{project.name}</span>
-        <span class="rst-table__sub rst-p1105-note">
-          <span>{project.ref === '' ? 'default branch' : project.ref}</span>
-          {' · '}
-          <span>{project.subpath === '' ? 'whole repository' : project.subpath}</span>
-        </span>
+        <span class="rst-mono rst-zip__file">{sourceLabel(project)}</span>
+        <SourceNote project={project} />
       </td>
       <td data-label="Last run">{lastRunText(lastRun)}</td>
       <td data-label="State">

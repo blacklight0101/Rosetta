@@ -39,6 +39,8 @@ export const sessionSchema = z.object({
     state: z.enum(['Active', 'MustChangePassword', 'Locked', 'Disabled']),
   }),
   csrfToken: z.string(),
+  /** RF-129, DEC-149: the largest zip the server accepts, in MB; absent until the server says. */
+  uploadMaxMb: z.number().int().positive().optional(),
 });
 
 export type Session = z.output<typeof sessionSchema>;
