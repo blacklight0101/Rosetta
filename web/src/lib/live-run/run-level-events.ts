@@ -1,3 +1,4 @@
+import type { z } from 'zod';
 import type { RunEvent } from '../../api/run-events.js';
 import { endedData, resolvedData, scanData, startedData } from './event-data.js';
 import type { RunState, SourceState } from './run-state.js';
@@ -7,6 +8,28 @@ import type { RunState, SourceState } from './run-state.js';
 
 const GITHUB_REPOSITORY = /^https:\/\/github\.com\/([^/\s]+)\/([^/\s]+?)(?:\.git)?\/?$/u;
 
+type StartedSource = NonNullable<z.output<typeof startedData>['source']>;
+
+/** RF-131: the zip of an upload run, or the repository and commit of a GitHub run. */
+function sourceStateOf(source: StartedSource): SourceState {
+  if (source.kind === 'upload') {
+    return {
+      kind: 'upload',
+      fileName: source.fileName,
+      uploadedAt: source.uploadedAt,
+      snapshotHash: source.snapshotHash ?? undefined,
+      runId: undefined,
+      reportBuilt: false,
+    };
+  }
+  return {
+    owner: source.owner,
+    repo: source.repo,
+    subpath: source.subpath ?? '',
+    commitSha: source.commitSha ?? undefined,
+  };
+}
+
 // RF-1003, RF-1004, RF-006: a run that starts after it ended was resumed, so it is not ended any more,
 // and its judgement step will run again (RF-1014: the claims a stop left unjudged wait for it).
 export function onRunStarted(state: RunState, event: RunEvent): RunState {
@@ -14,15 +37,7 @@ export function onRunStarted(state: RunState, event: RunEvent): RunState {
   const parsed = startedData.safeParse(event.data);
   if (!parsed.success) return { ...state, ...restarted };
   const { stage, source, caps } = parsed.data;
-  const given: SourceState | undefined =
-    source === undefined
-      ? undefined
-      : {
-          owner: source.owner,
-          repo: source.repo,
-          subpath: source.subpath ?? '',
-          commitSha: source.commitSha ?? undefined,
-        };
+  const given = source === undefined ? undefined : sourceStateOf(source);
   return {
     ...state,
     ...restarted,
@@ -38,6 +53,7 @@ export function onSourceResolved(state: RunState, event: RunEvent): RunState {
   const parsed = resolvedData.safeParse(event.data);
   if (!parsed.success || parsed.data.commitSha === undefined) return state;
   const { commitSha, url } = parsed.data;
+  if (state.source?.kind === 'upload') return state;
   if (state.source !== undefined) return { ...state, source: { ...state.source, commitSha } };
   const match = url === undefined ? null : GITHUB_REPOSITORY.exec(url);
   const [, owner, repo] = match ?? [];

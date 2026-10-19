@@ -1,6 +1,7 @@
 import { h, type ComponentChild } from 'preact';
 import type { ReportModel, ReportQuestion } from '../../../application/report/report-model.js';
 import { renderPage } from '../page-shell.js';
+import { isUploadModel } from '../report-source.js';
 import { plural } from '../report-format.js';
 import { Glyph, Headline, ModelText } from './parts.js';
 import { renderStatic } from './static-render.js';
@@ -79,5 +80,11 @@ function Questions(props: { readonly model: ReportModel }): ComponentChild {
 // RF-500, RF-507, RF-1013
 export function renderQuestionsHtml(model: ReportModel): string {
   const main = renderStatic(h(Questions, { model }));
-  return renderPage({ page: 'questions', runKey: model.runKey, title: 'Open questions', main });
+  return renderPage({
+    page: 'questions',
+    runKey: model.runKey,
+    title: 'Open questions',
+    main,
+    upload: isUploadModel(model),
+  });
 }

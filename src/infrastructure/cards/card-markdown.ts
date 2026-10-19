@@ -10,7 +10,7 @@ import {
   stepMark,
 } from './card-detail-markdown.js';
 import { flowDiagramSection } from './flow-diagram-section.js';
-import { citationLink, type PermalinkSource } from './citation-link.js';
+import { citationLink, FROM_CARD_FILE, type PermalinkSource } from './citation-link.js';
 import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 import { renderYamlHeader } from './yaml-header.js';
 
@@ -74,7 +74,8 @@ function claimBody(
       : [`Replaces the rejected claim ${esc.inline(claim.replaces)}.`, '']),
     'Evidence:',
   ];
-  lines.push(...claim.citations.map((citation) => `- ${citationLink(citation, source)}`));
+  const spot = { cardId: card.id, claimId: claim.claimId, base: FROM_CARD_FILE };
+  lines.push(...claim.citations.map((citation) => `- ${citationLink(citation, source, spot)}`));
   if (claim.verdict !== undefined) {
     const { step, model, at, reason } = claim.verdict;
     lines.push(
@@ -84,7 +85,7 @@ function claimBody(
       esc.block(reason),
     );
   }
-  return [...lines, '', ...stepBody(claim, source, esc), ...stepMark(card, claim)];
+  return [...lines, '', ...stepBody(card, claim, source, esc), ...stepMark(card, claim)];
 }
 
 function questionBody(card: Card, esc: MarkdownEscaper): string[] {

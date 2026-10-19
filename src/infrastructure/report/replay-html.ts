@@ -2,6 +2,7 @@ import type { ReplayAgent, ReplayStep } from '../../application/report/replay-mo
 import type { ReportModel } from '../../application/report/report-model.js';
 import { escapeHtml, renderModelText } from './html-text.js';
 import { renderPage } from './page-shell.js';
+import { isUploadModel } from './report-source.js';
 import { dollars, formatDuration, formatOffset, plural } from './report-format.js';
 
 // RF-506, RF-507, RF-1013: `replay.html`, the "Run replay" page. Without JavaScript it is the whole
@@ -96,6 +97,7 @@ export function renderReplayHtml(model: ReportModel): string {
     runKey: model.runKey,
     title: 'Run replay',
     main: main.join('\n'),
+    upload: isUploadModel(model),
     ...(empty ? {} : { scripts: ['replay.js'] }),
   });
 }

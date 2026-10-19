@@ -6,7 +6,7 @@ import { Tabs, type TabSpec } from '../components/Tabs.js';
 import { tilesOf } from '../lib/live-run/code-map-tiles.js';
 import { journeyOf } from '../lib/live-run/journey.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
-import type { RunState, SourceState } from '../lib/live-run/run-state.js';
+import type { RunState, SourceState, UploadSourceState } from '../lib/live-run/run-state.js';
 import { roleTotalsOf } from '../lib/live-run/run-summary.js';
 import { workingNowOf } from '../lib/live-run/working-now.js';
 import { ActivityTab } from './ActivityTab.js';
@@ -41,15 +41,38 @@ type TabId = (typeof tabIds)[number];
 
 const tabOf = (id: string): TabId => tabIds.find((each) => each === id) ?? 'cards';
 
+/** RF-131: the zip, the upload date and the snapshot hash, in place of a repository and a commit. */
+function UploadFacts(props: { readonly source: UploadSourceState }): JSX.Element {
+  const { fileName, uploadedAt, snapshotHash } = props.source;
+  return (
+    <>
+      <span class="rst-mono">{fileName ?? 'Uploaded zip'}</span>
+      {uploadedAt === undefined ? null : <span>{`uploaded ${uploadedAt.slice(0, 10)}`}</span>}
+      {snapshotHash === undefined ? null : (
+        <span class="rst-mono" title={snapshotHash}>
+          {snapshotHash.slice(0, 23)}
+        </span>
+      )}
+    </>
+  );
+}
+
+function SourceFacts(props: { readonly source: SourceState | undefined }): JSX.Element | null {
+  const { source } = props;
+  if (source === undefined) return null;
+  if (source.kind === 'upload') return <UploadFacts source={source} />;
+  const commit = source.commitSha?.slice(0, 7);
+  return (
+    <span class="rst-mono">{`${source.owner}/${source.repo}${commit === undefined ? '' : ` @ ${commit}`}`}</span>
+  );
+}
+
 function Facts(props: Pick<RunningBodyProps, 'state' | 'source'>): JSX.Element {
   const { source, state } = props;
   const models = [...new Set(state.agents.map((agent) => agent.model).filter((m) => m !== ''))];
-  const commit = source?.commitSha?.slice(0, 7);
   return (
     <p class="rst-running__facts">
-      {source === undefined ? null : (
-        <span class="rst-mono">{`${source.owner}/${source.repo}${commit === undefined ? '' : ` @ ${commit}`}`}</span>
-      )}
+      <SourceFacts source={source} />
       {models.length === 0 ? null : <span>{models.join(', ')}</span>}
     </p>
   );

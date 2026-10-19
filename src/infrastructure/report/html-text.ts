@@ -45,6 +45,20 @@ export function isGitHubLink(address: string): boolean {
   }
 }
 
+const EXTERNAL_ANCHOR = /<a href="(https?:[^"]*)"[^>]*>([^<]*)<\/a>/gu;
+
+/**
+ * RF-131: the page of an uploaded project keeps no link to another site. A link that model text
+ * quoted from the code shows as the Markdown it was, `[label](address)`, as text.
+ */
+// RF-131
+export function withoutExternalLinks(html: string): string {
+  return html.replace(
+    EXTERNAL_ANCHOR,
+    (_whole, address: string, label: string) => `[${label}](${address})`,
+  );
+}
+
 const MARKDOWN_LINK = /\[([^\]\n]{1,200})\]\(([^)\s]{1,500})\)/gu;
 
 /** A piece of model text: plain text, or a Markdown link whose address is a github.com one. */

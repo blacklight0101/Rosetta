@@ -31,10 +31,12 @@ export interface LiveRunViewProps {
   readonly onResumed: () => void;
 }
 
-/** The commit the source was pinned to is known from the events or, late, from the run row. */
+/** The commit the source was pinned to is known from the events or, late, from the run row; an upload has the run. */
 function sourceOf(state: RunState, run: RunRow): SourceState | undefined {
-  if (state.source === undefined) return undefined;
-  return { ...state.source, commitSha: state.source.commitSha ?? run.commitSha ?? undefined };
+  const { source } = state;
+  if (source === undefined) return undefined;
+  if (source.kind === 'upload') return { ...source, runId: run.id, reportBuilt: run.reportBuilt };
+  return { ...source, commitSha: source.commitSha ?? run.commitSha ?? undefined };
 }
 
 /** The cost so far: what the run row has, or the end of the run, or the roles' own, the largest. */

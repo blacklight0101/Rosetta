@@ -1,8 +1,10 @@
 import { h, type ComponentChild } from 'preact';
 import {
   claimTotals,
+  type GithubReportSource,
   type ReportCard,
   type ReportModel,
+  type UploadReportSource,
 } from '../../../application/report/report-model.js';
 import { summariseVerification } from '../../../domain/cards/verification-summary.js';
 import {
@@ -20,6 +22,7 @@ import {
   plural,
 } from '../report-format.js';
 import { sourceLink } from '../report-source.js';
+import { UNNAMED_ZIP } from '../../../domain/sources/upload-facts.js';
 import {
   CardsByType,
   ClaimsByStatus,
@@ -37,11 +40,26 @@ import { DataTable, Facts, ModelText } from './parts.js';
 // the documents and pages of the report, the areas, the verification summary and the cards. The page is a document: the one script (`filters.js`, RF-503)
 // only filters the rows of the cards table when cards exist, and the page is whole without it.
 
-function sourceValue(model: ReportModel): ComponentChild {
-  if (model.source === null) return null;
-  const link = sourceLink(model.source);
-  if (link === undefined) return model.source.url;
+function sourceValue(source: GithubReportSource): ComponentChild {
+  const link = sourceLink(source);
+  if (link === undefined) return source.url;
   return h('a', { href: link.href, rel: 'noopener noreferrer nofollow' }, link.label);
+}
+
+/** RF-131: the zip, the upload date and the hash; text, never a link. */
+function uploadRows(source: UploadReportSource): [string, ComponentChild][] {
+  const { fileName, uploadedAt, snapshotHash } = source;
+  const rows: [string, ComponentChild][] = [['Source', fileName ?? UNNAMED_ZIP]];
+  if (uploadedAt !== null) rows.push(['Uploaded', uploadedAt]);
+  if (snapshotHash !== null) rows.push(['Snapshot', snapshotHash]);
+  return rows;
+}
+
+function sourceRows(model: ReportModel): [string, ComponentChild][] {
+  const { source } = model;
+  if (source === null) return [];
+  if (source.kind === 'upload') return uploadRows(source);
+  return [['Source', sourceValue(source)]];
 }
 
 function costValue(model: ReportModel): string | null {
@@ -59,7 +77,7 @@ function RunFacts(props: { readonly model: ReportModel }): ComponentChild {
     rows: [
       ['Stage', model.stage],
       ['State', model.endState ?? 'Not ended'],
-      ...optional('Source', sourceValue(model)),
+      ...sourceRows(model),
       ...optional('Started', model.startedAt),
       ...optional('Ended', model.endedAt),
       ...optional('Cost', costValue(model)),

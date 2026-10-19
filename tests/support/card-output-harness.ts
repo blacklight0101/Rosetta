@@ -1,5 +1,6 @@
 import { transitionClaim, type Card } from '../../src/domain/cards/card.js';
 import { assignCardIds, type TaskCards } from '../../src/domain/cards/card-ids.js';
+import type { CardSource } from '../../src/application/ports/card-outputs.js';
 import type { WriteRefusal } from '../../src/application/ports/output-writer.js';
 import type { Result } from '../../src/domain/errors/result.js';
 import { SecretMasker, type TextMasker } from '../../src/infrastructure/guards/secret-masker.js';
@@ -50,11 +51,12 @@ export function withRejectedFirstClaim(cards: readonly Card[]): readonly Card[] 
 export async function writeCards(
   cards: readonly Card[],
   masker: TextMasker = new SecretMasker(),
+  source: CardSource = cardSource,
 ): Promise<{ writer: MemoryOutputWriter; result: Result<void, WriteRefusal> }> {
   const writer = new MemoryOutputWriter();
   const result = await writeCardOutputs(writer, cardTarget, {
     cards,
-    source: cardSource,
+    source,
     masker,
     logger: cardLogger(),
   });

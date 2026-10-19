@@ -73,10 +73,16 @@ function filesAndAreas(state: RunState): string | undefined {
   return `${String(state.scan.files)} files, ${String(state.scan.areas)} areas`;
 }
 
+/** The commit of a repository, or the hash of an uploaded zip (RF-131), pins the snapshot. */
+function sourcePinned(source: RunState['source']): boolean {
+  if (source === undefined) return false;
+  return source.kind === 'upload'
+    ? source.snapshotHash !== undefined
+    : source.commitSha !== undefined;
+}
+
 function snapshotTaken(run: StepperRun, state: RunState): boolean {
-  return (
-    state.source?.commitSha !== undefined || run.commitSha !== null || state.scan !== undefined
-  );
+  return sourcePinned(state.source) || run.commitSha !== null || state.scan !== undefined;
 }
 
 function completedOf(phase: RunPhase): boolean {

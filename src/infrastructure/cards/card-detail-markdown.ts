@@ -2,7 +2,12 @@ import type { Card, Claim } from '../../domain/cards/card.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import { incompleteSteps, isUnsupported } from '../../domain/cards/flow-completeness.js';
 import type { CitedText, ScreenAction, ScreenField } from '../../domain/cards/flow-screen.js';
-import { citationLink, type PermalinkSource } from './citation-link.js';
+import {
+  citationLink,
+  FROM_CARD_FILE,
+  type CitationSpot,
+  type PermalinkSource,
+} from './citation-link.js';
 import type { MarkdownEscaper } from './markdown-text.js';
 
 // RF-260, RF-261, data-model 3.7: what a FLOW or SCRN card adds to its file. The header keys are
@@ -72,14 +77,24 @@ function flowBody(card: Card, esc: MarkdownEscaper): string[] {
   ];
 }
 
-function evidence(item: CitedText, source: PermalinkSource): string {
-  return item.citations.map((citation) => citationLink(citation, source)).join(', ');
+/** Where the citations of a card file are written: in `cards/<TYPE>/`, in a claim or not. */
+function spotOf(card: Pick<Card, 'id'>, claimId?: string): CitationSpot {
+  return { cardId: card.id, claimId, base: FROM_CARD_FILE };
 }
 
-function fieldLines(field: ScreenField, source: PermalinkSource, esc: MarkdownEscaper): string[] {
+function evidence(item: CitedText, source: PermalinkSource, spot: CitationSpot): string {
+  return item.citations.map((citation) => citationLink(citation, source, spot)).join(', ');
+}
+
+function fieldLines(
+  field: ScreenField,
+  where: { readonly source: PermalinkSource; readonly spot: CitationSpot },
+  esc: MarkdownEscaper,
+): string[] {
   const kind = `${esc.inline(field.inputKind)}, ${field.required ? 'required' : 'optional'}`;
   const validations = field.validations.map(
-    (item) => `  - Validation: ${esc.inline(item.text)} (${evidence(item, source)})`,
+    (item) =>
+      `  - Validation: ${esc.inline(item.text)} (${evidence(item, where.source, where.spot)})`,
   );
   return [`- ${esc.inline(field.name)} (${kind})`, ...validations];
 }
@@ -110,7 +125,7 @@ function screenBody(card: Card, source: PermalinkSource, esc: MarkdownEscaper): 
     '',
     'Fields:',
     '',
-    ...screen.fields.flatMap((field) => fieldLines(field, source, esc)),
+    ...screen.fields.flatMap((field) => fieldLines(field, { source, spot: spotOf(card) }, esc)),
     '',
     'Actions:',
     '',
@@ -125,11 +140,16 @@ export function detailBody(card: Card, source: PermalinkSource, esc: MarkdownEsc
 }
 
 /** What a FLOW step touches and its branches, under the step's text. */
-export function stepBody(claim: Claim, source: PermalinkSource, esc: MarkdownEscaper): string[] {
+export function stepBody(
+  card: Pick<Card, 'id'>,
+  claim: Claim,
+  source: PermalinkSource,
+  esc: MarkdownEscaper,
+): string[] {
   const touches = claim.target === undefined ? [] : [`Touches: ${esc.label(claim.target)}`, ''];
   const branches = (claim.branches ?? []).map(
     (branch) =>
-      `Branch ${String(branch.number)}: ${esc.inline(branch.text)} (${evidence(branch, source)})`,
+      `Branch ${String(branch.number)}: ${esc.inline(branch.text)} (${evidence(branch, source, spotOf(card, claim.claimId))})`,
   );
   return [...touches, ...branches, ...(branches.length === 0 ? [] : [''])];
 }

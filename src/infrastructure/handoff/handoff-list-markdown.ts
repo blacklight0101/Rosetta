@@ -4,6 +4,7 @@ import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { keepLegacyDefault, legacySafe } from '../../domain/planning/legacy-default.js';
 import { decisionFile, documentSet, handoffFiles, idLink, sourceLinks } from './handoff-links.js';
 import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
+import { uploadSentence } from '../../domain/sources/upload-facts.js';
 import { incompleteApiLines, incompleteLines } from './handoff-incomplete-markdown.js';
 
 // RF-601..RF-604, RF-603: the README with the reading order, the risks, the open questions (the
@@ -115,10 +116,11 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
 
 // RF-602
 export function sourcesMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
+  const where = handoff.upload === undefined ? 'at the analysed commit' : 'in the uploaded zip';
   return [
     '# Source cards',
     '',
-    'The cards of the analysis the package is planned from, each with the claims the verifier found supported and their citations (`path:startLine-endLine`) into the legacy code at the analysed commit.',
+    `The cards of the analysis the package is planned from, each with the claims the verifier found supported and their citations (\`path:startLine-endLine\`) into the legacy code ${where}.`,
     '',
     ...handoff.sources.flatMap((card) => [
       `## ${card.id}`,
@@ -219,10 +221,14 @@ function apiContractSection(handoff: HandoffPackage, esc: MarkdownEscaper): stri
 export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const { repository, brief } = handoff;
   const commit = repository.commitSha ?? 'not recorded';
+  const analysed =
+    handoff.upload === undefined
+      ? `${esc.inline(repository.url)} at commit ${esc.inline(commit)}`
+      : esc.inline(uploadSentence(handoff.upload));
   return [
     '# Modernisation hand-off package',
     '',
-    `Planned from the analysis of ${esc.inline(repository.url)} at commit ${esc.inline(commit)} (understand run ${esc.inline(handoff.sourceRun)}), with the planning brief saved at ${esc.inline(brief.savedAt)}.`,
+    `Planned from the analysis of ${analysed} (understand run ${esc.inline(handoff.sourceRun)}), with the planning brief saved at ${esc.inline(brief.savedAt)}.`,
     '',
     'Only claims the verifier found supported by the code were used. Every requirement names its source cards, and every source card lists its citations into the legacy code. The files are plain Markdown (the API contract, when there is one, is YAML); the diagrams are Mermaid.',
     '',
