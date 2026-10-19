@@ -236,10 +236,14 @@ export class SnapshotStore {
     const file = join(dir, INFO_FILE);
     await onDisk('description could not be replaced', async () => {
       await chmod(dir, WRITABLE_DIR);
-      await chmod(file, WRITABLE_FILE);
-      await this.writeInfo(dir, info);
-      await chmod(file, READ_ONLY_FILE);
-      await chmod(dir, READ_ONLY_DIR);
+      try {
+        await chmod(file, WRITABLE_FILE);
+        await this.writeInfo(dir, info);
+      } finally {
+        // Also when the write fails: the snapshot never stays writable (RF-128).
+        await chmod(file, READ_ONLY_FILE);
+        await chmod(dir, READ_ONLY_DIR);
+      }
     });
   }
 

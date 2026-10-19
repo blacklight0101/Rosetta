@@ -50,6 +50,8 @@ interface UploadRequest<T> {
   readonly path: string;
   readonly file: Blob;
   readonly contentType: string;
+  /** Extra headers, such as `X-File-Name`. */
+  readonly headers?: Readonly<Record<string, string>>;
   readonly schema: z.ZodType<T>;
   /** Told how many bytes have gone out of how many (RF-128). */
   readonly onProgress?: (loaded: number, total: number) => void;
@@ -163,6 +165,7 @@ async function uploadFile<T>(
     path: request.path,
     file: request.file,
     contentType: request.contentType,
+    headers: request.headers ?? {},
     csrfToken,
     timeoutMs: uploadTimeoutMs,
     signal: request.signal,

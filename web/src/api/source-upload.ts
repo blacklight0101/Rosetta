@@ -52,6 +52,8 @@ export function uploadSource(
     path: `/api/projects/${encodeURIComponent(projectId)}/source`,
     file,
     contentType: 'application/zip',
+    // The server names the snapshot after the file, not after the project (RF-128).
+    headers: { 'x-file-name': encodeURIComponent(file.name) },
     schema: uploadSummarySchema,
     onProgress: watch.onProgress,
     ...(watch.signal === undefined ? {} : { signal: watch.signal }),

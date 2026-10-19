@@ -1,4 +1,4 @@
-import { mkdtemp, readdir } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -45,7 +45,10 @@ async function signedIn(address: string, password: string) {
   });
   keep(first);
   const csrf = sessionBody.parse(await first.json()).csrfToken;
-  const send = (path: string, init: RequestInit & { type?: string } = {}): Promise<Response> =>
+  const send = (
+    path: string,
+    init: RequestInit & { type?: string; name?: string } = {},
+  ): Promise<Response> =>
     fetch(`${address}${path}`, {
       ...init,
       headers: {
@@ -53,6 +56,7 @@ async function signedIn(address: string, password: string) {
         origin,
         'x-csrf-token': csrf,
         ...(init.type === undefined ? {} : { 'content-type': init.type }),
+        ...(init.name === undefined ? {} : { 'x-file-name': init.name }),
       },
     });
   return { send };
@@ -61,6 +65,12 @@ async function signedIn(address: string, password: string) {
 async function snapshotFolders(dataDir: string): Promise<string[]> {
   const found = await readdir(join(dataDir, 'sources')).catch(() => []);
   return found.filter((name) => name.startsWith('upload__'));
+}
+
+/** The file name `snapshot.json` keeps, as the server decoded it from the header. */
+async function storedFileName(dataDir: string, folder = ''): Promise<unknown> {
+  const text = await readFile(join(dataDir, 'sources', folder, 'snapshot.json'), 'utf8');
+  return z.object({ fileName: z.string() }).parse(JSON.parse(text)).fileName;
 }
 
 async function composed(database: TestDatabase) {
@@ -104,14 +114,17 @@ describe.skipIf(!hasTestDatabase)('the composed application and an upload', () =
       const uploaded = await send(`/api/projects/${id}/source`, {
         method: 'PUT',
         type: 'application/zip',
+        name: encodeURIComponent('Café Orders.zip'),
         body: new Uint8Array(await sampleZip()),
       });
       const stored = await snapshotFolders(dataDir);
+      const named = await storedFileName(dataDir, stored[0]);
       const deleted = await send(`/api/projects/${id}`, { method: 'DELETE' });
 
       expect(session.uploadMaxMb).toBe(7);
       expect(uploaded.status).toBe(201);
       expect(stored).toHaveLength(1);
+      expect(named).toBe('Café Orders.zip');
       expect(deleted.status).toBe(200);
       expect(await snapshotFolders(dataDir)).toEqual([]);
     } finally {
