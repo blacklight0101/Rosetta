@@ -107,9 +107,9 @@ describe('the documentation set journey: the specification', () => {
   it('RF-262 the data model draws the relation a Supported claim states and lists it to confirm', () => {
     const data = current().specification['data-model.md'] ?? '';
 
-    expect(data).toContain('e2 }o..o{ e1 : "stated by ENT-002.c2 (cardinality unknown)"');
+    expect(data).toContain('e2 }o..o{ e1 : "stated by ENT#45;002.c2 #40;cardinality unknown#41;"');
     expect(data).toContain(
-      '- ENT-002 Basket line and ENT-001 Catalog item (stated by ENT-002.c2): cardinality unknown',
+      String.raw`- ENT\-002 Basket line and ENT\-001 Catalog item (stated by ENT\-002.c2): cardinality unknown`,
     );
     expect(data).not.toContain('record no relations');
     const diagrams = current().report['diagrams.html'] ?? '';

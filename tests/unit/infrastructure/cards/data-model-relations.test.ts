@@ -34,10 +34,12 @@ describe('renderDataModel relations', () => {
       lineCard('a catalog item', 'Supported'),
     ]);
 
-    expect(text).toContain('  e2 }o..o{ e1 : "stated by ENT-002.c2 (cardinality unknown)"');
+    expect(text).toContain(
+      '  e2 }o..o{ e1 : "stated by ENT#45;002.c2 #40;cardinality unknown#41;"',
+    );
     const confirm = text.slice(text.indexOf('## To confirm'));
     expect(confirm).toContain(
-      '- ENT-002 Basket line and ENT-001 Catalog item (stated by ENT-002.c2): cardinality unknown',
+      String.raw`- ENT\-002 Basket line and ENT\-001 Catalog item (stated by ENT\-002.c2): cardinality unknown`,
     );
     expect(confirm).not.toContain('record no relations');
   });

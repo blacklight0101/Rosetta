@@ -112,8 +112,23 @@ describe('entityModelOf names', () => {
         id: 'ENT-002',
         type: 'ENT',
         title: 'Shipment',
-        claims: [claim('ENT-002.c1', 'A shipment records the border country.', 'Supported')],
+        claims: [
+          claim(
+            'ENT-002.c1',
+            'A shipment records the border country in an orderly way.',
+            'Supported',
+          ),
+        ],
       }),
+    ]);
+
+    expect(model.relations).toEqual([]);
+  });
+
+  it('RF-262 an entity with a blank title is named by no claim', () => {
+    const model = entityModelOf([
+      cardOf({ id: 'ENT-001', type: 'ENT', title: '  ' }),
+      basketLine(claim('ENT-002.c1', 'A basket line holds a quantity.', 'Supported')),
     ]);
 
     expect(model.relations).toEqual([]);
