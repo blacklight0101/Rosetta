@@ -174,6 +174,13 @@ src/
                         (`YauzlZipExtractor`, ADR-022) with zip-entry-plan (the central-directory checks), zip-errors and zip-limits,
                         zip-upload-store (`ZipUploadStore`: free-space check, streaming under the limit with upload-intake, extraction, hash, snapshot,
                         read-only; RF-128, RF-129)
+    sources/workbook/   the workbook package reader (RF-151, ADR-023, P3-44): `readWorkbook` opens an `.xlsx` or `.xlsm` with `yauzl` under the zip guards
+                        (zip-entry-plan, entry-guards; nothing written to disk), streams each part into `saxes` through xml-stream (a document
+                        type, an entity declaration or nesting past 64 is refused), counts sheets, non-empty cells, shared strings and inflated
+                        bytes against workbook-limits (`ROSETTA_WORKBOOK_MAX_FILES`, `_MAX_SHEETS`, `_MAX_CELLS`), names a compound file as
+                        encrypted or legacy with `cfb` (workbook-format) and returns the typed `WorkbookModel` (workbook-model); readers per
+                        part: cell-reader, rule-reader, shared-strings-reader, styles-reader, small-part-readers, workbook-xml-reader;
+                        package-reader assembles them; errors RST-1921..1928 in workbook-errors; `checkWorkbookBatch` judges the file names
     files/              node-repository-reader, snapshot-index, snapshot-scope, ignore-rules (deny list), grep worker,
                         search and limits, node-output-writer, last-line (a file's last line, read from its end),
                         workspace-guard, workspace-paths, repository-path checks, file-run-manifest-store (`manifest.json`)
