@@ -58,7 +58,56 @@ describe('uploadFileName', () => {
     expect(uploadFileName(sent, 'x')).toEqual({ ok: false, error: 'not-a-zip-name' });
   });
 
-  it('RF-128 refuses a name that is not valid percent-encoding', () => {
-    expect(uploadFileName('%E0%A4%A.zip', 'x')).toEqual({ ok: false, error: 'not-a-zip-name' });
+  it('RF-128 answers bad-encoding, not not-a-zip-name, for a name that is not valid percent-encoding', () => {
+    expect(uploadFileName('%E0%A4%A.zip', 'x')).toEqual({ ok: false, error: 'bad-encoding' });
+    expect(uploadFileName('%E0%A4%A', 'x')).toEqual({ ok: false, error: 'bad-encoding' });
+  });
+});
+
+describe('uploadFileName hostile and long names', () => {
+  it.each([
+    ['U+202E right-to-left override', '‮'],
+    ['U+202A', '‪'],
+    ['U+202B', '‫'],
+    ['U+202C', '‬'],
+    ['U+202D', '‭'],
+    ['U+2066', '⁦'],
+    ['U+2067', '⁧'],
+    ['U+2068', '⁨'],
+    ['U+2069', '⁩'],
+    ['U+200E left-to-right mark', '‎'],
+    ['U+200F right-to-left mark', '‏'],
+  ])('RF-128 strips %s from the name', (_label, mark) => {
+    const sent = encodeURIComponent(`${mark}gnp${mark}.zip`);
+
+    expect(uploadFileName(sent, 'x')).toEqual({ ok: true, value: 'gnp.zip' });
+  });
+
+  it('RF-128 strips a right-to-left override from the project name used as the fallback', () => {
+    expect(uploadFileName(undefined, 'Order‮Desk')).toEqual({
+      ok: true,
+      value: 'OrderDesk.zip',
+    });
+  });
+
+  it('RF-128 refuses a name that is only bidi controls before .zip', () => {
+    expect(uploadFileName(encodeURIComponent('‮.zip'), 'x')).toEqual({
+      ok: false,
+      error: 'not-a-zip-name',
+    });
+  });
+
+  it('RF-128 drops a whole emoji that straddles the 200-character cut', () => {
+    const emoji = '\u{1F600}';
+    const result = uploadFileName(encodeURIComponent(`${'a'.repeat(195)}${emoji}bbbb.zip`), 'x');
+
+    expect(result).toEqual({ ok: true, value: `${'a'.repeat(195)}.zip` });
+  });
+
+  it('RF-128 keeps a whole emoji that ends exactly at the cut', () => {
+    const emoji = '\u{1F600}';
+    const result = uploadFileName(encodeURIComponent(`${'a'.repeat(194)}${emoji}bbbb.zip`), 'x');
+
+    expect(result).toEqual({ ok: true, value: `${'a'.repeat(194)}${emoji}.zip` });
   });
 });

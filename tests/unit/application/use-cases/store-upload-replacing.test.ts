@@ -71,3 +71,35 @@ describe('StoreUpload replacing the source while runs wait or the content is the
     expect(uploads.removed).toEqual([]);
   });
 });
+
+describe('StoreUpload saying whether the code changed since the last run', () => {
+  it('RF-128 answers true when the newest run read another snapshot than the one just stored', async () => {
+    const id = '00000000-0000-4000-a000-0000000000c5';
+    const project = uploadProject({
+      id,
+      upload: { fileName: 'Old.zip', uploadedAt: 1, snapshotKey: oldKey(id) },
+      lastRunSnapshotKey: oldKey(id),
+    });
+    const { useCase } = await setup(project);
+
+    const outcome = await useCase.execute(request(project));
+
+    expect(outcome).toMatchObject({ ok: true, value: { codeChangedSinceLastRun: true } });
+  });
+
+  it('RF-128 answers false when the stored zip is the one the newest run read', async () => {
+    const id = '00000000-0000-4000-a000-0000000000c6';
+    const first = await setup();
+    const same = uploadSnapshotKey(id, first.uploads.hash);
+    const project = uploadProject({
+      id,
+      upload: { fileName: 'Old.zip', uploadedAt: 1, snapshotKey: oldKey(id) },
+      lastRunSnapshotKey: same,
+    });
+    const { useCase } = await setup(project);
+
+    const outcome = await useCase.execute(request(project));
+
+    expect(outcome).toMatchObject({ ok: true, value: { codeChangedSinceLastRun: false } });
+  });
+});

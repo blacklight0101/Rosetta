@@ -119,7 +119,6 @@ test('RF-128 RF-131 an upload replaced between two runs gives a second report th
 
   await uploadZip(page, 'OrderDesk-v2.zip', await fixtureZip(secondVersion));
 
-  await page.reload();
   await expect(page.getByText('The code changed since the last run.')).toBeVisible();
   await scanAndUnderstandCatalog(page);
   await openRunTab(page, 'Evidence');
