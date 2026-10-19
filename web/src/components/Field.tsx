@@ -182,39 +182,25 @@ function InputControl(props: TextField): JSX.Element {
   }
 }
 
-function FileControl(props: FileField): JSX.Element {
+function FileControl(props: FileField | FilesField): JSX.Element {
   return (
     <input
       {...commonAttributes(props)}
       class="rst-field__control"
       type="file"
+      multiple={props.kind === 'files'}
       accept={props.accept}
       onChange={(event) => {
-        props.onFile(event.currentTarget.files?.[0]);
+        const chosen = Array.from(event.currentTarget.files ?? []);
+        if (props.kind === 'files') props.onFiles(chosen);
+        else props.onFile(chosen[0]);
       }}
     />
   );
 }
 
-function FilesControl(props: FilesField): JSX.Element {
-  return (
-    <input
-      {...commonAttributes(props)}
-      class="rst-field__control"
-      type="file"
-      multiple
-      accept={props.accept}
-      onChange={(event) => {
-        props.onFiles(Array.from(event.currentTarget.files ?? []));
-      }}
-    />
-  );
-}
-
-/** The file chooser: one file for the zip upload, several for the workbooks. */
-function FilePicker(props: FileField | FilesField): JSX.Element {
-  return props.kind === 'files' ? <FilesControl {...props} /> : <FileControl {...props} />;
-}
+const isFilePicker = (props: FieldProps): props is FileField | FilesField =>
+  props.kind === 'file' || props.kind === 'files';
 
 function TextareaControl(props: TextareaField): JSX.Element {
   return (
@@ -232,6 +218,7 @@ function TextareaControl(props: TextareaField): JSX.Element {
 }
 
 function Control(props: FieldProps): JSX.Element {
+  if (isFilePicker(props)) return <FileControl {...props} />;
   switch (props.kind) {
     case 'select':
       return <SelectControl {...props} />;
@@ -256,8 +243,6 @@ function Control(props: FieldProps): JSX.Element {
     case 'url':
     case 'password':
       return <InputControl {...props} />;
-    default:
-      return <FilePicker {...props} />;
   }
 }
 
