@@ -186,6 +186,36 @@ On a hosted deployment the same steps apply with the host's `psql` as the admini
 into the host's secret store in step 3. Rotate after anyone who knew the old values leaves, and at least once a year.
 The previous values stop working at step 2, so nothing else needs revoking.
 
+## Analysing a project from a zip
+
+A project that is not on GitHub can be analysed from a zip of its folder (RF-128): on the Projects page choose the
+Upload a zip tab, pick the file and press Upload zip. The page states the largest zip it accepts and refuses a larger
+file before sending it. The limit is `ROSETTA_UPLOAD_MAX_MB` (500 locally; the hosted deployment sets 100).
+
+**Make the zip.**
+
+- Windows: right-click the project folder, choose Send to, then Compressed (zipped) folder.
+- macOS: Control-click the project folder, then choose Compress.
+
+The folder may sit inside the zip as its single top-level folder; Rosetta removes it from every path. Leave out
+`node_modules`, `bin`, `obj` and `.git` if you can: Rosetta leaves them out anyway and counts them, and the zip stays
+smaller. A zip that holds no code after those folders are left out is refused with the reason and what to do.
+
+**What happens to the code.** Rosetta reads the extracted copy, never your computer, and keeps it read-only for the
+project's runs. Only the owner can see the project, its runs and its evidence, and deleting the project deletes the
+copy. Uploading a new zip to the same project replaces the source for the runs that follow; earlier runs keep the copy
+they read, and the start page says the code changed since the last run.
+
+**Where the code is sent.** With every role on Ollama the code stays on the Ollama server of this installation. When a
+role uses a cloud provider the start page asks for a second confirmation, separate from the cloud consent, naming the
+project and each provider (RF-132); Start stays disabled until both boxes are ticked, and Switch every role to Ollama
+sets every role to Ollama in one step.
+
+**Citations.** In the report, the specification and the hand-off package of an uploaded project every citation opens
+Rosetta's own evidence page for that file and those lines, and the report names the zip, the upload date and the
+snapshot hash instead of a repository and commit. A citation never links outside Rosetta, to GitHub or to any other
+site (RF-131).
+
 ## Troubleshooting
 
 | Symptom                                                                   | Likely cause and fix                                                                                                                                                                    |

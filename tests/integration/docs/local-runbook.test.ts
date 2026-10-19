@@ -53,6 +53,21 @@ describe('docs/runbooks/local.md', () => {
   });
 });
 
+describe('docs/runbooks/local.md, analysing a project from a zip', () => {
+  it('RF-128 RF-134 explains how to make a zip on Windows and macOS, the limit and what is left out', async () => {
+    const text = await read('docs/runbooks/local.md');
+    const section = text.split('## Analysing a project from a zip')[1]?.split('\n## ')[0] ?? '';
+
+    expect(section).toContain('Send to');
+    expect(section).toContain('Compressed (zipped) folder');
+    expect(section).toContain('Compress');
+    expect(section).toContain('ROSETTA_UPLOAD_MAX_MB');
+    expect(section).toContain('node_modules');
+    expect(section).toMatch(/second confirmation/iu);
+    expect(section).toMatch(/never links outside Rosetta/iu);
+  });
+});
+
 describe('README quick start', () => {
   it('RF-1301 shows the Compose quick start and links the runbook', async () => {
     const text = await read('README.md');

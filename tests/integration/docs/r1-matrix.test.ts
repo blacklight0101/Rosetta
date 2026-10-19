@@ -76,6 +76,37 @@ describe('the release 1 verification matrix', () => {
   });
 });
 
+describe('the zip source rows of the release 1 verification matrix', () => {
+  const zipSource = range('RF', 128, 134);
+
+  it('RF-128..RF-134 each have a row with passing tests, not a gap (P3-42)', () => {
+    for (const id of zipSource) {
+      const row = byId.get(id);
+      expect(
+        row?.counts.reduce((sum, count) => sum + count, 0),
+        `${id} has no tests`,
+      ).toBeGreaterThan(0);
+      expect(row?.state, `${id} is still a gap`).not.toContain('Gap');
+    }
+  });
+
+  it('RF-128..RF-134 are no longer in the table of gaps (P3-42)', () => {
+    const gaps =
+      matrix.split('## 5. Gaps and follow-up cards')[1]?.split('\nProposed cards:')[0] ?? '';
+
+    expect(zipSource.filter((id) => gaps.includes(`| ${id} `))).toEqual([]);
+  });
+
+  it('RF-131 RF-132 have an end-to-end example, the journey of the zip source (P3-42)', () => {
+    const journey = 'tests/e2e/journeys/zip-project.spec.ts';
+    const without = ['RF-128', 'RF-130', 'RF-131', 'RF-132'].filter(
+      (id) => !byId.get(id)?.example.includes(journey),
+    );
+
+    expect(without).toEqual([]);
+  });
+});
+
 describe('the guard of the release 1 verification matrix', () => {
   it('RNF-005 fails a Must row whose counts are - / - / -', async () => {
     const bad = withRow('RF-003', (line) => line.replace('31 / 13 / 0', '- / - / -'));
