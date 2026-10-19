@@ -154,6 +154,42 @@ it('RF-151 lists external links by file name and connections by name and type, a
   expect(JSON.stringify(model)).not.toContain('Password');
 });
 
+it('RF-151 keeps only the file name of an external link, without query, fragment or host', async () => {
+  const type = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  const targets = [
+    'https://files.example.test/a/Book.xlsx?token=NOTREAL#frag',
+    String.raw`\\share\dir\Plain.xlsx?x=1`,
+    'Encoded.xlsx%3Ftoken=NOTREAL',
+  ];
+  const rels = targets
+    .map(
+      (t, n) =>
+        `<Relationship Id="rId${String(n + 1)}" Type="${type}/externalLinkPath" Target="${t}" TargetMode="External"/>`,
+    )
+    .join('');
+  const bytes = await buildWorkbook({
+    sheets: [{ name: 'S' }],
+    workbookExtra: '<externalReferences><externalReference r:id="rId50"/></externalReferences>',
+    workbookRels: `<Relationship Id="rId50" Type="${type}/externalLink" Target="externalLinks/externalLink1.xml"/>`,
+    extraParts: [
+      { name: 'xl/externalLinks/externalLink1.xml', data: '<externalLink/>' },
+      {
+        name: 'xl/externalLinks/_rels/externalLink1.xml.rels',
+        data: `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels}</Relationships>`,
+      },
+    ],
+  });
+
+  const model = await readBuilt(root.path, bytes);
+
+  expect(model.externalLinks).toEqual([
+    { fileName: 'Book.xlsx' },
+    { fileName: 'Plain.xlsx' },
+    { fileName: 'Encoded.xlsx' },
+  ]);
+  expect(JSON.stringify(model)).not.toContain('NOTREAL');
+});
+
 it('RF-151 writes no part to disk while it reads', async () => {
   const bytes = await buildWorkbook({
     sheets: [{ name: 'S', xml: worksheet(row(1, numberCell('A1', 1))) }],
