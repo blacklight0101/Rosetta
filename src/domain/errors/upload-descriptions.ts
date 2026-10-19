@@ -18,6 +18,7 @@ export type UploadErrorCode = Extract<
   | 'RST-1918'
   | 'RST-1919'
   | 'RST-1920'
+  | 'RST-1930'
 >;
 
 export const UPLOAD_ERROR_DESCRIPTIONS: Readonly<Record<UploadErrorCode, ErrorDescription>> = {
@@ -78,5 +79,9 @@ export const UPLOAD_ERROR_DESCRIPTIONS: Readonly<Record<UploadErrorCode, ErrorDe
   'RST-1920': {
     message: 'This project has no source to analyse yet.',
     nextStep: 'Upload a zip of the project, then start the run again.',
+  },
+  'RST-1930': {
+    message: 'The name of the file could not be read, so the upload was not started.',
+    nextStep: 'Rename the file with plain letters and digits, then upload it again.',
   },
 };

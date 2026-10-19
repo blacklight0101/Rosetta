@@ -197,3 +197,63 @@ it('RF-128 the date and name the server reports for the stored zip are the ones 
 
   expect(await screen.findByText('OrderDesk (zip, 2 Jan 2026)')).not.toBeNull();
 });
+
+async function uploadReplacement(
+  server: ReturnType<typeof installFakeUploadServer>,
+): Promise<void> {
+  await screen.findByText('OrderDesk (zip, 19 Oct 2026)');
+  fireEvent.change(screen.getByLabelText('Zip file'), {
+    target: { files: [zipFile('OrderDesk-v2.zip')] },
+  });
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Upload zip' }).hasAttribute('disabled')).toBe(false);
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Upload zip' }));
+  await waitFor(() => {
+    expect(server.requests).toHaveLength(1);
+  });
+}
+
+const replaced = {
+  files: 1,
+  size: 10,
+  skipped: 0,
+  snapshotHash: 'c'.repeat(64),
+  fileName: 'OrderDesk-v2.zip',
+  uploadedAt: '2026-10-20T08:00:00.000Z',
+};
+
+it('RF-128 a replacing upload shows "The code changed since the last run." at once, without a reload', async () => {
+  const server = installFakeUploadServer();
+  renderStartOf(withSource);
+  await uploadReplacement(server);
+  expect(screen.queryByText('The code changed since the last run.')).toBeNull();
+
+  server.pending().respond(201, { ...replaced, codeChangedSinceLastRun: true });
+
+  expect(await screen.findByText('The code changed since the last run.')).not.toBeNull();
+  expect(screen.getByText('OrderDesk (zip, 20 Oct 2026)')).not.toBeNull();
+});
+
+it('RF-128 an upload of the same code the last run read takes the notice away', async () => {
+  const server = installFakeUploadServer();
+  renderStartOf(changed);
+  await uploadReplacement(server);
+  expect(screen.getByText('The code changed since the last run.')).not.toBeNull();
+
+  server.pending().respond(201, { ...replaced, codeChangedSinceLastRun: false });
+
+  await screen.findByText('OrderDesk (zip, 20 Oct 2026)');
+  expect(screen.queryByText('The code changed since the last run.')).toBeNull();
+});
+
+it('RF-128 an answer that does not say whether the code changed leaves the notice as it was', async () => {
+  const server = installFakeUploadServer();
+  renderStartOf(changed);
+  await uploadReplacement(server);
+
+  server.pending().respond(201, replaced);
+
+  await screen.findByText('OrderDesk (zip, 20 Oct 2026)');
+  expect(screen.getByText('The code changed since the last run.')).not.toBeNull();
+});

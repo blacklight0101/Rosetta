@@ -33,6 +33,9 @@ export function isUploadSnapshotKey(key: string): boolean {
 const DELETE = 0x7f;
 const FIRST_PRINTABLE = 0x20;
 
+/** Bidi controls change how a name reads on screen (`‮gnp.zip` shows as `piz.png`): they are never kept. */
+const BIDI_CONTROLS = /[‎‏‪-‮⁦-⁩]/gu;
+
 function withoutControls(text: string): string {
   let kept = '';
   for (let at = 0; at < text.length; at += 1) {
@@ -44,7 +47,9 @@ function withoutControls(text: string): string {
 
 function baseNameOf(text: string): string {
   const parts = text.split(/[/\\]/u);
-  return withoutControls(parts[parts.length - 1] ?? '').trim();
+  return withoutControls(parts[parts.length - 1] ?? '')
+    .replace(BIDI_CONTROLS, '')
+    .trim();
 }
 
 function decoded(text: string): string | undefined {
@@ -55,24 +60,31 @@ function decoded(text: string): string | undefined {
   }
 }
 
+function isHighSurrogate(code: number): boolean {
+  return code >= 0xd800 && code <= 0xdbff;
+}
+
+/** At most 200 characters, keeping the extension; a surrogate pair is kept whole or dropped whole. */
 function cut(name: string): string {
   if (name.length <= MAX_NAME) return name;
   const extension = name.slice(-'.zip'.length);
-  return `${name.slice(0, MAX_NAME - extension.length)}${extension}`;
+  let keep = MAX_NAME - extension.length;
+  if (isHighSurrogate(name.charCodeAt(keep - 1))) keep -= 1;
+  return `${name.slice(0, keep)}${extension}`;
 }
 
 /**
  * The file name to record: the one the page sent (percent-encoded, a base name, no control
- * characters, at most 200 characters), or `<project name>.zip` when it sent none. A name that does
+ * or bidi characters, at most 200 characters), or `<project name>.zip` when it sent none. A name that does
  * not end in `.zip`, or has nothing before it, is refused (RF-128).
  */
 // RF-128
 export function uploadFileName(
   sent: string | undefined,
   projectName: string,
-): Result<string, 'not-a-zip-name'> {
+): Result<string, 'not-a-zip-name' | 'bad-encoding'> {
   const text = sent === undefined ? `${baseNameOf(projectName)}.zip` : decoded(sent);
-  if (text === undefined) return err('not-a-zip-name');
+  if (text === undefined) return err('bad-encoding');
   const name = baseNameOf(text);
   if (!EXTENSION.test(name) || name.replace(EXTENSION, '').trim() === '') {
     return err('not-a-zip-name');

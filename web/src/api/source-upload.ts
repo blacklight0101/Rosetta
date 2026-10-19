@@ -21,6 +21,8 @@ export const uploadSummarySchema = z.object({
   /** What the server stored (P3-38); absent until it says, then the page uses its own. */
   fileName: z.string().optional(),
   uploadedAt: z.string().optional(),
+  /** The newest run read other code than this zip; absent from an older server, then the page keeps its notice. */
+  codeChangedSinceLastRun: z.boolean().optional(),
 });
 
 export type UploadSummary = z.output<typeof uploadSummarySchema>;
