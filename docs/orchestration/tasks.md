@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 42      | 5         | 35         | 2         | 0                  | 12      | 28      | 2      | 8          | 0         |
-| **Total**               | **259** | **77**    | **155**    | **27**    | **0**              | **128** | **119** | **12** | **143**    | **0**     |
+| P3 Report and plan      | 52      | 5         | 45         | 2         | 0                  | 15      | 35      | 2      | 8          | 0         |
+| **Total**               | **269** | **77**    | **165**    | **27**    | **0**              | **131** | **126** | **12** | **143**    | **0**     |
 
 ## Conventions for every card
 
@@ -3478,3 +3478,152 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: journey, matrix rows, runbook text.
 - **Done when**: the journey passes in CI; the R1 matrix guard passes with the new rows; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-128..RF-134, RNF-005, DEC-148.
+
+### P3-43 - Source kind `workbook`
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-005 sections 4.1 and 4.4; `src/domain/sources/source-kind.ts`, `source.ts`, `upload-name.ts`; `src/application/ports/source-fetcher.ts`; `src/application/understand/pinned-source.ts`; `db/migrations/0014_project_source_kind.sql`, `0015_project_upload_source.sql`; `docs/data-model.md` sections 3.3 and 4 (`projects`); RF-126, RF-130, RF-152.
+- **Do**: add `workbook` to the source union and to `SOURCE_KINDS`; a `WorkbookSource` record (`kind: workbook`, `uploadedAt`, `rendererVersion`, `workbooks` with file name, folder, size, SHA-256 and counts) and the optional `workbooks` list on an upload record; the key `workbook__<project id>@<16 hex>` beside the upload key; a new migration that widens the `projects.source_kind` check to `workbook` with `source_url`, `ref` and `subpath` empty; the run manifest records the kind, hash and renderer version (RF-126); `pinnedSourceOf` treats `workbook` as `upload` (evidence pages). No behaviour change for `github` or `upload`.
+- **Review probes**: a workbook record with GitHub fields (refused at parse); an upload record with an empty `workbooks` list and one without it (both read the same); a key with the upload prefix read as a workbook (refused); a GitHub run manifest (byte-identical to main); the migration on a database holding `github` and `upload` rows.
+- **Behaviour to preserve**: GitHub and zip projects, their snapshots, keys, manifests and citations exactly as on main.
+- **Delivers**: domain and port types, migration, repository changes, data-model.md and architecture.md updates, tests.
+- **Done when**: every RF-152 scenario about the record and key has a passing test; `npm run verify` green with no GitHub or zip test changed.
+- **Refs**: RF-126, RF-130, RF-152, ADR-012, ADR-016, DEC-150.
+
+### P3-44 - Workbook package reader with guards
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-43
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-005 section 4.3; ADR-022; ADR-023; `src/infrastructure/sources/zip-extractor.ts`, `zip-entry-plan.ts`, `entry-guards.ts`, `zip-limits.ts`, `zip-errors.ts`; RF-127, RF-129, RF-151.
+- **Do**: add `saxes` 6.0.0 and `cfb` 1.2.2 pinned exactly (ADR-023) with their rows in the package baseline of `docs/environments-and-delivery.md`; a reader in `src/infrastructure/sources/workbook/` that opens the package with `yauzl` under the RF-129 guards (reusing `entry-guards.ts`, nothing written to disk), streams each part into `saxes`, refuses a document type, an entity declaration and nesting deeper than 64, counts sheets, non-empty cells, shared strings and inflated part bytes against the settings `ROSETTA_WORKBOOK_MAX_FILES`, `ROSETTA_WORKBOOK_MAX_SHEETS`, `ROSETTA_WORKBOOK_MAX_CELLS` (start-up validation as `ROSETTA_UPLOAD_MAX_MB`), names a compound file as encrypted or legacy with `cfb`, refuses `.xlsb`, and returns a typed workbook model (sheets, cells with cached values and number formats, formulas with shared and array forms, names, tables, validation, conditional rules, comments without authors, external links, connections, pivots, charts). New codes RST-1921..RST-1928 in the catalogue and `docs/conventions.md`.
+- **Review probes**: a DOCTYPE in `sharedStrings.xml` only; an internal entity used once; 65 nested elements; a sheet part whose central-directory size understates its inflated size; 201 sheets; one cell over the cell limit across two workbooks; a shared-string table larger than the cell limit; an encrypted file renamed `.xlsx`; an `.xls` renamed `.xlsx`; an `.xlsb`; a sheet named in `workbook.xml.rels` but missing; a formula with a string holding `!` and `[`; a setting of 0, -1, `abc` and one above its range.
+- **Behaviour to preserve**: zip extraction results identical to main (same skipped counts, same hashes).
+- **Delivers**: reader, workbook model types, settings, error codes, workbooks built in tests (no committed binary, nothing from any employer), tests.
+- **Done when**: every RF-151 scenario has a passing test that fails when its guard is removed; `npm run verify` green.
+- **Refs**: RF-127, RF-129, RF-151, ADR-013, ADR-022, ADR-023, DEC-150.
+
+### P3-45 - VBA macro extraction
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-44
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-005 section 4.6; ADR-023; the MS-OVBA specification sections 2.3.4 (`dir` stream) and 2.4.1 (compression); RF-145, RF-154.
+- **Do**: open `xl/vbaProject.bin` with `cfb`; implement MS-OVBA decompression and the `dir` stream parse (module names, kinds, stream names, text offsets, code page); decompress each module from its offset; return standard modules as `.bas` and class, sheet, workbook and form modules as `.cls` text, form controls as a list; detect a project locked for viewing and skip it with its name (Q-40); name a module whose source is missing; bounds on stream sizes and module count so a hostile compound file cannot loop or exhaust memory. Tests build `vbaProject.bin` with `cfb` and a compressor written in the test from the specification.
+- **Review probes**: the specification's decompression examples; a chunk with a copy token at the start of a chunk; a raw (uncompressed) chunk; a `dir` record with an unknown id; a module offset past the stream end; a code page other than 1252; a locked project; a module stream with only compiled code; 10,000 modules.
+- **Behaviour to preserve**: an `.xlsx` without macros renders exactly as before this card.
+- **Delivers**: decompressor, `dir` parser, macro reader, tests.
+- **Done when**: every RF-154 scenario has a passing test; `npm run verify` green.
+- **Refs**: RF-145, RF-154, ADR-013, ADR-023, DEC-150.
+
+### P3-46 - Render a workbook into the text snapshot
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-44
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-005 section 4.4; `src/infrastructure/github/snapshot-store.ts`; `src/infrastructure/sources/zip-upload-store.ts`; RF-146, RF-152.
+- **Do**: render the workbook model into the layout of RFC-005 section 4.4: `workbook.md` with the safe-name mapping, per sheet `formulas.md` (regions, a shared formula as one line for its range, Q-36, array formulas marked, cached values), `values.md` (one line per row with addresses, JSON-escaped text, ISO dates for date formats, errors, `(f)` marks, continuation lines under 2,000 characters), `validation.md` and `notes.md` (no author names, Q-39); macros are written when P3-45 has merged and listed as "not read yet" until then; safe segment names with `~2` on clashes and device names prefixed; a deterministic order so the same workbook gives the same tree and hash; the renderer version constant.
+- **Review probes**: a sheet named `CON`, one named `a/b`, two named `Data` and `data`; a text cell holding `|`, a line break and `"`; a date cell with a custom format; a row of 600 columns; a hidden and a very hidden sheet; a merged range; an empty sheet; the same workbook rendered twice (byte-identical).
+- **Behaviour to preserve**: nothing outside the workbook folder changes.
+- **Delivers**: renderer, name mapping, tests.
+- **Done when**: every RF-152 rendering scenario has a passing test; `npm run verify` green.
+- **Refs**: RF-146, RF-152, ADR-005, ADR-023, DEC-150.
+
+### P3-47 - Formula references and the dependency map
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-46
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-005 section 4.5; RF-153.
+- **Do**: a tokenizer for Excel formulas that returns references (cells, absolute forms, ranges, whole columns and rows, sheet-qualified and quoted sheets, three-dimensional ranges, `[n]` and `[Book.xlsx]` external forms, structured table references, defined names) and skips literals and functions; resolution of external references by file name against the project, folder part dropped (Q-38); `dependencies.md` with workbook and sheet edges and counts, input and output cells grouped into ranges, defined names with targets and users, unresolved and dynamic (`INDIRECT`, `OFFSET`) references; external references in `formulas.md` shown with the file name.
+- **Review probes**: `'It''s'!A1`; `Sheet1:Sheet3!B2`; `A:A` and `1:1`; `Table1[[#This Row],[Price]]`; `"A1"` inside a string; a name that looks like a cell (`TAX1`); `[1]Rates!C4` with the link part naming `C:\Users\x\Rates.xlsx`; a reference to a workbook not uploaded; `INDIRECT("B"&ROW())`; a circular reference.
+- **Behaviour to preserve**: the rendered files of P3-46 other than `formulas.md` external names and the new `dependencies.md`.
+- **Delivers**: tokenizer, resolver, dependency map writer, tests.
+- **Done when**: every RF-153 scenario has a passing test; `npm run verify` green.
+- **Refs**: RF-153, ADR-023, DEC-150.
+
+### P3-48 - Batch upload endpoint and storage for workbooks
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-43, P3-46
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-005 section 4.2; `src/presentation/web/source-upload-routes.ts`; `src/infrastructure/sources/zip-upload-store.ts`, `upload-intake.ts`; the store-upload use case; RF-010, RF-133, RF-150, RF-157, RF-1009, RF-1105.
+- **Do**: `POST /api/projects/:id/source/batches` (free space at least twice `ROSETTA_UPLOAD_MAX_MB`, one open batch per project, RST-1919 otherwise), `PUT /api/projects/:id/source/batches/:batchId/files` (raw body streamed into the staging folder with the P3-38 intake, the remaining total of the limit, the zip signature, `X-File-Name`, `.xlsx` or `.xlsm`, duplicate names RST-1928, count limit RST-1924) and `POST .../finish` (read, render and resolve every workbook or none, hash, publish `workbook__<id>@<16 hex>`, delete the workbooks and the staging folder); expired batches and leftover staging folders deleted; replacing the source keeps the snapshots earlier runs use; deleting the project deletes its snapshots; an audit row per workbook (name, size, hash). After a zip is extracted (P3-37), render each `.xlsx` or `.xlsm` in place and list the ones left out with their reasons (Q-41).
+- **Review probes**: no session, no CSRF token, a foreign `Origin`, another user's project (404); a batch id of another project; two batches at once; a file after finish; finish with no file; the total passing the limit on the third file; an aborted file (no partial left); a batch left open 31 minutes; restart with a staging folder present; a zip holding an `.xlsx`, an encrypted `.xlsx` and an `.xls`.
+- **Behaviour to preserve**: `PUT /api/projects/:id/source` for zips and GitHub project creation unchanged.
+- **Delivers**: use cases, routes, storage, access matrix rows, audit rows, tests.
+- **Done when**: every RF-150 server scenario and the RF-157 storage scenario have a passing test; `npm run verify` green.
+- **Refs**: RF-010, RF-128, RF-133, RF-150, RF-157, RF-1009, RF-1105, ADR-015, ADR-016, ADR-022, DEC-150.
+
+### P3-49 - New-project form: the "Excel workbooks" tab
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-43
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-005 section 4.9; the new-project form and its zip tab (P3-39); `docs/design-system.md`; RF-150, RF-156, RF-158.
+- **Do**: a third tab "Excel workbooks": a multiple file field for `.xlsx` and `.xlsm`, the limits in one line, the chosen files with their sizes, checks before sending (type, count, total), the batch calls of P3-48 with progress per file, the summary (workbooks, sheets, cells, formulas, macro modules, skipped items with reasons) and "Upload again"; the projects list and header show `<name> (Excel, <N> workbooks, <date>)`. Until P3-48 merges, tests use a fake server.
+- **Review probes**: an `.xls` chosen (refused before sending with the save-as message); 21 files; a total one byte over the limit; a 0-byte file; keyboard only; 360 px wide; a file name holding HTML; a failure on the second of three files.
+- **Behaviour to preserve**: the GitHub and zip tabs work exactly as on main.
+- **Delivers**: components, page changes, design-system update, tests.
+- **Done when**: every RF-158 scenario and the RF-150 form scenarios have a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-150, RF-156, RF-158, RNF-010, ADR-012, DEC-150.
+
+### P3-50 - Spreadsheet-aware understand and plan guidance
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-43, P3-46
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-005 section 4.7; `src/infrastructure/prompts/prompt-files.ts`; `src/application/agent/reader-prompts.ts`; the planner prompt builder; `prompts/reader/area.v3.md`; `prompts/planner/package.v4.md`; RF-155, RNF-004.
+- **Do**: two versioned prompt files, `prompts/reader/workbook.v1.md` and `prompts/planner/workbook.v1.md`, with the guidance of RFC-005 section 4.7 and the data-block rule; the prompt builders add them only when the run's source is `workbook` or an upload whose record lists rendered workbooks; the run records the files' versions; recorded responses for one understand run and one plan run on a built workbook project.
+- **Review probes**: a GitHub run (prompts byte-identical to main); a zip run without workbooks (identical); a zip run with one workbook (guidance added); the manifest's prompt versions; a workbook cell holding "ignore your instructions" (stays data, RF-145).
+- **Behaviour to preserve**: every prompt of a run without workbooks.
+- **Delivers**: prompt files, selection, recorded responses, tests.
+- **Done when**: every RF-155 scenario has a passing test; `npm run verify` green.
+- **Refs**: RF-145, RF-155, RNF-004, ADR-004, ADR-005, ADR-018, DEC-150.
+
+### P3-51 - Citations, headers and privacy wording of a workbook project
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-43
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/domain/sources/evidence-link.ts`; `src/infrastructure/cards/citation-link.ts`; the report header and package writers; the evidence pages (P3-02); the second confirmation of P3-41; RF-131, RF-132, RF-156, RF-157.
+- **Do**: citations of a `workbook` project link to the evidence page like an upload; a label beside a citation to a rendered file names the workbook, sheet and cells read from the cited lines' prefixes; report, package and run-page headers name the workbooks, the upload date and the hash; the second confirmation is asked for a workbook project and an upload with rendered workbooks, worded "Cell values, formulas and macros from <project> will be sent to <provider>", with the RF-132 code on an API start without it.
+- **Review probes**: a citation to `dependencies.md`, to `workbook.md` and to a `.bas` file (labels or none); a citation across a region heading; a report of a workbook project searched for `github.com` (none); a zip project with and without workbooks (wording); a GitHub project's report (byte-identical to main).
+- **Behaviour to preserve**: GitHub and zip citations, headers and the RF-132 wording for a zip without workbooks.
+- **Delivers**: link, label, header and wording changes, tests.
+- **Done when**: every RF-156 and RF-157 page scenario has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-131, RF-132, RF-141, RF-142, RF-156, RF-157, ADR-005, ADR-006, ADR-012, DEC-150.
+
+### P3-52 - Journey: analyse a project from Excel workbooks
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-45, P3-47, P3-48, P3-49, P3-50, P3-51
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the zip journey (P3-42) and the other end-to-end journeys; `docs/verification/r1-matrix.md`; RF-150..RF-158.
+- **Do**: an end-to-end journey that builds two small first-party workbooks in the test (one `.xlsm` with a module, a cross-workbook reference, a shared formula, a table, a validation list; no committed binary, nothing from any employer), uploads them on the "Excel workbooks" tab, scans, runs understand with the fake provider and recorded responses, opens the report and the package, and checks that every citation opens an evidence page naming the sheet and cells and that no link leaves Rosetta; update RF-150..RF-158 in the R1 matrix with their tests; the runbook explains how to save a workbook as `.xlsx`.
+- **Review probes**: the journey on Windows and Linux CI; the source replaced between two runs (the second report names the new hash); a zip holding one of the workbooks.
+- **Delivers**: journey, matrix rows, runbook text.
+- **Done when**: the journey passes in CI; the R1 matrix guard passes with the rows no longer gaps; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-150..RF-158, RNF-005, DEC-150.
