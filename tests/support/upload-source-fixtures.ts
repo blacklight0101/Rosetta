@@ -17,3 +17,14 @@ export const hostileFileName =
 
 /** An address on github.com, wherever it stands in a page or a document. */
 export const githubAddress = /https?:\/\/[^\s"')]*github\.com/u;
+
+export const workbookHash = `sha256:${'cd'.repeat(32)}`;
+
+/** RF-156: the source of a run on Excel workbooks, as the report model and the header show it. */
+export const workbookReportSource = {
+  kind: 'workbook',
+  fileName: null,
+  workbooks: ['Pricing.xlsx', 'Rates.xlsm'],
+  uploadedAt: '2026-10-19T09:30:00.000Z',
+  snapshotHash: workbookHash,
+} as const satisfies NonNullable<ReportModel['source']>;
