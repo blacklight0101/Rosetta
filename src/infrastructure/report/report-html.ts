@@ -1,6 +1,7 @@
 import { h } from 'preact';
 import type { ReportModel } from '../../application/report/report-model.js';
 import { renderPage } from './page-shell.js';
+import { isUploadModel } from './report-source.js';
 import { Dashboard } from './site/dashboard.js';
 import { renderStatic } from './site/static-render.js';
 
@@ -18,6 +19,7 @@ export function renderReportHtml(model: ReportModel): string {
     runKey: model.runKey,
     title: 'Run report',
     main,
+    upload: isUploadModel(model),
     ...(model.cards.length === 0 ? {} : { scripts: ['filters.js'] }),
   });
 }

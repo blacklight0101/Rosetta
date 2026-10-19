@@ -3,6 +3,8 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { supportedCards, type SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { Run } from '../../domain/runs/run.js';
+import type { UploadFacts } from '../../domain/sources/upload-facts.js';
+import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { AnswersFile, RecordedQuestion } from '../ports/answers-file.js';
 import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
@@ -34,6 +36,8 @@ export interface PlanInputs {
   readonly cards: readonly SourceCard[];
   /** The source run's open questions, answered or not, in file order. */
   readonly questions: readonly RecordedQuestion[];
+  /** RF-131: the zip, its upload date and hash, for a project of kind `upload`. */
+  readonly upload?: UploadFacts;
 }
 
 export interface PlanInputProblem {
@@ -58,18 +62,39 @@ const problems = {
   },
 } as const;
 
+/** RF-131: what the manifest of the source run says of the zip; unknown parts are null. */
+async function uploadFactsOf(
+  manifests: Pick<RunManifestStore, 'read'> | undefined,
+  sourceRun: Run,
+): Promise<UploadFacts> {
+  const manifest = await manifests?.read(scopeOf(sourceRun));
+  const source = manifest?.source;
+  return {
+    fileName: source?.fileName ?? null,
+    uploadedAt: source?.uploadedAt ?? null,
+    snapshotHash: source?.snapshotHash ?? null,
+  };
+}
+
 // RF-604, RF-614
 export async function planInputs(
   deps: PlanInputDependencies,
   run: Pick<Run, 'userId' | 'projectId'>,
-  sourceRunId?: string,
+  /** The id of the run to plan from, as an option records it; anything but text names none. */
+  sourceRunId?: unknown,
+  /** RF-131: where the zip of an uploaded project is read from; the plan estimate needs none. */
+  manifests?: Pick<RunManifestStore, 'read'>,
 ): Promise<Result<PlanInputs, PlanInputProblem>> {
   const project = await deps.projects.find(run.userId, run.projectId);
   if (project === undefined) return err(problems.project);
   const ref = { userId: run.userId, projectId: run.projectId };
   const brief = await deps.briefs.read(ref);
   if (brief === undefined) return err(problems.brief);
-  const found = await planSourceRun(deps.runs, run, sourceRunId);
+  const found = await planSourceRun(
+    deps.runs,
+    run,
+    typeof sourceRunId === 'string' ? sourceRunId : undefined,
+  );
   if (!found.ok) {
     return err(found.error === ERROR_CODES.notFound ? problems.missing : problems.run);
   }
@@ -77,5 +102,14 @@ export async function planInputs(
   const cards = await deps.cards.cardsOf(scopeOf(sourceRun));
   if (supportedCards(cards).length === 0) return err(problems.claims);
   const questions = await deps.answers.questionsOf(ref, sourceRun.runKey);
-  return ok({ project, brief, sourceRun, cards, questions });
+  const upload =
+    project.sourceKind === 'upload' ? await uploadFactsOf(manifests, sourceRun) : undefined;
+  return ok({
+    project,
+    brief,
+    sourceRun,
+    cards,
+    questions,
+    ...(upload === undefined ? {} : { upload }),
+  });
 }

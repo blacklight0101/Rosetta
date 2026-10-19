@@ -4,7 +4,7 @@ import { incompleteSteps } from '../../domain/cards/flow-completeness.js';
 import type { Overview } from '../../domain/overview/overview.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { cardPath } from './card-markdown.js';
-import { citationLink, type PermalinkSource } from './citation-link.js';
+import { citationLink, FROM_RUN_FOLDER, type PermalinkSource } from './citation-link.js';
 import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 import { renderSurfaceSections } from './spec-sections.js';
 import { overviewBody } from './overview-markdown.js';
@@ -27,7 +27,10 @@ function cardSection(card: Card, source: PermalinkSource, esc: MarkdownEscaper):
   const incomplete = incompleteSteps(card).map((step) => `${step.claimId} (${step.status})`);
   if (incomplete.length > 0) lines.push(`Incomplete flow: ${incomplete.join(', ')}`, '');
   for (const claim of card.claims) {
-    const evidence = claim.citations.map((citation) => citationLink(citation, source)).join(', ');
+    const spot = { cardId: card.id, claimId: claim.claimId, base: FROM_RUN_FOLDER };
+    const evidence = claim.citations
+      .map((citation) => citationLink(citation, source, spot))
+      .join(', ');
     lines.push(`- ${claim.claimId} [${claim.status}] ${esc.inline(claim.text)} (${evidence})`);
   }
   return [...lines, ''];

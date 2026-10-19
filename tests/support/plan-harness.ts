@@ -86,6 +86,8 @@ export interface PlanHarnessOptions {
   readonly cloudPlanner?: boolean;
   /** Changes the project settings, for example its caps (RF-613). */
   readonly settings?: (settings: ProjectSettings) => ProjectSettings;
+  /** RF-131: fields of the project that differ from the GitHub one, for an uploaded zip. */
+  readonly project?: Partial<Project>;
   /** The scan results the plan run measures the data shapes from; none readable if absent. */
   readonly scans?: ScanResults;
   /** Runs before the planner call reaches the fake. */
@@ -175,6 +177,7 @@ async function projectOf(s: Stores, options: PlanHarnessOptions): Promise<Projec
     userId: account.id,
     sourceUrl: 'https://github.com/octo/demo',
     settings,
+    ...options.project,
   });
   await s.projects.insertOrFind(project);
   return project;

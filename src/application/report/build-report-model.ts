@@ -11,11 +11,13 @@ import {
   type ReportModel,
   type ReportProjectTotals,
   type ReportQuestion,
+  type ReportSource,
 } from './report-model.js';
 import type { ReportCardDetail } from './card-detail.js';
 import type { ReportDiagram } from './report-diagrams.js';
 import { parseOverview } from '../overview/overview-file.js';
 import { buildReplay } from './replay-timeline.js';
+import { sourceKindOf } from '../../domain/sources/source-kind.js';
 
 // RF-504, RF-506: what the report of a finished run says, from the run row, the manifest (when the
 // run has one), the events, the card index text and which documents the run folder holds. The run
@@ -46,6 +48,19 @@ export interface ReportInputs {
   readonly downloads?: ReportDownloadNames | undefined;
 }
 
+/** RF-131: the zip of an upload, or the repository of a GitHub run; null for a run with no manifest. */
+function sourceOf(manifest: RunManifest | undefined): ReportSource | null {
+  if (manifest === undefined) return null;
+  const { source } = manifest;
+  if (sourceKindOf(source) === 'github') return { url: source.url, commitSha: source.commitSha };
+  return {
+    kind: 'upload',
+    fileName: source.fileName ?? null,
+    uploadedAt: source.uploadedAt ?? null,
+    snapshotHash: source.snapshotHash,
+  };
+}
+
 // RF-504, RF-506
 export function buildReportModel(inputs: ReportInputs): ReportModel {
   const { run, manifest } = inputs;
@@ -55,10 +70,7 @@ export function buildReportModel(inputs: ReportInputs): ReportModel {
     endState: run.endState,
     startedAt: manifest?.startedAt ?? null,
     endedAt: manifest?.endedAt ?? null,
-    source:
-      manifest === undefined
-        ? null
-        : { url: manifest.source.url, commitSha: manifest.source.commitSha },
+    source: sourceOf(manifest),
     totals:
       manifest === undefined
         ? null

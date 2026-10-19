@@ -1,4 +1,4 @@
-import { escapeHtml } from './html-text.js';
+import { escapeHtml, withoutExternalLinks } from './html-text.js';
 import { REPORT_CSP, REPORT_REFERRER } from './report-security.js';
 
 // RF-1013, RF-507, DEC-112: the frame every static report page shares. The content security policy
@@ -17,6 +17,8 @@ export interface PageContent {
   readonly main: string;
   /** The scripts of the report folder to load deferred, in this order (file names); none by default. */
   readonly scripts?: readonly string[];
+  /** RF-131: the run is on an uploaded zip; no link to another site stays in the page. */
+  readonly upload?: boolean;
 }
 
 const NAVIGATION: readonly {
@@ -61,7 +63,7 @@ export function renderPage(content: PageContent): string {
 </header>
 ${navigation(content.page)}
 <main id="main">
-${content.main}
+${content.upload === true ? withoutExternalLinks(content.main) : content.main}
 </main>
 </body>
 </html>

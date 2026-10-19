@@ -2,6 +2,7 @@ import { h, type ComponentChild } from 'preact';
 import type { ReportCard, ReportModel } from '../../../application/report/report-model.js';
 import { formatShare } from '../../../domain/cards/verification-summary.js';
 import { renderPage } from '../page-shell.js';
+import { isUploadModel } from '../report-source.js';
 import { claimsText } from '../report-format.js';
 import { cardHref, Crumbs } from './crumbs.js';
 import { DataTable, ModelText, Panel } from './parts.js';
@@ -88,5 +89,11 @@ function AreaPage(props: { readonly model: ReportModel; readonly area: string })
 // RF-500, RF-507
 export function renderAreaPage(model: ReportModel, area: string): string {
   const main = renderStatic(h(AreaPage, { model, area }));
-  return renderPage({ page: 'area', runKey: model.runKey, title: 'Area', main });
+  return renderPage({
+    page: 'area',
+    runKey: model.runKey,
+    title: 'Area',
+    main,
+    upload: isUploadModel(model),
+  });
 }
