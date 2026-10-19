@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-19. Release 1 is built: **244 of 252 cards are Done** (see the [tasks.md totals](docs/orchestration/tasks.md)); P1, P2 and P3 are complete except P3-22 (owner review of the sample package) and the gated cards P1-50, P1-53, P1-54, P1-55, P2-12, P2-14 and P2-34, each waiting for its gate or the owner's check. No hosted deployment before the owner declares the local system ready (G-08, DEC-133). Milestone hand-in: 2026-10-26. The latest state is the first entry of the resume point below._
+_Last updated 2026-10-19. Release 1 is built: **251 of 259 cards are Done** (see the [tasks.md totals](docs/orchestration/tasks.md)); P1, P2 and P3 are complete except P3-22 (owner review of the sample package) and the gated cards P1-50, P1-53, P1-54, P1-55, P2-12, P2-14 and P2-34, each waiting for its gate or the owner's check. No hosted deployment before the owner declares the local system ready (G-08, DEC-133). Milestone hand-in: 2026-10-26. The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -29,6 +29,8 @@ _Last updated 2026-10-19. Release 1 is built: **244 of 252 cards are Done** (see
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Zip source complete (2026-10-19, evening).** Merged: P3-38 #614 (upload endpoint and storage; supersedes #612, closed because its branch history held a whole fake key and history is never rewritten) and P3-42 #615 (end-to-end journey of a project analysed from a zip; RF-128..RF-134 now in the R1 matrix, runbook section on making a zip). Both set to Done in this status pull request; the zip source (DEC-148, DEC-149) is complete. Verifier minors and the "code changed" refresh after a replacing upload are in the vault follow-ups.
 
 **Zip source build (2026-10-19, afternoon).** Merged: P3-36 #607 (source model), P3-37 #608 (safe zip extraction with `yauzl`), P3-39 #609 (upload form), P3-40 #610 (citations and headers of an uploaded project), P3-41 #611 (second confirmation before private code goes to a cloud provider, RST-1521). Set to Done in this status pull request. In review: P3-38 #612 (upload endpoint). Next: P3-42 (journey) after #612. Waiting for the owner: the zip ratio floor and `__MACOSX/` (defaults: 200:1 only above 4 MiB plus an archive-wide check above 64 MiB; leave `__MACOSX/` out), and three P3-41 questions (re-check the confirmation when a queued run starts; name the model on "Switch every role to Ollama"; the upload start-page e2e in P3-42).
 
