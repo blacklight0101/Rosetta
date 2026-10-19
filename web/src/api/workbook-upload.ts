@@ -20,7 +20,7 @@ const fileStoredSchema = z.object({ name: z.string(), size: z.number().int().non
 
 const count = z.number().int().nonnegative();
 
-export const workbookSummarySchema = z.object({
+const workbookSummarySchema = z.object({
   /** What was read of each workbook (RF-150). */
   workbooks: z.array(
     z.object({

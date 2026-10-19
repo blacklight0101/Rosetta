@@ -15,8 +15,6 @@ import type { FileState } from './workbook-batch.js';
 // checked at every render (so a limit that arrives late applies to them), which refuses a bad set
 // before anything is sent. Sending is the flow of `use-workbook-flow.ts`.
 
-export type { WorkbookPhase };
-
 export interface WorkbookItem {
   readonly file: File;
   readonly state: FileState;

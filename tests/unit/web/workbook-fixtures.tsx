@@ -13,13 +13,13 @@ import { projectOf } from './project-fixtures.js';
 const noProjects = json(200, { projects: [], truncated: false });
 
 /** The project `POST /api/projects` makes for workbooks: it has no source until a batch is finished. */
-export const sourcelessBook = projectOf('p-9', 'Pricing', {
+const sourcelessBook = projectOf('p-9', 'Pricing', {
   sourceUrl: '',
   sourceKind: 'workbook',
   source: null,
 });
 
-export const batchOpened = json(201, { batchId: 'b-1' });
+const batchOpened = json(201, { batchId: 'b-1' });
 
 export const finishedBody = {
   workbooks: [
@@ -32,7 +32,7 @@ export const finishedBody = {
   uploadedAt: '2026-10-19T08:00:00.000Z',
 };
 
-export const threeNames = ['Pricing.xlsx', 'Costs.xlsm', 'Rates.xlsx'] as const;
+const threeNames = ['Pricing.xlsx', 'Costs.xlsm', 'Rates.xlsx'] as const;
 
 export function workbookFile(name: string, size?: number): File {
   const bytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
