@@ -11,7 +11,7 @@ import type { RunScope } from './run-events.js';
 // puts back what it changed and rejects with the writer's code.
 
 /** The repository at the pinned commit, for the permalinks of the citations (RF-125). */
-export interface GithubCardSource {
+interface GithubCardSource {
   readonly kind?: 'github' | undefined;
   readonly owner: string;
   readonly repo: string;
@@ -19,7 +19,7 @@ export interface GithubCardSource {
 }
 
 /** An uploaded zip: the citations link to the evidence pages of the report (RF-131). */
-export interface UploadCardSource {
+interface UploadCardSource {
   readonly kind: 'upload';
 }
 
