@@ -32,6 +32,10 @@ const FIND = SELECT + ' WHERE user_id = $1 AND id = $2';
 const UPDATE_SETTINGS =
   'UPDATE projects SET settings = $3::jsonb, updated_at = $4, settings_version = settings_version + 1 WHERE user_id = $1 AND id = $2 AND ($5::int IS NULL OR settings_version = $5::int) RETURNING ' +
   PROJECT_COLUMNS;
+// RF-128: an upload project holds one zip at a time; a GitHub project holds none.
+const ATTACH_UPLOAD =
+  "UPDATE projects SET source_snapshot_key = $3, source_file_name = $4, source_uploaded_at = $5, updated_at = $6 WHERE user_id = $1 AND id = $2 AND source_kind = 'upload' RETURNING " +
+  PROJECT_COLUMNS;
 const VERSION_OF = 'SELECT settings_version FROM projects WHERE user_id = $1 AND id = $2';
 
 // RF-1012, P1-121: the removal is one transaction. It first locks the project row (`FOR UPDATE`
@@ -130,8 +134,16 @@ export class PgProjectRepository implements ProjectRepository {
     return { kind: 'stale', currentVersion: z.number().int().parse(current['settings_version']) };
   }
 
-  attachUpload(change: UploadAttachment): Promise<Project | undefined> {
-    return Promise.resolve(change.updatedAt < 0 ? undefined : undefined);
+  async attachUpload(change: UploadAttachment): Promise<Project | undefined> {
+    const { userId, projectId, upload } = change;
+    if (!UUID.test(userId) || !UUID.test(projectId)) return undefined;
+    const [row] = (
+      await this.run(ATTACH_UPLOAD, [
+        ...[userId, projectId, upload.snapshotKey, upload.fileName],
+        ...[new Date(upload.uploadedAt), new Date(change.updatedAt)],
+      ])
+    ).rows;
+    return row === undefined ? undefined : toProject(row);
   }
 
   async remove(

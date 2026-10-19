@@ -10,9 +10,23 @@ import { projectSettingsSchema } from '../../application/projects/project-settin
 
 /** Every column, in table order. */
 export const PROJECT_COLUMNS =
-  'id::text AS id, user_id::text AS user_id, name, source_kind, source_url, ref, subpath, settings, settings_version, created_at, updated_at';
+  'id::text AS id, user_id::text AS user_id, name, source_kind, source_url, ref, subpath, source_snapshot_key, source_file_name, source_uploaded_at, (SELECT r.snapshot_key FROM runs r WHERE r.project_id = projects.id AND r.snapshot_key IS NOT NULL ORDER BY r.queued_at DESC, r.id DESC LIMIT 1) AS last_run_snapshot_key, settings, settings_version, created_at, updated_at';
 
 const instant = z.date().transform((date) => date.getTime());
+
+interface UploadColumns {
+  readonly source_kind: string;
+  readonly source_snapshot_key: string | null;
+  readonly source_file_name: string | null;
+  readonly source_uploaded_at: number | null;
+}
+
+function hasValidUpload(row: UploadColumns): boolean {
+  const set = [row.source_snapshot_key, row.source_file_name, row.source_uploaded_at].filter(
+    (value) => value !== null,
+  ).length;
+  return set === 0 || (set === 3 && row.source_kind === 'upload');
+}
 
 const projectRowSchema = z
   .object({
@@ -23,11 +37,18 @@ const projectRowSchema = z
     source_url: z.string(),
     ref: z.string(),
     subpath: z.string(),
+    // Rows read before the columns existed have none of the four (RF-128).
+    source_snapshot_key: z.string().nullable().default(null),
+    source_file_name: z.string().nullable().default(null),
+    source_uploaded_at: instant.nullable().default(null),
+    last_run_snapshot_key: z.string().nullable().default(null),
     settings: projectSettingsSchema,
     settings_version: z.number().int().min(1),
     created_at: instant,
     updated_at: instant,
   })
+  // RF-128: the zip is all there or all null, and only an upload project has one.
+  .refine(hasValidUpload)
   // RF-130: an upload row with an address, ref or subpath is damaged, never guessed at.
   .refine((row) =>
     hasValidSourceShape(row.source_kind, {
@@ -48,6 +69,20 @@ export function toProject(row: unknown): Project {
     sourceUrl: parsed.source_url,
     ref: parsed.ref,
     subpath: parsed.subpath,
+    ...(parsed.source_snapshot_key === null ||
+    parsed.source_file_name === null ||
+    parsed.source_uploaded_at === null
+      ? {}
+      : {
+          upload: {
+            fileName: parsed.source_file_name,
+            uploadedAt: parsed.source_uploaded_at,
+            snapshotKey: parsed.source_snapshot_key,
+          },
+        }),
+    ...(parsed.last_run_snapshot_key === null
+      ? {}
+      : { lastRunSnapshotKey: parsed.last_run_snapshot_key }),
     settings: parsed.settings,
     settingsVersion: parsed.settings_version,
     createdAt: parsed.created_at,

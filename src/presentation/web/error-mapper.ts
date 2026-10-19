@@ -7,7 +7,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // code, the catalogue's plain message and the next step. The error's own message and stack never
 // reach the body: they may name internals (conventions section 6).
 
-type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 429 | 500 | 502;
+type ErrorStatus = 400 | 401 | 403 | 404 | 408 | 409 | 413 | 429 | 500 | 502 | 507;
 
 interface ErrorBody {
   readonly code: ErrorCode;
@@ -46,6 +46,21 @@ const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.cloudConsentMissing]: 400,
   [ERROR_CODES.areaUnknown]: 400,
   [ERROR_CODES.deepenNotConfirmed]: 400,
+  // RF-128, RF-129: an upload that cannot be taken. The zip rules are the sender's to fix (400); the
+  // size, the time and the free space are the request's (413, 408, 507); a second upload or a run
+  // on a project with no source is a conflict.
+  [ERROR_CODES.zipNotReadable]: 400,
+  [ERROR_CODES.zipTooLarge]: 400,
+  [ERROR_CODES.zipTooManyEntries]: 400,
+  [ERROR_CODES.zipRatioTooHigh]: 400,
+  [ERROR_CODES.zipEntryPathUnsafe]: 400,
+  [ERROR_CODES.zipEntryUnsupported]: 400,
+  [ERROR_CODES.zipEmpty]: 400,
+  [ERROR_CODES.uploadTooLarge]: 413,
+  [ERROR_CODES.uploadNoSpace]: 507,
+  [ERROR_CODES.uploadTimedOut]: 408,
+  [ERROR_CODES.uploadInProgress]: 409,
+  [ERROR_CODES.projectNoSource]: 409,
   [ERROR_CODES.notSignedIn]: 401,
   [ERROR_CODES.notAllowed]: 403,
   [ERROR_CODES.originRefused]: 403,
