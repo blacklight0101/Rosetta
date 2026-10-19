@@ -44,7 +44,7 @@ export function facts(over: Partial<JourneyFacts> = {}): JourneyFacts {
 }
 
 /** The package of a plan run that completed. */
-export function handoff(outOfDate = false): NonNullable<JourneyFacts['handoff']> {
+function handoff(outOfDate = false): NonNullable<JourneyFacts['handoff']> {
   return { runId: planId, runKey: '20261012-103000-plan', outOfDate };
 }
 
