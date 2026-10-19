@@ -1,8 +1,9 @@
 import { request as httpRequest, type IncomingMessage } from 'node:http';
-import { mkdtemp, readdir, realpath, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach } from 'vitest';
 import type { ZipUploadStore } from '../../src/infrastructure/sources/zip-upload-store.js';
+import { removeWritableTree } from './writable-temp-root.js';
 import { storeIn } from './upload-store-harness.js';
 import { tmpdir } from 'node:os';
 import { addUser, signedInBrowser, type TestBrowser } from './test-browser.js';
@@ -34,7 +35,7 @@ export function useDiskServers(): (options?: DiskOptions) => Promise<DiskSetup> 
   afterEach(async () => {
     for (const test of open.splice(0)) await test.server.close();
     for (const folder of folders) {
-      await rm(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+      await removeWritableTree(folder);
     }
   });
   return async (options = {}) => {

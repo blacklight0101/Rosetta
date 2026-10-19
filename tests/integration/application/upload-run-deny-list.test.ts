@@ -7,7 +7,7 @@ import { parseCodeMap } from '../../../src/infrastructure/scan/codemap/codemap-j
 import { FixedClock } from '../../support/fixed-clock.js';
 import { MemoryLogger } from '../../support/memory-logger.js';
 import { createScanRunHarness, scanActor } from '../../support/scan-run-harness.js';
-import { useTempRoot } from '../../support/temp-root.js';
+import { useWritableTempRoot } from '../../support/writable-temp-root.js';
 import { bodyOf, projectId, requestOf, storeIn } from '../../support/upload-store-harness.js';
 import { buildZip } from '../../support/zip-fixtures.js';
 
@@ -15,7 +15,7 @@ import { buildZip } from '../../support/zip-fixtures.js';
 // secret file or a path the repository ignores never reaches the code map and is refused to every
 // reader, so it can never be sent to a provider.
 
-const temp = useTempRoot('rosetta-upload-deny-');
+const temp = useWritableTempRoot('rosetta-upload-deny-');
 
 const zip = () =>
   buildZip([
