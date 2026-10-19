@@ -181,3 +181,18 @@ it('RF-150 a refused batch (one batch at a time) shows the refusal and sends no 
   expect(server.requests).toHaveLength(0);
   expect(sendButton().textContent).toBe('Upload again');
 });
+
+it('RNF-010 after a failure focus goes to the error alert, not to the page body', async () => {
+  const server = installFakeUploadServer();
+  renderWorkbookTab(happyAnswers());
+  await chooseValid();
+  fireEvent.click(sendButton());
+  await answerFile(server, 1);
+  await answerFile(server, 2, 413, tooBig);
+
+  const alert = await screen.findByRole('alert');
+
+  await waitFor(() => {
+    expect(document.activeElement).toBe(alert);
+  });
+});

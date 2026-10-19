@@ -8,6 +8,7 @@ import { PrivateCodeNotice } from './PrivateCodeNotice.js';
 import { EstimateSection } from './EstimateSection.js';
 import { RepositorySection } from './RepositorySection.js';
 import { UploadSourceSection } from './UploadSourceSection.js';
+import { WorkbookSourceSection } from './WorkbookSourceSection.js';
 import { RunNotice } from './RunNotice.js';
 import { StartConfirmDialog } from './StartConfirmDialog.js';
 import { StaleCodeMapNotice } from './StaleCodeMapNotice.js';
@@ -97,6 +98,36 @@ function PrivateCode({ form }: { readonly form: StartForm }): JSX.Element | null
   );
 }
 
+const leads = {
+  github:
+    'Paste a public GitHub repository URL. Rosetta pins it to a commit and downloads that snapshot once.',
+  upload: 'This project holds a zip of your code. Rosetta reads that copy, never your computer.',
+  workbook:
+    'This project holds Excel workbooks. Rosetta reads a text copy of them, never your computer.',
+} as const;
+
+const leadOf = (kind: Project['sourceKind']): string => leads[kind];
+
+function SourceSection({ form }: { readonly form: StartForm }): JSX.Element {
+  const { project, actions } = form;
+  if (project.sourceKind === 'upload') {
+    return <UploadSourceSection project={project} onStored={form.setProject} />;
+  }
+  if (project.sourceKind === 'workbook') {
+    return <WorkbookSourceSection project={project} onStored={form.setProject} />;
+  }
+  return (
+    <RepositorySection
+      project={project}
+      url={form.url}
+      failure={actions.refusals.url}
+      busy={actions.busy}
+      onUrl={form.setUrl}
+      onResolve={actions.resolve}
+    />
+  );
+}
+
 // RF-1001
 export function StartRunForm({ project }: { readonly project: Project }): JSX.Element {
   const form = useStartForm(project);
@@ -107,24 +138,9 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
     <div class="rst-start" ref={ref}>
       <div>
         <h1 class="rst-page__title">Start a run</h1>
-        <p class="rst-settings__lead">
-          {form.project.sourceKind === 'upload'
-            ? 'This project holds a zip of your code. Rosetta reads that copy, never your computer.'
-            : 'Paste a public GitHub repository URL. Rosetta pins it to a commit and downloads that snapshot once.'}
-        </p>
+        <p class="rst-settings__lead">{leadOf(form.project.sourceKind)}</p>
       </div>
-      {form.project.sourceKind === 'upload' ? (
-        <UploadSourceSection project={form.project} onStored={form.setProject} />
-      ) : (
-        <RepositorySection
-          project={form.project}
-          url={form.url}
-          failure={actions.refusals.url}
-          busy={actions.busy}
-          onUrl={form.setUrl}
-          onResolve={actions.resolve}
-        />
-      )}
+      <SourceSection form={form} />
       <StaleCodeMapNotice form={form} />
       <Columns form={form} />
       {consent.roles.length === 0 ? null : (

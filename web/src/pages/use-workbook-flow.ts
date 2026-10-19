@@ -14,10 +14,12 @@ import { useAbortOnLeave } from './use-zip-upload.js';
 export type WorkbookPhase = 'idle' | 'sending' | 'finishing' | 'done' | 'failed';
 
 export interface WorkbookFlowOptions {
+  /** The project whose source is uploaded (the start page); absent on the New project form. */
+  readonly existing?: Project;
   /** A project this form made; the batch may not be finished yet. */
-  readonly onCreated: (project: Project) => void;
+  readonly onCreated?: (project: Project) => void;
   /** The batch is finished: the list reads again. */
-  readonly onStored: () => void;
+  readonly onStored: (summary: WorkbookSummary) => void;
 }
 
 interface Where {
@@ -79,7 +81,7 @@ export function useWorkbookFlow(options: WorkbookFlowOptions): WorkbookFlow {
   const { client } = useApp();
   const signal = useAbortOnLeave();
   const placement = usePlacement();
-  const [project, setProject] = useState<Project | undefined>();
+  const [project, setProject] = useState(options.existing);
   const [batch, setBatch] = useState<OpenBatch | undefined>();
   const [phase, setPhase] = useState<WorkbookPhase>('idle');
   const [summary, setSummary] = useState<WorkbookSummary | undefined>();
@@ -99,7 +101,7 @@ export function useWorkbookFlow(options: WorkbookFlowOptions): WorkbookFlow {
     const events: BatchEvents = {
       project: (made) => {
         setProject(made);
-        options.onCreated(made);
+        options.onCreated?.(made);
       },
       batch: setBatch,
       file: placement.mark,
@@ -112,7 +114,7 @@ export function useWorkbookFlow(options: WorkbookFlowOptions): WorkbookFlow {
       if (result.ok) {
         setSummary(result.value);
         setPhase('done');
-        options.onStored();
+        options.onStored(result.value);
         return;
       }
       setFailure(result.error);

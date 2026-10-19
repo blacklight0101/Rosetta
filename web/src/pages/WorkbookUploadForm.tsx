@@ -1,10 +1,12 @@
 import type { JSX } from 'preact';
+import { useRef } from 'preact/hooks';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { useWorkbookUpload, type WorkbookUpload } from './use-workbook-upload.js';
 import type { WorkbookFlowOptions } from './use-workbook-flow.js';
-import { ChosenFiles, Problems, Progress, Summary } from './WorkbookParts.js';
+import { useRefusalFocus } from '../lib/use-refusal-focus.js';
+import { Announcement, ChosenFiles, Problems, Progress, Summary } from './WorkbookParts.js';
 
 // RF-150, RF-158, RFC-005 section 4.9, design-system.md section 14 (Projects): the Excel workbooks
 // form. It states the accepted types and the limits in one line, checks the files before sending,
@@ -84,8 +86,11 @@ export function WorkbookUploadForm(props: WorkbookFlowOptions): JSX.Element {
   const upload = useWorkbookUpload(props);
   const sending = upload.phase === 'sending' || upload.phase === 'finishing';
   const reason = reasonToWait(upload);
+  const formRef = useRef<HTMLFormElement>(null);
+  useRefusalFocus(formRef, upload.failure);
   return (
     <form
+      ref={formRef}
       class="rst-projects__create"
       noValidate
       onSubmit={(event) => {
@@ -97,6 +102,7 @@ export function WorkbookUploadForm(props: WorkbookFlowOptions): JSX.Element {
         Accepted: .xlsx and .xlsm. At most {upload.maxFiles} files and {upload.limitMb} MB in all.
       </p>
       <ChosenFields upload={upload} />
+      <Announcement items={upload.items} />
       <Outcome upload={upload} />
       <div class="rst-projects__actions">
         <Button

@@ -268,3 +268,26 @@ it('RF-150 choosing files again after a stored batch clears the summary', async 
     expect(screen.queryByText(/3 workbooks read/u)).toBeNull();
   });
 });
+
+it('RNF-010 a polite status says which file is going out and when one fails, without the percentage', async () => {
+  const server = installFakeUploadServer();
+  renderWorkbookTab(happyAnswers());
+  await chooseValid();
+  fireEvent.click(sendButton());
+  await answerFile(server, 1);
+  await waitFor(() => {
+    expect(server.requests).toHaveLength(2);
+  });
+
+  server.pending().progress(10, 100);
+
+  const live = screen
+    .getAllByRole('status')
+    .find((node) => node.getAttribute('aria-live') === 'polite');
+  expect(live?.textContent).toBe('Sending file 2 of 3: Costs.xlsm.');
+  server
+    .pending()
+    .respond(422, { code: 'RST-1921', message: 'Old format.', nextStep: 'Save as .xlsx.' });
+  await screen.findByRole('alert');
+  expect(live?.textContent).toBe('Costs.xlsm failed.');
+});

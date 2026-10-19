@@ -47,6 +47,24 @@ export function ChosenFiles({ items }: { readonly items: readonly WorkbookItem[]
   );
 }
 
+/** What a screen reader hears as the files go: a change of file or a failure, never the percentage. */
+function announcementOf(items: readonly WorkbookItem[]): string {
+  const failed = items.find((item) => item.state === 'failed');
+  if (failed !== undefined) return `${failed.file.name} failed.`;
+  const at = items.findIndex((item) => item.state === 'sending');
+  const item = items[at];
+  if (item === undefined) return '';
+  return `Sending file ${String(at + 1)} of ${String(items.length)}: ${item.file.name}.`;
+}
+
+export function Announcement({ items }: { readonly items: readonly WorkbookItem[] }): JSX.Element {
+  return (
+    <p class="rst-visually-hidden" role="status" aria-live="polite">
+      {announcementOf(items)}
+    </p>
+  );
+}
+
 export function Problems({ problems }: { readonly problems: readonly string[] }): JSX.Element {
   return (
     <ul id="workbook-problems" class="rst-zip__steps">

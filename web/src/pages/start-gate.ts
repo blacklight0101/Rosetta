@@ -21,6 +21,8 @@ export interface StartGateInput {
   readonly libraryUnconfirmed?: boolean;
   /** RF-128: an upload project whose zip is not stored yet; no run can start on it. */
   readonly noSource?: boolean;
+  /** RF-150: a workbook project with no batch stored yet; no run can start on it. */
+  readonly noWorkbooks?: boolean;
 }
 
 export interface StartGate {
@@ -37,11 +39,16 @@ function understandReason(input: StartGateInput): string | undefined {
 }
 
 // RF-1001, RF-143, RF-132
+function missingSource(input: StartGateInput): string | undefined {
+  if (input.noSource === true) return 'Upload a zip first: this project has no source.';
+  if (input.noWorkbooks === true) return 'Upload workbooks first: this project has no source.';
+  return undefined;
+}
+
 export function startGate(input: StartGateInput): StartGate {
   const plain: StartGate = { label: 'Start run', reason: undefined };
-  if (input.noSource === true) {
-    return { label: plain.label, reason: 'Upload a zip first: this project has no source.' };
-  }
+  const missing = missingSource(input);
+  if (missing !== undefined) return { label: plain.label, reason: missing };
   if (input.stage === 'scan') return plain;
   const reason = understandReason(input);
   if (reason !== undefined) return { label: plain.label, reason };
