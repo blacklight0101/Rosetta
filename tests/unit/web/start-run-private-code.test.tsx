@@ -258,3 +258,29 @@ it('RF-132 DEC-118 after the switch the notices an Ollama refusal had raised go 
     expect(screen.queryByRole('region', { name: noticeName })).toBeNull();
   });
 });
+
+it('RF-128 RF-132 an uploaded project with a source and a cloud role shows the source and the second confirmation together', async () => {
+  renderStart(uploadAnswers(oneCloudRole));
+  await ready();
+
+  expect(screen.getByRole('heading', { name: 'Source' })).not.toBeNull();
+  expect(screen.getByText('OrderDesk (zip, 19 Oct 2026)')).not.toBeNull();
+  expect(screen.getByRole('region', { name: noticeName })).not.toBeNull();
+  fireEvent.click(input(consentLabel));
+  fireEvent.click(input(privateLabel));
+  expect(start().disabled).toBe(false);
+});
+
+it('RF-128 RF-132 an uploaded project with no source keeps Start off even with both boxes ticked', async () => {
+  renderStart({
+    ...uploadAnswers(oneCloudRole),
+    [`GET ${projectPath}`]: json(200, { ...uploadProject, source: null }),
+  });
+  await ready();
+
+  fireEvent.click(input(consentLabel));
+  fireEvent.click(input(privateLabel));
+
+  expect(start().disabled).toBe(true);
+  expect(start().title).toContain('Upload a zip first');
+});

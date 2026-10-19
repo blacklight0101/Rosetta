@@ -69,8 +69,6 @@ export type RoleCapSettings = z.output<typeof roleCapSettings>;
 export const projectSchema = z.object({
   id: z.string(),
   name: z.string(),
-  /** RF-130: where the code came from; a project from an older server has no kind and is GitHub. */
-  sourceKind: z.enum(['github', 'upload']).optional(),
   sourceUrl: z.string(),
   ref: z.string(),
   subpath: z.string(),

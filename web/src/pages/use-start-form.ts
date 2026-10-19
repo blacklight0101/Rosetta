@@ -142,7 +142,6 @@ export function useStartForm(loaded: Project): StartForm {
   const [chosenStage, setStage] = useState<RunStageChoice>('understand');
   const [url, setUrl] = useState(project.sourceUrl);
   const fields = useLimitFields(project);
-  const { capText, thresholdText, capMicros } = fields;
   const [checked, setChecked] = useState(false);
   const confirmed = useAreaConfirmations();
   const [refused, setRefused] = useState(false);
@@ -153,14 +152,14 @@ export function useStartForm(loaded: Project): StartForm {
   const stage = estimate.status === 'none' ? 'scan' : chosenStage;
   const roles = stage === 'understand' ? consentRoles(estimate, refused) : [];
   const names = providerNames(roles.map((role) => role.provider));
-  const warnings = warningsOf({ stage, estimate, capMicros, limits });
+  const warnings = warningsOf({ stage, estimate, capMicros: fields.capMicros, limits });
   const privateCode = usePrivateCode(project, roles.length > 0, (saved) => {
     setProject(saved);
     setRefused(false);
     choice.reestimate();
   });
   const actions = useStartActions({
-    ...{ project, stage, url, capText, thresholdText, areas: choice.chosen, consent: checked },
+    ...{ project, stage, url, ...fields, areas: choice.chosen, consent: checked },
     privateConfirmed: privateCode.confirmed,
     withAnswers: rerun.answered > 0 && rerun.checked,
     likelyMicros: likelyOf(estimate),

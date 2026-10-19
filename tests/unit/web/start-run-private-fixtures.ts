@@ -30,6 +30,9 @@ export const twoCloudProviders = estimateOf([openAiReader, anthropicVerifier]);
 /** Every role on Ollama. */
 export const allLocalRoles = estimateOf([ollamaReader, ollamaVerifier]);
 
+/** The zip the project holds (RF-128); without one Start stays off. */
+const stored = { fileName: 'orderdesk.zip', uploadedAt: '2026-10-19T09:00:00.000Z' };
+
 function cloudSettings(): Record<string, unknown> {
   const settings = templateSettings();
   const openai = { ...settings.providers.ollama, kind: 'openai', keySource: 'user-then-server' };
@@ -54,6 +57,7 @@ function cloudSettings(): Record<string, unknown> {
 export const uploadProject = projectOf('p-1', 'OrderDesk', {
   sourceKind: 'upload',
   sourceUrl: '',
+  source: stored,
   settings: cloudSettings(),
 });
 
@@ -63,6 +67,7 @@ export const uploadProjectAnswer = json(200, uploadProject);
 export const uploadProjectOnOllama = projectOf('p-1', 'OrderDesk', {
   sourceKind: 'upload',
   sourceUrl: '',
+  source: stored,
   settingsVersion: 2,
   settings: templateSettings(),
 });
