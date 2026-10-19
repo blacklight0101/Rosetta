@@ -186,7 +186,7 @@ describe('journeyOf: questions, brief and estimate', () => {
     });
     expect(step(view, 'brief')).toMatchObject({ state: 'upcoming', here: false });
     expect(view.action).toEqual({
-      kind: 'link',
+      kind: 'answer',
       label: 'Answer 2 questions',
       href: `/runs/${sourceId}`,
     });
