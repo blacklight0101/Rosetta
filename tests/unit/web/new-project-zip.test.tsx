@@ -198,3 +198,30 @@ it('RF-128 the new project appears in the list as name (zip, date) once the zip 
   expect(row).not.toBeNull();
   expect(within(row ?? document.body).queryByText(/github/iu)).toBeNull();
 });
+
+it('RF-128 pressing submit twice while the zip goes out sends it once', async () => {
+  const server = installFakeUploadServer();
+  const view = renderUploadTab({ 'POST /api/projects': json(201, sourceless) });
+  await chooseValid();
+  await sendOne(server);
+
+  const form = screen.getByLabelText('Zip file').closest('form');
+  if (form === null) throw new Error('The zip field is not in a form.');
+  fireEvent.submit(form);
+
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(server.requests).toHaveLength(1);
+  expect(view.calls.filter((call) => call.method === 'POST')).toHaveLength(1);
+});
+
+it('RF-128 after a refused project creation the button still says Upload zip, not Upload again', async () => {
+  installFakeUploadServer();
+  renderUploadTab({ 'POST /api/projects': failure(422, 'RST-1900') });
+  await chooseValid();
+
+  fireEvent.click(uploadButton());
+
+  await screen.findByRole('alert');
+  expect(screen.queryByRole('button', { name: 'Upload again' })).toBeNull();
+  expect(screen.queryByText(/has no source/u)).toBeNull();
+});

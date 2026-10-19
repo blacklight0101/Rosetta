@@ -4,17 +4,18 @@ import { vi } from 'vitest';
 // XMLHttpRequest (fetch cannot report upload progress), so the fake stands in for that class. Every
 // request is recorded; a test answers it, or reports progress, from the outside.
 
-export interface UploadRequest {
+interface UploadRequest {
   readonly method: string;
   readonly path: string;
   readonly headers: Readonly<Record<string, string>>;
   readonly body: unknown;
 }
 
-export interface PendingUpload extends UploadRequest {
+interface PendingUpload extends UploadRequest {
   readonly progress: (loaded: number, total: number) => void;
   readonly respond: (status: number, body: unknown) => void;
   readonly failNetwork: () => void;
+  readonly failTimeout: () => void;
 }
 
 export interface FakeUploadServer {
@@ -82,6 +83,9 @@ export function installFakeUploadServer(): FakeUploadServer {
         },
         failNetwork() {
           request.onerror?.();
+        },
+        failTimeout() {
+          request.ontimeout?.();
         },
       };
     },

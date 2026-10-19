@@ -6,7 +6,7 @@ import { overviewRow, projectOf } from './project-fixtures.js';
 // P3-39, RF-128, RF-134: the Projects page with its Upload a zip tab, over the fake API and the
 // fake upload server. A zip starts with the local file header signature PK\x03\x04.
 
-export const noProjects = json(200, { projects: [], truncated: false });
+const noProjects = json(200, { projects: [], truncated: false });
 
 /** The project `POST /api/projects` makes for an upload: it has no source until the zip arrives. */
 export const sourceless = projectOf('p-9', 'OrderDesk', {

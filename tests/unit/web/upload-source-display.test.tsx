@@ -1,11 +1,11 @@
-import { screen, within } from '@testing-library/preact';
+import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it, vi } from 'vitest';
 import { StartRunPage } from '../../../web/src/pages/StartRunPage.js';
 import { ProjectsPage } from '../../../web/src/pages/ProjectsPage.js';
 import { json, renderPage } from './fake-api.js';
 import { installFakeUploadServer } from './fake-upload-server.js';
 import { overviewRow, projectOf } from './project-fixtures.js';
-import { overview, sourceless, withSource } from './zip-fixtures.js';
+import { overview, sourceless, withSource, zipFile } from './zip-fixtures.js';
 
 // RF-128, RF-134, RFC-004 section 4.5: how a project of kind upload shows in the projects list and on
 // its start page: `<name> (zip, <date>)`, the note that the code changed since the last run, and the
@@ -64,6 +64,7 @@ it('RF-128 an upload with no source is listed as having none', async () => {
     }),
   });
 
+  await screen.findByText('OrderDesk (zip, no source)');
   const row = rowOf('OrderDesk (zip, no source)');
 
   expect(within(row).getByText(/no source/iu)).not.toBeNull();
@@ -102,9 +103,71 @@ it('RF-128 the start page of an upload with no source says so, offers Upload aga
   installFakeUploadServer();
   renderStartOf(sourceless);
 
-  expect(await screen.findByText(/has no source/u)).not.toBeNull();
+  expect(await screen.findByText(/has no source. Upload a zip to start/u)).not.toBeNull();
   expect(screen.getByLabelText('Zip file')).not.toBeNull();
   const start = screen.getByRole('button', { name: /^Start run/u });
   expect(start.hasAttribute('disabled')).toBe(true);
   expect(start.getAttribute('title')).toBe('Upload a zip first: this project has no source.');
+});
+
+it('RF-128 a failed new upload to a project that already has a source does not say it has none', async () => {
+  const server = installFakeUploadServer();
+  renderStartOf(withSource);
+  await screen.findByText('OrderDesk (zip, 19 Oct 2026)');
+  const field = screen.getByLabelText('Zip file');
+  fireEvent.change(field, { target: { files: [zipFile('OrderDesk-2.zip')] } });
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Upload zip' }).hasAttribute('disabled')).toBe(false);
+  });
+
+  fireEvent.click(screen.getByRole('button', { name: 'Upload zip' }));
+  await waitFor(() => {
+    expect(server.requests).toHaveLength(1);
+  });
+  expect(server.requests[0]?.path).toBe('/api/projects/p-9/source');
+  server.pending().respond(413, {
+    code: 'RST-1912',
+    message: 'The zip is larger than the limit.',
+    nextStep: 'Zip again.',
+  });
+
+  await screen.findByRole('alert');
+  expect(screen.queryByText(/has no source/u)).toBeNull();
+  expect(screen.getByRole('button', { name: 'Upload again' })).not.toBeNull();
+});
+
+it('RF-128 a stored zip updates the source line and releases Start', async () => {
+  const server = installFakeUploadServer();
+  renderStartOf(sourceless);
+  await screen.findByText(/has no source\. Upload a zip to start/u);
+  fireEvent.change(screen.getByLabelText('Zip file'), {
+    target: { files: [zipFile('OrderDesk.zip')] },
+  });
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Upload zip' }).hasAttribute('disabled')).toBe(false);
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Upload zip' }));
+  await waitFor(() => {
+    expect(server.requests).toHaveLength(1);
+  });
+
+  server.pending().respond(201, { files: 1, size: 10, skipped: 0, snapshotHash: 'b'.repeat(64) });
+
+  expect(await screen.findByText(/1 file kept/u)).not.toBeNull();
+  expect(screen.queryByText(/has no source\. Upload a zip to start/u)).toBeNull();
+  expect(screen.getByText(/^OrderDesk \(zip, \d{1,2} \w{3} \d{4}\)$/u)).not.toBeNull();
+});
+
+it('RF-128 the start page form keeps the project it has: no name field to make another', async () => {
+  renderStartOf(withSource);
+  await screen.findByText('OrderDesk (zip, 19 Oct 2026)');
+
+  fireEvent.change(screen.getByLabelText('Zip file'), {
+    target: { files: [zipFile('Another.zip')] },
+  });
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Upload zip' }).hasAttribute('disabled')).toBe(false);
+  });
+  expect(screen.queryByLabelText('Project name')).toBeNull();
 });
