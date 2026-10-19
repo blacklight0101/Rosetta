@@ -236,3 +236,30 @@ describe('YauzlZipExtractor left-out folders and the top-level folder', () => {
     await expect(extractZip(root.path, zip)).rejects.toMatchObject({ code: 'RST-1913' });
   });
 });
+
+describe('YauzlZipExtractor __MACOSX folders (RF-129, DEC-151)', () => {
+  it('RF-129 a __MACOSX tree is left out and counted', async () => {
+    const zip = await buildZip([
+      { name: 'proj/a.txt', data: 'a' },
+      { name: '__MACOSX/proj/._a.txt', data: 'x' },
+      { name: '__MACOSX/._proj', data: 'y' },
+    ]);
+
+    const result = await extractZip(root.path, zip);
+
+    expect(result.keptFiles).toBe(1);
+    expect(result.leftOutEntries).toBe(2);
+  });
+
+  it('RF-129 a project folder literally named __MACOSX below the top level is left out at any depth', async () => {
+    const zip = await buildZip([
+      { name: 'proj/a.txt', data: 'a' },
+      { name: 'proj/__MACOSX/b.txt', data: 'b' },
+    ]);
+
+    const result = await extractZip(root.path, zip);
+
+    expect(result.keptFiles).toBe(1);
+    expect(result.leftOutEntries).toBe(1);
+  });
+});

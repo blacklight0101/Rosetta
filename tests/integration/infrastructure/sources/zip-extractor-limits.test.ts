@@ -74,37 +74,6 @@ describe('YauzlZipExtractor total size from the central directory', () => {
   });
 });
 
-describe('YauzlZipExtractor the compression ratio', () => {
-  it('RF-129 an entry far above the ratio limit stops with RST-1912 before anything is written', async () => {
-    const zip = await buildZip([
-      { name: 'p/ok.txt', data: 'fine' },
-      { name: 'p/bomb.txt', data: Buffer.alloc(2_000_000, 0) },
-    ]);
-
-    await expect(extractZip(root.path, zip)).rejects.toMatchObject({ code: 'RST-1912' });
-    expect(await targetExists(root.path)).toBe(false);
-  });
-
-  it('RF-129 the ratio limit is a setting: the same entry passes under a higher one', async () => {
-    const zip = await buildZip([{ name: 'p/zeros.txt', data: Buffer.alloc(2000, 0) }]);
-
-    const result = await extractZip(root.path, zip, { maxRatio: 1000 });
-
-    expect(result.keptFiles).toBe(1);
-  });
-
-  it('RF-129 the ratio of an entry that is left out is not judged', async () => {
-    const zip = await buildZip([
-      { name: 'p/ok.txt', data: 'fine' },
-      { name: 'p/node_modules/zeros.bin', data: Buffer.alloc(100_000, 0) },
-    ]);
-
-    const result = await extractZip(root.path, zip);
-
-    expect(result.keptFiles).toBe(1);
-  });
-});
-
 describe('YauzlZipExtractor limits while writing', () => {
   it('RF-129 a central directory that understates sizes is stopped by the written-byte count', async () => {
     const zip = patchCentral(

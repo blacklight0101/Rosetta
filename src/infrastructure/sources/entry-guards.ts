@@ -44,8 +44,14 @@ export function hasUnwritableSegment(segments: readonly string[]): boolean {
   return segments.some((segment) => segment.includes(':') || isDeviceName(segment));
 }
 
-/** Folders whose files are version control, build output or restored packages (RF-129). */
-const LEFT_OUT_FOLDERS: ReadonlySet<string> = new Set(['.git', 'node_modules', 'bin', 'obj']);
+/** Folders whose files are version control, build output, restored packages or macOS zip metadata (RF-129, DEC-151). */
+const LEFT_OUT_FOLDERS: ReadonlySet<string> = new Set([
+  '.git',
+  'node_modules',
+  'bin',
+  'obj',
+  '__macosx',
+]);
 
 /** Whether a folder on the way to the file (not the file name itself) is one that is left out; case is ignored. */
 export function isInLeftOutFolder(segments: readonly string[]): boolean {
