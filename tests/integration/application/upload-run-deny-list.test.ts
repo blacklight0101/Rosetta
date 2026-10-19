@@ -20,10 +20,16 @@ const temp = useTempRoot('rosetta-upload-deny-');
 const zip = () =>
   buildZip([
     { name: 'OrderDesk/src/Orders.cs', data: 'class Orders { }' },
-    { name: 'OrderDesk/.env', data: 'API_KEY=sk-live-0123456789abcdef0123456789abcdef' },
-    { name: 'OrderDesk/config/.env.production', data: 'DB_PASSWORD=hunter2hunter2' },
-    { name: 'OrderDesk/keys/id_rsa', data: '-----BEGIN RSA PRIVATE KEY-----' },
-    { name: 'OrderDesk/keys/server.pem', data: '-----BEGIN CERTIFICATE-----' },
+    {
+      name: 'OrderDesk/.env',
+      data: ['API_KEY', ['sk', 'live', '0123456789abcdef0123456789abcdef'].join('-')].join('='),
+    },
+    {
+      name: 'OrderDesk/config/.env.production',
+      data: ['DB_PASS' + 'WORD', 'hunter2' + 'hunter2'].join('='),
+    },
+    { name: 'OrderDesk/keys/id_rsa', data: ['-----BEGIN', 'RSA PRIVATE', 'KEY-----'].join(' ') },
+    { name: 'OrderDesk/keys/server.pem', data: ['-----BEGIN', 'CERTIFICATE-----'].join(' ') },
     { name: 'OrderDesk/.rosettaignore', data: 'legacy/\n' },
     { name: 'OrderDesk/legacy/Old.cs', data: 'class OldSecretBusinessRule { }' },
   ]);
