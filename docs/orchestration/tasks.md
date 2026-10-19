@@ -3649,7 +3649,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-41
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/use-cases/start-run.ts` and the code that starts a queued run; the start page and `web/src/pages/local-roles.ts`; the second confirmation of P3-41; RF-132 (as changed by DEC-151); the verdict on #611.
 - **Do**: when a queued run actually starts, run the same private-code check as the API start (RST-1521, or the code the code base uses for it) against the project's roles at that moment; if a role is now on a cloud provider and the confirmation no longer holds, the run does not start, is marked with that code, and the message says why (roles changed to a cloud provider, private code needs confirming again). The link "Switch every role to Ollama" shows the model it sets in its text, taking the name from the one constant in `local-roles.ts` (`gemma4:e4b` today), not written a second time.
 - **Review probes**: a queued run whose project roles change to a cloud provider before it starts (does not start, RST-1521 or the code the code base uses, the message names why); a queued run with unchanged roles (starts); a queued run whose roles are all local (starts); the link text names `gemma4:e4b` and changing the constant changes the text (a test reads the constant); GitHub projects unchanged (never asked, never blocked).
@@ -3664,7 +3664,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-38, P3-42
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the upload endpoint and the `X-File-Name` handling from P3-38; the free-space check (DEC-149); `web/src/.../UploadSourceSection.tsx` and the start page; the P3-42 journey; the verdicts on #614 and #615.
 - **Do**: the minors the P3-38 and P3-42 verifiers recorded. (1) Strip the Unicode bidi controls U+202A..U+202E, U+2066..U+2069, U+200E and U+200F from `X-File-Name`, and keep surrogate pairs whole when cutting the name at 200 characters. (2) A name that fails percent-decoding gets its own clear message and code instead of "not a readable zip". (3) The free-space check (DEC-149, twice the limit) reserves space while an upload runs, so parallel uploads cannot each pass against the same free bytes; the reservation is released when the upload ends or fails. (4) After a replacing upload the start page shows "The code changed since the last run." without a reload (`UploadSourceSection.tsx`), and the P3-42 journey drops its `page.reload()`.
 - **Review probes**: a name with a right-to-left override (stripped); a name cut at 200 characters in the middle of an emoji (the pair stays whole or is dropped whole); `X-File-Name: %E0%A4%A` (own message); two uploads started together with room for one (the second is refused for space); an upload that fails (its reservation is released); a replacing upload (notice shown, no reload).

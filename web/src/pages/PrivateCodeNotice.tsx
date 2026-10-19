@@ -4,6 +4,7 @@ import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { Glyph } from '../components/Glyph.js';
+import { LOCAL_OLLAMA_MODEL } from './local-roles.js';
 
 // RF-132, RF-1001, design-system.md section 14 (Start run): the second notice, for a project of kind
 // `upload` whose roles would send code to a cloud provider. It names the project and every provider
@@ -66,7 +67,7 @@ export function PrivateCodeNotice(props: PrivateCodeNoticeProps): JSX.Element {
           />
           <p>
             <Button variant="ghost" busy={props.switching} onClick={props.onSwitch}>
-              Switch every role to Ollama
+              {`Switch every role to Ollama (${LOCAL_OLLAMA_MODEL})`}
             </Button>{' '}
             Models then run on the Ollama server of this installation.
           </p>

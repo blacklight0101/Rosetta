@@ -62,6 +62,7 @@ const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.uploadTimedOut]: 408,
   [ERROR_CODES.uploadInProgress]: 409,
   [ERROR_CODES.projectNoSource]: 409,
+  [ERROR_CODES.uploadNameUnreadable]: 400,
   [ERROR_CODES.notSignedIn]: 401,
   [ERROR_CODES.notAllowed]: 403,
   [ERROR_CODES.originRefused]: 403,
