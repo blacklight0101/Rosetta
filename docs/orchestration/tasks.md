@@ -3500,7 +3500,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-43
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-005 section 4.3; ADR-022; ADR-023; `src/infrastructure/sources/zip-extractor.ts`, `zip-entry-plan.ts`, `entry-guards.ts`, `zip-limits.ts`, `zip-errors.ts`; RF-127, RF-129, RF-151.
 - **Do**: add `saxes` 6.0.0 and `cfb` 1.2.2 pinned exactly (ADR-023) with their rows in the package baseline of `docs/environments-and-delivery.md`; a reader in `src/infrastructure/sources/workbook/` that opens the package with `yauzl` under the RF-129 guards (reusing `entry-guards.ts`, nothing written to disk), streams each part into `saxes`, refuses a document type, an entity declaration and nesting deeper than 64, counts sheets, non-empty cells, shared strings and inflated part bytes against the settings `ROSETTA_WORKBOOK_MAX_FILES`, `ROSETTA_WORKBOOK_MAX_SHEETS`, `ROSETTA_WORKBOOK_MAX_CELLS` (start-up validation as `ROSETTA_UPLOAD_MAX_MB`), names a compound file as encrypted or legacy with `cfb`, refuses `.xlsb`, and returns a typed workbook model (sheets, cells with cached values and number formats, formulas with shared and array forms, names, tables, validation, conditional rules, comments without authors, external links, connections, pivots, charts). New codes RST-1921..RST-1928 in the catalogue and `docs/conventions.md`.
 - **Review probes**: a DOCTYPE in `sharedStrings.xml` only; an internal entity used once; 65 nested elements; a sheet part whose central-directory size understates its inflated size; 201 sheets; one cell over the cell limit across two workbooks; a shared-string table larger than the cell limit; an encrypted file renamed `.xlsx`; an `.xls` renamed `.xlsx`; an `.xlsb`; a sheet named in `workbook.xml.rels` but missing; a formula with a string holding `!` and `[`; a setting of 0, -1, `abc` and one above its range.
@@ -3605,7 +3605,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-43
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/sources/evidence-link.ts`; `src/infrastructure/cards/citation-link.ts`; the report header and package writers; the evidence pages (P3-02); the second confirmation of P3-41; RF-131, RF-132, RF-156, RF-157.
 - **Do**: citations of a `workbook` project link to the evidence page like an upload; a label beside a citation to a rendered file names the workbook, sheet and cells read from the cited lines' prefixes; report, package and run-page headers name the workbooks, the upload date and the hash; the second confirmation is asked for a workbook project and an upload with rendered workbooks, worded "Cell values, formulas and macros from <project> will be sent to <provider>", with the RF-132 code on an API start without it.
 - **Review probes**: a citation to `dependencies.md`, to `workbook.md` and to a `.bas` file (labels or none); a citation across a region heading; a report of a workbook project searched for `github.com` (none); a zip project with and without workbooks (wording); a GitHub project's report (byte-identical to main).
