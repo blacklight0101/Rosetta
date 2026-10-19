@@ -69,6 +69,7 @@ export function projectView(project: Project): Record<string, unknown> {
   return {
     id: project.id,
     name: project.name,
+    sourceKind: project.sourceKind,
     sourceUrl: project.sourceUrl,
     ref: project.ref,
     subpath: project.subpath,

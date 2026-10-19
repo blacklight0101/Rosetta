@@ -29,7 +29,8 @@ import { runView } from './run-view.js';
 // - POST /api/projects/:id/runs starts a run of one stage of the user's project: 202 with the run
 //   and its queue position (null when it started); a stage that cannot be started yet answers 409
 //   (RST-2305), another user's project 404. An understand run takes `areas` and `cloudConsent`;
-//   one whose roles need the consent and lack it answers 400 (RST-1515, RF-143).
+//   one whose roles need the consent and lack it answers 400 (RST-1515, RF-143); on an uploaded
+//   project it also needs `privateCodeConfirmed: true`, else 400 (RST-1521, RF-132).
 // - GET and POST /api/projects/:id/estimate give the estimate of an understand run (estimate-routes.ts).
 // - GET /api/runs/:runId gives the run as the start answered it (stage, queue and end state, project,
 //   totals so far), `reportBuilt`, whether its report exists (P1-130), and `position`, the place of a
@@ -75,6 +76,8 @@ const startBody = z.strictObject({
   stage: z.enum(RUN_STAGES),
   areas: z.array(areaName).max(MAX_AREAS).optional(),
   cloudConsent: z.boolean().optional(),
+  /** RF-132: the second confirmation for the private code of an upload. */
+  privateCodeConfirmed: z.boolean().optional(),
   withAnswers: z.boolean().optional(),
   /** RF-614: `plan` is written from this understand run (its id). */
   sourceRunId: z.string().min(1).max(64).optional(),
@@ -170,13 +173,15 @@ function registerStart(server: FastifyInstance, services: RunServices): void {
     async (request, reply) => {
       const body = startBody.safeParse(request.body);
       if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
-      const { stage, areas, cloudConsent, withAnswers, sourceRunId } = body.data;
+      const { stage, areas, cloudConsent, privateCodeConfirmed, withAnswers, sourceRunId } =
+        body.data;
       const outcome = await services.startRun.execute({
         actor: signedInOf(request).actor,
         projectId: request.params.id,
         stage,
         ...(areas === undefined ? {} : { areas }),
         ...(cloudConsent === undefined ? {} : { cloudConsent }),
+        ...(privateCodeConfirmed === undefined ? {} : { privateCodeConfirmed }),
         ...(withAnswers === undefined ? {} : { withAnswers }),
         ...(sourceRunId === undefined ? {} : { sourceRunId }),
       });

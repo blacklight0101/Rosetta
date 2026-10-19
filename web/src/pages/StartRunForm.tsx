@@ -4,6 +4,7 @@ import type { Project } from '../api/project-schemas.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { useRefusalFocus } from '../lib/use-refusal-focus.js';
 import { CloudNotice } from './CloudNotice.js';
+import { PrivateCodeNotice } from './PrivateCodeNotice.js';
 import { EstimateSection } from './EstimateSection.js';
 import { RepositorySection } from './RepositorySection.js';
 import { UploadSourceSection } from './UploadSourceSection.js';
@@ -14,7 +15,7 @@ import { StageAreasSection } from './StageAreasSection.js';
 import { SummaryBar } from './SummaryBar.js';
 import { useStartForm, type StartForm } from './use-start-form.js';
 
-// RF-1001, RF-143, RF-425, RF-1108, RF-1018, DEC-108, design-system.md section 14 (Start run): the
+// RF-1001, RF-143, RF-132, RF-425, RF-1108, RF-1018, DEC-108, design-system.md section 14 (Start run): the
 // page body. Repository, stage and areas, the estimate with the run cap, the cloud notice with its
 // consent, the queue notice, and the summary bar with Start (SummaryBar.tsx). A refusal shows next to the field it names and focus moves to
 // the first of them; one that names no field shows above Start.
@@ -78,6 +79,24 @@ function Confirmation({ form }: { readonly form: StartForm }): JSX.Element | nul
   );
 }
 
+/** RF-132: the second notice of an uploaded project whose roles send code to a cloud provider. */
+function PrivateCode({ form }: { readonly form: StartForm }): JSX.Element | null {
+  const { privateCode, consent, actions, project } = form;
+  if (!privateCode.needed) return null;
+  return (
+    <PrivateCodeNotice
+      projectName={project.name}
+      providers={consent.names}
+      confirmed={privateCode.checked}
+      error={actions.refusals.private}
+      onConfirm={privateCode.set}
+      onSwitch={privateCode.switchToOllama.run}
+      switching={privateCode.switchToOllama.switching}
+      switchError={privateCode.switchToOllama.error}
+    />
+  );
+}
+
 // RF-1001
 export function StartRunForm({ project }: { readonly project: Project }): JSX.Element {
   const form = useStartForm(project);
@@ -116,6 +135,7 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
           onConsent={consent.set}
         />
       )}
+      <PrivateCode form={form} />
       {actions.refusals.start === undefined ? null : <ErrorBanner error={actions.refusals.start} />}
       {actions.notice === undefined ? null : (
         <RunNotice notice={actions.notice} busy={actions.busy} onCancel={actions.cancel} />

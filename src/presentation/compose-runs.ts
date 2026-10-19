@@ -206,7 +206,7 @@ function runServices(service: ServiceParts): RunServices {
     countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
     readOverview: new ReadOverview({ runs, files: new FileRunTextFiles(writer) }),
     // RF-608, RF-609: the options of Plan setup, asked of the planner for a project.
-    suggestPlanOptions: composePlanOptions({ ...parts, writer, projects, runs, scans }),
+    suggestPlanOptions: composePlanOptions({ ...parts, writer, projects, runs, scans, ollamaHost }),
     ...observability,
     heartbeat: keepAliveScheduler(parts.logger),
     streams: parts.streams,

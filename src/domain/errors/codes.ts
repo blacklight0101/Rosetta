@@ -85,6 +85,7 @@ export const ERROR_CODES = {
   anthropicKeyRejected: 'RST-1518',
   anthropicModelUnknown: 'RST-1519',
   anthropicCreditExhausted: 'RST-1520',
+  privateCodeNotConfirmed: 'RST-1521',
   budgetCapReached: 'RST-1600',
   modelUnpriced: 'RST-1601',
   priceTableInvalid: 'RST-1602',

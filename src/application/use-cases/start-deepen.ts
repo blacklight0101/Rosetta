@@ -1,4 +1,5 @@
 import type { Actor } from '../../domain/accounts/actor.js';
+import type { Project } from '../projects/project.js';
 import { canDeepen } from '../../domain/deepen/deepen-record.js';
 import { DEEPEN_ROUNDS, isAllowedRoundLimit } from '../../domain/deepen/stop-rule.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -10,6 +11,7 @@ import { scopeOf } from '../runs/run-scope.js';
 import {
   readUnderstandOptions,
   rolesNeedCloudConsent,
+  rolesNeedPrivateConfirmation,
   understandOptionsOf,
 } from '../understand/understand-options.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
@@ -42,6 +44,8 @@ export interface StartDeepenRequest {
   /** Q-J: ticked unless the owner unticked it. */
   readonly coveragePass?: boolean | undefined;
   readonly cloudConsent?: boolean | undefined;
+  /** RF-132: the second confirmation, for an uploaded project whose roles use a cloud provider. */
+  readonly privateCodeConfirmed?: boolean | undefined;
 }
 
 export type StartDeepenProblem =
@@ -50,6 +54,7 @@ export type StartDeepenProblem =
   | typeof ERROR_CODES.deepenNotConfirmed
   | typeof ERROR_CODES.requestInvalid
   | typeof ERROR_CODES.cloudConsentMissing
+  | typeof ERROR_CODES.privateCodeNotConfirmed
   | typeof ERROR_CODES.runStageNotAvailable;
 
 export class StartDeepen {
@@ -72,17 +77,36 @@ export class StartDeepen {
     const stored = await this.deps.manifests.read(scopeOf(run));
     if (project === undefined || stored === undefined) return err(ERROR_CODES.notFound);
     const cloudConsent = request.cloudConsent === true;
-    if (!cloudConsent && rolesNeedCloudConsent(project.settings, this.deps.ollamaHost)) {
-      return err(ERROR_CODES.cloudConsentMissing);
-    }
+    const refusal = this.consentRefusal(request, project);
+    if (refusal !== undefined) return err(refusal);
+    const privateCodeConfirmed = request.privateCodeConfirmed === true;
     const { areas } = readUnderstandOptions(stored.options);
     const deepen = { parentRunId: run.id, maxRounds, coveragePass: request.coveragePass !== false };
-    const options = understandOptionsOf({ areas, cloudConsent, deepen });
+    const options = understandOptionsOf({
+      ...{ areas, cloudConsent, deepen },
+      privateCodeConfirmed:
+        privateCodeConfirmed && rolesNeedPrivateConfirmation(project, this.deps.ollamaHost),
+    });
     return this.deps.submit.execute({
       actor,
       project,
       stage: 'understand',
       options: { ...options },
     });
+  }
+
+  /** RF-143: no consent for a cloud provider; RF-132: no second confirmation for an upload. */
+  private consentRefusal(
+    request: StartDeepenRequest,
+    project: Project,
+  ): StartDeepenProblem | undefined {
+    const { ollamaHost } = this.deps;
+    if (request.cloudConsent !== true && rolesNeedCloudConsent(project.settings, ollamaHost)) {
+      return ERROR_CODES.cloudConsentMissing;
+    }
+    const needsPrivate = rolesNeedPrivateConfirmation(project, ollamaHost);
+    return needsPrivate && request.privateCodeConfirmed !== true
+      ? ERROR_CODES.privateCodeNotConfirmed
+      : undefined;
   }
 }

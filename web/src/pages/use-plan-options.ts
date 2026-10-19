@@ -22,6 +22,8 @@ export interface OptionsRequest {
   /** The planner may be called: its kind is known, and any consent it needs is given. */
   readonly allowed: boolean;
   readonly consent: boolean;
+  /** RF-132: the second confirmation, ticked for an uploaded project with a cloud planner. */
+  readonly privateConfirmed?: boolean;
   /** RF-614: the understand run the options are recommended from. */
   readonly sourceRunId: string | undefined;
 }
@@ -33,6 +35,7 @@ export function usePlanOptions(request: OptionsRequest): {
 } {
   const { client } = useApp();
   const { projectId, wanted, allowed, consent, sourceRunId } = request;
+  const privateCodeConfirmed = request.privateConfirmed === true;
   const [load, setLoad] = useState<OptionsLoad>({ status: 'idle' });
   const [attempt, setAttempt] = useState(0);
   const start = wanted && allowed;
@@ -40,20 +43,20 @@ export function usePlanOptions(request: OptionsRequest): {
     if (!start) return undefined;
     let current = true;
     setLoad({ status: 'loading' });
-    void getPlanOptions(client, projectId, { cloudConsent: consent, sourceRunId }).then(
-      (result) => {
-        if (!current) return;
-        setLoad(
-          result.ok
-            ? { status: 'ready', options: result.value }
-            : { status: 'failed', error: result.error },
-        );
-      },
-    );
+    void getPlanOptions(client, projectId, {
+      ...{ cloudConsent: consent, privateCodeConfirmed, sourceRunId },
+    }).then((result) => {
+      if (!current) return;
+      setLoad(
+        result.ok
+          ? { status: 'ready', options: result.value }
+          : { status: 'failed', error: result.error },
+      );
+    });
     return () => {
       current = false;
     };
-  }, [client, projectId, start, consent, sourceRunId, attempt]);
+  }, [client, projectId, start, consent, privateCodeConfirmed, sourceRunId, attempt]);
   const askAgain = useCallback(() => {
     setAttempt((each) => each + 1);
   }, []);

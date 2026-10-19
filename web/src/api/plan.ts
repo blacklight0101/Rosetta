@@ -95,17 +95,33 @@ export function getPlanSource(
   });
 }
 
+/** The consent of the planner, the second confirmation of an upload (RF-132) and the source run. */
+interface PlanRequest {
+  readonly cloudConsent: boolean;
+  readonly privateCodeConfirmed?: boolean | undefined;
+  readonly sourceRunId?: string | undefined;
+}
+
+/** RF-132: sent only when given, so a GitHub project's request is what it always was. */
+function privateField(request: PlanRequest): { readonly privateCodeConfirmed?: true } {
+  return request.privateCodeConfirmed === true ? { privateCodeConfirmed: true } : {};
+}
+
 // RF-608, RF-609, RF-143, RF-614
 export function getPlanOptions(
   client: ApiClient,
   projectId: string,
-  request: { readonly cloudConsent: boolean; readonly sourceRunId?: string | undefined },
+  request: PlanRequest,
 ): Promise<ApiResult<PlanOptions>> {
   const { cloudConsent, sourceRunId } = request;
   return client.request({
     method: 'POST',
     path: `${projectPath(projectId)}/plan-options`,
-    body: sourceRunId === undefined ? { cloudConsent } : { cloudConsent, sourceRunId },
+    body: {
+      cloudConsent,
+      ...privateField(request),
+      ...(sourceRunId === undefined ? {} : { sourceRunId }),
+    },
     schema: planOptionsSchema,
     timeoutMs: OPTIONS_TIMEOUT_MS,
   });
@@ -130,16 +146,17 @@ export function getPlanEstimate(
 export function startPlanRun(
   client: ApiClient,
   projectId: string,
-  request: { readonly cloudConsent: boolean; readonly sourceRunId?: string | undefined },
+  request: PlanRequest,
 ): Promise<ApiResult<StartedRun>> {
   const { cloudConsent, sourceRunId } = request;
   return client.request({
     method: 'POST',
     path: `${projectPath(projectId)}/runs`,
-    body:
-      sourceRunId === undefined
-        ? { stage: 'plan', cloudConsent }
-        : { stage: 'plan', cloudConsent, sourceRunId },
+    body: {
+      ...{ stage: 'plan', cloudConsent },
+      ...privateField(request),
+      ...(sourceRunId === undefined ? {} : { sourceRunId }),
+    },
     schema: startedRunSchema,
   });
 }

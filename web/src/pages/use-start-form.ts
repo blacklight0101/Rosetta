@@ -7,6 +7,7 @@ import { cloudRoles, pricedTotal } from '../lib/estimate-math.js';
 import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import { providerNames } from './provider-choices.js';
 import { startGate, type StartGate } from './start-gate.js';
+import { usePrivateCode, type PrivateCode } from './use-private-code.js';
 import type { EstimateLoad } from './use-estimate.js';
 import { useEstimateChoice, type EstimateChoice } from './use-estimate-choice.js';
 import { useSpendLimits } from './use-spend-limits.js';
@@ -63,6 +64,8 @@ export interface StartForm {
   readonly thresholdMicros: bigint;
   readonly setThresholdText: (text: string) => void;
   readonly consent: CloudConsent;
+  /** RF-132: the second confirmation of an uploaded project whose roles use a cloud provider. */
+  readonly privateCode: PrivateCode;
   readonly warnings: readonly CapWarning[];
   readonly gate: StartGate;
   readonly actions: StartActions;
@@ -105,34 +108,60 @@ function likelyOf(estimate: EstimateLoad): bigint | undefined {
   return estimate.status === 'ready' ? pricedTotal(estimate.estimate, 'likely') : undefined;
 }
 
+/** DEC-117: the run cap and the confirm threshold as the user types them, from the project's own. */
+function useLimitFields(project: Project) {
+  const [capText, setCapText] = useState(microsToDollars(runCapOf(project).toString()));
+  const [thresholdText, setThresholdText] = useState(
+    microsToDollars(String(project.settings.budget.confirmAboveCostMicros)),
+  );
+  const { budget } = project.settings;
+  const capMicros = micros(capText, budget.run.maxCostMicros);
+  const thresholdMicros = micros(thresholdText, budget.confirmAboveCostMicros);
+  return { capText, setCapText, thresholdText, setThresholdText, capMicros, thresholdMicros };
+}
+
+/** RF-113, RF-1018: whether the user confirmed the old code map and the library areas. */
+function useAreaConfirmations() {
+  const [oldMap, setOldMap] = useState(false);
+  const [library, setLibrary] = useState(false);
+  return {
+    oldMap: { confirmed: oldMap, set: setOldMap },
+    library: { confirmed: library, set: setLibrary },
+  };
+}
+
+/** RF-241: the questions with an answer, and whether the run re-uses them. */
+function useRerun(projectId: string): StartForm['rerun'] {
+  const [checked, set] = useState(false);
+  return { answered: useAnsweredCount(projectId), checked, set };
+}
+
 // RF-1001, RF-143, DEC-108
 export function useStartForm(loaded: Project): StartForm {
   const [project, setProject] = useState(loaded);
   const [chosenStage, setStage] = useState<RunStageChoice>('understand');
   const [url, setUrl] = useState(project.sourceUrl);
-  const [capText, setCapText] = useState(microsToDollars(runCapOf(project).toString()));
-  const [thresholdText, setThresholdText] = useState(
-    microsToDollars(String(project.settings.budget.confirmAboveCostMicros)),
-  );
+  const fields = useLimitFields(project);
   const [checked, setChecked] = useState(false);
-  const [oldMapConfirmed, setOldMapConfirmed] = useState(false);
-  const [libraryConfirmed, setLibraryConfirmed] = useState(false);
+  const confirmed = useAreaConfirmations();
   const [refused, setRefused] = useState(false);
-  const [rerunChecked, setRerunChecked] = useState(false);
-  const answered = useAnsweredCount(loaded.id);
+  const rerun = useRerun(loaded.id);
   const choice = useEstimateChoice(project.id);
   const limits = useSpendLimits();
   const { estimate } = choice;
   const stage = estimate.status === 'none' ? 'scan' : chosenStage;
   const roles = stage === 'understand' ? consentRoles(estimate, refused) : [];
   const names = providerNames(roles.map((role) => role.provider));
-  const { budget } = project.settings;
-  const capMicros = micros(capText, budget.run.maxCostMicros);
-  const thresholdMicros = micros(thresholdText, budget.confirmAboveCostMicros);
-  const warnings = warningsOf({ stage, estimate, capMicros, limits });
+  const warnings = warningsOf({ stage, estimate, capMicros: fields.capMicros, limits });
+  const privateCode = usePrivateCode(project, roles.length > 0, (saved) => {
+    setProject(saved);
+    setRefused(false);
+    choice.reestimate();
+  });
   const actions = useStartActions({
-    ...{ project, stage, url, capText, thresholdText, areas: choice.chosen, consent: checked },
-    withAnswers: answered > 0 && rerunChecked,
+    ...{ project, stage, url, ...fields, areas: choice.chosen, consent: checked },
+    privateConfirmed: privateCode.confirmed,
+    withAnswers: rerun.answered > 0 && rerun.checked,
     likelyMicros: likelyOf(estimate),
     onSaved: setProject,
     onConsentRefused: () => {
@@ -142,17 +171,19 @@ export function useStartForm(loaded: Project): StartForm {
   const libraryChosen = choice.areas.some((area) => area.checked && area.thirdParty);
   const gate = startGate({
     ...{ stage, estimate, consentNeeded: names, consentGiven: checked },
+    privateNeeded: privateCode.needed,
+    privateGiven: privateCode.checked,
     chosenAreas: choice.chosen.length,
-    oldMapUnconfirmed: isOutdated(estimate) && !oldMapConfirmed,
-    libraryUnconfirmed: libraryChosen && !libraryConfirmed,
+    oldMapUnconfirmed: isOutdated(estimate) && !confirmed.oldMap.confirmed,
+    libraryUnconfirmed: libraryChosen && !confirmed.library.confirmed,
     noSource: project.sourceKind === 'upload' && project.source === null,
   });
   return {
-    ...{ project, choice, stage, setStage, url, setUrl, capText, setCapText, capMicros },
-    ...{ thresholdText, thresholdMicros, setThresholdText },
+    ...{ project, choice, stage, setStage, url, setUrl, ...fields },
     ...{ consent: { roles, names, checked, set: setChecked }, warnings, gate, actions, setProject },
-    rerun: { answered, checked: rerunChecked, set: setRerunChecked },
-    library: { chosen: libraryChosen, confirmed: libraryConfirmed, set: setLibraryConfirmed },
-    oldMap: { outdated: isOutdated(estimate), confirmed: oldMapConfirmed, set: setOldMapConfirmed },
+    privateCode,
+    rerun,
+    library: { chosen: libraryChosen, ...confirmed.library },
+    oldMap: { outdated: isOutdated(estimate), ...confirmed.oldMap },
   };
 }
