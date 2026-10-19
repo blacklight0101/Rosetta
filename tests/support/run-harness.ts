@@ -101,6 +101,8 @@ export interface RunHarnessOptions {
   readonly eventStore?: EventStore;
   /** The stages that have an executor; all five by default. */
   readonly stages?: readonly RunStage[];
+  /** Wraps the executor of a stage, as the composition root wraps the real ones (P3-54). */
+  readonly wrapExecutor?: (inner: RunExecutor, stage: RunStage) => RunExecutor;
 }
 
 const allStages: readonly RunStage[] = ['scan', 'understand', 'verify', 'report', 'plan'];
@@ -153,7 +155,10 @@ export function createRunHarness(options: RunHarnessOptions = {}): RunHarness {
   const { clock, logger, runs, manifests, events, broadcaster, lifecycle } = stores;
   const executor = new ControlledExecutor();
   const executors = Object.fromEntries(
-    (options.stages ?? allStages).map((stage) => [stage, executor]),
+    (options.stages ?? allStages).map((stage) => [
+      stage,
+      options.wrapExecutor === undefined ? executor : options.wrapExecutor(executor, stage),
+    ]),
   );
   const maxRunning = options.maxRunning ?? 2;
   const makeQueue = (): RunQueue =>

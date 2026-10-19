@@ -5,7 +5,7 @@ import { providerDefaults } from './provider-choices.js';
 // private-code notice. A role already on Ollama keeps its model; any other gets the default local
 // model of templates/project-settings.json. Everything else in the document stays as it is.
 
-const LOCAL_MODEL = 'gemma4:e4b';
+export const LOCAL_OLLAMA_MODEL = 'gemma4:e4b';
 
 /** The project settings with the reader, verifier, planner and summariser on Ollama. */
 // RF-132
@@ -16,7 +16,7 @@ export function settingsOnOllama(settings: ProjectSettings): ProjectSettings {
   ): Role => ({
     ...role,
     provider: 'ollama',
-    model: role.provider === 'ollama' ? role.model : LOCAL_MODEL,
+    model: role.provider === 'ollama' ? role.model : LOCAL_OLLAMA_MODEL,
   });
   const { reader, verifier, planner, summariser } = settings.roles;
   return {
