@@ -7,9 +7,17 @@ const root = useWritableTempRoot('rosetta-zip-ratio-');
 
 const MIB = 1024 * 1024;
 
-/** Bytes that do not compress, so an entry keeps a ratio near 1. */
+/** Pseudo-random bytes (a fixed xorshift sequence) that deflate cannot shrink. */
 function noise(length: number): Buffer {
-  return Buffer.from(Array.from({ length }, (_, i) => (i * 131 + (i >> 3) * 7) % 251));
+  const bytes = Buffer.alloc(length);
+  let state = 0x2545f491;
+  for (let i = 0; i < length; i += 1) {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    bytes[i] = state & 0xff;
+  }
+  return bytes;
 }
 
 /** `count` small entries of 1 MiB each: zeros plus a little noise, so the overall ratio is near 300 : 1. */
