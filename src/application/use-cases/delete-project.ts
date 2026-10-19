@@ -27,7 +27,7 @@ export interface DeleteProjectDependencies {
   readonly folders: WorkspaceFolders;
   readonly logger: Logger;
   /** RF-133: the snapshots of an upload project go with it. */
-  readonly uploads?: Pick<UploadStore, 'removeAllOf'>;
+  readonly uploads: Pick<UploadStore, 'removeAllOf'>;
 }
 
 export class DeleteProject {
@@ -54,7 +54,7 @@ export class DeleteProject {
     const afterRowsGone = async (): Promise<void> => {
       await runs.removeEndedOfProject(userId, project.id);
       // RF-133: the zips the project was fed go with it; the runs that used them are gone.
-      await this.deps.uploads?.removeAllOf(project.id);
+      await this.deps.uploads.removeAllOf(project.id);
       await removeFolder(folders, logger, target, 'gone');
     };
     if (!(await projects.remove(userId, project.id, afterRowsGone))) {

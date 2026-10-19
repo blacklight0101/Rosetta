@@ -154,6 +154,9 @@ export class ZipUploadStore implements UploadStore {
     await this.snapshots.writeInfo(partial, info);
     if (await this.snapshots.commit(partial, key)) {
       await this.snapshots.makeReadOnly(this.snapshots.snapshotDir(key));
+    } else {
+      // The same content is already stored: the newest upload names it (RF-128).
+      await this.snapshots.rewriteInfo(key, info);
     }
     const skipped = info.skippedLinks + extraction.leftOutEntries;
     return { key, info, zipBytes, skipped };

@@ -67,6 +67,18 @@ describe('PUT /api/projects/:id/source a request that is not an upload', () => {
     expect(uploads.requests[0]?.fileName).toBe('Café.zip');
   });
 
+  it('RF-128 takes application/x-zip-compressed too, which Windows browsers report for a zip', async () => {
+    const { amy, uploads } = await setup();
+    const id = await createUploadProject(amy);
+
+    const response = await put(amy, id, {
+      headers: { 'content-type': 'application/x-zip-compressed' },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(uploads.requests).toHaveLength(1);
+  });
+
   it('RF-128 refuses a name that is not a zip with RST-1909 before reading the body', async () => {
     const { amy, uploads } = await setup();
     const id = await createUploadProject(amy);

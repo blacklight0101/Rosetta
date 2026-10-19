@@ -274,7 +274,7 @@ export function historyServices(parts: {
   readonly logger: MemoryLogger;
   readonly costs: MemoryCostTotals;
   /** RF-133: the store whose snapshots a deleted project takes with it. */
-  readonly upload?: { readonly store: UploadStore };
+  readonly upload: { readonly store: UploadStore };
 }): ServerOptions['history'] {
   const { projects, folders, snapshots, logger, costs, upload } = parts;
   const runs = parts.runs.runs;
@@ -284,7 +284,7 @@ export function historyServices(parts: {
     deleteRun: new DeleteRun({ runs, folders, logger }),
     deleteProject: new DeleteProject({
       ...{ projects, runs, folders, logger },
-      ...(upload === undefined ? {} : { uploads: upload.store }),
+      uploads: upload.store,
     }),
     listSnapshots: new ListSnapshots({ snapshots, runs }),
     deleteSnapshot: new DeleteSnapshot({ snapshots, runs, logger }),

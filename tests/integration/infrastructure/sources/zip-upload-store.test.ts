@@ -81,6 +81,27 @@ describe('ZipUploadStore what is counted and kept', () => {
     expect(second.key).toBe(first.key);
     expect(await sourcesEntries(root.path)).toEqual([first.key]);
   });
+});
+describe('ZipUploadStore the same content stored again', () => {
+  it('RF-128 the newest upload of the same content names the snapshot, and it stays read-only', async () => {
+    const store = storeIn(root.path);
+    const first = await store.store(requestOf(bodyOf(await sampleZip())));
+
+    const second = await store.store(
+      requestOf(bodyOf(await sampleZip()), {
+        fileName: 'Renamed.zip',
+        uploadedAt: '2026-10-20T09:00:00.000Z',
+      }),
+    );
+
+    expect(second.info).toMatchObject({ fileName: 'Renamed.zip' });
+    expect(await store.read(first.key)).toMatchObject({
+      fileName: 'Renamed.zip',
+      uploadedAt: '2026-10-20T09:00:00.000Z',
+    });
+    const mode = await modeOf(join(root.path, 'sources', first.key, 'snapshot.json'));
+    expect(mode & 0o222).toBe(0);
+  });
 
   it('RF-128 different content is a different snapshot and the first stays', async () => {
     const store = storeIn(root.path);

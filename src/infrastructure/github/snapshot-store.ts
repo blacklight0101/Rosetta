@@ -30,6 +30,8 @@ const PARTIAL_PREFIX = '.partial-';
 const FILES = 'files';
 const INFO_FILE = 'snapshot.json';
 const READ_ONLY_FILE = 0o444;
+const WRITABLE_FILE = 0o644;
+const WRITABLE_DIR = 0o755;
 const READ_ONLY_DIR = 0o555;
 
 function entryRefused(detail: string): RosettaError {
@@ -223,6 +225,22 @@ export class SnapshotStore {
       }
       throw snapshotWriteFailed(`${key} could not be renamed into place`, error);
     }
+  }
+
+  /**
+   * Replaces the description of a committed snapshot, for an upload of the same content under a new
+   * name (RF-128). The tree is not touched; the folder and the file are read-only again afterwards.
+   */
+  async rewriteInfo(key: string, info: SnapshotInfo): Promise<void> {
+    const dir = this.snapshotDir(key);
+    const file = join(dir, INFO_FILE);
+    await onDisk('description could not be replaced', async () => {
+      await chmod(dir, WRITABLE_DIR);
+      await chmod(file, WRITABLE_FILE);
+      await this.writeInfo(dir, info);
+      await chmod(file, READ_ONLY_FILE);
+      await chmod(dir, READ_ONLY_DIR);
+    });
   }
 
   /** Marks files and folders read-only where the operating system allows it (RF-005). */

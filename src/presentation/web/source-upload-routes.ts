@@ -21,7 +21,9 @@ interface IdParams {
   readonly id: string;
 }
 
-const ZIP_TYPE = /^application\/zip\s*(;|$)/iu;
+// Windows browsers report a zip as application/x-zip-compressed; the first bytes decide either way.
+const ZIP_TYPES = ['application/zip', 'application/x-zip-compressed'];
+const ZIP_TYPE = /^application\/(zip|x-zip-compressed)\s*(;|$)/iu;
 const DIGITS = /^\d{1,15}$/u;
 
 /** The `Content-Length` the client declared; undefined when it sent none or sent nonsense. */
@@ -65,7 +67,7 @@ export function registerSourceUploadRoutes(
   services: SourceUploadServices,
 ): void {
   // The body stays a stream: the store reads it under its own limit and time bound.
-  server.addContentTypeParser('application/zip', (_request, payload, done) => {
+  server.addContentTypeParser(ZIP_TYPES, (_request, payload, done) => {
     done(null, payload);
   });
   server.put<{ Params: IdParams }>(
