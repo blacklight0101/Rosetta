@@ -24,6 +24,8 @@ export interface UnderstandSeed {
   readonly runKey?: string;
   /** RF-614: the areas the run read, as its manifest options record them. */
   readonly areas?: readonly string[];
+  /** RF-131: the run read an uploaded zip, not a repository; its manifest names the zip. */
+  readonly upload?: { readonly fileName: string; readonly uploadedAt: string };
 }
 
 export async function seedRun(s: Stores, project: Project, seed: UnderstandSeed): Promise<Run> {
@@ -31,17 +33,21 @@ export async function seedRun(s: Stores, project: Project, seed: UnderstandSeed)
     ...{ userId: account.id, projectId: project.id, stage: 'understand' },
     ...{
       runKey: seed.runKey ?? '20261012-090000-understand',
-      commitSha,
-      snapshotKey: `octo__demo@${commitSha}`,
+      ...(seed.upload === undefined
+        ? { commitSha, snapshotKey: `octo__demo@${commitSha}` }
+        : { commitSha: null, snapshotKey: `upload__${project.id}@${'cd'.repeat(8)}` }),
     },
     ...{ queueState: 'Ended', endState: seed.endState ?? 'Completed' },
   });
   await s.runs.insert(run);
-  const source = {
-    ...sampleManifest().source,
-    commitSha,
-    snapshotHash: `sha256:${'cd'.repeat(32)}`,
-  };
+  const snapshotHash = `sha256:${'cd'.repeat(32)}`;
+  const source =
+    seed.upload === undefined
+      ? { ...sampleManifest().source, commitSha, snapshotHash }
+      : {
+          ...{ ...sampleManifest().source, kind: 'upload' as const, url: '', owner: '', repo: '' },
+          ...{ commitSha: null, snapshotHash, ...seed.upload },
+        };
   const options = seed.areas === undefined ? {} : { areas: seed.areas };
   const manifest = sampleManifest({ runId: run.runKey, stage: 'understand', source, options });
   await s.manifests.write(scopeOf(run), { ...manifest, codemapHash: `sha256:${'ab'.repeat(32)}` });
