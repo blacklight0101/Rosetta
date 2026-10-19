@@ -47,6 +47,7 @@ import type { StreamRegistry } from './web/event-stream.js';
 import { composeDeepen, composeResume } from './compose-deepen.js';
 import { composeObservability } from './compose-observability.js';
 import { composePlan } from './compose-plan.js';
+import { withPrivateCodeRecheck } from './compose-recheck.js';
 import { composeJourney } from './compose-journey.js';
 import { composeBuildReport } from './compose-report.js';
 import { composePlanOptions } from './compose-plan-options.js';
@@ -275,8 +276,10 @@ export function composeRuns(parts: RunParts): RunComposition {
     lifecycle,
     executors: {
       scan: scan.executor,
-      understand: composeUnderstand(stage),
-      plan: composePlan(stage),
+      ...withPrivateCodeRecheck(
+        { understand: composeUnderstand(stage), plan: composePlan(stage) },
+        { projects, logger, ollamaUrl: parts.ollamaUrl },
+      ),
     },
     clock,
     logger,

@@ -1,5 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it } from 'vitest';
+import { LOCAL_OLLAMA_MODEL } from '../../../web/src/pages/local-roles.js';
 import { failure, json, type Answer } from './fake-api.js';
 import {
   cloudEstimate,
@@ -209,7 +210,7 @@ it('RF-132 the link is a button that switches every role to Ollama, with no furt
   const put = calls.find((call) => call.method === 'PUT');
   expect(put?.ifMatch).toBe('"1"');
   expect(roleProviders(put?.body)).toEqual(['ollama', 'ollama', 'ollama', 'ollama']);
-  expect(roleModels(put?.body)).toEqual(Array(4).fill('gemma4:e4b'));
+  expect(roleModels(put?.body)).toEqual(Array(4).fill(LOCAL_OLLAMA_MODEL));
   expect(screen.queryByText(/Code will leave this machine/u)).toBeNull();
   await waitFor(() => {
     expect(start().disabled).toBe(false);
@@ -283,4 +284,15 @@ it('RF-128 RF-132 an uploaded project with no source keeps Start off even with b
 
   expect(start().disabled).toBe(true);
   expect(start().title).toContain('Upload a zip first');
+});
+
+it('RF-132 DEC-151 the link names the model it sets, taken from the one constant', async () => {
+  renderStart(uploadAnswers(oneCloudRole));
+  await ready();
+  const notice = screen.getByRole('region', { name: noticeName });
+
+  const link = within(notice).getByRole('button', { name: switchName });
+
+  expect(link.textContent).toContain(LOCAL_OLLAMA_MODEL);
+  expect(LOCAL_OLLAMA_MODEL).toBe('gemma4:e4b');
 });
