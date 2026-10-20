@@ -59,6 +59,35 @@ describe('the prompts of a task over an area with a rendered workbook', () => {
   });
 });
 
+describe('the card fragments of a workbook area', () => {
+  const surface = {
+    flows: file('cards/flows.v1.md', 'FLOWS-FRAGMENT'),
+    screens: file('cards/screens.v1.md', 'SCREENS-FRAGMENT'),
+  };
+  const full: ReaderPrompts = { ...withGuidance, surface };
+
+  it('RF-155 a workbook area gets the FLOW and SCRN formats its guidance asks for, though the code map marks none', () => {
+    const system = readerSystemPrompt(readerPromptsFor(full, none, true));
+
+    expect(system).toContain('FLOWS-FRAGMENT');
+    expect(system).toContain('SCREENS-FRAGMENT');
+    expect(system.indexOf('SCREENS-FRAGMENT')).toBeLessThan(system.indexOf('WORKBOOK-GUIDANCE'));
+  });
+
+  it('RF-155 another area of the same run gets no fragment', () => {
+    expect(readerSystemPrompt(readerPromptsFor(full, none, false))).toBe(readerSystemPrompt(plain));
+  });
+
+  it('RNF-004 the manifest records the fragments a workbook area used with the guidance', () => {
+    const names = Object.keys(promptVersionsOf(full, none, true));
+
+    expect(names).toContain('cards/flows.v1.md');
+    expect(names).toContain('cards/screens.v1.md');
+    expect(names).toContain('reader/workbook.v1.md');
+    expect(Object.keys(promptVersionsOf(full, none, false))).not.toContain('cards/flows.v1.md');
+  });
+});
+
 describe('the prompt versions of a run with workbooks', () => {
   it('RNF-004 records the guidance with its version and hash when a task used it', () => {
     const versions = promptVersionsOf(withGuidance, none, true);

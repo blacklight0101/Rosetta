@@ -54,7 +54,8 @@ describe('an understand run over a zip that holds one workbook', () => {
   it('RF-155 the area of the workbook folder gets the guidance and the helper area does not', async () => {
     const { h, run } = workbookRun.current();
     const guidance = await guidanceText();
-    const base = readerSystemPrompt(await loadReaderPrompts('prompts'));
+    const loaded = await loadReaderPrompts('prompts');
+    const base = readerSystemPrompt(loaded);
 
     const systems = readerSystems(h);
 
@@ -62,6 +63,8 @@ describe('an understand run over a zip that holds one workbook', () => {
     expect(guidance.length).toBeGreaterThan(0);
     expect(systems['reader-001']).toContain(guidance);
     expect(systems['reader-001']?.startsWith(base.trimEnd())).toBe(true);
+    expect(systems['reader-001']).toContain(loaded.surface?.flows.text.trim());
+    expect(systems['reader-001']).toContain(loaded.surface?.screens.text.trim());
     expect(systems['reader-002']).toBe(base);
   });
 
