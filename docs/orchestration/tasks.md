@@ -3560,7 +3560,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-43, P3-46
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-005 section 4.2; `src/presentation/web/source-upload-routes.ts`; `src/infrastructure/sources/zip-upload-store.ts`, `upload-intake.ts`; the store-upload use case; RF-010, RF-133, RF-150, RF-157, RF-1009, RF-1105.
 - **Do**: `POST /api/projects/:id/source/batches` (free space at least twice `ROSETTA_UPLOAD_MAX_MB`, one open batch per project, RST-1919 otherwise), `PUT /api/projects/:id/source/batches/:batchId/files` (raw body streamed into the staging folder with the P3-38 intake, the remaining total of the limit, the zip signature, `X-File-Name`, `.xlsx` or `.xlsm`, duplicate names RST-1928, count limit RST-1924) and `POST .../finish` (read, render and resolve every workbook or none, hash, publish `workbook__<id>@<16 hex>`, delete the workbooks and the staging folder); expired batches and leftover staging folders deleted; replacing the source keeps the snapshots earlier runs use; deleting the project deletes its snapshots; an audit row per workbook (name, size, hash). After a zip is extracted (P3-37), render each `.xlsx` or `.xlsm` in place and list the ones left out with their reasons (Q-41).
 - **Review probes**: no session, no CSRF token, a foreign `Origin`, another user's project (404); a batch id of another project; two batches at once; a file after finish; finish with no file; the total passing the limit on the third file; an aborted file (no partial left); a batch left open 31 minutes; restart with a staging folder present; a zip holding an `.xlsx`, an encrypted `.xlsx` and an `.xls`.
