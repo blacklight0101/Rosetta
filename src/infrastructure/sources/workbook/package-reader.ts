@@ -1,5 +1,6 @@
 import type { LimitCounter } from '../entry-guards.js';
 import { CellReader } from './cell-reader.js';
+import { readMacroProject } from './macro-reader.js';
 import { RuleReader } from './rule-reader.js';
 import { SharedStringsReader } from './shared-strings-reader.js';
 import {
@@ -24,6 +25,7 @@ const WORKBOOK_PART = 'xl/workbook.xml';
 const SHARED_STRINGS_PART = 'xl/sharedStrings.xml';
 const STYLES_PART = 'xl/styles.xml';
 const CONNECTIONS_PART = 'xl/connections.xml';
+const VBA_PART = 'xl/vbaProject.bin';
 
 class SheetPartReader implements XmlVisitor {
   readonly cells: CellReader;
@@ -108,9 +110,17 @@ export class PackageReader {
       }),
       externalLinks: await this.externalLinks(workbook.externalRelationships, relationships),
       connections: await this.connections(),
-      hasMacros: this.pkg.has('xl/vbaProject.bin'),
+      hasMacros: this.pkg.has(VBA_PART),
+      ...(await this.macros()),
       sharedStringCount: strings.length,
     };
+  }
+
+  /** The VBA project, read as text; nothing is added to the model of a workbook without one. */
+  private async macros(): Promise<Pick<WorkbookModel, 'macros'>> {
+    if (!this.pkg.has(VBA_PART)) return {};
+    const bytes = await this.pkg.readBytes(VBA_PART, this.limits.macros.maxProjectBytes);
+    return { macros: readMacroProject(bytes, this.limits.macros) };
   }
 
   private async sharedStrings(relationships: readonly Relationship[]): Promise<string[]> {

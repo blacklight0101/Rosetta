@@ -1,3 +1,4 @@
+import { DEFAULT_MACRO_LIMITS, type MacroLimits } from './macro-limits.js';
 import { DEFAULT_ZIP_LIMITS, type ZipExtractionLimits } from '../zip-limits.js';
 
 // RF-151, Q-32: the limits of the workbook reader. The three counts come from the settings
@@ -13,6 +14,8 @@ export interface WorkbookLimits {
   readonly maxPartBytes: number;
   /** The zip guards of RF-129 applied to the package. */
   readonly zip: ZipExtractionLimits;
+  /** The bounds on the VBA project of an `.xlsm` (RF-154). */
+  readonly macros: MacroLimits;
 }
 
 const MAX_PART_BYTES = 200 * 1024 * 1024;
@@ -23,4 +26,5 @@ export const DEFAULT_WORKBOOK_LIMITS: WorkbookLimits = {
   maxCells: 2_000_000,
   maxPartBytes: MAX_PART_BYTES,
   zip: DEFAULT_ZIP_LIMITS,
+  macros: DEFAULT_MACRO_LIMITS,
 };

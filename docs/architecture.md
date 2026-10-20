@@ -181,6 +181,16 @@ src/
                         encrypted or legacy with `cfb` (workbook-format) and returns the typed `WorkbookModel` (workbook-model); readers per
                         part: cell-reader, rule-reader, shared-strings-reader, styles-reader, small-part-readers, workbook-xml-reader;
                         package-reader assembles them; errors RST-1921..1928 in workbook-errors; `checkWorkbookBatch` judges the file names
+                        VBA macros (RF-154, P3-45): package-reader hands `xl/vbaProject.bin` (bytes counted as they inflate) to `readMacroProject`
+                        (macro-reader), which checks the compound file's header and allocation table first (compound-guard, compound-table, compound-directory: `cfb` follows
+                        sector chains without remembering them and copies each chain it meets, so a loop, merged or shared chains, a chain
+                        read against file order, a looping or oversized directory tree (2,048 entries, depth 32) and stream sizes that pass
+                        the file are refused before it reads; the same guard stands before the encrypted/legacy check in workbook-format;
+                        streams are listed once into a map), opens it with `cfb`, decompresses the `dir`
+                        stream and each module with the MS-OVBA code (ovba-decompress, ovba-dir, ovba-code-page), reads `PROJECT` for module kinds
+                        and the protection state of a project locked for viewing (macro-project-stream), lists form controls (macro-forms) and
+                        returns `MacroProject` (macro-model) on `WorkbookModel.macros`; bounds in macro-limits; damage leaves the project or
+                        module `unreadable`, a passed bound is RST-1926, and a CMG line that is doubled or cannot be decoded counts as locked (Q-40); macros are text and are never run
                         the workbook renderer (RF-152, Q-35..Q-39, P3-46): `renderWorkbooks` turns the models into paths and texts (nothing is
                         written to disk; the upload flow of P3-48 writes them): `workbook.md`, and per sheet `formulas.md`, `values.md`,
                         `validation.md`, `notes.md` (render-index, render-formulas, render-values, render-rules); safe segments with `~2` on a clash
