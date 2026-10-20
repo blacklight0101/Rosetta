@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 73      | 5         | 66         | 2         | 0                  | 24      | 47      | 2      | 29         | 0         |
-| **Total**               | **290** | **77**    | **186**    | **27**    | **0**              | **140** | **138** | **12** | **164**    | **0**     |
+| P3 Report and plan      | 76      | 5         | 69         | 2         | 0                  | 25      | 49      | 2      | 32         | 0         |
+| **Total**               | **293** | **77**    | **189**    | **27**    | **0**              | **141** | **140** | **12** | **167**    | **0**     |
 
 ## Conventions for every card
 
@@ -3942,3 +3942,48 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the rule, the prompt versions and tests.
 - **Done when**: each probe has a passing test; `npm run verify` green.
 - **Refs**: RF-243, Q-46; issue #699.
+
+### P3-74 - Follow-up: citations a small model can write
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-66
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-202 (the Q-47 scenarios), RF-201, RF-206, Q-47; the `read_file` tool and its result block, the card parser that drops a claim for a bad citation, the reader prompts in `prompts/reader/` (the workbook part that explains the `R<n> | ` row prefix). Found in the orchestrator's evaluation run of 2026-10-21 (`Loan.xlsx`, Ollama `gemma4:e4b`): every citation of 7 cards was dropped because the reader cited the line text (`values.md:R2 | C2 0.05`) or the row (`values.md:R8`) instead of line numbers; `read_file` returns the lines without their numbers, and the workbook text starts each line with its row, which reads like a line number.
+- **Do**: (1) `read_file` gives each line with its number (`12: text`), and the result header keeps the range; the prompts say a citation uses these numbers; (2) a citation into a rendered workbook file that names rows (`path:R8`, `path:R8-R12`) is mapped to the lines that start with those rows when each row is found, and dropped otherwise; (3) when the parser drops claims for their citations, the agent gets the RF-202 repair attempt once, with the dropped citations and the expected form, before they are dropped for good; (4) new prompt versions, the old ones kept.
+- **Review probes**: a `read_file` result shows numbered lines; `values.md:R8` and `values.md:R8-R12` mapped to the right lines; a row that is not in the file dropped; a citation holding line text gets the repair attempt and a corrected answer keeps its claims; a second bad answer drops them as today; code projects unchanged apart from the numbered lines; the manifest records the new prompt versions; recorded responses only.
+- **Behaviour to preserve**: DEC-18 (every claim cites `path:startLine-endLine` in the stored card), the one repair attempt of RF-202, ADR-013 data blocks.
+- **Delivers**: the numbered lines, the row mapping, the repair, the prompt versions and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-202, RF-201, RF-206, Q-47; issue #702.
+
+### P3-75 - Follow-up: the automatic Ollama context grows to fit the prompt
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-64, P3-71
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-401 (the Q-48 scenario), DEC-114, DEC-155, Q-23, Q-48; `src/infrastructure/providers/ollama/ollama-context-resolver.ts`, `ollama-prompt-guard.ts`, `ollama-provider.ts`, the call log and the run manifest. Found in the orchestrator's evaluation run of 2026-10-21: with `auto`, `qwen3.5:9b` got 8 192 tokens (the largest size that stays in GPU memory) and the workbook reader failed RST-1522 before its first turn; the planner (`maxOutputTokens` 16 384) cannot fit its input into the auto 32 768 of `gemma4:e4b` either, so a default local setup cannot write a package.
+- **Do**: when the setting is `auto` and the prompt estimate plus the output reserve is larger than the automatic size, send the smallest size, doubling from the automatic one, that holds them, up to the model's trained context; log once per model and size that part of the model runs on the CPU and is slower; record the size and the source `auto-grown` in the call log and the manifest; RST-1522 only when even the trained context is too small, and its message says so; a fixed `contextTokens` is never changed.
+- **Review probes**: a prompt that fits the automatic size (unchanged); a prompt that needs one doubling (the larger size sent, the warning once, `auto-grown` recorded); a prompt larger than the trained context (RST-1522, nothing sent); a fixed size too small (RST-1522 as today); the planner with 16 384 output tokens against 32 768 (grows); recorded responses and a fake probe only.
+- **Behaviour to preserve**: DEC-114 (the automatic size is measured once and cached), DEC-155 (a cut prompt never reaches a role), the budget guard.
+- **Delivers**: the growth, the log and manifest source, the message and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-401, DEC-114, DEC-155, Q-23, Q-48; issue #703.
+
+### P3-76 - Follow-up: the run page of a run with no card and a failed area
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-70
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-615 and RF-231 (the Q-49 scenario), RF-1015, Q-49; the journey (`web/src/lib/journey/`), the overview text that says "Only 0 card(s) from 0 of 2 area(s) passed the citation check", the "What was not covered" list, the area list of a workbook project. Found in the orchestrator's evaluation run of 2026-10-21 (`Loan.xlsx`, reader `qwen3.5:9b`): the run ended with no card, yet the journey showed "Questions: Done, No open questions"; the failed area showed only "failed (RST-1522)"; a `(root)` area with no workbook file was read and gave no card.
+- **Do**: (1) with no Supported claim the questions step is Locked like the steps after it ("Nothing to plan from"), not Done; (2) the overview counts read as sentences ("No card from 2 areas passed the citation check", "1 card from 1 of 2 areas"); (3) an area that failed with a code shows the code's next step from the error catalogue (for RST-1522 the Context size field); (4) a workbook project gets no `(root)` area when the root holds no workbook file.
+- **Review probes**: a run with no Supported claim (questions Locked); 0, 1 and 2 cards and areas worded; an area failed RST-1522 shows its next step; a workbook project's areas (no empty root); 360 px, light and dark, axe.
+- **Behaviour to preserve**: RF-231 wording rules; Q-43 retry of failed areas.
+- **Delivers**: the fixes and tests.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-615, RF-231, RF-1015, Q-49; issue #704.
