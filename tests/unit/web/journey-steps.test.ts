@@ -238,3 +238,25 @@ describe('journeyOf: questions, brief and estimate (2)', () => {
     expect(view.action).toEqual({ kind: 'link', label: 'Review the estimate', href: setUp });
   });
 });
+
+describe('journeyOf: the defaults (DEC-154)', () => {
+  it('RF-615 open questions offer Go on with the defaults, which opens the brief', () => {
+    const view = journeyOf(roadSigns['asking'] ?? facts(), projectId);
+
+    expect(view.secondary).toEqual({ kind: 'link', label: 'Go on with the defaults', href: setUp });
+  });
+
+  it('RF-615 with no open question the only action is Set up the plan', () => {
+    const view = journeyOf(facts({ briefSaved: false }), projectId);
+
+    expect(view.action).toMatchObject({ label: 'Set up the plan', href: setUp });
+    expect(view.secondary).toBeUndefined();
+  });
+
+  it('RF-615 every question having a saved answer finishes the questions step', () => {
+    const view = journeyOf(facts({ briefSaved: false }), projectId);
+
+    expect(step(view, 'questions')).toMatchObject({ state: 'done', here: false });
+    expect(step(view, 'brief')).toMatchObject({ state: 'current', here: true });
+  });
+});

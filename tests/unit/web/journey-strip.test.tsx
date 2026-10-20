@@ -198,3 +198,18 @@ it('RF-615 a step that is current by its state says so once, not twice', () => {
   expect(here.getAttribute('aria-current')).toBe('step');
   expect(here.querySelector('.rst-road__here')).toBeNull();
 });
+
+it('RF-615 Go on with the defaults sits next to Answer questions and opens the brief', () => {
+  strip('asking', () => undefined, vi.fn<() => void>());
+
+  fireEvent.click(within(journey()).getByRole('button', { name: 'Go on with the defaults' }));
+
+  expect(window.location.pathname).toBe('/projects/p-1/plan-setup');
+  expect(window.location.search).toBe(`?run=${sourceId}`);
+});
+
+it('RF-615 a road with no open question has no Go on with the defaults', () => {
+  strip('estimate');
+
+  expect(within(journey()).queryByRole('button', { name: 'Go on with the defaults' })).toBeNull();
+});

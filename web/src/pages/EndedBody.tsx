@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
+import { waitsForAnswer } from '../api/answers.js';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import { reportFilePath } from '../api/runs.js';
 import type { RunRow } from '../api/run-schemas.js';
@@ -21,6 +22,7 @@ import { RunDownloads } from './RunDownloads.js';
 import { RunFailure } from './RunFailure.js';
 import { RunReport } from './RunReport.js';
 import { RunStepper } from './RunStepper.js';
+import { useQuestionsFocus, type FocusRequest } from './use-focus-first-question.js';
 import { useRunAnswers, type AnswersLoad, type RunAnswersState } from './use-run-answers.js';
 import { useRunOverview, type OverviewLoad } from './use-run-overview.js';
 import { useUnderstanding, type UnderstandingLoad } from './use-understanding.js';
@@ -141,6 +143,8 @@ interface PanelsProps extends EndedBodyProps {
   readonly results: ResultsTab;
   readonly overview: OverviewLoad;
   readonly answers: RunAnswersState;
+  /** DEC-154: the first question without a saved answer is to take focus. */
+  readonly focus: FocusRequest;
   readonly understanding: UnderstandingLoad;
   readonly built: boolean;
 }
@@ -161,6 +165,7 @@ function Panels(props: PanelsProps): JSX.Element | null {
       <RunAnswers
         runId={run.id}
         answers={answers}
+        focus={props.focus}
         overview={overview}
         onConcern={(section) => {
           results.showSection(sectionAnchor(section));
@@ -212,7 +217,7 @@ function Rail(props: RailProps): JSX.Element {
 /** How many questions wait for an answer; none known until they are read. */
 function openQuestions(answers: AnswersLoad): number | undefined {
   if (answers.status !== 'ready') return undefined;
-  return answers.questions.filter((each) => each.state === 'Open').length;
+  return answers.questions.filter(waitsForAnswer).length;
 }
 
 /** The stepper, what failed, the areas that failed and, for a Deepen run, its rounds. */
@@ -250,9 +255,9 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
   const understanding = useUnderstanding(run.id, asks);
   const results = useResultsTab(asks);
   const open = openQuestions(answers.load);
-  const showQuestions = (): void => {
+  const { focus, showQuestions } = useQuestionsFocus(() => {
     results.show('questions');
-  };
+  });
   return (
     <>
       <Header {...props} reportBuilt={report.built} open={open} onAnswer={showQuestions} />
@@ -266,7 +271,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
           >
             <Panels
               {...props}
-              {...{ results, overview, answers, understanding }}
+              {...{ results, overview, answers, understanding, focus }}
               built={report.built}
             />
           </Tabs>

@@ -40,6 +40,8 @@ export interface JourneyView {
   readonly steps: readonly JourneyStep[];
   /** The one next action; none while a run works. */
   readonly action: JourneyAction | undefined;
+  /** DEC-154: the way to the brief while questions are open; none otherwise. */
+  readonly secondary: JourneyAction | undefined;
   readonly totalCostMicros: number;
 }
 
@@ -180,5 +182,5 @@ export function journeyOf(facts: JourneyFacts, projectId: string): JourneyView {
     };
   });
   const spent = (source?.costMicros ?? 0) + (plan?.costMicros ?? 0);
-  return { steps, action: next.action, totalCostMicros: spent };
+  return { steps, action: next.action, secondary: next.secondary, totalCostMicros: spent };
 }
