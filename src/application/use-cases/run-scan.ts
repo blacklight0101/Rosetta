@@ -14,10 +14,15 @@ import type { Logger } from '../ports/logger.js';
 import type { Project } from '../projects/project.js';
 import { scanSettingsSchema } from '../projects/project-settings.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
-import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
+import type {
+  ResolvedSource,
+  RunExecution,
+  RunExecutor,
+  RunOutcome,
+} from '../ports/run-executor.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { ScanPipeline, ScanReport, ScanRequest } from '../ports/scan-pipeline.js';
-import type { SourceFetcher } from '../ports/source-fetcher.js';
+import type { SourceFetcher, UploadSnapshot, WorkbookSnapshot } from '../ports/source-fetcher.js';
 import type { UploadStore } from '../ports/upload-store.js';
 import { scopeOf } from '../runs/run-scope.js';
 
@@ -43,6 +48,30 @@ export interface RunScanDependencies {
 interface ScannedTree {
   readonly rootDir: string;
   readonly source: CodeMapSource;
+}
+
+type Identity = Pick<ResolvedSource, 'commitSha' | 'snapshotKey' | 'snapshotHash' | 'uploadedAt'>;
+interface SentTree {
+  readonly resolved: ResolvedSource;
+  readonly source: CodeMapSource;
+}
+
+/** RF-128, RF-131: the source of a run on a zip, and the code map's. */
+function uploadTree(snapshot: UploadSnapshot, identity: Identity): SentTree {
+  const { fileName, snapshotHash } = snapshot;
+  return {
+    resolved: { ...identity, fileName },
+    source: { kind: 'upload', fileName, snapshotHash, subpath: '' },
+  };
+}
+
+/** RF-152, RF-156: the source of a run on workbooks, and the code map's. */
+function workbookTree(snapshot: WorkbookSnapshot, identity: Identity): SentTree {
+  const workbooks = snapshot.workbooks.map((entry) => entry.fileName);
+  return {
+    resolved: { ...identity, rendererVersion: snapshot.rendererVersion, workbooks },
+    source: { kind: 'workbook', workbooks, snapshotHash: snapshot.snapshotHash, subpath: '' },
+  };
 }
 
 const INTERRUPTED: RunOutcome = { endState: 'Interrupted' };
@@ -75,10 +104,7 @@ export class RunScan implements RunExecutor {
     const { run, signal } = execution;
     const project = await this.deps.projects.find(run.userId, run.projectId);
     if (project === undefined) return { endState: 'Failed', errorCode: ERROR_CODES.notFound };
-    const snapshot =
-      project.sourceKind === 'upload'
-        ? await this.fetchUpload(execution, project)
-        : await this.fetch(execution);
+    const snapshot = await this.treeOf(execution, project);
     if (isStopped(signal)) return INTERRUPTED;
     const report = await this.deps.pipeline.scan({
       scope: scopeOf(run),
@@ -88,6 +114,12 @@ export class RunScan implements RunExecutor {
       signal,
     });
     return this.complete(execution, report);
+  }
+
+  /** The tree of the project's source: a GitHub snapshot, or what the user sent (RF-128, RF-152). */
+  private treeOf(execution: RunExecution, project: Project): Promise<ScannedTree> {
+    if (project.sourceKind === 'github') return this.fetch(execution);
+    return this.fetchSent(execution, project);
   }
 
   /**
@@ -175,19 +207,23 @@ export class RunScan implements RunExecutor {
   }
 
   /**
-   * RF-128, RF-130: reads the zip the project holds as a snapshot, records it as the run's source
-   * (no commit, the name and instant of the zip) and publishes what was read. A project whose zip
-   * is gone has no source: the run fails with RST-1920 and nothing is scanned.
+   * RF-128, RF-130, RF-152: reads the zip or the rendered workbooks the project holds as a snapshot,
+   * records it as the run's source (no commit; the zip's name, or the workbooks' names and renderer)
+   * and publishes what was read. A project whose source is gone, or of the other kind, has no source:
+   * the run fails with RST-1920 and nothing is scanned.
    */
-  private async fetchUpload(execution: RunExecution, project: Project): Promise<ScannedTree> {
+  private async fetchSent(execution: RunExecution, project: Project): Promise<ScannedTree> {
     const began = this.deps.clock.now().getTime();
     const key = project.upload?.snapshotKey;
     const snapshot = key === undefined ? undefined : await this.deps.uploads.read(key);
-    if (snapshot?.kind !== 'upload') throw new RosettaError(ERROR_CODES.projectNoSource);
-    const { fileName, uploadedAt, snapshotHash } = snapshot;
-    await execution.recordSource({
-      ...{ commitSha: null, snapshotKey: snapshot.key, snapshotHash, fileName, uploadedAt },
-    });
+    if (snapshot?.kind !== project.sourceKind) throw new RosettaError(ERROR_CODES.projectNoSource);
+    const { uploadedAt, snapshotHash } = snapshot;
+    const identity = { commitSha: null, snapshotKey: snapshot.key, snapshotHash, uploadedAt };
+    const tree =
+      snapshot.kind === 'upload'
+        ? uploadTree(snapshot, identity)
+        : workbookTree(snapshot, identity);
+    await execution.recordSource(tree.resolved);
     await this.update(execution.run, (stored) =>
       recordManifestSkippedLinks(stored, snapshot.skippedLinks),
     );
@@ -197,10 +233,7 @@ export class RunScan implements RunExecutor {
       durationMs: this.deps.clock.now().getTime() - began,
       cached: true,
     });
-    return {
-      rootDir: snapshot.rootDir,
-      source: { kind: 'upload', fileName, snapshotHash, subpath: '' },
-    };
+    return { rootDir: snapshot.rootDir, source: tree.source };
   }
 
   private async update(

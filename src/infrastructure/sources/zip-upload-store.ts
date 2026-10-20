@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { UploadSnapshot, UploadSnapshotInfo } from '../../application/ports/source-fetcher.js';
+import type { SentSnapshot, UploadSnapshotInfo } from '../../application/ports/source-fetcher.js';
 import type {
   StoredUpload,
   UploadRequest,
@@ -13,6 +13,7 @@ import {
   uploadKeyPrefix,
   uploadSnapshotKey,
 } from '../../domain/sources/upload-name.js';
+import { isWorkbookSnapshotKey, workbookKeyPrefix } from '../../domain/sources/workbook-key.js';
 import { FileSnapshotCache } from '../files/file-snapshot-cache.js';
 import { errorCode, snapshotWriteFailed } from '../github/snapshot-errors.js';
 import { SnapshotStore } from '../github/snapshot-store.js';
@@ -95,18 +96,25 @@ export class ZipUploadStore implements UploadStore {
     }
   }
 
-  async read(key: string): Promise<UploadSnapshot | undefined> {
-    if (!isUploadSnapshotKey(key)) return undefined;
+  // RF-128, RF-152: the key of a zip reads a zip snapshot, the key of workbooks a workbook one.
+  async read(key: string): Promise<SentSnapshot | undefined> {
+    const wanted = isUploadSnapshotKey(key)
+      ? 'upload'
+      : isWorkbookSnapshotKey(key)
+        ? 'workbook'
+        : '';
+    if (wanted === '') return undefined;
     const snapshot = await this.snapshots.readExisting(key);
-    return snapshot?.kind === 'upload' ? snapshot : undefined;
+    return snapshot?.kind === wanted ? snapshot : undefined;
   }
 
   remove(key: string): Promise<boolean> {
-    return isUploadSnapshotKey(key) ? this.cache.remove(key) : Promise.resolve(false);
+    const mine = isUploadSnapshotKey(key) || isWorkbookSnapshotKey(key);
+    return mine ? this.cache.remove(key) : Promise.resolve(false);
   }
 
   async removeAllOf(projectId: string): Promise<number> {
-    const prefix = uploadKeyPrefix(projectId);
+    const prefixes = [uploadKeyPrefix(projectId), workbookKeyPrefix(projectId)];
     let names: string[];
     try {
       names = await readdir(this.snapshots.sourcesDir);
@@ -115,7 +123,9 @@ export class ZipUploadStore implements UploadStore {
       throw snapshotWriteFailed('folder could not be listed', error);
     }
     let removed = 0;
-    for (const name of names.filter((entry) => entry.startsWith(prefix))) {
+    for (const name of names.filter((entry) =>
+      prefixes.some((prefix) => entry.startsWith(prefix)),
+    )) {
       if (await this.remove(name)) removed += 1;
     }
     return removed;
