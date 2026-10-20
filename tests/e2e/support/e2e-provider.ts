@@ -79,9 +79,12 @@ function verdictOf(
 ): LlmResponse | undefined {
   if (request.context.role !== 'verifier') return undefined;
   const { agentTaskId } = request.context;
-  const known = Object.hasOwn(VERDICT_SCRIPT, agentTaskId)
-    ? VERDICT_SCRIPT[agentTaskId]
-    : undefined;
+  // P3-52: a claim about a rendered workbook has no recorded verdict of its own; it is Supported.
+  const workbook = /\.xls[xm]\b/u.test(firstMessage(request));
+  const known =
+    Object.hasOwn(VERDICT_SCRIPT, agentTaskId) && !workbook
+      ? VERDICT_SCRIPT[agentTaskId]
+      : undefined;
   return known === undefined ? answerOf(supported, 0) : answerOf(webforms, known);
 }
 
@@ -132,6 +135,9 @@ function plannerOf(
 /** Each recorded call waits this long, so a page can be seen between the steps of an agent. */
 const STEP_DELAY_MS = 700;
 
+/** P3-52: the calls that answer each area of `understand-workbook-journey.json`, in turn order. */
+const WORKBOOK_SCRIPT = { 'Pricing.xlsm': [0, 1, 2, 3, 4], 'Discounts.xlsx': [5, 6] } as const;
+
 /** The area whose reader never answers until the run is stopped (the Stop journey). */
 const HELD_AREA = 'Controllers';
 
@@ -140,12 +146,14 @@ interface Readers {
   readonly webforms: ScriptedProvider;
   readonly merging: ScriptedProvider;
   readonly rerun: ScriptedProvider;
+  readonly workbooks: ScriptedProvider;
 }
 
 /** RF-241, RF-250: the reader double that answers a call, by the model and by the answers it carries. */
 function readerFor(readers: Readers, request: LlmRequest): ScriptedProvider | undefined {
   if (request.context.role !== 'reader') return undefined;
   if (request.model === consolidateModel) return readers.merging;
+  if (readers.workbooks.handles(request)) return readers.workbooks;
   const rerun = firstMessage(request).includes(answerMarker);
   return rerun ? readers.rerun : readers.webforms;
 }
@@ -172,6 +180,7 @@ export async function createE2eProvider(): Promise<LlmProvider> {
     }),
     merging: await scriptedFrom('understand-consolidate.json', MERGING_SCRIPT),
     rerun: await scriptedFrom('understand-csharp-answers.json', { '(root)': [0, 1] }),
+    workbooks: await scriptedFrom('understand-workbook-journey.json', WORKBOOK_SCRIPT),
   };
   const verdicts: Verdicts = {
     webforms: await loadRecording(join('tests', 'recordings', 'fake', 'verifier-csharp-full.json')),

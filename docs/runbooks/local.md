@@ -216,6 +216,40 @@ Rosetta's own evidence page for that file and those lines, and the report names 
 snapshot hash instead of a repository and commit. A citation never links outside Rosetta, to GitHub or to any other
 site (RF-131).
 
+## Analysing a project from Excel workbooks
+
+Workbooks that people use as a system can be analysed without GitHub or a zip (RF-150): on the Projects page choose the
+Excel workbooks tab, pick one or more `.xlsx` or `.xlsm` files and press Upload workbooks. The page states the
+accepted types, the number of workbooks and the largest total size, and refuses a set outside them before sending
+anything (RF-158). The size limit is `ROSETTA_UPLOAD_MAX_MB`; the other limits are `ROSETTA_WORKBOOK_MAX_FILES` (20
+workbooks), `ROSETTA_WORKBOOK_MAX_SHEETS` (200 sheets in one workbook) and `ROSETTA_WORKBOOK_MAX_CELLS` (2,000,000
+non-empty cells in one project).
+
+**Save an old workbook as .xlsx.** Rosetta does not read the old `.xls` and `.xlsb` formats. Open the file in Excel,
+choose File, then Save As, and pick Excel Workbook (`.xlsx`). A workbook with macros is saved as Excel Macro-Enabled
+Workbook (`.xlsm`) so that its macros are kept; saved as `.xlsx`, Excel drops them. A workbook with a password is
+refused: in Excel choose File, Info, Protect Workbook, Encrypt with Password, clear the password, save, and upload
+again. A macro project locked for viewing is skipped and named in the summary; unlock it in Excel and upload again. A
+`.csv` export is not read.
+
+**Workbooks that refer to each other.** Upload them in one batch. A formula that reads another workbook, such as
+`[Discounts.xlsx]Discounts!B2`, is resolved by file name (case ignored) to the workbook of the same batch; one that
+points at a file that was not uploaded is listed as unresolved in the dependency map. Uploading a new batch to the same
+project replaces all its workbooks for the runs that follow; earlier runs keep the copy they read, and the start page
+says the code changed since the last run.
+
+**What Rosetta reads.** It reads each workbook as text, never your computer: the sheets, every cell value, the formulas
+with the values Excel last saved, the tables, defined names, validation lists, comments without their authors, the VBA
+modules and a map of which cell, sheet and workbook reads which. Nothing is calculated, no macro is run and no external
+link or data connection is opened. The uploaded files are deleted once they are read.
+
+**Where the data is sent.** As for a zip, a role on a cloud provider makes the start page ask for a second confirmation
+that names the cell values, formulas and macros of the project and each provider (RF-157).
+
+**Citations.** In the report, the specification and the hand-off package every citation opens Rosetta's own evidence
+page and shows beside it the workbook, the sheet and the cells of the cited lines; the report names the workbooks, the
+upload date and the snapshot hash instead of a repository and commit. No citation links outside Rosetta (RF-156).
+
 ## Troubleshooting
 
 | Symptom                                                                   | Likely cause and fix                                                                                                                                                                    |
