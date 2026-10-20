@@ -28,6 +28,10 @@ export class TextFile {
     this.budget = budget;
   }
 
+  get lineCount(): number {
+    return this.lines.length;
+  }
+
   add(line = ''): void {
     const cut = cutLine(line);
     this.budget.take(Buffer.byteLength(cut) + 1);

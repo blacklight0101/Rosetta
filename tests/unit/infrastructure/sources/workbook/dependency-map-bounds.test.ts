@@ -1,4 +1,6 @@
 import { expect, it } from 'vitest';
+import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
+import { renderWorkbooks } from '../../../../../src/infrastructure/sources/workbook/workbook-renderer.js';
 import { book, cell, num, sheet } from '../../../../support/rendered-workbook-fixtures.js';
 import {
   chainProject,
@@ -144,8 +146,10 @@ it('RF-153 keeps every line under 1,900 characters and loses nothing of a long n
   const content = dependenciesOf(models);
 
   for (const line of content.split('\n')) expect(line.length).toBeLessThan(1900);
-  const names = sectionOf(content, 'Defined names').join('');
-  expect(names).toContain(refersTo.slice(-500));
+  const pieces = sectionOf(content, 'Defined names').map(
+    (line) => /refers to (?:[(]continued[)] )?"(.*)"$/u.exec(line)?.[1] ?? '',
+  );
+  expect(pieces.join('')).toBe(refersTo);
   expect(content).toContain('which is not uploaded');
 });
 
@@ -160,6 +164,14 @@ it('RF-153 writes many ranges on lines that each start with the cells they descr
   for (const line of inputs) expect(line).toMatch(/^Book\.xlsx\/S!A[0-9]+$/u);
 });
 
-it('RF-153 stops at the total byte limit of the render like every other file', () => {
-  expect(() => projectOf(chainProject(200, '1'), { maxTotalBytes: 30_000 })).toThrow(/RST-1926/u);
+it('RF-153 counts dependencies.md in the total byte limit of the render', () => {
+  const models = chainProject(200, '1');
+  const rendered = projectOf(models);
+  const files = rendered.workbooks.flatMap((workbook) => workbook.files);
+  const bytes = files.reduce((sum, file) => sum + Buffer.byteLength(file.content), 0);
+
+  expect(() => renderWorkbooks(models, { maxTotalBytes: bytes })).not.toThrow();
+  expect(() => projectOf(models, { maxTotalBytes: bytes })).toThrow(
+    expect.objectContaining({ code: ERROR_CODES.workbookTooLarge }),
+  );
 });

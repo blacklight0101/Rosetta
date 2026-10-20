@@ -1,5 +1,7 @@
-import { placeCells } from './cell-order.js';
-import type { DependencyLimits } from './dependency-limits.js';
+import { placeCells, type PlacedCell } from './cell-order.js';
+import { DEFAULT_DEPENDENCY_LIMITS, type DependencyLimits } from './dependency-limits.js';
+import { showExternalNames } from './external-names.js';
+import { renderDependencies } from './render-dependencies.js';
 import { renderFormulas } from './render-formulas.js';
 import { renderIndex, type SheetEntry } from './render-index.js';
 import { renderMacros } from './render-macros.js';
@@ -64,13 +66,27 @@ export interface RenderLimits {
 
 const DEFAULT_LIMITS: RenderLimits = { maxTotalBytes: DEFAULT_MAX_TOTAL_BYTES };
 
+/** A formula that reads another workbook is shown with the file name, not the link number (Q-38). */
+function withFileNames(placed: PlacedCell[], links: readonly string[]): PlacedCell[] {
+  if (links.length === 0) return placed;
+  return placed.map((item) => {
+    const formula = item.cell.formula;
+    if (formula === undefined || formula.text === '') return item;
+    const text = showExternalNames(formula.text, links);
+    return text === formula.text
+      ? item
+      : { ...item, cell: { ...item.cell, formula: { ...formula, text } } };
+  });
+}
+
 function renderSheet(
   model: WorkbookModel,
   entry: SheetEntry,
   budget: ByteBudget,
 ): { files: Record<string, string>; entry: SheetEntry } {
   const { sheet } = entry;
-  const placed = placeCells(sheet.cells, sheet.part);
+  const links = model.externalLinks.map((link) => link.fileName);
+  const placed = withFileNames(placeCells(sheet.cells, sheet.part), links);
   const formulas = placed.filter((p) => p.cell.formula !== undefined).length;
   const withCount = { ...entry, formulas };
   return {
@@ -134,7 +150,10 @@ export function renderWorkbooks(
   models: readonly WorkbookModel[],
   limits: RenderLimits = DEFAULT_LIMITS,
 ): RenderedWorkbook[] {
-  const budget = new ByteBudget(limits.maxTotalBytes);
+  return renderAll(models, new ByteBudget(limits.maxTotalBytes));
+}
+
+function renderAll(models: readonly WorkbookModel[], budget: ByteBudget): RenderedWorkbook[] {
   const folders = allocateSegments(
     models.map((model) => model.fileName),
     { keepExtension: true },
@@ -157,12 +176,17 @@ export interface RenderedProject {
   readonly dependencies: RenderedFile;
 }
 
+/**
+ * Renders the workbooks of a project and the dependency map that spans them. Both draw on one byte
+ * limit (`limits.maxTotalBytes`, RST-1926 when it is passed).
+ */
 export function renderProject(
   models: readonly WorkbookModel[],
   limits: RenderLimits = DEFAULT_LIMITS,
 ): RenderedProject {
-  return {
-    workbooks: renderWorkbooks(models, limits),
-    dependencies: { path: 'dependencies.md', content: '' },
-  };
+  const budget = new ByteBudget(limits.maxTotalBytes);
+  const workbooks = renderAll(models, budget);
+  const bounds = { ...DEFAULT_DEPENDENCY_LIMITS, ...limits.dependencies };
+  const content = renderDependencies(models, workbooks, bounds, budget);
+  return { workbooks, dependencies: { path: 'dependencies.md', content } };
 }

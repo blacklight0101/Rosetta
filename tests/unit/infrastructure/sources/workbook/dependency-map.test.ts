@@ -115,7 +115,7 @@ it('RF-153 reads whole columns and whole rows as the cells that exist in them', 
   });
   const content = dependenciesOf([book([data, calc], { fileName: 'Book.xlsx' })]);
 
-  expect(sectionOf(content, 'Input cells')).toEqual(['Book.xlsx/Data!A1:B1', 'Book.xlsx/Data!A2']);
+  expect(sectionOf(content, 'Input cells')).toEqual(['Book.xlsx/Data!A1:A2', 'Book.xlsx/Data!B1']);
 });
 
 it('RF-153 reads a structured table reference as the table columns it names', () => {
@@ -126,11 +126,27 @@ it('RF-153 reads a structured table reference as the table columns it names', ()
     ),
   });
   const calc = sheet('Calc', {
-    cells: [withFormula('A1', 'SUM(Sales[Price])'), withFormula('A2', 'Sales[[#This Row],[Qty]]')],
+    cells: [withFormula('A1', 'SUM(Sales[Price])'), withFormula('A2', 'SUM(Sales[Qty])')],
   });
   const content = dependenciesOf([book([data, calc], { fileName: 'Book.xlsx' })]);
 
   expect(sectionOf(content, 'Input cells')).toEqual(['Book.xlsx/Data!B2:C4']);
+});
+
+it('RF-153 reads this row of a table as the row of the formula', () => {
+  const data = sheet('Data', {
+    tables: [{ name: 'Sales', range: 'A1:D4', columns: ['Region', 'Qty', 'Price', 'Total'] }],
+    cells: [
+      cell('B2', num(1)),
+      cell('B3', num(2)),
+      cell('B4', num(3)),
+      withFormula('D2', 'Sales[[#This Row],[Qty]]*2'),
+      withFormula('D3', '[@Qty]*2'),
+    ],
+  });
+  const content = dependenciesOf([book([data], { fileName: 'Book.xlsx' })]);
+
+  expect(sectionOf(content, 'Input cells')).toEqual(['Book.xlsx/Data!B2:B3']);
 });
 
 it('RF-153 reads a shared formula for every cell it covers, shifted from its first cell', () => {
