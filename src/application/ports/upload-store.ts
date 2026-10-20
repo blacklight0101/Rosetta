@@ -1,4 +1,4 @@
-import type { UploadSnapshot, UploadSnapshotInfo } from './source-fetcher.js';
+import type { SentSnapshot, UploadSnapshotInfo } from './source-fetcher.js';
 
 // RF-128, RF-129, RF-130, RFC-004 section 4.2: where an uploaded zip becomes a snapshot. The store
 // streams the body to a temporary file under a size limit, unpacks it (the ZipExtractor port),
@@ -34,10 +34,10 @@ export interface StoredUpload {
 
 export interface UploadStore {
   store(request: UploadRequest): Promise<StoredUpload>;
-  /** The snapshot of an upload key; undefined when there is none. */
-  read(key: string): Promise<UploadSnapshot | undefined>;
+  /** The snapshot of an upload or workbook key; undefined when there is none. */
+  read(key: string): Promise<SentSnapshot | undefined>;
   /** Deletes one snapshot; false when there is none. */
   remove(key: string): Promise<boolean>;
-  /** Deletes every snapshot of the project's uploads; how many went. */
+  /** Deletes every snapshot of the project's uploads and workbooks; how many went. */
   removeAllOf(projectId: string): Promise<number>;
 }

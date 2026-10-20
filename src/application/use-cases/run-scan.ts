@@ -183,7 +183,7 @@ export class RunScan implements RunExecutor {
     const began = this.deps.clock.now().getTime();
     const key = project.upload?.snapshotKey;
     const snapshot = key === undefined ? undefined : await this.deps.uploads.read(key);
-    if (snapshot === undefined) throw new RosettaError(ERROR_CODES.projectNoSource);
+    if (snapshot?.kind !== 'upload') throw new RosettaError(ERROR_CODES.projectNoSource);
     const { fileName, uploadedAt, snapshotHash } = snapshot;
     await execution.recordSource({
       ...{ commitSha: null, snapshotKey: snapshot.key, snapshotHash, fileName, uploadedAt },
