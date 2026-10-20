@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { BreakableText } from '../components/BreakableText.js';
 import { coverageOf, type AreaCoverage, type CoverageNode } from '../lib/live-run/coverage-map.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 
@@ -16,7 +17,9 @@ function Tree({ nodes }: { readonly nodes: readonly CoverageNode[] }): JSX.Eleme
     <ul class="rst-p138-tree">
       {nodes.map((node) => (
         <li key={node.path} class={`rst-p138-node rst-p138-node--${node.kind}`}>
-          <span class="rst-p138-name">{node.kind === 'folder' ? `${node.name}/` : node.name}</span>
+          <span class="rst-p138-name">
+            <BreakableText text={node.kind === 'folder' ? `${node.name}/` : node.name} />
+          </span>
           {node.children.length === 0 ? null : <Tree nodes={node.children} />}
         </li>
       ))}
@@ -29,9 +32,11 @@ function Area({ area }: { readonly area: AreaCoverage }): JSX.Element {
   return (
     <section class="rst-p138-area" aria-label={`Coverage of ${area.area}`}>
       <div class="rst-p138-area-head">
-        <h3 class="rst-p138-area-name">{area.area}</h3>
+        <h3 class="rst-p138-area-name">
+          <BreakableText text={area.area} />
+        </h3>
         <span class="rst-p138-area-figures">
-          {filesLabel(area.filesRead)} · {share} of the reads
+          {filesLabel(area.filesRead)} · {share} of all files read
         </span>
       </div>
       <div

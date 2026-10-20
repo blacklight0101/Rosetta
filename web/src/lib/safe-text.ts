@@ -4,9 +4,13 @@
 
 export type TextPart =
   | { readonly kind: 'text'; readonly text: string }
+  /** `inline code` between single backticks; the backticks are not part of the text. */
+  | { readonly kind: 'code'; readonly text: string }
   | { readonly kind: 'link'; readonly href: string; readonly label: string };
 
 const githubPrefix = 'https://github.com/';
+/** Text between single backticks on one line. */
+const codePattern = /`([^`\n]+)`/gu;
 /** `[label](url)` or a bare http(s) URL; a bare URL ends before whitespace, quotes and brackets. */
 const linkPattern = /\[([^\]\n]*)\]\(([^)\s]*)\)|https?:\/\/[^\s<>"'`)\]]+/giu;
 const trailingPunctuation = /[.,;:!?]+$/u;
@@ -53,8 +57,8 @@ function partsOfMatch(match: RegExpExecArray): TextPart[] {
   return parts;
 }
 
-// RF-507
-export function splitText(text: string): readonly TextPart[] {
+/** The links of a stretch of text outside any code span. */
+function linkParts(text: string): readonly TextPart[] {
   const parts: TextPart[] = [];
   let end = 0;
   for (const match of text.matchAll(linkPattern)) {
@@ -66,5 +70,18 @@ export function splitText(text: string): readonly TextPart[] {
     end = match.index + match[0].length;
   }
   pushText(parts, text.slice(end));
+  return parts;
+}
+
+// RF-507
+export function splitText(text: string): readonly TextPart[] {
+  const parts: TextPart[] = [];
+  let end = 0;
+  for (const match of text.matchAll(codePattern)) {
+    parts.push(...linkParts(text.slice(end, match.index)));
+    parts.push({ kind: 'code', text: match[1] ?? '' });
+    end = match.index + match[0].length;
+  }
+  parts.push(...linkParts(text.slice(end)));
   return parts;
 }
