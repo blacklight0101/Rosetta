@@ -6,13 +6,15 @@ import type { ProjectSettings } from './project-settings.js';
 // source is a normalised GitHub address, or empty for an uploaded zip (RF-130); an empty `ref` means the default branch and an empty
 // `subpath` the repository root. Instants are epoch milliseconds from the Clock port.
 
-/** The zip an upload project holds now (RF-128, RF-130). */
+/** The zip an upload project, or the workbooks a workbook project, hold now (RF-128, RF-130, RF-150). */
 export interface ProjectUpload {
-  /** The file name as sent, with its .zip. */
+  /** The file name as sent, with its .zip; for workbooks the names of the files, joined by commas. */
   readonly fileName: string;
   readonly uploadedAt: EpochMs;
-  /** The snapshot folder name, upload__<project id>@<16 hex>. */
+  /** The snapshot folder name, upload__<project id>@<16 hex> or workbook__<project id>@<16 hex>. */
   readonly snapshotKey: string;
+  /** How many workbooks the source holds; absent when it holds none (RF-150, RF-156). */
+  readonly workbooks?: number | undefined;
 }
 
 export interface Project {
@@ -21,7 +23,7 @@ export interface Project {
   readonly userId: string;
   /** `<owner>/<repo>` by default. */
   readonly name: string;
-  /** `github` (a public repository) or `upload` (a zip the user sent); see `source-kind.ts` (RF-130). */
+  /** `github` (a public repository), `upload` (a zip the user sent) or `workbook` (Excel workbooks); see `source-kind.ts` (RF-130, RF-152). */
   readonly sourceKind: SourceKind;
   /**
    * `https://github.com/<owner>/<repo>`, lower case so that GitHub's case-insensitive names match;
@@ -30,7 +32,7 @@ export interface Project {
   readonly sourceUrl: string;
   readonly ref: string;
   readonly subpath: string;
-  /** An upload project's current zip; absent for a GitHub project and for an upload with no source yet. */
+  /** The current zip or workbooks of a sent source; absent for a GitHub project and for a project with no source yet. */
   readonly upload?: ProjectUpload | undefined;
   /** The snapshot the newest run with a source analysed; absent when no run has one (RF-128). */
   readonly lastRunSnapshotKey?: string | undefined;

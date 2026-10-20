@@ -4,7 +4,7 @@ import { active, adminOnly, everyone, ownerOnly, signedIn } from './access-colum
 import { budgetRoutes, outputRoutes, type Context, type Probe } from './access-probes.js';
 import { settingsWith } from './project-fixtures.js';
 import { planRows } from './access-plan-rows.js';
-import { uploadRows } from './access-upload-rows.js';
+import { uploadRows, workbookRows } from './access-upload-rows.js';
 import { deepenRows } from './access-deepen-rows.js';
 import { fixtureKey } from './provider-key-fixtures.js';
 import type { TestUser } from './test-browser.js';
@@ -284,6 +284,7 @@ export const matrixAreas = {
   projects: projectRows,
   plan: planRows,
   upload: uploadRows,
+  workbook: workbookRows,
   deepen: deepenRows,
   account: accountRows,
   admin: adminRows,

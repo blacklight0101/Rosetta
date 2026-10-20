@@ -32,9 +32,10 @@ const FIND = SELECT + ' WHERE user_id = $1 AND id = $2';
 const UPDATE_SETTINGS =
   'UPDATE projects SET settings = $3::jsonb, updated_at = $4, settings_version = settings_version + 1 WHERE user_id = $1 AND id = $2 AND ($5::int IS NULL OR settings_version = $5::int) RETURNING ' +
   PROJECT_COLUMNS;
-// RF-128: an upload project holds one zip at a time; a GitHub project holds none.
+// RF-128, RF-150: an upload project holds one zip at a time and a workbook project one batch of
+// workbooks; a GitHub project holds none. `$7` is the number of workbooks, null when there are none.
 const ATTACH_UPLOAD =
-  "UPDATE projects SET source_snapshot_key = $3, source_file_name = $4, source_uploaded_at = $5, updated_at = $6 WHERE user_id = $1 AND id = $2 AND source_kind = 'upload' RETURNING " +
+  "UPDATE projects SET source_snapshot_key = $3, source_file_name = $4, source_uploaded_at = $5, updated_at = $6, source_workbooks = $7::int WHERE user_id = $1 AND id = $2 AND source_kind IN ('upload', 'workbook') RETURNING " +
   PROJECT_COLUMNS;
 const VERSION_OF = 'SELECT settings_version FROM projects WHERE user_id = $1 AND id = $2';
 
@@ -140,7 +141,7 @@ export class PgProjectRepository implements ProjectRepository {
     const [row] = (
       await this.run(ATTACH_UPLOAD, [
         ...[userId, projectId, upload.snapshotKey, upload.fileName],
-        ...[new Date(upload.uploadedAt), new Date(change.updatedAt)],
+        ...[new Date(upload.uploadedAt), new Date(change.updatedAt), upload.workbooks ?? null],
       ])
     ).rows;
     return row === undefined ? undefined : toProject(row);

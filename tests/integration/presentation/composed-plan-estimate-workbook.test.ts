@@ -76,6 +76,7 @@ async function promptTokens(pool: Pool, dataDir: string, ids: readonly string[])
     ...{ pool, logger, clock, masker, dataDir },
     ...{ templatesFolder: 'templates', promptsFolder: 'prompts' },
     ...{ uploadMaxMb: 10, priceTable: estimatePrices, serverKeys: { has: () => true } },
+    workbook: { workbookMaxFiles: 20, workbookMaxSheets: 200, workbookMaxCells: 2_000_000 },
   });
   const [userId, projectId] = ids;
   const outcome = await services.estimatePlan.execute({

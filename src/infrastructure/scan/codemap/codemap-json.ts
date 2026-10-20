@@ -3,6 +3,7 @@ import { MAX_AREA_NAME_LENGTH, type AreaProblem } from '../../../domain/code-map
 import {
   createCodeMap,
   isUploadSource,
+  isWorkbookSource,
   type CodeLink,
   type CodeMap,
   type CodeMapProblem,
@@ -109,6 +110,13 @@ const codeMapSchema = z.strictObject({
       snapshotHash: z.string().regex(/^sha256:[0-9a-f]{64}$/u),
       subpath: z.literal(''),
     }),
+    // RF-152: uploaded workbooks have their file names and a tree hash, no repository and no commit.
+    z.strictObject({
+      kind: z.literal('workbook'),
+      workbooks: z.array(z.string().min(1).max(maxPath)).min(1).max(maxFiles),
+      snapshotHash: z.string().regex(/^sha256:[0-9a-f]{64}$/u),
+      subpath: z.literal(''),
+    }),
   ]),
   files: z.array(fileSchema).max(maxFiles),
   areas: z.array(areaSchema).max(maxAreas),
@@ -161,6 +169,10 @@ function sourceJson(source: CodeMapSource): Record<string, unknown> {
   if (isUploadSource(source)) {
     const { kind, fileName, snapshotHash, subpath } = source;
     return { kind, fileName, snapshotHash, subpath };
+  }
+  if (isWorkbookSource(source)) {
+    const { kind, workbooks, snapshotHash, subpath } = source;
+    return { kind, workbooks, snapshotHash, subpath };
   }
   const { owner, repo, commitSha, subpath } = source;
   return { owner, repo, commitSha, subpath };

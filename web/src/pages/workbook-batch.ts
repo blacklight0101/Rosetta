@@ -1,6 +1,7 @@
 import type { ApiClient, ApiResult } from '../api/client.js';
 import type { Project } from '../api/project-schemas.js';
 import {
+  cancelBatch,
   createWorkbookProject,
   finishBatch,
   openBatch,
@@ -65,6 +66,8 @@ async function sendFiles(
     });
     if (!stored.ok) {
       run.events.file(index, 'failed');
+      // The server no longer has the batch (it expired): the next run opens a new one.
+      if (stored.error.status === 404) run.events.batch(undefined);
       return stored;
     }
     batch = { ...batch, sent: [...batch.sent, file] };
@@ -77,6 +80,8 @@ async function sendFiles(
 async function ensureBatch(run: BatchRun, projectId: string): Promise<ApiResult<OpenBatch>> {
   const kept = reusable(run.batch, run.files);
   if (kept !== undefined) return { ok: true, value: kept };
+  // An open batch the files do not fit is cancelled, or it would block the new one (RST-1919).
+  if (run.batch !== undefined) await cancelBatch(run.client, { projectId, batchId: run.batch.id });
   const opened = await openBatch(run.client, projectId, run.signal);
   if (!opened.ok) return opened;
   const batch = { id: opened.value, sent: [] };

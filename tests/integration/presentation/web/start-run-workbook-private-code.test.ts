@@ -4,6 +4,7 @@ import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { describeError } from '../../../../src/domain/errors/descriptions.js';
 import { settingsFor } from '../../../support/provider-factory-harness.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
+import { heldWorkbooks } from '../../../support/workbook-run-fixtures.js';
 import { addUser, signedInBrowser } from '../../../support/test-browser.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
@@ -27,7 +28,7 @@ async function setup() {
   const userId = actorOf(amyUser.account).userId;
   const project = sampleProject({
     ...{ userId, settings: cloudReader, sourceKind: 'workbook' },
-    ...{ sourceUrl: '', ref: '', subpath: '' },
+    ...{ sourceUrl: '', ref: '', subpath: '', upload: heldWorkbooks },
   });
   await test.projects.insertOrFind(project);
   return { test, project, amy: await signedInBrowser(test.server, amyUser), userId };

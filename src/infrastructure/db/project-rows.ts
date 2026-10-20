@@ -10,7 +10,7 @@ import { projectSettingsSchema } from '../../application/projects/project-settin
 
 /** Every column, in table order. */
 export const PROJECT_COLUMNS =
-  'id::text AS id, user_id::text AS user_id, name, source_kind, source_url, ref, subpath, source_snapshot_key, source_file_name, source_uploaded_at, (SELECT r.snapshot_key FROM runs r WHERE r.project_id = projects.id AND r.snapshot_key IS NOT NULL ORDER BY r.queued_at DESC, r.id DESC LIMIT 1) AS last_run_snapshot_key, settings, settings_version, created_at, updated_at';
+  'id::text AS id, user_id::text AS user_id, name, source_kind, source_url, ref, subpath, source_snapshot_key, source_file_name, source_uploaded_at, source_workbooks, (SELECT r.snapshot_key FROM runs r WHERE r.project_id = projects.id AND r.snapshot_key IS NOT NULL ORDER BY r.queued_at DESC, r.id DESC LIMIT 1) AS last_run_snapshot_key, settings, settings_version, created_at, updated_at';
 
 const instant = z.date().transform((date) => date.getTime());
 
@@ -19,13 +19,15 @@ interface UploadColumns {
   readonly source_snapshot_key: string | null;
   readonly source_file_name: string | null;
   readonly source_uploaded_at: number | null;
+  readonly source_workbooks: number | null;
 }
 
 function hasValidUpload(row: UploadColumns): boolean {
   const set = [row.source_snapshot_key, row.source_file_name, row.source_uploaded_at].filter(
     (value) => value !== null,
   ).length;
-  return set === 0 || (set === 3 && row.source_kind === 'upload');
+  if (set === 0) return row.source_workbooks === null;
+  return set === 3 && (row.source_kind === 'upload' || row.source_kind === 'workbook');
 }
 
 const projectRowSchema = z
@@ -41,13 +43,14 @@ const projectRowSchema = z
     source_snapshot_key: z.string().nullable().default(null),
     source_file_name: z.string().nullable().default(null),
     source_uploaded_at: instant.nullable().default(null),
+    source_workbooks: z.number().int().min(1).nullable().default(null),
     last_run_snapshot_key: z.string().nullable().default(null),
     settings: projectSettingsSchema,
     settings_version: z.number().int().min(1),
     created_at: instant,
     updated_at: instant,
   })
-  // RF-128: the zip is all there or all null, and only an upload project has one.
+  // RF-128, RF-150: the source is all there or all null, and only an upload or workbook project has one.
   .refine(hasValidUpload)
   // RF-130: an upload row with an address, ref or subpath is damaged, never guessed at.
   .refine((row) =>
@@ -78,6 +81,7 @@ export function toProject(row: unknown): Project {
             fileName: parsed.source_file_name,
             uploadedAt: parsed.source_uploaded_at,
             snapshotKey: parsed.source_snapshot_key,
+            ...(parsed.source_workbooks === null ? {} : { workbooks: parsed.source_workbooks }),
           },
         }),
     ...(parsed.last_run_snapshot_key === null

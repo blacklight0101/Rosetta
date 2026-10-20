@@ -15,6 +15,7 @@ import { GetPlanSource } from '../application/use-cases/get-plan-source.js';
 import { GetPlanningBrief } from '../application/use-cases/get-planning-brief.js';
 import { SavePlanningBrief } from '../application/use-cases/save-planning-brief.js';
 import { StoreUpload } from '../application/use-cases/store-upload.js';
+import { WorkbookBatches } from '../application/use-cases/workbook-batches.js';
 import { UpdateProjectSettings } from '../application/use-cases/update-project-settings.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
 import { FileAnswersFile } from '../infrastructure/cards/answers-file.js';
@@ -44,6 +45,10 @@ import {
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
+import type { WorkbookSettings } from '../infrastructure/config/workbook-settings.js';
+import { SpaceReservation } from '../infrastructure/sources/space-reservation.js';
+import { DEFAULT_WORKBOOK_LIMITS } from '../infrastructure/sources/workbook/workbook-limits.js';
+import { DiskWorkbookStaging } from '../infrastructure/sources/workbook-staging.js';
 import type { PlanInputs } from '../application/plan/plan-inputs.js';
 import { workbookGuidanceFor } from '../application/plan/plan-workbook.js';
 import { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-store.js';
@@ -72,6 +77,8 @@ export interface ProjectParts {
   readonly pool: DatabasePool;
   readonly logger: Logger;
   readonly clock: Clock;
+  /** The clock the workbook batches expire by; `clock` unless a test moves its own. */
+  readonly batchClock?: Clock;
   readonly masker: TextMasker;
   /** The folder with `project-settings.json` and `ignore-rules.txt`. */
   readonly templatesFolder: string;
@@ -80,24 +87,54 @@ export interface ProjectParts {
   readonly dataDir: string;
   /** `ROSETTA_UPLOAD_MAX_MB` (RF-129). */
   readonly uploadMaxMb: number;
+  /** `ROSETTA_WORKBOOK_MAX_FILES`, `_MAX_SHEETS` and `_MAX_CELLS` (RF-151). */
+  readonly workbook: WorkbookSettings;
+  /** Free bytes of the data folder, for a test that needs the space to be short; the file system's by default. */
+  readonly freeBytes?: () => Promise<number>;
   /** The shipped price table the plan estimate prices the planner with (RF-613). */
   readonly priceTable: PriceTable;
   /** Which providers the server holds a key for; the plan estimate says when a call has none. */
   readonly serverKeys: ServerKeyPresence;
 }
 
-/** The use case behind PUT /api/projects/:id/source (RF-128, RF-129). */
-function storeUploadOf(
+/**
+ * The use cases behind PUT /api/projects/:id/source (RF-128, RF-129) and the workbook batch routes
+ * (RF-150). They share one reservation of free space and one upload store (DEC-149).
+ */
+function uploadsOf(
   parts: ProjectParts,
   projects: ProjectRepository,
   runs: RunIndex,
-): StoreUpload {
-  const { pool, logger, clock, masker } = parts;
-  return new StoreUpload({
-    ...{ projects, runs, logger, clock, auditLog: new PgAuditLog(pool, masker) },
-    uploads: createUploadStore(parts.dataDir),
-    limitBytes: uploadLimitBytes(parts.uploadMaxMb),
+): Pick<ProjectServices, 'storeUpload' | 'workbookBatches'> {
+  const { pool, logger, clock, masker, dataDir } = parts;
+  const reservation = new SpaceReservation({
+    dataDir,
+    ...(parts.freeBytes === undefined ? {} : { freeBytes: parts.freeBytes }),
   });
+  const { workbookMaxFiles, workbookMaxSheets, workbookMaxCells } = parts.workbook;
+  const limits = {
+    ...DEFAULT_WORKBOOK_LIMITS,
+    ...{ maxFiles: workbookMaxFiles, maxSheets: workbookMaxSheets, maxCells: workbookMaxCells },
+  };
+  const uploads = createUploadStore(dataDir, reservation, limits);
+  const limitBytes = uploadLimitBytes(parts.uploadMaxMb);
+  const auditLog = new PgAuditLog(pool, masker);
+  return {
+    storeUpload: new StoreUpload({
+      ...{ projects, runs, logger, clock, auditLog },
+      uploads,
+      limitBytes,
+    }),
+    workbookBatches: new WorkbookBatches({
+      ...{ projects, runs, logger, auditLog, uploads, limitBytes },
+      clock: parts.batchClock ?? clock,
+      staging: new DiskWorkbookStaging({
+        dataDir,
+        reservation,
+        limits,
+      }),
+    }),
+  };
 }
 
 /** RF-155: the plan estimate asks the same question as the plan run, over the same scan results. */
@@ -133,7 +170,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       ids: new TimestampIdGenerator(clock),
       clock,
     }),
-    storeUpload: storeUploadOf(parts, projects, runs),
+    ...uploadsOf(parts, projects, runs),
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
     updateProjectSettings: new UpdateProjectSettings({ projects, clock }),

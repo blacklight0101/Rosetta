@@ -2,6 +2,7 @@ import { GetPlanSource } from '../../src/application/use-cases/get-plan-source.j
 import { EstimatePlan } from '../../src/application/estimate/estimate-plan.js';
 import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
 import type { UploadStore } from '../../src/application/ports/upload-store.js';
+import type { WorkbookStaging } from '../../src/application/ports/workbook-staging.js';
 import type { RunIndex } from '../../src/application/ports/run-index.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
 import { GetAccountTotals } from '../../src/application/use-cases/get-account-totals.js';
@@ -11,6 +12,7 @@ import { GetProjectCost } from '../../src/application/use-cases/get-project-cost
 import { ListProjects } from '../../src/application/use-cases/list-projects.js';
 import { OpenWorkspace } from '../../src/application/use-cases/open-workspace.js';
 import { StoreUpload } from '../../src/application/use-cases/store-upload.js';
+import { WorkbookBatches } from '../../src/application/use-cases/workbook-batches.js';
 import { UpdateProjectSettings } from '../../src/application/use-cases/update-project-settings.js';
 import type { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { FileRunCards } from '../../src/infrastructure/cards/file-run-cards.js';
@@ -62,9 +64,10 @@ export interface PlanFiles {
   readonly keys: MemoryProviderKeyRepository;
 }
 
-/** RF-128: the store an upload goes to and the largest zip it takes. */
+/** RF-128, RF-150: the store an upload goes to, the staging area of a workbook batch and the largest upload. */
 export interface UploadParts {
   readonly store: UploadStore;
+  readonly staging: WorkbookStaging;
   readonly limitBytes: number;
 }
 
@@ -84,6 +87,12 @@ export function projectServices(
     storeUpload: new StoreUpload({
       ...{ projects, runs, auditLog, logger, clock },
       uploads: upload.store,
+      limitBytes: upload.limitBytes,
+    }),
+    workbookBatches: new WorkbookBatches({
+      ...{ projects, runs, auditLog, logger, clock },
+      uploads: upload.store,
+      staging: upload.staging,
       limitBytes: upload.limitBytes,
     }),
     listProjects: new ListProjects({ projects }),

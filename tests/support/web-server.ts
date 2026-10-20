@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { UploadStore } from '../../src/application/ports/upload-store.js';
+import type { WorkbookStaging } from '../../src/application/ports/workbook-staging.js';
 import type { DefaultRoles } from '../../src/application/projects/default-roles.js';
 import type { PasswordHasher } from '../../src/application/ports/password-hasher.js';
 import type { SessionStore } from '../../src/application/ports/session-store.js';
@@ -47,6 +48,7 @@ import type { MemoryOutputWriter } from './memory-output-writer.js';
 import type { ManualScheduler } from './manual-scheduler.js';
 import { capServices } from './cap-services.js';
 import { FakeUploadStore } from './fake-upload-store.js';
+import { FakeWorkbookStaging } from './fake-workbook-staging.js';
 import { projectServices, type UploadParts } from './project-services.js';
 import { historyServices, runServices, type RunOutputGiven } from './web-run-services.js';
 import {
@@ -131,6 +133,8 @@ export interface TestServerOptions
   readonly dummyHash?: string;
   /** RF-128: where uploads go; a fake that keeps nothing by default. The limit is `uploadMaxMb` (5 MB when not given). */
   readonly uploads?: UploadStore;
+  /** RF-150: where the files of a workbook batch go; a fake by default. */
+  readonly workbookStaging?: WorkbookStaging;
   /** RF-1011: a data folder makes the calls and logs routes the composition root's, over its logs. */
   readonly logDir?: string;
 }
@@ -226,7 +230,8 @@ function fileDoubles(parts: {
 /** RF-128, RF-129: the store uploads go to (a fake by default) and the limit it is given. */
 function uploadPartsOf(options: TestServerOptions): UploadParts {
   const { uploads = new FakeUploadStore(), uploadMaxMb = DEFAULT_TEST_UPLOAD_MB } = options;
-  return { store: uploads, limitBytes: uploadMaxMb * BYTES_PER_MB };
+  const { workbookStaging = new FakeWorkbookStaging() } = options;
+  return { store: uploads, staging: workbookStaging, limitBytes: uploadMaxMb * BYTES_PER_MB };
 }
 
 /**

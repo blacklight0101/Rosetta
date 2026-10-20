@@ -32,6 +32,8 @@ export interface SessionRouteOptions {
   readonly refusals: RecordRefusedRequest;
   /** `ROSETTA_UPLOAD_MAX_MB`; told to the page so it can refuse a big file before sending it (RF-134). */
   readonly uploadMaxMb?: number | undefined;
+  /** `ROSETTA_WORKBOOK_MAX_FILES`; told to the page beside the size limit (RF-158). */
+  readonly workbookMaxFiles?: number | undefined;
 }
 
 const MAX_USER_NAME_LENGTH = 200;
@@ -105,6 +107,9 @@ export function registerSessionRoutes(server: FastifyInstance, options: SessionR
         user: signedInOf(request).user,
         csrfToken: reply.generateCsrf(),
         ...(options.uploadMaxMb === undefined ? {} : { uploadMaxMb: options.uploadMaxMb }),
+        ...(options.workbookMaxFiles === undefined
+          ? {}
+          : { workbookMaxFiles: options.workbookMaxFiles }),
       }),
   );
 

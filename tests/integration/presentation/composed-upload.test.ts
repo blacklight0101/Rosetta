@@ -9,6 +9,8 @@ import { fixturePassword } from '../../support/account-fixtures.js';
 import { hasTestDatabase, useTestDatabase, type TestDatabase } from '../../support/postgres.js';
 import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 import { sampleZip } from '../../support/upload-store-harness.js';
+import { encryptedBook, sampleBook } from '../../support/workbook-staging-harness.js';
+import { buildZip } from '../../support/zip-fixtures.js';
 import { removeWritableTree } from '../../support/writable-temp-root.js';
 
 // RF-128, RF-133, RF-134: the composed application, not a hand-wired one. The page reads the upload
@@ -127,6 +129,52 @@ describe.skipIf(!hasTestDatabase)('the composed application and an upload', () =
       expect(named).toBe('Café Orders.zip');
       expect(deleted.status).toBe(200);
       expect(await snapshotFolders(dataDir)).toEqual([]);
+    } finally {
+      await application.stop();
+    }
+  });
+});
+
+const zipBody = z.object({
+  workbooks: z.array(z.object({ name: z.string(), sheets: z.number() })),
+  leftOut: z.array(z.object({ name: z.string(), reason: z.string() })),
+});
+const viewBody = z.object({ source: z.object({ workbooks: z.number().optional() }) });
+
+describe.skipIf(!hasTestDatabase)('the composed application and a zip that holds workbooks', () => {
+  const database = useTestDatabase();
+
+  it('RF-152 Q-41 renders the workbook, lists the refused one and counts them on the project', async () => {
+    const { application, password, pool } = await composed(database);
+    try {
+      const address = await application.start();
+      await pool.query("UPDATE users SET state = 'Active'");
+      const { send } = await signedIn(address, password);
+      const created = await send('/api/projects', {
+        method: 'POST',
+        type: 'application/json',
+        body: JSON.stringify({ sourceKind: 'upload', name: 'OrderDesk' }),
+      });
+      const id = idBody.parse(await created.json()).id;
+      const zip = await buildZip([
+        { name: 'src/Orders.cs', data: 'class Orders {}' },
+        { name: 'Pricing.xlsx', data: await sampleBook() },
+        { name: 'Locked.xlsx', data: encryptedBook() },
+      ]);
+
+      const uploaded = await send(`/api/projects/${id}/source`, {
+        method: 'PUT',
+        type: 'application/zip',
+        name: 'Orders.zip',
+        body: new Uint8Array(zip),
+      });
+      const body = zipBody.parse(await uploaded.json());
+      const view = viewBody.parse(await (await send(`/api/projects/${id}`)).json());
+
+      expect(uploaded.status).toBe(201);
+      expect(body.workbooks.map((book) => book.name)).toEqual(['Pricing.xlsx']);
+      expect(body.leftOut.map((item) => item.name)).toEqual(['Locked.xlsx']);
+      expect(view.source.workbooks).toBe(1);
     } finally {
       await application.stop();
     }

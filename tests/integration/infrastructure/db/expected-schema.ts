@@ -56,6 +56,7 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'source_snapshot_key text null',
     'source_file_name text null',
     'source_uploaded_at timestamptz null',
+    'source_workbooks int4 null',
   ],
   runs: [
     'id uuid',
