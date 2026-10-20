@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "description": "An understand run over the pricing-workbook fixture (a rendered Excel workbook beside a C# helper, as an uploaded zip holding a workbook). The Pricing.xlsx task reads the formulas and the values of the Quote sheet, which hold a planted instruction in a cell, and describes the discount rule, the price lookup and the Quote sheet as an entity; the Tools task reads the helper and describes it. Written by hand for the fake provider; no real provider was called (P3-50).",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Pricing.xlsx/Quote/formulas.md",
+                  "startLine": 1,
+                  "endLine": 7
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-2",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Pricing.xlsx/Quote/values.md",
+                  "startLine": 6,
+                  "endLine": 11
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Volume discount\",\n      \"area\": \"Pricing.xlsx\",\n      \"summary\": \"A quote of 100 units or more gets a 10% discount.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The discount is 10% when the quantity is 100 or more, and none below that.\",\n          \"citations\": [\n            \"Pricing.xlsx/Quote/formulas.md:6-6\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"BR\",\n      \"title\": \"Unit price by customer type\",\n      \"area\": \"Pricing.xlsx\",\n      \"summary\": \"The list price of a quote comes from the rate table by customer type.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The list price is looked up in the Rates sheet by the customer type of the quote.\",\n          \"citations\": [\n            \"Pricing.xlsx/Quote/formulas.md:5-5\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"ENT\",\n      \"title\": \"Quote\",\n      \"area\": \"Pricing.xlsx\",\n      \"summary\": \"A quote holds a customer type, a quantity, a list price, a discount and a total.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The Quote sheet holds one quote: customer type, quantity, list price, discount, total and a free-text note.\",\n          \"citations\": [\n            \"Pricing.xlsx/Quote/values.md:6-11\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-3",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-4",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Tools/Helper.cs",
+                  "startLine": 1,
+                  "endLine": 10
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Customer type label\",\n      \"area\": \"Tools\",\n      \"summary\": \"A customer type is shown trimmed and in capital letters.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The label of a customer type is the text trimmed and in upper case.\",\n          \"citations\": [\n            \"Tools/Helper.cs:5-8\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-5",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

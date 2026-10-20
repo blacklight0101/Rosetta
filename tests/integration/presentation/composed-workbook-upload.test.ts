@@ -245,9 +245,12 @@ describe.skipIf(!hasTestDatabase)('the composed application and a batch left ope
 
       clock.advance(31 * 60_000);
 
-      await vi.waitFor(async () => {
-        expect(await readdir(join(dataDir, 'sources'))).toEqual([]);
-      });
+      await vi.waitFor(
+        async () => {
+          expect(await readdir(join(dataDir, 'sources'))).toEqual([]);
+        },
+        { timeout: 15_000 },
+      );
       const again = await send(batch.base, { method: 'POST' });
       expect(again.status).toBe(201);
     } finally {

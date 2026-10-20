@@ -74,6 +74,8 @@ export interface UnderstandHarnessOptions {
   readonly settings?: ProjectSettings;
   /** RF-130: the project is an uploaded zip whose tree is the repository, not a GitHub address. */
   readonly upload?: boolean;
+  /** RF-155: the folders of the rendered workbooks the snapshot of the project lists. */
+  readonly workbookFolders?: readonly string[];
   /** How many understand runs replay the recording, one after the other (1 when absent). */
   readonly replays?: number;
   readonly decorateAnswer?: DecorateAnswer;
@@ -196,12 +198,10 @@ function keysOf(given: UnderstandHarnessOptions['openAiKey']): Partial<Understan
 export async function createUnderstandHarness(
   options: UnderstandHarnessOptions,
 ): Promise<UnderstandHarness> {
-  const s = stores(
-    options.dataDir,
-    options.refuseRemoval === true,
-    options.fixture,
-    options.repository,
-  );
+  const s = {
+    ...stores(options.dataDir, options.refuseRemoval === true, options.fixture, options.repository),
+    ...(options.workbookFolders === undefined ? {} : { workbookFolders: options.workbookFolders }),
+  };
   await s.users.insert(account);
   const project = sampleProject({
     userId: account.id,

@@ -1,7 +1,6 @@
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { ok } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import type { Catalogue } from '../../domain/planning/catalogue.js';
 import { assemblePlan, type PlanAssembly } from '../../domain/planning/plan-content.js';
 import { methodPrinciples } from '../../domain/planning/task-method.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
@@ -13,14 +12,20 @@ import {
   recordPromptVersions,
 } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
-import type { PromptFile } from '../agent/prompt-file.js';
 import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
 import { parsePlanAnswer } from '../plan/plan-answer.js';
 import { coverageWarnings, planCoverage } from '../plan/plan-coverage.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
-import { planDocuments, type DocumentPrompts } from '../plan/plan-documents.js';
+import { planDocuments } from '../plan/plan-documents.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
 import { planShapes } from '../plan/plan-shapes.js';
+import {
+  loadPlanFiles,
+  planPromptVersions,
+  type PlanFiles,
+  type PlanPromptSources,
+  type PlanPrompts,
+} from '../plan/plan-prompts.js';
 import { handoffPackageOf } from '../plan/plan-package.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
 import type { HandoffWriter } from '../ports/handoff-writer.js';
@@ -44,38 +49,17 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // `handoff/` (an item no card builds: RST-1806). Only `Supported` claims and answered questions reach
 // the planner. The cost report is written at every end.
 
-export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDependencies {
+export interface BuildPlanDependencies
+  extends PlanInputDependencies, PlanPromptSources, RunSinkDependencies {
   readonly users: UserRepository;
   /** RF-632: the scan whose files the data shapes are measured from. */
   readonly scans: ScanResults;
   readonly providers: ProviderSetFactory;
   readonly handoff: HandoffWriter;
   readonly costReports: CostReportWriter;
-  /** The principle catalogue the run plans with (RF-606); its version and hash are recorded. */
-  readonly catalogue: () => Promise<Catalogue>;
-  /** The planner's versioned prompt file (RNF-004). */
-  readonly prompt: () => Promise<PromptFile>;
-  /** The planner's versioned prompt file for the product requirements document (RF-621). */
-  readonly prdPrompt: () => Promise<PromptFile>;
-  /** The planner's versioned prompt file for the target data model (RF-623). */
-  readonly dataModelPrompt: () => Promise<PromptFile>;
-  /** The planner's versioned prompt file for the target flows (RF-625). */
-  readonly flowsPrompt: () => Promise<PromptFile>;
-  /** The planner's versioned prompt file for the API contract (RF-624). */
-  readonly apiContractPrompt: () => Promise<PromptFile>;
-  /** The planner's versioned prompt file that asks a cut-off answer to continue (RF-604). */
-  readonly continuePrompt: () => Promise<PromptFile>;
-  /** The planner's versioned prompt file for the user-interface material (RF-626). */
-  readonly uxPrompt: () => Promise<PromptFile>;
-  /** The planner's versioned prompt file for the links of the task cards to the items (RF-627). */
-  readonly coveragePrompt: () => Promise<PromptFile>;
   /** RF-145: the random tag of every data block. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
-
-type PlanPrompts = Readonly<
-  Record<keyof DocumentPrompts | 'plan' | 'coverage' | 'continue', PromptFile>
->;
 
 interface Finish {
   readonly run: Run;
@@ -122,8 +106,9 @@ export class BuildPlan implements RunExecutor {
     const inputs = await planInputs(this.deps, run, named, this.deps.manifests);
     if (!inputs.ok) return this.fail(run, inputs.error.code, inputs.error.message);
     const updates = new ManifestUpdates(this.deps.manifests, scopeOf(run));
-    const { catalogue, prompts } = await this.loadFiles();
-    await this.record(execution, updates, { inputs: inputs.value, catalogue, prompts });
+    const files = await loadPlanFiles(this.deps, inputs.value);
+    const { catalogue, prompts } = files;
+    await this.record(execution, updates, { inputs: inputs.value, files });
     const planner = await this.plannerOf(execution, inputs.value, updates);
     if (typeof planner === 'string') return failed(planner);
     if (signal.aborted) return { endState: 'Interrupted' };
@@ -180,25 +165,6 @@ export class BuildPlan implements RunExecutor {
     return this.fail(run, ERROR_CODES.planCoverageGap, message);
   }
 
-  /** The principle catalogue and the planner's versioned prompts, read for this run. */
-  private async loadFiles(): Promise<{ catalogue: Catalogue; prompts: PlanPrompts }> {
-    const { catalogue, prompt, prdPrompt, dataModelPrompt, flowsPrompt } = this.deps;
-    const [loaded, plan, prd, dataModel, flows, apiContract, ux, coverage, cont] =
-      await Promise.all([
-        catalogue(),
-        prompt(),
-        prdPrompt(),
-        dataModelPrompt(),
-        flowsPrompt(),
-        this.deps.apiContractPrompt(),
-        this.deps.uxPrompt(),
-        this.deps.coveragePrompt(),
-        this.deps.continuePrompt(),
-      ]);
-    const prompts = { plan, prd, dataModel, flows, apiContract, ux, coverage, continue: cont };
-    return { catalogue: loaded, prompts };
-  }
-
   private warn(run: Run, message: string): Promise<void> {
     return this.deps.logger.log({
       ...{ level: 'warn', logger: 'plan', runId: run.runKey, userId: run.userId },
@@ -212,18 +178,12 @@ export class BuildPlan implements RunExecutor {
     updates: ManifestUpdates,
     used: {
       readonly inputs: PlanInputs;
-      readonly catalogue: Catalogue;
-      readonly prompts: PlanPrompts;
+      readonly files: PlanFiles;
     },
   ): Promise<void> {
-    const { inputs, catalogue, prompts } = used;
-    const { version, sha256 } = catalogue;
-    const versions = Object.fromEntries(
-      Object.values(prompts).map((file) => [
-        file.name,
-        { version: file.version, sha256: file.sha256 },
-      ]),
-    );
+    const { inputs, files } = used;
+    const { version, sha256 } = files.catalogue;
+    const versions = planPromptVersions(files);
     await updates.update((manifest) => recordManifestBrief(manifest, inputs.brief));
     await updates.update((manifest) => recordManifestSourceRun(manifest, inputs.sourceRun.runKey));
     await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));

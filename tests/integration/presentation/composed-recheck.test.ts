@@ -228,7 +228,11 @@ describe.skipIf(!hasTestDatabase)('a queued run in the composed application', ()
         const rows = await setup.pool.query<{ end_state: string | null }>(sql, [run.id]);
         return rows.rows[0]?.end_state ?? undefined;
       });
-      const events = await endedEvents(setup.dataDir);
+      // The row is ended before `run.ended` is appended, so wait for the event, not for a time.
+      const events = await waitFor(async () => {
+        const found = await endedEvents(setup.dataDir);
+        return found.length === 0 ? undefined : found;
+      });
 
       expect(ended).toBe('Failed');
       expect(JSON.stringify(events)).toContain('RST-1521');

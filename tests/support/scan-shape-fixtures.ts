@@ -157,9 +157,11 @@ class FixtureReader implements RepositoryReader {
 export class FixtureScans implements ScanResults {
   readonly opened: Run[] = [];
   private readonly scan: ScanFixture;
+  private readonly workbookFolders: readonly string[];
 
-  constructor(scan: ScanFixture) {
+  constructor(scan: ScanFixture, workbookFolders: readonly string[] = []) {
     this.scan = scan;
+    this.workbookFolders = workbookFolders;
   }
 
   open(run: Run): Promise<ScannedSource> {
@@ -179,6 +181,7 @@ export class FixtureScans implements ScanResults {
         snapshotKey: run.snapshotKey ?? 'octo__demo',
         snapshotHash: `sha256:${'b'.repeat(64)}`,
       },
+      ...(this.workbookFolders.length === 0 ? {} : { workbookFolders: this.workbookFolders }),
     });
   }
 }

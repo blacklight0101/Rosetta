@@ -20,6 +20,8 @@ export interface TokenFigures {
 }
 
 const noMarks: AreaMarks = { flows: false, screens: false };
+/** RF-155: a workbook area gets both fragments with the guidance. */
+const bothMarks: AreaMarks = { flows: true, screens: true };
 
 /** How many of the flows and the screens fragments the area gets: 0, 1 or 2. */
 function fragmentsOf(marks: AreaMarks): number {
@@ -30,13 +32,16 @@ function areaTokens(
   area: Area,
   scenario: Scenario,
   assumptions: ReaderAssumptions,
-  marks: AreaMarks,
+  kind: { readonly marks: AreaMarks; readonly workbook: boolean },
 ): TokenFigures {
+  const { marks, workbook } = kind;
   const turns = assumptions.turnsPerArea[scenario];
   const answered = assumptions.outputTokensPerTurn[scenario];
   const read = ceilPercent(area.estimatedTokens, assumptions.readSharePercent[scenario]);
-  const fragments = fragmentsOf(marks);
-  const overhead = assumptions.promptOverheadTokens + fragments * assumptions.surfacePromptTokens;
+  const fragments = fragmentsOf(workbook ? bothMarks : marks);
+  const guidance = workbook ? assumptions.workbookPromptTokens : 0;
+  const surface = fragments * assumptions.surfacePromptTokens;
+  const overhead = assumptions.promptOverheadTokens + surface + guidance;
   let inputTokens = 0;
   let cacheWriteTokens = 0;
   for (let turn = 1; turn <= turns; turn += 1) {
@@ -54,10 +59,17 @@ export function readerTokens(
   areas: readonly Area[],
   assumptions: ReaderAssumptions,
   marks: ReadonlyMap<string, AreaMarks> = new Map(),
+  /** RF-155: the names of the areas that hold a rendered workbook. */
+  workbooks: ReadonlySet<string> = new Set(),
 ): ByScenario<TokenFigures> {
   const sum = (scenario: Scenario): TokenFigures =>
     areas
-      .map((area) => areaTokens(area, scenario, assumptions, marks.get(area.name) ?? noMarks))
+      .map((area) =>
+        areaTokens(area, scenario, assumptions, {
+          marks: marks.get(area.name) ?? noMarks,
+          workbook: workbooks.has(area.name),
+        }),
+      )
       .reduce(
         (total, each) => ({
           inputTokens: total.inputTokens + each.inputTokens,

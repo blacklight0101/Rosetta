@@ -1,6 +1,7 @@
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
+import type { Run } from '../../domain/runs/run.js';
 import type { Logger } from '../ports/logger.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { ScanResults } from '../ports/scan-results.js';
@@ -18,20 +19,29 @@ export interface PlanShapeDependencies {
   readonly logger: Logger;
 }
 
+/** RF-155, RF-632: the newest completed scan of the snapshot the source run read, if any. */
+export async function scanOfSourceRun(
+  deps: Pick<PlanShapeDependencies, 'runs'>,
+  inputs: PlanInputs,
+): Promise<Run | undefined> {
+  const { project, sourceRun } = inputs;
+  if (sourceRun.snapshotKey === null) return undefined;
+  const listed = await deps.runs.list(project.userId, project.id);
+  return listed.find(
+    (each) =>
+      each.stage === 'scan' &&
+      each.endState === 'Completed' &&
+      each.snapshotKey === sourceRun.snapshotKey,
+  );
+}
+
 // RF-632
 export async function planShapes(
   deps: PlanShapeDependencies,
   inputs: PlanInputs,
 ): Promise<ScanShapes | undefined> {
   const { project, sourceRun } = inputs;
-  if (sourceRun.snapshotKey === null) return undefined;
-  const listed = await deps.runs.list(project.userId, project.id);
-  const scan = listed.find(
-    (each) =>
-      each.stage === 'scan' &&
-      each.endState === 'Completed' &&
-      each.snapshotKey === sourceRun.snapshotKey,
-  );
+  const scan = await scanOfSourceRun(deps, inputs);
   if (scan === undefined) return undefined;
   try {
     const { codeMap, reader } = await deps.scans.open(scan);

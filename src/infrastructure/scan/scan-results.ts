@@ -26,6 +26,8 @@ export interface FileScanResultsOptions {
   /** The read-only repository tree of a snapshot folder name (`<data>/sources/<key>/files`). */
   readonly snapshotRoot: (snapshotKey: string) => string;
   readonly logger: Logger;
+  /** RF-155: the folders of the rendered workbooks a snapshot lists (none when unset). */
+  readonly workbookFolders?: (snapshotKey: string) => Promise<readonly string[]>;
 }
 
 function missing(detail: string): RosettaError {
@@ -74,7 +76,11 @@ export class FileScanResults implements ScanResults {
         cause: error,
       });
     });
-    return { codeMap, codeMapHash, reader, source: { commitSha, snapshotKey, snapshotHash } };
+    const source = { commitSha, snapshotKey, snapshotHash };
+    const workbookFolders = await this.options.workbookFolders?.(snapshotKey);
+    const listed =
+      workbookFolders === undefined || workbookFolders.length === 0 ? {} : { workbookFolders };
+    return { codeMap, codeMapHash, reader, source, ...listed };
   }
 
   private async codeMapOf(

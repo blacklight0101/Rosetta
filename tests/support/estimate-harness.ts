@@ -32,9 +32,16 @@ export class FixedScans implements ScanResults {
   private readonly areas: readonly Area[];
   private readonly files: readonly FileEntry[];
 
-  constructor(areas: readonly Area[], files: readonly FileEntry[] = []) {
+  private readonly workbookFolders: readonly string[];
+
+  constructor(
+    areas: readonly Area[],
+    files: readonly FileEntry[] = [],
+    workbookFolders: readonly string[] = [],
+  ) {
     this.areas = areas;
     this.files = files;
+    this.workbookFolders = workbookFolders;
   }
 
   open(scan: Run): Promise<ScannedSource> {
@@ -52,6 +59,7 @@ export class FixedScans implements ScanResults {
         languagePacks: [],
       },
       codeMapHash: 'a'.repeat(64),
+      ...(this.workbookFolders.length === 0 ? {} : { workbookFolders: this.workbookFolders }),
       reader: new MemoryRepositoryReader({}),
       source: {
         commitSha: 'c'.repeat(40),
@@ -117,11 +125,12 @@ export function createEstimateHarness(
   areas: readonly Area[] = catalogAreas,
   files: readonly FileEntry[] = [],
   priceTable: PriceTable = estimatePrices,
+  workbookFolders: readonly string[] = [],
 ): EstimateHarness {
   const projects = new MemoryProjectRepository();
   const runs = new MemoryRunIndex();
   const keys = new MemoryProviderKeyRepository();
-  const scans = new FixedScans(areas, files);
+  const scans = new FixedScans(areas, files, workbookFolders);
   const estimate = new EstimateRun({ projects, runs, scans, keys, priceTable });
   return { estimate, projects, runs, keys, scans };
 }

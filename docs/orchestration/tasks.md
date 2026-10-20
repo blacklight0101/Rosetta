@@ -3590,7 +3590,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-43, P3-46
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-005 section 4.7; `src/infrastructure/prompts/prompt-files.ts`; `src/application/agent/reader-prompts.ts`; the planner prompt builder; `prompts/reader/area.v3.md`; `prompts/planner/package.v4.md`; RF-155, RNF-004.
 - **Do**: two versioned prompt files, `prompts/reader/workbook.v1.md` and `prompts/planner/workbook.v1.md`, with the guidance of RFC-005 section 4.7 and the data-block rule; the prompt builders add them only when the run's source is `workbook` or an upload whose record lists rendered workbooks; the run records the files' versions; recorded responses for one understand run and one plan run on a built workbook project.
 - **Review probes**: a GitHub run (prompts byte-identical to main); a zip run without workbooks (identical); a zip run with one workbook (guidance added); the manifest's prompt versions; a workbook cell holding "ignore your instructions" (stays data, RF-145).
