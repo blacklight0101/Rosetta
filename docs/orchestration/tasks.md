@@ -3679,7 +3679,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-44, P3-47
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the workbook reader and its limits (`src/infrastructure/sources/workbook/`, P3-44); the formula tokenizer and the external-name rewrite (P3-47, #647, #653); RF-151 and DEC-152; the error-code ranges in `docs/conventions.md`; the second-review verdicts on #653.
 - **Do**: the reader refuses a workbook holding a formula longer than 8,192 characters with RST-1931, at the point the formula is read (cell formulas, shared and array formulas, defined names, validation and conditional-formatting rules), before it reaches the tokenizer or the renderer. The message names the workbook, the sheet and the cell (or the defined name or rule) and says that Excel cannot write such a formula. In a batch nothing is published; in a zip the workbook is left out and listed with its reason (Q-41). Count characters as Excel does (UTF-16 code units after XML unescaping).
 - **Review probes**: a formula of exactly 8,192 characters (accepted) and of 8,193 (refused); the limit hit in a shared formula, a defined name and a validation rule; a formula whose escaped XML is longer than 8,192 but whose text is not (accepted); a zip holding such a workbook (left out and listed, the rest analysed); a batch of two where one is refused (nothing published).
