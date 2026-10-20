@@ -180,3 +180,18 @@ describe('an understand run that cannot start', UNDERSTAND_TIMEOUT, () => {
     expect(h.providers.requests()).toEqual([]);
   });
 });
+
+describe('an understand run: the lines a read returned', () => {
+  it('RF-1002 the result of a read names the lines it returned', () => {
+    const { h, run } = full.current();
+
+    const result = h.eventsOf(run).then((events) => {
+      return events.find((event) => event.type === 'agent.tool.result')?.data;
+    });
+
+    return expect(result).resolves.toEqual({
+      ...{ turn: 1, tool: 'read_file', ok: true },
+      ...{ startLine: 1, endLine: 14, linesReturned: 14 },
+    });
+  });
+});

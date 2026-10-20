@@ -12,6 +12,8 @@ export interface CodeAreaInfo {
   readonly name: string;
   readonly estimatedTokens: number;
   readonly thirdParty: boolean;
+  /** The files the code map lists in the area, when the estimate said. */
+  readonly files?: number;
 }
 
 export interface Tile {

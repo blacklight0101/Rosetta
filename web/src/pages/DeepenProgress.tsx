@@ -34,7 +34,7 @@ export function DeepenProgress(props: { readonly progress: Progress }): JSX.Elem
     <section class="rst-card rst-p241-progress" aria-label="Deepen progress">
       <h2 class="rst-live-section__title">{`Deepen of run ${progress.parentRunKey}`}</h2>
       <p data-testid="deepen-seeded">
-        {`Started from ${countText(seeded.cards)} cards and ${countText(seeded.claims)} claims: ${countText(seeded.supported)} supported, ${countText(seeded.rejected)} rejected, ${countText(seeded.notJudged)} not judged.`}
+        {`Started from ${countText(seeded.cards)} cards and ${countText(seeded.claims)} claims: ${countText(seeded.supported)} supported, ${countText(seeded.rejected)} rejected, ${countText(seeded.citationInvalid)} citation invalid, ${countText(seeded.notJudged)} not judged.`}
       </p>
       <progress
         class="rst-p241-bar"

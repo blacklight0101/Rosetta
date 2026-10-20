@@ -56,15 +56,32 @@ function readers(state: RunState): readonly AgentPanelState[] {
   return state.agents.filter((agent) => agent.role === 'reader');
 }
 
+/**
+ * The areas read against the areas of the map: an area counts as read once every agent that works
+ * on it has ended (a Deepen sends several agents into one area), and the total is the map's own
+ * areas, so the step and "Map the code" count the same things.
+ */
+function areasRead(input: JourneyInput): { readonly read: number; readonly of: number } {
+  const own = input.tiles.filter((tile) => tile.state !== 'library');
+  const ofMap = new Set(own.map((tile) => tile.name));
+  const byArea = new Map<string, AgentPanelState[]>();
+  for (const agent of readers(input.state)) {
+    if (input.tiles.length > 0 && !ofMap.has(agent.area)) continue;
+    byArea.set(agent.area, [...(byArea.get(agent.area) ?? []), agent]);
+  }
+  const read = [...byArea.values()].filter((agents) => agents.every(finished)).length;
+  return { read, of: Math.max(own.length, byArea.size) };
+}
+
 function readStep(input: JourneyInput, mapDone: boolean): Core {
   if (input.stage === 'scan') return { status: 'later', detail: 'in an Understand run' };
   if (!mapDone || input.phase.kind === 'queued') return { status: 'later', detail: 'area by area' };
   const all = readers(input.state);
   if (all.length === 0) return { status: 'current', detail: 'planning the areas' };
-  const ended = all.filter(finished).length;
+  const { read, of } = areasRead(input);
   return {
-    status: ended === all.length ? 'done' : 'current',
-    detail: `${String(ended)} of ${String(all.length)} areas`,
+    status: all.every(finished) ? 'done' : 'current',
+    detail: `${String(read)} of ${String(of)} areas`,
   };
 }
 

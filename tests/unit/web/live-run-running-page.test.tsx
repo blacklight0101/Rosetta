@@ -69,7 +69,7 @@ it('RF-1015 the journey marks the current step and says every state in words', a
   const items = within(journey).getAllByRole('listitem');
   const read = items.find((item) => item.textContent.includes('Read'));
   expect(read?.getAttribute('aria-current')).toBe('step');
-  expect(read?.textContent).toContain('0 of 2 areas');
+  expect(read?.textContent).toContain('0 of 3 areas');
   expect(read?.textContent).toContain('in progress');
   expect(items[0]?.textContent).toContain('done');
   expect(items.at(-1)?.textContent).toContain('waiting');
