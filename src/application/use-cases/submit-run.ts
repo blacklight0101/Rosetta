@@ -59,9 +59,12 @@ export class SubmitRun {
     const { actor, project, stage } = request;
     if (project.userId !== actor.userId) return err(ERROR_CODES.notFound);
     if (!this.deps.queue.canRun(stage)) return err(ERROR_CODES.runStageNotAvailable);
-    const run = await this.insert(project, stage);
-    await this.writeManifest(run, request);
-    await this.deps.queue.dispatch();
+    // One queue step: a dispatch in between would start the run before its manifest exists.
+    const run = await this.deps.queue.admit(async () => {
+      const queued = await this.insert(project, stage);
+      await this.writeManifest(queued, request);
+      return queued;
+    });
     const current = await this.deps.runs.find(actor.userId, run.id);
     return ok({ run: current ?? run, position: await this.deps.queue.positionOf(run.id) });
   }

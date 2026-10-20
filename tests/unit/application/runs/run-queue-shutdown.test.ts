@@ -1,5 +1,9 @@
 import { describe, expect, it, vi, type MockInstance } from 'vitest';
+import { acceptedManifest } from '../../../../src/application/runs/accepted-manifest.js';
+import type { Actor } from '../../../../src/domain/accounts/actor.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
+import { sampleProject } from '../../../support/project-fixtures.js';
+import { sampleRun } from '../../../support/run-fixtures.js';
 import { createRunHarness, userAmy, userBob } from '../../../support/run-harness.js';
 
 // RNF-002, RF-1108: a shutdown that comes while the queue is starting runs leaves none behind. A
@@ -47,6 +51,22 @@ function holdFirstList(h: Harness): HeldList {
   return { release, queued: listQueued };
 }
 
+/**
+ * A queued run of the user with its manifest, put in the stores without a dispatch: Submit run takes the
+ * queue's step for it (P3-59), so two submits cannot be waiting for one dispatch to read both.
+ */
+async function queueRun(h: Harness, actor: Actor): Promise<Run> {
+  const project = sampleProject({ userId: actor.userId });
+  const run = sampleRun({ userId: actor.userId, projectId: project.id });
+  await h.runs.insert(run);
+  const options = {};
+  await h.manifests.write(
+    h.scopeOf(run),
+    acceptedManifest({ run, project, rosettaVersion: '1.2.3-test', options }),
+  );
+  return run;
+}
+
 /** Lets every pending promise callback run. */
 async function settleCallbacks(): Promise<void> {
   for (let round = 0; round < 20; round += 1) await new Promise((resolve) => setImmediate(resolve));
@@ -85,8 +105,9 @@ describe('RunQueue.shutDown while a dispatch has more runs to start', () => {
     const h = createRunHarness();
     const list = holdFirstList(h);
     const starts = holdStarts(h);
-    const first = h.start(userAmy);
-    const second = h.start(userBob);
+    const amy = await queueRun(h, userAmy);
+    const bob = await queueRun(h, userBob);
+    const dispatching = h.queue.dispatch();
     await vi.waitFor(async () => {
       expect(await list.queued()).toHaveLength(2);
     });
@@ -97,7 +118,7 @@ describe('RunQueue.shutDown while a dispatch has more runs to start', () => {
 
     const closing = h.queue.shutDown();
     starts.open();
-    const [amy, bob] = await Promise.all([first, second]);
+    await dispatching;
     h.executor.settle(amy.id, { endState: 'Interrupted' });
     await closing;
     await settleCallbacks();

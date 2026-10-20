@@ -99,6 +99,18 @@ export class RunQueue {
     });
   }
 
+  /**
+   * RF-1108: runs `work` (queueing a run and writing its manifest) as one queue step, so no dispatch
+   * by another run starts the run before its manifest exists, then starts what can start.
+   */
+  admit<T>(work: () => Promise<T>): Promise<T> {
+    return this.steps.run(STEP, async () => {
+      const value = await work();
+      await this.startWaiting();
+      return value;
+    });
+  }
+
   /** Whether an executor is registered for the stage, so a run of it can start. */
   canRun(stage: RunStage): boolean {
     return this.deps.executors[stage] !== undefined;
