@@ -175,3 +175,30 @@ it('RF-153 counts dependencies.md in the total byte limit of the render', () => 
     expect.objectContaining({ code: ERROR_CODES.workbookTooLarge }),
   );
 });
+
+it('RF-153 reads at most 64 cells of the target of one defined name', () => {
+  const refersTo = Array.from({ length: 100 }, (_, i) => `Data!$A$${String(i * 2 + 1)}`).join(',');
+  const data = sheet('Data', {
+    cells: Array.from({ length: 100 }, (_, i) => cell(`A${String(i * 2 + 1)}`, num(i))),
+  });
+  const calc = sheet('Calc', { cells: [withFormula('A1', 'Many*2')] });
+  const content = dependenciesOf([
+    book([data, calc], {
+      fileName: 'Book.xlsx',
+      definedNames: [{ name: 'Many', hidden: false, refersTo }],
+    }),
+  ]);
+
+  expect(sectionOf(content, 'Input cells')).toHaveLength(64);
+});
+
+it('RF-153 reports a formula that the reference limit cuts in the middle as not read', () => {
+  const cells = [cell('A1', num(1)), withFormula('C1', 'A1+A2+A3+A4+A5'), withFormula('C2', 'A1')];
+  const content = dependenciesOf([book([sheet('S', { cells })], { fileName: 'Book.xlsx' })], {
+    dependencies: { maxReferences: 3 },
+  });
+
+  expect(sectionOf(content, LIMITS)).toEqual([
+    'Book.xlsx/S!C1:C2 not read: the project passed the limit of 3 references',
+  ]);
+});

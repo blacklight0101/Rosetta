@@ -108,10 +108,6 @@ function readOne(
   },
 ): void {
   const position = site.col * POSITION + site.row;
-  if (context.store.exhausted) {
-    context.findings.record(context.findings.notRead, site.sheet.id, position);
-    return;
-  }
   const source = sourceOf(formula, site, context);
   if (source === undefined) return;
   if (source.refs.truncated)

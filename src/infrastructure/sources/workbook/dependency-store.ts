@@ -22,10 +22,6 @@ export class RefStore {
     this.max = max;
   }
 
-  get exhausted(): boolean {
-    return this.spent >= this.max;
-  }
-
   /** Takes one unit of the budget; false when the limit is reached. */
   spend(): boolean {
     if (this.spent >= this.max) return false;

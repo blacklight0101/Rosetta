@@ -198,6 +198,14 @@ src/
                         from the format code (excel-dates, cell-value-text); lines under the 2,000 character cut and a byte limit for the whole
                         render, RST-1926 (render-output); `WORKBOOK_RENDERER_VERSION` names the layout. The first table of `workbook.md` maps each
                         safe segment to the real name as a JSON string (cut at 100 characters), which the evidence page label reads
+                        macros (P3-47, RF-154): `render-macros` writes each module with source as `macros/<Module>.bas` or `.cls` (every line `L<n> | `, a long line continued with the
+                        same prefix), `workbook.md` lists the modules, form controls and a locked, unreadable or compiled-only project, and the counts carry `macroModules`, `macrosSkipped`
+                        formula references and the dependency map (RF-153, Q-38, P3-47): `formula-references` is Rosetta's own tokenizer (scanner `formula-scanner`, boxes `reference-box`,
+                        table references `table-reference`): one forward pass, capped formula length, reference count, word, quoted name and bracket group; a range stays a box and is never
+                        expanded; `renderProject` returns the workbooks and `dependencies.md` (root of the tree) under one byte limit; the map (`dependency-project`, `-collect`, `-resolve`,
+                        `-scope`, `-store`, `-cover`, `-cycles`, `render-dependencies`) resolves external references by file name against the project, counts references, sheet edges and
+                        cycle-search steps against `dependency-limits` and writes any limit reached; the search for circular references is an iterative Tarjan over a column index of the
+                        formula cells; `external-names` shows `[1]Rates!C4` as `[Rates.xlsx]Rates!C4` in `formulas.md`
     files/              node-repository-reader, snapshot-index, snapshot-scope, ignore-rules (deny list), grep worker,
                         search and limits, node-output-writer, last-line (a file's last line, read from its end),
                         workspace-guard, workspace-paths, repository-path checks, file-run-manifest-store (`manifest.json`)
