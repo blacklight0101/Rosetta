@@ -1,4 +1,5 @@
 import type { LimitCounter } from '../entry-guards.js';
+import { checkFormulaLength, cellPlace } from './formula-limit.js';
 import { columnName, MAX_COLUMNS, MAX_ROWS, parseAddress, parseRowNumber } from './cell-address.js';
 import type { RosettaError } from '../../../domain/errors/rosetta-error.js';
 import { quoted, workbookNotReadable, workbookTooLarge } from './workbook-errors.js';
@@ -12,6 +13,8 @@ export interface CellContext {
   readonly part: string;
   /** The workbook's file name, for the message of a refusal. */
   readonly fileName: string;
+  /** The sheet's name, for the message of a formula that is too long. */
+  readonly sheet: string;
   readonly strings: readonly string[];
   readonly formatOf: (style: number | undefined) => string | undefined;
   /** The cells of the whole project, shared by the workbooks of one upload. */
@@ -126,9 +129,15 @@ export class CellReader implements XmlVisitor {
   text(text: string): void {
     const draft = this.draft;
     if (draft === undefined || this.target === undefined) return;
-    if (this.target === 'formula') draft.formulaText += text;
+    if (this.target === 'formula') this.addFormulaText(draft, text);
     else if (this.target === 'value') draft.valueText += text;
     else draft.inlineText += text;
+  }
+
+  private addFormulaText(draft: Draft, text: string): void {
+    draft.formulaText += text;
+    const { fileName, sheet } = this.context;
+    checkFormulaLength(draft.formulaText.length, fileName, () => cellPlace(sheet, draft.address));
   }
 
   close(name: string): void {

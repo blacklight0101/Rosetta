@@ -6,6 +6,7 @@ import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { SnapshotStore } from '../../../../src/infrastructure/github/snapshot-store.js';
 import {
   encryptedBook,
+  formulaBook,
   legacyBook,
   projectId,
   sampleBook,
@@ -157,6 +158,35 @@ describe('DiskWorkbookStaging.publish when a workbook is refused', () => {
     });
 
     expect(await sourcesOf(dataDir)).toEqual([]);
+  });
+});
+
+describe('DiskWorkbookStaging.publish and the formula limit', () => {
+  it('RF-151 publishes nothing for a batch of two where one holds a formula of 8,193 characters', async () => {
+    const { staging, dataDir } = await folders();
+    const { id } = await stageFiles(staging, [
+      ['Pricing.xlsx', await sampleBook()],
+      ['Long.xlsx', await formulaBook(8193)],
+    ]);
+
+    await expect(staging.publish(id, request())).rejects.toMatchObject({
+      code: ERROR_CODES.workbookFormulaTooLong,
+      problems: [{ field: 'Long.xlsx', code: ERROR_CODES.workbookFormulaTooLong }],
+    });
+
+    expect(await sourcesOf(dataDir)).toEqual([]);
+  });
+
+  it('RF-151 publishes a batch whose longest formula has exactly 8,192 characters', async () => {
+    const { staging, dataDir } = await folders();
+    const { id } = await stageFiles(staging, [
+      ['Pricing.xlsx', await sampleBook()],
+      ['Long.xlsx', await formulaBook(8192)],
+    ]);
+
+    const published = await staging.publish(id, request());
+
+    expect(await sourcesOf(dataDir)).toEqual([published.key]);
   });
 });
 

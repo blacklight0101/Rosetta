@@ -71,6 +71,12 @@ export function sampleBook(extra: readonly SheetSpec[] = []): Promise<Buffer> {
   });
 }
 
+/** A workbook with one cell whose formula is `length` characters long (Excel's limit is 8,192). */
+export function formulaBook(length: number): Promise<Buffer> {
+  const sheet = worksheet(row(1, formulaCell('A1', '1'.repeat(length), '1')));
+  return buildWorkbook({ sheets: [{ name: 'Summary', xml: sheet }] });
+}
+
 /** A file that starts like a password-protected workbook. */
 export function encryptedBook(): Buffer {
   return buildCompoundFile(['EncryptionInfo', 'EncryptedPackage']);

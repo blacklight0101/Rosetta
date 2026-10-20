@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
-import { sampleBook, encryptedBook } from '../../../support/workbook-staging-harness.js';
+import {
+  sampleBook,
+  encryptedBook,
+  formulaBook,
+} from '../../../support/workbook-staging-harness.js';
 import { bodyOf as jsonOf } from '../../../support/upload-route-harness.js';
 import {
   batchesUrl,
@@ -222,5 +226,24 @@ describe('the batch routes and a refused workbook', () => {
     expect(jsonOf(finished)['nextStep']).toContain('Remove the password');
     expect(shown.json()).toMatchObject({ source: null });
     expect(reopened.statusCode).toBe(201);
+  });
+
+  it('RF-151 names the file and the reason when one of two workbooks holds a formula over 8,192 characters', async () => {
+    const { amy } = await setup();
+    const projectId = await createWorkbookProject(amy);
+    const target = { projectId, batchId: await openBatch(amy, projectId) };
+    await putFile(amy, target, { name: 'Pricing.xlsx', bytes: await sampleBook() });
+    await putFile(amy, target, { name: 'Long.xlsx', bytes: await formulaBook(8193) });
+
+    const finished = await finishBatch(amy, target);
+    const shown = await amy.request({ method: 'GET', url: `/api/projects/${projectId}` });
+
+    expect(finished.statusCode).toBe(400);
+    expect(finished.json()).toMatchObject({
+      code: ERROR_CODES.workbookFormulaTooLong,
+      problems: [{ field: 'Long.xlsx', code: ERROR_CODES.workbookFormulaTooLong }],
+    });
+    expect(jsonOf(finished)['message']).toContain('longer than 8,192');
+    expect(shown.json()).toMatchObject({ source: null });
   });
 });
