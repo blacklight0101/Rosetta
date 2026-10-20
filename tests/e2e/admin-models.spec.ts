@@ -87,6 +87,7 @@ test('RF-405 lists the priced OpenAI models and saves free text under Other mode
   await page.getByLabel('Summariser provider').selectOption('openai');
   const model = page.getByLabel('Summariser model', { exact: true });
 
+  await expect(model).toHaveJSProperty('tagName', 'SELECT');
   await expect(model.locator('option', { hasText: 'GPT-5 nano' }).first()).toBeAttached();
   expect(await optionTexts(model)).not.toContain('GPT-5 nano (no price)');
   await model.selectOption({ label: 'Other model...' });
@@ -105,7 +106,9 @@ test('RF-405 lists the priced OpenAI models and saves free text under Other mode
 
 test('RF-405 changing the provider clears the model choice', async ({ page }) => {
   await page.getByLabel('Summariser provider').selectOption('anthropic');
-  await page.getByLabel('Summariser model', { exact: true }).selectOption('claude-opus-5-5');
+  const model = page.getByLabel('Summariser model', { exact: true });
+  await expect(model).toHaveJSProperty('tagName', 'SELECT');
+  await model.selectOption('claude-opus-5-5');
 
   await page.getByLabel('Summariser provider').selectOption('openai');
 
@@ -174,9 +177,9 @@ test('RF-405 Ollama that cannot be reached leaves the text field and a note, and
 test('RF-405 the choice fits a 360 px screen without sideways scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 780 });
   await page.getByLabel('Summariser provider').selectOption('anthropic');
-  await page
-    .getByLabel('Summariser model', { exact: true })
-    .selectOption({ label: 'Other model...' });
+  const model = page.getByLabel('Summariser model', { exact: true });
+  await expect(model).toHaveJSProperty('tagName', 'SELECT');
+  await model.selectOption({ label: 'Other model...' });
 
   const fits = await page.evaluate(
     () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,

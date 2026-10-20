@@ -115,6 +115,8 @@ test('RF-405 lists the models installed on Ollama in the project settings', asyn
       },
     }),
   );
+  // The page asked for the installed models when it opened, so open it again with the answer given.
+  await page.reload();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('ollama');
 
   const model = page.getByLabel('Reader model', { exact: true });
