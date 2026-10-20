@@ -40,6 +40,9 @@ const item = (cardId: string): HTMLElement => {
   return found;
 };
 
+const badgeOf = (cardId: string): string | null =>
+  within(item(cardId)).getByTestId('status-badge').textContent;
+
 describe('reopening an answered question on the page', () => {
   it('RF-241 offers Reopen on an Answered question and on no other', async () => {
     renderAnswers({ [`GET ${route}`]: json(200, { questions: [open, answered] }) });
@@ -62,9 +65,7 @@ describe('reopening an answered question on the page', () => {
     fireEvent.click(within(item('OQ-002')).getByRole('button', { name: 'Reopen question' }));
 
     await waitFor(() => {
-      expect(within(item('OQ-002')).getByTestId('status-badge').textContent).toContain(
-        'Answer saved',
-      );
+      expect(badgeOf('OQ-002')).toContain('Answer saved');
     });
     expect(page.calls.find((call) => call.method === 'POST')).toMatchObject({
       path: reopenRoute,
@@ -162,16 +163,12 @@ describe('a read that is overtaken', () => {
     });
     fireEvent.click(within(item('OQ-002')).getByRole('button', { name: 'Reopen question' }));
     await waitFor(() => {
-      expect(within(item('OQ-002')).getByTestId('status-badge').textContent).toContain(
-        'Answer saved',
-      );
+      expect(badgeOf('OQ-002')).toContain('Answer saved');
     });
 
     gate.finish();
     await new Promise((resolve) => setTimeout(resolve, 30));
 
-    expect(within(item('OQ-002')).getByTestId('status-badge').textContent).toContain(
-      'Answer saved',
-    );
+    expect(badgeOf('OQ-002')).toContain('Answer saved');
   });
 });
