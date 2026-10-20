@@ -37,20 +37,21 @@ const tile = (name: string, state: Tile['state']): Tile => ({
 
 const threeAreas = [tile('Catalog', 'done'), tile('Models', 'done'), tile('Services', 'gap')];
 
+/** The events of agents that each plan, start and end in turn, with sequence numbers from the first one given. */
+function readOnce(from: number, ids: readonly string[], area: string) {
+  return ids.flatMap((id, index) => [
+    planned(from + index * 3, id, area),
+    agentStarted(from + index * 3 + 1, id, area),
+    agentEnded(from + index * 3 + 2, id, 'Done', 0),
+  ]);
+}
+
 it('RF-1015 counts the areas read, not the agents, in a run whose areas were read again', () => {
   // A Deepen: Catalog is read by three agents (rounds 1 and 2), Models by two, Services by none.
   const state = stateAfter(
     ev(1, 'run.started', startedData),
-    ...['r1', 'r2', 'r3'].flatMap((id, index) => [
-      planned(2 + index, id, 'Catalog'),
-      agentStarted(5 + index, id, 'Catalog'),
-      agentEnded(8 + index, id, 'Done', 0),
-    ]),
-    ...['r4', 'r5'].flatMap((id, index) => [
-      planned(11 + index, id, 'Models'),
-      agentStarted(13 + index, id, 'Models'),
-      agentEnded(15 + index, id, 'Done', 0),
-    ]),
+    ...readOnce(2, ['r1', 'r2', 'r3'], 'Catalog'),
+    ...readOnce(11, ['r4', 'r5'], 'Models'),
   );
 
   const steps = journeyOf({ stage: 'understand', phase: running, state, tiles: threeAreas });
