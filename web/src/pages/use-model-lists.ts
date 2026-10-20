@@ -8,7 +8,7 @@ import type { ModelListState } from './model-lists.js';
 // absent from the answer, and its roles keep the plain text field.
 
 /** The providers whose models the server lists. */
-export const listedProviders: readonly string[] = ['anthropic', 'openai', 'ollama'];
+const listedProviders: readonly string[] = ['anthropic', 'openai', 'ollama'];
 
 // RF-405
 export function useModelLists(

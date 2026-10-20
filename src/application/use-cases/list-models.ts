@@ -9,7 +9,7 @@ import type { InstalledModels } from '../ports/installed-models.js';
 // installed on the configured server; a server that cannot be asked gives an empty list and the
 // reason. Any other provider has no list.
 
-export interface ModelChoice {
+interface ModelChoice {
   readonly model: string;
   readonly label: string;
   /** False when the price table has no price for the model (RF-427). */

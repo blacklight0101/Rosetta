@@ -2,7 +2,7 @@
 // (`prices/models.yaml`, versioned like the price table). Only providers that sell a fixed set of
 // models appear here; Ollama lists what is installed on the server instead.
 
-export interface ListedModel {
+interface ListedModel {
   /** The provider kind, for example `anthropic`. */
   readonly provider: string;
   /** The model id sent to the provider. */
