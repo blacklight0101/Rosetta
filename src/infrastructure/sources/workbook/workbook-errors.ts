@@ -74,3 +74,15 @@ export function workbookDuplicateName(name: string): RosettaError {
     `Two workbooks in the upload are named ${quoted(name)}.`,
   );
 }
+
+/** RST-1931: a formula longer than Excel can write; `place` says where it was read. */
+export function workbookFormulaTooLong(
+  fileName: string,
+  place: string,
+  limit: number,
+): RosettaError {
+  return new RosettaError(
+    ERROR_CODES.workbookFormulaTooLong,
+    `The workbook ${quoted(fileName)} holds a formula longer than ${limit.toLocaleString('en-US')} characters (${place}); Excel cannot write such a formula.`,
+  );
+}
