@@ -26,7 +26,7 @@ const OVERVIEW_OUTPUT_TOKENS: ByScenario<number> = { low: 800, likely: 1500, hig
 /** The flows or the screens fragment of the reader prompt (RF-260, RF-261), more than its size. */
 const SURFACE_PROMPT_TOKENS = 900;
 /** The workbook guidance of the reader prompt (RF-155), more than its size. */
-const WORKBOOK_PROMPT_TOKENS = 1100;
+export const WORKBOOK_PROMPT_TOKENS = 1100;
 /** The cards of one kind a marked area writes besides its other cards, in output tokens. */
 const SURFACE_OUTPUT_TOKENS: ByScenario<number> = { low: 300, likely: 800, high: 2000 };
 /** The system prompt and the tool definitions every turn resends. */

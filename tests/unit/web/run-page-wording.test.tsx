@@ -279,3 +279,19 @@ describe('RF-1002 the count of the Activity tab', () => {
     expect(logCountOf(state.log)).toBe('1,000+');
   });
 });
+
+it('RF-425 the likely estimate of a local model is in tokens only, never $0.00 (P3-68)', () => {
+  meter(used(1_000, 500), 0);
+
+  const text = screen.getByTestId('estimate-line').textContent;
+  expect(text).toContain('Estimate (likely): 44,000 tokens. Range 22,000 to 88,000 tokens.');
+  expect(text).not.toContain('$');
+});
+
+it('RF-425 the likely estimate of a priced model keeps its dollars (P3-68)', () => {
+  meter(used(1_000, 500), 0, cloud);
+
+  expect(screen.getByTestId('estimate-line').textContent).toMatch(
+    /^Estimate \(likely\): [\d,]+ tokens, \$\d+\.\d\d\. Range /u,
+  );
+});

@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/preact';
+import { screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it } from 'vitest';
 import { failure, json } from './fake-api.js';
 import { facts, projectId, roadSigns, source } from './journey-fixtures.js';
@@ -79,4 +79,15 @@ it('RST-1802 a project with no usable run asks for the journey of the project, w
 
   expect(page.calls.map((call) => call.path)).toContain(journey);
   expect(page.calls.map((call) => call.path)).not.toContain(`${journey}?run=run-1`);
+});
+
+it('RF-615 Plan setup does not offer "Go on with the defaults" as a link to its own page (P3-68)', async () => {
+  window.history.pushState({}, '', '/projects/p-1/plan-setup?run=run-1');
+  renderPlan({ [`GET ${journey}?run=run-1`]: json(200, roadSigns['asking']) });
+  await ready();
+
+  await screen.findByRole('region', { name: 'Journey from code to package' });
+
+  expect(within(strip()).getByRole('button', { name: 'Answer 2 questions' })).toBeTruthy();
+  expect(within(strip()).queryByRole('button', { name: 'Go on with the defaults' })).toBeNull();
 });

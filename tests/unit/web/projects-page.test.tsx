@@ -192,3 +192,16 @@ it('RF-1008 says nothing about the limit when every project is listed', async ()
   await screen.findByText('octo/demo');
   expect(screen.queryByText(/newest 100/u)).toBeNull();
 });
+
+it('RF-150 the intro and the empty state name GitHub, zip and Excel workbooks (P3-68)', async () => {
+  renderProjects({ 'GET /api/projects/overview': json(200, { projects: [], truncated: false }) });
+
+  const empty = (await screen.findByText(/No projects yet/u)).textContent ?? '';
+  const intro = screen.getByText(/Each project is one/u).textContent ?? '';
+
+  for (const text of [intro, empty]) {
+    expect(text).toContain('GitHub');
+    expect(text).toContain('zip');
+    expect(text).toContain('Excel workbooks');
+  }
+});
