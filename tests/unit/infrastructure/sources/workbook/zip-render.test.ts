@@ -48,6 +48,17 @@ it('RST-1926 drops the last workbook when the books fit but their map does not',
   expect(result.refused.get(1)?.code).toBe(ERROR_CODES.workbookTooLarge);
 });
 
+it('RST-1926 leaves every workbook out, and does not throw, under a limit below the map alone', () => {
+  const result = renderZip(items, 50);
+
+  expect(result.live).toEqual([]);
+  expect([...result.refused.keys()]).toEqual([0, 1]);
+  for (const error of result.refused.values()) {
+    expect(error.code).toBe(ERROR_CODES.workbookTooLarge);
+  }
+  expect(result.rendered.workbooks).toEqual([]);
+});
+
 it('RST-1926 keeps a small workbook that comes after the one that did not fit', () => {
   const next = book([sheet('S', { cells: [cell('A1', num(2))] })], { fileName: 'docs/Next.xlsx' });
   const both = renderProject([small, next]);
