@@ -88,7 +88,8 @@ async function composer(environment: ReturnType<typeof loadEnvironment>): Promis
     composeApplication({
       environment,
       listen: { host: '127.0.0.1', port },
-      output: { write: () => true },
+      // The log lines at the server's level (error) reach the test log: a run that ends Failed names why.
+      output: process.stdout,
       doubles: TestDoubles.create(environment, { fetch: github.fetch, provider }),
     });
 }

@@ -7,7 +7,6 @@ import {
   mkdir,
   readFile,
   realpath,
-  rename,
   rm,
   writeFile,
 } from 'node:fs/promises';
@@ -23,6 +22,7 @@ import type {
 } from '../../application/ports/output-writer.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { lastCompleteLineOf } from './last-line.js';
+import { renameWhenFree } from './rename-when-free.js';
 import { isInside } from './repository-path.js';
 import { linkProblem, writeRefusal, type WorkspaceRoots } from './workspace-guard.js';
 import {
@@ -93,7 +93,7 @@ export class NodeOutputWriter implements OutputWriter, TextLineReader {
         await rm(temporary, { force: true });
         return await this.#refuse(moved, file);
       }
-      await rename(temporary, target.value);
+      await renameWhenFree(temporary, target.value);
     } catch (error: unknown) {
       await rm(temporary, { force: true });
       // RF-005: a folder deleted during the write (a run or a project) is a refusal, not a fault; any

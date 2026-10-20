@@ -37,7 +37,10 @@ export async function saveBrief(page: Page): Promise<void> {
 export async function writeAndDownload(page: Page): Promise<Readonly<Record<string, string>>> {
   await expect(writeButton(page)).toBeEnabled();
   await writeButton(page).click();
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  // The start request queues the run and may wait behind other accounts' runs on a loaded machine.
+  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });
   await expectNoSeriousViolations(page);
   const [download] = await Promise.all([
