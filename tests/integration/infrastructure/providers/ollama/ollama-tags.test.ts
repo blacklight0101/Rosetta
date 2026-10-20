@@ -104,3 +104,24 @@ it('RF-405 follows no redirect', async () => {
   expect(answer.ok).toBe(false);
   expect(target.received).toEqual([]);
 });
+
+it('RF-405 reads at most 500 model names from a server that lists more', async () => {
+  const models = Array.from({ length: 600 }, (_value, index) => ({
+    name: `model-${String(index)}`,
+  }));
+  const crowded = new FakeHttpServer(() => ({ status: 200, body: { models } }));
+
+  const answer = await ask(await started(crowded));
+
+  expect(answer.ok && answer.models).toHaveLength(500);
+});
+
+it('RF-405 reads no answer larger than 1 MiB and gives a reason instead', async () => {
+  const name = 'x'.repeat(150);
+  const models = Array.from({ length: 8000 }, () => ({ name }));
+  const huge = new FakeHttpServer(() => ({ status: 200, body: { models } }));
+
+  const answer = await ask(await started(huge));
+
+  expect(answer).toEqual({ ok: false, reason: 'Ollama could not be reached.' });
+});

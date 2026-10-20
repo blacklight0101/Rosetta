@@ -167,3 +167,17 @@ it('RF-405 asks only the configured Ollama server, never an address named in the
   expect(configured.received).toHaveLength(1);
   expect(named.received).toEqual([]);
 });
+
+it('RF-405 limits the questions one address can ask to 60 a minute', async () => {
+  test = createTestServer();
+  const user = await signedIn();
+
+  const statuses: number[] = [];
+  for (let index = 0; index < 61; index += 1) {
+    const response = await user.request({ method: 'GET', url: '/api/models/openai' });
+    statuses.push(response.statusCode);
+  }
+
+  expect(statuses.filter((status) => status === 200)).toHaveLength(60);
+  expect(statuses.at(-1)).toBe(429);
+});

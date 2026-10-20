@@ -1,0 +1,30 @@
+# The shipped model list (RF-405, DEC-156): the models a role can be set to from a dropdown on the
+# Default models page and in a project's model settings, for the providers that sell a fixed set of
+# models. Ollama is not listed here: its models are the ones installed on the configured server.
+# A model on this list that `default-prices.yaml` has no price for is shown as "no price" (RF-427);
+# a person can still type any other model id under "Other model...". Keep the OpenAI entries in step
+# with the price table, and update the version date when the list changes.
+schemaVersion: 1
+version: '2026-10-20'
+models:
+  - provider: anthropic
+    model: claude-opus-5-5
+    label: Claude Opus 5.5
+  - provider: anthropic
+    model: claude-sonnet-5-5
+    label: Claude Sonnet 5.5
+  - provider: anthropic
+    model: claude-haiku-5-5
+    label: Claude Haiku 5.5
+  - provider: anthropic
+    model: claude-fable-5-1
+    label: Claude Fable 5.1
+  - provider: openai
+    model: gpt-5-nano
+    label: GPT-5 nano
+  - provider: openai
+    model: gpt-5-nano-2025-08-07
+    label: GPT-5 nano (2025-08-07)
+  - provider: openai
+    model: gpt-5.6-luna
+    label: GPT-5.6 luna
