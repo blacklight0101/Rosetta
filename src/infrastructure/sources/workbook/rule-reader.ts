@@ -1,3 +1,4 @@
+import { checkFormulaLength, rulePlace } from './formula-limit.js';
 import type { ConditionalRule, DataValidationRule } from './workbook-model.js';
 import type { Attributes, XmlVisitor } from './xml-stream.js';
 
@@ -50,6 +51,13 @@ export class RuleReader implements XmlVisitor {
   private group: GroupDraft | undefined;
   private collecting: Collecting | undefined;
   private buffer = '';
+  private readonly fileName: string;
+  private readonly sheet: string;
+
+  constructor(fileName: string, sheet: string) {
+    this.fileName = fileName;
+    this.sheet = sheet;
+  }
 
   open(name: string, attributes: Attributes): void {
     if (name === 'dimension') this.usedRange = attributes['ref'];
@@ -97,7 +105,18 @@ export class RuleReader implements XmlVisitor {
   }
 
   text(text: string): void {
-    if (this.collecting !== undefined) this.buffer += text;
+    if (this.collecting === undefined) return;
+    this.buffer += text;
+    if (this.collecting !== 'validationRanges' && this.collecting !== 'groupRanges') {
+      checkFormulaLength(this.buffer.length, this.fileName, () => this.place());
+    }
+  }
+
+  private place(): string {
+    if (this.validation !== undefined) {
+      return rulePlace('data validation', this.sheet, this.validation.ranges);
+    }
+    return rulePlace('conditional-formatting', this.sheet, this.group?.ranges ?? '');
   }
 
   close(name: string): void {

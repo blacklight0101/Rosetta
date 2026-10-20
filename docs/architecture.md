@@ -185,7 +185,7 @@ src/
                         bytes against workbook-limits (`ROSETTA_WORKBOOK_MAX_FILES`, `_MAX_SHEETS`, `_MAX_CELLS`), names a compound file as
                         encrypted or legacy with `cfb` (workbook-format) and returns the typed `WorkbookModel` (workbook-model); readers per
                         part: cell-reader, rule-reader, shared-strings-reader, styles-reader, small-part-readers, workbook-xml-reader;
-                        package-reader assembles them; errors RST-1921..1928 in workbook-errors; `checkWorkbookBatch` judges the file names
+                        package-reader assembles them; errors RST-1921..1928 and RST-1931 in workbook-errors; `formula-limit` refuses a formula over 8,192 UTF-16 code units (unescaped, RST-1931, DEC-152) in cell-reader, workbook-xml-reader (names) and rule-reader as the text streams, before the tokenizer or the renderer; `checkWorkbookBatch` judges the file names
                         VBA macros (RF-154, P3-45): package-reader hands `xl/vbaProject.bin` (bytes counted as they inflate) to `readMacroProject`
                         (macro-reader), which checks the compound file's header and allocation table first (compound-guard, compound-table, compound-directory: `cfb` follows
                         sector chains without remembering them and copies each chain it meets, so a loop, merged or shared chains, a chain
