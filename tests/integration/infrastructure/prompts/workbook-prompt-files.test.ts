@@ -18,8 +18,8 @@ describe('the reader workbook guidance', () => {
   it('RNF-004 is loaded with its version and the hash of its bytes', async () => {
     const { workbook } = await loadReaderPrompts('prompts');
 
-    expect(workbook).toMatchObject({ name: 'reader/workbook.v1.md', version: 'v1' });
-    expect(workbook?.sha256).toBe(await sha256Of('prompts/reader/workbook.v1.md'));
+    expect(workbook).toMatchObject({ name: 'reader/workbook.v2.md', version: 'v2' });
+    expect(workbook?.sha256).toBe(await sha256Of('prompts/reader/workbook.v2.md'));
   });
 
   it('RF-155 names the rendered files, the row prefix and the optional macros and dependencies', async () => {
