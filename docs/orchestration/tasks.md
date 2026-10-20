@@ -3896,7 +3896,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Behaviour to preserve**: RF-231 wording; DEC-154 saved answers; RF-627 (a package with gaps is never reported as complete).
 - **Delivers**: the fixes and tests.
 - **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
-- **Refs**: RF-615, RF-1015, RF-627, RF-209, RF-231, Q-44.
+- **Refs**: RF-615, RF-1015, RF-627, RF-209, RF-231, Q-44; issue #696.
 
 ### P3-71 - Follow-up: the Ollama context size can be set on the page
 
@@ -3911,7 +3911,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Behaviour to preserve**: DEC-114 auto choice; saved settings without the field.
 - **Delivers**: the field, the message and tests.
 - **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
-- **Refs**: RF-401, DEC-114, Q-23, Q-44.
+- **Refs**: RF-401, DEC-114, Q-23, Q-44; issue #697.
 
 ### P3-72 - Follow-up: the planner gets one call for the items no task card builds
 
@@ -3926,7 +3926,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Behaviour to preserve**: RF-627 never reports a package with gaps as complete; the task card format of RF-630.
 - **Delivers**: the extra call, the prompt version and tests.
 - **Done when**: each probe has a passing test; `npm run verify` green.
-- **Refs**: RF-627, RF-630, RF-421, Q-45.
+- **Refs**: RF-627, RF-630, RF-421, Q-45; issue #698.
 
 ### P3-73 - Follow-up: the reader does not ask what the workbook already says
 
@@ -3941,4 +3941,4 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Behaviour to preserve**: RF-243 merging and ordering; questions with a business reason pass.
 - **Delivers**: the rule, the prompt versions and tests.
 - **Done when**: each probe has a passing test; `npm run verify` green.
-- **Refs**: RF-243, Q-46.
+- **Refs**: RF-243, Q-46; issue #699.
