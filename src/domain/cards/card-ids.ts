@@ -18,6 +18,8 @@ export interface CardDraft {
   readonly whyItMatters?: string | undefined;
   readonly flow?: FlowDetail | undefined;
   readonly screen?: ScreenDetail | undefined;
+  /** RF-209: the id of the listed card a Deepen task's claims belong to. */
+  readonly extends?: string | undefined;
 }
 
 /** The drafts of one finished agent task, in the order the agent wrote them. */
@@ -29,6 +31,8 @@ export interface TaskCards {
   readonly note?: string;
   /** RF-209: the rejected claims a Deepen re-read was given; only these may be named by `replaces`. */
   readonly replaceable?: readonly string[];
+  /** RF-209: the ids of the parent's cards the task was given; only these may be named by `extends`. */
+  readonly extendable?: readonly string[];
 }
 
 /** The number in an id such as `BR-007`. */

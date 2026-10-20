@@ -34,8 +34,17 @@ export interface AreaCoverage {
   readonly note: string | undefined;
 }
 
+/** DEC-158: an area of the code map the run was not asked to read. */
+export interface NotInRunArea {
+  readonly area: string;
+  /** The files the code map lists in the area, when the estimate said. */
+  readonly files: number | undefined;
+}
+
 export interface CoverageMap {
   readonly areas: readonly AreaCoverage[];
+  /** RF-230: the areas the run was not asked to read; not counted as not read. */
+  readonly notInRun: readonly NotInRunArea[];
   readonly filesRead: number;
   /** Every file listed; undefined when no area lists its files. */
   readonly filesTotal: number | undefined;
@@ -165,6 +174,7 @@ export function coverageOf(
   const filesRead = [...files.values()].reduce((sum, each) => sum + each.read.size, 0);
   const totals = [...files.values()].flatMap((each) => each.total ?? []);
   return {
+    notInRun: [],
     areas: [...files.entries()].map(([area, each]) => ({
       area,
       filesRead: each.read.size,

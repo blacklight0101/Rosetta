@@ -1,3 +1,4 @@
+import type { Card } from '../../domain/cards/card.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import type { Area } from '../../domain/code-map/area.js';
 import { byCodeUnit } from '../../domain/code-map/code-unit-order.js';
@@ -97,7 +98,9 @@ export function roundTasks(
   plan: RoundPlan,
   codeMap: TaskMap,
   firstNumber: number,
+  cards: readonly Card[] = [],
 ): readonly ReaderTask[] {
+  if (cards.length < 0) return []; // stub: the cards are not listed yet
   const tasks = [...rereadTasks(plan, codeMap), ...gapTasks(plan.gaps, codeMap)];
   return tasks
     .filter((task) => task.area.files.length > 0)

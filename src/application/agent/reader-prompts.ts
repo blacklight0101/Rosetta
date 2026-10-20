@@ -23,6 +23,8 @@ export interface ReaderPrompts {
   readonly answers?: PromptFile;
   /** `reader/reread.v<n>.md`: the rejected claims a Deepen re-reads, with the reasons (RF-209). */
   readonly reread?: PromptFile;
+  /** `reader/parent-cards.v<n>.md`: the parent's cards a Deepen task adds to (RF-209, DEC-158). */
+  readonly parentCards?: PromptFile;
   /** `cards/flows.v<n>.md` and `cards/screens.v<n>.md`: added only to areas the code map marks (Q-25). */
   readonly surface?: SurfacePrompts;
 
@@ -46,6 +48,7 @@ export const readerPlaceholders = {
   repair: '{{problems}}',
   answers: '{{answers}}',
   reread: '{{rejected}}',
+  parentCards: '{{parentCards}}',
   readFirstFiles: '{{files}}',
   readFirstTurns: '{{turns}}',
 } as const;

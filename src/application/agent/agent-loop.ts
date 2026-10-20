@@ -63,6 +63,8 @@ export interface AgentTaskRequest {
   readonly answers?: string;
   /** RF-209: the rejected claims a Deepen re-reads, as JSON, sent as one data block after the area's. */
   readonly rejected?: string;
+  /** RF-209: the parent's cards for the area, as JSON, sent as one data block after the area's. */
+  readonly parentCards?: string;
 }
 
 /** About four characters per token, the estimate the providers use too (RF-421). */

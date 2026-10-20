@@ -73,8 +73,8 @@ describe('the versions of the reader prompts', () => {
 
     expect(prompts.system).toMatchObject({ name: 'reader/area.v4.md', version: 'v4' });
     expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v2.md', version: 'v2' });
-    expect(reread).toMatchObject({ name: 'reader/reread.v2.md', version: 'v2' });
-    expect(reread.sha256).toBe(await sha256Of('prompts/reader/reread.v2.md'));
+    // P3-67: the re-read default moved on to v3, which keeps the rule (parent-cards-prompt-files.test.ts).
+    expect(reread).toMatchObject({ name: 'reader/reread.v3.md', version: 'v3' });
   });
 
   it.each(oldVersions)(
