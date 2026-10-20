@@ -2,6 +2,7 @@ import { placeCells } from './cell-order.js';
 import type { DependencyLimits } from './dependency-limits.js';
 import { renderFormulas } from './render-formulas.js';
 import { renderIndex, type SheetEntry } from './render-index.js';
+import { renderMacros } from './render-macros.js';
 import { ByteBudget } from './render-output.js';
 import { renderNotes, renderValidation } from './render-rules.js';
 import { renderValues } from './render-values.js';
@@ -48,6 +49,9 @@ export interface RenderedWorkbook {
     readonly sheets: number;
     readonly nonEmptyCells: number;
     readonly formulas: number;
+    /** Macro modules written as files, and modules listed without a file. */
+    readonly macroModules: number;
+    readonly macrosSkipped: number;
   };
 }
 
@@ -95,8 +99,11 @@ function renderOne(model: WorkbookModel, folder: string, budget: ByteBudget): Re
       files.push({ path: `${folder}/${segment}/${name}`, content });
     }
   });
-  const index = renderIndex({ model, folder, entries, version: WORKBOOK_RENDERER_VERSION }, budget);
-  files.push({ path: `${folder}/workbook.md`, content: index });
+  const macros = renderMacros(model.macros, budget);
+  for (const file of macros.files)
+    files.push({ path: `${folder}/${file.path}`, content: file.content });
+  const input = { model, folder, entries, version: WORKBOOK_RENDERER_VERSION, macros };
+  files.push({ path: `${folder}/workbook.md`, content: renderIndex(input, budget) });
   files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
   return {
     folder,
@@ -113,6 +120,8 @@ function renderOne(model: WorkbookModel, folder: string, budget: ByteBudget): Re
       sheets: entries.length,
       nonEmptyCells: entries.reduce((sum, e) => sum + e.sheet.cells.length, 0),
       formulas: entries.reduce((sum, e) => sum + e.formulas, 0),
+      macroModules: macros.written,
+      macrosSkipped: macros.skipped,
     },
   };
 }
