@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 65      | 5         | 58         | 2         | 0                  | 21      | 42      | 2      | 21         | 0         |
-| **Total**               | **282** | **77**    | **178**    | **27**    | **0**              | **137** | **133** | **12** | **156**    | **0**     |
+| P3 Report and plan      | 66      | 5         | 59         | 2         | 0                  | 22      | 42      | 2      | 22         | 0         |
+| **Total**               | **283** | **77**    | **179**    | **27**    | **0**              | **138** | **133** | **12** | **157**    | **0**     |
 
 ## Conventions for every card
 
@@ -3822,3 +3822,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the list file, the route, the two pages and tests.
 - **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-405, RF-401, RF-427, DEC-156; issue #682.
+
+### P3-66 - Follow-up: the reader groups repeated wiring into one claim
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-202 (the DEC-157 scenario), RF-207, RNF-004; DEC-157; `prompts/reader/` (`area.v3.md`, `workbook.v1.md`, `reread.v1.md`) and where their versions are chosen and recorded in the run manifest; the recorded responses used by the reader tests. Owner test 2026-10-20: SCRN-012 of a workbook's calendar form carried 44 near-identical claims, one per day button.
+- **Do**: add new versions of the reader prompts that carry the grouping rule (one claim for repeated wiring that names the shared behaviour and lists the controls or the range, representative citations, a separate claim only for a control that differs), keep the old versions on disk, switch the defaults to the new versions so runs record them; add a short example to the rule; do not change the card schema.
+- **Review probes**: the manifest of a new run records the new prompt versions; an old run still explains itself with its old versions; the rule appears in the area, workbook and re-read prompts; the prompt stays inside its size limits; recorded-response tests still pass; no model in automated tests.
+- **Behaviour to preserve**: RF-207 one-line citations; every claim cites evidence; the verifier unchanged.
+- **Delivers**: the prompt versions and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-202, RF-207, RNF-004, DEC-157; issue #684.

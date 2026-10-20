@@ -605,11 +605,12 @@ As a developer I want each agent to explore its area with tools so that it reads
 - Given a tool call with invalid arguments, when it is executed, then the agent receives an error result it can correct, and the error is logged.
   Verification: integration tests with recorded responses including a bad tool call.
 
-**RF-202 Produce valid cards** - R1 (M1) - Must - Source DEC-18 - ADR-005
+**RF-202 Produce valid cards** - R1 (M1) - Must - Source DEC-18, DEC-157 - ADR-005
 As a developer I want every agent result in one strict card format so that cards can be checked and rendered.
 
 - Given an agent's final answer, when it is parsed, then each card validates against the card schema: type, title, area, summary, claims, each claim with at least one citation, confidence, and for `OQ` the question and why it matters.
 - Given invalid output, when parsing fails, then the agent gets one repair attempt with the validation errors; if that also fails, the raw output is saved and the task is marked `invalid output`.
+- Given an area where many controls or cells repeat the same wiring (for example 42 day buttons that each call one handler), when the reader writes its cards (DEC-157), then the repeated wiring is one claim that names the shared behaviour and lists the controls or the range they cover, citing one or more representative lines, instead of one claim per control; a control that differs from the pattern keeps its own claim.
   Verification: unit tests on the schema and parser; integration test of the repair path.
 
 **RF-203 Stable card ids** - R1 (M1) - Must - Source DEC-18 - ADR-005
