@@ -3545,7 +3545,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-46
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-005 section 4.5; RF-153.
 - **Do**: a tokenizer for Excel formulas that returns references (cells, absolute forms, ranges, whole columns and rows, sheet-qualified and quoted sheets, three-dimensional ranges, `[n]` and `[Book.xlsx]` external forms, structured table references, defined names) and skips literals and functions; resolution of external references by file name against the project, folder part dropped (Q-38); `dependencies.md` with workbook and sheet edges and counts, input and output cells grouped into ranges, defined names with targets and users, unresolved and dynamic (`INDIRECT`, `OFFSET`) references; external references in `formulas.md` shown with the file name.
 - **Review probes**: `'It''s'!A1`; `Sheet1:Sheet3!B2`; `A:A` and `1:1`; `Table1[[#This Row],[Price]]`; `"A1"` inside a string; a name that looks like a cell (`TAX1`); `[1]Rates!C4` with the link part naming `C:\Users\x\Rates.xlsx`; a reference to a workbook not uploaded; `INDIRECT("B"&ROW())`; a circular reference.
