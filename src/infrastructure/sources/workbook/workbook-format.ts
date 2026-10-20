@@ -1,5 +1,6 @@
 import { open, readFile, stat } from 'node:fs/promises';
 import CFB from 'cfb';
+import { compoundFileProblem } from './compound-guard.js';
 import type { RosettaError } from '../../../domain/errors/rosetta-error.js';
 import { workbookEncrypted, workbookLegacyFormat, workbookNotReadable } from './workbook-errors.js';
 
@@ -43,9 +44,12 @@ export async function refusalForCompound(path: string, fileName: string): Promis
     return workbookNotReadable(fileName, 'the compound file is too large to identify');
   }
   try {
-    const names = new Set(
-      CFB.read(await readFile(path), { type: 'buffer' }).FileIndex.map((e) => e.name),
-    );
+    const bytes = await readFile(path);
+    const problem = compoundFileProblem(bytes);
+    if (problem !== undefined) {
+      return workbookNotReadable(fileName, `the compound file cannot be read safely: ${problem}`);
+    }
+    const names = new Set(CFB.read(bytes, { type: 'buffer' }).FileIndex.map((e) => e.name));
     if (names.has('EncryptionInfo')) return workbookEncrypted(fileName);
     if (names.has('Workbook') || names.has('Book')) {
       return workbookLegacyFormat(fileName, 'a legacy .xls');
