@@ -3515,7 +3515,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-44
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-005 section 4.6; ADR-023; the MS-OVBA specification sections 2.3.4 (`dir` stream) and 2.4.1 (compression); RF-145, RF-154.
 - **Do**: open `xl/vbaProject.bin` with `cfb`; implement MS-OVBA decompression and the `dir` stream parse (module names, kinds, stream names, text offsets, code page); decompress each module from its offset; return standard modules as `.bas` and class, sheet, workbook and form modules as `.cls` text, form controls as a list; detect a project locked for viewing and skip it with its name (Q-40); name a module whose source is missing; bounds on stream sizes and module count so a hostile compound file cannot loop or exhaust memory. Tests build `vbaProject.bin` with `cfb` and a compressor written in the test from the specification.
 - **Review probes**: the specification's decompression examples; a chunk with a copy token at the start of a chunk; a raw (uncompressed) chunk; a `dir` record with an unknown id; a module offset past the stream end; a code page other than 1252; a locked project; a module stream with only compiled code; 10,000 modules.
