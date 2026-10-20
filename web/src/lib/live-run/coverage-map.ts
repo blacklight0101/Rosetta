@@ -120,16 +120,29 @@ function filesOf(
   return { paths, read, total, note: listed?.note };
 }
 
+/** RF-231: the third-party areas, from the code map or from a note of the listing, are left out. */
+function thirdPartyNames(
+  listing: CoverageListing | undefined,
+  areas: readonly CodeAreaInfo[],
+): ReadonlySet<string> {
+  const fromMap = areas.filter((each) => each.thirdParty).map((each) => each.name);
+  const fromNotes = (listing?.areas ?? [])
+    .filter((each) => each.note?.includes('no application logic') === true)
+    .map((each) => each.area);
+  return new Set([...fromMap, ...fromNotes]);
+}
+
 /** The area names in order: the run's readers, then the listing's, then the code map's own areas. */
 function namesOf(
   reads: ReadonlyMap<string, unknown>,
   listing: CoverageListing | undefined,
   areas: readonly CodeAreaInfo[],
 ): readonly string[] {
+  const left = thirdPartyNames(listing, areas);
   const listed = (listing?.areas ?? []).map((each) => each.area);
-  const own = areas.filter((each) => !each.thirdParty).map((each) => each.name);
+  const own = areas.map((each) => each.name);
   const names = listing === undefined ? [...reads.keys()] : [...reads.keys(), ...listed, ...own];
-  return [...new Set(names)];
+  return [...new Set(names)].filter((name) => !left.has(name));
 }
 
 // RF-1005, RF-230

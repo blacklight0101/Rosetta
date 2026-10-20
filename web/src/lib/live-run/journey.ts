@@ -62,13 +62,15 @@ function readers(state: RunState): readonly AgentPanelState[] {
  * areas, so the step and "Map the code" count the same things.
  */
 function areasRead(input: JourneyInput): { readonly read: number; readonly of: number } {
+  const own = input.tiles.filter((tile) => tile.state !== 'library');
+  const ofMap = new Set(own.map((tile) => tile.name));
   const byArea = new Map<string, AgentPanelState[]>();
   for (const agent of readers(input.state)) {
+    if (input.tiles.length > 0 && !ofMap.has(agent.area)) continue;
     byArea.set(agent.area, [...(byArea.get(agent.area) ?? []), agent]);
   }
   const read = [...byArea.values()].filter((agents) => agents.every(finished)).length;
-  const own = input.tiles.filter((tile) => tile.state !== 'library').length;
-  return { read, of: Math.max(own, byArea.size) };
+  return { read, of: Math.max(own.length, byArea.size) };
 }
 
 function readStep(input: JourneyInput, mapDone: boolean): Core {
