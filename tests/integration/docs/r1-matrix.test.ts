@@ -107,6 +107,36 @@ describe('the zip source rows of the release 1 verification matrix', () => {
   });
 });
 
+describe('the workbook source rows of the release 1 verification matrix', () => {
+  const workbookSource = range('RF', 150, 158);
+
+  it('RF-150..RF-158 each have a row with passing tests, not a gap (P3-52)', () => {
+    for (const id of workbookSource) {
+      const row = byId.get(id);
+      expect(
+        row?.counts.reduce((sum, count) => sum + count, 0),
+        `${id} has no tests`,
+      ).toBeGreaterThan(0);
+      expect(row?.state, `${id} is still a gap`).not.toContain('Gap');
+    }
+  });
+
+  it('RF-150..RF-158 are no longer in the table of gaps (P3-52)', () => {
+    const gaps =
+      matrix.split('## 5. Gaps and follow-up cards')[1]?.split('\nProposed cards:')[0] ?? '';
+
+    expect(workbookSource.filter((id) => gaps.includes(`| ${id} `))).toEqual([]);
+  });
+
+  it('RF-150 RF-152 RF-153 RF-154 RF-155 RF-156 RF-157 have an end-to-end example, the journey of the workbook source (P3-52)', () => {
+    const journey = 'tests/e2e/journeys/workbook-project.spec.ts';
+    const ids = ['RF-150', 'RF-152', 'RF-153', 'RF-154', 'RF-155', 'RF-156', 'RF-157'];
+    const without = ids.filter((id) => !byId.get(id)?.example.includes(journey));
+
+    expect(without).toEqual([]);
+  });
+});
+
 describe('the guard of the release 1 verification matrix', () => {
   it('RNF-005 fails a Must row whose counts are - / - / -', async () => {
     const bad = withRow('RF-003', (line) => line.replace('31 / 13 / 0', '- / - / -'));

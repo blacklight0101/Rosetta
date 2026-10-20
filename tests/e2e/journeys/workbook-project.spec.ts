@@ -66,6 +66,8 @@ test('RF-150 RF-152 RF-155 RF-156 two workbooks are uploaded, scanned and unders
   await expectLinksStayInRosetta(page);
   firstReport = await openReport(page);
   firstHash = await snapshotHashOfReport(page);
+  // Every claim of the run is Supported: the verifier double has no verdict of the webforms run for them.
+  await expect(page.getByText(/^\d+ cards?, (\d+) claims?: \1 Supported\.$/u)).toBeVisible();
   const source = page.getByText(/^Excel workbooks: /u).first();
   await expect(source).toContainText('Pricing.xlsm');
   await expect(source).toContainText('Discounts.xlsx');
@@ -141,6 +143,8 @@ test('RF-150 RF-156 workbooks replaced between two runs give a second report tha
 
   await uploadWorkbooks(page, await journeyWorkbooks(0.15));
 
+  // The start page says so when it is opened again; unlike the zip form it does not say so at once.
+  await openWorkbookStart(page, projectName);
   await expect(page.getByText('The code changed since the last run.')).toBeVisible();
   const runPath = await scanAndUnderstand(page, areas);
   const secondReport = await openReport(page);

@@ -19,6 +19,9 @@ export interface WorkbookFile {
 
 const OCTET = 'application/octet-stream';
 
+/** The diagram library the report bundles: its licence comments name github.com, the pages do not link it. */
+const VENDORED_DIAGRAM_LIBRARY = 'report/mermaid.min.js';
+
 /** What one citation of an evidence page shows: its name, the cells label beside it and its lines. */
 export interface ShownCitation {
   readonly name: string;
@@ -96,7 +99,9 @@ export async function openEveryCitation(
   const files = await downloadedRunFiles(page);
   const links = new Map<string, URL>();
   for (const [name, text] of Object.entries(files)) {
-    expect(text, `${name} names GitHub`).not.toContain('github.com');
+    if (name !== VENDORED_DIAGRAM_LIBRARY) {
+      expect(text, `${name} names GitHub`).not.toContain('github.com');
+    }
     const served = new URL(`files/${name}`, `${origin}${runPath}/`);
     for (const link of citationLinksIn(text, served)) links.set(link.href, link);
   }
