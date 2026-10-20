@@ -8,6 +8,8 @@ import type { ConditionalRule, DataValidationRule, WorkbookModel } from './workb
 // The folder often holds a user name and means nothing on the server, so every place that writes the
 // text of a formula or a name shows the workbook part as the file name only (`[Rates.xlsx]Rates!C4`).
 // Strings and structured table references are not references to a workbook and are left alone.
+// A bracket group longer than one chunk (32,768 characters), or a path of that length written without
+// quotes, is a hand-made file that no writer produces; its folder is not rewritten.
 
 /** Brackets that hold a path, and the quoted or unquoted path before them, for text the tokenizer skipped. */
 const LOOSE =
@@ -23,23 +25,56 @@ function looseHide(text: string): string {
   });
 }
 
+/** How many characters from `from`, which holds `quote`, belong to the literal or name it opens. */
+function quotedLength(formula: string, from: number, quote: string): number {
+  let at = from + 1;
+  for (;;) {
+    const close = formula.indexOf(quote, at);
+    if (close < 0) return formula.length - from;
+    if (formula.charAt(close + 1) !== quote) return close + 1 - from;
+    at = close + 2;
+  }
+}
+
+/** A literal or name longer than a chunk, read to its end so the next chunk does not start inside it. */
+function longQuoted(
+  formula: string,
+  offset: number,
+  quote: string,
+): { text: string; used: number } {
+  const used = quotedLength(formula, offset, quote);
+  const span = formula.slice(offset, offset + used);
+  // A quoted name is hidden with the loose pass; a string literal is kept as it is.
+  return { text: quote === "'" ? looseHide(span) : span, used };
+}
+
+/** The rewritten text of the chunk at `offset` and how much of the formula it covered. */
+function rewriteChunk(
+  formula: string,
+  offset: number,
+  links: readonly string[],
+): { text: string; used: number } {
+  const chunk = formula.slice(offset, offset + MAX_FORMULA_CHARS);
+  const more = offset + chunk.length < formula.length;
+  const recorder = new EditRecorder(chunk, links);
+  const read = extractReferences(chunk, { recorder });
+  // The tokenizer stops at its reference limit; a chunk that ends the text mid-token is read again
+  // from that token. A token longer than a chunk is hidden with the loose pass.
+  const used = read.stoppedAt ?? (more ? read.lastStep : chunk.length);
+  if (used > 0) return { text: applyEdits(chunk, recorder.edits, used), used };
+  const quote = chunk.charAt(0);
+  if (quote === '"' || quote === "'") return longQuoted(formula, offset, quote);
+  return { text: looseHide(applyEdits(chunk, recorder.edits, chunk.length)), used: chunk.length };
+}
+
 /** The formula with the workbook part of each external reference shown as the file name only. */
 export function showExternalNames(formula: string, links: readonly string[]): string {
   if (!formula.includes('[')) return formula;
   let out = '';
   let offset = 0;
   while (offset < formula.length) {
-    const chunk = formula.slice(offset, offset + MAX_FORMULA_CHARS);
-    const more = offset + chunk.length < formula.length;
-    const recorder = new EditRecorder(chunk, links);
-    const read = extractReferences(chunk, { recorder });
-    // The tokenizer stops at its reference limit; a chunk that ends the text mid-token is read again
-    // from that token. A token longer than a chunk is hidden with the loose pass.
-    let used = read.stoppedAt ?? (more ? read.lastStep : chunk.length);
-    const stuck = used <= 0;
-    if (stuck) used = chunk.length;
-    const text = applyEdits(chunk, recorder.edits, used);
-    out += stuck ? looseHide(text) : text;
+    const { text, used } = rewriteChunk(formula, offset, links);
+    out += text;
     offset += used;
   }
   return out;

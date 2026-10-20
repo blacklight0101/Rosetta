@@ -4,7 +4,7 @@ import { plainModel } from './external-names.js';
 import { renderDependencies } from './render-dependencies.js';
 import { renderFormulas } from './render-formulas.js';
 import { renderIndex, type SheetEntry } from './render-index.js';
-import { renderMacros } from './render-macros.js';
+import { macroNoticeOf, renderMacros } from './render-macros.js';
 import { ByteBudget } from './render-output.js';
 import { renderNotes, renderValidation } from './render-rules.js';
 import { renderValues } from './render-values.js';
@@ -55,6 +55,8 @@ export interface RenderedWorkbook {
     readonly macroModules: number;
     readonly macrosSkipped: number;
   };
+  /** Set when the macros were skipped because they are locked or compiled only (Q-40). */
+  readonly macroNotice?: string;
 }
 
 export interface RenderLimits {
@@ -62,6 +64,8 @@ export interface RenderLimits {
   readonly maxTotalBytes: number;
   /** Bounds of the dependency map; the defaults apply to what is left out. */
   readonly dependencies?: Partial<DependencyLimits>;
+  /** The folder of each model, in place of the safe segments of their file names (a zip renders in place). */
+  readonly folders?: readonly string[];
 }
 
 const DEFAULT_LIMITS: RenderLimits = { maxTotalBytes: DEFAULT_MAX_TOTAL_BYTES };
@@ -104,6 +108,7 @@ function renderOne(model: WorkbookModel, folder: string, budget: ByteBudget): Re
   const macros = renderMacros(model.macros, budget);
   for (const file of macros.files)
     files.push({ path: `${folder}/${file.path}`, content: file.content });
+  const notice = macroNoticeOf(model.macros, macros);
   const input = { model, folder, entries, version: WORKBOOK_RENDERER_VERSION, macros };
   files.push({ path: `${folder}/workbook.md`, content: renderIndex(input, budget) });
   files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
@@ -125,6 +130,7 @@ function renderOne(model: WorkbookModel, folder: string, budget: ByteBudget): Re
       macroModules: macros.written,
       macrosSkipped: macros.skipped,
     },
+    ...(notice === undefined ? {} : { macroNotice: notice }),
   };
 }
 
@@ -139,11 +145,17 @@ export function renderWorkbooks(
   return renderAll(models.map(plainModel), new ByteBudget(limits.maxTotalBytes));
 }
 
-function renderAll(models: readonly WorkbookModel[], budget: ByteBudget): RenderedWorkbook[] {
-  const folders = allocateSegments(
-    models.map((model) => model.fileName),
-    { keepExtension: true },
-  );
+function renderAll(
+  models: readonly WorkbookModel[],
+  budget: ByteBudget,
+  given?: readonly string[],
+): RenderedWorkbook[] {
+  const folders =
+    given ??
+    allocateSegments(
+      models.map((model) => model.fileName),
+      { keepExtension: true },
+    );
   return models.map((model, index) => renderOne(model, folders[index] ?? '_', budget));
 }
 
@@ -172,7 +184,7 @@ export function renderProject(
 ): RenderedProject {
   const budget = new ByteBudget(limits.maxTotalBytes);
   const plain = models.map(plainModel);
-  const workbooks = renderAll(plain, budget);
+  const workbooks = renderAll(plain, budget, limits.folders);
   const bounds = { ...DEFAULT_DEPENDENCY_LIMITS, ...limits.dependencies };
   const content = renderDependencies(models, workbooks, bounds, budget);
   return { workbooks, dependencies: { path: 'dependencies.md', content } };

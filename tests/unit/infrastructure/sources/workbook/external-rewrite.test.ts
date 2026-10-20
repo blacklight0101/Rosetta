@@ -76,6 +76,25 @@ it('Q-38 reads a doubled quote inside a very long literal as part of it', () => 
   );
 });
 
+const PATH_AFTER = String.raw`&'C:\Users\x\[Rates.xlsx]Rates'!C5`;
+
+it.each(['', '1+'])(
+  'Q-38 hides the folder of a name or a word longer than a chunk, after %j',
+  (lead) => {
+    const name = `'${'a'.repeat(33_000)}'`;
+    const doubled = `'${"a''".repeat(12_000)}'`;
+
+    const inside = rewrite(`${lead}'C:\\Users\\x\\[Rates.xlsx]${'a'.repeat(33_000)}'!A1`);
+
+    expect(inside).toBe(`${lead}'[Rates.xlsx]${'a'.repeat(33_000)}'!A1`);
+    expect(rewrite(lead + name + PATH_AFTER)).toBe(`${lead}${name}&'[Rates.xlsx]Rates'!C5`);
+    expect(rewrite(lead + doubled + PATH_AFTER)).toBe(`${lead}${doubled}&'[Rates.xlsx]Rates'!C5`);
+    expect(rewrite(lead + 'A'.repeat(40_000) + PATH_AFTER)).toBe(
+      `${lead}${'A'.repeat(40_000)}&'[Rates.xlsx]Rates'!C5`,
+    );
+  },
+);
+
 // A seeded generator: formulas made of pieces whose rewrite is known, joined by operators.
 
 interface Piece {

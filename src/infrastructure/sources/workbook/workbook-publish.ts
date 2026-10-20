@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { rm } from 'node:fs/promises';
 import type { WorkbookSnapshotInfo } from '../../../application/ports/source-fetcher.js';
-import type { PublishedWorkbooks } from '../../../application/ports/workbook-staging.js';
+import type { LeftOut, PublishedWorkbooks } from '../../../application/ports/workbook-staging.js';
 import type { WorkbookEntry } from '../../../domain/sources/source.js';
 import { workbookSnapshotKey } from '../../../domain/sources/workbook-key.js';
 import type { SnapshotStore } from '../../github/snapshot-store.js';
@@ -11,13 +11,15 @@ import type { WorkbookLimits } from './workbook-limits.js';
 import type { WorkbookModel } from './workbook-model.js';
 import { readWorkbook } from './workbook-reader.js';
 import {
-  renderWorkbooks,
+  DEFAULT_MAX_TOTAL_BYTES,
+  renderProject,
   WORKBOOK_RENDERER_VERSION,
   type RenderedWorkbook,
 } from './workbook-renderer.js';
 import {
   entryOf,
   fileHash,
+  macroLeftOut,
   summaryOf,
   writeRendered,
   type UploadedWorkbook,
@@ -70,6 +72,13 @@ async function entriesOf(
   return entries;
 }
 
+/** The workbooks to name on the page because their macros were skipped (RF-154). */
+function skippedOf(input: PublishInput, rendered: readonly RenderedWorkbook[]): LeftOut[] {
+  return rendered.flatMap((book, index) =>
+    macroLeftOut(input.uploads[index]?.fileName ?? book.folder, book),
+  );
+}
+
 /** Renames the partial folder into place, or keeps the snapshot of the same content that is there (RF-152). */
 async function publishTree(
   snapshots: SnapshotStore,
@@ -94,11 +103,13 @@ export async function publishWorkbooks(
 ): Promise<PublishedWorkbooks> {
   const models = await readAll(input);
   input.check();
-  const rendered = renderWorkbooks(models);
+  const project = renderProject(models, { maxTotalBytes: DEFAULT_MAX_TOTAL_BYTES });
+  const rendered = project.workbooks;
   input.check();
   const { dir, filesDir } = await snapshots.createPartial(randomUUID());
   try {
     for (const book of rendered) await writeRendered(filesDir, '', book);
+    await writeRendered(filesDir, '', { files: [project.dependencies] });
     const entries = await entriesOf(input, rendered);
     input.check();
     const tree = await snapshots.inspect(filesDir);
@@ -112,7 +123,7 @@ export async function publishWorkbooks(
     };
     const key = workbookSnapshotKey(input.projectId, tree.snapshotHash);
     await publishTree(snapshots, dir, key, info);
-    return { key, info, summary: entries.map(summaryOf), skipped: [] };
+    return { key, info, summary: entries.map(summaryOf), skipped: skippedOf(input, rendered) };
   } catch (error) {
     await rm(dir, { recursive: true, force: true });
     throw error;

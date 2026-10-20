@@ -73,3 +73,16 @@ export function renderMacros(
   const written = files.length;
   return { files, entries, written, skipped: entries.length - written };
 }
+
+/** Why the page names a workbook whose macros were skipped, or undefined when none were (Q-40). */
+export function macroNoticeOf(
+  project: MacroProject | undefined,
+  macros: RenderedMacros,
+): string | undefined {
+  const closed =
+    project?.state === 'locked' ||
+    macros.entries.some((entry) => entry.status === 'locked' || entry.status === 'no-source');
+  return closed
+    ? 'Its macros are locked for viewing or hold compiled code only, so they were skipped and the rest of the workbook was rendered; unlock it in Excel and upload again.'
+    : undefined;
+}
