@@ -150,6 +150,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     ...{ version, publicUrl: environment.publicUrl, trustProxy: environment.trustProxy },
     contactEmail: environment.contactEmail,
     uploadMaxMb: environment.uploadMaxMb,
+    workbookMaxFiles: environment.workbookMaxFiles,
     staticRoot,
   });
   return {

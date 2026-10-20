@@ -82,6 +82,8 @@ export interface ServerOptions {
   readonly contactEmail?: string | undefined;
   /** `ROSETTA_UPLOAD_MAX_MB`, told to the page by `GET /api/session` (RF-134); left out when not given. */
   readonly uploadMaxMb?: number;
+  /** `ROSETTA_WORKBOOK_MAX_FILES`, told to the page beside it (RF-158); left out when not given. */
+  readonly workbookMaxFiles?: number;
   /** The folder of the built front end; no static files are served without it. */
   readonly staticRoot?: string;
   /**
@@ -210,6 +212,12 @@ function registerAccess(server: FastifyInstance, options: ServerOptions): void {
   registerAccessHooks(server, { publicUrl, logger, ...auth });
 }
 
+/** RF-134, RF-158: the session services and the upload limits the page is told. */
+function sessionOptions(options: ServerOptions) {
+  const { uploadMaxMb, workbookMaxFiles } = options;
+  return { ...options.auth, uploadMaxMb, workbookMaxFiles };
+}
+
 /**
  * RF-1013, RF-1201, RF-1303, RF-007, RF-1009, RF-1100, RF-1101: the server with its plugins, hooks,
  * public routes and the session API.
@@ -244,7 +252,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   registerLandingRoute(server, { contactEmail: options.contactEmail });
   // Registered as a plugin, so the rate-limit plugin (loaded first) sees these routes.
   void server.register((instance, _options, done) => {
-    registerSessionRoutes(instance, { ...options.auth, uploadMaxMb: options.uploadMaxMb });
+    registerSessionRoutes(instance, sessionOptions(options));
     registerAccountRoutes(instance, options.auth.accounts, options.auth.refusals);
     registerKeyRoutes(instance, options.auth.accounts);
     registerProviderTestRoutes(instance, options.auth.accounts, options.auth.refusals);

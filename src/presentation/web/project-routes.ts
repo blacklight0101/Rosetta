@@ -65,17 +65,25 @@ const MAX_URL_LENGTH = 2048;
 
 const createBody = z.strictObject({ url: z.string().max(MAX_URL_LENGTH) });
 // RF-128: a project that takes a zip; the name is checked by the use case, as the GitHub address is.
-const uploadBody = z.strictObject({ sourceKind: z.literal('upload'), name: z.string() });
+// RF-150: the same for a project of Excel workbooks.
+const uploadBody = z.strictObject({
+  sourceKind: z.enum(['upload', 'workbook']),
+  name: z.string(),
+});
 
 interface IdParams {
   readonly id: string;
 }
 
-/** What the page shows of an upload project's zip (RF-128). */
+/** What the page shows of the zip or the workbooks of a sent source (RF-128, RF-150). */
 function sourceView(project: Project): Record<string, unknown> | null {
   if (project.upload === undefined) return null;
-  const { fileName, uploadedAt } = project.upload;
-  return { fileName, uploadedAt: formatInstant(uploadedAt) };
+  const { fileName, uploadedAt, workbooks } = project.upload;
+  return {
+    fileName,
+    uploadedAt: formatInstant(uploadedAt),
+    ...(workbooks === undefined ? {} : { workbooks }),
+  };
 }
 
 /** RF-128: the zip is not the one the newest run analysed; false while no run has one. */
@@ -96,7 +104,7 @@ export function projectView(project: Project): Record<string, unknown> {
     subpath: project.subpath,
     source: sourceView(project),
     // Absent for a GitHub project, which is pinned to a commit and cannot change (RF-128).
-    ...(project.sourceKind === 'upload' ? { codeChangedSinceLastRun: codeChanged(project) } : {}),
+    ...(project.sourceKind === 'github' ? {} : { codeChangedSinceLastRun: codeChanged(project) }),
     settings: project.settings,
     settingsVersion: project.settingsVersion,
     createdAt: formatInstant(project.createdAt),
@@ -136,6 +144,7 @@ function registerCreate(server: FastifyInstance, services: ProjectServices): voi
         const made = await services.createProject.createUpload({
           actor: signedInOf(request).actor,
           name: upload.data.name,
+          sourceKind: upload.data.sourceKind,
         });
         if (!made.ok) throw new RosettaError(made.error);
         return reply.status(201).send(projectView(made.value.project));

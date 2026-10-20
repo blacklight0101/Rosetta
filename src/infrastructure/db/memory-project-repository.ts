@@ -87,7 +87,7 @@ export class MemoryProjectRepository implements ProjectRepository {
 
   async attachUpload(change: UploadAttachment): Promise<Project | undefined> {
     const project = this.owned(change.userId, change.projectId);
-    if (project?.sourceKind !== 'upload') return undefined;
+    if (project === undefined || project.sourceKind === 'github') return undefined;
     const updated = { ...project, upload: change.upload, updatedAt: change.updatedAt };
     this.projects.set(project.id, updated);
     return this.withLastRun(updated);
