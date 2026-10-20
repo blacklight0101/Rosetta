@@ -1,3 +1,4 @@
+import type { MacroStatus, RenderedMacros } from './render-macros.js';
 import { TextFile, type ByteBudget } from './render-output.js';
 import type { WorkbookModel, WorkbookSheet } from './workbook-model.js';
 import { NAME_CAP, quoteText, splitText } from './workbook-text.js';
@@ -171,16 +172,68 @@ function sheetRow(e: SheetEntry): string[] {
   ];
 }
 
+const SKIPPED: Readonly<Record<Exclude<MacroStatus, 'written'>, string>> = {
+  locked: 'skipped, project locked',
+  'no-source': 'skipped, compiled code only',
+  unreadable: 'skipped, unreadable',
+};
+
+function macroState(model: WorkbookModel, macros: RenderedMacros): string {
+  const project = model.macros;
+  if (project === undefined) {
+    return model.hasMacros
+      ? '- This workbook holds a VBA project that was not read.'
+      : '- No VBA project.';
+  }
+  const name = project.name === undefined ? '' : ` ${q(project.name)}`;
+  if (project.state === 'locked') {
+    return `- The VBA project${name} is locked for viewing; its modules are named and skipped (Q-40).`;
+  }
+  if (project.state === 'unreadable') {
+    const reason = quoteText(project.reason ?? 'unknown', 300);
+    return `- The VBA project${name} could not be read: ${reason}`;
+  }
+  return `- VBA project${name}: ${String(macros.written)} modules written, ${String(macros.skipped)} skipped.`;
+}
+
+/** The macros of the workbook: the state of the project, its modules and its form controls. */
+function addMacros(file: TextFile, model: WorkbookModel, macros: RenderedMacros): void {
+  file.section('## Macros');
+  file.add();
+  file.add(macroState(model, macros));
+  addTable(
+    file,
+    '## Macro modules',
+    ['File', 'Kind', 'Lines', 'Status', 'Real name'],
+    macros.entries.map((m) => [
+      m.file === undefined ? '-' : `macros/${m.file}`,
+      m.module.kind,
+      m.status === 'written' ? String(m.lines) : '-',
+      m.status === 'written' ? 'written' : SKIPPED[m.status],
+      q(m.module.name),
+    ]),
+  );
+  const controls = model.macros?.formControls ?? [];
+  if (controls.length === 0) return;
+  file.section('## Form controls');
+  file.add();
+  for (const c of controls.slice(0, LIST_CAP))
+    file.add(`- ${q(c.form)} ${q(c.name)}: ${q(c.type)}`);
+  if (controls.length > LIST_CAP)
+    file.add(`- ${String(controls.length - LIST_CAP)} more not listed`);
+}
+
 export interface IndexInput {
   readonly model: WorkbookModel;
   /** The folder of the workbook, the segment of its own name. */
   readonly folder: string;
   readonly entries: readonly SheetEntry[];
   readonly version: string;
+  readonly macros: RenderedMacros;
 }
 
 export function renderIndex(input: IndexInput, budget: ByteBudget): string {
-  const { model, folder, entries, version } = input;
+  const { model, folder, entries, version, macros } = input;
   const file = new TextFile(budget);
   addHeader(file, model, version, entries);
   addTable(
@@ -190,6 +243,9 @@ export function renderIndex(input: IndexInput, budget: ByteBudget): string {
     [
       [folder, 'workbook', q(model.fileName)],
       ...entries.map((e) => [e.segment, 'sheet', q(e.sheet.name)]),
+      ...macros.entries.flatMap((m) =>
+        m.file === undefined ? [] : [[`macros/${m.file}`, 'macro', q(m.module.name)]],
+      ),
     ],
   );
   addTable(
@@ -201,12 +257,6 @@ export function renderIndex(input: IndexInput, budget: ByteBudget): string {
   addNames(file, model, entries);
   addSheetLists(file, entries);
   addLinks(file, model);
-  file.section('## Macros');
-  file.add();
-  file.add(
-    model.hasMacros
-      ? '- This workbook holds a VBA project. Its macros are not read yet by this version of Rosetta.'
-      : '- No VBA project.',
-  );
+  addMacros(file, model, macros);
   return file.text();
 }

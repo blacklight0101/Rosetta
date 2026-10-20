@@ -10,7 +10,8 @@
     "tests/compose/*.spec.ts",
     "tests/compose/serve.ts",
     "tests/support/frozen-database-harness.ts",
-    "tests/support/read-project-child.ts"
+    "tests/support/read-project-child.ts",
+    "tests/support/dependency-child.ts"
   ],
   "project": [
     "src/**/*.ts",

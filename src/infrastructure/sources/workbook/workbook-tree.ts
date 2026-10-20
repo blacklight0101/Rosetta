@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { mkdir, open, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import type { WorkbookSummaryLine } from '../../../application/ports/workbook-staging.js';
+import type { LeftOut, WorkbookSummaryLine } from '../../../application/ports/workbook-staging.js';
 import type { WorkbookEntry } from '../../../domain/sources/source.js';
 import { snapshotWriteFailed } from '../../github/snapshot-errors.js';
 import type { RenderedWorkbook } from './workbook-renderer.js';
@@ -39,7 +39,7 @@ export async function fileHash(path: string): Promise<string> {
 export async function writeRendered(
   root: string,
   prefix: string,
-  rendered: RenderedWorkbook,
+  rendered: Pick<RenderedWorkbook, 'files'>,
 ): Promise<void> {
   try {
     for (const file of rendered.files) {
@@ -59,13 +59,13 @@ export function entryOf(
   folder: string,
   rendered: RenderedWorkbook,
 ): WorkbookEntry {
-  const { sheets, nonEmptyCells, formulas } = rendered.counts;
+  const { sheets, nonEmptyCells, formulas, macroModules, macrosSkipped } = rendered.counts;
   return {
     fileName: upload.fileName,
     folder,
     sizeBytes: upload.size,
     sha256,
-    counts: { sheets, nonEmptyCells, formulas, macroModules: 0, macrosSkipped: 0 },
+    counts: { sheets, nonEmptyCells, formulas, macroModules, macrosSkipped },
   };
 }
 
@@ -73,4 +73,11 @@ export function entryOf(
 export function summaryOf(entry: WorkbookEntry): WorkbookSummaryLine {
   const { sheets, nonEmptyCells, formulas, macroModules } = entry.counts;
   return { name: entry.fileName, sheets, cells: nonEmptyCells, formulas, macroModules };
+}
+
+/** The workbook named on the page because its macros were skipped, with the way out (RF-154, Q-40). */
+export function macroLeftOut(fileName: string, rendered: RenderedWorkbook): LeftOut[] {
+  return rendered.macroNotice === undefined
+    ? []
+    : [{ name: fileName, reason: rendered.macroNotice }];
 }

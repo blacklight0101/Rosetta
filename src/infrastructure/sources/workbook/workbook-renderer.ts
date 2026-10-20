@@ -1,6 +1,10 @@
 import { placeCells } from './cell-order.js';
+import { DEFAULT_DEPENDENCY_LIMITS, type DependencyLimits } from './dependency-limits.js';
+import { plainModel } from './external-names.js';
+import { renderDependencies } from './render-dependencies.js';
 import { renderFormulas } from './render-formulas.js';
 import { renderIndex, type SheetEntry } from './render-index.js';
+import { macroNoticeOf, renderMacros } from './render-macros.js';
 import { ByteBudget } from './render-output.js';
 import { renderNotes, renderValidation } from './render-rules.js';
 import { renderValues } from './render-values.js';
@@ -47,12 +51,21 @@ export interface RenderedWorkbook {
     readonly sheets: number;
     readonly nonEmptyCells: number;
     readonly formulas: number;
+    /** Macro modules written as files, and modules listed without a file. */
+    readonly macroModules: number;
+    readonly macrosSkipped: number;
   };
+  /** Set when the macros were skipped because they are locked or compiled only (Q-40). */
+  readonly macroNotice?: string;
 }
 
 export interface RenderLimits {
   /** The bytes of rendered text, over all the workbooks of one call (RST-1926 when passed). */
   readonly maxTotalBytes: number;
+  /** Bounds of the dependency map; the defaults apply to what is left out. */
+  readonly dependencies?: Partial<DependencyLimits>;
+  /** The folder of each model, in place of the safe segments of their file names (a zip renders in place). */
+  readonly folders?: readonly string[];
 }
 
 const DEFAULT_LIMITS: RenderLimits = { maxTotalBytes: DEFAULT_MAX_TOTAL_BYTES };
@@ -92,8 +105,12 @@ function renderOne(model: WorkbookModel, folder: string, budget: ByteBudget): Re
       files.push({ path: `${folder}/${segment}/${name}`, content });
     }
   });
-  const index = renderIndex({ model, folder, entries, version: WORKBOOK_RENDERER_VERSION }, budget);
-  files.push({ path: `${folder}/workbook.md`, content: index });
+  const macros = renderMacros(model.macros, budget);
+  for (const file of macros.files)
+    files.push({ path: `${folder}/${file.path}`, content: file.content });
+  const notice = macroNoticeOf(model.macros, macros);
+  const input = { model, folder, entries, version: WORKBOOK_RENDERER_VERSION, macros };
+  files.push({ path: `${folder}/workbook.md`, content: renderIndex(input, budget) });
   files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
   return {
     folder,
@@ -110,7 +127,10 @@ function renderOne(model: WorkbookModel, folder: string, budget: ByteBudget): Re
       sheets: entries.length,
       nonEmptyCells: entries.reduce((sum, e) => sum + e.sheet.cells.length, 0),
       formulas: entries.reduce((sum, e) => sum + e.formulas, 0),
+      macroModules: macros.written,
+      macrosSkipped: macros.skipped,
     },
+    ...(notice === undefined ? {} : { macroNotice: notice }),
   };
 }
 
@@ -122,11 +142,20 @@ export function renderWorkbooks(
   models: readonly WorkbookModel[],
   limits: RenderLimits = DEFAULT_LIMITS,
 ): RenderedWorkbook[] {
-  const budget = new ByteBudget(limits.maxTotalBytes);
-  const folders = allocateSegments(
-    models.map((model) => model.fileName),
-    { keepExtension: true },
-  );
+  return renderAll(models.map(plainModel), new ByteBudget(limits.maxTotalBytes));
+}
+
+function renderAll(
+  models: readonly WorkbookModel[],
+  budget: ByteBudget,
+  given?: readonly string[],
+): RenderedWorkbook[] {
+  const folders =
+    given ??
+    allocateSegments(
+      models.map((model) => model.fileName),
+      { keepExtension: true },
+    );
   return models.map((model, index) => renderOne(model, folders[index] ?? '_', budget));
 }
 
@@ -137,4 +166,26 @@ export function renderWorkbook(
   const [rendered] = renderWorkbooks([model], limits);
   if (rendered === undefined) throw new RangeError('One workbook gives one render.');
   return rendered;
+}
+
+export interface RenderedProject {
+  readonly workbooks: readonly RenderedWorkbook[];
+  /** `dependencies.md`, at the root of the tree (RFC-005 section 4.5). */
+  readonly dependencies: RenderedFile;
+}
+
+/**
+ * Renders the workbooks of a project and the dependency map that spans them. Both draw on one byte
+ * limit (`limits.maxTotalBytes`, RST-1926 when it is passed).
+ */
+export function renderProject(
+  models: readonly WorkbookModel[],
+  limits: RenderLimits = DEFAULT_LIMITS,
+): RenderedProject {
+  const budget = new ByteBudget(limits.maxTotalBytes);
+  const plain = models.map(plainModel);
+  const workbooks = renderAll(plain, budget, limits.folders);
+  const bounds = { ...DEFAULT_DEPENDENCY_LIMITS, ...limits.dependencies };
+  const content = renderDependencies(models, workbooks, bounds, budget);
+  return { workbooks, dependencies: { path: 'dependencies.md', content } };
 }
