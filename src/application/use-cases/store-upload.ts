@@ -8,6 +8,7 @@ import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { StoredUpload, UploadStore } from '../ports/upload-store.js';
+import type { LeftOut, WorkbookSummaryLine } from '../ports/workbook-staging.js';
 import { pruneEarlier } from '../projects/prune-snapshot.js';
 
 // RF-128, RF-129, RF-130, RF-133: Store upload turns the zip a user sends into the project's source.
@@ -44,6 +45,9 @@ export interface UploadSummary {
   readonly uploadedAt: string;
   /** The newest run read another snapshot than the one just stored (false while no run has one). */
   readonly codeChangedSinceLastRun: boolean;
+  /** RF-150, Q-41: only when the zip held workbooks; what was rendered, and what was left out. */
+  readonly workbooks?: readonly WorkbookSummaryLine[];
+  readonly leftOut?: readonly LeftOut[];
 }
 
 export type UploadProblem =

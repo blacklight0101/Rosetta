@@ -4,6 +4,8 @@ import type {
   UploadRequest,
   UploadStore,
 } from '../../src/application/ports/upload-store.js';
+import type { WorkbookEntry } from '../../src/domain/sources/source.js';
+import type { LeftOut, WorkbookSummaryLine } from '../../src/application/ports/workbook-staging.js';
 import { uploadSnapshotKey } from '../../src/domain/sources/upload-name.js';
 
 // RF-128: an upload store for use case tests. It records what it was asked, answers a stored upload
@@ -18,6 +20,8 @@ export class FakeUploadStore implements UploadStore {
   gate: Promise<void> | undefined;
   hash = `sha256:${'ab'.repeat(32)}`;
   zipBytes = 1234;
+  /** RF-152: the workbooks the zip held and the ones left out; none by default, as for most zips. */
+  held: { entries: WorkbookEntry[]; lines: WorkbookSummaryLine[]; leftOut: LeftOut[] } | undefined;
 
   async store(request: UploadRequest): Promise<StoredUpload> {
     this.requests.push(request);
@@ -31,12 +35,18 @@ export class FakeUploadStore implements UploadStore {
       totalBytes: 4096,
       skippedLinks: 1,
       snapshotHash: this.hash,
+      ...(this.held === undefined || this.held.entries.length === 0
+        ? {}
+        : { workbooks: this.held.entries }),
     };
     return {
       key: uploadSnapshotKey(request.projectId, this.hash),
       info,
       zipBytes: this.zipBytes,
       skipped: 3,
+      ...(this.held === undefined
+        ? {}
+        : { workbooks: this.held.lines, leftOut: this.held.leftOut }),
     };
   }
 
