@@ -28,6 +28,9 @@ export const toolResultData = z.looseObject({
   tool: text.optional(),
   ok: z.boolean().optional(),
   linesReturned: count.optional(),
+  /** A `read_file` result: the lines it gave back (RF-1002). */
+  startLine: count.optional(),
+  endLine: count.optional(),
   refusedReason: text.optional(),
 });
 

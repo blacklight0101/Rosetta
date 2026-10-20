@@ -1,4 +1,5 @@
 import type { AgentTaskRequest } from '../agent/agent-loop.js';
+import type { ToolOutcome } from '../agent/read-only-tools.js';
 import type { LlmProvider, LlmResponse } from '../ports/llm-provider.js';
 import type { RunEventPublisher } from '../runs/run-event-publisher.js';
 
@@ -61,6 +62,18 @@ export function providerWithEvents(
   };
 }
 
+/**
+ * RF-1002, RF-230: the lines a successful `read_file` gave back. The tool answers with the lines
+ * that exist, so a read asked to go past the end of a file ends at its last line; the page shows
+ * these lines, not the ones the model asked for.
+ */
+function servedLines(tool: string, outcome: ToolOutcome): Record<string, number> {
+  const excerpt = outcome.excerpts?.[0];
+  if (tool !== 'read_file' || outcome.error !== undefined || excerpt === undefined) return {};
+  const { startLine, endLine } = excerpt;
+  return { startLine, endLine, linesReturned: endLine - startLine + 1 };
+}
+
 // RF-1002
 export function toolsWithEvents(
   inner: AgentTools,
@@ -82,7 +95,7 @@ export function toolsWithEvents(
       const refused = outcome.error === undefined ? {} : { refusedReason: outcome.error.code };
       await events.emit(
         'agent.tool.result',
-        { turn, tool, ok: outcome.error === undefined, ...refused },
+        { turn, tool, ok: outcome.error === undefined, ...refused, ...servedLines(tool, outcome) },
         agentTaskId,
       );
       return outcome;

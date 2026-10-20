@@ -22,6 +22,14 @@ function argsOf(data: Readonly<Record<string, unknown>>): Readonly<Record<string
   return typeof args === 'object' && args !== null ? Object.fromEntries(Object.entries(args)) : {};
 }
 
+/** ` · lines 1-317` for a read that says which lines it returned, else nothing. */
+function servedText(data: Readonly<Record<string, unknown>>): string {
+  const { startLine, endLine } = data;
+  return typeof startLine === 'number' && typeof endLine === 'number'
+    ? ` · lines ${String(startLine)}-${String(endLine)}`
+    : '';
+}
+
 function seededOf(data: Readonly<Record<string, unknown>>): Readonly<Record<string, unknown>> {
   const seeded = data['seeded'];
   return typeof seeded === 'object' && seeded !== null
@@ -42,7 +50,7 @@ const writers: Readonly<Record<string, Writer>> = {
     `${area} turn ${field(data, 'turn')} · ${field(data, 'inputTokens')} in / ${field(data, 'outputTokens')} out`,
   'agent.tool.called': (data, area) => `${area} ${toolText(field(data, 'tool'), argsOf(data))}`,
   'agent.tool.result': (data, area) =>
-    `${area} ${field(data, 'tool')} ${data['ok'] === true ? 'ok' : `failed ${field(data, 'refusedReason')}`}`,
+    `${area} ${field(data, 'tool')} ${data['ok'] === true ? `ok${servedText(data)}` : `failed ${field(data, 'refusedReason')}`}`,
   'agent.card.proposed': (data, area) =>
     `${area} ${field(data, 'cardId')} "${field(data, 'title')}"`,
   'agent.ended': (data, area) =>
