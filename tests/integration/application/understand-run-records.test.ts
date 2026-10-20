@@ -123,21 +123,6 @@ describe('an understand run: events', () => {
   });
 });
 
-describe('an understand run: the lines a read returned', () => {
-  it('RF-1002 the result of a read names the lines it returned', () => {
-    const { h, run } = full.current();
-
-    const result = h.eventsOf(run).then((events) => {
-      return events.find((event) => event.type === 'agent.tool.result')?.data;
-    });
-
-    return expect(result).resolves.toEqual({
-      ...{ turn: 1, tool: 'read_file', ok: true },
-      ...{ startLine: 1, endLine: 14, linesReturned: 14 },
-    });
-  });
-});
-
 describe('an understand run: log entries', () => {
   it("RF-1011 every log entry that names the run's key also names its owner", () => {
     const { h, run } = full.current();
@@ -193,5 +178,20 @@ describe('an understand run that cannot start', UNDERSTAND_TIMEOUT, () => {
       errorCode: ERROR_CODES.codeMapMissing,
     });
     expect(h.providers.requests()).toEqual([]);
+  });
+});
+
+describe('an understand run: the lines a read returned', () => {
+  it('RF-1002 the result of a read names the lines it returned', () => {
+    const { h, run } = full.current();
+
+    const result = h.eventsOf(run).then((events) => {
+      return events.find((event) => event.type === 'agent.tool.result')?.data;
+    });
+
+    return expect(result).resolves.toEqual({
+      ...{ turn: 1, tool: 'read_file', ok: true },
+      ...{ startLine: 1, endLine: 14, linesReturned: 14 },
+    });
   });
 });
