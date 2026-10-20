@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 55      | 5         | 48         | 2         | 0                  | 18      | 35      | 2      | 11         | 0         |
-| **Total**               | **272** | **77**    | **168**    | **27**    | **0**              | **134** | **126** | **12** | **146**    | **0**     |
+| P3 Report and plan      | 56      | 5         | 49         | 2         | 0                  | 19      | 35      | 2      | 12         | 0         |
+| **Total**               | **273** | **77**    | **169**    | **27**    | **0**              | **135** | **126** | **12** | **147**    | **0**     |
 
 ## Conventions for every card
 
@@ -3672,3 +3672,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the four changes and tests; the journey without `page.reload()`.
 - **Done when**: each probe has a passing test; the P3-42 journey passes without the reload; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-128, RF-129, RF-133, RF-134, DEC-149, P3-38 and P3-42 (verifier MINORs).
+
+### P3-56 - Follow-up: formula length limit in the workbook reader
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-44, P3-47
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the workbook reader and its limits (`src/infrastructure/sources/workbook/`, P3-44); the formula tokenizer and the external-name rewrite (P3-47, #647, #653); RF-151 and DEC-152; the error-code ranges in `docs/conventions.md`; the second-review verdicts on #653.
+- **Do**: the reader refuses a workbook holding a formula longer than 8,192 characters with RST-1931, at the point the formula is read (cell formulas, shared and array formulas, defined names, validation and conditional-formatting rules), before it reaches the tokenizer or the renderer. The message names the workbook, the sheet and the cell (or the defined name or rule) and says that Excel cannot write such a formula. In a batch nothing is published; in a zip the workbook is left out and listed with its reason (Q-41). Count characters as Excel does (UTF-16 code units after XML unescaping).
+- **Review probes**: a formula of exactly 8,192 characters (accepted) and of 8,193 (refused); the limit hit in a shared formula, a defined name and a validation rule; a formula whose escaped XML is longer than 8,192 but whose text is not (accepted); a zip holding such a workbook (left out and listed, the rest analysed); a batch of two where one is refused (nothing published).
+- **Behaviour to preserve**: every workbook Excel can write still reads unchanged; the other RF-151 limits and their codes; the linear rewrite passes of #653.
+- **Delivers**: the limit, RST-1931, tests.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-151, DEC-152, P3-44, P3-47 (owner decision on the second review of #653); issue #656.
