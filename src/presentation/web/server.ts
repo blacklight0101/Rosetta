@@ -26,6 +26,7 @@ import { registerErrorCatalogueRoutes } from './error-catalogue-routes.js';
 import { registerCapRoutes, type CapServices } from './cap-routes.js';
 import { registerCostRoutes } from './cost-routes.js';
 import { registerDefaultRoleRoutes, type DefaultRoleServices } from './default-role-routes.js';
+import { registerModelRoutes, type ModelServices } from './model-routes.js';
 import { registerHistoryRoutes, type HistoryServices } from './history-routes.js';
 import { registerHttpsRedirect } from './https-redirect.js';
 import { registerKeyRoutes, type KeyServices } from './key-routes.js';
@@ -72,6 +73,8 @@ export interface ServerOptions {
   readonly runs: RunServices;
   /** RF-1008, RF-1012: the use cases behind the history page, the deletions and the snapshot list. */
   readonly history: HistoryServices;
+  /** RF-405, DEC-156: the use case behind the list of models a role can be set to. */
+  readonly models: ModelServices;
   /** The Rosetta version reported by /healthz. */
   readonly version: string;
   /** `ROSETTA_PUBLIC_URL`; https turns HSTS on (RF-1013). */
@@ -218,6 +221,23 @@ function sessionOptions(options: ServerOptions) {
   return { ...options.auth, uploadMaxMb, workbookMaxFiles };
 }
 
+/** The session, account, administration, project, run and history routes. */
+function registerApiRoutes(instance: FastifyInstance, options: ServerOptions): void {
+  registerSessionRoutes(instance, sessionOptions(options));
+  registerAccountRoutes(instance, options.auth.accounts, options.auth.refusals);
+  registerKeyRoutes(instance, options.auth.accounts);
+  registerProviderTestRoutes(instance, options.auth.accounts, options.auth.refusals);
+  registerAdminRoutes(instance, options.auth.accounts);
+  registerCapRoutes(instance, options.auth.accounts);
+  registerDefaultRoleRoutes(instance, options.auth.accounts);
+  registerModelRoutes(instance, options.models);
+  registerProjectRoutes(instance, options.projects);
+  registerRunRoutes(instance, options.runs, options.logger);
+  registerCostRoutes(instance, options.projects);
+  registerErrorCatalogueRoutes(instance);
+  registerHistoryRoutes(instance, options.history);
+}
+
 /**
  * RF-1013, RF-1201, RF-1303, RF-007, RF-1009, RF-1100, RF-1101: the server with its plugins, hooks,
  * public routes and the session API.
@@ -252,18 +272,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   registerLandingRoute(server, { contactEmail: options.contactEmail });
   // Registered as a plugin, so the rate-limit plugin (loaded first) sees these routes.
   void server.register((instance, _options, done) => {
-    registerSessionRoutes(instance, sessionOptions(options));
-    registerAccountRoutes(instance, options.auth.accounts, options.auth.refusals);
-    registerKeyRoutes(instance, options.auth.accounts);
-    registerProviderTestRoutes(instance, options.auth.accounts, options.auth.refusals);
-    registerAdminRoutes(instance, options.auth.accounts);
-    registerCapRoutes(instance, options.auth.accounts);
-    registerDefaultRoleRoutes(instance, options.auth.accounts);
-    registerProjectRoutes(instance, options.projects);
-    registerRunRoutes(instance, options.runs, options.logger);
-    registerCostRoutes(instance, options.projects);
-    registerErrorCatalogueRoutes(instance);
-    registerHistoryRoutes(instance, options.history);
+    registerApiRoutes(instance, options);
     done();
   });
   if (options.staticRoot !== undefined) {

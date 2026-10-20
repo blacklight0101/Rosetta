@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "description": "An answer whose prompt_eval_count is 900, far below what the prompt sent was worth, as Ollama reports when it cut the prompt to fit its context. Hand-written in the documented shape of Ollama's /api/chat answer (stream false); no real model was called (ADR-008).",
+  "models": [
+    {
+      "name": "contract-model:latest",
+      "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ],
+  "chat": [
+    {
+      "status": 200,
+      "body": {
+        "model": "contract-model",
+        "created_at": "2026-10-11T09:05:03.007Z",
+        "message": {
+          "role": "assistant",
+          "content": "The Catalog area lists products from the database."
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 2600000000,
+        "load_duration": 500000000,
+        "prompt_eval_duration": 600000000,
+        "eval_duration": 1000000000,
+        "prompt_eval_count": 900,
+        "eval_count": 80
+      }
+    }
+  ]
+}

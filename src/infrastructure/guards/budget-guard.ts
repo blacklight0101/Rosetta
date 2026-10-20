@@ -12,16 +12,18 @@ import type { Logger } from '../../application/ports/logger.js';
 import type { ProviderCallRecorder } from '../../application/ports/provider-call-recorder.js';
 import type { RunCostRecorder } from '../../application/runs/run-cost-record.js';
 import { capStopsRun } from '../../domain/budget/cap-stop.js';
-import { cacheWriteCostOf, costOf } from '../../domain/budget/price.js';
 import type { KeySource } from '../../domain/budget/price-table.js';
 import type { CapBreach, UsageCap, WorstCase } from '../../domain/budget/usage-cap.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { ProviderTarget } from '../providers/call-attempts.js';
+import { ProviderCallError } from '../providers/provider-call-error.js';
 import { estimateInputTokens } from '../providers/usage-estimate.js';
 import {
   ledgerEntryOf,
   noUsage,
+  outcomeOf,
+  totalsOf,
   refusedRecord,
   type BudgetCaller,
   type BudgetRun,
@@ -132,7 +134,7 @@ export class BudgetGuard implements LlmProvider {
     try {
       response = await this.options.inner.complete(request, counting);
     } catch (error) {
-      await this.closeFailed(request, plan, attempts);
+      await this.closeFailed(request, plan, { attempts, error });
       throw error;
     }
     await this.settle(request, plan, attempts, response);
@@ -208,21 +210,16 @@ export class BudgetGuard implements LlmProvider {
     response: LlmResponse,
   ): Promise<void> {
     const { usage } = response;
-    const { price } = plan.price;
-    const costMicros = price === undefined ? 0n : costOf(price, usage).micros;
-    // P2-16: the cache writes' share of the cost, fixed with it; unknown (0) when the cost is.
-    const cacheWriteCostMicros = price === undefined ? 0n : cacheWriteCostOf(price, usage).micros;
-    const attempt = Math.max(attempts, 1);
-    const outcome: CallOutcome = { attempt, usage, costMicros, cacheWriteCostMicros };
+    const outcome = outcomeOf(plan.price, attempts, usage);
+    const { costMicros } = outcome;
     const entry = this.entryOf(request, plan, outcome);
     try {
       await this.options.ledger.settle(entry);
     } catch (error) {
       throw new RosettaError(ERROR_CODES.costRecordFailed, undefined, { cause: error });
     }
-    const { inputTokens, outputTokens, cachedInputTokens } = usage;
     await this.quietly('The run totals could not be updated.', request, () =>
-      this.options.costs.addCall({ inputTokens, outputTokens, cachedInputTokens, costMicros }),
+      this.options.costs.addCall(totalsOf(usage, costMicros)),
     );
     // RF-1003: the run's usage event, after the row is written; it never fails the call.
     const { caps, budgetEvents } = this.options;
@@ -231,24 +228,34 @@ export class BudgetGuard implements LlmProvider {
     );
   }
 
-  /** A call that failed: a row without usage if it was sent, else its reservation is freed. */
-  private async closeFailed(request: LlmRequest, plan: CallPlan, attempts: number): Promise<void> {
+  /**
+   * A call that failed: a row without usage if it was sent, else its reservation is freed. A call
+   * the provider made but whose answer it dropped (an Ollama prompt cut, DEC-155) is a row with
+   * the usage the provider reported; one the provider refused before sending it is not a call.
+   */
+  private async closeFailed(
+    request: LlmRequest,
+    plan: CallPlan,
+    failed: { readonly attempts: number; readonly error: unknown },
+  ): Promise<void> {
     const { ledger } = this.options;
-    const outcome: CallOutcome = {
-      attempt: attempts,
-      usage: noUsage,
-      costMicros: 0n,
-      cacheWriteCostMicros: 0n,
-    };
-    await this.quietly('The cost of a failed call could not be recorded.', request, () =>
-      attempts === 0
-        ? ledger.release({
-            callId: request.context.callId,
-            userId: this.options.run.userId,
-            runId: this.options.run.id,
-          })
-        : ledger.settle(this.entryOf(request, plan, outcome)),
-    );
+    const { attempts, error } = failed;
+    const notSent = attempts === 0 || (error instanceof ProviderCallError && error.notSent);
+    const usage = error instanceof ProviderCallError ? error.usage : undefined;
+    await this.quietly('The cost of a failed call could not be recorded.', request, async () => {
+      if (notSent) {
+        await ledger.release({
+          callId: request.context.callId,
+          userId: this.options.run.userId,
+          runId: this.options.run.id,
+        });
+        return;
+      }
+      const outcome = outcomeOf(plan.price, attempts, usage ?? noUsage);
+      await ledger.settle(this.entryOf(request, plan, outcome));
+      if (usage !== undefined)
+        await this.options.costs.addCall(totalsOf(usage, outcome.costMicros));
+    });
   }
 
   private entryOf(request: LlmRequest, plan: CallPlan, outcome: CallOutcome) {

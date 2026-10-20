@@ -69,6 +69,12 @@ interface Finish {
   readonly inputs: PlanInputs;
 }
 
+/** The codes whose own message is logged: the cut-off answer (RST-1805) and the prompt size (RST-1522). */
+const namesItsCause = new Set<ErrorCode>([
+  ERROR_CODES.plannerAnswerCutOff,
+  ERROR_CODES.ollamaPromptTooLarge,
+]);
+
 const failed = (errorCode: ErrorCode): RunOutcome => ({ endState: 'Failed', errorCode });
 
 export class BuildPlan implements RunExecutor {
@@ -91,8 +97,9 @@ export class BuildPlan implements RunExecutor {
         await this.log(execution.run, error.code, 'The planner call would pass a cap.');
         return { endState: 'CapReached', errorCode: error.code };
       }
-      const cutOff = error.code === ERROR_CODES.plannerAnswerCutOff;
-      const message = cutOff ? error.message : 'The hand-off package could not be written.';
+      // RF-401, RF-604: these two messages name sizes and settings, never prompt text.
+      const named = namesItsCause.has(error.code);
+      const message = named ? error.message : 'The hand-off package could not be written.';
       await this.log(execution.run, error.code, message);
       return failed(error.code);
     } finally {

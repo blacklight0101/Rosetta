@@ -30,6 +30,7 @@ import {
 import { modelMissing } from './ollama-errors.js';
 import { exchange } from './ollama-http.js';
 import { chatBody, type ToolMode } from './ollama-request.js';
+import { cutPrompt, promptFactsOf, refusedPrompt } from './ollama-prompt-guard.js';
 import { llmResponseOf } from './ollama-response.js';
 import { digestOf, parseChat } from './ollama-wire.js';
 
@@ -147,13 +148,18 @@ export class OllamaProvider implements LlmProvider {
       contextTokens: context.tokens,
       textProtocolPrompt,
     };
-    const result = await exchange({
-      ...this.target('/api/chat', request),
-      body: chatBody(request, settings),
-    });
+    const body = chatBody(request, settings);
+    const facts = promptFactsOf(request, body, context.tokens);
+    // DEC-155: a prompt that does not fit is refused before anything is sent.
+    const refused = refusedPrompt(facts);
+    if (refused !== undefined) return { ok: false, failed: refused };
+    const result = await exchange({ ...this.target('/api/chat', request), body });
     if (!result.ok) return result;
     const chat = parseChat(result.body);
     if (chat === undefined) return invalidAnswer();
+    // DEC-155: Ollama cut the prompt; the answer is not the one the prompt asked for.
+    const cut = cutPrompt(facts, chat, request);
+    if (cut !== undefined) return { ok: false, failed: cut };
     if (context.source === 'fixed') {
       await untilAborted(this.contexts.checkFixed(ref, context.tokens), request.signal);
     }

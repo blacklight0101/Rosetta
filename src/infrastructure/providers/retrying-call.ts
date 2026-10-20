@@ -3,6 +3,7 @@ import type {
   LlmAttemptFailure,
   LlmAttemptObserver,
   LlmResponse,
+  TokenUsage,
 } from '../../application/ports/llm-provider.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -22,6 +23,10 @@ export interface AttemptFailed {
   /** A message that names the fix, when the catalogue's plain one is not enough. */
   readonly message?: string;
   readonly cause?: unknown;
+  /** Nothing was sent to the provider (DEC-155): the budget guard frees the reservation. */
+  readonly notSent?: boolean;
+  /** The usage the provider reported for a call whose answer was dropped (DEC-155). */
+  readonly usage?: TokenUsage;
 }
 
 export type AttemptResult =
@@ -72,7 +77,12 @@ export async function completeWithRetries(call: RetryingCall): Promise<LlmRespon
     if (result.ok) return result.response;
     const { failed } = result;
     if (!failed.retryable || retry >= policy.maxRetries) {
-      throw new ProviderCallError(failed.failure, { cause: failed.cause, message: failed.message });
+      throw new ProviderCallError(failed.failure, {
+        cause: failed.cause,
+        message: failed.message,
+        notSent: failed.notSent,
+        usage: failed.usage,
+      });
     }
     await observer?.attemptRetried(failed.failure);
     await backOff(retry + 1, failed, call);

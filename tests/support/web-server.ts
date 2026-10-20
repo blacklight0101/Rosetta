@@ -59,6 +59,7 @@ import {
   type HistoryDoubles,
   type KeyParts,
 } from './web-server-parts.js';
+import { modelServices } from './model-services.js';
 import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
@@ -280,7 +281,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     projects: projectServices(projectParts, { ...files, keys: keys.keys }, runs.runs, upload),
     runs: runServices(runs, { ...stores, keys: keys.keys, users, factory }, route, outputs),
     history: historyServices({ runs, projects, folders, snapshots, logger, costs, upload }),
-    onRoute: recorder.onRoute,
+    ...{ models: modelServices(), onRoute: recorder.onRoute },
     ...overrides,
   });
   return {

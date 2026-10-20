@@ -4,6 +4,7 @@ import { filesOf, readZip } from '../../support/zip-reader.js';
 import { expect } from './fixtures.js';
 import { chooseAreas, openProjectStart, repositories, runScan } from './journey-pages.js';
 import { runStatus, startAndOpenLiveRun } from './live-run-page.js';
+import { chooseModel } from './choose-model.js';
 
 // P2-13: the steps the full-understand journeys share, written as a person does them: scan the
 // webforms project, give the roles of the project a model (the name steers the model double,
@@ -20,12 +21,12 @@ export interface JourneyModels {
 /** Opens the settings of the webforms project from its start page and saves the models. */
 async function saveModels(page: Page, models: JourneyModels): Promise<void> {
   await page.getByRole('link', { name: 'Project settings' }).click();
-  await page.getByLabel('Reader model', { exact: true }).fill(models.reader);
+  await chooseModel(page, 'Reader', models.reader);
   if (models.summariser !== undefined) {
-    await page.getByLabel('Summariser model', { exact: true }).fill(models.summariser);
+    await chooseModel(page, 'Summariser', models.summariser);
   }
   if (models.planner !== undefined) {
-    await page.getByLabel('Planner model', { exact: true }).fill(models.planner);
+    await chooseModel(page, 'Planner', models.planner);
   }
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();

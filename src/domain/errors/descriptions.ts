@@ -214,6 +214,12 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     nextStep:
       'Start the run again and tick the private code confirmation, or switch every role to a local Ollama model.',
   },
+  'RST-1522': {
+    message:
+      'The prompt of this role is larger than the context Ollama gives the model, so the call was stopped instead of letting Ollama cut the prompt.',
+    nextStep:
+      'Choose a model with a larger context, or a cloud model for this role, in the project settings; or set a larger contextTokens for the Ollama provider.',
+  },
   'RST-1900': {
     message: 'The address is not a public GitHub repository URL.',
     nextStep:

@@ -12,6 +12,7 @@ import { fixtureKeyEndingIn } from '../support/no-full-key.js';
 import { accountFor } from '../support/seed.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
+import { chooseModel } from '../support/choose-model.js';
 
 // RF-006, RF-422, RF-428, RF-301, ADR-007, ADR-010, P2-13: flow 4 to its end. A run on a priced
 // reader stops at the project's run cap ("Cap reached", flow 4 step G), keeps what it did and says
@@ -37,9 +38,9 @@ async function storeKeyAndPickPricedModels(page: Page): Promise<void> {
 async function saveSettings(page: Page, cap: string): Promise<void> {
   await page.getByRole('link', { name: 'Project settings' }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
-  await page.getByLabel('Reader model', { exact: true }).fill('gpt-5-nano');
+  await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByLabel('Summariser provider', { exact: true }).selectOption('openai');
-  await page.getByLabel('Summariser model', { exact: true }).fill('gpt-5-nano');
+  await chooseModel(page, 'Summariser', 'gpt-5-nano');
   // DEC-117: the threshold to confirm a run is at most the run cap, so both are set together.
   await page.getByLabel('Ask before a run estimated above (USD)', { exact: true }).fill('0.001');
   await page.getByLabel('Run cost cap (USD)', { exact: true }).fill(cap);
