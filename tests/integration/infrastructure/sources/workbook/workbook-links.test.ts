@@ -10,24 +10,25 @@ const root = useWritableTempRoot('rosetta-workbook-links-');
 const REL_TYPE = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const SECRET = ['SEC', 'RET'].join('');
 
+/** One `externalReference` and one link part per target, as Excel writes them. */
 async function modelOf(targets: readonly string[]) {
-  const rels = targets
-    .map(
-      (target, n) =>
-        `<Relationship Id="rId${String(n + 1)}" Type="${REL_TYPE}/externalLinkPath" Target="${target}" TargetMode="External"/>`,
-    )
-    .join('');
+  const ids = targets.map((_, n) => String(n + 50));
   const bytes = await buildWorkbook({
     sheets: [{ name: 'S' }],
-    workbookExtra: '<externalReferences><externalReference r:id="rId50"/></externalReferences>',
-    workbookRels: `<Relationship Id="rId50" Type="${REL_TYPE}/externalLink" Target="externalLinks/externalLink1.xml"/>`,
-    extraParts: [
-      { name: 'xl/externalLinks/externalLink1.xml', data: '<externalLink/>' },
+    workbookExtra: `<externalReferences>${ids.map((id) => `<externalReference r:id="rId${id}"/>`).join('')}</externalReferences>`,
+    workbookRels: ids
+      .map(
+        (id) =>
+          `<Relationship Id="rId${id}" Type="${REL_TYPE}/externalLink" Target="externalLinks/externalLink${id}.xml"/>`,
+      )
+      .join(''),
+    extraParts: targets.flatMap((target, n) => [
+      { name: `xl/externalLinks/externalLink${ids[n] ?? ''}.xml`, data: '<externalLink/>' },
       {
-        name: 'xl/externalLinks/_rels/externalLink1.xml.rels',
-        data: `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels}</Relationships>`,
+        name: `xl/externalLinks/_rels/externalLink${ids[n] ?? ''}.xml.rels`,
+        data: `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL_TYPE}/externalLinkPath" Target="${target}" TargetMode="External"/></Relationships>`,
       },
-    ],
+    ]),
   });
   return readBuilt(root.path, bytes);
 }

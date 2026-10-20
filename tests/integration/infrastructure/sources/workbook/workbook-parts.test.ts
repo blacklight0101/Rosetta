@@ -182,10 +182,10 @@ it('RF-151 keeps only the file name of an external link, without query, fragment
 
   const model = await readBuilt(root.path, bytes);
 
-  expect(model.externalLinks).toEqual([
-    { fileName: 'Book.xlsx' },
-    { fileName: 'Plain.xlsx' },
-    { fileName: 'Encoded.xlsx' },
+  expect(model.externalLinks.map((link) => link.fileName)).toEqual([
+    'Book.xlsx',
+    'Plain.xlsx',
+    'Encoded.xlsx',
   ]);
   expect(JSON.stringify(model)).not.toContain('NOTREAL');
 });

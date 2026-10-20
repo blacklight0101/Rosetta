@@ -237,20 +237,22 @@ export class PackageReader {
     relationships: readonly Relationship[],
   ): Promise<Pick<WorkbookModel, 'externalLinks' | 'unnamedExternalLinks'>> {
     const links: ExternalLink[] = [];
-    let number = 0;
-    for (const id of ids) {
+    let unnamed = 0;
+    for (const [index, id] of ids.entries()) {
+      const number = index + 1;
       const part = relationships.find((rel) => rel.id === id)?.target;
       if (part === undefined) continue;
       if (!this.pkg.has(part)) throw workbookNotReadable(part, 'the part is missing');
       for (const rel of await this.pkg.relationships(part)) {
         if (!rel.external) continue;
-        number += 1;
         const fileName = linkFileName(rel.target);
-        if (fileName === '') continue;
+        if (fileName === '') {
+          unnamed += 1;
+          continue;
+        }
         links.push(number === links.length + 1 ? { fileName } : { fileName, position: number });
       }
     }
-    const unnamed = number - links.length;
     return { externalLinks: links, ...(unnamed > 0 ? { unnamedExternalLinks: unnamed } : {}) };
   }
 

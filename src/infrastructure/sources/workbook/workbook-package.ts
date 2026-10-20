@@ -28,11 +28,21 @@ function relationshipPartOf(owner: string): string {
   return `${posix.dirname(owner)}/_rels/${posix.basename(owner)}.rels`;
 }
 
+/** A target is a URI reference: `my%20book.xml` names `my book.xml`; one that cannot be decoded is kept. */
+function decodedOnce(target: string): string {
+  try {
+    return decodeURIComponent(target);
+  } catch {
+    return target;
+  }
+}
+
 /**
  * The package part a relative `target` names, as seen from the part `owner`. A target that climbs
  * out of the package (`../../etc/passwd`) is refused with RST-1927.
  */
-function resolveTarget(owner: string, target: string): string {
+function resolveTarget(owner: string, rawTarget: string): string {
+  const target = decodedOnce(rawTarget);
   const joined = target.startsWith('/')
     ? target.slice(1)
     : posix.join(posix.dirname(owner), target);
