@@ -49,6 +49,33 @@ it('Q-38 hides the folder after the tokenizer stops: a very long formula and one
   expect(rewrite(many)).not.toContain('Users');
 });
 
+it('Q-38 hides the folder of a quote that is never closed', () => {
+  expect(rewrite(String.raw`1+'C:\Users\x\[R.xlsx]S`)).toBe("1+'[R.xlsx]S");
+  expect(rewrite(String.raw`'C:\Users\x\[R.xlsx]S!A1+2`)).toBe("'[R.xlsx]S!A1+2");
+});
+
+it.each([32_000, 32_767, 32_768, 33_000, 70_000])(
+  'Q-38 hides the folder after a string literal of %i characters',
+  (length) => {
+    const literal = `"${'x'.repeat(length)}"&`;
+    const quoted = rewrite(literal + String.raw`'C:\Users\x\[Rates.xlsx]Rates'!C5`);
+    const bracket = rewrite(literal + String.raw`[C:\Users\x\Rates.xlsx]Rates!C5`);
+    const linked = rewrite(`${literal}[1]Rates!C5+""""&[2]S!A1`);
+
+    expect(quoted).toBe(`${literal}'[Rates.xlsx]Rates'!C5`);
+    expect(bracket).toBe(`${literal}[Rates.xlsx]Rates!C5`);
+    expect(linked).toBe(`${literal}[Rates.xlsx]Rates!C5+""""&[Other.xlsx]S!A1`);
+  },
+);
+
+it('Q-38 reads a doubled quote inside a very long literal as part of it', () => {
+  const literal = `"${'x'.repeat(40_000)}""y${'x'.repeat(10)}"&`;
+
+  expect(rewrite(literal + String.raw`[C:\Users\x\Rates.xlsx]S!A1`)).toBe(
+    `${literal}[Rates.xlsx]S!A1`,
+  );
+});
+
 // A seeded generator: formulas made of pieces whose rewrite is known, joined by operators.
 
 interface Piece {
@@ -65,6 +92,7 @@ const PIECES: readonly Piece[] = [
   same("Table1[[#This Row],[Col'[x']]]"),
   same("T[[A]:[B']]]"),
   same('[@Qty]'),
+  same(`"${'x'.repeat(33_000)}"`),
   same("'Rates 2026'!$C$4"),
   same("'It''s'!B2"),
   same("'a b'!A1:B2"),
@@ -80,6 +108,7 @@ const PIECES: readonly Piece[] = [
   { input: '[2]!TaxRate', output: '[Other.xlsx]!TaxRate' },
   { input: 'https://srvhost/Users/x/[Rates.xlsx]Rates!$A$1', output: '[Rates.xlsx]Rates!$A$1' },
 ];
+const UNCLOSED: Piece = { input: String.raw`&'C:\Users\x\[R.xlsx]S`, output: "&'[R.xlsx]S" };
 const JOINERS = ['+', '*', '&', ',', '-', '>'] as const;
 
 function generated(seed: number): Piece {
@@ -95,7 +124,11 @@ function generated(seed: number): Piece {
   const joiners = parts.map(() => JOINERS[next(JOINERS.length)] ?? '+');
   const join = (pick: (piece: Piece) => string): string =>
     parts.map((piece, i) => `${i === 0 ? '' : (joiners[i] ?? '+')}${pick(piece)}`).join('');
-  return { input: `SUM(${join((p) => p.input)})`, output: `SUM(${join((p) => p.output)})` };
+  const tail = next(5) === 0 ? UNCLOSED : same('');
+  return {
+    input: `SUM(${join((p) => p.input)})${tail.input}`,
+    output: `SUM(${join((p) => p.output)})${tail.output}`,
+  };
 }
 
 it('Q-38 changes only the workbook part of external references in 500 generated formulas', () => {
