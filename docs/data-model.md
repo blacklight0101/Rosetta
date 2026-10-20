@@ -39,6 +39,11 @@ the web UI and the builders. The database never stores file contents; files neve
 | Ownership      | every table with user data has a `user_id` column, and every repository query filters on it (RF-1105)                                                                                                                                                                                         |
 | Line endings   | LF in every file Rosetta writes, on every operating system                                                                                                                                                                                                                                    |
 
+An atomic write on Windows can meet a reader: the operating system refuses a rename onto a file that another
+handle has open (`EPERM`, `EBUSY` or `EACCES`). The rename is tried again up to 12 times, a little later each
+time, while the temporary file is there (`src/infrastructure/files/rename-when-free.ts`, P3-59); any other failure
+surfaces at once.
+
 ## 2. Folder map
 
 Everything Rosetta writes to disk is inside the data folder `<data>` = `ROSETTA_DATA_DIR` (RF-005, RF-1305).
