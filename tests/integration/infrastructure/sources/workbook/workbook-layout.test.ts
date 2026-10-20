@@ -122,3 +122,29 @@ it('RF-151 refuses a sheet relationship that points outside the package with RST
 
   expect(await codeOf({ sheets: [{ name: 'S', rels }] })).toBe('RST-1927');
 });
+
+it('RF-151 decodes a percent-encoded relationship target before it names a part', async () => {
+  const bytes = await buildWorkbook({
+    sheets: [SHEET],
+    workbookRels: `<Relationship Id="rId40" Type="${REL}/connections" Target="my%20book.xml"/>`,
+    extraParts: [
+      {
+        name: 'xl/my book.xml',
+        data: `<connections xmlns="${MAIN_NS}"><connection id="1" name="Spaced" type="5"/></connections>`,
+      },
+    ],
+  });
+
+  const model = await readBuilt(root.path, bytes);
+
+  expect(model.connections).toEqual([{ name: 'Spaced', sourceType: 5 }]);
+});
+
+it('RF-151 refuses an encoded target that climbs out of the package after it is decoded', async () => {
+  const spec = {
+    sheets: [SHEET],
+    workbookRels: `<Relationship Id="rId40" Type="${REL}/styles" Target="%2e%2e/%2e%2e/etc/passwd"/>`,
+  };
+
+  expect(await codeOf(spec)).toBe('RST-1927');
+});

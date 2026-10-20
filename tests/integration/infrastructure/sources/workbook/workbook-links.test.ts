@@ -118,3 +118,31 @@ it('RF-153 leaves unnamedExternalLinks out when every link has a name', async ()
 
   expect(model.unnamedExternalLinks).toBeUndefined();
 });
+
+it('RF-153 numbers a link by its externalReference, so a reference with no relationship keeps the numbers after it', async () => {
+  const bytes = await buildWorkbook({
+    sheets: [{ name: 'S' }],
+    workbookExtra:
+      '<externalReferences><externalReference r:id="rId50"/><externalReference r:id="rId99"/><externalReference r:id="rId51"/></externalReferences>',
+    workbookRels: [50, 51]
+      .map(
+        (n) =>
+          `<Relationship Id="rId${String(n)}" Type="${REL_TYPE}/externalLink" Target="externalLinks/externalLink${String(n)}.xml"/>`,
+      )
+      .join(''),
+    extraParts: [50, 51].flatMap((n, i) => [
+      { name: `xl/externalLinks/externalLink${String(n)}.xml`, data: '<externalLink/>' },
+      {
+        name: `xl/externalLinks/_rels/externalLink${String(n)}.xml.rels`,
+        data: `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL_TYPE}/externalLinkPath" Target="${i === 0 ? 'A' : 'C'}.xlsx" TargetMode="External"/></Relationships>`,
+      },
+    ]),
+  });
+
+  const model = await readBuilt(root.path, bytes);
+
+  expect(model.externalLinks).toEqual([
+    { fileName: 'A.xlsx' },
+    { fileName: 'C.xlsx', position: 3 },
+  ]);
+});
