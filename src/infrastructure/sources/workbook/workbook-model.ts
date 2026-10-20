@@ -2,6 +2,8 @@
 // once: cached values are the ones Excel stored, formulas are text (never evaluated), and the
 // renderer (P3-46) turns it into the text snapshot. Authors of comments are never read (Q-39).
 
+import type { MacroProject } from './macro-model.js';
+
 export type CellValue =
   | { readonly type: 'number'; readonly value: number }
   | { readonly type: 'text'; readonly value: string }
@@ -106,7 +108,9 @@ export interface WorkbookModel {
   readonly definedNames: readonly DefinedName[];
   readonly externalLinks: readonly ExternalLink[];
   readonly connections: readonly DataConnection[];
-  /** True when the package holds `xl/vbaProject.bin`; reading it belongs to P3-45. */
+  /** True when the package holds `xl/vbaProject.bin`. */
   readonly hasMacros: boolean;
+  /** The VBA project read from it, as text (RF-154); absent when there is none. */
+  readonly macros?: MacroProject;
   readonly sharedStringCount: number;
 }
