@@ -67,6 +67,8 @@ export interface ReaderAssumptions {
   readonly promptOverheadTokens: number;
   /** Added to the prompt of every turn of an area for each of flows and screens it is marked for (Q-25). */
   readonly surfacePromptTokens: number;
+  /** Added to the prompt of every turn of an area that holds a rendered workbook, besides both fragments (RF-155). */
+  readonly workbookPromptTokens: number;
   /** Added once to the output of an area for each of flows and screens it is marked for. */
   readonly surfaceOutputTokens: ByScenario<number>;
   /** The most one turn sends: the context share of the reader's context window. */

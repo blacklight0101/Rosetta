@@ -38,11 +38,16 @@ import {
   loadDataModelPrompt,
   loadFlowsPrompt,
   loadPlannerPrompt,
+  loadPlannerWorkbookPrompt,
   loadUxPrompt,
   loadCoveragePrompt,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
+import type { PlanInputs } from '../application/plan/plan-inputs.js';
+import { workbookGuidanceFor } from '../application/plan/plan-workbook.js';
+import { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-store.js';
+import { composeScanResults } from './compose-understand.js';
 import { createUploadStore, uploadLimitBytes } from './compose-uploads.js';
 import type { ProjectServices } from './web/project-routes.js';
 
@@ -95,7 +100,21 @@ function storeUploadOf(
   });
 }
 
-// RF-010
+/** RF-155: the plan estimate asks the same question as the plan run, over the same scan results. */
+function workbookGuidanceOf(parts: ProjectParts, runs: RunIndex, writer: NodeOutputWriter) {
+  const { logger, masker, dataDir } = parts;
+  const deps = {
+    ...{ runs, logger },
+    scans: composeScanResults({
+      ...{ dataDir, writer, logger },
+      manifests: new FileRunManifestStore({ writer, masker }),
+    }),
+    workbookPrompt: () => loadPlannerWorkbookPrompt(parts.promptsFolder),
+  };
+  return (inputs: PlanInputs) => workbookGuidanceFor(deps, inputs);
+}
+
+// RF-010; `estimatePlan` (RF-613) is the estimate before a plan run, against the caps the budget guard checks.
 export async function composeProjects(parts: ProjectParts): Promise<ProjectServices> {
   const { pool, logger, clock, masker } = parts;
   const projects = new PgProjectRepository(pool);
@@ -128,7 +147,6 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
     // RF-605: the planning brief of Plan setup.
     getPlanningBrief: new GetPlanningBrief({ projects, runs, briefs, catalogue }),
     savePlanningBrief: new SavePlanningBrief({ projects, runs, briefs, catalogue, clock }),
-    // RF-613: the estimate before a plan run, against the caps the budget guard checks.
     estimatePlan: new EstimatePlan({
       ...{ projects, runs, briefs, clock, usage, priceTable: parts.priceTable },
       cards: new FileRunCards(writer),
@@ -138,6 +156,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       ...{ keys: new PgProviderKeyRepository(pool), serverKeys: parts.serverKeys },
       catalogue: () => Promise.resolve(catalogue),
       ...plannerPrompts(parts.promptsFolder),
+      workbookGuidance: workbookGuidanceOf(parts, runs, writer),
     }),
     catalogue,
     getPlanSource: new GetPlanSource({ projects, runs, cards: new FileRunCards(writer) }),

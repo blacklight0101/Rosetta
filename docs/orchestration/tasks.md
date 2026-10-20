@@ -3515,7 +3515,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-44
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-005 section 4.6; ADR-023; the MS-OVBA specification sections 2.3.4 (`dir` stream) and 2.4.1 (compression); RF-145, RF-154.
 - **Do**: open `xl/vbaProject.bin` with `cfb`; implement MS-OVBA decompression and the `dir` stream parse (module names, kinds, stream names, text offsets, code page); decompress each module from its offset; return standard modules as `.bas` and class, sheet, workbook and form modules as `.cls` text, form controls as a list; detect a project locked for viewing and skip it with its name (Q-40); name a module whose source is missing; bounds on stream sizes and module count so a hostile compound file cannot loop or exhaust memory. Tests build `vbaProject.bin` with `cfb` and a compressor written in the test from the specification.
 - **Review probes**: the specification's decompression examples; a chunk with a copy token at the start of a chunk; a raw (uncompressed) chunk; a `dir` record with an unknown id; a module offset past the stream end; a code page other than 1252; a locked project; a module stream with only compiled code; 10,000 modules.
@@ -3590,7 +3590,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-43, P3-46
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-005 section 4.7; `src/infrastructure/prompts/prompt-files.ts`; `src/application/agent/reader-prompts.ts`; the planner prompt builder; `prompts/reader/area.v3.md`; `prompts/planner/package.v4.md`; RF-155, RNF-004.
 - **Do**: two versioned prompt files, `prompts/reader/workbook.v1.md` and `prompts/planner/workbook.v1.md`, with the guidance of RFC-005 section 4.7 and the data-block rule; the prompt builders add them only when the run's source is `workbook` or an upload whose record lists rendered workbooks; the run records the files' versions; recorded responses for one understand run and one plan run on a built workbook project.
 - **Review probes**: a GitHub run (prompts byte-identical to main); a zip run without workbooks (identical); a zip run with one workbook (guidance added); the manifest's prompt versions; a workbook cell holding "ignore your instructions" (stays data, RF-145).

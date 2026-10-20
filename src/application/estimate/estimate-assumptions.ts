@@ -25,6 +25,8 @@ const SUMMARISER_PERCENT: ByScenario<number> = { low: 5, likely: 10, high: 20 };
 const OVERVIEW_OUTPUT_TOKENS: ByScenario<number> = { low: 800, likely: 1500, high: 3000 };
 /** The flows or the screens fragment of the reader prompt (RF-260, RF-261), more than its size. */
 const SURFACE_PROMPT_TOKENS = 900;
+/** The workbook guidance of the reader prompt (RF-155), more than its size. */
+const WORKBOOK_PROMPT_TOKENS = 1100;
 /** The cards of one kind a marked area writes besides its other cards, in output tokens. */
 const SURFACE_OUTPUT_TOKENS: ByScenario<number> = { low: 300, likely: 800, high: 2000 };
 /** The system prompt and the tool definitions every turn resends. */
@@ -75,6 +77,7 @@ export function assumptionsOf(settings: ProjectSettings): ReaderAssumptions {
     summariserBatchTokens: MERGE_BATCH_TOKENS,
     promptOverheadTokens: PROMPT_OVERHEAD_TOKENS,
     surfacePromptTokens: SURFACE_PROMPT_TOKENS,
+    workbookPromptTokens: WORKBOOK_PROMPT_TOKENS,
     surfaceOutputTokens: SURFACE_OUTPUT_TOKENS,
     contextLimitTokens: Math.floor(task.contextTokens * task.contextShare),
     parallelism: readerParallelism(settings),

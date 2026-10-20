@@ -29,6 +29,9 @@ const readerPromptNames = [
 
 const surfacePromptNames = ['cards/flows.v1.md', 'cards/screens.v2.md'];
 
+/** RF-155: the guidance added to an area that holds a rendered workbook. */
+const workbookPromptNames = ['reader/workbook.v1.md'];
+
 async function sha256Of(path: string): Promise<string> {
   return createHash('sha256')
     .update(await readFile(path))
@@ -66,7 +69,7 @@ describe('loadReaderPrompts refusals', () => {
   const temp = useTempRoot('rosetta-prompts-');
 
   async function copyPrompts(): Promise<void> {
-    for (const name of [...readerPromptNames, ...surfacePromptNames]) {
+    for (const name of [...readerPromptNames, ...surfacePromptNames, ...workbookPromptNames]) {
       await mkdir(join(temp.path, name.split('/')[0] ?? ''), { recursive: true });
       await writeFile(join(temp.path, name), await readFile(join('prompts', name)));
     }
