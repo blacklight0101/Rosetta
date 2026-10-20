@@ -1,13 +1,11 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
-import { assumptionsOf } from '../../../../src/application/estimate/estimate-assumptions.js';
 import {
   loadPromptFile,
   loadReaderPrompts,
   loadRereadPrompt,
 } from '../../../../src/infrastructure/prompts/prompt-files.js';
-import { settingsFor } from '../../../support/provider-factory-harness.js';
 
 // RF-202 (DEC-157), RNF-004: the reader prompts carry one short rule that groups repeated wiring into
 // one claim. The rule is in new versions of the area, workbook and re-read prompts; the old versions stay.
@@ -97,21 +95,15 @@ describe('the versions of the reader prompts', () => {
 });
 
 describe('the size of the reader prompts', () => {
-  it('RF-202 the workbook guidance stays inside the tokens the estimate counts for it', async () => {
-    const assumptions = assumptionsOf(settingsFor({ reader: { provider: 'openai', model: 'm' } }));
-    const text = (await textsWithTheRule())['workbook'] ?? '';
-
-    expect(Math.ceil(text.length / 4)).toBeLessThanOrEqual(assumptions.workbookPromptTokens);
-  });
-
   it.each([
     ['area.v3', 'area.v4'],
     ['reread.v1', 'reread.v2'],
-  ] as const)('RF-202 %s grows by at most 900 characters in %s', async (before, after) => {
+    ['workbook.v1', 'workbook.v2'],
+  ] as const)('RF-202 %s grows by at most 700 characters in %s', async (before, after) => {
     const size = async (name: string) =>
       (await readFile(`prompts/reader/${name}.md`, 'utf8')).length;
 
-    expect((await size(after)) - (await size(before))).toBeLessThanOrEqual(900);
+    expect((await size(after)) - (await size(before))).toBeLessThanOrEqual(700);
   });
 
   it('RF-207 the card format still asks for path:startLine-endLine citations', async () => {
