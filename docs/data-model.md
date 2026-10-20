@@ -434,7 +434,7 @@ writes. It is absent for a run whose summariser step answered nothing.
   `{ area, files: [{ path, read: [{ startLine, endLine }] }], tokens, readTokens, readTokenShare, failure?, note? }`, where `note` (RF-206, RF-243) is present only for an area worth a remark: `not read` (its agent answered without reading any file of the area), `no readable file in the area (only binary or ignored files)`, `no application logic` (every file of the area is third-party code, so it writes no open question), the reasons joined by `; `, and `failure`
   (RF-208) is present only for an area whose task gave no usable card, in a few words with the code (`invalid output
 (RST-1300)`); feeds the web UI
-  coverage map (RF-1005) and the report. Areas keep the order of the run and list only tasks that ended; `files` is
+  coverage map (RF-1005, through `GET /api/runs/:runId/coverage`, which lists every file as read or not read) and the report. Areas keep the order of the run and list only tasks that ended; `files` is
   every file of the area in the area's order, `read` the line ranges the task's tools returned (a read, the lines of
   grep matches, the statements of a code map entry), cut to the file, sorted and merged, empty for a file not read;
   lines of files outside the area are not counted. `tokens` is the area's estimated tokens, `readTokens` each file's
