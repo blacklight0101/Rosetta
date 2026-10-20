@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 63      | 5         | 56         | 2         | 0                  | 21      | 40      | 2      | 19         | 0         |
-| **Total**               | **280** | **77**    | **176**    | **27**    | **0**              | **137** | **131** | **12** | **154**    | **0**     |
+| P3 Report and plan      | 64      | 5         | 57         | 2         | 0                  | 21      | 41      | 2      | 20         | 0         |
+| **Total**               | **281** | **77**    | **177**    | **27**    | **0**              | **137** | **132** | **12** | **155**    | **0**     |
 
 ## Conventions for every card
 
@@ -3739,7 +3739,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P1-15, P3-42, P3-52
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the landing page from P1-15 and its tests; `docs/design/board/Landing.dc.html`; `docs/design-system.md` section 14; `.impeccable/surfaces/` (landing direction contract); RF-1200 (changed by DEC-153), RFC-004, RFC-005; the start page's three tabs (P3-49).
 - **Do**: update the public landing page so it shows what the system does today, within the approved design: the hero sentence and its sub-line say a project comes from a public GitHub URL, a zip, or one or more Excel workbooks; the pipeline rail's first stage ("Pin a commit") becomes a source stage covering the three (a GitHub URL pinned to one commit; a zip or workbooks become a read-only snapshot named by its hash); the agents stage mentions that workbooks are read as formulas, values, the dependency map between sheets and workbooks, and VBA macros as text; the security section adds that uploads are read under size and content limits and macros are never run; the "Any stack" section says Excel workbooks are a source too. Keep the sample replay a GitHub run, keep every other section, and keep the page working without JavaScript from 360 px. Copy in English, plain, no new claims beyond what is built.
 - **Review probes**: the page at 360 px and desktop, light and dark, with JavaScript off; axe in both schemes; every changed sentence checked against what is built (RFC-004, RFC-005, the start page); no text implies macros run or files leave the machine without the private-code confirmation.
@@ -3792,3 +3792,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the change and tests.
 - **Done when**: each RF-615 DEC-154 scenario has a passing test; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-615, RF-240, RF-243, RF-1015, DEC-154; issue #676.
+
+### P3-64 - Follow-up: a prompt larger than the Ollama context fails with a clear error
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P1-63
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-401 (the DEC-155 scenario), RF-421, DEC-114, DEC-155; `src/infrastructure/providers/ollama/` (context resolver, request, response); the error catalogue in `docs/conventions.md` (providers range RST-1500..1599); the run page failure banner. Owner test 2026-10-20: a plan run on `gemma4:e4b` with `num_ctx` 32 768 sent about 125 000 characters, Ollama evaluated 16 387 prompt tokens, the format instructions were lost and the run failed with a misleading RST-1803.
+- **Do**: in the Ollama adapter, before a call estimate the prompt tokens (system, messages, tool definitions; the RF-421 estimate of about four characters per token, with a safety margin) and, when the estimate plus the requested output exceeds `num_ctx`, fail the call before sending with a new providers error code; after a call, when the reported `prompt_eval_count` is clearly below the estimate (Ollama cut the prompt), fail with the same code instead of passing the answer on. The message names the estimated input, the context size, the role and the two remedies (a model with a larger context or a cloud model for the role in the project settings, or a larger `contextTokens`). The run ends `Failed` with that code, and the run page and journey show it instead of RST-1803. Add the code to `docs/conventions.md`.
+- **Review probes**: a prompt just under and just over the context (with output reserve); Ollama reporting a cut prompt count; a fixed `contextTokens`; a reader, verifier and planner call (every role); a prompt with tool definitions; the message never includes prompt text or secrets; other providers unchanged.
+- **Behaviour to preserve**: DEC-114 context choice; calls that fit are unchanged; the cost ledger records a refused call as no call (nothing sent) and a cut call with its reported tokens.
+- **Delivers**: the guard, the error code and tests.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-401, RF-421, DEC-114, DEC-155; issue #678.
