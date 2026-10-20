@@ -56,7 +56,8 @@ it('RF-1014 lists the claims with their status, reason and a link to the cited l
   expect(second?.textContent).toContain('line 140 is past the end of the file');
   const agents = await openTabWhenReady('All agents');
   const overview = within(agents).getByRole('region', { name: 'Overview' });
-  expect(overview.textContent).toContain('1 citations checked');
+  expect(overview.textContent).toContain('1 waiting for judgement');
+  expect(overview.textContent).not.toContain('1 citations checked');
   expect(overview.textContent).toContain(WAITING_NOTE);
   expect(overview.textContent).not.toContain('later version');
 });
