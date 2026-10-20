@@ -654,7 +654,7 @@ As a developer I want an agent's good cards kept and its failed work retried so 
 - Given a run in which some areas failed, when it ends, then its end state and summary say how many areas failed and why; it is never shown as a plain success.
   Verification: unit tests of the parser on answers recorded in the owner's 2026-10-14 runs; integration tests of the second repair, the continuation and the task retry with recorded responses.
 
-**RF-209 Deepen a completed run** - R1 - Should - Source RFC-003, DEC-144, DEC-145 - ADR-005, ADR-007
+**RF-209 Deepen a completed run** - R1 - Should - Source RFC-003, DEC-144, DEC-145, DEC-158 - ADR-005, ADR-007
 As a developer I want to send Rosetta back over what it did not confirm so that more of my application is understood, with evidence, at a cost I approved.
 
 - Given an understand run that ended `Completed`, when I press Deepen, then the page shows the estimate for one round and the maximum for all rounds against my caps, and starts nothing until I confirm; the coverage pass is ticked by default and can be unticked.
@@ -662,13 +662,15 @@ As a developer I want to send Rosetta back over what it did not confirm so that 
 - Given a rejected claim whose citations are all in third-party or generated code, when a round is planned, then it is not re-read and the summary lists it as out of scope with that reason.
 - Given a round that adds no new `Supported` claim and reads no new first-party file, when it ends, then the Deepen run ends with the stop reason "no progress"; it also ends at the round limit (default 3, allowed 1 to 5), at a cap (`CapReached`, resumable with RF-006) or when I press Stop.
 - Given a re-read that produces a claim for a rejected one, when results are written, then the new claim records the id it replaces, the rejected claim stays `Rejected` with its reason, and a replacement that is rejected again is not re-read in the same Deepen.
+- Given a re-read or a reading of a never-read file in a Deepen (DEC-158), when its reader task is planned, then the task lists the cards the parent run already holds for the area (id, type and title), and the reader writes a new card only for a fact that no listed card holds; a fact about a listed card is written as a claim of that card.
 - Given a Deepen run that ended, when I open it, then it can be deepened again as a new linked run; Deepen never starts by itself at the end of a run.
   Verification: integration tests with recorded responses for each stop reason; unit tests of the round planner and the stop rule.
 
-**RF-230 Coverage per area** - R1 - Must - Source RFC-001 risks, DEC-144 - ADR-005
+**RF-230 Coverage per area** - R1 - Must - Source RFC-001 risks, DEC-144, DEC-158 - ADR-005
 As a developer I want to know which files each agent actually read so that silent gaps are visible.
 
 - Given a finished agent task, when results are written, then a coverage table lists every file in the area as read (with line ranges) or not read, and the run summary shows the percentage of first-party tokens read, with third-party and generated code shown apart (RF-231).
+- Given a run over a subset of the areas (DEC-158), when its coverage map is shown, then the areas the run was not asked to read are listed apart as "not in this run" and are not counted as not read.
   Verification: integration test with the fake provider.
 
 **RF-231 Honest understanding measures** - R1 - Must - Source RFC-003, DEC-144, DEC-145 - ADR-005
