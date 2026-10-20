@@ -73,6 +73,10 @@ const badgeRows: readonly { name: string; badges: readonly BadgeChoice[] }[] = [
     ),
   },
   {
+    name: 'QuestionShown',
+    badges: stateLists.QuestionShown.map((value) => ({ list: 'QuestionShown', value }) as const),
+  },
+  {
     name: 'AgentTaskState',
     badges: stateLists.AgentTaskState.map((value) => ({ list: 'AgentTaskState', value }) as const),
   },

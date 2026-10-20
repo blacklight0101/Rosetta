@@ -68,6 +68,7 @@ function StepItem({ step }: { readonly step: JourneyStep }): JSX.Element {
 
 function Action(props: {
   readonly action: JourneyAction | undefined;
+  readonly variant?: 'primary' | 'secondary';
   readonly onResumed: () => void;
   readonly onAnswer: (() => void) | undefined;
 }): JSX.Element | null {
@@ -79,7 +80,7 @@ function Action(props: {
   const answersHere = action.kind === 'answer' && onAnswer !== undefined;
   return (
     <Button
-      variant="primary"
+      variant={props.variant ?? 'primary'}
       onClick={() => {
         if (answersHere) onAnswer();
         else navigate(action.href);
@@ -105,6 +106,12 @@ export function JourneyStrip(props: JourneyStripProps): JSX.Element {
       </ol>
       <div class="rst-road__foot">
         <Action action={view.action} onResumed={props.onResumed} onAnswer={props.onAnswer} />
+        <Action
+          action={view.secondary}
+          variant="secondary"
+          onResumed={props.onResumed}
+          onAnswer={undefined}
+        />
         <p class="rst-road__total">{`Total so far ${costLabel(view.totalCostMicros)}`}</p>
       </div>
     </section>

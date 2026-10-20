@@ -79,13 +79,13 @@ it('RF-615 the tab count and Your turn count only the questions without a saved 
 });
 
 it('RF-615 Your turn with every answer saved offers the plan and no questions', async () => {
-  await openEnded({ questions: [saved(1), saved(2)] });
+  await openEnded({ questions: [saved(1), saved(2)], judged: 'Supported' });
 
   await waitFor(() => {
     expect(turn().textContent).toContain('saved answer');
+    expect(within(turn()).getByRole('button', { name: 'Set up the plan' })).toBeTruthy();
   });
   expect(within(turn()).queryByRole('button', { name: /^Answer / })).toBeNull();
-  expect(within(turn()).getByRole('button', { name: 'Set up the plan' })).toBeTruthy();
 });
 
 it('RF-615 saving the last answer moves the journey to the brief without reloading the page', async () => {
@@ -191,4 +191,27 @@ it('RF-615 choosing Answer questions again moves focus back to the first questio
   await waitFor(() => {
     expect(document.activeElement).toBe(within(item('OQ-001')).getByLabelText('Answer to OQ-001'));
   });
+});
+
+it('RF-615 focus moves once: coming back to the tab does not take focus again', async () => {
+  await openEnded({ questions: [question(1), question(2)] });
+  fireEvent.click(within(turn()).getByRole('button', { name: 'Answer 2 questions' }));
+  await waitFor(() => {
+    expect(document.activeElement).toBe(within(item('OQ-001')).getByLabelText('Answer to OQ-001'));
+  });
+
+  fireEvent.click(tab('Evidence'));
+  fireEvent.click(tab('Your questions'));
+
+  expect(document.activeElement).not.toBe(
+    within(item('OQ-001')).getByLabelText('Answer to OQ-001'),
+  );
+});
+
+it('RF-615 an answer of blanks only is not a saved answer', async () => {
+  await openEnded({ questions: [question(1, { answer: '   ' })] });
+
+  fireEvent.click(tab('Your questions'));
+
+  expect(within(item('OQ-001')).getByTestId('status-badge').textContent).toBe('Open');
 });
