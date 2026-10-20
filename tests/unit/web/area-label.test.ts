@@ -26,6 +26,7 @@ describe('RF-1016 the name of an area on a tile', () => {
       part: 1,
     });
     expect(areaLabel('Models#12').text).toBe('Models, part 12');
+    expect(areaLabel('#1').text).toBe('#1');
   });
 
   it('RF-104 leaves a "#" that is not a part number in the name', () => {

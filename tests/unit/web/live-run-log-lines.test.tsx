@@ -68,6 +68,12 @@ describe('RF-1003 the usage lines of the event log', () => {
     ]);
   });
 
+  it('RF-427 adds only the calls that have a price when some do and some do not', () => {
+    const state = stateAfter(start, usage(2, 'reader'), usage(3, 'reader', 500));
+
+    expect(usageLines(state.log)[0]?.text).toBe('reader · 2 calls · 240 tokens · $0.0005');
+  });
+
   it('RF-427 says the model has no price when the event leaves the cost out', () => {
     const state = stateAfter(start, usage(2, 'reader'));
 
@@ -163,4 +169,40 @@ describe('RF-1002 the times and paths of the event log', () => {
     const text = document.querySelector('.rst-live-log__text');
     expect(text?.querySelectorAll('wbr').length).toBeGreaterThanOrEqual(2);
   });
+});
+
+it('RF-1002 shows a verdict that has no claim id as the plain text of its line', () => {
+  const event = ev(2, 'verify.claim.judged', { status: 'Supported', reason: 'ok' }, 'reader-001');
+  const state = stateAfter(start, event);
+
+  expect(state.log.at(-1)?.detail).toBeUndefined();
+  logOf(start, event);
+  expect(screen.queryByRole('button')).toBeNull();
+  expect(screen.getByRole('log').textContent).toContain('Supported');
+});
+
+it('RF-1002 shows a status the claims list does not know as its own word, without a badge', () => {
+  logOf(start, judged(2, 'Maybe', 'Not sure.'));
+
+  expect(screen.queryByTestId('status-badge')).toBeNull();
+  expect(lineOf('BR-001.c1').textContent).toContain('Maybe');
+  expect(lineOf('BR-001.c1').textContent).toContain('Not sure.');
+});
+
+it('RF-1002 shows a verdict without a reason as the claim and its badge alone', () => {
+  const event = ev(2, 'verify.claim.judged', { claimId: 'BR-001.c1', status: 'Supported' });
+  logOf(start, event);
+
+  expect(screen.queryByTestId('log-reason')).toBeNull();
+  expect(lineOf('BR-001.c1').textContent).toContain('Supported');
+});
+
+it('RF-1002 says the log keeps only the newest 1,000 events once it is full', () => {
+  const full = stateAfter(...Array.from({ length: 1_000 }, (_, i) => ev(i + 1, 'scan.completed')));
+  const { unmount } = render(<EventLog lines={full.log} startedAt={undefined} />);
+  expect(screen.getByText(/Only the newest 1,000 events are kept\./u)).toBeTruthy();
+  unmount();
+
+  render(<EventLog lines={full.log.slice(1)} startedAt={undefined} />);
+  expect(screen.queryByText(/Only the newest/u)).toBeNull();
 });
