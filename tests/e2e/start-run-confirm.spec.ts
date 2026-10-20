@@ -4,6 +4,7 @@ import { expectNoSeriousViolations } from './support/axe.js';
 import { openScannedStartPage } from './support/cost-run.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
+import { chooseModel } from './support/choose-model.js';
 
 // RF-425 (second scenario), DEC-97, P2-08: the start page asks before an understand run whose
 // likely cost is above the confirm threshold, and the whole question is answered with the keyboard.
@@ -21,7 +22,7 @@ async function openWithCloudReader(page: Page): Promise<void> {
   await openScannedStartPage(page);
   await page.getByRole('link', { name: 'Project settings' }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
-  await page.getByLabel('Reader model', { exact: true }).fill('gpt-5-nano');
+  await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();

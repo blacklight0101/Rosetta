@@ -7,6 +7,7 @@ import { accountFor } from './support/seed.js';
 import { leaveOnlyThisInTheDay } from './support/seed-limits.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
+import { chooseModel } from './support/choose-model.js';
 
 // RF-002, RF-1001, RF-1106, RF-1108, DEC-108, P1-106: what the start page and the settings page read
 // from the server, driven against the test server. Two tabs cannot overwrite each other's settings (a
@@ -110,7 +111,7 @@ test('DEC-108 the warning names what is left of the day, not the whole cap', asy
   await openScannedStartPage(page);
   await page.getByRole('link', { name: 'Project settings' }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
-  await page.getByLabel('Reader model', { exact: true }).fill('gpt-5-nano');
+  await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();

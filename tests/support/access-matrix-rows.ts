@@ -3,6 +3,7 @@ import { fixturePassword } from './account-fixtures.js';
 import { active, adminOnly, everyone, ownerOnly, signedIn } from './access-columns.js';
 import { budgetRoutes, outputRoutes, type Context, type Probe } from './access-probes.js';
 import { settingsWith } from './project-fixtures.js';
+import { modelRows } from './access-model-rows.js';
 import { planRows } from './access-plan-rows.js';
 import { uploadRows, workbookRows } from './access-upload-rows.js';
 import { deepenRows } from './access-deepen-rows.js';
@@ -286,13 +287,12 @@ export const matrixAreas = {
   upload: uploadRows,
   workbook: workbookRows,
   deepen: deepenRows,
-  account: accountRows,
+  account: { ...accountRows, ...modelRows },
   admin: adminRows,
   pages: pageRows,
   budget: budgetRoutes,
   output: outputRoutes,
 } as const;
-
 /** The whole matrix: every row of every area. */
 export const matrix: Rows = Object.fromEntries(
   Object.values(matrixAreas).flatMap((rows) => Object.entries(rows)),

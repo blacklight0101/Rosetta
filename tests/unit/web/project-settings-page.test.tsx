@@ -92,7 +92,7 @@ it('RF-002 saves the edited document whole, with the CSRF token, and says so', a
   expected.budget.run = { maxCostMicros: 1_250_000, maxTokens: 3_000_000 };
   expected.budget.allowUnpriced = true;
   expected.scan.ignoreRules = 'vendor/\n';
-  expect(calls.at(-1)).toEqual({
+  expect(calls.findLast((call) => call.method === 'PUT')).toEqual({
     method: 'PUT',
     path: settingsRoute,
     csrf: 'csrf-0',
@@ -110,7 +110,7 @@ it('RF-002 a role on a provider the project does not define brings that provider
   save();
 
   await screen.findByText('Settings saved.');
-  expect(calls.at(-1)?.body).toMatchObject({
+  expect(calls.findLast((call) => call.method === 'PUT')?.body).toMatchObject({
     providers: {
       ollama: { kind: 'ollama' },
       openai: { kind: 'openai', keySource: 'user-then-server', timeoutSeconds: 120 },
@@ -135,7 +135,7 @@ it('RF-002 keeps the settings the form has no field for', async () => {
   save();
 
   await screen.findByText('Settings saved.');
-  expect(calls.at(-1)?.body).toMatchObject({
+  expect(calls.findLast((call) => call.method === 'PUT')?.body).toMatchObject({
     budget: { roles: { reader: { maxTokens: 900_000 } } },
   });
 });
@@ -225,7 +225,7 @@ it('DEC-107 adds an override in dollars per million tokens, saves it and removes
   save();
 
   await screen.findByText('Settings saved.');
-  expect(calls.at(-1)?.body).toMatchObject({
+  expect(calls.findLast((call) => call.method === 'PUT')?.body).toMatchObject({
     budget: {
       prices: [
         {
@@ -244,7 +244,9 @@ it('DEC-107 adds an override in dollars per million tokens, saves it and removes
   await waitFor(() => {
     expect(calls.filter((call) => call.method === 'PUT')).toHaveLength(2);
   });
-  expect(JSON.stringify(calls.at(-1)?.body)).not.toContain('"prices"');
+  expect(JSON.stringify(calls.findLast((call) => call.method === 'PUT')?.body)).not.toContain(
+    '"prices"',
+  );
 });
 
 it('RF-002 shows a refusal of one override next to its field', async () => {
