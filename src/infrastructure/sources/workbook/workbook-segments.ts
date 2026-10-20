@@ -20,7 +20,7 @@ function safeSegment(name: string, keepExtension: boolean): string {
     .replace(/[^A-Za-z0-9._-]/gu, '_')
     .replace(/_+/gu, '_')
     .replace(/\.+$/u, '');
-  if (segment === '' || /^\.+$/u.test(segment)) segment = '_';
+  if (segment === '') segment = '_';
   if (DEVICE.test(segment.split('.')[0] ?? '')) segment = `_${segment}`;
   const extension = keepExtension ? (WORKBOOK_EXTENSION.exec(segment)?.[0] ?? '') : '';
   const stem = segment.slice(0, segment.length - extension.length);
