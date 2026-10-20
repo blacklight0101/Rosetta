@@ -68,7 +68,7 @@ function Actions({ row }: { readonly row: ProjectOverviewRow }): JSX.Element {
 }
 
 function SourceNote({ project }: { readonly project: Project }): JSX.Element {
-  if (project.sourceKind !== 'upload') {
+  if (project.sourceKind === 'github') {
     return (
       <span class="rst-table__sub rst-p1105-note">
         <span>{project.ref === '' ? 'default branch' : project.ref}</span>
@@ -78,7 +78,8 @@ function SourceNote({ project }: { readonly project: Project }): JSX.Element {
     );
   }
   if (project.source === null) {
-    return <span class="rst-table__sub rst-p1105-note">Upload a zip to start.</span>;
+    const need = project.sourceKind === 'workbook' ? 'Upload workbooks' : 'Upload a zip';
+    return <span class="rst-table__sub rst-p1105-note">{need} to start.</span>;
   }
   return project.codeChangedSinceLastRun ? (
     <span class="rst-table__sub rst-p1105-note">Code changed since the last run.</span>

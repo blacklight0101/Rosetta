@@ -70,3 +70,32 @@
 .rst-zip__summary p {
   margin: 0;
 }
+
+/*
+ * P3-49, RF-150, RF-158, design-system.md section 14 (Projects, Excel workbooks): the files chosen
+ * on the Excel workbooks tab, each with where it is, and the lists of the summary. Tokens only;
+ * every class carries the prefix `rst-wb`.
+ */
+.rst-wb__files,
+.rst-wb__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-wb__file {
+  overflow-wrap: anywhere;
+}
+
+.rst-wb__state {
+  color: var(--rst-ink-soft);
+  white-space: nowrap;
+}
+
+.rst-wb__state[data-state='sent'] {
+  color: var(--rst-ink);
+}

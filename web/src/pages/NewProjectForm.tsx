@@ -11,12 +11,14 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { Tabs } from '../components/Tabs.js';
 import { useRefusalFocus } from '../lib/use-refusal-focus.js';
+import { WorkbookUploadForm } from './WorkbookUploadForm.js';
 import { ZipUploadForm } from './ZipUploadForm.js';
 
 // RF-010, design-system.md section 14 (Projects): the New project form. A refused address shows
 // its code and reason next to the field and creates nothing; an address that is already a project
 // of the user opens that project's start page instead of making a second one. A second tab, Upload
-// a zip, makes a project from a zip file instead (RF-128, RFC-004 section 4.5).
+// a zip, makes a project from a zip file instead (RF-128, RFC-004 section 4.5), and a third, Excel
+// workbooks, from one or more workbooks (RF-150, RFC-005 section 4.9).
 
 export interface NewProjectFormProps {
   readonly url: string;
@@ -107,18 +109,25 @@ function GithubProjectForm(props: NewProjectFormProps): JSX.Element {
 const sourceTabs = [
   { id: 'github', label: 'GitHub repository' },
   { id: 'upload', label: 'Upload a zip' },
+  { id: 'workbooks', label: 'Excel workbooks' },
 ] as const;
 
-// RF-010, RF-128
+function SourceForm(props: NewProjectFormProps & { readonly selected: string }): JSX.Element {
+  if (props.selected === 'upload') {
+    return <ZipUploadForm onCreated={props.onCreated} onStored={props.onStored} />;
+  }
+  if (props.selected === 'workbooks') {
+    return <WorkbookUploadForm onCreated={props.onCreated} onStored={props.onStored} />;
+  }
+  return <GithubProjectForm {...props} />;
+}
+
+// RF-010, RF-128, RF-150
 export function NewProjectForm(props: NewProjectFormProps): JSX.Element {
   const [selected, setSelected] = useState<string>('github');
   return (
     <Tabs label="Project source" tabs={sourceTabs} selected={selected} onSelect={setSelected}>
-      {selected === 'upload' ? (
-        <ZipUploadForm onCreated={props.onCreated} onStored={props.onStored} />
-      ) : (
-        <GithubProjectForm {...props} />
-      )}
+      <SourceForm {...props} selected={selected} />
     </Tabs>
   );
 }

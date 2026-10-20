@@ -3,7 +3,7 @@ import type { JSX, TargetedInputEvent } from 'preact';
 // design-system.md section 5: a labelled form field with help and error text. The label is bound
 // to the control, the help and the error through aria-describedby, and the error carries the
 // `RST` code when there is one (section 7). Text, URL, password, number, textarea, select, radio
-// checkbox and file (one file chosen from the computer, for the zip upload).
+// checkbox, file (one file chosen from the computer, for the zip upload) and files (several).
 
 interface FieldError {
   readonly code?: string;
@@ -74,8 +74,16 @@ interface FileField extends FieldBase {
   readonly onFile: (file: File | undefined) => void;
 }
 
+interface FilesField extends FieldBase {
+  readonly kind: 'files';
+  /** The `accept` list of the file chooser, for example `.xlsx,.xlsm`. */
+  readonly accept: string;
+  /** Called with every file chosen, in the order the chooser gives them (none when cleared). */
+  readonly onFiles: (files: readonly File[]) => void;
+}
+
 export type FieldProps =
-  TextField | TextareaField | SelectField | CheckboxField | RadioField | FileField;
+  TextField | TextareaField | SelectField | CheckboxField | RadioField | FileField | FilesField;
 
 const valueOf = (event: Event): string =>
   event.target instanceof HTMLInputElement ||
@@ -174,19 +182,25 @@ function InputControl(props: TextField): JSX.Element {
   }
 }
 
-function FileControl(props: FileField): JSX.Element {
+function FileControl(props: FileField | FilesField): JSX.Element {
   return (
     <input
       {...commonAttributes(props)}
       class="rst-field__control"
       type="file"
+      multiple={props.kind === 'files'}
       accept={props.accept}
       onChange={(event) => {
-        props.onFile(event.currentTarget.files?.[0]);
+        const chosen = Array.from(event.currentTarget.files ?? []);
+        if (props.kind === 'files') props.onFiles(chosen);
+        else props.onFile(chosen[0]);
       }}
     />
   );
 }
+
+const isFilePicker = (props: FieldProps): props is FileField | FilesField =>
+  props.kind === 'file' || props.kind === 'files';
 
 function TextareaControl(props: TextareaField): JSX.Element {
   return (
@@ -204,6 +218,7 @@ function TextareaControl(props: TextareaField): JSX.Element {
 }
 
 function Control(props: FieldProps): JSX.Element {
+  if (isFilePicker(props)) return <FileControl {...props} />;
   switch (props.kind) {
     case 'select':
       return <SelectControl {...props} />;
@@ -221,8 +236,6 @@ function Control(props: FieldProps): JSX.Element {
       );
     case 'radio':
       return <RadioGroup {...props} />;
-    case 'file':
-      return <FileControl {...props} />;
     case 'textarea':
       return <TextareaControl {...props} />;
     case 'text':
