@@ -122,7 +122,9 @@ describe.skipIf(!hasTestDatabase)('migration 0016 on a database that holds proje
     const rowsBefore = await snapshotOfRows();
     expect(await outcomeOf(pool, projectOf({ kind: 'workbook', url: '' }))).toBe(CHECK_VIOLATION);
 
-    const all = await readMigrationFiles(migrationsFolder);
+    const all = (await readMigrationFiles(migrationsFolder)).filter(
+      (migration) => migration.version <= 16,
+    );
     const applied = await new PgMigrator({ pool, migrations: all, clock: testClock }).migrate();
 
     expect(applied.map((migration) => migration.version)).toEqual([16]);

@@ -56,7 +56,7 @@ function fixtureWorkbookSnapshot(root: string): WorkbookSnapshot {
 }
 
 /** A store that holds the workbook snapshot only, with the tree at `root`. */
-export function workbookSnapshotsAt(root: string): Pick<UploadStore, 'read'> {
+function workbookSnapshotsAt(root: string): Pick<UploadStore, 'read'> {
   return {
     read: (key) =>
       Promise.resolve(key === WORKBOOK_RUN_KEY ? fixtureWorkbookSnapshot(root) : undefined),
