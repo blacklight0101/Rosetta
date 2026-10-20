@@ -210,3 +210,28 @@ it('RF-152 lists comments with their cell address and no author', () => {
     ].join('\n'),
   );
 });
+
+it('RF-152 lists the hidden rows and columns in the header, and the ones not listed', () => {
+  const model = book([
+    sheet('S', {
+      cells: [cell('A1', num(1))],
+      hiddenRows: { ranges: ['2:3', '5'], omitted: 0 },
+      hiddenColumns: { ranges: ['B:C'], omitted: 12 },
+    }),
+  ]);
+
+  const values = fileOf(renderWorkbook(model), 'S/values.md');
+
+  expect(values).toContain('- Hidden rows: 2:3, 5\n');
+  expect(values).toContain('- Hidden columns: B:C\n- Hidden columns not listed: 12\n');
+  expect(values.indexOf('- Hidden rows')).toBeLessThan(values.indexOf('- Non-empty cells'));
+});
+
+it('RF-152 a sheet with nothing hidden has no hidden line in its header', () => {
+  const values = fileOf(
+    renderWorkbook(book([sheet('S', { cells: [cell('A1', num(1))] })])),
+    'S/values.md',
+  );
+
+  expect(values).not.toContain('Hidden');
+});
