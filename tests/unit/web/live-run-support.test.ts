@@ -60,9 +60,13 @@ describe('citationHref', () => {
 });
 
 describe('elapsedLabel', () => {
-  it('RF-1002 shows minutes, seconds and tenths since the start of the run', () => {
-    expect(elapsedLabel('2026-10-12T10:00:00.000Z', '2026-10-12T10:06:42.140Z')).toBe('06:42.1');
-    expect(elapsedLabel('2026-10-12T10:00:00.000Z', '2026-10-12T10:00:00.000Z')).toBe('00:00.0');
+  it('RF-1002 shows minutes, seconds and tenths since the start of the run, with a plus sign', () => {
+    expect(elapsedLabel('2026-10-12T10:00:00.000Z', '2026-10-12T10:06:42.140Z')).toBe('+06:42.1');
+    expect(elapsedLabel('2026-10-12T10:00:00.000Z', '2026-10-12T10:00:00.000Z')).toBe('+00:00.0');
+  });
+
+  it('RF-1002 counts hours once the run is past the first hour, so minutes never pass 59', () => {
+    expect(elapsedLabel('2026-10-12T10:00:00.000Z', '2026-10-12T11:02:03.450Z')).toBe('+1:02:03.4');
   });
 
   it('RF-1002 shows the clock time when the start is unknown or the event is earlier', () => {

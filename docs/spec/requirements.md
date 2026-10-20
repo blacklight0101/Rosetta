@@ -605,11 +605,12 @@ As a developer I want each agent to explore its area with tools so that it reads
 - Given a tool call with invalid arguments, when it is executed, then the agent receives an error result it can correct, and the error is logged.
   Verification: integration tests with recorded responses including a bad tool call.
 
-**RF-202 Produce valid cards** - R1 (M1) - Must - Source DEC-18 - ADR-005
+**RF-202 Produce valid cards** - R1 (M1) - Must - Source DEC-18, DEC-157 - ADR-005
 As a developer I want every agent result in one strict card format so that cards can be checked and rendered.
 
 - Given an agent's final answer, when it is parsed, then each card validates against the card schema: type, title, area, summary, claims, each claim with at least one citation, confidence, and for `OQ` the question and why it matters.
 - Given invalid output, when parsing fails, then the agent gets one repair attempt with the validation errors; if that also fails, the raw output is saved and the task is marked `invalid output`.
+- Given an area where many controls or cells repeat the same wiring (for example 42 day buttons that each call one handler), when the reader writes its cards (DEC-157), then the repeated wiring is one claim that names the shared behaviour and lists the controls or the range they cover, citing one or more representative lines, instead of one claim per control; a control that differs from the pattern keeps its own claim.
   Verification: unit tests on the schema and parser; integration test of the repair path.
 
 **RF-203 Stable card ids** - R1 (M1) - Must - Source DEC-18 - ADR-005
@@ -804,13 +805,14 @@ As a maintainer I want all model access through one interface so that providers 
 - Given any agent, verifier or planner call, when it is made, then it goes through the `LlmProvider` port with a system prompt, messages and tool definitions, and returns text, tool calls and usage (input, output and cached input tokens) in one shape for every provider.
   Verification: a contract test suite run against every adapter with recorded responses.
 
-**RF-401 Ollama adapter** - R1 (M1) - Must - Source DEC-09, DEC-23 - ADR-003
+**RF-401 Ollama adapter** - R1 (M1) - Must - Source DEC-09, DEC-23, DEC-155 - ADR-003
 As a developer I want to run every role on local models so that development costs nothing and code stays local.
 
 - Given Ollama running locally with the configured model, when a role uses provider `ollama`, then calls succeed with native tool calling where the model supports it, or the text protocol (RF-205).
 - Given Ollama not running or the model not pulled, when the run starts, then it stops before any work with an error code and the command to fix it.
 - Given `providers.<name>.contextTokens` is `auto` (the default), when a model is first used, then the adapter picks the largest context size that keeps the model entirely in the GPU memory Ollama reports (`/api/ps` `size_vram` equal to `size`), starting at the smaller of the model's trained context (`/api/show`) and the ceiling, halving down to the floor (Q-23), sends it as `num_ctx` on every call, and records the chosen value in the call log and the run manifest (DEC-114).
 - Given `contextTokens` is a number, when a role calls the model, then that value is sent unchanged, and a warning is logged if Ollama reports part of the model on the CPU (DEC-114).
+- Given a prompt whose estimated size plus the output reserve is larger than the context size sent as `num_ctx`, or a call where Ollama reports fewer prompt tokens than the estimate because it cut the prompt, when a role calls the model, then the call fails with a providers error code that names the estimated input, the context size, the role and the remedies (a model with a larger context or a cloud model for the role, or a larger `contextTokens`), and a cut prompt never reaches the role as an answer (DEC-155).
   Verification: contract test with recorded responses; manual run against Ollama.
 
 **RF-402 OpenAI adapter** - R1 (M1) - Must - Source DEC-09 - ADR-003
@@ -831,11 +833,13 @@ As a developer I want to use Claude models with prompt caching so that long agen
 - Given an Anthropic key and model, when a role uses provider `anthropic`, then calls succeed with tool calling, the stable prompt prefix is marked for caching, and cached-token usage is reported.
   Verification: contract test with recorded responses; one manual live call.
 
-**RF-405 Model per role** - R1 (M1) - Must - Source DEC-09 - ADR-003
+**RF-405 Model per role** - R1 (M1) - Must - Source DEC-09, DEC-156 - ADR-003
 As a developer I want to choose the provider and model for each role so that I can balance cost and quality.
 
 - Given a configuration that sets `reader`, `verifier`, `planner` and `summariser` to different providers and models, when a run uses each role, then each call goes to its configured model and the cost report shows them separately.
-  Verification: integration test with two fake providers.
+- Given the Default models page or a project's model settings (DEC-156), when a role's provider is `anthropic` or `openai`, then the model is chosen from a dropdown of the models in the shipped model list (`prices/models.yaml`, versioned like the price table), each without a price in the price table marked "no price", with a last option "Other model..." that shows the text field; a saved model not on the list stays selected under "Other model...".
+- Given the provider `ollama`, when the page opens, then the server asks the configured Ollama server for its installed models (`/api/tags`) and offers them in the same dropdown with "Other model..."; when Ollama cannot be reached within a short timeout, the text field is shown with a note, and saving still works.
+  Verification: integration test with two fake providers; component tests of the dropdown, the "Other model..." field and the Ollama fallback; integration test of the installed-models route with a recorded Ollama response.
 
 **RF-406 Retry and fail cleanly** - R1 (M1) - Must - Source RFC-001 failure paths - ADR-003
 As a developer I want temporary provider errors retried and permanent ones to stop only the affected task so that a run survives hiccups.
@@ -1075,14 +1079,17 @@ As a developer I want the plan to follow the understand run I just read so that 
 - Given a plan run, when its manifest is read, then it records the source understand run, and the estimate and the package use that run's cards and answers only.
   Verification: end-to-end test with the fake provider from a completed run to a package; integration test that the source run, not the newest run, feeds `plan`.
 
-**RF-615 Journey from code to package** - R1 - Should - Source RFC-002, DEC-142, DEC-143 - ADR-012
+**RF-615 Journey from code to package** - R1 - Should - Source RFC-002, DEC-142, DEC-143, DEC-154 - ADR-012
 As a developer I want to see every step from scan to package with its state and cost so that I always know where I am and what to do next.
 
 - Given an understand run, when its page, its Plan setup or its plan run page opens, then a journey strip shows scan, understand, questions, brief, estimate, plan and package, each with its state (done, current, locked with a reason, failed with its code, out of date) and its cost, and one next action.
 - Given the plan run failed, when the journey is shown, then the understand run, its cards and the brief are unchanged, and the next action is "Try the plan again", which starts a new plan run after a new estimate; a failed plan run is not resumed.
 - Given the understand run stopped (`Failed`, `CapReached`, `Interrupted`), when the journey is shown, then the plan steps are locked with the reason and the next action is Resume (RF-006).
 - Given the brief or the source run changed after a package was written, when the journey is shown, then the package step is marked out of date.
-  Verification: component tests of each step state; end-to-end test of the failure paths with the fake provider.
+- Given an open question with an answer saved in `answers.md` (DEC-154), when the journey or the Your questions tab is shown, then the question reads "Answer saved" and is not counted as open; it is marked `Answered` only when a later run reads the answers.
+- Given every question has a saved answer, when the journey is shown, then the questions step is done and the next action is "Set up the plan"; given some questions have no saved answer, then "Go on with the defaults", next to "Answer N questions", opens the brief, and the skipped questions keep their defaults.
+- Given the run page with open questions, when "Answer N questions" is chosen, then the Your questions tab opens and the first question without a saved answer is scrolled into view and focused.
+  Verification: component tests of each step state; end-to-end test of the failure paths with the fake provider; end-to-end test of saving every answer and going on to the brief, and of going on with the defaults.
 
 **RF-620 Documentation set of the package** - R1 - Must - Source DEC-134 - ADR-018
 As a modernisation team I want the package to read like a complete project documentation set so that we can start building from it alone.

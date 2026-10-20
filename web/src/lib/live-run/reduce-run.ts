@@ -21,7 +21,8 @@ import {
   onDeepenRoundStarted,
   onDeepenStarted,
 } from './deepen-events.js';
-import { logText } from './log-text.js';
+import { LOG_LIMIT } from './log-count.js';
+import { withLine } from './log-lines.js';
 import type { RunState } from './run-state.js';
 import { onRunEnded, onRunStarted, onScanCompleted, onSourceResolved } from './run-level-events.js';
 
@@ -29,9 +30,6 @@ import { onRunEnded, onRunStarted, onScanCompleted, onSourceResolved } from './r
 // that was already applied (`seq` not above the last) changes nothing, so a replay after a
 // reconnect cannot double a count. Every event, whatever its type, becomes a line of the log; the
 // log keeps the newest events when a run has more than `LOG_LIMIT`.
-
-/** The log keeps this many of the newest events; the sequence numbers show how many came before. */
-const LOG_LIMIT = 1000;
 
 type Handler = (state: RunState, event: RunEvent) => RunState;
 
@@ -88,6 +86,6 @@ export function applyEvent(state: RunState, event: RunEvent): RunState {
   const handler = Object.hasOwn(handlers, event.type) ? handlers[event.type] : undefined;
   const changed = handler === undefined ? state : handler(state, event);
   const area = changed.agents.find((agent) => agent.agentTaskId === event.agentTaskId)?.area ?? '';
-  const line = { seq: event.seq, at: event.at, type: event.type, text: logText(event, area) };
-  return { ...changed, lastSeq: event.seq, log: [...changed.log, line].slice(-LOG_LIMIT) };
+  const log = withLine(changed.log, event, area).slice(-LOG_LIMIT);
+  return { ...changed, lastSeq: event.seq, log };
 }

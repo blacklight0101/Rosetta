@@ -86,11 +86,9 @@
 }
 
 .rst-journey__detail {
-  overflow: hidden;
   color: var(--rst-ink-muted);
   font-size: var(--rst-fs-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
 }
 
 .rst-journey__step--done .rst-journey__n {
@@ -209,14 +207,14 @@
 .rst-now__title {
   font-size: var(--rst-fs-sm);
   font-weight: var(--rst-fw-label);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .rst-now__text {
   margin: 2px 0 0;
   color: var(--rst-ink-soft);
   font-size: var(--rst-fs-sm);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* Tabs */
@@ -394,4 +392,10 @@
     grid-column: 2;
     justify-self: start;
   }
+}
+
+.rst-spend__caption {
+  margin: 0;
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
 }

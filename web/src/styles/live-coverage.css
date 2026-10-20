@@ -47,7 +47,7 @@
   font-family: var(--rst-mono);
   font-size: var(--rst-fs-md);
   font-weight: var(--rst-fw-head);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .rst-p138-area-figures {
@@ -81,7 +81,7 @@
 }
 
 .rst-p138-name {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .rst-p138-node--folder > .rst-p138-name {

@@ -9,8 +9,8 @@ import { useId } from 'preact/hooks';
 export interface TabSpec {
   readonly id: string;
   readonly label: string;
-  /** A number beside the label, for example how many cards there are. */
-  readonly count?: number | undefined;
+  /** A number beside the label, for example how many cards there are, or "1,000+" for "more". */
+  readonly count?: number | string | undefined;
 }
 
 export interface TabsProps {

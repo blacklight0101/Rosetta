@@ -22,6 +22,8 @@ export interface AgentPanelState {
   readonly role: string;
   readonly model: string;
   readonly state: AgentState;
+  /** RF-209: the round of a Deepen that planned this agent; undefined for any other run. */
+  readonly round?: number | undefined;
   readonly turn: number;
   readonly filesRead: readonly string[];
   readonly tool: ToolNow | undefined;
@@ -52,11 +54,31 @@ export interface ClaimRow {
   readonly reason: string | undefined;
 }
 
+/** RF-1002, RF-1003: the usage lines of the log that follow each other for one role are one line. */
+export interface UsageDetail {
+  readonly kind: 'usage';
+  readonly role: string;
+  readonly calls: number;
+  readonly tokens: number;
+  /** Undefined when no call had a price. */
+  readonly costMicros: number | undefined;
+}
+
+/** RF-1002: a verdict of the verifier on one claim, with its whole reason. */
+export interface VerdictDetail {
+  readonly kind: 'verdict';
+  readonly claimId: string;
+  readonly status: string;
+  readonly reason: string;
+}
+
 export interface LogLine {
   readonly seq: number;
   readonly at: string;
   readonly type: string;
   readonly text: string;
+  /** What a line of this type shows beyond its text. */
+  readonly detail?: UsageDetail | VerdictDetail | undefined;
 }
 
 /** A public GitHub repository pinned to a commit; an absent `kind` means GitHub. */

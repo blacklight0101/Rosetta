@@ -72,7 +72,6 @@ const writers: Readonly<Record<string, Writer>> = {
     `round ${field(data, 'round')} ${data['complete'] === false ? 'cut short' : 'ended'} · ${field(data, 'newClaims')} new claims, ${field(data, 'newSupported')} supported, ${field(data, 'filesRead')} files read`,
   'deepen.ended': (data) =>
     `stopped: ${field(data, 'stopReason')} after ${field(data, 'roundsDone')} rounds`,
-  'usage.recorded': (data) => `${field(data, 'role')} ${field(data, 'costMicros')} micro-dollars`,
   'budget.warning': (data) =>
     `${field(data, 'scope')} at ${field(data, 'sharePercent')}% of its cap`,
   'budget.capReached': (data) => `${field(data, 'role')} ${field(data, 'scope')} reached its cap`,

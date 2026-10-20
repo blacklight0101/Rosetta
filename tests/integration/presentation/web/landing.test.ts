@@ -27,7 +27,9 @@ describe('landing page content', () => {
     expect(html).toMatch(/^<!doctype html>/i);
     expect(html).toContain('<html lang="en"');
     expect(html).toMatch(/<h1[^>]*>[^<]*legacy code[^<]*<\/h1>/);
-    expect(html).toContain('Paste a public GitHub URL');
+    expect(html).toContain(
+      'Start from a public GitHub URL, a zip of your code or one or more Excel workbooks.',
+    );
   });
 
   it('RF-1200 sends the page as UTF-8 HTML', async () => {
@@ -45,7 +47,7 @@ describe('landing page content', () => {
     expect(list).not.toBeNull();
     expect((list?.[1] ?? '').match(/<li\b/g)).toHaveLength(6);
     for (const stage of [
-      'Pin a commit',
+      'Choose the source',
       'Map the code',
       'Agents write cards',
       'Check every claim',
@@ -113,6 +115,52 @@ describe('landing page sections', () => {
     const { html } = await landing();
 
     expect(html).not.toMatch(/mission foods|testimonial|trusted by|customers love/i);
+  });
+});
+
+describe('landing page sources (DEC-153)', () => {
+  it('RF-1200 names the three sources in the pipeline heading and in the source stage', async () => {
+    const { html } = await landing();
+
+    expect(html).toContain(
+      'From a GitHub URL, a zip or Excel workbooks to a hand-off your team can build from.',
+    );
+    expect(html).toContain('A public GitHub URL is pinned to one commit and downloaded once.');
+    expect(html).toContain(
+      'A zip or Excel workbooks become a read-only snapshot named by its hash.',
+    );
+    expect(html).not.toContain('Pin a commit');
+  });
+
+  it('RF-1200 says the agents read workbooks as formulas, values, the dependency map and macro text', async () => {
+    const { html } = await landing();
+
+    expect(html).toContain(
+      'In workbooks they read formulas, values, the dependency map between sheets and workbooks, and VBA macros as text.',
+    );
+  });
+
+  it('RF-1200 says uploads are read under limits and macros are never run', async () => {
+    const { html } = await landing();
+
+    expect(html).toContain('Limited uploads.');
+    expect(html).toContain(
+      'Zips and workbooks are read under size and content limits. Macros are never run.',
+    );
+  });
+
+  it('RF-1200 says in the stack section that Excel workbooks (.xlsx and .xlsm) are a source too', async () => {
+    const { html } = await landing();
+
+    expect(html).toContain('Excel workbooks (.xlsx and .xlsm) are a source too.');
+  });
+
+  it('RF-1200 keeps the sample replay a GitHub run and claims no macro is run or analysed for security', async () => {
+    const { html } = await landing();
+
+    expect(html).toContain('Sample run of Microsoft');
+    expect(html).not.toMatch(/macros? (?:are|is) (?:run|executed|analy[sz]ed)/i);
+    expect(html).not.toMatch(/\.xls(?![xm])|\.xlsb/i);
   });
 });
 
