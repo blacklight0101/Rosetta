@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { waitsForAnswer } from '../api/answers.js';
 import { Button } from '../components/Button.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { endFactsOf } from '../lib/live-run/end-facts.js';
@@ -6,6 +7,8 @@ import { PlanNext } from './PlanNext.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 import { DeepenAction } from './DeepenAction.js';
 import type { AnswersLoad } from './use-run-answers.js';
+
+type AnswersLoadReady = Extract<AnswersLoad, { readonly status: 'ready' }>;
 
 // RF-1015, RF-1017, RF-614, DEC-137, design-system.md section 14: the "Your turn" panel of an ended run:
 // how many questions wait for the user and the way to them, the way on to the plan (PlanNext) and the facts of the run. A run that
@@ -31,6 +34,19 @@ function plural(count: number, word: string): string {
   return `${String(count)} ${word}${count === 1 ? '' : 's'}`;
 }
 
+/** DEC-154: nothing waits; the answers saved so far are said, so the user knows what to do next. */
+function NoneWaiting(props: { readonly answers: AnswersLoadReady['questions'] }): JSX.Element {
+  const saved = props.answers.filter((each) => each.state === 'Open').length;
+  if (saved === 0) {
+    return <p>This run has no questions for you. Its report and downloads are below.</p>;
+  }
+  return (
+    <p>
+      {`Every question has a saved answer (${String(saved)}). The next run uses your answers; set up the plan to go on.`}
+    </p>
+  );
+}
+
 function Next(props: YourTurnProps): JSX.Element {
   const { answers } = props;
   if (props.failed) {
@@ -46,9 +62,8 @@ function Next(props: YourTurnProps): JSX.Element {
     return <p>The open questions could not be read. The Your questions tab shows why.</p>;
   }
   if (answers.status !== 'ready') return <p>Loading the open questions.</p>;
-  const open = answers.questions.filter((each) => each.state === 'Open').length;
-  if (open === 0)
-    return <p>This run has no questions for you. Its report and downloads are below.</p>;
+  const open = answers.questions.filter(waitsForAnswer).length;
+  if (open === 0) return <NoneWaiting answers={answers.questions} />;
   return (
     <>
       <p>
@@ -73,7 +88,7 @@ function Fact(props: { readonly label: string; readonly value: string }): JSX.El
 
 /** Questions are open when the answers are read and at least one waits. */
 function questionsOpen(answers: AnswersLoad): boolean {
-  return answers.status === 'ready' && answers.questions.some((each) => each.state === 'Open');
+  return answers.status === 'ready' && answers.questions.some(waitsForAnswer);
 }
 
 // RF-1015, RF-614

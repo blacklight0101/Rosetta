@@ -209,6 +209,7 @@ The state lists are canonical in [architecture](architecture.md) section 5; this
 | Run `Failed`                                        | danger                                          | solid  | exclamation           | see the log and the error code                                 |
 | Run `Interrupted`                                   | neutral                                         | solid  | pause bars            | stopped by the developer                                       |
 | Question `Open` / `Answered`                        | warn tint / ok tint                             |        | question mark / check |                                                                |
+| Question `Answer saved` (DEC-154)                   | info tint                                       |        | check                 | an answer is in answers.md and no run has read it yet          |
 | Call `ok` / `retried` / `failed` / `refused-by-cap` | ok tint / warn tint / danger solid / warn solid |        | HTTP code or glyph    | provider call status (RF-408)                                  |
 
 ## 7. Patterns

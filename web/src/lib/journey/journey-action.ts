@@ -15,12 +15,14 @@ export type JourneyAction =
 
 export interface Next {
   readonly action: JourneyAction | undefined;
+  /** DEC-154: "Go on with the defaults" next to "Answer N questions"; it opens the brief. */
+  readonly secondary?: JourneyAction;
   readonly here: StepKey;
 }
 
 const link = (label: string, href: string): JourneyAction => ({ kind: 'link', label, href });
 
-function afterTheRun(c: Context): Next | undefined {
+function afterTheRun(c: Context, setUp: string): Next | undefined {
   const { source } = c;
   if (source === null) return undefined;
   const phase = phaseOf(source);
@@ -40,7 +42,11 @@ function afterTheRun(c: Context): Next | undefined {
   if (source.openQuestions === 0) return undefined;
   const count = source.openQuestions;
   const label = `Answer ${String(count)} question${count === 1 ? '' : 's'}`;
-  return { action: { kind: 'answer', label, href: `/runs/${source.id}` }, here: 'questions' };
+  return {
+    action: { kind: 'answer', label, href: `/runs/${source.id}` },
+    secondary: link('Go on with the defaults', setUp),
+    here: 'questions',
+  };
 }
 
 function afterThePlan(c: Context, setUp: string): Next {
@@ -62,7 +68,7 @@ export function nextOf(c: Context): Next {
   if (c.source === null || c.setUp === undefined) {
     return { action: link('Start a run', `/projects/${c.projectId}/start`), here: 'scan' };
   }
-  const early = afterTheRun(c);
+  const early = afterTheRun(c, c.setUp);
   if (early !== undefined) return early;
   if (!c.facts.briefSaved) return { action: link('Set up the plan', c.setUp), here: 'brief' };
   return afterThePlan(c, c.setUp);
