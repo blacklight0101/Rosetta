@@ -1460,7 +1460,7 @@ As the administrator I want account and key events recorded so that I can see wh
 **RF-1200 Landing page** - R1 (M1) - Must - Source DEC-63 - ADR-012
 As a visitor I want a page that explains Rosetta well so that I understand what it does before signing in.
 
-- Given the root URL, when it is opened without a session, then a product-quality landing page shows: what Rosetta does in one sentence; the pipeline (GitHub URL, scan, agents, verifier, report, hand-off) as a graphic; the live agent view; evidence-cited cards with the verifier; cost control; security and privacy; the technology; who built it and why (a master's final project); and a Sign in button.
+- Given the root URL, when it is opened without a session, then a product-quality landing page shows: what Rosetta does in one sentence; the pipeline (a GitHub URL, a zip or Excel workbooks, then scan, agents, verifier, report, hand-off; sources changed by DEC-153) as a graphic; the live agent view; evidence-cited cards with the verifier; cost control; security and privacy; the technology; who built it and why (a master's final project); and a Sign in button.
 - Given a signed-in user, when they open the root URL, then they go to their projects.
 - Given any screen width from 360 px, when the page is shown, then it follows the design system (RNF-010) and works without JavaScript.
   Verification: end-to-end test with axe; review against the design board.

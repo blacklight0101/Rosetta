@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 59      | 5         | 52         | 2         | 0                  | 20      | 37      | 2      | 15         | 0         |
-| **Total**               | **276** | **77**    | **172**    | **27**    | **0**              | **136** | **128** | **12** | **150**    | **0**     |
+| P3 Report and plan      | 60      | 5         | 53         | 2         | 0                  | 21      | 37      | 2      | 16         | 0         |
+| **Total**               | **277** | **77**    | **173**    | **27**    | **0**              | **137** | **128** | **12** | **151**    | **0**     |
 
 ## Conventions for every card
 
@@ -3732,3 +3732,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the cause of each failure in the PR body, the fix and its test.
 - **Done when**: both specs pass 20 runs in a row locally and in CI; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-604, RF-610, RF-611, RNF-010 (flaky CI runs on 2026-10-20); issue #660.
+
+### P3-60 - Follow-up: the landing page names the zip and Excel sources
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-15, P3-42, P3-52
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the landing page from P1-15 and its tests; `docs/design/board/Landing.dc.html`; `docs/design-system.md` section 14; `.impeccable/surfaces/` (landing direction contract); RF-1200 (changed by DEC-153), RFC-004, RFC-005; the start page's three tabs (P3-49).
+- **Do**: update the public landing page so it shows what the system does today, within the approved design: the hero sentence and its sub-line say a project comes from a public GitHub URL, a zip, or one or more Excel workbooks; the pipeline rail's first stage ("Pin a commit") becomes a source stage covering the three (a GitHub URL pinned to one commit; a zip or workbooks become a read-only snapshot named by its hash); the agents stage mentions that workbooks are read as formulas, values, the dependency map between sheets and workbooks, and VBA macros as text; the security section adds that uploads are read under size and content limits and macros are never run; the "Any stack" section says Excel workbooks are a source too. Keep the sample replay a GitHub run, keep every other section, and keep the page working without JavaScript from 360 px. Copy in English, plain, no new claims beyond what is built.
+- **Review probes**: the page at 360 px and desktop, light and dark, with JavaScript off; axe in both schemes; every changed sentence checked against what is built (RFC-004, RFC-005, the start page); no text implies macros run or files leave the machine without the private-code confirmation.
+- **Behaviour to preserve**: the redirect for a signed-in visitor, `noindex`, the Request access link rule (RF-1201), the replay behaviour and reduced-motion rule.
+- **Delivers**: the updated page and its tests.
+- **Done when**: every RF-1200 and RF-1201 scenario passes; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-1200, RF-1201, RNF-010, DEC-153, RFC-004, RFC-005; issue #670.
