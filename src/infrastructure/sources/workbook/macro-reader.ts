@@ -33,17 +33,21 @@ function unreadable(reason: string): MacroProject {
   };
 }
 
-/** The streams of one compound file, each cut at the size limit. */
+/** The streams of one compound file by path, listed once so a lookup costs nothing. */
 class Container {
-  private readonly container: CFB.CFB$Container;
+  private readonly streams = new Map<string, Buffer>();
 
   constructor(container: CFB.CFB$Container) {
-    this.container = container;
+    container.FileIndex.forEach((entry, index) => {
+      const path = (container.FullPaths[index] ?? '').split('/').slice(1).join('/').toLowerCase();
+      if (Buffer.isBuffer(entry.content) && !this.streams.has(path)) {
+        this.streams.set(path, entry.content);
+      }
+    });
   }
 
   stream(path: string): Buffer | undefined {
-    const content: unknown = CFB.find(this.container, `/${path}`)?.content;
-    return Buffer.isBuffer(content) ? content : undefined;
+    return this.streams.get(path.toLowerCase());
   }
 }
 

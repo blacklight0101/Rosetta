@@ -43,16 +43,16 @@ function decryptData(encrypted: Uint8Array): Uint8Array | undefined {
   return lengthBytes.length === 4 && length === data.length ? Uint8Array.from(data) : undefined;
 }
 
-/** True when the protection state of `CMG="hex"` sets any of the user, host or editor bits. */
-function isLocked(hex: string): boolean {
+/** Whether the protection state of `CMG="hex"` is clear; one that cannot be decoded is not. */
+function isClear(hex: string): boolean {
   if (!/^(?:[0-9a-fA-F]{2}){4,40}$/.test(hex)) return false;
   const data = decryptData(Buffer.from(hex, 'hex'));
-  return data !== undefined && data.length >= 1 && ((data[0] ?? 0) & PROTECTION_BITS) !== 0;
+  return data !== undefined && data.length >= 1 && ((data[0] ?? 0) & PROTECTION_BITS) === 0;
 }
 
 export function parseProjectStream(text: string): ProjectStream {
   const kinds = new Map<string, MacroModuleKind>();
-  let locked = false;
+  const protections: boolean[] = [];
   for (const line of text.split(/\r?\n/)) {
     const at = line.indexOf('=');
     if (at < 0) continue;
@@ -60,7 +60,8 @@ export function parseProjectStream(text: string): ProjectStream {
     const value = line.slice(at + 1).trim();
     const kind = KEY_KINDS[key];
     if (kind !== undefined) kinds.set(value.split('/')[0]?.toLowerCase() ?? '', kind);
-    if (key === 'cmg') locked = isLocked(value.replace(/^"|"$/g, ''));
+    if (key === 'cmg') protections.push(isClear(value.replace(/^"|"$/g, '')));
   }
-  return { kinds, locked };
+  // Fail closed: a second CMG line or one that cannot be decoded counts as a lock (Q-40).
+  return { kinds, locked: protections.length > 1 || protections.includes(false) };
 }

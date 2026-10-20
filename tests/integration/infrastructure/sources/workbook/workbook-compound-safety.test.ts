@@ -27,11 +27,15 @@ it('RF-151 refuses a hostile compound file renamed .xlsx with RST-1927, without 
     next: (s) => (s < 3999 ? s + 1 : -2),
   });
 
+  const read = vi.spyOn(CFB, 'read');
   const failure = await readBuilt(root.path, bytes, { fileName: 'Book.xlsx' }).catch(
     (error: unknown) => error,
   );
+  const handedOver = read.mock.calls.length;
+  read.mockRestore();
 
   expect(failure instanceof RosettaError ? failure.code : failure).toBe('RST-1927');
+  expect(handedOver).toBe(0);
 });
 
 it('RF-154 finds the streams of 1,000 modules without a lookup in cfb for each', () => {

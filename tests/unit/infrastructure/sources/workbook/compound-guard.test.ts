@@ -96,8 +96,15 @@ it('RF-154 refuses storages nested deeper than 32 and accepts 30', () => {
   expect(compoundFileProblem(nested(30))).toBe(undefined);
 });
 
+it('RF-154 refuses an entry that points outside the directory, and a directory sector outside the file', () => {
+  const outside = withDirectory([ROOT, { type: 2, right: 99 }]);
+  const sector = withDirectory([ROOT], { count: 3, next: (s) => (s === 0 ? 100 : -2) });
+
+  expect(compoundFileProblem(outside)).toContain('points outside the directory');
+  expect(compoundFileProblem(sector)).toContain('directory sector is outside');
+});
+
 it.each([
-  ['an entry that points outside the directory', [ROOT, { type: 2, right: 99 }]],
   ['a first entry that is not the root', [{ type: 1 }]],
   ['an entry that no one points at', [{ type: 5 }, { type: 2 }]],
   ['a second root', [ROOT, { type: 5 }]],

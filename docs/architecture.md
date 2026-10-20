@@ -182,12 +182,15 @@ src/
                         part: cell-reader, rule-reader, shared-strings-reader, styles-reader, small-part-readers, workbook-xml-reader;
                         package-reader assembles them; errors RST-1921..1928 in workbook-errors; `checkWorkbookBatch` judges the file names
                         VBA macros (RF-154, P3-45): package-reader hands `xl/vbaProject.bin` (bytes counted as they inflate) to `readMacroProject`
-                        (macro-reader), which checks the compound file's header and allocation table first (compound-guard: `cfb` follows
-                        sector chains without remembering them, so a loop is refused before it reads), opens it with `cfb`, decompresses the `dir`
+                        (macro-reader), which checks the compound file's header and allocation table first (compound-guard, compound-table, compound-directory: `cfb` follows
+                        sector chains without remembering them and copies each chain it meets, so a loop, merged or shared chains, a chain
+                        read against file order, a looping or oversized directory tree (2,048 entries, depth 32) and stream sizes that pass
+                        the file are refused before it reads; the same guard stands before the encrypted/legacy check in workbook-format;
+                        streams are listed once into a map), opens it with `cfb`, decompresses the `dir`
                         stream and each module with the MS-OVBA code (ovba-decompress, ovba-dir, ovba-code-page), reads `PROJECT` for module kinds
                         and the protection state of a project locked for viewing (macro-project-stream), lists form controls (macro-forms) and
                         returns `MacroProject` (macro-model) on `WorkbookModel.macros`; bounds in macro-limits; damage leaves the project or
-                        module `unreadable`, a passed bound is RST-1926; macros are text and are never run
+                        module `unreadable`, a passed bound is RST-1926, and a CMG line that is doubled or cannot be decoded counts as locked (Q-40); macros are text and are never run
     files/              node-repository-reader, snapshot-index, snapshot-scope, ignore-rules (deny list), grep worker,
                         search and limits, node-output-writer, last-line (a file's last line, read from its end),
                         workspace-guard, workspace-paths, repository-path checks, file-run-manifest-store (`manifest.json`)

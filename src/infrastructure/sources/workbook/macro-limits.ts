@@ -1,6 +1,9 @@
 // RF-154: bounds on a VBA project. Every size, count and offset in a compound file is chosen by
 // whoever made the file, so each one is checked against these before memory is allocated.
 
+/** Entries in the directory of a compound file: `cfb` arranges them in quadratic time. */
+export const MAX_DIRECTORY_ENTRIES = 2048;
+
 export interface MacroLimits {
   /** `xl/vbaProject.bin` as stored in the package. */
   readonly maxProjectBytes: number;

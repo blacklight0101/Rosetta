@@ -19,7 +19,7 @@ export interface EntrySpec {
   readonly size?: number;
 }
 
-export function directoryEntry(spec: EntrySpec): Buffer {
+function directoryEntry(spec: EntrySpec): Buffer {
   const bytes = Buffer.alloc(ENTRY);
   const name = Buffer.from(`${spec.name ?? ''}${String.fromCharCode(0)}`, 'utf16le');
   if (spec.type !== 0) name.copy(bytes);
