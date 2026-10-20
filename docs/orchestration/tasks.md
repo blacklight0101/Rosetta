@@ -3694,7 +3694,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-48, P3-49, P3-52
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-005 section 4.4; RF-150 and RF-152; the workbook reader and renderer (`src/infrastructure/sources/workbook/`); `web/src/pages/WorkbookUploadForm.tsx`, `use-workbook-upload.ts`, `web/src/lib/workbook-check.ts`; P3-55 (the zip form's notice); the P3-52 journey and its open questions (#652); the P3-46, P3-49 and P3-51 verdicts (#642, #639, #640).
 - **Do**: (1) the reader carries hidden rows and hidden columns of each sheet and the sheet header in `values.md` marks them, as RFC-005 section 4.4 asks; (2) after a replacing batch the workbook start page shows "The code changed since the last run." at once, from the flag the finish answer already carries, as P3-55 did for zips, and the P3-52 journey stops reopening the page; (3) check that the page reads the workbook file limit from the server (`GET /api/session` beside `uploadMaxMb`) and not a constant, and fix it if not; (4) check that the server refuses to start a run for a workbook project that has no source yet (not only the page), and add the refusal and its test if it is missing.
 - **Review probes**: a sheet with hidden rows, hidden columns and a hidden row inside a used range; a replacing batch with the page left open (notice shown, no reload); `ROSETTA_WORKBOOK_MAX_FILES=3` (the page says 3 and refuses a fourth file before upload); an API start of a workbook project with no source (refused with its code).
