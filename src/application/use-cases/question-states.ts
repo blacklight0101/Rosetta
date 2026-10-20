@@ -22,6 +22,14 @@ function dependentsOf(behind: readonly PriorCard[], earlier: readonly PriorCard[
   ).length;
 }
 
+/**
+ * RF-615, DEC-154: a question waits for the user while it is `Open` and has no saved answer. An
+ * answer of blanks only is none. A question with a saved answer is not open for the journey, but it
+ * is `Answered` only when a later run has read the answer (RF-243).
+ */
+export const waitsForAnswer = (question: Pick<StatedQuestion, 'state' | 'answer'>): boolean =>
+  question.state === 'Open' && question.answer.trim() === '';
+
 // RF-1007
 export async function withStates(
   cards: PriorCards,

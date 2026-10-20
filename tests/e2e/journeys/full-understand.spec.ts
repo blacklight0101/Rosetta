@@ -1,3 +1,4 @@
+import type { Locator, Page, TestInfo } from '@playwright/test';
 import { expect, test } from '../support/fixtures.js';
 import { expectNoSeriousViolations } from '../support/axe.js';
 import { openHistory, runRow } from '../support/history-page.js';
@@ -29,6 +30,40 @@ import { inEveryView } from '../support/views.js';
 
 const claim = (page: Parameters<typeof agentPanel>[0], id: string) =>
   page.getByRole('region', { name: 'Claims' }).getByTestId('claim').filter({ hasText: id });
+
+const journeyOf = (page: Page) =>
+  page.getByRole('region', { name: 'Journey from code to package' });
+
+/** DEC-154: with a question open, the journey offers the defaults, which open the brief. */
+async function goOnWithTheDefaultsAndBack(page: Page): Promise<void> {
+  await journeyOf(page).getByRole('button', { name: 'Go on with the defaults' }).click();
+  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}\/plan-setup\?run=[0-9a-f-]{36}$/u);
+  await page.goBack();
+}
+
+/** DEC-154, RNF-010: both actions of the journey fit and pass axe at 360 px, light and dark. */
+async function expectActionsFit(page: Page, info: TestInfo): Promise<void> {
+  await transitionsDone(page);
+  await inEveryView(page, info, async () => {
+    await expect(
+      journeyOf(page).getByRole('button', { name: 'Go on with the defaults' }),
+    ).toBeVisible();
+    const fits = await page.evaluate(
+      'document.documentElement.scrollWidth <= document.documentElement.clientWidth',
+    );
+    expect(fits).toBe(true);
+    await expectNoSeriousViolations(page);
+  });
+}
+
+/** DEC-154: the saved answer moves the journey on to the brief, with no reload of the page. */
+async function expectJourneyMovedOn(page: Page, question: Locator): Promise<void> {
+  const journey = journeyOf(page);
+  await expect(question.getByTestId('status-badge')).toHaveText('Answer saved');
+  await expect(journey.getByRole('button', { name: 'Set up the plan' })).toBeVisible();
+  await expect(journey.getByRole('button', { name: /^Answer / })).toHaveCount(0);
+  await expect(journey.getByRole('button', { name: 'Go on with the defaults' })).toHaveCount(0);
+}
 
 test.describe.configure({ mode: 'serial' });
 
@@ -72,15 +107,19 @@ test('RF-240 RF-241 RF-1007 the owner answers the open question and the area run
   await runRow(page, '-understand')
     .getByRole('link', { name: /^View run /u })
     .click();
-  await openRunTab(page, 'Your questions');
+  await goOnWithTheDefaultsAndBack(page);
   const question = page
     .getByRole('region', { name: 'Open questions' })
     .getByTestId('open-question')
     .filter({ hasText: 'OQ-001' });
+  await journeyOf(page).getByRole('button', { name: 'Answer 1 question' }).click();
+  await expect(question.getByLabel('Answer to OQ-001')).toBeFocused();
+  await expectActionsFit(page, info);
   await expect(question).toContainText('Open');
   await question.getByLabel('Answer to OQ-001').fill(answerToOq001);
   await question.getByRole('button', { name: 'Save answer' }).click();
   await expect(question).toContainText('Answer saved in answers.md.');
+  await expectJourneyMovedOn(page, question);
 
   await page.getByRole('link', { name: 'Start page' }).click();
   const rerun = page.getByRole('checkbox', { name: 'Re-run with answers', exact: false });
