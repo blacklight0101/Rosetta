@@ -8,14 +8,14 @@ import {
   type Endpoint,
   type RefBox,
 } from './reference-box.js';
-import { isWordChar, Scanner } from './formula-scanner.js';
+import type { EditRecorder } from './external-edit.js';
+import { isWordChar, MAX_BRACKET, Scanner } from './formula-scanner.js';
 
 // RF-153, ADR-023, RFC-005 section 4.5: Rosetta's own tokenizer for Excel formulas. It returns the
 // references a formula holds and nothing else: cells, ranges, whole columns and rows, sheet-qualified
-// and quoted sheets, three-dimensional spans, external workbooks, structured table references and
-// defined names; strings, numbers, functions and operators are skipped. A formula is never evaluated:
-// `INDIRECT` and `OFFSET` are reported as dynamic. One pass moves forward over the text, the number of
-// references is capped, and a range stays one range whatever its size.
+// and quoted sheets, three-dimensional spans, external workbooks, structured table references and defined
+// names; strings, numbers, functions and operators are skipped. A formula is never evaluated: `INDIRECT`
+// and `OFFSET` are dynamic. One forward pass; the reference count is capped; a range stays one range.
 
 type BookRef = { readonly index: number } | { readonly name: string };
 
@@ -40,17 +40,25 @@ export interface ExtractOptions {
    * word that could be a name is reported.
    */
   readonly names?: ReadonlySet<string>;
+  /** Receives the place of the workbook part of each external reference (see `external-edit`). */
+  readonly recorder?: EditRecorder;
 }
 
 export interface ExtractedReferences {
   readonly references: readonly FormulaReference[];
   /** True when the formula was cut at the length limit or had more references than the limit. */
   readonly truncated: boolean;
+  /** Where the reading stopped because of the reference limit, if it did. */
+  readonly stoppedAt?: number;
+  /** Where the last token read began. */
+  readonly lastStep: number;
 }
 
 /** The references kept for one formula; a formula with more says so (`truncated`). */
 export const MAX_REFERENCES_PER_FORMULA = 4096;
 
+/** A word of a share path (`\\server\share\`): a table name has no two backslashes. */
+const UNC_PATH = /^\\\\|\\.*\\/u;
 const FUNCTION_PREFIX = /^_XL(?:FN|WS|UDF)\./u;
 
 function baseName(path: string): string {
@@ -92,15 +100,23 @@ class Parser {
   private overflow = false;
   private readonly scan: Scanner;
   private readonly names: ReadonlySet<string> | undefined;
+  private readonly recorder: EditRecorder | undefined;
+  private stepStart = 0;
 
   constructor(formula: string, options: ExtractOptions) {
     this.scan = new Scanner(formula);
     this.names = options.names;
+    this.recorder = options.recorder;
   }
 
   run(): ExtractedReferences {
     while (!this.scan.atEnd && !this.full) this.step();
-    return { references: this.references, truncated: this.overflow || this.scan.cut };
+    return {
+      references: this.references,
+      truncated: this.overflow || this.scan.cut,
+      ...(this.full ? { stoppedAt: this.scan.pos } : {}),
+      lastStep: this.stepStart,
+    };
   }
 
   private push(reference: FormulaReference): void {
@@ -113,6 +129,7 @@ class Parser {
   }
 
   private step(): void {
+    this.stepStart = this.scan.pos;
     const char = this.scan.peek();
     if (char === '"') this.scan.skipString();
     else if (char === "'") this.quoted();
@@ -148,21 +165,38 @@ class Parser {
   }
 
   private quoted(): void {
+    const start = this.scan.pos;
     const inner = this.scan.readQuoted();
-    if (inner === undefined || this.scan.peek() !== '!') return;
+    const followed = this.scan.peek() === '!';
+    this.recorder?.quoted(start, this.scan.pos, followed || !this.scan.quoteClosed);
+    if (inner === undefined || !followed) return;
     this.scan.pos += 1;
     this.afterPrefix(scopeOfQuoted(inner));
   }
 
   /** `[1]Sheet!A1`, `[Book.xlsx]Sheet!A1` and `[1]!Name`, or a structured reference with no table name. */
   private bracket(): void {
+    const start = this.scan.pos;
     const spec = this.scan.readBracket();
-    if (!spec.endsWith(']') || spec.length < 2) return;
+    if (!spec.endsWith(']') || spec.length < 2) {
+      this.longBracket(start, spec);
+      return;
+    }
     const inner = spec.slice(1, -1);
     const structured = inner.includes('[') || inner.startsWith('@') || inner.startsWith('#');
     const scope = structured ? undefined : this.externalScope(inner);
     if (scope === undefined) this.push({ kind: 'table', spec });
-    else this.afterPrefix(scope);
+    else {
+      this.recorder?.bracket(start, start + spec.length);
+      this.afterPrefix(scope);
+    }
+  }
+
+  /** A bracket group the scanner cut: the recorder may read it to its end to hide a path. */
+  private longBracket(start: number, spec: string): void {
+    if (this.recorder === undefined || spec.length < MAX_BRACKET) return;
+    const next = this.recorder.long(start, this.scan.pos);
+    if (next !== undefined) this.scan.pos = next;
   }
 
   /** The scope after `[book]` when a sheet and `!` follow, else undefined with the position kept. */
@@ -191,13 +225,18 @@ class Parser {
   private classify(word: string, scope: SheetScope): void {
     const next = this.scan.peek();
     if (next === '(') this.call(word);
-    else if (next === '[' && startsName(word)) {
-      this.push({ kind: 'table', table: word, spec: this.scan.readBracket() });
-    } else if (this.names?.has(word.toLowerCase()) === true) {
+    else if (next === '[' && startsName(word)) this.tableOrShare(word);
+    else if (this.names?.has(word.toLowerCase()) === true) {
       this.push({ kind: 'name', scope, name: word });
     } else if (!this.range(word, scope) && this.isNameLike(word, scope)) {
       this.push({ kind: 'name', scope, name: word });
     }
+  }
+
+  /** `Table1[Price]`, or the bracket after a share path (`\\server\share\[Book.xlsx]`) when rewriting. */
+  private tableOrShare(word: string): void {
+    if (this.recorder !== undefined && UNC_PATH.test(word)) this.bracket();
+    else this.push({ kind: 'table', table: word, spec: this.scan.readBracket() });
   }
 
   private isNameLike(word: string, scope: SheetScope): boolean {

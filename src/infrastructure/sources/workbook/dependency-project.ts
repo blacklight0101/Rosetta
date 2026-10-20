@@ -1,5 +1,5 @@
 import { buildGrid, type SheetGrid } from './dependency-grid.js';
-import { fileNameOf } from './external-names.js';
+import { fileNameOf } from './external-edit.js';
 import { extractReferences } from './formula-references.js';
 import type { RefBox } from './reference-box.js';
 import type { TableShape } from './table-reference.js';

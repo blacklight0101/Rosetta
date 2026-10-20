@@ -7,7 +7,7 @@
 export const MAX_FORMULA_CHARS = 32_768;
 const MAX_WORD = 255;
 const MAX_QUOTED = 1000;
-const MAX_BRACKET = 1000;
+export const MAX_BRACKET = 1000;
 const MAX_ERROR = 12;
 
 /** A letter, digit, `_`, `.`, `$`, `\` or any character beyond ASCII (names may use them). */
@@ -22,6 +22,8 @@ export class Scanner {
   readonly text: string;
   /** True when the formula was longer than `MAX_FORMULA_CHARS`. */
   readonly cut: boolean;
+  /** Whether the last quoted name read had its closing quote. */
+  quoteClosed = false;
 
   constructor(formula: string) {
     this.cut = formula.length > MAX_FORMULA_CHARS;
@@ -81,6 +83,7 @@ export class Scanner {
       const char = this.text.charAt(at);
       if (char === "'" && this.text.charAt(at + 1) !== "'") {
         this.pos = at + 1;
+        this.quoteClosed = true;
         return tooLong ? undefined : decoded;
       }
       if (decoded.length < MAX_QUOTED) decoded += char;
@@ -88,6 +91,7 @@ export class Scanner {
       at += char === "'" ? 2 : 1;
     }
     this.pos = this.text.length;
+    this.quoteClosed = false;
     return undefined;
   }
 
