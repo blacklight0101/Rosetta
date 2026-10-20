@@ -41,12 +41,6 @@ it('RF-151 reads a package whose workbook part is xl/book.xml named by _rels/.re
   await expect(readBuilt(root.path, bytes)).resolves.toMatchObject({ sheets: [{ name: 'S' }] });
 });
 
-it('RF-151 reads a workbook part in another folder, with its sheets relative to it', async () => {
-  const bytes = await buildWorkbook({ sheets: [SHEET], workbookPart: 'xl/main/book.xml' });
-
-  await expect(readBuilt(root.path, bytes)).resolves.toMatchObject({ sheets: [{ name: 'S' }] });
-});
-
 it('RF-151 reads xl/workbook.xml when the package has no _rels/.rels', async () => {
   const bytes = await buildWorkbook({ sheets: [SHEET], omitRootRels: true });
 

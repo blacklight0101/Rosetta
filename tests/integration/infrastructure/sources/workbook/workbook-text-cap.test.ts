@@ -1,7 +1,9 @@
+import { execFile } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
 import { expect, it } from 'vitest';
 import { RosettaError } from '../../../../../src/domain/errors/rosetta-error.js';
-import { DEFAULT_WORKBOOK_LIMITS } from '../../../../../src/infrastructure/sources/workbook/workbook-limits.js';
 import { useWritableTempRoot } from '../../../../support/writable-temp-root.js';
 import {
   buildWorkbook,
@@ -12,11 +14,13 @@ import {
   type ReadOptions,
   type WorkbookSpec,
 } from '../../../../support/workbook-fixtures.js';
+import { writeZipFile } from '../../../../support/zip-fixtures.js';
 
 // RF-151: one XML text value is capped, so a single huge node cannot take several times its size
 // in memory. The parser holds a text node whole until the next tag, so the cap is judged while the
 // node grows, not after it has been read.
 
+const run = promisify(execFile);
 const root = useWritableTempRoot('rosetta-workbook-text-');
 
 const MAIN_NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
@@ -100,22 +104,18 @@ it('RF-151 names the limit in the message', async () => {
   expect(failure.message).toContain('1000');
 });
 
-it('RF-151 refuses a 100 MB text node and stays within a small multiple of the cap in memory', async () => {
-  const spec = sharedStringsWith(`<t>${incompressible(100_000_000)}</t>`);
-  const bytes = await buildWorkbook(spec);
-  const base = process.memoryUsage().rss;
-  let peak = base;
-  const sampler = setInterval(() => {
-    peak = Math.max(peak, process.memoryUsage().rss);
-  }, 5);
+it('RF-151 refuses a 100 MB text node inside an 80 MB heap', async () => {
+  const bytes = await buildWorkbook(sharedStringsWith(`<t>${incompressible(100_000_000)}</t>`));
+  const path = await writeZipFile(join(root.path, 'upload'), 'Big.xlsx', bytes);
+  const args = [
+    '--max-old-space-size=80',
+    '--import',
+    './scripts/register-ts.mjs',
+    'tests/support/text-cap-child.ts',
+    path,
+  ];
 
-  try {
-    await expect(readBuilt(root.path, bytes)).rejects.toMatchObject({ code: 'RST-1926' });
-  } finally {
-    clearInterval(sampler);
-  }
+  const { stdout } = await run(process.execPath, args, { timeout: 100_000, encoding: 'utf8' });
 
-  const cap = DEFAULT_WORKBOOK_LIMITS.maxTextChars;
-  expect(cap).toBeGreaterThan(0);
-  expect(peak - base).toBeLessThan(cap * 8);
+  expect(stdout).toBe('RST-1926');
 }, 120_000);

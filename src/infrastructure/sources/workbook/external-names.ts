@@ -1,4 +1,5 @@
 import { applyEdits, EditRecorder, fileNameOf } from './external-edit.js';
+import { linkNamesByNumber } from './external-link-numbers.js';
 import { extractReferences } from './formula-references.js';
 import { MAX_FORMULA_CHARS } from './formula-scanner.js';
 import type { ConditionalRule, DataValidationRule, WorkbookModel } from './workbook-model.js';
@@ -143,7 +144,7 @@ function plainRule<T extends DataValidationRule | ConditionalRule>(
  * external workbook. Only what may hold one is copied; the rest is shared with the original.
  */
 export function plainModel(model: WorkbookModel): WorkbookModel {
-  const links = model.externalLinks.map((link) => link.fileName);
+  const links = linkNamesByNumber(model.externalLinks);
   return {
     ...model,
     definedNames: model.definedNames.map((name) => ({
