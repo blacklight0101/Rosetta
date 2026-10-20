@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 64      | 5         | 57         | 2         | 0                  | 21      | 41      | 2      | 20         | 0         |
-| **Total**               | **281** | **77**    | **177**    | **27**    | **0**              | **137** | **132** | **12** | **155**    | **0**     |
+| P3 Report and plan      | 65      | 5         | 58         | 2         | 0                  | 21      | 42      | 2      | 21         | 0         |
+| **Total**               | **282** | **77**    | **178**    | **27**    | **0**              | **137** | **133** | **12** | **156**    | **0**     |
 
 ## Conventions for every card
 
@@ -3807,3 +3807,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the guard, the error code and tests.
 - **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-401, RF-421, DEC-114, DEC-155; issue #678.
+
+### P3-65 - Follow-up: choose each role's model from a list
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-405 (the DEC-156 scenarios), RF-401, RF-427; DEC-156; `web/src/pages/AdminModelsPage.tsx` and the project model settings page; `prices/default-prices.yaml` and its loader `src/infrastructure/budget/price-file.ts`; `src/infrastructure/providers/ollama/ollama-provider.ts` (`/api/tags`); `docs/design-system.md`; ADR-006 (egress) and the session and role rules of the routes.
+- **Do**: add `prices/models.yaml` (provider, model, label) with the DEC-156 models and its parsed loader; a signed-in route that returns, per provider, the listed models with whether each has a price, and for `ollama` the models installed on the configured Ollama server (`/api/tags`, short timeout, a failure returns an empty list and a reason, never an error page); replace the model text field on both pages with a select built from it plus "Other model..." that shows the text field; keep a saved model that is not listed selected under "Other model..."; changing the provider resets the model choice. Use the existing Ollama adapter code to read the tags (no provider SDK outside its adapter); the route reads only the server's configured Ollama URL, never one from the request.
+- **Review probes**: anthropic and openai lists; a listed model without a price ("no price"); "Other model..." saves free text; a saved unlisted model; Ollama with models, Ollama down (text field and note, save works), Ollama slow (timeout); the route signed out (401) and as a non-admin on the admin page; no URL taken from the request; keyboard and screen reader; 360 px, light and dark, axe.
+- **Behaviour to preserve**: saved defaults and project models unchanged; RF-427 unpriced handling; the template default option.
+- **Delivers**: the list file, the route, the two pages and tests.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-405, RF-401, RF-427, DEC-156; issue #682.

@@ -832,11 +832,13 @@ As a developer I want to use Claude models with prompt caching so that long agen
 - Given an Anthropic key and model, when a role uses provider `anthropic`, then calls succeed with tool calling, the stable prompt prefix is marked for caching, and cached-token usage is reported.
   Verification: contract test with recorded responses; one manual live call.
 
-**RF-405 Model per role** - R1 (M1) - Must - Source DEC-09 - ADR-003
+**RF-405 Model per role** - R1 (M1) - Must - Source DEC-09, DEC-156 - ADR-003
 As a developer I want to choose the provider and model for each role so that I can balance cost and quality.
 
 - Given a configuration that sets `reader`, `verifier`, `planner` and `summariser` to different providers and models, when a run uses each role, then each call goes to its configured model and the cost report shows them separately.
-  Verification: integration test with two fake providers.
+- Given the Default models page or a project's model settings (DEC-156), when a role's provider is `anthropic` or `openai`, then the model is chosen from a dropdown of the models in the shipped model list (`prices/models.yaml`, versioned like the price table), each without a price in the price table marked "no price", with a last option "Other model..." that shows the text field; a saved model not on the list stays selected under "Other model...".
+- Given the provider `ollama`, when the page opens, then the server asks the configured Ollama server for its installed models (`/api/tags`) and offers them in the same dropdown with "Other model..."; when Ollama cannot be reached within a short timeout, the text field is shown with a note, and saving still works.
+  Verification: integration test with two fake providers; component tests of the dropdown, the "Other model..." field and the Ollama fallback; integration test of the installed-models route with a recorded Ollama response.
 
 **RF-406 Retry and fail cleanly** - R1 (M1) - Must - Source RFC-001 failure paths - ADR-003
 As a developer I want temporary provider errors retried and permanent ones to stop only the affected task so that a run survives hiccups.
