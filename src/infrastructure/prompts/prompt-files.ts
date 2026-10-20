@@ -15,7 +15,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // before any run uses it.
 
 const readerPromptNames = {
-  system: 'reader/area.v3.md',
+  system: 'reader/area.v4.md',
   cardFormat: 'cards/card-format.v2.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
@@ -25,10 +25,10 @@ const readerPromptNames = {
 } as const;
 
 /** RF-155: added only to areas that hold a rendered workbook. */
-const workbookPromptName = 'reader/workbook.v1.md';
+const workbookPromptName = 'reader/workbook.v2.md';
 
 const answersPromptName = 'reader/answers.v1.md';
-const rereadPromptName = 'reader/reread.v1.md';
+const rereadPromptName = 'reader/reread.v2.md';
 
 /** RF-260, RF-261: fragments of the card format, added only to areas the code map marks (Q-25). */
 const surfacePromptNames = { flows: 'cards/flows.v1.md', screens: 'cards/screens.v2.md' } as const;
