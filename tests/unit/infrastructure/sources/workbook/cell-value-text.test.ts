@@ -66,6 +66,11 @@ it('RF-152 leaves a number alone when its format is not a date or its serial is 
   expect(withFormat(0.5, 'yyyy-mm-dd')).toBe('1900-01-00');
 });
 
+it('RF-152 does not analyse a format code of more than 256 characters', () => {
+  expect(withFormat(45000, 'd'.repeat(300))).toBe('45000');
+  expect(withFormat(45000, 'd'.repeat(200))).toBe('2023-03-15');
+});
+
 it('RF-152 passes a stored date through when it is an ISO date', () => {
   expect(bareValue(cell('A1', { type: 'date', value: '2026-03-01T10:00:00Z' }), false)).toBe(
     '2026-03-01T10:00:00Z',

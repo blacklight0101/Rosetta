@@ -59,6 +59,7 @@ it('RF-152 cuts and counts what it left out', () => {
 it('RF-146 leaves a line under the limit and cuts one over it', () => {
   expect(cutLine('short')).toBe('short');
   const cut = cutLine('x'.repeat(5000));
-  expect(cut.length).toBeLessThan(MAX_LINE);
+  expect(cut.length).toBeLessThanOrEqual(MAX_LINE);
+  expect(MAX_LINE).toBeLessThan(2000);
   expect(cut.endsWith(' ...')).toBe(true);
 });

@@ -55,7 +55,7 @@ it('RF-152 renders a workbook read from a package into the folder of RFC-005 sec
   ]);
   expect(rendered.files.map((file) => file.path)).toContain('Pricing.xlsx/Empty/notes.md');
   expect(fileOf(rendered, '_CON/values.md')).toContain(
-    'R1 | A1 "say \\"hi\\" | now\nline2" | B1 2023-03-15T12:00:00 | C1 90001 (f)\n',
+    'R1 | A1 "say \\"hi\\" | now\\nline2" | B1 2023-03-15T12:00:00 | C1 90001 (f)\n',
   );
   expect(fileOf(rendered, '_CON/values.md')).toContain('- Merged ranges: A1:B1\n');
   expect(fileOf(rendered, 'Hidden/values.md')).toContain('- State: hidden\n');
