@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "description": "Three models installed on the server, as /api/tags lists them (name and digest). Hand-written in the documented shape of Ollama's /api/tags answer; no real server was called (ADR-008).",
+  "models": [
+    {
+      "name": "llama3.2:3b",
+      "digest": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    {
+      "name": "gemma4:e4b",
+      "digest": "2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    {
+      "name": "qwen3:8b",
+      "digest": "3333333333333333333333333333333333333333333333333333333333333333"
+    }
+  ],
+  "chat": []
+}

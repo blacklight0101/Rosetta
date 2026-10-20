@@ -20,6 +20,7 @@ import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password
 import { bootstrapAdministrator, composeAuth, reEncryptProviderKeys } from './compose-accounts.js';
 import type { Auth } from './compose-accounts.js';
 import { composeHistory } from './compose-history.js';
+import { composeModels } from './compose-models.js';
 import { checkSchema } from './compose-migrations.js';
 import { serverKeyPresence } from './server-key-presence.js';
 import { composeProjects } from './compose-projects.js';
@@ -156,6 +157,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     projects,
     runs: runs.services,
     history: composeHistory({ pool, logger, dataDir: environment.dataDir }),
+    models: await composeModels({ environment, priceTable: auth.priceTable }),
     ...{ version, publicUrl: environment.publicUrl, trustProxy: environment.trustProxy },
     contactEmail: environment.contactEmail,
     uploadMaxMb: environment.uploadMaxMb,
