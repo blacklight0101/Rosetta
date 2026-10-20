@@ -3709,7 +3709,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-44, P3-47, P3-51
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-151, RF-153 and its privacy rule (Q-38); the workbook reader (`package-reader.ts`, `workbook-xml-reader.ts`), the external-link naming and `workbook-cell-label.ts`; the P3-44 and P3-51 verdicts (#638, #640).
 - **Do**: (1) an external-link target that is double-encoded (`Book.xlsx%253Ftoken=SECRET`) keeps no query or fragment after decoding, at any depth of encoding, and a target that is only a query, fragment or host gives no empty file name (it is dropped and counted); (2) workbook and sheet names in the evidence cell label are capped, with the cut marked, so a long name cannot flood a page; (3) the reader finds the workbook part through `_rels/.rels` and the styles, shared-strings and connections parts through the workbook relationships instead of fixed paths, so a valid package with another layout is read and one whose relationships point outside the package is refused with its code; (4) one XML text node is capped so a single 100 MB value cannot take several times its size in memory; it is refused with its RF-151 code.
 - **Review probes**: `%253F`, `%25253F` and `%2523` in a link target; a link target of only `?a=b`; a 500-character sheet name in a citation; a package whose workbook part is `xl/book.xml` named by `_rels/.rels`; a relationship target of `../../etc/passwd`; a 100 MB single text node (memory stays within a small multiple of the cap).
