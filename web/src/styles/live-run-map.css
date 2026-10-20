@@ -77,7 +77,7 @@
 .rst-codemap {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-auto-rows: 56px;
+  grid-auto-rows: minmax(56px, auto);
   gap: var(--rst-sp-2);
   max-block-size: 36rem;
   margin: 0;
@@ -154,31 +154,50 @@ button.rst-tile:hover {
 
 .rst-tile__name {
   min-inline-size: 0;
-  overflow: hidden;
   font-size: var(--rst-fs-sm);
   font-weight: var(--rst-fw-label);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
 }
 
+/* The sub-line wraps: its words are never cut with an ellipsis. */
 .rst-tile__meta {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--rst-sp-1);
   min-inline-size: 0;
   color: var(--rst-ink-muted);
   font-size: var(--rst-fs-xs);
-  white-space: nowrap;
 }
 
 .rst-tile__meta .rst-glyph {
   flex: none;
+  margin-block-start: 1px;
 }
 
 .rst-tile__words {
   min-inline-size: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
+}
+
+/* The whole name of an area, over the tile, while the pointer or the keyboard is on it. */
+.rst-tile__full {
+  display: none;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 1;
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  background: var(--rst-surface);
+  box-shadow: var(--rst-shadow-2);
+  color: var(--rst-ink);
+  font-family: var(--rst-mono);
+  font-size: var(--rst-fs-xs);
+  overflow-wrap: anywhere;
+}
+
+.rst-tile:hover .rst-tile__full,
+.rst-tile:focus-visible .rst-tile__full {
+  display: block;
 }
 
 .rst-tile--waiting {

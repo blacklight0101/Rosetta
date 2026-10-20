@@ -25,6 +25,8 @@ export const stateLists = {
   ClaimStatus: ['Proposed', 'CitationInvalid', 'Supported', 'Rejected', 'Unverified'],
   CardType: ['FEAT', 'BR', 'ENT', 'INT', 'OQ', 'FLOW', 'SCRN'],
   OpenQuestionState: ['Open', 'Answered'],
+  /** DEC-154: how a question is shown; not a domain state list, so not in architecture.md. */
+  QuestionShown: ['Open', 'Answer saved', 'Answered'],
   AgentTaskState: [
     'Planned',
     'Running',
@@ -68,6 +70,11 @@ export const badgeSpecs: SpecTable = {
   },
   OpenQuestionState: {
     Open: badge('Open', 'warn', 'tint', 'question'),
+    Answered: badge('Answered', 'ok', 'tint', 'check'),
+  },
+  QuestionShown: {
+    Open: badge('Open', 'warn', 'tint', 'question'),
+    'Answer saved': badge('Answer saved', 'info', 'tint', 'check'),
     Answered: badge('Answered', 'ok', 'tint', 'check'),
   },
   AgentTaskState: {

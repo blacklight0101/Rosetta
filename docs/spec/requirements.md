@@ -605,11 +605,12 @@ As a developer I want each agent to explore its area with tools so that it reads
 - Given a tool call with invalid arguments, when it is executed, then the agent receives an error result it can correct, and the error is logged.
   Verification: integration tests with recorded responses including a bad tool call.
 
-**RF-202 Produce valid cards** - R1 (M1) - Must - Source DEC-18 - ADR-005
+**RF-202 Produce valid cards** - R1 (M1) - Must - Source DEC-18, DEC-157 - ADR-005
 As a developer I want every agent result in one strict card format so that cards can be checked and rendered.
 
 - Given an agent's final answer, when it is parsed, then each card validates against the card schema: type, title, area, summary, claims, each claim with at least one citation, confidence, and for `OQ` the question and why it matters.
 - Given invalid output, when parsing fails, then the agent gets one repair attempt with the validation errors; if that also fails, the raw output is saved and the task is marked `invalid output`.
+- Given an area where many controls or cells repeat the same wiring (for example 42 day buttons that each call one handler), when the reader writes its cards (DEC-157), then the repeated wiring is one claim that names the shared behaviour and lists the controls or the range they cover, citing one or more representative lines, instead of one claim per control; a control that differs from the pattern keeps its own claim.
   Verification: unit tests on the schema and parser; integration test of the repair path.
 
 **RF-203 Stable card ids** - R1 (M1) - Must - Source DEC-18 - ADR-005
@@ -653,7 +654,7 @@ As a developer I want an agent's good cards kept and its failed work retried so 
 - Given a run in which some areas failed, when it ends, then its end state and summary say how many areas failed and why; it is never shown as a plain success.
   Verification: unit tests of the parser on answers recorded in the owner's 2026-10-14 runs; integration tests of the second repair, the continuation and the task retry with recorded responses.
 
-**RF-209 Deepen a completed run** - R1 - Should - Source RFC-003, DEC-144, DEC-145 - ADR-005, ADR-007
+**RF-209 Deepen a completed run** - R1 - Should - Source RFC-003, DEC-144, DEC-145, DEC-158 - ADR-005, ADR-007
 As a developer I want to send Rosetta back over what it did not confirm so that more of my application is understood, with evidence, at a cost I approved.
 
 - Given an understand run that ended `Completed`, when I press Deepen, then the page shows the estimate for one round and the maximum for all rounds against my caps, and starts nothing until I confirm; the coverage pass is ticked by default and can be unticked.
@@ -661,13 +662,15 @@ As a developer I want to send Rosetta back over what it did not confirm so that 
 - Given a rejected claim whose citations are all in third-party or generated code, when a round is planned, then it is not re-read and the summary lists it as out of scope with that reason.
 - Given a round that adds no new `Supported` claim and reads no new first-party file, when it ends, then the Deepen run ends with the stop reason "no progress"; it also ends at the round limit (default 3, allowed 1 to 5), at a cap (`CapReached`, resumable with RF-006) or when I press Stop.
 - Given a re-read that produces a claim for a rejected one, when results are written, then the new claim records the id it replaces, the rejected claim stays `Rejected` with its reason, and a replacement that is rejected again is not re-read in the same Deepen.
+- Given a re-read or a reading of a never-read file in a Deepen (DEC-158), when its reader task is planned, then the task lists the cards the parent run already holds for the area (id, type and title), and the reader writes a new card only for a fact that no listed card holds; a fact about a listed card is written as a claim of that card.
 - Given a Deepen run that ended, when I open it, then it can be deepened again as a new linked run; Deepen never starts by itself at the end of a run.
   Verification: integration tests with recorded responses for each stop reason; unit tests of the round planner and the stop rule.
 
-**RF-230 Coverage per area** - R1 - Must - Source RFC-001 risks, DEC-144 - ADR-005
+**RF-230 Coverage per area** - R1 - Must - Source RFC-001 risks, DEC-144, DEC-158 - ADR-005
 As a developer I want to know which files each agent actually read so that silent gaps are visible.
 
 - Given a finished agent task, when results are written, then a coverage table lists every file in the area as read (with line ranges) or not read, and the run summary shows the percentage of first-party tokens read, with third-party and generated code shown apart (RF-231).
+- Given a run over a subset of the areas (DEC-158), when its coverage map is shown, then the areas the run was not asked to read are listed apart as "not in this run" and are not counted as not read.
   Verification: integration test with the fake provider.
 
 **RF-231 Honest understanding measures** - R1 - Must - Source RFC-003, DEC-144, DEC-145 - ADR-005
@@ -832,11 +835,13 @@ As a developer I want to use Claude models with prompt caching so that long agen
 - Given an Anthropic key and model, when a role uses provider `anthropic`, then calls succeed with tool calling, the stable prompt prefix is marked for caching, and cached-token usage is reported.
   Verification: contract test with recorded responses; one manual live call.
 
-**RF-405 Model per role** - R1 (M1) - Must - Source DEC-09 - ADR-003
+**RF-405 Model per role** - R1 (M1) - Must - Source DEC-09, DEC-156 - ADR-003
 As a developer I want to choose the provider and model for each role so that I can balance cost and quality.
 
 - Given a configuration that sets `reader`, `verifier`, `planner` and `summariser` to different providers and models, when a run uses each role, then each call goes to its configured model and the cost report shows them separately.
-  Verification: integration test with two fake providers.
+- Given the Default models page or a project's model settings (DEC-156), when a role's provider is `anthropic` or `openai`, then the model is chosen from a dropdown of the models in the shipped model list (`prices/models.yaml`, versioned like the price table), each without a price in the price table marked "no price", with a last option "Other model..." that shows the text field; a saved model not on the list stays selected under "Other model...".
+- Given the provider `ollama`, when the page opens, then the server asks the configured Ollama server for its installed models (`/api/tags`) and offers them in the same dropdown with "Other model..."; when Ollama cannot be reached within a short timeout, the text field is shown with a note, and saving still works.
+  Verification: integration test with two fake providers; component tests of the dropdown, the "Other model..." field and the Ollama fallback; integration test of the installed-models route with a recorded Ollama response.
 
 **RF-406 Retry and fail cleanly** - R1 (M1) - Must - Source RFC-001 failure paths - ADR-003
 As a developer I want temporary provider errors retried and permanent ones to stop only the affected task so that a run survives hiccups.
