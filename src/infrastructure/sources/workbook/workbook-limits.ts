@@ -12,6 +12,8 @@ export interface WorkbookLimits {
   readonly maxCells: number;
   /** One XML part once inflated (RF-151: 200 MB). */
   readonly maxPartBytes: number;
+  /** One XML text value or attribute, in characters (RST-1926); the parser holds a node whole. */
+  readonly maxTextChars: number;
   /** The zip guards of RF-129 applied to the package. */
   readonly zip: ZipExtractionLimits;
   /** The bounds on the VBA project of an `.xlsm` (RF-154). */
@@ -21,12 +23,14 @@ export interface WorkbookLimits {
 }
 
 const MAX_PART_BYTES = 200 * 1024 * 1024;
+const MAX_TEXT_CHARS = 8 * 1024 * 1024;
 
 export const DEFAULT_WORKBOOK_LIMITS: WorkbookLimits = {
   maxFiles: 20,
   maxSheets: 200,
   maxCells: 2_000_000,
   maxPartBytes: MAX_PART_BYTES,
+  maxTextChars: MAX_TEXT_CHARS,
   zip: DEFAULT_ZIP_LIMITS,
   macros: DEFAULT_MACRO_LIMITS,
 };

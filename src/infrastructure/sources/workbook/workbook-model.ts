@@ -93,6 +93,8 @@ export interface DefinedName {
 export interface ExternalLink {
   /** Only the file name of the target (Q-38); the file is never opened. */
   readonly fileName: string;
+  /** The link number a formula uses (1-based), only when a dropped link before it shifts it. */
+  readonly position?: number;
 }
 
 export interface DataConnection {
@@ -107,6 +109,8 @@ export interface WorkbookModel {
   readonly sheets: readonly WorkbookSheet[];
   readonly definedNames: readonly DefinedName[];
   readonly externalLinks: readonly ExternalLink[];
+  /** External links with no usable file name, left out of `externalLinks`; absent when none. */
+  readonly unnamedExternalLinks?: number;
   readonly connections: readonly DataConnection[];
   /** True when the package holds `xl/vbaProject.bin`. */
   readonly hasMacros: boolean;
