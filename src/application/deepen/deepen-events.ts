@@ -9,7 +9,7 @@ import { cardsOf, type DeepenState } from './deepen-state.js';
 // cards it starts from, each round as it begins and as it ends, and why it stopped. Counts only,
 // never claim text, so the events stay small; the page reads the claims themselves from the run.
 
-/** The cards and claims a Deepen starts from; the four groups of claims add up to . */
+/** The cards and claims a Deepen starts from; the four groups of claims add up to the claims. */
 export interface SeededCounts {
   readonly cards: number;
   readonly claims: number;
@@ -29,7 +29,7 @@ export function seededCounts(cards: readonly Card[]): SeededCounts {
     claims: claims.length,
     supported: count((status) => status === 'Supported'),
     rejected: count((status) => status === 'Rejected'),
-    citationInvalid: 0,
+    citationInvalid: count((status) => status === 'CitationInvalid'),
     notJudged: count((status) => status === 'Unverified' || status === 'Proposed'),
   };
 }

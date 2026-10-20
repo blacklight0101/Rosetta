@@ -134,6 +134,8 @@ export const deepenStartedData = z.looseObject({
     claims: count,
     supported: count,
     rejected: count,
+    /** Absent from events written before the group existed (RF-209). */
+    citationInvalid: count.optional(),
     notJudged: count,
   }),
 });
