@@ -48,8 +48,10 @@ function hiddenFrom(text: string, from: number, open: number): number {
 function looseHide(text: string): string {
   let out = '';
   let from = 0;
+  let close = -1;
   for (let open = text.indexOf('['); open >= 0; open = text.indexOf('[', from)) {
-    const close = text.indexOf(']', open + 1);
+    // The close is searched once per run of nested brackets, not again from every inner one.
+    if (close < open) close = text.indexOf(']', open + 1);
     if (close < 0) break;
     const inner = text.indexOf('[', open + 1);
     if (inner >= 0 && inner < close) {
