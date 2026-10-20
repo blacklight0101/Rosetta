@@ -78,6 +78,27 @@ describe('RF-209 the cards a Deepen task is given', () => {
 
     expect(task?.extendable).toEqual(['ENT-001', 'BR-001']);
   });
+});
+
+describe('RF-209 which of the listed cards a Deepen task may add to', () => {
+  it('RF-209 lists an open question but offers only the other types to add a claim to', () => {
+    const withQuestion: TaskCards = {
+      ...orders,
+      drafts: [
+        ...orders.drafts,
+        {
+          ...draftOf({ type: 'OQ', title: 'Who may cancel?' }),
+          question: 'Who?',
+          whyItMatters: 'Rules.',
+        },
+      ],
+    };
+
+    const [task] = roundTasks(reread, agentCodeMap, 3, cardsOf(withQuestion));
+
+    expect(JSON.stringify(listed(task))).toContain('OQ-001');
+    expect(task?.extendable).toEqual(['ENT-001', 'BR-001']);
+  });
 
   it('RF-209 lists a card merged from several areas under each of them', () => {
     const merged: Card[] = cardsOf(billing).map((card) => ({

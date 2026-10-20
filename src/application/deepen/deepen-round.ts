@@ -1,5 +1,6 @@
 import { isCapStop } from '../../domain/budget/cap-stop.js';
 import type { Card } from '../../domain/cards/card.js';
+import { extendCards } from '../../domain/cards/card-extension.js';
 import { assignCardIds } from '../../domain/cards/card-ids.js';
 import type { DeepenRound } from '../../domain/deepen/deepen-record.js';
 import type { RoundPlan } from '../../domain/deepen/round-plan.js';
@@ -7,7 +8,7 @@ import type { DeepenStopReason } from '../../domain/deepen/stop-rule.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { scopeOf } from '../runs/run-scope.js';
-import { announceCards } from '../understand/announce-cards.js';
+import { announceCards, announceExtensions } from '../understand/announce-cards.js';
 import { judgementPartsOf, runJudgementStep } from '../understand/claim-judgement.js';
 import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import { checkCitations } from '../verifier/citation-check.js';
@@ -47,19 +48,65 @@ async function judge(
   return runJudgementStep(cards, { ...base, awaits, onCapped });
 }
 
-/** RF-203, RF-300, RF-301: the new cards with ids, the citation check and the judgement. */
+/** What a round wrote: new cards, and the parent's cards that got claims (DEC-158). */
+interface RoundCards {
+  readonly added: readonly Card[];
+  /** The parent's cards with the claims this round added to them, judged. */
+  readonly extended: readonly Card[];
+  /** The ids of every claim the round wrote, on a new card or on a parent's card. */
+  readonly claimIds: ReadonlySet<string>;
+}
+
+/**
+ * RF-203, RF-300, RF-301, RF-209: the new cards with ids, the claims added to the parent's cards,
+ * the citation check and the judgement of every new claim (and of no other).
+ */
 async function newCardsOf(
   parts: DeepenParts,
   state: DeepenState,
   ended: readonly EndedTask[],
   cap: CapWatch,
-): Promise<readonly Card[]> {
-  const assigned = assignCardIds(ended.map(taskCardsOf), cardsOf(state));
+): Promise<RoundCards> {
+  const tasks = ended.map(taskCardsOf);
+  const assigned = assignCardIds(tasks, cardsOf(state));
   if (!assigned.ok) throw new RosettaError(ERROR_CODES.cardOutputInvalid, assigned.error);
+  const extension = extendCards(tasks, cardsOf(state));
+  if (!extension.ok) throw new RosettaError(ERROR_CODES.cardOutputInvalid, extension.error);
   const at = parts.deps.clock.now().toISOString();
-  const checked = checkCitations(assigned.value, parts.scanned.codeMap, at);
-  await announceCards(parts.execution.events, checked, checked.cards);
-  return judge(parts, checked.cards, { cap });
+  const all = [...assigned.value, ...extension.value.cards];
+  const checked = checkCitations(all, parts.scanned.codeMap, at);
+  const { events } = parts.execution;
+  await announceCards(events, checked, checked.cards.slice(0, assigned.value.length));
+  await announceExtensions(events, checked, extension.value);
+  const claimIds = new Set([
+    ...assigned.value.flatMap((card) => card.claims.map((claim) => claim.claimId)),
+    ...extension.value.claims.map((claim) => claim.claimId),
+  ]);
+  const awaits = (claim: Card['claims'][number]): boolean => claimIds.has(claim.claimId);
+  const judged = await judge(parts, checked.cards, { awaits, cap });
+  return {
+    added: judged.slice(0, assigned.value.length),
+    extended: judged.slice(assigned.value.length),
+    claimIds,
+  };
+}
+
+/** The state with the parent's extended cards in place of the cards they were. */
+function withExtended(state: DeepenState, extended: readonly Card[]): DeepenState {
+  const cards = cardsOf(state).map((card) => extended.find((each) => each.id === card.id) ?? card);
+  return withCards(state, cards);
+}
+
+/** RF-209: the claims the round wrote, as its record lists them. */
+function newClaimsOf({ added, extended, claimIds }: RoundCards): DeepenRound['newClaims'] {
+  return [...added, ...extended]
+    .flatMap((card) => card.claims)
+    .filter((claim) => claimIds.has(claim.claimId))
+    .map(({ claimId, status, replaces }) => ({
+      claimId,
+      status,
+      ...(replaces === undefined ? {} : { replaces }),
+    }));
 }
 
 async function spentSoFar(parts: DeepenParts): Promise<{ tokens: number; costMicros: number }> {
@@ -105,11 +152,11 @@ export async function runRound(
   const wanted = new Set(plan.judge);
   const awaits = (claim: Card['claims'][number]): boolean => wanted.has(claim.claimId);
   const judged = withCards(state, await judge(parts, cardsOf(state), { awaits, cap }));
-  const tasks = roundTasks(plan, codeMap, nextTaskNumber(judged.results));
+  const tasks = roundTasks(plan, codeMap, nextTaskNumber(judged.results), cardsOf(judged));
   const ended = await runRoundTasks(parts, tasks);
-  const added = await newCardsOf(parts, judged, ended, cap);
-  const results = ended.map((each) => taskResultOfRound(parts, each, added));
-  const next = { results: [...judged.results, ...results] };
+  const written = await newCardsOf(parts, judged, ended, cap);
+  const results = ended.map((each) => taskResultOfRound(parts, each, written.added));
+  const next = { results: [...withExtended(judged, written.extended).results, ...results] };
   const after = snapshotOf(next, codeMap);
   const now = await spentSoFar(parts);
   const stopped = stopOf(parts, ended, cap);
@@ -119,13 +166,7 @@ export async function runRound(
     judged: plan.judge,
     reread: rereadDone(plan, ended, parts.execution.signal.aborted),
     filesRead: [...after.filesRead].filter((path) => !before.filesRead.has(path)),
-    newClaims: added.flatMap((card) =>
-      card.claims.map(({ claimId, status, replaces }) => ({
-        claimId,
-        status,
-        ...(replaces === undefined ? {} : { replaces }),
-      })),
-    ),
+    newClaims: newClaimsOf(written),
     tokens: Math.max(0, now.tokens - spent.tokens),
     costMicros: Math.max(0, now.costMicros - spent.costMicros),
   };

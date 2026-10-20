@@ -43,7 +43,9 @@ const overTwo = () =>
   stateAfter(planned(1, 'reader-001', 'Catalog'), planned(2, 'reader-002', 'Models'));
 
 const overAll = () =>
-  stateAfter(...areaNames.map((name, index) => planned(index + 1, `reader-00${index + 1}`, name)));
+  stateAfter(
+    ...areaNames.map((name, index) => planned(index + 1, `reader-00${String(index + 1)}`, name)),
+  );
 
 describe('the areas of a run over 2 of 5 areas', () => {
   it('RF-230 lists the 3 areas the run was not asked to read apart, in code map order', () => {
@@ -73,7 +75,9 @@ describe('the areas of a run over 2 of 5 areas', () => {
 
     expect(map.notInRun.map((each) => each.area)).not.toContain('jQuery');
   });
+});
 
+describe('the page of a run over 2 of 5 areas', () => {
   it('RF-230 says on the page: 2 areas, 1 not read, and a section "Not in this run" with the 3 names', () => {
     render(<CoverageMap state={overTwo()} coverage={twoAreas} areas={known} />);
 

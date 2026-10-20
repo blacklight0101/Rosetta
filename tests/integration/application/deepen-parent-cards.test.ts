@@ -89,3 +89,58 @@ describe('RF-209 what a Deepen over a parent card leaves', UNDERSTAND_TIMEOUT, (
     expect(promptVersions['reader/parent-cards.v1.md']).toMatchObject({ version: 'v1' });
   });
 });
+
+describe(
+  'RF-209 a Deepen round with a claim for a parent card and a new rule',
+  UNDERSTAND_TIMEOUT,
+  () => {
+    async function mixed() {
+      const { h, run } = await completedRun({
+        dataDir: temp.path,
+        recording: 'deepen-extends-and-new.json',
+        verifierRecording: 'verifier-deepen-supported.json',
+      });
+      const deepen = await h.deepen(run, { coveragePass: false, maxRounds: 1 });
+      if (!deepen.ok) throw new Error(deepen.error);
+      return { h, deep: deepen.value };
+    }
+
+    it('DEC-158 a genuinely new rule is a new card with an id after the parent ids, beside the claim on BR-001', async () => {
+      const { h, deep } = await mixed();
+
+      expect((await claimsOf(h, deep)).map((claim) => [claim.claimId, claim.status])).toEqual([
+        ['BR-001.c1', 'Rejected'],
+        ['BR-001.c2', 'Supported'],
+        ['BR-002.c1', 'Supported'],
+        ['BR-003.c1', 'Supported'],
+      ]);
+      const card = await readFile(join(h.runFolder(deep), 'cards', 'BR', 'BR-003.md'), 'utf8');
+      expect(card).toContain('Details page reads the catalog id');
+    });
+
+    it('RF-209 judges both new claims, the one on the parent card and the one on the new card', async () => {
+      const { h, deep } = await mixed();
+
+      expect(h.providers.verifierRequests()).toHaveLength(4);
+      const [round] = (await deepenOf(h, deep)).rounds;
+      expect(round?.newClaims.map((claim) => claim.claimId).sort()).toEqual([
+        'BR-001.c2',
+        'BR-003.c1',
+      ]);
+    });
+
+    it('RF-1002 announces the new claim on its parent card id by its citation check, and the card only once', async () => {
+      const { h, deep } = await mixed();
+
+      const events = await h.eventsOf(deep);
+
+      const checked = events.filter((event) => event.type === 'verify.citation.checked');
+      expect(checked.map((event) => [event.data['claimId'], event.agentTaskId])).toEqual([
+        ['BR-003.c1', 'reader-003'],
+        ['BR-001.c2', 'reader-003'],
+      ]);
+      const proposed = events.filter((event) => event.type === 'agent.card.proposed');
+      expect(proposed.map((event) => event.data['cardId'])).toEqual(['BR-003']);
+    });
+  },
+);

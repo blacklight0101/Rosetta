@@ -7,8 +7,10 @@ import { shareOf } from './run-summary.js';
 // order, with the files of each as a tree of folders and the area's share of all the files read in
 // the run. A file is read once a `read_file` call on it succeeded (see `agent-events.ts`) or the
 // run's `coverage.json` (the listing) says lines of it were read. The listing also names the files
-// not read, so a file or an area nobody read is shown as not read; an area of the code map that has
-// no entry yet is listed with the count of its files. Without a listing the map shows the reads.
+// not read, so a file or an area nobody read is shown as not read; an area the run asked an agent to
+// read that has no entry yet is listed with the count of its files. An area of the code map the run
+// was not asked to read (a run over some of the areas) is listed apart, not counted as not read
+// (RF-230, DEC-158). Without a listing the map shows the reads.
 
 export interface CoverageNode {
   readonly kind: 'folder' | 'file';
@@ -141,17 +143,32 @@ function thirdPartyNames(
   return new Set([...fromMap, ...fromNotes]);
 }
 
-/** The area names in order: the run's readers, then the listing's, then the code map's own areas. */
+/** The area names of a map: those in the run, in order, and those the run was not asked to read. */
+interface AreaNames {
+  readonly inRun: readonly string[];
+  readonly apart: readonly string[];
+}
+
+/**
+ * The areas of the run, in order: its readers, then the listing's, then the code map's own areas the
+ * run has no reader or entry for. Once the run's readers or listing say which areas it is about
+ * (DEC-158), the own areas left over are not in this run and are kept apart; until then they wait
+ * with the rest. Third-party areas are in neither list (RF-231).
+ */
 function namesOf(
   reads: ReadonlyMap<string, unknown>,
   listing: CoverageListing | undefined,
   areas: readonly CodeAreaInfo[],
-): readonly string[] {
+): AreaNames {
   const left = thirdPartyNames(listing, areas);
-  const listed = (listing?.areas ?? []).map((each) => each.area);
-  const own = areas.map((each) => each.name);
-  const names = listing === undefined ? [...reads.keys()] : [...reads.keys(), ...listed, ...own];
-  return [...new Set(names)].filter((name) => !left.has(name));
+  const chosen = listing === undefined ? [] : listing.areas.map((each) => each.area);
+  const asked = [...new Set([...reads.keys(), ...chosen])];
+  const own = listing === undefined ? [] : areas.map((each) => each.name);
+  const rest = own.filter((name) => !asked.includes(name));
+  const kept = (names: readonly string[]): readonly string[] =>
+    [...new Set(names)].filter((name) => !left.has(name));
+  const known = asked.length > 0;
+  return known ? { inRun: kept(asked), apart: kept(rest) } : { inRun: kept(rest), apart: [] };
 }
 
 // RF-1005, RF-230
@@ -161,8 +178,9 @@ export function coverageOf(
   areas: readonly CodeAreaInfo[] = [],
 ): CoverageMap {
   const reads = readsByArea(state);
+  const names = namesOf(reads, listing, areas);
   const files = new Map(
-    namesOf(reads, listing, areas).map((name) => [
+    names.inRun.map((name) => [
       name,
       filesOf(
         reads.get(name) ?? new Set<string>(),
@@ -174,7 +192,10 @@ export function coverageOf(
   const filesRead = [...files.values()].reduce((sum, each) => sum + each.read.size, 0);
   const totals = [...files.values()].flatMap((each) => each.total ?? []);
   return {
-    notInRun: [],
+    notInRun: names.apart.map((area) => ({
+      area,
+      files: areas.find((each) => each.name === area)?.files,
+    })),
     areas: [...files.entries()].map(([area, each]) => ({
       area,
       filesRead: each.read.size,

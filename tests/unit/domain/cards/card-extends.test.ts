@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { Card } from '../../../../src/domain/cards/card.js';
+import { appendClaims, type Card } from '../../../../src/domain/cards/card.js';
 import { assignCardIds, type TaskCards } from '../../../../src/domain/cards/card-ids.js';
 import { extendCards } from '../../../../src/domain/cards/card-extension.js';
-import { draftOf } from '../../../support/card-fixtures.js';
+import { draftOf, oqDraft } from '../../../support/card-fixtures.js';
 
 // RF-209, RF-203, DEC-158: a draft of a Deepen task that names a card the task was given (`extends`)
 // is not a new card: its claims are added to that card, which keeps its id. A draft that names
@@ -121,6 +121,20 @@ describe('RF-203 a draft that does not extend a listed card', () => {
     expect(extended.ok && extended.value.cards).toEqual([]);
   });
 
+  it('RF-209 an open question is never extended: the question is its own card', () => {
+    const open = assignCardIds([
+      { agentTaskId: 'reader-001', area: 'orders', drafts: [oqDraft()] },
+    ]);
+    if (!open.ok) throw new Error(open.error);
+    const task = deepenTask([{ ...oqDraft(), extends: 'OQ-001' }], ['OQ-001']);
+
+    const cards = assignCardIds([task], open.value);
+    const extended = extendCards([task], open.value);
+
+    expect(cards.ok && cards.value.map((card) => card.id)).toEqual(['OQ-002']);
+    expect(extended.ok && extended.value.cards).toEqual([]);
+  });
+
   it('RF-209 writes a new card for a listed id the run does not hold', () => {
     const task = deepenTask([extension({ extends: 'ENT-007' })], ['ENT-007']);
 
@@ -135,5 +149,16 @@ describe('RF-203 a draft that does not extend a listed card', () => {
     const cards = assignCardIds([task], parentCards());
 
     expect(cards.ok && cards.value.map((card) => card.id)).toEqual(['ENT-002']);
+  });
+});
+
+describe('RF-202 a claim added to a card keeps the rules of a claim', () => {
+  it('RF-202 refuses a claim without a citation and changes nothing', () => {
+    const [parent] = parentCards();
+    if (parent === undefined) throw new Error('no parent card');
+
+    const added = appendClaims(parent, [{ text: 'No evidence.', citations: [] }]);
+
+    expect(added).toEqual({ ok: false, error: 'claim-without-citation' });
   });
 });

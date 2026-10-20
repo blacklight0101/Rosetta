@@ -71,19 +71,24 @@ function filled(
 /**
  * The first user message: the task text with the area's data block in place of its placeholder,
  * for a re-run with answers the answers prompt with their data block (RF-241), and for a Deepen
- * re-read the rejected claims with the verifier's reasons in theirs (RF-209).
+ * re-read the rejected claims with the verifier's reasons in theirs (RF-209), and for any Deepen
+ * task the cards the parent run holds for the area in a block of their own (DEC-158).
  */
 export function readerTaskMessage(
   prompts: ReaderPrompts,
   areaBlock: string,
   answersBlock?: string,
-  rejectedBlock?: string,
+  deepen: {
+    readonly rejected?: string | undefined;
+    readonly parentCards?: string | undefined;
+  } = {},
 ): string {
   const task = prompts.task.text.replace(readerPlaceholders.task, () => areaBlock).trimEnd();
   return [
     task,
     ...filled(prompts.answers, readerPlaceholders.answers, answersBlock),
-    ...filled(prompts.reread, readerPlaceholders.reread, rejectedBlock),
+    ...filled(prompts.reread, readerPlaceholders.reread, deepen.rejected),
+    ...filled(prompts.parentCards, readerPlaceholders.parentCards, deepen.parentCards),
   ].join('\n\n');
 }
 
@@ -160,6 +165,7 @@ export function promptVersionsOf(
     prompts.continue,
     ...(prompts.answers === undefined ? [] : [prompts.answers]),
     ...(prompts.reread === undefined ? [] : [prompts.reread]),
+    ...(prompts.parentCards === undefined ? [] : [prompts.parentCards]),
     ...surfaceFilesFor(prompts, used),
     ...guidance,
     prompts.readFirst,
