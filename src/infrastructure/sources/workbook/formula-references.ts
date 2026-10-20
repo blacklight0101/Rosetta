@@ -17,7 +17,7 @@ import { isWordChar, Scanner } from './formula-scanner.js';
 // `INDIRECT` and `OFFSET` are reported as dynamic. One pass moves forward over the text, the number of
 // references is capped, and a range stays one range whatever its size.
 
-export type BookRef = { readonly index: number } | { readonly name: string };
+type BookRef = { readonly index: number } | { readonly name: string };
 
 /** The workbook and sheets a reference is qualified with; empty for a reference on its own sheet. */
 export interface SheetScope {
@@ -26,8 +26,6 @@ export interface SheetScope {
   /** The last sheet of a three-dimensional span (`Sheet1:Sheet3!A1`). */
   readonly last?: string;
 }
-
-export type { RefBox } from './reference-box.js';
 
 export type FormulaReference =
   | { readonly kind: 'range'; readonly scope: SheetScope; readonly box: RefBox }

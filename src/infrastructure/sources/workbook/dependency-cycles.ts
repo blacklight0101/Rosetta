@@ -10,7 +10,7 @@ import type { RefStore } from './dependency-store.js';
 // sheet cannot make the search run for long. When the limit is reached the search stops and says so;
 // the components it had finished are real.
 
-export interface Cycle {
+interface Cycle {
   /** Formula node numbers, ascending. */
   readonly members: readonly number[];
 }

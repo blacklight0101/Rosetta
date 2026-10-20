@@ -10,10 +10,6 @@ const MAX_QUOTED = 1000;
 const MAX_BRACKET = 1000;
 const MAX_ERROR = 12;
 
-export function isDigit(char: string): boolean {
-  return char >= '0' && char <= '9';
-}
-
 /** A letter, digit, `_`, `.`, `$`, `\` or any character beyond ASCII (names may use them). */
 const WORD_CHAR = /[A-Za-z0-9_.$\\]/u;
 

@@ -11,7 +11,7 @@ import { book, cell, num, sheet, text } from './rendered-workbook-fixtures.js';
 
 // P3-47: small workbooks built in the test (first-party data only) and the text of the map.
 
-export const formula = (value: string): Pick<WorkbookCell, 'formula'> => ({
+const formula = (value: string): Pick<WorkbookCell, 'formula'> => ({
   formula: { kind: 'normal', text: value },
 });
 

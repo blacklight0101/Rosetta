@@ -14,7 +14,7 @@ const LINE_CHUNK = 1700;
 
 export type MacroStatus = 'written' | 'locked' | 'no-source' | 'unreadable';
 
-export interface MacroEntry {
+interface MacroEntry {
   readonly module: MacroModule;
   /** The file name below `macros/` (`Module1.bas`), or undefined when the module has no file. */
   readonly file?: string;

@@ -27,7 +27,7 @@ export const WORKBOOK_RENDERER_VERSION = '1';
 /** The bytes of rendered text one render may produce, for all its workbooks together. */
 const DEFAULT_MAX_TOTAL_BYTES = 256 * 1024 * 1024;
 
-export interface RenderedFile {
+interface RenderedFile {
   /** Below the project root: `Pricing.xlsx/Summary/values.md`. */
   readonly path: string;
   readonly content: string;

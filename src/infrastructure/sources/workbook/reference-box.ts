@@ -3,8 +3,8 @@ import { MAX_COLUMNS, MAX_ROWS } from './cell-address.js';
 // RF-153: a reference to cells as numbers. A range is four numbers whatever its size: the map never
 // expands `A:A` or `A1:XFD1048576` into cells, it keeps the box and asks questions of it.
 
-export const LAST_COLUMN = MAX_COLUMNS - 1;
-export const LAST_ROW = MAX_ROWS;
+const LAST_COLUMN = MAX_COLUMNS - 1;
+const LAST_ROW = MAX_ROWS;
 
 /** Which corners are written with a `$`, so a shared formula can move the ones that are not. */
 export const FIXED_C1 = 1;

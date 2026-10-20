@@ -30,7 +30,7 @@ export interface SheetNode {
   formulaIds: Int32Array;
 }
 
-export interface TableNode extends TableShape {
+interface TableNode extends TableShape {
   readonly sheet: SheetNode;
   readonly name: string;
 }

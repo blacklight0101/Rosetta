@@ -41,7 +41,7 @@ function boxText(ref: Extract<FormulaReference, { kind: 'range' }>): string {
   return c1 === c2 && r1 === r2 ? first : `${first}:${last}`;
 }
 
-export function referenceText(ref: FormulaReference): string {
+function referenceText(ref: FormulaReference): string {
   if (ref.kind === 'range') return `${scopeText(ref.scope)}${boxText(ref)}`;
   if (ref.kind === 'name') return `name:${scopeText(ref.scope)}${ref.name}`;
   if (ref.kind === 'table') return `table:${ref.table ?? ''}${ref.spec}`;
