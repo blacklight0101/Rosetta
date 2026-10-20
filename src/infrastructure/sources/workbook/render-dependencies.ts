@@ -135,6 +135,14 @@ function addLimits(file: TextFile, parts: Parts): void {
     const more = `${String(findings.droppedSheetEdges)} more than the limit of ${String(limits.maxSheetEdges)}`;
     file.add(`Sheet-to-sheet edges not listed: ${more}`);
   }
+  if (findings.droppedUnresolved > 0) {
+    const more = `${String(findings.droppedUnresolved)} more than the limit of ${String(limits.maxUnresolved)}`;
+    file.add(`Unresolved references not listed: ${more}`);
+  }
+  if (findings.unlocatedCells > 0) {
+    const past = `${plural(findings.unlocatedCells, 'formula')} past the limit of ${String(limits.maxUnresolvedCells)} cells`;
+    file.add(`Unresolved references not located: ${past}`);
+  }
   if (cycles.notListed > 0) {
     const more = `${String(cycles.notListed)} more than the limit of ${String(limits.maxCyclesListed)}`;
     file.add(`Circular references not listed: ${more}`);

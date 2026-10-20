@@ -205,7 +205,7 @@ src/
                         expanded; `renderProject` returns the workbooks and `dependencies.md` (root of the tree) under one byte limit; the map (`dependency-project`, `-collect`, `-resolve`,
                         `-scope`, `-store`, `-cover`, `-cycles`, `render-dependencies`) resolves external references by file name against the project, counts references, sheet edges and
                         cycle-search steps against `dependency-limits` and writes any limit reached; the search for circular references is an iterative Tarjan over a column index of the
-                        formula cells; `external-names` shows `[1]Rates!C4` as `[Rates.xlsx]Rates!C4` in `formulas.md`
+                        formula cells; `external-names` (`plainModel`) writes every formula, rule and defined name with the workbook part of an external reference as the file name only (stored, path, UNC, URL forms; Q-38); unresolved references are listed up to `maxUnresolved` targets and `maxUnresolvedCells` cells
     files/              node-repository-reader, snapshot-index, snapshot-scope, ignore-rules (deny list), grep worker,
                         search and limits, node-output-writer, last-line (a file's last line, read from its end),
                         workspace-guard, workspace-paths, repository-path checks, file-run-manifest-store (`manifest.json`)

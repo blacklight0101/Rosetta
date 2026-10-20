@@ -66,6 +66,12 @@ export class RefStore {
   }
 }
 
+export interface FindingLimits {
+  readonly maxSheetEdges: number;
+  readonly maxUnresolved: number;
+  readonly maxUnresolvedCells: number;
+}
+
 export interface Unresolved {
   readonly sheet: number;
   readonly message: string;
@@ -90,11 +96,15 @@ export class Findings {
   readonly partial = new Map<number, number[]>();
   /** For each defined name, the formulas that use it per sheet. */
   readonly nameUsers = new Map<DefinedName, Map<number, number>>();
-  private readonly maxSheetEdges: number;
+  /** Unresolved references that did not fit the list, and cells whose position was not kept. */
+  droppedUnresolved = 0;
+  unlocatedCells = 0;
+  private locatedCells = 0;
+  private readonly limits: FindingLimits;
   private readonly sheetCount: number;
 
-  constructor(maxSheetEdges: number, sheetCount: number) {
-    this.maxSheetEdges = maxSheetEdges;
+  constructor(limits: FindingLimits, sheetCount: number) {
+    this.limits = limits;
     this.sheetCount = sheetCount;
   }
 
@@ -112,8 +122,31 @@ export class Findings {
     const key = from * this.sheetCount + to;
     const known = this.sheetEdges.get(key);
     if (known !== undefined) this.sheetEdges.set(key, known + 1);
-    else if (this.sheetEdges.size < this.maxSheetEdges) this.sheetEdges.set(key, 1);
+    else if (this.sheetEdges.size < this.limits.maxSheetEdges) this.sheetEdges.set(key, 1);
     else if (this.droppedEdges.size < 1_000_000) this.droppedEdges.add(key);
+  }
+
+  /**
+   * One formula cell that holds an unresolved reference. A new target past the list limit is only
+   * counted, and a cell past the position limit is only counted, so memory stays bounded.
+   */
+  addUnresolved(sheet: number, message: string, position: number): void {
+    const key = `${String(sheet)}\u0000${message}`;
+    let entry = this.unresolved.get(key);
+    if (entry === undefined) {
+      if (this.unresolved.size >= this.limits.maxUnresolved) {
+        this.droppedUnresolved += 1;
+        return;
+      }
+      entry = { sheet, message, positions: [] };
+      this.unresolved.set(key, entry);
+    }
+    if (this.locatedCells >= this.limits.maxUnresolvedCells) {
+      this.unlocatedCells += 1;
+      return;
+    }
+    entry.positions.push(position);
+    this.locatedCells += 1;
   }
 
   record(map: Map<number, number[]>, sheet: number, position: number): void {

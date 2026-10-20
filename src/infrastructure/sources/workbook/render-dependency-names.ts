@@ -1,4 +1,5 @@
 import { boxText, rangesOf } from './cell-runs.js';
+import { showExternalNames } from './external-names.js';
 import type { Project } from './dependency-project.js';
 import { nameTargets } from './dependency-scope.js';
 import type { Findings } from './dependency-store.js';
@@ -28,14 +29,16 @@ function byScopeAndName(a: DefinedName, b: DefinedName): number {
 
 function addName(
   file: TextFile,
-  context: { project: Project; findings: Findings; prefix: string },
+  context: { project: Project; findings: Findings; prefix: string; links: readonly string[] },
   name: DefinedName,
 ): void {
   const local = name.sheet === undefined ? '' : ` (local to the sheet ${q(name.sheet)})`;
   const head = `${context.prefix} name ${q(name.name)}${local}`;
-  splitText(name.refersTo, REFERS_CHUNK, true).forEach((piece, index) => {
-    file.add(`${head} refers to ${index === 0 ? '' : '(continued) '}"${piece}"`);
-  });
+  splitText(showExternalNames(name.refersTo, context.links), REFERS_CHUNK, true).forEach(
+    (piece, index) => {
+      file.add(`${head} refers to ${index === 0 ? '' : '(continued) '}"${piece}"`);
+    },
+  );
   const users = [...(context.findings.nameUsers.get(name) ?? [])].sort((a, b) => a[0] - b[0]);
   if (users.length === 0) file.add(`${head} is not used by any formula`);
   for (const [sheetId, count] of users) {
@@ -54,7 +57,7 @@ export function addDefinedNames(file: TextFile, project: Project, findings: Find
       const first = nameTargets(project, book, name).boxes[0];
       const prefix =
         first === undefined ? book.folder : `${first.sheet.path}!${boxText(first.box)}`;
-      addName(file, { project, findings, prefix }, name);
+      addName(file, { project, findings, prefix, links: book.linkNames }, name);
     }
   }
   if (!any) file.add('None.');

@@ -93,6 +93,7 @@ export class Resolver {
     }
     this.store.add(sheet.id, box);
     if (sheet.id !== this.here.sheet.id) this.targets.add(sheet.id);
+    if (sheet.workbook !== this.here.sheet.workbook) this.books.add(sheet.workbook);
   }
 
   private range(scope: Parameters<typeof resolveScope>[2], box: RefBox): void {
@@ -113,9 +114,7 @@ export class Resolver {
       this.ok = false;
       return;
     }
-    const entry = this.findings.unresolved.get(key) ?? { sheet: sheet.id, message, positions: [] };
-    entry.positions.push(col * POSITION + row);
-    this.findings.unresolved.set(key, entry);
+    this.findings.addUnresolved(sheet.id, message, col * POSITION + row);
   }
 
   private dynamic(fn: string): void {

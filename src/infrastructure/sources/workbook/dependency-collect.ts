@@ -71,7 +71,7 @@ function sourceOf(
 
 export function collect(project: Project, limits: DependencyLimits): Collected {
   const store = new RefStore(limits.maxReferences);
-  const findings = new Findings(limits.maxSheetEdges, project.sheets.length);
+  const findings = new Findings(limits, project.sheets.length);
   const resolver = new Resolver(project, store, findings);
   const nodeSheet: number[] = [];
   const nodePosition: number[] = [];
