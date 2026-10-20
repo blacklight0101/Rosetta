@@ -41,6 +41,8 @@ export const sessionSchema = z.object({
   csrfToken: z.string(),
   /** RF-129, DEC-149: the largest zip the server accepts, in MB; absent until the server says. */
   uploadMaxMb: z.number().int().positive().optional(),
+  /** RF-151, Q-32: the most workbooks in one project; absent until the server says. */
+  workbookMaxFiles: z.number().int().positive().optional(),
 });
 
 export type Session = z.output<typeof sessionSchema>;

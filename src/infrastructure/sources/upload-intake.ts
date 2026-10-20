@@ -4,6 +4,7 @@ import { pipeline } from 'node:stream/promises';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { isFileSystemFailure, snapshotWriteFailed } from '../github/snapshot-errors.js';
+
 import { zipNotReadable } from './zip-errors.js';
 
 // RF-128, RF-129: the body of an upload on its way to a temporary file. It is streamed, never
@@ -11,12 +12,25 @@ import { zipNotReadable } from './zip-errors.js';
 // stops sending is cut off. The first bytes must be those of a zip.
 
 const SIGNATURE_BYTES = 4;
+
+/** What a body must start with, and the refusal when it does not (RF-128, RF-150). */
+export interface IntakeFormat {
+  readonly signatures: readonly (readonly number[])[];
+  /** How the refusal names the format: `a zip`. */
+  readonly what: string;
+  readonly notReadable: (detail: string) => RosettaError;
+}
+
 /** `PK` and the local file header, the end of an empty archive, or the spanned-archive marker. */
-const SIGNATURES = [
-  [0x50, 0x4b, 0x03, 0x04],
-  [0x50, 0x4b, 0x05, 0x06],
-  [0x50, 0x4b, 0x07, 0x08],
-];
+const ZIP_FORMAT: IntakeFormat = {
+  signatures: [
+    [0x50, 0x4b, 0x03, 0x04],
+    [0x50, 0x4b, 0x05, 0x06],
+    [0x50, 0x4b, 0x07, 0x08],
+  ],
+  what: 'a zip',
+  notReadable: zipNotReadable,
+};
 
 /** RST-1916: the archive passes the upload limit. */
 export function uploadTooLarge(limitBytes: number): RosettaError {
@@ -31,9 +45,9 @@ export function uploadTimedOut(what: string): RosettaError {
   return new RosettaError(ERROR_CODES.uploadTimedOut, `The upload ${what} took too long.`);
 }
 
-/** True when the bytes seen so far can still start a zip. */
-function isZipHead(head: Buffer): boolean {
-  return SIGNATURES.some((signature) => head.every((byte, at) => byte === signature[at]));
+/** True when the bytes seen so far can still start the format. */
+function isHeadOf(format: IntakeFormat, head: Buffer): boolean {
+  return format.signatures.some((signature) => head.every((byte, at) => byte === signature[at]));
 }
 
 /** Counts the bytes, enforces the limit and checks the first four bytes. */
@@ -41,10 +55,12 @@ class Receiving extends Transform {
   bytes = 0;
   private head: Buffer = Buffer.alloc(0);
   private readonly limit: number;
+  private readonly format: IntakeFormat;
 
-  constructor(limit: number) {
+  constructor(limit: number, format: IntakeFormat) {
     super();
     this.limit = limit;
+    this.format = format;
   }
 
   override _transform(chunk: Buffer, _encoding: BufferEncoding, done: TransformCallback): void {
@@ -56,8 +72,8 @@ class Receiving extends Transform {
     if (this.head.length < SIGNATURE_BYTES) {
       const missing = SIGNATURE_BYTES - this.head.length;
       this.head = Buffer.concat([this.head, chunk.subarray(0, missing)]);
-      if (!isZipHead(this.head)) {
-        done(zipNotReadable('the file does not start like a zip'));
+      if (!isHeadOf(this.format, this.head)) {
+        done(this.format.notReadable(`the file does not start like ${this.format.what}`));
         return;
       }
     }
@@ -65,7 +81,11 @@ class Receiving extends Transform {
   }
 
   override _flush(done: TransformCallback): void {
-    done(this.head.length < SIGNATURE_BYTES ? zipNotReadable('the file is not a zip') : null);
+    done(
+      this.head.length < SIGNATURE_BYTES
+        ? this.format.notReadable(`the file is not ${this.format.what}`)
+        : null,
+    );
   }
 }
 
@@ -100,12 +120,14 @@ export interface IntakeRequest {
   readonly limitBytes: number;
   readonly stallMs: number;
   readonly signal: AbortSignal;
+  /** A zip when left out (RF-128); a workbook batch names its own (RF-150). */
+  readonly format?: IntakeFormat;
 }
 
 /** Streams the body to `zipPath` (which must not exist) and returns the bytes written. */
-// RF-128, RF-129
+// RF-128, RF-129, RF-150
 export async function receiveZip(request: IntakeRequest, zipPath: string): Promise<number> {
-  const counter = new Receiving(request.limitBytes);
+  const counter = new Receiving(request.limitBytes, request.format ?? ZIP_FORMAT);
   try {
     await pipeline(
       withoutStalls(request.body, request.stallMs),

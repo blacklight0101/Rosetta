@@ -1,5 +1,6 @@
 import {
   isUploadSource,
+  isWorkbookSource,
   type CodeMap,
   type CodeMapSource,
 } from '../../../domain/code-map/code-map.js';
@@ -94,6 +95,12 @@ function sourceLines(source: CodeMapSource, subpath: string): string[] {
   if (isUploadSource(source)) {
     return [
       `- Source: uploaded zip ${cell(source.fileName)}`,
+      `- Snapshot: ${source.snapshotHash}`,
+    ];
+  }
+  if (isWorkbookSource(source)) {
+    return [
+      `- Source: uploaded workbooks ${cell(source.workbooks.join(', '))}`,
       `- Snapshot: ${source.snapshotHash}`,
     ];
   }

@@ -77,6 +77,23 @@ describe('PUT /api/projects/:id/source the kind of project', () => {
   });
 });
 
+describe('PUT /api/projects/:id/source a workbook project', () => {
+  it('RF-152 takes no zip: 409, because its source is a batch of workbooks', async () => {
+    const { amy, uploads } = await setup();
+    const workbook = await amy.request({
+      method: 'POST',
+      url: '/api/projects',
+      payload: { sourceKind: 'workbook', name: 'Pricing' },
+    });
+
+    const response = await put(amy, idOf(workbook));
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toMatchObject({ code: ERROR_CODES.conflict });
+    expect(uploads.requests).toEqual([]);
+  });
+});
+
 describe('PUT /api/projects/:id/source the audit trail', () => {
   it('RF-133 writes one audit row for the upload and none for a refused one', async () => {
     const { test, amy, bob } = await setup();

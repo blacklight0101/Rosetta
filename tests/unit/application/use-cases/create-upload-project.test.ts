@@ -76,3 +76,40 @@ describe('CreateProject.createUpload refusals', () => {
     expect(await test.projects.list(bob.userId)).toHaveLength(1);
   });
 });
+
+describe('CreateProject.createUpload for workbooks', () => {
+  it('RF-150 stores a workbook project with the name, no address and the default settings', async () => {
+    const test = projectHarness();
+
+    const outcome = await test.createProject.createUpload({
+      actor: amy,
+      name: 'Pricing',
+      sourceKind: 'workbook',
+    });
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.value.project).toMatchObject({
+      userId: amy.userId,
+      name: 'Pricing',
+      sourceKind: 'workbook',
+      sourceUrl: '',
+      ref: '',
+      subpath: '',
+      settings: newProjectSettings,
+    });
+    expect(outcome.value.project.upload).toBeUndefined();
+  });
+
+  it('RF-150 refuses a bad name for a workbook project too', async () => {
+    const test = projectHarness();
+
+    const outcome = await test.createProject.createUpload({
+      actor: amy,
+      name: ' ',
+      sourceKind: 'workbook',
+    });
+
+    expect(outcome).toEqual({ ok: false, error: ERROR_CODES.requestInvalid });
+  });
+});

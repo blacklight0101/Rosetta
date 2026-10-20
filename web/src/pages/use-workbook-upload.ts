@@ -1,7 +1,12 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import type { ApiFailure } from '../api/client.js';
 import type { Project } from '../api/project-schemas.js';
-import { defaultWorkbookMaxFiles, type WorkbookSummary } from '../api/workbook-upload.js';
+import {
+  defaultWorkbookMaxFiles,
+  loadWorkbookMaxFiles,
+  type WorkbookSummary,
+} from '../api/workbook-upload.js';
+import { useApp } from '../app/app-context.js';
 import { workbookProblems, workbookProjectName } from '../lib/workbook-check.js';
 import {
   useWorkbookFlow,
@@ -41,13 +46,29 @@ export interface WorkbookUpload {
   readonly submit: () => void;
 }
 
+/** RF-151, Q-32: the file limit the server reports; the built-in one until it answers. */
+function useWorkbookMaxFiles(): number {
+  const { client } = useApp();
+  const [maxFiles, setMaxFiles] = useState(defaultWorkbookMaxFiles);
+  useEffect(() => {
+    const abort = new AbortController();
+    void loadWorkbookMaxFiles(client, abort.signal).then((limit) => {
+      if (!abort.signal.aborted) setMaxFiles(limit);
+    });
+    return () => {
+      abort.abort();
+    };
+  }, [client]);
+  return maxFiles;
+}
+
 // RF-150, RF-158
 export function useWorkbookUpload(options: WorkbookFlowOptions): WorkbookUpload {
   const limitMb = useUploadLimit();
   const flow = useWorkbookFlow(options);
   const [files, setFiles] = useState<readonly File[]>([]);
   const [typedName, setName] = useState('');
-  const maxFiles = defaultWorkbookMaxFiles;
+  const maxFiles = useWorkbookMaxFiles();
   const problems = workbookProblems(files, { maxFiles, limitMb });
   const first = files[0];
   const name =

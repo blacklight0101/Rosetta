@@ -61,6 +61,7 @@ describe('release migrations', () => {
       '0014_project_source_kind.sql',
       '0015_project_upload_source.sql',
       '0016_project_workbook_source.sql',
+      '0017_project_workbook_source_columns.sql',
     ]);
   });
 

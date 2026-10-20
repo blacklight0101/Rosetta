@@ -83,14 +83,14 @@ export class StartRun {
   }
 
   /**
-   * RF-128: an upload project reads its zip, so a run needs one; no run is created without it. The
+   * RF-128, RF-152: an upload or workbook project reads what it holds, so a run needs it; no run is created without it. The
    * confirmations of the request are judged first, so the owner is asked for each thing once.
    */
   private submit(
     input: Parameters<SubmitRun['execute']>[0],
   ): Promise<Result<SubmittedRun, StartRunProblem>> {
     const { project } = input;
-    if (project.sourceKind === 'upload' && project.upload === undefined) {
+    if (project.sourceKind !== 'github' && project.upload === undefined) {
       return Promise.resolve(err(ERROR_CODES.projectNoSource));
     }
     return this.deps.submit.execute(input);

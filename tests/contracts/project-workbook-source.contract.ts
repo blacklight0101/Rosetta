@@ -61,3 +61,95 @@ export function projectWorkbookSourceContract(name: string, fresh: FreshProjects
 }
 
 export const workbookProjectOwners: readonly string[] = [amy, bob];
+
+const pricing = {
+  fileName: 'Pricing.xlsx, Rates.xlsm',
+  uploadedAt: 6_000_000,
+  snapshotKey: '',
+  workbooks: 2,
+};
+
+/** RF-150, RF-152, P3-48: the source a workbook project holds after a batch, and the zip with workbooks. */
+export function projectWorkbookAttachContract(name: string, fresh: FreshProjects): void {
+  it(`RF-150 ${name} records the workbooks of a workbook project with their count`, async () => {
+    const projects = await fresh();
+    const project = workbook();
+    await projects.insertOrFind(project);
+    const upload = { ...pricing, snapshotKey: `workbook__${project.id}@0123456789abcdef` };
+
+    const attached = await projects.attachUpload({
+      userId: amy,
+      projectId: project.id,
+      upload,
+      updatedAt: 7_000_000,
+    });
+
+    const expected = { ...project, upload, updatedAt: 7_000_000 };
+    expect(attached).toEqual(expected);
+    expect(await projects.find(amy, project.id)).toEqual(expected);
+  });
+
+  it(`RF-150 ${name} replaces the whole source when a workbook batch is uploaded again`, async () => {
+    const projects = await fresh();
+    const project = workbook();
+    await projects.insertOrFind(project);
+    const first = {
+      ...pricing,
+      snapshotKey: `workbook__${project.id}@0123456789abcdef`,
+    };
+    const change = { userId: amy, projectId: project.id, upload: first, updatedAt: 7_000_000 };
+    await projects.attachUpload(change);
+    const second = {
+      ...first,
+      fileName: 'Costs.xlsx',
+      workbooks: 1,
+      snapshotKey: `workbook__${project.id}@fedcba9876543210`,
+    };
+
+    await projects.attachUpload({ ...change, upload: second, updatedAt: 8_000_000 });
+
+    expect((await projects.find(amy, project.id))?.upload).toEqual(second);
+  });
+}
+
+/** RF-150: the zip that held workbooks, and the owner scope of a workbook source. */
+export function projectWorkbookCountContract(name: string, fresh: FreshProjects): void {
+  it(`RF-150 ${name} keeps the workbook count of a zip that held workbooks`, async () => {
+    const projects = await fresh();
+    const project = sampleProject({
+      userId: amy,
+      sourceKind: 'upload',
+      sourceUrl: '',
+      ref: '',
+      subpath: '',
+    });
+    await projects.insertOrFind(project);
+    const upload = {
+      fileName: 'OrderDesk.zip',
+      uploadedAt: 6_000_000,
+      snapshotKey: `upload__${project.id}@0123456789abcdef`,
+      workbooks: 3,
+    };
+
+    await projects.attachUpload({ userId: amy, projectId: project.id, upload, updatedAt: 7 });
+
+    expect((await projects.find(amy, project.id))?.upload).toEqual(upload);
+  });
+
+  it(`RF-150 ${name} records a workbook source for its owner only`, async () => {
+    const projects = await fresh();
+    const project = workbook();
+    await projects.insertOrFind(project);
+    const upload = { ...pricing, snapshotKey: `workbook__${project.id}@0123456789abcdef` };
+
+    const foreign = await projects.attachUpload({
+      userId: bob,
+      projectId: project.id,
+      upload,
+      updatedAt: 7_000_000,
+    });
+
+    expect(foreign).toBeUndefined();
+    expect(await projects.find(amy, project.id)).toEqual(project);
+  });
+}

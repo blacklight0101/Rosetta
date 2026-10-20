@@ -48,8 +48,9 @@ export interface ProjectRepository {
    */
   updateSettings(change: SettingsChange): Promise<SettingsUpdate>;
   /**
-   * Records the zip an upload project holds now (RF-128), replacing the earlier one. Undefined for an
-   * unknown id, another user's project and a GitHub project, and then nothing is written.
+   * Records the zip an upload project, or the workbooks a workbook project, hold now (RF-128, RF-150),
+   * replacing the earlier source. Undefined for an unknown id, another user's project and a GitHub
+   * project, and then nothing is written.
    */
   attachUpload(change: UploadAttachment): Promise<Project | undefined>;
   /**

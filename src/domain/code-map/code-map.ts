@@ -25,11 +25,25 @@ export interface UploadCodeMapSource {
   readonly subpath: string;
 }
 
-export type CodeMapSource = GithubCodeMapSource | UploadCodeMapSource;
+/** Excel workbooks the user uploaded (RF-152): named by their files and the hash of the rendered tree. */
+export interface WorkbookCodeMapSource {
+  readonly kind: 'workbook';
+  readonly workbooks: readonly string[];
+  readonly snapshotHash: string;
+  /** Always '': a batch of workbooks is the whole tree. */
+  readonly subpath: string;
+}
+
+export type CodeMapSource = GithubCodeMapSource | UploadCodeMapSource | WorkbookCodeMapSource;
 
 /** True for the source of an uploaded zip. */
 export function isUploadSource(source: CodeMapSource): source is UploadCodeMapSource {
-  return 'kind' in source;
+  return 'kind' in source && source.kind === 'upload';
+}
+
+/** True for the source of uploaded workbooks. */
+export function isWorkbookSource(source: CodeMapSource): source is WorkbookCodeMapSource {
+  return 'kind' in source && source.kind === 'workbook';
 }
 
 export interface CodeSymbol {

@@ -1,3 +1,4 @@
+import { heldWorkbooks } from '../../../support/workbook-run-fixtures.js';
 import { describe, expect, it } from 'vitest';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import { rolesNeedPrivateConfirmation } from '../../../../src/application/understand/understand-options.js';
@@ -35,6 +36,7 @@ async function setup(settings: ProjectSettings) {
     sourceUrl: '',
     ref: '',
     subpath: '',
+    upload: heldWorkbooks,
   });
   await projects.insertOrFind(project);
   const briefs = new MemoryBriefStore();
