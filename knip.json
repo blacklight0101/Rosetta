@@ -9,7 +9,8 @@
     "src/infrastructure/files/grep-worker.ts",
     "tests/compose/*.spec.ts",
     "tests/compose/serve.ts",
-    "tests/support/frozen-database-harness.ts"
+    "tests/support/frozen-database-harness.ts",
+    "tests/support/read-project-child.ts"
   ],
   "project": [
     "src/**/*.ts",

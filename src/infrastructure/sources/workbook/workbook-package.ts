@@ -101,6 +101,31 @@ export class WorkbookPackage {
     }
   }
 
+  /** The inflated bytes of a binary part (`xl/vbaProject.bin`), counted against the limits as they inflate. */
+  async readBytes(part: string, maxBytes: number): Promise<Buffer> {
+    const planned = this.parts.get(part.toLowerCase());
+    if (planned === undefined) throw workbookNotReadable(part, 'the part is missing');
+    const chunks: Buffer[] = [];
+    let bytes = 0;
+    try {
+      for await (const chunk of await this.zip.openReadStreamPromise(planned.entry)) {
+        if (!Buffer.isBuffer(chunk)) throw workbookNotReadable(part, 'the data is not bytes');
+        this.settings.signal.throwIfAborted();
+        bytes += chunk.length;
+        if (bytes > maxBytes) throw workbookTooLarge('bytes in a macro project', maxBytes);
+        if (!this.inflated.add(chunk.length)) throw zipTooLarge(this.settings.limits.zip.maxBytes);
+        chunks.push(chunk);
+      }
+      if (bytes !== planned.entry.uncompressedSize) {
+        throw zipNotReadable('an entry is not the size its header declares');
+      }
+    } catch (error) {
+      if (error instanceof RosettaError || this.settings.signal.aborted) throw error;
+      throw workbookNotReadable(part, 'the data could not be read', error);
+    }
+    return Buffer.concat(chunks);
+  }
+
   private async feed(planned: PlannedFile, part: string, visitor: XmlVisitor): Promise<number> {
     const { maxPartBytes, zip } = this.settings.limits;
     const feeder = new XmlFeeder(part, visitor);
