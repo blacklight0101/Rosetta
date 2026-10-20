@@ -16,13 +16,18 @@ const scanOf = (source: Record<string, unknown> | undefined) =>
     }),
   );
 
-const zip = { kind: 'upload', url: '', fileName: 'OrderDesk.zip', snapshotHash: null } as const;
-const workbook = {
-  kind: 'workbook',
+const bare = {
   url: '',
-  workbooks: ['Pricing.xlsx'],
+  owner: '',
+  repo: '',
+  ref: '',
+  commitSha: null,
+  subpath: '',
   snapshotHash: null,
+  uploadedAt: '2026-10-19T09:30:00.000Z',
 } as const;
+const zip = { ...bare, kind: 'upload', fileName: 'OrderDesk.zip' } as const;
+const workbook = { ...bare, kind: 'workbook', workbooks: ['Pricing.xlsx'] } as const;
 
 const stepDetail = (state: ReturnType<typeof scanOf>): string | undefined =>
   journeyOf({ stage: 'scan', phase: { kind: 'running' }, state, tiles: [] })[0]?.detail;
