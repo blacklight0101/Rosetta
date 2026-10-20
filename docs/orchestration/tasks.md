@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 56      | 5         | 49         | 2         | 0                  | 19      | 35      | 2      | 12         | 0         |
-| **Total**               | **273** | **77**    | **169**    | **27**    | **0**              | **135** | **126** | **12** | **147**    | **0**     |
+| P3 Report and plan      | 59      | 5         | 52         | 2         | 0                  | 20      | 37      | 2      | 15         | 0         |
+| **Total**               | **276** | **77**    | **172**    | **27**    | **0**              | **136** | **128** | **12** | **150**    | **0**     |
 
 ## Conventions for every card
 
@@ -3687,3 +3687,48 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the limit, RST-1931, tests.
 - **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-151, DEC-152, P3-44, P3-47 (owner decision on the second review of #653); issue #656.
+
+### P3-57 - Follow-up: workbook pages after the Excel journey
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P3-48, P3-49, P3-52
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RFC-005 section 4.4; RF-150 and RF-152; the workbook reader and renderer (`src/infrastructure/sources/workbook/`); `web/src/pages/WorkbookUploadForm.tsx`, `use-workbook-upload.ts`, `web/src/lib/workbook-check.ts`; P3-55 (the zip form's notice); the P3-52 journey and its open questions (#652); the P3-46, P3-49 and P3-51 verdicts (#642, #639, #640).
+- **Do**: (1) the reader carries hidden rows and hidden columns of each sheet and the sheet header in `values.md` marks them, as RFC-005 section 4.4 asks; (2) after a replacing batch the workbook start page shows "The code changed since the last run." at once, from the flag the finish answer already carries, as P3-55 did for zips, and the P3-52 journey stops reopening the page; (3) check that the page reads the workbook file limit from the server (`GET /api/session` beside `uploadMaxMb`) and not a constant, and fix it if not; (4) check that the server refuses to start a run for a workbook project that has no source yet (not only the page), and add the refusal and its test if it is missing.
+- **Review probes**: a sheet with hidden rows, hidden columns and a hidden row inside a used range; a replacing batch with the page left open (notice shown, no reload); `ROSETTA_WORKBOOK_MAX_FILES=3` (the page says 3 and refuses a fourth file before upload); an API start of a workbook project with no source (refused with its code).
+- **Behaviour to preserve**: the rendering of sheets with nothing hidden; the zip form's notice; the RF-151 limits.
+- **Delivers**: the four changes and tests; the journey without the reopen.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-150, RF-152, RFC-005 section 4.4, P3-46, P3-49, P3-52 (verifier and builder notes); issue #658.
+
+### P3-58 - Follow-up: workbook reader privacy and robustness
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-44, P3-47, P3-51
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-151, RF-153 and its privacy rule (Q-38); the workbook reader (`package-reader.ts`, `workbook-xml-reader.ts`), the external-link naming and `workbook-cell-label.ts`; the P3-44 and P3-51 verdicts (#638, #640).
+- **Do**: (1) an external-link target that is double-encoded (`Book.xlsx%253Ftoken=SECRET`) keeps no query or fragment after decoding, at any depth of encoding, and a target that is only a query, fragment or host gives no empty file name (it is dropped and counted); (2) workbook and sheet names in the evidence cell label are capped, with the cut marked, so a long name cannot flood a page; (3) the reader finds the workbook part through `_rels/.rels` and the styles, shared-strings and connections parts through the workbook relationships instead of fixed paths, so a valid package with another layout is read and one whose relationships point outside the package is refused with its code; (4) one XML text node is capped so a single 100 MB value cannot take several times its size in memory; it is refused with its RF-151 code.
+- **Review probes**: `%253F`, `%25253F` and `%2523` in a link target; a link target of only `?a=b`; a 500-character sheet name in a citation; a package whose workbook part is `xl/book.xml` named by `_rels/.rels`; a relationship target of `../../etc/passwd`; a 100 MB single text node (memory stays within a small multiple of the cap).
+- **Behaviour to preserve**: every workbook Excel writes reads unchanged; the folder-free external names of #653; the RF-151 limits and codes.
+- **Delivers**: the four changes and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-151, RF-153, Q-38, P3-44, P3-51 (verifier MINORs); issue #659.
+
+### P3-59 - Follow-up: the flaky hand-off package journey
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-12
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/e2e/journeys/handoff-package.spec.ts` and its support files; the CI runs 39375038203 and 39396931579 (shard 3, the run ended "Failed" instead of "Completed"; both passed on rerun) and their artifacts; `tests/e2e/journeys/zip-project.spec.ts:51` and the run where the start-page contrast check saw a button of contrast 1.16 (white on #eaefee, `title=""`) in run 39384719621.
+- **Do**: find why the run of `handoff-package.spec.ts:27` sometimes ends "Failed": read the failed run's events and error code from the CI artifacts (add an artifact upload of the run log on failure if none exists), reproduce it under load, and fix the cause, in the product if a run can really fail this way, else in the test. Do the same for the contrast failure (a button caught mid-transition, or a real state with too little contrast). Do not weaken the accessibility check or add retries to hide a failure.
+- **Review probes**: the spec run 20 times under `--repeat-each` with CPU load; the start page checked during and after its transitions.
+- **Behaviour to preserve**: every assertion of both journeys; the accessibility check.
+- **Delivers**: the cause of each failure in the PR body, the fix and its test.
+- **Done when**: both specs pass 20 runs in a row locally and in CI; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-604, RF-610, RF-611, RNF-010 (flaky CI runs on 2026-10-20); issue #660.
