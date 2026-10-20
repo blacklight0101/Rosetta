@@ -1,10 +1,11 @@
 import { SaxesParser } from 'saxes';
-import { workbookNotReadable, workbookXmlRefused } from './workbook-errors.js';
+import { workbookNotReadable, workbookTooLarge, workbookXmlRefused } from './workbook-errors.js';
 
 // RF-151, ADR-023: every XML part is read as a stream of events by `saxes`, a non-validating parser
 // that resolves no external entity. A part is refused on its document type (so no entity can be
 // declared, internal or external) and on nesting deeper than 64; nothing is held but what a
-// visitor keeps.
+// visitor keeps. The parser holds one text value (a text node, a CDATA section, a comment or an
+// attribute) whole until it ends, so the length of what it holds is judged after every chunk.
 
 export type Attributes = Readonly<Record<string, string>>;
 
@@ -31,8 +32,10 @@ export function relationshipId(attributes: Attributes): string | undefined {
 /** Feeds the text of one part to a visitor, under the guards. */
 export class XmlFeeder {
   private readonly parser = new SaxesParser();
+  private readonly maxTextChars: number;
 
-  constructor(part: string, visitor: XmlVisitor) {
+  constructor(part: string, visitor: XmlVisitor, maxTextChars: number) {
+    this.maxTextChars = maxTextChars;
     let depth = 0;
     this.parser.on('error', (error) => {
       throw workbookNotReadable(part, 'the XML is not well formed', error);
@@ -45,18 +48,42 @@ export class XmlFeeder {
       if (depth > MAX_NESTING) {
         throw workbookXmlRefused(part, `nests elements deeper than ${String(MAX_NESTING)}`);
       }
+      for (const value of Object.values(tag.attributes)) this.checkLength(value.length);
       visitor.open?.(localName(tag.name), tag.attributes);
     });
     this.parser.on('closetag', (tag) => {
       depth -= 1;
       visitor.close?.(localName(tag.name));
     });
-    this.parser.on('text', (text) => visitor.text?.(text));
-    this.parser.on('cdata', (text) => visitor.text?.(text));
+    for (const event of ['text', 'cdata'] as const) {
+      this.parser.on(event, (text) => {
+        this.checkLength(text.length);
+        visitor.text?.(text);
+      });
+    }
   }
 
   write(text: string): void {
     this.parser.write(text);
+    this.checkHeld();
+  }
+
+  /**
+   * RST-1926: the text or the name the parser is still collecting is longer than the cap. Its
+   * fields are not in its typed interface, so they are read as unknown; a field it does not have
+   * is never too long (the test of a 100 MB node fails if a new version renames them).
+   */
+  private checkHeld(): void {
+    for (const field of ['text', 'name']) {
+      const held: unknown = Reflect.get(this.parser, field);
+      if (typeof held === 'string') this.checkLength(held.length);
+    }
+  }
+
+  private checkLength(length: number): void {
+    if (length > this.maxTextChars) {
+      throw workbookTooLarge('characters in one XML text value', this.maxTextChars);
+    }
   }
 
   /** Ends the part; an element left open is "not well formed". */

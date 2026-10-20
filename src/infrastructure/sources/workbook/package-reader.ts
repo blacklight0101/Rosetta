@@ -1,6 +1,8 @@
+import { posix } from 'node:path';
 import type { LimitCounter } from '../entry-guards.js';
 import { CellReader } from './cell-reader.js';
 import { HiddenReader } from './hidden-reader.js';
+import { linkFileName } from './link-file-name.js';
 import { readMacroProject } from './macro-reader.js';
 import { RuleReader } from './rule-reader.js';
 import { SharedStringsReader } from './shared-strings-reader.js';
@@ -22,6 +24,8 @@ import type { XmlVisitor } from './xml-stream.js';
 // RF-151, RF-152: assembles the model of one workbook package from its parts, in the order that
 // lets each part be read once: workbook, strings, styles, then every sheet with what it points at.
 
+// The workbook part comes from `_rels/.rels`, and the strings, styles and connections from the workbook's
+// relationships. A package that names none of them is read from the paths Excel uses.
 const WORKBOOK_PART = 'xl/workbook.xml';
 const SHARED_STRINGS_PART = 'xl/sharedStrings.xml';
 const STYLES_PART = 'xl/styles.xml';
@@ -55,16 +59,20 @@ class SheetPartReader implements XmlVisitor {
   }
 }
 
-/** Only the file name of a link target: no folder, host, query or fragment, encoded or not. */
-function fileNameOf(target: string): string {
-  const bare = (text: string): string => text.split(/[?#]/)[0] ?? '';
-  let decoded = bare(target);
-  try {
-    decoded = decodeURIComponent(decoded);
-  } catch {
-    // An undecodable name is kept as written.
-  }
-  return bare(decoded).split(/[\\/]/).pop() ?? '';
+/** The part the workbook's relationship of this type names, else the file Excel puts beside it. */
+function partOf(
+  workbookPart: string,
+  relationships: readonly Relationship[],
+  type: 'sharedStrings' | 'styles' | 'connections',
+): string {
+  const named = relationships.find((rel) => !rel.external && rel.type === type)?.target;
+  if (named !== undefined) return named;
+  const fallback = {
+    sharedStrings: SHARED_STRINGS_PART,
+    styles: STYLES_PART,
+    connections: CONNECTIONS_PART,
+  };
+  return posix.join(posix.dirname(workbookPart), posix.basename(fallback[type]));
 }
 
 export class PackageReader {
@@ -89,12 +97,14 @@ export class PackageReader {
     if (this.pkg.has('xl/workbook.bin')) {
       throw workbookLegacyFormat(this.fileName, 'an .xlsb (binary) workbook');
     }
+    const workbookPart = await this.workbookPart();
     const workbook = new WorkbookXmlReader(this.fileName, this.limits.maxSheets);
-    await this.pkg.stream(WORKBOOK_PART, workbook);
-    const relationships = await this.pkg.relationships(WORKBOOK_PART);
-    const strings = await this.sharedStrings(relationships);
+    await this.pkg.stream(workbookPart, workbook);
+    const relationships = await this.pkg.relationships(workbookPart);
+    const strings = await this.sharedStrings(partOf(workbookPart, relationships, 'sharedStrings'));
     const styles = new StylesReader();
-    if (this.pkg.has(STYLES_PART)) await this.pkg.stream(STYLES_PART, styles);
+    const stylesPart = partOf(workbookPart, relationships, 'styles');
+    if (this.pkg.has(stylesPart)) await this.pkg.stream(stylesPart, styles);
     const sheets: WorkbookSheet[] = [];
     for (const entry of workbook.sheets) {
       sheets.push(await this.readSheet(entry, relationships, strings, styles));
@@ -112,12 +122,20 @@ export class PackageReader {
           refersTo: name.refersTo,
         };
       }),
-      externalLinks: await this.externalLinks(workbook.externalRelationships, relationships),
-      connections: await this.connections(),
+      ...(await this.externalLinks(workbook.externalRelationships, relationships)),
+      connections: await this.connections(partOf(workbookPart, relationships, 'connections')),
       hasMacros: this.pkg.has(VBA_PART),
       ...(await this.macros()),
       sharedStringCount: strings.length,
     };
+  }
+
+  /** The part `_rels/.rels` names as the office document; `xl/workbook.xml` when it names none. */
+  private async workbookPart(): Promise<string> {
+    const rels = await this.pkg.relationships('');
+    return (
+      rels.find((rel) => !rel.external && rel.type === 'officeDocument')?.target ?? WORKBOOK_PART
+    );
   }
 
   /** The VBA project, read as text; nothing is added to the model of a workbook without one. */
@@ -127,9 +145,7 @@ export class PackageReader {
     return { macros: readMacroProject(bytes, this.limits.macros) };
   }
 
-  private async sharedStrings(relationships: readonly Relationship[]): Promise<string[]> {
-    const target = relationships.find((rel) => rel.type === 'sharedStrings')?.target;
-    const part = target ?? SHARED_STRINGS_PART;
+  private async sharedStrings(part: string): Promise<string[]> {
     if (!this.pkg.has(part)) return [];
     const reader = new SharedStringsReader(this.limits.maxCells);
     await this.pkg.stream(part, reader);
@@ -217,27 +233,38 @@ export class PackageReader {
     return kinds;
   }
 
-  /** Links to other workbooks, by file name only; the target is never opened. */
+  /**
+   * Links to other workbooks, by file name only; the target is never opened. A target with no file
+   * name is left out and counted; the links after it keep the number they have in the file.
+   */
   private async externalLinks(
     ids: readonly string[],
     relationships: readonly Relationship[],
-  ): Promise<ExternalLink[]> {
+  ): Promise<Pick<WorkbookModel, 'externalLinks' | 'unnamedExternalLinks'>> {
     const links: ExternalLink[] = [];
-    for (const id of ids) {
+    let unnamed = 0;
+    for (const [index, id] of ids.entries()) {
+      const number = index + 1;
       const part = relationships.find((rel) => rel.id === id)?.target;
       if (part === undefined) continue;
       if (!this.pkg.has(part)) throw workbookNotReadable(part, 'the part is missing');
       for (const rel of await this.pkg.relationships(part)) {
-        if (rel.external) links.push({ fileName: fileNameOf(rel.target) });
+        if (!rel.external) continue;
+        const fileName = linkFileName(rel.target);
+        if (fileName === '') {
+          unnamed += 1;
+          continue;
+        }
+        links.push(number === links.length + 1 ? { fileName } : { fileName, position: number });
       }
     }
-    return links;
+    return { externalLinks: links, ...(unnamed > 0 ? { unnamedExternalLinks: unnamed } : {}) };
   }
 
-  private async connections(): Promise<ConnectionsReader['connections']> {
-    if (!this.pkg.has(CONNECTIONS_PART)) return [];
+  private async connections(part: string): Promise<ConnectionsReader['connections']> {
+    if (!this.pkg.has(part)) return [];
     const reader = new ConnectionsReader();
-    await this.pkg.stream(CONNECTIONS_PART, reader);
+    await this.pkg.stream(part, reader);
     return reader.connections;
   }
 }

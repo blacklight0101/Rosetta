@@ -125,3 +125,35 @@ it('RF-156 reads no more than 40 ranges of a rule line', () => {
   const label = workbookCellLabel('Pricing.xlsx/S/validation.md', [`${many} validation x: 1`]);
   expect(label).toBe('Pricing.xlsx, sheet S, cells A1');
 });
+
+it('RF-156 caps a 500-character sheet name and marks the cut', () => {
+  const sheet = 'S'.repeat(500);
+  const label = workbookCellLabel(`Pricing.xlsx/${sheet}/values.md`, ['R1 | B2 = 1']) ?? '';
+
+  expect(label).toBe(`Pricing.xlsx, sheet ${'S'.repeat(120)}..., cells B2`);
+});
+
+it('RF-156 caps a 500-character workbook name and marks the cut', () => {
+  const workbook = `${'W'.repeat(500)}.xlsx`;
+  const label = workbookCellLabel(`${workbook}/Summary/formulas.md`, ['B12 = 1']) ?? '';
+
+  expect(label).toBe(`${'W'.repeat(120)}..., sheet Summary, cells B12`);
+});
+
+it('RF-156 keeps a name of exactly 120 characters whole', () => {
+  const sheet = 'S'.repeat(120);
+
+  expect(workbookCellLabel(`Pricing.xlsx/${sheet}/formulas.md`, ['B12 = 1'])).toBe(
+    `Pricing.xlsx, sheet ${sheet}, cells B12`,
+  );
+});
+
+it('RF-156 keeps a long label short when both names are long and many cells are cited', () => {
+  const lines = Array.from({ length: 5000 }, (_, i) => `A${String(i + 1)} = 1`);
+  const label = workbookCellLabel(
+    `${'W'.repeat(100_000)}.xlsx/${'S'.repeat(100_000)}/formulas.md`,
+    lines,
+  );
+
+  expect(label?.length).toBeLessThan(400);
+});

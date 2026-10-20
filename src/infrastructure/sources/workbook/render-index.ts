@@ -127,9 +127,14 @@ function addNames(file: TextFile, model: WorkbookModel, entries: readonly SheetE
 function addLinks(file: TextFile, model: WorkbookModel): void {
   file.section('## External links');
   file.add();
-  if (model.externalLinks.length === 0) file.add('None.');
+  const unnamed = model.unnamedExternalLinks ?? 0;
+  if (model.externalLinks.length === 0 && unnamed === 0) file.add('None.');
   for (const link of model.externalLinks.slice(0, LIST_CAP)) {
     file.add(`- ${q(baseName(link.fileName))}`);
+  }
+  if (unnamed === 1) file.add('- 1 external link had no usable file name and is not listed.');
+  else if (unnamed > 1) {
+    file.add(`- ${String(unnamed)} external links had no usable file name and are not listed.`);
   }
   addTable(
     file,
