@@ -19,7 +19,7 @@ describe('prompt files', () => {
   it('RF-145 the reader has its versioned prompt files', () => {
     expect(agentPrompts).toEqual(
       expect.arrayContaining([
-        'reader/area.v3.md',
+        'reader/area.v4.md',
         'reader/read-first.v1.md',
         'reader/task.v2.md',
         'reader/turns-left.v2.md',
@@ -50,7 +50,7 @@ describe('prompt files', () => {
   });
 
   it('RF-201 the reader prompt names every tool and no other', async () => {
-    const text = await readFile('prompts/reader/area.v3.md', 'utf8');
+    const text = await readFile('prompts/reader/area.v4.md', 'utf8');
 
     for (const tool of ['list_area_files', 'read_file', 'grep', 'codemap_query']) {
       expect(text).toContain(`\`${tool}`);
@@ -61,7 +61,7 @@ describe('prompt files', () => {
 
 describe('RF-206 the read-first prompts', () => {
   it('RF-206 the reader prompt tells the reader to read its area before it answers', async () => {
-    const text = await readFile('prompts/reader/area.v3.md', 'utf8');
+    const text = await readFile('prompts/reader/area.v4.md', 'utf8');
 
     expect(text).toMatch(/read before you answer/iu);
     expect(text).toMatch(/not accepted/iu);
