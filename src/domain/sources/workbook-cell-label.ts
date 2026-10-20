@@ -10,6 +10,18 @@ const LINE_START = /^([A-Z]{1,3}[0-9]{1,7}(?::[A-Z]{1,3}[0-9]{1,7})?)(?=[\s{]|$)
 const FIELD_START = /^([A-Z]{1,3}[0-9]{1,7})(?=\s|$)/u;
 const ROW_MARKER = /^R[0-9]+$/u;
 const SHOWN_CELLS = 6;
+const RANGE_TOKEN = /^[A-Z]{1,3}[0-9]{1,7}(?::[A-Z]{1,3}[0-9]{1,7})?$/u;
+/** A rule line names at most this many ranges before its rule word (the renderer writes at most 40). */
+const MAX_RULE_RANGES = 40;
+const RULE_WORDS = new Set(['validation', 'conditional']);
+
+/** The ranges a validation or conditional rule line starts with, when a rule word follows them. */
+function rangesOfRuleLine(line: string): string[] | undefined {
+  const tokens = line.split(' ', MAX_RULE_RANGES + 1);
+  const end = tokens.findIndex((token) => !RANGE_TOKEN.test(token));
+  const word = tokens[end];
+  return end > 0 && word !== undefined && RULE_WORDS.has(word) ? tokens.slice(0, end) : undefined;
+}
 
 /** The fields of a values line, split at ` | ` outside a quoted text (a text is JSON-escaped). */
 function fieldsOf(line: string): string[] {
@@ -37,6 +49,10 @@ function cellsOfValuesLine(line: string): string[] {
 
 function cellsOfLine(file: string, line: string): string[] {
   if (file === 'values.md') return cellsOfValuesLine(line);
+  if (file === 'validation.md') {
+    const ranges = rangesOfRuleLine(line);
+    if (ranges !== undefined) return ranges;
+  }
   const cell = LINE_START.exec(line)?.[1];
   return cell === undefined ? [] : [cell];
 }
