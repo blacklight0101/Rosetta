@@ -32,6 +32,7 @@ import {
   loadPlannerWorkbookPrompt,
   loadUxPrompt,
   loadCoveragePrompt,
+  loadGapPrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
@@ -83,7 +84,7 @@ export interface PlanHarnessOptions {
   readonly coverageRecording?: Recording;
   /** Q-45: the answer to the call for the items no card builds (no card if absent), and a hook before it. */
   readonly gapRecording?: Recording;
-  readonly beforeGapCall?: () => Promise<void>;
+  readonly beforeGapCall?: (harness: PlanHarness) => Promise<void>;
   /** RF-143: the planner on OpenAI with the server's key, a provider that needs consent. */
   readonly cloudPlanner?: boolean;
   /** Changes the project settings, for example its caps (RF-613). */
@@ -129,6 +130,7 @@ export function planExecutor(
     workbookPrompt: () => loadPlannerWorkbookPrompt('prompts'),
     uxPrompt: () => loadUxPrompt('prompts'),
     coveragePrompt: () => loadCoveragePrompt('prompts'),
+    gapPrompt: () => loadGapPrompt('prompts'),
     ids: new SequenceIdGenerator(),
     scans,
   });
@@ -255,7 +257,9 @@ export async function createPlanHarness(
       options.coverageRecording ??
       (await loadRecording(join('tests', 'recordings', 'fake', 'planner-coverage.json'))),
     gapRecording: options.gapRecording ?? noGapCards(),
-    ...(options.beforeGapCall === undefined ? {} : { beforeGapCall: options.beforeGapCall }),
+    beforeGapCall: async () => {
+      if (made.harness !== undefined) await options.beforeGapCall?.(made.harness);
+    },
     ...(cloud ? { serverOpenAiKey: serverKeyText } : {}),
     beforeCall: async () => {
       if (made.harness !== undefined) await options.beforeCall?.(made.harness);

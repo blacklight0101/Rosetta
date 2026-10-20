@@ -79,3 +79,41 @@ describe('BuildPlan: the gap call refused by a cap', () => {
     expect(Object.keys(await h.handoffOf(run))).toContain('checks.md');
   });
 });
+
+describe('BuildPlan: a stop during the gap call', () => {
+  it('RF-1108 a run stopped during the call ends Interrupted, not with the code of the call', async () => {
+    const h = await seededUxPlan(temp.path, {
+      harness: {
+        coverageRecording: await withCoverageAnswer(linksOne),
+        gapRecording: await closingGapRecording(),
+        beforeGapCall: async (harness) => {
+          await harness.stopRunning();
+          throw new RosettaError(ERROR_CODES.providerUnavailable, 'Stopped.');
+        },
+      },
+    });
+
+    const run = await h.plan();
+
+    expect(run.endState).toBe('Interrupted');
+    expect(h.s.logger.entries).not.toContainEqual(
+      expect.objectContaining({ code: ERROR_CODES.providerUnavailable }),
+    );
+  });
+});
+
+describe('BuildPlan: a fault in the gap call that is no refusal', () => {
+  it('Q-45 a plain error is not taken for a refusal: no package is written under a code it does not have', async () => {
+    const h = await seededUxPlan(temp.path, {
+      harness: {
+        coverageRecording: await withCoverageAnswer(linksOne),
+        beforeGapCall: () => Promise.reject(new TypeError('A fault of the program.')),
+      },
+    });
+
+    const run = await h.plan();
+
+    expect(run.endState).toBe('Failed');
+    expect(await h.handoffOf(run)).toEqual({});
+  });
+});

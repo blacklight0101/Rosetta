@@ -136,10 +136,8 @@ describe('BuildPlan: the run manifest', () => {
 
     const manifest = await h.manifestOf(await h.plan());
     expect(manifest.brief).toMatchObject({ ...briefAnswers, savedAt: '2026-10-12T09:30:00.000Z' });
-    expect(manifest.catalogue).toEqual({
-      version: shippedCatalogue.version,
-      sha256: shippedCatalogue.sha256,
-    });
+    const { version, sha256 } = shippedCatalogue;
+    expect(manifest.catalogue).toEqual({ version, sha256 });
     const sha = async (name: string): Promise<string> =>
       createHash('sha256')
         .update(await readFile(`prompts/planner/${name}`))
@@ -153,6 +151,7 @@ describe('BuildPlan: the run manifest', () => {
       'planner/api-contract.v1.md': { version: 'v1', sha256: await sha('api-contract.v1.md') },
       'planner/ux.v1.md': { version: 'v1', sha256: await sha('ux.v1.md') },
       'planner/coverage.v1.md': { version: 'v1', sha256: await sha('coverage.v1.md') },
+      'planner/gap.v1.md': { version: 'v1', sha256: await sha('gap.v1.md') },
     });
     expect(manifest.roles['planner']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.source.commitSha).toBe('3f786850e387550fdab836ed7e6dc881de23001b');

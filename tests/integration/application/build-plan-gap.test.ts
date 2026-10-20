@@ -1,6 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
-import { withCoverageAnswer } from '../../support/coverage-plan-harness.js';
+import { separateFrontEnd } from '../../support/api-plan-harness.js';
+import {
+  withCoverageAnswer,
+  withoutPhases,
+  withoutTasks,
+} from '../../support/coverage-plan-harness.js';
 import { closingGapRecording, gapRecordingOf } from '../../support/gap-plan-harness.js';
 import { seededUxPlan } from '../../support/ux-plan-harness.js';
 import { useTempRoot } from '../../support/temp-root.js';
@@ -106,14 +111,15 @@ describe('BuildPlan: gaps closed by the call', () => {
     ]);
     const added = cards.slice(3).join('\n');
     expect(added).toContain('Place and read orders through the API');
-    expect(added).toContain('operation:placeOrder');
-    expect(added).toContain('flow:FLOW-001');
+    expect(added).toContain('[Operation](api/openapi.yaml) placeOrder');
+    expect(added).toContain('[Flow](flows/FLOW-001.md) FLOW-001: Checkout journey');
     expect(added).toContain('Invariant: Only a signed-in customer reads the customer list');
     expect(added).toContain('Review probes:');
     expect(added).not.toContain('A card in a phase that does not exist');
     const first = cards[3] ?? '';
-    expect(first).not.toContain('table:customer');
-    expect(first).not.toContain('operation:ghost');
+    expect(first).not.toContain('[Table]');
+    expect(first).not.toContain('[Feature]');
+    expect(first).not.toContain('ghost');
   });
 
   it('RF-634 a new card waits for the card it names', async () => {
@@ -133,6 +139,7 @@ function cardOf() {
     requirements: [1],
     acceptanceCriteria: ['Given a basket of 60, when it is posted, then the order is stored.'],
     invariant: 'An order posted is an order stored.',
+    riskClass: 'none',
   };
 }
 
@@ -204,5 +211,64 @@ describe('BuildPlan: answers that close nothing', () => {
     expect(run.endState).toBe('Failed');
     expect(plain((await h.handoffOf(run))['tasks.md'])).not.toContain('Nothing new');
     expect(h.providers.gapRequests()).toHaveLength(1);
+  });
+});
+
+describe('BuildPlan: plans the call cannot serve', () => {
+  it('Q-45 a plan with no phase has no place for a card, so the call is not made', async () => {
+    const h = await seededUxPlan(temp.path, {
+      recording: await withoutPhases(),
+      harness: { gapRecording: await closingGapRecording() },
+    });
+
+    const run = await h.plan();
+
+    expect(run.endState).toBe('Failed');
+    expect(h.providers.gapRequests()).toHaveLength(0);
+    expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
+  });
+
+  it('Q-45 a plan with phases but no card still asks, and the cards of the answer join it', async () => {
+    const h = await seededUxPlan(temp.path, {
+      recording: await withoutTasks(),
+      harness: { gapRecording: await closingGapRecording() },
+    });
+
+    const run = await h.plan();
+
+    expect(h.providers.gapRequests()).toHaveLength(1);
+    expect(plain((await h.handoffOf(run))['tasks.md'])).toMatch(/^## T-001\n/mu);
+  });
+});
+
+describe('BuildPlan: the gap cards under SDD', () => {
+  it('RF-607 given SDD a card that implements no requirement is not added', async () => {
+    const h = await gappedPlan(
+      gapRecordingOf(
+        JSON.stringify({
+          tasks: [
+            { ...cardOf(), title: 'The journey', requirements: [], builds: ['flow:FLOW-001'] },
+          ],
+        }),
+      ),
+    );
+    await h.saveBrief({ ...separateFrontEnd, principles: ['sdd'] });
+
+    const run = await h.plan();
+
+    expect(run.endState).toBe('Failed');
+    expect(plain((await h.handoffOf(run))['tasks.md'])).not.toContain('## T-004');
+  });
+
+  it('RF-607 without SDD the same card is added', async () => {
+    const answer = JSON.stringify({
+      tasks: [{ ...cardOf(), title: 'The journey', requirements: [], builds: ['flow:FLOW-001'] }],
+    });
+    const h = await gappedPlan(gapRecordingOf(answer));
+    await h.saveBrief({ ...separateFrontEnd, principles: ['tdd'] });
+
+    const run = await h.plan();
+
+    expect(plain((await h.handoffOf(run))['tasks.md'])).toContain('## T-004');
   });
 });
