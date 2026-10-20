@@ -32,7 +32,11 @@ export interface CallOutcome {
 }
 
 /** The outcome of a call that used this much, priced as an answered call is (RF-421, P2-16). */
-export function outcomeOf(price: CallPrice, attempts: number, usage: TokenUsage): CallOutcome {
+export function outcomeOf(
+  price: CallPrice,
+  attempts: number,
+  usage: CallOutcome['usage'],
+): CallOutcome {
   const priced = price.price;
   return {
     attempt: Math.max(attempts, 1),
