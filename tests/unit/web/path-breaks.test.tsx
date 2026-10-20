@@ -2,6 +2,7 @@ import { render } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { BreakableText } from '../../../web/src/components/BreakableText.js';
 import { breakablePieces } from '../../../web/src/lib/path-breaks.js';
+import { toolText } from '../../../web/src/lib/live-run/tool-text.js';
 import { formatCitationRef } from '../../../web/src/lib/live-run/citation-label.js';
 
 // RNF-010, design-system.md section 10 (P3-62, owner test 2026-10-20): a long path wraps at "/" and
@@ -53,5 +54,16 @@ describe('RF-1004 a citation of one line', () => {
 
   it('RF-1004 keeps the range of several lines', () => {
     expect(formatCitationRef({ path: 'a.cs', startLine: 27, endLine: 30 })).toBe('a.cs:27-30');
+  });
+});
+
+describe('RF-1002 a tool call on one line', () => {
+  it('RF-1002 writes the range of one line as file:27, and several lines as file:27-30', () => {
+    const one = { path: 'docs/dependencies.md', startLine: 27, endLine: 27 };
+
+    expect(toolText('read_file', one)).toBe('read_file docs/dependencies.md:27');
+    expect(toolText('read_file', { ...one, endLine: 30 })).toBe(
+      'read_file docs/dependencies.md:27-30',
+    );
   });
 });

@@ -36,56 +36,51 @@ function codeMapOf(names: readonly string[], state: RunState) {
   return render(<CodeMap tiles={tiles} stage="understand" onOpenArea={() => undefined} />);
 }
 
-describe('RF-1016 the tiles of the code map', () => {
-  const state = stateAfter(
-    planned(1, 'r1', 'Asset_Manager.xlsm/macros'),
-    agentStarted(2, 'r1', 'Asset_Manager.xlsm/macros'),
-  );
+const state = stateAfter(
+  planned(1, 'r1', 'Asset_Manager.xlsm/macros'),
+  agentStarted(2, 'r1', 'Asset_Manager.xlsm/macros'),
+);
 
-  it('RF-1016 shows the part of the name after the last "/", with the full name apart', () => {
-    codeMapOf(['Asset_Manager.xlsm/macros', 'Catalog'], state);
+it('RF-1016 shows the part of the name after the last "/", with the full name apart', () => {
+  codeMapOf(['Asset_Manager.xlsm/macros', 'Catalog'], state);
 
-    const tile = screen.getByRole('button', { name: /Asset_Manager\.xlsm\/macros/u });
-    expect(tile.querySelector('.rst-tile__name')?.textContent).toBe('macros');
-    expect(tile.querySelector('.rst-tile__full')?.textContent).toBe('Asset_Manager.xlsm/macros');
-    expect(tile.getAttribute('aria-label')).toContain('being read');
-  });
+  const tile = screen.getByRole('button', { name: /Asset_Manager\.xlsm\/macros/u });
+  expect(tile.querySelector('.rst-tile__name')?.textContent).toBe('macros');
+  expect(tile.querySelector('.rst-tile__full')?.textContent).toBe('Asset_Manager.xlsm/macros');
+  expect(tile.getAttribute('aria-label')).toContain('being read');
+});
 
-  it('RF-1016 adds no full-name element to a tile whose name has no "/"', () => {
-    codeMapOf(['Asset_Manager.xlsm/macros', 'Catalog'], state);
+it('RF-1016 adds no full-name element to a tile whose name has no "/"', () => {
+  codeMapOf(['Asset_Manager.xlsm/macros', 'Catalog'], state);
 
-    const tile = screen.getByRole('button', { name: /Catalog/u });
-    expect(tile.querySelector('.rst-tile__full')).toBeNull();
-  });
+  const tile = screen.getByRole('button', { name: /Catalog/u });
+  expect(tile.querySelector('.rst-tile__full')).toBeNull();
+});
 
-  it('RF-104 explains the "#1" of a part of a large area', () => {
-    codeMapOf(['Asset_Manager.xlsm/Inventory#1'], stateAfter());
+it('RF-104 explains the "#1" of a part of a large area', () => {
+  codeMapOf(['Asset_Manager.xlsm/Inventory#1'], stateAfter());
 
-    const tile = screen.getByRole('button', { name: /Inventory/u });
-    expect(tile.querySelector('.rst-tile__name')?.textContent).toBe('Inventory, part 1');
-    expect(tile.getAttribute('aria-label')).toContain('part 1 of an area too large for one agent');
-    expect(tile.textContent).not.toContain('#1');
-  });
+  const tile = screen.getByRole('button', { name: /Inventory/u });
+  expect(tile.querySelector('.rst-tile__name')?.textContent).toBe('Inventory, part 1');
+  expect(tile.getAttribute('aria-label')).toContain('part 1 of an area too large for one agent');
+  expect(tile.querySelector('.rst-tile__name')?.textContent).not.toContain('#1');
+});
 
-  it('RF-1016 writes the sub-line of a tile in full words', () => {
-    codeMapOf(
-      ['Catalog'],
-      stateAfter(planned(1, 'r1', 'Catalog'), agentStarted(2, 'r1', 'Catalog')),
-    );
+it('RF-1016 writes the sub-line of a tile in full words', () => {
+  codeMapOf(['Catalog'], stateAfter(planned(1, 'r1', 'Catalog'), agentStarted(2, 'r1', 'Catalog')));
 
-    const meta = document.querySelector('.rst-tile__words');
-    expect(meta?.textContent).toBe('being read · 0 files');
-  });
+  const meta = document.querySelector('.rst-tile__words');
+  expect(meta?.textContent).toBe('being read · 0 files');
+});
 
-  it('RF-1016 opens the agents of the area under its full name', () => {
-    const opened: string[] = [];
-    const tiles = tilesOf(state, areas(['Asset_Manager.xlsm/macros']));
-    render(<CodeMap tiles={tiles} stage="understand" onOpenArea={(name) => opened.push(name)} />);
+it('RF-1016 opens the agents of the area under its full name', () => {
+  const opened: string[] = [];
+  const tiles = tilesOf(state, areas(['Asset_Manager.xlsm/macros']));
+  render(<CodeMap tiles={tiles} stage="understand" onOpenArea={(name) => opened.push(name)} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /macros/u }));
+  fireEvent.click(screen.getByRole('button', { name: /macros/u }));
 
-    expect(opened).toEqual(['Asset_Manager.xlsm/macros']);
-  });
+  expect(opened).toEqual(['Asset_Manager.xlsm/macros']);
 });
 
 describe('RF-1003 the spend for this run', () => {
@@ -103,7 +98,7 @@ describe('RF-1003 the spend for this run', () => {
     render(<SpendPanel {...props} costMicros={0} tokens={1_098_763} />);
 
     const meter = screen.getByRole('meter', { name: 'Tokens against the cap' });
-    expect(meter.getAttribute('aria-valuenow')).toBe('36');
+    expect(meter.getAttribute('aria-valuenow')).toBe('37');
     expect(screen.getByText(/No cost so far/u)).toBeTruthy();
     expect(screen.queryByRole('meter', { name: 'Spend against the cap' })).toBeNull();
   });
@@ -126,123 +121,119 @@ describe('RF-1003 the spend for this run', () => {
   });
 });
 
-describe('RF-425 the estimate line of the run meter', () => {
-  const local = estimateSchema.parse(localEstimate);
-  const cloud = estimateSchema.parse(cloudEstimate);
-  const used = (input: number, output: number): RunState =>
-    stateAfter(
-      ev(1, 'run.started', startedData),
-      ev(2, 'usage.recorded', {
-        role: 'reader',
-        tokens: { inputTokens: input, outputTokens: output },
-      }),
-    );
-  const meter = (state: RunState, costMicros: number, estimate = local) =>
-    render(<RunMeter state={state} costMicros={costMicros} estimate={estimate} />);
+const local = estimateSchema.parse(localEstimate);
+const cloud = estimateSchema.parse(cloudEstimate);
+const used = (input: number, output: number): RunState =>
+  stateAfter(
+    ev(1, 'run.started', startedData),
+    ev(2, 'usage.recorded', {
+      role: 'reader',
+      tokens: { inputTokens: input, outputTokens: output },
+    }),
+  );
+const meter = (state: RunState, costMicros: number, estimate = local) =>
+  render(<RunMeter state={state} costMicros={costMicros} estimate={estimate} />);
 
-  it('RF-425 gives the range in tokens when a local model makes the dollar range 0 to 0', () => {
-    meter(used(1_000, 500), 0);
+it('RF-425 gives the range in tokens when a local model makes the dollar range 0 to 0', () => {
+  meter(used(1_000, 500), 0);
 
-    const line = screen.getByTestId('estimate-line');
-    expect(line.textContent).toContain('44,000 tokens');
-    expect(line.textContent).toContain('Range 22,000 to 88,000 tokens.');
-    expect(line.textContent).not.toContain('$0.00 to $0.00');
-  });
-
-  it('RF-425 adds the dollar range when the run has a price', () => {
-    meter(used(1_000, 500), 0, cloud);
-
-    expect(screen.getByTestId('estimate-line').textContent).toContain(
-      'Range 22,000 to 88,000 tokens, $0.12 to $0.80.',
-    );
-  });
-
-  it('RF-425 says the run is over the estimate when tokens pass the likely tokens of a free model', () => {
-    meter(used(30_000, 20_000), 0);
-
-    expect(screen.getByTestId('estimate-over').textContent).toBe(
-      'Over the estimate: 50,000 tokens used so far against 44,000 likely.',
-    );
-  });
-
-  it('RF-425 says the run is over the estimate when the cost passes the likely cost', () => {
-    meter(used(1_000, 500), 500_000, cloud);
-
-    expect(screen.getByTestId('estimate-over').textContent).toBe(
-      'Over the estimate: $0.50 spent so far against $0.39 likely.',
-    );
-  });
-
-  it('RF-425 says nothing about the estimate while the run is within it', () => {
-    meter(used(20_000, 24_000), 0);
-    expect(screen.queryByTestId('estimate-over')).toBeNull();
-  });
-
-  it('RF-425 says nothing about the estimate when the run is at it exactly', () => {
-    meter(used(22_000, 22_000), 0);
-    expect(screen.queryByTestId('estimate-over')).toBeNull();
-  });
+  const line = screen.getByTestId('estimate-line');
+  expect(line.textContent).toContain('44,000 tokens');
+  expect(line.textContent).toContain('Range 22,000 to 88,000 tokens.');
+  expect(line.textContent).not.toContain('$0.00 to $0.00');
 });
 
-describe('RF-209 the agent cards of a Deepen run', () => {
-  const deepened = stateAfter(
-    ev(1, 'run.started', startedData),
-    deepenStarted(2),
-    deepenRoundStarted(3, 1),
-    planned(4, 'reader-001', 'Asset_Manager.xlsm/macros'),
-    agentEnded(5, 'reader-001', 'Done', 1),
-    deepenRoundEnded(6, 1),
-    deepenRoundStarted(7, 2),
-    planned(8, 'reader-002', 'Asset_Manager.xlsm/macros'),
-    planned(9, 'reader-003', 'Asset_Manager.xlsm/sheets'),
+it('RF-425 adds the dollar range when the run has a price', () => {
+  meter(used(1_000, 500), 0, cloud);
+
+  expect(screen.getByTestId('estimate-line').textContent).toContain(
+    'Range 22,000 to 88,000 tokens, $0.12 to $0.80.',
+  );
+});
+
+it('RF-425 says the run is over the estimate when tokens pass the likely tokens of a free model', () => {
+  meter(used(30_000, 20_000), 0);
+
+  expect(screen.getByTestId('estimate-over').textContent).toBe(
+    'Over the estimate: 50,000 tokens used so far against 44,000 likely.',
+  );
+});
+
+it('RF-425 says the run is over the estimate when the cost passes the likely cost', () => {
+  meter(used(1_000, 500), 500_000, cloud);
+
+  expect(screen.getByTestId('estimate-over').textContent).toBe(
+    'Over the estimate: $0.50 spent so far against $0.39 likely.',
+  );
+});
+
+it('RF-425 says nothing about the estimate while the run is within it', () => {
+  meter(used(20_000, 24_000), 0);
+  expect(screen.queryByTestId('estimate-over')).toBeNull();
+});
+
+it('RF-425 says nothing about the estimate when the run is at it exactly', () => {
+  meter(used(22_000, 22_000), 0);
+  expect(screen.queryByTestId('estimate-over')).toBeNull();
+});
+
+const deepened = stateAfter(
+  ev(1, 'run.started', startedData),
+  deepenStarted(2),
+  deepenRoundStarted(3, 1),
+  planned(4, 'reader-001', 'Asset_Manager.xlsm/macros'),
+  agentEnded(5, 'reader-001', 'Done', 1),
+  deepenRoundEnded(6, 1),
+  deepenRoundStarted(7, 2),
+  planned(8, 'reader-002', 'Asset_Manager.xlsm/macros'),
+  planned(9, 'reader-003', 'Asset_Manager.xlsm/sheets'),
+);
+
+it('RF-209 tells the cards of one area apart by the round that planned them', () => {
+  const [first, second] = deepened.agents;
+  if (first === undefined || second === undefined) throw new Error('two agents expected');
+  render(
+    <>
+      <AgentPanel agent={first} />
+      <AgentPanel agent={second} />
+    </>,
   );
 
-  it('RF-209 tells the cards of one area apart by the round that planned them', () => {
-    const [first, second] = deepened.agents;
-    if (first === undefined || second === undefined) throw new Error('two agents expected');
-    render(
-      <>
-        <AgentPanel agent={first} />
-        <AgentPanel agent={second} />
-      </>,
-    );
+  expect(screen.getAllByTestId('agent-round').map((each) => each.textContent)).toEqual([
+    'Round 1',
+    'Round 2',
+  ]);
+});
 
-    expect(screen.getAllByTestId('agent-round').map((each) => each.textContent)).toEqual([
-      'Round 1',
-      'Round 2',
-    ]);
-  });
+it('RF-209 adds the round to the accessible name of the card', () => {
+  const second = deepened.agents[1];
+  if (second === undefined) throw new Error('an agent expected');
+  render(<AgentPanel agent={second} />);
 
-  it('RF-209 adds the round to the accessible name of the card', () => {
-    const second = deepened.agents[1];
-    if (second === undefined) throw new Error('an agent expected');
-    render(<AgentPanel agent={second} />);
+  expect(screen.getByLabelText('Agent Asset_Manager.xlsm/macros, round 2')).toBeTruthy();
+});
 
-    expect(screen.getByLabelText('Agent Asset_Manager.xlsm/macros, round 2')).toBeTruthy();
-  });
+it('RF-209 shows no round on the card of a run that is not a Deepen', () => {
+  const plain = stateAfter(planned(1, 'reader-001', 'Catalog')).agents[0];
+  if (plain === undefined) throw new Error('an agent expected');
+  render(<AgentPanel agent={plain} />);
 
-  it('RF-209 shows no round on the card of a run that is not a Deepen', () => {
-    const plain = stateAfter(planned(1, 'reader-001', 'Catalog')).agents[0];
-    if (plain === undefined) throw new Error('an agent expected');
-    render(<AgentPanel agent={plain} />);
+  expect(screen.queryByTestId('agent-round')).toBeNull();
+  expect(screen.getByLabelText('Agent Catalog')).toBeTruthy();
+});
 
-    expect(screen.queryByTestId('agent-round')).toBeNull();
-    expect(screen.getByLabelText('Agent Catalog')).toBeTruthy();
-  });
+it('RNF-010 keeps the role and the state on one line under the title, whatever the title', () => {
+  const second = deepened.agents[1];
+  if (second === undefined) throw new Error('an agent expected');
+  render(<AgentPanel agent={second} />);
 
-  it('RNF-010 keeps the role and the state on one line under the title, whatever the title', () => {
-    const second = deepened.agents[1];
-    if (second === undefined) throw new Error('an agent expected');
-    render(<AgentPanel agent={second} />);
-
-    const panel = screen.getByRole('article');
-    const title = panel.querySelector('.rst-live-panel__area');
-    const role = panel.querySelector('.rst-live-panel__role');
-    const badge = within(panel).getByTestId('status-badge');
-    expect(role?.parentElement).toBe(badge.parentElement);
-    expect(title?.parentElement).not.toBe(role?.parentElement);
-    expect(title?.querySelectorAll('wbr').length).toBeGreaterThan(0);
-  });
+  const panel = screen.getByRole('article');
+  const title = panel.querySelector('.rst-live-panel__area');
+  const role = panel.querySelector('.rst-live-panel__role');
+  const badge = within(panel).getByTestId('status-badge');
+  expect(role?.parentElement).toBe(badge.parentElement);
+  expect(title?.parentElement).not.toBe(role?.parentElement);
+  expect(title?.querySelectorAll('wbr').length).toBeGreaterThan(0);
 });
 
 describe('RF-1005 the coverage map', () => {

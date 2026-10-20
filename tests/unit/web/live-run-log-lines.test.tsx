@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
+import type { RunEvent } from '../../../web/src/api/run-events.js';
+import type { RunState } from '../../../web/src/lib/live-run/run-state.js';
 import { StatusBadge } from '../../../web/src/components/StatusBadge.js';
 import { EventLog } from '../../../web/src/pages/EventLog.js';
 import { ev, startedData, stateAfter } from './live-run-fixtures.js';
@@ -24,7 +26,7 @@ const judged = (seq: number, status: string, reason: string) =>
   ev(seq, 'verify.claim.judged', { claimId: 'BR-001.c1', status, reason }, 'reader-001');
 
 const start = ev(1, 'run.started', startedData);
-const usageLines = (lines: readonly { readonly type: string }[]) =>
+const usageLines = (lines: RunState['log']) =>
   lines.filter((line) => line.type === 'usage.recorded');
 
 describe('RF-1003 the usage lines of the event log', () => {
@@ -79,62 +81,60 @@ function lineOf(claimId: string): HTMLElement {
   return item;
 }
 
-function logOf(...events: Parameters<typeof stateAfter>) {
+function logOf(...events: readonly RunEvent[]) {
   const state = stateAfter(...events);
   return render(<EventLog lines={state.log} startedAt={state.startedAt} />);
 }
 
-describe('RF-1002 the verdict lines of the event log', () => {
-  it('RF-1002 uses the badge of the claims list for Supported and for Rejected', () => {
-    logOf(start, judged(2, 'Supported', 'The lines do it.'), judged(3, 'Rejected', 'They do not.'));
+it('RF-1002 uses the badge of the claims list for Supported and for Rejected', () => {
+  logOf(start, judged(2, 'Supported', 'The lines do it.'), judged(3, 'Rejected', 'They do not.'));
 
-    const badges = screen.getAllByTestId('status-badge');
-    const wanted = (value: 'Supported' | 'Rejected') => {
-      const { container } = render(<StatusBadge list="ClaimStatus" value={value} />);
-      return container.firstElementChild?.className;
-    };
-    expect(badges.map((badge) => badge.textContent)).toEqual(['Rejected', 'Supported']);
-    expect(badges[0]?.className).toBe(wanted('Rejected'));
-    expect(badges[1]?.className).toBe(wanted('Supported'));
-    expect(badges[0]?.className).not.toBe(badges[1]?.className);
-  });
+  const badges = screen.getAllByTestId('status-badge');
+  const wanted = (value: 'Supported' | 'Rejected') => {
+    const { container } = render(<StatusBadge list="ClaimStatus" value={value} />);
+    return container.firstElementChild?.className;
+  };
+  expect(badges.map((badge) => badge.textContent)).toEqual(['Rejected', 'Supported']);
+  expect(badges[0]?.className).toBe(wanted('Rejected'));
+  expect(badges[1]?.className).toBe(wanted('Supported'));
+  expect(badges[0]?.className).not.toBe(badges[1]?.className);
+});
 
-  it('RF-1002 shows the claim and the whole reason when the reason is short', () => {
-    logOf(start, judged(2, 'Supported', 'The cited lines call `Save()` once.'));
+it('RF-1002 shows the claim and the whole reason when the reason is short', () => {
+  logOf(start, judged(2, 'Supported', 'The cited lines call `Save()` once.'));
 
-    const item = lineOf('BR-001.c1');
-    expect(item.textContent).toContain('The cited lines call Save() once.');
-    expect(item.querySelector('code')?.textContent).toBe('Save()');
-    expect(within(item).queryByRole('button')).toBeNull();
-  });
+  const item = lineOf('BR-001.c1');
+  expect(item.textContent).toContain('The cited lines call Save() once.');
+  expect(item.querySelector('code')?.textContent).toBe('Save()');
+  expect(within(item).queryByRole('button')).toBeNull();
+});
 
-  it('RF-1002 cuts a reason of 2,000 characters and opens it in full on request', () => {
-    const reason = `${'word '.repeat(399)}end.`;
-    expect(reason.length).toBeGreaterThan(1_900);
-    logOf(start, judged(2, 'Rejected', reason));
+it('RF-1002 cuts a reason of 2,000 characters and opens it in full on request', () => {
+  const reason = `${'word '.repeat(399)}end.`;
+  expect(reason.length).toBeGreaterThan(1_900);
+  logOf(start, judged(2, 'Rejected', reason));
 
-    const item = lineOf('BR-001.c1');
-    expect(item.textContent).not.toContain('end.');
-    expect(item.textContent).not.toContain('...');
-    const open = within(item).getByRole('button', { name: 'Show the full reason' });
-    expect(open.getAttribute('aria-expanded')).toBe('false');
+  const item = lineOf('BR-001.c1');
+  expect(item.textContent).not.toContain('end.');
+  expect(item.textContent).not.toContain('...');
+  const open = within(item).getByRole('button', { name: 'Show the full reason' });
+  expect(open.getAttribute('aria-expanded')).toBe('false');
 
-    fireEvent.click(open);
+  fireEvent.click(open);
 
-    expect(item.textContent).toContain(reason);
-    const close = within(item).getByRole('button', { name: 'Show less' });
-    expect(close.getAttribute('aria-expanded')).toBe('true');
-    fireEvent.click(close);
-    expect(item.textContent).not.toContain('end.');
-  });
+  expect(item.textContent).toContain(reason);
+  const close = within(item).getByRole('button', { name: 'Show less' });
+  expect(close.getAttribute('aria-expanded')).toBe('true');
+  fireEvent.click(close);
+  expect(item.textContent).not.toContain('end.');
+});
 
-  it('RF-507 shows a reason with markup as text', () => {
-    logOf(start, judged(2, 'Unverified', 'It says <b>bold</b> and <script>1</script>'));
+it('RF-507 shows a reason with markup as text', () => {
+  logOf(start, judged(2, 'Unverified', 'It says <b>bold</b> and <script>1</script>'));
 
-    expect(document.querySelector('.rst-live-log b')).toBeNull();
-    expect(document.querySelector('.rst-live-log script')).toBeNull();
-    expect(screen.getByRole('log').textContent).toContain('<b>bold</b>');
-  });
+  expect(document.querySelector('.rst-live-log b')).toBeNull();
+  expect(document.querySelector('.rst-live-log script')).toBeNull();
+  expect(screen.getByRole('log').textContent).toContain('<b>bold</b>');
 });
 
 describe('RF-1002 the times and paths of the event log', () => {
