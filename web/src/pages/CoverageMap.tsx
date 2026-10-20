@@ -1,4 +1,6 @@
 import type { JSX } from 'preact';
+import type { CoverageListing } from '../api/coverage.js';
+import type { CodeAreaInfo } from '../lib/live-run/code-map-tiles.js';
 import { coverageOf, type AreaCoverage, type CoverageNode } from '../lib/live-run/coverage-map.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 
@@ -55,8 +57,13 @@ function Area({ area }: { readonly area: AreaCoverage }): JSX.Element {
 }
 
 // RF-1005
-export function CoverageMap({ state }: { readonly state: RunState }): JSX.Element {
-  const map = coverageOf(state);
+export function CoverageMap(props: {
+  readonly state: RunState;
+  readonly coverage?: CoverageListing | undefined;
+  readonly areas?: readonly CodeAreaInfo[] | undefined;
+}): JSX.Element {
+  const { state, coverage, areas } = props;
+  const map = coverageOf(state, coverage, areas);
   const readAreas = map.areas.filter((area) => area.filesRead > 0).length;
   const summary =
     map.filesRead === 0
