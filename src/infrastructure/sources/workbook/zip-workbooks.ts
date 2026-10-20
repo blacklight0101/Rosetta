@@ -97,6 +97,7 @@ class Pass {
     if (reads.length === 0) return;
     const { live, rendered, refused } = renderZip(
       reads.map((read) => ({ model: read.model, folder: read.relative })),
+      this.limits.maxRenderedBytes,
     );
     for (const [index, error] of refused) {
       const read = reads[index];
@@ -107,6 +108,7 @@ class Pass {
       const book = rendered.workbooks[position];
       if (read !== undefined && book !== undefined) await this.place(read, book);
     }
+    // Every workbook refused (the byte cap) or failed to place: there is nothing to map (Q-41).
     if (this.entries.length === 0) return;
     const file = { ...rendered.dependencies, path: await mapName(this.root) };
     await writeRendered(this.root, '', { files: [file] });

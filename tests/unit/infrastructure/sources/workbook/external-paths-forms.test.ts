@@ -116,6 +116,17 @@ it.each(NO_BRACKET)('Q-38 hides the folder of the display form %s of an external
   expect(sectionOf(inCell.map, 'Workbooks')).toEqual(['Reader.xlsx -> Rates.xlsx: 1 formula']);
 });
 
+it('Q-38 hides the folder before a bracket that no sheet follows, and one the bracket opens with', () => {
+  const links = [String.raw`C:\Users\x\Rates.xlsx`];
+
+  expect(showExternalNames(String.raw`1+C:\Users\john-doe\[Rates.xlsx]`, links)).toBe(
+    '1+[Rates.xlsx]',
+  );
+  expect(showExternalNames(String.raw`1+[C:\Users\john-doe\Rates.xlsx]`, links)).toBe(
+    '1+[Rates.xlsx]',
+  );
+});
+
 it('Q-38 keeps a quoted sheet name and a three-dimensional span that hold no separator', () => {
   const links = [String.raw`C:\Users\x\Rates.xlsx`];
 

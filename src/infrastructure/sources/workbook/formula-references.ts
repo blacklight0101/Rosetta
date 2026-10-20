@@ -57,8 +57,8 @@ export interface ExtractedReferences {
 /** The references kept for one formula; a formula with more says so (`truncated`). */
 export const MAX_REFERENCES_PER_FORMULA = 4096;
 
-/** A word of a share path (`\\server\share\`): a table name has no two backslashes. */
-const UNC_PATH = /^\\\\|\\.*\\/u;
+/** A sheet name never holds a path separator; a quoted prefix that does is a workbook path (Q-38). */
+const SEPARATOR = /[\\/]/u;
 const FUNCTION_PREFIX = /^_XL(?:FN|WS|UDF)\./u;
 
 function baseName(path: string): string {
@@ -83,10 +83,11 @@ function scopeOf(book: BookRef | undefined, first: string, last: string): SheetS
   };
 }
 
-/** The scope of a quoted prefix: `Sheet 1`, `Sheet 1:Sheet 3` or `C:\dir\[Book.xlsx]Sheet 1`. */
+/** The scope of a quoted prefix: `Sheet 1`, `Sheet 1:Sheet 3`, `C:\dir\[Book.xlsx]Sheet 1` or `C:\dir\Book.xlsx` (Q-38). */
 function scopeOfQuoted(inner: string): SheetScope {
   const open = inner.indexOf('[');
   const close = open < 0 ? -1 : inner.indexOf(']', open);
+  if (close < 0 && SEPARATOR.test(inner)) return scopeOf(bookOf(inner), '', '');
   const book = close > open ? bookOf(inner.slice(open + 1, close)) : undefined;
   const sheets = close > open ? inner.slice(close + 1) : inner;
   const colon = sheets.indexOf(':');
@@ -174,19 +175,23 @@ class Parser {
     this.afterPrefix(scopeOfQuoted(inner));
   }
 
-  /** `[1]Sheet!A1`, `[Book.xlsx]Sheet!A1` and `[1]!Name`, or a structured reference with no table name. */
-  private bracket(): void {
+  /**
+   * `[1]Sheet!A1`, `[Book.xlsx]Sheet!A1`, `[1]!Name`, or a structured reference (`Table1[Price]`, `[@Qty]`).
+   * A bracket followed by `Sheet!` is an external workbook whatever stands before it: the last folder of
+   * an unquoted path (`C:\Users\john-doe\[Book.xlsx]`) may look like a table name (Q-38).
+   */
+  private bracket(table?: string): void {
     const start = this.scan.pos;
     const spec = this.scan.readBracket();
     if (!spec.endsWith(']') || spec.length < 2) {
       this.longBracket(start, spec);
       return;
     }
-    const inner = spec.slice(1, -1);
-    const structured = inner.includes('[') || inner.startsWith('@') || inner.startsWith('#');
-    const scope = structured ? undefined : this.externalScope(inner);
-    if (scope === undefined) this.push({ kind: 'table', spec });
-    else {
+    const scope = this.externalScope(spec.slice(1, -1));
+    if (scope === undefined) {
+      this.recorder?.table(start, start + spec.length);
+      this.push({ kind: 'table', ...(table === undefined ? {} : { table }), spec });
+    } else {
       this.recorder?.bracket(start, start + spec.length);
       this.afterPrefix(scope);
     }
@@ -225,18 +230,12 @@ class Parser {
   private classify(word: string, scope: SheetScope): void {
     const next = this.scan.peek();
     if (next === '(') this.call(word);
-    else if (next === '[' && startsName(word)) this.tableOrShare(word);
+    else if (next === '[' && startsName(word)) this.bracket(word);
     else if (this.names?.has(word.toLowerCase()) === true) {
       this.push({ kind: 'name', scope, name: word });
     } else if (!this.range(word, scope) && this.isNameLike(word, scope)) {
       this.push({ kind: 'name', scope, name: word });
     }
-  }
-
-  /** `Table1[Price]`, or the bracket after a share path (`\\server\share\[Book.xlsx]`) when rewriting. */
-  private tableOrShare(word: string): void {
-    if (this.recorder !== undefined && UNC_PATH.test(word)) this.bracket();
-    else this.push({ kind: 'table', table: word, spec: this.scan.readBracket() });
   }
 
   private isNameLike(word: string, scope: SheetScope): boolean {

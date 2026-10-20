@@ -74,7 +74,8 @@ function root(random: Random): string {
 
 /**
  * A reference to `Rates.xlsx` in one of the forms a hand-made or third-party file may write. Inside
- * a quoted form an apostrophe of the folder is doubled, as Excel writes it.
+ * a quoted form an apostrophe of the folder is doubled, as Excel writes it; a path that holds one is
+ * never written without quotes (Excel quotes it), so such a folder takes the quoted form.
  */
 function externalReference(random: Random, marker: string): string {
   const base = root(random);
@@ -83,7 +84,8 @@ function externalReference(random: Random, marker: string): string {
   const folders = Array.from({ length: depth }, () => folder(random, marker)).join(separator);
   const path = `${base}${folders}${separator}`;
   const quoted = path.replaceAll("'", "''");
-  const form = random.next(4);
+  const drawn = random.next(4);
+  const form = drawn === 0 && path.includes("'") ? 1 : drawn;
   if (form === 0) return `${path}[Rates.xlsx]Rates!C5`;
   if (form === 1) return `'${quoted}[Rates.xlsx]Rates'!C5`;
   if (form === 2) return `'${quoted}Rates.xlsx'!TaxRate`;

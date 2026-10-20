@@ -8,8 +8,12 @@ import type { ConditionalRule, DataValidationRule, WorkbookModel } from './workb
 // The folder often holds a user name and means nothing on the server, so every place that writes the
 // text of a formula or a name shows the workbook part as the file name only (`[Rates.xlsx]Rates!C4`).
 // Strings and structured table references are not references to a workbook and are left alone.
-// A bracket group longer than one chunk (32,768 characters), or a path of that length written without
-// quotes, is a hand-made file that no writer produces; its folder is not rewritten.
+// A path written without quotes is hidden back to its start wherever it begins in its chunk; a
+// bracket group longer than one chunk (32,768 characters), or an unquoted path that starts in an
+// earlier chunk, is a hand-made file that no writer produces, and the part before the chunk stays.
+
+/** Text that may hold an external reference: a bracket, or a quoted path such as `'C:\dir\Book.xlsx'!Name`. */
+const MAY_HOLD_EXTERNAL = /['[]/u;
 
 /** Brackets that hold a path, and the quoted or unquoted path before them, for text the tokenizer skipped. */
 const LOOSE =
@@ -69,7 +73,7 @@ function rewriteChunk(
 
 /** The formula with the workbook part of each external reference shown as the file name only. */
 export function showExternalNames(formula: string, links: readonly string[]): string {
-  if (!formula.includes('[')) return formula;
+  if (!MAY_HOLD_EXTERNAL.test(formula)) return formula;
   let out = '';
   let offset = 0;
   while (offset < formula.length) {
@@ -97,7 +101,7 @@ function plainRule<T extends DataValidationRule | ConditionalRule>(
 
 /**
  * The model with the text of every formula, rule and defined name written without the folder of an
- * external workbook. Only what holds a bracket is copied; the rest is shared with the original.
+ * external workbook. Only what may hold one is copied; the rest is shared with the original.
  */
 export function plainModel(model: WorkbookModel): WorkbookModel {
   const links = model.externalLinks.map((link) => link.fileName);
@@ -111,7 +115,7 @@ export function plainModel(model: WorkbookModel): WorkbookModel {
       ...sheet,
       cells: sheet.cells.map((cell) => {
         const formula = cell.formula;
-        if (!formula?.text.includes('[')) return cell;
+        if (formula === undefined || !MAY_HOLD_EXTERNAL.test(formula.text)) return cell;
         return { ...cell, formula: { ...formula, text: showExternalNames(formula.text, links) } };
       }),
       validations: sheet.validations.map((rule) => plainRule(rule, links)),

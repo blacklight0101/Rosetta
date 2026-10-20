@@ -16,6 +16,8 @@ export interface WorkbookLimits {
   readonly zip: ZipExtractionLimits;
   /** The bounds on the VBA project of an `.xlsm` (RF-154). */
   readonly macros: MacroLimits;
+  /** The bytes of rendered text of the workbooks in one zip (RST-1926); the renderer's default when absent. */
+  readonly maxRenderedBytes?: number;
 }
 
 const MAX_PART_BYTES = 200 * 1024 * 1024;
