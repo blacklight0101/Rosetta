@@ -6,7 +6,7 @@ import { quoted, workbookFormulaTooLong } from './workbook-errors.js';
 // as the text streams in, so a longer one stops the part before the rest of it is held, and
 // before it can reach the tokenizer or the renderer.
 
-export const MAX_FORMULA_LENGTH = 8192;
+const MAX_FORMULA_LENGTH = 8192;
 
 /** Throws RST-1931 when `length` is over the limit; `place` is only built for the refusal. */
 export function checkFormulaLength(length: number, fileName: string, place: () => string): void {
