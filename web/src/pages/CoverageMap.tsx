@@ -35,14 +35,17 @@ function Tree({ nodes }: { readonly nodes: readonly CoverageNode[] }): JSX.Eleme
   );
 }
 
-function emptyNote(area: AreaCoverage): string {
+/** Why an area has no file in its tree: nobody has read one yet, or the run ended without one. */
+function emptyNote(area: AreaCoverage, ended: boolean): string {
+  const none = ended ? 'No files read.' : 'No files read yet.';
   const listed = area.filesTotal;
   return listed === undefined
-    ? 'No files read yet.'
-    : `No files read yet. The code map lists ${plural(listed, 'file', 'files')} in this area.`;
+    ? none
+    : `${none} The code map lists ${plural(listed, 'file', 'files')} in this area.`;
 }
 
-function Area({ area }: { readonly area: AreaCoverage }): JSX.Element {
+function Area(props: { readonly area: AreaCoverage; readonly ended: boolean }): JSX.Element {
+  const { area, ended } = props;
   const share = `${String(area.share)}%`;
   return (
     <section class="rst-p138-area" aria-label={`Coverage of ${area.area}`}>
@@ -65,7 +68,7 @@ function Area({ area }: { readonly area: AreaCoverage }): JSX.Element {
       </div>
       {area.note === undefined ? null : <p class="rst-p138-note">{`Note: ${area.note}`}</p>}
       {area.tree.length === 0 ? (
-        <p class="rst-p138-note">{emptyNote(area)}</p>
+        <p class="rst-p138-note">{emptyNote(area, ended)}</p>
       ) : (
         <Tree nodes={area.tree} />
       )}
@@ -101,7 +104,7 @@ export function CoverageMap({ state, coverage, areas }: CoverageMapProps): JSX.E
       ) : (
         <div class="rst-p138-areas">
           {map.areas.map((area) => (
-            <Area key={area.area} area={area} />
+            <Area key={area.area} area={area} ended={state.ended !== undefined} />
           ))}
         </div>
       )}

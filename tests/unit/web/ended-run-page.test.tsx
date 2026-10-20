@@ -222,7 +222,7 @@ it('RF-230 the Evidence tab lists the files and the areas nobody read as not rea
     );
   });
   expect(within(map).getByRole('region', { name: 'Coverage of Models' }).textContent).toContain(
-    'No files read yet.',
+    'No files read.',
   );
   expect(within(map).getAllByText('not read')).toHaveLength(1);
 });

@@ -120,7 +120,7 @@ test('RF-1002 RF-1004 the journey of an understand run reads while it runs and t
   const read = journey.getByRole('listitem').filter({ hasText: /Read\d/u });
   await expect(read).toHaveAttribute('aria-current', 'step', { timeout: 30_000 });
   await expect(journey.getByRole('listitem').first()).toContainText('done');
-  await expect(read).toContainText(/\d of 4 areas/u);
+  await expect(read).toContainText(/\d of 5 areas/u);
   await expectNoSeriousViolations(page);
   await transitionsDone(page);
 
