@@ -154,20 +154,34 @@ it('RF-154 returns a module that calls Shell as plain text and runs nothing', ()
 
 const badVersion = `CMG="${encrypt(Buffer.from([4, 0, 0, 0]), 0x5a, 0x21, 5).toString('hex')}"`;
 
-it.each([
-  ['a clear protection state', protectionLine(0)],
-  ['a protection state with a wrong version', badVersion],
-  ['a protection state that is not hexadecimal', 'CMG="not hex at all"'],
-  ['an empty protection state', 'CMG=""'],
-])('RF-154 does not take a project with %s for a locked one', (_name, line) => {
+it('RF-154 reads a project whose protection state is clear', () => {
   const project = read({
     modules: [{ name: 'M', kind: 'standard', source: BAS }],
-    projectLines: [line],
+    projectLines: [protectionLine(0)],
   });
 
   expect(project.state).toBe('readable');
   expect(project.modules[0]?.source.status).toBe('text');
 });
+
+it.each([
+  ['a wrong version', [badVersion]],
+  ['text that is not hexadecimal', ['CMG="not hex at all"']],
+  ['an empty value', ['CMG=""']],
+  ['a second CMG line after a clear one', [protectionLine(0), protectionLine(0)]],
+  ['a clear CMG line followed by a locked one', [protectionLine(0), protectionLine(4)]],
+])(
+  'RF-154 fails closed and takes a project with CMG as %s for a locked one (Q-40)',
+  (_n, lines) => {
+    const project = read({
+      modules: [{ name: 'M', kind: 'standard', source: BAS }],
+      projectLines: lines,
+    });
+
+    expect(project.state).toBe('locked');
+    expect(project.modules[0]?.source).toEqual({ status: 'locked' });
+  },
+);
 
 it('RF-154 takes any protection bit for a locked project', () => {
   const project = read({
