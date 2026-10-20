@@ -10,7 +10,9 @@ import {
 // RF-153, RF-152, RST-1926: the workbooks of a zip rendered as one project, in place. When all of
 // them together are over the byte limit, those that do not fit one after the other are refused and
 // named, as a workbook of its own that cannot be rendered is; the map is part of the same limit, so
-// the last workbook is dropped until the rest and their map fit.
+// the last workbook is dropped until the rest and their map fit. When none is left, every workbook
+// is refused and the render holds no workbook; the map of nothing is not written (zip-workbooks),
+// so its bytes are not held to the limit.
 
 export interface Placed {
   readonly model: WorkbookModel;
@@ -69,10 +71,12 @@ export function renderZip(
   let live = items.map((_, index) => index);
   let fitted = false;
   for (;;) {
+    if (live.length === 0)
+      return { live, rendered: attempt(items, live, DEFAULT_MAX_TOTAL_BYTES), refused };
     try {
       return { live, rendered: attempt(items, live, maxTotalBytes), refused };
     } catch (error) {
-      if (!(error instanceof RosettaError) || live.length === 0) throw error;
+      if (!(error instanceof RosettaError)) throw error;
       if (!fitted) {
         live = fit(items, maxTotalBytes, refused);
         fitted = true;

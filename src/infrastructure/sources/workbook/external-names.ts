@@ -8,21 +8,64 @@ import type { ConditionalRule, DataValidationRule, WorkbookModel } from './workb
 // The folder often holds a user name and means nothing on the server, so every place that writes the
 // text of a formula or a name shows the workbook part as the file name only (`[Rates.xlsx]Rates!C4`).
 // Strings and structured table references are not references to a workbook and are left alone.
-// A bracket group longer than one chunk (32,768 characters), or a path of that length written without
-// quotes, is a hand-made file that no writer produces; its folder is not rewritten.
+// A path written without quotes is hidden back to its start wherever it begins in its chunk. Two
+// hand-made forms that no writer produces are not fully hidden: a bracket group longer than one chunk
+// (32,768 characters) keeps the part before the chunk, and an unquoted path that straddles a chunk
+// boundary keeps its whole folder (the chunk it ends in holds no path start). Every pass is linear
+// in the length of the formula, which the file does not cap (RF-151).
 
-/** Brackets that hold a path, and the quoted or unquoted path before them, for text the tokenizer skipped. */
-const LOOSE =
-  /(?:'[^'[\]]*|[A-Za-z]{2,10}:\/\/[^\s'"[\]]*|[A-Za-z]:[\\/][^\s'"[\]]*|\\\\[^\s'"[\]]*)?\[([^[\]]*)\]/gu;
+/** Text that may hold an external reference: a bracket, or a quoted path such as `'C:\dir\Book.xlsx'!Name`. */
+const MAY_HOLD_EXTERNAL = /['[]/u;
 
-/** Last resort for text no token covers: hide the folder of anything that looks like a workbook path. */
+/** Where an unquoted path starts: a URL scheme, a drive or a UNC share. */
+const PATH_START = /[A-Za-z]{2,10}:\/\/|[A-Za-z]:[\\/]|\\\\/u;
+/** A character that ends the run of an unquoted path when read backwards from its bracket. */
+const PATH_STOP = /[\s'"[\]]/u;
+
+/**
+ * Where the text to hide before the bracket at `open` starts, or `open` when nothing is hidden: the
+ * character after the last quote of the piece (a quoted name is a path up to its bracket), or the
+ * earliest path start in the run of path characters before the bracket. One walk back from the
+ * bracket to `from`, so the brackets of one piece never read the same character twice.
+ */
+function hiddenFrom(text: string, from: number, open: number): number {
+  let run = open;
+  for (let at = open; at > from; at -= 1) {
+    const char = text.charAt(at - 1);
+    if (char === ']') break;
+    if (char === "'") return at;
+    if (run === at && !PATH_STOP.test(char)) run = at - 1;
+  }
+  const found = PATH_START.exec(text.slice(run, open));
+  return found === null ? open : run + found.index;
+}
+
+/**
+ * Last resort for text no token covers: hide the folder of anything that looks like a workbook path.
+ * One pass: each bracket group is found once and the text before it is read back once, so the work
+ * grows with the length of the text (a formula has no length cap in the file, RF-151).
+ */
 function looseHide(text: string): string {
-  return text.replace(LOOSE, (found: string, content: string) => {
-    const quoted = found.startsWith("'");
-    const path = found.length > content.length + 2 || /[\\/]/u.test(content);
-    if (!path) return found;
-    return `${quoted ? "'" : ''}[${fileNameOf(content)}]`;
-  });
+  let out = '';
+  let from = 0;
+  let close = -1;
+  for (let open = text.indexOf('['); open >= 0; open = text.indexOf('[', from)) {
+    // The close is searched once per run of nested brackets, not again from every inner one.
+    if (close < open) close = text.indexOf(']', open + 1);
+    if (close < 0) break;
+    const inner = text.indexOf('[', open + 1);
+    if (inner >= 0 && inner < close) {
+      out += text.slice(from, inner);
+      from = inner;
+      continue;
+    }
+    const content = text.slice(open + 1, close);
+    const at = hiddenFrom(text, from, open);
+    const path = at < open || /[\\/]/u.test(content);
+    out += text.slice(from, at) + (path ? `[${fileNameOf(content)}]` : text.slice(at, close + 1));
+    from = close + 1;
+  }
+  return out + text.slice(from);
 }
 
 /** How many characters from `from`, which holds `quote`, belong to the literal or name it opens. */
@@ -69,7 +112,7 @@ function rewriteChunk(
 
 /** The formula with the workbook part of each external reference shown as the file name only. */
 export function showExternalNames(formula: string, links: readonly string[]): string {
-  if (!formula.includes('[')) return formula;
+  if (!MAY_HOLD_EXTERNAL.test(formula)) return formula;
   let out = '';
   let offset = 0;
   while (offset < formula.length) {
@@ -97,7 +140,7 @@ function plainRule<T extends DataValidationRule | ConditionalRule>(
 
 /**
  * The model with the text of every formula, rule and defined name written without the folder of an
- * external workbook. Only what holds a bracket is copied; the rest is shared with the original.
+ * external workbook. Only what may hold one is copied; the rest is shared with the original.
  */
 export function plainModel(model: WorkbookModel): WorkbookModel {
   const links = model.externalLinks.map((link) => link.fileName);
@@ -111,7 +154,7 @@ export function plainModel(model: WorkbookModel): WorkbookModel {
       ...sheet,
       cells: sheet.cells.map((cell) => {
         const formula = cell.formula;
-        if (!formula?.text.includes('[')) return cell;
+        if (formula === undefined || !MAY_HOLD_EXTERNAL.test(formula.text)) return cell;
         return { ...cell, formula: { ...formula, text: showExternalNames(formula.text, links) } };
       }),
       validations: sheet.validations.map((rule) => plainRule(rule, links)),
