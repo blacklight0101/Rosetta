@@ -804,13 +804,14 @@ As a maintainer I want all model access through one interface so that providers 
 - Given any agent, verifier or planner call, when it is made, then it goes through the `LlmProvider` port with a system prompt, messages and tool definitions, and returns text, tool calls and usage (input, output and cached input tokens) in one shape for every provider.
   Verification: a contract test suite run against every adapter with recorded responses.
 
-**RF-401 Ollama adapter** - R1 (M1) - Must - Source DEC-09, DEC-23 - ADR-003
+**RF-401 Ollama adapter** - R1 (M1) - Must - Source DEC-09, DEC-23, DEC-155 - ADR-003
 As a developer I want to run every role on local models so that development costs nothing and code stays local.
 
 - Given Ollama running locally with the configured model, when a role uses provider `ollama`, then calls succeed with native tool calling where the model supports it, or the text protocol (RF-205).
 - Given Ollama not running or the model not pulled, when the run starts, then it stops before any work with an error code and the command to fix it.
 - Given `providers.<name>.contextTokens` is `auto` (the default), when a model is first used, then the adapter picks the largest context size that keeps the model entirely in the GPU memory Ollama reports (`/api/ps` `size_vram` equal to `size`), starting at the smaller of the model's trained context (`/api/show`) and the ceiling, halving down to the floor (Q-23), sends it as `num_ctx` on every call, and records the chosen value in the call log and the run manifest (DEC-114).
 - Given `contextTokens` is a number, when a role calls the model, then that value is sent unchanged, and a warning is logged if Ollama reports part of the model on the CPU (DEC-114).
+- Given a prompt whose estimated size plus the output reserve is larger than the context size sent as `num_ctx`, or a call where Ollama reports fewer prompt tokens than the estimate because it cut the prompt, when a role calls the model, then the call fails with a providers error code that names the estimated input, the context size, the role and the remedies (a model with a larger context or a cloud model for the role, or a larger `contextTokens`), and a cut prompt never reaches the role as an answer (DEC-155).
   Verification: contract test with recorded responses; manual run against Ollama.
 
 **RF-402 OpenAI adapter** - R1 (M1) - Must - Source DEC-09 - ADR-003
