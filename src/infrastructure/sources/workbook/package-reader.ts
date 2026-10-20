@@ -29,10 +29,11 @@ const VBA_PART = 'xl/vbaProject.bin';
 
 class SheetPartReader implements XmlVisitor {
   readonly cells: CellReader;
-  readonly rules = new RuleReader();
+  readonly rules: RuleReader;
 
-  constructor(cells: CellReader) {
+  constructor(cells: CellReader, rules: RuleReader) {
     this.cells = cells;
+    this.rules = rules;
   }
 
   open(name: string, attributes: Record<string, string>): void {
@@ -149,12 +150,13 @@ export class PackageReader {
     const cells = new CellReader({
       part,
       fileName: this.fileName,
+      sheet: entry.name,
       strings,
       formatOf: (style) => styles.formatOf(style),
       budget: this.budget,
       maxCells: this.limits.maxCells,
     });
-    const reader = new SheetPartReader(cells);
+    const reader = new SheetPartReader(cells, new RuleReader(this.fileName, entry.name));
     await this.pkg.stream(part, reader);
     const extras = await this.sheetExtras(part);
     return {

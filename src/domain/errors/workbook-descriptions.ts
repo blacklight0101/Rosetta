@@ -1,6 +1,6 @@
 import type { ErrorCode, ErrorDescription } from './codes.js';
 
-// RF-007, RF-151: the plain message and the next step of the workbook codes (RST-1921..1928), in
+// RF-007, RF-151: the plain message and the next step of the workbook codes (RST-1921..1928 and RST-1931), in
 // numeric order. descriptions.ts merges them with the rest; describeError there is the only way to
 // read them. The message of a thrown error names the file and the limit; these are the page text.
 
@@ -14,6 +14,7 @@ export type WorkbookErrorCode = Extract<
   | 'RST-1926'
   | 'RST-1927'
   | 'RST-1928'
+  | 'RST-1931'
 >;
 
 export const WORKBOOK_ERROR_DESCRIPTIONS: Readonly<Record<WorkbookErrorCode, ErrorDescription>> = {
@@ -53,5 +54,10 @@ export const WORKBOOK_ERROR_DESCRIPTIONS: Readonly<Record<WorkbookErrorCode, Err
   'RST-1928': {
     message: 'Two workbooks in the upload have the same name.',
     nextStep: 'Rename one of the two files and upload again.',
+  },
+  'RST-1931': {
+    message:
+      'A workbook holds a formula longer than 8,192 characters, which Excel cannot write and Rosetta does not read.',
+    nextStep: 'Shorten or split that formula in Excel, or remove it, and upload again.',
   },
 };
