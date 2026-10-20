@@ -26,6 +26,8 @@ export function sheet(name: string, rest: Partial<WorkbookSheet> = {}): Workbook
     part: 'xl/worksheets/sheet1.xml',
     cells: [],
     mergedRanges: [],
+    hiddenRows: { ranges: [], omitted: 0 },
+    hiddenColumns: { ranges: [], omitted: 0 },
     validations: [],
     conditionalRules: [],
     comments: [],

@@ -184,7 +184,7 @@ src/
                         type, an entity declaration or nesting past 64 is refused), counts sheets, non-empty cells, shared strings and inflated
                         bytes against workbook-limits (`ROSETTA_WORKBOOK_MAX_FILES`, `_MAX_SHEETS`, `_MAX_CELLS`), names a compound file as
                         encrypted or legacy with `cfb` (workbook-format) and returns the typed `WorkbookModel` (workbook-model); readers per
-                        part: cell-reader, rule-reader, shared-strings-reader, styles-reader, small-part-readers, workbook-xml-reader;
+                        part: cell-reader, hidden-reader (hidden rows and columns as ranges, P3-57), rule-reader, shared-strings-reader, styles-reader, small-part-readers, workbook-xml-reader;
                         package-reader assembles them, finding the workbook part through `_rels/.rels` and the strings, styles and connections parts through the workbook's relationships (the paths Excel uses when none is named; a relationship that climbs out of the package is refused with RST-1927); xml-stream refuses one text value, CDATA section or attribute above `WorkbookLimits.maxTextChars` (8 Mi characters, RST-1926), judged while the parser still holds it; an external link target is cut to its file name by link-file-name (decoded to a fixed point, at most 32 rounds; query, fragment, `;` parameters, folder and user information cut), and one with no file name is left out and counted in `unnamedExternalLinks` (the links after it keep the number of their `externalReference` in `position`); errors RST-1921..1928 and RST-1931 in workbook-errors; `formula-limit` refuses a formula over 8,192 UTF-16 code units (unescaped, RST-1931, DEC-152) in cell-reader, workbook-xml-reader (names) and rule-reader as the text streams, before the tokenizer or the renderer; `checkWorkbookBatch` judges the file names
                         VBA macros (RF-154, P3-45): package-reader hands `xl/vbaProject.bin` (bytes counted as they inflate) to `readMacroProject`
                         (macro-reader), which checks the compound file's header and allocation table first (compound-guard, compound-table, compound-directory: `cfb` follows
@@ -198,7 +198,7 @@ src/
                         module `unreadable`, a passed bound is RST-1926, and a CMG line that is doubled or cannot be decoded counts as locked (Q-40); macros are text and are never run
                         the workbook renderer (RF-152, Q-35..Q-39, P3-46): `renderWorkbooks` turns the models into paths and texts (nothing is
                         written to disk; the upload flow of P3-48 writes them): `workbook.md`, and per sheet `formulas.md`, `values.md`,
-                        `validation.md`, `notes.md` (render-index, render-formulas, render-values, render-rules); safe segments with `~2` on a clash
+                        `validation.md`, `notes.md` (render-index, render-formulas, render-values, render-rules; the header of `values.md` lists hidden rows and columns, P3-57); safe segments with `~2` on a clash
                         and a `_` before a device name (workbook-segments); text escaped to one line, a long one continued on lines with the same address (workbook-text); dates
                         from the format code (excel-dates, cell-value-text); lines under the 2,000 character cut and a byte limit for the whole
                         render, RST-1926 (render-output); `WORKBOOK_RENDERER_VERSION` names the layout. The first table of `workbook.md` maps each

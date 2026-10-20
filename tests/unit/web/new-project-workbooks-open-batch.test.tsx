@@ -110,3 +110,23 @@ it('RF-150 a batch that is reused is not cancelled', async () => {
   expect(deletes(view)).toEqual([]);
   expect(posts(view).filter((path) => path === batchRoute)).toHaveLength(1);
 });
+
+it('RF-151 a server limit of 3 files is shown as 3 and a fourth file is refused before any upload', async () => {
+  const server = installFakeUploadServer();
+  const view = renderWorkbookTab({ ...happyAnswers(), 'GET /api/session': sessionWith(3) });
+  await screen.findByText('Accepted: .xlsx and .xlsm. At most 3 files and 100 MB in all.');
+
+  chooseFiles(...['A', 'B', 'C', 'D'].map((name) => workbookFile(`${name}.xlsx`)));
+
+  expect((await screen.findByTestId('field-error')).textContent).toMatch(
+    /4 files chosen. Upload at most 3 workbooks/u,
+  );
+  expect(sendButton().hasAttribute('disabled')).toBe(true);
+  expect(server.requests).toHaveLength(0);
+  expect(posts(view)).toEqual([]);
+
+  chooseFiles(...['A', 'B', 'C'].map((name) => workbookFile(`${name}.xlsx`)));
+  await waitFor(() => {
+    expect(sendButton().hasAttribute('disabled')).toBe(false);
+  });
+});
