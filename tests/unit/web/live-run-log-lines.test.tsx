@@ -29,56 +29,54 @@ const start = ev(1, 'run.started', startedData);
 const usageLines = (lines: RunState['log']) =>
   lines.filter((line) => line.type === 'usage.recorded');
 
-describe('RF-1003 the usage lines of the event log', () => {
-  it('RF-1003 never writes micro-dollars, and gives dollars and tokens', () => {
-    const state = stateAfter(start, usage(2, 'verifier', 1_500));
+it('RF-1003 never writes micro-dollars, and gives dollars and tokens', () => {
+  const state = stateAfter(start, usage(2, 'verifier', 1_500));
 
-    const [line] = usageLines(state.log);
-    expect(line?.text).not.toMatch(/micro/iu);
-    expect(line?.text).toBe('verifier · 1 call · 120 tokens · $0.0015');
-  });
+  const [line] = usageLines(state.log);
+  expect(line?.text).not.toMatch(/micro/iu);
+  expect(line?.text).toBe('verifier · 1 call · 120 tokens · $0.0015');
+});
 
-  it('RF-1003 groups the usage lines that follow each other for one role into one line', () => {
-    const state = stateAfter(
-      start,
-      usage(2, 'verifier', 1_000),
-      usage(3, 'verifier', 500),
-      usage(4, 'verifier', 0),
-    );
+it('RF-1003 groups the usage lines that follow each other for one role into one line', () => {
+  const state = stateAfter(
+    start,
+    usage(2, 'verifier', 1_000),
+    usage(3, 'verifier', 500),
+    usage(4, 'verifier', 0),
+  );
 
-    const lines = usageLines(state.log);
-    expect(lines).toHaveLength(1);
-    expect(lines[0]?.text).toBe('verifier · 3 calls · 360 tokens · $0.0015');
-    expect(state.log.map((line) => line.type)).toEqual(['run.started', 'usage.recorded']);
-  });
+  const lines = usageLines(state.log);
+  expect(lines).toHaveLength(1);
+  expect(lines[0]?.text).toBe('verifier · 3 calls · 360 tokens · $0.0015');
+  expect(state.log.map((line) => line.type)).toEqual(['run.started', 'usage.recorded']);
+});
 
-  it('RF-1003 keeps a line for each role and after any other event', () => {
-    const state = stateAfter(
-      start,
-      usage(2, 'reader', 0),
-      usage(3, 'verifier', 0),
-      ev(4, 'agent.turn', { turn: 1, inputTokens: 1, outputTokens: 1 }, 'reader-001'),
-      usage(5, 'verifier', 0),
-    );
+it('RF-1003 keeps a line for each role and after any other event', () => {
+  const state = stateAfter(
+    start,
+    usage(2, 'reader', 0),
+    usage(3, 'verifier', 0),
+    ev(4, 'agent.turn', { turn: 1, inputTokens: 1, outputTokens: 1 }, 'reader-001'),
+    usage(5, 'verifier', 0),
+  );
 
-    expect(usageLines(state.log).map((line) => line.text)).toEqual([
-      'reader · 1 call · 120 tokens · $0.00',
-      'verifier · 1 call · 120 tokens · $0.00',
-      'verifier · 1 call · 120 tokens · $0.00',
-    ]);
-  });
+  expect(usageLines(state.log).map((line) => line.text)).toEqual([
+    'reader · 1 call · 120 tokens · $0.00',
+    'verifier · 1 call · 120 tokens · $0.00',
+    'verifier · 1 call · 120 tokens · $0.00',
+  ]);
+});
 
-  it('RF-427 adds only the calls that have a price when some do and some do not', () => {
-    const state = stateAfter(start, usage(2, 'reader'), usage(3, 'reader', 500));
+it('RF-427 adds only the calls that have a price when some do and some do not', () => {
+  const state = stateAfter(start, usage(2, 'reader'), usage(3, 'reader', 500));
 
-    expect(usageLines(state.log)[0]?.text).toBe('reader · 2 calls · 240 tokens · $0.0005');
-  });
+  expect(usageLines(state.log)[0]?.text).toBe('reader · 2 calls · 240 tokens · $0.0005');
+});
 
-  it('RF-427 says the model has no price when the event leaves the cost out', () => {
-    const state = stateAfter(start, usage(2, 'reader'));
+it('RF-427 says the model has no price when the event leaves the cost out', () => {
+  const state = stateAfter(start, usage(2, 'reader'));
 
-    expect(usageLines(state.log)[0]?.text).toBe('reader · 1 call · 120 tokens · no price');
-  });
+  expect(usageLines(state.log)[0]?.text).toBe('reader · 1 call · 120 tokens · no price');
 });
 
 function lineOf(claimId: string): HTMLElement {
