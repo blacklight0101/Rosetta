@@ -3620,7 +3620,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-45, P3-47, P3-48, P3-49, P3-50, P3-51
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the zip journey (P3-42) and the other end-to-end journeys; `docs/verification/r1-matrix.md`; RF-150..RF-158.
 - **Do**: an end-to-end journey that builds two small first-party workbooks in the test (one `.xlsm` with a module, a cross-workbook reference, a shared formula, a table, a validation list; no committed binary, nothing from any employer), uploads them on the "Excel workbooks" tab, scans, runs understand with the fake provider and recorded responses, opens the report and the package, and checks that every citation opens an evidence page naming the sheet and cells and that no link leaves Rosetta; update RF-150..RF-158 in the R1 matrix with their tests; the runbook explains how to save a workbook as `.xlsx`.
 - **Review probes**: the journey on Windows and Linux CI; the source replaced between two runs (the second report names the new hash); a zip holding one of the workbooks.
