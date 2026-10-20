@@ -15,6 +15,11 @@ export interface ScannedSource {
   /** Read-only: the agent tools cannot change the snapshot (RF-005). */
   readonly reader: RepositoryReader;
   readonly source: ResolvedSource;
+  /**
+   * RF-155: the folders of the rendered workbooks the snapshot lists, relative to its root; absent
+   * or empty for a GitHub snapshot and for a zip without workbooks.
+   */
+  readonly workbookFolders?: readonly string[];
 }
 
 export interface ScanResults {

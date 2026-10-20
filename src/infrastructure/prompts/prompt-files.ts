@@ -78,6 +78,12 @@ export function loadPlannerPrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'planner/package.v4.md');
 }
 
+/** The planner's guidance for a plan that rebuilds workbooks as an application (RF-155), checked and hashed. */
+// RNF-004
+export function loadPlannerWorkbookPrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'planner/workbook.v1.md');
+}
+
 /** The planner's prompt that asks a cut-off answer to go on (RF-604), checked and hashed. */
 // RNF-004
 export function loadPlannerContinuePrompt(promptsFolder: string): Promise<PromptFile> {

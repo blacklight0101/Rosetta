@@ -26,6 +26,9 @@ export interface ReaderPrompts {
   /** `cards/flows.v<n>.md` and `cards/screens.v<n>.md`: added only to areas the code map marks (Q-25). */
   readonly surface?: SurfacePrompts;
 
+  /** `reader/workbook.v<n>.md`: added only to areas that hold a rendered workbook (RF-155). */
+  readonly workbook?: PromptFile;
+
   /** `reader/read-first.v<n>.md`: refuses an answer given before any file of the area was read (RF-206). */
   readonly readFirst: PromptFile;
 }
@@ -110,9 +113,13 @@ function surfaceFilesFor(prompts: ReaderPrompts, marks: AreaMarks): readonly Pro
  * screens fragments after the card format; any other area gets the very same prompts, so a
  * library costs nothing extra.
  */
-export function readerPromptsFor(prompts: ReaderPrompts, marks: AreaMarks): ReaderPrompts {
+export function readerPromptsFor(
+  prompts: ReaderPrompts,
+  marks: AreaMarks,
+  workbook = false,
+): ReaderPrompts {
   const fragments = surfaceFilesFor(prompts, marks);
-  if (fragments.length === 0) return prompts;
+  if (fragments.length === 0 && !workbook) return prompts;
   const text = [prompts.cardFormat.text.trimEnd(), ...fragments.map((file) => file.text.trim())];
   const joined = `${text.join('\n\n')}\n`;
   return { ...prompts, cardFormat: { ...prompts.cardFormat, text: joined } };
@@ -126,6 +133,7 @@ export function readerPromptsFor(prompts: ReaderPrompts, marks: AreaMarks): Read
 export function promptVersionsOf(
   prompts: ReaderPrompts,
   marks: AreaMarks = { flows: false, screens: false },
+  workbook = false,
 ): Record<string, PromptVersion> {
   const files = [
     prompts.system,
@@ -137,6 +145,7 @@ export function promptVersionsOf(
     ...(prompts.answers === undefined ? [] : [prompts.answers]),
     ...(prompts.reread === undefined ? [] : [prompts.reread]),
     ...surfaceFilesFor(prompts, marks),
+    ...(workbook && prompts.readFirst.name === '' ? [prompts.readFirst] : []),
     prompts.readFirst,
   ];
   return Object.fromEntries(
