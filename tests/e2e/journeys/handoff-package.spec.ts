@@ -64,7 +64,7 @@ test('RF-601 RF-605 RF-612 a brief saved with every default gives a package that
   page,
 }, info) => {
   test.setTimeout(300_000);
-  await signInThroughPage(page, accountFor('journey-run', info.project.name));
+  await signInThroughPage(page, accountFor('journey-run', `${info.project.name}/defaults`));
   await understandFromUrl(page);
 
   await openStep(page, 'Build method');

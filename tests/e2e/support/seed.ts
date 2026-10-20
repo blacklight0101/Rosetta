@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto';
-import { test } from '@playwright/test';
 import { actorOf } from '../../../src/domain/accounts/actor.js';
 import type { Logger } from '../../../src/application/ports/logger.js';
 import { CreateUser } from '../../../src/application/use-cases/create-user.js';
@@ -17,6 +15,7 @@ import { TimestampIdGenerator } from '../../../src/infrastructure/system/timesta
 import { fixturePassword } from '../../support/account-fixtures.js';
 import { disposableSchemaUrl } from './database.js';
 import { e2ePort } from './server-config.js';
+import { currentTestKey } from './account-key.js';
 
 // FAKE CREDENTIALS ONLY (RNF-003): the accounts of an end-to-end run. The test server creates the
 // administrator at start-up through the bootstrap use case (RF-1102), so it must change its
@@ -163,33 +162,13 @@ export function preseededAccountFor(kind: E2eAccountKind, project: string): Cred
  */
 export function accountFor(kind: E2eAccountKind, project: string): Credentials {
   if (fixedAccountKinds.has(kind)) return preseededAccountFor(kind, project);
-  const key = currentTestKey(kind);
+  const key = currentTestKey(kind, project);
   // A user name has 40 characters at most (RF-1102), so the key stands for the kind and project.
   return {
     userName: `e2e-${key}`,
     password: fixturePassword(`Acct${kind}`),
     seed: { kind, project },
   };
-}
-
-/**
- * A key of the running test's account: kind, spec file, worker, parallel slot and repeat. Concurrent
- * tests are in different workers; a serial journey keeps one worker and one repeat, so its steps
- * share the account; a restarted worker gets a new key.
- */
-function currentTestKey(kind: E2eAccountKind): string {
-  let info: ReturnType<typeof test.info>;
-  try {
-    info = test.info();
-  } catch (error) {
-    throw new Error(
-      `accountFor('${kind}') was called outside a test; use preseededAccountFor or call it inside a test.`,
-      { cause: error },
-    );
-  }
-  const parts = [kind, info.file, info.workerIndex, info.parallelIndex, info.repeatEachIndex];
-  const digest = createHash('sha256').update(parts.map(String).join('|'));
-  return digest.digest('hex').slice(0, 20);
 }
 
 const quiet: Logger = {
