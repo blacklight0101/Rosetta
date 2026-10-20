@@ -87,9 +87,9 @@ export interface Step {
 
 export const steps: readonly Step[] = [
   {
-    title: 'Pin a commit',
+    title: 'Choose the source',
     leaves: 'snapshot.json',
-    text: 'A public GitHub URL is resolved to one commit and downloaded once, read-only.',
+    text: 'A public GitHub URL is pinned to one commit and downloaded once. A zip or Excel workbooks become a read-only snapshot named by its hash.',
   },
   {
     title: 'Map the code',
@@ -100,7 +100,7 @@ export const steps: readonly Step[] = [
     title: 'Agents write cards',
     leaves: 'cards/',
     tone: 'reader',
-    text: 'One reader per area explores with read-only tools and writes features, rules, entities and integrations.',
+    text: 'One reader per area explores with read-only tools and writes features, rules, entities and integrations. In workbooks they read formulas, values, the dependency map between sheets and workbooks, and VBA macros as text.',
   },
   {
     title: 'Check every claim',
@@ -134,6 +134,10 @@ export const safeguards: readonly Safeguard[] = [
   {
     title: 'Untrusted text stays text.',
     text: 'Code and model output are never run or rendered as HTML.',
+  },
+  {
+    title: 'Limited uploads.',
+    text: 'Zips and workbooks are read under size and content limits. Macros are never run.',
   },
   {
     title: 'Private by account.',

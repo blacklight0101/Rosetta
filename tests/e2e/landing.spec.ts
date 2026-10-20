@@ -17,7 +17,9 @@ test.describe('landing page', () => {
   test('RF-1200 says what Rosetta does and offers Sign in', async ({ page }) => {
     await expect(page).toHaveTitle(/Rosetta/);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('legacy code');
-    await expect(page.getByText('Paste a public GitHub URL')).toBeVisible();
+    await expect(
+      page.getByText(/^Start from a public GitHub URL, a zip of your code/),
+    ).toBeVisible();
 
     await page.getByRole('link', { name: 'Sign in to try it' }).click();
 
@@ -27,7 +29,7 @@ test.describe('landing page', () => {
   test('RF-1200 shows every section of the artboard', async ({ page }) => {
     for (const name of [
       'Watch it work',
-      'From a GitHub URL to a hand-off your team can build from.',
+      'From a GitHub URL, a zip or Excel workbooks to a hand-off your team can build from.',
       'No claim without the lines that prove it.',
       'You see the price before, during and after.',
       'Built to read code it does not trust.',
