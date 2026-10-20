@@ -5,3 +5,4 @@ import { matrixAreas } from '../support/access-matrix-rows.js';
 // tests/integration/access-matrix.test.ts checks that the areas together cover every route.
 
 describeAccessMatrix(matrixAreas.upload);
+describeAccessMatrix(matrixAreas.workbook);

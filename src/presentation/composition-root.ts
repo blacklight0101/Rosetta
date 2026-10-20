@@ -138,6 +138,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     ...{ pool, logger, clock, masker, templatesFolder, promptsFolder },
     ...{ dataDir: environment.dataDir, priceTable: auth.priceTable },
     uploadMaxMb: environment.uploadMaxMb,
+    workbook: environment,
     serverKeys: serverKeyPresence(environment, doubles !== undefined),
   });
   const server = buildServer({
@@ -158,6 +159,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     runs,
     abortUploads: () => {
       projects.storeUpload.abortAll();
+      projects.workbookBatches.abortAll();
     },
   };
 }

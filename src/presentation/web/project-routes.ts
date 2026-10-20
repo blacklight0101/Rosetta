@@ -6,6 +6,7 @@ import type { CreateProject } from '../../application/use-cases/create-project.j
 import type { GetProject } from '../../application/use-cases/get-project.js';
 import type { ListProjects } from '../../application/use-cases/list-projects.js';
 import type { StoreUpload } from '../../application/use-cases/store-upload.js';
+import type { WorkbookBatches } from '../../application/use-cases/workbook-batches.js';
 import type { OpenWorkspace } from '../../application/use-cases/open-workspace.js';
 import type { UpdateProjectSettings } from '../../application/use-cases/update-project-settings.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -57,6 +58,8 @@ export interface ProjectServices
   readonly openWorkspace: OpenWorkspace;
   /** RF-128: the zip of an upload project (source-upload-routes.ts). */
   readonly storeUpload: StoreUpload;
+  /** RF-150: the batches of a workbook project (workbook-batch-routes.ts). */
+  readonly workbookBatches: WorkbookBatches;
 }
 
 const CREATE_BODY_LIMIT_BYTES = 4096;

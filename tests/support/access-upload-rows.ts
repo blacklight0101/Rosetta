@@ -26,3 +26,44 @@ export const uploadRows: Readonly<Record<string, readonly Probe[]>> = {
     },
   ],
 };
+
+const batches = (context: Context): string => `/api/projects/${context.projectId}/source/batches`;
+const aBatch = (context: Context): string =>
+  `${batches(context)}/00000000-0000-4000-b000-000000000001`;
+const octetHeaders = { 'content-type': 'application/octet-stream', 'x-file-name': 'Pricing.xlsx' };
+
+/**
+ * RF-1105, RF-1009, RF-150: the batch routes of an Excel workbooks project. The matrix project is a
+ * GitHub one, so its owner is told 409 when opening a batch and 404 for a batch that does not exist;
+ * everyone else is refused as for any project route. The batches themselves are tried in
+ * tests/integration/presentation/web.
+ */
+export const workbookRows: Readonly<Record<string, readonly Probe[]>> = {
+  'POST /api/projects/:id/source/batches': [
+    { method: 'POST', url: batches, expected: ownerOnly(409) },
+    {
+      method: 'POST',
+      url: () => '/api/projects/not-a-uuid/source/batches',
+      expected: active(401, 404),
+    },
+  ],
+  'PUT /api/projects/:id/source/batches/:batchId/files': [
+    {
+      method: 'PUT',
+      url: (context: Context) => `${aBatch(context)}/files`,
+      payload: zipBody,
+      headers: octetHeaders,
+      expected: ownerOnly(404),
+    },
+  ],
+  'POST /api/projects/:id/source/batches/:batchId/finish': [
+    {
+      method: 'POST',
+      url: (context: Context) => `${aBatch(context)}/finish`,
+      expected: ownerOnly(404),
+    },
+  ],
+  'DELETE /api/projects/:id/source/batches/:batchId': [
+    { method: 'DELETE', url: aBatch, expected: ownerOnly(404) },
+  ],
+};

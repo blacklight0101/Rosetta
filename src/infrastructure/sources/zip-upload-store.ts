@@ -18,6 +18,7 @@ import {
 import { FileSnapshotCache } from '../files/file-snapshot-cache.js';
 import { errorCode, snapshotWriteFailed } from '../github/snapshot-errors.js';
 import { SnapshotStore } from '../github/snapshot-store.js';
+import type { SpaceReservation } from './space-reservation.js';
 import { receiveZip, uploadTimedOut, uploadTooLarge } from './upload-intake.js';
 
 export interface ZipUploadStoreOptions {
@@ -25,6 +26,8 @@ export interface ZipUploadStoreOptions {
   readonly extractor: ZipExtractor;
   /** Free bytes of the data folder; the file system's by default. */
   readonly freeBytes?: () => Promise<number>;
+  /** The reservation of free space the other uploads share (DEC-149); one of its own by default. */
+  readonly reservation?: SpaceReservation;
   /** How long unpacking may take. */
   readonly extractTimeoutMs?: number;
   /** How long the body may stay silent. */
