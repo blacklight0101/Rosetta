@@ -139,6 +139,50 @@ describe('the areas of the coverage map', () => {
   });
 });
 
+const library: CoverageListing = {
+  areas: [
+    ...listing.areas,
+    {
+      area: 'jQuery',
+      files: [
+        { path: 'Scripts/jquery.js', read: [] },
+        { path: 'Scripts/jquery.min.js', read: [] },
+      ],
+      note: 'not read; no application logic',
+    },
+  ],
+};
+
+describe('third-party code on the coverage map (RF-231)', () => {
+  it('RF-231 leaves out a listed area the code map marks third-party, from the areas and the counts', () => {
+    const state = stateAfter(planned(1, 'reader-001', 'Catalog'));
+
+    const map = coverageOf(state, library, known);
+
+    expect(map.areas.map((each) => each.area)).not.toContain('jQuery');
+    expect(map.filesTotal).toBe(12);
+  });
+
+  it('RF-231 leaves out a listed area whose note says it has no application logic, whatever the code map says', () => {
+    const state = stateAfter(planned(1, 'reader-001', 'Catalog'));
+
+    const map = coverageOf(state, library, []);
+
+    expect(map.areas.map((each) => each.area)).toEqual(['Catalog', 'Models']);
+    expect(map.filesTotal).toBe(5);
+  });
+
+  it('RF-231 shows no third-party file on the page and counts none as not read', () => {
+    const state = stateAfter(planned(1, 'reader-001', 'Catalog'));
+
+    render(<CoverageMap state={state} coverage={library} areas={known} />);
+
+    const region = screen.getByRole('region', { name: 'Coverage map' });
+    expect(region.textContent).not.toContain('jquery');
+    expect(region.textContent).toContain('1 of 12 files read in 1 area · 2 areas not read');
+  });
+});
+
 describe('the coverage map on the page', () => {
   it('RF-230 adds no count of areas not read when every area was read', () => {
     const state = stateAfter(planned(1, 'reader-001', 'Catalog'));

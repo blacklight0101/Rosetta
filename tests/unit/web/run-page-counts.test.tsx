@@ -60,6 +60,20 @@ it('RF-1015 counts the areas read, not the agents, in a run whose areas were rea
   expect(steps[1]?.detail).toBe('2 of 3 areas');
 });
 
+it('RF-1015 counts the areas of the map only: an area it leaves out as a library is not one', () => {
+  const state = stateAfter(
+    ev(1, 'run.started', startedData),
+    ...readOnce(2, ['r1'], 'Catalog'),
+    ...readOnce(5, ['r2'], 'jQuery'),
+  );
+  const tiles = [tile('Catalog', 'done'), tile('jQuery', 'library')];
+
+  const steps = journeyOf({ stage: 'understand', phase: running, state, tiles });
+
+  expect(steps[0]?.detail).toBe('1 area, 1 library folder left out');
+  expect(steps[1]?.detail).toBe('1 of 1 areas');
+});
+
 it('RF-1015 does not count an area as read while one of its agents still works', () => {
   const state = stateAfter(
     ev(1, 'run.started', startedData),
