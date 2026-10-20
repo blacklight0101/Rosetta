@@ -50,6 +50,8 @@ export interface ApplicationOptions {
   readonly promptsFolder?: string;
   /** Where the periodic jobs are registered; an `IntervalScheduler` unless a test passes its own. */
   readonly scheduler?: Scheduler;
+  /** RF-150: the clock the workbook batches expire by and how often they are swept; the real clock and 60 s. */
+  readonly batchTimers?: { readonly clock?: Clock; readonly sweepMs?: number };
 }
 
 export interface Application {
@@ -118,6 +120,7 @@ interface ServerParts {
   readonly masker: TextMasker;
   readonly doubles: TestDoubles | undefined;
   readonly promptsFolder: string;
+  readonly batchTimers: ApplicationOptions['batchTimers'];
 }
 
 const BATCH_SWEEP_MS = 60_000;
@@ -140,6 +143,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
   });
   const projects = await composeProjects({
     ...{ pool, logger, clock, masker, templatesFolder, promptsFolder },
+    ...(parts.batchTimers?.clock === undefined ? {} : { batchClock: parts.batchTimers.clock }),
     ...{ dataDir: environment.dataDir, priceTable: auth.priceTable },
     uploadMaxMb: environment.uploadMaxMb,
     workbook: environment,
@@ -159,7 +163,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     staticRoot,
   });
   // RF-150: a batch left open is freed after 30 minutes even when nobody calls the batch routes again.
-  projects.workbookBatches.startSweeping(BATCH_SWEEP_MS);
+  projects.workbookBatches.startSweeping(parts.batchTimers?.sweepMs ?? BATCH_SWEEP_MS);
   return {
     server,
     runs,
@@ -238,6 +242,7 @@ export function composeApplication(options: ApplicationOptions): Application {
       const auth = await composeAuth(options, { pool, logger, clock, masker, hasher, secretBox });
       const { server, runs, abortUploads, closeBatches } = await createServer({
         ...{ environment, logger, pool, clock, masker, doubles, promptsFolder: catalogueFolder },
+        batchTimers: options.batchTimers,
         auth,
       });
       close = closer({ server, runs, abortUploads, closeBatches });

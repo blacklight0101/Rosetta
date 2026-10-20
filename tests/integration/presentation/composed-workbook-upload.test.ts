@@ -4,7 +4,11 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { loadEnvironment } from '../../../src/infrastructure/config/environment.js';
-import { composeApplication } from '../../../src/presentation/composition-root.js';
+import {
+  composeApplication,
+  type ApplicationOptions,
+} from '../../../src/presentation/composition-root.js';
+import { FixedClock } from '../../support/fixed-clock.js';
 import { fixturePassword } from '../../support/account-fixtures.js';
 import { hasTestDatabase, useTestDatabase, type TestDatabase } from '../../support/postgres.js';
 import { fixtureSecret } from '../../support/provider-key-fixtures.js';
@@ -70,7 +74,11 @@ async function workbookFolders(dataDir: string): Promise<string[]> {
   return found.filter((name) => name.startsWith('workbook__'));
 }
 
-async function composed(database: TestDatabase, leftover = false) {
+async function composed(
+  database: TestDatabase,
+  leftover = false,
+  batchTimers?: ApplicationOptions['batchTimers'],
+) {
   const schema = await database.createSchema({ migrate: true });
   const dataDir = await mkdtemp(join(tmpdir(), 'rst-composed-workbook-'));
   folders.push(dataDir);
@@ -90,6 +98,7 @@ async function composed(database: TestDatabase, leftover = false) {
     }),
     listen: { host: '127.0.0.1', port: 0 },
     output: { write: () => true },
+    ...(batchTimers === undefined ? {} : { batchTimers }),
   });
   return { application, password, dataDir, pool: schema.pool };
 }
@@ -219,4 +228,30 @@ describe.skipIf(!hasTestDatabase)('the composed application and a shutdown', () 
 
     expect(await readdir(join(dataDir, 'sources'))).toEqual([]);
   }, 30_000);
+});
+
+describe.skipIf(!hasTestDatabase)('the composed application and a batch left open', () => {
+  it('RF-150 DEC-149 frees a batch open for 30 minutes on the sweep, with no further batch call', async () => {
+    const clock = new FixedClock('2026-10-19T08:00:00.000Z');
+    const timers = { clock, sweepMs: 50 };
+    const { application, password, dataDir, pool } = await composed(database, false, timers);
+    try {
+      const address = await application.start();
+      await pool.query("UPDATE users SET state = 'Active'");
+      const { send } = await signedIn(address, password);
+      const batch = await openedBatch(send, 'Pricing');
+      await putBook(send, batch, 'A.xlsx');
+      expect(await readdir(join(dataDir, 'sources'))).toHaveLength(1);
+
+      clock.advance(31 * 60_000);
+
+      await vi.waitFor(async () => {
+        expect(await readdir(join(dataDir, 'sources'))).toEqual([]);
+      });
+      const again = await send(batch.base, { method: 'POST' });
+      expect(again.status).toBe(201);
+    } finally {
+      await application.stop();
+    }
+  });
 });

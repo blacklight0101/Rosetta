@@ -72,6 +72,8 @@ export interface ProjectParts {
   readonly pool: DatabasePool;
   readonly logger: Logger;
   readonly clock: Clock;
+  /** The clock the workbook batches expire by; `clock` unless a test moves its own. */
+  readonly batchClock?: Clock;
   readonly masker: TextMasker;
   /** The folder with `project-settings.json` and `ignore-rules.txt`. */
   readonly templatesFolder: string;
@@ -119,7 +121,8 @@ function uploadsOf(
       limitBytes,
     }),
     workbookBatches: new WorkbookBatches({
-      ...{ projects, runs, logger, clock, auditLog, uploads, limitBytes },
+      ...{ projects, runs, logger, auditLog, uploads, limitBytes },
+      clock: parts.batchClock ?? clock,
       staging: new DiskWorkbookStaging({
         dataDir,
         reservation,
