@@ -11,13 +11,13 @@ import type { OllamaChat } from './ollama-wire.js';
 // Two checks turn that into one clear failure for every role:
 //   - before the call: the estimated prompt (about four characters per token, RF-421) plus the
 //     output reserve is larger than the context sent as `num_ctx`; nothing is sent;
-//   - after the call: the prompt is near the context (at least 80 percent of it) and Ollama
-//     reports less than 70 percent of the estimate as evaluated; the answer is dropped.
-// The estimate is rough, so the first check adds no margin of its own and the second only fires
-// when the estimate is near the context and the gap is far beyond the estimate's error.
-// The messages carry numbers, the role and the model name, never any prompt text.
+//   - after the call: the estimate is over the context (a cut is certain) and Ollama reports less
+//     than 70 percent of the estimate as evaluated; the answer is dropped. A prompt whose estimate
+//     fits is never failed here: Ollama counts only the tokens it evaluated anew, so a KV cache hit
+//     of a multi-turn call gives a small count for a prompt that fitted.
+// The estimate is rough, so the first check adds no margin of its own. The messages carry numbers,
+// the role and the model name, never any prompt text.
 
-const nearContextPercent = 80;
 const cutBelowEstimatePercent = 70;
 
 export interface PromptFacts {
@@ -82,9 +82,11 @@ export function cutPrompt(
   const { role, model, estimatedTokens, contextTokens } = facts;
   const reported = chat.prompt_eval_count;
   if (reported === undefined) return undefined;
-  const near = estimatedTokens * 100 >= contextTokens * nearContextPercent;
+  // Ollama counts only the tokens it evaluated anew, so a KV cache hit gives a small count for a
+  // prompt that fitted: only an estimate over the context proves a cut.
+  const over = estimatedTokens > contextTokens;
   const far = reported * 100 < estimatedTokens * cutBelowEstimatePercent;
-  if (!near || !far) return undefined;
+  if (!over || !far) return undefined;
   const message = `Ollama read only ${String(reported)} of the about ${String(estimatedTokens)} tokens of the ${role} prompt: the context for ${model} is ${String(contextTokens)} tokens, so it cut the prompt and the answer was not used. ${remedies(role)}`;
   return {
     failure: { code: ERROR_CODES.ollamaPromptTooLarge },

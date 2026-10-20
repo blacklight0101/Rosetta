@@ -88,9 +88,12 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
   the tool definitions (the text protocol prompt counts in `text` mode). Before the call: when the estimate plus
   `maxOutputTokens` (0 when the call has none) is larger than the `num_ctx` sent, nothing is sent and the call fails;
   the estimate has no margin of its own, because it is rough in both directions. After the call: when the estimate is
-  at least 80 percent of `num_ctx` and `prompt_eval_count` is below 70 percent of the estimate, Ollama cut the prompt;
-  the answer is dropped and the call fails (a reported count below the estimate with a prompt far from the context is
-  just an estimate that was too high). Neither failure is retried. The message names the role, the model, the
+  over `num_ctx` and `prompt_eval_count` is below 70 percent of the estimate, Ollama cut the prompt; the answer is
+  dropped and the call fails. A prompt whose estimate fits never fails after the call, whatever the count: Ollama
+  counts only the tokens it evaluated anew when its KV cache serves a prefix (a multi-turn reader), so a small count
+  is no sign of a cut. The check before the call already refuses every estimate over the context, so through the adapter the check after
+  it cannot fire today (it is unit-tested on its own); it stays so a cut is never passed on as an answer if the
+  check before the call is ever relaxed. Neither failure is retried. The message names the role, the model, the
   estimated input, the output reserve (or the tokens Ollama read), the context size and the remedies (a model with a
   larger context, a cloud model for the role in the project settings, or a larger `contextTokens`); it never holds
   prompt text. The budget guard frees the reservation of a refused call (no ledger row) and writes a row with the
