@@ -75,7 +75,7 @@ export async function scanAndUnderstand(page: Page, areas: readonly string[]): P
 }
 
 /** RF-156: the citation the address of the open evidence page points at (the one in :target). */
-export async function targetCitation(page: Page): Promise<ShownCitation> {
+async function targetCitation(page: Page): Promise<ShownCitation> {
   const target = page.locator(':target');
   await expect(target).toBeVisible();
   const label = target.locator('.citation-label');
