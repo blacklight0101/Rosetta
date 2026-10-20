@@ -1,9 +1,11 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 // RF-405, DEC-156: sets the model of a role on the Default models page or in the project settings.
 // The model is a select of the provider's list when there is one: a listed model is picked, any
 // other goes under "Other model...". With no list (Ollama unreachable) it is the plain text field.
-// The provider is chosen first: changing it clears the model.
+// The provider is chosen first (changing it clears the model); the helper then waits until the list
+// has arrived or the note about the missing list is shown, so it never types into a field that is
+// about to become a select.
 
 export async function chooseModel(
   page: Page,
@@ -11,6 +13,13 @@ export async function chooseModel(
   model: string,
 ): Promise<void> {
   const control = page.getByLabel(`${role} model`, { exact: true });
+  await expect
+    .poll(() =>
+      control.evaluate(
+        (element) => element.tagName === 'SELECT' || element.hasAttribute('aria-describedby'),
+      ),
+    )
+    .toBe(true);
   const tag = await control.evaluate((element) => element.tagName);
   if (tag !== 'SELECT') {
     await control.fill(model);

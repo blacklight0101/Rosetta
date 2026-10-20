@@ -9,6 +9,9 @@ import { signInAs } from './support/sign-in.js';
 // default" keeps the template's model. Every project saves the same values, as they share the
 // server setting.
 
+// The default models are one server setting, so the steps of this file run in order.
+test.describe.configure({ mode: 'serial' });
+
 test.beforeEach(async ({ context, page }, info) => {
   await signInAs(context, accountFor('admin', info.project.name));
   await page.goto('/admin/models');
@@ -164,7 +167,9 @@ test('RF-405 Ollama that cannot be reached leaves the text field and a note, and
   await page.getByLabel('Summariser provider').selectOption('ollama');
 
   const model = page.getByLabel('Summariser model', { exact: true });
-  await expect(page.getByText(/Ollama could not be reached\. Type the model id/u)).toBeVisible();
+  await expect(page.locator('#default-summariser-model-help')).toContainText(
+    'Ollama could not be reached. Type the model id',
+  );
   await expect(model).toHaveJSProperty('tagName', 'INPUT');
   await model.fill('gemma4:e4b');
   await expectNoSeriousViolations(page);
