@@ -1,4 +1,5 @@
 import { placeCells } from './cell-order.js';
+import type { DependencyLimits } from './dependency-limits.js';
 import { renderFormulas } from './render-formulas.js';
 import { renderIndex, type SheetEntry } from './render-index.js';
 import { ByteBudget } from './render-output.js';
@@ -23,7 +24,7 @@ export const WORKBOOK_RENDERER_VERSION = '1';
 /** The bytes of rendered text one render may produce, for all its workbooks together. */
 const DEFAULT_MAX_TOTAL_BYTES = 256 * 1024 * 1024;
 
-interface RenderedFile {
+export interface RenderedFile {
   /** Below the project root: `Pricing.xlsx/Summary/values.md`. */
   readonly path: string;
   readonly content: string;
@@ -53,6 +54,8 @@ export interface RenderedWorkbook {
 export interface RenderLimits {
   /** The bytes of rendered text, over all the workbooks of one call (RST-1926 when passed). */
   readonly maxTotalBytes: number;
+  /** Bounds of the dependency map; the defaults apply to what is left out. */
+  readonly dependencies?: Partial<DependencyLimits>;
 }
 
 const DEFAULT_LIMITS: RenderLimits = { maxTotalBytes: DEFAULT_MAX_TOTAL_BYTES };
@@ -137,4 +140,20 @@ export function renderWorkbook(
   const [rendered] = renderWorkbooks([model], limits);
   if (rendered === undefined) throw new RangeError('One workbook gives one render.');
   return rendered;
+}
+
+export interface RenderedProject {
+  readonly workbooks: readonly RenderedWorkbook[];
+  /** `dependencies.md`, at the root of the tree (RFC-005 section 4.5). */
+  readonly dependencies: RenderedFile;
+}
+
+export function renderProject(
+  models: readonly WorkbookModel[],
+  limits: RenderLimits = DEFAULT_LIMITS,
+): RenderedProject {
+  return {
+    workbooks: renderWorkbooks(models, limits),
+    dependencies: { path: 'dependencies.md', content: '' },
+  };
 }
