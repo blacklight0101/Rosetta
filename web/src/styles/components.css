@@ -11,7 +11,11 @@
   box-shadow: var(--rst-shadow-1);
 }
 
-/* Button */
+/*
+ * Button. RNF-010: a button does not fade. One that has just been enabled gets its text colour at
+ * once, so a fade of its background from the disabled grey would show white text on a pale button for
+ * the length of the fade (contrast 1.16 in CI run 39384719621).
+ */
 
 .rst-root .rst-button {
   display: inline-flex;
@@ -26,9 +30,6 @@
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition:
-    background var(--rst-dur-fast) var(--rst-ease),
-    border-color var(--rst-dur-fast) var(--rst-ease);
 }
 
 .rst-root .rst-button--primary {
