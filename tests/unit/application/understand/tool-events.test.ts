@@ -79,11 +79,21 @@ describe('RF-1002 the result of a read', () => {
 });
 
 describe('RF-1002 the result of a read that gave nothing', () => {
+  it('RF-1002 gives no lines for a read that returned no excerpt', async () => {
+    const data = await resultOf(
+      'read_file',
+      { path: calendar, startLine: 1, endLine: 9 },
+      { content: 'text' },
+    );
+
+    expect(data).toEqual({ turn: 0, tool: 'read_file', ok: true });
+  });
+
   it('RF-1002 gives no lines for a refused read or for a tool that is not a read', async () => {
     const refused: ToolOutcome = {
       content: 'error',
       error: { code: 'RST-1204', message: 'refused' },
-      excerpts: [],
+      excerpts: [{ path: calendar, startLine: 1, endLine: 9 }],
     };
     const grep: ToolOutcome = {
       content: 'text',

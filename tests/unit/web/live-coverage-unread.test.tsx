@@ -115,6 +115,14 @@ describe('the areas of the coverage map', () => {
     expect(map.areas.map((each) => each.area)).not.toContain('jQuery');
   });
 
+  it('RF-1005 lists only the areas with agents until the run has answered with its listing', () => {
+    const state = stateAfter(planned(1, 'reader-001', 'Catalog'));
+
+    const map = coverageOf(state, undefined, known);
+
+    expect(map.areas.map((each) => each.area)).toEqual(['Catalog']);
+  });
+
   it('RF-1005 keeps the map of the reads alone when the run has no listing', () => {
     const state = stateAfter(
       ev(1, 'run.started', startedData),
@@ -132,6 +140,19 @@ describe('the areas of the coverage map', () => {
 });
 
 describe('the coverage map on the page', () => {
+  it('RF-230 adds no count of areas not read when every area was read', () => {
+    const state = stateAfter(planned(1, 'reader-001', 'Catalog'));
+    const everyArea: CoverageListing = {
+      areas: [{ area: 'Catalog', files: [{ path: 'Catalog/Edit.cs', read }] }],
+    };
+
+    render(<CoverageMap state={state} coverage={everyArea} areas={[]} />);
+
+    const region = screen.getByRole('region', { name: 'Coverage map' });
+    expect(region.textContent).toContain('1 of 1 file read in 1 area');
+    expect(region.textContent).not.toContain('not read');
+  });
+
   it('RF-230 says in words which files were not read and how many files and areas were left', () => {
     const state = stateAfter(planned(1, 'reader-001', 'Catalog'));
 
@@ -143,6 +164,9 @@ describe('the coverage map on the page', () => {
     const models = within(region).getByRole('region', { name: 'Coverage of Models' });
     expect(models.textContent).toContain('0 of 2 files read');
     expect(within(models).getAllByText('not read')).toHaveLength(2);
+    expect(models.textContent).toContain('Note: not read');
+    const reports = within(region).getByRole('region', { name: 'Coverage of Reports' });
+    expect(reports.textContent).toContain('The code map lists 7 files in this area.');
     const catalog = within(region).getByRole('region', { name: 'Coverage of Catalog' });
     expect(within(catalog).getAllByText('not read')).toHaveLength(2);
   });

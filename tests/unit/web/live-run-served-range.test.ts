@@ -65,6 +65,39 @@ describe('RF-1002 the range of a read on the panel of an agent', () => {
   });
 });
 
+describe('RF-1002 a result the page cannot place', () => {
+  it('RF-1002 shows no tool line for a result whose call the page never saw', () => {
+    const state = stateAfter(planned(1, 'reader-001', 'Macros'), served(2, 'reader-001', 1, 317));
+
+    expect(state.agents[0]?.tool).toBeUndefined();
+  });
+
+  it('RF-1002 keeps the line of a tool that is not a read when its result names lines', () => {
+    const state = stateAfter(
+      planned(1, 'reader-001', 'Macros'),
+      toolCalled(2, 'reader-001', { pattern: 'Sub' }, 'grep'),
+      ev(
+        3,
+        'agent.tool.result',
+        { turn: 1, tool: 'grep', ok: true, startLine: 1, endLine: 5 },
+        'reader-001',
+      ),
+    );
+
+    expect(state.agents[0]?.tool?.text).toBe('grep "Sub"');
+  });
+
+  it('RF-1002 keeps the lines asked for when a read failed', () => {
+    const state = stateAfter(
+      planned(1, 'reader-001', 'Macros'),
+      toolCalled(2, 'reader-001', { path, startLine: 1, endLine: 340 }),
+      ev(3, 'agent.tool.result', { turn: 1, tool: 'read_file', ok: false }, 'reader-001'),
+    );
+
+    expect(state.agents[0]?.tool).toEqual({ text: `read_file ${path}:1-340`, status: 'failed' });
+  });
+});
+
 describe('RF-1002 the range of a read in the event log', () => {
   it('RF-1002 names the lines a read returned on its result line', () => {
     const state = stateAfter(
