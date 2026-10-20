@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "description": "The planner role answering a plan run over a seeded understand run of the pricing-workbook fixture: the plan (a quote form, a pricing service and rate data replacing the workbook), then the product requirements document. Written by hand for the fake provider; no real provider was called (P3-50).",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"summary\": \"A pricing application that replaces the Pricing workbook: a quote form, the discount rule as tested code and the customer rates as reference data.\",\n  \"requirements\": [\n    {\n      \"title\": \"Quote a price\",\n      \"statement\": \"A salesperson enters a customer type and a quantity and gets the total of the quote.\",\n      \"sources\": [\n        \"FEAT-001\"\n      ]\n    },\n    {\n      \"title\": \"Volume discount\",\n      \"statement\": \"A quote of 100 units or more gets a 10% discount.\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ],\n  \"components\": [\n    {\n      \"name\": \"Quote form\",\n      \"responsibility\": \"Takes the customer type and the quantity and shows the total.\",\n      \"dependsOn\": [\n        \"Pricing service\"\n      ]\n    },\n    {\n      \"name\": \"Pricing service\",\n      \"responsibility\": \"Applies the rate and the discount rule to a quote.\",\n      \"dependsOn\": [\n        \"Rate data\"\n      ]\n    },\n    {\n      \"name\": \"Rate data\",\n      \"responsibility\": \"Keeps the unit price of each customer type.\",\n      \"dependsOn\": []\n    }\n  ],\n  \"decisions\": [\n    {\n      \"title\": \"Keep the discount rule in one service\",\n      \"context\": \"The rule sits in a formula of the Quote sheet.\",\n      \"decision\": \"The pricing service owns the discount rule and the rate lookup.\",\n      \"consequences\": \"The form only shows the result.\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ],\n  \"entities\": [],\n  \"phases\": [\n    {\n      \"name\": \"Quoting\",\n      \"goal\": \"Quotes are made in the new application.\",\n      \"exitCriteria\": [\n        \"Every quote of the workbook is reproduced by the new application.\"\n      ]\n    }\n  ],\n  \"tasks\": [\n    {\n      \"title\": \"Quote form and pricing rules\",\n      \"phase\": 1,\n      \"requirements\": [\n        1,\n        2\n      ],\n      \"acceptanceCriteria\": [\n        \"Given 120 units for a wholesale customer, when the quote is made, then the total is 918.\"\n      ],\n      \"invariant\": \"The discount is 10% exactly when the quantity is 100 or more, however the quantity is written.\",\n      \"riskClass\": \"money\",\n      \"adds\": [\n        \"limit\"\n      ],\n      \"probes\": [\n        \"A quantity of 99, 100 and 101.\",\n        \"A quantity written as 1e2 or with a trailing space.\",\n        \"A customer type that is not in the rate table.\"\n      ],\n      \"files\": [\n        \"src/quote/\",\n        \"tests/quote/\"\n      ],\n      \"needs\": [\n        {\n          \"kind\": \"error code\",\n          \"purpose\": \"customer type with no rate\"\n        }\n      ]\n    }\n  ],\n  \"risks\": [\n    {\n      \"text\": \"The discount threshold may also be applied by hand outside the workbook.\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 3000,
+              "outputTokens": 700,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"problem\": {\n    \"text\": \"The price of a quote lives in formulas of a workbook that one person maintains.\",\n    \"sources\": [\n      \"BR-001\"\n    ]\n  },\n  \"goal\": {\n    \"text\": \"Make quotes in an application that applies the same rate and discount rules.\",\n    \"sources\": [\n      \"FEAT-001\"\n    ]\n  },\n  \"features\": [\n    {\n      \"title\": \"Quote a price\",\n      \"description\": \"A salesperson enters a customer type and a quantity and gets the total.\",\n      \"priority\": \"Must\",\n      \"sources\": [\n        \"FEAT-001\"\n      ]\n    },\n    {\n      \"title\": \"Volume discount\",\n      \"description\": \"A quote of 100 units or more gets a 10% discount.\",\n      \"priority\": \"Must\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ],\n  \"rules\": [\n    {\n      \"text\": \"The discount is 10% when the quantity is 100 or more, and none below that.\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ],\n  \"outOfScope\": [],\n  \"roles\": [],\n  \"nonFunctional\": []\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 3000,
+              "outputTokens": 700,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

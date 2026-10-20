@@ -9,6 +9,7 @@ import { apiContractMessage } from '../plan/api-contract-message.js';
 import { dataModelMessage } from '../plan/data-model-message.js';
 import { flowsMessage } from '../plan/flows-message.js';
 import type { PlanInputs } from '../plan/plan-inputs.js';
+import { withWorkbookGuidance } from '../plan/plan-workbook.js';
 import { planMessage } from '../plan/plan-message.js';
 import { uxMessage } from '../plan/ux-message.js';
 import { coverageMessage } from '../plan/coverage-message.js';
@@ -39,6 +40,8 @@ export interface PlanPromptFiles {
   readonly uxPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the links of the task cards to the items (RF-627). */
   readonly coveragePrompt: () => Promise<PromptFile>;
+  /** RF-155: the package prompt with the workbook guidance after it, when this run would add it. */
+  readonly workbookGuidance?: (inputs: PlanInputs) => Promise<PromptFile | undefined>;
 }
 
 export type PlannedCallKind =
@@ -121,12 +124,13 @@ export async function plannedPrompts(
     files.uxPrompt(),
     files.coveragePrompt(),
   ]);
+  const guidance = await files.workbookGuidance?.(inputs);
   const supported = supportedCards(cards);
   const answered = questions.filter((question) => question.answer.trim() !== '');
   // The plan and the PRD send the same data blocks; only the system prompt differs.
   const message = planMessage({ cards: supported, brief, catalogue, answered }, () => TAG);
   const calls: PlannedCall[] = [
-    { kind: 'plan', file: plan, message },
+    { kind: 'plan', file: withWorkbookGuidance(plan, guidance), message },
     { kind: 'prd', file: prd, message },
     ...documentCalls(supported, brief, { dataModel, flows, apiContract, ux }),
     // RF-627: the links are asked for whenever a plan is written, so the call is always counted.

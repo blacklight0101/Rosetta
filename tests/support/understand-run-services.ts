@@ -79,6 +79,8 @@ export interface Stores {
   readonly runs: MemoryRunIndex;
   readonly projects: MemoryProjectRepository;
   readonly users: MemoryUserRepository;
+  /** RF-155: the folders of the rendered workbooks the snapshot of the runs lists. */
+  readonly workbookFolders?: readonly string[];
   /** The snapshot of the zip an upload project holds: the repository folder of the run (RF-130). */
   readonly uploads: Pick<UploadStore, 'read'>;
 }
@@ -124,6 +126,7 @@ export function scanResultsOf(s: Stores): FileScanResults {
     writer,
     manifests,
     snapshotRoot: () => s.repoRoot,
+    workbookFolders: () => Promise.resolve(s.workbookFolders ?? []),
     logger,
   });
 }

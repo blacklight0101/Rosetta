@@ -20,12 +20,18 @@ import {
   loadDataModelPrompt,
   loadFlowsPrompt,
   loadPlannerPrompt,
+  loadPlannerWorkbookPrompt,
   loadUxPrompt,
   loadCoveragePrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import { sampleAccount } from './account-fixtures.js';
 import { estimatePrices } from './estimate-harness.js';
+import { workbookGuidanceFor } from '../../src/application/plan/plan-workbook.js';
+import type { ScanResults } from '../../src/application/ports/scan-results.js';
+import { ERROR_CODES } from '../../src/domain/errors/codes.js';
+import { RosettaError } from '../../src/domain/errors/rosetta-error.js';
+import { MemoryLogger } from './memory-logger.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryOutputWriter } from './memory-output-writer.js';
 import { seedPlanSource, type PlanSourceSeed } from './plan-source-seed.js';
@@ -58,6 +64,8 @@ export interface PlanEstimateOptions {
   readonly serverKeys?: ServerKeyPresence;
   /** What to seed before the test starts; everything by default. Pass false to seed nothing. */
   readonly seed?: PlanSourceSeed | false;
+  /** RF-155: fields of the project that differ from the GitHub one. */
+  readonly project?: Partial<Project>;
 }
 
 /** The project settings with the planner on this provider and model; the other roles stay local. */
@@ -70,6 +78,19 @@ export function plannerSettings(
   );
 }
 
+/** Scan results whose output is gone: a zip then gets no guidance, a workbook project still does. */
+const goneScans: ScanResults = {
+  open: () =>
+    Promise.reject(new RosettaError(ERROR_CODES.codeMapMissing, 'The scan has no code map.')),
+};
+
+function workbookDeps(runs: MemoryRunIndex, clock: FixedClock, masker: SecretMasker) {
+  return {
+    ...{ runs, scans: goneScans, logger: new MemoryLogger(clock, masker) },
+    workbookPrompt: () => loadPlannerWorkbookPrompt('prompts'),
+  };
+}
+
 export async function createPlanEstimateHarness(
   options: PlanEstimateOptions = {},
 ): Promise<PlanEstimateHarness> {
@@ -80,6 +101,7 @@ export async function createPlanEstimateHarness(
   const project = sampleProject({
     userId: account.id,
     settings: options.settings ?? plannerSettings({ provider: 'ollama', model: 'gemma4:e4b' }),
+    ...options.project,
   });
   const projects = new MemoryProjectRepository();
   await projects.insertOrFind(project);
@@ -108,6 +130,7 @@ export async function createPlanEstimateHarness(
       apiContractPrompt: () => loadApiContractPrompt('prompts'),
       uxPrompt: () => loadUxPrompt('prompts'),
       coveragePrompt: () => loadCoveragePrompt('prompts'),
+      workbookGuidance: (inputs) => workbookGuidanceFor(workbookDeps(runs, clock, masker), inputs),
     }),
     seed: (seed) => seedPlanSource({ files, briefs, runs }, project, seed),
   };

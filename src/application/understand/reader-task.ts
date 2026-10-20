@@ -6,6 +6,7 @@ import {
 import type { AgentTaskState } from '../../domain/runs/run-states.js';
 import type { Area } from '../../domain/code-map/area.js';
 import { marksOf } from '../../domain/code-map/area-surface.js';
+import { areaHoldsWorkbook } from '../../domain/sources/workbook-folders.js';
 import { runAgentTask } from '../agent/agent-loop.js';
 import type { AgentTaskResult } from '../agent/agent-task-result.js';
 import { ReadOnlyTools } from '../agent/read-only-tools.js';
@@ -93,6 +94,16 @@ async function recordAnswer(updates: ManifestUpdates, response: LlmResponse): Pr
   await updates.update((manifest) => recordManifestContext(manifest, READER, context));
 }
 
+/**
+ * Q-25: the flows and screens fragments only for an area with entry points or pages; RF-155: the
+ * workbook guidance only for an area that holds a rendered workbook.
+ */
+function promptsOf(context: ReaderTaskContext, area: Area): ReaderPrompts {
+  const { scanned } = context;
+  const marks = marksOf(area, scanned.codeMap);
+  return readerPromptsFor(context.prompts, marks, areaHoldsWorkbook(area, scanned.workbookFolders));
+}
+
 // RF-201, RF-1002, RF-230: the lines the tools return are kept in `reads` for the coverage.
 export async function runReaderTask(
   context: ReaderTaskContext,
@@ -123,8 +134,7 @@ export async function runReaderTask(
   return runAgentTask({
     provider: providerWithEvents(role.provider, events, turns),
     tools: toolsWithEvents(toolsWithReads(tools, reads), events, turns),
-    // Q-25: the flows and screens fragments only for an area with entry points or pages.
-    prompts: readerPromptsFor(context.prompts, marksOf(area, scanned.codeMap)),
+    prompts: promptsOf(context, area),
     logger,
     settings: {
       ...readerTaskSettings(context.settings, role),

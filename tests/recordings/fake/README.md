@@ -15,6 +15,8 @@ for the catalogue and order journeys and none for the service library (P2-19).
 
 `understand-shop-journey.json`, `verifier-shop-journey.json`, `planner-shop.json` and `planner-shop-coverage.json` are the recordings of the documentation-set journey (P3-22, `tests/integration/journeys/`): the `webforms-shop` demo understood in four areas (the flows, screens, entities and rule of `understand-shop-model.json` plus three `FEAT` cards, and the summariser's overview as the ninth call); the verifier judging it (it rejects the second step of the first flow, the free statement of the first screen and the field `ShippingList` of the checkout screen); the planner's six answers (plan, PRD, data model, flows, API contract, user-interface material) over the cards that run writes; and the planner's coverage links. The journey replays the reader's nine calls and then the planner's six from one fake, in that order.
 
+`understand-workbook.json` is an understand run over the `pricing-workbook` fixture (a rendered Excel workbook beside a C# helper, as an uploaded zip holding a workbook): the workbook area reads the Quote sheet's formulas and values (a cell there holds a planted instruction) and writes two `BR` cards and an `ENT` card, the helper area writes one `BR` card; `verifier-all-supported.json` judges it. `planner-workbook.json` holds the planner's plan and product requirements document for a seeded run over that workbook (a quote form, a pricing service and rate data replacing it). Both are P3-50 (RF-155).
+
 ## Provenance (RNF-009)
 
 Every file was written by hand for this repository by the Rosetta contributors and is covered by the repository's MIT
