@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { BreakableText } from '../components/BreakableText.js';
 import { Glyph } from '../components/Glyph.js';
 import { RenderedText } from '../components/RenderedText.js';
 import { StatusBadge } from '../components/StatusBadge.js';
@@ -52,10 +53,10 @@ function Citations(props: {
           return (
             <li key={label} class="rst-mono">
               {href === undefined ? (
-                label
+                <BreakableText text={label} />
               ) : (
                 <a href={href} rel="noopener noreferrer" target="_blank">
-                  {label}
+                  <BreakableText text={label} />
                 </a>
               )}
             </li>

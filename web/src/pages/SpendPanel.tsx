@@ -17,24 +17,34 @@ export interface SpendPanelProps {
   readonly onOpenRoles: () => void;
 }
 
-function Bar({ share }: { readonly share: number }): JSX.Element {
+interface BarProps {
+  readonly share: number;
+  /** What the bar measures, as the meter is named for a screen reader. */
+  readonly name: string;
+  readonly caption: string;
+}
+
+function Bar({ share, name, caption }: BarProps): JSX.Element {
   return (
-    <div
-      class="rst-cap-meter"
-      role="meter"
-      aria-label="Spend against the cap"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={share}
-      aria-valuetext={`${String(share)}% of the cap`}
-    >
+    <>
+      <p class="rst-spend__caption">{caption}</p>
       <div
-        class={
-          share >= 80 ? 'rst-cap-meter__fill rst-live-meter__fill--warn' : 'rst-cap-meter__fill'
-        }
-        style={{ inlineSize: `${String(share)}%` }}
-      />
-    </div>
+        class="rst-cap-meter"
+        role="meter"
+        aria-label={name}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={share}
+        aria-valuetext={`${String(share)}% of the cap`}
+      >
+        <div
+          class={
+            share >= 80 ? 'rst-cap-meter__fill rst-live-meter__fill--warn' : 'rst-cap-meter__fill'
+          }
+          style={{ inlineSize: `${String(share)}%` }}
+        />
+      </div>
+    </>
   );
 }
 
@@ -43,9 +53,24 @@ function Figures({ props }: { readonly props: SpendPanelProps }): JSX.Element {
   if (caps === undefined) {
     return <p class="rst-settings__note">The caps of the run are not known yet.</p>;
   }
+  // A model that costs nothing leaves the cost bar empty however much it reads: the bar then shows
+  // the tokens, the other cap of the run (RF-1003).
+  const freeButUsed = costMicros === 0 && tokens > 0;
   return (
     <>
-      <Bar share={shareOf(costMicros, caps.maxCostMicros)} />
+      {freeButUsed ? (
+        <Bar
+          share={shareOf(tokens, caps.maxTokens)}
+          name="Tokens against the cap"
+          caption="No cost so far. The bar shows the tokens against their cap."
+        />
+      ) : (
+        <Bar
+          share={shareOf(costMicros, caps.maxCostMicros)}
+          name="Spend against the cap"
+          caption="Cost against the cap"
+        />
+      )}
       <p class="rst-spend__tokens">
         {tokensLabel(tokens)} of {tokensLabel(caps.maxTokens)} tokens
       </p>
@@ -69,7 +94,7 @@ export function SpendPanel(props: SpendPanelProps): JSX.Element {
       <p class="rst-spend__cost">{costLabel(costMicros)}</p>
       <Figures props={props} />
       <div class="rst-spend__more">
-        <Button variant="ghost" onClick={props.onOpenRoles}>
+        <Button variant="link" onClick={props.onOpenRoles}>
           Cost per role and estimate
         </Button>
         <Link href={`/runs/${encodeURIComponent(props.runId)}/calls`}>API calls and logs</Link>

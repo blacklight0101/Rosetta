@@ -30,3 +30,32 @@ describe('RF-507 rendering of repository and model text', () => {
     expect(container.textContent).toContain('[open](javascript:window.pwned=true)');
   });
 });
+
+// RNF-010, RF-507 (P3-62): inline code is drawn with the code style, as a text node of a `code`
+// element; the model's `<b>` stays literal text.
+
+describe('RF-507 inline code in model text', () => {
+  it('RF-507 shows `code` in a code element without its backticks', () => {
+    const { container } = render(<RenderedText text="Calls `GetOrders()` before `Save`." />);
+
+    const codes = [...container.querySelectorAll('code')];
+    expect(codes.map((code) => code.textContent)).toEqual(['GetOrders()', 'Save']);
+    expect(container.textContent).toBe('Calls GetOrders() before Save.');
+    expect(container.textContent).not.toContain('`');
+  });
+
+  it('RF-507 shows markup inside backticks, and outside them, as literal text', () => {
+    const { container } = render(<RenderedText text="Use `<b>x</b>` not <b>y</b>" />);
+
+    expect(container.querySelector('b')).toBeNull();
+    expect(container.querySelector('code')?.textContent).toBe('<b>x</b>');
+    expect(container.textContent).toBe('Use <b>x</b> not <b>y</b>');
+  });
+
+  it('RF-507 builds the code part from a text node, not from markup', () => {
+    const { container } = render(<RenderedText text="`<img src=x onerror=alert(1)>`" />);
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.querySelector('code')?.firstChild?.nodeType).toBe(Node.TEXT_NODE);
+  });
+});
