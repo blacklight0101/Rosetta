@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { ApiClient, ApiResult } from './client.js';
 import { projectSchema, type Project } from './project-schemas.js';
+import { sessionSchema } from './schemas.js';
 
 // RF-150, RF-158, RFC-005 section 4.2: the calls of the Excel workbooks tab. The project is created
 // first (`POST /api/projects` with `sourceKind: 'workbook'` and a name); a batch is opened
@@ -8,8 +9,38 @@ import { projectSchema, type Project } from './project-schemas.js';
 // raw body, `X-File-Name`); the batch is finished (`POST .../finish`), which reads, renders and
 // publishes every workbook or none.
 
-/** Q-32: the most workbooks in one project until the server reports its own (P3-48). */
+/** Q-32: the most workbooks in one project until the server reports its own (`GET /api/session`). */
 export const defaultWorkbookMaxFiles = 20;
+
+/** The most workbooks in one project, as `GET /api/session` reports it; the default when it does not. */
+// RF-151
+export async function loadWorkbookMaxFiles(
+  client: ApiClient,
+  signal: AbortSignal,
+): Promise<number> {
+  const result = await client.request({
+    method: 'GET',
+    path: '/api/session',
+    schema: sessionSchema,
+    signal,
+  });
+  return result.ok
+    ? (result.value.workbookMaxFiles ?? defaultWorkbookMaxFiles)
+    : defaultWorkbookMaxFiles;
+}
+
+/** Cancels an open batch so the next one can be opened at once (RST-1919); a failure is not worth telling. */
+// RF-150
+export async function cancelBatch(
+  client: ApiClient,
+  batch: { readonly projectId: string; readonly batchId: string },
+): Promise<void> {
+  await client.request({
+    method: 'DELETE',
+    path: `${batchPath(batch.projectId)}/${encodeURIComponent(batch.batchId)}`,
+    schema: z.undefined(),
+  });
+}
 
 /** Reading and rendering a set of workbooks can take minutes; a batch lives 30 minutes. */
 const finishTimeoutMs = 10 * 60_000;
