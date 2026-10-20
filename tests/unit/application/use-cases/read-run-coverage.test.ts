@@ -89,7 +89,9 @@ describe('ReadRunCoverage without a file', () => {
       runId: run.id,
     });
     const other = await (
-      await reader({ 'coverage.json': '{"schemaVersion": 2, "areas": []}' })
+      await reader({
+        'coverage.json': coverageJson.replace('"schemaVersion":1', '"schemaVersion":2'),
+      })
     ).execute({
       actor: userAmy,
       runId: run.id,

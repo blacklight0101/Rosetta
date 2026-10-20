@@ -99,6 +99,16 @@ describe('RF-1002 a result the page cannot place', () => {
 });
 
 describe('RF-1002 the range of a read in the event log', () => {
+  it('RF-1002 writes a result that names no lines as a plain ok', () => {
+    const state = stateAfter(
+      planned(1, 'reader-001', 'Macros'),
+      toolCalled(2, 'reader-001', { path, startLine: 1, endLine: 40 }),
+      ev(3, 'agent.tool.result', { turn: 1, tool: 'read_file', ok: true }, 'reader-001'),
+    );
+
+    expect(state.log.at(-1)?.text.endsWith('read_file ok')).toBe(true);
+  });
+
   it('RF-1002 names the lines a read returned on its result line', () => {
     const state = stateAfter(
       planned(1, 'reader-001', 'Macros'),

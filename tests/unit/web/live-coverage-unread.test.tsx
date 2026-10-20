@@ -168,6 +168,7 @@ describe('the coverage map on the page', () => {
     const reports = within(region).getByRole('region', { name: 'Coverage of Reports' });
     expect(reports.textContent).toContain('The code map lists 7 files in this area.');
     const catalog = within(region).getByRole('region', { name: 'Coverage of Catalog' });
+    expect(catalog.textContent).not.toContain('Note:');
     expect(within(catalog).getAllByText('not read')).toHaveLength(2);
   });
 });
