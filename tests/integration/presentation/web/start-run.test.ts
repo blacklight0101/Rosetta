@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { actorOf } from '../../../../src/domain/accounts/actor.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { settingsFor } from '../../../support/provider-factory-harness.js';
+import { sampleRun } from '../../../support/run-fixtures.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
 import { addUser, signedInBrowser, TestBrowser } from '../../../support/test-browser.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
@@ -226,6 +227,39 @@ describe('POST /api/projects/:id/runs with the answers option', () => {
     expect(test.runs.executor.started[0]?.manifest.options).toEqual({
       cloudConsent: false,
       withAnswers: true,
+    });
+    expect(refused.statusCode).toBe(400);
+  });
+});
+
+describe('POST /api/projects/:id/runs with the run to retry', () => {
+  async function understandRun(test: TestServer, project: { id: string; userId: string }) {
+    const run = sampleRun({
+      ...{ userId: project.userId, projectId: project.id, stage: 'understand' },
+      ...{ queueState: 'Ended', endState: 'Completed' },
+    });
+    await test.runs.runs.insert(run);
+    return run;
+  }
+
+  it('RF-208 records the run to retry in the manifest and refuses one that is not text', async () => {
+    const { test, amy, project } = await setup();
+    const parent = await understandRun(test, project);
+    const url = startUrl(project.id);
+
+    const accepted = await amy.request({
+      ...{ method: 'POST', url },
+      payload: { stage: 'understand', areas: ['Catalog'], retryOf: parent.id },
+    });
+    const refused = await amy.request({
+      ...{ method: 'POST', url },
+      payload: { stage: 'understand', areas: ['Catalog'], retryOf: 7 },
+    });
+
+    expect(accepted.statusCode).toBe(202);
+    expect(test.runs.executor.started[0]?.manifest.options).toEqual({
+      ...{ cloudConsent: false, areas: ['Catalog'] },
+      retryOf: parent.id,
     });
     expect(refused.statusCode).toBe(400);
   });
