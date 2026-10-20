@@ -3530,7 +3530,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-44
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-005 section 4.4; `src/infrastructure/github/snapshot-store.ts`; `src/infrastructure/sources/zip-upload-store.ts`; RF-146, RF-152.
 - **Do**: render the workbook model into the layout of RFC-005 section 4.4: `workbook.md` with the safe-name mapping, per sheet `formulas.md` (regions, a shared formula as one line for its range, Q-36, array formulas marked, cached values), `values.md` (one line per row with addresses, JSON-escaped text, ISO dates for date formats, errors, `(f)` marks, continuation lines under 2,000 characters), `validation.md` and `notes.md` (no author names, Q-39); macros are written when P3-45 has merged and listed as "not read yet" until then; safe segment names with `~2` on clashes and device names prefixed; a deterministic order so the same workbook gives the same tree and hash; the renderer version constant.
 - **Review probes**: a sheet named `CON`, one named `a/b`, two named `Data` and `data`; a text cell holding `|`, a line break and `"`; a date cell with a custom format; a row of 600 columns; a hidden and a very hidden sheet; a merged range; an empty sheet; the same workbook rendered twice (byte-identical).
@@ -3575,7 +3575,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-43
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-005 section 4.9; the new-project form and its zip tab (P3-39); `docs/design-system.md`; RF-150, RF-156, RF-158.
 - **Do**: a third tab "Excel workbooks": a multiple file field for `.xlsx` and `.xlsm`, the limits in one line, the chosen files with their sizes, checks before sending (type, count, total), the batch calls of P3-48 with progress per file, the summary (workbooks, sheets, cells, formulas, macro modules, skipped items with reasons) and "Upload again"; the projects list and header show `<name> (Excel, <N> workbooks, <date>)`. Until P3-48 merges, tests use a fake server.
 - **Review probes**: an `.xls` chosen (refused before sending with the save-as message); 21 files; a total one byte over the limit; a 0-byte file; keyboard only; 360 px wide; a file name holding HTML; a failure on the second of three files.
