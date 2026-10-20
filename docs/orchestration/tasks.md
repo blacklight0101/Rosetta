@@ -3724,7 +3724,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-12
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/e2e/journeys/handoff-package.spec.ts` and its support files; the CI runs 39375038203 and 39396931579 (shard 3, the run ended "Failed" instead of "Completed"; both passed on rerun) and their artifacts; `tests/e2e/journeys/zip-project.spec.ts:51` and the run where the start-page contrast check saw a button of contrast 1.16 (white on #eaefee, `title=""`) in run 39384719621.
 - **Do**: find why the run of `handoff-package.spec.ts:27` sometimes ends "Failed": read the failed run's events and error code from the CI artifacts (add an artifact upload of the run log on failure if none exists), reproduce it under load, and fix the cause, in the product if a run can really fail this way, else in the test. Do the same for the contrast failure (a button caught mid-transition, or a real state with too little contrast). Do not weaken the accessibility check or add retries to hide a failure.
 - **Review probes**: the spec run 20 times under `--repeat-each` with CPU load; the start page checked during and after its transitions.
