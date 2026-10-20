@@ -164,6 +164,8 @@ export class PackageReader {
       ...(reader.rules.usedRange === undefined ? {} : { usedRange: reader.rules.usedRange }),
       cells: cells.cells,
       mergedRanges: reader.rules.mergedRanges,
+      hiddenRows: { ranges: [], omitted: 0 },
+      hiddenColumns: { ranges: [], omitted: 0 },
       validations: reader.rules.validations,
       conditionalRules: reader.rules.conditionalRules,
       ...extras,

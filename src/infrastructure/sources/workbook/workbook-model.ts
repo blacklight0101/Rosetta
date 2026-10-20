@@ -65,6 +65,12 @@ export interface PivotTable {
   readonly range?: string;
 }
 
+/** Hidden rows or columns as ranges (`2:3`, `5`; `B:C`, `E`); `omitted` counts the ranges past the cap. */
+export interface HiddenLines {
+  readonly ranges: readonly string[];
+  readonly omitted: number;
+}
+
 export interface WorkbookSheet {
   readonly name: string;
   readonly state: SheetState;
@@ -73,6 +79,8 @@ export interface WorkbookSheet {
   readonly usedRange?: string;
   readonly cells: readonly WorkbookCell[];
   readonly mergedRanges: readonly string[];
+  readonly hiddenRows: HiddenLines;
+  readonly hiddenColumns: HiddenLines;
   readonly validations: readonly DataValidationRule[];
   readonly conditionalRules: readonly ConditionalRule[];
   readonly comments: readonly SheetComment[];
