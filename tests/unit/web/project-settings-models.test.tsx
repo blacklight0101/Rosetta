@@ -79,7 +79,7 @@ it('RF-405 choosing another installed model saves it', async () => {
   save();
 
   await screen.findByText('Settings saved.');
-  expect(calls.at(-1)?.body).toMatchObject({
+  expect(calls.findLast((call) => call.method === 'PUT')?.body).toMatchObject({
     roles: { reader: { provider: 'ollama', model: 'qwen3:8b' } },
   });
 });
@@ -119,7 +119,7 @@ it('RF-405 changing the provider of a role resets its model and lists the new pr
   save();
 
   await screen.findByText('Settings saved.');
-  expect(calls.at(-1)?.body).toMatchObject({
+  expect(calls.findLast((call) => call.method === 'PUT')?.body).toMatchObject({
     roles: { planner: { provider: 'openai', model: 'gpt-5-nano' } },
   });
 });
@@ -137,7 +137,7 @@ it('RF-405 Other model... saves free text for a role', async () => {
   save();
 
   await screen.findByText('Settings saved.');
-  expect(calls.at(-1)?.body).toMatchObject({
+  expect(calls.findLast((call) => call.method === 'PUT')?.body).toMatchObject({
     roles: { verifier: { provider: 'ollama', model: 'phi4:14b' } },
   });
 });
@@ -158,7 +158,7 @@ it('RF-405 Ollama down: the text field and a note stay, and saving works', async
   save();
 
   await screen.findByText('Settings saved.');
-  expect(calls.at(-1)?.body).toMatchObject({
+  expect(calls.findLast((call) => call.method === 'PUT')?.body).toMatchObject({
     roles: { reader: { provider: 'ollama', model: 'gemma4:e2b' } },
   });
 });

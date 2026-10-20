@@ -34,7 +34,10 @@ it('RF-002 a save names the version the page loaded in If-Match', async () => {
   save();
 
   await screen.findByText('Settings saved.');
-  expect(calls.at(-1)).toMatchObject({ method: 'PUT', ifMatch: '"4"' });
+  expect(calls.findLast((call) => call.method === 'PUT')).toMatchObject({
+    method: 'PUT',
+    ifMatch: '"4"',
+  });
 });
 
 it('RF-002 the next save names the version the last save answered', async () => {

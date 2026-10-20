@@ -78,3 +78,48 @@ test('RF-002 saves changed settings and shows them again after a reload', async 
   await expect(page.getByLabel('Run cost cap (USD)', { exact: true })).toHaveValue('1.25');
   await expectNoSeriousViolations(page);
 });
+
+// RF-405, DEC-156: the model of each role is chosen from the provider's list (these are the last
+// steps, so the models saved by the steps above are already checked).
+test('RF-405 chooses the Reader model from the Anthropic list, then from Other model...', async ({
+  page,
+}) => {
+  await page.getByLabel('Reader provider', { exact: true }).selectOption('anthropic');
+  const model = page.getByLabel('Reader model', { exact: true });
+  await expect(model).toHaveJSProperty('tagName', 'SELECT');
+  await expect(model).toHaveValue('');
+
+  await model.selectOption('claude-haiku-5-5');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText('Settings saved.')).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Reader model', { exact: true })).toHaveValue('claude-haiku-5-5');
+  await expectNoSeriousViolations(page);
+
+  await page.getByLabel('Reader model', { exact: true }).selectOption({ label: 'Other model...' });
+  await page.getByLabel('Reader other model').fill('claude-haiku-4-5');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText('Settings saved.')).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Reader model', { exact: true })).toHaveValue('__other__');
+  await expect(page.getByLabel('Reader other model')).toHaveValue('claude-haiku-4-5');
+  await expectNoSeriousViolations(page);
+});
+
+test('RF-405 lists the models installed on Ollama in the project settings', async ({ page }) => {
+  await page.route('**/api/models/ollama', (route) =>
+    route.fulfill({
+      json: {
+        provider: 'ollama',
+        models: [{ model: 'qwen3:8b', label: 'qwen3:8b', priced: true }],
+      },
+    }),
+  );
+  await page.getByLabel('Reader provider', { exact: true }).selectOption('ollama');
+
+  const model = page.getByLabel('Reader model', { exact: true });
+  await expect(model.locator('option', { hasText: 'qwen3:8b' })).toBeAttached();
+  await model.selectOption('qwen3:8b');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText('Settings saved.')).toBeVisible();
+});

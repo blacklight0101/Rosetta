@@ -120,12 +120,17 @@ it('RF-405 a listed model with a price shows no price note', () => {
   expect(selectOf('Reader model').getAttribute('aria-describedby')).toBeNull();
 });
 
-it('RF-405 an error shows on the select while none is chosen and on the text field under Other model...', () => {
-  const error = { code: 'RST-1002', message: 'Enter the model.' };
-  const { rerender } = render(<Harness list={anthropic} error={error} />);
-  expect(selectOf('Reader model').getAttribute('aria-invalid')).toBe('true');
+it('RF-405 an error shows on the select while none is chosen', () => {
+  render(<Harness list={anthropic} error={{ code: 'RST-1002', message: 'Enter the model.' }} />);
 
-  rerender(<Harness list={anthropic} initial="saved-unlisted" error={error} />);
+  expect(selectOf('Reader model').getAttribute('aria-invalid')).toBe('true');
+  expect(screen.queryByLabelText('Reader other model')).toBeNull();
+});
+
+it('RF-405 an error shows on the text field, not the select, under Other model...', () => {
+  const error = { code: 'RST-1002', message: 'Enter the model.' };
+  render(<Harness list={anthropic} initial="saved-unlisted" error={error} />);
+
   expect(screen.getByLabelText('Reader other model').getAttribute('aria-invalid')).toBe('true');
   expect(selectOf('Reader model').getAttribute('aria-invalid')).toBeNull();
 });

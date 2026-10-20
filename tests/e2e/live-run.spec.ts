@@ -13,12 +13,12 @@ import { expectMeterFromUsage } from './support/meter-usage.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
+import { chooseModel } from './support/choose-model.js';
 
 // RF-1002, RF-1003, RF-424, RF-1004, RF-301, DEC-103, RF-1006, RF-008, RF-1108, RF-1105, P1-35: the live run
 // page, driven by real runs of the test server. The model double replays the recorded understand run
 // of the C# fixture (e2e-provider.ts) and nothing of the API or the event stream is replaced, so what
-// the page shows is what the server sent. The steps run in order: they share one project and one run
-// at a time, and the last one changes the project's reader to a cloud model that has no key.
+// the page shows is what the server sent. The steps run in order, sharing one project and run.
 
 test.describe.configure({ mode: 'serial' });
 
@@ -282,7 +282,7 @@ test('RF-1108 RST-2302 a run refused for a missing key shows the code, the messa
   await openStartPage(page);
   await page.getByRole('link', { name: 'Project settings' }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('anthropic');
-  await page.getByLabel('Reader model', { exact: true }).fill('claude-haiku-4-5');
+  await chooseModel(page, 'Reader', 'claude-haiku-4-5');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
