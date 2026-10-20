@@ -127,6 +127,22 @@ it('Q-38 hides the folder before a bracket that no sheet follows, and one the br
   );
 });
 
+// The loose pass: text no token covers, a quoted name longer than one chunk (32,768 characters).
+const FILLER = 'a'.repeat(40_000);
+const LOOSE_LINKS = [String.raw`C:\Users\x\Rates.xlsx`];
+
+it('Q-38 hides a relative folder inside a quoted name longer than a chunk', () => {
+  const out = showExternalNames(String.raw`'john-doe\[R.xlsx]S` + FILLER, LOOSE_LINKS);
+
+  expect(out).toBe(`'[R.xlsx]S${FILLER}`);
+});
+
+it('Q-38 keeps text between a stray close bracket and the next bracket of a long quoted name', () => {
+  const out = showExternalNames(`'x]y[R.xlsx]S${FILLER}`, LOOSE_LINKS);
+
+  expect(out).toBe(`'x]y[R.xlsx]S${FILLER}`);
+});
+
 it('Q-38 keeps a quoted sheet name and a three-dimensional span that hold no separator', () => {
   const links = [String.raw`C:\Users\x\Rates.xlsx`];
 

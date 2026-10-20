@@ -22,6 +22,18 @@ it.each([
   ['an unclosed quote and 42,000 URL starts', `'${'http://'.repeat(42_000)}`],
   ['an unclosed quote and 40,000 bracket paths', `'${'C:/x/[R.xlsx]'.repeat(40_000)}`],
   ['a word of 300,000 backslashes and drive starts', 'C:\\'.repeat(100_000)],
+  ['an unclosed quote, 600,000 nested brackets and one close', `'${'['.repeat(600_000)}]`],
+  [
+    'an unclosed quote, 300,000 nested brackets with text and one close',
+    `'${'[a'.repeat(300_000)}]`,
+  ],
+  [
+    'an unclosed quote, 100,000 nested brackets, a path and one close',
+    `'${'[a'.repeat(100_000)}C:\\x\\R.xlsx]`,
+  ],
+  ['words that straddle every chunk boundary', `+${'W'.repeat(32_767)}`.repeat(9)],
+  ['quoted names that straddle every chunk boundary', `'${'a'.repeat(20_000)}'!A1+`.repeat(15)],
+  ['brackets that straddle every chunk boundary', `+[${'b'.repeat(30_000)}]`.repeat(10)],
 ])('RF-151 rewrites a formula of %s in bounded time', (_name, formula) => {
   const { ms } = timed(formula);
 
