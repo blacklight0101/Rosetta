@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 62      | 5         | 55         | 2         | 0                  | 21      | 39      | 2      | 18         | 0         |
-| **Total**               | **279** | **77**    | **175**    | **27**    | **0**              | **137** | **130** | **12** | **153**    | **0**     |
+| P3 Report and plan      | 63      | 5         | 56         | 2         | 0                  | 21      | 40      | 2      | 19         | 0         |
+| **Total**               | **280** | **77**    | **176**    | **27**    | **0**              | **137** | **131** | **12** | **154**    | **0**     |
 
 ## Conventions for every card
 
@@ -3777,3 +3777,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the fixes and tests.
 - **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-209, RF-230, RF-231, RF-507, RNF-010 (owner test 2026-10-20); issue #674.
+
+### P3-63 - Follow-up: a saved answer moves the journey on
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P3-28, P3-30
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-615 (the four DEC-154 scenarios), RF-240, RF-243, RF-1007, RF-1015; DEC-154; `src/application/use-cases/get-journey.ts`, `src/application/use-cases/question-states.ts`, `web/src/lib/journey/`, `web/src/pages/YourTurn.tsx`, `web/src/pages/JourneyStrip.tsx`, the Your questions tab; `docs/design-system.md`.
+- **Do**: count a question with a saved answer as not open in the journey and show it as "Answer saved" (the `Answered` state from a later run is unchanged); make the questions step done and the next action "Set up the plan" when every question has a saved answer; add "Go on with the defaults" next to "Answer N questions" that opens the brief; make "Answer N questions" on the run page open the Your questions tab and scroll to and focus the first question without a saved answer; update the Your turn count the same way. A cleared answer counts as open again.
+- **Review probes**: save every answer (journey moves to the brief without a reload of the page); save some (count drops, "Go on with the defaults" opens the brief); clear a saved answer (open again); a merged question with several cards; "Answer N questions" while already on the tab (moves focus); keyboard and screen reader; 360 px, light and dark, axe.
+- **Behaviour to preserve**: RF-243 (answers reach the next run); the brief, estimate and plan steps; a skipped question keeps its default in the package.
+- **Delivers**: the change and tests.
+- **Done when**: each RF-615 DEC-154 scenario has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-615, RF-240, RF-243, RF-1015, DEC-154; issue #676.

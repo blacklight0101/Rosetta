@@ -1075,14 +1075,17 @@ As a developer I want the plan to follow the understand run I just read so that 
 - Given a plan run, when its manifest is read, then it records the source understand run, and the estimate and the package use that run's cards and answers only.
   Verification: end-to-end test with the fake provider from a completed run to a package; integration test that the source run, not the newest run, feeds `plan`.
 
-**RF-615 Journey from code to package** - R1 - Should - Source RFC-002, DEC-142, DEC-143 - ADR-012
+**RF-615 Journey from code to package** - R1 - Should - Source RFC-002, DEC-142, DEC-143, DEC-154 - ADR-012
 As a developer I want to see every step from scan to package with its state and cost so that I always know where I am and what to do next.
 
 - Given an understand run, when its page, its Plan setup or its plan run page opens, then a journey strip shows scan, understand, questions, brief, estimate, plan and package, each with its state (done, current, locked with a reason, failed with its code, out of date) and its cost, and one next action.
 - Given the plan run failed, when the journey is shown, then the understand run, its cards and the brief are unchanged, and the next action is "Try the plan again", which starts a new plan run after a new estimate; a failed plan run is not resumed.
 - Given the understand run stopped (`Failed`, `CapReached`, `Interrupted`), when the journey is shown, then the plan steps are locked with the reason and the next action is Resume (RF-006).
 - Given the brief or the source run changed after a package was written, when the journey is shown, then the package step is marked out of date.
-  Verification: component tests of each step state; end-to-end test of the failure paths with the fake provider.
+- Given an open question with an answer saved in `answers.md` (DEC-154), when the journey or the Your questions tab is shown, then the question reads "Answer saved" and is not counted as open; it is marked `Answered` only when a later run reads the answers.
+- Given every question has a saved answer, when the journey is shown, then the questions step is done and the next action is "Set up the plan"; given some questions have no saved answer, then "Go on with the defaults", next to "Answer N questions", opens the brief, and the skipped questions keep their defaults.
+- Given the run page with open questions, when "Answer N questions" is chosen, then the Your questions tab opens and the first question without a saved answer is scrolled into view and focused.
+  Verification: component tests of each step state; end-to-end test of the failure paths with the fake provider; end-to-end test of saving every answer and going on to the brief, and of going on with the defaults.
 
 **RF-620 Documentation set of the package** - R1 - Must - Source DEC-134 - ADR-018
 As a modernisation team I want the package to read like a complete project documentation set so that we can start building from it alone.
