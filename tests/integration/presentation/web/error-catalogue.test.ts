@@ -68,3 +68,17 @@ describe('GET /api/errors/:code', () => {
     expect(response.statusCode).toBe(401);
   });
 });
+
+describe('GET /api/errors/RST-1522', () => {
+  it('RF-401 DEC-155 answers the prompt-size code with the remedies the run page shows', async () => {
+    const { amy } = await setup();
+
+    const response = await amy.request({ method: 'GET', url: '/api/errors/RST-1522' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      code: ERROR_CODES.ollamaPromptTooLarge,
+      ...describeError(ERROR_CODES.ollamaPromptTooLarge),
+    });
+  });
+});

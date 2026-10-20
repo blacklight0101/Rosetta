@@ -268,3 +268,18 @@ describe('OpenAiProvider keys beyond Latin-1', () => {
     await expect(provider.complete(contractRequest())).resolves.toBeDefined();
   });
 });
+
+describe('OpenAiProvider with a very large prompt', () => {
+  it('RF-402 RF-401 DEC-155 sends a prompt of 500000 characters unchanged: only Ollama checks its context', async () => {
+    const { provider, server } = await start('contract-text');
+    const request = {
+      ...contractRequest(),
+      messages: [{ role: 'user' as const, content: 'x'.repeat(500_000) }],
+    };
+
+    const response = await provider.complete(request);
+
+    expect(response.text).not.toBe('');
+    expect(server.chatBodies()).toHaveLength(1);
+  });
+});

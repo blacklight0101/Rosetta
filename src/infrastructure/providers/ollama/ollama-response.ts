@@ -44,7 +44,7 @@ function metricsOf(chat: OllamaChat, context: ContextChoice): OllamaMetrics {
 }
 
 /** Reported counts, or an estimate of about four characters per token (RF-421). */
-function usageOf(chat: OllamaChat, request: LlmRequest): TokenUsage {
+export function usageOf(chat: OllamaChat, request: LlmRequest): TokenUsage {
   const { prompt_eval_count: input, eval_count: output } = chat;
   if (input !== undefined && output !== undefined) {
     return {

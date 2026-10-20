@@ -10,10 +10,14 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { useRefusalFocus } from '../lib/use-refusal-focus.js';
 import { BuiltInDefaults } from './BuiltInDefaults.js';
+import { ModelChoice } from './ModelChoice.js';
+import type { ModelListState } from './model-lists.js';
+import { useModelLists } from './use-model-lists.js';
 import { defaultModelProviders } from './provider-choices.js';
 
-// DEC-106, design-system.md section 14: the provider and the dated model each role of a new project
-// starts with. A role left on "Template default" is left out of the saved setting and keeps the
+// DEC-106, DEC-156, design-system.md section 14: the provider and the dated model each role of a new
+// project starts with. The model is chosen from the provider's list, with "Other model..." for free
+// text (RF-405). A role left on "Template default" is left out of the saved setting and keeps the
 // template's model. Projects that exist are not touched. The server refuses an unknown provider.
 
 const roleText: Readonly<
@@ -111,8 +115,12 @@ function useEditing(saved: DefaultRoles): Editing {
   return { applied, draft, missing, busy, failure, message, refusals, edit, submit };
 }
 
-function RoleFields(props: { readonly name: DefaultRoleName; readonly editing: Editing }) {
-  const { name, editing } = props;
+function RoleFields(props: {
+  readonly name: DefaultRoleName;
+  readonly editing: Editing;
+  readonly list: ModelListState | undefined;
+}) {
+  const { name, editing, list } = props;
   const { title, purpose } = roleText[name];
   const role = editing.draft[name];
   return (
@@ -131,23 +139,23 @@ function RoleFields(props: { readonly name: DefaultRoleName; readonly editing: E
           error={problemFor(editing.failure, `${name}.provider`)}
           announce={false}
           onChange={(provider) => {
-            editing.edit(name, { provider });
+            editing.edit(name, { provider, model: '' });
           }}
         />
-        <Field
-          kind="text"
+        <ModelChoice
+          key={role.provider}
           id={`default-${name}-model`}
           label={`${title} model`}
           placeholder="Dated model id"
           value={role.model}
           disabled={role.provider === ''}
+          list={role.provider === '' ? undefined : list}
           error={
             editing.missing.includes(name)
-              ? { message: 'Enter the dated model id for this provider.' }
+              ? { message: 'Choose or enter the dated model id for this provider.' }
               : problemFor(editing.failure, `${name}.model`)
           }
-          announce={false}
-          onInput={(model) => {
+          onChange={(model) => {
             editing.edit(name, { model });
           }}
         />
@@ -163,6 +171,7 @@ function ModelsForm(props: {
   const { saved, builtIn } = props;
   const editing = useEditing(saved);
   const formRef = useRef<HTMLFormElement>(null);
+  const lists = useModelLists(defaultRoleNames.map((name) => editing.draft[name].provider));
   useRefusalFocus(formRef, editing.refusals);
   return (
     <form
@@ -187,7 +196,12 @@ function ModelsForm(props: {
         template. Projects that exist keep their own models.
       </p>
       {defaultRoleNames.map((name) => (
-        <RoleFields key={name} name={name} editing={editing} />
+        <RoleFields
+          key={name}
+          name={name}
+          editing={editing}
+          list={lists[editing.draft[name].provider]}
+        />
       ))}
       <div class="rst-projects__actions">
         <Button type="submit" variant="primary" busy={editing.busy}>

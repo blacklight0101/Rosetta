@@ -811,6 +811,8 @@ input, cached input and cache-write prices (RF-422). Every price is a whole numb
 provider kind; a file that breaks this stops the server with `RST-1602`. A call priced with a project override
 (user's own key only, DEC-107) records the version `<version>+project`.
 
+The model list `prices/models.yaml` (DEC-156, RF-405) sits beside it: `{ schemaVersion: 1, version (date), models: [{ provider (anthropic or openai), model, label }] }`, a model once per provider, read at start-up with the price table; a file that breaks this stops the server with `RST-1602`. It feeds the model dropdowns only and prices nothing: a listed model the price table has no entry for shows as "no price" (RF-427). Ollama is not listed, because its models are the ones installed on the configured server.
+
 ### 3.19 Evaluation results: `eval-out/<id>/`
 
 Written by `npm run eval` (RNF-006, RNF-012, RNF-015, RF-305), inside the Rosetta repository's git-ignored `eval-out/`, never
@@ -1191,6 +1193,7 @@ releases.
 | Server settings defaults                  | migration `0004_server_settings_defaults`                                                       | caps, queue (RF-1106, RF-1108)             |
 | Default project settings and ignore rules | `templates/project-settings.json`, `templates/ignore-rules.txt`                                 | `CreateProject` (RF-010)                   |
 | Default price table                       | `prices/default-prices.yaml`                                                                    | budget guard, estimator                    |
+| Model list                                | `prices/models.yaml`                                                                            | model dropdowns (RF-405, DEC-156)          |
 | Prompts                                   | `prompts/<role>/`                                                                               | agent loop (RNF-004)                       |
 | Demo target                               | `https://github.com/dotnet-architecture/eShopModernizing/tree/main/eShopLegacyWebFormsSolution` | README quick start, milestone run (RF-801) |
 

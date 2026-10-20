@@ -2,6 +2,7 @@ import type { LedgerEntry } from '../../application/ports/cost-ledger.js';
 import type { LlmRequest } from '../../application/ports/llm-provider.js';
 import type { ProviderCallRecord } from '../../application/ports/provider-call-recorder.js';
 import type { ProviderRun } from '../../application/ports/provider-set-factory.js';
+import { cacheWriteCostOf, costOf } from '../../domain/budget/price.js';
 import type { KeySource } from '../../domain/budget/price-table.js';
 import type { TokenUsage } from '../../domain/budget/token-usage.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -28,6 +29,32 @@ export interface CallOutcome {
   readonly costMicros: bigint;
   /** The part of `costMicros` the cache writes cost (P2-16). */
   readonly cacheWriteCostMicros: bigint;
+}
+
+/** The outcome of a call that used this much, priced as an answered call is (RF-421, P2-16). */
+export function outcomeOf(
+  price: CallPrice,
+  attempts: number,
+  usage: CallOutcome['usage'],
+): CallOutcome {
+  const priced = price.price;
+  return {
+    attempt: Math.max(attempts, 1),
+    usage,
+    costMicros: priced === undefined ? 0n : costOf(priced, usage).micros,
+    cacheWriteCostMicros: priced === undefined ? 0n : cacheWriteCostOf(priced, usage).micros,
+  };
+}
+
+/** What a call adds to the run's totals. */
+export function totalsOf(
+  usage: TokenUsage,
+  costMicros: bigint,
+): Pick<TokenUsage, 'inputTokens' | 'outputTokens' | 'cachedInputTokens'> & {
+  readonly costMicros: bigint;
+} {
+  const { inputTokens, outputTokens, cachedInputTokens } = usage;
+  return { inputTokens, outputTokens, cachedInputTokens, costMicros };
 }
 
 /** The ledger row of a call (RF-428); a call without an answer has no usage and costs 0. */

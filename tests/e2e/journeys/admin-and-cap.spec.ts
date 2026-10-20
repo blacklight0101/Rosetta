@@ -10,6 +10,7 @@ import { accountFor, type Credentials } from '../support/seed.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
 import { fixturePassword } from '../../support/account-fixtures.js';
+import { chooseModel } from '../support/choose-model.js';
 
 // RF-1102, RF-1106, RF-1104, RF-422, RF-1010, RF-428, RNF-010, P1-46: the administrator creates a
 // user and saves the caps (the same figures as admin-users.spec.ts, so the server's month stays
@@ -50,10 +51,10 @@ async function userStoresKeyAndPricedReader(page: Page): Promise<void> {
   await openProjectStart(page, repositories.webforms);
   await page.getByRole('link', { name: 'Project settings' }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
-  await page.getByLabel('Reader model', { exact: true }).fill('gpt-5-nano');
+  await chooseModel(page, 'Reader', 'gpt-5-nano');
   // RF-250: the summariser is a role of the run like the reader; it is priced the same way.
   await page.getByLabel('Summariser provider', { exact: true }).selectOption('openai');
-  await page.getByLabel('Summariser model', { exact: true }).fill('gpt-5-nano');
+  await chooseModel(page, 'Summariser', 'gpt-5-nano');
   // DEC-117: the threshold to confirm a run is at most the run cap, so both are set together.
   await page.getByLabel('Run cost cap (USD)', { exact: true }).fill('0.002');
   await page.getByLabel('Ask before a run estimated above (USD)', { exact: true }).fill('0.001');

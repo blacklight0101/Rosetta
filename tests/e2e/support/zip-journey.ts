@@ -5,6 +5,7 @@ import { buildZip, type ZipItem } from '../../support/zip-fixtures.js';
 import { expect } from './fixtures.js';
 import { chooseAreas, runScan } from './journey-pages.js';
 import { runStatus, startAndOpenLiveRun } from './live-run-page.js';
+import { chooseModel } from './choose-model.js';
 
 // RF-128, RF-130, RF-131, P3-42: the steps of the journey of a project analysed from a zip. The zip
 // is made in the test from the first-party C# fixture (tests/fixtures/repos/webforms-csharp) under
@@ -126,7 +127,7 @@ export async function snapshotHashOfReport(page: Page): Promise<string> {
 export async function giveReaderToOpenAi(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Project settings' }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
-  await page.getByLabel('Reader model', { exact: true }).fill('gpt-5-nano');
+  await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
