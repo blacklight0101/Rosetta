@@ -1,6 +1,8 @@
 import type { JSX } from 'preact';
+import type { CoverageListing } from '../api/coverage.js';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import { Button } from '../components/Button.js';
+import type { CodeAreaInfo } from '../lib/live-run/code-map-tiles.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 import { AgentsGrid } from './AgentsGrid.js';
 import { CoverageMap } from './CoverageMap.js';
@@ -17,6 +19,10 @@ export interface AgentsTabProps {
   readonly stage: string;
   readonly costMicros: number;
   readonly estimate: RunEstimate | undefined;
+  /** The files of every area with the lines read, once the run has listed them (RF-230). */
+  readonly coverage?: CoverageListing | undefined;
+  /** The areas of the code map, so the coverage map lists an area nobody read yet. */
+  readonly codeAreas?: readonly CodeAreaInfo[] | undefined;
   /** The area a tile opened, if any. */
   readonly area: string | undefined;
   readonly onShowAll: () => void;
@@ -47,7 +53,9 @@ export function AgentsTab(props: AgentsTabProps): JSX.Element {
       <RunOverview state={state} />
       <RunMeter state={state} costMicros={props.costMicros} estimate={props.estimate} />
       <AgentsGrid state={state} />
-      {props.stage === 'understand' ? <CoverageMap state={state} /> : null}
+      {props.stage === 'understand' ? (
+        <CoverageMap state={state} coverage={props.coverage} areas={props.codeAreas} />
+      ) : null}
     </>
   );
 }

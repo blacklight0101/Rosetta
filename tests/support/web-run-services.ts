@@ -8,11 +8,11 @@ import type { RunCallReader } from '../../src/application/ports/run-call-reader.
 import type { ReportDownloads } from '../../src/application/ports/report-downloads.js';
 import type { ReportWriter } from '../../src/application/ports/report-writer.js';
 import type { RunFileReader } from '../../src/application/ports/run-file-reader.js';
+import { pageReads } from './page-reads.js';
 import type { RunTextFiles } from '../../src/application/ports/run-text-files.js';
 import { EstimateRun } from '../../src/application/estimate/estimate-run.js';
 import { BuildReport } from '../../src/application/use-cases/build-report.js';
 import { ReadRunFile } from '../../src/application/use-cases/read-run-file.js';
-import { ReadOverview } from '../../src/application/use-cases/read-overview.js';
 import { ExportZip } from '../../src/application/use-cases/export-zip.js';
 import { GetCallTranscript } from '../../src/application/use-cases/get-call-transcript.js';
 import { GetJourney } from '../../src/application/use-cases/get-journey.js';
@@ -235,7 +235,7 @@ export function runServices(
   const { projects, keys, calls, logs, clock, answers } = stores;
   return {
     getRun: new GetRun({ runs: runs.runs, queue: runs.queue, files: outputs.text }),
-    readOverview: new ReadOverview({ runs: runs.runs, files: outputs.text }),
+    ...pageReads(runs.runs, outputs.text),
     subscribeRunEvents: runs.subscribe,
     stopRun: runs.stop,
     resumeRun: new ResumeRun({

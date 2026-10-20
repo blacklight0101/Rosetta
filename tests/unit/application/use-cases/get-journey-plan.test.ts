@@ -55,6 +55,22 @@ describe('GetJourney: the plan run', () => {
 });
 
 describe('GetJourney: the plan run (2)', () => {
+  it('RF-401 DEC-155 a plan run that ended with RST-1522 is shown with that code', async () => {
+    const { project, parts, seed, journey } = await setup();
+    const understand = await seed();
+    const failed = await addPlanRun(parts, project, {
+      ...{ runKey: '20261012-100000-plan', sourceRunKey: sourceKey, endState: 'Failed' },
+      ...{ errorCode: 'RST-1522', startedAt: briefSavedAt + hour, costMicros: 0 },
+    });
+
+    const result = await journey.execute({ actor, projectId: project.id, runId: understand?.id });
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: { plan: { id: failed.id, endState: 'Failed', errorCode: 'RST-1522' } },
+    });
+  });
+
   it('RF-615 a plan run written from another understand run is not the plan of this one', async () => {
     const { project, parts, seed, journey } = await setup();
     await seed({ run: { runKey: olderKey } });

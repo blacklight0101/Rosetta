@@ -1,3 +1,4 @@
+import type { Card } from '../../domain/cards/card.js';
 import type { DeepenRecord, DeepenRound } from '../../domain/deepen/deepen-record.js';
 import type { RoundPlan } from '../../domain/deepen/round-plan.js';
 import type { DeepenStopReason } from '../../domain/deepen/stop-rule.js';
@@ -8,26 +9,41 @@ import { cardsOf, type DeepenState } from './deepen-state.js';
 // cards it starts from, each round as it begins and as it ends, and why it stopped. Counts only,
 // never claim text, so the events stay small; the page reads the claims themselves from the run.
 
+/** The cards and claims a Deepen starts from; the four groups of claims add up to the claims. */
+export interface SeededCounts {
+  readonly cards: number;
+  readonly claims: number;
+  readonly supported: number;
+  readonly rejected: number;
+  readonly citationInvalid: number;
+  readonly notJudged: number;
+}
+
+// RF-209
+export function seededCounts(cards: readonly Card[]): SeededCounts {
+  const claims = cards.flatMap((card) => card.claims);
+  const count = (keep: (status: string) => boolean): number =>
+    claims.filter((claim) => keep(claim.status)).length;
+  return {
+    cards: cards.length,
+    claims: claims.length,
+    supported: count((status) => status === 'Supported'),
+    rejected: count((status) => status === 'Rejected'),
+    citationInvalid: count((status) => status === 'CitationInvalid'),
+    notJudged: count((status) => status === 'Unverified' || status === 'Proposed'),
+  };
+}
+
 /** RF-209: the run to improve and what the owner confirmed, with the cards the Deepen starts from. */
 export async function announceDeepen(
   parts: DeepenParts,
   state: DeepenState,
   record: DeepenRecord,
 ): Promise<void> {
-  const cards = cardsOf(state);
-  const claims = cards.flatMap((card) => card.claims);
-  const count = (keep: (status: string) => boolean): number =>
-    claims.filter((claim) => keep(claim.status)).length;
   const { parentRunId, parentRunKey, maxRounds, coveragePass } = record;
   await parts.execution.events.emit('deepen.started', {
     ...{ parentRunId, parentRunKey, maxRounds, coveragePass },
-    seeded: {
-      cards: cards.length,
-      claims: claims.length,
-      supported: count((status) => status === 'Supported'),
-      rejected: count((status) => status === 'Rejected'),
-      notJudged: count((status) => status === 'Unverified' || status === 'Proposed'),
-    },
+    seeded: seededCounts(cardsOf(state)),
   });
 }
 

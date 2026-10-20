@@ -136,7 +136,14 @@ export const deepenStarted = (seq: number, maxRounds = 3): RunEvent =>
     parentRunKey: '20261001-090000-understand',
     maxRounds,
     coveragePass: true,
-    seeded: { cards: 24, claims: 118, supported: 68, rejected: 40, notJudged: 10 },
+    seeded: {
+      cards: 24,
+      claims: 118,
+      supported: 68,
+      rejected: 40,
+      citationInvalid: 0,
+      notJudged: 10,
+    },
   });
 
 export const deepenRoundStarted = (seq: number, round: number): RunEvent =>

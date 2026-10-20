@@ -198,3 +198,37 @@ it('RF-1015 a run that is not an understand run has the evidence and activity ta
       .map((each) => each.textContent),
   ).toEqual([expect.stringMatching(/^Evidence/u), expect.stringMatching(/^Activity/u)]);
 });
+
+it('RF-230 the Evidence tab lists the files and the areas nobody read as not read', async () => {
+  const listing = {
+    areas: [
+      {
+        area: 'Catalog',
+        files: [
+          { path: 'Catalog/Edit.cs', read: [{ startLine: 1, endLine: 30 }] },
+          { path: 'Catalog/Other.cs', read: [] },
+        ],
+      },
+    ],
+  };
+  await openEnded({ extra: { [`GET ${runPath}/coverage`]: json(200, listing) } });
+
+  fireEvent.click(tab('Evidence'));
+
+  const map = await screen.findByRole('region', { name: 'Coverage map' });
+  await waitFor(() => {
+    expect(within(map).getByRole('region', { name: 'Coverage of Catalog' }).textContent).toContain(
+      'Other.cs',
+    );
+  });
+  expect(within(map).getByRole('region', { name: 'Coverage of Models' }).textContent).toContain(
+    'No files read.',
+  );
+  expect(within(map).getAllByText('not read')).toHaveLength(1);
+});
+
+it('RF-230 a scan has no files read per area, so its page does not ask for them', async () => {
+  const page = await openEnded({ stage: 'scan' });
+
+  expect(page.calls.map((call) => call.path)).not.toContain(`${runPath}/coverage`);
+});

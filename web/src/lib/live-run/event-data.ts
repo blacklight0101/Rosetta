@@ -28,6 +28,9 @@ export const toolResultData = z.looseObject({
   tool: text.optional(),
   ok: z.boolean().optional(),
   linesReturned: count.optional(),
+  /** A `read_file` result: the lines it gave back (RF-1002). */
+  startLine: count.optional(),
+  endLine: count.optional(),
   refusedReason: text.optional(),
 });
 
@@ -134,6 +137,8 @@ export const deepenStartedData = z.looseObject({
     claims: count,
     supported: count,
     rejected: count,
+    /** Absent from events written before the group existed (RF-209). */
+    citationInvalid: count.optional(),
     notJudged: count,
   }),
 });

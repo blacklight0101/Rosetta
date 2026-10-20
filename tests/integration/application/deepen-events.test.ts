@@ -43,7 +43,7 @@ describe('RF-209 the events of a Deepen run', UNDERSTAND_TIMEOUT, () => {
       parentRunKey: run.runKey,
       maxRounds: 2,
       coveragePass: false,
-      seeded: { cards: 2, claims: 2, supported: 1, rejected: 1, notJudged: 0 },
+      seeded: { cards: 2, claims: 2, supported: 1, rejected: 1, citationInvalid: 0, notJudged: 0 },
     });
     const at = (type: string): number => events.findIndex((event) => event.type === type);
     expect(at('deepen.started')).toBeGreaterThanOrEqual(0);
@@ -102,6 +102,7 @@ describe('RF-209 the counts of the events of a Deepen', UNDERSTAND_TIMEOUT, () =
       claims: 2,
       supported: 1,
       rejected: 0,
+      citationInvalid: 0,
       notJudged: 1,
     });
   });
