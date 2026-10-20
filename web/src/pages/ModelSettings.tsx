@@ -1,12 +1,16 @@
 import type { JSX } from 'preact';
 import { ROLE_NAMES, type RoleName } from './project-settings-form.js';
 import { LimitSetting } from './LimitSetting.js';
-import { ProviderSetting, TextSetting } from './SettingFields.js';
+import { ModelChoice } from './ModelChoice.js';
+import type { ModelListState } from './model-lists.js';
+import { ProviderSetting } from './SettingFields.js';
 import type { SectionProps } from './settings-section.js';
 import { ranges, templateDefaults } from './setting-limits.js';
+import { useModelLists } from './use-model-lists.js';
 
-// RF-002, RF-405, DEC-116, DEC-117, design-system.md section 14: the provider, model and output
-// limit of each agent role; only the reader has a turn limit. The limits are sliders (P2-15).
+// RF-002, RF-405, DEC-116, DEC-117, DEC-156, design-system.md section 14: the provider, model and
+// output limit of each agent role; only the reader has a turn limit. The limits are sliders (P2-15).
+// The model is chosen from the provider's list, with "Other model..." for free text.
 
 const roleText: Readonly<Record<RoleName, { readonly title: string; readonly purpose: string }>> = {
   reader: { title: 'Reader', purpose: 'Reads each area of the code and writes the cards.' },
@@ -56,8 +60,10 @@ function OutputTokens({
   );
 }
 
-function RoleFields(props: SectionProps & { readonly role: RoleName }): JSX.Element {
-  const { editor, errorFor, providers, role } = props;
+function RoleFields(
+  props: SectionProps & { readonly role: RoleName; readonly list: ModelListState | undefined },
+): JSX.Element {
+  const { editor, errorFor, providers, role, list } = props;
   const { title, purpose } = roleText[role];
   const draft = editor.draft.roles[role];
   const path = `roles.${role}`;
@@ -76,16 +82,17 @@ function RoleFields(props: SectionProps & { readonly role: RoleName }): JSX.Elem
           options={providers}
           value={draft.provider}
           onChange={(provider) => {
-            editor.changeRole(role, { provider });
+            editor.changeRole(role, { provider, model: '' });
           }}
         />
-        <TextSetting
+        <ModelChoice
+          key={draft.provider}
           id={`role-${role}-model`}
           label={`${title} model`}
-          path={`${path}.model`}
-          errorFor={errorFor}
           value={draft.model}
-          onInput={(model) => {
+          list={list}
+          error={errorFor(`${path}.model`)}
+          onChange={(model) => {
             editor.changeRole(role, { model });
           }}
         />
@@ -98,6 +105,7 @@ function RoleFields(props: SectionProps & { readonly role: RoleName }): JSX.Elem
 
 // RF-002
 export function ModelSettings(props: SectionProps): JSX.Element {
+  const lists = useModelLists(ROLE_NAMES.map((role) => props.editor.draft.roles[role].provider));
   return (
     <section class="rst-card rst-settings__section" aria-labelledby="models">
       <h2 id="models" class="rst-settings__heading">
@@ -108,7 +116,12 @@ export function ModelSettings(props: SectionProps): JSX.Element {
         with its usual settings; keys are kept on the Settings and keys page.
       </p>
       {ROLE_NAMES.map((role) => (
-        <RoleFields key={role} {...props} role={role} />
+        <RoleFields
+          key={role}
+          {...props}
+          role={role}
+          list={lists[props.editor.draft.roles[role].provider]}
+        />
       ))}
     </section>
   );
