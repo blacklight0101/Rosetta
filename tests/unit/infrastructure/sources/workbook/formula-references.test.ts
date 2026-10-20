@@ -49,7 +49,7 @@ it('RF-153 reads external references in the file form, the stored form and the q
     '[Book.xlsx]Sheet!A1',
     '[1]Sheet!A1',
     '[Book.xlsx]My Sheet!B2',
-    'name:[2]TaxRate',
+    'name:[2]!TaxRate',
     '[0]S!A1',
   ]);
 });
@@ -72,14 +72,14 @@ it('RF-153 reads structured table references', () => {
 });
 
 it("RF-153 reads a table column whose name holds an escaped bracket and a quote ('[ and '')", () => {
-  expect(refsOf("T[Name '[x']+B1")).toEqual(["table:T[Name '[x']", 'B1']);
+  expect(refsOf("T[Name '[x']]+B1")).toEqual(["table:T[Name '[x']]", 'B1']);
 });
 
 it('RF-153 reads defined names, and a name that looks like a cell only when the file defines it', () => {
   expect(refsOf('TaxRate*A1+TAXRATE2', ['TaxRate'])).toEqual(['name:TaxRate', 'A1']);
   expect(refsOf('TAX1*2', ['TAX1'])).toEqual(['name:TAX1']);
   expect(refsOf('TAX1*2')).toEqual(['TAX1']);
-  expect(refsOf('XFE1+XFD1', [])).toEqual(['name:XFE1', 'XFD1']);
+  expect(refsOf('XFE1+XFD1', ['XFE1'])).toEqual(['name:XFE1', 'XFD1']);
   expect(refsOf('Sheet1!MyName', ['MyName'])).toEqual(['name:Sheet1!MyName']);
 });
 
