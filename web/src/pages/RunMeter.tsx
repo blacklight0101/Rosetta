@@ -77,19 +77,56 @@ function Bars(props: {
   );
 }
 
-function Estimate({
-  estimate,
-}: {
-  readonly estimate: RunEstimate | undefined;
-}): JSX.Element | null {
-  if (estimate === undefined) return null;
-  const { low, likely, high } = estimate.total;
-  const dollars = (micros: string): string => `$${microsToDollars(micros)}`;
+type Point = RunEstimate['total']['likely'];
+
+const dollars = (micros: string): string => `$${microsToDollars(micros)}`;
+const tokensOf = (point: Point): number => point.inputTokens + point.outputTokens;
+
+/** The range in tokens, and in dollars when the models have a price: free models show 0 to 0. */
+function rangeText(total: RunEstimate['total']): string {
+  const tokens = `${tokensLabel(tokensOf(total.low))} to ${tokensLabel(tokensOf(total.high))} tokens`;
+  const priced = BigInt(total.high.costMicros) > 0n;
+  return priced
+    ? `${tokens}, ${dollars(total.low.costMicros)} to ${dollars(total.high.costMicros)}`
+    : tokens;
+}
+
+/** Says so when the run has used more than the likely estimate: in dollars if priced, else tokens. */
+function overrunOf(props: EstimateProps): string | undefined {
+  const { likely } = props.estimate.total;
+  if (BigInt(likely.costMicros) > 0n) {
+    const over = BigInt(Math.round(props.costMicros)) > BigInt(likely.costMicros);
+    return over
+      ? `Over the estimate: ${costLabel(props.costMicros)} spent so far against ${dollars(likely.costMicros)} likely.`
+      : undefined;
+  }
+  const expected = tokensOf(likely);
+  return expected > 0 && props.tokens > expected
+    ? `Over the estimate: ${tokensLabel(props.tokens)} tokens used so far against ${tokensLabel(expected)} likely.`
+    : undefined;
+}
+
+interface EstimateProps {
+  readonly estimate: RunEstimate;
+  readonly tokens: number;
+  readonly costMicros: number;
+}
+
+function Estimate(props: EstimateProps): JSX.Element {
+  const { likely } = props.estimate.total;
+  const over = overrunOf(props);
   return (
-    <p class="rst-live-meter__estimate">
-      Estimate (likely): {tokensLabel(likely.inputTokens + likely.outputTokens)} tokens,{' '}
-      {dollars(likely.costMicros)}. Range {dollars(low.costMicros)} to {dollars(high.costMicros)}.
-    </p>
+    <>
+      <p class="rst-live-meter__estimate" data-testid="estimate-line">
+        Estimate (likely): {tokensLabel(tokensOf(likely))} tokens, {dollars(likely.costMicros)}.
+        Range {rangeText(props.estimate.total)}.
+      </p>
+      {over === undefined ? null : (
+        <p class="rst-live-meter__over" data-testid="estimate-over">
+          {over}
+        </p>
+      )}
+    </>
   );
 }
 
@@ -178,7 +215,7 @@ export function RunMeter({ state, costMicros, estimate }: RunMeterProps): JSX.El
       <h2 class="rst-live-section__title">Run meter</h2>
       <Bars caps={state.caps} tokens={tokens} costMicros={costMicros} />
       <RoleTable state={state} costMicros={costMicros} />
-      <Estimate estimate={estimate} />
+      {estimate === undefined ? null : <Estimate {...{ estimate, tokens, costMicros }} />}
     </section>
   );
 }

@@ -63,6 +63,20 @@
   color: var(--rst-brand-hover);
 }
 
+.rst-root .rst-button--link {
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--rst-brand);
+  font-weight: var(--rst-fw-body);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.rst-root .rst-button--link:hover {
+  color: var(--rst-brand-hover);
+}
+
 .rst-root .rst-button--danger {
   background: var(--rst-danger-solid);
   color: var(--rst-danger-solid-ink);
@@ -270,6 +284,16 @@
 .rst-rendered-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* `inline code` in model text: the mono font on a quiet background, still text */
+
+.rst-rendered-text__code {
+  padding: 0 var(--rst-sp-1);
+  border-radius: var(--rst-radius-sm);
+  background: var(--rst-surface-2);
+  font-family: var(--rst-mono);
+  font-size: 0.92em;
 }
 
 /* Callout tones: error is the default; warn and info are the other two (design-system.md section 7) */

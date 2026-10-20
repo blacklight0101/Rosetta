@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { BreakableText } from '../components/BreakableText.js';
 import { Glyph } from '../components/Glyph.js';
 import type { WorkingItem } from '../lib/live-run/working-now.js';
 
@@ -16,8 +17,12 @@ function Item({ item }: { readonly item: WorkingItem }): JSX.Element {
         <Glyph name={item.role === 'verifier' ? 'check' : 'brackets'} />
       </span>
       <div class="rst-now__body">
-        <b class="rst-now__title">{item.title}</b>
-        <p class="rst-now__text">{item.text}</p>
+        <b class="rst-now__title">
+          <BreakableText text={item.title} />
+        </b>
+        <p class="rst-now__text">
+          <BreakableText text={item.text} />
+        </p>
       </div>
     </li>
   );

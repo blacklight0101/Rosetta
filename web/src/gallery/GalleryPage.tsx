@@ -20,6 +20,7 @@ const variants: readonly ButtonVariant[] = [
   'primary',
   'secondary',
   'ghost',
+  'link',
   'danger',
   'danger-outline',
 ];
@@ -71,6 +72,10 @@ const badgeRows: readonly { name: string; badges: readonly BadgeChoice[] }[] = [
     badges: stateLists.OpenQuestionState.map(
       (value) => ({ list: 'OpenQuestionState', value }) as const,
     ),
+  },
+  {
+    name: 'QuestionShown',
+    badges: stateLists.QuestionShown.map((value) => ({ list: 'QuestionShown', value }) as const),
   },
   {
     name: 'AgentTaskState',

@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 66      | 5         | 59         | 2         | 0                  | 22      | 42      | 2      | 22         | 0         |
-| **Total**               | **283** | **77**    | **179**    | **27**    | **0**              | **138** | **133** | **12** | **157**    | **0**     |
+| P3 Report and plan      | 67      | 5         | 60         | 2         | 0                  | 22      | 43      | 2      | 23         | 0         |
+| **Total**               | **284** | **77**    | **180**    | **27**    | **0**              | **138** | **134** | **12** | **158**    | **0**     |
 
 ## Conventions for every card
 
@@ -3837,3 +3837,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the prompt versions and tests.
 - **Done when**: each probe has a passing test; `npm run verify` green.
 - **Refs**: RF-202, RF-207, RNF-004, DEC-157; issue #684.
+
+### P3-67 - Follow-up: a Deepen does not duplicate the parent's cards; unselected areas apart
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-61
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-209 and RF-230 (the DEC-158 scenarios), RF-250, RFC-003 section 4; DEC-158; the PR #681 cause of the duplicate cards (`src/application/deepen/deepen-tasks.ts`, `prompts/reader/reread.v1.md`, `assignCardIds`); the coverage map from P3-61 (`web/src/lib/live-run/coverage-map.ts`, `CoverageMap.tsx`, `read-run-coverage.ts`).
+- **Do**: (1) give every Deepen reader task (re-read and never-read file) the parent's cards for its area (id, type, title, inside a labelled data block), with a new reader prompt version (keep the old one) that writes a new card only for a fact no listed card holds and otherwise adds the claim to the listed card; the merge of such a claim into the parent's card keeps the parent's id and follows RF-203; record the prompt version in the manifest. (2) On the coverage map, list areas the run was not asked to read apart as "not in this run" and leave them out of the "not read" count. Coordinate with P3-66 (new reader prompt versions for claim grouping): build on its versions if it has merged.
+- **Review probes**: a Deepen over an area whose parent holds an entity card (no second card; the new claim lands on the parent's card id); a genuinely new entity (new card after the parent's ids); a listed card title that carries instructions (treated as data); a run over 2 of 5 areas (3 "not in this run", not counted as not read); a full run (no "not in this run" section); recorded responses only.
+- **Behaviour to preserve**: RF-209 ids after the parent's for new cards; the parent run unchanged; RF-231 wording.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-209, RF-230, RF-203, RF-250, DEC-158; issue #685.

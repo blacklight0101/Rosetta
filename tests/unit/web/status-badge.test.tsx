@@ -37,6 +37,7 @@ const sortedValues = (lists: Record<string, readonly string[]>): Record<string, 
 const statusLists = [
   'ClaimStatus',
   'OpenQuestionState',
+  'QuestionShown',
   'AgentTaskState',
   'RunEndState',
   'RunQueueState',

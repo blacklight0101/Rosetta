@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { BreakableText } from '../components/BreakableText.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import type { AgentPanelState, ToolNow } from '../lib/live-run/run-state.js';
@@ -24,7 +25,9 @@ function Now({ agent }: { readonly agent: AgentPanelState }): JSX.Element {
   }
   return (
     <p class="rst-live-panel__now rst-mono" data-testid="agent-now">
-      <span>{tool.text}</span>{' '}
+      <span>
+        <BreakableText text={tool.text} />
+      </span>{' '}
       <span class="rst-live-panel__status">{toolStatusWords[tool.status]}</span>
     </p>
   );
@@ -67,16 +70,27 @@ function roleClass(role: string): string {
 // RF-1002
 export function AgentPanel({ agent }: { readonly agent: AgentPanelState }): JSX.Element {
   const area = agent.area === '' ? agent.agentTaskId : agent.area;
+  const { round } = agent;
   return (
     <article
       class={`rst-live-panel rst-live-panel--${roleClass(agent.role)}`}
-      aria-label={`Agent ${area}`}
+      aria-label={round === undefined ? `Agent ${area}` : `Agent ${area}, round ${String(round)}`}
       data-testid="agent-panel"
     >
       <header class="rst-live-panel__head">
-        <strong class="rst-mono rst-live-panel__area">{area}</strong>
-        <span class="rst-live-panel__role">{agent.role}</span>
-        <StatusBadge list="AgentTaskState" value={agent.state} />
+        <strong class="rst-mono rst-live-panel__area">
+          <BreakableText text={area} />
+        </strong>
+        <div class="rst-live-panel__meta">
+          <span class="rst-live-panel__role">{agent.role}</span>
+          {round === undefined ? null : (
+            <span
+              class="rst-live-panel__round"
+              data-testid="agent-round"
+            >{`Round ${String(round)}`}</span>
+          )}
+          <StatusBadge list="AgentTaskState" value={agent.state} />
+        </div>
       </header>
       <p class="rst-mono rst-live-panel__model">
         {agent.model === '' ? 'model not named' : agent.model}

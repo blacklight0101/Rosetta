@@ -1,22 +1,21 @@
 import type { JSX } from 'preact';
-import { useState } from 'preact/hooks';
 import { sectionTitles } from '../api/overview.js';
-import { reopenQuestion, saveAnswer, type OpenQuestionRow } from '../api/answers.js';
-import type { ApiFailure, ApiResult } from '../api/client.js';
-import { useApp } from '../app/app-context.js';
+import { waitsForAnswer, type OpenQuestionRow } from '../api/answers.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { RenderedText } from '../components/RenderedText.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { sectionAnchor } from './AppOverview.js';
+import { useAnswerSave, type AnswerSave } from './use-answer-save.js';
+import { useFocusFirst, type FocusRequest } from './use-focus-first-question.js';
 import type { RunAnswersState } from './use-run-answers.js';
 import type { OverviewLoad } from './use-run-overview.js';
 
 // RF-1007, RF-240, RF-507: the open questions of an understand run on its live page, each with a
 // field for the answer. Saving writes the answer into the project's answers.md (the other answers
 // stay); a question is marked answered only when its area is analysed again with the answers
-// (RF-241), so a question reads Open until a re-run used its answer, then Answered. A re-run skips
+// (RF-241), so a saved answer reads "Answer saved" (not open, DEC-154) until a re-run used it, then Answered. A re-run skips
 // an Answered question, so one whose answer was edited is reopened first (RF-241). Question and
 // context come from a model and are shown as text. Each question also says how many items depend on
 // it and what happens if it is skipped (RF-1017). The page of the ended run reads the questions (it
@@ -27,6 +26,11 @@ export interface RunAnswersProps {
   readonly runId: string;
   /** The questions of the run and the way to show the ones a save returned. */
   readonly answers: RunAnswersState;
+  /**
+   * DEC-154: when `wanted`, the first question without a saved answer is scrolled into view and
+   * focused as soon as the questions are shown, and `done` is called.
+   */
+  readonly focus?: FocusRequest;
   /** RF-264: the overview each question links to, when the run has one. */
   readonly overview?: OverviewLoad;
   /** Called when the link to the overview section a question concerns is followed. */
@@ -34,88 +38,6 @@ export interface RunAnswersProps {
 }
 
 type Questions = readonly OpenQuestionRow[];
-
-interface AnswerSave {
-  readonly text: string;
-  readonly busy: boolean;
-  readonly failure: ApiFailure | undefined;
-  readonly message: string;
-  readonly type: (value: string) => void;
-  readonly submit: () => Promise<void>;
-  readonly reopen: () => Promise<void>;
-}
-
-interface QuestionRequest {
-  readonly busy: boolean;
-  readonly failure: ApiFailure | undefined;
-  readonly message: string;
-  readonly setMessage: (message: string) => void;
-  /** Sends the request; the questions it answered, or undefined when it failed. */
-  readonly run: (
-    send: () => Promise<ApiResult<Questions>>,
-    done: (questions: Questions) => string,
-  ) => Promise<Questions | undefined>;
-}
-
-/** What a request about one question does with its answer: the busy mark, the failure, a message. */
-function useQuestionRequest(): QuestionRequest {
-  const [busy, setBusy] = useState(false);
-  const [failure, setFailure] = useState<ApiFailure | undefined>();
-  const [message, setMessage] = useState('');
-  const run = async (
-    send: () => Promise<ApiResult<Questions>>,
-    done: (questions: Questions) => string,
-  ): Promise<Questions | undefined> => {
-    setBusy(true);
-    setFailure(undefined);
-    setMessage('');
-    const result = await send();
-    setBusy(false);
-    if (!result.ok) {
-      setFailure(result.error);
-      return undefined;
-    }
-    setMessage(done(result.value));
-    return result.value;
-  };
-  return { busy, failure, message, setMessage, run };
-}
-
-function useAnswerSave(
-  runId: string,
-  question: OpenQuestionRow,
-  apply: (questions: Questions) => void,
-): AnswerSave {
-  const { client } = useApp();
-  const [text, setText] = useState(question.answer);
-  const request = useQuestionRequest();
-  const { cardId } = question;
-  const savedOf = (questions: Questions): string =>
-    questions.find((each) => each.cardId === cardId)?.answer ?? '';
-  const submit = async (): Promise<void> => {
-    const send = () => saveAnswer(client, runId, { cardId, answer: text });
-    const saved = await request.run(send, (questions) =>
-      savedOf(questions) === '' ? 'Answer cleared in answers.md.' : 'Answer saved in answers.md.',
-    );
-    if (saved === undefined) return;
-    setText(savedOf(saved));
-    apply(saved);
-  };
-  const reopen = async (): Promise<void> => {
-    const send = () => reopenQuestion(client, runId, cardId);
-    const reopened = await request.run(
-      send,
-      () => 'Question reopened. The next re-run with answers uses the answer.',
-    );
-    if (reopened !== undefined) apply(reopened);
-  };
-  const type = (value: string): void => {
-    setText(value);
-    request.setMessage('');
-  };
-  const { busy, failure, message } = request;
-  return { text, busy, failure, message, type, submit, reopen };
-}
 
 const SAVE_HELP =
   "Saved on one line in the project's answers.md. Leave it empty to clear the answer.";
@@ -222,6 +144,12 @@ function Reasons({ question }: { readonly question: OpenQuestionRow }): JSX.Elem
   );
 }
 
+/** DEC-154: Open, Answer saved (an answer in answers.md that no run has read yet) or Answered. */
+function shownState(question: OpenQuestionRow): 'Open' | 'Answer saved' | 'Answered' {
+  if (question.state === 'Answered') return 'Answered';
+  return waitsForAnswer(question) ? 'Open' : 'Answer saved';
+}
+
 function QuestionItem(props: {
   readonly runId: string;
   readonly question: OpenQuestionRow;
@@ -235,7 +163,7 @@ function QuestionItem(props: {
     <li class="rst-p139-question" data-testid="open-question">
       <div class="rst-p139-question__head">
         <span class="rst-mono rst-p139-question__id">{question.cardId}</span>
-        <StatusBadge list="OpenQuestionState" value={question.state} />
+        <StatusBadge list="QuestionShown" value={shownState(question)} />
       </div>
       <p class="rst-p139-question__text">
         <RenderedText text={question.question} />
@@ -284,6 +212,7 @@ function Body({ runId, answers, overview, onConcern }: RunAnswersProps): JSX.Ele
 
 // RF-1007
 export function RunAnswers(props: RunAnswersProps): JSX.Element {
+  useFocusFirst(props.answers.load, props.focus);
   return (
     <section class="rst-card rst-p139-answers" aria-label="Open questions">
       <h2 class="rst-live-section__title">Open questions</h2>

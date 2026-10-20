@@ -15,6 +15,10 @@ const questionSchema = z.looseObject({
   dependents: z.number().int().min(0),
 });
 
+/** DEC-154: a question waits for the user while it is Open and has no saved answer. */
+export const waitsForAnswer = (question: Pick<OpenQuestionRow, 'state' | 'answer'>): boolean =>
+  question.state === 'Open' && question.answer.trim() === '';
+
 const questionsSchema = z
   .looseObject({ questions: z.array(questionSchema) })
   .transform((body) => body.questions);
