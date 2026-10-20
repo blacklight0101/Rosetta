@@ -16,8 +16,8 @@ export interface FieldProblem {
 export class FieldProblemsError extends RosettaError {
   readonly problems: readonly FieldProblem[];
 
-  constructor(code: ErrorCode, problems: readonly FieldProblem[]) {
-    super(code);
+  constructor(code: ErrorCode, problems: readonly FieldProblem[], options?: ErrorOptions) {
+    super(code, undefined, options);
     this.name = 'FieldProblemsError';
     this.problems = problems;
   }

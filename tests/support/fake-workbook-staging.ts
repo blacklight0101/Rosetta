@@ -20,6 +20,8 @@ export class FakeWorkbookStaging implements WorkbookStaging {
   readonly held = new Map<string, StagedFile[]>();
   receiveFails: Error | undefined;
   publishFails: Error | undefined;
+  /** Runs while a batch is being published, for a change that happens meanwhile. */
+  duringPublish: (() => Promise<void>) | undefined;
   /** When set, `receive` waits for it. */
   gate: Promise<void> | undefined;
   private counter = 0;
@@ -43,11 +45,12 @@ export class FakeWorkbookStaging implements WorkbookStaging {
     return file;
   }
 
-  publish(id: string, request: PublishRequest): Promise<PublishedWorkbooks> {
+  async publish(id: string, request: PublishRequest): Promise<PublishedWorkbooks> {
     this.published.push(id);
+    await this.duringPublish?.();
     if (this.publishFails !== undefined) {
       this.held.delete(id);
-      return Promise.reject(this.publishFails);
+      throw this.publishFails;
     }
     const files = this.held.get(id) ?? [];
     this.held.delete(id);
@@ -61,7 +64,7 @@ export class FakeWorkbookStaging implements WorkbookStaging {
       sha256: `sha256:${'cd'.repeat(32)}`,
       counts: { sheets: 2, nonEmptyCells: 30, formulas: 4, macroModules: 0, macrosSkipped: 0 },
     }));
-    return Promise.resolve({
+    return {
       key: workbookSnapshotKey(request.projectId, hash),
       info: {
         kind: 'workbook',
@@ -81,7 +84,7 @@ export class FakeWorkbookStaging implements WorkbookStaging {
         macroModules: 0,
       })),
       skipped: [],
-    });
+    };
   }
 
   discard(id: string): Promise<void> {

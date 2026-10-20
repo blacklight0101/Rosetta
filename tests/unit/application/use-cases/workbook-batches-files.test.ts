@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import {
@@ -154,7 +154,9 @@ describe('WorkbookBatches.receive (4)', () => {
       release = resolve;
     });
     const arriving = test.useCase.receive(fileRequest(test.project, batchId));
-    await Promise.resolve();
+    await vi.waitFor(() => {
+      expect(test.staging.received).toHaveLength(1);
+    });
 
     test.useCase.abortAll();
     release();

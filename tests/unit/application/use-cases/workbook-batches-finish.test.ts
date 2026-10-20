@@ -161,7 +161,10 @@ describe('WorkbookBatches.finish when a workbook is refused', () => {
   it('RF-150 removes the snapshot when the project was deleted while the batch was read', async () => {
     const test = await batchCase();
     const batchId = await withFiles(test, ['Pricing.xlsx']);
-    await test.projects.remove(amy.userId, test.project.id, () => Promise.resolve());
+    test.staging.duringPublish = () =>
+      test.projects
+        .remove(amy.userId, test.project.id, () => Promise.resolve())
+        .then(() => undefined);
 
     const outcome = await test.useCase.finish(finishRequest(test, batchId));
 

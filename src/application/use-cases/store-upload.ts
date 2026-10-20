@@ -8,7 +8,7 @@ import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { StoredUpload, UploadStore } from '../ports/upload-store.js';
-import type { Project } from '../projects/project.js';
+import { pruneEarlier } from '../projects/prune-snapshot.js';
 
 // RF-128, RF-129, RF-130, RF-133: Store upload turns the zip a user sends into the project's source.
 
@@ -117,7 +117,7 @@ export class StoreUpload {
       await uploads.remove(stored.key);
       return err(ERROR_CODES.notFound);
     }
-    await this.pruneEarlier(project, stored.key);
+    await pruneEarlier(this.deps, project, stored.key);
     await this.record(request, project.id, stored);
     return ok({
       files: stored.info.fileCount,
@@ -129,15 +129,6 @@ export class StoreUpload {
       codeChangedSinceLastRun:
         project.lastRunSnapshotKey !== undefined && project.lastRunSnapshotKey !== stored.key,
     });
-  }
-
-  /** RF-128: the earlier snapshot goes unless a run uses it or may still read the source. */
-  private async pruneEarlier(project: Project, newKey: string): Promise<void> {
-    const earlier = project.upload?.snapshotKey;
-    if (earlier === undefined || earlier === newKey) return;
-    const runs = await this.deps.runs.list(project.userId, project.id);
-    if (runs.some((run) => run.queueState !== 'Ended' || run.snapshotKey === earlier)) return;
-    await this.deps.uploads.remove(earlier);
   }
 
   // RF-133: the name, size and hash of the zip, never its content.

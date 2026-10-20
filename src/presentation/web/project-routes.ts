@@ -26,6 +26,7 @@ import {
 } from './planning-brief-routes.js';
 import { signedInOf } from './request-actor.js';
 import { registerSourceUploadRoutes } from './source-upload-routes.js';
+import { registerWorkbookBatchRoutes } from './workbook-batch-routes.js';
 
 // RF-010, RF-002, RF-1105, RF-1109: the projects API.
 // - POST /api/projects creates a project from a GitHub URL (201), or answers the existing one (200).
@@ -238,6 +239,7 @@ export function registerProjectRoutes(server: FastifyInstance, services: Project
   registerCreate(server, services);
   registerRead(server, services);
   registerSourceUploadRoutes(server, services);
+  registerWorkbookBatchRoutes(server, services);
   registerSettings(server, services);
   registerPlanningBriefRoutes(server, services);
   registerPlanEstimateRoutes(server, services);

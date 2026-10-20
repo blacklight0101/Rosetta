@@ -45,14 +45,16 @@ function withoutControls(text: string): string {
   return kept;
 }
 
-function baseNameOf(text: string): string {
+/** The last path segment of a name as sent, without control or bidi characters (RF-128, RF-150). */
+export function baseNameOf(text: string): string {
   const parts = text.split(/[/\\]/u);
   return withoutControls(parts[parts.length - 1] ?? '')
     .replace(BIDI_CONTROLS, '')
     .trim();
 }
 
-function decoded(text: string): string | undefined {
+/** The percent-decoded text; undefined when the encoding is broken (RF-128, RF-150). */
+export function decoded(text: string): string | undefined {
   try {
     return decodeURIComponent(text);
   } catch {
@@ -60,7 +62,7 @@ function decoded(text: string): string | undefined {
   }
 }
 
-function isHighSurrogate(code: number): boolean {
+export function isHighSurrogate(code: number): boolean {
   return code >= 0xd800 && code <= 0xdbff;
 }
 

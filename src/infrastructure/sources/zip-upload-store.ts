@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readdir, rm, statfs } from 'node:fs/promises';
+import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { UploadSnapshot, UploadSnapshotInfo } from '../../application/ports/source-fetcher.js';
 import type {
@@ -8,8 +8,6 @@ import type {
   UploadStore,
 } from '../../application/ports/upload-store.js';
 import type { ZipExtraction, ZipExtractor } from '../../application/ports/zip-extractor.js';
-import { ERROR_CODES } from '../../domain/errors/codes.js';
-import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import {
   isUploadSnapshotKey,
   uploadKeyPrefix,
@@ -18,13 +16,13 @@ import {
 import { FileSnapshotCache } from '../files/file-snapshot-cache.js';
 import { errorCode, snapshotWriteFailed } from '../github/snapshot-errors.js';
 import { SnapshotStore } from '../github/snapshot-store.js';
-import type { SpaceReservation } from './space-reservation.js';
+import { SpaceReservation } from './space-reservation.js';
 import { receiveZip, uploadTimedOut, uploadTooLarge } from './upload-intake.js';
 
 export interface ZipUploadStoreOptions {
   readonly dataDir: string;
   readonly extractor: ZipExtractor;
-  /** Free bytes of the data folder; the file system's by default. */
+  /** Free bytes of the data folder, for a reservation of its own; the file system's by default. */
   readonly freeBytes?: () => Promise<number>;
   /** The reservation of free space the other uploads share (DEC-149); one of its own by default. */
   readonly reservation?: SpaceReservation;
@@ -42,14 +40,6 @@ const PARTIAL_PREFIX = '.partial-';
 const ZIP_FILE = 'upload.zip';
 const FILES = 'files';
 
-/** RST-1917: the data folder cannot hold the upload. */
-function noSpace(requiredBytes: number): RosettaError {
-  return new RosettaError(
-    ERROR_CODES.uploadNoSpace,
-    `The data folder has less than ${String(requiredBytes)} bytes free.`,
-  );
-}
-
 /** The error a stopped request should surface: its own reason when it has one. */
 function stoppedBy(signal: AbortSignal, fallback: unknown): unknown {
   return signal.aborted && signal.reason instanceof Error ? signal.reason : fallback;
@@ -66,25 +56,29 @@ export class ZipUploadStore implements UploadStore {
   private readonly options: ZipUploadStoreOptions;
   private readonly snapshots: SnapshotStore;
   private readonly cache: FileSnapshotCache;
-  /** Free bytes the uploads running now may still need, held back from the next check. */
-  private reservedBytes = 0;
+  private readonly reservation: SpaceReservation;
 
   constructor(options: ZipUploadStoreOptions) {
     this.options = options;
     this.snapshots = new SnapshotStore(options.dataDir);
     this.cache = new FileSnapshotCache(options.dataDir);
+    this.reservation =
+      options.reservation ??
+      new SpaceReservation({
+        dataDir: options.dataDir,
+        ...(options.freeBytes === undefined ? {} : { freeBytes: options.freeBytes }),
+      });
   }
 
   async store(request: UploadRequest): Promise<StoredUpload> {
     if (request.declaredBytes !== undefined && request.declaredBytes > request.limitBytes) {
       throw uploadTooLarge(request.limitBytes);
     }
-    const reserved = request.limitBytes * FREE_SPACE_FACTOR;
-    await this.reserveSpace(reserved);
+    const release = await this.reservation.reserve(request.limitBytes * FREE_SPACE_FACTOR);
     try {
       return await this.storeInPartial(request);
     } finally {
-      this.reservedBytes -= reserved;
+      release();
     }
   }
 
@@ -125,27 +119,6 @@ export class ZipUploadStore implements UploadStore {
       if (await this.remove(name)) removed += 1;
     }
     return removed;
-  }
-
-  /**
-   * Checks the free space against what the uploads already running hold back (DEC-149), then holds
-   * back this one's share. Nothing awaits between the check and the hold, so uploads that start
-   * together cannot each pass against the same free bytes; the caller releases the share.
-   */
-  private async reserveSpace(requiredBytes: number): Promise<void> {
-    const free = await (this.options.freeBytes ?? this.fileSystemFreeBytes.bind(this))();
-    if (free - this.reservedBytes < requiredBytes) throw noSpace(requiredBytes);
-    this.reservedBytes += requiredBytes;
-  }
-
-  private async fileSystemFreeBytes(): Promise<number> {
-    try {
-      await mkdir(this.options.dataDir, { recursive: true });
-      const stats = await statfs(this.options.dataDir);
-      return stats.bavail * stats.bsize;
-    } catch (error) {
-      throw snapshotWriteFailed('free space could not be read', error);
-    }
   }
 
   private async build(partial: string, request: UploadRequest): Promise<StoredUpload> {
