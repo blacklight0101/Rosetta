@@ -16,6 +16,7 @@ import { DeepenProgress } from './DeepenProgress.js';
 import { EvidenceTab } from './EvidenceTab.js';
 import { UnderstandJourney } from './JourneyPlacement.js';
 import { FailedAreas } from './FailedAreas.js';
+import { RetryNotice } from './RetryNotice.js';
 
 import { RunAnswers } from './RunAnswers.js';
 import { RunDownloads } from './RunDownloads.js';
@@ -234,7 +235,8 @@ function Header(
     <>
       <RunStepper steps={stepperOf(built, shown, phase)} />
       {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
-      <FailedAreas state={shown} projectId={run.projectId} />
+      <FailedAreas state={shown} projectId={run.projectId} runId={run.id} />
+      {shown.retry === undefined ? null : <RetryNotice retry={shown.retry} />}
       {shown.deepen === undefined ? null : <DeepenProgress progress={shown.deepen} />}
       <UnderstandJourney
         {...{ run, stage, phase, open: props.open, onResumed: props.onResumed }}

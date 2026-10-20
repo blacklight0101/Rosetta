@@ -49,7 +49,10 @@ const threePlanned = [
 it('RF-208 the reducer keeps the run being retried and the number of areas retried', () => {
   const state = stateAfter(ev(1, 'run.started', startedData), retryStarted(2, 3));
 
-  expect(state.retry).toEqual({ parentRunId: parentId, parentRunKey: parentKey, areas: 3 });
+  expect(state.retry).toEqual({
+    ...{ parentRunId: parentId, parentRunKey: parentKey, areas: 3 },
+    seeded: { cards: 4, claims: 6, supported: 5 },
+  });
 });
 
 it('RF-208 a retry.started event that does not fit changes nothing', () => {

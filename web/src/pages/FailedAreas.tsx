@@ -20,6 +20,8 @@ const NO_CONSENT = 'RST-1515';
 export interface FailedAreasProps {
   readonly state: RunState;
   readonly projectId: string;
+  /** The run the notice is about (its id): a completed run is retried as a linked run (Q-43). */
+  readonly runId: string;
 }
 
 function headline(endState: string, count: number): string {
@@ -27,32 +29,40 @@ function headline(endState: string, count: number): string {
   return endState === 'Completed' ? `Completed with ${areas} failed` : `${areas} failed`;
 }
 
-function useRetry(projectId: string, areas: readonly string[]) {
+/** Q-43: a run that ended Completed is retried as a linked run; any other is read again as a plain run. */
+function retryTarget(endState: string | undefined, runId: string): string | undefined {
+  return endState === 'Completed' ? runId : undefined;
+}
+
+function useRetry(projectId: string, areas: readonly string[], retryOf: string | undefined) {
   const { client } = useApp();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiFailure | undefined>();
   const retry = (): void => {
     setBusy(true);
     setError(undefined);
-    void startRun(client, projectId, { stage: 'understand', areas, cloudConsent: false }).then(
-      (result) => {
-        setBusy(false);
-        if (result.ok) navigate(`/runs/${encodeURIComponent(result.value.id)}`);
-        else setError(result.error);
-      },
-    );
+    const request = { stage: 'understand', areas, cloudConsent: false } as const;
+    void startRun(client, projectId, {
+      ...request,
+      ...(retryOf === undefined ? {} : { retryOf }),
+    }).then((result) => {
+      setBusy(false);
+      if (result.ok) navigate(`/runs/${encodeURIComponent(result.value.id)}`);
+      else setError(result.error);
+    });
   };
   return { busy, error, retry };
 }
 
 // RF-208
-export function FailedAreas({ state, projectId }: FailedAreasProps): JSX.Element | null {
+export function FailedAreas({ state, projectId, runId }: FailedAreasProps): JSX.Element | null {
   const failed = failedAreasOf(state);
+  const endState = state.ended?.endState;
   const retry = useRetry(
     projectId,
     failed.map((each) => each.area),
+    retryTarget(endState, runId),
   );
-  const endState = state.ended?.endState;
   if (endState === undefined || endState === 'Interrupted' || failed.length === 0) return null;
   return (
     <section class="rst-callout rst-callout--warn" data-testid="failed-areas">

@@ -14,7 +14,7 @@ import { createUnderstandHarness, type UnderstandHarness } from './understand-ru
 // Supported card, and what a retry of Catalog leaves: its cards, its claims and what the journey and
 // Plan setup read from it.
 
-export const retryAreas = ['Catalog', 'Services'];
+const retryAreas = ['Catalog', 'Services'];
 
 const indexSchema = z.object({
   cards: z.array(
@@ -81,4 +81,10 @@ export function readersOfProject(h: UnderstandHarness): ProjectReaders {
     journey: () => journey.execute({ actor: owner, projectId: h.project.id }),
     planSource: () => source.execute({ actor: owner, projectId: h.project.id }),
   };
+}
+
+/** Starts the retry of the failed areas of `parent` a minute later, so it is the newest run. */
+export function retryOfRun(h: UnderstandHarness, parent: Run, areas = ['Catalog']): Promise<Run> {
+  h.stores.clock.advance(60_000);
+  return h.understand({ areas, retryOf: parent.id });
 }

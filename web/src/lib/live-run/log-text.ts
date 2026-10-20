@@ -66,6 +66,8 @@ const writers: Readonly<Record<string, Writer>> = {
     const seeded = seededOf(data);
     return `from run ${field(data, 'parentRunKey')}: ${field(seeded, 'cards')} cards, ${field(seeded, 'claims')} claims · up to ${field(data, 'maxRounds')} rounds`;
   },
+  'retry.started': (data) =>
+    `retry of run ${field(data, 'parentRunKey')}: ${field(data, 'areas')} areas read again`,
   'deepen.round.started': (data) =>
     `round ${field(data, 'round')} of ${field(data, 'maxRounds')}: judge ${field(data, 'judge')}, re-read ${field(data, 'reread')}, ${field(data, 'unreadFiles')} unread files`,
   'deepen.round.ended': (data) =>

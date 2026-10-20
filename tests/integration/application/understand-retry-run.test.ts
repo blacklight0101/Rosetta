@@ -6,6 +6,7 @@ import {
   firstRunOf,
   readersAskedSince,
   readersOfProject,
+  retryOfRun,
 } from '../../support/retry-run.js';
 import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
 import { copyFixture } from '../../support/scan-harness.js';
@@ -27,7 +28,7 @@ describe('a retry whose area fails again', UNDERSTAND_TIMEOUT, () => {
     const { h, first } = await firstRunOf(temp.path, again);
     const asked = h.providers.requests().length;
 
-    const retry = await h.understand({ areas: ['Catalog'], retryOf: first.id });
+    const retry = await retryOfRun(h, first);
 
     expect(retry).toMatchObject({ endState: 'Completed', failedAreas: 1 });
     expect(await cardsOfRun(h, retry)).toEqual([['FEAT-001', 'Services', 1]]);
@@ -41,7 +42,7 @@ describe('a retry whose area fails again', UNDERSTAND_TIMEOUT, () => {
 
   it('RF-615 RF-614 the journey and Plan setup take the retry as the source, with its Supported claims', async () => {
     const { h, first } = await firstRunOf(temp.path, again);
-    const retry = await h.understand({ areas: ['Catalog'], retryOf: first.id });
+    const retry = await retryOfRun(h, first);
     const read = readersOfProject(h);
 
     const journey = await read.journey();
@@ -68,7 +69,7 @@ describe('the run it retries', UNDERSTAND_TIMEOUT, () => {
       cards: await cardsOfRun(h, first),
     };
 
-    await h.understand({ areas: ['Catalog'], retryOf: first.id });
+    await retryOfRun(h, first);
 
     expect(await h.manifestOf(first)).toEqual(before.manifest);
     expect(await readFile(results, 'utf8')).toBe(before.results);
@@ -80,7 +81,7 @@ describe('a retry that works', UNDERSTAND_TIMEOUT, () => {
   it('RF-208 gives the new card an id after the parent cards and holds both Supported claims', async () => {
     const { h, first } = await firstRunOf(temp.path, recovers);
 
-    const retry = await h.understand({ areas: ['Catalog'], retryOf: first.id });
+    const retry = await retryOfRun(h, first);
 
     expect(retry).toMatchObject({ endState: 'Completed', failedAreas: 0 });
     expect(await cardsOfRun(h, retry)).toEqual([
@@ -96,9 +97,9 @@ describe('a retry that works', UNDERSTAND_TIMEOUT, () => {
 describe('a retry of a retry', UNDERSTAND_TIMEOUT, () => {
   it('RF-208 holds the cards of the whole chain and is linked to the retry it retries', async () => {
     const { h, first } = await firstRunOf(temp.path, again);
-    const second = await h.understand({ areas: ['Catalog'], retryOf: first.id });
+    const second = await retryOfRun(h, first);
 
-    const third = await h.understand({ areas: ['Catalog'], retryOf: second.id });
+    const third = await retryOfRun(h, second);
 
     expect(third).toMatchObject({ endState: 'Completed', failedAreas: 1 });
     expect(await cardsOfRun(h, third)).toEqual([['FEAT-001', 'Services', 1]]);
@@ -111,7 +112,7 @@ describe('what the retry says of itself', UNDERSTAND_TIMEOUT, () => {
   it('RF-208 plans only the retried area and announces the run it retries before its agents', async () => {
     const { h, first } = await firstRunOf(temp.path, again);
 
-    const retry = await h.understand({ areas: ['Catalog'], retryOf: first.id });
+    const retry = await retryOfRun(h, first);
 
     const events = await h.eventsOf(retry);
     const types = events.map((event) => event.type);
@@ -137,7 +138,7 @@ describe('an area the run it retries read well', UNDERSTAND_TIMEOUT, () => {
     const { h, first } = await firstRunOf(temp.path, again);
     const asked = h.providers.requests().length;
 
-    const retry = await h.understand({ areas: ['Catalog', 'Services'], retryOf: first.id });
+    const retry = await retryOfRun(h, first, ['Catalog', 'Services']);
 
     expect(await cardsOfRun(h, retry)).toEqual([['FEAT-001', 'Services', 1]]);
     expect(readersAskedSince(h, asked).some((id) => id.startsWith('reader-002'))).toBe(false);
@@ -160,10 +161,11 @@ describe('a retry on a code map that changed', UNDERSTAND_TIMEOUT, () => {
       'public class Extra {}\n',
       'utf8',
     );
+    h.stores.clock.advance(60_000);
     await h.scan();
     const asked = h.providers.requests().length;
 
-    const retry = await h.understand({ areas: ['Catalog'], retryOf: first.id });
+    const retry = await retryOfRun(h, first);
 
     expect(retry.endState).toBe('Failed');
     const ended = (await h.eventsOf(retry)).find((event) => event.type === 'run.ended');

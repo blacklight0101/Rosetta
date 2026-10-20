@@ -28,6 +28,7 @@ export type RunEventType =
   | 'deepen.round.started'
   | 'deepen.round.ended'
   | 'deepen.ended'
+  | 'retry.started'
   | 'question.answered'
   | 'question.skipped'
   | 'run.ended';

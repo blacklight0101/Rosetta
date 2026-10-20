@@ -70,7 +70,9 @@ function areasRead(input: JourneyInput): { readonly read: number; readonly of: n
     byArea.set(agent.area, [...(byArea.get(agent.area) ?? []), agent]);
   }
   const read = [...byArea.values()].filter((agents) => agents.every(finished)).length;
-  return { read, of: Math.max(own.length, byArea.size) };
+  // RF-208: a retry reads only the areas it names; the rest it holds as they were.
+  const retried = input.state.retry?.areas;
+  return { read, of: retried ?? Math.max(own.length, byArea.size) };
 }
 
 function readStep(input: JourneyInput, mapDone: boolean): Core {
