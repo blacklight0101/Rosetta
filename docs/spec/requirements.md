@@ -178,6 +178,9 @@ the decision log.
 | Q-41 | A workbook inside an uploaded zip that cannot be rendered (legacy format, password, limit) (RF-150)                                                                   | Product owner                      | P3 (workbook source)                   | It is left out and listed with its reason; the rest of the zip is analysed                                                                                                                                                                                                                               | Default applies                                                                                                                                                                                                    |
 | Q-42 | Render workbooks found in a GitHub repository too (RF-100)?                                                                                                           | Product owner                      | after release 1                        | Not in this change: they stay ignored as binary files                                                                                                                                                                                                                                                    | Default applies                                                                                                                                                                                                    |
 | Q-43 | How does a "Retry failed areas" run relate to the run it retries (RF-208)?                                                                                            | Product owner                      | P3 (P3-69)                             | It starts from the cards, statuses and coverage of the run it retries, like a Deepen (RF-209), re-reads only the failed areas, and is linked to it; so it never has fewer Supported claims than that run, and the journey and Plan setup use it as the source                                            | Default applies                                                                                                                                                                                                    |
+| Q-44 | How do the journey and the run page show a plan with skipped questions, a package written with gaps, and the Ollama context size (RF-615, RF-1015, RF-401)?           | Product owner                      | P3 (P3-70, P3-71)                      | Once the brief is saved the questions step is done and the journey moves on; a package written with gaps reads "Written with gaps" and can be downloaded; a plan run page shows plan steps; the context size is a field of the model settings for Ollama roles                                           | Default applies                                                                                                                                                                                                    |
+| Q-45 | Should the planner get one more call for the items no task card builds before the gaps are reported (RF-627)?                                                         | Product owner                      | P3 (P3-72)                             | Yes, one call listing only the uncovered items; its cost is in the plan estimate                                                                                                                                                                                                                         | Default applies                                                                                                                                                                                                    |
+| Q-46 | Which questions does the reader refuse because the code answers them (RF-243)?                                                                                        | Product owner                      | P3 (P3-73)                             | Questions asking for a value, a formula, a count, a list of columns or headers, or whether two parts match; checked when the card is parsed, with examples in the reader prompt; no extra model call                                                                                                     | Default applies                                                                                                                                                                                                    |
 
 ## 5. Functional requirements (R1)
 
@@ -697,10 +700,11 @@ As a developer I want my answers used when areas are analysed again so that the 
 
 **RF-242 Answer interactively** - Withdrawn 2026-10-11 - see RF-1007 (DEC-59)
 
-**RF-243 Questions only the code cannot answer** - R1 (M1) - Must - Source DEC-136 - ADR-005
+**RF-243 Questions only the code cannot answer** - R1 (M1) - Must - Source DEC-136, Q-46 - ADR-005
 As a developer who does not know the legacy application I want to be asked only what the code cannot tell so that my answers add knowledge instead of doing the agents' reading.
 
 - Given an `OQ` card, when it is parsed, then it must say what the code shows, cite the code that raised the question, and ask about something outside the code: business intent, the reason for a rule, an external system, data volumes or who uses a feature; a question asking what the code, an area or the application does is refused with the repair message telling the agent to read instead.
+- Given an `OQ` card that asks for a value, a formula, a count, a list of columns or headers, or whether two parts of the workbook or code match (Q-46, default applies), when it is parsed, then it is refused with the repair message telling the agent to read the file that holds the answer; the reader prompt gives examples of questions to read instead of asking.
 - Given questions from several areas, when the run ends, then duplicates are merged keeping every citation, and the questions are grouped by the feature or area they concern and ordered by how much of the specification depends on them.
 - Given a run on third-party or generated code only, when an agent finds no application logic, then it writes no `OQ` card; the coverage notes "no application logic".
   Verification: unit test of the refusal rule with example questions; integration test with recorded responses.
@@ -809,13 +813,14 @@ As a maintainer I want all model access through one interface so that providers 
 - Given any agent, verifier or planner call, when it is made, then it goes through the `LlmProvider` port with a system prompt, messages and tool definitions, and returns text, tool calls and usage (input, output and cached input tokens) in one shape for every provider.
   Verification: a contract test suite run against every adapter with recorded responses.
 
-**RF-401 Ollama adapter** - R1 (M1) - Must - Source DEC-09, DEC-23, DEC-155 - ADR-003
+**RF-401 Ollama adapter** - R1 (M1) - Must - Source DEC-09, DEC-23, DEC-155, Q-44 - ADR-003
 As a developer I want to run every role on local models so that development costs nothing and code stays local.
 
 - Given Ollama running locally with the configured model, when a role uses provider `ollama`, then calls succeed with native tool calling where the model supports it, or the text protocol (RF-205).
 - Given Ollama not running or the model not pulled, when the run starts, then it stops before any work with an error code and the command to fix it.
 - Given `providers.<name>.contextTokens` is `auto` (the default), when a model is first used, then the adapter picks the largest context size that keeps the model entirely in the GPU memory Ollama reports (`/api/ps` `size_vram` equal to `size`), starting at the smaller of the model's trained context (`/api/show`) and the ceiling, halving down to the floor (Q-23), sends it as `num_ctx` on every call, and records the chosen value in the call log and the run manifest (DEC-114).
 - Given `contextTokens` is a number, when a role calls the model, then that value is sent unchanged, and a warning is logged if Ollama reports part of the model on the CPU (DEC-114).
+- Given the project model settings or the Default models page (Q-44), when a role uses provider `ollama`, then a "Context size" field offers Auto (the default) or a number of tokens between the floor (Q-23) and the model's trained context, saved as `contextTokens`; the RST-1522 message names this field.
 - Given a prompt whose estimated size plus the output reserve is larger than the context size sent as `num_ctx`, or a call where Ollama reports fewer prompt tokens than the estimate because it cut the prompt, when a role calls the model, then the call fails with a providers error code that names the estimated input, the context size, the role and the remedies (a model with a larger context or a cloud model for the role, or a larger `contextTokens`), and a cut prompt never reaches the role as an answer (DEC-155).
   Verification: contract test with recorded responses; manual run against Ollama.
 
@@ -1083,7 +1088,7 @@ As a developer I want the plan to follow the understand run I just read so that 
 - Given a plan run, when its manifest is read, then it records the source understand run, and the estimate and the package use that run's cards and answers only.
   Verification: end-to-end test with the fake provider from a completed run to a package; integration test that the source run, not the newest run, feeds `plan`.
 
-**RF-615 Journey from code to package** - R1 - Should - Source RFC-002, DEC-142, DEC-143, DEC-154 - ADR-012
+**RF-615 Journey from code to package** - R1 - Should - Source RFC-002, DEC-142, DEC-143, DEC-154, Q-44 - ADR-012
 As a developer I want to see every step from scan to package with its state and cost so that I always know where I am and what to do next.
 
 - Given an understand run, when its page, its Plan setup or its plan run page opens, then a journey strip shows scan, understand, questions, brief, estimate, plan and package, each with its state (done, current, locked with a reason, failed with its code, out of date) and its cost, and one next action.
@@ -1093,6 +1098,8 @@ As a developer I want to see every step from scan to package with its state and 
 - Given an open question with an answer saved in `answers.md` (DEC-154), when the journey or the Your questions tab is shown, then the question reads "Answer saved" and is not counted as open; it is marked `Answered` only when a later run reads the answers.
 - Given every question has a saved answer, when the journey is shown, then the questions step is done and the next action is "Set up the plan"; given some questions have no saved answer, then "Go on with the defaults", next to "Answer N questions", opens the brief, and the skipped questions keep their defaults.
 - Given the run page with open questions, when "Answer N questions" is chosen, then the Your questions tab opens and the first question without a saved answer is scrolled into view and focused.
+- Given a saved brief (Q-44, default applies), when the journey is shown, then the questions step is done ("N questions left on their defaults") and the journey moves on to the estimate, the plan and the package; "Answer N questions" stays available on the run page but is no longer the next action.
+- Given a plan run that wrote the package but ended `Failed` with RST-1806 (Q-44), when the journey is shown, then the package step reads "Written with gaps", links the package and its `checks.md`, and the plan step names the code; the download stays available.
   Verification: component tests of each step state; end-to-end test of the failure paths with the fake provider; end-to-end test of saving every answer and going on to the brief, and of going on with the defaults.
 
 **RF-620 Documentation set of the package** - R1 - Must - Source DEC-134 - ADR-018
@@ -1147,11 +1154,12 @@ As a designer and a front-end developer I want the target screens planned so tha
 - Given a card written before screens were checked this way (no derived claim of that kind on the card), when the package is written, then its fields are drawn marked "not checked" and none is sent to the planner; its route, roles and links are shown as before.
   Verification: structure test (every `SCRN` card is mapped); the wireframes pass an HTML check with no script, no event attribute and no external resource.
 
-**RF-627 Implementation plan** - R1 - Must - Source DEC-134 - ADR-018
+**RF-627 Implementation plan** - R1 - Must - Source DEC-134, Q-45 - ADR-018
 As a modernisation team I want an implementation plan that covers every document of the package so that nothing in it is left without work.
 
 - Given the package, when the plan is written, then the roadmap (RF-601) has phases with exit criteria and the task cards cover the whole set: every PRD feature, every target table, every API operation, every target flow and every main screen is named by at least one task card, and each card links the items it builds.
 - Given an item no card covers, when the package is checked, then it is listed as a gap in the package's checks file and the run is not reported as complete.
+- Given items no card covers after the planner's answer (Q-45, default applies), when the package is checked, then the planner gets one more call that lists only the uncovered items and asks for task cards that build them; the gaps left after that call are listed as above.
   Verification: structure test of the coverage of the plan.
 
 **RF-630 Task cards an agent can build without guessing** - R1 - Must - Source DEC-135 - ADR-018
@@ -1349,6 +1357,7 @@ As a user I want the verification state to say what was checked and what was not
 As a user who may not know the analysed code I want the run page to show one thing at a time so that I always know what is happening and what to do next.
 
 - Given a queued or running run, when its page opens, then it is in "while running" mode: the run journey (map the code, read, check citations, explain, your questions) with the current step, the living code map (RF-1016), the spend for the run against its cap, and up to three "working now" agents in plain words; cards so far, all agents, and activity (events, provider calls and logs) sit in tabs below, one list at a time.
+- Given a plan run (Q-44), when its page opens, then its stepper shows the plan steps (brief, planner calls, package, checks), never the understand steps.
 - Given a run that has ended, when its page opens, then it is in "after the run" mode: the overview (RF-264) first, a "Your turn" panel with the number of open questions and the next actions, followed by the journey to the package (RF-615), and tabs for Your questions, Evidence (cards, claims, citations, coverage, code map) and Activity (replay, events, calls, logs); the page switches modes by itself when the run ends.
 - Given either mode, when it is used with the keyboard or a screen reader, then tabs follow the tab pattern, every state is carried by text and a glyph as well as colour, and RF-1002..RF-1005, RF-1007, RF-1010 and RF-1011 keep their content in these places.
   Verification: end-to-end tests of both modes and the switch; accessibility checks; the design proposal `docs/design/proposals/run-page-v2.html` is the reference.
