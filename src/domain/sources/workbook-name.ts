@@ -7,6 +7,7 @@ import { baseNameOf, decoded, isHighSurrogate } from './upload-name.js';
 const MAX_NAME = 200;
 const MAX_EXTENSION = 8;
 const ELLIPSIS = '...';
+const EXCEL_EXTENSION = /\.(xlsx|xlsm|xls|xlsb)$/iu;
 
 /** At most 200 characters, keeping a short extension; a surrogate pair is kept whole or dropped whole. */
 function cut(name: string): string {
@@ -31,7 +32,14 @@ export function workbookFileName(
   const text = decoded(sent);
   if (text === undefined) return err('bad-encoding');
   const name = baseNameOf(text);
-  return name === '' ? err('missing') : ok(cut(name));
+  // Nothing before the extension is no name, as for a zip (RF-128).
+  if (
+    name === '' ||
+    (EXCEL_EXTENSION.test(name) && name.replace(EXCEL_EXTENSION, '').trim() === '')
+  ) {
+    return err('missing');
+  }
+  return ok(cut(name));
 }
 
 /** The names of a project's workbooks, joined by commas and cut to 200 characters, for its source columns. */

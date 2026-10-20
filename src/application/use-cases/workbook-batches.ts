@@ -8,14 +8,16 @@ import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { UploadStore } from '../ports/upload-store.js';
-import type {
-  LeftOut,
-  PublishedWorkbooks,
-  StagedFile,
-  WorkbookStaging,
-  WorkbookSummaryLine,
-} from '../ports/workbook-staging.js';
+import type { PublishedWorkbooks, StagedFile, WorkbookStaging } from '../ports/workbook-staging.js';
 import type { Project } from '../projects/project.js';
+import { IntervalTask } from '../projects/interval-task.js';
+import type {
+  BatchFileRequest,
+  BatchProblem,
+  BatchRef,
+  FinishBatchRequest,
+  WorkbookBatchSummary,
+} from './workbook-batch-types.js';
 import { pruneEarlier } from '../projects/prune-snapshot.js';
 import { recordWorkbooks } from '../projects/record-workbooks.js';
 
@@ -36,41 +38,13 @@ export interface WorkbookBatchesDependencies {
   readonly limitBytes: number;
 }
 
-export type BatchProblem =
-  | typeof ERROR_CODES.notFound
-  | typeof ERROR_CODES.conflict
-  | typeof ERROR_CODES.uploadInProgress
-  | typeof ERROR_CODES.requestInvalid
-  | typeof ERROR_CODES.uploadNameUnreadable;
-
-export interface BatchRef {
-  readonly actor: Actor;
-  readonly projectId: string;
-  readonly batchId: string;
-}
-
-export interface BatchFileRequest extends BatchRef {
-  /** The file name as the page sent it (percent-encoded). */
-  readonly fileName: string | undefined;
-  readonly body: AsyncIterable<Uint8Array>;
-  readonly declaredBytes: number | undefined;
-  readonly signal: AbortSignal;
-}
-
-export interface FinishBatchRequest extends BatchRef {
-  readonly ip: string;
-  readonly signal: AbortSignal;
-}
-
-/** What the page shows after a batch is finished (RF-150). */
-export interface WorkbookBatchSummary {
-  readonly workbooks: readonly WorkbookSummaryLine[];
-  readonly skipped: readonly LeftOut[];
-  readonly snapshotHash: string;
-  readonly uploadedAt: string;
-  /** The newest run read another snapshot than the one just stored (false while no run has one). */
-  readonly codeChangedSinceLastRun: boolean;
-}
+export type {
+  BatchFileRequest,
+  BatchProblem,
+  BatchRef,
+  FinishBatchRequest,
+  WorkbookBatchSummary,
+} from './workbook-batch-types.js';
 
 /** A batch that is open: who owns it, since when, how much it holds and what is running on it. */
 interface OpenBatch {
@@ -99,6 +73,7 @@ export class WorkbookBatches {
   private readonly batches = new Map<string, OpenBatch>();
   /** Projects whose batch is being opened, so two opens together cannot both pass. */
   private readonly opening = new Set<string>();
+  private readonly sweeper = new IntervalTask();
 
   constructor(deps: WorkbookBatchesDependencies) {
     this.deps = deps;
@@ -186,7 +161,8 @@ export class WorkbookBatches {
       throw error;
     } finally {
       batch.busy = undefined;
-      this.batches.delete(project.id);
+      // A cancel and a new batch may have come meanwhile: only this batch's own entry goes.
+      if (this.batches.get(project.id) === batch) this.batches.delete(project.id);
     }
   }
 
@@ -204,16 +180,29 @@ export class WorkbookBatches {
   /** Deletes the expired batches every `intervalMs` without waiting for a batch call (RF-150). */
   startSweeping(intervalMs: number): void {
     if (intervalMs <= 0) throw new RangeError('The sweep interval must be positive.');
+    this.sweeper.start(
+      intervalMs,
+      () => this.sweep(),
+      (error) =>
+        this.deps.logger.log({
+          level: 'warn',
+          logger: 'sources',
+          message: 'The sweep of expired workbook batches failed.',
+          data: { reason: error instanceof Error ? error.message : 'unknown' },
+        }),
+    );
   }
 
   /** Server shutdown: stops the work in flight and deletes every open batch with its reserved space. */
   async close(): Promise<void> {
+    this.sweeper.stop();
     this.abortAll();
-    await Promise.resolve();
+    for (const [projectId, batch] of [...this.batches]) await this.drop(projectId, batch);
   }
 
   /** Stops every file and finish in flight (server shutdown). */
   abortAll(): void {
+    this.sweeper.stop();
     for (const batch of this.batches.values()) batch.busy?.abort();
   }
 

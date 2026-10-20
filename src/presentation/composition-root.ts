@@ -105,6 +105,8 @@ interface CreatedServer {
   readonly runs: RunComposition;
   /** RF-129: stops the uploads in flight, so a shutdown does not wait for a slow sender. */
   readonly abortUploads: () => void;
+  /** DEC-149: deletes the batches still open, so their staging folders and reserved space go. */
+  readonly closeBatches: () => Promise<void>;
 }
 
 interface ServerParts {
@@ -117,6 +119,8 @@ interface ServerParts {
   readonly doubles: TestDoubles | undefined;
   readonly promptsFolder: string;
 }
+
+const BATCH_SWEEP_MS = 60_000;
 
 // ADR-017, RF-1303, RF-1009: the HTTP server with the database probe, the session use cases and
 // the shipped version.
@@ -154,6 +158,8 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     workbookMaxFiles: environment.workbookMaxFiles,
     staticRoot,
   });
+  // RF-150: a batch left open is freed after 30 minutes even when nobody calls the batch routes again.
+  projects.workbookBatches.startSweeping(BATCH_SWEEP_MS);
   return {
     server,
     runs,
@@ -161,6 +167,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
       projects.storeUpload.abortAll();
       projects.workbookBatches.abortAll();
     },
+    closeBatches: () => projects.workbookBatches.close(),
   };
 }
 
@@ -171,6 +178,7 @@ function closer(created: CreatedServer): () => Promise<void> {
     created.abortUploads();
     await created.runs.queue.shutDown();
     await created.server.close();
+    await created.closeBatches();
   };
 }
 
@@ -228,11 +236,11 @@ export function composeApplication(options: ApplicationOptions): Application {
     try {
       await file.applyRetention();
       const auth = await composeAuth(options, { pool, logger, clock, masker, hasher, secretBox });
-      const { server, runs, abortUploads } = await createServer({
+      const { server, runs, abortUploads, closeBatches } = await createServer({
         ...{ environment, logger, pool, clock, masker, doubles, promptsFolder: catalogueFolder },
         auth,
       });
-      close = closer({ server, runs, abortUploads });
+      close = closer({ server, runs, abortUploads, closeBatches });
       const parts = { file, auth, pool, clock, runs: runs.queue, logger, environment };
       let address = '';
       await startUp({
