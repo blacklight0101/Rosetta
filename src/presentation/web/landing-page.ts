@@ -9,7 +9,7 @@ import { escapeHtml as esc } from './html-text.js';
 
 const sourceUrl = 'https://github.com/blacklight0101/Rosetta';
 const description =
-  'Rosetta reads a public GitHub repository, writes evidence-cited cards, checks every claim and prepares the hand-off for a modernisation team.';
+  'Rosetta reads a public GitHub repository, a zip or Excel workbooks, writes evidence-cited cards, checks every claim and prepares the hand-off for a modernisation team.';
 
 export interface LandingOptions {
   /** `ROSETTA_CONTACT_EMAIL`: the "Request access" address; without it the page has no such link. */
@@ -40,7 +40,7 @@ function renderHero(): string {
   return `<section class="wrap hero">
   <h1>Watch AI agents read your legacy code, and check every word they write.</h1>
   <div class="hero-aside">
-    <p class="lede">Paste a public GitHub URL. Readers explore each area of the code, a verifier tests every claim against the lines it cites, and the spend runs against a cap you set.</p>
+    <p class="lede">Start from a public GitHub URL, a zip of your code or one or more Excel workbooks. Readers explore each area, a verifier tests every claim against the lines it cites, and the spend runs against a cap you set.</p>
     <a class="btn pri" href="/sign-in">Sign in to try it</a>
   </div>
 </section>`;
@@ -81,7 +81,7 @@ function renderSecurityAndTechnology(): string {
     </div>
     <div class="col">
       <h2>Any stack. Any model.</h2>
-      <p class="lede">A universal scan maps code in any language; language packs add symbols where they exist (C# first). Each agent role picks its own provider and model: Ollama on your machine, OpenAI, Anthropic, or any OpenAI-compatible service.</p>
+      <p class="lede">A universal scan maps code in any language; language packs add symbols where they exist (C# first). Excel workbooks (.xlsx and .xlsm) are a source too. Each agent role picks its own provider and model: Ollama on your machine, OpenAI, Anthropic, or any OpenAI-compatible service.</p>
       <p class="lbl">TypeScript on Node.js · Fastify · Preact · PostgreSQL · one container image</p>
     </div>
   </div>

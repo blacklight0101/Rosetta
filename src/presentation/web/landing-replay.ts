@@ -103,7 +103,7 @@ export function renderPipeline(): string {
   return `<section id="how" class="sec-band">
   <div class="wrap stack">
     <div class="how-head">
-      <h2>From a GitHub URL to a hand-off your team can build from.</h2>
+      <h2>From a GitHub URL, a zip or Excel workbooks to a hand-off your team can build from.</h2>
       <p class="lede">Six stages, each leaving files you can open. Rosetta never edits the code it reads and never rebuilds the system for you.</p>
     </div>
     <ol class="rail" aria-label="Pipeline">
