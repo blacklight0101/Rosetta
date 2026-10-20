@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 68      | 5         | 61         | 2         | 0                  | 22      | 44      | 2      | 24         | 0         |
-| **Total**               | **285** | **77**    | **181**    | **27**    | **0**              | **138** | **135** | **12** | **159**    | **0**     |
+| P3 Report and plan      | 69      | 5         | 62         | 2         | 0                  | 22      | 45      | 2      | 25         | 0         |
+| **Total**               | **286** | **77**    | **182**    | **27**    | **0**              | **138** | **136** | **12** | **160**    | **0**     |
 
 ## Conventions for every card
 
@@ -3867,3 +3867,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the fixes and tests.
 - **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-1301, RF-1302, RF-150, RF-615, RF-1015, RF-421, RNF-010; issue #692.
+
+### P3-69 - Follow-up: a retry of failed areas keeps the run's cards
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P2-41, P3-61
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-208 (the Q-43 scenario), RF-209, RF-614, RF-615, Q-43; how a Deepen seeds a run from its parent (`src/application/deepen/`); the "Retry failed areas" action and the journey source choice (`src/application/use-cases/get-journey.ts`). Found in the orchestrator's evaluation run of 2026-10-21: an understand run with 64 Supported claims and 3 failed areas; "Retry failed areas" started a run of the 3 areas that failed again, and the project journey then said "No Supported claim to plan from" (RST-1802) with every plan step locked, because the retry run held no card of the first run.
+- **Do**: make a retry run start from the cards, claim statuses and coverage of the run it retries (reuse the Deepen seeding), read only the failed areas, record the link in the manifest and show it on the run page ("Retry of <run>"); its stepper and coverage count only the retried areas as this run's work; the journey and Plan setup take the retry run as the source. A retry whose areas fail again keeps every card of the run it retried.
+- **Review probes**: the evaluation case (retry fails again: the journey still has the 64 Supported claims and offers the questions and the brief); a retry that succeeds (new cards with ids after the parent's, the parent unchanged); a retry of a retry; the stepper "0 of 3 areas", not "of 9"; Plan setup names the retry run as the source; recorded responses only.
+- **Behaviour to preserve**: RF-208 retry inside a run; Deepen (RF-209); the parent run unchanged.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-208, RF-209, RF-614, RF-615, Q-43; issue #694.
