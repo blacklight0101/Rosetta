@@ -64,3 +64,20 @@ it('RF-1108 while the catalogue answer is missing the page shows the code and a 
   });
   expect(failure.textContent).toContain('error catalogue');
 });
+
+it('RF-401 DEC-155 a plan run that ended with RST-1522 shows that code and its remedies, never RST-1803', async () => {
+  const answers = catalogue(
+    'RST-1522',
+    'The prompt of this role is larger than the context Ollama gives the model.',
+    'Choose a model with a larger context, or a cloud model for this role, in the project settings.',
+  );
+
+  const failure = await endedWith('RST-1522', answers);
+
+  await vi.waitFor(() => {
+    expect(failure.textContent).toContain('larger than the context Ollama gives the model');
+  });
+  expect(failure.textContent).toContain('RST-1522');
+  expect(failure.textContent).toContain('a cloud model for this role');
+  expect(failure.textContent).not.toContain('RST-1803');
+});

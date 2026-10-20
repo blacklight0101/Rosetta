@@ -1,42 +1,21 @@
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { AgentRole, LlmRequest } from '../../../../../src/application/ports/llm-provider.js';
+import type { LlmRequest } from '../../../../../src/application/ports/llm-provider.js';
 import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
-import { ProviderCallError } from '../../../../../src/infrastructure/providers/provider-call-error.js';
-import { estimateInputTokens } from '../../../../../src/infrastructure/providers/usage-estimate.js';
+import { textProtocolSystem } from '../../../../../src/infrastructure/providers/ollama/text-tool-protocol.js';
+import { loadTextToolProtocol } from '../../../../../src/infrastructure/providers/ollama/text-tool-protocol-file.js';
+import {
+  estimateInputTokens,
+  estimateTokens,
+} from '../../../../../src/infrastructure/providers/usage-estimate.js';
 import { contractRequest } from '../../../../contracts/llm-provider.contract.js';
-import { failureOf } from '../../../../support/failure-of.js';
 import { useFakeOllama } from '../../../../support/ollama-harness.js';
+import { asRole, refusal, requestOf } from '../../../../support/ollama-prompt-size.js';
 
 // RF-401, RF-421, DEC-114, DEC-155: a prompt larger than the Ollama context fails with a clear
 // error before the call, and a prompt Ollama reports it cut fails after it (ADR-008).
 
 const start = useFakeOllama();
-
-/** The contract request with its user message padded so the estimate is exactly `tokens`. */
-function requestOf(tokens: number, overrides: Partial<LlmRequest> = {}): LlmRequest {
-  const base = { ...contractRequest(), maxOutputTokens: 512, ...overrides };
-  const empty = estimateInputTokens({ ...base, messages: [{ role: 'user', content: '' }] });
-  const chars = (tokens - empty) * 4;
-  const request = { ...base, messages: [{ role: 'user' as const, content: 'x'.repeat(chars) }] };
-  expect(estimateInputTokens(request)).toBe(tokens);
-  return request;
-}
-
-/** A request with 100 tokens of output reserved, as the cut-prompt cases need room below the context. */
-function smallOutput(tokens: number, role: AgentRole = 'reader'): LlmRequest {
-  const request = requestOf(tokens, { maxOutputTokens: 100 });
-  return { ...request, context: { ...request.context, role } };
-}
-
-function asRole(request: LlmRequest, role: AgentRole): LlmRequest {
-  return { ...request, context: { ...request.context, role } };
-}
-
-async function refusal(promise: Promise<unknown>): Promise<ProviderCallError> {
-  const error = await failureOf(promise);
-  if (!(error instanceof ProviderCallError)) throw new Error('expected a ProviderCallError');
-  return error;
-}
 
 describe('OllamaProvider with a prompt near the context (fixed contextTokens)', () => {
   it('RF-401 sends a prompt whose estimate plus the output reserve exactly fills the context', async () => {
@@ -61,7 +40,7 @@ describe('OllamaProvider with a prompt near the context (fixed contextTokens)', 
 
 describe('OllamaProvider with a prompt near the context (output reserve and roles)', () => {
   it('RF-401 counts a call without an output limit as no output reserve', async () => {
-    const { provider } = await start('contract-text', { contextTokens: 2048 });
+    const { provider } = await start('prompt-counted-full', { contextTokens: 2048 });
     const { maxOutputTokens: limit, ...unlimited } = requestOf(2048);
 
     expect(limit).toBe(512);
@@ -72,6 +51,7 @@ describe('OllamaProvider with a prompt near the context (output reserve and role
 
     expect(fits.text).not.toBe('');
     expect(over.code).toBe(ERROR_CODES.ollamaPromptTooLarge);
+    expect(over.message).not.toContain('more');
   });
 
   it('RF-401 the message names the estimate, the output, the context, the role and the remedies', async () => {
@@ -126,9 +106,42 @@ describe('OllamaProvider with tool definitions and the text protocol', () => {
     expect(sent.text).not.toBe('');
     expect(error.code).toBe(ERROR_CODES.ollamaPromptTooLarge);
   });
+
+  it('RF-205 RF-401 in text tool mode the tools are counted once, inside the protocol prompt', async () => {
+    const { provider } = await start('contract-text', { contextTokens: 2048, toolMode: 'text' });
+    const { text: protocol } = await loadTextToolProtocol(join(process.cwd(), 'prompts'));
+    const request = requestOf(1530);
+    const [message] = request.messages;
+    const system = textProtocolSystem(request.system, protocol, request.tools);
+
+    const error = await refusal(provider.complete(request));
+
+    const expected = estimateTokens(system + (message?.content ?? ''));
+    expect(error.message).toContain(`about ${String(expected)} tokens`);
+  });
 });
 
 describe('OllamaProvider prompt size message', () => {
+  it('RF-401 counts the tool calls of earlier messages in the estimate', async () => {
+    const { provider, server } = await start('contract-text', { contextTokens: 2048 });
+    const toolCalls = [{ id: 'call-1', name: 'read_file', arguments: { path: 'p'.repeat(7000) } }];
+    const request: LlmRequest = {
+      ...contractRequest(),
+      maxOutputTokens: 512,
+      messages: [
+        { role: 'user', content: 'Describe the Catalog area.' },
+        { role: 'assistant', content: '', toolCalls },
+        { role: 'tool', toolCallId: 'call-1', content: 'ok' },
+      ],
+    };
+
+    const error = await refusal(provider.complete(request));
+
+    expect(estimateInputTokens(request)).toBeLessThan(200);
+    expect(error.code).toBe(ERROR_CODES.ollamaPromptTooLarge);
+    expect(server.chatBodies()).toEqual([]);
+  });
+
   it('RF-401 the message never holds the prompt text or a secret', async () => {
     const { provider } = await start('contract-text', { contextTokens: 2048 });
     const secret = ['sk', 'test', 'A1b2C3d4E5f6G7h8'].join('-');
@@ -150,7 +163,7 @@ describe('OllamaProvider prompt size message', () => {
 
 describe('OllamaProvider with a prompt near the context (contextTokens auto)', () => {
   it('RF-401 DEC-114 refuses against the context the resolver chose', async () => {
-    const { provider, server } = await start('context-model-limit');
+    const { provider, server } = await start('prompt-counted-full-auto');
 
     const fits = await provider.complete(requestOf(7680));
     const error = await refusal(provider.complete(requestOf(7681)));
@@ -159,108 +172,5 @@ describe('OllamaProvider with a prompt near the context (contextTokens auto)', (
     expect(error.code).toBe(ERROR_CODES.ollamaPromptTooLarge);
     expect(error.message).toContain('8192');
     expect(server.chatBodies()).toHaveLength(1);
-  });
-});
-
-describe('OllamaProvider when Ollama cut the prompt', () => {
-  it('RF-401 fails a call whose reported prompt tokens are far below a large estimate', async () => {
-    const { provider } = await start('prompt-cut', { contextTokens: 2048 });
-
-    const error = await refusal(provider.complete(smallOutput(1900, 'planner')));
-
-    expect(error.code).toBe(ERROR_CODES.ollamaPromptTooLarge);
-    expect(error.notSent).toBe(false);
-    expect(error.message).toContain('900');
-    expect(error.message).toContain('1900');
-    expect(error.message).toContain('2048');
-    expect(error.message).toContain('planner');
-    expect(error.message).toMatch(/cloud model/);
-  });
-
-  it('RF-401 RF-428 the failure carries the reported tokens, and the answer is dropped', async () => {
-    const { provider } = await start('prompt-cut', { contextTokens: 2048 });
-
-    const error = await refusal(provider.complete(smallOutput(1900)));
-
-    expect(error.usage).toEqual({
-      inputTokens: 900,
-      outputTokens: 80,
-      cachedInputTokens: 0,
-      usageSource: 'reported',
-    });
-    expect(error.message).not.toContain('Catalog area lists');
-  });
-});
-
-describe('OllamaProvider when Ollama cut the prompt (auto context and roles)', () => {
-  it('RF-401 fails the same way against an auto context', async () => {
-    const { provider } = await start('prompt-cut-auto');
-
-    const error = await refusal(provider.complete(smallOutput(7000)));
-
-    expect(error.code).toBe(ERROR_CODES.ollamaPromptTooLarge);
-    expect(error.message).toContain('8192');
-  });
-
-  it.each(['reader', 'verifier', 'planner'] as const)(
-    'RF-401 fails a cut prompt of the %s role',
-    async (role) => {
-      const { provider } = await start('prompt-cut', { contextTokens: 2048 });
-
-      const error = await refusal(provider.complete(smallOutput(1900, role)));
-
-      expect(error.code).toBe(ERROR_CODES.ollamaPromptTooLarge);
-      expect(error.message).toContain(role);
-    },
-  );
-});
-
-describe('OllamaProvider cut-prompt rule boundaries', () => {
-  it('RF-401 does not call a prompt cut when its estimate is below four fifths of the context', async () => {
-    const { provider } = await start('prompt-cut', { contextTokens: 2048 });
-
-    const response = await provider.complete(smallOutput(1638));
-
-    expect(response.usage.inputTokens).toBe(900);
-  });
-
-  it('RF-401 calls a prompt cut from four fifths of the context up', async () => {
-    const { provider } = await start('prompt-cut', { contextTokens: 2048 });
-
-    const error = await refusal(provider.complete(smallOutput(1639)));
-
-    expect(error.code).toBe(ERROR_CODES.ollamaPromptTooLarge);
-  });
-
-  it('RF-401 does not call a prompt cut when the reported count is 70 percent of the estimate', async () => {
-    const { provider } = await start('prompt-cut', { contextTokens: 1536 });
-
-    const response = await provider.complete(smallOutput(1285));
-
-    expect(response.usage.inputTokens).toBe(900);
-  });
-
-  it('RF-401 calls a prompt cut when the reported count is below 70 percent of the estimate', async () => {
-    const { provider } = await start('prompt-cut', { contextTokens: 1536 });
-
-    const error = await refusal(provider.complete(smallOutput(1286)));
-
-    expect(error.code).toBe(ERROR_CODES.ollamaPromptTooLarge);
-  });
-
-  it('RF-401 answers a large prompt whose reported count agrees with the estimate', async () => {
-    const { provider } = await start('prompt-counted-full', { contextTokens: 2048 });
-
-    const response = await provider.complete(smallOutput(1900));
-
-    expect(response.usage.inputTokens).toBe(1900);
-  });
-
-  it('RF-401 RF-421 answers a large prompt when Ollama reports no counts', async () => {
-    const { provider } = await start('usage-missing', { contextTokens: 2048 });
-
-    const response = await provider.complete(smallOutput(1900));
-
-    expect(response.usage.usageSource).toBe('estimated');
   });
 });

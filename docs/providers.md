@@ -83,6 +83,18 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
   (`RST-1501`) and the measurement goes on for the other callers. A fixed number is sent unchanged; one warning is logged if `/api/ps` shows
   the model partly on the CPU; that check after the first call ends at once when the caller stops. The call log records `contextTokens` and `contextSource` (`auto-fit`, `auto-floor`,
   `auto-model-limit`, `auto-fallback`, `fixed`; data-model section 3.10). Probe answers are capped at 4 MiB.
+- A prompt that does not fit the context fails with `RST-1522` for every role (DEC-155, ollama-prompt-guard.ts). The
+  prompt is estimated at about four characters per token (RF-421) from every message sent, the tool calls in them and
+  the tool definitions (the text protocol prompt counts in `text` mode). Before the call: when the estimate plus
+  `maxOutputTokens` (0 when the call has none) is larger than the `num_ctx` sent, nothing is sent and the call fails;
+  the estimate has no margin of its own, because it is rough in both directions. After the call: when the estimate is
+  at least 80 percent of `num_ctx` and `prompt_eval_count` is below 70 percent of the estimate, Ollama cut the prompt;
+  the answer is dropped and the call fails (a reported count below the estimate with a prompt far from the context is
+  just an estimate that was too high). Neither failure is retried. The message names the role, the model, the
+  estimated input, the output reserve (or the tokens Ollama read), the context size and the remedies (a model with a
+  larger context, a cloud model for the role in the project settings, or a larger `contextTokens`); it never holds
+  prompt text. The budget guard frees the reservation of a refused call (no ledger row) and writes a row with the
+  reported tokens for a cut one. Splitting a large planner input to fit a small context is not done in release 1.
 - `think: false` is sent by default (adapter option `think`): on the owner's machine the tool loop was about ten
   times faster with thinking off and as correct. Models that ignore it (for example gpt-oss, deepseek-r1) still
   think; their `thinking` field and any thinking text in the content never reach the answer. The content is
