@@ -1,9 +1,10 @@
 import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
+import type { CoverageListing } from '../api/coverage.js';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import type { RunRow } from '../api/run-schemas.js';
 import { Tabs, type TabSpec } from '../components/Tabs.js';
-import { tilesOf } from '../lib/live-run/code-map-tiles.js';
+import { tilesOf, type CodeAreaInfo } from '../lib/live-run/code-map-tiles.js';
 import { journeyOf } from '../lib/live-run/journey.js';
 import { logCountOf } from '../lib/live-run/log-count.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
@@ -18,6 +19,7 @@ import { DeepenProgress } from './DeepenProgress.js';
 import { RunJourney } from './RunJourney.js';
 import { SpendPanel } from './SpendPanel.js';
 import { useCodeAreas } from './use-code-areas.js';
+import { endedAgents, useRunCoverage } from './use-run-coverage.js';
 import { WorkingNow } from './WorkingNow.js';
 
 // RF-1015, DEC-137, design-system.md section 14 (live run): the page of a run while it runs (queued
@@ -104,6 +106,8 @@ function tabsOf(state: RunState): readonly TabSpec[] {
 }
 
 interface DetailsProps extends RunningBodyProps {
+  readonly coverage: CoverageListing | undefined;
+  readonly codeAreas: readonly CodeAreaInfo[] | undefined;
   readonly tab: TabId;
   readonly area: string | undefined;
   readonly open: (id: TabId, area?: string) => void;
@@ -127,6 +131,8 @@ function Details(props: DetailsProps): JSX.Element {
         {tab === 'agents' ? (
           <AgentsTab
             {...{ state, stage, area }}
+            coverage={props.coverage}
+            codeAreas={props.codeAreas}
             costMicros={props.costMicros}
             estimate={props.estimate}
             onShowAll={() => {
@@ -146,6 +152,7 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
   const [tab, setTab] = useState<TabId>('cards');
   const [area, setArea] = useState<string | undefined>();
   const areas = useCodeAreas(run.projectId, stage);
+  const coverage = useRunCoverage(run.id, stage, endedAgents(state));
   const tiles = tilesOf(state, areas);
   const open = (id: TabId, only?: string): void => {
     setTab(id);
@@ -178,7 +185,7 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
           <WorkingNow items={workingNowOf(state)} waitingNote={noteOf(phase, state)} />
         </div>
       </div>
-      <Details {...props} {...{ tab, area, open }} />
+      <Details {...props} {...{ tab, area, open, coverage }} codeAreas={areas} />
     </>
   );
 }

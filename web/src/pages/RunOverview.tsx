@@ -7,7 +7,6 @@ import type { RunState } from '../lib/live-run/run-state.js';
 // running, done and failed, the cards proposed and the claims by status.
 
 const claimWords: readonly (readonly [string, string])[] = [
-  ['CitationsChecked', 'citations checked'],
   ['CitationInvalid', 'citation invalid'],
   ['Supported', 'supported'],
   ['Rejected', 'rejected'],
@@ -17,7 +16,13 @@ const claimWords: readonly (readonly [string, string])[] = [
 
 function claimLine(state: RunState): string {
   const counts = claimCounts(state.claims);
-  const parts = claimWords.flatMap(([status, words]) => {
+  // The words of the journey: a claim that passed its check waits for the verifier, or was left unjudged.
+  const passed = judgementPending(state) ? 'waiting for judgement' : 'not judged';
+  const wordsOf: readonly (readonly [string, string])[] = [
+    ['CitationsChecked', passed],
+    ...claimWords,
+  ];
+  const parts = wordsOf.flatMap(([status, words]) => {
     const count = counts[status] ?? 0;
     return count === 0 ? [] : [`${String(count)} ${words}`];
   });

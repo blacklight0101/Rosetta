@@ -58,15 +58,15 @@ describe('an understand run: cost and prompts', () => {
       'cards/flows.v1.md',
       'cards/repair.v1.md',
       'cards/screens.v2.md',
-      'reader/area.v3.md',
+      'reader/area.v4.md',
       'reader/read-first.v1.md',
       'reader/task.v2.md',
       'reader/turns-left.v2.md',
       'verifier/claim.v1.md',
       'verifier/retry.v1.md',
     ]);
-    expect(manifest.promptVersions['reader/area.v3.md']?.version).toBe('v3');
-    expect(manifest.promptVersions['reader/area.v3.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(manifest.promptVersions['reader/area.v4.md']?.version).toBe('v4');
+    expect(manifest.promptVersions['reader/area.v4.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
     expect(manifest.roles['reader']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.roles['verifier']?.modelVersion).toBe('fake-judge-2026-10-01');
   });
@@ -178,5 +178,20 @@ describe('an understand run that cannot start', UNDERSTAND_TIMEOUT, () => {
       errorCode: ERROR_CODES.codeMapMissing,
     });
     expect(h.providers.requests()).toEqual([]);
+  });
+});
+
+describe('an understand run: the lines a read returned', () => {
+  it('RF-1002 the result of a read names the lines it returned', () => {
+    const { h, run } = full.current();
+
+    const result = h.eventsOf(run).then((events) => {
+      return events.find((event) => event.type === 'agent.tool.result')?.data;
+    });
+
+    return expect(result).resolves.toEqual({
+      ...{ turn: 1, tool: 'read_file', ok: true },
+      ...{ startLine: 1, endLine: 14, linesReturned: 14 },
+    });
   });
 });

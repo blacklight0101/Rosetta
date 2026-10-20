@@ -10,7 +10,6 @@ import { ExportZip } from '../application/use-cases/export-zip.js';
 import { GetRun } from '../application/use-cases/get-run.js';
 import { CountAnsweredQuestions } from '../application/use-cases/count-answered-questions.js';
 import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
-import { ReadOverview } from '../application/use-cases/read-overview.js';
 import { ListAnswers } from '../application/use-cases/list-answers.js';
 import { RecordAnswers } from '../application/use-cases/record-answers.js';
 import { ReopenQuestion } from '../application/use-cases/reopen-question.js';
@@ -44,6 +43,7 @@ import { SnapshotScanPipeline } from '../infrastructure/scan/scan-pipeline.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import type { StreamRegistry } from './web/event-stream.js';
+import { composeRunReads } from './compose-run-reads.js';
 import { composeDeepen, composeResume } from './compose-deepen.js';
 import { composeObservability } from './compose-observability.js';
 import { composePlan } from './compose-plan.js';
@@ -209,7 +209,7 @@ function runServices(service: ServiceParts): RunServices {
     recordAnswers: new RecordAnswers({ runs, answers, cards }),
     reopenQuestion: new ReopenQuestion({ runs, answers, cards, logger: parts.logger }),
     countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
-    readOverview: new ReadOverview({ runs, files: new FileRunTextFiles(writer) }),
+    ...composeRunReads(runs, writer),
     // RF-608, RF-609: the options of Plan setup, asked of the planner for a project.
     suggestPlanOptions: composePlanOptions({ ...parts, writer, projects, runs, scans, ollamaHost }),
     ...observability,

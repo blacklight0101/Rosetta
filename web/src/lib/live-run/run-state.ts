@@ -135,6 +135,8 @@ interface DeepenSeeded {
   readonly claims: number;
   readonly supported: number;
   readonly rejected: number;
+  /** Claims whose citation failed the check; an older event leaves them out, the rest is counted here. */
+  readonly citationInvalid: number;
   readonly notJudged: number;
 }
 

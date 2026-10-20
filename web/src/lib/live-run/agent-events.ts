@@ -102,6 +102,18 @@ export function onToolCalled(state: RunState, event: RunEvent): RunState {
   }));
 }
 
+/** The tool line once a read answered: the lines it returned, not the lines the model asked for. */
+function answeredText(
+  agent: AgentPanelState,
+  lines: readonly [number | undefined, number | undefined],
+): string {
+  const text = agent.tool?.text ?? '';
+  const [startLine, endLine] = lines;
+  const path = agent.pendingRead;
+  if (path === undefined || startLine === undefined || endLine === undefined) return text;
+  return toolText('read_file', { path, startLine, endLine });
+}
+
 // RF-1002
 export function onToolResult(state: RunState, event: RunEvent): RunState {
   const parsed = toolResultData.safeParse(event.data);
@@ -110,9 +122,14 @@ export function onToolResult(state: RunState, event: RunEvent): RunState {
   return withAgent(state, event, (agent) => {
     const path = agent.pendingRead;
     const read = ok && path !== undefined && !agent.filesRead.includes(path);
+    const { startLine, endLine } = parsed.data;
+    const text = ok ? answeredText(agent, [startLine, endLine]) : undefined;
     return {
       ...agent,
-      tool: agent.tool === undefined ? undefined : { ...agent.tool, status: ok ? 'ok' : 'failed' },
+      tool:
+        agent.tool === undefined
+          ? undefined
+          : { text: text ?? agent.tool.text, status: ok ? 'ok' : 'failed' },
       pendingRead: undefined,
       filesRead: read ? [...agent.filesRead, path] : agent.filesRead,
     };

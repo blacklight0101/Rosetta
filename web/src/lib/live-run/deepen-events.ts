@@ -18,6 +18,16 @@ function withRound(progress: DeepenProgress, round: DeepenRoundState): readonly 
   return [...others, round].sort((left, right) => left.round - right.round);
 }
 
+/** The claims no named group holds: what an event written before citationInvalid left out. */
+function unnamed(seeded: {
+  claims: number;
+  supported: number;
+  rejected: number;
+  notJudged: number;
+}): number {
+  return Math.max(0, seeded.claims - seeded.supported - seeded.rejected - seeded.notJudged);
+}
+
 // RF-209
 export function onDeepenStarted(state: RunState, event: RunEvent): RunState {
   const parsed = deepenStartedData.safeParse(event.data);
@@ -25,7 +35,7 @@ export function onDeepenStarted(state: RunState, event: RunEvent): RunState {
   const { parentRunId, parentRunKey, maxRounds, coveragePass, seeded } = parsed.data;
   const first: DeepenProgress = {
     ...{ parentRunId, parentRunKey, maxRounds, coveragePass },
-    seeded: { ...seeded },
+    seeded: { ...seeded, citationInvalid: seeded.citationInvalid ?? unnamed(seeded) },
     rounds: [],
     stop: undefined,
   };

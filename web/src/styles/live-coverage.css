@@ -87,3 +87,9 @@
 .rst-p138-node--folder > .rst-p138-name {
   color: var(--rst-ink-soft);
 }
+
+.rst-p138-unread {
+  margin-inline-start: var(--rst-sp-2);
+  color: var(--rst-ink-soft);
+  font-style: italic;
+}

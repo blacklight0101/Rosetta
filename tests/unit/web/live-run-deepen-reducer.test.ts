@@ -18,6 +18,15 @@ import {
 const lines = (...events: readonly RunEvent[]): readonly string[] =>
   stateAfter(...events).log.map((line) => line.text);
 
+const seeded = {
+  cards: 24,
+  claims: 118,
+  supported: 68,
+  rejected: 40,
+  citationInvalid: 0,
+  notJudged: 10,
+};
+
 describe('RF-209 the Deepen progress of the run page', () => {
   it('RF-209 starts from the cards the Deepen was seeded with', () => {
     const state = stateAfter(deepenStarted(1));
@@ -27,7 +36,7 @@ describe('RF-209 the Deepen progress of the run page', () => {
       parentRunKey: '20261001-090000-understand',
       maxRounds: 3,
       coveragePass: true,
-      seeded: { cards: 24, claims: 118, supported: 68, rejected: 40, notJudged: 10 },
+      seeded,
       rounds: [],
       stop: undefined,
     });

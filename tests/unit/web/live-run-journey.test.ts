@@ -92,7 +92,7 @@ it('RF-1015 moves to checking the citations when every agent has ended', () => {
     'Read:done',
     'Check citations:current',
   ]);
-  expect(steps[1]?.detail).toBe('1 of 1 areas');
+  expect(steps[1]?.detail).toBe('1 of 2 areas');
 });
 
 it('RF-1015 says the planning is under way before any agent exists', () => {

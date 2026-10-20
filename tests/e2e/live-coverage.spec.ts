@@ -84,7 +84,11 @@ test('RF-1005 the coverage map of a running run fills in by area and by read sha
   await expect(agentPanel(page, 'Services')).toContainText('Done', { timeout: 30_000 });
 
   await expect(runStatus(page)).toContainText('Running');
-  await expect(coverageOf(page, '(root)').getByRole('listitem')).toHaveText(['Default.aspx.cs']);
+  // RF-230: every file of the area is listed, the one read plain and the six others as not read.
+  const rootFiles = coverageOf(page, '(root)').getByRole('listitem');
+  await expect(rootFiles).toHaveCount(7);
+  await expect(rootFiles.filter({ hasText: 'not read' })).toHaveCount(6);
+  await expect(rootFiles.filter({ hasText: /^Default.aspx.cs$/u })).toHaveCount(1);
   const services = coverageOf(page, 'Services');
   await expect(services.getByRole('listitem').first()).toContainText('Services/');
   await expect(services.getByText('CatalogService.cs', { exact: true })).toBeVisible();
@@ -92,7 +96,7 @@ test('RF-1005 the coverage map of a running run fills in by area and by read sha
   await expect(readShare(page, 'Services')).toHaveAttribute('aria-valuenow', '50');
   await expect(coverageOf(page, 'Controllers')).toContainText('No files read yet');
   await expect(readShare(page, 'Controllers')).toHaveAttribute('aria-valuenow', '0');
-  await expect(map).toContainText('2 files read in 2 areas');
+  await expect(map).toContainText('2 of 13 files read in 2 areas');
   await expectNoSeriousViolations(page);
 
   await page.getByRole('button', { name: 'Stop run' }).click();
@@ -114,7 +118,7 @@ test('RF-1005 RF-1002 Pause updates freezes the coverage map while read_file eve
   const map = page.getByRole('region', { name: 'Coverage map' });
   const root = coverageOf(page, '(root)');
   await expect(root.getByText('Default.aspx.cs', { exact: true })).toBeVisible({ timeout: 30_000 });
-  await expect(map).toContainText('1 file read in 1 area');
+  await expect(map).toContainText('1 of 13 files read in 1 area');
   const services = coverageOf(page, 'Services');
   await expect(services).toContainText('No files read yet');
 
@@ -135,7 +139,7 @@ test('RF-1005 RF-1002 Pause updates freezes the coverage map while read_file eve
   await expect(services.getByText('CatalogService.cs', { exact: true })).toBeVisible({
     timeout: 30_000,
   });
-  await expect(map).toContainText('2 files read in 2 areas');
+  await expect(map).toContainText('2 of 13 files read in 2 areas');
   await expect(readShare(page, '(root)')).toHaveAttribute('aria-valuenow', '50');
   await expect(readShare(page, 'Services')).toHaveAttribute('aria-valuenow', '50');
   await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
