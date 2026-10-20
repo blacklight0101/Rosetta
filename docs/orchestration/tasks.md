@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 64      | 5         | 57         | 2         | 0                  | 21      | 41      | 2      | 20         | 0         |
-| **Total**               | **281** | **77**    | **177**    | **27**    | **0**              | **137** | **132** | **12** | **155**    | **0**     |
+| P3 Report and plan      | 66      | 5         | 59         | 2         | 0                  | 22      | 42      | 2      | 22         | 0         |
+| **Total**               | **283** | **77**    | **179**    | **27**    | **0**              | **138** | **133** | **12** | **157**    | **0**     |
 
 ## Conventions for every card
 
@@ -3807,3 +3807,33 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the guard, the error code and tests.
 - **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-401, RF-421, DEC-114, DEC-155; issue #678.
+
+### P3-65 - Follow-up: choose each role's model from a list
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-405 (the DEC-156 scenarios), RF-401, RF-427; DEC-156; `web/src/pages/AdminModelsPage.tsx` and the project model settings page; `prices/default-prices.yaml` and its loader `src/infrastructure/budget/price-file.ts`; `src/infrastructure/providers/ollama/ollama-provider.ts` (`/api/tags`); `docs/design-system.md`; ADR-006 (egress) and the session and role rules of the routes.
+- **Do**: add `prices/models.yaml` (provider, model, label) with the DEC-156 models and its parsed loader; a signed-in route that returns, per provider, the listed models with whether each has a price, and for `ollama` the models installed on the configured Ollama server (`/api/tags`, short timeout, a failure returns an empty list and a reason, never an error page); replace the model text field on both pages with a select built from it plus "Other model..." that shows the text field; keep a saved model that is not listed selected under "Other model..."; changing the provider resets the model choice. Use the existing Ollama adapter code to read the tags (no provider SDK outside its adapter); the route reads only the server's configured Ollama URL, never one from the request.
+- **Review probes**: anthropic and openai lists; a listed model without a price ("no price"); "Other model..." saves free text; a saved unlisted model; Ollama with models, Ollama down (text field and note, save works), Ollama slow (timeout); the route signed out (401) and as a non-admin on the admin page; no URL taken from the request; keyboard and screen reader; 360 px, light and dark, axe.
+- **Behaviour to preserve**: saved defaults and project models unchanged; RF-427 unpriced handling; the template default option.
+- **Delivers**: the list file, the route, the two pages and tests.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-405, RF-401, RF-427, DEC-156; issue #682.
+
+### P3-66 - Follow-up: the reader groups repeated wiring into one claim
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-202 (the DEC-157 scenario), RF-207, RNF-004; DEC-157; `prompts/reader/` (`area.v3.md`, `workbook.v1.md`, `reread.v1.md`) and where their versions are chosen and recorded in the run manifest; the recorded responses used by the reader tests. Owner test 2026-10-20: SCRN-012 of a workbook's calendar form carried 44 near-identical claims, one per day button.
+- **Do**: add new versions of the reader prompts that carry the grouping rule (one claim for repeated wiring that names the shared behaviour and lists the controls or the range, representative citations, a separate claim only for a control that differs), keep the old versions on disk, switch the defaults to the new versions so runs record them; add a short example to the rule; do not change the card schema.
+- **Review probes**: the manifest of a new run records the new prompt versions; an old run still explains itself with its old versions; the rule appears in the area, workbook and re-read prompts; the prompt stays inside its size limits; recorded-response tests still pass; no model in automated tests.
+- **Behaviour to preserve**: RF-207 one-line citations; every claim cites evidence; the verifier unchanged.
+- **Delivers**: the prompt versions and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-202, RF-207, RNF-004, DEC-157; issue #684.
