@@ -151,6 +151,7 @@ src/
     budget/             the cost breakdown and the cost report of a run (RF-426, RF-428)
     planning/           the plan options request and answer, the planning brief state and schema, and the recommendation of plan options
     journey/            the facts of the journey from code to package: its types and what is read of a run beyond its row (RF-615, P3-30)
+    models/             the shipped list of models a role can be set to, as the pages offer them (RF-405, DEC-156)
     audit/              the audit retention job and the refusal limiter
     consolidate/        consolidating the cards of a run: the merge request and answer, the consolidation parts and the consolidate run
     eval/               the calibration and evaluation runs: their ports and schemas, the golden and calibration sets, the reports and the experiment
