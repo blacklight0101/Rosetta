@@ -46,6 +46,7 @@ import {
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import type { WorkbookSettings } from '../infrastructure/config/workbook-settings.js';
 import { SpaceReservation } from '../infrastructure/sources/space-reservation.js';
+import { DEFAULT_WORKBOOK_LIMITS } from '../infrastructure/sources/workbook/workbook-limits.js';
 import { DiskWorkbookStaging } from '../infrastructure/sources/workbook-staging.js';
 import { createUploadStore, uploadLimitBytes } from './compose-uploads.js';
 import type { ProjectServices } from './web/project-routes.js';
@@ -103,10 +104,14 @@ function uploadsOf(
     dataDir,
     ...(parts.freeBytes === undefined ? {} : { freeBytes: parts.freeBytes }),
   });
-  const uploads = createUploadStore(dataDir, reservation);
+  const { workbookMaxFiles, workbookMaxSheets, workbookMaxCells } = parts.workbook;
+  const limits = {
+    ...DEFAULT_WORKBOOK_LIMITS,
+    ...{ maxFiles: workbookMaxFiles, maxSheets: workbookMaxSheets, maxCells: workbookMaxCells },
+  };
+  const uploads = createUploadStore(dataDir, reservation, limits);
   const limitBytes = uploadLimitBytes(parts.uploadMaxMb);
   const auditLog = new PgAuditLog(pool, masker);
-  const { workbookMaxFiles, workbookMaxSheets, workbookMaxCells } = parts.workbook;
   return {
     storeUpload: new StoreUpload({
       ...{ projects, runs, logger, clock, auditLog },
@@ -118,11 +123,7 @@ function uploadsOf(
       staging: new DiskWorkbookStaging({
         dataDir,
         reservation,
-        limits: {
-          maxFiles: workbookMaxFiles,
-          maxSheets: workbookMaxSheets,
-          maxCells: workbookMaxCells,
-        },
+        limits,
       }),
     }),
   };

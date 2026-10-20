@@ -1,6 +1,7 @@
 import type { UploadStore } from '../application/ports/upload-store.js';
 import { YauzlZipExtractor } from '../infrastructure/sources/zip-extractor.js';
 import { DEFAULT_ZIP_LIMITS } from '../infrastructure/sources/zip-limits.js';
+import type { WorkbookLimits } from '../infrastructure/sources/workbook/workbook-limits.js';
 import type { SpaceReservation } from '../infrastructure/sources/space-reservation.js';
 import { ZipUploadStore } from '../infrastructure/sources/zip-upload-store.js';
 
@@ -14,10 +15,15 @@ export function uploadLimitBytes(uploadMaxMb: number): number {
 }
 
 // RF-128, DEC-149: the zip store and the workbook staging area count free space from one reservation.
-export function createUploadStore(dataDir: string, reservation?: SpaceReservation): UploadStore {
+export function createUploadStore(
+  dataDir: string,
+  reservation?: SpaceReservation,
+  workbookLimits?: WorkbookLimits,
+): UploadStore {
   return new ZipUploadStore({
     dataDir,
     extractor: new YauzlZipExtractor(DEFAULT_ZIP_LIMITS),
     ...(reservation === undefined ? {} : { reservation }),
+    ...(workbookLimits === undefined ? {} : { workbookLimits }),
   });
 }

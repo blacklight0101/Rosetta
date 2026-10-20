@@ -9,7 +9,9 @@ import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { StoredUpload, UploadStore } from '../ports/upload-store.js';
 import type { LeftOut, WorkbookSummaryLine } from '../ports/workbook-staging.js';
+import type { Project } from '../projects/project.js';
 import { pruneEarlier } from '../projects/prune-snapshot.js';
+import { recordWorkbooks } from '../projects/record-workbooks.js';
 
 // RF-128, RF-129, RF-130, RF-133: Store upload turns the zip a user sends into the project's source.
 
@@ -56,6 +58,28 @@ export type UploadProblem =
   | typeof ERROR_CODES.uploadInProgress
   | typeof ERROR_CODES.zipNotReadable
   | typeof ERROR_CODES.uploadNameUnreadable;
+
+/** The answer for the page; the workbook fields only when the zip held workbooks (RF-150). */
+function summaryOf(
+  stored: StoredUpload,
+  project: Project,
+  fileName: string,
+  uploadedAt: string,
+): UploadSummary {
+  return {
+    files: stored.info.fileCount,
+    size: stored.info.totalBytes,
+    skipped: stored.skipped,
+    snapshotHash: stored.info.snapshotHash,
+    fileName,
+    uploadedAt,
+    codeChangedSinceLastRun:
+      project.lastRunSnapshotKey !== undefined && project.lastRunSnapshotKey !== stored.key,
+    ...(stored.workbooks === undefined
+      ? {}
+      : { workbooks: stored.workbooks, leftOut: stored.leftOut ?? [] }),
+  };
+}
 
 export class StoreUpload {
   readonly deps: StoreUploadDependencies;
@@ -110,10 +134,14 @@ export class StoreUpload {
       limitBytes: this.deps.limitBytes,
       signal,
     });
+    const workbooks = stored.info.workbooks?.length ?? 0;
     const attached = await projects.attachUpload({
       userId: project.userId,
       projectId: project.id,
-      upload: { fileName: name.value, uploadedAt: uploadedAt.getTime(), snapshotKey: stored.key },
+      upload: {
+        ...{ fileName: name.value, uploadedAt: uploadedAt.getTime(), snapshotKey: stored.key },
+        ...(workbooks === 0 ? {} : { workbooks }),
+      },
       updatedAt: uploadedAt.getTime(),
     });
     if (attached === undefined) {
@@ -123,16 +151,12 @@ export class StoreUpload {
     }
     await pruneEarlier(this.deps, project, stored.key);
     await this.record(request, project.id, stored);
-    return ok({
-      files: stored.info.fileCount,
-      size: stored.info.totalBytes,
-      skipped: stored.skipped,
+    await recordWorkbooks(this.deps, {
+      ...{ actor: request.actor, projectId: project.id, ip: request.ip },
       snapshotHash: stored.info.snapshotHash,
-      fileName: name.value,
-      uploadedAt: uploadedAt.toISOString(),
-      codeChangedSinceLastRun:
-        project.lastRunSnapshotKey !== undefined && project.lastRunSnapshotKey !== stored.key,
+      workbooks: stored.info.workbooks ?? [],
     });
+    return ok(summaryOf(stored, project, name.value, uploadedAt.toISOString()));
   }
 
   // RF-133: the name, size and hash of the zip, never its content.

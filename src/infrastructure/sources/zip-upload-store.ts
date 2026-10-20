@@ -19,6 +19,8 @@ import { errorCode, snapshotWriteFailed } from '../github/snapshot-errors.js';
 import { SnapshotStore } from '../github/snapshot-store.js';
 import { SpaceReservation } from './space-reservation.js';
 import type { WorkbookLimits } from './workbook/workbook-limits.js';
+import { DEFAULT_WORKBOOK_LIMITS } from './workbook/workbook-limits.js';
+import { renderZipWorkbooks } from './workbook/zip-workbooks.js';
 import { receiveZip, uploadTimedOut, uploadTooLarge } from './upload-intake.js';
 
 export interface ZipUploadStoreOptions {
@@ -148,6 +150,7 @@ export class ZipUploadStore implements UploadStore {
     );
     const extraction = await this.extract(zipPath, filesDir, request.signal);
     await rm(zipPath, { force: true });
+    const books = await this.renderBooks(filesDir, request.signal);
     const summary = await this.snapshots.inspect(filesDir);
     const info: UploadSnapshotInfo = {
       kind: 'upload',
@@ -155,6 +158,7 @@ export class ZipUploadStore implements UploadStore {
       uploadedAt: request.uploadedAt,
       ...summary,
       skippedLinks: extraction.skippedLinks + extraction.skippedDeviceNames,
+      ...(books === undefined || books.entries.length === 0 ? {} : { workbooks: books.entries }),
     };
     const key = uploadSnapshotKey(request.projectId, summary.snapshotHash);
     await this.snapshots.writeInfo(partial, info);
@@ -165,7 +169,21 @@ export class ZipUploadStore implements UploadStore {
       await this.snapshots.rewriteInfo(key, info);
     }
     const skipped = info.skippedLinks + extraction.leftOutEntries;
-    return { key, info, zipBytes, skipped };
+    const held = books === undefined ? {} : { workbooks: books.lines, leftOut: books.leftOut };
+    return { key, info, zipBytes, skipped, ...held };
+  }
+
+  /** RF-152, Q-41: renders the workbooks of the unpacked tree under the time bound of unpacking. */
+  private async renderBooks(filesDir: string, requestSignal: AbortSignal) {
+    const bound = AbortSignal.timeout(this.options.extractTimeoutMs ?? DEFAULT_EXTRACT_TIMEOUT_MS);
+    const limits = this.options.workbookLimits ?? DEFAULT_WORKBOOK_LIMITS;
+    try {
+      return await renderZipWorkbooks(filesDir, limits, AbortSignal.any([requestSignal, bound]));
+    } catch (error) {
+      if (requestSignal.aborted) throw stoppedBy(requestSignal, error);
+      if (bound.aborted) throw uploadTimedOut('rendering workbooks');
+      throw error;
+    }
   }
 
   /** Unpacks under the time bound; a stop by the request keeps its own reason (RST-1918 is the bound's). */
