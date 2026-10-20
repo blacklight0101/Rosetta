@@ -1,6 +1,7 @@
 import type { Run } from '../../domain/runs/run.js';
 import type { RunManifest } from '../../domain/runs/run-manifest.js';
 import type { ResolvedSource } from '../ports/run-executor.js';
+import { workbookFactsOf } from '../runs/workbook-facts.js';
 
 // RF-130, RF-131, RNF-004: the source a plan run records as its own, the one of the understand run it
 // is written from. A GitHub run has a commit; an upload run has none and names its zip. Undefined
@@ -18,5 +19,6 @@ export function resolvedSourceOf(
   return {
     ...{ commitSha, snapshotKey, snapshotHash },
     ...(fileName === undefined || uploadedAt === undefined ? {} : { fileName, uploadedAt }),
+    ...(manifest === undefined ? {} : workbookFactsOf(manifest.source)),
   };
 }

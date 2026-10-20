@@ -5,6 +5,7 @@ import type { RunManifestStore } from '../../application/ports/run-manifest-stor
 import type { ScannedSource, ScanResults } from '../../application/ports/scan-results.js';
 import { scanSettingsSchema } from '../../application/projects/project-settings.js';
 import { scopeOf } from '../../application/runs/run-scope.js';
+import { workbookFactsOf } from '../../application/runs/workbook-facts.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -76,7 +77,8 @@ export class FileScanResults implements ScanResults {
         cause: error,
       });
     });
-    const source = { commitSha, snapshotKey, snapshotHash };
+    // RF-156: a workbook run keeps the names, the instant and the renderer its scan recorded.
+    const source = { commitSha, snapshotKey, snapshotHash, ...workbookFactsOf(manifest.source) };
     const workbookFolders = await this.options.workbookFolders?.(snapshotKey);
     const listed =
       workbookFolders === undefined || workbookFolders.length === 0 ? {} : { workbookFolders };

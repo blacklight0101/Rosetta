@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "description": "An understand run over the two workbooks of the Excel journey (Pricing.xlsm reads Discounts.xlsx). Written by hand for the fake provider; no real provider was called (P3-52).",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Pricing.xlsm/Quote/formulas.md",
+                  "startLine": 1,
+                  "endLine": 9
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-2",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Pricing.xlsm/Quote/values.md",
+                  "startLine": 1,
+                  "endLine": 8
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-3",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Pricing.xlsm/macros/Module1.bas",
+                  "startLine": 1,
+                  "endLine": 7
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-3",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-4",
+                "name": "read_file",
+                "arguments": {
+                  "path": "dependencies.md",
+                  "startLine": 1,
+                  "endLine": 20
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"List price by customer type\",\n      \"area\": \"Pricing.xlsm\",\n      \"summary\": \"The list price of a quote is looked up in the Rates sheet by the customer type.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The list price in C2:C3 is the price the Rates sheet holds for the customer type of the row.\",\n          \"citations\": [\n            \"Pricing.xlsm/Quote/formulas.md:9-9\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"BR\",\n      \"title\": \"Quote total with the tier discount\",\n      \"area\": \"Pricing.xlsm\",\n      \"summary\": \"The total of a quote is the quantity times the list price, less the discount of its tier from Discounts.xlsx.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The total in D2 and D3 is quantity times list price times one minus the discount of the tier.\",\n          \"citations\": [\n            \"Pricing.xlsm/Quote/formulas.md:5-6\"\n          ]\n        },\n        {\n          \"text\": \"The discount is read from the Discounts workbook, one per customer type.\",\n          \"citations\": [\n            \"Pricing.xlsm/Quote/formulas.md:5-6\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"ENT\",\n      \"title\": \"Quote\",\n      \"area\": \"Pricing.xlsm\",\n      \"summary\": \"A quote holds a customer type, a quantity, a list price and a total.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The Quote sheet has one row per quote with a customer type, a quantity, a list price and a total.\",\n          \"citations\": [\n            \"Pricing.xlsm/Quote/values.md:6-8\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"INT\",\n      \"title\": \"Customer type choice\",\n      \"area\": \"Pricing.xlsm\",\n      \"summary\": \"The customer type of a quote is picked from a list.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The customer type cells A2:A3 accept only Retail or Wholesale.\",\n          \"citations\": [\n            \"Pricing.xlsm/Quote/validation.md:6-6\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"BR\",\n      \"title\": \"Tier 2 discount macro\",\n      \"area\": \"Pricing.xlsm\",\n      \"summary\": \"A macro writes a Tier 2 discount note on a quote of 100 units or more.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The macro ApplyTierDiscount marks the first quote as Tier 2 discount when its quantity is 100 or more.\",\n          \"citations\": [\n            \"Pricing.xlsm/macros/Module1.bas:2-6\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"INT\",\n      \"title\": \"Pricing reads Discounts\",\n      \"area\": \"Pricing.xlsm\",\n      \"summary\": \"The totals of the Quote sheet read the discounts held in the Discounts workbook.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"Pricing.xlsm reads Discounts.xlsx in two formulas, so a change of a discount changes the totals.\",\n          \"citations\": [\n            \"dependencies.md:8-8\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-5",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-6",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Discounts.xlsx/Discounts/values.md",
+                  "startLine": 1,
+                  "endLine": 8
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-6",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"ENT\",\n      \"title\": \"Discount by customer type\",\n      \"area\": \"Discounts.xlsx\",\n      \"summary\": \"Each customer type has a discount rate.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The Discount column holds 0.1 for Retail and 0.2 for Wholesale.\",\n          \"citations\": [\n            \"Discounts.xlsx/Discounts/values.md:6-8\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-7",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}
