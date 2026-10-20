@@ -136,6 +136,15 @@ function useRerun(projectId: string): StartForm['rerun'] {
   return { answered: useAnsweredCount(projectId), checked, set };
 }
 
+/** RF-128, RF-150: an upload project with no zip, or a workbook project with no batch, yet. */
+function noSourceOf(project: Project): { noSource: boolean; noWorkbooks: boolean } {
+  const empty = project.source === null;
+  return {
+    noSource: project.sourceKind === 'upload' && empty,
+    noWorkbooks: project.sourceKind === 'workbook' && empty,
+  };
+}
+
 // RF-1001, RF-143, DEC-108
 export function useStartForm(loaded: Project): StartForm {
   const [project, setProject] = useState(loaded);
@@ -176,7 +185,7 @@ export function useStartForm(loaded: Project): StartForm {
     chosenAreas: choice.chosen.length,
     oldMapUnconfirmed: isOutdated(estimate) && !confirmed.oldMap.confirmed,
     libraryUnconfirmed: libraryChosen && !confirmed.library.confirmed,
-    noSource: project.sourceKind === 'upload' && project.source === null,
+    ...noSourceOf(project),
   });
   return {
     ...{ project, choice, stage, setStage, url, setUrl, ...fields },
