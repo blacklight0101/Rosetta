@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 67      | 5         | 60         | 2         | 0                  | 22      | 43      | 2      | 23         | 0         |
-| **Total**               | **284** | **77**    | **180**    | **27**    | **0**              | **138** | **134** | **12** | **158**    | **0**     |
+| P3 Report and plan      | 68      | 5         | 61         | 2         | 0                  | 22      | 44      | 2      | 24         | 0         |
+| **Total**               | **285** | **77**    | **181**    | **27**    | **0**              | **138** | **135** | **12** | **159**    | **0**     |
 
 ## Conventions for every card
 
@@ -3852,3 +3852,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-209, RF-230, RF-203, RF-250, DEC-158; issue #685.
+
+### P3-68 - Follow-up: evaluation batch 1 (first start, wording, small fixes)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P3-61, P3-62, P3-63
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `compose.yaml` and RF-1301, RF-1302; the projects page, the start page, the upload summary, `RunMeter.tsx`, `EventLog.tsx`, `JourneyStrip.tsx`, `journey-action.ts`, `use-focus-first-question.ts`, `src/application/estimate/estimate-assumptions.ts`; `docs/design-system.md`. Found in the orchestrator's evaluation run of 2026-10-21 on a fresh Compose project and by the verifiers of P3-62, P3-63 and P3-66.
+- **Do**: (1) a first `docker compose up` on an empty volume fails because the db health check (`pg_isready -U postgres -d rosetta`) passes over the Unix socket while the image's init-time server runs, and migrate then gets ECONNREFUSED: check over TCP (`-h 127.0.0.1`) so migrate starts only on the real server, and add a test of the compose file; (2) the projects page intro and empty state name Excel workbooks as well as GitHub and zip; (3) the upload summary formats counts with thousands separators ("12,247 cells"); (4) the start page of a project with no scan does not log a 409 in the browser console (do not ask for the understand estimate before a code map exists, or handle the answer quietly); (5) the scan text says "the code or workbooks", not "the repository", for a workbook or zip project; (6) "It is a understand run" reads "an understand run"; (7) with a local model the estimate line does not read "$0.00" (tokens only, as the spend panel does); (8) a cut verdict reason never splits a surrogate pair; (9) on Plan setup the journey's "Go on with the defaults" is not shown as a link to the same page; (10) a focus request for the first unanswered question is not dropped when the field mounts late; (11) `WORKBOOK_PROMPT_TOKENS` matches the current workbook prompt size (with a test that compares it with the prompt file).
+- **Review probes**: compose test of the health check; the projects page with no projects (all three sources named); "12,247"; the start page console with no scan; a zip, a workbook and a GitHub project's scan text; "an understand run"; a local-model estimate line; a 300-character reason with an emoji at 200; Plan setup with open questions; a late-mounting answer field; the workbook prompt size test.
+- **Behaviour to preserve**: RF-231 wording; existing GitHub project texts; the estimate for priced models.
+- **Delivers**: the fixes and tests.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-1301, RF-1302, RF-150, RF-615, RF-1015, RF-421, RNF-010; issue #692.
