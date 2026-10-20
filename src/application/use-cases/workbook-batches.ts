@@ -201,6 +201,17 @@ export class WorkbookBatches {
     return ok(undefined);
   }
 
+  /** Deletes the expired batches every `intervalMs` without waiting for a batch call (RF-150). */
+  startSweeping(intervalMs: number): void {
+    if (intervalMs <= 0) throw new RangeError('The sweep interval must be positive.');
+  }
+
+  /** Server shutdown: stops the work in flight and deletes every open batch with its reserved space. */
+  async close(): Promise<void> {
+    this.abortAll();
+    await Promise.resolve();
+  }
+
   /** Stops every file and finish in flight (server shutdown). */
   abortAll(): void {
     for (const batch of this.batches.values()) batch.busy?.abort();

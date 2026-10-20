@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { loadEnvironment } from '../../../src/infrastructure/config/environment.js';
 import { composeApplication } from '../../../src/presentation/composition-root.js';
@@ -184,4 +184,39 @@ describe.skipIf(!hasTestDatabase)('the composed application and a restart', () =
       await application.stop();
     }
   });
+});
+
+/** A file whose body sends a few bytes and then never ends: a client that went away without closing. */
+function hangingBody(): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new Uint8Array([0x50, 0x4b, 0x03, 0x04]));
+    },
+  });
+}
+
+describe.skipIf(!hasTestDatabase)('the composed application and a shutdown', () => {
+  it('RF-1108 DEC-149 stops a file that is arriving and deletes the open batch with its staging folder', async () => {
+    const { application, password, dataDir, pool } = await composed(database);
+    const address = await application.start();
+    await pool.query("UPDATE users SET state = 'Active'");
+    const { send } = await signedIn(address, password);
+    const batch = await openedBatch(send, 'Pricing');
+    const init = {
+      method: 'PUT',
+      type: 'application/octet-stream',
+      name: encodeURIComponent('A.xlsx'),
+      body: hangingBody(),
+      duplex: 'half',
+    };
+    const arriving = send(`${batch.base}/${batch.batchId}/files`, init).catch(() => undefined);
+    await vi.waitFor(async () => {
+      expect(await readdir(join(dataDir, 'sources'))).toHaveLength(1);
+    });
+
+    await application.stop();
+    await arriving;
+
+    expect(await readdir(join(dataDir, 'sources'))).toEqual([]);
+  }, 30_000);
 });
