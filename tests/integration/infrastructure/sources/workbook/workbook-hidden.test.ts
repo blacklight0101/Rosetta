@@ -82,3 +82,12 @@ it('RF-152 names hidden rows and columns in the header of values.md and still re
   expect(values).toContain('R2 | A2 3 | C2 4\n');
   expect(values).toContain('R5 | E5 6\n');
 });
+
+it('RF-152 a column range the sheet cannot hold is ignored', async () => {
+  const columns =
+    '<col min="5" max="3" hidden="1"/><col min="1" max="20000" hidden="1"/><col min="0" max="2" hidden="1"/><col max="4" hidden="1"/>';
+
+  const sheet = (await modelOf(withColumns(columns, row(1, numberCell('A1', 1))))).sheets[0];
+
+  expect(sheet?.hiddenColumns).toEqual({ ranges: [], omitted: 0 });
+});

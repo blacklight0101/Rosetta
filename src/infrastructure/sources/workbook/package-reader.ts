@@ -1,5 +1,6 @@
 import type { LimitCounter } from '../entry-guards.js';
 import { CellReader } from './cell-reader.js';
+import { HiddenReader } from './hidden-reader.js';
 import { readMacroProject } from './macro-reader.js';
 import { RuleReader } from './rule-reader.js';
 import { SharedStringsReader } from './shared-strings-reader.js';
@@ -30,6 +31,7 @@ const VBA_PART = 'xl/vbaProject.bin';
 class SheetPartReader implements XmlVisitor {
   readonly cells: CellReader;
   readonly rules = new RuleReader();
+  readonly hidden = new HiddenReader();
 
   constructor(cells: CellReader) {
     this.cells = cells;
@@ -38,6 +40,7 @@ class SheetPartReader implements XmlVisitor {
   open(name: string, attributes: Record<string, string>): void {
     this.cells.open(name, attributes);
     this.rules.open(name, attributes);
+    this.hidden.open(name, attributes);
   }
 
   text(text: string): void {
@@ -164,8 +167,8 @@ export class PackageReader {
       ...(reader.rules.usedRange === undefined ? {} : { usedRange: reader.rules.usedRange }),
       cells: cells.cells,
       mergedRanges: reader.rules.mergedRanges,
-      hiddenRows: { ranges: [], omitted: 0 },
-      hiddenColumns: { ranges: [], omitted: 0 },
+      hiddenRows: reader.hidden.rows,
+      hiddenColumns: reader.hidden.columns,
       validations: reader.rules.validations,
       conditionalRules: reader.rules.conditionalRules,
       ...extras,
