@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 60      | 5         | 53         | 2         | 0                  | 21      | 37      | 2      | 16         | 0         |
-| **Total**               | **277** | **77**    | **173**    | **27**    | **0**              | **137** | **128** | **12** | **151**    | **0**     |
+| P3 Report and plan      | 62      | 5         | 55         | 2         | 0                  | 21      | 39      | 2      | 18         | 0         |
+| **Total**               | **279** | **77**    | **175**    | **27**    | **0**              | **137** | **130** | **12** | **153**    | **0**     |
 
 ## Conventions for every card
 
@@ -3747,3 +3747,33 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the updated page and its tests.
 - **Done when**: every RF-1200 and RF-1201 scenario passes; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-1200, RF-1201, RNF-010, DEC-153, RFC-004, RFC-005; issue #670.
+
+### P3-61 - Follow-up: run page counts, coverage and Deepen consistency
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P2-41, P3-52
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the run page (`web/src/pages/` live run, stepper, Deepen panel, area map, coverage map, All agents tab) and the run summary it reads; RF-209, RF-230, RF-231; RFC-003; the owner's test of a Deepen run on an Excel project (2026-10-20, notes below).
+- **Do**: investigate and fix, each with a test that fails first. (1) The Deepen panel's "Started from 34 cards and 83 claims: 41 supported, 40 rejected, 0 not judged" leaves 2 claims in no group: name every status (for example out of scope) so the parts add up to the total. (2) The stepper shows "Map the code: 9 areas" and "Read: 12 of 15 areas" in the same Deepen run: make both use one count basis, or say why they differ. (3) The coverage map shows only areas with reads ("16 files read in 5 areas"); RF-230 asks for every file of every area as read or not read: show unread areas and files. (4) Two readers of one Deepen run report the same file with different ranges (`macros/Calendar.cls:1-340` and `:1-317`): find whether a range passes the end of the file or the file differs between rounds, and fix the cause. (5) A Deepen round wrote ENT-035..ENT-048 from the same `workbook.md` the parent's reader had turned into ENT-013..ENT-019: find whether Deepen re-creates cards that already exist instead of extending them (RFC-003 says it starts from the parent's cards), and fix it so a card is not duplicated. (6) The All agents claims panel says "29 citations checked" for claims waiting for the verifier while the stepper uses "citations checked" for another count: use one wording.
+- **Review probes**: a Deepen run with out-of-scope claims (sums add up); a Deepen run that adds areas; an area never read (listed with its files as not read); a file read in two rounds (same range basis); a Deepen round over an entity the parent already has (no second card).
+- **Behaviour to preserve**: RF-231 wording rules (never "complete" or "fully understood"); the parent run unchanged; the before/after measures.
+- **Delivers**: the fixes and tests; the cause of (4) and (5) in the PR body.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-209, RF-230, RF-231, RFC-003 (owner test 2026-10-20).
+
+### P3-62 - Follow-up: run page wording and layout
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P2-41, P3-52
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the run page (header, stepper, Deepen panel, area map, spend panel, All agents tab, Activity tab and event log); `docs/design-system.md`; RNF-010; RF-507 (model text as text); the owner's test of a Deepen run on an Excel project (2026-10-20, notes below).
+- **Do**: within the design system, fix: (1) plurals in the Deepen round lines ("1 files read"); (2) round 3 wording ("re-reading 60" names what, "0 unread files to read" reads plainly); (3) the stepper sub-lines are cut off ("127 of 127 citations check..."): fit or wrap; (4) area tiles all cut to "Asset_Mana...": show the part after the last "/" with the full name on hover and focus, and do not cut the sub-lines ("read · 1 fil...", "being rea..."); explain or drop the "#1" suffix in tile names; (5) the Activity tab count shows "1000" when the log holds more: show "1000+" or the real count; (6) the side "Spend for this run" bar stays empty with a local model while tokens are used: label it as cost, or show the token bar when the cost is zero; (7) the two links in the spend panel use one link style; (8) the "Start page" link sits with the title or the buttons, not floating between them; (9) the estimate line says "Range $0.00 to $0.00" with a local model and does not say when the run has passed the likely estimate: give the token range, and say "over the estimate" when it is; (10) agent cards with the same area title (Deepen rounds) show the round or what they re-read; (11) agent card headers line up when the title is long (role and badge on one line, or a fixed place); (12) a one-line range reads `file:27`, not `file:27-27`; (13) long paths wrap at "/" and before ":", not mid-word; (14) the coverage map's "6% of the reads" says "of all files read"; (15) event-log times read as time since the start ("+16:27.5"); (16) the "usage.recorded · verifier 0 micro-dollars" lines are folded into the line they belong to or grouped, and "micro-dollars" never appears; (17) Supported and Rejected verdict lines use the cards list's badge and colour; (18) a cut verdict reason can be opened in full; (19) inline code in model text (backticks) is shown as code styling, still as text, never HTML.
+- **Review probes**: the run page at 360 px and desktop, light and dark, with a Deepen run of three rounds and a local model; axe in both schemes; a log of more than 1,000 events; a verdict reason of 2,000 characters; model text with backticks and with `<b>` (shown as text).
+- **Behaviour to preserve**: every RF-231 wording rule; RF-507 (no model text as HTML); the live updates and Pause updates.
+- **Delivers**: the fixes and tests.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-209, RF-230, RF-231, RF-507, RNF-010 (owner test 2026-10-20).
