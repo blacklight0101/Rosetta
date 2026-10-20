@@ -202,3 +202,64 @@ it('RF-153 reports a formula that the reference limit cuts in the middle as not 
     'Book.xlsx/S!C1:C2 not read: the project passed the limit of 3 references',
   ]);
 });
+
+it('RF-153 lists no more unresolved targets than the limit and counts the rest', () => {
+  const cells = Array.from({ length: 10 }, (_, i) =>
+    withFormula(`A${String(i + 1)}`, `Gone${String(i)}!A1`),
+  );
+  const content = dependenciesOf([book([sheet('S', { cells })], { fileName: 'Book.xlsx' })], {
+    dependencies: { maxUnresolved: 4 },
+  });
+
+  expect(sectionOf(content, 'Unresolved and dynamic references')).toHaveLength(4);
+  expect(sectionOf(content, LIMITS)).toEqual([
+    'Unresolved references not listed: 6 more than the limit of 4',
+  ]);
+});
+
+it('RF-153 keeps the cells of unresolved references up to the limit and counts the formulas past it', () => {
+  const cells = Array.from({ length: 10 }, (_, i) =>
+    withFormula(`A${String(i * 2 + 1)}`, 'Gone!A1'),
+  );
+  const content = dependenciesOf([book([sheet('S', { cells })], { fileName: 'Book.xlsx' })], {
+    dependencies: { maxUnresolvedCells: 3 },
+  });
+
+  expect(sectionOf(content, 'Unresolved and dynamic references')).toHaveLength(3);
+  expect(sectionOf(content, LIMITS)).toEqual([
+    'Unresolved references not located: 7 formulas past the limit of 3 cells',
+  ]);
+});
+
+it('RF-153 counts the workbook of a defined name that points into another workbook as an edge', () => {
+  const reader = book(
+    [sheet('S', { cells: [withFormula('A1', 'Rate*2'), withFormula('A2', '[1]Rates!C4')] })],
+    {
+      fileName: 'Reader.xlsx',
+      externalLinks: [{ fileName: 'Rates.xlsx' }],
+      definedNames: [{ name: 'Rate', hidden: false, refersTo: '[1]Rates!$C$4' }],
+    },
+  );
+  const rates = book([sheet('Rates', { cells: [cell('C4', num(1))] })], { fileName: 'Rates.xlsx' });
+  const content = dependenciesOf([reader, rates]);
+
+  expect(sectionOf(content, 'Workbooks')).toEqual(['Reader.xlsx -> Rates.xlsx: 2 formulas']);
+  expect(sectionOf(content, 'Sheets')).toEqual(['Reader.xlsx/S -> Rates.xlsx/Rates: 2 formulas']);
+});
+
+it('RF-153 reads A1:XFD1048576 as one reference: the work done is one box, not a row at a time', () => {
+  const data = sheet('Data', { cells: [cell('A1', num(1))] });
+  const calc = sheet('Calc', { cells: [withFormula('A1', 'SUM(Data!A1:XFD1048576)')] });
+  const own = sheet('Own', {
+    cells: [cell('A1', num(1)), withFormula('B2', 'SUM(A1:XFD1048576)')],
+  });
+
+  const content = dependenciesOf([book([data, calc, own], { fileName: 'Book.xlsx' })], {
+    dependencies: { maxReferences: 2, maxCycleWork: 20 },
+  });
+
+  expect(sectionOf(content, LIMITS)).toEqual(['None.']);
+  expect(sectionOf(content, 'Circular references')).toEqual([
+    'Book.xlsx/Own!B2 circular reference 1 (1 cell)',
+  ]);
+});

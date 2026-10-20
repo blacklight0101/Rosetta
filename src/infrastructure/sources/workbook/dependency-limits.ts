@@ -8,6 +8,10 @@ export interface DependencyLimits {
   readonly maxReferences: number;
   /** The distinct sheet-to-sheet edges listed. */
   readonly maxSheetEdges: number;
+  /** The distinct unresolved references (a sheet and a missing name) listed. */
+  readonly maxUnresolved: number;
+  /** The cells of formulas with an unresolved reference that are located, all targets together. */
+  readonly maxUnresolvedCells: number;
   /** The steps of the circular-reference search (an edge followed, a column of cells jumped). */
   readonly maxCycleWork: number;
   /** The circular references written out; the rest are counted. */
@@ -17,6 +21,8 @@ export interface DependencyLimits {
 export const DEFAULT_DEPENDENCY_LIMITS: DependencyLimits = {
   maxReferences: 8_000_000,
   maxSheetEdges: 100_000,
+  maxUnresolved: 10_000,
+  maxUnresolvedCells: 100_000,
   maxCycleWork: 20_000_000,
   maxCyclesListed: 10_000,
 };
