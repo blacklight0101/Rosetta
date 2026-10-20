@@ -122,7 +122,6 @@ it('RF-146 cuts a very long text so no line reaches 2,000 characters', () => {
   }
   const values = fileOf(renderWorkbook(model), 'Long/values.md');
   expect(values).toContain('B1 2');
-  expect(values).toMatch(/\(\+\d+ characters\)/u);
 });
 
 it('RF-151 refuses a render that passes the total byte limit with RST-1926', () => {

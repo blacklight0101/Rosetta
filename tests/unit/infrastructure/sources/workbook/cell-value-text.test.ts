@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import {
   bareValue,
-  valueField,
+  valueFields,
 } from '../../../../../src/infrastructure/sources/workbook/cell-value-text.js';
 import { cell, num, text } from '../../../../support/rendered-workbook-fixtures.js';
 
@@ -87,13 +87,15 @@ it('RF-152 has nothing to write for a formula stored without a result', () => {
 
 it('RF-152 starts with the address and marks a cached formula result with (f)', () => {
   const formula = { kind: 'normal', text: 'B2*C2' } as const;
-  expect(valueField(cell('D2', num(5000), { formula }), false)).toBe('D2 5000 (f)');
-  expect(valueField(cell('A2', text('North')), false)).toBe('A2 "North"');
+  expect(valueFields(cell('D2', num(5000), { formula }), false)).toEqual(['D2 5000 (f)']);
+  expect(valueFields(cell('A2', text('North')), false)).toEqual(['A2 "North"']);
 });
 
 it('RF-152 says so when a formula has no cached value', () => {
   const formula = { kind: 'normal', text: 'B2' } as const;
-  expect(valueField(cell('D2', undefined, { formula }), false)).toBe('D2 (f, no cached value)');
+  expect(valueFields(cell('D2', undefined, { formula }), false)).toEqual([
+    'D2 (f, no cached value)',
+  ]);
 });
 
 it('RF-152 leaves a serial number that would pass the year 9999 in the 1904 system as a number', () => {
@@ -102,8 +104,28 @@ it('RF-152 leaves a serial number that would pass the year 9999 in the 1904 syst
   expect(bareValue(cellOf, false)).toBe('9999-12-31');
 });
 
-it('RF-152 cuts the cached text of a formula shorter than a value', () => {
-  const formula = { kind: 'normal', text: 'A2' } as const;
-  const long = cell('A1', text('c'.repeat(5000)), { formula });
-  expect(bareValue(long, false, 200)).toMatch(/^"c{200}\.\.\.\(\+4800 characters\)"$/u);
+it('RF-152 leaves a number with a General, Standard or Scientific format a number', () => {
+  const formats = [
+    'General',
+    'General_)',
+    'General;General',
+    '[$-409]General',
+    '[Red]General',
+    'General" kg"',
+    'Standard',
+    'Scientific',
+    'general',
+    '0.00_);(0.00)',
+    '"Seconds: "0',
+  ];
+  expect(formats.map((format) => withFormat(1234.5, format))).toEqual(formats.map(() => '1234.5'));
+});
+
+it('RF-152 still reads true date and time formats around words and sections', () => {
+  expect(withFormat(45000, 'yyyy-mm-dd;@')).toBe('2023-03-15');
+  expect(withFormat(45000, '[$-F800]dddd, mmmm dd, yyyy')).toBe('2023-03-15');
+  expect(withFormat(0.75, 'h:mm;@')).toBe('18:00:00');
+  expect(withFormat(45000.5, '[Red]d/m/yy h:mm')).toBe('2023-03-15T12:00:00');
+  expect(withFormat(0.5, '[mm]:ss')).toBe('12:00:00');
+  expect(withFormat(45000, 'General;yyyy-mm-dd')).toBe('45000');
 });

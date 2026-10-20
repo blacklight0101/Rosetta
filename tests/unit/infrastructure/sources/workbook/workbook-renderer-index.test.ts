@@ -70,7 +70,8 @@ it('RF-152 lists names, tables, links, connections, pivots and charts', () => {
 
   expect(workbook).toContain('| "TaxRate" | workbook | no | "\'Rates 2026\'!$C$4" |');
   expect(workbook).toContain('| "Local" | Summary | yes | "Summary!$A$1" |');
-  expect(workbook).toContain('| Summary | "Prices" | "B2:D9" | "Item", "Price" |');
+  expect(workbook).toContain('| Summary | "Prices" | "B2:D9" | 2 |');
+  expect(workbook).toContain('- Summary "Prices": "Item", "Price"');
   expect(workbook).toContain('- "Rates.xlsx"');
   expect(workbook).not.toContain('Users');
   expect(workbook).toContain('| "Sales cube" | 1 |');

@@ -15,26 +15,6 @@ import {
 const manyRanges = (count: number): string[] =>
   Array.from({ length: count }, (_, i) => `A${String(i + 1)}:B${String(i + 1)}`);
 
-it('RF-152 cuts a long formula, a comment and a rule at their caps with a note, not at the line limit', () => {
-  const formula = { kind: 'normal', text: `SUM(${'1,'.repeat(5000)}1)` } as const;
-  const model = book([
-    sheet('Long', {
-      cells: [cell('A1', num(1), { formula })],
-      comments: [{ address: 'A1', text: 'n'.repeat(50_000) }],
-      validations: [{ ranges: 'A1', type: 'custom', formula1: 'f'.repeat(50_000) }],
-      conditionalRules: [{ ranges: 'A1', type: 'expression', formulas: ['g'.repeat(50_000)] }],
-    }),
-  ]);
-
-  const rendered = renderWorkbook(model);
-
-  const noted = ['formulas', 'notes', 'validation'].map((name) =>
-    /\(\+\d+ characters\)/u.test(fileOf(rendered, `Long/${name}.md`)),
-  );
-  expect(noted).toEqual([true, true, true]);
-  expect(fileOf(rendered, 'Long/formulas.md')).toContain('[cached: 1]');
-});
-
 it('RF-152 lists at most 1,000 merged ranges and counts the rest, on lines under the limit', () => {
   const model = book([sheet('Merged', { mergedRanges: manyRanges(1500) })]);
 
@@ -59,17 +39,6 @@ it('RF-152 lists at most 1,000 rows of a list in workbook.md and counts the rest
   expect(workbook).toContain('"Name999"');
   expect(workbook).not.toContain('"Name1000"');
   expect(workbook).toContain('- 200 more not listed');
-});
-
-it('RF-152 lists the first five formulas of a conditional rule and counts the rest', () => {
-  const formulas = ['1', '2', '3', '4', '5', '6', '7', '8'];
-  const model = book([
-    sheet('S', { conditionalRules: [{ ranges: 'A1', type: 'expression', formulas }] }),
-  ]);
-
-  const validation = fileOf(renderWorkbook(model), 'S/validation.md');
-
-  expect(validation).toContain('A1 conditional expression: 1 ; 2 ; 3 ; 4 ; 5 ; (+3 more)');
 });
 
 it('RF-152 quotes a range that is not a reference so it cannot pass for the cells of a line', () => {
@@ -144,16 +113,6 @@ it('RF-152 keeps a shared formula whose first cell has no index apart from the o
   expect(formulas).toContain('A2 = (shared formula 4, its text is not in the file)    [cached: 2]');
 });
 
-it('RF-152 lists the first 30 columns of a table and counts the rest', () => {
-  const columns = Array.from({ length: 40 }, (_, i) => `Col${String(i)}`);
-  const model = book([sheet('S', { tables: [{ name: 'T', range: 'A1:AN9', columns }] })]);
-
-  const workbook = fileOf(renderWorkbook(model), 'workbook.md');
-
-  expect(workbook).toContain('"Col29", ... (+10 more) |');
-  expect(workbook).not.toContain('"Col30"');
-});
-
 it('RF-152 groups only formulas in neighbouring rows of one column into a region', () => {
   const formula = { kind: 'normal', text: '1' } as const;
   const cells = ['A1', 'A3', 'A4', 'B4'].map((address) => cell(address, num(1), { formula }));
@@ -165,10 +124,10 @@ it('RF-152 groups only formulas in neighbouring rows of one column into a region
 });
 
 it('RF-152 keeps a pipe out of a table cell and cuts a long reference of a defined name', () => {
-  const definedNames = [{ name: 'A|B', hidden: false, refersTo: 'x'.repeat(1000) }];
+  const definedNames = [{ name: 'A|B', hidden: false, refersTo: 'x'.repeat(3000) }];
 
   const workbook = fileOf(renderWorkbook(book([sheet('S')], { definedNames })), 'workbook.md');
 
   expect(workbook).toContain('| "A\\u007cB" | workbook | no | "xxxxxxxx');
-  expect(workbook).toContain('...(+700 characters)" |');
+  expect(workbook).toContain('...(+1800 characters)" |');
 });

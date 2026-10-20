@@ -53,3 +53,8 @@ export function valueField(cell: WorkbookCell, date1904: boolean): string {
   if (value === undefined) return formula ? `${cell.address} (f, no cached value)` : cell.address;
   return `${cell.address} ${value}${formula ? ' (f)' : ''}`;
 }
+
+// RF-152 (fix round): stub, replaced by the implementation in the next commit.
+export function valueFields(cell: WorkbookCell, date1904: boolean): string[] {
+  return date1904 ? [cell.address] : [];
+}
