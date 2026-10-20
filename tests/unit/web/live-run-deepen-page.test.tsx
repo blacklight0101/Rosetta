@@ -46,7 +46,7 @@ describe('RF-209 a Deepen run while it runs', () => {
     await screen.findByRole('region', { name: 'Deepen progress' });
     expect(progress().textContent).toContain('Deepen of run 20261001-090000-understand');
     expect(textOf('deepen-seeded')).toBe(
-      'Started from 24 cards and 118 claims: 68 supported, 40 rejected, 10 not judged.',
+      'Started from 24 cards and 118 claims: 68 supported, 40 rejected, 0 citation invalid, 10 not judged.',
     );
     expect(textOf('deepen-round-1')).toContain('Round 1 of 3, running');
     expect(textOf('deepen-round-1')).toContain('judging 10 claims, re-reading 40');
