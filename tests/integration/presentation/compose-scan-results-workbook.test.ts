@@ -35,7 +35,7 @@ afterEach(async () => {
 });
 
 /** Scans the pricing-workbook fixture as an upload snapshot and opens the scan as the application does. */
-async function opened(workbooks: readonly (typeof workbook)[] | undefined) {
+async function opened(workbooks: readonly (typeof workbook)[] | undefined, raw?: string) {
   const snapshot = new SnapshotStore(dataDir);
   const files = snapshot.filesDir(UPLOAD_KEY);
   await cp(join('tests', 'fixtures', 'repos', 'pricing-workbook'), files, { recursive: true });
@@ -51,8 +51,11 @@ async function opened(workbooks: readonly (typeof workbook)[] | undefined) {
     ...(workbooks === undefined ? {} : { workbooks }),
     ...{ fileCount: 10, totalBytes: 4096, skippedLinks: 0, snapshotHash: UPLOAD_HASH },
   };
-  await writeFile(join(snapshot.snapshotDir(UPLOAD_KEY), 'snapshot.json'), JSON.stringify(record));
-  return composeScanResults(partsOf()).open(scan);
+  const text = raw ?? JSON.stringify(record);
+  await writeFile(join(snapshot.snapshotDir(UPLOAD_KEY), 'snapshot.json'), text);
+  const parts = partsOf();
+  const scanned = await composeScanResults(parts).open(scan);
+  return { scanned, warnings: parts.logger.entries.filter((entry) => entry.level === 'warn') };
 }
 
 function partsOf() {
@@ -82,13 +85,13 @@ async function openedGithub() {
 
 describe('the scan results of the composed application', () => {
   it('RF-155 name the folders of the workbooks the snapshot record lists', async () => {
-    const scanned = await opened([workbook]);
+    const { scanned } = await opened([workbook]);
 
     expect(scanned.workbookFolders).toEqual(['Pricing.xlsx']);
   });
 
   it('RF-155 name none for a zip whose record lists no workbook', async () => {
-    const scanned = await opened(undefined);
+    const { scanned } = await opened(undefined);
 
     expect(scanned.workbookFolders ?? []).toEqual([]);
   });
@@ -98,4 +101,19 @@ describe('the scan results of the composed application', () => {
 
     expect(scanned.workbookFolders ?? []).toEqual([]);
   });
+
+  it.each([
+    ['malformed JSON', '{nope'],
+    ['a record of no known shape', JSON.stringify({ kind: 'upload', workbooks: 'many' })],
+  ])(
+    'RF-155 a snapshot record that is %s leaves the scan readable, with none listed and a warning',
+    async (_name, raw) => {
+      const { scanned, warnings } = await opened(undefined, raw);
+
+      expect(scanned.workbookFolders ?? []).toEqual([]);
+      expect(scanned.source.snapshotKey).toBe(UPLOAD_KEY);
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]?.message).toContain('snapshot.json');
+    },
+  );
 });

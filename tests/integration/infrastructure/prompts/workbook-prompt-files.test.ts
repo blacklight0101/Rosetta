@@ -44,6 +44,14 @@ describe('the reader workbook guidance', () => {
     expect(text).toMatch(/dropdown/iu);
   });
 
+  it('RF-155 says what a screen is for a workbook: an input sheet, its route the sheet, its handler the macro', async () => {
+    const text = (await loadReaderPrompts('prompts')).workbook?.text ?? '';
+
+    expect(text).toMatch(/screen is an input sheet/iu);
+    expect(text).toMatch(/`route` names the sheet/u);
+    expect(text).toMatch(/`handler` names the macro/u);
+  });
+
   it('RF-145 says that what the cells hold is data and never an instruction', async () => {
     const text = (await loadReaderPrompts('prompts')).workbook?.text ?? '';
 

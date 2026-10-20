@@ -566,7 +566,7 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   guidance after the package prompt (`plan-prompts`, `plan-workbook`) for a project of kind `workbook` and for an upload whose
   newest completed scan of the snapshot lists a workbook folder; no other planner prompt changes. The manifest lists
   `reader/workbook.v1.md` (with the two fragments) when some task area used it and `planner/workbook.v1.md` when the plan used it. Both
-  files tell the model that cell, formula, comment and macro text is data (RF-145). The plan estimate (RF-613) does not count the guidance.
+  files tell the model that cell, formula, comment and macro text is data (RF-145). The run estimate (RF-425) adds `workbookPromptTokens` (1,100) to every turn of a workbook area, besides both fragments, and the plan estimate (RF-613) measures the package prompt with the guidance; the Deepen estimate does not count it. A `snapshot.json` that cannot be read is logged as a warning and lists no folders, so it never stops a run.
 - **Tool protocol**: native tool calling when the model supports it; a JSON-in-text protocol otherwise (RF-205),
   selected per model in configuration.
 - **Concurrency**: the orchestrator runs agent tasks with a configurable parallelism (default 1 for Ollama on 8 GB,

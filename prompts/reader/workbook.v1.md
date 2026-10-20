@@ -39,6 +39,9 @@ Formulas are written as text and were never calculated by Rosetta: the stored va
 6. Input cells, dropdowns and output cells are the interface of the system. Write a `SCRN` card for a sheet where
    people enter values, with its inputs, dropdown choices and results. Write an `INT` card for a link to another
    file or a data connection.
+   In a workbook a screen is an input sheet (or a form-like range of one), and the code map found no pages here: in a
+   `SCRN` card the `route` names the sheet, for example `Quote`, and the `handler` names the macro that a button or
+   event starts, or the sheet range that computes the result when no macro does.
 7. Values are evidence of the data, not rules to repeat. A value that a formula computes is not a rule; the formula
    is. A constant that a formula uses is part of the rule it belongs to.
 8. A sheet or a name that is hidden, or a formula that nothing uses, is something the cells cannot explain. Write

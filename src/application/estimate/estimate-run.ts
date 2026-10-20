@@ -5,6 +5,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Run } from '../../domain/runs/run.js';
 import { CURRENT_SCANNER_VERSION, type CodeMap } from '../../domain/code-map/code-map.js';
+import { areaHoldsWorkbook } from '../../domain/sources/workbook-folders.js';
 import { marksOf, surfaceOf } from '../../domain/code-map/area-surface.js';
 import type { Area } from '../../domain/code-map/area.js';
 import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
@@ -142,6 +143,14 @@ export function sumPoints(points: readonly ByScenario<EstimatePoint>[]): ByScena
   return { low: total('low'), likely: total('likely'), high: total('high') };
 }
 
+/** RF-155: the areas that hold a rendered workbook also resend the guidance and both formats. */
+function workbookAreaNames(
+  areas: readonly Area[],
+  folders: readonly string[] | undefined,
+): ReadonlySet<string> {
+  return new Set(areas.filter((area) => areaHoldsWorkbook(area, folders)).map((area) => area.name));
+}
+
 export class EstimateRun {
   private readonly deps: EstimateRunDependencies;
 
@@ -154,15 +163,17 @@ export class EstimateRun {
     const { actor, projectId } = request;
     const project = await this.deps.projects.find(actor.userId, projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
-    const codeMap = await this.codeMapOf(project);
-    if (codeMap === undefined) return err(ERROR_CODES.codeMapMissing);
+    const scanned = await this.scanOf(project);
+    if (scanned === undefined) return err(ERROR_CODES.codeMapMissing);
+    const { codeMap, workbookFolders } = scanned;
     const tasks = planReaderTasks(codeMap.areas, request.areas);
     if (!tasks.ok) return err(ERROR_CODES.areaUnknown);
     const areas = tasks.value.map((task) => task.area);
     const thirdParty = thirdPartyAreaNames(codeMap);
     const assumptions = assumptionsOf(project.settings);
     const marks = new Map(areas.map((area) => [area.name, marksOf(area, codeMap)]));
-    const reader = readerTokens(areas, assumptions, marks);
+    const workbooks = workbookAreaNames(areas, workbookFolders);
+    const reader = readerTokens(areas, assumptions, marks, workbooks);
     const screenClaimCalls = screensOf(areas, codeMap) * assumptions.verifierCallsPerScreen;
     const summariser = summariserFigures(reader, assumptions);
     const roles = await Promise.all([
@@ -198,12 +209,15 @@ export class EstimateRun {
   }
 
   /** RF-200: the code map of the project's newest scan that ended `Completed`. */
-  private async codeMapOf(project: Project): Promise<CodeMap | undefined> {
+  private async scanOf(
+    project: Project,
+  ): Promise<{ codeMap: CodeMap; workbookFolders: readonly string[] | undefined } | undefined> {
     const runs = await this.deps.runs.list(project.userId, project.id);
     const scan = runs.find((each: Run) => each.stage === 'scan' && each.endState === 'Completed');
     if (scan === undefined) return undefined;
     try {
-      return (await this.deps.scans.open(scan)).codeMap;
+      const { codeMap, workbookFolders } = await this.deps.scans.open(scan);
+      return { codeMap, workbookFolders };
     } catch (error) {
       // A scan whose output is gone (RST-1203) leaves no code map to estimate from.
       if (error instanceof RosettaError && error.code === ERROR_CODES.codeMapMissing) {
