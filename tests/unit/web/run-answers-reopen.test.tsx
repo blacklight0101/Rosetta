@@ -62,7 +62,9 @@ describe('reopening an answered question on the page', () => {
     fireEvent.click(within(item('OQ-002')).getByRole('button', { name: 'Reopen question' }));
 
     await waitFor(() => {
-      expect(within(item('OQ-002')).getByTestId('status-badge').textContent).toContain('Answer saved');
+      expect(within(item('OQ-002')).getByTestId('status-badge').textContent).toContain(
+        'Answer saved',
+      );
     });
     expect(page.calls.find((call) => call.method === 'POST')).toMatchObject({
       path: reopenRoute,
@@ -160,12 +162,16 @@ describe('a read that is overtaken', () => {
     });
     fireEvent.click(within(item('OQ-002')).getByRole('button', { name: 'Reopen question' }));
     await waitFor(() => {
-      expect(within(item('OQ-002')).getByTestId('status-badge').textContent).toContain('Answer saved');
+      expect(within(item('OQ-002')).getByTestId('status-badge').textContent).toContain(
+        'Answer saved',
+      );
     });
 
     gate.finish();
     await new Promise((resolve) => setTimeout(resolve, 30));
 
-    expect(within(item('OQ-002')).getByTestId('status-badge').textContent).toContain('Answer saved');
+    expect(within(item('OQ-002')).getByTestId('status-badge').textContent).toContain(
+      'Answer saved',
+    );
   });
 });
