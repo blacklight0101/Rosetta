@@ -12,7 +12,7 @@ import { NAME_CAP, quoteText } from './workbook-text.js';
 /** The merged ranges listed in a header; the rest are counted. */
 const MERGED_LISTED = 1000;
 
-export function rangeText(range: string): string {
+function rangeText(range: string): string {
   return canonicalRange(range) ?? quoteText(range, 40);
 }
 

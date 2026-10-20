@@ -15,7 +15,7 @@ export interface PlacedCell {
 
 const RANGE = /^([A-Za-z]{1,3}[1-9][0-9]{0,6})(?::([A-Za-z]{1,3}[1-9][0-9]{0,6}))?$/u;
 
-export function canonicalAddress(column: number, row: number): string {
+function canonicalAddress(column: number, row: number): string {
   return `${columnName(column)}${String(row)}`;
 }
 

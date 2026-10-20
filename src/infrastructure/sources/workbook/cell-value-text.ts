@@ -7,7 +7,7 @@ import { quoteText } from './workbook-text.js';
 // Excel writes them and a cached formula result is marked `(f)`.
 
 /** The longest text of one cell written on a values line; more is cut with a note. */
-export const VALUE_CAP = 1000;
+const VALUE_CAP = 1000;
 
 const EXCEL_ERROR = /^#[A-Z0-9/!?]{1,10}$/u;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}(?:T[0-9:.]{1,20}(?:Z|[+-]\d{2}:\d{2})?)?$/u;
