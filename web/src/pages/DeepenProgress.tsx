@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import { Glyph, type GlyphName } from '../components/Glyph.js';
+import { roundText } from '../lib/live-run/deepen-text.js';
 import type { DeepenProgress as Progress, DeepenRoundState } from '../lib/live-run/run-state.js';
 import { countText, stopText } from '../lib/understanding/measure-text.js';
 
@@ -13,15 +14,6 @@ const glyphs: Readonly<Record<DeepenRoundState['status'], GlyphName>> = {
   done: 'check',
   cut: 'dashed-circle',
 };
-
-function roundText(round: DeepenRoundState, maxRounds: number): string {
-  const head = `Round ${String(round.round)} of ${String(maxRounds)}`;
-  if (round.status === 'running') {
-    return `${head}, running: judging ${countText(round.judge)} claims, re-reading ${countText(round.reread)}, ${countText(round.unreadFiles)} unread files to read.`;
-  }
-  if (round.status === 'cut') return `${head}, cut short by a cap or by Stop.`;
-  return `${head}, done: ${countText(round.newClaims)} new claims, ${countText(round.newSupported)} supported, ${countText(round.filesRead)} files read.`;
-}
 
 function Round(props: { readonly round: DeepenRoundState; readonly maxRounds: number }) {
   const { round, maxRounds } = props;

@@ -48,9 +48,12 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
   return (
     <>
       <div class="rst-live-head">
-        <h1 class="rst-page__title">Live run</h1>
-        <span class="rst-mono rst-live-head__key">{props.runKey}</span>
-        <span class="rst-live-head__stage">{props.stage}</span>
+        <div class="rst-live-head__title">
+          <h1 class="rst-page__title">Live run</h1>
+          <span class="rst-mono rst-live-head__key">{props.runKey}</span>
+          <span class="rst-live-head__stage">{props.stage}</span>
+          <Link href={`/projects/${encodeURIComponent(props.projectId)}/start`}>Start page</Link>
+        </div>
         <span role="status" data-testid="run-status" class="rst-live-head__state">
           <Badge phase={phase} />
           {phase.kind === 'ended' ? (
@@ -62,7 +65,6 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
           <span class="rst-live-head__note rst-live-pause-note">{props.updatesNote}</span>
         </span>
         <span class="rst-live-pause-actions">
-          <Link href={`/projects/${encodeURIComponent(props.projectId)}/start`}>Start page</Link>
           {props.controls}
           {phase.kind === 'ended' ? (
             props.resume

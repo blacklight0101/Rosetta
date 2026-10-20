@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 63      | 5         | 56         | 2         | 0                  | 21      | 40      | 2      | 19         | 0         |
-| **Total**               | **280** | **77**    | **176**    | **27**    | **0**              | **137** | **131** | **12** | **154**    | **0**     |
+| P3 Report and plan      | 66      | 5         | 59         | 2         | 0                  | 22      | 42      | 2      | 22         | 0         |
+| **Total**               | **283** | **77**    | **179**    | **27**    | **0**              | **138** | **133** | **12** | **157**    | **0**     |
 
 ## Conventions for every card
 
@@ -3739,7 +3739,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P1-15, P3-42, P3-52
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the landing page from P1-15 and its tests; `docs/design/board/Landing.dc.html`; `docs/design-system.md` section 14; `.impeccable/surfaces/` (landing direction contract); RF-1200 (changed by DEC-153), RFC-004, RFC-005; the start page's three tabs (P3-49).
 - **Do**: update the public landing page so it shows what the system does today, within the approved design: the hero sentence and its sub-line say a project comes from a public GitHub URL, a zip, or one or more Excel workbooks; the pipeline rail's first stage ("Pin a commit") becomes a source stage covering the three (a GitHub URL pinned to one commit; a zip or workbooks become a read-only snapshot named by its hash); the agents stage mentions that workbooks are read as formulas, values, the dependency map between sheets and workbooks, and VBA macros as text; the security section adds that uploads are read under size and content limits and macros are never run; the "Any stack" section says Excel workbooks are a source too. Keep the sample replay a GitHub run, keep every other section, and keep the page working without JavaScript from 360 px. Copy in English, plain, no new claims beyond what is built.
 - **Review probes**: the page at 360 px and desktop, light and dark, with JavaScript off; axe in both schemes; every changed sentence checked against what is built (RFC-004, RFC-005, the start page); no text implies macros run or files leave the machine without the private-code confirmation.
@@ -3792,3 +3792,48 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the change and tests.
 - **Done when**: each RF-615 DEC-154 scenario has a passing test; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-615, RF-240, RF-243, RF-1015, DEC-154; issue #676.
+
+### P3-64 - Follow-up: a prompt larger than the Ollama context fails with a clear error
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P1-63
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-401 (the DEC-155 scenario), RF-421, DEC-114, DEC-155; `src/infrastructure/providers/ollama/` (context resolver, request, response); the error catalogue in `docs/conventions.md` (providers range RST-1500..1599); the run page failure banner. Owner test 2026-10-20: a plan run on `gemma4:e4b` with `num_ctx` 32 768 sent about 125 000 characters, Ollama evaluated 16 387 prompt tokens, the format instructions were lost and the run failed with a misleading RST-1803.
+- **Do**: in the Ollama adapter, before a call estimate the prompt tokens (system, messages, tool definitions; the RF-421 estimate of about four characters per token, with a safety margin) and, when the estimate plus the requested output exceeds `num_ctx`, fail the call before sending with a new providers error code; after a call, when the reported `prompt_eval_count` is clearly below the estimate (Ollama cut the prompt), fail with the same code instead of passing the answer on. The message names the estimated input, the context size, the role and the two remedies (a model with a larger context or a cloud model for the role in the project settings, or a larger `contextTokens`). The run ends `Failed` with that code, and the run page and journey show it instead of RST-1803. Add the code to `docs/conventions.md`.
+- **Review probes**: a prompt just under and just over the context (with output reserve); Ollama reporting a cut prompt count; a fixed `contextTokens`; a reader, verifier and planner call (every role); a prompt with tool definitions; the message never includes prompt text or secrets; other providers unchanged.
+- **Behaviour to preserve**: DEC-114 context choice; calls that fit are unchanged; the cost ledger records a refused call as no call (nothing sent) and a cut call with its reported tokens.
+- **Delivers**: the guard, the error code and tests.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-401, RF-421, DEC-114, DEC-155; issue #678.
+
+### P3-65 - Follow-up: choose each role's model from a list
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-405 (the DEC-156 scenarios), RF-401, RF-427; DEC-156; `web/src/pages/AdminModelsPage.tsx` and the project model settings page; `prices/default-prices.yaml` and its loader `src/infrastructure/budget/price-file.ts`; `src/infrastructure/providers/ollama/ollama-provider.ts` (`/api/tags`); `docs/design-system.md`; ADR-006 (egress) and the session and role rules of the routes.
+- **Do**: add `prices/models.yaml` (provider, model, label) with the DEC-156 models and its parsed loader; a signed-in route that returns, per provider, the listed models with whether each has a price, and for `ollama` the models installed on the configured Ollama server (`/api/tags`, short timeout, a failure returns an empty list and a reason, never an error page); replace the model text field on both pages with a select built from it plus "Other model..." that shows the text field; keep a saved model that is not listed selected under "Other model..."; changing the provider resets the model choice. Use the existing Ollama adapter code to read the tags (no provider SDK outside its adapter); the route reads only the server's configured Ollama URL, never one from the request.
+- **Review probes**: anthropic and openai lists; a listed model without a price ("no price"); "Other model..." saves free text; a saved unlisted model; Ollama with models, Ollama down (text field and note, save works), Ollama slow (timeout); the route signed out (401) and as a non-admin on the admin page; no URL taken from the request; keyboard and screen reader; 360 px, light and dark, axe.
+- **Behaviour to preserve**: saved defaults and project models unchanged; RF-427 unpriced handling; the template default option.
+- **Delivers**: the list file, the route, the two pages and tests.
+- **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-405, RF-401, RF-427, DEC-156; issue #682.
+
+### P3-66 - Follow-up: the reader groups repeated wiring into one claim
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-202 (the DEC-157 scenario), RF-207, RNF-004; DEC-157; `prompts/reader/` (`area.v3.md`, `workbook.v1.md`, `reread.v1.md`) and where their versions are chosen and recorded in the run manifest; the recorded responses used by the reader tests. Owner test 2026-10-20: SCRN-012 of a workbook's calendar form carried 44 near-identical claims, one per day button.
+- **Do**: add new versions of the reader prompts that carry the grouping rule (one claim for repeated wiring that names the shared behaviour and lists the controls or the range, representative citations, a separate claim only for a control that differs), keep the old versions on disk, switch the defaults to the new versions so runs record them; add a short example to the rule; do not change the card schema.
+- **Review probes**: the manifest of a new run records the new prompt versions; an old run still explains itself with its old versions; the rule appears in the area, workbook and re-read prompts; the prompt stays inside its size limits; recorded-response tests still pass; no model in automated tests.
+- **Behaviour to preserve**: RF-207 one-line citations; every claim cites evidence; the verifier unchanged.
+- **Delivers**: the prompt versions and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-202, RF-207, RNF-004, DEC-157; issue #684.

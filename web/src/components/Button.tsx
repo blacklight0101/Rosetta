@@ -3,7 +3,9 @@ import type { ComponentChildren, JSX } from 'preact';
 // design-system.md section 5: native button; a disabled one keeps its reason in the title (section
 // 7, "disabled with a reason"); a busy one cannot be pressed twice.
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-outline';
+/** `link` is an action drawn like a link (underlined), for the one that opens a tab beside real links. */
+export type ButtonVariant =
+  'primary' | 'secondary' | 'ghost' | 'link' | 'danger' | 'danger-outline';
 
 export interface ButtonProps {
   readonly children: ComponentChildren;

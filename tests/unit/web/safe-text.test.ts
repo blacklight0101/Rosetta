@@ -67,3 +67,37 @@ it('RF-507 returns the whole text unchanged when it has no link', () => {
   expect(splitText('plain text')).toEqual([{ kind: 'text', text: 'plain text' }]);
   expect(splitText('')).toEqual([]);
 });
+
+// RF-507, RNF-010 (P3-62, owner test 2026-10-20): `inline code` in model text is a code part, still
+// only text; the backticks do not show.
+
+it('RF-507 turns text between single backticks into a code part without the backticks', () => {
+  expect(splitText('Calls `GetOrders()` twice')).toEqual([
+    { kind: 'text', text: 'Calls ' },
+    { kind: 'code', text: 'GetOrders()' },
+    { kind: 'text', text: ' twice' },
+  ]);
+});
+
+it('RF-507 keeps a backtick that has no partner as text', () => {
+  expect(splitText('a lone ` backtick')).toEqual([{ kind: 'text', text: 'a lone ` backtick' }]);
+  expect(splitText('empty `` pair')).toEqual([{ kind: 'text', text: 'empty `` pair' }]);
+});
+
+it('RF-507 does not run a code part across a line break', () => {
+  expect(splitText('one `two\nthree` four')).toEqual([
+    { kind: 'text', text: 'one `two\nthree` four' },
+  ]);
+});
+
+it('RF-507 keeps markup and a link inside backticks as code text, never a link or an element', () => {
+  expect(splitText('`<b>x</b>` and `https://github.com/o/r`')).toEqual([
+    { kind: 'code', text: '<b>x</b>' },
+    { kind: 'text', text: ' and ' },
+    { kind: 'code', text: 'https://github.com/o/r' },
+  ]);
+});
+
+it('RF-507 still finds a link outside the backticks', () => {
+  expect(linksOf('Run `x` then https://github.com/o/r.')).toEqual(['https://github.com/o/r']);
+});

@@ -59,14 +59,22 @@ function named(agent: AgentPanelState, event: RunEvent): AgentPanelState {
   };
 }
 
-// RF-1002
-export function onPlanned(state: RunState, event: RunEvent): RunState {
-  return withAgent(state, event, (agent) => named(agent, event));
+/** RF-209: an agent a Deepen plans belongs to the round that is on (the one with the highest number). */
+function inRound(state: RunState, agent: AgentPanelState): AgentPanelState {
+  const round = agent.round ?? state.deepen?.rounds.at(-1)?.round;
+  return round === undefined ? agent : { ...agent, round };
 }
 
-// RF-1002
+// RF-1002, RF-209
+export function onPlanned(state: RunState, event: RunEvent): RunState {
+  return withAgent(state, event, (agent) => inRound(state, named(agent, event)));
+}
+
+// RF-1002, RF-209
 export function onStarted(state: RunState, event: RunEvent): RunState {
-  return withAgent(state, event, (agent) => ({ ...named(agent, event), state: 'Running' }));
+  return withAgent(state, event, (agent) =>
+    inRound(state, { ...named(agent, event), state: 'Running' }),
+  );
 }
 
 // RF-1002, RF-1003

@@ -17,6 +17,14 @@
   gap: var(--rst-sp-2) var(--rst-sp-4);
 }
 
+.rst-live-head__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--rst-sp-1) var(--rst-sp-3);
+  min-inline-size: 0;
+}
+
 .rst-live-head__key {
   color: var(--rst-ink-soft);
   overflow-wrap: anywhere;
@@ -149,6 +157,13 @@
   font-size: var(--rst-fs-sm);
 }
 
+/* A run past its likely estimate says so, in words (the warning tone is not the only sign). */
+.rst-live-meter__over {
+  color: var(--rst-warn-ink);
+  font-size: var(--rst-fs-sm);
+  font-weight: var(--rst-fw-label);
+}
+
 /* Agent panels */
 
 .rst-live-agents {
@@ -190,20 +205,35 @@
 
 .rst-live-panel__head {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--rst-sp-1);
+}
+
+/* The title takes the width it needs and wraps at "/"; the role, the round and the state sit on
+   one line under it, in the same place on every card whatever the title. */
+.rst-live-panel__area {
+  font-size: var(--rst-fs-md);
+  overflow-wrap: break-word;
+}
+
+.rst-live-panel__meta {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--rst-sp-2);
-}
-
-.rst-live-panel__area {
-  font-size: var(--rst-fs-md);
-  overflow-wrap: anywhere;
 }
 
 .rst-live-panel__role {
   flex: 1 1 auto;
   color: var(--rst-ink-muted);
   font-size: var(--rst-fs-xs);
+}
+
+.rst-live-panel__round {
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-xs);
+  font-variant-numeric: tabular-nums;
 }
 
 .rst-live-panel__model {
@@ -221,7 +251,7 @@
   background: var(--rst-surface-2);
   color: var(--rst-ink-soft);
   font-size: var(--rst-fs-xs);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .rst-live-panel__status {
@@ -314,7 +344,7 @@
   padding: 0;
   font-size: var(--rst-fs-sm);
   list-style: none;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* Event log */
@@ -370,7 +400,25 @@
 
 .rst-live-log__text {
   color: var(--rst-ink-soft);
+  overflow-wrap: break-word;
+}
+
+/* A verdict: the claim, the badge of the claims list, then the reason on its own line. */
+.rst-live-log__verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-1) var(--rst-sp-2);
+}
+
+.rst-live-log__reason {
+  flex: 1 1 100%;
+  min-inline-size: 0;
   overflow-wrap: anywhere;
+}
+
+.rst-live-log__more {
+  font-size: var(--rst-fs-xs);
 }
 
 /* Report: the Build report control and the links to what it built (P1-97) */

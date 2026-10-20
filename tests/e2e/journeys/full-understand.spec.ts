@@ -217,6 +217,13 @@ test('RF-209 RF-231 a confirmed Deepen runs its rounds on the page and shows wha
   await expect(runStatus(page)).toContainText('Completed', { timeout: 30_000 });
   const changes = page.getByRole('table', { name: 'Before and after this Deepen' });
   await expect(changes.getByTestId('change-coverage')).toBeVisible();
+  // P3-62: the round lines read in plain words, the log counts from the start and names no micro-dollars.
+  await expect(progress).not.toContainText(/(?<!\d)(?:0 unread files|1 files read|1 new claims)/u);
+  await openRunTab(page, 'Activity');
+  const log = page.getByRole('log', { name: 'Event log' });
+  await expect(log.locator('time').first()).toHaveText(/^\+\d\d:\d\d\.\d$/u);
+  await expect(log).not.toContainText('micro-dollars');
+  await expectNoSeriousViolations(page);
 
   await transitionsDone(page);
   await expectNoSeriousViolations(page);

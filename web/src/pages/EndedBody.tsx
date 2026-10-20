@@ -6,6 +6,7 @@ import { reportFilePath } from '../api/runs.js';
 import type { RunRow } from '../api/run-schemas.js';
 import { Link } from '../components/Link.js';
 import { Tabs, type TabSpec } from '../components/Tabs.js';
+import { logCountOf } from '../lib/live-run/log-count.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { stepperOf } from '../lib/live-run/run-stepper.js';
@@ -83,7 +84,7 @@ function tabsOf(props: {
     ...(asks ? [{ id: 'overview', label: 'Overview' }] : []),
     ...(asks ? [{ id: 'questions', label: 'Your questions', count: open }] : []),
     { id: 'evidence', label: 'Evidence', count: state.cards.length },
-    { id: 'activity', label: 'Activity', count: state.log.length },
+    { id: 'activity', label: 'Activity', count: logCountOf(state.log) },
   ];
 }
 
