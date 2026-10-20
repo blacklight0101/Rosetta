@@ -31,6 +31,8 @@ export class EditRecorder {
   private readonly links: readonly string[];
   private readonly text: string;
   private lastEnd = 0;
+  /** No path starts between here and the last place looked back from: that run is never read twice. */
+  private noPathBelow = 0;
   private longDone = false;
 
   constructor(text: string, links: readonly string[]) {
@@ -55,14 +57,17 @@ export class EditRecorder {
   }
 
   /**
-   * The length of a path written without quotes right before `at`, or 0. The look-back stops at the
-   * previous edit, so over a whole formula every character is read at most once; the earliest path
-   * start in the run wins, so the edit fails toward hiding more.
+   * The length of a path written without quotes right before `at` (a `[` or a `'`), or 0. The
+   * look-back stops at the previous edit or at the last run found free of a path start, so over a
+   * whole formula every character is read at most once (a path start never straddles a `[` or `'`);
+   * the earliest path start in the run wins, so the edit fails toward hiding more.
    */
   private pathBefore(at: number): number {
+    const floor = Math.max(this.lastEnd, this.noPathBelow);
     let from = at;
-    while (from > this.lastEnd && PATH_CHAR.test(this.text.charAt(from - 1))) from -= 1;
+    while (from > floor && PATH_CHAR.test(this.text.charAt(from - 1))) from -= 1;
     const found = PATH_START.exec(this.text.slice(from, at));
+    if (found === null) this.noPathBelow = at;
     return found === null ? 0 : at - from - found.index;
   }
 
