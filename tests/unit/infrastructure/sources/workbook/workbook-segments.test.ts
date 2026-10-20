@@ -77,3 +77,8 @@ it('RF-152 is repeatable for the same names', () => {
   const names = ['b', 'B', 'CON', 'a/b', 'a b', ''];
   expect(allocateSegments(names)).toEqual(allocateSegments(names));
 });
+
+it('RF-152 drops a trailing dot before it looks for the extension, and after a cut', () => {
+  expect(allocateSegments(['Book.xlsx.'], { keepExtension: true })).toEqual(['Book.xlsx']);
+  expect(one(`${'a'.repeat(63)}.b`)).toBe('a'.repeat(63));
+});

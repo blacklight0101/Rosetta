@@ -95,3 +95,15 @@ it('RF-152 says so when a formula has no cached value', () => {
   const formula = { kind: 'normal', text: 'B2' } as const;
   expect(valueField(cell('D2', undefined, { formula }), false)).toBe('D2 (f, no cached value)');
 });
+
+it('RF-152 leaves a serial number that would pass the year 9999 in the 1904 system as a number', () => {
+  const cellOf = cell('A1', num(2958465), { numberFormat: 'yyyy-mm-dd' });
+  expect(bareValue(cellOf, true)).toBe('2958465');
+  expect(bareValue(cellOf, false)).toBe('9999-12-31');
+});
+
+it('RF-152 cuts the cached text of a formula shorter than a value', () => {
+  const formula = { kind: 'normal', text: 'A2' } as const;
+  const long = cell('A1', text('c'.repeat(5000)), { formula });
+  expect(bareValue(long, false, 200)).toMatch(/^"c{200}\.\.\.\(\+4800 characters\)"$/u);
+});

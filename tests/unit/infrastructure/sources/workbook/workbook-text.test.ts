@@ -63,3 +63,14 @@ it('RF-146 leaves a line under the limit and cuts one over it', () => {
   expect(MAX_LINE).toBeLessThan(2000);
   expect(cut.endsWith(' ...')).toBe(true);
 });
+
+it('RF-152 escapes a lone surrogate and the delete character', () => {
+  expect(quoteText('a\ud800b', 100)).toBe('"a\\ud800b"');
+  expect(quoteText('a\u007fb', 100)).toBe('"a\\u007fb"');
+});
+
+it('RF-146 does not cut a line between the halves of a surrogate pair', () => {
+  const cut = cutLine(`${'x'.repeat(MAX_LINE - 5)}😀${'y'.repeat(50)}`);
+  expect(cut).not.toMatch(/[\ud800-\udbff](?![\udc00-\udfff])/u);
+  expect(cut.length).toBeLessThanOrEqual(MAX_LINE);
+});
