@@ -13,6 +13,14 @@ import { PROVIDER_KINDS, ROLE_NAMES, type ProjectSettings } from './project-sett
 const invalid = { error: ERROR_CODES.settingValueInvalid };
 const MAX_MODEL = 200;
 
+/**
+ * The Ollama context size an administrator can set for new projects (Q-23, Q-44): the floor of the
+ * automatic choice (ollama-context.ts, which application cannot import) up to a fixed bound, as the
+ * trained context of a model is known only to Ollama. web/ keeps the same two numbers.
+ */
+export const OLLAMA_CONTEXT_MIN = 4096;
+export const OLLAMA_CONTEXT_MAX = 131_072;
+
 const roleChoice = z.strictObject(
   {
     provider: z.enum(PROVIDER_KINDS, { error: ERROR_CODES.settingsProviderUnknown }),
