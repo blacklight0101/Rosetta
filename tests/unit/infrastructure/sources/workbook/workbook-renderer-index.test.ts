@@ -80,14 +80,20 @@ it('RF-152 lists names, tables, links, connections, pivots and charts', () => {
   expect(workbook).toContain('| Summary | "barChart" |');
 });
 
-it('RF-152 says macros are not read yet when the workbook holds a VBA project', () => {
+it('RF-152 says the VBA project was not read when the model holds none of its macros', () => {
   const workbook = fileOf(renderWorkbook(model), 'workbook.md');
-  expect(workbook).toContain('not read yet');
+  expect(workbook).toContain('holds a VBA project that was not read');
   const plain = fileOf(renderWorkbook(book([sheet('S')])), 'workbook.md');
   expect(plain).toContain('- No VBA project.');
 });
 
 it('RF-152 writes the sheet count, the cell count and the formula count of the result', () => {
   const rendered = renderWorkbook(model);
-  expect(rendered.counts).toEqual({ sheets: 3, nonEmptyCells: 2, formulas: 1 });
+  expect(rendered.counts).toEqual({
+    sheets: 3,
+    nonEmptyCells: 2,
+    formulas: 1,
+    macroModules: 0,
+    macrosSkipped: 0,
+  });
 });
