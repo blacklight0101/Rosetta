@@ -30,7 +30,7 @@ export interface PromptFacts {
 }
 
 /** The estimated prompt tokens of the chat body: every message, tool calls and tool definitions. */
-export function estimatedPromptTokens(body: OllamaChatBody, request: LlmRequest): number {
+function estimatedPromptTokens(body: OllamaChatBody, request: LlmRequest): number {
   const messages = body.messages.map((message) =>
     message.tool_calls === undefined
       ? message.content
