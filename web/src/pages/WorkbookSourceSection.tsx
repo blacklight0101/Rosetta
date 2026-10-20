@@ -43,7 +43,11 @@ export function WorkbookSourceSection(props: WorkbookSourceProps): JSX.Element {
           const fileName = summary.workbooks[0]?.name ?? project.name;
           const workbooks = summary.workbooks.length;
           const { codeChangedSinceLastRun = project.codeChangedSinceLastRun } = summary;
-          onStored({ ...project, source: { fileName, uploadedAt, workbooks }, codeChangedSinceLastRun });
+          onStored({
+            ...project,
+            source: { fileName, uploadedAt, workbooks },
+            codeChangedSinceLastRun,
+          });
         }}
       />
     </section>

@@ -5,7 +5,7 @@ import type { Attributes, XmlVisitor } from './xml-stream.js';
 // RF-152, RFC-005 section 4.4: the hidden rows and columns of one sheet part, kept as ranges so a
 // sheet with every other row hidden stays small: at most this many ranges of each kind are kept and
 // the rest are counted.
-export const HIDDEN_RANGES_LISTED = 1000;
+const HIDDEN_RANGES_LISTED = 1000;
 
 const isTrue = (value: string | undefined): boolean => value === '1' || value === 'true';
 
