@@ -59,7 +59,7 @@ interface RoundCards {
 
 /**
  * RF-203, RF-300, RF-301, RF-209: the new cards with ids, the claims added to the parent's cards,
- * the citation check and the judgement of every new claim (and of no other).
+ * the citation check and the judgement of every new claim.
  */
 async function newCardsOf(
   parts: DeepenParts,
@@ -82,8 +82,7 @@ async function newCardsOf(
     ...assigned.value.flatMap((card) => card.claims.map((claim) => claim.claimId)),
     ...extension.value.claims.map((claim) => claim.claimId),
   ]);
-  const awaits = (claim: Card['claims'][number]): boolean => claimIds.has(claim.claimId);
-  const judged = await judge(parts, checked.cards, { awaits, cap });
+  const judged = await judge(parts, checked.cards, { cap });
   return {
     added: judged.slice(0, assigned.value.length),
     extended: judged.slice(assigned.value.length),
