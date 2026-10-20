@@ -22,11 +22,11 @@ afterEach(() => {
   window.history.pushState({}, '', '/');
 });
 
-it('RF-128 the form has the tabs GitHub repository and Upload a zip', () => {
+it('RF-128 the form has the tabs GitHub repository, Upload a zip and Excel workbooks', () => {
   renderUploadTab();
 
   const tabs = screen.getAllByRole('tab').map((tab) => tab.textContent);
-  expect(tabs).toEqual(['GitHub repository', 'Upload a zip']);
+  expect(tabs).toEqual(['GitHub repository', 'Upload a zip', 'Excel workbooks']);
   expect(screen.getByLabelText('Zip file')).not.toBeNull();
   fireEvent.click(screen.getByRole('tab', { name: 'GitHub repository' }));
   expect(screen.getByLabelText('GitHub repository URL')).not.toBeNull();

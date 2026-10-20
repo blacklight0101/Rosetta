@@ -25,6 +25,7 @@ const codeNoticeName = /Your code is private/u;
 
 const workbookProject = projectOf('p-1', 'Pricing', {
   ...{ sourceKind: 'workbook', sourceUrl: '', settings: uploadProject['settings'] },
+  source: { fileName: 'Pricing.xlsx', uploadedAt: '2026-10-19T09:00:00.000Z', workbooks: 3 },
 });
 const zipWithWorkbooks = {
   ...uploadProject,

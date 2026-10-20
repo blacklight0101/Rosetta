@@ -75,14 +75,14 @@ export const projectSchema = z.object({
   settings: settingsSchema,
   /** Counts the saves of the settings; a save names it in If-Match (P1-106). */
   settingsVersion: z.number().int().min(1),
-  /** RFC-004 section 4.1: where the code comes from. Absent on the wire means a GitHub project. */
+  /** RFC-004 section 4.1, RFC-005 section 4.1: where the code comes from. Absent on the wire means GitHub. */
   sourceKind: z.enum(['github', 'upload', 'workbook']).default('github'),
-  /** The zip an upload project holds; null while it has no source (RF-128). */
+  /** The zip or the workbooks a project holds; null while it has no source (RF-128, RF-150). */
   source: z
     .object({
       fileName: z.string(),
       uploadedAt: z.string(),
-      /** RF-157: how many workbooks the zip holds, when the server says; absent means none. */
+      /** RF-150, RF-157: how many workbooks the source holds (a workbook project or a zip), when the server says. */
       workbooks: z.number().int().min(0).optional(),
     })
     .nullable()
