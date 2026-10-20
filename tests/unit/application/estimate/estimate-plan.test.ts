@@ -63,7 +63,7 @@ describe('EstimatePlan: the planner range', () => {
     expect(planner.points.low.costMicros).toBeLessThan(planner.points.likely.costMicros);
     expect(planner.points.likely.costMicros).toBeLessThan(planner.points.high.costMicros);
     expect(planner.points.high.costMicros).toBeGreaterThanOrEqual(16_384n);
-    expect(assumptions).toMatchObject({ calls: 4, maxOutputTokens: 16384 });
+    expect(assumptions).toMatchObject({ calls: 5, maxOutputTokens: 16384 });
     expect(assumptions.promptTokens).toBe(planner.points.low.inputTokens);
     expect(estimate).toMatchObject({ currency: 'USD', priceTableVersion: '2026-10-11' });
   });
@@ -97,14 +97,15 @@ describe('EstimatePlan: the PRD call', () => {
       assumptions.prdPromptTokens -
       assumptions.dataModelPromptTokens -
       assumptions.flowsPromptTokens -
-      assumptions.coveragePromptTokens;
+      assumptions.coveragePromptTokens -
+      assumptions.gapPromptTokens;
     expect(assumptions.prdPromptTokens).toBeGreaterThan(0);
     expect(planTokens).toBeGreaterThan(0);
     expect(
       Math.abs(planTokens - assumptions.prdPromptTokens - (packageSize - prdSize) / 4),
     ).toBeLessThan(2);
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(4 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(5 * 3 * assumptions.maxOutputTokens);
   });
 });
 

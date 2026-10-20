@@ -10,6 +10,7 @@ import { FilePlanningBriefStore } from '../../src/infrastructure/files/file-plan
 import {
   loadApiContractPrompt,
   loadCoveragePrompt,
+  loadGapPrompt,
   loadDataModelPrompt,
   loadFlowsPrompt,
   loadPlannerPrompt,
@@ -47,6 +48,7 @@ export async function planEstimateOf(
     apiContractPrompt: () => loadApiContractPrompt('prompts'),
     uxPrompt: () => loadUxPrompt('prompts'),
     coveragePrompt: () => loadCoveragePrompt('prompts'),
+    gapPrompt: () => loadGapPrompt('prompts'),
   });
   const request = { actor, projectId: project.id };
   const outcome = await estimate.execute(
