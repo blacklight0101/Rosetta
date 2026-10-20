@@ -71,8 +71,8 @@ describe('the versions of the reader prompts', () => {
     const prompts = await loadReaderPrompts('prompts');
     const reread = await loadRereadPrompt('prompts');
 
-    expect(prompts.system).toMatchObject({ name: 'reader/area.v4.md', version: 'v4' });
-    expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v2.md', version: 'v2' });
+    expect(prompts.system).toMatchObject({ name: 'reader/area.v5.md', version: 'v5' });
+    expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v3.md', version: 'v3' });
     expect(reread).toMatchObject({ name: 'reader/reread.v2.md', version: 'v2' });
     expect(reread.sha256).toBe(await sha256Of('prompts/reader/reread.v2.md'));
   });
