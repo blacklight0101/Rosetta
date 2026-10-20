@@ -1,12 +1,14 @@
 import type { JSX } from 'preact';
 import { Glyph, type GlyphName } from '../components/Glyph.js';
+import { areaLabel } from '../lib/live-run/area-label.js';
 import type { Tile, TileState } from '../lib/live-run/code-map-tiles.js';
 
 // RF-1016, DEC-137, design-system.md section 5 (living code map): the areas of the code as tiles
 // sized by their estimated tokens. A tile says its state in words and a glyph: waiting, being read
 // (a moving highlight, still under reduced motion), read with one mark per card, not covered, or
 // library code left out (hatched). A tile opens its agent and cards. Names come from the repository
-// and are shown as text; a long one is cut with an ellipsis and keeps its full text in a title.
+// and are shown as text: the part after the last "/" (`#1` reads "part 1"), the full name over the
+// tile on hover and focus, in the title and in the name a screen reader says. The sub-line wraps.
 
 export interface CodeMapProps {
   readonly tiles: readonly Tile[];
@@ -63,17 +65,31 @@ function Pips({ cards }: { readonly cards: number }): JSX.Element {
   );
 }
 
+/** What a screen reader says for a tile: the full name (and what a part is), then the state. */
+function nameOf(tile: Tile): string {
+  const label = areaLabel(tile.name);
+  const part =
+    label.part === undefined
+      ? ''
+      : `: part ${String(label.part)} of an area too large for one agent`;
+  return `${label.full}${part}, ${metaOf(tile)}`;
+}
+
 function TileFace({ tile }: { readonly tile: Tile }): JSX.Element {
+  const label = areaLabel(tile.name);
   return (
     <>
-      <span class="rst-tile__name" title={tile.name}>
-        {tile.name}
+      <span class="rst-tile__name" title={label.full}>
+        {label.text}
       </span>
+      {label.text === label.full ? null : (
+        <span class="rst-tile__full" aria-hidden="true">
+          {label.full}
+        </span>
+      )}
       <span class="rst-tile__meta">
         <Glyph name={glyphOf[tile.state]} />
-        <span class="rst-tile__words" title={metaOf(tile)}>
-          {metaOf(tile)}
-        </span>
+        <span class="rst-tile__words">{metaOf(tile)}</span>
       </span>
       {tile.rows > 1 && tile.cards > 0 ? <Pips cards={tile.cards} /> : null}
       {tile.progress === undefined ? null : (
@@ -100,6 +116,7 @@ function Cell(props: {
         <button
           type="button"
           class={face}
+          aria-label={nameOf(tile)}
           onClick={() => {
             props.onOpenArea(tile.name);
           }}

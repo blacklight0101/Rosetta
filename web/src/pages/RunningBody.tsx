@@ -5,6 +5,7 @@ import type { RunRow } from '../api/run-schemas.js';
 import { Tabs, type TabSpec } from '../components/Tabs.js';
 import { tilesOf } from '../lib/live-run/code-map-tiles.js';
 import { journeyOf } from '../lib/live-run/journey.js';
+import { logCountOf } from '../lib/live-run/log-count.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState, UploadSourceState } from '../lib/live-run/run-state.js';
 import { roleTotalsOf } from '../lib/live-run/run-summary.js';
@@ -98,7 +99,7 @@ function tabsOf(state: RunState): readonly TabSpec[] {
   return [
     { id: 'cards', label: 'Cards so far', count: state.cards.length },
     { id: 'agents', label: 'All agents', count: state.agents.length },
-    { id: 'activity', label: 'Activity', count: state.log.length },
+    { id: 'activity', label: 'Activity', count: logCountOf(state.log) },
   ];
 }
 
