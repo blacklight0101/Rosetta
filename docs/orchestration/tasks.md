@@ -3761,7 +3761,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Behaviour to preserve**: RF-231 wording rules (never "complete" or "fully understood"); the parent run unchanged; the before/after measures.
 - **Delivers**: the fixes and tests; the cause of (4) and (5) in the PR body.
 - **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
-- **Refs**: RF-209, RF-230, RF-231, RFC-003 (owner test 2026-10-20).
+- **Refs**: RF-209, RF-230, RF-231, RFC-003 (owner test 2026-10-20); issue #673.
 
 ### P3-62 - Follow-up: run page wording and layout
 
@@ -3776,4 +3776,4 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Behaviour to preserve**: every RF-231 wording rule; RF-507 (no model text as HTML); the live updates and Pause updates.
 - **Delivers**: the fixes and tests.
 - **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
-- **Refs**: RF-209, RF-230, RF-231, RF-507, RNF-010 (owner test 2026-10-20).
+- **Refs**: RF-209, RF-230, RF-231, RF-507, RNF-010 (owner test 2026-10-20); issue #674.
