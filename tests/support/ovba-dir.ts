@@ -46,7 +46,9 @@ function moduleRecords(module: DirModuleSpec, unknownId: number | undefined): Bu
   const unicodeStream = Buffer.from(module.streamName ?? module.name, 'utf16le');
   return [
     record(0x0019, name),
-    record(0x0047, Buffer.from(module.name, 'utf16le')),
+    ...(module.nameBytes === undefined
+      ? [record(0x0047, Buffer.from(module.name, 'utf16le'))]
+      : []),
     record(0x001a, stream),
     record(0x0032, unicodeStream),
     record(0x001c),

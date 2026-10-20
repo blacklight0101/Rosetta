@@ -82,6 +82,13 @@ it('RF-154 refuses a raw chunk that is not 4096 bytes', () => {
   expect(reasonOf(input)).toBe('corrupt');
 });
 
+it('RF-154 refuses a literal after a chunk is already 4096 bytes long', () => {
+  const body = Buffer.from([0x02, 0x61, 0xfc, 0x0f, 0x00, 0x62]);
+  const input = Buffer.concat([Buffer.from([1]), chunkHeader(8), body]);
+
+  expect(reasonOf(input)).toBe('corrupt');
+});
+
 it('RF-154 refuses a chunk that expands past 4096 bytes', () => {
   const body = Buffer.from([0x02, 0x61, 0xfd, 0x0f]);
   const input = Buffer.concat([Buffer.from([1]), chunkHeader(6), body]);
@@ -92,7 +99,7 @@ it('RF-154 refuses a chunk that expands past 4096 bytes', () => {
 it.each([
   ['an empty input', Buffer.alloc(0)],
   ['a wrong signature byte', Buffer.from([2, 0x00, 0xb0])],
-  ['a chunk header without its signature bits', Buffer.from([1, 0x03, 0x80, 0, 0x61])],
+  ['a chunk header without its signature bits', Buffer.from([1, 0x03, 0x80, 0, 0x61, 0x62, 0x63])],
   ['one stray byte after the last chunk', hex('01 03 B0 02 61 45 00 07')],
 ])('RF-154 refuses %s', (_name, input) => {
   expect(reasonOf(input)).toBe('corrupt');

@@ -18,6 +18,11 @@ function reasonOf(dir: Buffer, max = MAX): string {
   return result.ok ? 'ok' : result.error.reason;
 }
 
+function detailOf(dir: Buffer): string {
+  const result = parseDirStream(dir, MAX);
+  return result.ok ? 'ok' : result.error.detail;
+}
+
 const TWO = [
   { name: 'Module1', offset: 40, standard: true },
   { name: 'Sheet1', streamName: 'Sheet1', offset: 52, standard: false },
@@ -83,6 +88,7 @@ it('RF-154 refuses a record whose size runs past the end of the stream', () => {
   ]);
 
   expect(reasonOf(hostile)).toBe('corrupt');
+  expect(detailOf(hostile)).toContain('past the end');
 });
 
 it('RF-154 refuses a stream cut in the middle of a record or without its terminator', () => {

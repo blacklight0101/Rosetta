@@ -5,9 +5,9 @@ import { buildDirStream, type DirModuleSpec } from './ovba-dir.js';
 // P3-45: a `vbaProject.bin` composed inside the test with `cfb` (the compound file) and the
 // test-side compressor (the module and `dir` streams). Nothing is committed, nothing is real.
 
-export type ModuleKind = 'standard' | 'class' | 'document' | 'form';
+type ModuleKind = 'standard' | 'class' | 'document' | 'form';
 
-export interface ModuleSpec {
+interface ModuleSpec {
   readonly name: string;
   readonly kind: ModuleKind;
   /** The source as text (latin1 bytes) or as bytes in the project's code page. */
@@ -34,14 +34,17 @@ export interface ProjectSpec {
   readonly declaredCount?: number;
   readonly unknownRecordId?: number;
   readonly omitDir?: boolean;
+  /** Lines added to the PROJECT stream after the module lines. */
+  readonly projectLines?: readonly string[];
   /** Replaces the compressed `dir` stream with these bytes, as they are stored. */
   readonly rawDir?: Buffer;
 }
 
 const CACHE = Buffer.from('compiled performance cache, not source code'.padEnd(40, '.'));
 
-function encrypt(data: Buffer, seed: number, projectKey: number): Buffer {
-  const out: number[] = [seed, seed ^ 2, seed ^ projectKey];
+/** `versionXor` is what the seed is combined with to give VersionEnc; the format wants 2. */
+export function encrypt(data: Buffer, seed: number, projectKey: number, versionXor = 2): Buffer {
+  const out: number[] = [seed, seed ^ versionXor, seed ^ projectKey];
   let encrypted2 = out[1] ?? 0;
   let encrypted1 = out[2] ?? 0;
   let plain1 = projectKey;
@@ -76,6 +79,7 @@ function projectStream(spec: ProjectSpec): Buffer {
   }
   lines.push('Name="VBAProject"');
   if (spec.locked === true) lines.push(protectionLine(0x04));
+  lines.push(...(spec.projectLines ?? []));
   return Buffer.from(`${lines.join('\r\n')}\r\n`, 'latin1');
 }
 

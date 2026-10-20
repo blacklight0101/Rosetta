@@ -9,7 +9,7 @@ const COMPRESSED_FLAG = 0x8000;
 const WINDOW = 256;
 
 /** The number of offset bits of a copy token at `position` inside its chunk (section 2.4.1.3.19.1). */
-export function offsetBits(position: number): number {
+function offsetBits(position: number): number {
   return Math.max(32 - Math.clz32(position - 1), 4);
 }
 
