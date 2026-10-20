@@ -97,6 +97,8 @@ const defaultRolesSchema = z.object({
   verifier: roleChoice.optional(),
   planner: roleChoice.optional(),
   summariser: roleChoice.optional(),
+  /** The Ollama context size of new projects (RF-401); left out means Auto. */
+  ollamaContextTokens: z.union([z.literal('auto'), z.number()]).optional(),
 });
 
 export type DefaultRoles = z.output<typeof defaultRolesSchema>;

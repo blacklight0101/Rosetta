@@ -6,7 +6,8 @@ import { PROVIDER_KINDS, ROLE_NAMES, type ProjectSettings } from './project-sett
 
 // DEC-106, data-model.md section 4 (`server_settings`): the `defaultRoles` server setting, the
 // provider and the dated model id the administrator chose for each role of a new project. A role
-// left out keeps the template's model. The value is `{}` until the administrator sets it.
+// left out keeps the template's model, and `ollamaContextTokens` is the context size of the Ollama
+// provider of a new project (RF-401, Q-44). The value is `{}` until the administrator sets it.
 // `parseDefaultRoles` refuses a bad value with the field of each problem (`reader.provider`,
 // `verifier.model`, an unknown role by its name) and its code, like the other settings.
 
@@ -33,12 +34,26 @@ const roleChoice = z.strictObject(
   invalid,
 );
 
+/** `auto`, or a number of tokens from the floor of the automatic choice to the fixed bound. */
+const contextSize = z.union(
+  [
+    z.literal('auto'),
+    z
+      .number(invalid)
+      .int(invalid)
+      .min(OLLAMA_CONTEXT_MIN, invalid)
+      .max(OLLAMA_CONTEXT_MAX, invalid),
+  ],
+  invalid,
+);
+
 export const defaultRolesSchema = z.strictObject(
   {
     reader: roleChoice.optional(),
     verifier: roleChoice.optional(),
     planner: roleChoice.optional(),
     summariser: roleChoice.optional(),
+    ollamaContextTokens: contextSize.optional(),
   },
   invalid,
 );

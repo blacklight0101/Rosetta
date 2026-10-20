@@ -66,7 +66,11 @@ it('DEC-114 Auto leaves the size out of the saved setting', async () => {
 });
 
 it('RF-401 a saved size shows as a number', async () => {
-  renderPage(<AdminModelsPage />, withRoles({ ...ollamaReader, ollamaContextTokens: 32_768 }), root);
+  renderPage(
+    <AdminModelsPage />,
+    withRoles({ ...ollamaReader, ollamaContextTokens: 32_768 }),
+    root,
+  );
 
   await screen.findByLabelText('Reader provider');
 
@@ -93,18 +97,21 @@ it.each([
   ['2048', /at least 4096/u],
   ['200000', /at most 131072/u],
   ['x', /whole number/u],
-])('Q-23 a size of "%s" is refused next to the field and nothing is sent', async (text, message) => {
-  const { calls } = renderPage(<AdminModelsPage />, withRoles(ollamaReader), root);
-  await screen.findByLabelText('Reader provider');
+])(
+  'Q-23 a size of "%s" is refused next to the field and nothing is sent',
+  async (text, message) => {
+    const { calls } = renderPage(<AdminModelsPage />, withRoles(ollamaReader), root);
+    await screen.findByLabelText('Reader provider');
 
-  fireEvent.change(mode(), { target: { value: 'number' } });
-  fireEvent.input(size(), { target: { value: text } });
-  save();
+    fireEvent.change(mode(), { target: { value: 'number' } });
+    fireEvent.input(size(), { target: { value: text } });
+    save();
 
-  expect(await screen.findByText(message)).toBeTruthy();
-  expect(size().getAttribute('aria-invalid')).toBe('true');
-  expect(calls.some((call) => call.method === 'PUT')).toBe(false);
-});
+    expect(await screen.findByText(message)).toBeTruthy();
+    expect(size().getAttribute('aria-invalid')).toBe('true');
+    expect(calls.some((call) => call.method === 'PUT')).toBe(false);
+  },
+);
 
 it('RF-401 a refusal of the server for the field shows next to it', async () => {
   renderPage(

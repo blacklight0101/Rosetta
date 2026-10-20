@@ -125,3 +125,34 @@ test('RF-405 lists the models installed on Ollama in the project settings', asyn
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
 });
+
+// RF-401, DEC-114, Q-23, Q-44: the Ollama context size is a field of the model settings; every
+// project of this file shares the page, so the test gives the project back on Auto when it ends.
+
+test('RF-401 sets the Ollama context size from the keyboard, refuses a bad one and passes axe', async ({
+  page,
+}) => {
+  const mode = page.getByLabel('Ollama context size', { exact: true });
+  await expect(mode).toHaveValue('auto');
+  await mode.focus();
+  await page.keyboard.press('ArrowDown');
+  const tokens = page.getByLabel('Ollama context size in tokens');
+  await tokens.fill('2048');
+
+  await page.getByRole('button', { name: 'Save settings' }).click();
+
+  await expect(page.getByText(/at least 4096/u)).toBeVisible();
+  await expect(tokens).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByText('Settings saved.')).toHaveCount(0);
+  await expectNoSeriousViolations(page);
+  await tokens.fill('65536');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText('Settings saved.')).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Ollama context size in tokens')).toHaveValue('65536');
+  await expectNoSeriousViolations(page);
+
+  await page.getByLabel('Ollama context size', { exact: true }).selectOption('auto');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText('Settings saved.')).toBeVisible();
+});

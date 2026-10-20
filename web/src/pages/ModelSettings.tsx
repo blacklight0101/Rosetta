@@ -1,7 +1,8 @@
 import type { JSX } from 'preact';
-import { ROLE_NAMES, type RoleName } from './project-settings-form.js';
+import { contextPath, ROLE_NAMES, usesOllama, type RoleName } from './project-settings-form.js';
 import { LimitSetting } from './LimitSetting.js';
 import { ModelChoice } from './ModelChoice.js';
+import { OllamaContextField } from './OllamaContextField.js';
 import type { ModelListState } from './model-lists.js';
 import { ProviderSetting } from './SettingFields.js';
 import type { SectionProps } from './settings-section.js';
@@ -103,6 +104,21 @@ function RoleFields(
   );
 }
 
+function OllamaContext({ editor, errorFor }: SectionProps): JSX.Element | null {
+  if (!usesOllama(editor.draft.roles)) return null;
+  return (
+    <OllamaContextField
+      id="ollama-context"
+      value={editor.draft.ollamaContext}
+      scope="It applies to every Ollama role of this project."
+      error={errorFor(contextPath)}
+      onChange={(ollamaContext) => {
+        editor.change({ ollamaContext });
+      }}
+    />
+  );
+}
+
 // RF-002
 export function ModelSettings(props: SectionProps): JSX.Element {
   const lists = useModelLists(ROLE_NAMES.map((role) => props.editor.draft.roles[role].provider));
@@ -123,6 +139,7 @@ export function ModelSettings(props: SectionProps): JSX.Element {
           list={lists[props.editor.draft.roles[role].provider]}
         />
       ))}
+      <OllamaContext {...props} />
     </section>
   );
 }

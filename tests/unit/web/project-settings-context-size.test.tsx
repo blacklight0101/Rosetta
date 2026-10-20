@@ -13,7 +13,8 @@ const settingsRoute = `${route}/settings`;
 
 function withContext(contextTokens: 'auto' | number | undefined) {
   const base = templateSettings();
-  const { contextTokens: _dropped, ...rest } = base.providers.ollama;
+  const { kind, keySource, toolMode, timeoutSeconds, maxRetries } = base.providers.ollama;
+  const rest = { kind, keySource, toolMode, timeoutSeconds, maxRetries };
   const ollama = contextTokens === undefined ? rest : { ...rest, contextTokens };
   return projectOf('p-1', 'octo/demo', {
     settings: { ...base, providers: { ollama } },
@@ -45,7 +46,7 @@ const choose = (value: string): void => {
 };
 
 const sentShape = z.object({
-  providers: z.object({ ollama: z.object({ contextTokens: z.unknown() }) }),
+  providers: z.object({ ollama: z.object({ contextTokens: z.unknown().optional() }) }),
 });
 
 /** The contextTokens of the last saved document; 'no body' when nothing was saved. */
@@ -173,7 +174,8 @@ it('RF-401 no field shows while no role uses Ollama, and it returns with the fir
 
 it('RF-401 a project with no Ollama entry yet saves the chosen size for the new entry', async () => {
   const base = templateSettings();
-  const { contextTokens: _unused, ...openai } = { ...base.providers.ollama, kind: 'openai' };
+  const { keySource, toolMode, timeoutSeconds, maxRetries } = base.providers.ollama;
+  const openai = { kind: 'openai', keySource, toolMode, timeoutSeconds, maxRetries };
   const hosted = projectOf('p-1', 'octo/demo', {
     settings: {
       ...base,
