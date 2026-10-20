@@ -145,12 +145,13 @@ describe('RF-209 a Deepen of a run with an Unverified claim', UNDERSTAND_TIMEOUT
 });
 
 describe('RNF-004 the manifest of a Deepen run', UNDERSTAND_TIMEOUT, () => {
-  it('RNF-004 DEC-157 records the re-read prompt version that carries the grouping rule', async () => {
+  it('RNF-004 DEC-157 DEC-158 records the re-read prompt version that carries the grouping rule and the card list', async () => {
     const { h, deep } = await rejectedAgain();
 
     const manifest = await h.manifestOf(deep);
 
-    expect(manifest.promptVersions['reader/reread.v2.md']?.version).toBe('v2');
+    expect(manifest.promptVersions['reader/reread.v3.md']?.version).toBe('v3');
     expect(manifest.promptVersions['reader/reread.v1.md']).toBeUndefined();
+    expect(manifest.promptVersions['reader/reread.v2.md']).toBeUndefined();
   });
 });

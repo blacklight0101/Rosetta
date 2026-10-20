@@ -2,14 +2,20 @@ import type { JSX } from 'preact';
 import type { CoverageListing } from '../api/coverage.js';
 import type { CodeAreaInfo } from '../lib/live-run/code-map-tiles.js';
 import { BreakableText } from '../components/BreakableText.js';
-import { coverageOf, type AreaCoverage, type CoverageNode } from '../lib/live-run/coverage-map.js';
+import {
+  coverageOf,
+  type AreaCoverage,
+  type CoverageNode,
+  type NotInRunArea,
+} from '../lib/live-run/coverage-map.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 
 // RF-1005, RF-230, DEC-51, design-system.md section 14 (live run): the coverage map of the live run
 // page. One block per area in plan order with the area's share of the files read as a meter and
 // its files as a tree of folders; it fills in as `read_file` calls succeed. When the run lists the
 // files of its areas, every file is shown as read or "not read", and an area nobody read is listed
-// too. Paths and notes are shown as text.
+// too. An area a run over some of the areas was not asked to read is listed apart as "not in this
+// run" (DEC-158). Paths and notes are shown as text.
 
 const plural = (count: number, one: string, many: string): string =>
   `${String(count)} ${count === 1 ? one : many}`;
@@ -81,6 +87,29 @@ function Area(props: { readonly area: AreaCoverage; readonly ended: boolean }): 
   );
 }
 
+/** RF-230, DEC-158: the areas a run over some of the areas was not asked to read, apart. */
+function NotInRun({ areas }: { readonly areas: readonly NotInRunArea[] }): JSX.Element | null {
+  if (areas.length === 0) return null;
+  return (
+    <section class="rst-p138-area" aria-label="Not in this run">
+      <h3 class="rst-p138-area-name">Not in this run</h3>
+      <p class="rst-p138-note">This run was not asked to read these areas.</p>
+      <ul class="rst-p138-tree">
+        {areas.map((each) => (
+          <li key={each.area} class="rst-p138-node rst-p138-node--folder">
+            <span class="rst-p138-name">
+              <BreakableText text={each.area} />
+            </span>
+            {each.files === undefined ? null : (
+              <span class="rst-p138-area-figures">{plural(each.files, 'file', 'files')}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function summaryOf(areas: readonly AreaCoverage[], read: number, total?: number): string {
   const readAreas = areas.filter((area) => area.filesRead > 0).length;
   if (read === 0 && total === undefined) return filesLabel(0);
@@ -113,6 +142,7 @@ export function CoverageMap({ state, coverage, areas }: CoverageMapProps): JSX.E
           ))}
         </div>
       )}
+      <NotInRun areas={map.notInRun} />
     </section>
   );
 }

@@ -77,6 +77,7 @@ export function taskCardsOf({ task, outcome }: EndedTask): TaskCards {
     area: task.area.name,
     drafts: outcome.drafts,
     ...(task.replaceable === undefined ? {} : { replaceable: task.replaceable }),
+    ...(task.extendable === undefined ? {} : { extendable: task.extendable }),
     ...(note === undefined ? {} : { note }),
   };
 }

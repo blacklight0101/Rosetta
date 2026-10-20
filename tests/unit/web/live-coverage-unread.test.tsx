@@ -18,7 +18,8 @@ import {
 } from './live-run-fixtures.js';
 
 // RF-230, RF-1005 (P3-61): the coverage map lists every file of every area, as read or not read,
-// and an area no agent read is listed with its files as not read. It was drawn from the reads alone.
+// and an area the run asked an agent to read, but nobody did, is listed with its files as not read.
+// An area the run was not asked to read is apart (live-coverage-not-in-run.test.tsx).
 
 afterEach(cleanup);
 
@@ -57,6 +58,10 @@ const readEvents = (seq: number, task: string, path: string) => [
   toolCalled(seq, task, { path, startLine: 1, endLine: 20 }),
   toolResult(seq + 1, task, true),
 ];
+
+/** DEC-158: a run asked to read Catalog and Reports; a code map area with no reader is not in it. */
+const catalogAndReports = () =>
+  stateAfter(planned(1, 'reader-001', 'Catalog'), planned(2, 'reader-002', 'Reports'));
 
 const flat = (nodes: readonly CoverageNode[]): readonly CoverageNode[] =>
   nodes.flatMap((node) => [node, ...flat(node.children)]);
@@ -106,7 +111,7 @@ describe('the areas of the coverage map', () => {
   });
 
   it('RF-230 lists an area of the code map that has no entry yet, with the count of its files', () => {
-    const state = stateAfter(planned(1, 'reader-001', 'Catalog'));
+    const state = catalogAndReports();
 
     const map = coverageOf(state, listing, known);
 
@@ -155,7 +160,7 @@ const library: CoverageListing = {
 
 describe('third-party code on the coverage map (RF-231)', () => {
   it('RF-231 leaves out a listed area the code map marks third-party, from the areas and the counts', () => {
-    const state = stateAfter(planned(1, 'reader-001', 'Catalog'));
+    const state = catalogAndReports();
 
     const map = coverageOf(state, library, known);
 
@@ -173,7 +178,7 @@ describe('third-party code on the coverage map (RF-231)', () => {
   });
 
   it('RF-231 shows no third-party file on the page and counts none as not read', () => {
-    const state = stateAfter(planned(1, 'reader-001', 'Catalog'));
+    const state = catalogAndReports();
 
     render(<CoverageMap state={state} coverage={library} areas={known} />);
 
@@ -198,7 +203,7 @@ describe('the coverage map on the page', () => {
   });
 
   it('RF-230 says in words which files were not read and how many files and areas were left', () => {
-    const state = stateAfter(planned(1, 'reader-001', 'Catalog'));
+    const state = catalogAndReports();
 
     render(<CoverageMap state={state} coverage={listing} areas={known} />);
 

@@ -199,7 +199,7 @@ it('RF-1015 a run that is not an understand run has the evidence and activity ta
   ).toEqual([expect.stringMatching(/^Evidence/u), expect.stringMatching(/^Activity/u)]);
 });
 
-it('RF-230 the Evidence tab lists the files and the areas nobody read as not read', async () => {
+it('RF-230 the Evidence tab lists the files as not read and an area the run was not asked to read apart', async () => {
   const listing = {
     areas: [
       {
@@ -221,8 +221,10 @@ it('RF-230 the Evidence tab lists the files and the areas nobody read as not rea
       'Other.cs',
     );
   });
-  expect(within(map).getByRole('region', { name: 'Coverage of Models' }).textContent).toContain(
-    'No files read.',
+  // DEC-158: Models is in the code map but this run planned one area, so it is not counted as not read.
+  expect(within(map).queryByRole('region', { name: 'Coverage of Models' })).toBeNull();
+  expect(within(map).getByRole('region', { name: 'Not in this run' }).textContent).toContain(
+    'Models',
   );
   expect(within(map).getAllByText('not read')).toHaveLength(1);
 });
