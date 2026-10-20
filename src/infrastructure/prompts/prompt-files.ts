@@ -24,6 +24,9 @@ const readerPromptNames = {
   readFirst: 'reader/read-first.v1.md',
 } as const;
 
+/** RF-155: added only to areas that hold a rendered workbook. */
+const workbookPromptName = 'reader/workbook.v1.md';
+
 const answersPromptName = 'reader/answers.v1.md';
 const rereadPromptName = 'reader/reread.v1.md';
 
@@ -134,7 +137,7 @@ function requirePlaceholders(file: PromptFile, placeholders: readonly string[]):
 // RNF-004
 export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPrompts> {
   const load = (name: string) => loadPromptFile(promptsFolder, name);
-  const [system, cardFormat, task, turnsLeft, repair, resume, flows, screens, readFirst] =
+  const [system, cardFormat, task, turnsLeft, repair, resume, flows, screens, readFirst, workbook] =
     await Promise.all([
       load(readerPromptNames.system),
       load(readerPromptNames.cardFormat),
@@ -145,6 +148,7 @@ export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPr
       load(surfacePromptNames.flows),
       load(surfacePromptNames.screens),
       load(readerPromptNames.readFirst),
+      load(workbookPromptName),
     ]);
   return {
     system,
@@ -154,6 +158,7 @@ export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPr
     repair: requirePlaceholder(repair, readerPlaceholders.repair),
     continue: resume,
     surface: { flows, screens },
+    workbook,
     readFirst: requirePlaceholders(readFirst, [
       readerPlaceholders.readFirstFiles,
       readerPlaceholders.readFirstTurns,

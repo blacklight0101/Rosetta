@@ -44,7 +44,7 @@ const workbooks = { names: ['Pricing.xlsx'], uploadedAt: '2026-10-19T09:30:00.00
 async function planned(
   project: Partial<Project>,
   scans?: ScanResults,
-  seed: 'workbook' | 'zip' | 'github' = 'github',
+  seed: 'workbook' | 'zip' | 'github' | 'github-scanned' = 'github',
 ): Promise<{
   readonly h: PlanHarness;
   readonly manifest: Awaited<ReturnType<PlanHarness['manifestOf']>>;
@@ -63,6 +63,7 @@ async function planned(
     ...(seed === 'zip' ? { upload } : {}),
   });
   if (seed === 'zip') await h.seedScan({ snapshotKey: source.snapshotKey });
+  if (seed === 'github-scanned') await h.seedScan();
   await h.saveBrief(briefAnswers);
   const run = await h.plan();
   expect(run.endState).toBe('Completed');
@@ -134,6 +135,15 @@ describe('a plan run over a zip', () => {
 });
 
 describe('a plan run over a GitHub repository', () => {
+  it('RF-155 sends the prompt of before even when a scan of its snapshot lists folders', async () => {
+    const scans = new FixtureScans(demoScan(), ['Pricing.xlsx']);
+
+    const { h, manifest } = await planned({}, scans, 'github-scanned');
+
+    expect(h.providers.requests()[0]?.system).toBe(await base());
+    expect(Object.keys(manifest.promptVersions)).not.toContain('planner/workbook.v1.md');
+  });
+
   it('RF-155 sends the prompt of before and records no guidance', async () => {
     const { h, manifest } = await planned({});
 

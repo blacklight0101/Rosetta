@@ -33,6 +33,9 @@ import { loadVerifierPrompts } from '../infrastructure/prompts/verifier-prompt-f
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
 import { loadTextToolProtocol } from '../infrastructure/providers/ollama/text-tool-protocol-file.js';
 import { FileScanResults } from '../infrastructure/scan/scan-results.js';
+import { isUploadSnapshotKey } from '../domain/sources/upload-name.js';
+import { workbookFoldersOf } from '../domain/sources/workbook-folders.js';
+import { isWorkbookSnapshotKey } from '../domain/sources/workbook-key.js';
 
 // Architecture section 2 (composition root), RF-200, ADR-003: the executor of the `understand`
 // stage. The reader's provider comes only from the provider factory the Test button uses too; the
@@ -78,6 +81,13 @@ export function composeScanResults(
     manifests,
     logger,
     snapshotRoot: (key) => snapshots.filesDir(key),
+    // RF-155: the folders of the rendered workbooks the snapshot record lists.
+    workbookFolders: async (key) => {
+      // A GitHub snapshot lists none, and its record is not read for this.
+      if (!isUploadSnapshotKey(key) && !isWorkbookSnapshotKey(key)) return [];
+      const snapshot = await snapshots.readExisting(key);
+      return snapshot === undefined ? [] : workbookFoldersOf(snapshot);
+    },
   });
 }
 

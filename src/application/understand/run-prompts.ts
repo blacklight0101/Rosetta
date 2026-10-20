@@ -5,8 +5,9 @@ import { promptVersionsOf, type ReaderPrompts } from '../agent/reader-prompts.js
 import type { ProjectSettings } from '../projects/project-settings.js';
 import { rolesUseTextToolProtocol } from './understand-options.js';
 
-// RNF-004, RF-205, RF-241, Q-25: the prompt files an understand run uses and the versions it records:
-// the reader's, the flows and screens fragments when some area is marked for them, the text tool
+// RNF-004, RF-205, RF-241, RF-155, Q-25: the prompt files an understand run uses and the versions it records:
+// the reader's, the flows and screens fragments when some area is marked for them, the workbook
+// guidance when some area holds a rendered workbook, the text tool
 // protocol when a role uses it, the answers prompt when a re-run with answers has a task to run,
 // and the re-read prompt of a Deepen (RF-209).
 
@@ -21,6 +22,8 @@ export interface PromptSources {
 interface PromptUse {
   readonly withAnswers: boolean;
   readonly deepen: boolean;
+  /** RF-155: some area of the run holds a rendered workbook, so a task uses the workbook guidance. */
+  readonly workbook: boolean;
 }
 
 export async function runPrompts(
@@ -36,7 +39,7 @@ export async function runPrompts(
   const answers = use.withAnswers ? { answers: await sources.answersPrompt() } : {};
   const reread = use.deepen ? { reread: await sources.rereadPrompt() } : {};
   const prompts = { ...read, ...answers, ...reread };
-  const versions = promptVersionsOf(prompts, marks);
+  const versions = promptVersionsOf(prompts, marks, use.workbook);
   if (!rolesUseTextToolProtocol(settings)) return { prompts, versions };
   const { name, version, sha256 } = await sources.textToolProtocol();
   return { prompts, versions: { ...versions, [name]: { version, sha256 } } };

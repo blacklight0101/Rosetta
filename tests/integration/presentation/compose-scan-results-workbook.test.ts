@@ -52,12 +52,32 @@ async function opened(workbooks: readonly (typeof workbook)[] | undefined) {
     ...{ fileCount: 10, totalBytes: 4096, skippedLinks: 0, snapshotHash: UPLOAD_HASH },
   };
   await writeFile(join(snapshot.snapshotDir(UPLOAD_KEY), 'snapshot.json'), JSON.stringify(record));
+  return composeScanResults(partsOf()).open(scan);
+}
+
+function partsOf() {
   const clock = new FixedClock('2026-10-12T10:00:00.000Z');
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
   const writer = new NodeOutputWriter({ dataDir, logger });
   const manifests = new FileRunManifestStore({ writer, masker });
-  return composeScanResults({ dataDir, writer, manifests, logger }).open(scan);
+  return { dataDir, writer, manifests, logger };
+}
+
+/** Scans the same tree as a GitHub snapshot whose `snapshot.json` is not a record at all. */
+async function openedGithub() {
+  const key = `octo__demo@${'c'.repeat(40)}`;
+  const snapshot = new SnapshotStore(dataDir);
+  const files = snapshot.filesDir(key);
+  await cp(join('tests', 'fixtures', 'repos', 'pricing-workbook'), files, { recursive: true });
+  const h = await createUnderstandHarness({
+    dataDir,
+    recording: 'understand-read-then-answer.json',
+    repository: files,
+  });
+  const scan = await h.scan();
+  await writeFile(join(snapshot.snapshotDir(key), 'snapshot.json'), 'not a snapshot record');
+  return composeScanResults(partsOf()).open(scan);
 }
 
 describe('the scan results of the composed application', () => {
@@ -69,6 +89,12 @@ describe('the scan results of the composed application', () => {
 
   it('RF-155 name none for a zip whose record lists no workbook', async () => {
     const scanned = await opened(undefined);
+
+    expect(scanned.workbookFolders ?? []).toEqual([]);
+  });
+
+  it('RF-155 are not read from the record of a GitHub snapshot, which can list none', async () => {
+    const scanned = await openedGithub();
 
     expect(scanned.workbookFolders ?? []).toEqual([]);
   });

@@ -108,33 +108,46 @@ function surfaceFilesFor(prompts: ReaderPrompts, marks: AreaMarks): readonly Pro
   return [...(marks.flows ? [surface.flows] : []), ...(marks.screens ? [surface.screens] : [])];
 }
 
+/** RF-155: a workbook area is asked for FLOW and SCRN cards, so it gets both formats. */
+const WORKBOOK_MARKS: AreaMarks = { flows: true, screens: true };
+
+/** The guidance file, when the area holds a workbook and the run loaded it. */
+function guidanceFor(prompts: ReaderPrompts, workbook: boolean): readonly PromptFile[] {
+  return workbook && prompts.workbook !== undefined ? [prompts.workbook] : [];
+}
+
 /**
- * Q-25: the prompts of a task over an area with these marks. A marked area gets the flows and
- * screens fragments after the card format; any other area gets the very same prompts, so a
- * library costs nothing extra.
+ * Q-25, RF-155: the prompts of a task over an area with these marks. A marked area gets the flows
+ * and screens fragments after the card format; an area that holds a rendered workbook gets both
+ * fragments and then the workbook guidance; any other area gets the very same prompts, so a
+ * library, a GitHub run or a zip without workbooks costs nothing extra.
  */
 export function readerPromptsFor(
   prompts: ReaderPrompts,
   marks: AreaMarks,
   workbook = false,
 ): ReaderPrompts {
-  const fragments = surfaceFilesFor(prompts, marks);
-  if (fragments.length === 0 && !workbook) return prompts;
-  const text = [prompts.cardFormat.text.trimEnd(), ...fragments.map((file) => file.text.trim())];
+  const guidance = guidanceFor(prompts, workbook);
+  const fragments = surfaceFilesFor(prompts, guidance.length > 0 ? WORKBOOK_MARKS : marks);
+  const added = [...fragments, ...guidance];
+  if (added.length === 0) return prompts;
+  const text = [prompts.cardFormat.text.trimEnd(), ...added.map((file) => file.text.trim())];
   const joined = `${text.join('\n\n')}\n`;
   return { ...prompts, cardFormat: { ...prompts.cardFormat, text: joined } };
 }
 
 /**
  * RNF-004: what the run manifest records about the reader's prompts, by file name. `marks` says
- * whether any area of the run is marked for flows or screens: only the fragments some task used
- * are recorded.
+ * whether any area of the run is marked for flows or screens, and `workbook` whether any area holds
+ * a rendered workbook: only the fragments and the guidance some task used are recorded.
  */
 export function promptVersionsOf(
   prompts: ReaderPrompts,
   marks: AreaMarks = { flows: false, screens: false },
   workbook = false,
 ): Record<string, PromptVersion> {
+  const guidance = guidanceFor(prompts, workbook);
+  const used = guidance.length > 0 ? WORKBOOK_MARKS : marks;
   const files = [
     prompts.system,
     prompts.cardFormat,
@@ -144,8 +157,8 @@ export function promptVersionsOf(
     prompts.continue,
     ...(prompts.answers === undefined ? [] : [prompts.answers]),
     ...(prompts.reread === undefined ? [] : [prompts.reread]),
-    ...surfaceFilesFor(prompts, marks),
-    ...(workbook && prompts.readFirst.name === '' ? [prompts.readFirst] : []),
+    ...surfaceFilesFor(prompts, used),
+    ...guidance,
     prompts.readFirst,
   ];
   return Object.fromEntries(

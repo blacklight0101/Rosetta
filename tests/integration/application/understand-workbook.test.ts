@@ -136,9 +136,24 @@ const zipRun = useSharedValue('rosetta-zip-', async (dir) => {
   return { h, run, manifest: await h.manifestOf(run) };
 });
 
+// A zip that lists a workbook folder none of whose files is in an area the run reads.
+const elsewhereRun = useSharedValue('rosetta-elsewhere-', async (dir) => {
+  const h = await createUnderstandHarness({
+    dataDir: dir,
+    recording: 'understand-csharp-full.json',
+    verifierRecording: 'verifier-csharp-full.json',
+    upload: true,
+    workbookFolders: ['Elsewhere.xlsx'],
+  });
+  await h.scan();
+  const run = await h.understand();
+  return { h, run, manifest: await h.manifestOf(run) };
+});
+
 describe.each([
   ['a GitHub run', githubRun],
   ['a zip run without workbooks', zipRun],
+  ['a zip run whose workbook folder holds none of its areas', elsewhereRun],
 ])('%s', (_name, shared) => {
   it('RF-155 no prompt holds the workbook guidance and the manifest names none', async () => {
     const { h, run, manifest } = shared.current();

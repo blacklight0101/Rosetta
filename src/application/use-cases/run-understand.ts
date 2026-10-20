@@ -33,6 +33,7 @@ import { preflightOllama, type PreflightProblem } from '../understand/reader-pre
 import type { UnknownAreas } from '../understand/reader-tasks.js';
 import { logSkippedQuestions, publishSkippedQuestions } from '../understand/skipped-questions.js';
 import { runPrompts } from '../understand/run-prompts.js';
+import { areaHoldsWorkbook } from '../../domain/sources/workbook-folders.js';
 import { runMarks } from '../understand/run-marks.js';
 import { planTasks } from '../understand/task-plan.js';
 import { readUnderstandOptions, UNDERSTAND_ROLES } from '../understand/understand-options.js';
@@ -174,7 +175,9 @@ export class RunUnderstand implements RunExecutor {
     const skipped = rerun?.plan.skipped ?? [];
     await logSkippedQuestions(this.deps.logger, run, skipped);
     await publishSkippedQuestions(execution.events, skipped);
-    const use = { withAnswers: rerun !== undefined && tasks.length > 0, deepen: !!options.deepen };
+    const workbook = tasks.some((task) => areaHoldsWorkbook(task.area, scanned.workbookFolders));
+    const withAnswers = rerun !== undefined && tasks.length > 0;
+    const use = { withAnswers, deepen: !!options.deepen, workbook };
     const marks = runMarks(tasks, scanned.codeMap);
     const { prompts, versions } = await runPrompts(this.deps, project.settings, use, marks);
     const [mergePrompt, overviewPrompt, verifierPrompts] = await Promise.all([

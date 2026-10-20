@@ -76,7 +76,11 @@ export class FileScanResults implements ScanResults {
         cause: error,
       });
     });
-    return { codeMap, codeMapHash, reader, source: { commitSha, snapshotKey, snapshotHash } };
+    const source = { commitSha, snapshotKey, snapshotHash };
+    const workbookFolders = await this.options.workbookFolders?.(snapshotKey);
+    const listed =
+      workbookFolders === undefined || workbookFolders.length === 0 ? {} : { workbookFolders };
+    return { codeMap, codeMapHash, reader, source, ...listed };
   }
 
   private async codeMapOf(
