@@ -84,7 +84,11 @@ test('RF-1005 the coverage map of a running run fills in by area and by read sha
   await expect(agentPanel(page, 'Services')).toContainText('Done', { timeout: 30_000 });
 
   await expect(runStatus(page)).toContainText('Running');
-  await expect(coverageOf(page, '(root)').getByRole('listitem')).toHaveText(['Default.aspx.cs']);
+  // RF-230: every file of the area is listed, the one read plain and the six others as not read.
+  const rootFiles = coverageOf(page, '(root)').getByRole('listitem');
+  await expect(rootFiles).toHaveCount(7);
+  await expect(rootFiles.filter({ hasText: 'not read' })).toHaveCount(6);
+  await expect(rootFiles.filter({ hasText: /^Default.aspx.cs$/u })).toHaveCount(1);
   const services = coverageOf(page, 'Services');
   await expect(services.getByRole('listitem').first()).toContainText('Services/');
   await expect(services.getByText('CatalogService.cs', { exact: true })).toBeVisible();
