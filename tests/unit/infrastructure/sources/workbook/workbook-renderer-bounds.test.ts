@@ -64,7 +64,7 @@ it('RF-152 quotes a range that is not a reference so it cannot pass for the cell
   expect(lines).toContain('A1:B2 C3 validation custom: 1');
   expect(linesOf(fileOf(rendered, 'S/notes.md'))).toContain('"D9 = x" "note"');
   const label = workbookCellLabel('Pricing.xlsx/S/validation.md', lines);
-  expect(label).toBe('Pricing.xlsx, sheet S, cells A1:B2');
+  expect(label).toBe('Pricing.xlsx, sheet S, cells A1:B2, C3');
 });
 
 it('RF-152 puts a comment whose address is not a cell after the others', () => {
@@ -129,5 +129,6 @@ it('RF-152 keeps a pipe out of a table cell and cuts a long reference of a defin
   const workbook = fileOf(renderWorkbook(book([sheet('S')], { definedNames })), 'workbook.md');
 
   expect(workbook).toContain('| "A\\u007cB" | workbook | no | "xxxxxxxx');
-  expect(workbook).toContain('...(+1800 characters)" |');
+  expect(workbook).not.toContain('characters)');
+  expect(workbook).toContain('- "A\\u007cB" (continued): "xxxxxxxx');
 });

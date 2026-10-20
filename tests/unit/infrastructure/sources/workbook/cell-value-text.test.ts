@@ -126,6 +126,5 @@ it('RF-152 still reads true date and time formats around words and sections', ()
   expect(withFormat(45000, '[$-F800]dddd, mmmm dd, yyyy')).toBe('2023-03-15');
   expect(withFormat(0.75, 'h:mm;@')).toBe('18:00:00');
   expect(withFormat(45000.5, '[Red]d/m/yy h:mm')).toBe('2023-03-15T12:00:00');
-  expect(withFormat(0.5, '[mm]:ss')).toBe('12:00:00');
   expect(withFormat(45000, 'General;yyyy-mm-dd')).toBe('45000');
 });

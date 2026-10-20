@@ -1,4 +1,4 @@
-import { valueField } from './cell-value-text.js';
+import { valueFields } from './cell-value-text.js';
 import { canonicalRange, type PlacedCell } from './cell-order.js';
 import type { ByteBudget } from './render-output.js';
 import { TextFile } from './render-output.js';
@@ -40,7 +40,7 @@ function* rowsOf(
       if (current !== undefined) yield current;
       current = { row, fields: [] };
     }
-    current.fields.push(valueField(cell, date1904));
+    current.fields.push(...valueFields(cell, date1904));
   }
   if (current !== undefined) yield current;
 }

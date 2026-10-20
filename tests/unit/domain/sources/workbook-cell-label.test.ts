@@ -109,7 +109,7 @@ it('RF-156 reads every range of a validation or conditional rule line, up to 40'
   expect(workbookCellLabel('Pricing.xlsx/Summary/validation.md', lines)).toBe(
     'Pricing.xlsx, sheet Summary, cells A1:A5, C1, E2:F3, B1:B5, D4, D5',
   );
-  const many = Array.from({ length: 60 }, (_, i) => `A${String(i + 1)}`).join(' ');
+  const many = Array.from({ length: 40 }, (_, i) => `A${String(i + 1)}`).join(' ');
   const label = workbookCellLabel('Pricing.xlsx/S/validation.md', [`${many} validation x: 1`]);
   expect(label).toBe('Pricing.xlsx, sheet S, cells A1, A2, A3, A4, A5, A6 and 34 more');
 });
@@ -118,4 +118,10 @@ it('RF-156 reads a range list only when a rule word follows it', () => {
   expect(workbookCellLabel('Pricing.xlsx/S/validation.md', ['A1 B2 and then text'])).toBe(
     'Pricing.xlsx, sheet S, cells A1',
   );
+});
+
+it('RF-156 reads no more than 40 ranges of a rule line', () => {
+  const many = Array.from({ length: 60 }, (_, i) => `A${String(i + 1)}`).join(' ');
+  const label = workbookCellLabel('Pricing.xlsx/S/validation.md', [`${many} validation x: 1`]);
+  expect(label).toBe('Pricing.xlsx, sheet S, cells A1');
 });

@@ -64,7 +64,10 @@ it('DEC-150 writes a long formula and its long cached text without losing a char
     .map((line) => line.replace(/ {4}\[cached: .*$/u, ''))
     .join('');
   expect(joined).toBe(body);
-  expect(decodedStrings(lines.map((line) => line.replace(/^.*?\[cached: /u, '[')))).toBe(cached);
+  const cachedLines = lines
+    .filter((line) => line.includes('[cached: ') || line.includes('(cached, continued)'))
+    .map((line) => line.slice(line.indexOf('"')).replace(/^.*?\[cached: /u, ''));
+  expect(decodedStrings(cachedLines)).toBe(cached);
   expect(formulas).not.toMatch(/characters\)/u);
 });
 
@@ -134,7 +137,7 @@ it('DEC-150 keeps a long defined-name reference whole, and valid tables of many 
   expectShortLines(workbook);
   expect(workbook).not.toContain(' ...\n');
   for (const line of linesOf(workbook).filter((l) => l.startsWith('|'))) {
-    expect(line.endsWith(' |')).toBe(true);
+    expect(line.endsWith('|')).toBe(true);
   }
   expect(workbook).toContain('| S | "T" | "A1:BH9" | 60 |');
   const columnLines = linesOf(workbook).filter((line) => line.startsWith('- S "T": '));

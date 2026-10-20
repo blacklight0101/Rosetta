@@ -184,7 +184,7 @@ src/
                         the workbook renderer (RF-152, Q-35..Q-39, P3-46): `renderWorkbooks` turns the models into paths and texts (nothing is
                         written to disk; the upload flow of P3-48 writes them): `workbook.md`, and per sheet `formulas.md`, `values.md`,
                         `validation.md`, `notes.md` (render-index, render-formulas, render-values, render-rules); safe segments with `~2` on a clash
-                        and a `_` before a device name (workbook-segments); text escaped to one line and cut at its cap (workbook-text); dates
+                        and a `_` before a device name (workbook-segments); text escaped to one line, a long one continued on lines with the same address (workbook-text); dates
                         from the format code (excel-dates, cell-value-text); lines under the 2,000 character cut and a byte limit for the whole
                         render, RST-1926 (render-output); `WORKBOOK_RENDERER_VERSION` names the layout. The first table of `workbook.md` maps each
                         safe segment to the real name as a JSON string (cut at 100 characters), which the evidence page label reads

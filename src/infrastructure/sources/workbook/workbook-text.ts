@@ -57,6 +57,25 @@ function bounded(text: string, maxChars: number, quote: boolean, pipes: boolean)
   return left > 0 ? `${out}...(+${String(left)} characters)` : out;
 }
 
+/**
+ * The whole text as pieces of at most `maxChars` escaped characters, never splitting a character;
+ * nothing is cut. With `quote` the pieces are escaped for a JSON string (the caller adds the quotes).
+ */
+export function splitText(text: string, maxChars: number, quote: boolean, pipes = false): string[] {
+  const pieces: string[] = [];
+  let current = '';
+  for (const char of text) {
+    const piece = escapeChar(char, quote, pipes);
+    if (current.length + piece.length > maxChars) {
+      pieces.push(current);
+      current = '';
+    }
+    current += piece;
+  }
+  pieces.push(current);
+  return pieces;
+}
+
 /** A JSON string: quotes and backslashes escaped, control characters and line breaks escaped. */
 export function quoteText(text: string, maxChars: number, options: QuoteOptions = {}): string {
   return `"${bounded(text, maxChars, true, options.pipes === true)}"`;

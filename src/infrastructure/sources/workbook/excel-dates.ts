@@ -29,6 +29,7 @@ function lettersOf(format: string): { letters: string; elapsed: boolean } {
     });
   const letters = (stripped.split(';')[0] ?? '')
     .toLowerCase()
+    .replace(/general|standard|scientific/gu, '')
     .replace(/am\/pm|a\/p/gu, '')
     .replace(/(h+[^a-z]*)m+/gu, '$1n')
     .replace(/m+([^a-z]*s)/gu, 'n$1');

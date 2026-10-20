@@ -1,6 +1,6 @@
 import { TextFile, type ByteBudget } from './render-output.js';
 import type { WorkbookModel, WorkbookSheet } from './workbook-model.js';
-import { NAME_CAP, quoteText } from './workbook-text.js';
+import { NAME_CAP, quoteText, splitText } from './workbook-text.js';
 
 // RF-152, Q-35, Q-38, Q-39, RFC-005 section 4.4: `workbook.md`. Its first table maps every safe
 // folder name to the real name of the workbook or sheet (a reader of the report reads the real name
@@ -11,9 +11,8 @@ import { NAME_CAP, quoteText } from './workbook-text.js';
 
 /** Rows of one list; more are counted. */
 const LIST_CAP = 1000;
-const REFERS_CAP = 300;
-const COLUMNS_LISTED = 30;
-const COLUMN_CAP = 60;
+/** The escaped characters of one piece of a reference in a table row. */
+const REFERS_CHUNK = 600;
 
 export interface SheetEntry {
   readonly sheet: WorkbookSheet;
@@ -49,10 +48,16 @@ function baseName(path: string): string {
   return path.split(/[\\/]/u).at(-1) ?? path;
 }
 
-function columnsText(columns: readonly string[]): string {
-  const shown = columns.slice(0, COLUMNS_LISTED).map((column) => q(column, COLUMN_CAP));
-  const more = columns.length - shown.length;
-  return more > 0 ? `${shown.join(', ')}, ... (+${String(more)} more)` : shown.join(', ');
+/** The columns of each table, all of them, on lines that repeat the table they belong to. */
+function addTableColumns(file: TextFile, entries: readonly SheetEntry[]): void {
+  const tables = entries.flatMap((e) => e.sheet.tables.map((table) => ({ e, table })));
+  if (tables.length === 0) return;
+  file.section('## Table columns');
+  file.add();
+  for (const { e, table } of tables) {
+    const columns = table.columns.map((column) => q(column));
+    file.addWrapped(`- ${e.segment} ${q(table.name)}: `, columns, ', ');
+  }
 }
 
 function addSheetLists(file: TextFile, entries: readonly SheetEntry[]): void {
@@ -66,9 +71,10 @@ function addSheetLists(file: TextFile, entries: readonly SheetEntry[]): void {
     ['Sheet', 'Table', 'Range', 'Columns'],
     each(
       (s) => s.tables,
-      (e, t) => [e.segment, q(t.name), q(t.range), columnsText(t.columns)],
+      (e, t) => [e.segment, q(t.name), q(t.range), String(t.columns.length)],
     ),
   );
+  addTableColumns(file, entries);
   addTable(
     file,
     '## Pivot tables',
@@ -94,6 +100,8 @@ function addNames(file: TextFile, model: WorkbookModel, entries: readonly SheetE
     if (name === undefined) return 'workbook';
     return entries.find((e) => e.sheet.name === name)?.segment ?? q(name);
   };
+  const pieces = (refersTo: string): string[] =>
+    splitText(refersTo, REFERS_CHUNK, true, true).map((piece) => `"${piece}"`);
   addTable(
     file,
     '## Defined names',
@@ -102,9 +110,17 @@ function addNames(file: TextFile, model: WorkbookModel, entries: readonly SheetE
       q(n.name),
       scopeOf(n.sheet),
       n.hidden ? 'yes' : 'no',
-      q(n.refersTo, REFERS_CAP),
+      pieces(n.refersTo)[0] ?? '""',
     ]),
   );
+  const longer = model.definedNames.filter((n) => pieces(n.refersTo).length > 1);
+  if (longer.length === 0) return;
+  file.section('## Defined names, rest of long references');
+  file.add();
+  for (const n of longer.slice(0, LIST_CAP)) {
+    for (const piece of pieces(n.refersTo).slice(1))
+      file.add(`- ${q(n.name)} (continued): ${piece}`);
+  }
 }
 
 function addLinks(file: TextFile, model: WorkbookModel): void {

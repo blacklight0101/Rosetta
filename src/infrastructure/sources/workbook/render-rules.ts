@@ -6,7 +6,7 @@ import type {
   SheetComment,
   WorkbookSheet,
 } from './workbook-model.js';
-import { escapeInline, NAME_CAP, quoteText } from './workbook-text.js';
+import { escapeInline, NAME_CAP, quoteText, splitText } from './workbook-text.js';
 
 // RF-152, Q-39, RFC-005 section 4.4: `validation.md` (data validation and conditional formatting
 // rules, each line starting with the range it applies to) and `notes.md` (comments with their cell
@@ -15,11 +15,10 @@ import { escapeInline, NAME_CAP, quoteText } from './workbook-text.js';
 
 const RANGES_CAP = 200;
 const WORD_CAP = 40;
-const FORMULA_CAP = 300;
-const FORMULAS_LISTED = 5;
-const COMMENT_CAP = 1500;
+const RULE_CHUNK = 800;
+const COMMENT_CHUNK = 1000;
 const RANGE_TOKEN = /^[A-Za-z]{1,3}[1-9][0-9]{0,6}(?::[A-Za-z]{1,3}[1-9][0-9]{0,6})?$/u;
-const MAX_RANGE_TOKENS = 50;
+const MAX_RANGE_TOKENS = 40;
 
 /** The ranges of a rule written as references; anything else is quoted so it cannot pass for cells. */
 function rangesText(ranges: string): string {
@@ -37,22 +36,27 @@ function word(text: string): string {
   return escapeInline(text, WORD_CAP);
 }
 
-function validationLine(rule: DataValidationRule): string {
-  const operator = rule.operator === undefined ? '' : ` ${word(rule.operator)}`;
-  const first = rule.formula1 === undefined ? '' : escapeInline(rule.formula1, FORMULA_CAP);
-  const second =
-    rule.formula2 === undefined ? '' : ` and ${escapeInline(rule.formula2, FORMULA_CAP)}`;
-  const rest = first === '' ? '' : `: ${first}${second}`;
-  return `${rangesText(rule.ranges)} validation ${word(rule.type)}${operator}${rest}`;
+/** A rule on as many lines as its formulas need; each starts with the same ranges. */
+function ruleLines(head: string, ranges: string, kind: string, body: string): string[] {
+  const [first, ...rest] = body === '' ? [] : splitText(body, RULE_CHUNK, false);
+  if (first === undefined) return [head];
+  return [`${head}: ${first}`, ...rest.map((piece) => `${ranges} ${kind} (continued): ${piece}`)];
 }
 
-function conditionalLine(rule: ConditionalRule): string {
+function validationLines(rule: DataValidationRule): string[] {
+  const ranges = rangesText(rule.ranges);
   const operator = rule.operator === undefined ? '' : ` ${word(rule.operator)}`;
-  const shown = rule.formulas.slice(0, FORMULAS_LISTED).map((f) => escapeInline(f, FORMULA_CAP));
-  const more = rule.formulas.length - shown.length;
-  if (more > 0) shown.push(`(+${String(more)} more)`);
-  const rest = shown.length === 0 ? '' : `: ${shown.join(' ; ')}`;
-  return `${rangesText(rule.ranges)} conditional ${word(rule.type)}${operator}${rest}`;
+  const second = rule.formula2 === undefined ? '' : ` and ${rule.formula2}`;
+  const body = rule.formula1 === undefined ? '' : `${rule.formula1}${second}`;
+  const head = `${ranges} validation ${word(rule.type)}${operator}`;
+  return ruleLines(head, ranges, 'validation', body);
+}
+
+function conditionalLines(rule: ConditionalRule): string[] {
+  const ranges = rangesText(rule.ranges);
+  const operator = rule.operator === undefined ? '' : ` ${word(rule.operator)}`;
+  const head = `${ranges} conditional ${word(rule.type)}${operator}`;
+  return ruleLines(head, ranges, 'conditional', rule.formulas.join(' ; '));
 }
 
 function addRules(file: TextFile, heading: string, lines: readonly string[]): void {
@@ -66,14 +70,18 @@ export function renderValidation(sheet: WorkbookSheet, budget: ByteBudget): stri
   file.add(`# Validation of sheet ${quoteText(sheet.name, NAME_CAP)}`);
   file.add(`- Data validation rules: ${String(sheet.validations.length)}`);
   file.add(`- Conditional formatting rules: ${String(sheet.conditionalRules.length)}`);
-  addRules(file, '## Data validation', sheet.validations.map(validationLine));
-  addRules(file, '## Conditional formatting', sheet.conditionalRules.map(conditionalLine));
+  addRules(file, '## Data validation', sheet.validations.flatMap(validationLines));
+  addRules(file, '## Conditional formatting', sheet.conditionalRules.flatMap(conditionalLines));
   return file.text();
 }
 
-function commentLine(comment: SheetComment): string {
+function commentLines(comment: SheetComment): string[] {
   const address = canonicalRange(comment.address) ?? quoteText(comment.address, WORD_CAP);
-  return `${address} ${quoteText(comment.text, COMMENT_CAP)}`;
+  const [first, ...rest] = splitText(comment.text, COMMENT_CHUNK, true);
+  return [
+    `${address} "${first ?? ''}"`,
+    ...rest.map((piece) => `${address} (continued) "${piece}"`),
+  ];
 }
 
 /** The comments in reading order; one with an address that is not a cell goes last. */
@@ -93,6 +101,8 @@ export function renderNotes(sheet: WorkbookSheet, budget: ByteBudget): string {
   file.add(`- Comments: ${String(sheet.comments.length)}`);
   file.add();
   if (sheet.comments.length === 0) file.add('No comments.');
-  for (const comment of ordered(sheet.comments)) file.add(commentLine(comment));
+  for (const comment of ordered(sheet.comments)) {
+    for (const line of commentLines(comment)) file.add(line);
+  }
   return file.text();
 }
