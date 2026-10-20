@@ -25,13 +25,13 @@ async function storedFrom(...items: readonly ZipItem[]) {
 describe('ZipUploadStore the dependency map of a zip', () => {
   it('RF-153 writes dependencies.md at the root, labelling workbooks by their folder in the tree', async () => {
     const { files, tree } = await storedFrom({
-      name: 'docs/Pricing.xlsx',
+      name: 'books/Pricing.xlsx',
       data: await sampleBook(),
     });
 
     expect(tree).toContain('dependencies.md');
-    expect(tree).toContain('docs/Pricing.xlsx/workbook.md');
-    expect(await readFile(join(files, 'dependencies.md'), 'utf8')).toContain('docs/Pricing.xlsx');
+    expect(tree).toContain('books/Pricing.xlsx/workbook.md');
+    expect(await readFile(join(files, 'dependencies.md'), 'utf8')).toContain('books/Pricing.xlsx');
   });
 
   it('RF-153 leaves a dependencies.md of the zip as it is and writes the map beside it', async () => {
