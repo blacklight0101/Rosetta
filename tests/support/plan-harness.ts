@@ -7,7 +7,6 @@ import { RosettaError } from '../../src/domain/errors/rosetta-error.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
 import { RunQueue } from '../../src/application/runs/run-queue.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
-import { EstimatePlan } from '../../src/application/estimate/estimate-plan.js';
 import type { PlanEstimate } from '../../src/application/estimate/plan-estimate-types.js';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import { BuildPlan } from '../../src/application/use-cases/build-plan.js';
@@ -19,9 +18,6 @@ import type { Run } from '../../src/domain/runs/run.js';
 import { FileCostReportWriter } from '../../src/infrastructure/budget/cost-report-files.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { FileRunCards } from '../../src/infrastructure/cards/file-run-cards.js';
-import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
-import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
-import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
 import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import { FanOutSink } from '../../src/infrastructure/events/fan-out-sink.js';
 import { FilePlanningBriefStore } from '../../src/infrastructure/files/file-planning-brief-store.js';
@@ -41,7 +37,9 @@ import {
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
 import { loadRecording } from '../../src/infrastructure/providers/fake/recording.js';
 import { filesUnder } from './files-under.js';
-import { budgetTable, contractPrice } from './budget-harness.js';
+import { noGapCards } from './gap-plan-harness.js';
+import { contractPrice } from './budget-harness.js';
+import { planEstimateOf } from './plan-estimate-of.js';
 import { shippedCatalogue } from './planning-brief-harness.js';
 import { account, seedRun, seedScan, type UnderstandSeed } from './plan-run-seeds.js';
 import { sampleProject } from './project-fixtures.js';
@@ -83,6 +81,9 @@ export interface PlanHarness {
 export interface PlanHarnessOptions {
   /** RF-627: the planner's answer to the coverage call; tests/recordings/fake/planner-coverage.json if absent. */
   readonly coverageRecording?: Recording;
+  /** Q-45: the answer to the call for the items no card builds (no card if absent), and a hook before it. */
+  readonly gapRecording?: Recording;
+  readonly beforeGapCall?: () => Promise<void>;
   /** RF-143: the planner on OpenAI with the server's key, a provider that needs consent. */
   readonly cloudPlanner?: boolean;
   /** Changes the project settings, for example its caps (RF-613). */
@@ -193,36 +194,6 @@ interface HarnessParts {
   readonly queue: RunQueue;
 }
 
-async function estimateOf(
-  s: Stores,
-  project: Project,
-  sourceRunId?: string,
-): Promise<PlanEstimate> {
-  const { writer, masker, clock, runs, projects, users } = s;
-  const estimate = new EstimatePlan({
-    ...{ projects, runs, users, clock, priceTable: budgetTable, serverKeys: { has: () => true } },
-    briefs: new FilePlanningBriefStore({ writer, masker }),
-    cards: new FileRunCards(writer),
-    answers: new FileAnswersFile({ writer, masker }),
-    usage: new MemoryAccountUsage(),
-    serverSettings: new MemoryServerSettings({}),
-    keys: new MemoryProviderKeyRepository(),
-    ...{ catalogue: () => Promise.resolve(shippedCatalogue) },
-    ...{ prompt: () => loadPlannerPrompt('prompts'), prdPrompt: () => loadPrdPrompt('prompts') },
-    dataModelPrompt: () => loadDataModelPrompt('prompts'),
-    flowsPrompt: () => loadFlowsPrompt('prompts'),
-    apiContractPrompt: () => loadApiContractPrompt('prompts'),
-    uxPrompt: () => loadUxPrompt('prompts'),
-    coveragePrompt: () => loadCoveragePrompt('prompts'),
-  });
-  const request = { actor, projectId: project.id };
-  const outcome = await estimate.execute(
-    sourceRunId === undefined ? request : { ...request, sourceRunId },
-  );
-  if (!outcome.ok) throw new Error(`The plan estimate was refused: ${outcome.error}`);
-  return outcome.value;
-}
-
 function harnessOf(parts: HarnessParts): PlanHarness {
   const { s, dataDir, project, providers, queue } = parts;
   const { writer, masker } = s;
@@ -258,7 +229,7 @@ function harnessOf(parts: HarnessParts): PlanHarness {
       if (manifest === undefined) throw new Error('The run has no manifest');
       return manifest;
     },
-    estimate: (sourceRunId) => estimateOf(s, project, sourceRunId),
+    estimate: (sourceRunId) => planEstimateOf(s, project, sourceRunId),
     async stopRunning() {
       for (const run of await s.runs.listRunning()) await queue.stop(run.userId, run.id);
     },
@@ -283,6 +254,8 @@ export async function createPlanHarness(
     coverageRecording:
       options.coverageRecording ??
       (await loadRecording(join('tests', 'recordings', 'fake', 'planner-coverage.json'))),
+    gapRecording: options.gapRecording ?? noGapCards(),
+    ...(options.beforeGapCall === undefined ? {} : { beforeGapCall: options.beforeGapCall }),
     ...(cloud ? { serverOpenAiKey: serverKeyText } : {}),
     beforeCall: async () => {
       if (made.harness !== undefined) await options.beforeCall?.(made.harness);
