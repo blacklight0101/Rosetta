@@ -1,3 +1,4 @@
+import { checkFormulaLength, namePlace } from './formula-limit.js';
 import { workbookTooManySheets } from './workbook-errors.js';
 import type { SheetState } from './workbook-model.js';
 import { relationshipId, type Attributes, type XmlVisitor } from './xml-stream.js';
@@ -76,7 +77,12 @@ export class WorkbookXmlReader implements XmlVisitor {
   }
 
   text(text: string): void {
-    if (this.pending !== undefined) this.nameText += text;
+    if (this.pending === undefined) return;
+    this.nameText += text;
+    const { name, sheetIndex } = this.pending;
+    checkFormulaLength(this.nameText.length, this.fileName, () =>
+      namePlace(name, sheetIndex === undefined ? undefined : this.sheets[sheetIndex]?.name),
+    );
   }
 
   close(name: string): void {

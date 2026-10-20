@@ -40,6 +40,12 @@ export interface WorkbookSpec {
   /** Sheet numbers (1-based) whose part is left out of the package. */
   readonly omitSheetParts?: readonly number[];
   readonly omitWorkbookXml?: boolean;
+  /** Where the workbook part lives (default `xl/workbook.xml`); `_rels/.rels` and its own rels follow it. */
+  readonly workbookPart?: string;
+  /** The `Target` that `_rels/.rels` gives the workbook, when it must differ from `workbookPart`. */
+  readonly rootTarget?: string;
+  /** Leaves `_rels/.rels` out of the package. */
+  readonly omitRootRels?: boolean;
   /** Replaces `xl/workbook.xml` with these bytes. */
   readonly rawWorkbookXml?: string;
   readonly date1904?: boolean;
@@ -96,20 +102,29 @@ function sharedStringsXml(strings: readonly string[]): string {
   return `${XML_HEAD}<sst xmlns="${MAIN_NS}" count="${count}" uniqueCount="${count}">${items}</sst>`;
 }
 
+function relsPartOf(part: string): string {
+  const at = part.lastIndexOf('/');
+  return `${part.slice(0, at + 1)}_rels/${part.slice(at + 1)}.rels`;
+}
+
 function packageParts(spec: WorkbookSpec): ZipItem[] {
+  const workbookPart = spec.workbookPart ?? 'xl/workbook.xml';
+  const rootTarget = spec.rootTarget ?? workbookPart;
   const parts: ZipItem[] = [
     {
       name: '[Content_Types].xml',
       data: `${XML_HEAD}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`,
     },
-    {
-      name: '_rels/.rels',
-      data: `${XML_HEAD}<Relationships xmlns="${PKG_REL_NS}"><Relationship Id="rId1" Type="${REL_NS}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
-    },
-    { name: 'xl/_rels/workbook.xml.rels', data: workbookRels(spec) },
+    { name: relsPartOf(workbookPart), data: workbookRels(spec) },
   ];
+  if (spec.omitRootRels !== true) {
+    parts.push({
+      name: '_rels/.rels',
+      data: `${XML_HEAD}<Relationships xmlns="${PKG_REL_NS}"><Relationship Id="rId1" Type="${REL_NS}/officeDocument" Target="${rootTarget}"/></Relationships>`,
+    });
+  }
   if (spec.omitWorkbookXml !== true)
-    parts.push({ name: 'xl/workbook.xml', data: spec.rawWorkbookXml ?? workbookXml(spec) });
+    parts.push({ name: workbookPart, data: spec.rawWorkbookXml ?? workbookXml(spec) });
   spec.sheets.forEach((sheet, i) => {
     const number = i + 1;
     if (spec.omitSheetParts?.includes(number) === true) return;

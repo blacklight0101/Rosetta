@@ -65,6 +65,12 @@ export interface PivotTable {
   readonly range?: string;
 }
 
+/** Hidden rows or columns as ranges (`2:3`, `5`; `B:C`, `E`); `omitted` counts the ranges past the cap. */
+export interface HiddenLines {
+  readonly ranges: readonly string[];
+  readonly omitted: number;
+}
+
 export interface WorkbookSheet {
   readonly name: string;
   readonly state: SheetState;
@@ -73,6 +79,8 @@ export interface WorkbookSheet {
   readonly usedRange?: string;
   readonly cells: readonly WorkbookCell[];
   readonly mergedRanges: readonly string[];
+  readonly hiddenRows: HiddenLines;
+  readonly hiddenColumns: HiddenLines;
   readonly validations: readonly DataValidationRule[];
   readonly conditionalRules: readonly ConditionalRule[];
   readonly comments: readonly SheetComment[];
@@ -93,6 +101,8 @@ export interface DefinedName {
 export interface ExternalLink {
   /** Only the file name of the target (Q-38); the file is never opened. */
   readonly fileName: string;
+  /** The link number a formula uses (1-based), only when a dropped link before it shifts it. */
+  readonly position?: number;
 }
 
 export interface DataConnection {
@@ -107,6 +117,8 @@ export interface WorkbookModel {
   readonly sheets: readonly WorkbookSheet[];
   readonly definedNames: readonly DefinedName[];
   readonly externalLinks: readonly ExternalLink[];
+  /** External links with no usable file name, left out of `externalLinks`; absent when none. */
+  readonly unnamedExternalLinks?: number;
   readonly connections: readonly DataConnection[];
   /** True when the package holds `xl/vbaProject.bin`. */
   readonly hasMacros: boolean;

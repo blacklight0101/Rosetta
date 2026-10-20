@@ -10,6 +10,8 @@ const LINE_START = /^([A-Z]{1,3}[0-9]{1,7}(?::[A-Z]{1,3}[0-9]{1,7})?)(?=[\s{]|$)
 const FIELD_START = /^([A-Z]{1,3}[0-9]{1,7})(?=\s|$)/u;
 const ROW_MARKER = /^R[0-9]+$/u;
 const SHOWN_CELLS = 6;
+/** A workbook or sheet name longer than this is cut and marked, so a long name cannot flood a page. */
+const MAX_NAME_CHARS = 120;
 const RANGE_TOKEN = /^[A-Z]{1,3}[0-9]{1,7}(?::[A-Z]{1,3}[0-9]{1,7})?$/u;
 /** A rule line names at most this many ranges before its rule word (the renderer writes at most 40). */
 const MAX_RULE_RANGES = 40;
@@ -57,6 +59,10 @@ function cellsOfLine(file: string, line: string): string[] {
   return cell === undefined ? [] : [cell];
 }
 
+function shortName(name: string): string {
+  return name.length > MAX_NAME_CHARS ? `${name.slice(0, MAX_NAME_CHARS)}...` : name;
+}
+
 function cellsText(cells: readonly string[]): string {
   const shown = cells.slice(0, SHOWN_CELLS).join(', ');
   const more = cells.length - SHOWN_CELLS;
@@ -73,6 +79,6 @@ export function workbookCellLabel(path: string, lines: readonly string[]): strin
   if (sheet === undefined || file === undefined || workbook === undefined) return undefined;
   if (!SHEET_FILES.includes(file) || !WORKBOOK_FOLDER.test(workbook)) return undefined;
   const cells = [...new Set(lines.flatMap((line) => cellsOfLine(file, line)))];
-  const where = `${workbook}, sheet ${sheet}`;
+  const where = `${shortName(workbook)}, sheet ${shortName(sheet)}`;
   return cells.length === 0 ? where : `${where}, cells ${cellsText(cells)}`;
 }

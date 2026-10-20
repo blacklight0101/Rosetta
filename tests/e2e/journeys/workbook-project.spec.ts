@@ -143,8 +143,7 @@ test('RF-150 RF-156 workbooks replaced between two runs give a second report tha
 
   await uploadWorkbooks(page, await journeyWorkbooks(0.15));
 
-  // The start page says so when it is opened again; unlike the zip form it does not say so at once.
-  await openWorkbookStart(page, projectName);
+  // The notice shows at once, from the flag the finish answer carries, with no reopening of the page.
   await expect(page.getByText('The code changed since the last run.')).toBeVisible();
   const runPath = await scanAndUnderstand(page, areas);
   const secondReport = await openReport(page);

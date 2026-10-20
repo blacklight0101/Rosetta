@@ -66,6 +66,8 @@ const workbookSummarySchema = z.object({
   skipped: z.array(z.object({ name: z.string(), reason: z.string() })),
   snapshotHash: z.string(),
   uploadedAt: z.string().optional(),
+  /** The newest run read other code than this batch; absent from an older server, then the page keeps its notice. */
+  codeChangedSinceLastRun: z.boolean().optional(),
 });
 
 export type WorkbookSummary = z.output<typeof workbookSummarySchema>;

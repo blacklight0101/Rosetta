@@ -4,7 +4,7 @@ import { RosettaError } from '../../../domain/errors/rosetta-error.js';
 import { LimitCounter } from '../entry-guards.js';
 import type { PlannedFile } from '../zip-entry-plan.js';
 import { zipNotReadable, zipTooLarge } from '../zip-errors.js';
-import { workbookNotReadable, workbookTooLarge } from './workbook-errors.js';
+import { quoted, workbookNotReadable, workbookTooLarge } from './workbook-errors.js';
 import type { WorkbookLimits } from './workbook-limits.js';
 import { XmlFeeder, type Attributes, type XmlVisitor } from './xml-stream.js';
 
@@ -22,14 +22,38 @@ export interface Relationship {
   readonly external: boolean;
 }
 
-/** The package part a relative `target` names, as seen from the part `owner`. */
-function resolveTarget(owner: string, target: string): string {
-  if (target.startsWith('/')) return target.slice(1);
-  return posix.normalize(posix.join(posix.dirname(owner), target));
+/** The relationships part of `owner`; the empty owner is the package itself (`_rels/.rels`). */
+function relationshipPartOf(owner: string): string {
+  if (owner === '') return '_rels/.rels';
+  return `${posix.dirname(owner)}/_rels/${posix.basename(owner)}.rels`;
 }
 
-function relationshipPartOf(owner: string): string {
-  return `${posix.dirname(owner)}/_rels/${posix.basename(owner)}.rels`;
+/** A target is a URI reference: `my%20book.xml` names `my book.xml`; one that cannot be decoded is kept. */
+function decodedOnce(target: string): string {
+  try {
+    return decodeURIComponent(target);
+  } catch {
+    return target;
+  }
+}
+
+/**
+ * The package part a relative `target` names, as seen from the part `owner`. A target that climbs
+ * out of the package (`../../etc/passwd`) is refused with RST-1927.
+ */
+function resolveTarget(owner: string, rawTarget: string): string {
+  const target = decodedOnce(rawTarget);
+  const joined = target.startsWith('/')
+    ? target.slice(1)
+    : posix.join(posix.dirname(owner), target);
+  const part = posix.normalize(joined);
+  if (part === '..' || part.startsWith('../')) {
+    throw workbookNotReadable(
+      relationshipPartOf(owner),
+      `the relationship ${quoted(target)} points outside the package`,
+    );
+  }
+  return part;
 }
 
 class RelationshipsReader implements XmlVisitor {
@@ -128,7 +152,7 @@ export class WorkbookPackage {
 
   private async feed(planned: PlannedFile, part: string, visitor: XmlVisitor): Promise<number> {
     const { maxPartBytes, zip } = this.settings.limits;
-    const feeder = new XmlFeeder(part, visitor);
+    const feeder = new XmlFeeder(part, visitor, this.settings.limits.maxTextChars);
     const decoder = new TextDecoder();
     let bytes = 0;
     for await (const chunk of await this.zip.openReadStreamPromise(planned.entry)) {

@@ -3679,7 +3679,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-44, P3-47
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the workbook reader and its limits (`src/infrastructure/sources/workbook/`, P3-44); the formula tokenizer and the external-name rewrite (P3-47, #647, #653); RF-151 and DEC-152; the error-code ranges in `docs/conventions.md`; the second-review verdicts on #653.
 - **Do**: the reader refuses a workbook holding a formula longer than 8,192 characters with RST-1931, at the point the formula is read (cell formulas, shared and array formulas, defined names, validation and conditional-formatting rules), before it reaches the tokenizer or the renderer. The message names the workbook, the sheet and the cell (or the defined name or rule) and says that Excel cannot write such a formula. In a batch nothing is published; in a zip the workbook is left out and listed with its reason (Q-41). Count characters as Excel does (UTF-16 code units after XML unescaping).
 - **Review probes**: a formula of exactly 8,192 characters (accepted) and of 8,193 (refused); the limit hit in a shared formula, a defined name and a validation rule; a formula whose escaped XML is longer than 8,192 but whose text is not (accepted); a zip holding such a workbook (left out and listed, the rest analysed); a batch of two where one is refused (nothing published).
@@ -3694,7 +3694,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-48, P3-49, P3-52
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-005 section 4.4; RF-150 and RF-152; the workbook reader and renderer (`src/infrastructure/sources/workbook/`); `web/src/pages/WorkbookUploadForm.tsx`, `use-workbook-upload.ts`, `web/src/lib/workbook-check.ts`; P3-55 (the zip form's notice); the P3-52 journey and its open questions (#652); the P3-46, P3-49 and P3-51 verdicts (#642, #639, #640).
 - **Do**: (1) the reader carries hidden rows and hidden columns of each sheet and the sheet header in `values.md` marks them, as RFC-005 section 4.4 asks; (2) after a replacing batch the workbook start page shows "The code changed since the last run." at once, from the flag the finish answer already carries, as P3-55 did for zips, and the P3-52 journey stops reopening the page; (3) check that the page reads the workbook file limit from the server (`GET /api/session` beside `uploadMaxMb`) and not a constant, and fix it if not; (4) check that the server refuses to start a run for a workbook project that has no source yet (not only the page), and add the refusal and its test if it is missing.
 - **Review probes**: a sheet with hidden rows, hidden columns and a hidden row inside a used range; a replacing batch with the page left open (notice shown, no reload); `ROSETTA_WORKBOOK_MAX_FILES=3` (the page says 3 and refuses a fourth file before upload); an API start of a workbook project with no source (refused with its code).
@@ -3709,7 +3709,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-44, P3-47, P3-51
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-151, RF-153 and its privacy rule (Q-38); the workbook reader (`package-reader.ts`, `workbook-xml-reader.ts`), the external-link naming and `workbook-cell-label.ts`; the P3-44 and P3-51 verdicts (#638, #640).
 - **Do**: (1) an external-link target that is double-encoded (`Book.xlsx%253Ftoken=SECRET`) keeps no query or fragment after decoding, at any depth of encoding, and a target that is only a query, fragment or host gives no empty file name (it is dropped and counted); (2) workbook and sheet names in the evidence cell label are capped, with the cut marked, so a long name cannot flood a page; (3) the reader finds the workbook part through `_rels/.rels` and the styles, shared-strings and connections parts through the workbook relationships instead of fixed paths, so a valid package with another layout is read and one whose relationships point outside the package is refused with its code; (4) one XML text node is capped so a single 100 MB value cannot take several times its size in memory; it is refused with its RF-151 code.
 - **Review probes**: `%253F`, `%25253F` and `%2523` in a link target; a link target of only `?a=b`; a 500-character sheet name in a citation; a package whose workbook part is `xl/book.xml` named by `_rels/.rels`; a relationship target of `../../etc/passwd`; a 100 MB single text node (memory stays within a small multiple of the cap).

@@ -6,7 +6,7 @@ import { RosettaError } from '../../../domain/errors/rosetta-error.js';
 // name the file, the reason and the next step. Refusals that are about the upload as a whole (its
 // size, its time, the free space) are not about a file and stay as they are.
 
-/** The codes of a workbook that cannot be read: the zip guards applied to the package and RST-1921..1928. */
+/** The codes of a workbook that cannot be read: the zip guards applied to the package and RST-1921..1928 and RST-1931. */
 const ABOUT_A_FILE: ReadonlySet<ErrorCode> = new Set([
   ERROR_CODES.zipNotReadable,
   ERROR_CODES.zipTooLarge,
@@ -23,6 +23,7 @@ const ABOUT_A_FILE: ReadonlySet<ErrorCode> = new Set([
   ERROR_CODES.workbookTooLarge,
   ERROR_CODES.workbookNotReadable,
   ERROR_CODES.workbookDuplicateName,
+  ERROR_CODES.workbookFormulaTooLong,
 ]);
 
 /** The same refusal with the file it is about; any other failure as it was. */

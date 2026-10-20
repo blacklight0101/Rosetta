@@ -131,6 +131,7 @@ export const ERROR_CODES = {
   workbookNotReadable: 'RST-1927',
   workbookDuplicateName: 'RST-1928',
   uploadNameUnreadable: 'RST-1930',
+  workbookFormulaTooLong: 'RST-1931',
   requestInvalid: 'RST-2000',
   notSignedIn: 'RST-2001',
   notAllowed: 'RST-2002',

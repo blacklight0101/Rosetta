@@ -1,5 +1,6 @@
 import { buildGrid, type SheetGrid } from './dependency-grid.js';
 import { fileNameOf } from './external-edit.js';
+import { linkNamesByNumber } from './external-link-numbers.js';
 import { extractReferences } from './formula-references.js';
 import type { RefBox } from './reference-box.js';
 import type { TableShape } from './table-reference.js';
@@ -102,7 +103,7 @@ function workbookNode(
     tableByName: new Map(tables.map((t) => [t.name.toLowerCase(), t])),
     nameSet: new Set(model.definedNames.map((d) => d.name.toLowerCase())),
     definedByKey: new Map(model.definedNames.map((d) => [nameKey(d.sheet, d.name), d])),
-    linkNames: model.externalLinks.map((link) => fileNameOf(link.fileName)),
+    linkNames: linkNamesByNumber(model.externalLinks).map(fileNameOf),
     tables,
   };
 }

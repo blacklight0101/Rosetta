@@ -2,7 +2,7 @@ import { valueFields } from './cell-value-text.js';
 import { canonicalRange, type PlacedCell } from './cell-order.js';
 import type { ByteBudget } from './render-output.js';
 import { TextFile } from './render-output.js';
-import type { WorkbookSheet } from './workbook-model.js';
+import type { HiddenLines, WorkbookSheet } from './workbook-model.js';
 import { NAME_CAP, quoteText } from './workbook-text.js';
 
 // RF-152, RFC-005 section 4.4: `values.md`, every non-empty cell of a sheet, one line per row. Each
@@ -16,12 +16,19 @@ function rangeText(range: string): string {
   return canonicalRange(range) ?? quoteText(range, 40);
 }
 
+function addHidden(file: TextFile, kind: string, hidden: HiddenLines): void {
+  if (hidden.ranges.length > 0) file.addWrapped(`- Hidden ${kind}: `, hidden.ranges, ', ');
+  if (hidden.omitted > 0) file.add(`- Hidden ${kind} not listed: ${String(hidden.omitted)}`);
+}
+
 function addHeader(file: TextFile, sheet: WorkbookSheet, cells: number): void {
   file.add(`# Values of sheet ${quoteText(sheet.name, NAME_CAP)}`);
   file.add(`- State: ${sheet.state}`);
   file.add(
     `- Used range: ${sheet.usedRange === undefined ? '(none)' : rangeText(sheet.usedRange)}`,
   );
+  addHidden(file, 'rows', sheet.hiddenRows);
+  addHidden(file, 'columns', sheet.hiddenColumns);
   const merged = sheet.mergedRanges.slice(0, MERGED_LISTED).map(rangeText);
   if (merged.length > 0) file.addWrapped('- Merged ranges: ', merged, ', ');
   const more = sheet.mergedRanges.length - merged.length;

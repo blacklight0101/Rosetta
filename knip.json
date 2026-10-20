@@ -11,7 +11,8 @@
     "tests/compose/serve.ts",
     "tests/support/frozen-database-harness.ts",
     "tests/support/read-project-child.ts",
-    "tests/support/dependency-child.ts"
+    "tests/support/dependency-child.ts",
+    "tests/support/text-cap-child.ts"
   ],
   "project": [
     "src/**/*.ts",
