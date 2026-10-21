@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 76      | 5         | 69         | 2         | 0                  | 25      | 49      | 2      | 32         | 0         |
-| **Total**               | **293** | **77**    | **189**    | **27**    | **0**              | **141** | **140** | **12** | **167**    | **0**     |
+| P3 Report and plan      | 77      | 5         | 70         | 2         | 0                  | 26      | 49      | 2      | 33         | 0         |
+| **Total**               | **294** | **77**    | **190**    | **27**    | **0**              | **142** | **140** | **12** | **168**    | **0**     |
 
 ## Conventions for every card
 
@@ -3987,3 +3987,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the fixes and tests.
 - **Done when**: each probe has a passing test; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-615, RF-231, RF-1015, Q-49; issue #704.
+
+### P3-77 - Follow-up: the default models e2e waits for the model list
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-71
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RNF-005, RF-405, DEC-106; `tests/e2e/admin-models.spec.ts`, `web/src/pages/AdminModelsPage.tsx` and the model list fetch of P3-65 and P3-71. Found by the orchestrator on 2026-10-21: the spec failed four times in CI (also on main at 15fbc831), at "DEC-106 asks for a model when a provider is chosen without one" (`locator.fill` on a model field that had become a dropdown) and at "RF-405 lists the models installed on Ollama and saves one" (`toHaveJSProperty('tagName', 'SELECT')`). Since P3-71 the page fetches the Ollama model list on load for the context bound, so a route mock set after `page.goto` and a field that turns from a text input into a dropdown when a list arrives make the steps race.
+- **Do**: make the spec deterministic without weakening it: set each route mock before the page loads the list, wait for the model field's final state (dropdown or text field with its note) before acting, and reset the shared default-models setting the steps change; fix the page only if it changes the field's type after a user has started typing.
+- **Review probes**: the spec passes 20 times in a row locally (`--repeat-each=20`) on the CI shard settings; every existing assertion kept; no fixed waits (`waitForTimeout`).
+- **Behaviour to preserve**: DEC-106, DEC-156 and the P3-71 Context size field.
+- **Delivers**: the spec fix and, if needed, the page fix.
+- **Done when**: the probes hold; `npm run verify` and the admin-models e2e green.
+- **Refs**: RNF-005, RF-405, DEC-106; issue #716.
