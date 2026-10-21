@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 85      | 5         | 78         | 2         | 0                  | 28      | 55      | 2      | 41         | 0         |
-| **Total**               | **302** | **77**    | **198**    | **27**    | **0**              | **144** | **146** | **12** | **176**    | **0**     |
+| P3 Report and plan      | 86      | 5         | 79         | 2         | 0                  | 28      | 56      | 2      | 42         | 0         |
+| **Total**               | **303** | **77**    | **199**    | **27**    | **0**              | **144** | **147** | **12** | **177**    | **0**     |
 
 ## Conventions for every card
 
@@ -4122,3 +4122,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the limits in the model list, the defaults, the estimate lines and tests.
 - **Done when**: each probe has a passing test; `npm run verify` green.
 - **Refs**: RF-405, RF-201, RF-425, Q-57; issue #740.
+
+### P3-86 - Follow-up: a reasoning model keeps room for its answer
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-402 and RF-405 (the Q-58 scenario), RF-202, RF-208, Q-58; `src/infrastructure/providers/openai/openai-request.ts` (sends `max_completion_tokens`, no reasoning setting), `openai-response.ts`, the Anthropic adapter's thinking settings, `src/application/agent/answer-collector.ts` (continuation of a cut answer), `prices/models.yaml`. Found in the orchestrator's evaluation of 2026-10-21 (Invoice_Generator.xlsm, every role on OpenAI `gpt-5-nano`, reader output limit 4,096): every final answer came back with empty text and `finish_reason: length` after 4,096 output tokens, because the hidden reasoning used the whole budget; the two continuations came back empty the same way, the task ended `InvalidOutput` with no card, the retry did the same, and the plan was refused (RST-1802). The reasoning tokens were billed as output. The builder confirms the request parameters on the provider's API reference (OpenAI reasoning effort for the Chat Completions API; Anthropic thinking and effort for the Messages API), never from memory.
+- **Do**: (1) a role may set a reasoning effort; for a model the shipped list marks as a reasoning model, the adapter sends it (OpenAI `reasoning_effort`, Anthropic `effort` where the model accepts it); the default for every role is `low`; a model that does not accept the setting is never sent it; (2) the response records the reasoning tokens the provider reports (as part of the output tokens in the ledger, shown apart in the call log); (3) an answer that comes back empty with the output limit reached is not asked to continue; it is retried once with the output limit doubled (still under the model's maximum and through the budget guard), and the event names the reason; a second empty answer ends the task as today; (4) `prices/models.yaml` marks the reasoning models of P3-84's list; the start page shows a role's effort.
+- **Review probes**: a recorded `gpt-5-nano` answer with empty content, `finish_reason: length` and reasoning tokens equal to the limit (one retry with the doubled limit, its cards kept); a second empty answer (task ends as today, event logged); a non-reasoning model never gets `reasoning_effort`; the role's effort reaches the request; the reasoning tokens are in the ledger and the call log; an Anthropic model with effort; the doubled limit passes the cap check or is refused cleanly; recorded responses only.
+- **Behaviour to preserve**: RF-202 repairs and continuations of a cut answer with text; RF-208 retry; ADR-003 provider types stay in the adapter; ADR-007 every call metered.
+- **Delivers**: the effort setting, the empty-answer retry, the reasoning tokens and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-402, RF-405, RF-202, RF-208, Q-58; issue #744.
