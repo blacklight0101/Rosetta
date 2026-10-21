@@ -20,9 +20,10 @@ const area = (name: string, files: string[]): Area => ({
 });
 const loan = area('Loan.xlsx', ['Loan.xlsx/workbook.md']);
 const root = area('(root)', ['dependencies.md']);
+const rates = area('Rates.xlsx', ['Rates.xlsx/workbook.md']);
 const workbookKey = `workbook__${'0'.repeat(8)}-0000-0000-0000-${'0'.repeat(12)}@${'a'.repeat(16)}`;
 
-async function overviewOf(snapshotKey: string) {
+async function overviewOf(snapshotKey: string, folders: readonly string[] = ['Loan.xlsx']) {
   const provider = new Answers(() => answer('{}'));
   const task: ReaderTask = { agentTaskId: 'reader-001', area: loan };
   const run = sampleRun({ stage: 'understand' });
@@ -37,9 +38,9 @@ async function overviewOf(snapshotKey: string) {
     execution: { run, signal: new AbortController().signal },
     overviewPrompt: { name: 'summariser/overview.v1.md', version: 'v1', sha256: 'ab', text: 'x' },
     scanned: {
-      codeMap: { areas: [loan, root] },
+      codeMap: { areas: [loan, root, rates] },
       source: { snapshotKey },
-      workbookFolders: ['Loan.xlsx'],
+      workbookFolders: folders,
     },
     allTasks: [task],
   } as const;
@@ -53,6 +54,12 @@ describe('the overview of a run over a workbook project', () => {
 
     expect(overview.notCovered.join('\n')).not.toContain('(root)');
     expect(overview.notice).toContain('No card from 1 area passed the citation check.');
+  });
+
+  it('RF-231 lists the (root) area with dependencies.md when the project has two workbooks', async () => {
+    const overview = await overviewOf(workbookKey, ['Loan.xlsx', 'Rates.xlsx']);
+
+    expect(overview.notCovered.join('\n')).toContain('(root)');
   });
 
   it('RF-231 a zip keeps its root area in the list', async () => {

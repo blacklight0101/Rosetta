@@ -23,6 +23,17 @@ describe('plannedAreas', () => {
     expect(planned.map((each) => each.name)).toEqual(['Loan.xlsx']);
   });
 
+  it('RF-231 keeps the (root) area with dependencies.md when the project has two workbooks', () => {
+    const second = area('Rates.xlsx', ['Rates.xlsx/workbook.md']);
+    const planned = plannedAreas({
+      codeMap: { areas: [loan, root, second] },
+      source: { snapshotKey: workbookKey },
+      workbookFolders: ['Loan.xlsx', 'Rates.xlsx'],
+    });
+
+    expect(planned.map((each) => each.name)).toEqual(['Loan.xlsx', '(root)', 'Rates.xlsx']);
+  });
+
   it('RF-231 keeps every area of a zip, even when it lists a workbook', () => {
     const planned = plannedAreas({
       codeMap: { areas: [loan, root, helper] },
