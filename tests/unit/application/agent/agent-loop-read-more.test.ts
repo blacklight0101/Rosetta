@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { runAgentTask } from '../../../../src/application/agent/agent-loop.js';
 import type { AgentToolSet } from '../../../../src/application/agent/agent-tool-set.js';
 import type { FileEntry } from '../../../../src/domain/code-map/file-entry.js';
@@ -34,6 +35,13 @@ const codeFiles: readonly FileEntry[] = [
   entry('src/Other.cs', 3000),
 ];
 
+const pathArguments = z.object({ path: z.string() });
+
+function pathOf(args: unknown): string {
+  const parsed = pathArguments.safeParse(args);
+  return parsed.success ? parsed.data.path : '';
+}
+
 function toolsOver(files: readonly FileEntry[]): AgentToolSet {
   return {
     definitions: [],
@@ -43,7 +51,7 @@ function toolsOver(files: readonly FileEntry[]): AgentToolSet {
     renderBlock: (_source, text) => text,
     rowSpans: () => Promise.resolve(undefined),
     run(call) {
-      const path = String((call.arguments as { path?: unknown }).path);
+      const path = pathOf(call.arguments);
       const file = files.find((each) => each.path === path);
       const excerpts = file === undefined ? [] : [{ path, startLine: 1, endLine: file.lines }];
       return Promise.resolve({ content: `read ${path}`, excerpts });
@@ -186,5 +194,66 @@ describe('P3-78 the files listed and counted', () => {
     const result = await runAgentTask(request(fake));
 
     expect(result.turns).toBe(2);
+  });
+});
+
+describe('P3-78 the threshold and the list', () => {
+  const split = (read: number, unread: number): readonly FileEntry[] => [
+    entry('src/Read.cs', read),
+    entry('src/Unread.cs', unread),
+  ];
+
+  it('Q-50 refuses an answer at 49% of the first-party tokens', async () => {
+    const t = over(split(49, 51), [
+      toolTurn([read('src/Read.cs')]),
+      textTurn(shippingCards),
+      textTurn(shippingCards),
+    ]);
+
+    const result = await t.run();
+
+    expect(result.turns).toBe(3);
+    expect(t.fake.requests[2]?.messages.at(-1)?.content).toContain('49%');
+  });
+
+  it('Q-50 accepts an answer at exactly 50% at once', async () => {
+    const t = over(split(50, 50), [toolTurn([read('src/Read.cs')]), textTurn(shippingCards)]);
+
+    const result = await t.run();
+
+    expect(result.turns).toBe(2);
+  });
+});
+
+describe('P3-78 the cap of the list', () => {
+  const names = (at: number) => entry(`src/F${String(at).padStart(2, '0')}.cs`, 10);
+
+  it('Q-50 lists at most 20 unread files and counts the rest', async () => {
+    const many = Array.from({ length: 25 }, (_, at) => names(at));
+    const t = over(
+      [entry('src/Read.cs', 10), ...many],
+      [toolTurn([read('src/Read.cs')]), textTurn(shippingCards), textTurn(shippingCards)],
+    );
+
+    await t.run();
+
+    const text = t.fake.requests[2]?.messages.at(-1)?.content ?? '';
+    expect(text.match(/src\/F\d\d\.cs/gu)).toHaveLength(20);
+    expect(text).toContain('... and 5 more files');
+  });
+
+  it('RF-206 lists at most 20 files to a reader that read none', async () => {
+    const many = Array.from({ length: 25 }, (_, at) => names(at));
+    const t = over(many, [
+      textTurn(shippingCards),
+      toolTurn([read('src/F00.cs')]),
+      textTurn(shippingCards),
+    ]);
+
+    await t.run();
+
+    const text = t.fake.requests[1]?.messages.at(-1)?.content ?? '';
+    expect(text.match(/src\/F\d\d\.cs/gu)).toHaveLength(20);
+    expect(text).toContain('... and 5 more files');
   });
 });
