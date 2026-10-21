@@ -26,7 +26,7 @@ describe('the line about files not read with deep paths', () => {
     expect(line.length).toBeLessThan(1000);
     expect(line).toContain('6 files, 95% of first-party tokens not read.');
     expect(line).toContain('Next step: run a Deepen to read them.');
-    expect(line).toContain('Aaxxxx.java');
+    expect(line).toContain('Axxxxx.java');
   });
 
   it('RF-264 round-trips through overview.json, so the overview is not lost', () => {

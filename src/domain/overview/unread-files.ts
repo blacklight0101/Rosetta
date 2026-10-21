@@ -30,10 +30,19 @@ function shareText(unread: UnreadFiles): string | undefined {
   return whole === 0 && notRead > 0 ? 'less than 1%' : `${String(whole)}%`;
 }
 
-function largestText(unread: UnreadFiles): string {
+/** `overview.json` refuses a line over 1000 characters (and so loses the overview); stay well under. */
+const MAX_LINE = 900;
+/** The tail of a path kept when the line would be too long: the file name and its nearest folders. */
+const SHORT_PATH = 80;
+
+function shortened(path: string): string {
+  return path.length <= SHORT_PATH ? path : `...${path.slice(path.length - SHORT_PATH + 3)}`;
+}
+
+function largestText(unread: UnreadFiles, pathOf: (path: string) => string): string {
   const shown = unread.files
     .slice(0, LARGEST_SHOWN)
-    .map((file) => `${file.path} (${plural(file.tokens, 'token')})`);
+    .map((file) => `${pathOf(file.path)} (${plural(file.tokens, 'token')})`);
   const more = unread.files.length - shown.length;
   return `Largest: ${shown.join(', ')}${more > 0 ? `, and ${number.format(more)} more` : ''}.`;
 }
@@ -48,5 +57,8 @@ export function unreadFilesLine(unread: UnreadFiles): string | undefined {
       ? plural(count, 'file')
       : `${plural(count, 'file')}, ${share} of first-party tokens not read`;
   const next = `Next step: run a Deepen to read ${count === 1 ? 'it' : 'them'}.`;
-  return `${UNREAD_FILES_PREFIX}${figures}. ${largestText(unread)} ${next}`;
+  const line = (pathOf: (path: string) => string): string =>
+    `${UNREAD_FILES_PREFIX}${figures}. ${largestText(unread, pathOf)} ${next}`;
+  const full = line((path) => path);
+  return full.length <= MAX_LINE ? full : line(shortened);
 }
