@@ -1,4 +1,5 @@
 import type { DataBlockSource } from '../../domain/egress/data-block.js';
+import type { RowSpan } from '../cards/row-citations.js';
 import type { ToolCall, ToolDefinition } from '../ports/llm-provider.js';
 import type { ToolCallIds, ToolOutcome } from './read-only-tools.js';
 
@@ -10,5 +11,7 @@ export interface AgentToolSet {
   readableAreaFiles(): readonly string[];
   /** RF-145: text as one data block with a fresh tag of its own. */
   renderBlock(source: DataBlockSource, text: string): string;
+  /** RF-202: the lines that start with each row of a rendered workbook file, or undefined when it cannot be read. */
+  rowSpans(path: string): Promise<ReadonlyMap<number, RowSpan> | undefined>;
   run(call: ToolCall, ids: ToolCallIds): Promise<ToolOutcome>;
 }

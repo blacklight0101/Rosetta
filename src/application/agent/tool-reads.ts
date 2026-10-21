@@ -4,9 +4,10 @@ import type { ToolAnswer } from './tool-answer.js';
 import type { ToolLimits } from './tool-limits.js';
 import { cutLine, linesThatFit } from './tool-text.js';
 
-// RF-144, RF-146, RF-201: read_file and grep through the RepositoryReader, with every result cut
-// to the tool limits. A read keeps the file's lines exactly as they are (only a line longer than
-// the limit is cut), so line numbers and the egress guard's line-based masking stay valid.
+// RF-144, RF-146, RF-201, RF-202: read_file and grep through the RepositoryReader, with every result
+// cut to the tool limits. A read keeps the file's lines as they are (only a line longer than the
+// limit is cut) and gives each one with its number, `12: text` (Q-47), so a model that cites a
+// range copies numbers it can see. The egress guard reads a numbered line like any other.
 
 interface LinesRequest {
   /** The code map's spelling of the path. */
@@ -23,10 +24,12 @@ export async function readLinesBounded(
 ): Promise<ToolAnswer> {
   const read = await reader.readLines(request);
   if (!read.ok) return err({ code: read.error.code, message: read.error.message });
-  const lines = read.value.lines.map((line) => cutLine(line, limits.maxLineChars));
+  const { path, startLine } = read.value;
+  const lines = read.value.lines.map(
+    (line, index) => `${String(startLine + index)}: ${cutLine(line, limits.maxLineChars)}`,
+  );
   const fitting = Math.max(1, linesThatFit(lines, limits.maxResultChars));
   const kept = lines.slice(0, Math.min(fitting, limits.maxReadLines));
-  const { path, startLine } = read.value;
   const endLine = startLine + kept.length - 1;
   const notice = omittedNotice(endLine + 1, read.value.endLine);
   const text = notice === undefined ? kept.join('\n') : `${kept.join('\n')}\n${notice}`;
