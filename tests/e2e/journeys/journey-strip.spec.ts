@@ -16,6 +16,7 @@ import { estimate, writeButton } from '../support/plan-setup-page.js';
 import { accountFor } from '../support/seed.js';
 import { signInAs } from '../support/sign-in.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
+import { replayRunId } from '../support/seed-replay.js';
 import { transitionsDone } from '../support/transitions.js';
 
 // RF-615, RF-614, RF-006, DEC-143, RNF-010: the journey from code to package on the pages of the
@@ -108,7 +109,7 @@ test('RF-615 RF-614 a failed plan leaves the earlier steps as they were and Try 
 
   await expect(stepOf(page, 'Brief')).toContainText('Brief saved');
   await expect(stepOf(page, 'Estimate')).toHaveAttribute('aria-current', 'step');
-  await expect(estimate(page)).toContainText(/\$[\d.]+ likely/u);
+  await expect(estimate(page)).toContainText(/(\$[\d.]+|[\d,]+ tokens) likely/u);
   await expectNoSeriousViolations(page);
   await writeButton(page).click();
   await expect(runStatus(page)).toContainText('Failed', { timeout: 90_000 });
@@ -129,8 +130,57 @@ test('RF-615 RF-614 a failed plan leaves the earlier steps as they were and Try 
   await journey(page).getByRole('button', { name: 'Try the plan again' }).click();
 
   await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}\/plan-setup\?run=[0-9a-f-]{36}$/u);
-  await expect(estimate(page)).toContainText(/\$[\d.]+ likely/u);
+  await expect(estimate(page)).toContainText(/(\$[\d.]+|[\d,]+ tokens) likely/u);
   await expect(writeButton(page)).toBeEnabled();
   await expect(stepOf(page, 'Plan')).toContainText('Failed');
+  await expectNoSeriousViolations(page);
+});
+
+test('RF-627 RF-615 a package written with gaps reads "Written with gaps" and links checks.md and the download, never Done', async ({
+  page,
+}, info) => {
+  await signInAs(page.context(), accountFor('replay', info.project.name));
+  // The facts of the journey: the recorded run, and a plan run that wrote the package and ended RST-1806.
+  const planId = '00000000-0000-4000-a0ee-0000000000f1';
+  const ended = { queueState: 'Ended', endedAt: '2026-10-12T10:31:00.000Z' };
+  await page.route('**/api/projects/*/journey*', async (route) => {
+    await route.fulfill({
+      json: {
+        scanRunId: null,
+        briefSaved: true,
+        source: {
+          ...{ id: replayRunId(info.project.name), runKey: '20261012-100000-understand' },
+          ...{ endState: 'Completed', costMicros: 120_000, errorCode: null, ...ended },
+          ...{ supportedClaims: 4, openQuestions: 0 },
+        },
+        plan: {
+          ...{ id: planId, runKey: '20261012-103000-plan', endState: 'Failed' },
+          ...{ costMicros: 31_000, errorCode: 'RST-1806', ...ended },
+        },
+        handoff: { runId: planId, runKey: '20261012-103000-plan', outOfDate: false, gaps: true },
+      },
+    });
+  });
+
+  await page.goto(`/runs/${replayRunId(info.project.name)}`);
+
+  const written = stepOf(page, 'Package');
+  await expect(written).toContainText('With gaps');
+  await expect(written).toContainText('Written with gaps');
+  await expect(written).not.toContainText('Done');
+  await expect(written.getByRole('link', { name: 'checks.md' })).toHaveAttribute(
+    'href',
+    /\/runs\/[0-9a-f-]{36}\/files\/handoff\/checks\.md$/u,
+  );
+  await expect(written.getByRole('link', { name: 'Download the package' })).toHaveAttribute(
+    'href',
+    /\/api\/runs\/[0-9a-f-]{36}\/handoff\.zip$/u,
+  );
+  await expect(stepOf(page, 'Plan')).toContainText('RST-1806');
+  await expect(journey(page).getByRole('button', { name: 'Try the plan again' })).toBeVisible();
+  await page.setViewportSize({ width: 360, height: 780 });
+  await expectNoSidewaysScroll(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await transitionsDone(page);
   await expectNoSeriousViolations(page);
 });
