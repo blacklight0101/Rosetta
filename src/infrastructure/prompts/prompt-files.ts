@@ -130,6 +130,12 @@ export function loadCoveragePrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'planner/coverage.v1.md');
 }
 
+/** The planner's prompt for the task cards of the items no card builds (Q-45), checked and hashed. */
+// RNF-004
+export function loadGapPrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'planner/gap.v1.md');
+}
+
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {
   return placeholders.reduce(requirePlaceholder, file);
 }

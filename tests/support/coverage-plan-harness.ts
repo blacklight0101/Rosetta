@@ -31,14 +31,23 @@ export async function withCoverageAnswer(text: string): Promise<Recording> {
   return { ...recording, calls: [{ attempts: [{ response }] }] };
 }
 
-/** The recording whose plan has no task card at all. */
-export async function withoutTasks(): Promise<Recording> {
+async function withPlan(patch: Record<string, unknown>): Promise<Recording> {
   const recording = await base();
   const first = responseOf(recording, 0);
   const body = first.text.replace(/^```json\n/u, '').replace(/\n```\s*$/u, '');
   const plan: unknown = JSON.parse(body);
   if (typeof plan !== 'object' || plan === null) throw new Error('The plan is an object');
-  const text = JSON.stringify({ ...plan, tasks: [] });
+  const text = JSON.stringify({ ...plan, ...patch });
   const calls = [{ attempts: [{ response: { ...first, text } }] }, ...recording.calls.slice(1)];
   return { ...recording, calls };
+}
+
+/** The recording whose plan has no task card at all. */
+export function withoutTasks(): Promise<Recording> {
+  return withPlan({ tasks: [] });
+}
+
+/** The recording whose plan has no phase, so every task card is in a phase that does not exist. */
+export function withoutPhases(): Promise<Recording> {
+  return withPlan({ phases: [] });
 }
