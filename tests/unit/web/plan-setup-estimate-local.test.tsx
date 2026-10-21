@@ -52,7 +52,9 @@ describe('RF-613 the plan estimate with a local model', () => {
     renderPlan(answers('ollama', { zero: true, caps: [costCap(true), tokenCap(true)] }));
     await ready();
 
-    expect(card().textContent).toContain('60,000 tokens likely (low 30,000 tokens, high 90,000 tokens)');
+    expect(card().textContent).toContain(
+      '60,000 tokens likely (low 30,000 tokens, high 90,000 tokens)',
+    );
     expect(card().querySelector('.rst-plan-estimate__lead')?.textContent).not.toContain('$');
   });
 
