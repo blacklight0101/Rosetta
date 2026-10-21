@@ -9,6 +9,7 @@ import { journeyOf } from '../lib/live-run/journey.js';
 import { logCountOf } from '../lib/live-run/log-count.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState, UploadSourceState } from '../lib/live-run/run-state.js';
+import { stepperOf } from '../lib/live-run/run-stepper.js';
 import { roleTotalsOf } from '../lib/live-run/run-summary.js';
 import { workingNowOf } from '../lib/live-run/working-now.js';
 import { ActivityTab } from './ActivityTab.js';
@@ -18,6 +19,7 @@ import { CodeMap } from './CodeMap.js';
 import { DeepenProgress } from './DeepenProgress.js';
 import { RetryNotice } from './RetryNotice.js';
 import { RunJourney } from './RunJourney.js';
+import { RunStepper } from './RunStepper.js';
 import { SpendPanel } from './SpendPanel.js';
 import { useCodeAreas } from './use-code-areas.js';
 import { endedAgents, useRunCoverage } from './use-run-coverage.js';
@@ -163,7 +165,13 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
   return (
     <>
       <Facts state={state} source={props.source} />
-      <RunJourney steps={journeyOf({ stage, phase, state, tiles })} />
+      {stage === 'plan' ? (
+        <RunStepper
+          steps={stepperOf({ stage, commitSha: run.commitSha, reportBuilt: false }, state, phase)}
+        />
+      ) : (
+        <RunJourney steps={journeyOf({ stage, phase, state, tiles })} />
+      )}
       {state.retry === undefined ? null : <RetryNotice retry={state.retry} />}
       {state.deepen === undefined ? null : <DeepenProgress progress={state.deepen} />}
       <div class="rst-running__grid">

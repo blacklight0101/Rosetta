@@ -1,4 +1,5 @@
 import type { JourneyFacts, JourneyRunFacts } from '../../api/journey-schemas.js';
+import { runDownloadPath } from '../../api/runs.js';
 import { costLabel } from '../live-run/format.js';
 import { nextOf, type JourneyAction, type JourneyLink } from './journey-action.js';
 import {
@@ -18,7 +19,16 @@ import {
 // and has no page, so it is never offered.
 
 /** `current` is the step that holds the next action; `upcoming` is open but not yet reached. */
-export type StepState = 'done' | 'current' | 'upcoming' | 'locked' | 'failed' | 'out-of-date';
+export type StepState =
+  | ('done' | 'current' | 'upcoming' | 'locked' | 'failed' | 'out-of-date')
+  /** RF-627: the package was written but some items are built by no task card. */
+  | 'gaps';
+
+/** A file or a download a step offers besides its page. */
+export interface StepLink {
+  readonly label: string;
+  readonly href: string;
+}
 
 export interface JourneyStep {
   readonly key: StepKey;
@@ -29,6 +39,8 @@ export interface JourneyStep {
   readonly cost: string;
   /** The page of the step; none for a step the user may not open. */
   readonly href: string | undefined;
+  /** Files and downloads of the step, apart from its page; none for most steps. */
+  readonly links: readonly StepLink[];
   /** The step that holds the next action, whatever its state. */
   readonly here: boolean;
 }
@@ -46,7 +58,10 @@ export interface JourneyView {
 }
 
 type Draft = Omit<JourneyStep, 'here'>;
-type Part = Pick<Draft, 'state' | 'detail'> & { readonly href?: string | undefined };
+type Part = Pick<Draft, 'state' | 'detail'> & {
+  readonly href?: string | undefined;
+  readonly links?: readonly StepLink[];
+};
 
 const NO_COST = 'No cost';
 const plural = (count: number, one: string): string =>
@@ -77,7 +92,7 @@ function understandPart({ source }: Context): Part {
   return ofRun(source, { state: 'done', detail, href: runPage(source) });
 }
 
-function questionsPart({ source }: Context): Part {
+function questionsPart({ source, facts }: Context): Part {
   if (source === null) return locked('Needs an understand run');
   const phase = phaseOf(source);
   if (phase === 'working') return locked('Comes after the run finishes');
@@ -85,6 +100,14 @@ function questionsPart({ source }: Context): Part {
   const open = source.openQuestions;
   const href = runPage(source);
   if (open === 0) return { state: 'done', detail: 'No open questions', href };
+  // RF-615 (Q-44): a saved brief moves the journey on; the skipped questions keep their defaults.
+  if (facts.briefSaved) {
+    const left =
+      open === 1
+        ? '1 question left on its default'
+        : `${String(open)} questions left on their defaults`;
+    return { state: 'done', detail: left, href };
+  }
   return { state: 'upcoming', detail: plural(open, 'open question'), href };
 }
 
@@ -127,10 +150,24 @@ function lockedPackage({ plan }: Context): Part {
   );
 }
 
+/** RF-627: the package of a plan run that ended RST-1806, never reported as complete. */
+function gapsPart(runId: string): Part {
+  return {
+    state: 'gaps',
+    detail: 'Written with gaps',
+    href: runPage({ id: runId }),
+    links: [
+      { label: 'checks.md', href: `/runs/${runId}/files/handoff/checks.md` },
+      { label: 'Download the package', href: runDownloadPath(runId, 'handoff') },
+    ],
+  };
+}
+
 function packagePart(c: Context): Part {
   const { handoff } = c.facts;
   if (handoff === null) return lockedPackage(c);
   const href = `/runs/${handoff.runId}`;
+  if (handoff.gaps && !handoff.outOfDate) return gapsPart(handoff.runId);
   if (handoff.outOfDate) {
     return {
       state: 'out-of-date',
@@ -179,6 +216,7 @@ export function journeyOf(facts: JourneyFacts, projectId: string): JourneyView {
     return {
       ...{ key, title, detail: part.detail, href: part.href, here },
       ...{ state: stateOf(part, here), cost: costs[key] ?? NO_COST },
+      links: part.links ?? [],
     };
   });
   const spent = (source?.costMicros ?? 0) + (plan?.costMicros ?? 0);
