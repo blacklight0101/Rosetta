@@ -59,7 +59,7 @@ describe('RF-006 a Deepen resumed between two merge calls', UNDERSTAND_TIMEOUT, 
 
     if (!resumed.ok) throw new Error(resumed.error);
     expect(resumed.value.endState).toBe('Completed');
-    expect(merges(h)).toEqual(['summariser-br', 'summariser-br', 'summariser-ent']);
+    expect(merges(h)).toEqual(['summariser-br', 'summariser-ent']);
     expect(await cardFiles(h, stopped, 'BR')).toEqual(['BR-001.md']);
     expect(await cardFiles(h, stopped, 'ENT')).toEqual(['ENT-001.md']);
   });

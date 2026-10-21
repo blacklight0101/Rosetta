@@ -93,9 +93,11 @@ async function finish(
   const overview = await overviewOf(parts, final, merged?.cards);
   await writeOutputs(parts, final, { overview, merged });
   if (merged !== undefined) await announceDeepenMerges(parts, merged);
-  await saveRecord(parts, endedDeepen(record, stop, measuresOf(final, parts.scanned.codeMap)));
-  await announceStop(parts, record, stop);
-  if (stop === 'stopped') return { endState: 'Interrupted' };
+  // RF-1108: a Stop that came during the merge or the overview ends the Deepen like any Stop.
+  const ended = stop !== 'capReached' && parts.execution.signal.aborted ? 'stopped' : stop;
+  await saveRecord(parts, endedDeepen(record, ended, measuresOf(final, parts.scanned.codeMap)));
+  await announceStop(parts, record, ended);
+  if (ended === 'stopped') return { endState: 'Interrupted' };
   if (stop === 'capReached')
     return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
   return { endState: 'Completed' };
