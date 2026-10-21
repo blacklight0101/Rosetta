@@ -16,7 +16,7 @@ import { accountFor, type Credentials } from '../support/seed.js';
 import { e2eServerOpenAiKey } from '../support/server-key.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
-import { chooseModel } from '../support/choose-model.js';
+import { chooseModel, setOutputLimit } from '../support/choose-model.js';
 
 // RF-1104, RF-1105, RF-1106, RF-428, RNF-005, P1-131: the administrator's caps bind only runs on a
 // server key. The user has no key of their own, so the run uses the server's (serve.ts holds a fake
@@ -80,6 +80,8 @@ async function userPicksTheReader(page: Page, user: Credentials): Promise<void> 
   // RF-250: the summariser is a role of the run like the reader; it is priced the same way.
   await page.getByLabel('Summariser provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Summariser', 'gpt-5-nano');
+  await setOutputLimit(page, 'Reader', 4096);
+  await setOutputLimit(page, 'Summariser', 2048);
   // One reader at a time, so the first calls are answered and metered before one is refused.
   await page.getByLabel('Parallel readers', { exact: true }).fill('1');
   await page.getByRole('button', { name: 'Save settings' }).click();

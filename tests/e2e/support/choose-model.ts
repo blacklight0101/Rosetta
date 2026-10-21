@@ -37,3 +37,14 @@ export async function chooseModel(
   await control.selectOption({ label: 'Other model...' });
   await page.getByLabel(`${role} other model`, { exact: true }).fill(model);
 }
+
+// Q-57: a role the project gives no output limit takes the default of its model (16,000 for the
+// reader of a hosted model). Specs whose figures depend on the small limits of the Ollama defaults
+// (a cap of a fraction of a cent) set them here, so what they check is the cap and not the model.
+export async function setOutputLimit(
+  page: Page,
+  role: 'Reader' | 'Verifier' | 'Planner' | 'Summariser',
+  tokens: number,
+): Promise<void> {
+  await page.getByLabel(`${role} max output tokens`, { exact: true }).fill(String(tokens));
+}
