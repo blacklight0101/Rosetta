@@ -12,7 +12,10 @@ import type { LlmMessage, LlmRequest } from '../../../application/ports/llm-prov
 // and a user message after them share one turn, as the API expects). The stable prompt prefix is
 // marked for caching with two of the four allowed breakpoints: the system prompt (which caches the
 // tools before it) and the last block of the last message, because a task's conversation is
-// append-only and that prefix repeats unchanged in its next call.
+// append-only and that prefix repeats unchanged in its next call. `output_config.effort` (no beta
+// header, platform.claude.com/docs/en/build-with-claude/effort) is sent only when the request
+// carries an effort, which the provider factory sets for the models of the shipped list that accept
+// one.
 
 const cacheBreakpoint = { type: 'ephemeral' } as const;
 
@@ -88,6 +91,9 @@ export function messageBody(
     messages: withLastBreakpoint(turnsOf(request.messages)),
     ...(request.tools.length > 0 ? { tools: toolsOf(request) } : {}),
     ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
+    ...(request.reasoningEffort === undefined
+      ? {}
+      : { output_config: { effort: request.reasoningEffort } }),
     stream: false,
   };
 }

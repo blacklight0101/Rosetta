@@ -44,3 +44,15 @@ describe('OpenAI request body', () => {
     expect(body.messages[1]).toEqual({ role: 'assistant', content: 'Done.' });
   });
 });
+
+describe('OpenAI request body: reasoning effort', () => {
+  it('Q-58 has no reasoning_effort key at all when the request carries no effort', () => {
+    expect(chatCompletionBody(contractRequest())).not.toHaveProperty('reasoning_effort');
+  });
+
+  it('Q-58 has reasoning_effort with the effort of the request', () => {
+    const body = chatCompletionBody({ ...contractRequest(), reasoningEffort: 'low' });
+
+    expect(body.reasoning_effort).toBe('low');
+  });
+});

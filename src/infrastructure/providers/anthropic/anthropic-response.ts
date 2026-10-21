@@ -30,12 +30,15 @@ function usageOf(message: AnthropicMessage, text: string, request: LlmRequest): 
   }
   const read = usage.cache_read_input_tokens ?? 0;
   const written = usage.cache_creation_input_tokens ?? 0;
+  // Q-58: thinking tokens are billed as output and counted in `output_tokens`; the part is shown apart.
+  const thinking = usage.output_tokens_details?.thinking_tokens ?? 0;
   return {
     inputTokens: usage.input_tokens + read + written,
     outputTokens: usage.output_tokens,
     cachedInputTokens: read,
     // P2-16: the tokens written to the cache, billed at the cache-write price; absent when none.
     ...(written > 0 ? { cacheWriteInputTokens: written } : {}),
+    ...(thinking > 0 ? { reasoningTokens: thinking } : {}),
     usageSource: 'reported',
   };
 }

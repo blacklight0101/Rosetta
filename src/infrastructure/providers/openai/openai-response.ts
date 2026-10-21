@@ -9,7 +9,9 @@ import { parseCompletion, type OpenAiCompletion } from './openai-wire.js';
 
 // RF-402, RF-408, RF-421: OpenAI's chat completion in the port's one shape. `inputTokens` is
 // OpenAI's `prompt_tokens`, which includes the cached ones; `cachedInputTokens` is
-// `prompt_tokens_details.cached_tokens`, 0 when OpenAI leaves it out.
+// `prompt_tokens_details.cached_tokens`, 0 when OpenAI leaves it out. `completion_tokens` includes the
+// reasoning tokens, so `outputTokens` does too (billed as output); `reasoningTokens` is
+// `completion_tokens_details.reasoning_tokens`, left out when OpenAI reports none or zero (Q-58).
 
 export interface ResponseContext {
   readonly request: LlmRequest;
@@ -18,6 +20,12 @@ export interface ResponseContext {
 }
 
 type Choice = OpenAiCompletion['choices'][number];
+
+/** Q-58: the reasoning tokens, a part of the output tokens; none when absent or zero. */
+function reasoningOf(usage: NonNullable<OpenAiCompletion['usage']>): { reasoningTokens?: number } {
+  const reasoning = usage.completion_tokens_details?.reasoning_tokens ?? 0;
+  return reasoning > 0 ? { reasoningTokens: reasoning } : {};
+}
 
 function usageOf(completion: OpenAiCompletion, text: string, request: LlmRequest): TokenUsage {
   const { usage } = completion;
@@ -34,6 +42,7 @@ function usageOf(completion: OpenAiCompletion, text: string, request: LlmRequest
     inputTokens: input ?? estimateInputTokens(request),
     outputTokens: output ?? estimateTokens(text),
     cachedInputTokens: usage.prompt_tokens_details?.cached_tokens ?? 0,
+    ...reasoningOf(usage),
     usageSource: input === undefined || output === undefined ? 'estimated' : 'reported',
   };
 }

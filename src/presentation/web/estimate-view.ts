@@ -32,6 +32,7 @@ export function estimateView(estimate: RunEstimate): Record<string, unknown> {
     roles: estimate.roles.map((role) => ({
       ...{ role: role.role, provider: role.provider, kind: role.kind, model: role.model },
       ...{ keySource: role.keySource, priced: role.priced },
+      ...(role.reasoningEffort === undefined ? {} : { reasoningEffort: role.reasoningEffort }),
       ...rangeView(role.points),
     })),
     total: rangeView(estimate.total),

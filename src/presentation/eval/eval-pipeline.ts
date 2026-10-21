@@ -198,6 +198,8 @@ export function composePipeline(parts: PipelineParts): Pipeline {
     scans: s.scans,
     keys,
     priceTable: parts.priceTable,
+    // The evaluation shows no start page, so no role names its effort.
+    reasoningModels: () => false,
   });
   return {
     ...s,

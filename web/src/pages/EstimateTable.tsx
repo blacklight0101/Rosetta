@@ -31,6 +31,9 @@ function RoleRow({ role }: { readonly role: RoleEstimate }): JSX.Element {
         <span class="rst-mono">
           {role.provider} / {role.model}
         </span>
+        {role.reasoningEffort === undefined ? null : (
+          <div class="rst-table__sub">reasoning effort {role.reasoningEffort}</div>
+        )}
       </td>
       {scenarios.map((scenario) => (
         <td key={scenario} class="rst-table__number" data-label={columnTitles[scenario]}>

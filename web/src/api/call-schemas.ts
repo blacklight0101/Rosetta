@@ -24,6 +24,8 @@ const callSchema = z.object({
   latencyMs: count,
   inputTokens: count,
   outputTokens: count,
+  /** Q-58: the part of the output tokens spent on reasoning; absent when not reported. */
+  reasoningTokens: count.optional(),
   cachedInputTokens: count,
   costMicros: count,
   currency: z.string(),

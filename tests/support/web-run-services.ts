@@ -258,8 +258,7 @@ export function runServices(
       projects,
       runs: runs.runs,
       scans: new FixedScans(catalogAreas),
-      keys,
-      priceTable: estimatePrices,
+      ...{ keys, priceTable: estimatePrices, reasoningModels: () => false },
     }),
     ...route,
   };

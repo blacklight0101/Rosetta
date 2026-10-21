@@ -146,6 +146,9 @@ function harnessOver(scans: FixedScans, priceTable: PriceTable): EstimateHarness
   const projects = new MemoryProjectRepository();
   const runs = new MemoryRunIndex();
   const keys = new MemoryProviderKeyRepository();
-  const estimate = new EstimateRun({ projects, runs, scans, keys, priceTable });
+  const estimate = new EstimateRun({
+    ...{ projects, runs, scans, keys, priceTable },
+    reasoningModels: () => false,
+  });
   return { estimate, projects, runs, keys, scans };
 }

@@ -3,6 +3,8 @@ import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { SecretBox } from '../application/ports/secret-box.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
+import { reasoningModelsOf, type ReasoningModels } from '../application/models/model-list.js';
+import { loadModelList } from '../infrastructure/models/model-list-file.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
 import { TestProviders } from '../application/use-cases/test-providers.js';
 import type { Environment } from '../infrastructure/config/environment.js';
@@ -34,6 +36,7 @@ import type { TestDoubles } from './test-doubles.js';
 // is the repository root (the image's app folder) from both.
 const repositoryRoot = new URL('../../', import.meta.url);
 const priceFile = fileURLToPath(new URL('prices/default-prices.yaml', repositoryRoot));
+const modelsFile = fileURLToPath(new URL('prices/models.yaml', repositoryRoot));
 const promptsFolder = fileURLToPath(new URL('prompts/', repositoryRoot));
 const templatesFolder = fileURLToPath(new URL('templates/', repositoryRoot));
 
@@ -50,6 +53,11 @@ export interface ProviderParts {
   readonly secretBox: SecretBox;
   /** Test mode only: the model double stands in for every adapter (ADR-008). */
   readonly doubles: TestDoubles | undefined;
+}
+
+/** Q-58: the models the shipped list marks as reasoning models; a bad list stops the start-up. */
+async function loadReasoningModels(): Promise<ReasoningModels> {
+  return reasoningModelsOf(await loadModelList(modelsFile));
 }
 
 /** The adapters of this release, or, in the end-to-end tests, the model double for every kind. */
@@ -77,7 +85,8 @@ export type GuardedFactoryMaker = (parts: GuardedFactoryParts) => ProviderSetFac
 export async function evaluationProviderFactory(logger: Logger): Promise<GuardedFactoryMaker> {
   const textProtocolPrompt = (await loadTextToolProtocol(promptsFolder)).text;
   const adapters = realAdapters({ testMode: false, textProtocolPrompt, logger });
-  return (parts) => new GuardedProviderFactory({ ...parts, adapters });
+  const reasoningModels = await loadReasoningModels();
+  return (parts) => new GuardedProviderFactory({ ...parts, adapters, reasoningModels });
 }
 
 export interface ComposedProviders {
@@ -87,6 +96,8 @@ export interface ComposedProviders {
   readonly factory: ProviderSetFactory;
   /** The shipped price table, loaded once; the run estimate prices the roles with it (RF-425). */
   readonly priceTable: PriceTable;
+  /** Q-58: the models the shipped list marks as reasoning models; the estimate names their effort. */
+  readonly reasoningModels: ReasoningModels;
   /** The shipped settings template, loaded once: its roles are the built-in default models. */
   readonly template: ProjectSettings;
 }
@@ -97,6 +108,7 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
   const ids = new TimestampIdGenerator(clock);
   const serverSettings = new PgServerSettings(pool);
   const priceTable = await loadPriceTable(priceFile);
+  const reasoningModels = await loadReasoningModels();
   const factory = new GuardedProviderFactory({
     keys: new PgProviderKeyRepository(pool),
     box: secretBox,
@@ -107,6 +119,7 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
     priceTable,
     masker,
     adapters: await adaptersFor(parts),
+    reasoningModels,
     ...{ clock, ids, logger },
   });
   const template = await loadProjectTemplate(templatesFolder);
@@ -119,5 +132,5 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
     unrecorded: unrecordedSinks(),
     signals: new SystemTimeoutSignals(),
   });
-  return { testProviders, factory, priceTable, template };
+  return { testProviders, factory, priceTable, reasoningModels, template };
 }
