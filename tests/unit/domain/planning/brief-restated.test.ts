@@ -87,6 +87,17 @@ describe('decideOnce: the style', () => {
   });
 });
 
+describe('decideOnce: only whole words count', () => {
+  it('RF-608 does not find the style inside a longer word or across the title and the text', () => {
+    const { restated } = decided({ migration: 'strangler-fig' }, [
+      decision('Multilayered caching', 'Cache in two layers.'),
+      decision('Retire the strangler', 'Fig trees are not code.'),
+    ]);
+
+    expect(restated).toEqual([]);
+  });
+});
+
 describe('decideOnce: the migration and the stack', () => {
   it('RF-610 leaves out a restated migration strategy and keeps one record for it', () => {
     const { content, restated, choices } = decided({ migration: 'strangler-fig' }, [
