@@ -106,24 +106,50 @@ function questionFields(input: CardInput): Result<QuestionFields, CardProblem> {
   });
 }
 
+/** The `Proposed` claim number `number` of card `id`, as the agent wrote it. */
+function claimFrom(
+  card: Pick<Card, 'id' | 'type'>,
+  number: number,
+  claim: ClaimInput,
+): Result<Claim, CardProblem> {
+  const step = stepFields(card.type, claim);
+  if (!step.ok) return step;
+  return ok({
+    claimId: `${card.id}.c${String(number)}`,
+    text: claim.text,
+    citations: claim.citations,
+    status: 'Proposed',
+    ...step.value,
+    ...(claim.replaces === undefined ? {} : { replaces: claim.replaces }),
+  });
+}
+
 function claimsOf(input: CardInput): Result<readonly Claim[], CardProblem> {
   const claims: Claim[] = [];
   // RF-261: the validations and actions of a screen are claims after the ones the agent wrote.
   const derived: readonly ClaimInput[] =
     input.type === 'SCRN' && input.screen ? screenClaims(input.screen, input.claims) : [];
   for (const [index, claim] of [...input.claims, ...derived].entries()) {
-    const step = stepFields(input.type, claim);
-    if (!step.ok) return step;
-    claims.push({
-      claimId: `${input.id}.c${String(index + 1)}`,
-      text: claim.text,
-      citations: claim.citations,
-      status: 'Proposed',
-      ...step.value,
-      ...(claim.replaces === undefined ? {} : { replaces: claim.replaces }),
-    });
+    const made = claimFrom(input, index + 1, claim);
+    if (!made.ok) return made;
+    claims.push(made.value);
   }
   return ok(claims);
+}
+
+/**
+ * RF-209, DEC-158: the card with these claims after its own, as `Proposed` claims numbered on from
+ * its last. The card keeps its id and everything else; no claim of it changes.
+ */
+export function appendClaims(card: Card, inputs: readonly ClaimInput[]): Result<Card, CardProblem> {
+  if (inputs.some((claim) => claim.citations.length === 0)) return err('claim-without-citation');
+  const added: Claim[] = [];
+  for (const [index, input] of inputs.entries()) {
+    const made = claimFrom(card, card.claims.length + index + 1, input);
+    if (!made.ok) return made;
+    added.push(made.value);
+  }
+  return ok({ ...card, claims: [...card.claims, ...added] });
 }
 
 // RF-202: at least one claim, each with at least one citation; an OQ also has its question; a FLOW

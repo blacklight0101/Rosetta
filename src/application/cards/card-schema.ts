@@ -50,6 +50,9 @@ const cardShape = z.object({
   whyItMatters: text(cardLimits.maxQuestionChars).optional(),
   flow: flowSchema.optional(),
   screen: screenSchema.optional(),
+  // RF-209, DEC-158: the id of the card the parent run holds that a Deepen task's claims belong to;
+  // a bad value is dropped, never the card, and an id the task was not given makes a new card.
+  extends: z.string().trim().min(1).max(MAX_CLAIM_ID_CHARS).optional().catch(undefined),
 });
 
 type ParsedCard = z.output<typeof cardShape>;

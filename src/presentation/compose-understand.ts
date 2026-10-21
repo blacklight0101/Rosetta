@@ -24,6 +24,7 @@ import { JsonlEgressLog } from '../infrastructure/guards/jsonl-egress-log.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import {
   loadAnswersPrompt,
+  loadParentCardsPrompt,
   loadRereadPrompt,
   loadMergePrompt,
   loadOverviewPrompt,
@@ -131,6 +132,7 @@ export function composeUnderstand(parts: UnderstandParts): RunUnderstand {
     textToolProtocol: () => loadTextToolProtocol(promptsFolder),
     answersPrompt: () => loadAnswersPrompt(promptsFolder),
     rereadPrompt: () => loadRereadPrompt(promptsFolder),
+    parentCardsPrompt: () => loadParentCardsPrompt(promptsFolder),
     priorCards: new FilePriorCards(writer),
     ids: parts.ids,
   });

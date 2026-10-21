@@ -1,6 +1,6 @@
 import { err, ok, type Result } from '../errors/result.js';
 import { createCard, type Card, type CardProblem, type ClaimInput } from './card.js';
-import type { CardType, Confidence } from './card-vocabulary.js';
+import { EXTENDABLE_TYPES, type CardType, type Confidence } from './card-vocabulary.js';
 import type { FlowDetail, ScreenDetail } from './flow-screen.js';
 
 // RF-203, DEC-43: ids are numbered per run, per type, in order of area and appearance.
@@ -18,6 +18,8 @@ export interface CardDraft {
   readonly whyItMatters?: string | undefined;
   readonly flow?: FlowDetail | undefined;
   readonly screen?: ScreenDetail | undefined;
+  /** RF-209: the id of the listed card a Deepen task's claims belong to. */
+  readonly extends?: string | undefined;
 }
 
 /** The drafts of one finished agent task, in the order the agent wrote them. */
@@ -29,6 +31,8 @@ export interface TaskCards {
   readonly note?: string;
   /** RF-209: the rejected claims a Deepen re-read was given; only these may be named by `replaces`. */
   readonly replaceable?: readonly string[];
+  /** RF-209: the ids of the parent's cards the task was given; only these may be named by `extends`. */
+  readonly extendable?: readonly string[];
 }
 
 /** The number in an id such as `BR-007`. */
@@ -42,10 +46,29 @@ export function formatCardId(type: CardType, number: number): string {
 }
 
 /** RF-209: `replaces` names a claim the task was given to re-read, or it is dropped (the claim stays). */
-function withAllowedReplaces(claim: ClaimInput, replaceable: readonly string[] = []): ClaimInput {
+export function withAllowedReplaces(
+  claim: ClaimInput,
+  replaceable: readonly string[] = [],
+): ClaimInput {
   if (claim.replaces === undefined || replaceable.includes(claim.replaces)) return claim;
   const { text, citations, target, branches } = claim;
   return { text, citations, target, branches };
+}
+
+/**
+ * RF-209, DEC-158: the card a draft of a Deepen task adds its claims to, when it names one the task
+ * was given (`extends`) that the run holds with the draft's own type; otherwise none, and the draft
+ * is a new card, so a wrong id never costs the draft.
+ */
+export function extendedCardOf(
+  draft: CardDraft,
+  task: Pick<TaskCards, 'extendable'>,
+  cards: readonly Card[],
+): Card | undefined {
+  const { extends: id } = draft;
+  if (id === undefined || !(task.extendable ?? []).includes(id)) return undefined;
+  if (!EXTENDABLE_TYPES.includes(draft.type)) return undefined;
+  return cards.find((card) => card.id === id && card.type === draft.type);
 }
 
 /**
@@ -63,6 +86,7 @@ export function assignCardIds(
   const cards: Card[] = [];
   for (const task of tasks) {
     for (const draft of task.drafts) {
+      if (extendedCardOf(draft, task, after) !== undefined) continue;
       const number = (counters.get(draft.type) ?? 0) + 1;
       counters.set(draft.type, number);
       const card = createCard({

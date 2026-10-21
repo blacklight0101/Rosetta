@@ -1,7 +1,31 @@
 import type { Card } from '../../domain/cards/card.js';
+import type { CardExtension } from '../../domain/cards/card-extension.js';
 import type { RunEventPublisher } from '../runs/run-event-publisher.js';
 import type { CheckedCards } from '../verifier/citation-check.js';
 import type { Consolidation } from '../consolidate/consolidate-cards.js';
+
+/** The citation check of one claim as an event (RF-1002, RF-1004). */
+async function announceCheck(
+  events: RunEventPublisher,
+  claim: Card['claims'][number],
+  checked: CheckedCards,
+  agentTaskId: string,
+): Promise<void> {
+  const check = checked.checks.find((each) => each.claimId === claim.claimId);
+  if (check === undefined) return;
+  const reason = check.reason === undefined ? {} : { reason: check.reason };
+  // RF-1004: the text and cited lines let the live page list the claim without a card read.
+  const shown = {
+    text: claim.text,
+    citations: claim.citations.map(({ path, startLine, endLine }) => ({
+      path,
+      startLine,
+      endLine,
+    })),
+  };
+  const data = { claimId: claim.claimId, ok: check.ok, ...reason, ...shown };
+  await events.emit('verify.citation.checked', data, agentTaskId);
+}
 
 /** Publishes the given cards, with the citation check of each claim (RF-1002). */
 export async function announceCards(
@@ -13,22 +37,23 @@ export async function announceCards(
     const { id: cardId, type, title, agentTaskId } = card;
     const claims = card.claims.length;
     await events.emit('agent.card.proposed', { cardId, type, title, claims }, agentTaskId);
-    for (const claim of card.claims) {
-      const check = checked.checks.find((each) => each.claimId === claim.claimId);
-      if (check === undefined) continue;
-      const reason = check.reason === undefined ? {} : { reason: check.reason };
-      // RF-1004: the text and cited lines let the live page list the claim without a card read.
-      const shown = {
-        text: claim.text,
-        citations: claim.citations.map(({ path, startLine, endLine }) => ({
-          path,
-          startLine,
-          endLine,
-        })),
-      };
-      const data = { claimId: claim.claimId, ok: check.ok, ...reason, ...shown };
-      await events.emit('verify.citation.checked', data, agentTaskId);
-    }
+    for (const claim of card.claims) await announceCheck(events, claim, checked, agentTaskId);
+  }
+}
+
+/**
+ * RF-209, DEC-158: the claims a Deepen task added to cards the parent run holds. The card is not
+ * proposed again; each new claim is announced on its card id by its citation check, under the task
+ * that wrote it, and the live page lists it with its card.
+ */
+export async function announceExtensions(
+  events: RunEventPublisher,
+  checked: CheckedCards,
+  extension: CardExtension,
+): Promise<void> {
+  for (const { claimId, agentTaskId } of extension.claims) {
+    const claim = checked.cards.flatMap((card) => card.claims).find((c) => c.claimId === claimId);
+    if (claim !== undefined) await announceCheck(events, claim, checked, agentTaskId);
   }
 }
 
