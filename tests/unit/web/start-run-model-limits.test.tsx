@@ -13,24 +13,34 @@ function withLimits(roleLimits: Record<string, unknown>): Record<string, unknown
   return { ...cloudEstimate, assumptions: { ...assumptions, roleLimits } };
 }
 
-const limit = (contextTokens: number, maxOutputTokens: number, contextAutomatic = false) => ({
+const limit = (
+  contextTokens: number,
+  maxOutputTokens: number,
+  contextAutomatic = false,
+  modelWindowTokens?: number,
+) => ({
   contextTokens,
   contextAutomatic,
+  ...(modelWindowTokens === undefined ? {} : { modelWindowTokens }),
   maxOutputTokens,
 });
 
 it('RF-405 shows the context and the output limit of each role', async () => {
   const body = withLimits({
-    reader: limit(1_000_000, 16_000),
-    verifier: limit(1_000_000, 4_000),
+    reader: limit(128_000, 8_192, false, 1_000_000),
+    verifier: limit(128_000, 4_000, false, 1_000_000),
     summariser: limit(128_000, 4_000),
   });
   renderStart({ [`GET ${estimatePath}`]: json(200, body) });
   await ready();
 
   const text = screen.getByText(/^Limits:/u).textContent;
-  expect(text).toContain('reader: context 1,000,000 tokens, output 16,000 tokens');
-  expect(text).toContain('verifier: context 1,000,000 tokens, output 4,000 tokens');
+  expect(text).toContain(
+    'reader: context 128,000 tokens (model window 1,000,000 tokens), output 8,192 tokens',
+  );
+  expect(text).toContain(
+    'verifier: context 128,000 tokens (model window 1,000,000 tokens), output 4,000 tokens',
+  );
   expect(text).toContain('summariser: context 128,000 tokens, output 4,000 tokens');
 });
 

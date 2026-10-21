@@ -52,6 +52,8 @@ export interface RoleLimitsView {
   readonly contextTokens: number;
   /** True for an Ollama context that is chosen at run time: the context is then the floor the estimate assumed. */
   readonly contextAutomatic: boolean;
+  /** The window the shipped model list gives the model; absent when it gives none (Q-57). */
+  readonly modelWindowTokens?: number;
   readonly maxOutputTokens: number;
 }
 

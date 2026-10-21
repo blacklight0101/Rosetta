@@ -5,7 +5,7 @@ import { openScannedStartPage } from './support/cost-run.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
-import { chooseModel, setOutputLimit } from './support/choose-model.js';
+import { chooseModel } from './support/choose-model.js';
 
 // RF-1001, RF-143, RF-425, RF-1108, DEC-108, P1-34: the start page of a project, driven against
 // the test server (fake GitHub for octo/demo, the answering provider for every model call). A scan
@@ -235,7 +235,6 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
   await page.getByRole('link', { name: 'Project settings' }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
-  await setOutputLimit(page, 'Reader', 4096);
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();

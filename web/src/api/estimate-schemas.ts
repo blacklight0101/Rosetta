@@ -20,6 +20,7 @@ const scenarioNumbers = z.object({ low: z.number(), likely: z.number(), high: z.
 const roleLimit = z.object({
   contextTokens: z.number(),
   contextAutomatic: z.boolean(),
+  modelWindowTokens: z.number().optional(),
   maxOutputTokens: z.number(),
 });
 

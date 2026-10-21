@@ -52,7 +52,7 @@ describe('the output limits in the accepted manifest', () => {
   });
 
   it('Q-57 without a model list a hosted role takes the default of its role', () => {
-    expect(manifestOf({}).roles['reader']?.maxOutputTokens).toBe(16_000);
+    expect(manifestOf({}).roles['reader']?.maxOutputTokens).toBe(8_192);
   });
 
   it('P3-64 an Ollama role records the default it always had', () => {

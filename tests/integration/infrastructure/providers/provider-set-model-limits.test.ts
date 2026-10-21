@@ -52,23 +52,23 @@ describe('the limits of a role in the provider set', () => {
     const set = await setFor(settings);
 
     expect([...set.entries()].map(([role, each]) => [role, each.maxOutputTokens])).toEqual([
-      ['reader', 16_000],
+      ['reader', 8_192],
       ['verifier', 4_000],
-      ['planner', 32_000],
+      ['planner', 16_384],
       ['summariser', 4_000],
     ]);
   });
 
-  it('RF-201 the reader task of a Haiku 5.5 role runs with 1,000,000 tokens of context', async () => {
+  it('RF-201 the reader task of a Haiku 5.5 role keeps 128,000 tokens of context', async () => {
     const settings = withoutOutputLimits(settingsFor({ reader: haiku }));
 
     const reader = (await setFor(settings)).get('reader');
     if (reader === undefined) throw new Error('No reader');
 
     expect(readerTaskSettings(settings, reader)).toMatchObject({
-      contextTokens: 1_000_000,
+      contextTokens: 128_000,
       contextShare: 0.8,
-      maxOutputTokens: 16_000,
+      maxOutputTokens: 8_192,
     });
   });
 });

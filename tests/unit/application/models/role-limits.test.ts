@@ -4,9 +4,10 @@ import { roleLimits } from '../../../../src/application/models/role-limits.js';
 import { settingsFor, withContextTokens } from '../../../support/provider-factory-harness.js';
 import { withoutOutputLimits } from '../../../support/output-limits.js';
 
-// RF-405, RF-201, Q-57: a hosted role runs with the context window of its model from the shipped
-// list (128,000 when the list gives none) and, unless the project sets it, an output limit of the
-// smaller of the model's maximum and the role's hosted default. Ollama keeps today's numbers.
+// RF-405, RF-201, Q-57: a hosted role keeps 128,000 tokens of context unless the project sets a
+// number, which the model's window in the shipped list bounds, and, unless the project sets it, has
+// an output limit of the smaller of the model's maximum and the role's hosted default. Ollama keeps
+// today's numbers.
 
 const list: ModelList = {
   version: '2026-10-21',
@@ -25,12 +26,12 @@ const list: ModelList = {
       ...{ contextTokens: 200_000, maxOutputTokens: 3_000 },
     },
     {
-      ...{ provider: 'openai', model: 'gpt-edge-16000', label: 'Exactly the reader default' },
-      ...{ contextTokens: 100_000, maxOutputTokens: 16_000 },
+      ...{ provider: 'openai', model: 'gpt-edge-8192', label: 'Exactly the reader default' },
+      ...{ contextTokens: 100_000, maxOutputTokens: 8_192 },
     },
     {
-      ...{ provider: 'openai', model: 'gpt-edge-16001', label: 'One over the reader default' },
-      ...{ contextTokens: 100_000, maxOutputTokens: 16_001 },
+      ...{ provider: 'openai', model: 'gpt-edge-8193', label: 'One over the reader default' },
+      ...{ contextTokens: 100_000, maxOutputTokens: 8_193 },
     },
   ],
 };
@@ -38,22 +39,25 @@ const list: ModelList = {
 const haiku = { provider: 'anthropic', model: 'claude-haiku-5-5' };
 
 describe('the limits of a hosted role', () => {
-  it('RF-405 a reader on Claude Haiku 5.5 has 1,000,000 tokens of context and 16,000 of output', () => {
+  it('RF-405 a reader on Claude Haiku 5.5 keeps 128,000 tokens of context, knows its 1,000,000 window and writes 8,192', () => {
     const settings = withoutOutputLimits(settingsFor({ reader: haiku }));
 
     expect(roleLimits(settings, 'reader', list)).toEqual({
-      contextTokens: 1_000_000,
+      contextTokens: 128_000,
       contextAutomatic: false,
       modelContextTokens: 1_000_000,
-      maxOutputTokens: 16_000,
+      maxOutputTokens: 8_192,
     });
   });
 
-  it('RF-405 an OpenAI model has the window of its entry', () => {
+  it('RF-405 an OpenAI model knows the window of its entry and keeps 128,000 tokens', () => {
     const reader = { provider: 'openai', model: 'gpt-5-mini' };
     const settings = withoutOutputLimits(settingsFor({ reader }));
 
-    expect(roleLimits(settings, 'reader', list).contextTokens).toBe(400_000);
+    expect(roleLimits(settings, 'reader', list)).toMatchObject({
+      contextTokens: 128_000,
+      modelContextTokens: 400_000,
+    });
   });
 
   it('RF-405 a model of the list without numbers keeps 128,000 tokens and the role default', () => {
@@ -63,7 +67,7 @@ describe('the limits of a hosted role', () => {
     expect(roleLimits(settings, 'reader', list)).toMatchObject({
       contextTokens: 128_000,
       modelContextTokens: undefined,
-      maxOutputTokens: 16_000,
+      maxOutputTokens: 8_192,
     });
   });
 
@@ -93,6 +97,26 @@ describe('what a project sets for a hosted role', () => {
     });
   });
 
+  it('RF-405 a context number a project sets never goes above the window of its model', () => {
+    const reader = { provider: 'openai', model: 'gpt-5-mini' };
+    const base = withoutOutputLimits(settingsFor({ reader }));
+
+    const above = withContextTokens(base, 'openai', 900_000);
+    const below = withContextTokens(base, 'openai', 300_000);
+
+    expect(roleLimits(above, 'reader', list).contextTokens).toBe(400_000);
+    expect(roleLimits(below, 'reader', list).contextTokens).toBe(300_000);
+  });
+
+  it('RF-405 a context number for a model without a window is used as it is', () => {
+    const reader = { provider: 'anthropic', model: 'claude-bare' };
+    const base = withoutOutputLimits(settingsFor({ reader }));
+
+    const settings = withContextTokens(base, 'anthropic', 900_000);
+
+    expect(roleLimits(settings, 'reader', list).contextTokens).toBe(900_000);
+  });
+
   it('RF-405 the output limit a project sets wins, whatever the model allows', () => {
     const base = settingsFor({ reader: haiku });
     const reader = { ...base.roles.reader, maxOutputTokens: 4_096 };
@@ -104,10 +128,10 @@ describe('what a project sets for a hosted role', () => {
 
 describe('the hosted defaults per kind', () => {
   it.each([
-    ['reader', 16_000],
+    ['reader', 8_192],
     ['verifier', 4_000],
     ['summariser', 4_000],
-    ['planner', 32_000],
+    ['planner', 16_384],
   ] as const)('Q-57 the hosted default of the %s is %i tokens', (role, expected) => {
     const settings = withoutOutputLimits(settingsFor({ [role]: haiku }));
 
@@ -116,8 +140,8 @@ describe('the hosted defaults per kind', () => {
 
   it.each([
     ['anthropic', 'claude-small', 3_000],
-    ['openai', 'gpt-edge-16000', 16_000],
-    ['openai', 'gpt-edge-16001', 16_000],
+    ['openai', 'gpt-edge-8192', 8_192],
+    ['openai', 'gpt-edge-8193', 8_192],
   ] as const)(
     'Q-57 the default of %s %s never exceeds the model maximum: %i',
     (provider, model, expected) => {

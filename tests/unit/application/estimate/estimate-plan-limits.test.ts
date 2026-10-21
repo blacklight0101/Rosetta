@@ -37,11 +37,11 @@ async function assumptionsOf(model: string, kind = 'openai', limit?: number) {
 }
 
 describe('the planner limits of the plan estimate', () => {
-  it('Q-57 a hosted planner uses 32,000 output tokens and the window of its model', async () => {
+  it('Q-57 a hosted planner uses 16,384 output tokens and keeps 128,000 tokens of context', async () => {
     const assumptions = await assumptionsOf('priced-model');
 
-    expect(assumptions.maxOutputTokens).toBe(32_000);
-    expect(assumptions.contextTokens).toBe(400_000);
+    expect(assumptions.maxOutputTokens).toBe(16_384);
+    expect(assumptions.contextTokens).toBe(128_000);
   });
 
   it('Q-57 the default never exceeds the maximum output of the model', async () => {

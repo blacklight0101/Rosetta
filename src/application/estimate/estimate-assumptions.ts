@@ -69,8 +69,11 @@ function eachScenario(figure: (scenario: Scenario) => number): ByScenario<number
 /** Q-57: what the start page states for the roles of an understand run. */
 function limitsOf(settings: ProjectSettings, models: ModelList): ReaderAssumptions['roleLimits'] {
   const view = (role: 'reader' | 'verifier' | 'summariser'): RoleLimitsView => {
-    const { contextTokens, contextAutomatic, maxOutputTokens } = roleLimits(settings, role, models);
-    return { contextTokens, contextAutomatic, maxOutputTokens };
+    const limits = roleLimits(settings, role, models);
+    const { contextTokens, contextAutomatic, maxOutputTokens, modelContextTokens } = limits;
+    const window =
+      modelContextTokens === undefined ? {} : { modelWindowTokens: modelContextTokens };
+    return { contextTokens, contextAutomatic, ...window, maxOutputTokens };
   };
   return { reader: view('reader'), verifier: view('verifier'), summariser: view('summariser') };
 }

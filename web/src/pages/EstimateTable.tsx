@@ -92,7 +92,11 @@ function limitsText(limits: NonNullable<RunEstimate['assumptions']['roleLimits']
       const context = each.contextAutomatic
         ? `automatic (estimated at ${tokensText(each.contextTokens)})`
         : tokensText(each.contextTokens);
-      return `${role}: context ${context}, output ${tokensText(each.maxOutputTokens)}`;
+      const window =
+        each.modelWindowTokens === undefined
+          ? ''
+          : ` (model window ${tokensText(each.modelWindowTokens)})`;
+      return `${role}: context ${context}${window}, output ${tokensText(each.maxOutputTokens)}`;
     })
     .join('; ');
 }

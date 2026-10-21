@@ -23,6 +23,11 @@ import { userAmy } from '../../support/run-harness.js';
 const prices = fileURLToPath(new URL('../../../prices/default-prices.yaml', import.meta.url));
 const models = fileURLToPath(new URL('../../../prices/models.yaml', import.meta.url));
 const haiku = { provider: 'anthropic', model: 'claude-haiku-5-5' };
+const haikuWindow = {
+  contextTokens: 128_000,
+  contextAutomatic: false,
+  modelWindowTokens: 1_000_000,
+} as const;
 const hugeAreas = ['One', 'Two', 'Three', 'Four'].map((name) => areaOf(name, 1_000_000));
 
 let table: PriceTable;
@@ -52,21 +57,21 @@ function ceilMillion(total: bigint): bigint {
 }
 
 describe('the limits the estimate states', () => {
-  it('RF-405 shows the context and the output limit of each role on Haiku 5.5', async () => {
+  it('RF-405 shows the context, the model window and the output limit of each role on Haiku 5.5', async () => {
     const estimate = await estimateOf(onHaiku());
 
     expect(estimate.assumptions.roleLimits).toEqual({
-      reader: { contextTokens: 1_000_000, contextAutomatic: false, maxOutputTokens: 16_000 },
-      verifier: { contextTokens: 1_000_000, contextAutomatic: false, maxOutputTokens: 4_000 },
-      summariser: { contextTokens: 1_000_000, contextAutomatic: false, maxOutputTokens: 4_000 },
+      reader: { ...haikuWindow, maxOutputTokens: 8_192 },
+      verifier: { ...haikuWindow, maxOutputTokens: 4_000 },
+      summariser: { ...haikuWindow, maxOutputTokens: 4_000 },
     });
-    expect(estimate.assumptions.contextLimitTokens).toBe(800_000);
+    expect(estimate.assumptions.contextLimitTokens).toBe(102_400);
   });
 
-  it('RF-405 the output the reader writes per turn is a share of its 16,000-token limit', async () => {
+  it('RF-405 the output the reader writes per turn is a share of its 8,192-token limit', async () => {
     const { assumptions } = await estimateOf(onHaiku());
 
-    expect(assumptions.outputTokensPerTurn).toEqual({ low: 2_400, likely: 4_800, high: 9_600 });
+    expect(assumptions.outputTokensPerTurn).toEqual({ low: 1_229, likely: 2_458, high: 4_916 });
   });
 });
 
@@ -87,12 +92,15 @@ describe('what a project sets in the estimate', () => {
     expect(estimate.assumptions.contextLimitTokens).toBe(160_000);
   });
 
-  it('RF-405 an OpenAI model has the window of its entry', async () => {
+  it('RF-405 an OpenAI model shows the window of its entry and keeps 128,000 tokens of context', async () => {
     const reader = { provider: 'openai', model: 'gpt-5-mini' };
     const estimate = await estimateOf(withoutOutputLimits(settingsFor({ reader })));
 
-    expect(estimate.assumptions.roleLimits.reader.contextTokens).toBe(400_000);
-    expect(estimate.assumptions.contextLimitTokens).toBe(320_000);
+    expect(estimate.assumptions.roleLimits.reader).toMatchObject({
+      contextTokens: 128_000,
+      modelWindowTokens: 400_000,
+    });
+    expect(estimate.assumptions.contextLimitTokens).toBe(102_400);
   });
 });
 
@@ -104,7 +112,7 @@ describe('models without numbers and local models in the estimate', () => {
     expect(estimate.assumptions.roleLimits.reader).toEqual({
       contextTokens: 128_000,
       contextAutomatic: false,
-      maxOutputTokens: 16_000,
+      maxOutputTokens: 8_192,
     });
     expect(estimate.assumptions.contextLimitTokens).toBe(102_400);
   });
