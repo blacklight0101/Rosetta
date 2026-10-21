@@ -11,8 +11,8 @@ export interface UnreadFiles {
   readonly firstPartyReadTokens: number;
 }
 
-/** What the line starts with, so a page can set it apart from the lines about areas. */
-export const UNREAD_FILES_PREFIX = 'First-party files not read: ';
+/** What the line starts with; the web page sets it apart by the same words (group-not-covered.ts). */
+const UNREAD_FILES_PREFIX = 'First-party files not read: ';
 
 const LARGEST_SHOWN = 5;
 const number = new Intl.NumberFormat('en-US');
