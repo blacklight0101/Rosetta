@@ -39,7 +39,9 @@ export function ChosenFiles({ items }: { readonly items: readonly WorkbookItem[]
         <li key={`${item.file.name}-${String(item.file.size)}`} class="rst-wb__file">
           <Name text={item.file.name} /> ({bytesText(item.file.size)}){' '}
           <span class="rst-wb__state" data-state={item.state}>
-            {stateText(item.state, item.percent)}
+            {item.state === 'waiting' && item.refusal !== undefined
+              ? item.refusal
+              : stateText(item.state, item.percent)}
           </span>
         </li>
       ))}
