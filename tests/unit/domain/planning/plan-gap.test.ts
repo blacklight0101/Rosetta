@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { CoverageItem } from '../../../../src/domain/planning/plan-coverage.js';
-import { addGapTasks, type GapDraft } from '../../../../src/domain/planning/plan-gap.js';
+import {
+  addGapTasks as addGapTasksReporting,
+  type GapDraft,
+} from '../../../../src/domain/planning/plan-gap.js';
 import { planOf, twoTasks } from '../../../support/coverage-fixtures.js';
 import { draftTask, planTask } from '../../../support/task-card-fixtures.js';
 
@@ -11,6 +14,13 @@ import { draftTask, planTask } from '../../../support/task-card-fixtures.js';
 const flow: CoverageItem = { id: 'flow:FLOW-007', kind: 'flow', name: 'Refund', detail: '' };
 const screen: CoverageItem = { id: 'screen:SCRN-004', kind: 'screen', name: 'Refunds', detail: '' };
 const gaps = [flow, screen];
+
+type Args = Parameters<typeof addGapTasksReporting>;
+
+/** The plan with the cards added; what is left out is tested in plan-gap-left-out.test.ts. */
+function addGapTasks(...args: Args) {
+  return addGapTasksReporting(...args).content;
+}
 
 function gapDraft(overrides: Partial<GapDraft> = {}): GapDraft {
   return { ...draftTask(), builds: ['flow:FLOW-007'], ...overrides };

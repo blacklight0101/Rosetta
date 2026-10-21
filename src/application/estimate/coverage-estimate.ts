@@ -1,3 +1,4 @@
+import type { GapProblem } from '../plan/gap-answer.js';
 import type { GapMessageInput } from '../plan/gap-message.js';
 import type { PlanContent, PlanTask } from '../../domain/planning/plan-content.js';
 import type { CoverageItem } from '../../domain/planning/plan-coverage.js';
@@ -52,4 +53,19 @@ export function assumedGapInput(): GapMessageInput {
     technical: { integrations: [], security: [], targets: [], environments: [] },
   };
   return { items, content };
+}
+
+/** The most task cards an answer to the gap call may hold (gap-answer.ts); the repair may list a problem for each. */
+const MAX_CARDS = 50;
+
+/**
+ * Q-54, RF-613: the problems the repair attempt would list, sized for the worst case: every card of
+ * the answer left out, each with the longest field name and the longest reason. Whether any card is
+ * left out is not known before the run, so the call is counted whenever a plan is written.
+ */
+export function assumedGapProblems(): readonly GapProblem[] {
+  return Array.from({ length: MAX_CARDS }, (_, index) => ({
+    ...{ position: index + 1, field: 'acceptanceCriteria', builds: [] },
+    reason: 'is empty or below its minimum',
+  }));
 }

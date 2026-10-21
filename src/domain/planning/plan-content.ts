@@ -13,7 +13,8 @@ import type {
   DraftTask,
   PlanDraft,
 } from './plan-draft.js';
-import { cardProblem, type GuardKind, type RiskClass } from './task-card-quality.js';
+import { draftFault, noRequirement, type LeftOutCard } from './left-out-card.js';
+import type { GuardKind, RiskClass } from './task-card-quality.js';
 import { assembleTechnical, type TechnicalContent } from './technical-content.js';
 
 // RF-601, RF-602, ADR-005, ADR-013: the planner's draft made into the content of the package.
@@ -86,6 +87,8 @@ export interface PlanContent {
 
 export interface PlanAssembly {
   readonly content: PlanContent;
+  /** Q-54: the task cards of the draft that the package leaves out, by position and field. */
+  readonly leftOut: readonly LeftOutCard[];
   /** How many items the draft had that the package leaves out. */
   readonly dropped: {
     readonly requirements: number;
@@ -130,20 +133,45 @@ function requirementsOf(
   return { kept, idAt };
 }
 
-function tasksOf(
+interface KeptTask {
+  readonly position: number;
+  readonly task: DraftTask;
+  readonly riskClass: RiskClass;
+  readonly requirements: string[];
+  readonly files: string[];
+}
+
+/** The draft tasks that are cards of the plan, and by position and field the ones that are not. */
+function keptTasks(
   drafts: readonly DraftTask[],
   phases: number,
   idAt: ReadonlyMap<number, string>,
   specified: boolean,
-): PlanTask[] {
-  const kept = drafts.flatMap((task, index) => {
+): { readonly kept: KeptTask[]; readonly leftOut: LeftOutCard[] } {
+  const kept: KeptTask[] = [];
+  const leftOut: LeftOutCard[] = [];
+  drafts.forEach((task, index) => {
+    const position = index + 1;
     const { riskClass } = task;
-    if (task.phase < 1 || task.phase > phases) return [];
-    if (riskClass === undefined || cardProblem({ ...task, riskClass }) !== undefined) return [];
+    const fault = draftFault(task, phases);
     const requirements = unique(task.requirements.flatMap((at) => idAt.get(at) ?? []));
-    if (specified && requirements.length === 0) return [];
-    return [{ position: index + 1, task, riskClass, requirements, files: listedFiles(task.files) }];
+    const missing = specified && requirements.length === 0 ? noRequirement : undefined;
+    if (fault !== undefined || riskClass === undefined || missing !== undefined) {
+      const left = fault ?? missing;
+      if (left !== undefined) leftOut.push({ position, ...left });
+      return;
+    }
+    kept.push({ position, task, riskClass, requirements, files: listedFiles(task.files) });
   });
+  return { kept, leftOut };
+}
+
+function tasksOf(
+  draft: PlanDraft,
+  idAt: ReadonlyMap<number, string>,
+  specified: boolean,
+): { readonly tasks: PlanTask[]; readonly leftOut: LeftOutCard[] } {
+  const { kept, leftOut } = keptTasks(draft.tasks, draft.phases.length, idAt, specified);
   const identifiers = allocateIdentifiers(kept.map((each) => each.task.needs));
   const at = new Map(kept.map((each, index) => [each.position, index]));
   const dependencies = dependenciesOf(
@@ -152,7 +180,7 @@ function tasksOf(
       declared: task.dependsOn.flatMap((position) => at.get(position) ?? []),
     })),
   );
-  return kept.map(({ task, riskClass, requirements, files }, index) => {
+  const tasks = kept.map(({ task, riskClass, requirements, files }, index) => {
     const { title, phase, acceptanceCriteria, invariant, adds, probes } = task;
     return {
       ...{ id: planId('T', index + 1), title, phase, requirements, acceptanceCriteria },
@@ -162,6 +190,7 @@ function tasksOf(
       builds: [],
     };
   });
+  return { tasks, leftOut };
 }
 
 function componentsOf(drafts: readonly DraftComponent[]): DraftComponent[] {
@@ -191,7 +220,7 @@ export function assemblePlan(
     return sources.length === 0 ? [] : [{ ...entity, sources }];
   });
   const specified = options.specificationDriven === true;
-  const tasks = tasksOf(draft.tasks, draft.phases.length, requirements.idAt, specified);
+  const { tasks, leftOut } = tasksOf(draft, requirements.idAt, specified);
   const withSources = <T extends { readonly sources: readonly string[] }>(item: T): T => ({
     ...item,
     sources: knownSources(item.sources, supported),
@@ -202,6 +231,7 @@ export function assemblePlan(
     draft.decisions.map((_, index) => planId('ADR', index + 1)),
   );
   return {
+    leftOut,
     content: {
       summary: draft.summary,
       requirements: requirements.kept,

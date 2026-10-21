@@ -137,6 +137,12 @@ export function loadGapPrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'planner/gap.v1.md');
 }
 
+/** The planner's prompt for the one repair attempt of the gap call (Q-54), checked and hashed. */
+// RNF-004
+export function loadGapRepairPrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'planner/gap-repair.v1.md');
+}
+
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {
   return placeholders.reduce(requirePlaceholder, file);
 }

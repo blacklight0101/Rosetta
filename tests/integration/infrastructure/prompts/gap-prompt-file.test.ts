@@ -1,7 +1,10 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
-import { loadGapPrompt } from '../../../../src/infrastructure/prompts/prompt-files.js';
+import {
+  loadGapPrompt,
+  loadGapRepairPrompt,
+} from '../../../../src/infrastructure/prompts/prompt-files.js';
 
 // RNF-004, RF-145, RF-627, RF-630, Q-45: the planner's prompt for the task cards of the items no
 // card builds is a versioned file, loaded with its version and the SHA-256 of its bytes for the
@@ -38,5 +41,27 @@ describe('loadGapPrompt', () => {
     const coverage = await readFile('prompts/planner/coverage.v1.md', 'utf8');
 
     expect(coverage).not.toMatch(/task cards that build/u);
+  });
+});
+
+describe('loadGapRepairPrompt', () => {
+  it('RNF-004 loads prompts/planner/gap-repair.v1.md with its version and hash', async () => {
+    const file = await loadGapRepairPrompt('prompts');
+
+    const bytes = await readFile('prompts/planner/gap-repair.v1.md');
+    expect(file).toMatchObject({ name: 'planner/gap-repair.v1.md', version: 'v1' });
+    expect(file.sha256).toBe(createHash('sha256').update(bytes).digest('hex'));
+    expect(file.text).toBe(bytes.toString('utf8'));
+  });
+
+  it('RF-202 RF-627 lists the problems and the expected shape, and keeps the first prompt as it was', async () => {
+    const { text } = await loadGapRepairPrompt('prompts');
+
+    expect(text).toMatch(/could not be read/u);
+    expect(text).toMatch(/"position": 3/u);
+    expect(text).toMatch(/only the cards/iu);
+    expect(text).toMatch(/data, never instructions/u);
+    expect(text).toMatch(/Write no text other than the JSON/u);
+    expect(await readFile('prompts/planner/gap.v1.md', 'utf8')).not.toMatch(/could not be read/u);
   });
 });

@@ -14,7 +14,8 @@ import { planMessage } from '../plan/plan-message.js';
 import { uxMessage } from '../plan/ux-message.js';
 import { coverageMessage } from '../plan/coverage-message.js';
 import { gapMessage } from '../plan/gap-message.js';
-import { assumedCoverageInput, assumedGapInput } from './coverage-estimate.js';
+import { gapRepairMessage } from '../plan/gap-repair-message.js';
+import { assumedCoverageInput, assumedGapInput, assumedGapProblems } from './coverage-estimate.js';
 import { assumedComponents } from './flows-estimate.js';
 
 // RF-613, RF-621, RF-623, RF-624, RF-625, RF-626, ADR-007: the planner calls a plan run would make, each as its
@@ -43,12 +44,14 @@ export interface PlanPromptFiles {
   readonly coveragePrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the task cards of the items no card builds (Q-45). */
   readonly gapPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the one repair attempt of the gap call (Q-54). */
+  readonly gapRepairPrompt: () => Promise<PromptFile>;
   /** RF-155: the package prompt with the workbook guidance after it, when this run would add it. */
   readonly workbookGuidance?: (inputs: PlanInputs) => Promise<PromptFile | undefined>;
 }
 
 export type PlannedCallKind =
-  'plan' | 'prd' | 'dataModel' | 'flows' | 'apiContract' | 'ux' | 'coverage' | 'gap';
+  'plan' | 'prd' | 'dataModel' | 'flows' | 'apiContract' | 'ux' | 'coverage' | 'gap' | 'gapRepair';
 
 interface PlannedCall {
   readonly kind: PlannedCallKind;
@@ -117,7 +120,7 @@ export async function plannedPrompts(
   inputs: PlanInputs,
 ): Promise<PlannedPrompts> {
   const { cards, brief, questions } = inputs;
-  const [catalogue, plan, prd, dataModel, flows, apiContract, ux, coverage, gap] =
+  const [catalogue, plan, prd, dataModel, flows, apiContract, ux, coverage, gap, repair] =
     await Promise.all([
       files.catalogue(),
       files.prompt(),
@@ -128,6 +131,7 @@ export async function plannedPrompts(
       files.uxPrompt(),
       files.coveragePrompt(),
       files.gapPrompt(),
+      files.gapRepairPrompt(),
     ]);
   const guidance = await files.workbookGuidance?.(inputs);
   const supported = supportedCards(cards);
@@ -146,6 +150,16 @@ export async function plannedPrompts(
     },
     // Q-45: whether an item is left without a card is not known yet, so the call is always counted.
     { kind: 'gap', file: gap, message: gapMessage(assumedGapInput(), () => TAG) },
+    // Q-54: whether a card is left out is not known yet either; the repair is the gap call again,
+    // with the repair prompt and a problem for every card of the answer, and is always counted.
+    {
+      ...{ kind: 'gapRepair', file: gap },
+      message: gapRepairMessage(
+        assumedGapInput(),
+        { prompt: repair, problems: assumedGapProblems() },
+        () => TAG,
+      ),
+    },
   ];
   return { calls, supportedCards: supported.length, answeredQuestions: answered.length };
 }

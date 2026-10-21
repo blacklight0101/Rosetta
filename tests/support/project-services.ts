@@ -31,6 +31,7 @@ import {
   loadUxPrompt,
   loadCoveragePrompt,
   loadGapPrompt,
+  loadGapRepairPrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { ServerOptions } from '../../src/presentation/web/server.js';
@@ -71,6 +72,13 @@ export interface UploadParts {
   readonly staging: WorkbookStaging;
   readonly limitBytes: number;
 }
+
+/** The planner's prompts for the links of the task cards and for the items no card builds. */
+const laterPrompts = {
+  coveragePrompt: () => loadCoveragePrompt('prompts'),
+  gapPrompt: () => loadGapPrompt('prompts'),
+  gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
+};
 
 export function projectServices(
   parts: ProjectParts,
@@ -117,8 +125,7 @@ export function projectServices(
       flowsPrompt: () => loadFlowsPrompt('prompts'),
       apiContractPrompt: () => loadApiContractPrompt('prompts'),
       uxPrompt: () => loadUxPrompt('prompts'),
-      coveragePrompt: () => loadCoveragePrompt('prompts'),
-      gapPrompt: () => loadGapPrompt('prompts'),
+      ...laterPrompts,
     }),
   };
 }
