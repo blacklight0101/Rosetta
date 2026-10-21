@@ -74,7 +74,7 @@ function lines(): Line[] {
     row: FIRST_ROW + index,
     amounts: [100 + index * 10, 50 + index, 25],
     expenses: 10 * (index + 1),
-    vatRate: 0.2,
+    vatRate: 0.25,
   }));
 }
 
