@@ -22,6 +22,7 @@ function toolSet(outcome: ToolOutcome): AgentToolSet {
     areaOverview: () => '',
     readableAreaFiles: () => [],
     renderBlock: () => '',
+    rowSpans: () => Promise.resolve(undefined),
     run: () => Promise.resolve(outcome),
   };
 }

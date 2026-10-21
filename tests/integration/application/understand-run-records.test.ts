@@ -56,17 +56,17 @@ describe('an understand run: cost and prompts', () => {
       'cards/card-format.v2.md',
       'cards/continue.v1.md',
       'cards/flows.v1.md',
-      'cards/repair.v1.md',
+      'cards/repair.v2.md',
       'cards/screens.v2.md',
-      'reader/area.v4.md',
+      'reader/area.v5.md',
       'reader/read-first.v1.md',
       'reader/task.v2.md',
       'reader/turns-left.v2.md',
       'verifier/claim.v1.md',
       'verifier/retry.v1.md',
     ]);
-    expect(manifest.promptVersions['reader/area.v4.md']?.version).toBe('v4');
-    expect(manifest.promptVersions['reader/area.v4.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(manifest.promptVersions['reader/area.v5.md']?.version).toBe('v5');
+    expect(manifest.promptVersions['reader/area.v5.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
     expect(manifest.roles['reader']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.roles['verifier']?.modelVersion).toBe('fake-judge-2026-10-01');
   });
