@@ -13,7 +13,7 @@ import type {
   DraftTask,
   PlanDraft,
 } from './plan-draft.js';
-import type { RequirementNote } from './requirement-notes.js';
+import { unknownPositions, type RequirementNote } from './requirement-notes.js';
 import { draftFault, noRequirement, type LeftOutCard } from './left-out-card.js';
 import type { GuardKind, RiskClass } from './task-card-quality.js';
 import { assembleTechnical, type TechnicalContent } from './technical-content.js';
@@ -224,6 +224,7 @@ export function assemblePlan(
   });
   const specified = options.specificationDriven === true;
   const { tasks, leftOut } = tasksOf(draft, requirements.idAt, specified);
+  const notes = unknownPositions(draft.tasks, draft.requirements.length);
   const withSources = <T extends { readonly sources: readonly string[] }>(item: T): T => ({
     ...item,
     sources: knownSources(item.sources, supported),
@@ -251,6 +252,7 @@ export function assemblePlan(
         id: planId('RISK', index + 1),
       })),
       technical: technical.content,
+      ...(notes.length === 0 ? {} : { requirementNotes: notes }),
     },
     dropped: {
       requirements: draft.requirements.length - requirements.kept.length,

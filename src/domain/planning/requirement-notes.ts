@@ -4,12 +4,17 @@ import type { DraftTask } from './plan-draft.js';
 // them, so that checks.md can say it.
 
 export type RequirementNote =
+  /** A requirement position of the draft task `card` (from 1) that the list of `count` requirements does not have. */
   | {
       readonly kind: 'position';
       readonly card: number;
       readonly position: number;
       readonly count: number;
     }
+  /**
+   * Code put a requirement on a task card (`added`), took it off (`removed`), or kept it because
+   * it was the only one the card had (`unmatched`), from the cards behind what the task builds.
+   */
   | {
       readonly kind: 'added' | 'removed' | 'unmatched';
       readonly task: string;
@@ -19,5 +24,9 @@ export type RequirementNote =
 /** The requirement positions the draft tasks name that are outside the list of `count` requirements. */
 // RF-627
 export function unknownPositions(tasks: readonly DraftTask[], count: number): RequirementNote[] {
-  return count < 0 ? tasks.map(() => ({ kind: 'position', card: 0, position: 0, count })) : [];
+  return tasks.flatMap((task, index) =>
+    [...new Set(task.requirements)]
+      .filter((position) => position < 1 || position > count)
+      .map((position): RequirementNote => ({ kind: 'position', card: index + 1, position, count })),
+  );
 }
