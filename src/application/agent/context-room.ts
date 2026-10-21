@@ -8,7 +8,7 @@ export const charsPerToken = 4;
 /** What one more read adds to the conversation: a read of the default 400 lines. */
 const readTokens = 4_000;
 
-export function tokensOfText(text: string): number {
+function tokensOfText(text: string): number {
   return Math.ceil(text.length / charsPerToken);
 }
 
