@@ -54,3 +54,10 @@ export function chatCompletionBody(request: LlmRequest): ChatCompletionCreatePar
     stream: false,
   };
 }
+
+/** Stub: the streaming body comes with the streaming adapter. */
+export function chatCompletionStreamBody(
+  request: LlmRequest,
+): ChatCompletionCreateParamsNonStreaming {
+  return chatCompletionBody(request);
+}
