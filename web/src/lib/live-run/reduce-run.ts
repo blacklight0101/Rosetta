@@ -21,6 +21,7 @@ import {
   onDeepenRoundStarted,
   onDeepenStarted,
 } from './deepen-events.js';
+import { onRetryStarted } from './retry-events.js';
 import { LOG_LIMIT } from './log-count.js';
 import { withLine } from './log-lines.js';
 import type { RunState } from './run-state.js';
@@ -55,6 +56,8 @@ const handlers: Readonly<Record<string, Handler>> = {
   'deepen.round.started': onDeepenRoundStarted,
   'deepen.round.ended': onDeepenRoundEnded,
   'deepen.ended': onDeepenEnded,
+  // RF-208: the run a retry of failed areas starts from.
+  'retry.started': onRetryStarted,
   // RF-1014: the judgement step's start and end; the claims wait for it only in between (or before).
   'verify.judgement.started': (state) => ({ ...state, judgement: 'running' }),
   'verify.judgement.ended': (state) => ({ ...state, judgement: 'ended' }),
@@ -76,6 +79,7 @@ export function initialRunState(): RunState {
     roleCostMicros: {},
     roleTokens: {},
     deepen: undefined,
+    retry: undefined,
     ended: undefined,
   };
 }

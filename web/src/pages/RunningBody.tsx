@@ -17,6 +17,7 @@ import { AgentsTab } from './AgentsTab.js';
 import { CardsTab } from './CardsTab.js';
 import { CodeMap } from './CodeMap.js';
 import { DeepenProgress } from './DeepenProgress.js';
+import { RetryNotice } from './RetryNotice.js';
 import { RunJourney } from './RunJourney.js';
 import { RunStepper } from './RunStepper.js';
 import { SpendPanel } from './SpendPanel.js';
@@ -171,6 +172,7 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
       ) : (
         <RunJourney steps={journeyOf({ stage, phase, state, tiles })} />
       )}
+      {state.retry === undefined ? null : <RetryNotice retry={state.retry} />}
       {state.deepen === undefined ? null : <DeepenProgress progress={state.deepen} />}
       <div class="rst-running__grid">
         <CodeMap
