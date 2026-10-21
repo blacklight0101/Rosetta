@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 82      | 5         | 75         | 2         | 0                  | 28      | 52      | 2      | 38         | 0         |
-| **Total**               | **299** | **77**    | **195**    | **27**    | **0**              | **144** | **143** | **12** | **173**    | **0**     |
+| P3 Report and plan      | 83      | 5         | 76         | 2         | 0                  | 28      | 53      | 2      | 39         | 0         |
+| **Total**               | **300** | **77**    | **196**    | **27**    | **0**              | **144** | **144** | **12** | **174**    | **0**     |
 
 ## Conventions for every card
 
@@ -4077,3 +4077,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the tolerant positions, the log, the repair and tests.
 - **Done when**: each probe has a passing test; `npm run verify` green.
 - **Refs**: RF-627, RF-630, RF-202, Q-45, Q-54; issue #726.
+
+### P3-83 - Follow-up: a refused or cut-off reader answer keeps its cards
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-78
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-206, RF-202 and RF-208 (the Q-55 scenarios), Q-50, Q-55; `src/application/agent/agent-loop.ts` (`refuseUnread` pushes the answer and the refusal, then `turn()` ends the task `context-limit` when `overContextShare()` is true, and the answer is lost), `src/application/agent/read-gate.ts` (`readMore`), `src/application/agent/answer-collector.ts` (continuation of a cut-off answer; its follow-up goes through the same context check), `src/application/understand/task-retry.ts` (a `context-limit` end splits the area in two halves with half the turns each). Found in the orchestrator's re-run of 2026-10-21 on the merged main (Invoice_Generator.xlsm, reader Ollama `gemma4:e4b`, context 32,768): the reader read 5 files (about a fifth of the area), then gave a full answer of about 10,000 characters (entities, rules, screens, an open question); the Q-50 refusal was added, the next turn was over the context share, the task ended `context-limit` with no card, and the answer was dropped. The split retry then ran twice with 6 turns: the first half gave 3 thin cards, the second half's answer was cut at 4,096 output tokens (`finishReason: length`, 28,142 input tokens), its continuation was over the context share, and none of its complete cards was kept. The run ended with 7 claims, against 165 Supported in the earlier Deepen.
+- **Do**: (1) the Q-50 refusal is given only when the conversation has room for at least one more read and a new answer (the context share minus the current estimate is at least the answer's size plus one read); otherwise the answer is taken as it is; (2) when the turn after a refusal ends the task (`context-limit`, `max-turns`), the refused answer is read as the final answer instead of being lost; (3) when an answer is cut off (`length`) and its continuation cannot be asked (context share, turn limit, a guard), the complete cards and open questions in the cut text are kept (parse up to the last complete card), the cut part is recorded as invalid output; (4) an event and a log line say why an answer was refused, lost or cut (the reason only, never answer text), so a run page and `events.jsonl` explain a retry.
+- **Review probes**: the recorded Invoice shape (5 files read, a long answer, context near the share): no refusal, the cards kept, no retry; a refusal with room left (read more, second answer accepted, as P3-78); a refusal whose next turn is over the share (the first answer's cards kept); a refusal followed by the turn limit (kept); an answer cut at the output limit with no room to continue (its complete cards kept, the cut card recorded as invalid output); a cut answer with room (continuation as today); the event names the reason; recorded responses only.
+- **Behaviour to preserve**: RF-206 no answer before any read; P3-78 refusal when there is room; RF-202 repairs; RF-208 retries of a task with no card; ADR-005 every claim cited; ADR-013 untrusted answers.
+- **Delivers**: the room check, the kept answers, the partial parse, the events and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-206, RF-202, RF-208, Q-50, Q-55; issue #735.
