@@ -1,5 +1,6 @@
 import type { ApiContract } from '../../domain/planning/api-contract.js';
 import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
+import type { RestatedDecision } from '../../domain/planning/brief-restated.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
 import type { TargetDataModel } from '../../domain/planning/data-model.js';
 import type { TargetFlows } from '../../domain/planning/target-flows.js';
@@ -59,6 +60,8 @@ export interface HandoffPackage {
   readonly content: PlanContent;
   /** The decision record of the style, of each chosen stack layer and of the migration. */
   readonly choices: BriefChoices;
+  /** RF-608: the planner decisions left out because the record of the brief already decides them. */
+  readonly restated: readonly RestatedDecision[];
   /** The target tables, with the legacy source of each column and the dropped legacy fields (RF-623). */
   readonly dataModel: TargetDataModel;
   /** The main journeys mapped to target components, and those out of scope (RF-625). */

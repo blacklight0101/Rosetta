@@ -1,4 +1,4 @@
-import { briefDecisions } from '../../domain/planning/brief-decisions.js';
+import { decideOnce } from '../../domain/planning/brief-restated.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
@@ -34,7 +34,7 @@ export function handoffPackageOf(
   const { brief, sourceRun, project, cards, questions, upload } = inputs;
   const sources = supportedCards(cards);
   const supported = new Set(sources.map((card) => card.id));
-  const fromBrief = briefDecisions(brief, catalogue, supported, content.decisions.length);
+  const decided = decideOnce(content, brief, catalogue, supported);
   return {
     repository: { url: project.sourceUrl, commitSha: sourceRun.commitSha },
     ...(upload === undefined ? {} : { upload }),
@@ -42,8 +42,9 @@ export function handoffPackageOf(
     brief,
     style: principleOf(catalogue, brief.architecture.style),
     principles: brief.principles.map((id) => principleOf(catalogue, id)),
-    content: { ...content, decisions: [...content.decisions, ...fromBrief.decisions] },
-    choices: fromBrief.choices,
+    content: decided.content,
+    choices: decided.choices,
+    restated: decided.restated,
     sources,
     excluded: excludedClaims(cards),
     briefQuestions: defaultedQuestions(brief, catalogue),
