@@ -18,7 +18,7 @@ import type { PlanEstimate } from './plan-estimate-types.js';
 import { estimateRole, type RolePricing } from './role-estimate.js';
 
 // RF-613, ADR-007, DEC-81: the estimate before a plan run (`GET /api/projects/:id/plan-estimate`).
-// The plan run makes up to six planner calls (BuildPlan): the plan, the product requirements
+// The plan run makes up to eight planner calls (BuildPlan; the last two are the coverage links and, Q-45, the task cards for the items no card builds, both counted whenever a plan is written): the plan, the product requirements
 // document (RF-621), when the supported cards hold an `ENT` claim the target data model (RF-623),
 // when they hold a `FLOW` card the target flows (RF-625, whose components block is sized at the
 // plan answer's limits, flows-estimate.ts), when the brief names a front end and a `FEAT` or
@@ -122,6 +122,7 @@ export class EstimatePlan {
           apiContractPromptTokens: tokensOf(calls, prompts, 'apiContract'),
           uxPromptTokens: tokensOf(calls, prompts, 'ux'),
           coveragePromptTokens: tokensOf(calls, prompts, 'coverage'),
+          gapPromptTokens: tokensOf(calls, prompts, 'gap'),
         },
         ...{ maxOutputTokens, outputPercent: OUTPUT_PERCENT },
         continuationsPerCall: maxPlannerContinuations,

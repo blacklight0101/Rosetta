@@ -55,9 +55,9 @@ describe('EstimatePlan: the planner range', () => {
       ...{ role: 'planner', provider: 'openai', kind: 'openai', model: 'priced-model' },
       ...{ keySource: 'server', priced: true },
     });
-    expect(planner.points.low.outputTokens).toBe(16384);
-    expect(planner.points.likely.outputTokens).toBe(32768);
-    expect(planner.points.high.outputTokens).toBe(196608);
+    expect(planner.points.low.outputTokens).toBe(20480);
+    expect(planner.points.likely.outputTokens).toBe(40960);
+    expect(planner.points.high.outputTokens).toBe(245760);
     expect(planner.points.low.inputTokens).toBeGreaterThan(0);
     expect(planner.points.high.inputTokens).toBeGreaterThan(planner.points.low.inputTokens);
     expect(planner.points.low.costMicros).toBeLessThan(planner.points.likely.costMicros);
@@ -117,7 +117,7 @@ describe('EstimatePlan: the planner price', () => {
 
     expect(estimate.planner).toMatchObject({ kind: 'ollama', keySource: 'none', priced: true });
     expect(estimate.planner.points.high.costMicros).toBe(0n);
-    expect(estimate.planner.points.high.outputTokens).toBe(196608);
+    expect(estimate.planner.points.high.outputTokens).toBe(245760);
     expect(estimate.withinCaps).toEqual({ low: true, likely: true, high: true });
   });
 
@@ -128,7 +128,7 @@ describe('EstimatePlan: the planner price', () => {
 
     expect(estimate.planner.priced).toBe(false);
     expect(estimate.planner.points.high.costMicros).toBe(0n);
-    expect(estimate.planner.points.high.outputTokens).toBe(196608);
+    expect(estimate.planner.points.high.outputTokens).toBe(245760);
   });
 });
 
@@ -141,10 +141,10 @@ describe('EstimatePlan: against the project caps', () => {
     ]);
     expect(cap(estimate, 'run-cost')).toMatchObject({
       ...{ unit: 'micros', limit: 500_000n, spent: 0n, remaining: 500_000n },
-      fits: { low: true, likely: true, high: true },
+      fits: { low: true, likely: true, high: false },
     });
     expect(cap(estimate, 'run-tokens')).toMatchObject({ unit: 'tokens', limit: 2_000_000n });
-    expect(estimate.withinCaps).toEqual({ low: true, likely: true, high: true });
+    expect(estimate.withinCaps).toEqual({ low: true, likely: true, high: false });
   });
 
   it('RF-613 a run cap between the likely and the high figure leaves high not fitting', async () => {
@@ -209,7 +209,7 @@ describe('EstimatePlan: against the account caps', () => {
   it('RF-1106 a server key is checked against what is left of the server month', async () => {
     const h = await createPlanEstimateHarness({ settings: plannerSettings(cloudPlanner) });
     await h.serverSettings.saveCaps({
-      ...{ runMicros: 500_000n, userDayMicros: 500_000n, serverMonthMicros: 20_000n },
+      ...{ runMicros: 500_000n, userDayMicros: 2_000_000n, serverMonthMicros: 20_000n },
     });
     const other = { userId: 'someone-else', currency: 'USD', keySource: 'server' } as const;
     h.usage.addCost({ ...other, at: new Date('2026-10-02T08:00:00.000Z'), costMicros: 15_000n });

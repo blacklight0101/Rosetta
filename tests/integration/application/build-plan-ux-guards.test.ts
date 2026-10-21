@@ -117,7 +117,7 @@ describe('plan estimate with the screens call', () => {
     expect(BigInt(high.inputTokens + high.outputTokens)).toBeGreaterThanOrEqual(
       sum((worst) => worst.tokens),
     );
-    expect(estimate.assumptions.calls).toBe(9);
+    expect(estimate.assumptions.calls).toBe(8);
   });
 });
 

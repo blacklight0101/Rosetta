@@ -41,7 +41,7 @@ describe('plan estimate with an API contract', () => {
     expect(BigInt(high.inputTokens + high.outputTokens)).toBeGreaterThanOrEqual(
       sum((worst) => worst.tokens),
     );
-    expect(estimate.assumptions.calls).toBe(8);
+    expect(estimate.assumptions.calls).toBe(7);
   });
 });
 

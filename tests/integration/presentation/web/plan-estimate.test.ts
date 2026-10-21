@@ -99,7 +99,7 @@ describe('GET /api/projects/:id/plan-estimate answers', () => {
       ...['run-cost', 'run-tokens', 'user-day', 'server-month'],
     ]);
     expect(body.caps[0]).toMatchObject({ unit: 'micros', limit: '500000', spent: '0' });
-    expect(body.withinCaps).toEqual({ low: true, likely: true, high: true });
+    expect(body.withinCaps).toEqual({ low: true, likely: true, high: false });
     expect(body.keyAvailable).toBe(true);
   });
 
