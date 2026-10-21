@@ -238,3 +238,18 @@ it('RF-158 the chosen files are listed with their sizes, names isolated for righ
   expect(items).toContain('Costs.xlsm (12 B) Waiting');
   expect(document.querySelectorAll('bdi').length).toBeGreaterThanOrEqual(2);
 });
+
+it('RF-158 a refused README.md reads "Not a workbook" in the file list, not "Waiting"', async () => {
+  installFakeUploadServer();
+  renderWorkbookTab();
+
+  chooseFiles(workbookFile('Good.xlsx'), workbookFile('README.md'));
+  await screen.findByTestId('field-error');
+
+  const list = screen.getByRole('list', { name: 'Chosen workbooks' });
+  const [good, readme] = Array.from(list.querySelectorAll('li'));
+  expect(good?.textContent).toContain('Waiting');
+  expect(readme?.textContent).toContain('README.md');
+  expect(readme?.textContent).toContain('Not a workbook');
+  expect(readme?.textContent).not.toContain('Waiting');
+});
