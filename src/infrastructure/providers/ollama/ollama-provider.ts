@@ -29,8 +29,14 @@ import {
 } from './ollama-context-resolver.js';
 import { modelMissing } from './ollama-errors.js';
 import { exchange } from './ollama-http.js';
-import { chatBody, type ToolMode } from './ollama-request.js';
-import { cutPrompt, promptFactsOf, refusedPrompt } from './ollama-prompt-guard.js';
+import { chatBody, type OllamaChatBody, type ToolMode } from './ollama-request.js';
+import {
+  cutPrompt,
+  neededTokens,
+  promptFactsOf,
+  refusedPrompt,
+  type PromptFacts,
+} from './ollama-prompt-guard.js';
 import { llmResponseOf } from './ollama-response.js';
 import { digestOf, parseChat } from './ollama-wire.js';
 
@@ -72,6 +78,12 @@ export interface OllamaProviderOptions {
 
 // DEC-114: one context cache per process. It is private to this module, so no caller can empty it.
 const processCache: ContextCache = newContextCache();
+
+interface Prepared {
+  readonly context: ContextChoice;
+  readonly body: OllamaChatBody;
+  readonly facts: PromptFacts;
+}
 
 function cancelled(signal: AbortSignal): RosettaError {
   return new RosettaError(ERROR_CODES.providerCallCancelled, undefined, { cause: signal.reason });
@@ -140,16 +152,12 @@ export class OllamaProvider implements LlmProvider {
     const digest = await this.digest(request);
     if (!digest.ok) return digest;
     const ref = { model: request.model, digest: digest.value };
-    const context = await untilAborted(this.contextFor(ref), request.signal);
-    const { toolMode, think, textProtocolPrompt } = this.options;
-    const settings = {
-      toolMode,
-      think: think ?? false,
-      contextTokens: context.tokens,
-      textProtocolPrompt,
-    };
-    const body = chatBody(request, settings);
-    const facts = promptFactsOf(request, body, context.tokens);
+    const auto = await untilAborted(this.contextFor(ref), request.signal);
+    const { toolMode } = this.options;
+    const { context, body, facts } = await untilAborted(
+      this.prepare(request, ref, auto),
+      request.signal,
+    );
     // DEC-155: a prompt that does not fit is refused before anything is sent.
     const refused = refusedPrompt(facts);
     if (refused !== undefined) return { ok: false, failed: refused };
@@ -170,6 +178,34 @@ export class OllamaProvider implements LlmProvider {
       context,
     });
     return { ok: true, response };
+  }
+
+  /**
+   * RF-401, Q-48: the body of the call. With `auto`, a prompt that does not fit the automatic size
+   * is sent at a larger one, up to the trained context; otherwise the facts carry the trained
+   * context so the refusal can say that even it is too small.
+   */
+  private async prepare(
+    request: LlmRequest,
+    ref: ModelRef,
+    auto: ContextChoice,
+  ): Promise<Prepared> {
+    const { toolMode, think, textProtocolPrompt } = this.options;
+    const build = (context: ContextChoice, trained?: number): Prepared => {
+      const settings = {
+        toolMode,
+        think: think ?? false,
+        contextTokens: context.tokens,
+        textProtocolPrompt,
+      };
+      const body = chatBody(request, settings);
+      return { context, body, facts: promptFactsOf(request, body, context.tokens, trained) };
+    };
+    const first = build(auto);
+    if (auto.source === 'fixed') return first;
+    const grown = await this.contexts.grow(ref, auto, neededTokens(first.facts));
+    if (grown === undefined) return build(auto, this.contexts.trainedContext(ref));
+    return grown === auto ? first : build(grown);
   }
 
   /** RF-401, DEC-114: the `num_ctx` of this model, measured once when the setting is `auto`. */

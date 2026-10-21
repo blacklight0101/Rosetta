@@ -43,10 +43,20 @@ export interface ContextCache {
   readonly retryAt: Map<string, number>;
   /** Server, digest and size of the fixed sizes already checked for a spill. */
   readonly fixedChecked: Set<string>;
+  /** The trained context by server and digest, when the last measurement read it (Q-48). */
+  readonly trained: Map<string, number | undefined>;
+  /** Server, digest and size of the grown sizes already warned about (Q-48). */
+  readonly grownWarned: Set<string>;
 }
 
 export function newContextCache(): ContextCache {
-  return { auto: new Map(), retryAt: new Map(), fixedChecked: new Set() };
+  return {
+    auto: new Map(),
+    retryAt: new Map(),
+    fixedChecked: new Set(),
+    trained: new Map(),
+    grownWarned: new Set(),
+  };
 }
 
 export interface ContextResolverDeps {
@@ -94,6 +104,32 @@ export class OllamaContextResolver {
     return pending;
   }
 
+  /** The model's trained context when the last measurement read it (Q-48). */
+  trainedContext(ref: ModelRef): number | undefined {
+    return this.deps.cache.trained.get(this.keyOf(ref));
+  }
+
+  /**
+   * Q-48: the choice to send for a prompt of `needed` tokens (prompt estimate plus output reserve).
+   * It is `auto` when that holds them; else the smallest size, doubling from `auto` and never
+   * above the trained context, that does, with one warning per model and size that part of the
+   * model runs on the CPU. Undefined when even the trained context is too small or not known, and
+   * for a fixed size, which is never changed.
+   */
+  async grow(
+    ref: ModelRef,
+    auto: ContextChoice,
+    needed: number,
+  ): Promise<ContextChoice | undefined> {
+    if (needed <= auto.tokens) return auto;
+    const trained = this.trainedContext(ref);
+    if (auto.source === 'fixed' || trained === undefined || needed > trained) return undefined;
+    let tokens = auto.tokens;
+    while (tokens < needed) tokens = Math.min(tokens * 2, trained);
+    await this.warnGrown(ref, tokens, auto.tokens);
+    return { tokens, source: 'auto-grown' };
+  }
+
   /** After the first call at a fixed size: one warning when part of the model is on the CPU. */
   async checkFixed(ref: ModelRef, tokens: number): Promise<void> {
     const key = `${this.keyOf(ref)} ${String(tokens)}`;
@@ -119,8 +155,12 @@ export class OllamaContextResolver {
    */
   private async measure(ref: ModelRef): Promise<ContextChoice> {
     const trained = await this.deps.probe.trainedContext(ref.model);
-    if (!trained.ok) return this.fallback(ref, CONTEXT_CEILING, trained.reason);
+    if (!trained.ok) {
+      this.deps.cache.trained.delete(this.keyOf(ref));
+      return this.fallback(ref, CONTEXT_CEILING, trained.reason);
+    }
     const limit = trained.value;
+    this.deps.cache.trained.set(this.keyOf(ref), limit);
     const start = limit === undefined ? CONTEXT_CEILING : Math.min(limit, CONTEXT_CEILING);
     for (let tokens = start; ; tokens = Math.max(CONTEXT_FLOOR, Math.floor(tokens / 2))) {
       const residency = await this.loadedAt(ref, tokens);
@@ -155,6 +195,16 @@ export class OllamaContextResolver {
       { model: ref.model, contextSize: tokens, reason },
     );
     return { tokens, source: 'auto-fallback' };
+  }
+
+  private async warnGrown(ref: ModelRef, tokens: number, automatic: number): Promise<void> {
+    const key = `${this.keyOf(ref)} ${String(tokens)}`;
+    if (this.deps.cache.grownWarned.has(key)) return;
+    this.deps.cache.grownWarned.add(key);
+    await this.warn(
+      `The prompt does not fit the automatic context of ${String(automatic)} tokens for ${ref.model}, so ${String(tokens)} are used; part of the model runs on the CPU, which is slower.`,
+      { model: ref.model, contextSize: tokens, automaticContextSize: automatic },
+    );
   }
 
   private async warn(message: string, data: Record<string, LogValue>): Promise<void> {

@@ -3,7 +3,8 @@ import { ERROR_CODES } from '../../../domain/errors/codes.js';
 import { RosettaError } from '../../../domain/errors/rosetta-error.js';
 
 // RF-401, DEC-114, Q-23: the Ollama context size (`num_ctx`). `auto` (the default) picks the largest
-// size that keeps the whole model in GPU memory; a number is sent unchanged.
+// size that keeps the whole model in GPU memory and grows for a larger prompt, up to the trained
+// context (Q-48); a number is sent unchanged.
 
 /** `providers.<name>.contextTokens` (data-model.md section 3.1). */
 export type ContextSetting = 'auto' | number;

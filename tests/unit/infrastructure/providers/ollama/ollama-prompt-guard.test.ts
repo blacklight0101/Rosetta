@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
 import {
   cutPrompt,
+  refusedPrompt,
   type PromptFacts,
 } from '../../../../../src/infrastructure/providers/ollama/ollama-prompt-guard.js';
 import { contractRequest } from '../../../../contracts/llm-provider.contract.js';
@@ -47,5 +48,23 @@ describe('cutPrompt', () => {
 
   it('RF-401 does not fail when Ollama reports no prompt count', () => {
     expect(cutPrompt(facts(3000), chat(undefined), contractRequest())).toBeUndefined();
+  });
+});
+
+describe('refusedPrompt', () => {
+  it('RF-401 Q-48 names the trained context when the facts carry one that is too small', () => {
+    const failed = refusedPrompt({ ...facts(9000), trainedTokens: 8192, contextTokens: 8192 });
+
+    expect(failed?.notSent).toBe(true);
+    expect(failed?.message).toMatch(/even the trained context/);
+    expect(failed?.message).toContain('8192');
+    expect(failed?.message).toContain('Context size');
+  });
+
+  it('RF-401 does not mention a trained context when the facts carry none', () => {
+    const failed = refusedPrompt(facts(3000));
+
+    expect(failed?.message).not.toMatch(/trained context/);
+    expect(failed?.message).toContain('Context size');
   });
 });
