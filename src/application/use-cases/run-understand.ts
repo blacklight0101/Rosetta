@@ -1,7 +1,6 @@
-import { ERROR_CODES } from '../../domain/errors/codes.js';
-import { ok } from '../../domain/errors/result.js';
+import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import { recordManifestCodeMap, recordPromptVersions } from '../../domain/runs/run-manifest.js';
+import { recordManifestCodeMap } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import type { ReaderPrompts } from '../agent/reader-prompts.js';
@@ -32,20 +31,25 @@ import { callIds, traceIdOf } from '../runs/run-ids.js';
 import { preflightOllama, type PreflightProblem } from '../understand/reader-preflight.js';
 import type { UnknownAreas } from '../understand/reader-tasks.js';
 import { logSkippedQuestions, publishSkippedQuestions } from '../understand/skipped-questions.js';
-import { runPrompts } from '../understand/run-prompts.js';
-import { areaHoldsWorkbook } from '../../domain/sources/workbook-folders.js';
-import { runMarks } from '../understand/run-marks.js';
 import { planTasks } from '../understand/task-plan.js';
 import { readUnderstandOptions, UNDERSTAND_ROLES } from '../understand/understand-options.js';
 import { pinnedSourceOf } from '../understand/pinned-source.js';
-import { planRunTasks, resumeSourceProblem } from '../understand/resume-state.js';
+import { resumeSourceProblem } from '../understand/resume-state.js';
+import { announceRetry, scheduleTasks } from '../understand/retry-plan.js';
+import { recordRunTexts } from '../understand/run-texts.js';
 import type { Prepared, UnderstandRoles } from '../understand/run-understand-types.js';
 import { UnderstandSession } from '../understand/understand-session.js';
 import { runProviderSinks } from '../understand/run-sinks.js';
-import { verifierPromptVersions, type VerifierPrompts } from '../verifier/verifier-prompts.js';
+import type { VerifierPrompts } from '../verifier/verifier-prompts.js';
 import { sameFamilyWarning } from '../verifier/family-warning.js';
 import { runDeepen } from '../deepen/deepen-session.js';
-import { failed, stop, understandRolesOf, type Step } from '../understand/run-understand-steps.js';
+import {
+  failed,
+  optionalPartsOf,
+  stop,
+  understandRolesOf,
+  type Step,
+} from '../understand/run-understand-steps.js';
 
 // RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007: the executor of the
 // `understand` stage. It opens the code map and snapshot of the project's latest completed scan,
@@ -139,6 +143,7 @@ export class RunUnderstand implements RunExecutor {
     // RF-209: a Deepen run goes back over a completed run instead of reading the areas anew.
     const deepen = readUnderstandOptions(execution.manifest.options).deepen;
     if (deepen !== undefined) return runDeepen({ ...parts, request: deepen });
+    if (prepared.value.retry !== undefined) await announceRetry(execution, prepared.value.retry);
     const session = new UnderstandSession(parts);
     await session.plan();
     await session.run();
@@ -159,9 +164,11 @@ export class RunUnderstand implements RunExecutor {
     const scanned = await this.deps.scans.open(scan);
     const changed = resumeSourceProblem(manifest, scanned);
     if (changed !== undefined) {
-      const message = 'The code map of the latest scan is not the one this run read.';
-      await this.log(run, changed, message, {});
-      return stop(failed(changed));
+      return this.refuse(
+        run,
+        changed,
+        'The code map of the latest scan is not the one this run read.',
+      );
     }
     await execution.recordSource(scanned.source);
     await updates.update((stored) => recordManifestCodeMap(stored, scanned.codeMapHash));
@@ -173,26 +180,29 @@ export class RunUnderstand implements RunExecutor {
     });
     if (!planned.ok) return this.unknownAreas(run, planned.error);
     const { tasks, rerun } = planned.value;
-    const plan = await planRunTasks(this.deps.taskResults, execution, tasks);
+    const scheduled = await scheduleTasks(this.deps, execution, { tasks, scanned, options });
+    if (!scheduled.ok) {
+      return this.refuse(
+        run,
+        scheduled.error,
+        'The run to retry cannot be read as this retry needs it.',
+      );
+    }
+    const { plan, allTasks, link } = scheduled.value;
     const skipped = rerun?.plan.skipped ?? [];
     await logSkippedQuestions(this.deps.logger, run, skipped);
     await publishSkippedQuestions(execution.events, skipped);
-    const workbook = tasks.some((task) => areaHoldsWorkbook(task.area, scanned.workbookFolders));
-    const withAnswers = rerun !== undefined && tasks.length > 0;
-    const use = { withAnswers, deepen: !!options.deepen, workbook };
-    const marks = runMarks(tasks, scanned.codeMap);
-    const { prompts, versions } = await runPrompts(this.deps, project.settings, use, marks);
-    const [mergePrompt, overviewPrompt, verifierPrompts] = await Promise.all([
-      this.deps.mergePrompt(),
-      this.deps.overviewPrompt(),
-      this.deps.verifierPrompts(),
-    ]);
-    const all = { ...versions, ...verifierPromptVersions(verifierPrompts) };
-    await updates.update((stored) => ok(recordPromptVersions(stored, all)));
-    const withRerun = rerun === undefined ? {} : { rerun };
-    const base = { project, scanned, plan, allTasks: tasks, prompts, mergePrompt, verifierPrompts };
-    const withOverview = { ...base, overviewPrompt };
-    return { ok: true, value: { ...withOverview, ...withRerun } };
+    const texts = await recordRunTexts(this.deps, updates, {
+      ...{ project, scanned, tasks, options, rerun },
+    });
+    const base = { project, scanned, plan, allTasks, ...texts };
+    return { ok: true, value: { ...base, ...optionalPartsOf(rerun, link) } };
+  }
+
+  /** The run cannot start for this reason: it is logged and the run ends `Failed` with the code. */
+  private async refuse(run: Run, code: ErrorCode, message: string): Promise<Step<never>> {
+    await this.log(run, code, message, {});
+    return stop(failed(code));
   }
 
   /** RF-200: an area named in the request is not in the code map; the valid names are logged. */

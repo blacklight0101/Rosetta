@@ -140,6 +140,15 @@ interface DeepenSeeded {
   readonly notJudged: number;
 }
 
+/** RF-208: the run a retry of failed areas starts from, and the cards it holds from it. */
+export interface RetryProgress {
+  readonly parentRunId: string;
+  readonly parentRunKey: string;
+  /** The areas this run reads again: all the stepper counts as its work. */
+  readonly areas: number;
+  readonly seeded: { readonly cards: number; readonly claims: number; readonly supported: number };
+}
+
 /** RF-209: one round of a Deepen; `cut` is a round a cap or a Stop ended before its end. */
 export interface DeepenRoundState {
   readonly round: number;
@@ -190,5 +199,7 @@ export interface RunState {
   readonly roleTokens: Readonly<Record<string, RoleTokens>>;
   /** RF-209: set only for a Deepen run. */
   readonly deepen: DeepenProgress | undefined;
+  /** RF-208: set only for a run that retries the failed areas of another run. */
+  readonly retry: RetryProgress | undefined;
   readonly ended: EndedState | undefined;
 }

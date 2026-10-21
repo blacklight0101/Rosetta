@@ -51,6 +51,8 @@ export interface StartRunRequest {
   readonly withAnswers?: boolean;
   /** RF-614: `plan` is written from this understand run (its id); the newest completed one when absent. */
   readonly sourceRunId?: string;
+  /** RF-208, Q-43: `understand` reads `areas` again for this run (its id) and holds its cards. */
+  readonly retryOf?: string;
 }
 
 export type StartRunProblem =
@@ -60,7 +62,8 @@ export type StartRunProblem =
   | typeof ERROR_CODES.privateCodeNotConfirmed
   | typeof ERROR_CODES.planBriefMissing
   | typeof ERROR_CODES.planSourceMissing
-  | typeof ERROR_CODES.projectNoSource;
+  | typeof ERROR_CODES.projectNoSource
+  | typeof ERROR_CODES.requestInvalid;
 
 export class StartRun {
   private readonly deps: StartRunDependencies;
@@ -134,12 +137,30 @@ export class StartRun {
     return this.submit({ actor, project, stage: 'plan', options });
   }
 
+  /**
+   * RF-208, Q-43, RF-1105: a retry names the run it retries, which must be the user's, of this
+   * project and an understand run that ended `Completed`, and the areas to read again. Another
+   * user's run or another project's answers like an unknown one.
+   */
+  private async retryProblem(
+    request: StartRunRequest,
+    project: Project,
+  ): Promise<StartRunProblem | undefined> {
+    if (request.retryOf === undefined) return undefined;
+    const parent = await this.deps.runs.find(request.actor.userId, request.retryOf);
+    if (parent?.projectId !== project.id) return ERROR_CODES.notFound;
+    const retryable = parent.stage === 'understand' && parent.endState === 'Completed';
+    return retryable && (request.areas?.length ?? 0) > 0 ? undefined : ERROR_CODES.requestInvalid;
+  }
+
   // RF-143, RF-132, RF-200
   private async understand(
     request: StartRunRequest,
     project: Project,
   ): Promise<Result<SubmittedRun, StartRunProblem>> {
     const { ollamaHost } = this.deps;
+    const retryProblem = await this.retryProblem(request, project);
+    if (retryProblem !== undefined) return err(retryProblem);
     const needsPrivate = rolesNeedPrivateConfirmation(project, ollamaHost);
     const options = understandOptionsOf({
       ...request,

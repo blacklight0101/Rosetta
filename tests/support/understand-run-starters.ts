@@ -24,6 +24,8 @@ export interface UnderstandStart {
   readonly areas?: readonly string[];
   readonly cloudConsent?: boolean;
   readonly withAnswers?: boolean;
+  /** RF-208, Q-43: the run whose failed areas this run reads again (its id). */
+  readonly retryOf?: string;
 }
 
 /** RF-209: what the owner confirms on the Deepen estimate; confirmed unless a test says not. */
