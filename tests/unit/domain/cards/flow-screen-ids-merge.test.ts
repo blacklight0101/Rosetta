@@ -29,25 +29,27 @@ describe('FLOW and SCRN ids', () => {
 });
 
 describe('FLOW and SCRN in consolidation', () => {
-  it('RF-250 FLOW and SCRN are not mergeable types', () => {
+  it('RF-250 SCRN joins BR, ENT and FEAT as a mergeable type; FLOW is not one (Q-52)', () => {
+    expect(MERGEABLE_TYPES).toEqual(['BR', 'ENT', 'SCRN', 'FEAT']);
     expect(MERGEABLE_TYPES).not.toContain('FLOW');
-    expect(MERGEABLE_TYPES).not.toContain('SCRN');
   });
 
-  it.each([
-    ['FLOW', flowDraft],
-    ['SCRN', screenDraft],
-  ])('RF-250 two %s cards of two areas are not merged', (_type, make) => {
-    const cards = assignCardIds([
-      { agentTaskId: 'a', area: 'orders', drafts: [make()] },
-      { agentTaskId: 'b', area: 'billing', drafts: [make()] },
-    ]);
-    const ids = cards.ok ? cards.value.map((card) => card.id) : [];
+  it.each([['FLOW', flowDraft]])(
+    'RF-250 two %s cards of two areas are not merged',
+    (_type, make) => {
+      const cards = assignCardIds([
+        { agentTaskId: 'a', area: 'orders', drafts: [make()] },
+        { agentTaskId: 'b', area: 'billing', drafts: [make()] },
+      ]);
+      const ids = cards.ok ? cards.value.map((card) => card.id) : [];
 
-    const result = applyMerges(cards.ok ? cards.value : [], [{ ids, title: 'One', summary: 'x' }]);
+      const result = applyMerges(cards.ok ? cards.value : [], [
+        { ids, title: 'One', summary: 'x' },
+      ]);
 
-    expect(result.applied).toEqual([]);
-    expect(result.skipped.map((skip) => skip.problem)).toEqual(['type-not-mergeable']);
-    expect(result.cards).toHaveLength(2);
-  });
+      expect(result.applied).toEqual([]);
+      expect(result.skipped.map((skip) => skip.problem)).toEqual(['type-not-mergeable']);
+      expect(result.cards).toHaveLength(2);
+    },
+  );
 });

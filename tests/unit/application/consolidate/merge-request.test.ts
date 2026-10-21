@@ -4,7 +4,11 @@ import {
   typesToMerge,
 } from '../../../../src/application/consolidate/merge-request.js';
 import { dataBlockFooter } from '../../../../src/domain/egress/data-block.js';
-import { cardsAcrossAreas } from '../../../support/merge-fixtures.js';
+import {
+  cardsAcrossAreas,
+  oneTaskTwoCards,
+  twoTasksOneArea,
+} from '../../../support/merge-fixtures.js';
 
 // RF-250, RF-145: which cards the summariser is asked about, and how they reach it.
 
@@ -20,10 +24,30 @@ describe('typesToMerge', () => {
     expect(typesToMerge(cardsAcrossAreas().slice(0, 2))).toEqual([]);
   });
 
-  it('RF-250 open questions and features are never candidates', () => {
+  it('RF-250 open questions are never candidates', () => {
     const cards = cardsAcrossAreas().map((card) => ({ ...card, type: 'OQ' as const }));
 
     expect(typesToMerge(cards)).toEqual([]);
+  });
+
+  it.each(['ENT', 'SCRN', 'FEAT', 'BR'] as const)(
+    'RF-250 %s cards of one area from two reader tasks are a candidate (Q-52)',
+    (type) => {
+      expect(typesToMerge(twoTasksOneArea(type))).toEqual([type]);
+    },
+  );
+
+  it.each(['ENT', 'SCRN'] as const)(
+    'RF-250 two %s cards of one reader task are not asked about (Q-52)',
+    (type) => {
+      expect(typesToMerge(oneTaskTwoCards(type))).toEqual([]);
+    },
+  );
+
+  it('RF-250 the types are asked in the order rules, entities, screens, features', () => {
+    const cards = [...twoTasksOneArea('FEAT'), ...twoTasksOneArea('SCRN')];
+
+    expect(typesToMerge(cards)).toEqual(['SCRN', 'FEAT']);
   });
 });
 

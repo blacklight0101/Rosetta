@@ -8,7 +8,11 @@ import type {
 } from '../../../../src/application/ports/llm-provider.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
-import { cardsAcrossAreas } from '../../../support/merge-fixtures.js';
+import {
+  cardsAcrossAreas,
+  oneTaskTwoCards,
+  twoTasksOneArea,
+} from '../../../support/merge-fixtures.js';
 import { RecordingLogger } from '../../../support/recording-logger.js';
 import { SequenceIdGenerator } from '../../../support/sequence-id-generator.js';
 
@@ -89,6 +93,43 @@ describe('consolidateCards', () => {
 
     expect(provider.requests).toHaveLength(0);
     expect(result.merges).toEqual([]);
+  });
+});
+
+describe('consolidateCards, cards of one area (Q-52)', () => {
+  it('RF-250 cards of one area from two reader tasks are asked about and merged (Q-52)', async () => {
+    const same = { ids: ['SCRN-001', 'SCRN-002'], title: 'Sheet1', summary: 'One screen.' };
+    const provider = new Answers(() => answer(JSON.stringify({ merges: [same] })));
+    const { parts } = partsOf(provider);
+
+    const result = await consolidateCards(parts, twoTasksOneArea('SCRN'));
+
+    expect(provider.requests).toHaveLength(1);
+    expect(provider.requests[0]?.context.agentTaskId).toBe('summariser-scrn');
+    expect(result.merges).toEqual([same]);
+    expect(result.cards.map((card) => card.id)).toEqual(['SCRN-001']);
+  });
+
+  it('RF-250 two cards that one reader task wrote cost no summariser call (Q-52)', async () => {
+    const provider = new Answers(() => answer('{"merges": []}'));
+    const { parts } = partsOf(provider);
+
+    const result = await consolidateCards(parts, oneTaskTwoCards('ENT'));
+
+    expect(provider.requests).toHaveLength(0);
+    expect(result.cards).toHaveLength(2);
+  });
+
+  it('RF-250 a failed call within one area leaves the cards and the run goes on (Q-52)', async () => {
+    const provider = new Answers(() =>
+      Promise.reject(new RosettaError(ERROR_CODES.providerCallFailed, 'Down.')),
+    );
+    const { parts } = partsOf(provider);
+
+    const result = await consolidateCards(parts, twoTasksOneArea('FEAT'));
+
+    expect(result.cards).toHaveLength(2);
+    expect(result.capped).toBe(false);
   });
 });
 

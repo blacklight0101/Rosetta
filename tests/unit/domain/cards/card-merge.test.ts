@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { applyMerges, type CardMerge } from '../../../../src/domain/cards/card-merge.js';
 import { transitionClaim, type Card } from '../../../../src/domain/cards/card.js';
 import { formatCitation } from '../../../../src/domain/cards/citation.js';
-import { cardsAcrossAreas, threeEntities } from '../../../support/merge-fixtures.js';
+import {
+  cardsAcrossAreas,
+  threeEntities,
+  twoTasksOneArea,
+} from '../../../support/merge-fixtures.js';
 
 // RF-250, ADR-005: duplicate cards of several areas become one card that keeps every claim and
 // every citation, and the merge is recorded in `mergedFrom`.
@@ -119,13 +123,14 @@ describe('applyMerges: merges that are refused', () => {
     expect(result.skipped).toEqual([{ merge, problem }]);
   });
 
-  it('RF-250 cards of one area are not merged', () => {
+  it('RF-250 cards of one area written by two tasks are merged like those of several areas (Q-52)', () => {
     const [first, rule, second, ...rest] = cardsAcrossAreas();
     if (!first || !rule || !second) throw new Error('fixture');
 
     const result = applyMerges([first, rule, { ...second, area: 'Orders' }, ...rest], [customer]);
 
-    expect(result.skipped.map((each) => each.problem)).toEqual(['one-area']);
+    expect(result.skipped).toEqual([]);
+    expect(result.cards[0]).toMatchObject({ id: 'ENT-001', mergedAreas: ['Orders'] });
   });
 
   it('RF-250 an open question is never merged', () => {
@@ -177,5 +182,85 @@ describe('applyMerges: a card named by a second merge', () => {
 
     expect(result.skipped).toEqual([]);
     expect(result.cards[0]?.mergedFrom).toEqual(['ENT-001', 'ENT-002', 'ENT-003']);
+  });
+});
+
+describe('applyMerges: duplicates within one area (Q-52)', () => {
+  it('RF-250 two ENT Invoice Table cards of one area from two tasks become one with every citation', () => {
+    const before = twoTasksOneArea('ENT');
+
+    const result = applyMerges(before, [
+      { ids: ['ENT-001', 'ENT-002'], title: 'Invoice Table', summary: 'One.' },
+    ]);
+
+    expect(result.cards.map((card) => card.id)).toEqual(['ENT-001']);
+    expect(citationsOf(result.cards)).toEqual(citationsOf(before));
+    expect(result.cards[0]).toMatchObject({
+      mergedFrom: ['ENT-001', 'ENT-002'],
+      mergedAreas: ['Invoice'],
+    });
+  });
+
+  it('RF-250 two FEAT cards of one area are merged', () => {
+    const result = applyMerges(twoTasksOneArea('FEAT'), [
+      { ids: ['FEAT-001', 'FEAT-002'], title: 'Invoice Table', summary: 'One.' },
+    ]);
+
+    expect(result.cards.map((card) => card.id)).toEqual(['FEAT-001']);
+    expect(result.cards[0]?.claims).toHaveLength(2);
+  });
+
+  it('RF-250 FLOW cards stay unmerged, also within one area', () => {
+    const merge = { ids: ['FLOW-001', 'FLOW-002'], title: 'Flow', summary: 'x' };
+    const cards = twoTasksOneArea('ENT').map((card) => ({ ...card, type: 'FLOW' as const }));
+
+    const result = applyMerges(
+      cards.map((card, index) => ({ ...card, id: `FLOW-00${String(index + 1)}` })),
+      [merge],
+    );
+
+    expect(result.skipped.map((each) => each.problem)).toEqual(['type-not-mergeable']);
+  });
+});
+
+describe('applyMerges: two screens of one sheet (Q-52)', () => {
+  const merged = () => {
+    const before = twoTasksOneArea('SCRN');
+    const result = applyMerges(before, [
+      { ids: ['SCRN-001', 'SCRN-002'], title: 'Sheet1', summary: 'One screen.' },
+    ]);
+    return { before, result, screen: result.cards[0]?.screen };
+  };
+
+  it('RF-250 keeps every role, field, validation, action and link of both screens', () => {
+    const { screen } = merged();
+
+    expect(screen?.route).toBe('Sheet1');
+    expect(screen?.roles).toEqual(['Admin', 'Clerk']);
+    expect(screen?.fields.map((field) => field.name)).toEqual(['Email', 'Total']);
+    expect(screen?.fields.flatMap((field) => field.validations)).toHaveLength(2);
+    expect(screen?.actions.map((action) => action.label)).toEqual(['Print', 'Save']);
+    expect(screen?.leadsTo).toEqual(['Sheet2', 'Sheet3']);
+  });
+
+  it('RF-250 leaves one card and loses no citation', () => {
+    const { before, result } = merged();
+
+    expect(result.cards).toHaveLength(1);
+    expect(citationsOf(result.cards)).toEqual(citationsOf(before));
+  });
+
+  it('RF-250 a field both screens have is one field with the validations of both', () => {
+    const [one, two] = twoTasksOneArea('SCRN');
+    const field = one?.screen?.fields[0];
+    if (!one || !two?.screen || !field) throw new Error('fixture');
+    const same = { ...two, screen: { ...two.screen, fields: [field] } };
+
+    const result = applyMerges(
+      [one, same],
+      [{ ids: ['SCRN-001', 'SCRN-002'], title: 'Sheet1', summary: 'One screen.' }],
+    );
+
+    expect(result.cards[0]?.screen?.fields).toHaveLength(1);
   });
 });

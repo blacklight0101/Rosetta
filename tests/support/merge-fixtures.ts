@@ -1,4 +1,5 @@
 import type { Card } from '../../src/domain/cards/card.js';
+import type { ScreenDetail } from '../../src/domain/cards/flow-screen.js';
 import { assignCardIds } from '../../src/domain/cards/card-ids.js';
 import { draftOf } from './card-fixtures.js';
 
@@ -71,4 +72,76 @@ export function threeEntities(thirdArea: string): readonly Card[] {
   ]);
   if (!cards.ok) throw new Error('The merge fixture cards are invalid.');
   return cards.value;
+}
+
+const invoiceFile = 'Invoice/Sheet1.txt';
+
+/** Two cards of one type and one area, written by two reader tasks (Q-52): ids `<TYPE>-001`, `-002`. */
+export function twoTasksOneArea(type: 'ENT' | 'FEAT' | 'SCRN' | 'BR'): readonly Card[] {
+  const draft = (lines: [number, number]) =>
+    draftOf({
+      type,
+      title: 'Invoice Table',
+      area: 'Invoice',
+      claims: [
+        {
+          text: `Invoice Table is described at line ${String(lines[0])}.`,
+          citations: [{ path: invoiceFile, startLine: lines[0], endLine: lines[1] }],
+        },
+      ],
+      ...(type === 'SCRN' ? { screen: invoiceScreen(lines[0]) } : {}),
+    });
+  const cards = assignCardIds([
+    { agentTaskId: 'reader-001', area: 'Invoice', drafts: [draft([1, 5])] },
+    { agentTaskId: 'reader-002', area: 'Invoice', drafts: [draft([10, 14])] },
+  ]);
+  if (!cards.ok) throw new Error('The merge fixture cards are invalid.');
+  return cards.value;
+}
+
+/** One card type and one area but a single reader task: nothing to compare (Q-52). */
+export function oneTaskTwoCards(type: 'ENT' | 'SCRN'): readonly Card[] {
+  const draft = (lines: [number, number]) =>
+    draftOf({
+      type,
+      title: 'Invoice Table',
+      area: 'Invoice',
+      claims: [
+        {
+          text: `Invoice Table at ${String(lines[0])}.`,
+          citations: [{ path: invoiceFile, startLine: lines[0], endLine: lines[1] }],
+        },
+      ],
+      ...(type === 'SCRN' ? { screen: invoiceScreen(lines[0]) } : {}),
+    });
+  const cards = assignCardIds([
+    { agentTaskId: 'reader-001', area: 'Invoice', drafts: [draft([1, 5]), draft([10, 14])] },
+  ]);
+  if (!cards.ok) throw new Error('The merge fixture cards are invalid.');
+  return cards.value;
+}
+
+/** The screen of the sheet: the first task sees an Email field, the second a Total field. */
+function invoiceScreen(first: number): ScreenDetail {
+  const second = first > 1;
+  const name = second ? 'Total' : 'Email';
+  return {
+    route: 'Sheet1',
+    roles: second ? ['Clerk'] : ['Admin'],
+    fields: [
+      {
+        name,
+        inputKind: 'text',
+        required: second,
+        validations: [
+          {
+            text: `${name} must be filled.`,
+            citations: [{ path: invoiceFile, startLine: first + 2, endLine: first + 3 }],
+          },
+        ],
+      },
+    ],
+    actions: [{ label: second ? 'Save' : 'Print', handler: second ? 'Save_Click' : 'Print_Click' }],
+    leadsTo: [second ? 'Sheet3' : 'Sheet2'],
+  };
 }
