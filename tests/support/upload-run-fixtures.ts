@@ -47,11 +47,11 @@ function fixtureUploadSnapshot(): UploadSnapshot {
 }
 
 /** An upload store that holds the fixture snapshot only, with the tree at `root`. */
-export function fixtureUploadsAt(root: string): Pick<UploadStore, 'read'> {
+export function fixtureUploadsAt(root: string, heldKey = UPLOAD_KEY): Pick<UploadStore, 'read'> {
   return {
     read: (key) =>
       Promise.resolve(
-        key === UPLOAD_KEY ? { ...fixtureUploadSnapshot(), rootDir: root } : undefined,
+        key === heldKey ? { ...fixtureUploadSnapshot(), key, rootDir: root } : undefined,
       ),
   };
 }

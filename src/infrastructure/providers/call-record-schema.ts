@@ -14,7 +14,7 @@ const ollamaSchema = z.object({
   tokensPerSecond: z.number().nonnegative(),
   contextTokens: count.optional(),
   contextSource: z
-    .enum(['auto-fit', 'auto-floor', 'auto-model-limit', 'auto-fallback', 'fixed'])
+    .enum(['auto-fit', 'auto-floor', 'auto-model-limit', 'auto-fallback', 'auto-grown', 'fixed'])
     .optional(),
 });
 

@@ -184,3 +184,41 @@ test('RF-627 RF-615 a package written with gaps reads "Written with gaps" and li
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
 });
+
+test('RF-615 a completed run with no Supported claim locks the questions step like the plan steps, at 360 px and in both themes', async ({
+  page,
+}, info) => {
+  await signInAs(page.context(), accountFor('replay', info.project.name));
+  // The facts of the journey: the recorded run, read again as one that gave no Supported claim.
+  const ended = { queueState: 'Ended', endedAt: '2026-10-12T10:31:00.000Z' };
+  await page.route('**/api/projects/*/journey*', async (route) => {
+    await route.fulfill({
+      json: {
+        scanRunId: null,
+        briefSaved: false,
+        source: {
+          ...{ id: replayRunId(info.project.name), runKey: '20261012-100000-understand' },
+          ...{ endState: 'Completed', costMicros: 120_000, errorCode: null, ...ended },
+          ...{ supportedClaims: 0, openQuestions: 0 },
+        },
+        plan: null,
+        handoff: null,
+      },
+    });
+  });
+
+  await page.goto(`/runs/${replayRunId(info.project.name)}`);
+
+  for (const title of ['Questions', 'Brief', 'Estimate', 'Plan', 'Package']) {
+    await expect(stepOf(page, title)).toContainText('Locked');
+    await expect(stepOf(page, title).getByRole('link')).toHaveCount(0);
+  }
+  await expect(stepOf(page, 'Questions')).toContainText('Nothing to plan from');
+  await expect(stepOf(page, 'Questions')).not.toContainText('No open questions');
+  await expect(stepOf(page, 'Brief')).toContainText('Nothing to plan from');
+  await page.setViewportSize({ width: 360, height: 780 });
+  await expectNoSidewaysScroll(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await transitionsDone(page);
+  await expectNoSeriousViolations(page);
+});

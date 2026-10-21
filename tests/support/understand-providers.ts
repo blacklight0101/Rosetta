@@ -41,6 +41,14 @@ export type DecorateAnswer = (call: number, response: LlmResponse) => LlmRespons
 /** No call: a `verifier` call the test gave no recording for fails with RST-1503. */
 const noCalls: Recording = { schemaVersion: 1, description: 'no verifier calls', calls: [] };
 
+/** What runs before and after the calls of the fake; a rejection stands for the guard refusing. */
+interface Hooks {
+  readonly before?: BeforeCall | undefined;
+  readonly decorate?: DecorateAnswer | undefined;
+  readonly beforeVerifier?: BeforeCall | undefined;
+  readonly beforeGap?: BeforeCall | undefined;
+}
+
 /**
  * The fake behind every role, with a hook before each reader call. The `verifier` role (RF-301)
  * replays a recording of its own, so the reader's recording keeps its order whatever the
@@ -51,43 +59,46 @@ class HookedProvider implements LlmProvider {
   readonly verifier: FakeProvider;
   /** RF-627: the planner's coverage call replays a recording of its own, whichever calls came before. */
   readonly coverage: FakeProvider;
-  private readonly before: BeforeCall | undefined;
-  private readonly decorate: DecorateAnswer | undefined;
+  /** Q-45: the planner's call for the items no task card builds replays a recording of its own. */
+  readonly gap: FakeProvider;
+  private readonly hooks: Hooks;
   private calls = 0;
   private verifierCalls = 0;
-  private readonly beforeVerifier: BeforeCall | undefined;
 
   constructor(
     recordings: {
       readonly reader: Recording;
       readonly verifier: Recording | undefined;
       readonly coverage: Recording | undefined;
+      readonly gap: Recording | undefined;
     },
-    before: BeforeCall | undefined,
-    decorate: DecorateAnswer | undefined,
-    beforeVerifier?: BeforeCall,
+    hooks: Hooks,
   ) {
     this.fake = new FakeProvider({ testMode: true, recording: recordings.reader });
     this.verifier = new FakeProvider({ testMode: true, recording: recordings.verifier ?? noCalls });
     this.coverage = new FakeProvider({ testMode: true, recording: recordings.coverage ?? noCalls });
-    this.before = before;
-    this.decorate = decorate;
-    this.beforeVerifier = beforeVerifier;
+    this.gap = new FakeProvider({ testMode: true, recording: recordings.gap ?? noCalls });
+    this.hooks = hooks;
   }
 
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
     if (request.context.role === 'verifier') {
       this.verifierCalls += 1;
-      await this.beforeVerifier?.(this.verifierCalls, request.signal);
+      await this.hooks.beforeVerifier?.(this.verifierCalls, request.signal);
       return this.verifier.complete(request, observer);
+    }
+    if (request.context.agentTaskId === 'planner-gap') {
+      await this.hooks.beforeGap?.(1, request.signal);
+      return this.gap.complete(request, observer);
     }
     if (request.context.agentTaskId === 'planner-coverage') {
       return this.coverage.complete(request, observer);
     }
     this.calls += 1;
-    await this.before?.(this.calls, request.signal);
+    await this.hooks.before?.(this.calls, request.signal);
     const response = await this.fake.complete(request, observer);
-    return this.decorate === undefined ? response : this.decorate(this.calls, response);
+    const { decorate } = this.hooks;
+    return decorate === undefined ? response : decorate(this.calls, response);
   }
 }
 
@@ -100,6 +111,8 @@ export interface UnderstandProviders {
   readonly verifierRequests: () => readonly LlmRequest[];
   /** The requests of the planner's coverage call (RF-627), kept apart from the others. */
   readonly coverageRequests: () => readonly LlmRequest[];
+  /** The requests of the planner's call for the items no task card builds (Q-45). */
+  readonly gapRequests: () => readonly LlmRequest[];
   readonly runSinks: (scope: RunScope) => Pick<ProviderSinks, 'recorder' | 'egressLog'>;
 }
 
@@ -114,6 +127,10 @@ export interface UnderstandProviderParts {
   readonly verifierRecording?: Recording;
   /** RF-627: what the planner answers to the coverage call (the links of the task cards). */
   readonly coverageRecording?: Recording;
+  /** Q-45: what the planner answers to the call for the items no card builds (task cards). */
+  readonly gapRecording?: Recording;
+  /** Runs before the gap call reaches the fake; a rejection is the guard refusing it. */
+  readonly beforeGapCall?: BeforeCall;
   readonly beforeCall?: BeforeCall;
   /** Runs before each `verifier` call, counted from 1 (the judgement step). */
   readonly beforeVerifierCall?: BeforeCall;
@@ -134,16 +151,16 @@ function recordingsOf(parts: UnderstandProviderParts) {
     reader: parts.recording,
     verifier: parts.verifierRecording,
     coverage: parts.coverageRecording,
+    gap: parts.gapRecording,
   };
 }
 
-export function understandProviders(parts: UnderstandProviderParts): UnderstandProviders {
-  const { dataDir, writer, masker, clock, logger } = parts;
-  const hooks = [parts.beforeCall, parts.decorateAnswer, parts.beforeVerifierCall] as const;
-  const adapter = new HookedProvider(recordingsOf(parts), ...hooks);
-  const ledger = new SpyLedger(new MemoryCostLedger());
-  const keys = new MemoryProviderKeyRepository();
-  const box = new AesGcmSecretBox({ current: fixtureSecret(3) });
+/** The keys of their own that a test gave to users, sealed as the account does. */
+function seedOwnKeys(
+  parts: Pick<UnderstandProviderParts, 'ownOpenAiKey' | 'ownAnthropicKey'>,
+  keys: MemoryProviderKeyRepository,
+  box: AesGcmSecretBox,
+): void {
   const own = parts.ownOpenAiKey;
   if (own !== undefined) {
     const sealed = box.seal(own.key, keyAdditionalData(own.userId, 'openai'));
@@ -156,6 +173,18 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
       sampleKeyRecord(anthropic.userId, 'anthropic', { sealed, last4: anthropic.key.slice(-4) }),
     );
   }
+}
+
+export function understandProviders(parts: UnderstandProviderParts): UnderstandProviders {
+  const { dataDir, writer, masker, clock, logger } = parts;
+  const adapter = new HookedProvider(recordingsOf(parts), {
+    ...{ before: parts.beforeCall, decorate: parts.decorateAnswer },
+    ...{ beforeVerifier: parts.beforeVerifierCall, beforeGap: parts.beforeGapCall },
+  });
+  const ledger = new SpyLedger(new MemoryCostLedger());
+  const keys = new MemoryProviderKeyRepository();
+  const box = new AesGcmSecretBox({ current: fixtureSecret(3) });
+  seedOwnKeys(parts, keys, box);
   const factory = new GuardedProviderFactory({
     keys,
     box,
@@ -177,6 +206,7 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     requests: () => adapter.fake.requests,
     verifierRequests: () => adapter.verifier.requests,
     coverageRequests: () => adapter.coverage.requests,
+    gapRequests: () => adapter.gap.requests,
     runSinks: (scope) => ({
       recorder: new JsonlProviderCallLog({
         runDir: join(dataDir, 'users', scope.userId, runPath(scope.projectId, scope.runKey)),

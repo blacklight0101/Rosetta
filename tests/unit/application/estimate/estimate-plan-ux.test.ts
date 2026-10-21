@@ -31,19 +31,19 @@ describe('EstimatePlan: the screens call', () => {
   it('RF-613 RF-626 counts the screens call when a verified SCRN card exists, with its own measured prompt', async () => {
     const { assumptions, planner } = await estimateOf();
 
-    expect(assumptions.calls).toBe(5);
+    expect(assumptions.calls).toBe(6);
     expect(assumptions.uxPromptTokens).toBeGreaterThan(
       Math.ceil((await readFile('prompts/planner/ux.v1.md', 'utf8')).length / 4),
     );
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(5 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(6 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 RF-626 does not count it when no SCRN card has a supported claim, since no call is made', async () => {
     const { assumptions, planner } = await estimateOf({ seed: { cards: planCards() } });
 
-    expect(assumptions).toMatchObject({ calls: 4, uxPromptTokens: 0 });
-    expect(planner.points.high.outputTokens).toBe(4 * 3 * assumptions.maxOutputTokens);
+    expect(assumptions).toMatchObject({ calls: 5, uxPromptTokens: 0 });
+    expect(planner.points.high.outputTokens).toBe(5 * 3 * assumptions.maxOutputTokens);
   });
 });
 
@@ -58,13 +58,15 @@ describe('EstimatePlan: the screens call and the guard', () => {
       assumptions.prdPromptTokens -
       assumptions.dataModelPromptTokens -
       assumptions.uxPromptTokens -
-      assumptions.coveragePromptTokens;
+      assumptions.coveragePromptTokens -
+      assumptions.gapPromptTokens;
     const sum = [
       plan,
       assumptions.prdPromptTokens,
       assumptions.dataModelPromptTokens,
       assumptions.uxPromptTokens,
       assumptions.coveragePromptTokens,
+      assumptions.gapPromptTokens,
     ]
       .map(reservation)
       .reduce((total, each) => total + each, 0);
@@ -76,7 +78,7 @@ describe('EstimatePlan: the screens call and the guard', () => {
 
     const { assumptions } = await estimateOf({ seed: { ...withScreens, briefAnswers: frontEnd } });
 
-    expect(assumptions.calls).toBe(6);
+    expect(assumptions.calls).toBe(7);
     expect(assumptions.apiContractPromptTokens).toBeGreaterThan(0);
     expect(assumptions.uxPromptTokens).toBeGreaterThan(0);
   });

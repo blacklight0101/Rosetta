@@ -97,6 +97,9 @@ function questionsPart({ source, facts }: Context): Part {
   const phase = phaseOf(source);
   if (phase === 'working') return locked('Comes after the run finishes');
   if (phase === 'stopped') return locked('Resume the run first');
+  // RF-615 (Q-49): no Supported claim, no question to answer: locked like the steps after it.
+  const nothing = lockReason(source);
+  if (nothing !== undefined) return locked(nothing);
   const open = source.openQuestions;
   const href = runPage(source);
   if (open === 0) return { state: 'done', detail: 'No open questions', href };

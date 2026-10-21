@@ -71,7 +71,7 @@ const refusedIdentifierShape = new RegExp(
  * the plain text they imitate (the fold of the data-block marker check), then letters and digits
  * only with single spaces, and the fillers "actually" and "exactly" dropped.
  */
-function plainWords(question: string): string {
+export function plainWords(question: string): string {
   return foldMarkers(question)
     .text.replace(/[^\p{L}\p{N}]+/gu, ' ')
     .replace(/\b(?:actually|exactly|really|even|just)\s+/giu, '')

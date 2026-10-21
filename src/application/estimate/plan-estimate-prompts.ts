@@ -13,7 +13,8 @@ import { withWorkbookGuidance } from '../plan/plan-workbook.js';
 import { planMessage } from '../plan/plan-message.js';
 import { uxMessage } from '../plan/ux-message.js';
 import { coverageMessage } from '../plan/coverage-message.js';
-import { assumedCoverageInput } from './coverage-estimate.js';
+import { gapMessage } from '../plan/gap-message.js';
+import { assumedCoverageInput, assumedGapInput } from './coverage-estimate.js';
 import { assumedComponents } from './flows-estimate.js';
 
 // RF-613, RF-621, RF-623, RF-624, RF-625, RF-626, ADR-007: the planner calls a plan run would make, each as its
@@ -40,12 +41,14 @@ export interface PlanPromptFiles {
   readonly uxPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the links of the task cards to the items (RF-627). */
   readonly coveragePrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the task cards of the items no card builds (Q-45). */
+  readonly gapPrompt: () => Promise<PromptFile>;
   /** RF-155: the package prompt with the workbook guidance after it, when this run would add it. */
   readonly workbookGuidance?: (inputs: PlanInputs) => Promise<PromptFile | undefined>;
 }
 
 export type PlannedCallKind =
-  'plan' | 'prd' | 'dataModel' | 'flows' | 'apiContract' | 'ux' | 'coverage';
+  'plan' | 'prd' | 'dataModel' | 'flows' | 'apiContract' | 'ux' | 'coverage' | 'gap';
 
 interface PlannedCall {
   readonly kind: PlannedCallKind;
@@ -114,16 +117,18 @@ export async function plannedPrompts(
   inputs: PlanInputs,
 ): Promise<PlannedPrompts> {
   const { cards, brief, questions } = inputs;
-  const [catalogue, plan, prd, dataModel, flows, apiContract, ux, coverage] = await Promise.all([
-    files.catalogue(),
-    files.prompt(),
-    files.prdPrompt(),
-    files.dataModelPrompt(),
-    files.flowsPrompt(),
-    files.apiContractPrompt(),
-    files.uxPrompt(),
-    files.coveragePrompt(),
-  ]);
+  const [catalogue, plan, prd, dataModel, flows, apiContract, ux, coverage, gap] =
+    await Promise.all([
+      files.catalogue(),
+      files.prompt(),
+      files.prdPrompt(),
+      files.dataModelPrompt(),
+      files.flowsPrompt(),
+      files.apiContractPrompt(),
+      files.uxPrompt(),
+      files.coveragePrompt(),
+      files.gapPrompt(),
+    ]);
   const guidance = await files.workbookGuidance?.(inputs);
   const supported = supportedCards(cards);
   const answered = questions.filter((question) => question.answer.trim() !== '');
@@ -139,6 +144,8 @@ export async function plannedPrompts(
       file: coverage,
       message: coverageMessage(assumedCoverageInput(), () => TAG),
     },
+    // Q-45: whether an item is left without a card is not known yet, so the call is always counted.
+    { kind: 'gap', file: gap, message: gapMessage(assumedGapInput(), () => TAG) },
   ];
   return { calls, supportedCards: supported.length, answeredQuestions: answered.length };
 }

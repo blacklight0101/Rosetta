@@ -29,7 +29,7 @@ const SURFACE_PROMPT_TOKENS = 900;
  * The workbook guidance of the reader prompt (RF-155), a little more than its size. A test compares
  * it with the prompt file, so a new version of the prompt makes it change here too.
  */
-export const WORKBOOK_PROMPT_TOKENS = 1400;
+export const WORKBOOK_PROMPT_TOKENS = 1550;
 /** The cards of one kind a marked area writes besides its other cards, in output tokens. */
 const SURFACE_OUTPUT_TOKENS: ByScenario<number> = { low: 300, likely: 800, high: 2000 };
 /** The system prompt and the tool definitions every turn resends. */

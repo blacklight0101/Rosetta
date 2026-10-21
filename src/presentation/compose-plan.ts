@@ -31,6 +31,7 @@ import {
   loadPlannerWorkbookPrompt,
   loadUxPrompt,
   loadCoveragePrompt,
+  loadGapPrompt,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
@@ -89,6 +90,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
     workbookPrompt: () => loadPlannerWorkbookPrompt(promptsFolder),
     uxPrompt: () => loadUxPrompt(promptsFolder),
     coveragePrompt: () => loadCoveragePrompt(promptsFolder),
+    gapPrompt: () => loadGapPrompt(promptsFolder),
     ids: parts.ids,
   });
 }
