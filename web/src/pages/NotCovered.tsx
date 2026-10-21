@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import { groupNotCovered, type CoverageGroup } from '../lib/group-not-covered.js';
+import { groupNotCovered, splitUnreadFiles, type CoverageGroup } from '../lib/group-not-covered.js';
 import { RenderedText } from '../components/RenderedText.js';
 
 // RF-264, P1-173: what the run could not cover, grouped by reason with a count per group. A group of
@@ -40,6 +40,7 @@ function Group({ group }: { readonly group: CoverageGroup }): JSX.Element {
 
 // RF-264
 export function NotCovered({ lines }: { readonly lines: readonly string[] }): JSX.Element {
+  const { unread, areas } = splitUnreadFiles(lines);
   return (
     <section class="rst-p168-section" aria-labelledby="overview-not-covered">
       <h3 class="rst-p168-section__title" id="overview-not-covered">
@@ -48,7 +49,16 @@ export function NotCovered({ lines }: { readonly lines: readonly string[] }): JS
       {lines.length === 0 ? (
         <p>Every area of the run gave at least one card.</p>
       ) : (
-        groupNotCovered(lines).map((group) => <Group key={group.title} group={group} />)
+        <>
+          {unread === undefined ? null : (
+            <p class="rst-p168-unread">
+              <RenderedText text={unread} />
+            </p>
+          )}
+          {groupNotCovered(areas).map((group) => (
+            <Group key={group.title} group={group} />
+          ))}
+        </>
       )}
     </section>
   );

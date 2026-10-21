@@ -193,10 +193,12 @@ describe('what was not covered when first-party files were not read', () => {
   });
   const unread = fullOverview({ notCovered });
   const sentence = 'Every area of the run gave at least one card.';
+  /** The Markdown as a viewer shows it: the escaping backslashes are not text. */
+  const shown = (markdown: string): string => markdown.replaceAll('\\', '');
   const named = 'First-party files not read: 41 files, 97% of first-party tokens not read.';
 
   it('RF-264 overview.md names the files not read, the share and the Deepen step, not the old sentence', () => {
-    const text = renderOverview(unread, masker);
+    const text = shown(renderOverview(unread, masker));
 
     expect(text).toContain(named);
     expect(text).toContain('src/Big0.cs (900 tokens)');
@@ -205,7 +207,7 @@ describe('what was not covered when first-party files were not read', () => {
   });
 
   it('RF-264 report.md names the files not read and not the old sentence', () => {
-    const text = renderReportMarkdown(reportModel({ overview: unread }), masker);
+    const text = shown(renderReportMarkdown(reportModel({ overview: unread }), masker));
 
     expect(text).toContain(named);
     expect(text).not.toContain(sentence);

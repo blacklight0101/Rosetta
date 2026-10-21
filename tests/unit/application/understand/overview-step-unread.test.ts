@@ -35,7 +35,7 @@ async function overviewOf(readPaths: readonly string[], failure?: string) {
     ...{ traceId: 'a'.repeat(32), nextCallId: () => 'c#1' },
     summariser: {
       ...{ provider: new Answers(() => answer('{}')), name: 'fake', kind: 'fake' as const },
-      ...{ model: 'm', maxOutputTokens: 900, keySource: 'user' },
+      ...{ model: 'm', maxOutputTokens: 900, keySource: 'user' as const },
     },
     updates: new ManifestUpdates(new MemoryRunManifestStore(), scopeFor()),
     execution: { run: sampleRun({ stage: 'understand' }), signal: new AbortController().signal },
@@ -58,7 +58,7 @@ describe('the overview of a run that left first-party files not read', () => {
     expect(line).toContain(
       'First-party files not read: 41 files, 98% of first-party tokens not read.',
     );
-    expect(line).toContain('Largest: src/File0.cs (1000 tokens)');
+    expect(line).toContain('Largest: src/File0.cs (1,000 tokens)');
     expect(line).toContain('Next step: run a Deepen to read them.');
   });
 
