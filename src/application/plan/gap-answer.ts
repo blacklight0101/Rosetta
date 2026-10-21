@@ -21,16 +21,31 @@ const gapTask = taskSchema
 
 const answer = z.object({ tasks: z.array(z.unknown()).max(MAX_CARDS) });
 
-/** The cards of the answer that read as cards, or undefined when no JSON object reads as a list of them. */
+/** A card of the answer that could not be read: its position (from 1), the field and why. */
+export interface GapProblem {
+  readonly position: number;
+  readonly field: string;
+  readonly reason: string;
+  /** The ids the card named in `builds`, when that list was readable. */
+  readonly builds: readonly string[];
+}
+
+export interface GapAnswer {
+  readonly drafts: GapDraft[];
+  readonly problems: GapProblem[];
+}
+
+/** The cards of the answer that read as cards and the ones that did not, or undefined when no JSON object reads as a list of them. */
 // Q-45
-export function parseGapAnswer(output: string): GapDraft[] | undefined {
+export function parseGapAnswer(output: string): GapAnswer | undefined {
   for (const value of searchJson(output.slice(0, cardLimits.maxOutputChars)).values) {
     const parsed = answer.safeParse(value);
     if (!parsed.success) continue;
-    return parsed.data.tasks.flatMap((each) => {
+    const drafts = parsed.data.tasks.flatMap((each) => {
       const card = gapTask.safeParse(each);
       return card.success ? [card.data] : [];
     });
+    return { drafts, problems: [] };
   }
   return undefined;
 }

@@ -54,7 +54,9 @@ async function planGap(
     gapMessage({ items: report.uncovered, content }, call.tags),
   );
   const drafts = parseGapAnswer(answer);
-  const grown = addGapTasks(content, drafts ?? [], report.uncovered, { specificationDriven });
+  const grown = addGapTasks(content, drafts?.drafts ?? [], report.uncovered, {
+    specificationDriven,
+  });
   const closed = { ...planned, content: grown, report: coverageOf(report.items, grown.tasks) };
   return { planned: closed, readable: drafts !== undefined };
 }

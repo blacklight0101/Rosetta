@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { parseGapAnswer } from '../../../../src/application/plan/gap-answer.js';
 import { scenario } from '../../../support/task-card-fixtures.js';
 
-// RF-627, RF-630, ADR-013, Q-45: the planner's task cards for the gaps are untrusted text, read as
-// one JSON object (fenced or in prose) with every list and text bounded. Which gaps a card builds,
-// and whether it is a card, is the domain's decision (plan-gap.ts).
+// RF-627, RF-630, ADR-013, Q-45, Q-54: the planner's task cards for the gaps are untrusted text, read
+// as one JSON object (fenced or in prose) with every list and text bounded. Which gaps a card
+// builds, and whether it is a card, is the domain's decision (plan-gap.ts). A card that cannot be
+// read is left out with its position and the field that was wrong, never with answer text.
 
 const card = {
   title: 'Refund an order',
@@ -20,28 +21,30 @@ const card = {
   builds: ['flow:FLOW-007'],
 };
 
+const read = (value: unknown) => parseGapAnswer(JSON.stringify(value));
+
 describe('parseGapAnswer', () => {
   it('RF-627 reads a fenced JSON object into task drafts', () => {
     const answer = '```json\n' + JSON.stringify({ tasks: [card] }) + '\n```';
 
-    expect(parseGapAnswer(answer)).toEqual([card]);
+    expect(parseGapAnswer(answer)?.drafts).toEqual([card]);
   });
 
   it('RF-627 reads the object inside prose', () => {
     const answer = `Here: ${JSON.stringify({ tasks: [card, card] })} Done.`;
 
-    expect(parseGapAnswer(answer)).toHaveLength(2);
+    expect(parseGapAnswer(answer)?.drafts).toHaveLength(2);
   });
 
   it('RF-627 an answer with no card is still an answer', () => {
-    expect(parseGapAnswer('{"tasks": []}')).toEqual([]);
+    expect(parseGapAnswer('{"tasks": []}')).toEqual({ drafts: [], problems: [] });
   });
 
   it('RF-630 a list the answer leaves out is empty, and a risk class that does not exist is left out', () => {
     const bare = { title: 'T', phase: 1, acceptanceCriteria: [scenario], builds: ['flow:X'] };
     const odd = { ...bare, riskClass: 'catastrophe' };
 
-    const [first, second] = parseGapAnswer(JSON.stringify({ tasks: [bare, odd] })) ?? [];
+    const [first, second] = read({ tasks: [bare, odd] })?.drafts ?? [];
 
     expect(first).toMatchObject({
       requirements: [],
@@ -59,9 +62,110 @@ describe('parseGapAnswer', () => {
     const broken = { ...card, phase: 0 };
     const noBuilds = { title: 'T', phase: 1, acceptanceCriteria: [scenario] };
 
-    const drafts = parseGapAnswer(JSON.stringify({ tasks: [broken, card, noBuilds, 'text'] }));
+    const answer = read({ tasks: [broken, card, noBuilds, 'text'] });
 
-    expect(drafts).toEqual([card]);
+    expect(answer?.drafts).toEqual([card]);
+  });
+});
+
+describe('parseGapAnswer: positions written as objects (Q-54)', () => {
+  const objects = {
+    ...card,
+    requirements: [{ position: 3 }, { position: 1 }],
+    dependsOn: [{ position: 4, builds: ['T-004'] }],
+  };
+
+  it('RF-627 Q-54 reads an object with a numeric position as that number', () => {
+    const answer = read({ tasks: [objects] });
+
+    expect(answer?.drafts).toEqual([{ ...card, requirements: [3, 1], dependsOn: [4] }]);
+    expect(answer?.problems).toEqual([]);
+  });
+
+  it('RF-627 Q-54 reads numbers and objects mixed in one list', () => {
+    const mixed = { ...card, requirements: [2, { position: 3 }] };
+
+    expect(read({ tasks: [mixed] })?.drafts[0]?.requirements).toEqual([2, 3]);
+  });
+
+  it.each([
+    ['a position written as a string', { position: '3' }],
+    ['an object with an id and no position', { id: 3 }],
+    ['an object whose position is a list', { position: [3] }],
+    ['a position of 0', { position: 0 }],
+    ['a position of 201', { position: 201 }],
+    ['a fractional position', { position: 1.5 }],
+    ['null', null],
+    ['a string', '3'],
+  ])('RF-627 Q-54 %s leaves the card out and names its position and field', (_name, bad) => {
+    const answer = read({ tasks: [card, { ...card, requirements: [bad] }] });
+
+    expect(answer?.drafts).toEqual([card]);
+    expect(answer?.problems).toMatchObject([
+      { position: 2, field: 'requirements', builds: ['flow:FLOW-007'] },
+    ]);
+  });
+});
+
+describe('parseGapAnswer: what a card that is left out reports (Q-54)', () => {
+  it('RF-627 Q-54 names dependsOn when that list is the wrong one', () => {
+    const answer = read({ tasks: [{ ...card, dependsOn: [{ id: 1 }] }] });
+
+    expect(answer?.problems).toMatchObject([{ position: 1, field: 'dependsOn' }]);
+  });
+
+  it('RF-627 Q-54 names the card when the card is not an object, and keeps no ids from it', () => {
+    const answer = read({ tasks: ['text', 7, null, card] });
+
+    expect(answer?.problems).toMatchObject([
+      { position: 1, field: 'card', builds: [] },
+      { position: 2, field: 'card', builds: [] },
+      { position: 3, field: 'card', builds: [] },
+    ]);
+  });
+
+  it('RF-627 Q-54 the problem holds a reason and no text of the answer', () => {
+    const sentinel = 'sentinel-title-' + 'x'.repeat(8);
+    const answer = read({
+      tasks: [{ ...card, title: sentinel, requirements: [{ id: sentinel }] }],
+    });
+
+    expect(JSON.stringify(answer?.problems)).not.toContain(sentinel);
+    expect(answer?.problems[0]?.reason).toMatch(/wrong type or shape/u);
+  });
+});
+
+describe('parseGapAnswer: the ids and fields of a card that is left out (Q-54)', () => {
+  it('RF-627 Q-54 the builds of a left-out card are only the ids that are texts, bounded', () => {
+    const odd = {
+      ...card,
+      requirements: ['3'],
+      builds: ['flow:FLOW-007', 4, null, 't'.repeat(301)],
+    };
+
+    expect(read({ tasks: [odd] })?.problems[0]?.builds).toEqual(['flow:FLOW-007']);
+  });
+
+  it('RF-627 Q-54 a card whose builds list is no list names no id', () => {
+    const odd = { ...card, requirements: ['3'], builds: 'flow:FLOW-007' };
+
+    expect(read({ tasks: [odd] })?.problems[0]?.builds).toEqual([]);
+  });
+
+  it('RF-627 Q-54 names a field that is too long or too short for the reason', () => {
+    const long = { ...card, title: 't'.repeat(201) };
+    const none = { ...card, acceptanceCriteria: [] };
+
+    const problems = read({ tasks: [long, none] })?.problems ?? [];
+
+    expect(problems.map((each) => [each.position, each.field])).toEqual([
+      [1, 'title'],
+      [2, 'acceptanceCriteria'],
+    ]);
+    expect(problems.map((each) => each.reason)).toEqual([
+      expect.stringMatching(/above its maximum/u),
+      expect.stringMatching(/empty or below its minimum/u),
+    ]);
   });
 });
 
@@ -79,7 +183,13 @@ describe('parseGapAnswer: refusals', () => {
     const many = { ...card, builds: Array.from({ length: 501 }, () => 'flow:X') };
     const long = { ...card, builds: ['t'.repeat(301)] };
 
-    expect(parseGapAnswer(JSON.stringify({ tasks: [many, long, card] }))).toEqual([card]);
+    const answer = read({ tasks: [many, long, card] });
+
+    expect(answer?.drafts).toEqual([card]);
+    expect(answer?.problems.map((each) => [each.position, each.field])).toEqual([
+      [1, 'builds'],
+      [2, 'builds'],
+    ]);
   });
 
   it('RF-627 only the text before the output limit is read', () => {

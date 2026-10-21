@@ -123,6 +123,7 @@ export class EstimatePlan {
           uxPromptTokens: tokensOf(calls, prompts, 'ux'),
           coveragePromptTokens: tokensOf(calls, prompts, 'coverage'),
           gapPromptTokens: tokensOf(calls, prompts, 'gap'),
+          gapRepairPromptTokens: 0,
         },
         ...{ maxOutputTokens, outputPercent: OUTPUT_PERCENT },
         continuationsPerCall: maxPlannerContinuations,

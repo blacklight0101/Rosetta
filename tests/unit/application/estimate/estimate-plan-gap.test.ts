@@ -27,7 +27,7 @@ describe('EstimatePlan: the call for the items no task card builds', () => {
     const { assumptions } = await estimateOf();
 
     const system = (await readFile('prompts/planner/gap.v1.md', 'utf8')).length;
-    expect(assumptions.calls).toBe(5);
+    expect(assumptions.calls).toBe(6);
     expect(assumptions.gapPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(assumptions.gapPromptTokens).not.toBe(assumptions.coveragePromptTokens);
   });
@@ -37,10 +37,36 @@ describe('EstimatePlan: the call for the items no task card builds', () => {
 
     const reservation = (promptTokens: number): number =>
       3 * promptTokens + 6 * assumptions.maxOutputTokens + 2 * continuePromptTokens;
-    const others = assumptions.promptTokens - assumptions.gapPromptTokens;
     const high = planner.points.high.inputTokens + planner.points.high.outputTokens;
     expect(high).toBeGreaterThan(reservation(assumptions.gapPromptTokens));
-    expect(planner.points.low.inputTokens).toBe(others + assumptions.gapPromptTokens);
-    expect(planner.points.high.outputTokens).toBe(5 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
+    expect(planner.points.high.outputTokens).toBe(6 * 3 * assumptions.maxOutputTokens);
+  });
+});
+
+describe('EstimatePlan: the repair attempt of the call for the items no task card builds', () => {
+  it('Q-54 RF-627 counts the repair call after the gap call, with the gap prompt and the repair prompt measured', async () => {
+    const { assumptions } = await estimateOf();
+
+    const system = (await readFile('prompts/planner/gap.v1.md', 'utf8')).length;
+    const repair = (await readFile('prompts/planner/gap-repair.v1.md', 'utf8')).length;
+    expect(assumptions.gapRepairPromptTokens).toBeGreaterThan(
+      assumptions.gapPromptTokens + Math.ceil(repair / 4) - 1,
+    );
+    expect(assumptions.gapPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
+  });
+
+  it('Q-54 the repair is in the total of the prompts and the high figure reserves it with its continuations', async () => {
+    const { assumptions, planner } = await estimateOf();
+
+    const reservation = (promptTokens: number): number =>
+      3 * promptTokens + 6 * assumptions.maxOutputTokens + 2 * continuePromptTokens;
+    const high = planner.points.high.inputTokens + planner.points.high.outputTokens;
+    expect(high).toBeGreaterThan(
+      reservation(assumptions.gapPromptTokens) + reservation(assumptions.gapRepairPromptTokens),
+    );
+    expect(assumptions.promptTokens).toBeGreaterThan(
+      assumptions.gapPromptTokens + assumptions.gapRepairPromptTokens,
+    );
   });
 });

@@ -51,3 +51,8 @@ export function withoutTasks(): Promise<Recording> {
 export function withoutPhases(): Promise<Recording> {
   return withPlan({ phases: [] });
 }
+
+/** The recording whose plan has these task cards (the other parts of the plan stay). */
+export function withTasks(tasks: readonly unknown[]): Promise<Recording> {
+  return withPlan({ tasks });
+}

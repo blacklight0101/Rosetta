@@ -202,3 +202,31 @@ describe('parsePlanAnswer: the output cap', () => {
     );
   });
 });
+
+describe('parsePlanAnswer: positions written as objects (Q-54)', () => {
+  const task = { title: 'Orders', phase: 1, requirements: [1], acceptanceCriteria: [scenario] };
+
+  function tasksOf(extra: object): unknown {
+    const answer = JSON.stringify({ requirements: [requirement], tasks: [{ ...task, ...extra }] });
+    return parsePlanAnswer(answer)?.tasks;
+  }
+
+  it('RF-601 Q-54 reads an object with a numeric position in requirements and dependsOn', () => {
+    const extra = {
+      requirements: [{ position: 3 }, 1],
+      dependsOn: [{ position: 4, builds: ['T-004'] }],
+    };
+
+    expect(tasksOf(extra)).toMatchObject([{ requirements: [3, 1], dependsOn: [4] }]);
+  });
+
+  it.each([
+    ['a position written as a string', { position: '3' }],
+    ['an object with an id and no position', { id: 3 }],
+    ['a position of 0', { position: 0 }],
+    ['null', null],
+  ])('RF-601 Q-54 %s makes the answer unusable, as a text did before', (_name, bad) => {
+    expect(tasksOf({ requirements: [bad] })).toBeUndefined();
+    expect(tasksOf({ dependsOn: [bad] })).toBeUndefined();
+  });
+});

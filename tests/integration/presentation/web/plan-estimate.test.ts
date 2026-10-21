@@ -92,7 +92,7 @@ describe('GET /api/projects/:id/plan-estimate answers', () => {
       ...{ role: 'planner', provider: 'openai', model: 'priced-model' },
       ...{ keySource: 'server', priced: true },
     });
-    expect(body.planner.high.outputTokens).toBe(5 * 3 * body.assumptions.maxOutputTokens);
+    expect(body.planner.high.outputTokens).toBe(6 * 3 * body.assumptions.maxOutputTokens);
     expect(body.planner.high.inputTokens).toBeGreaterThan(body.assumptions.promptTokens);
     expect(BigInt(body.planner.high.costMicros)).toBeGreaterThan(0n);
     expect(body.caps.map((cap) => cap.kind)).toEqual([

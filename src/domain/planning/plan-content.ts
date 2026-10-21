@@ -84,8 +84,17 @@ export interface PlanContent {
   readonly technical: TechnicalContent;
 }
 
+/** A task card the package leaves out: its position in the answer (from 1), the field that kept it out and why. */
+export interface LeftOutCard {
+  readonly position: number;
+  readonly field: string;
+  readonly reason: string;
+}
+
 export interface PlanAssembly {
   readonly content: PlanContent;
+  /** Q-54: the task cards of the draft that the package leaves out, by position and field. */
+  readonly leftOut: readonly LeftOutCard[];
   /** How many items the draft had that the package leaves out. */
   readonly dropped: {
     readonly requirements: number;
@@ -202,6 +211,7 @@ export function assemblePlan(
     draft.decisions.map((_, index) => planId('ADR', index + 1)),
   );
   return {
+    leftOut: [],
     content: {
       summary: draft.summary,
       requirements: requirements.kept,

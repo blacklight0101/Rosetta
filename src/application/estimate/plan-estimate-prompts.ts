@@ -43,6 +43,8 @@ export interface PlanPromptFiles {
   readonly coveragePrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the task cards of the items no card builds (Q-45). */
   readonly gapPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the one repair attempt of the gap call (Q-54). */
+  readonly gapRepairPrompt: () => Promise<PromptFile>;
   /** RF-155: the package prompt with the workbook guidance after it, when this run would add it. */
   readonly workbookGuidance?: (inputs: PlanInputs) => Promise<PromptFile | undefined>;
 }
