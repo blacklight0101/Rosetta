@@ -8,7 +8,7 @@ import { estimateInputTokens, estimateTokens } from './usage-estimate.js';
 // be none; `outputUnknown` says the provider may have produced more.
 
 /** The usage of an attempt that timed out after `received` characters of answer. */
-export function timedOutUsage(request: LlmRequest, received: string): TokenUsage {
+function timedOutUsage(request: LlmRequest, received: string): TokenUsage {
   return {
     inputTokens: estimateInputTokens(request),
     outputTokens: estimateTokens(received),
