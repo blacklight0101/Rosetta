@@ -94,6 +94,15 @@ export class OllamaContextResolver {
     return pending;
   }
 
+  /**
+   * Q-48: the choice to send for a prompt of `needed` tokens; undefined when even the trained
+   * context is too small. Not implemented yet.
+   */
+  grow(ref: ModelRef, auto: ContextChoice, needed: number): Promise<ContextChoice | undefined> {
+    const known = this.deps.cache.auto.has(this.keyOf(ref));
+    return Promise.resolve(known && needed <= auto.tokens ? auto : undefined);
+  }
+
   /** After the first call at a fixed size: one warning when part of the model is on the CPU. */
   async checkFixed(ref: ModelRef, tokens: number): Promise<void> {
     const key = `${this.keyOf(ref)} ${String(tokens)}`;

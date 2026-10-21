@@ -85,7 +85,7 @@ export interface TokenUsage {
  * ceiling because Ollama could not be measured, or the project's fixed number.
  */
 export type OllamaContextSource =
-  'auto-fit' | 'auto-floor' | 'auto-model-limit' | 'auto-fallback' | 'fixed';
+  'auto-fit' | 'auto-floor' | 'auto-model-limit' | 'auto-fallback' | 'auto-grown' | 'fixed';
 
 /** Ollama's own timings of a call (RF-408) and the context size it was sent (RF-401). */
 export interface OllamaMetrics {

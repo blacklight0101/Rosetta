@@ -27,6 +27,8 @@ export interface PromptFacts {
   /** The output the call may use (`maxOutputTokens`); 0 when it has no limit. */
   readonly outputTokens: number;
   readonly contextTokens: number;
+  /** The trained context when `auto` could not grow beyond it (Q-48). */
+  readonly trainedTokens?: number;
 }
 
 /** The estimated prompt tokens of the chat body: every message, tool calls and tool definitions. */

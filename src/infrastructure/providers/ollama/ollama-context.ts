@@ -12,6 +12,8 @@ export type ContextSetting = 'auto' | number;
 export interface ContextChoice {
   readonly tokens: number;
   readonly source: OllamaContextSource;
+  /** The model's trained context when it is known: the most `auto` may grow to (Q-48). */
+  readonly trainedTokens?: number;
 }
 
 /** Q-23: `auto` never starts above this size. */
