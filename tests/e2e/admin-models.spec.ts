@@ -99,7 +99,7 @@ async function giveBackSummariser(page: Page): Promise<void> {
 const optionTexts = (select: Locator): Promise<string[]> =>
   select.locator('option').allTextContents();
 
-test('RF-405 lists the Anthropic models without a price, keeps the choice and passes axe', async ({
+test('RF-405 lists the priced Anthropic models, keeps the choice and passes axe', async ({
   page,
 }) => {
   await openModels(page);
@@ -109,14 +109,15 @@ test('RF-405 lists the Anthropic models without a price, keeps the choice and pa
 
   expect(await optionTexts(model)).toEqual([
     'Choose a model',
-    'Claude Opus 5.5 (no price)',
-    'Claude Sonnet 5.5 (no price)',
-    'Claude Haiku 5.5 (no price)',
-    'Claude Fable 5.1 (no price)',
+    'Claude Opus 5.5',
+    'Claude Sonnet 5.5',
+    'Claude Haiku 5.5',
+    'Claude Fable 5.1',
     'Other model...',
   ]);
   await model.selectOption('claude-sonnet-5-5');
-  await expect(page.getByText(/has no price in the price table/u)).toBeVisible();
+  // Q-56: the shipped price table holds every listed model, so no warning is shown.
+  await expect(page.getByText(/has no price in the price table/u)).toHaveCount(0);
   await expectNoSeriousViolations(page);
   await saveButton(page).click();
   await expect(page.getByRole('status').filter({ hasText: 'Default models saved' })).toBeVisible();
