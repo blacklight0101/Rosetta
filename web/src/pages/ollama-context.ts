@@ -7,7 +7,7 @@ import type { ModelListState } from './model-lists.js';
 // list carries from /api/show (Q-44); when none is known the bound falls back to 131,072.
 
 export const CONTEXT_MIN = 4096;
-export const CONTEXT_MAX = 131_072;
+const CONTEXT_MAX = 131_072;
 
 /** The trained context that bounds the field, and the model it belongs to. */
 export interface ContextLimit {
