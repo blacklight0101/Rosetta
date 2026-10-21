@@ -149,3 +149,40 @@ it('DEC-106 the answer names the built-in defaults that apply to a role nobody h
     summariser: { provider: template.summariser.provider, model: template.summariser.model },
   });
 });
+
+it('RF-401 DEC-106 the administrator sets the Ollama context size of new projects; it is kept and audited', async () => {
+  test = createTestServer();
+  const root = await signedIn('root', 'admin');
+  const withSize = { ...roles, ollamaContextTokens: 65_536 };
+
+  const saved = await root.request({
+    method: 'PUT',
+    url: '/api/admin/default-roles',
+    payload: { roles: withSize },
+  });
+  const read = await root.request({ method: 'GET', url: '/api/admin/default-roles' });
+
+  expect(saved.statusCode).toBe(200);
+  expect(answerSchema.parse(read.json()).roles).toEqual(withSize);
+  const [event] = await test.audit.list({ since: 0, action: 'admin.default_roles_changed' });
+  expect(event?.detail).toMatchObject({ ollamaContextTokens: '65536' });
+});
+
+it('Q-23 a context size under the floor is refused with its field and nothing changes', async () => {
+  test = createTestServer();
+  const root = await signedIn('root', 'admin');
+
+  const refused = await root.request({
+    method: 'PUT',
+    url: '/api/admin/default-roles',
+    payload: { roles: { ollamaContextTokens: 2048 } },
+  });
+
+  expect(refused.statusCode).toBe(400);
+  expect(refused.json()).toMatchObject({
+    code: ERROR_CODES.settingsInvalid,
+    problems: [{ field: 'ollamaContextTokens', code: ERROR_CODES.settingValueInvalid }],
+  });
+  const read = await root.request({ method: 'GET', url: '/api/admin/default-roles' });
+  expect(answerSchema.parse(read.json()).roles).toEqual({});
+});

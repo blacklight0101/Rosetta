@@ -14,6 +14,7 @@ import {
   type RoleName,
   type SettingsDraft,
 } from './project-settings-form.js';
+import type { ContextLimit } from './ollama-context.js';
 
 // RF-002, P1-41: the state of the project settings form. `useSettingsDraft` holds what the fields
 // show and how each control changes it; `useSettingsSave` sends the document and keeps what the
@@ -102,7 +103,11 @@ function bannerOf(refusal: Refusal | undefined, draft: SettingsDraft): ApiFailur
   return { ...failure, problems: unplaced };
 }
 
-export function useSettingsSave(project: Project, draft: SettingsDraft): SettingsSave {
+export function useSettingsSave(
+  project: Project,
+  draft: SettingsDraft,
+  limit?: ContextLimit,
+): SettingsSave {
   const { client } = useApp();
   const [base, setBase] = useState(project.settings);
   const [version, setVersion] = useState(project.settingsVersion);
@@ -111,7 +116,7 @@ export function useSettingsSave(project: Project, draft: SettingsDraft): Setting
   const [savedDraft, setSavedDraft] = useState<SettingsDraft | undefined>();
 
   const save = async (): Promise<void> => {
-    const built = settingsOf(base, draft);
+    const built = settingsOf(base, draft, limit);
     if (!built.ok) {
       setRefusal({ failure: undefined, local: built.problems });
       return;

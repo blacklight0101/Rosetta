@@ -1,10 +1,12 @@
 import type { CardDraft } from '../../domain/cards/card-ids.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { asCardList, cardItems } from './card-items.js';
 import { agentCardsSchema } from './card-schema.js';
 import { cardLimits } from './card-limits.js';
 import { searchJson, type JsonSearch } from './extract-json.js';
 import { readCard } from './lenient-cards.js';
 import type { OutputProblem } from './output-problem.js';
+import { mapRowCitations, type RowIndex } from './row-citations.js';
 
 // RF-202, RF-208: parses an agent's final answer into card drafts. The JSON is taken out of prose
 // or a code fence; the valid cards and claims are kept and the invalid ones are dropped and listed
@@ -44,14 +46,6 @@ function bounded(problems: readonly OutputProblem[]): readonly OutputProblem[] {
   }));
 }
 
-/**
- * A bare list counts as the card list only when it holds something: a stray `[]` in prose would
- * otherwise read as "no cards", so an empty answer needs the explicit `{"cards": []}` (P1-33).
- */
-function asCardList(value: unknown): unknown {
-  return Array.isArray(value) && value.length > 0 ? { cards: value } : value;
-}
-
 /** What one answer gave: the cards that are valid and why the rest was dropped. */
 export interface CardParse {
   readonly drafts: readonly CardDraft[];
@@ -59,12 +53,6 @@ export interface CardParse {
   readonly problems: readonly OutputProblem[];
   /** No card was found and the answer ends inside JSON it started: ask it to continue (RF-208). */
   readonly cutOff: boolean;
-}
-
-function cardItems(value: unknown): readonly unknown[] | undefined {
-  const list = asCardList(value);
-  if (typeof list !== 'object' || list === null || !('cards' in list)) return undefined;
-  return Array.isArray(list.cards) ? list.cards : undefined;
 }
 
 function strictProblems(value: unknown): readonly OutputProblem[] {
@@ -76,13 +64,13 @@ function strictProblems(value: unknown): readonly OutputProblem[] {
   }));
 }
 
-function readValue(value: unknown): Pick<CardParse, 'drafts' | 'problems'> {
+function readValue(value: unknown, rows: RowIndex): Pick<CardParse, 'drafts' | 'problems'> {
   const items = cardItems(value);
   if (items === undefined) return { drafts: [], problems: strictProblems(value) };
   const drafts: CardDraft[] = [];
   const problems: OutputProblem[] = items.length > cardLimits.maxCards ? [tooMany] : [];
   items.slice(0, cardLimits.maxCards).forEach((item, index) => {
-    const card = readCard(item, index);
+    const card = readCard(mapRowCitations(item, rows), index);
     if (card.draft !== undefined) drafts.push(card.draft);
     problems.push(...card.problems);
   });
@@ -95,10 +83,13 @@ function isClean(read: Pick<CardParse, 'drafts' | 'problems'>): boolean {
 }
 
 /** The best of the JSON values of an answer: a clean one first, else the one with most cards. */
-function bestRead(values: readonly unknown[]): Pick<CardParse, 'drafts' | 'problems'> | undefined {
+function bestRead(
+  values: readonly unknown[],
+  rows: RowIndex,
+): Pick<CardParse, 'drafts' | 'problems'> | undefined {
   let best: Pick<CardParse, 'drafts' | 'problems'> | undefined;
   for (const value of values) {
-    const read = readValue(value);
+    const read = readValue(value, rows);
     if (isClean(read)) return read;
     if (best === undefined || read.drafts.length > best.drafts.length) best = read;
   }
@@ -112,13 +103,17 @@ function nothingFound(search: JsonSearch, found: readonly OutputProblem[]): Card
   return { drafts: [], problems: bounded(found.length > 0 ? found : [noJson]), cutOff: false };
 }
 
+/**
+ * `rows` holds the row spans of the rendered workbook files the answer cites by row (RF-202,
+ * Q-47); a citation like `values.md:R8` is read as the lines of that row.
+ */
 // RF-208
-export function parseCardsLenient(raw: string): CardParse {
+export function parseCardsLenient(raw: string, rows: RowIndex = new Map()): CardParse {
   if (raw.length > cardLimits.maxOutputChars) {
     return { drafts: [], problems: [tooLong], cutOff: false };
   }
   const search = searchJson(raw);
-  const best = bestRead(search.values);
+  const best = bestRead(search.values, rows);
   if (best !== undefined && (best.drafts.length > 0 || isClean(best))) {
     return { ...best, problems: bounded(best.problems), cutOff: false };
   }

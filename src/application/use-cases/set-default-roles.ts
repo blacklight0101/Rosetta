@@ -26,12 +26,14 @@ export interface SetDefaultRolesDependencies {
 const roleNames = ['reader', 'verifier', 'planner', 'summariser'] as const;
 
 function detailOf(roles: DefaultRoles): AuditDetail {
-  return Object.fromEntries(
-    roleNames.map((name) => {
-      const choice = roles[name];
-      return [name, choice === undefined ? 'template' : `${choice.provider}/${choice.model}`];
-    }),
-  );
+  const detail: Record<string, string> = {};
+  for (const name of roleNames) {
+    const choice = roles[name];
+    detail[name] = choice === undefined ? 'template' : `${choice.provider}/${choice.model}`;
+  }
+  const size = roles.ollamaContextTokens;
+  if (size !== undefined) detail['ollamaContextTokens'] = String(size);
+  return detail;
 }
 
 export class SetDefaultRoles {

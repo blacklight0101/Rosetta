@@ -86,6 +86,7 @@ export function toolsWithEvents(
     areaOverview: () => inner.areaOverview(),
     readableAreaFiles: () => inner.readableAreaFiles(),
     renderBlock: (source, text) => inner.renderBlock(source, text),
+    rowSpans: (path) => inner.rowSpans(path),
     async run(call, ids) {
       const turn = turns.value;
       const tool = call.name.slice(0, MAX_TOOL_NAME);

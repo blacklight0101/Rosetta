@@ -55,7 +55,7 @@ export function promptFactsOf(
 }
 
 function remedies(role: string): string {
-  return `Use a model with a larger context, or a cloud model for the ${role} role in the project settings, or set a larger contextTokens for this provider.`;
+  return `Use a model with a larger context, or a cloud model for the ${role} role in the project settings, or set a larger size in project settings, the model of the role, Context size.`;
 }
 
 /** The failure of a prompt that does not fit: undefined when it fits. Nothing is sent. */

@@ -46,13 +46,13 @@ describe('an understand run: the text tool protocol', UNDERSTAND_TIMEOUT, () => 
     const versions = await promptVersionsOf(ollamaReader('text'));
 
     expect(versions[protocolName]).toEqual({ version: 'v1', sha256 });
-    expect(versions['reader/area.v4.md']).toBeDefined();
+    expect(versions['reader/area.v5.md']).toBeDefined();
   });
 
   it('RNF-004 leaves the protocol out when the reader calls tools natively', async () => {
     const versions = await promptVersionsOf(ollamaReader('native'));
 
     expect(Object.keys(versions)).not.toContain(protocolName);
-    expect(versions['reader/area.v4.md']).toBeDefined();
+    expect(versions['reader/area.v5.md']).toBeDefined();
   });
 });
