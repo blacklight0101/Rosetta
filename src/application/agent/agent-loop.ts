@@ -3,6 +3,8 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { AgentRole, LlmMessage, LlmProvider, LlmResponse } from '../ports/llm-provider.js';
 import type { Logger } from '../ports/logger.js';
 import { collectCards } from './answer-collector.js';
+import { recordNote, type AnswerNote } from './answer-note.js';
+import { charsPerToken } from './context-room.js';
 import {
   failedCallEnd,
   stoppedEnd,
@@ -12,11 +14,10 @@ import {
 } from './agent-task-result.js';
 import type { AgentToolSet } from './agent-tool-set.js';
 import { ReadGate } from './read-gate.js';
+import { refusalFor } from './refusal.js';
 import {
   readerSystemPrompt,
   readerTaskMessage,
-  readFirstMessage,
-  readMoreMessage,
   turnsLeftMessage,
   type ReaderPrompts,
 } from './reader-prompts.js';
@@ -66,10 +67,9 @@ export interface AgentTaskRequest {
   readonly rejected?: string;
   /** RF-209: the parent's cards for the area, as JSON, sent as one data block after the area's. */
   readonly parentCards?: string;
+  /** Q-55: told why an answer was refused, accepted for lack of room, kept or cut (never its text). */
+  readonly onNote?: (note: AnswerNote) => Promise<void>;
 }
-
-/** About four characters per token, the estimate the providers use too (RF-421). */
-const charsPerToken = 4;
 
 class AgentTask {
   private readonly request: AgentTaskRequest;
@@ -83,6 +83,8 @@ class AgentTask {
   /** Tokens of the conversation at the last answer, and characters added since. */
   private reportedTokens = 0;
   private charsSince = 0;
+  /** Q-55: the latest answer that was refused, read as the final answer if the task ends first. */
+  private refused: string | undefined;
 
   constructor(request: AgentTaskRequest) {
     this.request = request;
@@ -107,9 +109,9 @@ class AgentTask {
     const { settings, prompts } = this.request;
     for (;;) {
       const answer = await this.turn();
-      if (!answer.ok) return answer.error;
+      if (!answer.ok) return this.afterStop(answer.error);
       if (answer.value.toolCalls.length === 0) {
-        if (this.refuseUnread(answer.value.text)) continue;
+        if (await this.refuseUnread(answer.value.text)) continue;
         return this.finish(answer.value.text);
       }
       const stopped = await this.runTools(answer.value);
@@ -132,10 +134,15 @@ class AgentTask {
     return this.call();
   }
 
-  private overContextShare(): boolean {
+  /** Tokens of the conversation still free below the context share (negative when over it). */
+  private freeContext(): number {
     const { contextTokens, contextShare } = this.request.settings;
     const estimate = this.reportedTokens + Math.ceil(this.charsSince / charsPerToken);
-    return estimate >= Math.floor(contextTokens * contextShare);
+    return Math.floor(contextTokens * contextShare) - estimate;
+  }
+
+  private overContextShare(): boolean {
+    return this.freeContext() <= 0;
   }
 
   private async call(): Promise<Result<LlmResponse, AgentTaskEnd>> {
@@ -192,24 +199,38 @@ class AgentTask {
   /**
    * RF-206: a final answer before any file of the area was read is not accepted. The agent is told
    * which files it has not read and keeps its turns to read them. Q-50: so is, once, an answer
-   * after less than half of the area's first-party tokens were read, with the files still unread.
+   * after less than half of the area's first-party tokens were read, with the files still unread;
+   * Q-55: unless the conversation has no room for another read and answer, when it is taken as is.
    */
-  private refuseUnread(text: string): boolean {
-    const message = this.refusalMessage(this.request.settings.maxTurns - this.turns);
-    if (message === undefined) return false;
+  private async refuseUnread(text: string): Promise<boolean> {
+    const { prompts, tools, settings } = this.request;
+    const refusal = await refusalFor({
+      ...{ gate: this.gate, prompts, answer: text, freeContext: this.freeContext() },
+      block: (files) => tools.renderBlock('list_area_files', files),
+      turnsLeft: settings.maxTurns - this.turns,
+      note: (note) => this.note(note),
+    });
+    if (refusal === undefined) return false;
+    this.refused = text;
     this.messages.push({ role: 'assistant', content: text });
-    this.add({ role: 'user', content: message });
+    this.add({ role: 'user', content: refusal.message });
+    await this.note({ outcome: 'refused', reason: refusal.reason });
     return true;
   }
 
-  private refusalMessage(turnsLeft: number): string | undefined {
-    const { prompts, tools } = this.request;
-    const block = (files: string): string => tools.renderBlock('list_area_files', files);
-    const unread = this.gate.refuse(turnsLeft);
-    if (unread !== undefined) return readFirstMessage(prompts, block(unread), turnsLeft);
-    const more = this.gate.readMore(turnsLeft);
-    if (more === undefined) return undefined;
-    return readMoreMessage(prompts, { ...more, filesBlock: block(more.files), turns: turnsLeft });
+  /** Q-55: a task that ends after a refusal reads the refused answer as its final answer. */
+  private async afterStop(end: AgentTaskEnd): Promise<AgentTaskEnd> {
+    const kept = this.refused;
+    if (kept === undefined) return end;
+    if (end.reason !== 'context-limit' && end.reason !== 'max-turns') return end;
+    await this.note({ outcome: 'kept', reason: end.reason });
+    return this.finish(kept);
+  }
+
+  private note(note: AnswerNote): Promise<void> {
+    const { logger, context, onNote } = this.request;
+    const sink = { logger, runId: context.runId, agentTaskId: context.agentTaskId };
+    return recordNote(onNote === undefined ? sink : { ...sink, onNote }, note);
   }
 
   /**
@@ -225,6 +246,8 @@ class AgentTask {
       (path) => this.request.tools.rowSpans(path),
     );
     const { drafts, problems, rawOutputs, stopped } = collected;
+    if (collected.cutKept)
+      await this.note({ outcome: 'cut', reason: stopped?.reason ?? 'unfinished' });
     const left = { drafts, problems, rawOutputs: problems.length === 0 ? [] : rawOutputs };
     if (stopped !== undefined) return { ...stopped, ...left };
     if (drafts.length > 0 || problems.length === 0) return { reason: 'final-answer', ...left };

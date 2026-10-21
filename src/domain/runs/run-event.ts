@@ -12,6 +12,7 @@ export type RunEventType =
   | 'agent.planned'
   | 'agent.started'
   | 'agent.turn'
+  | 'agent.answer.noted'
   | 'agent.tool.called'
   | 'agent.tool.result'
   | 'agent.card.proposed'

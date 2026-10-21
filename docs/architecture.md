@@ -555,7 +555,14 @@ sequenceDiagram
   leaves third-party files out like the run's coverage) is refused once more with `prompts/reader/read-more.v1.md`:
   the percentage and tokens read, the unread files (every `formulas.md`, then the modules under `macros/`, then the
   largest first) as a data block and the turns left; the next answer is accepted whatever the coverage, and the
-  extra turns are model turns like any other, inside the turn limit and the budget guard: `ReadGate`), `InvalidOutput` (no valid card after the follow-ups), `TurnLimitReached` (the
+  extra turns are model turns like any other, inside the turn limit and the budget guard: `ReadGate`; Q-55, P3-83:
+  the Q-50 refusal is given only while the free room under the context share holds the answer's size plus 4,000
+  tokens for one more read (`context-room.ts`, `refusal.ts`), otherwise the answer is accepted as it is; a refused
+  answer is kept, and when the task then ends `context-limit` or `max-turns` before another answer arrives it is read
+  as the final answer, so its cards are not lost to a retry; an answer still cut off when no continuation can be asked
+  keeps the cards finished before the cut (`readCutCards`), the cut card is listed as invalid output; each of these
+  publishes the run event `agent.answer.noted` and an application log line with the reason only, never answer text,
+  `answer-note.ts`), `InvalidOutput` (no valid card after the follow-ups), `TurnLimitReached` (the
   configured maximum turns, `RST-1304`, or the context share, `RST-1305`), or `Failed` with a recorded reason: a
   model that repeats one call three times (`RST-1303`; a repeated call is answered with an error, not run again) or
   names unknown tools three times (`RST-1302`), a stop through the shared signal (checked before every turn and
