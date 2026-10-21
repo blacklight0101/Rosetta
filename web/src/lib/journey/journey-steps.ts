@@ -1,6 +1,6 @@
 import type { JourneyFacts, JourneyRunFacts } from '../../api/journey-schemas.js';
 import { costLabel } from '../live-run/format.js';
-import { nextOf, type JourneyAction } from './journey-action.js';
+import { nextOf, type JourneyAction, type JourneyLink } from './journey-action.js';
 import {
   endText,
   lockReason,
@@ -33,7 +33,7 @@ export interface JourneyStep {
   readonly here: boolean;
 }
 
-export type { JourneyAction } from './journey-action.js';
+export type { JourneyAction, JourneyLink } from './journey-action.js';
 export type { StepKey } from './journey-context.js';
 
 export interface JourneyView {
@@ -41,7 +41,7 @@ export interface JourneyView {
   /** The one next action; none while a run works. */
   readonly action: JourneyAction | undefined;
   /** DEC-154: the way to the brief while questions are open; none otherwise. */
-  readonly secondary: JourneyAction | undefined;
+  readonly secondary: JourneyLink | undefined;
   readonly totalCostMicros: number;
 }
 

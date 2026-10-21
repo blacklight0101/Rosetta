@@ -2,6 +2,7 @@ import type { Tile } from './code-map-tiles.js';
 import { JUDGEMENT_EXPLAINED, verifyDetail, waitsForJudgement } from './judgement-state.js';
 import type { RunPhase } from './run-phase.js';
 import type { AgentPanelState, RunState } from './run-state.js';
+import { scanSubjectOfRun } from './scan-subject.js';
 
 // RF-1015, DEC-137: the run journey of the page while a run works: map the code, read, check
 // citations, explain, your questions. Exactly one step is current while the run works; the steps
@@ -38,7 +39,8 @@ function mapStep(input: JourneyInput): Core {
   const { stage, phase, state, tiles } = input;
   if (phase.kind === 'queued') return { status: 'later', detail: 'waiting in the queue' };
   if (stage === 'scan') {
-    if (state.scan === undefined) return { status: 'current', detail: 'reading the repository' };
+    if (state.scan === undefined)
+      return { status: 'current', detail: `reading ${scanSubjectOfRun(state.source)}` };
     return {
       status: 'done',
       detail: `${String(state.scan.files)} files, ${String(state.scan.areas)} areas`,

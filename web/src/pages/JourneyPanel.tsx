@@ -19,6 +19,8 @@ export interface JourneyPanelProps {
   readonly onResumed?: (() => void) | undefined;
   /** Opens the questions where the page can show them. */
   readonly onAnswer?: (() => void) | undefined;
+  /** The path of the page the strip is on (Plan setup), so no action links to the page itself. */
+  readonly pagePath?: string | undefined;
 }
 
 // RF-615
@@ -35,6 +37,7 @@ export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
     <JourneyStrip
       view={view}
       onAnswer={props.onAnswer}
+      pagePath={props.pagePath}
       onResumed={
         props.onResumed ??
         (() => {

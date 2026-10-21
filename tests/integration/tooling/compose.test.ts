@@ -126,6 +126,17 @@ describe('compose.yaml: app service', () => {
   });
 });
 
+describe('compose.yaml: database health check', () => {
+  it('RF-1301 checks the database over TCP, so migrate waits for the real server and not the init-time one (P3-68)', async () => {
+    const test = dbOf(await load(COMPOSE)).healthcheck?.test ?? [];
+
+    expect(test.slice(0, 2)).toEqual(['CMD', 'pg_isready']);
+    expect(test.join(' ')).toContain('-h 127.0.0.1');
+    expect(test.join(' ')).toContain('-U postgres');
+    expect(test.join(' ')).toContain('-d rosetta');
+  });
+});
+
 describe('compose.yaml: app service configuration', () => {
   it('RF-1302 serves as rosetta_app with the password from .env (DATABASE_URL only, DEC-140)', async () => {
     const environment = environmentOf(appOf(await load(COMPOSE)));

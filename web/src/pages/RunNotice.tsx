@@ -34,12 +34,16 @@ function LiveLink({ runId }: { readonly runId: string }): JSX.Element {
   );
 }
 
+const articleOf = (word: string): string => (/^[aeiou]/iu.test(word) ? 'an' : 'a');
+
 function Body({ notice, busy, onCancel }: RunNoticeProps): JSX.Element {
   switch (notice.kind) {
     case 'started':
       return (
         <>
-          <p>Run started. It is a {notice.stage} run; it is running now.</p>
+          <p>
+            Run started. It is {articleOf(notice.stage)} {notice.stage} run; it is running now.
+          </p>
           <LiveLink runId={notice.runId} />
         </>
       );
