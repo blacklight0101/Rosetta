@@ -2,25 +2,26 @@ import type { JSX } from 'preact';
 import type { RoleEstimate, RunEstimate, Scenario } from '../api/estimate-schemas.js';
 import {
   dollars,
+  isLocalEstimate,
+  isLocalModel,
   pricedTotal,
   roleCost,
   scenarios,
+  tokensText,
   totalTokens,
   unpricedRoles,
 } from '../lib/estimate-math.js';
 
-// RF-425: tokens and cost per role as a low, likely and high range. A cloud model without a price
-// shows its cost as unknown, never as free, and the total then reads "at least" (RF-427).
+// RF-425, Q-51: tokens and cost per role as a low, likely and high range. A role on a local model
+// shows tokens only, and an estimate of local roles only totals in tokens; a mix shows each role in
+// its unit and the total in both. A cloud model without a price shows its cost as unknown, never as
+// free, and the total then reads "at least" (RF-427).
 
 const columnTitles: Readonly<Record<Scenario, string>> = {
   low: 'Low',
   likely: 'Likely',
   high: 'High',
 };
-
-function tokens(count: number): string {
-  return `${count.toLocaleString('en-US')} tokens`;
-}
 
 function RoleRow({ role }: { readonly role: RoleEstimate }): JSX.Element {
   return (
@@ -34,7 +35,9 @@ function RoleRow({ role }: { readonly role: RoleEstimate }): JSX.Element {
       {scenarios.map((scenario) => (
         <td key={scenario} class="rst-table__number" data-label={columnTitles[scenario]}>
           <div>{roleCost(role, scenario)}</div>
-          <div class="rst-table__sub">{tokens(totalTokens(role, scenario))}</div>
+          {isLocalModel(role.kind) ? null : (
+            <div class="rst-table__sub">{tokensText(totalTokens(role, scenario))}</div>
+          )}
         </td>
       ))}
     </tr>
@@ -43,6 +46,7 @@ function RoleRow({ role }: { readonly role: RoleEstimate }): JSX.Element {
 
 function TotalRow({ estimate }: { readonly estimate: RunEstimate }): JSX.Element {
   const incomplete = unpricedRoles(estimate).length > 0;
+  const local = isLocalEstimate(estimate);
   return (
     <tr>
       <th scope="row">
@@ -51,12 +55,14 @@ function TotalRow({ estimate }: { readonly estimate: RunEstimate }): JSX.Element
       <td />
       {scenarios.map((scenario) => {
         const amount = dollars(pricedTotal(estimate, scenario));
+        const count = tokensText(totalTokens(estimate.total, scenario));
+        const main = incomplete ? `at least ${amount}` : amount;
         return (
           <td key={scenario} class="rst-table__number" data-label={columnTitles[scenario]}>
             <div>
-              <strong>{incomplete ? `at least ${amount}` : amount}</strong>
+              <strong>{local ? count : main}</strong>
             </div>
-            <div class="rst-table__sub">{tokens(totalTokens(estimate.total, scenario))}</div>
+            {local ? null : <div class="rst-table__sub">{count}</div>}
           </td>
         );
       })}
@@ -75,6 +81,8 @@ function IncompleteNote({ estimate }: { readonly estimate: RunEstimate }): JSX.E
     </p>
   );
 }
+
+const areasText = (count: number): string => `${String(count)} ${count === 1 ? 'area' : 'areas'}`;
 
 // RF-425
 export function EstimateTable({ estimate }: { readonly estimate: RunEstimate }): JSX.Element {
@@ -105,8 +113,8 @@ export function EstimateTable({ estimate }: { readonly estimate: RunEstimate }):
       </div>
       <IncompleteNote estimate={estimate} />
       <p class="rst-settings__note">
-        Assumptions: {estimate.areas.length} areas, {assumptions.turnsPerArea.likely} turns per area
-        (likely), price table {estimate.priceTableVersion} ({estimate.currency}).
+        Assumptions: {areasText(estimate.areas.length)}, {assumptions.turnsPerArea.likely} turns per
+        area (likely), price table {estimate.priceTableVersion} ({estimate.currency}).
       </p>
     </>
   );

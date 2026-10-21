@@ -1,6 +1,13 @@
 import type { JSX } from 'preact';
 import { Button } from '../components/Button.js';
-import { dollars, pricedTotal, unpricedRoles } from '../lib/estimate-math.js';
+import {
+  dollars,
+  isLocalEstimate,
+  pricedTotal,
+  tokensText,
+  totalTokens,
+  unpricedRoles,
+} from '../lib/estimate-math.js';
 import { chosenOf, plural } from './area-selection.js';
 import type { StartForm } from './use-start-form.js';
 
@@ -12,6 +19,9 @@ function estimateText(form: StartForm, chosenAreas: number): string | undefined 
   const { estimate } = form.choice;
   if (chosenAreas === 0) return undefined;
   if (estimate.status !== 'ready') return undefined;
+  if (isLocalEstimate(estimate.estimate)) {
+    return `Likely ${tokensText(totalTokens(estimate.estimate.total, 'likely'))}`;
+  }
   const more = unpricedRoles(estimate.estimate).length > 0 ? ' or more' : '';
   return `Likely ${dollars(pricedTotal(estimate.estimate, 'likely'))}${more}`;
 }

@@ -51,6 +51,7 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
         cap={{
           text: form.capText,
           capMicros: form.capMicros,
+          capTokens: form.project.settings.budget.run.maxTokens,
           error: actions.refusals.cap,
           onInput: form.setCapText,
           threshold: {

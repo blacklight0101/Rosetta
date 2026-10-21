@@ -186,6 +186,9 @@ the decision log.
 | Q-49 | How does the run page show a run with no Supported claim and a failed area (RF-615, RF-231)?                                                                          | Product owner                      | P3 (P3-76)                             | The questions step is Locked like the later steps; a failed area shows its code's next step; counts read as sentences; no empty `(root)` area in a workbook project                                                                                                                                      | Default applies                                                                                                                                                                                                    |
 | Q-50 | Does a reader that answers after reading little of its area keep reading (RF-206)?                                                                                    | Product owner                      | P3 (P3-78)                             | Yes: below half of the area's first-party tokens and with turns left, the answer is refused once with the unread files (formulas, macros and the largest first); the next answer is accepted                                                                                                             | Default applies                                                                                                                                                                                                    |
 | Q-51 | How does the start page estimate read when the roles run on a local model (RF-425)?                                                                                   | Product owner                      | P3 (P3-79)                             | In tokens, with the cap sentence in the unit of the cap, like Plan setup and the Deepen panel (Q-44); priced roles keep dollars                                                                                                                                                                          | Default applies                                                                                                                                                                                                    |
+| Q-52 | Are duplicate cards of one area, or of the rounds of a Deepen, merged (RF-250, RF-243)?                                                                               | Product owner                      | P3 (P3-80)                             | Yes: the summariser is asked about a type once two reader tasks wrote it, in one area too; `SCRN` and `FEAT` become mergeable; equal questions of one area are merged                                                                                                                                    | Default applies                                                                                                                                                                                                    |
+| Q-53 | What does "What was not covered" say when first-party files were not read (RF-264)?                                                                                   | Product owner                      | P3 (P3-81)                             | The number of files, the share of tokens not read and the largest files, with the Deepen as the next step                                                                                                                                                                                                | Default applies                                                                                                                                                                                                    |
+| Q-54 | How are the task cards of a plan or gap answer read when a small model writes positions as objects (RF-627, RF-630)?                                                  | Product owner                      | P3 (P3-82)                             | An object with a numeric `position` is read as that number; every card left out is logged with the reason; the gap answer gets one repair attempt before its gaps are reported                                                                                                                           | Default applies                                                                                                                                                                                                    |
 
 ## 5. Functional requirements (R1)
 
@@ -710,19 +713,21 @@ As a developer I want my answers used when areas are analysed again so that the 
 
 **RF-242 Answer interactively** - Withdrawn 2026-10-11 - see RF-1007 (DEC-59)
 
-**RF-243 Questions only the code cannot answer** - R1 (M1) - Must - Source DEC-136, Q-46 - ADR-005
+**RF-243 Questions only the code cannot answer** - R1 (M1) - Must - Source DEC-136, Q-46, Q-52 - ADR-005
 As a developer who does not know the legacy application I want to be asked only what the code cannot tell so that my answers add knowledge instead of doing the agents' reading.
 
 - Given an `OQ` card, when it is parsed, then it must say what the code shows, cite the code that raised the question, and ask about something outside the code: business intent, the reason for a rule, an external system, data volumes or who uses a feature; a question asking what the code, an area or the application does is refused with the repair message telling the agent to read instead.
 - Given an `OQ` card that asks for a value, a formula, a count, a list of columns or headers, or whether two parts of the workbook or code match (Q-46, default applies), when it is parsed, then it is refused with the repair message telling the agent to read the file that holds the answer; the reader prompt gives examples of questions to read instead of asking.
 - Given questions from several areas, when the run ends, then duplicates are merged keeping every citation, and the questions are grouped by the feature or area they concern and ordered by how much of the specification depends on them.
+- Given two open questions of one area that ask the same thing (Q-52), when the run ends, then they are merged like the duplicates of several areas.
 - Given a run on third-party or generated code only, when an agent finds no application logic, then it writes no `OQ` card; the coverage notes "no application logic".
   Verification: unit test of the refusal rule with example questions; integration test with recorded responses.
 
-**RF-250 Consolidate cards across areas** - R1 - Should - Source interview 2026-10-09 - ADR-005
+**RF-250 Consolidate cards across areas** - R1 - Should - Source interview 2026-10-09, Q-52 - ADR-005
 As a developer I want duplicate entities and rules found by several agents merged so that the specification has no repeats.
 
 - Given cards from several areas describing the same entity or rule, when consolidation runs with the `summariser` role, then they are merged into one card keeping every citation, and the merge is recorded.
+- Given cards of one type written by two reader tasks of the same area, or by two rounds of a Deepen (Q-52, default applies), when consolidation runs, then the summariser is asked about them as it is about cards of several areas; `SCRN` and `FEAT` cards are merged like `BR` and `ENT` (a merged screen keeps every field, action and validation with its citations); `FLOW` cards are not merged.
   Verification: integration test with recorded responses.
 
 **RF-260 Flow cards** - R1 - Must - Source DEC-134 - ADR-005
@@ -757,12 +762,13 @@ As a reader I want `spec.md` to present the new material next to the existing ca
 - Given the new card types, when the run estimate is shown (RF-427), then it includes them; no new model role is added.
   Verification: snapshot test of `spec.md`.
 
-**RF-264 Overview of the application before any question** - R1 (M1) - Must - Source DEC-136 - ADR-005
+**RF-264 Overview of the application before any question** - R1 (M1) - Must - Source DEC-136, Q-53 - ADR-005
 As a developer who has never seen the legacy application I want Rosetta to explain what the application does before it asks me anything so that I can understand the output and answer well.
 
 - Given an understand run that has ended, when its results are written, then the `summariser` role writes `overview.md` from the cards whose citations passed: what the application is in two or three sentences, who uses it, its main features, screens, data and integrations, each statement linking its cards, and what the run could not cover; it holds no statement without a card.
 - Given the run page, the specification and the report, when they are opened after the run, then the overview comes first and the open questions come after it, each linked to the overview section it concerns.
 - Given a run whose cards are too few to explain the application (for example most areas were third-party code), when the overview is written, then it says so plainly and suggests the next step (a new scan, or more areas) instead of guessing.
+- Given an ended understand run that left first-party files not read (Q-53, default applies), when "What was not covered" is shown on the run page, in the overview or in the report, then it gives the number of files not read, the share of first-party tokens not read and the largest files, with the Deepen as the next step; "Every area of the run gave at least one card." is shown only when every first-party file was read.
   Verification: integration test with recorded responses; snapshot test of `overview.md`; end-to-end test of the order on the run page.
 
 ### 5.4 Verifier (RF-300..RF-399)
@@ -1167,12 +1173,13 @@ As a designer and a front-end developer I want the target screens planned so tha
 - Given a card written before screens were checked this way (no derived claim of that kind on the card), when the package is written, then its fields are drawn marked "not checked" and none is sent to the planner; its route, roles and links are shown as before.
   Verification: structure test (every `SCRN` card is mapped); the wireframes pass an HTML check with no script, no event attribute and no external resource.
 
-**RF-627 Implementation plan** - R1 - Must - Source DEC-134, Q-45 - ADR-018
+**RF-627 Implementation plan** - R1 - Must - Source DEC-134, Q-45, Q-54 - ADR-018
 As a modernisation team I want an implementation plan that covers every document of the package so that nothing in it is left without work.
 
 - Given the package, when the plan is written, then the roadmap (RF-601) has phases with exit criteria and the task cards cover the whole set: every PRD feature, every target table, every API operation, every target flow and every main screen is named by at least one task card, and each card links the items it builds.
 - Given an item no card covers, when the package is checked, then it is listed as a gap in the package's checks file and the run is not reported as complete.
 - Given items no card covers after the planner's answer (Q-45, default applies), when the package is checked, then the planner gets one more call that lists only the uncovered items and asks for task cards that build them; the gaps left after that call are listed as above.
+- Given a plan or gap answer whose task cards give `requirements` or `dependsOn` positions as objects with a numeric `position` (Q-54, default applies), when it is parsed, then the numbers are read; every card left out of the answer is logged with its position and the reason, never with answer text; when the gap answer leaves out cards that named a gap, the planner gets one repair attempt listing the problems, through the budget and context guards, before the gaps are reported.
   Verification: structure test of the coverage of the plan.
 
 **RF-630 Task cards an agent can build without guessing** - R1 - Must - Source DEC-135 - ADR-018

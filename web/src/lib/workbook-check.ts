@@ -18,6 +18,17 @@ function typeOf(fileName: string): string {
   return extension.exec(fileName)?.groups?.['type']?.toLowerCase() ?? '';
 }
 
+/**
+ * RF-158: the short reason a file will not be uploaded, for the file list; undefined when the file
+ * itself is fine (a set can still be refused as a whole).
+ */
+export function refusalLabel(file: File): string | undefined {
+  const type = typeOf(file.name);
+  if (type === 'xls' || type === 'xlsb') return 'Older format';
+  if (type !== 'xlsx' && type !== 'xlsm') return 'Not a workbook';
+  return file.size === 0 ? 'Empty' : undefined;
+}
+
 function fileProblem(file: File): string | undefined {
   const type = typeOf(file.name);
   if (type === 'xls' || type === 'xlsb') {
