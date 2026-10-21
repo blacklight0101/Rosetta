@@ -77,21 +77,56 @@ describe('decideOnce: the style', () => {
 
     expect(restated).toEqual([]);
   });
+});
 
-  it('RF-608 finds the chosen style in the text of the decision as well as in its title', () => {
-    const { restated } = decided({ architecture: { style: 'hexagonal' } }, [
-      decision('Structure of the code', 'Use ports and adapters around the core.'),
+describe('decideOnce: only the title counts', () => {
+  it('RF-608 keeps a decision whose text mentions a choice of the brief but whose title is about something else', () => {
+    const { restated } = decided(
+      {
+        architecture: { style: 'layered' },
+        stack: [{ layer: 'database', choice: 'PostgreSQL 17', custom: false }],
+      },
+      [
+        decision('Store VAT as a fraction in PostgreSQL', 'VAT is a fraction.'),
+        decision('Use layered error handling', 'Each layer wraps the error of the one below.'),
+        decision('Number invoices inside one database transaction'),
+        decision("Take today's date from a clock port"),
+        decision('Architecture style selection', 'Something else.'),
+      ],
+    );
+
+    expect(restated).toEqual([]);
+  });
+
+  it('RF-610 drops the rewrite with one cut-over and keeps a rewrite of one part', () => {
+    const { restated } = decided({ migration: 'rewrite' }, [
+      decision('Rewrite with one cut-over after a comparison'),
+      decision('Rewrite the pricing rules in the new language'),
     ]);
 
-    expect(restated).toEqual([{ title: 'Structure of the code', record: 'ADR-001' }]);
+    expect(restated.map((each) => each.title)).toEqual([
+      'Rewrite with one cut-over after a comparison',
+    ]);
   });
 });
 
-describe('decideOnce: only whole words count', () => {
-  it('RF-608 does not find the style inside a longer word or across the title and the text', () => {
+describe('decideOnce: a layer named in the title', () => {
+  it('RF-609 drops a title that names the technology with its layer, even without a verb', () => {
+    const answers: BriefAnswers = {
+      stack: [{ layer: 'backend-framework', choice: 'ASP.NET Core Razor Pages', custom: true }],
+    };
+
+    const { restated } = decided(answers, [
+      decision('ASP.NET Core Razor Pages for Backend'),
+      decision('Razor Pages views stay thin'),
+    ]);
+
+    expect(restated.map((each) => each.title)).toEqual(['ASP.NET Core Razor Pages for Backend']);
+  });
+
+  it('RF-608 does not find the style inside a longer word', () => {
     const { restated } = decided({ migration: 'strangler-fig' }, [
       decision('Multilayered caching', 'Cache in two layers.'),
-      decision('Retire the strangler', 'Fig trees are not code.'),
     ]);
 
     expect(restated).toEqual([]);

@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { loadPlannerPrompt } from '../../../src/infrastructure/prompts/prompt-files.js';
 import { describe, expect, it } from 'vitest';
 import { decisionsOf, packageOf, plain } from '../../support/plan-method-harness.js';
 import { recordingOf } from '../../support/fake-recordings.js';
@@ -123,6 +124,12 @@ describe('RF-610 RF-609 the migration and the stack are written once', () => {
 });
 
 describe('RF-608 the planner prompt says the brief already has its records', () => {
+  it('RF-608 RNF-004 the planner prompt the run loads is package.v5.md at version v5', async () => {
+    const file = await loadPlannerPrompt('prompts');
+
+    expect(file).toMatchObject({ name: 'planner/package.v5.md', version: 'v5' });
+  });
+
   it('RF-608 package.v5.md tells the planner not to write the brief choices again', async () => {
     const prompt = await readFile('prompts/planner/package.v5.md', 'utf8');
 
