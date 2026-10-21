@@ -61,7 +61,7 @@ it('RF-623 writes a table column formula with its column, its formula once and t
     '- Table column: InvoiceTable, "Agreed Amount Total"',
     '- Formula: `[Amount Line 1]+[Amount Line 2]+[Amount Line 3]`',
     '- Cached results: G8 = 175; G9 = 186; G10 = 197',
-    `- Lines: ${SHEET.replaceAll('_', '\\_')}/formulas.md:4-9`,
+    `- Lines: ${SHEET.replaceAll('_', '\\_')}/formulas.md:4\\-9`,
   ]);
 });
 

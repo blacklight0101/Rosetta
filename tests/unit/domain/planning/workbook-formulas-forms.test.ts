@@ -65,17 +65,17 @@ it('RF-152 does not read a function name or a quoted text as a cell', () => {
 
 it('RF-153 writes the references to the row of a table as column names, in every form', () => {
   const rows = rowsOf([
-    ...column('A', ['T1[@Price]*2', 'T1[@Price]*2']),
-    ...column('B', ['T1[@[Unit Price]]+1', 'T1[@[Unit Price]]+1']),
-    ...column('C', ['SUM(T1[[#This Row],[Q1]:[Q4]])', 'SUM(T1[[#This Row],[Q1]:[Q4]])']),
-    ...column('D', ['"T1[@Price]"&T2[Total]', '"T1[@Price]"&T2[Total]']),
+    ...column('A', ['Tbl[@Price]*2', 'Tbl[@Price]*2']),
+    ...column('B', ['Tbl[@[Unit Price]]+1', 'Tbl[@[Unit Price]]+1']),
+    ...column('C', ['SUM(Tbl[[#This Row],[Q1]:[Q4]])', 'SUM(Tbl[[#This Row],[Q1]:[Q4]])']),
+    ...column('D', ['"Tbl[@Price]"&Tbm[Total]', '"Tbl[@Price]"&Tbm[Total]']),
   ]);
 
   expect(rows.map((row) => row.formula)).toEqual([
     '[Price]*2',
     '[Unit Price]+1',
     'SUM([Q1]:[Q4])',
-    '"T1[@Price]"&T2[Total]',
+    '"Tbl[@Price]"&Tbm[Total]',
   ]);
 });
 
@@ -160,4 +160,117 @@ it('RF-152 keeps at most the given rows and counts the ones left out', () => {
 
   expect(limited.rows.map((row) => row.id)).toEqual(['F-001', 'F-002', 'F-003']);
   expect(limited).toMatchObject({ omitted: 1, unread: 2 });
+});
+
+const oneFile = (path: string, lines: readonly string[]) =>
+  workbookFormulasOf([{ path, text: ['# Formulas of sheet "S"', ...lines, ''].join('\n') }], {
+    unread: 0,
+  }).rows;
+
+it('RF-152 counts the cells of a shared formula from its range when the heading gives no count', () => {
+  const rows = oneFile('B.xlsx/S/formulas.md', [
+    '',
+    '## Region D2:E3 (shared formula)',
+    'D2:E3 = 1+1    [written for D2; cached D2: 2]',
+    '',
+    '## Region F2 (shared formula)',
+    'F2 = 2+2    [written for F2]',
+  ]);
+
+  expect(rows.map((row) => [row.range, row.cells, row.cached.length])).toEqual([
+    ['D2:E3', 4, 1],
+    ['F2', 1, 0],
+  ]);
+});
+
+it('RF-152 counts one cell for an array formula whose range cannot be read', () => {
+  const rows = oneFile('B.xlsx/S/formulas.md', [
+    '',
+    '## Array formulas',
+    'nonsense {= 1+1}    [array]',
+    'A1:nonsense {= 2+2}    [array]',
+  ]);
+
+  expect(rows.map((row) => [row.range, row.cells])).toEqual([
+    ['nonsense', 1],
+    ['A1:nonsense', 1],
+  ]);
+});
+
+it('RF-152 names the workbook by the folder of a sheet that has no workbook folder above it', () => {
+  const [row] = oneFile('Book.xlsx/formulas.md', [
+    '',
+    '## Single cells (1 formula)',
+    'A1 = 1    [cached: 1]',
+  ]);
+
+  expect(row).toMatchObject({ workbook: 'Book.xlsx', folder: 'Book.xlsx', sheet: 'S' });
+});
+
+it('RF-152 reads a cached boolean, error and text, and a formula stored without a result', () => {
+  const rows = oneFile('B.xlsx/S/formulas.md', [
+    '',
+    '## Single cells (4 formulas)',
+    'A1 = 1=1    [cached: TRUE]',
+    'A2 = NA()    [cached: #N/A]',
+    'A3 = "x"    [cached: abc]',
+    'A4 = 1    [no cached value]',
+    'A5 = 1    [cached: "unterminated]',
+  ]);
+
+  expect(rows.map((row) => row.cached)).toEqual([
+    [{ address: 'A1', kind: 'plain', text: 'TRUE' }],
+    [{ address: 'A2', kind: 'plain', text: '#N/A' }],
+    [{ address: 'A3', kind: 'text', text: 'abc' }],
+    [],
+    [{ address: 'A5', kind: 'text', text: '"unterminated' }],
+  ]);
+});
+
+it('RF-152 reads a quoted table name in a heading and in the note of a single formula', () => {
+  const rows = oneFile('B.xlsx/S/formulas.md', [
+    '',
+    '## Region A2:A3 (2 formulas), "My \\"table\\"" column "Total"',
+    'A2 = 1    [cached: 1]',
+    'A3 = 1    [cached: 1]',
+    '',
+    '## Single cells (1 formula)',
+    'C2 = 1    ["Odd table" column "Qty"; cached: 1]',
+  ]);
+
+  expect(rows.map((row) => [row.table, row.column])).toEqual([
+    ['My "table"', 'Total'],
+    ['Odd table', 'Qty'],
+  ]);
+});
+
+it('RF-152 ignores lines outside a section, a heading it does not read and a section after a gap', () => {
+  const rows = oneFile('B.xlsx/S/formulas.md', [
+    'A1 = 0    [cached: 0]',
+    '',
+    '## Something else',
+    'A2 = 0    [cached: 0]',
+    '',
+    '## Single cells (1 formula)',
+    'A3 = 3    [cached: 3]',
+    '',
+    'A4 = 4    [cached: 4]',
+    'a stray line',
+  ]);
+
+  expect(rows.map((row) => row.range)).toEqual(['A3']);
+});
+
+it('RF-152 reads a table column given with a malformed name as no table column', () => {
+  const rows = oneFile('B.xlsx/S/formulas.md', [
+    '',
+    '## Region A2:A3 (2 formulas), "bad column "Total"',
+    'A2 = 1    [cached: 1]',
+    'A3 = 1    [cached: 1]',
+    '',
+    '## Single cells (1 formula)',
+    'C2 = 1    ["T" column "bad\\q"; cached: 1]',
+  ]);
+
+  expect(rows.map((row) => row.table)).toEqual([undefined, undefined]);
 });

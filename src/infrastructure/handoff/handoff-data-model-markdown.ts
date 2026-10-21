@@ -8,8 +8,10 @@ import type {
   TargetDataModel,
 } from '../../domain/planning/data-model.js';
 import { fenced } from '../cards/flow-diagram-section.js';
+import type { FormulaRow } from '../../domain/planning/workbook-formulas.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import type { TextMasker } from '../guards/secret-masker.js';
+import { calculatedMark } from './handoff-formulas-markdown.js';
 import { handoffFiles, idLink } from './handoff-links.js';
 
 // RF-623, RF-603, RF-602, ADR-013: `data-model.md` of the hand-off package, the target data model
@@ -19,15 +21,22 @@ import { handoffFiles, idLink } from './handoff-links.js';
 // the file holds no executable DDL (names and types are checked by the domain, everything else is
 // escaped inline text). Model text goes through the escaper, which masks it first.
 
-function legacyText(legacy: LegacySource | null, esc: MarkdownEscaper): string {
+/** P3-94: the formula rows of the calculated table column a legacy source names; none without workbook formulas. */
+type CalculatedBy = (legacy: LegacySource) => readonly FormulaRow[];
+
+function legacyText(
+  legacy: LegacySource | null,
+  esc: MarkdownEscaper,
+  calculated: CalculatedBy,
+): string {
   if (legacy === null) return 'new';
   const link = idLink(legacy.cardId, handoffFiles.sources);
-  return `${link} ${esc.inline(`${legacy.claimId}: ${legacy.field}`)}`;
+  return `${link} ${esc.inline(`${legacy.claimId}: ${legacy.field}`)}${calculatedMark(calculated(legacy))}`;
 }
 
-function columnRow(column: ModelColumn, esc: MarkdownEscaper): string {
+function columnRow(column: ModelColumn, esc: MarkdownEscaper, calculated: CalculatedBy): string {
   const nullable = column.nullable ? 'yes' : 'no';
-  return `| ${esc.inline(column.name)} | ${esc.inline(column.type)} | ${nullable} | ${legacyText(column.legacy, esc)} |`;
+  return `| ${esc.inline(column.name)} | ${esc.inline(column.type)} | ${nullable} | ${legacyText(column.legacy, esc, calculated)} |`;
 }
 
 function list(columns: readonly string[], esc: MarkdownEscaper): string {
@@ -57,7 +66,7 @@ function indexLines(table: ModelTable, esc: MarkdownEscaper): string[] {
   });
 }
 
-function tableSection(table: ModelTable, esc: MarkdownEscaper): string[] {
+function tableSection(table: ModelTable, esc: MarkdownEscaper, calculated: CalculatedBy): string[] {
   const built =
     table.sources.length === 0
       ? 'Built from: no legacy entity (a new table)'
@@ -71,7 +80,7 @@ function tableSection(table: ModelTable, esc: MarkdownEscaper): string[] {
     '',
     '| Column | Type | Nullable | Legacy source |',
     '|---|---|---|---|',
-    ...table.columns.map((column) => columnRow(column, esc)),
+    ...table.columns.map((column) => columnRow(column, esc, calculated)),
     '',
     'Keys and constraints:',
     '',
@@ -142,6 +151,7 @@ export function dataModelMarkdown(
   model: TargetDataModel,
   esc: MarkdownEscaper,
   masker: TextMasker,
+  calculated: CalculatedBy = () => [],
 ): string {
   const diagram =
     model.tables.length === 0 ? [] : fenced(targetModelDiagram(model, (t) => masker.mask(t).text));
@@ -155,7 +165,7 @@ export function dataModelMarkdown(
     ...(model.tables.length === 0
       ? [noTableText(model), '']
       : ['## Entity-relationship diagram', '', ...diagram, '## Tables', '']),
-    ...model.tables.flatMap((table) => tableSection(table, esc)),
+    ...model.tables.flatMap((table) => tableSection(table, esc, calculated)),
     ...droppedSection(model, esc),
     ...riskSection(model, esc),
   ].join('\n');

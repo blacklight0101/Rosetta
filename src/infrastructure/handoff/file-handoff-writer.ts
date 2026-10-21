@@ -5,7 +5,7 @@ import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { byCodeUnit } from '../../domain/code-map/code-unit-order.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import { markdownEscaper } from '../cards/markdown-text.js';
+import { markdownEscaper, type MarkdownEscaper } from '../cards/markdown-text.js';
 import { runPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { checksMarkdown } from './handoff-checks-markdown.js';
@@ -16,6 +16,7 @@ import { withIncompleteNotice } from './handoff-incomplete-markdown.js';
 import { openApiYaml } from './handoff-openapi-yaml.js';
 import { agentsMarkdown, conventionsMarkdown } from './handoff-method-markdown.js';
 import { fixturesMarkdown } from './handoff-fixtures-markdown.js';
+import { columnFormulas, workbookFormulasMarkdown } from './handoff-formulas-markdown.js';
 import { prdMarkdown } from './handoff-prd-markdown.js';
 import {
   openQuestionsMarkdown,
@@ -56,6 +57,25 @@ function apiContractFile(handoff: HandoffPackage, masker: TextMasker): Record<st
     : {};
 }
 
+/** The files only some packages have: the workbook formulas (P3-94) and `AGENTS.md` of an AI-assisted build. */
+function optionalFiles(
+  handoff: HandoffPackage,
+  esc: MarkdownEscaper,
+  masker: TextMasker,
+): Record<string, string> {
+  const { workbookFormulas, brief } = handoff;
+  return {
+    ...(workbookFormulas === undefined
+      ? {}
+      : {
+          [handoffFiles.workbookFormulas]: workbookFormulasMarkdown(workbookFormulas, esc, masker),
+        }),
+    ...(brief.buildMethod.aiAssisted
+      ? { [handoffFiles.agents]: agentsMarkdown(handoff, esc) }
+      : {}),
+  };
+}
+
 /** Every file of the package by its path inside `handoff/`. */
 // RF-601, RF-603
 export function renderHandoff(
@@ -85,7 +105,12 @@ export function renderHandoff(
     [handoffFiles.flows]: flowsIndexMarkdown(handoff, esc),
     ...flows,
     [handoffFiles.entities]: entityMappingMarkdown(handoff, esc),
-    [handoffFiles.dataModel]: dataModelMarkdown(handoff.dataModel, esc, masker),
+    [handoffFiles.dataModel]: dataModelMarkdown(
+      handoff.dataModel,
+      esc,
+      masker,
+      columnFormulas(handoff),
+    ),
     ...apiContractFile(handoff, masker),
     ...uxFiles(handoff, esc, masker),
     [handoffFiles.roadmap]: roadmapMarkdown(handoff, esc),
@@ -96,9 +121,7 @@ export function renderHandoff(
     [handoffFiles.checks]: checksMarkdown(handoff, esc),
     [handoffFiles.conventions]: conventionsMarkdown(handoff, esc),
     [handoffFiles.fixtures]: fixturesMarkdown(handoff, esc),
-    ...(handoff.brief.buildMethod.aiAssisted
-      ? { [handoffFiles.agents]: agentsMarkdown(handoff, esc) }
-      : {}),
+    ...optionalFiles(handoff, esc, masker),
   };
   return withIncompleteNotices(handoff, files);
 }
