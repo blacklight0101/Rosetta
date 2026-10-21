@@ -33,6 +33,9 @@ export interface ReaderPrompts {
 
   /** `reader/read-first.v<n>.md`: refuses an answer given before any file of the area was read (RF-206). */
   readonly readFirst: PromptFile;
+
+  /** `reader/read-more.v<n>.md`: refuses once an answer given after reading little of the area (Q-50). */
+  readonly readMore: PromptFile;
 }
 
 /** RF-260, RF-261: the two card types a marked area may also write, one prompt fragment each. */
@@ -107,6 +110,20 @@ export function readFirstMessage(
     .replace(readerPlaceholders.readFirstTurns, String(turns))
     .replace(readerPlaceholders.readFirstFiles, () => filesBlock)
     .trimEnd();
+}
+
+/** What the read-more refusal tells the reader (P3-78). */
+export interface ReadMoreFacts {
+  readonly percent: number;
+  readonly readTokens: number;
+  readonly tokens: number;
+  readonly filesBlock: string;
+  readonly turns: number;
+}
+
+/** Q-50: the refusal of an answer given after reading little of the area. */
+export function readMoreMessage(prompts: ReaderPrompts, facts: ReadMoreFacts): string {
+  return `${prompts.readMore.text}${String(facts.percent)}`;
 }
 
 /** The fragments an area with these marks gets, flows first. */

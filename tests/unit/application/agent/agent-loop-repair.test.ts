@@ -91,6 +91,7 @@ describe('runAgentTask stop between tool calls', () => {
       definitions: base.tools.definitions,
       areaOverview: () => base.tools.areaOverview(),
       readableAreaFiles: () => base.tools.readableAreaFiles(),
+      readableAreaEntries: () => base.tools.readableAreaEntries(),
       renderBlock: (source, text) => base.tools.renderBlock(source, text),
       rowSpans: (path) => base.tools.rowSpans(path),
       run: async (call, ids) => {
