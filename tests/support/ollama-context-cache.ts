@@ -8,4 +8,6 @@ export function clearContextCache(cache: ContextCache): void {
   cache.auto.clear();
   cache.retryAt.clear();
   cache.fixedChecked.clear();
+  cache.trained.clear();
+  cache.grownWarned.clear();
 }

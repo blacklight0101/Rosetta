@@ -15,7 +15,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // before any run uses it.
 
 const readerPromptNames = {
-  system: 'reader/area.v5.md',
+  system: 'reader/area.v6.md',
   cardFormat: 'cards/card-format.v2.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
@@ -25,7 +25,7 @@ const readerPromptNames = {
 } as const;
 
 /** RF-155: added only to areas that hold a rendered workbook. */
-const workbookPromptName = 'reader/workbook.v3.md';
+const workbookPromptName = 'reader/workbook.v4.md';
 
 const answersPromptName = 'reader/answers.v1.md';
 const rereadPromptName = 'reader/reread.v3.md';
@@ -128,6 +128,12 @@ export function loadUxPrompt(promptsFolder: string): Promise<PromptFile> {
 // RNF-004
 export function loadCoveragePrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'planner/coverage.v1.md');
+}
+
+/** The planner's prompt for the task cards of the items no card builds (Q-45), checked and hashed. */
+// RNF-004
+export function loadGapPrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'planner/gap.v1.md');
 }
 
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {

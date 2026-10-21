@@ -30,6 +30,7 @@ import {
   loadPlannerPrompt,
   loadUxPrompt,
   loadCoveragePrompt,
+  loadGapPrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { ServerOptions } from '../../src/presentation/web/server.js';
@@ -117,6 +118,7 @@ export function projectServices(
       apiContractPrompt: () => loadApiContractPrompt('prompts'),
       uxPrompt: () => loadUxPrompt('prompts'),
       coveragePrompt: () => loadCoveragePrompt('prompts'),
+      gapPrompt: () => loadGapPrompt('prompts'),
     }),
   };
 }

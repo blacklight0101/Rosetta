@@ -88,8 +88,18 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
   the call timeout. A caller that stops while a measurement it shares is running ends at once as cancelled
   (`RST-1501`) and the measurement goes on for the other callers. A fixed number is sent unchanged; one warning is logged if `/api/ps` shows
   the model partly on the CPU; that check after the first call ends at once when the caller stops. The call log records `contextTokens` and `contextSource` (`auto-fit`, `auto-floor`,
-  `auto-model-limit`, `auto-fallback`, `fixed`; data-model section 3.10). Probe answers are capped at 4 MiB.
-- A prompt that does not fit the context fails with `RST-1522` for every role (DEC-155, ollama-prompt-guard.ts). The
+  `auto-model-limit`, `auto-fallback`, `auto-grown`, `fixed`; data-model section 3.10). Probe answers are capped at 4 MiB.
+- Growth of the automatic size (Q-48, P3-75). The automatic size is the largest that stays in GPU memory, which can be
+  smaller than a prompt needs (8 192 for `qwen3.5:9b`; the planner's 16 384 output tokens against 32 768). With `auto`,
+  when the prompt estimate plus `maxOutputTokens` is larger than the automatic size, the adapter sends the smallest
+  size, doubling from the automatic one and never above the trained context (the last step is the trained context
+  itself), that holds both (`OllamaContextResolver.grow`). The model then runs partly on the CPU and is slower, so one
+  warning is logged per server, model digest and size, and the call log and the run manifest record the size with the
+  source `auto-grown`. The cached automatic size is not changed (DEC-114), so a smaller prompt later is sent at the
+  automatic size again. The trained context is cached with the measurement; when `/api/show` failed or named none, the
+  size cannot grow and the refusal below is the message it was. A fixed `contextTokens` is never grown.
+- A prompt that does not fit the context fails with `RST-1522` for every role (DEC-155, ollama-prompt-guard.ts); with
+  `auto` that happens only when even the trained context is too small, and the message then says so (Q-48). The
   prompt is estimated at about four characters per token (RF-421) from every message sent, the tool calls in them and
   the tool definitions (the text protocol prompt counts in `text` mode). Before the call: when the estimate plus
   `maxOutputTokens` (0 when the call has none) is larger than the `num_ctx` sent, nothing is sent and the call fails;

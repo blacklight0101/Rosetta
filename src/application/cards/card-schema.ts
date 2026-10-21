@@ -3,6 +3,10 @@ import type { CardDraft } from '../../domain/cards/card-ids.js';
 import { CARD_TYPES, CONFIDENCES, type CardType } from '../../domain/cards/card-vocabulary.js';
 import { citation, ignoringCase, text } from './card-fields.js';
 import { asksWhatCodeDoes, codeQuestionRefusal } from '../../domain/cards/open-question.js';
+import {
+  asksWhatTheFileAnswers,
+  readFileQuestionRefusal,
+} from '../../domain/cards/open-question-reading.js';
 import { cardLimits } from './card-limits.js';
 import { flowSchema, screenSchema, stepSchemaFields } from './flow-screen-schema.js';
 
@@ -96,6 +100,8 @@ export const agentCardSchema = cardShape
     }
     if (value.question !== undefined && asksWhatCodeDoes(value.question)) {
       context.addIssue({ code: 'custom', path: ['question'], message: codeQuestionRefusal });
+    } else if (value.question !== undefined && asksWhatTheFileAnswers(value.question)) {
+      context.addIssue({ code: 'custom', path: ['question'], message: readFileQuestionRefusal });
     }
   })
   .transform(draftOf);

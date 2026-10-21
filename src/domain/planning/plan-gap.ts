@@ -1,0 +1,108 @@
+import { dependenciesOf, listedFiles, type OrderedCard } from './parallel-cards.js';
+import { planId, type PlanContent, type PlanTask } from './plan-content.js';
+import type { CoverageItem } from './plan-coverage.js';
+import type { DraftTask } from './plan-draft.js';
+import { cardProblem, type RiskClass } from './task-card-quality.js';
+
+// Q-45, RF-627, RF-630, ADR-013, ADR-018: the task cards the planner wrote for the items no card
+// builds, made into cards of the plan. The answer is untrusted: a draft is kept only when it is a
+// card an agent can build without guessing (RF-630), sits in a phase that exists, implements a
+// requirement when the plan is specification-driven (RF-607) and builds at least one item that
+// really is a gap. What it builds is cut to the gaps (an id that is no gap, covered or invented,
+// builds nothing) and listed in the order of the gaps. The kept cards take the ids after the last
+// card of the plan, in the order of the answer; what they wait for is worked out like the plan's
+// own cards (RF-634) over the whole plan. The cards that were there are not changed.
+
+/** A task card the planner wrote for the gaps: a draft task without needs, and the ids it builds. */
+export interface GapDraft extends Omit<DraftTask, 'needs'> {
+  readonly builds: readonly string[];
+}
+
+interface KeptDraft {
+  /** The draft's position in the answer, from 1. */
+  readonly position: number;
+  readonly draft: GapDraft;
+  readonly riskClass: RiskClass;
+  readonly requirements: readonly string[];
+  readonly builds: readonly string[];
+  readonly files: readonly string[];
+}
+
+export interface GapOptions {
+  /** RF-607: given SDD, a card that implements no requirement is not written. */
+  readonly specificationDriven?: boolean;
+}
+
+function unique<T>(items: readonly T[]): T[] {
+  return [...new Set(items)];
+}
+
+function keptDrafts(
+  content: PlanContent,
+  drafts: readonly GapDraft[],
+  uncovered: readonly CoverageItem[],
+  options: GapOptions,
+): KeptDraft[] {
+  return drafts.flatMap((draft, index) => {
+    const { riskClass } = draft;
+    if (draft.phase < 1 || draft.phase > content.phases.length) return [];
+    if (riskClass === undefined || cardProblem({ ...draft, riskClass }) !== undefined) return [];
+    const named = new Set(draft.builds);
+    const builds = uncovered.filter((each) => named.has(each.id)).map((each) => each.id);
+    const requirements = unique(
+      draft.requirements.flatMap((at) => content.requirements[at - 1]?.id ?? []),
+    );
+    if (builds.length === 0) return [];
+    if (options.specificationDriven === true && requirements.length === 0) return [];
+    const files = listedFiles(draft.files);
+    return [{ ...{ position: index + 1, draft, riskClass }, requirements, builds, files }];
+  });
+}
+
+/** What each card waits for, over the plan's cards and the new ones, as indexes into both. */
+function dependenciesOver(existing: readonly PlanTask[], kept: readonly KeptDraft[]): number[][] {
+  const old: OrderedCard[] = existing.map((task) => ({
+    ...{ phase: task.phase, files: task.files },
+    declared: task.dependsOn.flatMap((id) => {
+      const at = existing.findIndex((each) => each.id === id);
+      return at < 0 ? [] : [at];
+    }),
+  }));
+  const at = new Map(kept.map((each, index) => [each.position, existing.length + index]));
+  const added: OrderedCard[] = kept.map(({ draft, files }) => ({
+    ...{ phase: draft.phase, files },
+    declared: draft.dependsOn.flatMap((position) => at.get(position) ?? []),
+  }));
+  return dependenciesOf([...old, ...added]);
+}
+
+/**
+ * The plan with the task cards of the answer that are cards and build a gap, numbered after the
+ * last card; the plan as it was when there is none.
+ */
+// Q-45, RF-627, RF-630
+export function addGapTasks(
+  content: PlanContent,
+  drafts: readonly GapDraft[],
+  uncovered: readonly CoverageItem[],
+  options: GapOptions = {},
+): PlanContent {
+  const kept = keptDrafts(content, drafts, uncovered, options);
+  if (kept.length === 0) return content;
+  const first = content.tasks.length;
+  const ids = [
+    ...content.tasks.map((task) => task.id),
+    ...kept.map((_, at) => planId('T', first + at + 1)),
+  ];
+  const dependencies = dependenciesOver(content.tasks, kept);
+  const added = kept.map(({ draft, riskClass, requirements, builds, files }, at): PlanTask => {
+    const { title, phase, acceptanceCriteria, invariant, adds, probes } = draft;
+    return {
+      ...{ id: ids[first + at] ?? planId('T', first + at + 1), title, phase, requirements },
+      ...{ acceptanceCriteria, invariant, riskClass, adds, probes, files, builds },
+      identifiers: [],
+      dependsOn: (dependencies[first + at] ?? []).flatMap((on) => ids[on] ?? []),
+    };
+  });
+  return { ...content, tasks: [...content.tasks, ...added] };
+}

@@ -71,8 +71,8 @@ describe('the versions of the reader prompts', () => {
     const prompts = await loadReaderPrompts('prompts');
     const reread = await loadRereadPrompt('prompts');
 
-    expect(prompts.system).toMatchObject({ name: 'reader/area.v5.md', version: 'v5' });
-    expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v3.md', version: 'v3' });
+    expect(prompts.system).toMatchObject({ name: 'reader/area.v6.md', version: 'v6' });
+    expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v4.md', version: 'v4' });
     // P3-67: the re-read default moved on to v3, which keeps the rule (parent-cards-prompt-files.test.ts).
     expect(reread).toMatchObject({ name: 'reader/reread.v3.md', version: 'v3' });
   });

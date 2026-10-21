@@ -60,6 +60,25 @@ const technical = z.object({
     .default([]),
 });
 
+/** One task card of the planner's answer (RF-601, RF-630); the call for the gaps reads the same card (Q-45). */
+export const taskSchema = z.object({
+  title,
+  phase: position,
+  requirements: z.array(position).max(MAX_LIST).default([]),
+  acceptanceCriteria: texts.min(1),
+  invariant: optionalText,
+  riskClass: z.enum(riskClasses).optional().catch(undefined),
+  adds: z.array(z.enum(guardKinds)).max(guardKinds.length).default([]),
+  probes: texts.default([]),
+  files: z.array(path).max(MAX_LIST).default([]),
+  needs: z
+    .array(need.nullable().catch(null))
+    .max(MAX_LIST)
+    .transform((list) => list.flatMap((each) => (each === null ? [] : [each])))
+    .default([]),
+  dependsOn: z.array(position).max(MAX_LIST).default([]),
+});
+
 const answer = z.object({
   summary: optionalText,
   requirements: z
@@ -90,28 +109,7 @@ const answer = z.object({
     .array(z.object({ name: title, goal: text, exitCriteria: texts.min(1) }))
     .max(MAX_LIST)
     .default([]),
-  tasks: z
-    .array(
-      z.object({
-        title,
-        phase: position,
-        requirements: z.array(position).max(MAX_LIST).default([]),
-        acceptanceCriteria: texts.min(1),
-        invariant: optionalText,
-        riskClass: z.enum(riskClasses).optional().catch(undefined),
-        adds: z.array(z.enum(guardKinds)).max(guardKinds.length).default([]),
-        probes: texts.default([]),
-        files: z.array(path).max(MAX_LIST).default([]),
-        needs: z
-          .array(need.nullable().catch(null))
-          .max(MAX_LIST)
-          .transform((list) => list.flatMap((each) => (each === null ? [] : [each])))
-          .default([]),
-        dependsOn: z.array(position).max(MAX_LIST).default([]),
-      }),
-    )
-    .max(MAX_ITEMS)
-    .default([]),
+  tasks: z.array(taskSchema).max(MAX_ITEMS).default([]),
   risks: z
     .array(z.object({ text, sources: ids }))
     .max(MAX_LIST)
