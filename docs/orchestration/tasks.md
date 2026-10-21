@@ -3889,7 +3889,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-63, P3-68
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-615 and RF-1015 (the Q-44 scenarios), RF-627, RF-209, RF-231; Q-44; `web/src/lib/journey/`, `src/application/use-cases/get-journey.ts`, the run page stepper and Your turn panel, the Deepen panel, the Plan setup estimate. Found in the orchestrator's evaluation run of 2026-10-21 (Asset Manager workbook, Ollama `gemma4:e4b`).
 - **Do**: (1) once the brief is saved the journey's questions step is done ("1 question left on its default") and the next action moves on (estimate, plan, package); today one skipped question keeps "Questions: Current / Answer 1 question" even after a plan ran; (2) a plan run that wrote the package and ended RST-1806 shows the package step "Written with gaps" with links to the package and `checks.md`, not "Locked: the plan did not finish"; (3) a plan run page shows plan steps, not "Snapshot, Scan, Understand (stopped), Verify, Report"; (4) the Deepen panel and the plan estimate show tokens with a local model and do not warn that "$0.00 could pass the run cap"; (5) "1 claims left Unverified" reads "1 claim"; (6) "First-party files not read: 10 the largest are listed below" reads as a sentence; (7) the Deepen start line counts the parent's cards after consolidation (it said 34 while the parent shows 26).
 - **Review probes**: a brief saved with 1 question skipped (the journey moves on, the question can still be answered); a plan run ended RST-1806 (package step, download, checks link); a plan run page stepper; a local-model Deepen panel and plan estimate (tokens, no cap warning); a priced model (dollars, a warning when over); 1 and 2 Unverified claims; the Deepen start line after consolidation; 360 px, light and dark, axe.
@@ -3919,7 +3919,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-64
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-627 (the Q-45 scenario), RF-630, RF-421, Q-45; `src/application/plan/` (the package check that raises RST-1806, `build-plan.ts`), the planner prompts in `prompts/planner/`, the plan estimate. Found in the orchestrator's evaluation run of 2026-10-21: the package was written but 6 of 14 items (3 flows, 3 screens) were built by no task card, so the run ended RST-1806.
 - **Do**: when the check finds uncovered items, make one more planner call (a new prompt version) that lists only those items with their ids and asks for task cards that build them, merge the cards into the plan (ids after the last), check again, and report only the gaps left; add the call to the plan estimate; the call passes the budget guard and the Ollama context guard like every other.
 - **Review probes**: gaps closed by the extra call (the run completes, `checks.md` has no gap); gaps left (RST-1806 with only those); the extra call refused by the context guard or the cap (a clean RST-1522 or cap stop, the first package kept); the estimate includes the call; recorded responses only.
@@ -3934,7 +3934,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-66
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-243 (the Q-46 scenario), Q-46; the `OQ` refusal rule (search for the RF-243 repair message), `prompts/reader/` (the latest versions after P3-66 and P3-67). Found in the orchestrator's evaluation run of 2026-10-21: three of four open questions could be answered from the workbook ("Does the total number of sheets ... match ...", "What is the specific formula logic used in column F ...", "Are all the columns ... visible as headers ..."); only the meaning of the states was a real business question.
 - **Do**: extend the refusal rule to questions that ask for a value, a formula, a count, a list of columns or headers, or whether two parts match (written for code and for workbooks), with a repair message that tells the agent which file to read; add a short list of such examples to the reader prompts (new versions, the old kept); keep genuine questions about intent, reasons, external systems, volumes and users.
 - **Review probes**: the three evaluation questions refused; "What do REPAIR, DAMAGED and USABLE mean for the business?" kept; code-project questions ("What does this function return?") refused and "Why is the discount capped at 10%?" kept; the manifest records the new prompt versions; recorded responses only.
@@ -3964,7 +3964,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-64, P3-71
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-401 (the Q-48 scenario), DEC-114, DEC-155, Q-23, Q-48; `src/infrastructure/providers/ollama/ollama-context-resolver.ts`, `ollama-prompt-guard.ts`, `ollama-provider.ts`, the call log and the run manifest. Found in the orchestrator's evaluation run of 2026-10-21: with `auto`, `qwen3.5:9b` got 8 192 tokens (the largest size that stays in GPU memory) and the workbook reader failed RST-1522 before its first turn; the planner (`maxOutputTokens` 16 384) cannot fit its input into the auto 32 768 of `gemma4:e4b` either, so a default local setup cannot write a package.
 - **Do**: when the setting is `auto` and the prompt estimate plus the output reserve is larger than the automatic size, send the smallest size, doubling from the automatic one, that holds them, up to the model's trained context; log once per model and size that part of the model runs on the CPU and is slower; record the size and the source `auto-grown` in the call log and the manifest; RST-1522 only when even the trained context is too small, and its message says so; a fixed `contextTokens` is never changed.
 - **Review probes**: a prompt that fits the automatic size (unchanged); a prompt that needs one doubling (the larger size sent, the warning once, `auto-grown` recorded); a prompt larger than the trained context (RST-1522, nothing sent); a fixed size too small (RST-1522 as today); the planner with 16 384 output tokens against 32 768 (grows); recorded responses and a fake probe only.
@@ -3979,7 +3979,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-70
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-615 and RF-231 (the Q-49 scenario), RF-1015, Q-49; the journey (`web/src/lib/journey/`), the overview text that says "Only 0 card(s) from 0 of 2 area(s) passed the citation check", the "What was not covered" list, the area list of a workbook project. Found in the orchestrator's evaluation run of 2026-10-21 (`Loan.xlsx`, reader `qwen3.5:9b`): the run ended with no card, yet the journey showed "Questions: Done, No open questions"; the failed area showed only "failed (RST-1522)"; a `(root)` area with no workbook file was read and gave no card.
 - **Do**: (1) with no Supported claim the questions step is Locked like the steps after it ("Nothing to plan from"), not Done; (2) the overview counts read as sentences ("No card from 2 areas passed the citation check", "1 card from 1 of 2 areas"); (3) an area that failed with a code shows the code's next step from the error catalogue (for RST-1522 the Context size field); (4) a workbook project gets no `(root)` area when the root holds no workbook file.
 - **Review probes**: a run with no Supported claim (questions Locked); 0, 1 and 2 cards and areas worded; an area failed RST-1522 shows its next step; a workbook project's areas (no empty root); 360 px, light and dark, axe.
@@ -3994,7 +3994,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-71
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RNF-005, RF-405, DEC-106; `tests/e2e/admin-models.spec.ts`, `web/src/pages/AdminModelsPage.tsx` and the model list fetch of P3-65 and P3-71. Found by the orchestrator on 2026-10-21: the spec failed four times in CI (also on main at 15fbc831), at "DEC-106 asks for a model when a provider is chosen without one" (`locator.fill` on a model field that had become a dropdown) and at "RF-405 lists the models installed on Ollama and saves one" (`toHaveJSProperty('tagName', 'SELECT')`). Since P3-71 the page fetches the Ollama model list on load for the context bound, so a route mock set after `page.goto` and a field that turns from a text input into a dropdown when a list arrives make the steps race.
 - **Do**: make the spec deterministic without weakening it: set each route mock before the page loads the list, wait for the model field's final state (dropdown or text field with its note) before acting, and reset the shared default-models setting the steps change; fix the page only if it changes the field's type after a user has started typing.
 - **Review probes**: the spec passes 20 times in a row locally (`--repeat-each=20`) on the CI shard settings; every existing assertion kept; no fixed waits (`waitForTimeout`).
