@@ -24,6 +24,8 @@ export interface StartRequest {
   readonly privateCodeConfirmed?: boolean;
   /** `understand` only: re-run the areas of the answered questions with the answers (RF-241). */
   readonly withAnswers?: boolean;
+  /** `understand` only: the completed run whose failed areas `areas` reads again (RF-208, Q-43). */
+  readonly retryOf?: string;
 }
 
 /**

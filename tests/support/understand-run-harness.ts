@@ -105,6 +105,8 @@ export interface UnderstandHarness {
   readonly logger: MemoryLogger;
   readonly providers: UnderstandProviders;
   readonly runs: MemoryRunIndex;
+  /** The stores the runs read and write, for a test that reads them through a use case. */
+  readonly stores: Stores;
   /** Runs a scan of the project to its end. */
   scan(): Promise<Run>;
   /** Starts an understand run as the API does and waits for its end. */
@@ -146,7 +148,7 @@ function harnessOf(parts: HarnessParts): UnderstandHarness {
   const resume = resumerOf(s, queue);
   const deepen = deepenerOf(s, submit);
   return {
-    ...{ project, logger: s.logger, providers, runs: s.runs },
+    ...{ project, logger: s.logger, providers, runs: s.runs, stores: s },
     scan: () => start('scan', {}),
     understand: (extra = {}) => start('understand', extra),
     async answer(run, answers) {

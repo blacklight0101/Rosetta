@@ -1,7 +1,9 @@
 import type { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { RunOutcome } from '../ports/run-executor.js';
 import type { ProviderSet } from '../providers/provider-set.js';
-import type { UnderstandRoles } from './run-understand-types.js';
+import type { Rerun } from './answer-rerun.js';
+import type { RetryLink } from './retry-plan.js';
+import type { Prepared, UnderstandRoles } from './run-understand-types.js';
 
 // RF-200, RF-1108: the small steps of the understand executor: a failed end, a step that either
 // gives a value or ends the run, and the three roles an understand run calls.
@@ -24,4 +26,12 @@ export type Step<T> =
 
 export function stop(outcome: RunOutcome): { readonly ok: false; readonly outcome: RunOutcome } {
   return { ok: false, outcome };
+}
+
+/** The parts of a prepared run only some runs have: the re-run with answers and the retry (RF-241, RF-208). */
+export function optionalPartsOf(
+  rerun: Rerun | undefined,
+  retry: RetryLink | undefined,
+): Pick<Prepared, 'rerun' | 'retry'> {
+  return { ...(rerun === undefined ? {} : { rerun }), ...(retry === undefined ? {} : { retry }) };
 }

@@ -32,7 +32,7 @@ export function resumeSourceProblem(
 // RF-006
 export async function planRunTasks(
   results: TaskResults,
-  execution: RunExecution,
+  execution: Pick<RunExecution, 'run' | 'manifest'>,
   planned: readonly ReaderTask[],
 ): Promise<ResumePlan> {
   const { manifest, run } = execution;

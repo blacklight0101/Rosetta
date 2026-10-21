@@ -153,15 +153,18 @@ interface AreaNames {
  * The areas of the run, in order: its readers, then the listing's, then the code map's own areas the
  * run has no reader or entry for. Once the run's readers or listing say which areas it is about
  * (DEC-158), the own areas left over are not in this run and are kept apart; until then they wait
- * with the rest. Third-party areas are in neither list (RF-231).
+ * with the rest. Third-party areas are in neither list (RF-231). A run that retries the failed areas of
+ * another (RF-208) is about the areas it reads again alone: the areas it holds are not in this run.
  */
 function namesOf(
   reads: ReadonlyMap<string, unknown>,
   listing: CoverageListing | undefined,
   areas: readonly CodeAreaInfo[],
+  retried = false,
 ): AreaNames {
   const left = thirdPartyNames(listing, areas);
-  const chosen = listing === undefined ? [] : listing.areas.map((each) => each.area);
+  // RF-208: the listing of a retry also holds the areas of the run it retries; only its readers count.
+  const chosen = listing === undefined || retried ? [] : listing.areas.map((each) => each.area);
   const asked = [...new Set([...reads.keys(), ...chosen])];
   const own = listing === undefined ? [] : areas.map((each) => each.name);
   const rest = own.filter((name) => !asked.includes(name));
@@ -178,7 +181,7 @@ export function coverageOf(
   areas: readonly CodeAreaInfo[] = [],
 ): CoverageMap {
   const reads = readsByArea(state);
-  const names = namesOf(reads, listing, areas);
+  const names = namesOf(reads, listing, areas, state.retry !== undefined);
   const files = new Map(
     names.inRun.map((name) => [
       name,

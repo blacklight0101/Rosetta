@@ -5,6 +5,7 @@ import type { Project } from '../projects/project.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import type { VerifierPrompts } from '../verifier/verifier-prompts.js';
 import type { Rerun } from './answer-rerun.js';
+import type { RetryLink } from './retry-plan.js';
 import type { ResumePlan } from './resume-plan.js';
 import type { ReaderTask } from './reader-tasks.js';
 
@@ -22,6 +23,8 @@ export interface Prepared {
   /** RF-301: the prompts of the judgement step. */
   readonly verifierPrompts: VerifierPrompts;
   readonly rerun?: Rerun;
+  /** RF-208: the run this one retries; absent for any other run. */
+  readonly retry?: RetryLink;
 }
 
 export interface UnderstandRoles {

@@ -33,6 +33,8 @@ export interface UnderstandOptions {
   readonly withAnswers?: boolean;
   /** RF-209: present only for a Deepen run. */
   readonly deepen?: DeepenOptions;
+  /** RF-208, Q-43: the id of the run whose failed areas this run reads again; its cards are held. */
+  readonly retryOf?: string;
 }
 
 const optionsSchema = z.object({
@@ -43,6 +45,7 @@ const optionsSchema = z.object({
   deepen: z
     .object({ parentRunId: z.string(), maxRounds: z.number().int(), coveragePass: z.boolean() })
     .optional(),
+  retryOf: z.string().optional(),
 });
 
 /** The options as the manifest records them; `areas` only when the request sent it, as sent (empty kept). */
@@ -52,12 +55,14 @@ export function understandOptionsOf(request: {
   readonly privateCodeConfirmed?: boolean | undefined;
   readonly withAnswers?: boolean | undefined;
   readonly deepen?: DeepenOptions | undefined;
+  readonly retryOf?: string | undefined;
 }): UnderstandOptions {
   const consent = { cloudConsent: request.cloudConsent === true };
   const priv = request.privateCodeConfirmed === true ? { privateCodeConfirmed: true } : {};
   const answers = request.withAnswers === true ? { withAnswers: true } : {};
   const deepen = request.deepen === undefined ? {} : { deepen: { ...request.deepen } };
-  const base = { ...consent, ...priv, ...answers, ...deepen };
+  const retry = request.retryOf === undefined ? {} : { retryOf: request.retryOf };
+  const base = { ...consent, ...priv, ...answers, ...deepen, ...retry };
   return request.areas === undefined ? base : { areas: [...request.areas], ...base };
 }
 

@@ -81,6 +81,8 @@ const startBody = z.strictObject({
   withAnswers: z.boolean().optional(),
   /** RF-614: `plan` is written from this understand run (its id). */
   sourceRunId: z.string().min(1).max(64).optional(),
+  /** RF-208, Q-43: `understand` reads again the failed areas of this run (its id) and holds its cards. */
+  retryOf: z.string().min(1).max(64).optional(),
 });
 
 /** Streams one part of a run as an attachment; the file name comes from the run key, cleaned. */
@@ -173,8 +175,8 @@ function registerStart(server: FastifyInstance, services: RunServices): void {
     async (request, reply) => {
       const body = startBody.safeParse(request.body);
       if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
-      const { stage, areas, cloudConsent, privateCodeConfirmed, withAnswers, sourceRunId } =
-        body.data;
+      const { stage, areas, cloudConsent, privateCodeConfirmed, withAnswers } = body.data;
+      const { sourceRunId, retryOf } = body.data;
       const outcome = await services.startRun.execute({
         actor: signedInOf(request).actor,
         projectId: request.params.id,
@@ -184,6 +186,7 @@ function registerStart(server: FastifyInstance, services: RunServices): void {
         ...(privateCodeConfirmed === undefined ? {} : { privateCodeConfirmed }),
         ...(withAnswers === undefined ? {} : { withAnswers }),
         ...(sourceRunId === undefined ? {} : { sourceRunId }),
+        ...(retryOf === undefined ? {} : { retryOf }),
       });
       if (!outcome.ok) throw new RosettaError(outcome.error);
       const { run, position } = outcome.value;
