@@ -125,6 +125,7 @@ describe('P3-78 the answer that follows the refusal', () => {
 
     expect(result.state).toBe('Done');
     expect(result.turns).toBe(2);
+    expect(t.fake.requests).toHaveLength(2);
   });
 });
 
@@ -221,7 +222,9 @@ describe('P3-78 the threshold and the list', () => {
 
     const result = await t.run();
 
+    expect(result.state).toBe('Done');
     expect(result.turns).toBe(2);
+    expect(t.fake.requests).toHaveLength(2);
   });
 });
 
