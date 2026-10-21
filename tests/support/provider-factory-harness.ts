@@ -10,6 +10,7 @@ import type { ProjectSettings } from '../../src/application/projects/project-set
 import { ManifestSecurityRecorder } from '../../src/application/runs/run-security-record.js';
 import { keyAdditionalData, type KeyProvider } from '../../src/domain/accounts/provider-keys.js';
 import type { ServerCaps } from '../../src/domain/budget/budget.js';
+import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import type { RosettaError } from '../../src/domain/errors/rosetta-error.js';
 import { MemoryCostLedger } from '../../src/infrastructure/db/memory-cost-ledger.js';
 import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
@@ -24,7 +25,10 @@ import type {
   AdapterBuilder,
   AdapterSpec,
 } from '../../src/infrastructure/providers/adapter-spec.js';
-import { GuardedProviderFactory } from '../../src/infrastructure/providers/provider-factory.js';
+import {
+  GuardedProviderFactory,
+  type GuardedProviderFactoryOptions,
+} from '../../src/infrastructure/providers/provider-factory.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
 import { contractRequest } from '../contracts/llm-provider.contract.js';
 import { budgetTable } from './budget-harness.js';
@@ -105,6 +109,10 @@ export interface FactoryHarnessOptions {
   readonly defaultRoles?: DefaultRoles;
   /** The application log the guards write to; a fresh in-memory one by default. */
   readonly logger?: MemoryLogger;
+  /** The shipped price table; `budgetTable` by default. */
+  readonly priceTable?: PriceTable;
+  /** Q-58: which models the shipped list marks as reasoning models; none by default. */
+  readonly reasoningModels?: GuardedProviderFactoryOptions['reasoningModels'];
 }
 
 export interface FactoryHarness extends FakeAdapters {
@@ -182,8 +190,9 @@ export function factoryHarness(options: FactoryHarnessOptions = {}): FactoryHarn
     ...{ keys, box, serverSettings, ledger, masker, adapters, clock, logger },
     serverKeys: options.serverKeys ?? {},
     ollamaUrl: options.ollamaUrl,
-    priceTable: budgetTable,
+    priceTable: options.priceTable ?? budgetTable,
     ids: new SequenceIdGenerator(),
+    ...(options.reasoningModels === undefined ? {} : { reasoningModels: options.reasoningModels }),
   });
   const run = runSinks(masker);
   return {

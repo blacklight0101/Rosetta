@@ -9,6 +9,7 @@ import type {
   ProviderSetFactory,
   ProviderSetRequest,
 } from '../../application/ports/provider-set-factory.js';
+import type { ReasoningModels } from '../../application/models/model-list.js';
 import type { SecretBox } from '../../application/ports/secret-box.js';
 import type { ServerSettings } from '../../application/ports/server-settings.js';
 import type { ProjectSettings } from '../../application/projects/project-settings.js';
@@ -52,6 +53,8 @@ export interface GuardedProviderFactoryOptions {
   readonly priceTable: PriceTable;
   readonly masker: TextMasker;
   readonly adapters: AdapterBuilder;
+  /** Q-58: the models the shipped list marks as reasoning models; none when left out. */
+  readonly reasoningModels?: ReasoningModels;
   readonly clock: Clock;
   readonly ids: IdGenerator;
   readonly logger: Logger;
