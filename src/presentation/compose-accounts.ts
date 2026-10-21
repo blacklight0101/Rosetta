@@ -3,6 +3,7 @@ import type { Logger } from '../application/ports/logger.js';
 import type { PasswordHasher } from '../application/ports/password-hasher.js';
 import type { SecretBox } from '../application/ports/secret-box.js';
 import type { SessionStore } from '../application/ports/session-store.js';
+import type { ModelList } from '../application/models/model-list.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
 import { BootstrapAdmin } from '../application/use-cases/bootstrap-admin.js';
@@ -106,6 +107,8 @@ export interface Auth {
   readonly providers: ProviderSetFactory;
   /** The shipped price table, for the estimate before a run (RF-425). */
   readonly priceTable: PriceTable;
+  /** The shipped model list: each model's context window and maximum output (Q-57). */
+  readonly models: ModelList;
   /** For the hourly purge of expired sessions (architecture section 7, `Scheduler`). */
   readonly sessions: SessionStore;
   /** RF-1101: the open event streams, which end with their session (shared with the run routes). */
@@ -203,7 +206,7 @@ export async function composeAuth(
 ): Promise<Auth> {
   const { pool, logger, clock, masker, hasher, secretBox } = parts;
   // RF-407: loads the price table, so an invalid one stops the start-up (RST-1602).
-  const { testProviders, factory, priceTable, template } = await composeProviders({
+  const { testProviders, factory, priceTable, models, template } = await composeProviders({
     ...parts,
     environment: mode.environment,
     doubles: mode.doubles,
@@ -218,6 +221,7 @@ export async function composeAuth(
     streams,
     providers: factory,
     priceTable,
+    models,
     services: {
       accounts: await composeAccounts({
         ...{

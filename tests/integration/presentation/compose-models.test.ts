@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { expect, it } from 'vitest';
+import { loadModelList } from '../../../src/infrastructure/models/model-list-file.js';
 import { loadPriceTable } from '../../../src/infrastructure/budget/price-file.js';
 import { composeModels } from '../../../src/presentation/compose-models.js';
 
@@ -7,11 +8,13 @@ import { composeModels } from '../../../src/presentation/compose-models.js';
 // the Ollama server `ROSETTA_OLLAMA_URL` names and no other.
 
 const prices = fileURLToPath(new URL('../../../prices/default-prices.yaml', import.meta.url));
+const models = fileURLToPath(new URL('../../../prices/models.yaml', import.meta.url));
 
 it('RF-405 serves the shipped Anthropic and OpenAI lists, priced from the shipped price table', async () => {
-  const { listModels } = await composeModels({
+  const { listModels } = composeModels({
     environment: { ollamaUrl: undefined, test: true },
     priceTable: await loadPriceTable(prices),
+    list: await loadModelList(models),
   });
 
   const anthropic = await listModels.execute('anthropic');
@@ -29,9 +32,10 @@ it('RF-405 serves the shipped Anthropic and OpenAI lists, priced from the shippe
 });
 
 it('RF-405 says no Ollama server is configured when ROSETTA_OLLAMA_URL is not set', async () => {
-  const { listModels } = await composeModels({
+  const { listModels } = composeModels({
     environment: { ollamaUrl: undefined, test: true },
     priceTable: await loadPriceTable(prices),
+    list: await loadModelList(models),
   });
 
   const answer = await listModels.execute('ollama');

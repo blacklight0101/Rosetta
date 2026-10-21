@@ -1,6 +1,7 @@
 import type { AgentTaskRequest } from '../agent/agent-loop.js';
 import type { ToolLimits } from '../agent/tool-limits.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
+import { contextOf } from '../models/role-limits.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 
 // RF-201, RF-144, DEC-117: the limits of the reader tasks of an understand run, read from the
@@ -10,9 +11,6 @@ import type { RoleProvider } from '../providers/provider-set.js';
 /** DEC-117: `agents.parallelism` 1-8 and the reader's `maxTurns` 1-50. */
 const PARALLELISM = { min: 1, max: 8 } as const;
 const MAX_TURNS = { min: 1, max: 50, fallback: 12 } as const;
-/** The context assumed when the settings give no number: Ollama's floor, a cloud model's usual size. */
-const OLLAMA_CONTEXT_TOKENS = 32_768;
-const CLOUD_CONTEXT_TOKENS = 128_000;
 /** The share of the context a conversation may fill before the task ends (architecture section 8). */
 const CONTEXT_SHARE = 0.8;
 
@@ -26,14 +24,16 @@ export function readerParallelism(settings: ProjectSettings): number {
 }
 
 /** What the limits need of a role; the estimate (RF-425) knows a role by its settings alone. */
-export type ReaderRole = Pick<RoleProvider, 'name' | 'kind' | 'model' | 'maxOutputTokens'> & {
+export type ReaderRole = Pick<
+  RoleProvider,
+  'name' | 'kind' | 'model' | 'maxOutputTokens' | 'modelContextTokens'
+> & {
   readonly temperature?: number | undefined;
 };
 
 function contextTokensOf(settings: ProjectSettings, role: ReaderRole): number {
   const configured = settings.providers[role.name]?.contextTokens;
-  if (typeof configured === 'number') return configured;
-  return role.kind === 'ollama' ? OLLAMA_CONTEXT_TOKENS : CLOUD_CONTEXT_TOKENS;
+  return contextOf(configured, role.kind, role.modelContextTokens).contextTokens;
 }
 
 // RF-201

@@ -3,7 +3,7 @@ import type { ProjectSettings } from '../../src/application/projects/project-set
 import type { ScannedSource, ScanResults } from '../../src/application/ports/scan-results.js';
 import type { Area } from '../../src/domain/code-map/area.js';
 import type { FileEntry } from '../../src/domain/code-map/file-entry.js';
-import type { ModelList } from '../../src/application/models/model-list.js';
+import { NO_LISTED_MODELS, type ModelList } from '../../src/application/models/model-list.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import type { Project } from '../../src/application/projects/project.js';
 import type { Run } from '../../src/domain/runs/run.js';
@@ -90,9 +90,6 @@ export const estimatePrices: PriceTable = {
   ],
 };
 
-/** A model list that gives no limits: every hosted model keeps 128,000 tokens (Q-57). */
-export const noModels: ModelList = { version: '2026-10-21', models: [] };
-
 /** The areas of the estimate tests: 14,000 tokens in two areas. */
 export const catalogAreas: readonly Area[] = [areaOf('Catalog', 10_000), areaOf('Orders', 4_000)];
 
@@ -134,7 +131,7 @@ export function createEstimateHarness(
   priceTable: PriceTable = estimatePrices,
   workbookFolders: readonly string[] = [],
 ): EstimateHarness {
-  return harnessOver(new FixedScans(areas, files, workbookFolders), priceTable, noModels);
+  return harnessOver(new FixedScans(areas, files, workbookFolders), priceTable, NO_LISTED_MODELS);
 }
 
 /** Q-57: the estimate over a model list, whose entries give each model its context and output limit. */
@@ -155,7 +152,7 @@ export function createWorkbookEstimateHarness(
   return harnessOver(
     new FixedScans(areas, [], workbookFolders, snapshotKey),
     estimatePrices,
-    noModels,
+    NO_LISTED_MODELS,
   );
 }
 

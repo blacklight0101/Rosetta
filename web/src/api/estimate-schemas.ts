@@ -16,6 +16,15 @@ export type Scenario = keyof typeof range;
 
 const scenarioNumbers = z.object({ low: z.number(), likely: z.number(), high: z.number() });
 
+/** Q-57: the context window and the output limit a role runs with. */
+const roleLimit = z.object({
+  contextTokens: z.number(),
+  contextAutomatic: z.boolean(),
+  maxOutputTokens: z.number(),
+});
+
+const roleLimits = z.record(z.string(), roleLimit);
+
 export const roleEstimate = z.object({
   role: z.string(),
   provider: z.string(),
@@ -45,7 +54,7 @@ export const estimateSchema = z.object({
       thirdParty: z.boolean(),
     }),
   ),
-  assumptions: z.looseObject({ turnsPerArea: scenarioNumbers }),
+  assumptions: z.looseObject({ turnsPerArea: scenarioNumbers, roleLimits: roleLimits.optional() }),
   roles: z.array(roleEstimate),
   total: z.object(range),
 });

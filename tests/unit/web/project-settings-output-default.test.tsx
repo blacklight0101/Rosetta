@@ -70,3 +70,11 @@ it('Q-57 a number typed into the empty field is stored, and emptying a set field
   expect(body).toMatchObject({ roles: { reader: { maxOutputTokens: 8000 } } });
   expect(JSON.stringify(body)).not.toMatch(/"verifier":\{[^}]*maxOutputTokens/u);
 });
+
+it('Q-57 the slider of an empty output field sits at the default, not at the bottom of its range', async () => {
+  renderSettings(withoutReaderLimit());
+  await loaded();
+
+  const slider = screen.getByLabelText('Reader max output tokens slider');
+  expect(slider instanceof HTMLInputElement && slider.value).toBe('4096');
+});

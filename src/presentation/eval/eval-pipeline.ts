@@ -12,6 +12,7 @@ import { RunScan } from '../../application/use-cases/run-scan.js';
 import { RunUnderstand } from '../../application/use-cases/run-understand.js';
 import { StartRun } from '../../application/use-cases/start-run.js';
 import { SubmitRun } from '../../application/use-cases/submit-run.js';
+import type { ModelList } from '../../application/models/model-list.js';
 import type { PriceTable } from '../../domain/budget/price-table.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err } from '../../domain/errors/result.js';
@@ -67,6 +68,7 @@ export interface PipelineParts {
   readonly serverKeys: ServerKeys;
   readonly ollamaUrl: string | undefined;
   readonly priceTable: PriceTable;
+  readonly models: ModelList;
   readonly packs: LanguagePackRegistry;
   readonly promptsFolder: string;
   readonly rosettaVersion: string;
@@ -132,7 +134,7 @@ function providersOf(parts: PipelineParts, s: Stores): ProviderSetFactory {
   return parts.providers({
     ...{ keys: s.keys, box: noUserKeys, serverKeys: parts.serverKeys, ollamaUrl: parts.ollamaUrl },
     ...{ serverSettings: s.serverSettings, ledger: s.ledger },
-    ...{ priceTable: parts.priceTable, masker, clock, ids, logger },
+    ...{ priceTable: parts.priceTable, models: parts.models, masker, clock, ids, logger },
   });
 }
 
@@ -190,14 +192,14 @@ export function composePipeline(parts: PipelineParts): Pipeline {
     maxRunning: 1,
   });
   const rosettaVersion = parts.rosettaVersion;
-  const submit = new SubmitRun({ runs, manifests, queue, clock, ids, rosettaVersion });
+  const submit = new SubmitRun({
+    ...{ runs, manifests, queue, clock, ids, rosettaVersion },
+    models: parts.models,
+  });
   const keys = s.keys;
   const estimateRun = new EstimateRun({
-    projects,
-    runs,
-    scans: s.scans,
-    keys,
-    priceTable: parts.priceTable,
+    ...{ projects, runs, keys, scans: s.scans },
+    ...{ priceTable: parts.priceTable, models: parts.models },
   });
   return {
     ...s,

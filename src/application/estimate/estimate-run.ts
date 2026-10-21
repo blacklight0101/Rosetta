@@ -187,7 +187,7 @@ export class EstimateRun {
     if (!tasks.ok) return err(ERROR_CODES.areaUnknown);
     const areas = tasks.value.map((task) => task.area);
     const thirdParty = thirdPartyAreaNames(codeMap);
-    const assumptions = assumptionsOf(project.settings);
+    const assumptions = assumptionsOf(project.settings, this.deps.models);
     const marks = new Map(areas.map((area) => [area.name, marksOf(area, codeMap)]));
     const workbooks = workbookAreaNames(areas, workbookFolders);
     const reader = readerTokens(areas, assumptions, marks, workbooks);

@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../../src/application/models/model-list.js';
 import { access, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -60,6 +61,7 @@ function composedRuns(dataDir: string) {
     providers: { build: () => Promise.resolve({ ok: true, value: new Map() }) },
     ollamaUrl: undefined,
     priceTable: { version: '2026-10-11', currency: 'USD', prices: [] },
+    models: NO_LISTED_MODELS,
     streams,
   });
   return { runs, logger, pool, streams, clock };

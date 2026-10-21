@@ -20,3 +20,6 @@ export interface ModelList {
   readonly version: string;
   readonly models: readonly ListedModel[];
 }
+
+/** A list that gives no model any number: every hosted model keeps 128,000 tokens of context (Q-57). */
+export const NO_LISTED_MODELS: ModelList = { version: '0000-00-00', models: [] };

@@ -27,7 +27,7 @@ import type {
 import { GuardedProviderFactory } from '../../src/infrastructure/providers/provider-factory.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
 import { contractRequest } from '../contracts/llm-provider.contract.js';
-import type { ModelList } from '../../src/application/models/model-list.js';
+import { NO_LISTED_MODELS, type ModelList } from '../../src/application/models/model-list.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { budgetTable } from './budget-harness.js';
 import { FixedClock } from './fixed-clock.js';
@@ -189,7 +189,7 @@ export function factoryHarness(options: FactoryHarnessOptions = {}): FactoryHarn
     serverKeys: options.serverKeys ?? {},
     ollamaUrl: options.ollamaUrl,
     priceTable: options.priceTable ?? budgetTable,
-    models: options.models ?? { version: '2026-10-21', models: [] },
+    models: options.models ?? NO_LISTED_MODELS,
     ids: new SequenceIdGenerator(),
   });
   const run = runSinks(masker);

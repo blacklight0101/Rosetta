@@ -7,6 +7,8 @@ import type { ProviderSetFactory } from '../application/ports/provider-set-facto
 import { TestProviders } from '../application/use-cases/test-providers.js';
 import type { Environment } from '../infrastructure/config/environment.js';
 import { loadPriceTable } from '../infrastructure/budget/price-file.js';
+import type { ModelList } from '../application/models/model-list.js';
+import { loadModelList } from '../infrastructure/models/model-list-file.js';
 import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
 import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
 import { PgServerSettings } from '../infrastructure/db/pg-server-settings.js';
@@ -28,12 +30,13 @@ import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-gene
 import type { TestDoubles } from './test-doubles.js';
 
 // Architecture section 2 (composition root), ADR-003, ADR-006, ADR-007, RF-405, RF-407, RF-1104:
-// the provider factory and the use case behind the Test button. The shipped price table is loaded
-// here, at start-up: a missing or invalid file stops the server with RST-1602 instead of pricing a
-// call wrong later. This file is at the same depth in `src/` and in the built `dist/`, so `../../`
+// the provider factory and the use case behind the Test button. The shipped price table and model
+// list are loaded here, at start-up: a missing or invalid file stops the server with RST-1602 instead of pricing a
+// call wrong later or showing a wrong list. This file is at the same depth in `src/` and in the built `dist/`, so `../../`
 // is the repository root (the image's app folder) from both.
 const repositoryRoot = new URL('../../', import.meta.url);
 const priceFile = fileURLToPath(new URL('prices/default-prices.yaml', repositoryRoot));
+const modelsFile = fileURLToPath(new URL('prices/models.yaml', repositoryRoot));
 const promptsFolder = fileURLToPath(new URL('prompts/', repositoryRoot));
 const templatesFolder = fileURLToPath(new URL('templates/', repositoryRoot));
 
@@ -87,6 +90,8 @@ export interface ComposedProviders {
   readonly factory: ProviderSetFactory;
   /** The shipped price table, loaded once; the run estimate prices the roles with it (RF-425). */
   readonly priceTable: PriceTable;
+  /** The shipped model list, loaded once: each model's context window and maximum output (Q-57). */
+  readonly models: ModelList;
   /** The shipped settings template, loaded once: its roles are the built-in default models. */
   readonly template: ProjectSettings;
 }
@@ -97,6 +102,7 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
   const ids = new TimestampIdGenerator(clock);
   const serverSettings = new PgServerSettings(pool);
   const priceTable = await loadPriceTable(priceFile);
+  const models = await loadModelList(modelsFile);
   const factory = new GuardedProviderFactory({
     keys: new PgProviderKeyRepository(pool),
     box: secretBox,
@@ -105,6 +111,7 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
     serverSettings,
     ledger: new PgCostLedger(pool),
     priceTable,
+    models,
     masker,
     adapters: await adaptersFor(parts),
     ...{ clock, ids, logger },
@@ -119,5 +126,5 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
     unrecorded: unrecordedSinks(),
     signals: new SystemTimeoutSignals(),
   });
-  return { testProviders, factory, priceTable, template };
+  return { testProviders, factory, priceTable, models, template };
 }

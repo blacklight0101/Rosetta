@@ -168,3 +168,16 @@ describe('the limits of an Ollama role', () => {
     expect(roleLimits(settings, 'reader', list).contextTokens).toBe(32_768);
   });
 });
+
+describe('the limits of a compatible service', () => {
+  it('Q-57 an OpenAI-compatible role takes neither the window nor the hosted defaults of the list', () => {
+    const reader = { provider: 'openai-compatible', model: 'gpt-5-mini' };
+    const settings = withoutOutputLimits(settingsFor({ reader }));
+
+    expect(roleLimits(settings, 'reader', list)).toMatchObject({
+      contextTokens: 128_000,
+      modelContextTokens: undefined,
+      maxOutputTokens: 4_096,
+    });
+  });
+});

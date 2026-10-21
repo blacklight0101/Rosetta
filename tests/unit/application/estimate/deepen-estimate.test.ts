@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../../../src/application/models/model-list.js';
 import { describe, expect, it } from 'vitest';
 import {
   MERGE_ANSWER_TOKENS,
@@ -72,7 +73,9 @@ function cloudWithCap(maxTokens?: number): ProjectSettings {
     summariser: { provider: 'openai', model: 'priced-model' },
   });
   if (maxTokens === undefined) return settings;
-  const run = { ...settings.budget.run, maxTokens };
+  // The cost cap is out of the way, so only the token cap is compared (Q-57: a hosted model now
+  // defaults to a larger output limit, which raises the cost of the high figure).
+  const run = { maxCostMicros: 100_000_000, maxTokens };
   return { ...settings, budget: { ...settings.budget, run } };
 }
 
@@ -96,6 +99,7 @@ async function harnessOf(settings: ProjectSettings, run: Partial<Run> = {}) {
     taskResults: results,
     keys: new MemoryProviderKeyRepository(),
     priceTable: estimatePrices,
+    models: NO_LISTED_MODELS,
   });
   return { estimate, runs, understand };
 }

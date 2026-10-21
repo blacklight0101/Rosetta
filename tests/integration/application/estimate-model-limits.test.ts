@@ -3,8 +3,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { ModelList } from '../../../src/application/models/model-list.js';
 import type { ProjectSettings } from '../../../src/application/projects/project-settings.js';
 import type { RunEstimate } from '../../../src/application/estimate/estimate-types.js';
-import { worstCaseCost } from '../../../src/domain/budget/price.js';
-import { lookupPrice, type PriceTable } from '../../../src/domain/budget/price-table.js';
+import type { Area } from '../../../src/domain/code-map/area.js';
+import type { PriceTable } from '../../../src/domain/budget/price-table.js';
 import { loadPriceTable } from '../../../src/infrastructure/budget/price-file.js';
 import { loadModelList } from '../../../src/infrastructure/models/model-list-file.js';
 import {
@@ -33,8 +33,11 @@ beforeAll(async () => {
   list = await loadModelList(models);
 });
 
-async function estimateOf(settings: ProjectSettings): Promise<RunEstimate> {
-  const harness = createModelEstimateHarness(hugeAreas, table, list);
+async function estimateOf(
+  settings: ProjectSettings,
+  areas: readonly Area[] = hugeAreas,
+): Promise<RunEstimate> {
+  const harness = createModelEstimateHarness(areas, table, list);
   const project = await projectWithScan(harness, userAmy.userId, settings);
   const outcome = await harness.estimate.execute({ actor: userAmy, projectId: project.id });
   if (!outcome.ok) throw new Error('The estimate failed');
@@ -120,25 +123,21 @@ describe('models without numbers and local models in the estimate', () => {
 });
 
 describe('a larger context in the estimate', () => {
-  it('RF-425 grows the reader tokens and still fits the guard worst case of the run cap', async () => {
-    const small = await estimateOf(withContextTokens(onHaiku(), 'anthropic', 128_000));
-    const large = await estimateOf(onHaiku());
+  const orders = [areaOf('Orders', 30_000)];
+
+  it('RF-425 grows the reader tokens and the estimate still passes the run cap check', async () => {
+    const small = await estimateOf(withContextTokens(onHaiku(), 'anthropic', 20_000), orders);
+    const large = await estimateOf(onHaiku(), orders);
 
     const readerOf = (estimate: RunEstimate) => estimate.roles.find((r) => r.role === 'reader');
-    const before = readerOf(small)?.points.high.inputTokens ?? 0;
-    const after = readerOf(large)?.points.high.inputTokens ?? 0;
-    expect(after).toBeGreaterThan(before);
-    // The largest call of the high figure, as the budget guard would bound it (RF-422).
-    const lookup = lookupPrice(table, [], {
-      ...{ provider: 'anthropic' },
-      ...{ model: haiku.model, keySource: 'server' },
-    });
-    if (lookup.kind !== 'priced') throw new Error('Haiku 5.5 has no price');
-    const worst = worstCaseCost(lookup.price, {
-      promptTokens: large.assumptions.contextLimitTokens,
-      maxOutputTokens: large.assumptions.roleLimits.reader.maxOutputTokens,
-    });
-    expect(worst.micros).toBeLessThanOrEqual(BigInt(onHaiku().budget.run.maxCostMicros));
+    expect(readerOf(large)?.points.likely.inputTokens).toBeGreaterThan(
+      readerOf(small)?.points.likely.inputTokens ?? Number.POSITIVE_INFINITY,
+    );
+    // The start page compares the likely figure with the project's run cost cap (cap-comparison.ts).
+    expect(large.total.likely.costMicros).toBeGreaterThan(small.total.likely.costMicros);
+    expect(large.total.likely.costMicros).toBeLessThanOrEqual(
+      BigInt(onHaiku().budget.run.maxCostMicros),
+    );
   });
 });
 

@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import { fileURLToPath } from 'node:url';
 import type {
   LlmAttemptObserver,
@@ -123,6 +124,7 @@ export function calibrationParts(options: CalibrationHarnessOptions): Calibratio
     serverKeys: options.serverKeys ?? {},
     ollamaUrl: undefined,
     priceTable: budgetTable,
+    models: NO_LISTED_MODELS,
     settings: understandSettings(),
     capMicros: options.capMicros ?? 1_000_000,
     rosettaVersion: '1.2.3-test',

@@ -111,7 +111,11 @@ export class EstimatePlan {
     const { project } = inputs.value;
     const planned = await plannedPrompts(this.deps, inputs.value);
     const { calls: prompts } = planned;
-    const { maxOutputTokens } = project.settings.roles.planner;
+    const { maxOutputTokens, contextTokens } = roleLimits(
+      project.settings,
+      'planner',
+      this.deps.models,
+    );
     const calls = await Promise.all(
       prompts.map((each) => this.callOf(project, each.file.text + each.message, maxOutputTokens)),
     );
@@ -125,7 +129,7 @@ export class EstimatePlan {
       keyAvailable: await plannerKeyAvailable(this.deps, project, planner),
       assumptions: {
         ...{ calls: calls.length, promptTokens },
-        contextTokens: roleLimits(project.settings, 'planner', this.deps.models).contextTokens,
+        contextTokens,
         ...{
           prdPromptTokens: tokensOf(calls, prompts, 'prd'),
           dataModelPromptTokens: tokensOf(calls, prompts, 'dataModel'),

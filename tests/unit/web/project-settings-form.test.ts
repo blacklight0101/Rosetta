@@ -150,7 +150,10 @@ it('Q-57 shows an empty field for a role without an output limit and leaves it o
 
   expect(draft.roles.reader.maxOutputTokens).toBe('');
   expect(result).toEqual({ ok: true, settings: unset });
-  expect(result.ok && 'maxOutputTokens' in result.settings.roles.reader).toBe(false);
+  expect(result.ok && result.settings.roles.reader.maxOutputTokens).toBeUndefined();
+  expect(JSON.stringify(result.ok && result.settings.roles.reader)).not.toContain(
+    'maxOutputTokens',
+  );
 });
 
 it('Q-57 a number typed into the empty field is stored and text that is no number is named', () => {

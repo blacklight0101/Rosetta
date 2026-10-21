@@ -6,8 +6,9 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 
 // RF-405, DEC-156: the model list file (`prices/models.yaml`): `{ schemaVersion, version (date),
-// models: [{ provider, model, label }] }`. Only providers that sell a fixed set of models are
-// listed. A file that cannot be read, does not match, or lists a model twice is refused with
+// models: [{ provider, model, label, contextTokens?, maxOutputTokens? }] }`; the two numbers are the
+// context window and the maximum output of the provider's model page (Q-57). Only providers that sell
+// a fixed set of models are listed. A file that cannot be read, does not match, or lists a model twice is refused with
 // RST-1602 (the same code as the price table it sits beside) rather than guessed, so the dropdown
 // never offers a wrong name.
 
@@ -19,6 +20,9 @@ const modelListSchema = z.strictObject({
       provider: z.enum(['anthropic', 'openai']),
       model: z.string().min(1).max(200),
       label: z.string().min(1).max(100),
+      // Q-57: copied from the provider's model page; left out when no page confirms a number.
+      contextTokens: z.number().int().positive().optional(),
+      maxOutputTokens: z.number().int().positive().optional(),
     }),
   ),
 });

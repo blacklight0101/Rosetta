@@ -6,7 +6,7 @@ import { roleLimits } from '../models/role-limits.js';
 import type { ModelList } from '../models/model-list.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
 import { readerParallelism, readerTaskSettings } from '../understand/reader-settings.js';
-import type { ByScenario, ReaderAssumptions, Scenario } from './estimate-types.js';
+import type { ByScenario, ReaderAssumptions, RoleLimitsView, Scenario } from './estimate-types.js';
 
 // RF-425, ADR-007, DEC-117: the assumptions of the estimate. The reader limits (turns, output,
 // context, parallelism) are the ones the understand run uses, so the estimate and the run cannot
@@ -66,11 +66,17 @@ function eachScenario(figure: (scenario: Scenario) => number): ByScenario<number
   return { low: figure('low'), likely: figure('likely'), high: figure('high') };
 }
 
-// RF-425, DEC-117
-export function assumptionsOf(
-  settings: ProjectSettings,
-  models: ModelList = { version: '0000-00-00', models: [] },
-): ReaderAssumptions {
+/** Q-57: what the start page states for the roles of an understand run. */
+function limitsOf(settings: ProjectSettings, models: ModelList): ReaderAssumptions['roleLimits'] {
+  const view = (role: 'reader' | 'verifier' | 'summariser'): RoleLimitsView => {
+    const { contextTokens, contextAutomatic, maxOutputTokens } = roleLimits(settings, role, models);
+    return { contextTokens, contextAutomatic, maxOutputTokens };
+  };
+  return { reader: view('reader'), verifier: view('verifier'), summariser: view('summariser') };
+}
+
+// RF-425, DEC-117, Q-57
+export function assumptionsOf(settings: ProjectSettings, models: ModelList): ReaderAssumptions {
   const { reader } = settings.roles;
   const provider = Object.hasOwn(settings.providers, reader.provider)
     ? settings.providers[reader.provider]
@@ -78,23 +84,16 @@ export function assumptionsOf(
   if (provider === undefined) {
     throw new RosettaError(ERROR_CODES.settingsProviderUnknown);
   }
+  const { maxOutputTokens, modelContextTokens } = roleLimits(settings, 'reader', models);
   const role = { name: reader.provider, kind: provider.kind, ...reader };
-  const task = readerTaskSettings(settings, role);
-  const limitsOf = (name: 'reader' | 'verifier' | 'summariser') => {
-    const { contextTokens, contextAutomatic, maxOutputTokens } = roleLimits(settings, name, models);
-    return { contextTokens, contextAutomatic, maxOutputTokens };
-  };
+  const task = readerTaskSettings(settings, { ...role, maxOutputTokens, modelContextTokens });
   return {
-    roleLimits: {
-      reader: limitsOf('reader'),
-      verifier: limitsOf('verifier'),
-      summariser: limitsOf('summariser'),
-    },
+    roleLimits: limitsOf(settings, models),
     turnsPerArea: eachScenario((scenario) =>
       Math.max(1, ceilPercent(task.maxTurns, TURNS_PERCENT[scenario])),
     ),
     outputTokensPerTurn: eachScenario((scenario) =>
-      Math.max(1, ceilPercent(reader.maxOutputTokens, OUTPUT_PERCENT[scenario])),
+      Math.max(1, ceilPercent(maxOutputTokens, OUTPUT_PERCENT[scenario])),
     ),
     readSharePercent: READ_PERCENT,
     verifierSharePercent: VERIFIER_PERCENT,

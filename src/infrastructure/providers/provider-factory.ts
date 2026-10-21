@@ -1,3 +1,5 @@
+import type { ModelList } from '../../application/models/model-list.js';
+import { roleLimits } from '../../application/models/role-limits.js';
 import type { Clock } from '../../application/ports/clock.js';
 import type { CostLedger } from '../../application/ports/cost-ledger.js';
 import type { IdGenerator } from '../../application/ports/id-generator.js';
@@ -50,6 +52,8 @@ export interface GuardedProviderFactoryOptions {
   readonly ledger: CostLedger;
   /** The shipped price table, loaded at start-up (RF-420). */
   readonly priceTable: PriceTable;
+  /** The shipped model list: each model's context window and maximum output (Q-57). */
+  readonly models: ModelList;
   readonly masker: TextMasker;
   readonly adapters: AdapterBuilder;
   readonly clock: Clock;
@@ -139,6 +143,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     // RF-427: an unpriced model is refused when the run starts, before its first call.
     const unpriced = this.unpricedOf(request, config.kind, setting.model, access.value);
     if (unpriced !== undefined) return fail(ERROR_CODES.modelUnpriced, unpriced.message);
+    const limits = roleLimits(request.settings, role, this.options.models);
     const caps = this.capsOf({ request, role }, access.value, serverCaps);
     const provider = this.wrap({
       request,
@@ -153,7 +158,8 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       name,
       kind: config.kind,
       model: setting.model,
-      maxOutputTokens: setting.maxOutputTokens,
+      maxOutputTokens: limits.maxOutputTokens,
+      modelContextTokens: limits.modelContextTokens,
       ...(setting.temperature === undefined ? {} : { temperature: setting.temperature }),
       keySource: access.value.keySource,
     });
