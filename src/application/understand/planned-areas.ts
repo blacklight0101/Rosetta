@@ -2,9 +2,9 @@ import type { Area } from '../../domain/code-map/area.js';
 import { isWorkbookSnapshotKey } from '../../domain/sources/workbook-key.js';
 import { areaHoldsWorkbook } from '../../domain/sources/workbook-folders.js';
 
-// RF-231 (Q-49), RF-155: the areas a run plans. A workbook project has no `(root)` area when its
-// root holds no workbook file: the root of its tree holds only `dependencies.md`, which no reader
-// can explain without the workbooks. A zip or a repository plans every area of its code map, even
+// RF-231 (Q-49), RF-155: the areas a run plans. A project of a single workbook has no `(root)` area:
+// the root of its tree holds only `dependencies.md`, which says nothing a reader needs. With two or
+// more workbooks the root is kept, because `dependencies.md` is then the map between them. A zip or a repository plans every area of its code map, even
 // when the zip lists a workbook, because its root may hold code.
 
 export interface PlannedFrom {
@@ -17,6 +17,7 @@ export interface PlannedFrom {
 export function plannedAreas(scanned: PlannedFrom): readonly Area[] {
   const { areas } = scanned.codeMap;
   const folders = scanned.workbookFolders ?? [];
-  if (!isWorkbookSnapshotKey(scanned.source.snapshotKey) || folders.length === 0) return areas;
+  // Two or more workbooks: `dependencies.md` is the map between them and is read.
+  if (!isWorkbookSnapshotKey(scanned.source.snapshotKey) || folders.length !== 1) return areas;
   return areas.filter((area) => areaHoldsWorkbook(area, folders));
 }

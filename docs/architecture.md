@@ -135,7 +135,7 @@ src/
                         (`ReadOnlyTools`: definitions, zod-checked arguments, code-map lookup by exact
                         case, result limits), the reader prompt set (`ReaderPrompts`, `promptVersionsOf`);
                         the orchestrator joins here (P1-33)
-    understand/         the understand run's parts (P1-33): reader tasks per area (`planReaderTasks`; `plannedAreas` leaves out the `(root)` area of a workbook project, whose root holds only `dependencies.md`, Q-49), the task
+    understand/         the understand run's parts (P1-33): reader tasks per area (`planReaderTasks`; `plannedAreas` leaves out the `(root)` area of a single-workbook project, whose root holds only `dependencies.md`; with two or more workbooks it stays, Q-49), the task
                         pool (one abort signal), the reader limits from the settings, one reader task with its
                         run events (`runReaderTask`, `providerWithEvents`, `toolsWithEvents`), the cards of the
                         run as tasks end (`RunCards`: ids in area order, citation check), the pinned repository
