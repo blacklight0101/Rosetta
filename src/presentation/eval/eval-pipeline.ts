@@ -200,6 +200,8 @@ export function composePipeline(parts: PipelineParts): Pipeline {
   const estimateRun = new EstimateRun({
     ...{ projects, runs, keys, scans: s.scans },
     ...{ priceTable: parts.priceTable, models: parts.models },
+    // The evaluation shows no start page, so no role names its effort.
+    reasoningModels: () => false,
   });
   return {
     ...s,

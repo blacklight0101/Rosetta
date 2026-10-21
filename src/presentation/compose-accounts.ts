@@ -5,6 +5,7 @@ import type { SecretBox } from '../application/ports/secret-box.js';
 import type { SessionStore } from '../application/ports/session-store.js';
 import type { ModelList } from '../application/models/model-list.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
+import type { ReasoningModels } from '../application/models/model-list.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
 import { BootstrapAdmin } from '../application/use-cases/bootstrap-admin.js';
 import { ChangePassword } from '../application/use-cases/change-password.js';
@@ -109,6 +110,8 @@ export interface Auth {
   readonly priceTable: PriceTable;
   /** The shipped model list: each model's context window and maximum output (Q-57). */
   readonly models: ModelList;
+  /** Q-58: the models the shipped list marks as reasoning models, for the estimate (RF-425). */
+  readonly reasoningModels: ReasoningModels;
   /** For the hourly purge of expired sessions (architecture section 7, `Scheduler`). */
   readonly sessions: SessionStore;
   /** RF-1101: the open event streams, which end with their session (shared with the run routes). */
@@ -206,11 +209,12 @@ export async function composeAuth(
 ): Promise<Auth> {
   const { pool, logger, clock, masker, hasher, secretBox } = parts;
   // RF-407: loads the price table, so an invalid one stops the start-up (RST-1602).
-  const { testProviders, factory, priceTable, models, template } = await composeProviders({
-    ...parts,
-    environment: mode.environment,
-    doubles: mode.doubles,
-  });
+  const { testProviders, factory, priceTable, models, reasoningModels, template } =
+    await composeProviders({
+      ...parts,
+      environment: mode.environment,
+      doubles: mode.doubles,
+    });
   const users = new PgUserRepository(pool);
   const streams = new StreamRegistry();
   const sessions = new StreamClosingSessionStore(new PgSessionStore(pool), streams);
@@ -222,6 +226,7 @@ export async function composeAuth(
     providers: factory,
     priceTable,
     models,
+    reasoningModels,
     services: {
       accounts: await composeAccounts({
         ...{

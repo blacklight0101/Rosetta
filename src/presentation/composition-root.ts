@@ -140,6 +140,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     providers: auth.providers,
     priceTable: auth.priceTable,
     models: auth.models,
+    reasoningModels: auth.reasoningModels,
     streams: auth.streams,
     packs: await composeLanguagePacks(),
   });

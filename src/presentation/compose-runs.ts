@@ -20,6 +20,7 @@ import { SubmitRun } from '../application/use-cases/submit-run.js';
 import { SubscribeRunEvents } from '../application/use-cases/subscribe-run-events.js';
 import type { ModelList } from '../application/models/model-list.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
+import type { ReasoningModels } from '../application/models/model-list.js';
 import { FileAnswersFile } from '../infrastructure/cards/answers-file.js';
 import { RosettaError } from '../domain/errors/rosetta-error.js';
 import { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
@@ -56,10 +57,10 @@ import type { ObservabilityServices } from './web/observability-routes.js';
 import type { RunServices } from './web/run-routes.js';
 import type { StartUpSteps } from './start-up.js';
 
-// Architecture section 2 (composition root), RF-1006, RF-1108, RF-003: the run index, the event
-// log with the live broadcaster, the manifest store, the run queue and the use cases behind the run
-// routes. The stage executors are registered here (scan P1-23, understand P1-33, plan P3-09); SubmitRun
-// refuses a stage without one with RST-2305 (409); StartRun names the stages the API starts (RF-003).
+// Architecture section 2 (composition root), RF-1006, RF-1108, RF-003: the run index, the event log
+// with the live broadcaster, the manifest store, the run queue and the use cases behind the run
+// routes. The stage executors are registered here (scan P1-23, understand P1-33, plan P3-09);
+// SubmitRun refuses a stage without one (RST-2305); StartRun names the API's stages.
 
 export interface RunParts {
   readonly pool: DatabasePool;
@@ -85,10 +86,11 @@ export interface RunParts {
   readonly providers: ProviderSetFactory;
   /** `ROSETTA_OLLAMA_URL`; an Ollama on another host needs the cloud consent (RF-143). */
   readonly ollamaUrl: string | undefined;
-  /** The shipped price table the estimate prices the roles with (RF-425). */
+  /** The shipped price table, and the reasoning models (Q-58), the estimate names (RF-425). */
   readonly priceTable: PriceTable;
   /** The shipped model list (Q-57). */
   readonly models: ModelList;
+  readonly reasoningModels: ReasoningModels;
   /** RF-1101: the open event streams, ended with their session by the session store. */
   readonly streams: StreamRegistry;
 }
@@ -101,8 +103,7 @@ export interface RunComposition {
   readonly submitRun: SubmitRun;
   /**
    * Start-up only, before the server listens: deletes the partial snapshot folders an interrupted
-   * download left (RF-122). A failure is a warning. Not part of `recover`, which the scheduler runs
-   * every minute while downloads may be in progress.
+   * download left (RF-122); a failure is a warning. Not part of `recover`, which runs every minute.
    */
   discardPartialSnapshots(): Promise<void>;
   /** Ends the runs the earlier process left running and starts what can start (RF-1108). */

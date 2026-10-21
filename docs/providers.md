@@ -242,11 +242,22 @@ cloud providers off, a scan and an understand run must complete with Ollama only
 - `maxOutputTokens` is sent as `max_completion_tokens` (the older `max_tokens` is refused by reasoning models);
   `temperature` only when the role sets one. Reasoning models such as the GPT-5 family accept only the default
   temperature, so leave it unset for them; their reasoning tokens count in the output tokens.
+- **Reasoning effort (Q-58, RF-402).** A request that carries an effort sends it as `reasoning_effort` (Chat
+  Completions; `reasoning.effort` in the Responses API). The provider factory sets it, `low` unless the role
+  says `medium` or `high`, only for a model the shipped list (`prices/models.yaml`) marks `reasoning: true`; any
+  other model is never sent the field. Only `low`, `medium` and `high` are sent: the reasoning guide lists
+  `none`, `minimal`, `low`, `medium`, `high`, `xhigh` and `max` as the values, "model-dependent", and says `none`
+  returns HTTP 400 on some models (GPT-6 Astra) and `minimal` is not supported on others (GPT-6.1 Sol), while `low` is
+  on every list the model pages give. The GPT-6 models are not marked: their pages say Chat Completions takes function
+  calling only with effort `none` (Sol, Luna) or not at all (Astra, 6.1 Sol), and the reader needs tools. Sources,
+  read 2026-10-21: developers.openai.com/api/docs/guides/reasoning and the Chat Completions reference (`reasoning_effort`;
+  `max_completion_tokens` is an upper bound that includes reasoning tokens) and the model pages.
 - Tool calls keep the ids OpenAI gave them. A call whose arguments are not a JSON object stays visible as text, like
   the Ollama native mode (`tool-call-shape.ts`). A refusal is returned as the answer text.
 - Usage (`usageSource: reported`): `inputTokens` is `prompt_tokens`, which **includes** the cached tokens;
   `cachedInputTokens` is `prompt_tokens_details.cached_tokens`, 0 when OpenAI leaves it out; `outputTokens` is
-  `completion_tokens`. OpenAI caches prompt prefixes of 1024 tokens or more by itself. An answer without usage is
+  `completion_tokens`, which **includes** the reasoning tokens (billed as output); `reasoningTokens` is
+  `completion_tokens_details.reasoning_tokens`, left out when absent or zero. OpenAI caches prompt prefixes of 1024 tokens or more by itself. An answer without usage is
   estimated at about four characters per token and marked `estimated` (RF-421); so is a usage that leaves out one of the two counts (the missing count is estimated).
 - `modelVersion` is the answer's `model`, the dated model id (for example `gpt-5-nano-2025-08-07`, RNF-004);
   `requestId` is the `x-request-id` header, also kept on failed attempts for the call log (RF-408).
@@ -368,8 +379,15 @@ so every call passes `BudgetGuard(EgressGuard(ObservedProvider(adapter)))` and n
   tool results, and a user message after them, share one user turn; an assistant turn of tool calls only has no empty
   text block.
 - `maxOutputTokens` is sent as `max_tokens`, which Anthropic requires; a call without it is refused with `RST-1603`
-  before anything is sent (every role sets it, RF-422). `temperature` only when the role sets one. Thinking and
-  effort are not sent, so each model runs with its own default.
+  before anything is sent (every role sets it, RF-422). `temperature` only when the role sets one. Thinking is
+  not sent, so each model runs with its own default.
+- **Effort (Q-58, RF-404).** A request that carries an effort sends it as `output_config.effort` (`low`, `medium`,
+  `high`; the API also takes `xhigh` and `max`; no beta header). The provider factory sets it, `low` unless the role
+  says otherwise, only for a model the shipped list marks `reasoning: true`: the four Anthropic models of the list are
+  all on the effort page's list of supported models. Thinking tokens count toward `max_tokens` and are billed as
+  output; `usage.output_tokens_details.thinking_tokens` (a part of `output_tokens`) is kept as `reasoningTokens`.
+  Sources, read 2026-10-21: platform.claude.com/docs/en/build-with-claude/effort and /thinking and the Messages API
+  reference.
 - **Prompt caching (RF-404).** The stable prompt prefix is marked with two of the four cache breakpoints Anthropic
   allows, both `{ "type": "ephemeral" }` (five minutes): the system prompt block, which caches the tools rendered
   before it, and the last block of the last message, because an agent task's conversation is append-only and that

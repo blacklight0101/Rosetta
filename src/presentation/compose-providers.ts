@@ -3,12 +3,13 @@ import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { SecretBox } from '../application/ports/secret-box.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
+import { reasoningModelsOf, type ReasoningModels } from '../application/models/model-list.js';
+import { loadModelList } from '../infrastructure/models/model-list-file.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
 import { TestProviders } from '../application/use-cases/test-providers.js';
 import type { Environment } from '../infrastructure/config/environment.js';
 import { loadPriceTable } from '../infrastructure/budget/price-file.js';
 import type { ModelList } from '../application/models/model-list.js';
-import { loadModelList } from '../infrastructure/models/model-list-file.js';
 import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
 import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
 import { PgServerSettings } from '../infrastructure/db/pg-server-settings.js';
@@ -55,6 +56,11 @@ export interface ProviderParts {
   readonly doubles: TestDoubles | undefined;
 }
 
+/** Q-58: the models the shipped list marks as reasoning models; a bad list stops the start-up. */
+async function loadReasoningModels(): Promise<ReasoningModels> {
+  return reasoningModelsOf(await loadModelList(modelsFile));
+}
+
 /** The adapters of this release, or, in the end-to-end tests, the model double for every kind. */
 async function adaptersFor(parts: ProviderParts): Promise<AdapterBuilder> {
   const double = parts.doubles?.provider;
@@ -80,7 +86,8 @@ export type GuardedFactoryMaker = (parts: GuardedFactoryParts) => ProviderSetFac
 export async function evaluationProviderFactory(logger: Logger): Promise<GuardedFactoryMaker> {
   const textProtocolPrompt = (await loadTextToolProtocol(promptsFolder)).text;
   const adapters = realAdapters({ testMode: false, textProtocolPrompt, logger });
-  return (parts) => new GuardedProviderFactory({ ...parts, adapters });
+  const reasoningModels = await loadReasoningModels();
+  return (parts) => new GuardedProviderFactory({ ...parts, adapters, reasoningModels });
 }
 
 export interface ComposedProviders {
@@ -92,6 +99,8 @@ export interface ComposedProviders {
   readonly priceTable: PriceTable;
   /** The shipped model list, loaded once: each model's context window and maximum output (Q-57). */
   readonly models: ModelList;
+  /** Q-58: the models the shipped list marks as reasoning models; the estimate names their effort. */
+  readonly reasoningModels: ReasoningModels;
   /** The shipped settings template, loaded once: its roles are the built-in default models. */
   readonly template: ProjectSettings;
 }
@@ -103,6 +112,7 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
   const serverSettings = new PgServerSettings(pool);
   const priceTable = await loadPriceTable(priceFile);
   const models = await loadModelList(modelsFile);
+  const reasoningModels = reasoningModelsOf(models);
   const factory = new GuardedProviderFactory({
     keys: new PgProviderKeyRepository(pool),
     box: secretBox,
@@ -114,6 +124,7 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
     models,
     masker,
     adapters: await adaptersFor(parts),
+    reasoningModels,
     ...{ clock, ids, logger },
   });
   const template = await loadProjectTemplate(templatesFolder);
@@ -126,5 +137,5 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
     unrecorded: unrecordedSinks(),
     signals: new SystemTimeoutSignals(),
   });
-  return { testProviders, factory, priceTable, models, template };
+  return { testProviders, factory, priceTable, models, reasoningModels, template };
 }

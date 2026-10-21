@@ -62,6 +62,7 @@ function composedRuns(dataDir: string) {
     ollamaUrl: undefined,
     priceTable: { version: '2026-10-11', currency: 'USD', prices: [] },
     models: NO_LISTED_MODELS,
+    reasoningModels: () => false,
     streams,
   });
   return { runs, logger, pool, streams, clock };

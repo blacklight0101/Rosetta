@@ -10,6 +10,7 @@ import type { ProjectSettings } from '../../src/application/projects/project-set
 import { ManifestSecurityRecorder } from '../../src/application/runs/run-security-record.js';
 import { keyAdditionalData, type KeyProvider } from '../../src/domain/accounts/provider-keys.js';
 import type { ServerCaps } from '../../src/domain/budget/budget.js';
+import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import type { RosettaError } from '../../src/domain/errors/rosetta-error.js';
 import { MemoryCostLedger } from '../../src/infrastructure/db/memory-cost-ledger.js';
 import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
@@ -24,11 +25,13 @@ import type {
   AdapterBuilder,
   AdapterSpec,
 } from '../../src/infrastructure/providers/adapter-spec.js';
-import { GuardedProviderFactory } from '../../src/infrastructure/providers/provider-factory.js';
+import {
+  GuardedProviderFactory,
+  type GuardedProviderFactoryOptions,
+} from '../../src/infrastructure/providers/provider-factory.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
 import { contractRequest } from '../contracts/llm-provider.contract.js';
 import { NO_LISTED_MODELS, type ModelList } from '../../src/application/models/model-list.js';
-import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { budgetTable } from './budget-harness.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
@@ -107,10 +110,12 @@ export interface FactoryHarnessOptions {
   readonly defaultRoles?: DefaultRoles;
   /** The application log the guards write to; a fresh in-memory one by default. */
   readonly logger?: MemoryLogger;
-  /** The price table; the contract model only, by default. */
+  /** The shipped price table; `budgetTable` by default. */
   readonly priceTable?: PriceTable;
   /** The shipped model list (Q-57); a list without limits by default. */
   readonly models?: ModelList;
+  /** Q-58: which models the shipped list marks as reasoning models; none by default. */
+  readonly reasoningModels?: GuardedProviderFactoryOptions['reasoningModels'];
 }
 
 export interface FactoryHarness extends FakeAdapters {
@@ -191,6 +196,7 @@ export function factoryHarness(options: FactoryHarnessOptions = {}): FactoryHarn
     priceTable: options.priceTable ?? budgetTable,
     models: options.models ?? NO_LISTED_MODELS,
     ids: new SequenceIdGenerator(),
+    ...(options.reasoningModels === undefined ? {} : { reasoningModels: options.reasoningModels }),
   });
   const run = runSinks(masker);
   return {

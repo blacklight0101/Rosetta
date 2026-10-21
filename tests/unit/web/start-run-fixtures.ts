@@ -22,6 +22,7 @@ export interface RoleBody extends PointRange {
   readonly model: string;
   readonly keySource: string;
   readonly priced: boolean;
+  readonly reasoningEffort?: string;
 }
 
 interface PointRange {
@@ -43,6 +44,7 @@ interface RoleOptions {
   readonly model: string;
   readonly keySource?: string;
   readonly priced?: boolean;
+  readonly reasoningEffort?: string;
   readonly costs: readonly [string, string, string];
 }
 
@@ -53,6 +55,7 @@ export function roleOf(options: RoleOptions): RoleBody {
     ...{ role, provider, kind, model },
     keySource: options.keySource ?? 'none',
     priced: options.priced ?? true,
+    ...(options.reasoningEffort === undefined ? {} : { reasoningEffort: options.reasoningEffort }),
     low: point(10_000, 1_000, low),
     likely: point(20_000, 2_000, likely),
     high: point(40_000, 4_000, high),

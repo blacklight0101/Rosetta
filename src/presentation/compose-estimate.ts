@@ -1,4 +1,4 @@
-import type { ModelList } from '../application/models/model-list.js';
+import type { ModelList, ReasoningModels } from '../application/models/model-list.js';
 import type { ScanResults } from '../application/ports/scan-results.js';
 import { EstimateRun } from '../application/estimate/estimate-run.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
@@ -14,6 +14,8 @@ export interface EstimateParts {
   readonly pool: DatabasePool;
   readonly priceTable: PriceTable;
   readonly models: ModelList;
+  /** Q-58: the models the shipped list marks as reasoning models; the estimate names their effort. */
+  readonly reasoningModels: ReasoningModels;
 }
 
 // RF-425
@@ -30,5 +32,6 @@ export function composeEstimateRun(
     keys: new PgProviderKeyRepository(parts.pool),
     priceTable: parts.priceTable,
     models: parts.models,
+    reasoningModels: parts.reasoningModels,
   });
 }

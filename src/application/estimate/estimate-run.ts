@@ -36,6 +36,7 @@ import type {
   Scenario,
 } from './estimate-types.js';
 import { readerTokens, type TokenFigures } from './reader-estimate.js';
+import type { ReasoningModels } from '../models/model-list.js';
 import { estimateRole } from './role-estimate.js';
 
 // RF-425, ADR-007, DEC-13, DEC-54, DEC-107: the estimate before a run (`GET
@@ -57,6 +58,8 @@ export interface EstimateRunDependencies {
   readonly priceTable: PriceTable;
   /** The shipped model list: the context window and the output limit of each model (Q-57). */
   readonly models: ModelList;
+  /** Q-58: the models the shipped list marks as reasoning models; the estimate names their effort. */
+  readonly reasoningModels: ReasoningModels;
 }
 
 export interface EstimateRunRequest {

@@ -13,6 +13,8 @@ const usageSchema = z.object({
   cache_creation_input_tokens: count.nullish(),
   /** Read from the cache by this call. */
   cache_read_input_tokens: count.nullish(),
+  /** The part of `output_tokens` spent on thinking; absent from older answers. */
+  output_tokens_details: z.object({ thinking_tokens: count.nullish() }).nullish(),
 });
 
 const blockSchema = z.union([

@@ -41,6 +41,7 @@ const callSchema = z.object({
   outputTokens: count,
   cachedInputTokens: count,
   cacheWriteInputTokens: count.optional(),
+  reasoningTokens: count.optional(),
   usageSource: z.enum(['reported', 'estimated']),
   costMicros: count,
   currency: z.string(),
@@ -70,10 +71,11 @@ export function parseCallLine(value: unknown): StoredCall | undefined {
   if (!parsed.success) return undefined;
   const { modelVersion, requestId, errorCode, httpStatus, ollama, transcriptRef, ...rest } =
     parsed.data;
-  const { cacheWriteInputTokens, ...required } = rest;
+  const { cacheWriteInputTokens, reasoningTokens, ...required } = rest;
   return {
     ...required,
     ...(cacheWriteInputTokens === undefined ? {} : { cacheWriteInputTokens }),
+    ...(reasoningTokens === undefined ? {} : { reasoningTokens }),
     ...(modelVersion === undefined ? {} : { modelVersion }),
     ...(requestId === undefined ? {} : { requestId }),
     ...(errorCode === undefined ? {} : { errorCode }),
