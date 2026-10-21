@@ -24,6 +24,8 @@ interface PlanAssumptions {
   readonly uxPromptTokens: number;
   /** The part of `promptTokens` that belongs to the coverage call (RF-627). */
   readonly coveragePromptTokens: number;
+  /** The part of `promptTokens` that belongs to the call for the items no task card builds (Q-45). */
+  readonly gapPromptTokens: number;
   /** The planner's `maxOutputTokens`: the high figure writes all of it, as the guard's worst case does. */
   readonly maxOutputTokens: number;
   /** RF-604: the continuations one planner call may make when its answer is cut off; the high figure reserves them. */

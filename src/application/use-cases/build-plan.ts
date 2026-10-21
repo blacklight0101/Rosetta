@@ -14,7 +14,7 @@ import {
 import type { Run } from '../../domain/runs/run.js';
 import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
 import { parsePlanAnswer } from '../plan/plan-answer.js';
-import { coverageWarnings, planCoverage } from '../plan/plan-coverage.js';
+import { planLinks } from '../plan/plan-links.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
 import { planDocuments } from '../plan/plan-documents.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
@@ -91,17 +91,11 @@ export class BuildPlan implements RunExecutor {
     } catch (error) {
       if (execution.signal.aborted) return { endState: 'Interrupted' };
       if (!(error instanceof RosettaError)) throw error;
-      // RF-422, RF-423: a refusal by the planner's role cap leaves the run's signal alone, but the
-      // run did not finish what it was asked to write, so it ends CapReached like any cap stop.
-      if (error.code === ERROR_CODES.budgetCapReached) {
-        await this.log(execution.run, error.code, 'The planner call would pass a cap.');
-        return { endState: 'CapReached', errorCode: error.code };
-      }
-      // RF-401, RF-604: these two messages name sizes and settings, never prompt text.
-      const named = namesItsCause.has(error.code);
-      const message = named ? error.message : 'The hand-off package could not be written.';
-      await this.log(execution.run, error.code, message);
-      return failed(error.code);
+      return await this.refusedBy(
+        execution.run,
+        error,
+        'The hand-off package could not be written.',
+      );
     } finally {
       await writeCostReport(this.deps, execution.run);
     }
@@ -158,18 +152,44 @@ export class BuildPlan implements RunExecutor {
       ...{ ...call, onCutOff: warn },
       ...{ prompt: prompts.coverage, agentTaskId: 'planner-coverage' },
     };
-    const covered = await planCoverage(linking, { content: assembly.content, documents });
-    for (const message of coverageWarnings(covered)) await warn(message);
+    const gapping = { ...linking, prompt: prompts.gap, agentTaskId: 'planner-gap' };
+    const specificationDriven = inputs.brief.principles.includes(methodPrinciples.sdd);
+    const links = await planLinks(
+      { coverage: linking, gap: gapping, specificationDriven },
+      { content: assembly.content, documents },
+    );
+    const covered = links.planned;
+    for (const message of links.warnings) await warn(message);
     const shapes = await planShapes(this.deps, inputs);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
       ...documents,
       shapes,
     });
     await this.deps.handoff.write(scopeOf(run), handoff);
+    // Q-45: the extra call was refused or failed; the package of the first call stays as it is.
+    if (links.refusal !== undefined) {
+      const message =
+        'The package was written, but the task cards for the items no card builds could not be asked for.';
+      return this.refusedBy(run, links.refusal, message);
+    }
     const gaps = covered.report.uncovered.length;
     if (gaps === 0) return { endState: 'Completed' };
     const message = `The package was written, but ${String(gaps)} item(s) are built by no task card; see checks.md.`;
     return this.fail(run, ERROR_CODES.planCoverageGap, message);
+  }
+
+  /**
+   * RF-422, RF-423: a refusal by the planner's role cap leaves the run's signal alone, but the run
+   * did not finish what it was asked to write, so it ends CapReached like any cap stop. RF-401: the
+   * messages of the cut-off answer and of the prompt size name sizes and settings, never prompt text.
+   */
+  private async refusedBy(run: Run, error: RosettaError, fallback: string): Promise<RunOutcome> {
+    if (error.code === ERROR_CODES.budgetCapReached) {
+      await this.log(run, error.code, 'The planner call would pass a cap.');
+      return { endState: 'CapReached', errorCode: error.code };
+    }
+    await this.log(run, error.code, namesItsCause.has(error.code) ? error.message : fallback);
+    return failed(error.code);
   }
 
   private warn(run: Run, message: string): Promise<void> {
