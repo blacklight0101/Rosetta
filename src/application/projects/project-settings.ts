@@ -21,11 +21,7 @@ export const PROVIDER_KINDS = [
   'fake',
 ] as const satisfies readonly ProviderKind[];
 /** Q-58: the efforts a role may ask for; the ones every model that takes an effort accepts. */
-export const REASONING_EFFORTS = [
-  'low',
-  'medium',
-  'high',
-] as const satisfies readonly ReasoningEffort[];
+const REASONING_EFFORTS = ['low', 'medium', 'high'] as const satisfies readonly ReasoningEffort[];
 /** Q-58: the effort of a role that sets none. */
 export const DEFAULT_REASONING_EFFORT = 'low' satisfies ReasoningEffort;
 export const ROLE_NAMES = ['reader', 'verifier', 'planner', 'summariser'] as const;

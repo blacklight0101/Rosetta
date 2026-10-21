@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { runAgentTask } from '../../../../src/application/agent/agent-loop.js';
+import { OUTPUT_LIMIT_CEILING } from '../../../../src/application/agent/empty-answer-retry.js';
+import { parseProjectSettings } from '../../../../src/application/projects/project-settings.js';
+import { settingsWith } from '../../../support/project-fixtures.js';
 import type {
   LlmProvider,
   LlmRequest,
@@ -95,6 +98,14 @@ describe('P3-86 an empty answer at the output limit', () => {
 });
 
 describe('P3-86 the doubled limit', () => {
+  it('RF-402 the largest limit is the largest the settings accept', () => {
+    const at = (limit: number) =>
+      parseProjectSettings(settingsWith({ 'roles.reader.maxOutputTokens': limit })).ok;
+
+    expect(at(OUTPUT_LIMIT_CEILING)).toBe(true);
+    expect(at(OUTPUT_LIMIT_CEILING + 1)).toBe(false);
+  });
+
   it('RF-402 stops at the largest limit a role accepts', async () => {
     const { fake, request } = ungatedLoopSetup([emptyAtLimit(20_000), textTurn(whole)], {
       maxOutputTokens: 20_000,
