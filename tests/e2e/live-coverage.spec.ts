@@ -14,7 +14,7 @@ import { signInAs } from './support/sign-in.js';
 
 // RF-1005, DEC-51, P1-38: the coverage map of the live run page, driven by a real understand run of
 // the test server. The model double replays the recorded understand run of the C# fixture
-// (e2e-provider.ts): the `(root)` reader reads `Default.aspx.cs`, the `Services` reader reads
+// (e2e-provider.ts): the `(root)` reader reads `Default.aspx.cs`, `Web.config` and `Default.aspx` (more than half of its area, P3-78), the `Services` reader reads
 // `Services/CatalogService.cs`, and the `Controllers` reader never answers until the run is
 // stopped. With two parallel readers (set on the project settings page) the run is still running
 // while the map fills in. An understand run needs a completed scan of the project, so the test scans
@@ -84,20 +84,20 @@ test('RF-1005 the coverage map of a running run fills in by area and by read sha
   await expect(agentPanel(page, 'Services')).toContainText('Done', { timeout: 30_000 });
 
   await expect(runStatus(page)).toContainText('Running');
-  // RF-230: every file of the area is listed, the one read plain and the six others as not read.
+  // RF-230: every file of the area is listed, the three read plain and the four others as not read.
   const rootFiles = coverageOf(page, '(root)').getByRole('listitem');
   await expect(rootFiles).toHaveCount(7);
-  await expect(rootFiles.filter({ hasText: 'not read' })).toHaveCount(6);
+  await expect(rootFiles.filter({ hasText: 'not read' })).toHaveCount(4);
   await expect(rootFiles.filter({ hasText: /^Default.aspx.cs$/u })).toHaveCount(1);
   const services = coverageOf(page, 'Services');
   await expect(services.getByRole('listitem').first()).toContainText('Services/');
   await expect(services.getByText('CatalogService.cs', { exact: true })).toBeVisible();
-  await expect(readShare(page, '(root)')).toHaveAttribute('aria-valuenow', '50');
-  await expect(readShare(page, 'Services')).toHaveAttribute('aria-valuenow', '50');
+  await expect(readShare(page, '(root)')).toHaveAttribute('aria-valuenow', '75');
+  await expect(readShare(page, 'Services')).toHaveAttribute('aria-valuenow', '25');
   await expect(coverageOf(page, 'Controllers')).toContainText('No files read yet');
   await expect(readShare(page, 'Controllers')).toHaveAttribute('aria-valuenow', '0');
   // DEC-158: the run was asked for three of the five areas; the other two are apart, not "not read".
-  await expect(map).toContainText('2 of 9 files read in 2 areas · 1 area not read');
+  await expect(map).toContainText('4 of 9 files read in 2 areas · 1 area not read');
   const apart = map.getByRole('region', { name: 'Not in this run' });
   await expect(apart).toContainText('Catalog');
   await expect(apart).toContainText('Database');
@@ -123,7 +123,7 @@ test('RF-1005 RF-1002 Pause updates freezes the coverage map while read_file eve
   const map = page.getByRole('region', { name: 'Coverage map' });
   const root = coverageOf(page, '(root)');
   await expect(root.getByText('Default.aspx.cs', { exact: true })).toBeVisible({ timeout: 30_000 });
-  await expect(map).toContainText('1 of 8 files read in 1 area');
+  await expect(map).toContainText('3 of 8 files read in 1 area');
   await expect(map.getByRole('region', { name: 'Not in this run' })).toContainText('Controllers');
   const services = coverageOf(page, 'Services');
   await expect(services).toContainText('No files read yet');
@@ -145,8 +145,8 @@ test('RF-1005 RF-1002 Pause updates freezes the coverage map while read_file eve
   await expect(services.getByText('CatalogService.cs', { exact: true })).toBeVisible({
     timeout: 30_000,
   });
-  await expect(map).toContainText('2 of 8 files read in 2 areas');
-  await expect(readShare(page, '(root)')).toHaveAttribute('aria-valuenow', '50');
-  await expect(readShare(page, 'Services')).toHaveAttribute('aria-valuenow', '50');
+  await expect(map).toContainText('4 of 8 files read in 2 areas');
+  await expect(readShare(page, '(root)')).toHaveAttribute('aria-valuenow', '75');
+  await expect(readShare(page, 'Services')).toHaveAttribute('aria-valuenow', '25');
   await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
 });
