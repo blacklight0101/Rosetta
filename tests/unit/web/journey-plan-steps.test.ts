@@ -98,7 +98,12 @@ describe('journeyOf: the package', () => {
     const view = journeyOf(
       facts({
         plan: planRun({ endState: 'Failed', errorCode: 'RST-1803' }),
-        handoff: { runId: 'earlier', runKey: '20261011-100000-plan', outOfDate: false },
+        handoff: {
+          runId: 'earlier',
+          runKey: '20261011-100000-plan',
+          outOfDate: false,
+          gaps: false,
+        },
       }),
       projectId,
     );

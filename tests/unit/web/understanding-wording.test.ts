@@ -45,7 +45,7 @@ describe('RF-231 the wording of the measures', () => {
       },
       {
         ...{ id: 'notRead', label: 'First-party files not read', value: '12' },
-        detail: 'the largest are listed below',
+        detail: 'files; the largest are listed below',
       },
       {
         ...{ id: 'share', label: 'Supported share', value: '68 of 118' },
@@ -80,7 +80,9 @@ describe('RF-231 the wording of a well covered run', () => {
       ...{ id: 'afterReread', label: 'Supported after a re-read', value: '5' },
       detail: 'listed apart; check these with more care',
     });
-    expect(rows.find((row) => row.id === 'notRead')?.detail).toBe('none');
+    expect(rows.find((row) => row.id === 'notRead')?.detail).toBe(
+      'files; every first-party file was read',
+    );
   });
 });
 
@@ -154,5 +156,30 @@ describe('RF-231 percentages are cut down', () => {
     expect(standingOf(set).text).toBe(
       'Well covered: 80% of first-party tokens read and no claim left unjudged.',
     );
+  });
+});
+
+describe('RF-231 (Q-44) a measure reads as a sentence and agrees in number', () => {
+  const row = (set: MeasureSet, id: string) => {
+    const found = measureRows(set).find((each) => each.id === id);
+    if (found === undefined) throw new Error(`No row ${id}`);
+    return `${found.value} ${found.detail}`;
+  };
+
+  it.each([
+    [0, '0 claims left Unverified'],
+    [1, '1 claim left Unverified'],
+    [2, '2 claims left Unverified'],
+    [1200, '1,200 claims left Unverified'],
+  ])('RF-231 words %i claims not judged as "%s"', (count, expected) => {
+    expect(row(measures({ notJudged: count }), 'notJudged')).toBe(expected);
+  });
+
+  it.each([
+    [10, '10 files; the largest are listed below'],
+    [1, '1 file; it is listed below'],
+    [0, '0 files; every first-party file was read'],
+  ])('RF-231 words %i first-party files not read as "%s"', (count, expected) => {
+    expect(row(measures({ filesNotReadCount: count }), 'notRead')).toBe(expected);
   });
 });
