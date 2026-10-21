@@ -120,6 +120,10 @@ export const testReaderPrompts: ReaderPrompts = {
     'reader/read-first.v1.md',
     'You have read no file of your area. Read before you answer.\n{{files}}\nTurns left: {{turns}}.',
   ),
+  readMore: prompt(
+    'reader/read-more.v1.md',
+    'You read {{percent}}% of your area ({{read}} of {{total}} tokens). Read more.\n{{files}}\nTurns left: {{turns}}.',
+  ),
 };
 
 /** A valid final answer with one card citing the shipping rule. */

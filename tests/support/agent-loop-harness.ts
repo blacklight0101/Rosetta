@@ -71,6 +71,7 @@ function ungated(tools: ReadOnlyTools): AgentTaskRequest['tools'] {
     definitions: tools.definitions,
     areaOverview: () => tools.areaOverview(),
     readableAreaFiles: () => [],
+    readableAreaEntries: () => [],
     renderBlock: (source, text) => tools.renderBlock(source, text),
     rowSpans: (path) => tools.rowSpans(path),
     run: (call, ids) => tools.run(call, ids),

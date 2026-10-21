@@ -85,3 +85,34 @@ describe('a reader that answers at turn 1 and the budget', UNDERSTAND_TIMEOUT, (
     expect(h.providers.ledger.entries).toHaveLength(3);
   });
 });
+
+describe('a reader that answers after reading little of its area', UNDERSTAND_TIMEOUT, () => {
+  it('RF-206 is refused once with the unread file, reads it and its second answer is accepted', async () => {
+    const h = await started('understand-read-more.json');
+
+    const run = await h.understand({ areas: ['Catalog'] });
+
+    expect(run.endState).toBe('Completed');
+    const requests = h.providers.requests();
+    expect(requests).toHaveLength(4);
+    const told = requests[2]?.messages.at(-1)?.content ?? '';
+    expect(told).toMatch(/\d+%/u);
+    expect(told).toContain('Catalog/Details.aspx');
+    expect(told).not.toContain('Details.aspx.cs');
+    const folder = h.runFolder(run);
+    const coverage = coverageSchema.parse(await readJson(join(folder, 'coverage.json')));
+    expect(coverage.areas[0]?.note).toBeUndefined();
+    expect(coverage.areas[0]?.files.every((file) => file.read.length > 0)).toBe(true);
+  });
+
+  it('RNF-004 RF-206 the extra turn goes through the budget guard and the manifest records the prompt', async () => {
+    const h = await started('understand-read-more.json');
+
+    const run = await h.understand({ areas: ['Catalog'] });
+
+    const manifest = await h.manifestOf(run);
+    expect(manifest.totals.calls).toBe(4);
+    expect(h.providers.ledger.entries).toHaveLength(4);
+    expect(manifest.promptVersions['reader/read-more.v1.md']?.version).toBe('v1');
+  });
+});

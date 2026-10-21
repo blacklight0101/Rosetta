@@ -16,6 +16,24 @@
                   "startLine": 1,
                   "endLine": 14
                 }
+              },
+              {
+                "id": "call-2",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Web.config",
+                  "startLine": 1,
+                  "endLine": 9
+                }
+              },
+              {
+                "id": "call-3",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Default.aspx",
+                  "startLine": 1,
+                  "endLine": 8
+                }
               }
             ],
             "usage": {

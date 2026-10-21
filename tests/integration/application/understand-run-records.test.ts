@@ -46,7 +46,9 @@ describe('an understand run: cost and prompts', () => {
     });
     expect(await readFile(join(folder, 'cost.md'), 'utf8')).toContain('reader');
   });
+});
 
+describe('an understand run: prompts', () => {
   // The root and Catalog areas of the fixture hold pages, so the run used both fragments (Q-25).
   it('RNF-004 RF-301 records the reader and verifier prompt files with their versions and hashes', async () => {
     const { h, run } = full.current();
@@ -60,6 +62,7 @@ describe('an understand run: cost and prompts', () => {
       'cards/screens.v2.md',
       'reader/area.v6.md',
       'reader/read-first.v1.md',
+      'reader/read-more.v1.md',
       'reader/task.v2.md',
       'reader/turns-left.v2.md',
       'verifier/claim.v1.md',
@@ -80,12 +83,12 @@ describe('an understand run: events', () => {
     const count = (type: string): number => events.filter((event) => event.type === type).length;
     expect(
       ['agent.planned', 'agent.started', 'agent.turn', 'agent.tool.called'].map(count),
-    ).toEqual([5, 5, 11, 6]);
+    ).toEqual([5, 5, 11, 8]);
     expect(
       ['agent.tool.result', 'agent.card.proposed', 'verify.citation.checked', 'agent.ended'].map(
         count,
       ),
-    ).toEqual([6, 5, 7, 5]);
+    ).toEqual([8, 5, 7, 5]);
     expect(events.find((event) => event.type === 'agent.tool.called')?.data).toEqual({
       turn: 1,
       tool: 'read_file',

@@ -61,7 +61,7 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   for (const area of areas) await expect(agentPanel(page, area)).toBeVisible();
   const root = agentPanel(page, '(root)');
   await expect(root).toContainText('reader');
-  await expect(root).toContainText('read_file Default.aspx.cs:1-14');
+  await expect(root).toContainText('read_file Default.aspx:1-8');
   await expect(page.getByRole('region', { name: 'Overview' })).toContainText('Running');
   await expectNoSeriousViolations(page);
   await transitionsDone(page);
@@ -74,7 +74,7 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   await expect(valueOf(overview, 'Failed')).toHaveText('0');
   await expect(valueOf(overview, 'Running')).toHaveText('0');
   await expect(valueOf(root, 'Turns')).toHaveText('2');
-  await expect(valueOf(root, 'Files read')).toHaveText('1');
+  await expect(valueOf(root, 'Files read')).toHaveText('3'); // P3-78: three files, half of the area
   await expect(root).toContainText('FEAT-001');
   await expect(root).toContainText('OQ-001');
   await expectMeterFromUsage(page, finishedRun, areas);
