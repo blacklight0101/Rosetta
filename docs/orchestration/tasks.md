@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 83      | 5         | 76         | 2         | 0                  | 28      | 53      | 2      | 39         | 0         |
-| **Total**               | **300** | **77**    | **196**    | **27**    | **0**              | **144** | **144** | **12** | **174**    | **0**     |
+| P3 Report and plan      | 84      | 5         | 77         | 2         | 0                  | 28      | 54      | 2      | 40         | 0         |
+| **Total**               | **301** | **77**    | **197**    | **27**    | **0**              | **144** | **145** | **12** | **175**    | **0**     |
 
 ## Conventions for every card
 
@@ -4092,3 +4092,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the room check, the kept answers, the partial parse, the events and tests.
 - **Done when**: each probe has a passing test; `npm run verify` green.
 - **Refs**: RF-206, RF-202, RF-208, Q-50, Q-55; issue #735.
+
+### P3-84 - Follow-up: the shipped price table and model list are complete and current
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-420, RF-427 and RF-405 (the Q-56 scenario), Q-56; `prices/default-prices.yaml` (no Anthropic entry at all, OpenAI checked 2026-10-11; a call with a server key is always priced from this file, so every Anthropic model is refused on a server key), `prices/models.yaml` (the dropdown list), `src/application/projects/price-overrides.ts`, the price table loader and schema, the cost meter and the estimate, `docs/providers.md` section 3.5. Found in the orchestrator's evaluation of 2026-10-21: a project set to `anthropic / claude-haiku-5-5` on a server key shows "which has no price" on the start page and the run is refused. Sources, checked by the orchestrator on 2026-10-21 (the builder copies every number from these pages again and the verifier re-checks them): Anthropic https://platform.claude.com/docs/en/about-claude/pricing and https://platform.claude.com/docs/en/about-claude/models/overview; OpenAI https://developers.openai.com/api/docs/pricing (standard tier). Orchestrator's reading of the Anthropic table, per million tokens, base input / 5-minute cache write / cache hit / output: Fable 5.1 $10 / $12.50 / $0.25 / $50; Fable 5 $10 / $12.50 / $1 / $50; Opus 5.5 $4 / $5 / $0.20 / $20; Opus 5, 4.8, 4.7, 4.6 and 4.5 $5 / $6.25 / $0.50 / $25; Sonnet 5.5 $2 / $2.50 / $0.10 / $10; Sonnet 5 $2 / $2.50 / $0.20 / $10 (the introductory price is now standard); Sonnet 4.6 and 4.5 $3 / $3.75 / $0.30 / $15; Haiku 5.5 $0.10 / $0.125 / $0.01 / $0.50 for prompts up to 100,000 tokens and $0.50 / $0.625 / $0.05 / $2.50 over 100,000 (the prompt counts every input token, cache reads and writes included); Haiku 4.5 $1 / $1.25 / $0.10 / $5. Retired models and limited-availability models (Mythos) are left out. OpenAI: every model of the standard text tables, with its long-context tier where the page gives one (input over 272,000 tokens).
+- **Do**: (1) `prices/default-prices.yaml` holds every Anthropic model available on the Claude API (current and legacy still available, by its Claude API id from the models pages) and every OpenAI model of the standard text tables (by its API id), with the prices of the pages in micro-dollars, the cache write (Anthropic 5-minute write; OpenAI the input price, as today) and the cache hit; a comment per provider names the page and the date; the version date is 2026-10-21; Ollama entries stay; (2) a model entry may carry one long-prompt tier (an input-token threshold and its prices); a call whose input tokens (cache reads and writes included) are over the threshold is priced at that tier in the ledger and the meter, and the estimate and the cap check price a call at the tier its estimated prompt reaches; (3) `prices/models.yaml` lists the current Anthropic models and the current OpenAI flagship models, each with a price, plus the cheap models a user is likely to try; its version date is 2026-10-21; (4) `docs/providers.md` gives the sources and the date; `docs/data-model.md` describes the tier if the table format is documented there.
+- **Review probes**: every entry checked against the pages (the verifier samples at least eight, including Haiku 5.5 both tiers, Sonnet 5, Opus 5.5, one legacy Anthropic model, gpt-5-nano, one flagship OpenAI model and one with a long-context tier); a Haiku 5.5 call of 30,000 input tokens (lower tier), exactly 100,000 (lower), 120,000 (higher), cache reads and writes that cross the threshold together (higher); the start page with every role on Haiku 5.5 shows dollars, no "no price" note; an Ollama model costs zero as today; a project price override still applies only with the user's own key (DEC-107); the loader refuses a tier with a missing price; every model of `models.yaml` has a price; recorded responses only.
+- **Behaviour to preserve**: RF-420 server-key calls priced from the file; RF-427 unpriced models refused unless allowed; DEC-107 overrides; P3-79 tokens for local models.
+- **Delivers**: the price table, the model list, the tier, the docs and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-420, RF-427, RF-405, Q-56; issue #737.
