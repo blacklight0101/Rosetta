@@ -41,7 +41,7 @@ export class ReadGate {
   private readonly reads: Citation[] = [];
   private hasRead = false;
   private refusals = 0;
-  private askedToReadMore = false;
+  private asked = false;
 
   constructor(readableFiles: readonly FileEntry[]) {
     this.entries = readableFiles;
@@ -76,15 +76,19 @@ export class ReadGate {
 
   /**
    * Q-50: what to tell a reader whose answer is to be refused for having read little of its area,
-   * else undefined. It is asked once; its next answer is accepted whatever the coverage.
+   * else undefined. It looks only; `askedToReadMore` records that the reader was asked, once, so
+   * that its next answer is accepted whatever the coverage. A reader that is not asked because the
+   * conversation has no room (Q-55) is still to be asked while it has room.
    */
   readMore(turnsLeft: number): ReadMoreAsk | undefined {
-    if (this.state() !== 'read' || this.askedToReadMore || turnsLeft < turnsNeeded)
-      return undefined;
+    if (this.state() !== 'read' || this.asked || turnsLeft < turnsNeeded) return undefined;
     const { share, tokens, readTokens, unread } = readShare(this.entries, this.reads);
     if (share >= enoughRead || unread.length === 0) return undefined;
-    this.askedToReadMore = true;
     const percent = Math.round(share * 100);
     return { percent, readTokens, tokens, files: listed(unread.map((file) => file.path)) };
+  }
+
+  askedToReadMore(): void {
+    this.asked = true;
   }
 }

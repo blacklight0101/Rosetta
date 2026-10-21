@@ -66,7 +66,7 @@ function stringEnd(text: string, open: number): number {
 }
 
 /** The end of the JSON value that starts at `start`, or -1; strings and escapes are respected. */
-function balancedEnd(text: string, start: number): number {
+export function balancedEnd(text: string, start: number): number {
   let depth = 0;
   for (let index = start; index < text.length; index += 1) {
     const char = text[index];
