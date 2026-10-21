@@ -85,44 +85,40 @@ describe('RF-608 a decision the brief records is written once', () => {
 });
 
 describe('RF-608 a decision that is more than the brief says stays', () => {
-  it('RF-608 a decision with sources that mentions the style stays, and checks.md lists nothing', async () => {
+  it('RF-608 a decision with sources that mentions the style and one on email delivery stay, and checks.md lists nothing', async () => {
     const files = await packageOf(
       layered,
-      recordingWith([decision('Adopt layered architecture', ['BR-001'])]),
+      recordingWith([
+        decision('Adopt layered architecture', ['BR-001']),
+        decision('Deliver email by SMTP', []),
+      ]),
     );
 
-    expect(titlesOf(files).join('\n')).toContain('Adopt layered architecture');
-    expect(plain(files['checks.md'])).not.toContain('Decisions the brief already records');
-  });
-
-  it('RF-608 a decision on email delivery stays', async () => {
-    const files = await packageOf(layered, recordingWith([decision('Deliver email by SMTP', [])]));
-
-    expect(titlesOf(files).join('\n')).toContain('Deliver email by SMTP');
+    const titles = titlesOf(files).join(' | ');
+    expect(titles).toContain('Adopt layered architecture');
+    expect(titles).toContain('Deliver email by SMTP');
     expect(plain(files['checks.md'])).not.toContain('Decisions the brief already records');
   });
 });
 
 describe('RF-610 RF-609 the migration and the stack are written once', () => {
-  it('RF-610 a restated migration strategy leaves one record of the migration', async () => {
-    const files = await packageOf(
-      layered,
-      recordingWith([decision('Migration by strangler-fig', [])]),
-    );
-
-    expect(titlesOf(files).filter((title) => title.includes('Strangler'))).toHaveLength(1);
-  });
-
-  it('RF-609 a restated technology of an answered layer is left out', async () => {
+  it('RF-610 RF-609 a restated migration strategy and a restated technology leave one record each', async () => {
     const stack = [{ layer: 'database', choice: 'PostgreSQL 17', custom: false }] as const;
 
     const files = await packageOf(
       { ...layered, stack },
-      recordingWith([decision('Use PostgreSQL for storage', [])]),
+      recordingWith([
+        decision('Migration by strangler-fig', []),
+        decision('Use PostgreSQL for storage', []),
+      ]),
     );
 
-    expect(titlesOf(files).join('\n')).not.toContain('Use PostgreSQL for storage');
-    expect(plain(files['checks.md'])).toContain('- Use PostgreSQL for storage: see [ADR-002]');
+    const titles = titlesOf(files);
+    expect(titles.filter((title) => title.includes('Strangler'))).toHaveLength(1);
+    expect(titles.join(' | ')).not.toContain('Use PostgreSQL for storage');
+    const checks = plain(files['checks.md']);
+    expect(checks).toContain('- Use PostgreSQL for storage: see [ADR-002]');
+    expect(checks).toContain('- Migration by strangler-fig: see [ADR-003]');
   });
 });
 
