@@ -8,6 +8,7 @@ import {
   capName,
   overCaps,
   scenarioCost,
+  scenarioFigure,
   type Blocker,
 } from '../lib/plan-setup/estimate.js';
 import type { EstimateLoad } from './use-plan-estimate.js';
@@ -46,14 +47,14 @@ function CapRow({ cap }: { readonly cap: PlanCap }): JSX.Element {
 function warningsOf(estimate: PlanEstimate): readonly string[] {
   const likely = overCaps(estimate, 'likely').map(
     (cap) =>
-      `The likely estimate (${scenarioCost(estimate, 'likely')}) is over what is left of the ${capName(cap)}.`,
+      `The likely estimate (${scenarioFigure(estimate, 'likely', cap)}) is over what is left of the ${capName(cap)}.`,
   );
   const names = new Set(overCaps(estimate, 'likely').map(capName));
   const high = overCaps(estimate, 'high')
     .filter((cap) => !names.has(capName(cap)))
     .map(
       (cap) =>
-        `The high estimate (${scenarioCost(estimate, 'high')}) could pass the ${capName(cap)} (${capFigure(cap, cap.limit)}).`,
+        `The high estimate (${scenarioFigure(estimate, 'high', cap)}) could pass the ${capName(cap)} (${capFigure(cap, cap.limit)}).`,
     );
   return [...likely, ...high];
 }

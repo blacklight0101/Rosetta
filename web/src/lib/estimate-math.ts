@@ -6,6 +6,16 @@ import { microsToDollars } from './usd.js';
 // has a cost of zero in the data and is never shown as free: it is unknown, and a total that
 // includes one is a lower bound.
 
+/**
+ * RF-209, RF-613, Q-44: a local model server (Ollama) costs nothing, so its estimate is shown in
+ * tokens and never in dollars; every other provider is shown in dollars.
+ */
+export const isLocalModel = (kind: string): boolean => kind === 'ollama';
+
+/** `12,300 tokens`: a token figure with its unit. */
+export const tokensText = (tokens: number | bigint): string =>
+  `${tokens.toLocaleString('en-US')} tokens`;
+
 export const scenarios: readonly Scenario[] = ['low', 'likely', 'high'];
 
 /** `$0.39`: dollars with at least the cents and no trailing zeros beyond them. */

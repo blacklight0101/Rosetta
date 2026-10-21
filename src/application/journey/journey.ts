@@ -26,12 +26,17 @@ export interface JourneySource extends JourneyRun {
   readonly openQuestions: number;
 }
 
-/** The hand-off package: the newest plan run of the project that ended `Completed`. */
+/**
+ * The hand-off package: the newest plan run of the project that ended `Completed`, or that ended
+ * RST-1806 after writing the package with gaps (RF-627).
+ */
 export interface JourneyHandoff {
   readonly runId: string;
   readonly runKey: string;
   /** The brief or the source run changed after the package was written (RF-615, DEC-143 Q-C). */
   readonly outOfDate: boolean;
+  /** The plan run ended RST-1806: some items are built by no task card (checks.md lists them). */
+  readonly gaps: boolean;
 }
 
 export interface Journey {

@@ -29,12 +29,14 @@ export interface PlanPromptSources {
   readonly uxPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the links of the task cards to the items (RF-627). */
   readonly coveragePrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the task cards of the items no card builds (Q-45). */
+  readonly gapPrompt: () => Promise<PromptFile>;
   /** The planner's workbook guidance, added to the package prompt of a workbook plan (RF-155). */
   readonly workbookPrompt: () => Promise<PromptFile>;
 }
 
 export type PlanPrompts = Readonly<
-  Record<keyof DocumentPrompts | 'plan' | 'coverage' | 'continue', PromptFile>
+  Record<keyof DocumentPrompts | 'plan' | 'coverage' | 'gap' | 'continue', PromptFile>
 >;
 
 export interface PlanFiles {
@@ -50,7 +52,7 @@ export async function loadPlanFiles(
   sources: PlanPromptSources & PlanShapeDependencies,
   inputs: PlanInputs,
 ): Promise<PlanFiles> {
-  const [catalogue, plan, prd, dataModel, flows, apiContract, ux, coverage, cont] =
+  const [catalogue, plan, prd, dataModel, flows, apiContract, ux, coverage, gap, cont] =
     await Promise.all([
       sources.catalogue(),
       sources.prompt(),
@@ -60,12 +62,13 @@ export async function loadPlanFiles(
       sources.apiContractPrompt(),
       sources.uxPrompt(),
       sources.coveragePrompt(),
+      sources.gapPrompt(),
       sources.continuePrompt(),
     ]);
   const guidance = await workbookGuidanceFor(sources, inputs);
   const prompts = {
     ...{ plan: withWorkbookGuidance(plan, guidance), prd, dataModel, flows },
-    ...{ apiContract, ux, coverage, continue: cont },
+    ...{ apiContract, ux, coverage, gap, continue: cont },
   };
   return { catalogue, prompts, ...(guidance === undefined ? {} : { guidance }) };
 }

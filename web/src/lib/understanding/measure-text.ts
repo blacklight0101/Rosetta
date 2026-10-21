@@ -124,6 +124,12 @@ function thirdPartyRow(measures: MeasureSet): readonly MeasureRow[] {
   ];
 }
 
+/** Read after the count: "10 files; the largest are listed below" (Q-44). */
+function filesNotReadDetail(count: number): string {
+  if (count === 0) return 'files; every first-party file was read';
+  return count === 1 ? 'file; it is listed below' : 'files; the largest are listed below';
+}
+
 // RF-231
 export function measureRows(measures: MeasureSet): readonly MeasureRow[] {
   return [
@@ -131,13 +137,13 @@ export function measureRows(measures: MeasureSet): readonly MeasureRow[] {
     {
       ...{ id: 'notRead', label: 'First-party files not read' },
       value: countText(measures.filesNotReadCount),
-      detail: measures.filesNotReadCount === 0 ? 'none' : 'the largest are listed below',
+      detail: filesNotReadDetail(measures.filesNotReadCount),
     },
     shareRow(measures),
     {
       ...{ id: 'notJudged', label: 'Not judged' },
       value: countText(measures.notJudged),
-      detail: 'claims left Unverified',
+      detail: measures.notJudged === 1 ? 'claim left Unverified' : 'claims left Unverified',
     },
     {
       ...{ id: 'unresolved', label: 'Rejected, not replaced' },

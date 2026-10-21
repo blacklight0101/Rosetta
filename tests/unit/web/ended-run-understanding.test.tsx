@@ -149,7 +149,9 @@ describe('RF-231 the edges of the summary', () => {
 
     const panel = await summary();
 
-    expect(within(panel).getByTestId('measure-notRead').textContent).toContain('none');
+    expect(within(panel).getByTestId('measure-notRead').textContent).toContain(
+      'every first-party file was read',
+    );
     expect(within(panel).queryByRole('list', { name: 'Largest files not read' })).toBeNull();
   });
 
