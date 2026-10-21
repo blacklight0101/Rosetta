@@ -70,3 +70,14 @@ describe('EstimatePlan: the repair attempt of the call for the items no task car
     );
   });
 });
+
+describe('EstimatePlan: the problems the repair is sized with', () => {
+  it('Q-54 sizes the repair for a problem line of every card an answer may hold', async () => {
+    const { assumptions } = await estimateOf();
+
+    const repair = (await readFile('prompts/planner/gap-repair.v1.md', 'utf8')).length;
+    const added = assumptions.gapRepairPromptTokens - assumptions.gapPromptTokens;
+    // 50 cards, a line of about 70 characters each, at four characters per token.
+    expect(added - Math.ceil(repair / 4)).toBeGreaterThan(800);
+  });
+});

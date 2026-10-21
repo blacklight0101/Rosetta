@@ -76,7 +76,9 @@ async function gapRound(
       : gapRepairMessage(input, repair, call.tags);
   const answer = parseGapAnswer(await askPlannerWith(call, message));
   const drafts = answer?.drafts ?? [];
-  const grown = addGapTasks(content, drafts, report.uncovered, { specificationDriven });
+  const { content: grown } = addGapTasks(content, drafts, report.uncovered, {
+    specificationDriven,
+  });
   const closed = { ...planned, content: grown, report: coverageOf(report.items, grown.tasks) };
   return { planned: closed, answer };
 }

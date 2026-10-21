@@ -28,7 +28,17 @@ interface KeptDraft {
   readonly files: readonly string[];
 }
 
+/** A card of the answer the plan does not take: where, why, and the ids it named. */
+export interface GapLeftOut {
+  readonly position: number;
+  readonly field: string;
+  readonly reason: string;
+  readonly builds: readonly string[];
+}
+
 export interface GapOptions {
+  /** The position in the answer of each draft, from 1; the index plus one when not given. */
+  readonly positions?: readonly number[];
   /** RF-607: given SDD, a card that implements no requirement is not written. */
   readonly specificationDriven?: boolean;
 }
@@ -86,9 +96,9 @@ export function addGapTasks(
   drafts: readonly GapDraft[],
   uncovered: readonly CoverageItem[],
   options: GapOptions = {},
-): PlanContent {
+): { readonly content: PlanContent; readonly leftOut: readonly GapLeftOut[] } {
   const kept = keptDrafts(content, drafts, uncovered, options);
-  if (kept.length === 0) return content;
+  if (kept.length === 0) return { content, leftOut: [] };
   const first = content.tasks.length;
   const ids = [
     ...content.tasks.map((task) => task.id),
@@ -104,5 +114,5 @@ export function addGapTasks(
       dependsOn: (dependencies[first + at] ?? []).flatMap((on) => ids[on] ?? []),
     };
   });
-  return { ...content, tasks: [...content.tasks, ...added] };
+  return { content: { ...content, tasks: [...content.tasks, ...added] }, leftOut: [] };
 }

@@ -1,9 +1,17 @@
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import { separateFrontEnd } from '../../support/api-plan-harness.js';
-import { withCoverageAnswer } from '../../support/coverage-plan-harness.js';
 import { gapRecordingOfAll, objectPositionsGapRecording } from '../../support/gap-plan-harness.js';
-import { seededUxPlan } from '../../support/ux-plan-harness.js';
+import {
+  answerOf,
+  card,
+  gappedPlan as gappedPlanIn,
+  messageOf,
+  operations,
+  plain,
+  rest,
+  sentinel,
+} from '../../support/gap-repair-fixtures.js';
 import { useTempRoot } from '../../support/temp-root.js';
 
 // Q-54, Q-45, RF-627, RF-630, RF-202, ADR-013, ADR-008: a small model writes the positions of its
@@ -14,44 +22,10 @@ import { useTempRoot } from '../../support/temp-root.js';
 
 const temp = useTempRoot('rosetta-gap-repair-');
 
-const linksOne = JSON.stringify({ links: [{ task: 1, builds: ['feature:F-001'] }] });
-
-const sentinel = 'sentinel-title-0451';
-
-async function gappedPlan(
-  gap: Awaited<ReturnType<typeof objectPositionsGapRecording>>,
-  extra = {},
-) {
-  return seededUxPlan(temp.path, {
-    harness: { coverageRecording: await withCoverageAnswer(linksOne), gapRecording: gap, ...extra },
-  });
-}
-
-const plain = (text: string | undefined): string => (text ?? '').replaceAll('\\', '');
-
-function card(title: string, builds: string[], more: Record<string, unknown> = {}) {
-  return {
-    ...{ title, phase: 1, requirements: [1], builds },
-    acceptanceCriteria: ['Given a basket of 60, when it is posted, then the order is stored.'],
-    ...{ invariant: 'An order posted is an order stored.', riskClass: 'none' },
-    ...more,
-  };
-}
-
-const operations = [
-  ...['operation:placeOrder', 'operation:getOrder', 'operation:listOrders'],
-  ...['operation:signIn', 'operation:listCustomers', 'feature:F-002'],
-];
-const rest = ['flow:FLOW-001', 'screen:SCRN-001', 'screen:SCRN-003'];
+const gappedPlan = (gap: Parameters<typeof gappedPlanIn>[1]) => gappedPlanIn(temp.path, gap);
 
 const unreadable = card(sentinel, rest, { requirements: [{ position: '3' }] });
 const fixed = card('The journey and its screens', rest, { requirements: [{ position: 3 }] });
-
-const answerOf = (...cards: unknown[]): string => JSON.stringify({ tasks: cards });
-
-function messageOf(request: { messages: readonly { content: string }[] } | undefined): string {
-  return request?.messages.map((each) => each.content).join('\n') ?? '';
-}
 
 describe('BuildPlan: the recorded answer of a small model that writes positions as objects', () => {
   it('Q-54 RF-627 keeps the five cards and completes with no gap, without a repair call', async () => {
