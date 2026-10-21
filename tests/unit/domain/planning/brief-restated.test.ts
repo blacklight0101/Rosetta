@@ -98,10 +98,19 @@ describe('decideOnce: only the title counts', () => {
     expect(restated).toEqual([]);
   });
 
+  it('RF-608 keeps a decision whose title is neutral when only its text names the style', () => {
+    const { restated } = decided(layered, [
+      decision('Error handling', 'Adopt layered architecture for errors.'),
+    ]);
+
+    expect(restated).toEqual([]);
+  });
+
   it('RF-610 drops the rewrite with one cut-over and keeps a rewrite of one part', () => {
     const { restated } = decided({ migration: 'rewrite' }, [
       decision('Rewrite with one cut-over after a comparison'),
       decision('Rewrite the pricing rules in the new language'),
+      decision('Plan the cut-over of the pricing rules'),
     ]);
 
     expect(restated.map((each) => each.title)).toEqual([
