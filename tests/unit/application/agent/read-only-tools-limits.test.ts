@@ -6,7 +6,9 @@ import { blockOf, toolsSetup } from '../../../support/agent-tools-harness.js';
 // RF-144, RF-201: a read_file request beyond scan.excerptMaxLines is cut to the limit and the
 // answer names the lines left out, so the agent can ask for them in another call.
 
-const orderLines = (agentFiles['src/Orders/Order.cs'] ?? '').split('\n');
+const orderLines = (agentFiles['src/Orders/Order.cs'] ?? '')
+  .split('\n')
+  .map((line, index) => `${String(index + 1)}: ${line}`);
 const orderOf = (start: number, end: number) => ({
   path: 'src/Orders/Order.cs',
   startLine: start,
@@ -91,7 +93,7 @@ describe('read_file starts and result size', () => {
   });
 
   it('RF-144 a result cut for its size names the lines left out', async () => {
-    const { run } = toolsSetup({ maxResultChars: 55 });
+    const { run } = toolsSetup({ maxResultChars: 70 });
 
     const outcome = await run('read_file', {
       path: 'src/Orders/OrderService.cs',

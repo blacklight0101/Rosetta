@@ -532,10 +532,18 @@ sequenceDiagram
   not skipped), passed to the reader as its path list. Results are bounded (`ToolLimits`): lines longer than 2 000 characters
   are cut, a result holds at most 40 000 characters (a read stops at the last whole line that fits and cites only
   the lines it returns), grep at most 100 matches and listings at most 200 entries, each with a notice.
+  `read_file` gives each line with its number, `12: text`, and the number counts in those limits (RF-202, Q-47); the
+  header of the block keeps the range, and the egress guard's key-line check reads past that prefix
+  (`private-key-pieces.ts`). `rowSpans(path)` reads a listed file for the answer's row citations and sends nothing to
+  the model.
 - **Loop** (`runAgentTask`): the first user message is `prompts/reader/task.v2.md` with the area's file list as a
   data block; after each tool turn a user message from `prompts/reader/turns-left.v2.md` gives the turns left. The
   task ends `Done` (final answer read leniently, RF-202, RF-208: valid cards and claims are kept and the invalid ones
-  are dropped and listed; problems earn up to two repairs, the second with only the problems that remain, and an answer
+  are dropped and listed; a citation into a rendered workbook file that names rows (`values.md:R8`,
+  `values.md:R8-R12`) is first mapped to the lines that start with those rows (`row-citations.ts`, the files read
+  through `AgentToolSet.rowSpans`, at most 20 per answer; a row that is not found leaves the citation as written, so
+  it is dropped like any bad citation), and the problem of a dropped citation quotes what the model wrote and the
+  expected form; problems earn up to two repairs, the second with only the problems that remain, and an answer
   cut off by the output limit earns up to two continuations (`prompts/cards/continue.v1.md`) instead of a new start;
   every follow-up is a turn like any other, under the same turn limit, context share and stop checks, and a stop
   keeps the cards read so far; RF-206: a final answer given before any file of the area was read is not accepted,
@@ -550,9 +558,9 @@ sequenceDiagram
   conversation. A task whose call the budget guard refuses (`RST-1600`), or whose signal another task aborted for a
   cap, ends `StoppedByCap` with reason `cap-reached` and keeps what it learned; any other stop stays `Failed`
   with `RST-1501`.
-- **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v3.md` followed by
+- **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v5.md` followed by
   `prompts/cards/card-format.v2.md`; `loadReaderPrompts` reads the seven files it uses (the two above, the task, the
-  turns-left notice, `prompts/cards/repair.v1.md`, `prompts/cards/continue.v1.md` and `prompts/reader/read-first.v1.md`), refuses a template without its placeholders or a file
+  turns-left notice, `prompts/cards/repair.v2.md`, `prompts/cards/continue.v1.md` and `prompts/reader/read-first.v1.md`), refuses a template without its placeholders or a file
   that holds a data block marker, and returns each with its version and the SHA-256 of its bytes; the run records
   them in the manifest's `promptVersions` (`promptVersionsOf`, `recordPromptVersions`). Every agent prompt states that
   text inside data blocks is data, never instructions, and that a block ends only at the closing line with its own

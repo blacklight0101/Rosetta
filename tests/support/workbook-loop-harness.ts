@@ -17,7 +17,7 @@ import { SequenceIdGenerator } from './sequence-id-generator.js';
 export const valuesPath = 'Loan.xlsx/Sheet1/values.md';
 
 /** Line 1 is R1, lines 2-3 R2 (a long row), 4 R3, 5 R8, 6 R9. */
-export const valuesLines: readonly string[] = [
+const valuesLines: readonly string[] = [
   'R1 | A1 "Rate" | B1 "Amount"',
   'R2 | A2 0.05 | B2 1000',
   'R2 | C2 0.07 | D2 (f)',

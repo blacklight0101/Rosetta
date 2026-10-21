@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { mapRowCitations, rowSpans } from '../../../../src/application/cards/row-citations.js';
+import {
+  loadRowIndex,
+  mapRowCitations,
+  rowSpans,
+} from '../../../../src/application/cards/row-citations.js';
 
 // RF-202 (Q-47): a citation that names rows of a rendered workbook file becomes the lines that
 // start with those rows; a row that is not found leaves the citation as written (it is then
@@ -22,14 +26,12 @@ function answer(...citations: string[]): string {
   return JSON.stringify({ cards: [{ claims: [{ text: 'x', citations }] }] });
 }
 
+const mappedCard = z.object({ claims: z.array(z.object({ citations: z.array(z.string()) })) });
+
 async function mapped(...citations: string[]): Promise<readonly string[]> {
-  const text = await mapRowCitations(answer(...citations), lookup);
-  const parsed = z
-    .object({
-      cards: z.array(z.object({ claims: z.array(z.object({ citations: z.array(z.string()) })) })),
-    })
-    .parse(JSON.parse(text));
-  return parsed.cards[0]?.claims[0]?.citations ?? [];
+  const index = await loadRowIndex(answer(...citations), lookup);
+  const card = mappedCard.parse(mapRowCitations({ claims: [{ text: 'x', citations }] }, index));
+  return card.claims[0]?.citations ?? [];
 }
 
 describe('rowSpans', () => {
@@ -85,13 +87,16 @@ describe('mapRowCitations and what it leaves alone', () => {
 
     expect(await mapped(...citations)).toEqual(citations);
   });
+});
 
-  it('RF-202 changes only whole citation strings, not claim text that mentions a row', async () => {
-    const text = JSON.stringify({
-      cards: [{ claims: [{ text: `see ${path}:R8`, citations: [] }] }],
+describe('loadRowIndex', () => {
+  it('RF-202 changes only the citations of claims, not claim text that mentions a row', async () => {
+    const card = { claims: [{ text: `see ${path}:R8`, citations: [`${path}:R9`] }] };
+    const index = await loadRowIndex(JSON.stringify({ cards: [card] }), lookup);
+
+    expect(mapRowCitations(card, index)).toEqual({
+      claims: [{ text: `see ${path}:R8`, citations: [`${path}:6-6`] }],
     });
-
-    expect(await mapRowCitations(text, lookup)).toBe(text);
   });
 
   it('RF-202 reads each file once however many citations name it', async () => {
@@ -101,8 +106,21 @@ describe('mapRowCitations and what it leaves alone', () => {
       return lookup(wanted);
     };
 
-    await mapRowCitations(answer(`${path}:R1`, `${path}:R3`, `${path}:R8`), counting);
+    await loadRowIndex(answer(`${path}:R1`, `${path}:R3`, `${path}:R8`), counting);
 
     expect(asked).toEqual([path]);
+  });
+
+  it('RF-202 reads at most twenty files for one answer', async () => {
+    const asked: string[] = [];
+    const counting = (wanted: string) => {
+      asked.push(wanted);
+      return lookup(wanted);
+    };
+    const many = Array.from({ length: 50 }, (_, at) => `book${String(at)}.xlsx/S/values.md:R1`);
+
+    await loadRowIndex(answer(...many), counting);
+
+    expect(asked).toHaveLength(20);
   });
 });
