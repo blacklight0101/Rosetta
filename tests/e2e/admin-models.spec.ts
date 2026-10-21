@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { expect, test } from './support/fixtures.js';
+import { expect, test as base } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { answerOllama, ollamaUnreachable, takeDefaultModels } from './support/default-models.js';
 import { accountFor } from './support/seed.js';
@@ -15,17 +15,25 @@ import { signInAs } from './support/sign-in.js';
 // Ollama list before it opens the page, and waits for the model field to take its final shape
 // (a dropdown, or the text field with its note) before it acts on it (support/default-models.ts).
 
-let giveBack: (() => Promise<void>) | undefined;
-
-test.beforeEach(async ({ context, page }, info) => {
-  await signInAs(context, accountFor('admin', info.project.name));
-  giveBack = await takeDefaultModels(context, info);
-  await answerOllama(page, ollamaUnreachable);
+// The wait for the turn is long, so it happens in a fixture with a timeout of its own, as the
+// @caps turn does (support/fixtures.ts), not in a hook that counts against the test's.
+const test = base.extend<{ defaultModels: boolean }>({
+  defaultModels: [
+    async ({ context }, use, info) => {
+      await signInAs(context, accountFor('admin', info.project.name));
+      const giveBack = await takeDefaultModels(context);
+      try {
+        await use(true);
+      } finally {
+        await giveBack();
+      }
+    },
+    { auto: true, timeout: 900_000 },
+  ],
 });
 
-test.afterEach(async () => {
-  await giveBack?.();
-  giveBack = undefined;
+test.beforeEach(async ({ page }) => {
+  await answerOllama(page, ollamaUnreachable);
 });
 
 async function openModels(page: Page): Promise<void> {

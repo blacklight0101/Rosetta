@@ -1,4 +1,4 @@
-import type { BrowserContext, Page, TestInfo } from '@playwright/test';
+import type { BrowserContext, Page } from '@playwright/test';
 import { z } from 'zod';
 import { acquireCapsLock, capsLockFolder } from './caps-lock.js';
 import { e2eOrigin } from './server-config.js';
@@ -46,15 +46,11 @@ async function clearDefaultModels(context: BrowserContext): Promise<void> {
 
 /**
  * Takes the turn of the server-wide settings and clears the default models. Returns the function
- * that clears them again and gives the turn up; call it in `afterEach`, once the context is
- * signed in as the administrator.
+ * that clears them again and gives the turn up; call it when the test ends. The wait for the turn can
+ * be long, so call it from a fixture with its own timeout, not from a hook (the test's 30 s).
  */
-export async function takeDefaultModels(
-  context: BrowserContext,
-  info: TestInfo,
-): Promise<() => Promise<void>> {
+export async function takeDefaultModels(context: BrowserContext): Promise<() => Promise<void>> {
   const turn = await acquireCapsLock(capsLockFolder());
-  info.setTimeout(info.timeout + turn.waitedMs);
   try {
     await clearDefaultModels(context);
   } catch (error) {
