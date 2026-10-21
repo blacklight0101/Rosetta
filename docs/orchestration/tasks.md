@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 84      | 5         | 77         | 2         | 0                  | 28      | 54      | 2      | 40         | 0         |
-| **Total**               | **301** | **77**    | **197**    | **27**    | **0**              | **144** | **145** | **12** | **175**    | **0**     |
+| P3 Report and plan      | 85      | 5         | 78         | 2         | 0                  | 28      | 55      | 2      | 41         | 0         |
+| **Total**               | **302** | **77**    | **198**    | **27**    | **0**              | **144** | **146** | **12** | **176**    | **0**     |
 
 ## Conventions for every card
 
@@ -4107,3 +4107,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the price table, the model list, the tier, the docs and tests.
 - **Done when**: each probe has a passing test; `npm run verify` green.
 - **Refs**: RF-420, RF-427, RF-405, Q-56; issue #737.
+
+### P3-85 - Follow-up: each hosted model runs with its own context window and output limit
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-84
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-405 and RF-201 (the Q-57 scenario), RF-425, Q-57; `src/application/understand/reader-settings.ts` (`CLOUD_CONTEXT_TOKENS = 128_000` for every Anthropic and OpenAI model, `CONTEXT_SHARE = 0.8`), `src/application/projects/default-settings.ts` (role `maxOutputTokens`: reader 4096, verifier and summariser 2048, planner 16384, whatever the model), `prices/models.yaml` (the shipped model list, refreshed by P3-84), `src/application/estimate/estimate-assumptions.ts`, the start page estimate. Found in the orchestrator's review of 2026-10-21: the local Ollama models get their context from the server (P3-64, P3-75), but every hosted model is assumed to have 128,000 tokens of context and every role the same output limit; the current Claude models have a 1M-token window and 128,000 output tokens (platform.claude.com models overview, 2026-10-21), and the reader's 4,096-token output limit cut the Invoice answer on Ollama (P3-83). Sources for the limits: the providers' model pages (Anthropic models overview and each model's page; OpenAI model pages); the builder copies every number from them, never from memory.
+- **Do**: (1) each Anthropic and OpenAI entry of `prices/models.yaml` carries its context window and its maximum output tokens from the provider's model page (a model without a confirmed number is left without it); (2) a hosted role's context is the model's window when the list gives one, otherwise 128,000 as today; a number set in the project's provider settings still wins; the reader stops at its context share as today; (3) a role whose output limit is not set by the project uses a default per kind: for a hosted model the smaller of the model's maximum output and a role default (reader 16,000, verifier and summariser 4,000, planner 32,000), for Ollama today's defaults; (4) the start page's estimate and its Assumptions line show each role's context and output limit; the estimate uses them; (5) a price tier (P3-84) still applies per call, so a reader whose context share lets prompts pass a tier threshold is estimated at the higher tier for those calls.
+- **Review probes**: a reader on Claude Haiku 5.5 (context 1M from the list, output 16,000); a model in the list without a window (128,000 as today); a project that sets its own context (its number); a project that sets the reader's output limit (its number); an OpenAI model with its window; Ollama unchanged (P3-64, P3-75); the start page shows the limits; the estimate with a larger context grows and passes the cap check; recorded responses only.
+- **Behaviour to preserve**: RF-201 turn and context limits; P3-64 Ollama context guard; P3-75 auto growth; P3-83 room check; RF-425 low, likely and high; a project's own settings win.
+- **Delivers**: the limits in the model list, the defaults, the estimate lines and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-405, RF-201, RF-425, Q-57; issue #740.
