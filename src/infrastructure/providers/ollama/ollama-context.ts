@@ -3,7 +3,8 @@ import { ERROR_CODES } from '../../../domain/errors/codes.js';
 import { RosettaError } from '../../../domain/errors/rosetta-error.js';
 
 // RF-401, DEC-114, Q-23: the Ollama context size (`num_ctx`). `auto` (the default) picks the largest
-// size that keeps the whole model in GPU memory; a number is sent unchanged.
+// size that keeps the whole model in GPU memory and grows for a larger prompt, up to the trained
+// context (Q-48); a number is sent unchanged.
 
 /** `providers.<name>.contextTokens` (data-model.md section 3.1). */
 export type ContextSetting = 'auto' | number;
@@ -12,8 +13,6 @@ export type ContextSetting = 'auto' | number;
 export interface ContextChoice {
   readonly tokens: number;
   readonly source: OllamaContextSource;
-  /** The model's trained context when it is known: the most `auto` may grow to (Q-48). */
-  readonly trainedTokens?: number;
 }
 
 /** Q-23: `auto` never starts above this size. */

@@ -101,7 +101,8 @@ describe('growing the automatic Ollama context size', () => {
 describe('a fixed or repeated growth of the Ollama context size', () => {
   it('RF-401 Q-48 never changes a fixed size', async () => {
     const { resolver } = resolverFor({ trained: 131_072, fitsUpTo: 32_768 });
-    const fixed = { tokens: 4_096, source: 'fixed', trainedTokens: 131_072 } as const;
+    await resolver.auto(gemma);
+    const fixed = { tokens: 4_096, source: 'fixed' } as const;
 
     expect(await resolver.grow(gemma, fixed, 50_000)).toBeUndefined();
   });

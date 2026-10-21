@@ -31,6 +31,11 @@ export interface PromptFacts {
   readonly trainedTokens?: number;
 }
 
+/** The tokens a call needs in the context: the prompt estimate plus the output reserve. */
+export function neededTokens(facts: PromptFacts): number {
+  return facts.estimatedTokens + facts.outputTokens;
+}
+
 /** The estimated prompt tokens of the chat body: every message, tool calls and tool definitions. */
 function estimatedPromptTokens(body: OllamaChatBody, request: LlmRequest): number {
   const messages = body.messages.map((message) =>
@@ -46,6 +51,7 @@ export function promptFactsOf(
   request: LlmRequest,
   body: OllamaChatBody,
   contextTokens: number,
+  trainedTokens?: number,
 ): PromptFacts {
   return {
     role: request.context.role,
@@ -53,6 +59,7 @@ export function promptFactsOf(
     estimatedTokens: estimatedPromptTokens(body, request),
     outputTokens: request.maxOutputTokens ?? 0,
     contextTokens,
+    ...(trainedTokens === undefined ? {} : { trainedTokens }),
   };
 }
 
@@ -60,13 +67,24 @@ function remedies(role: string): string {
   return `Use a model with a larger context, or a cloud model for the ${role} role in the project settings, or set a larger size in project settings, the model of the role, Context size.`;
 }
 
+function contextOf(
+  model: string,
+  contextTokens: number,
+  trainedTokens: number | undefined,
+): string {
+  if (trainedTokens === undefined) {
+    return `the Ollama context for ${model} is ${String(contextTokens)} tokens`;
+  }
+  return `even the trained context of ${model}, ${String(trainedTokens)} tokens, is too small`;
+}
+
 /** The failure of a prompt that does not fit: undefined when it fits. Nothing is sent. */
 export function refusedPrompt(facts: PromptFacts): AttemptFailed | undefined {
-  const { role, model, estimatedTokens, outputTokens, contextTokens } = facts;
-  if (estimatedTokens + outputTokens <= contextTokens) return undefined;
+  const { role, model, estimatedTokens, outputTokens, contextTokens, trainedTokens } = facts;
+  if (neededTokens(facts) <= contextTokens) return undefined;
   const answer =
     outputTokens === 0 ? '' : ` and its answer may use up to ${String(outputTokens)} more`;
-  const message = `The ${role} prompt is about ${String(estimatedTokens)} tokens${answer}, but the Ollama context for ${model} is ${String(contextTokens)} tokens, so the call was not sent. ${remedies(role)}`;
+  const message = `The ${role} prompt is about ${String(estimatedTokens)} tokens${answer}, but ${contextOf(model, contextTokens, trainedTokens)}, so the call was not sent. ${remedies(role)}`;
   return {
     failure: { code: ERROR_CODES.ollamaPromptTooLarge },
     retryable: false,
