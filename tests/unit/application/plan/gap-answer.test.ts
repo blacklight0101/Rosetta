@@ -37,7 +37,7 @@ describe('parseGapAnswer', () => {
   });
 
   it('RF-627 an answer with no card is still an answer', () => {
-    expect(parseGapAnswer('{"tasks": []}')).toEqual({ drafts: [], problems: [] });
+    expect(parseGapAnswer('{"tasks": []}')).toEqual({ drafts: [], positions: [], problems: [] });
   });
 
   it('RF-630 a list the answer leaves out is empty, and a risk class that does not exist is left out', () => {

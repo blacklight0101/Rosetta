@@ -39,6 +39,8 @@ export interface GapProblem {
 
 export interface GapAnswer {
   readonly drafts: GapDraft[];
+  /** The position in the answer (from 1) of each draft, so a later fault names the right card. */
+  readonly positions: number[];
   readonly problems: GapProblem[];
 }
 
@@ -72,13 +74,16 @@ export function parseGapAnswer(output: string): GapAnswer | undefined {
     const parsed = answer.safeParse(value);
     if (!parsed.success) continue;
     const drafts: GapDraft[] = [];
+    const positions: number[] = [];
     const problems: GapProblem[] = [];
     parsed.data.tasks.forEach((each, index) => {
       const card = gapTask.safeParse(each);
-      if (card.success) drafts.push(card.data);
-      else problems.push(problemOf(index + 1, card.error, each));
+      if (card.success) {
+        drafts.push(card.data);
+        positions.push(index + 1);
+      } else problems.push(problemOf(index + 1, card.error, each));
     });
-    return { drafts, problems };
+    return { drafts, positions, problems };
   }
   return undefined;
 }

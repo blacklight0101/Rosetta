@@ -15,7 +15,7 @@ type Fault = Pick<LeftOutCard, 'field' | 'reason'>;
 
 /** Why a draft task is not written, before its requirements are looked at; undefined when it is a card. */
 // Q-54
-export function draftFault(task: DraftTask, phases: number): Fault | undefined {
+export function draftFault(task: Omit<DraftTask, 'needs'>, phases: number): Fault | undefined {
   if (task.phase < 1 || task.phase > phases) {
     return { field: 'phase', reason: 'The phase is not a phase of the plan.' };
   }

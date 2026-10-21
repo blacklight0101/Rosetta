@@ -53,6 +53,8 @@ interface Round {
   readonly planned: PlannedCoverage;
   /** Undefined when the answer was no list of cards. */
   readonly answer: GapAnswer | undefined;
+  /** Every card left out, unreadable or not taken by the plan, in the order of the answer. */
+  readonly problems: readonly GapProblem[];
 }
 
 interface RoundOptions {
@@ -75,18 +77,22 @@ async function gapRound(
       ? gapMessage(input, call.tags)
       : gapRepairMessage(input, repair, call.tags);
   const answer = parseGapAnswer(await askPlannerWith(call, message));
-  const drafts = answer?.drafts ?? [];
-  const { content: grown } = addGapTasks(content, drafts, report.uncovered, {
-    specificationDriven,
+  const positions = answer?.positions;
+  const taken = addGapTasks(content, answer?.drafts ?? [], report.uncovered, {
+    ...{ specificationDriven, ...(positions === undefined ? {} : { positions }) },
   });
+  const grown = taken.content;
   const closed = { ...planned, content: grown, report: coverageOf(report.items, grown.tasks) };
-  return { planned: closed, answer };
+  const problems = [...(answer?.problems ?? []), ...taken.leftOut].sort(
+    (left, right) => left.position - right.position,
+  );
+  return { planned: closed, answer, problems };
 }
 
 /** What to log about an answer: the cards left out, by position and field, or that it was no answer. */
 function roundWarnings(round: Round, label: string, unreadable: string): string[] {
   if (round.answer === undefined) return [unreadable];
-  return round.answer.problems.map(
+  return round.problems.map(
     ({ position, field, reason }) =>
       `Task card at position ${String(position)} of the ${label} was left out: the field "${field}" ${reason}.`,
   );
@@ -94,11 +100,11 @@ function roundWarnings(round: Round, label: string, unreadable: string): string[
 
 /** The cards left out that named an item which is still built by no card. */
 function namedGaps(
-  answer: GapAnswer | undefined,
+  problems: readonly GapProblem[],
   uncovered: readonly CoverageItem[],
 ): GapProblem[] {
   const open = new Set(uncovered.map((item) => item.id));
-  return (answer?.problems ?? []).filter((problem) => problem.builds.some((id) => open.has(id)));
+  return problems.filter((problem) => problem.builds.some((id) => open.has(id)));
 }
 
 /** The call for the items still uncovered and, when cards were left out that named one, the repair. */
@@ -109,7 +115,7 @@ async function planGap(calls: LinkCalls, covered: PlannedCoverage): Promise<Plan
   }
   const first = await gapRound(calls.gap, covered, { specificationDriven });
   const warnings = roundWarnings(first, 'gap answer', UNREADABLE_GAP);
-  const problems = namedGaps(first.answer, first.planned.report.uncovered);
+  const problems = namedGaps(first.problems, first.planned.report.uncovered);
   if (problems.length === 0) return { planned: first.planned, warnings };
   const repair = { prompt: calls.repairPrompt, problems };
   try {
