@@ -33,15 +33,18 @@ export class FixedScans implements ScanResults {
   private readonly files: readonly FileEntry[];
 
   private readonly workbookFolders: readonly string[];
+  private readonly snapshotKey: string;
 
   constructor(
     areas: readonly Area[],
     files: readonly FileEntry[] = [],
     workbookFolders: readonly string[] = [],
+    snapshotKey = 'owner-repo-cccccccc',
   ) {
     this.areas = areas;
     this.files = files;
     this.workbookFolders = workbookFolders;
+    this.snapshotKey = snapshotKey;
   }
 
   open(scan: Run): Promise<ScannedSource> {
@@ -63,7 +66,7 @@ export class FixedScans implements ScanResults {
       reader: new MemoryRepositoryReader({}),
       source: {
         commitSha: 'c'.repeat(40),
-        snapshotKey: 'owner-repo-cccccccc',
+        snapshotKey: this.snapshotKey,
         snapshotHash: `sha256:${'b'.repeat(64)}`,
       },
     });
@@ -127,10 +130,22 @@ export function createEstimateHarness(
   priceTable: PriceTable = estimatePrices,
   workbookFolders: readonly string[] = [],
 ): EstimateHarness {
+  return harnessOver(new FixedScans(areas, files, workbookFolders), priceTable);
+}
+
+/** Q-49: the estimate over the snapshot of a workbook project (its folder name is a workbook key). */
+export function createWorkbookEstimateHarness(
+  areas: readonly Area[],
+  workbookFolders: readonly string[],
+  snapshotKey: string,
+): EstimateHarness {
+  return harnessOver(new FixedScans(areas, [], workbookFolders, snapshotKey), estimatePrices);
+}
+
+function harnessOver(scans: FixedScans, priceTable: PriceTable): EstimateHarness {
   const projects = new MemoryProjectRepository();
   const runs = new MemoryRunIndex();
   const keys = new MemoryProviderKeyRepository();
-  const scans = new FixedScans(areas, files, workbookFolders);
   const estimate = new EstimateRun({ projects, runs, scans, keys, priceTable });
   return { estimate, projects, runs, keys, scans };
 }

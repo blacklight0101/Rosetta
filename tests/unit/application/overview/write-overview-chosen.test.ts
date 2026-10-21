@@ -41,7 +41,7 @@ describe('writeOverview on a run of chosen areas', () => {
     expect(provider.requests).toHaveLength(0);
     expect(overview.state).toBe('thin');
     expect(overview.notice).toContain('cannot explain the application yet');
-    expect(overview.notice).toContain('1 card(s) from 1 of 2 area(s)');
+    expect(overview.notice).toContain('Only 1 card from 1 of 2 areas passed the citation check.');
     expect(overview.notice).not.toContain('third-party');
   });
 
