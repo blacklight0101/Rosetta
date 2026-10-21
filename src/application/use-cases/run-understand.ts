@@ -31,6 +31,7 @@ import { callIds, traceIdOf } from '../runs/run-ids.js';
 import { preflightOllama, type PreflightProblem } from '../understand/reader-preflight.js';
 import type { UnknownAreas } from '../understand/reader-tasks.js';
 import { logSkippedQuestions, publishSkippedQuestions } from '../understand/skipped-questions.js';
+import { plannedAreas } from '../understand/planned-areas.js';
 import { planTasks } from '../understand/task-plan.js';
 import { readUnderstandOptions, UNDERSTAND_ROLES } from '../understand/understand-options.js';
 import { pinnedSourceOf } from '../understand/pinned-source.js';
@@ -175,9 +176,8 @@ export class RunUnderstand implements RunExecutor {
     const options = readUnderstandOptions(manifest.options);
     const deps = { answers: this.deps.answers, cards: this.deps.priorCards };
     const ref = { userId: run.userId, projectId: run.projectId };
-    const planned = await planTasks({
-      ...{ areas: scanned.codeMap.areas, options, project: ref, rerun: deps },
-    });
+    const areas = plannedAreas(scanned);
+    const planned = await planTasks({ areas, options, project: ref, rerun: deps });
     if (!planned.ok) return this.unknownAreas(run, planned.error);
     const { tasks, rerun } = planned.value;
     const scheduled = await scheduleTasks(this.deps, execution, { tasks, scanned, options });

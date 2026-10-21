@@ -17,7 +17,7 @@ const codeMap = { areas: [loan, root] };
 describe('plannedAreas', () => {
   it('RF-231 leaves out an area that holds no workbook file in a workbook project', () => {
     const planned = plannedAreas({
-      ...{ codeMap, snapshotKey: workbookKey, workbookFolders: ['Loan.xlsx'] },
+      ...{ codeMap, source: { snapshotKey: workbookKey }, workbookFolders: ['Loan.xlsx'] },
     });
 
     expect(planned.map((each) => each.name)).toEqual(['Loan.xlsx']);
@@ -26,7 +26,7 @@ describe('plannedAreas', () => {
   it('RF-231 keeps every area of a zip, even when it lists a workbook', () => {
     const planned = plannedAreas({
       codeMap: { areas: [loan, root, helper] },
-      snapshotKey: 'upload__x@aaaaaaaaaaaaaaaa',
+      source: { snapshotKey: 'upload__x@aaaaaaaaaaaaaaaa' },
       workbookFolders: ['Loan.xlsx'],
     });
 
@@ -34,13 +34,17 @@ describe('plannedAreas', () => {
   });
 
   it('RF-231 keeps every area of a GitHub repository', () => {
-    const planned = plannedAreas({ codeMap, snapshotKey: 'octo-demo-cccccccc' });
+    const planned = plannedAreas({ codeMap, source: { snapshotKey: 'octo-demo-cccccccc' } });
 
     expect(planned).toEqual([loan, root]);
   });
 
   it('RF-231 a workbook project that lists no folder keeps its areas rather than plan none', () => {
-    const planned = plannedAreas({ codeMap, snapshotKey: workbookKey, workbookFolders: [] });
+    const planned = plannedAreas({
+      codeMap,
+      source: { snapshotKey: workbookKey },
+      workbookFolders: [],
+    });
 
     expect(planned).toEqual([loan, root]);
   });

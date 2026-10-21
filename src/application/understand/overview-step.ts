@@ -1,5 +1,4 @@
 import type { Card } from '../../domain/cards/card.js';
-import type { CodeMap } from '../../domain/code-map/code-map.js';
 import type { Overview } from '../../domain/overview/overview.js';
 import type { AreaStanding } from '../../domain/overview/standing.js';
 import type { PromptFile } from '../agent/prompt-file.js';
@@ -9,6 +8,7 @@ import {
 } from '../consolidate/consolidation-parts.js';
 import { writeOverview } from '../overview/write-overview.js';
 import type { RunExecution } from '../ports/run-executor.js';
+import { plannedAreas, type PlannedFrom } from './planned-areas.js';
 import type { ReaderTask } from './reader-tasks.js';
 import type { RunCoverage } from './run-coverage.js';
 
@@ -19,7 +19,7 @@ import type { RunCoverage } from './run-coverage.js';
 interface OverviewStepParts extends Omit<ConsolidationSource, 'runId' | 'signal' | 'mergePrompt'> {
   readonly execution: Pick<RunExecution, 'run' | 'signal'>;
   readonly overviewPrompt: PromptFile;
-  readonly scanned: { readonly codeMap: Pick<CodeMap, 'areas'> };
+  readonly scanned: PlannedFrom;
   readonly allTasks: readonly ReaderTask[];
 }
 
@@ -32,7 +32,7 @@ interface OverviewStepInput {
 
 function standingOf(input: OverviewStepInput): readonly AreaStanding[] {
   const { parts, coverage, thirdParty } = input;
-  return parts.scanned.codeMap.areas.map((area) => {
+  return plannedAreas(parts.scanned).map((area) => {
     const task = parts.allTasks.find((each) => each.area.name === area.name);
     const ended = task === undefined ? undefined : coverage.of(task.agentTaskId);
     return {
