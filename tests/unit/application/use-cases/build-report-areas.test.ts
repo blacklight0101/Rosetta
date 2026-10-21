@@ -180,3 +180,32 @@ describe('BuildReport and a scan that is the run itself or missing', () => {
     expect(logger.text()).not.toContain('the snapshot is gone');
   });
 });
+
+describe('BuildReport and the areas of a workbook project (Q-49)', () => {
+  const workbookKey = `workbook__${'0'.repeat(8)}-0000-0000-0000-${'0'.repeat(12)}@${'a'.repeat(16)}`;
+  const root = { ...areaOf('(root)', 10), files: ['dependencies.md'] };
+  const loan = { ...areaOf('Loan.xlsx', 100), files: ['Loan.xlsx/workbook.md'] };
+  const rates = { ...areaOf('Rates.xlsx', 100), files: ['Rates.xlsx/workbook.md'] };
+
+  async function namesFor(areas: readonly Area[], folders: readonly string[]) {
+    const scans = new FixedScans(areas, [], folders, workbookKey);
+    const run = endedRun();
+    const { build, writer } = await setup(run, scans, [scanRun()]);
+
+    await build.execute(request(run));
+
+    return writer.written[0]?.model.areas.map((area) => area.name);
+  }
+
+  it('RF-231 lists no (root) area for a single workbook', async () => {
+    expect(await namesFor([loan, root], ['Loan.xlsx'])).toEqual(['Loan.xlsx']);
+  });
+
+  it('RF-231 lists the (root) area for two workbooks', async () => {
+    expect(await namesFor([loan, rates, root], ['Loan.xlsx', 'Rates.xlsx'])).toEqual([
+      'Loan.xlsx',
+      'Rates.xlsx',
+      '(root)',
+    ]);
+  });
+});

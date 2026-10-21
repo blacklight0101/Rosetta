@@ -18,7 +18,7 @@ import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { readerRecordingOf, verifierRecordingOf } from './understand-recordings.js';
 import { sampleAccount } from './account-fixtures.js';
 import { settingsFor } from './provider-factory-harness.js';
-import { uploadProjectFields } from './upload-run-fixtures.js';
+import { heldZip, uploadProjectFields } from './upload-run-fixtures.js';
 import { sampleProject } from './project-fixtures.js';
 import { queueOf, stores, type Stores } from './understand-run-services.js';
 import {
@@ -74,6 +74,8 @@ export interface UnderstandHarnessOptions {
   readonly settings?: ProjectSettings;
   /** RF-130: the project is an uploaded zip whose tree is the repository, not a GitHub address. */
   readonly upload?: boolean;
+  /** Q-49: the folder name of the upload's snapshot (a `workbook__` key plans like a workbook project). */
+  readonly snapshotKey?: string;
   /** RF-155: the folders of the rendered workbooks the snapshot of the project lists. */
   readonly workbookFolders?: readonly string[];
   /** How many understand runs replay the recording, one after the other (1 when absent). */
@@ -196,12 +198,20 @@ function keysOf(given: UnderstandHarnessOptions['openAiKey']): Partial<Understan
     : { ownOpenAiKey: { userId: account.id, key: given.key } };
 }
 
+function uploadFieldsOf(snapshotKey: string | undefined): Partial<Project> {
+  if (snapshotKey === undefined) return uploadProjectFields;
+  return { ...uploadProjectFields, upload: { ...heldZip, snapshotKey } };
+}
+
 // RF-200
 export async function createUnderstandHarness(
   options: UnderstandHarnessOptions,
 ): Promise<UnderstandHarness> {
   const s = {
-    ...stores(options.dataDir, options.refuseRemoval === true, options.fixture, options.repository),
+    ...stores(options.dataDir, options.refuseRemoval === true, options.fixture, {
+      repository: options.repository,
+      snapshotKey: options.snapshotKey,
+    }),
     ...(options.workbookFolders === undefined ? {} : { workbookFolders: options.workbookFolders }),
   };
   await s.users.insert(account);
@@ -209,7 +219,7 @@ export async function createUnderstandHarness(
     userId: account.id,
     sourceUrl: 'https://github.com/octo/demo',
     settings: options.settings ?? understandSettings(),
-    ...(options.upload === true ? uploadProjectFields : {}),
+    ...(options.upload === true ? uploadFieldsOf(options.snapshotKey) : {}),
   });
   await s.projects.insertOrFind(project);
   const holder: { harness?: UnderstandHarness } = {};

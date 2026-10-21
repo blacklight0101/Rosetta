@@ -100,8 +100,12 @@ export function stores(
   dataDir: string,
   refuseRemoval = false,
   fixture: FixtureRepository = 'webforms-csharp',
-  repository?: string,
+  source: {
+    readonly repository?: string | undefined;
+    readonly snapshotKey?: string | undefined;
+  } = {},
 ): Stores {
+  const { repository, snapshotKey } = source;
   const clock = new FixedClock('2026-10-12T10:00:00.000Z');
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
@@ -116,7 +120,7 @@ export function stores(
     runs: new MemoryRunIndex(),
     projects: new MemoryProjectRepository(),
     users: new MemoryUserRepository(),
-    uploads: fixtureUploadsAt(repository ?? fixtureRoot(fixture)),
+    uploads: fixtureUploadsAt(repository ?? fixtureRoot(fixture), snapshotKey),
   };
 }
 
