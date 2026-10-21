@@ -62,11 +62,15 @@ const refusedShapes: readonly RegExp[] = [
   ),
 ];
 
-/** A question about how much there is in a month or in production asks for volumes, which no file holds. */
-const volume = /\b(?:per|each|every)\s+(?:day|week|month|year|hour)\b|\bin\s+production\b/u;
+/**
+ * A question about intent, a reason, a meaning, what people expect, or how much there is in a period
+ * or in production asks for something no file holds, whatever nouns it uses.
+ */
+const intent =
+  /\b(?:why|reasons?|meaning|means?|expects?|expected|agreed|business|team|users?|volumes?)\b|\b(?:per|each|every|in\s+a)\s+(?:day|week|month|year|hour)\b|\bin\s+production\b/u;
 
 // RF-243
 export function asksWhatTheFileAnswers(question: string): boolean {
   const lower = plainWords(question).toLowerCase();
-  return !volume.test(lower) && refusedShapes.some((shape) => shape.test(lower));
+  return !intent.test(lower) && refusedShapes.some((shape) => shape.test(lower));
 }
