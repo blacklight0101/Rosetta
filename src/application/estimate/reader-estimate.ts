@@ -17,6 +17,8 @@ export interface TokenFigures {
   readonly outputTokens: number;
   /** The part of `inputTokens` written to a prompt cache: the conversation at the last turn (P2-37). */
   readonly cacheWriteTokens: number;
+  /** The estimated prompt of one call (Q-56). */
+  readonly promptTokens?: number;
 }
 
 const noMarks: AreaMarks = { flows: false, screens: false };

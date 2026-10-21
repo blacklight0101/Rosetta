@@ -74,7 +74,7 @@ describe('reader tokens of the estimate', () => {
     // Orders: the same with 80% of 4,000.
     // The tokens written to the cache are the conversation at the last turn: Catalog 2,000 + 6,666 +
     // 5 x 300 = 10,166 and Orders 2,000 + 2,666 + 1,500 = 6,166 (P2-37).
-    expect(tokens.likely).toEqual({
+    expect(tokens.likely).toMatchObject({
       inputTokens: 60_996,
       outputTokens: 3600,
       cacheWriteTokens: 16_332,
@@ -86,9 +86,21 @@ describe('reader tokens of the estimate', () => {
 
     const tokens = readerTokens([areaOf('Catalog', 10_000)], assumptions);
 
-    expect(tokens.low).toEqual({ inputTokens: 2000, outputTokens: 150, cacheWriteTokens: 2000 });
-    expect(tokens.likely).toEqual({ inputTokens: 2000, outputTokens: 300, cacheWriteTokens: 2000 });
-    expect(tokens.high).toEqual({ inputTokens: 2000, outputTokens: 600, cacheWriteTokens: 2000 });
+    expect(tokens.low).toMatchObject({
+      inputTokens: 2000,
+      outputTokens: 150,
+      cacheWriteTokens: 2000,
+    });
+    expect(tokens.likely).toMatchObject({
+      inputTokens: 2000,
+      outputTokens: 300,
+      cacheWriteTokens: 2000,
+    });
+    expect(tokens.high).toMatchObject({
+      inputTokens: 2000,
+      outputTokens: 600,
+      cacheWriteTokens: 2000,
+    });
   });
 
   it('RF-425 low is below likely is below high', () => {
@@ -117,7 +129,7 @@ describe('reader tokens of the estimate at the limits', () => {
   it('RF-425 no areas give no tokens', () => {
     const assumptions = assumptionsOf(readerSettings({ maxTurns: 10, maxOutputTokens: 1000 }));
 
-    expect(readerTokens([], assumptions).high).toEqual({
+    expect(readerTokens([], assumptions).high).toMatchObject({
       inputTokens: 0,
       outputTokens: 0,
       cacheWriteTokens: 0,

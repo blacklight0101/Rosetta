@@ -6,6 +6,15 @@ import type { TokenUsage } from './token-usage.js';
 // currency. Costs are computed with bigint only and a part of a micro-dollar rounds up, so a cost
 // is never under-counted and no floating-point number ever holds money.
 
+/** The prices of a call whose input tokens are over `overInputTokens` (Q-56). */
+export interface LongPromptTier {
+  readonly overInputTokens: number;
+  readonly inputPerMillionMicros: bigint;
+  readonly outputPerMillionMicros: bigint;
+  readonly cachedInputPerMillionMicros: bigint;
+  readonly cacheWriteInputPerMillionMicros: bigint;
+}
+
 export interface Price {
   /** The provider kind (`openai`, `ollama`, ...), as in the project settings. */
   readonly provider: string;
@@ -20,6 +29,8 @@ export interface Price {
    * writes no tokens to a cache of its own price, so its written tokens are priced as input.
    */
   readonly cacheWriteInputPerMillionMicros?: bigint;
+  /** The prices of a call whose input tokens are over the tier's threshold (Q-56). */
+  readonly longPrompt?: LongPromptTier;
   readonly currency: 'USD';
 }
 
@@ -41,6 +52,11 @@ function smaller(left: bigint, right: bigint): bigint {
 
 function larger(left: bigint, right: bigint): bigint {
   return left > right ? left : right;
+}
+
+/** STUB: the price of a call by its prompt tokens. */
+export function priceAt(price: Price, promptTokens: number): Price {
+  return promptTokens < 0 ? price : price;
 }
 
 /** The cache-write price; the input price for a kind that bills no cache write of its own. */
