@@ -106,9 +106,9 @@ describe('the overview and what was not covered', UNDERSTAND_TIMEOUT, () => {
   it('RF-264 lists what the run could not cover from the areas, not from the model', async () => {
     const { folder } = await fullRun();
 
-    const overview = await overviewOf(folder);
+    const { notCovered } = await overviewOf(folder);
 
-    expect(overview.notCovered).toEqual(['Controllers: no card passed the citation check.']);
+    expect(notCovered.slice(-1)).toEqual(['Controllers: no card passed the citation check.']);
   });
 
   it('RF-264 links the open question to the section of the overview it concerns', async () => {

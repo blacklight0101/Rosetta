@@ -4,6 +4,7 @@ import {
   serialiseOverview,
 } from '../../../../src/application/overview/overview-file.js';
 import type { Overview } from '../../../../src/domain/overview/overview.js';
+import { notCoveredOf } from '../../../../src/domain/overview/standing.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { writeCardOutputs } from '../../../../src/infrastructure/cards/write-card-outputs.js';
 import { renderOverview } from '../../../../src/infrastructure/cards/overview-markdown.js';
@@ -177,5 +178,74 @@ describe('the report', () => {
     expect(section?.querySelector('script')).toBeNull();
     expect(section?.querySelector('img')).toBeNull();
     expect(section?.textContent).toContain('<script>');
+  });
+});
+
+describe('what was not covered when first-party files were not read', () => {
+  const files = Array.from({ length: 41 }, (_, index) => ({
+    path: `src/Big${String(index)}.cs`,
+    tokens: 900 - index,
+  }));
+  const notCovered = notCoveredOf([], {
+    files,
+    firstPartyTokens: 30_000,
+    firstPartyReadTokens: 900,
+  });
+  const unread = fullOverview({ notCovered });
+  const sentence = 'Every area of the run gave at least one card.';
+  /** The Markdown as a viewer shows it: the escaping backslashes are not text. */
+  const shown = (markdown: string): string => markdown.replaceAll('\\', '');
+  const named = 'First-party files not read: 41 files, 97% of first-party tokens not read.';
+
+  it('RF-264 overview.md names the files not read, the share and the Deepen step, not the old sentence', () => {
+    const text = shown(renderOverview(unread, masker));
+
+    expect(text).toContain(named);
+    expect(text).toContain('src/Big0.cs (900 tokens)');
+    expect(text).toContain('Next step: run a Deepen to read them.');
+    expect(text).not.toContain(sentence);
+  });
+
+  it('RF-264 report.md names the files not read and not the old sentence', () => {
+    const text = shown(renderReportMarkdown(reportModel({ overview: unread }), masker));
+
+    expect(text).toContain(named);
+    expect(text).not.toContain(sentence);
+  });
+
+  it('RF-264 report.html names the files not read as text and not the old sentence', () => {
+    const page = auditHtml(renderReportHtml(reportModel({ overview: unread })));
+
+    const section = page.document.querySelector('section[aria-labelledby="overview"]');
+    expect(section?.textContent).toContain(named);
+    expect(section?.textContent).toContain('Next step: run a Deepen to read them.');
+    expect(section?.textContent).not.toContain(sentence);
+  });
+});
+
+describe('what was not covered and hostile or complete runs', () => {
+  const sentence = 'Every area of the run gave at least one card.';
+
+  it('RF-264 a hostile file name is shown as text in overview.md and the report', () => {
+    const hostile = fullOverview({
+      notCovered: notCoveredOf([], {
+        files: [{ path: 'src/<img src=x onerror=alert(1)>.cs', tokens: 5 }],
+        firstPartyTokens: 10,
+        firstPartyReadTokens: 0,
+      }),
+    });
+
+    const page = auditHtml(renderReportHtml(reportModel({ overview: hostile })));
+
+    expect(page.document.querySelector('section[aria-labelledby="overview"] img')).toBeNull();
+    expect(renderOverview(hostile, masker)).not.toContain('<img');
+  });
+
+  it('RF-264 every file read keeps the sentence in overview.md, report.md and report.html', () => {
+    const every = fullOverview({ notCovered: [] });
+
+    expect(renderOverview(every, masker)).toContain(sentence);
+    expect(renderReportMarkdown(reportModel({ overview: every }), masker)).toContain(sentence);
+    expect(renderReportHtml(reportModel({ overview: every }))).toContain(sentence);
   });
 });

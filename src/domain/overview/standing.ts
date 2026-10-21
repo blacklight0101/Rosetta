@@ -1,5 +1,6 @@
 import { ERROR_CODES } from '../errors/codes.js';
 import { describeError } from '../errors/descriptions.js';
+import { unreadFilesLine, type UnreadFiles } from './unread-files.js';
 
 // RF-264: what the run could not cover, in plain sentences. One sentence per area that the run did
 // not explain, in the order of the code map. An area that gave a card is not listed.
@@ -38,6 +39,13 @@ function sentenceOf(area: AreaStanding): string | undefined {
 }
 
 // RF-264
-export function notCoveredOf(areas: readonly AreaStanding[]): readonly string[] {
-  return areas.flatMap((area) => sentenceOf(area) ?? []);
+export function notCoveredOf(
+  areas: readonly AreaStanding[],
+  unread?: UnreadFiles,
+): readonly string[] {
+  const files = unread === undefined ? undefined : unreadFilesLine(unread);
+  return [
+    ...(files === undefined ? [] : [files]),
+    ...areas.flatMap((area) => sentenceOf(area) ?? []),
+  ];
 }
