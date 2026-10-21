@@ -181,3 +181,21 @@ it('RF-405 limits the questions one address can ask to 60 a minute', async () =>
   expect(statuses.filter((status) => status === 200)).toHaveLength(60);
   expect(statuses.at(-1)).toBe(429);
 });
+
+it('RF-401 Q-44 the Ollama list carries the trained context of each model from /api/show', async () => {
+  const ollama = new FakeOllamaServer(await loadOllamaRecording('installed-models-trained'));
+  fakes.push(ollama);
+  test = createTestServer({ models: overOllama(await ollama.start()) });
+  const user = await signedIn();
+
+  const response = await user.request({ method: 'GET', url: '/api/models/ollama' });
+
+  expect(response.json()).toMatchObject({
+    provider: 'ollama',
+    models: [
+      { model: 'gemma4:e4b', trainedContext: 8192 },
+      { model: 'llama3.2:3b', trainedContext: 8192 },
+      { model: 'qwen3:8b', trainedContext: 8192 },
+    ],
+  });
+});

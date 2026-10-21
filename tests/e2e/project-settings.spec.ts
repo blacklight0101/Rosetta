@@ -141,7 +141,7 @@ test('RF-401 sets the Ollama context size from the keyboard, refuses a bad one a
 
   await page.getByRole('button', { name: 'Save settings' }).click();
 
-  await expect(page.getByText(/at least 4096/u)).toBeVisible();
+  await expect(page.getByText(/at least 4,096/u)).toBeVisible();
   await expect(tokens).toHaveAttribute('aria-invalid', 'true');
   await expect(page.getByText('Settings saved.')).toHaveCount(0);
   await expectNoSeriousViolations(page);

@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/preact';
+import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { expect, it } from 'vitest';
 import { AdminModelsPage } from '../../../web/src/pages/AdminModelsPage.js';
 import { accountBody, cap, root } from './admin-fixtures.js';
@@ -94,8 +94,8 @@ it('RF-401 the size is not sent when no role uses Ollama any more', async () => 
 });
 
 it.each([
-  ['2048', /at least 4096/u],
-  ['200000', /at most 131072/u],
+  ['2048', /at least 4,096/u],
+  ['200000', /at most 131,072/u],
   ['x', /whole number/u],
 ])(
   'Q-23 a size of "%s" is refused next to the field and nothing is sent',
@@ -129,4 +129,66 @@ it('RF-401 a refusal of the server for the field shows next to it', async () => 
   save();
 
   expect(await screen.findByText(/Message of RST-1006/u)).toBeTruthy();
+});
+
+// Q-44: the number is bounded by the smallest trained context among the models of the Ollama roles.
+
+const trainedList = (trained: number | undefined): Response =>
+  json(200, {
+    provider: 'ollama',
+    models: [
+      {
+        model: 'gemma4:e4b',
+        label: 'gemma4:e4b',
+        priced: true,
+        ...(trained === undefined ? {} : { trainedContext: trained }),
+      },
+    ],
+  });
+
+async function tryTokens(answer: Response, text: string) {
+  const page = renderPage(
+    <AdminModelsPage />,
+    { ...withRoles(ollamaReader), 'GET /api/models/ollama': answer },
+    root,
+  );
+  await screen.findByLabelText('Reader provider');
+  await waitFor(() => {
+    expect(screen.getByLabelText('Reader model').tagName).toBe('SELECT');
+  });
+  fireEvent.change(mode(), { target: { value: 'number' } });
+  fireEvent.input(size(), { target: { value: text } });
+  save();
+  return page;
+}
+
+it('Q-44 a size above the trained context of the reader model is refused with its name', async () => {
+  const { calls } = await tryTokens(trainedList(8192), '9000');
+
+  expect(await screen.findByText(/gemma4:e4b was trained for 8,192 tokens/u)).toBeTruthy();
+  expect(calls.some((call) => call.method === 'PUT')).toBe(false);
+});
+
+it('Q-44 the trained context itself is saved', async () => {
+  const { calls } = await tryTokens(trainedList(8192), '8192');
+
+  await screen.findByText('Default models saved.');
+  expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({
+    roles: { ...ollamaReader, ollamaContextTokens: 8192 },
+  });
+});
+
+it('Q-44 a trained context above 131,072 allows a larger size', async () => {
+  const { calls } = await tryTokens(trainedList(262_144), '200000');
+
+  await screen.findByText('Default models saved.');
+  expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({
+    roles: { ...ollamaReader, ollamaContextTokens: 200_000 },
+  });
+});
+
+it('Q-44 with no trained context known the bound falls back to 131,072', async () => {
+  await tryTokens(trainedList(undefined), '131073');
+
+  expect(await screen.findByText(/at most 131,072 tokens\./u)).toBeTruthy();
 });

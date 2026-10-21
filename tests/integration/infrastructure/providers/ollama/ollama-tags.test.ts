@@ -33,7 +33,44 @@ it('RF-405 reads the names of the installed models from a recorded /api/tags ans
   expect(answer).toEqual({ ok: true, models: ['llama3.2:3b', 'gemma4:e4b', 'qwen3:8b'] });
   expect(server.received.map((request) => `${request.method} ${request.path}`)).toEqual([
     'GET /api/tags',
+    ...['llama3.2:3b', 'gemma4:e4b', 'qwen3:8b'].map(() => 'POST /api/show'),
   ]);
+});
+
+it('RF-401 Q-44 gives each model its trained context from a recorded /api/show answer', async () => {
+  const server = new FakeOllamaServer(await loadOllamaRecording('installed-models-trained'));
+
+  const answer = await ask(await started(server));
+
+  expect(answer).toEqual({
+    ok: true,
+    models: ['llama3.2:3b', 'gemma4:e4b', 'qwen3:8b'],
+    trainedContexts: { 'llama3.2:3b': 8192, 'gemma4:e4b': 8192, 'qwen3:8b': 8192 },
+  });
+  const asked = server.received.filter((request) => request.path === '/api/show');
+  expect(asked.map((request) => request.body)).toEqual([
+    { model: 'llama3.2:3b' },
+    { model: 'gemma4:e4b' },
+    { model: 'qwen3:8b' },
+  ]);
+});
+
+it('RF-401 Q-44 a model whose /api/show is unreadable is listed without a trained context', async () => {
+  const server = new FakeOllamaServer(await loadOllamaRecording('context-show-malformed'));
+
+  const answer = await ask(await started(server));
+
+  expect(answer).toEqual({ ok: true, models: ['contract-model:latest'] });
+});
+
+it('RF-401 Q-44 a /api/show that never answers costs one timeout, not the list', async () => {
+  const server = new FakeOllamaServer(await loadOllamaRecording('context-show-hangs'));
+  const began = Date.now();
+
+  const answer = await ask(await started(server), 150);
+
+  expect(answer).toEqual({ ok: true, models: ['contract-model:latest'] });
+  expect(Date.now() - began).toBeLessThan(2000);
 });
 
 it('RF-405 gives a reason when no Ollama server is configured', async () => {

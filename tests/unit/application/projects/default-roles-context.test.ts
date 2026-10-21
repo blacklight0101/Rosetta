@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  OLLAMA_CONTEXT_MAX,
   OLLAMA_CONTEXT_MIN,
   parseDefaultRoles,
 } from '../../../../src/application/projects/default-roles.js';
@@ -16,10 +15,9 @@ import { templateSettings } from '../../../support/project-fixtures.js';
 describe('parseDefaultRoles: ollamaContextTokens', () => {
   it('Q-23 the floor of the field is the floor of the automatic choice', () => {
     expect(OLLAMA_CONTEXT_MIN).toBe(CONTEXT_FLOOR);
-    expect(OLLAMA_CONTEXT_MAX).toBe(131_072);
   });
 
-  it.each([['auto'], [OLLAMA_CONTEXT_MIN], [65_536], [OLLAMA_CONTEXT_MAX]])(
+  it.each([['auto'], [OLLAMA_CONTEXT_MIN], [65_536], [262_144]])(
     'RF-401 %s is accepted',
     (value) => {
       expect(parseDefaultRoles({ ollamaContextTokens: value })).toEqual({
@@ -29,7 +27,7 @@ describe('parseDefaultRoles: ollamaContextTokens', () => {
     },
   );
 
-  it.each([[OLLAMA_CONTEXT_MIN - 1], [OLLAMA_CONTEXT_MAX + 1], [8192.5], ['big'], [null]])(
+  it.each([[OLLAMA_CONTEXT_MIN - 1], [8192.5], ['big'], [null]])(
     'Q-23 %s is refused with the field and RST-1006',
     (value) => {
       const result = parseDefaultRoles({ ollamaContextTokens: value });

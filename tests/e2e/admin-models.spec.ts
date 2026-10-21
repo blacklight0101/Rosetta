@@ -206,7 +206,7 @@ test('RF-401 saves the Ollama context size of new projects and shows it after a 
   const tokens = page.getByLabel('Ollama context size in tokens');
   await tokens.fill('2048');
   await saveButton(page).click();
-  await expect(page.getByText(/at least 4096/u)).toBeVisible();
+  await expect(page.getByText(/at least 4,096/u)).toBeVisible();
   await expect(tokens).toHaveAttribute('aria-invalid', 'true');
 
   await tokens.fill('65536');
@@ -219,4 +219,19 @@ test('RF-401 saves the Ollama context size of new projects and shows it after a 
   await page.getByLabel('Ollama context size', { exact: true }).selectOption('auto');
   await saveButton(page).click();
   await expect(page.getByRole('status').filter({ hasText: 'Default models saved' })).toBeVisible();
+});
+
+test('RF-401 the Ollama context size fits a 360 px screen without sideways scrolling', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.getByLabel('Reader provider').selectOption('ollama');
+  await page.getByLabel('Ollama context size', { exact: true }).selectOption('number');
+  await expect(page.getByLabel('Ollama context size in tokens')).toBeVisible();
+
+  const fits = await page.evaluate(
+    () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+  );
+
+  expect(fits).toBe(true);
 });
