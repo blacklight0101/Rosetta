@@ -66,12 +66,18 @@ describe('the prompt of one call in the reader figures', () => {
   });
 
   it('RF-425 is zero for no areas', () => {
-    expect(readerTokens([], assumptions).high.promptTokens).toBe(0);
+    const none = readerTokens([], assumptions);
+
+    expect([none.low.promptTokens, none.likely.promptTokens, none.high.promptTokens]).toEqual([
+      0, 0, 0,
+    ]);
   });
 });
 
+const hugeAreas = ['One', 'Two', 'Three', 'Four'].map((name) => areaOf(name, 1_000_000));
+
 async function estimatedRoles(): Promise<readonly RoleEstimate[]> {
-  const harness = createEstimateHarness([areaOf('Huge', 1_000_000)], [], table);
+  const harness = createEstimateHarness(hugeAreas, [], table);
   const project = await projectWithScan(harness, userAmy.userId, claudeRoles);
   const outcome = await harness.estimate.execute({ actor: userAmy, projectId: project.id });
   if (!outcome.ok) throw new Error('The estimate failed');
@@ -99,13 +105,22 @@ describe('the estimate of a model priced by prompt length', () => {
     );
   });
 
-  it('RF-420 prices the verifier, a share of the reader, at the reader prompt tier', async () => {
-    const verifier = (await estimatedRoles()).find((each) => each.role === 'verifier');
-    if (verifier === undefined) throw new Error('The estimate has no verifier');
-    const { high } = verifier.points;
+  it.each(['verifier', 'summariser'] as const)(
+    'RF-420 prices the %s, a share of the reader, at the reader prompt tier in each figure',
+    async (name) => {
+      const role = (await estimatedRoles()).find((each) => each.role === name);
+      if (role === undefined) throw new Error(`The estimate has no ${name}`);
+      const { likely, high } = role.points;
 
-    expect(high.costMicros).toBe(
-      ceilMillion(BigInt(high.inputTokens) * 500_000n + BigInt(high.outputTokens) * 2_500_000n),
-    );
-  });
+      // The share sums fewer calls, not smaller ones: its input is over 100,000 tokens in the
+      // likely figure too, but each call of it is under, so only the high figure is at the tier.
+      expect(likely.inputTokens).toBeGreaterThan(100_000);
+      expect(likely.costMicros).toBe(
+        ceilMillion(BigInt(likely.inputTokens) * 100_000n + BigInt(likely.outputTokens) * 500_000n),
+      );
+      expect(high.costMicros).toBe(
+        ceilMillion(BigInt(high.inputTokens) * 500_000n + BigInt(high.outputTokens) * 2_500_000n),
+      );
+    },
+  );
 });

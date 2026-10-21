@@ -1,4 +1,4 @@
-import { costOf, type Price } from '../../domain/budget/price.js';
+import { costOf, priceAt, type Price } from '../../domain/budget/price.js';
 import { lookupPrice, type KeySource, type PriceTable } from '../../domain/budget/price-table.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -41,15 +41,14 @@ export interface RoleTokens {
  * The confirmation threshold of RF-425 is compared with the likely point (start-confirmation.ts),
  * not with the high one.
  */
-function costOfPoint(
-  price: Price,
-  tokens: Pick<TokenFigures, 'inputTokens' | 'outputTokens' | 'cacheWriteTokens'>,
-  scenario: Scenario,
-): bigint {
+function costOfPoint(price: Price, tokens: TokenFigures, scenario: Scenario): bigint {
   const { inputTokens, outputTokens } = tokens;
-  const plain = costOf(price, { inputTokens, outputTokens, cachedInputTokens: 0 }).micros;
+  // Q-56: a model priced by prompt length is priced at the tier the prompt of one call reaches,
+  // not the sum of all its calls: `costOf` takes the tier from the tokens of one call.
+  const tiered = priceAt(price, tokens.promptTokens);
+  const plain = costOf(tiered, { inputTokens, outputTokens, cachedInputTokens: 0 }).micros;
   const written = scenario === 'high' ? inputTokens : tokens.cacheWriteTokens;
-  const withWrites = costOf(price, {
+  const withWrites = costOf(tiered, {
     ...{ inputTokens, outputTokens, cachedInputTokens: 0 },
     cacheWriteInputTokens: written,
   }).micros;

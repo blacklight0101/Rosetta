@@ -5,18 +5,312 @@
 # project allows unpriced models with the user's own key (RF-427). Prices change: check the
 # providers' pricing pages, update the entries and the version date together.
 #
-# OpenAI prices checked on OpenAI's pricing and model pages on 2026-10-11 (docs/providers.md
-# section 3.5), standard tier.
+# Sources, checked on 2026-10-21 (docs/providers.md section 3.5, Q-56):
+# - Anthropic: https://platform.claude.com/docs/en/about-claude/pricing (base input, 5-minute cache
+#   write, cache hit and output) and the model pages under https://platform.claude.com/docs/en/models/
+#   for the Claude API ids. Every model available on the Claude API is listed, the legacy ones
+#   included; retired models and the limited-availability Mythos models are not. Where a model page
+#   gives a dated id and an alias, both are listed.
+# - OpenAI: https://developers.openai.com/api/docs/pricing, Standard tier, the flagship text tables.
+#   The cached input of a model whose page shows a dash is the input price (no cache discount).
+#   `gpt-5-nano-2025-08-07` is not on the page; it stays because the table priced it before
+#   (DEC-106), at the price of `gpt-5-nano`.
 #
 # `cacheWriteInputPerMillionMicros` (P2-16) is the price of the tokens a call writes to the
-# provider's prompt cache. Anthropic bills it at 1.25 times the input price, so an Anthropic model
-# without it is handled like a model missing from this list (RF-427). OpenAI bills no cache write
-# of its own (cached prompts are written at the input price), so its entries repeat the input
+# provider's prompt cache. Anthropic bills it at its 5-minute cache write price, so an Anthropic
+# model without it is handled like a model missing from this list (RF-427). OpenAI bills no cache
+# write of its own (cached prompts are written at the input price), so its entries repeat the input
 # price; Ollama models are free.
+#
+# `longPrompt` (Q-56) is the one tier a model may carry: the prices of a call whose input tokens
+# (cache reads and writes included) are over `overInputTokens`. Claude Haiku 5.5 is priced so over
+# 100,000 prompt tokens; the OpenAI flagships over 272,000.
 schemaVersion: 1
-version: '2026-10-11'
+version: '2026-10-21'
 currency: USD
 models:
+  - provider: anthropic
+    model: claude-fable-5-1
+    inputPerMillionMicros: 10000000
+    cachedInputPerMillionMicros: 250000
+    cacheWriteInputPerMillionMicros: 12500000
+    outputPerMillionMicros: 50000000
+  - provider: anthropic
+    model: claude-fable-5
+    inputPerMillionMicros: 10000000
+    cachedInputPerMillionMicros: 1000000
+    cacheWriteInputPerMillionMicros: 12500000
+    outputPerMillionMicros: 50000000
+  - provider: anthropic
+    model: claude-opus-5-5
+    inputPerMillionMicros: 4000000
+    cachedInputPerMillionMicros: 200000
+    cacheWriteInputPerMillionMicros: 5000000
+    outputPerMillionMicros: 20000000
+  - provider: anthropic
+    model: claude-opus-5
+    inputPerMillionMicros: 5000000
+    cachedInputPerMillionMicros: 500000
+    cacheWriteInputPerMillionMicros: 6250000
+    outputPerMillionMicros: 25000000
+  - provider: anthropic
+    model: claude-opus-4-8
+    inputPerMillionMicros: 5000000
+    cachedInputPerMillionMicros: 500000
+    cacheWriteInputPerMillionMicros: 6250000
+    outputPerMillionMicros: 25000000
+  - provider: anthropic
+    model: claude-opus-4-7
+    inputPerMillionMicros: 5000000
+    cachedInputPerMillionMicros: 500000
+    cacheWriteInputPerMillionMicros: 6250000
+    outputPerMillionMicros: 25000000
+  - provider: anthropic
+    model: claude-opus-4-6
+    inputPerMillionMicros: 5000000
+    cachedInputPerMillionMicros: 500000
+    cacheWriteInputPerMillionMicros: 6250000
+    outputPerMillionMicros: 25000000
+  - provider: anthropic
+    model: claude-opus-4-5-20251101
+    inputPerMillionMicros: 5000000
+    cachedInputPerMillionMicros: 500000
+    cacheWriteInputPerMillionMicros: 6250000
+    outputPerMillionMicros: 25000000
+  - provider: anthropic
+    model: claude-opus-4-5
+    inputPerMillionMicros: 5000000
+    cachedInputPerMillionMicros: 500000
+    cacheWriteInputPerMillionMicros: 6250000
+    outputPerMillionMicros: 25000000
+  - provider: anthropic
+    model: claude-sonnet-5-5
+    inputPerMillionMicros: 2000000
+    cachedInputPerMillionMicros: 100000
+    cacheWriteInputPerMillionMicros: 2500000
+    outputPerMillionMicros: 10000000
+  - provider: anthropic
+    model: claude-sonnet-5
+    inputPerMillionMicros: 2000000
+    cachedInputPerMillionMicros: 200000
+    cacheWriteInputPerMillionMicros: 2500000
+    outputPerMillionMicros: 10000000
+  - provider: anthropic
+    model: claude-sonnet-4-6
+    inputPerMillionMicros: 3000000
+    cachedInputPerMillionMicros: 300000
+    cacheWriteInputPerMillionMicros: 3750000
+    outputPerMillionMicros: 15000000
+  - provider: anthropic
+    model: claude-sonnet-4-5-20250929
+    inputPerMillionMicros: 3000000
+    cachedInputPerMillionMicros: 300000
+    cacheWriteInputPerMillionMicros: 3750000
+    outputPerMillionMicros: 15000000
+  - provider: anthropic
+    model: claude-sonnet-4-5
+    inputPerMillionMicros: 3000000
+    cachedInputPerMillionMicros: 300000
+    cacheWriteInputPerMillionMicros: 3750000
+    outputPerMillionMicros: 15000000
+  - provider: anthropic
+    model: claude-haiku-5-5
+    inputPerMillionMicros: 100000
+    cachedInputPerMillionMicros: 10000
+    cacheWriteInputPerMillionMicros: 125000
+    outputPerMillionMicros: 500000
+    longPrompt:
+      overInputTokens: 100000
+      inputPerMillionMicros: 500000
+      cachedInputPerMillionMicros: 50000
+      cacheWriteInputPerMillionMicros: 625000
+      outputPerMillionMicros: 2500000
+  - provider: anthropic
+    model: claude-haiku-4-5-20251001
+    inputPerMillionMicros: 1000000
+    cachedInputPerMillionMicros: 100000
+    cacheWriteInputPerMillionMicros: 1250000
+    outputPerMillionMicros: 5000000
+  - provider: anthropic
+    model: claude-haiku-4-5
+    inputPerMillionMicros: 1000000
+    cachedInputPerMillionMicros: 100000
+    cacheWriteInputPerMillionMicros: 1250000
+    outputPerMillionMicros: 5000000
+  - provider: openai
+    model: gpt-6-astra
+    inputPerMillionMicros: 10000000
+    cachedInputPerMillionMicros: 1000000
+    cacheWriteInputPerMillionMicros: 10000000
+    outputPerMillionMicros: 50000000
+    longPrompt:
+      overInputTokens: 272000
+      inputPerMillionMicros: 20000000
+      cachedInputPerMillionMicros: 2000000
+      cacheWriteInputPerMillionMicros: 20000000
+      outputPerMillionMicros: 75000000
+  - provider: openai
+    model: gpt-6.1-sol
+    inputPerMillionMicros: 2000000
+    cachedInputPerMillionMicros: 100000
+    cacheWriteInputPerMillionMicros: 2000000
+    outputPerMillionMicros: 10000000
+    longPrompt:
+      overInputTokens: 272000
+      inputPerMillionMicros: 4000000
+      cachedInputPerMillionMicros: 200000
+      cacheWriteInputPerMillionMicros: 4000000
+      outputPerMillionMicros: 15000000
+  - provider: openai
+    model: gpt-6-luna
+    inputPerMillionMicros: 100000
+    cachedInputPerMillionMicros: 10000
+    cacheWriteInputPerMillionMicros: 100000
+    outputPerMillionMicros: 500000
+    longPrompt:
+      overInputTokens: 272000
+      inputPerMillionMicros: 200000
+      cachedInputPerMillionMicros: 20000
+      cacheWriteInputPerMillionMicros: 200000
+      outputPerMillionMicros: 750000
+  - provider: openai
+    model: gpt-6-sol
+    inputPerMillionMicros: 2000000
+    cachedInputPerMillionMicros: 200000
+    cacheWriteInputPerMillionMicros: 2000000
+    outputPerMillionMicros: 10000000
+    longPrompt:
+      overInputTokens: 272000
+      inputPerMillionMicros: 4000000
+      cachedInputPerMillionMicros: 400000
+      cacheWriteInputPerMillionMicros: 4000000
+      outputPerMillionMicros: 15000000
+  - provider: openai
+    model: gpt-5.6-sol
+    inputPerMillionMicros: 4000000
+    cachedInputPerMillionMicros: 400000
+    cacheWriteInputPerMillionMicros: 4000000
+    outputPerMillionMicros: 20000000
+    longPrompt:
+      overInputTokens: 272000
+      inputPerMillionMicros: 8000000
+      cachedInputPerMillionMicros: 800000
+      cacheWriteInputPerMillionMicros: 8000000
+      outputPerMillionMicros: 30000000
+  - provider: openai
+    model: gpt-5.6-terra
+    inputPerMillionMicros: 2000000
+    cachedInputPerMillionMicros: 200000
+    cacheWriteInputPerMillionMicros: 2000000
+    outputPerMillionMicros: 12000000
+    longPrompt:
+      overInputTokens: 272000
+      inputPerMillionMicros: 4000000
+      cachedInputPerMillionMicros: 400000
+      cacheWriteInputPerMillionMicros: 4000000
+      outputPerMillionMicros: 18000000
+  - provider: openai
+    model: gpt-5.6-luna
+    inputPerMillionMicros: 200000
+    cachedInputPerMillionMicros: 20000
+    cacheWriteInputPerMillionMicros: 200000
+    outputPerMillionMicros: 1200000
+    longPrompt:
+      overInputTokens: 272000
+      inputPerMillionMicros: 400000
+      cachedInputPerMillionMicros: 40000
+      cacheWriteInputPerMillionMicros: 400000
+      outputPerMillionMicros: 1800000
+  - provider: openai
+    model: gpt-5.5
+    inputPerMillionMicros: 5000000
+    cachedInputPerMillionMicros: 500000
+    cacheWriteInputPerMillionMicros: 5000000
+    outputPerMillionMicros: 30000000
+    longPrompt:
+      overInputTokens: 272000
+      inputPerMillionMicros: 10000000
+      cachedInputPerMillionMicros: 1000000
+      cacheWriteInputPerMillionMicros: 10000000
+      outputPerMillionMicros: 45000000
+  - provider: openai
+    model: gpt-5.5-pro
+    inputPerMillionMicros: 30000000
+    cachedInputPerMillionMicros: 30000000
+    cacheWriteInputPerMillionMicros: 30000000
+    outputPerMillionMicros: 180000000
+    longPrompt:
+      overInputTokens: 272000
+      inputPerMillionMicros: 60000000
+      cachedInputPerMillionMicros: 60000000
+      cacheWriteInputPerMillionMicros: 60000000
+      outputPerMillionMicros: 270000000
+  - provider: openai
+    model: gpt-5.4
+    inputPerMillionMicros: 2500000
+    cachedInputPerMillionMicros: 250000
+    cacheWriteInputPerMillionMicros: 2500000
+    outputPerMillionMicros: 15000000
+    longPrompt:
+      overInputTokens: 272000
+      inputPerMillionMicros: 5000000
+      cachedInputPerMillionMicros: 500000
+      cacheWriteInputPerMillionMicros: 5000000
+      outputPerMillionMicros: 22500000
+  - provider: openai
+    model: gpt-5.4-pro
+    inputPerMillionMicros: 30000000
+    cachedInputPerMillionMicros: 30000000
+    cacheWriteInputPerMillionMicros: 30000000
+    outputPerMillionMicros: 180000000
+    longPrompt:
+      overInputTokens: 272000
+      inputPerMillionMicros: 60000000
+      cachedInputPerMillionMicros: 60000000
+      cacheWriteInputPerMillionMicros: 60000000
+      outputPerMillionMicros: 270000000
+  - provider: openai
+    model: gpt-5.4-mini
+    inputPerMillionMicros: 750000
+    cachedInputPerMillionMicros: 75000
+    cacheWriteInputPerMillionMicros: 750000
+    outputPerMillionMicros: 4500000
+  - provider: openai
+    model: gpt-5.4-nano
+    inputPerMillionMicros: 200000
+    cachedInputPerMillionMicros: 20000
+    cacheWriteInputPerMillionMicros: 200000
+    outputPerMillionMicros: 1250000
+  - provider: openai
+    model: gpt-5.2
+    inputPerMillionMicros: 1750000
+    cachedInputPerMillionMicros: 175000
+    cacheWriteInputPerMillionMicros: 1750000
+    outputPerMillionMicros: 14000000
+  - provider: openai
+    model: gpt-5.2-pro
+    inputPerMillionMicros: 21000000
+    cachedInputPerMillionMicros: 21000000
+    cacheWriteInputPerMillionMicros: 21000000
+    outputPerMillionMicros: 168000000
+  - provider: openai
+    model: gpt-5.1
+    inputPerMillionMicros: 1250000
+    cachedInputPerMillionMicros: 125000
+    cacheWriteInputPerMillionMicros: 1250000
+    outputPerMillionMicros: 10000000
+  - provider: openai
+    model: gpt-5
+    inputPerMillionMicros: 1250000
+    cachedInputPerMillionMicros: 125000
+    cacheWriteInputPerMillionMicros: 1250000
+    outputPerMillionMicros: 10000000
+  - provider: openai
+    model: gpt-5-mini
+    inputPerMillionMicros: 250000
+    cachedInputPerMillionMicros: 25000
+    cacheWriteInputPerMillionMicros: 250000
+    outputPerMillionMicros: 2000000
   - provider: openai
     model: gpt-5-nano
     inputPerMillionMicros: 50000
@@ -30,11 +324,107 @@ models:
     cacheWriteInputPerMillionMicros: 50000
     outputPerMillionMicros: 400000
   - provider: openai
-    model: gpt-5.6-luna
-    inputPerMillionMicros: 200000
-    cachedInputPerMillionMicros: 20000
-    cacheWriteInputPerMillionMicros: 200000
-    outputPerMillionMicros: 1200000
+    model: gpt-5-pro
+    inputPerMillionMicros: 15000000
+    cachedInputPerMillionMicros: 15000000
+    cacheWriteInputPerMillionMicros: 15000000
+    outputPerMillionMicros: 120000000
+  - provider: openai
+    model: gpt-4.1
+    inputPerMillionMicros: 2000000
+    cachedInputPerMillionMicros: 500000
+    cacheWriteInputPerMillionMicros: 2000000
+    outputPerMillionMicros: 8000000
+  - provider: openai
+    model: gpt-4.1-mini
+    inputPerMillionMicros: 400000
+    cachedInputPerMillionMicros: 100000
+    cacheWriteInputPerMillionMicros: 400000
+    outputPerMillionMicros: 1600000
+  - provider: openai
+    model: gpt-4.1-nano
+    inputPerMillionMicros: 100000
+    cachedInputPerMillionMicros: 25000
+    cacheWriteInputPerMillionMicros: 100000
+    outputPerMillionMicros: 400000
+  - provider: openai
+    model: gpt-4o
+    inputPerMillionMicros: 2500000
+    cachedInputPerMillionMicros: 1250000
+    cacheWriteInputPerMillionMicros: 2500000
+    outputPerMillionMicros: 10000000
+  - provider: openai
+    model: gpt-4o-2024-05-13
+    inputPerMillionMicros: 5000000
+    cachedInputPerMillionMicros: 5000000
+    cacheWriteInputPerMillionMicros: 5000000
+    outputPerMillionMicros: 15000000
+  - provider: openai
+    model: gpt-4o-mini
+    inputPerMillionMicros: 150000
+    cachedInputPerMillionMicros: 75000
+    cacheWriteInputPerMillionMicros: 150000
+    outputPerMillionMicros: 600000
+  - provider: openai
+    model: o1
+    inputPerMillionMicros: 15000000
+    cachedInputPerMillionMicros: 7500000
+    cacheWriteInputPerMillionMicros: 15000000
+    outputPerMillionMicros: 60000000
+  - provider: openai
+    model: o1-pro
+    inputPerMillionMicros: 150000000
+    cachedInputPerMillionMicros: 150000000
+    cacheWriteInputPerMillionMicros: 150000000
+    outputPerMillionMicros: 600000000
+  - provider: openai
+    model: o3-pro
+    inputPerMillionMicros: 20000000
+    cachedInputPerMillionMicros: 20000000
+    cacheWriteInputPerMillionMicros: 20000000
+    outputPerMillionMicros: 80000000
+  - provider: openai
+    model: o3
+    inputPerMillionMicros: 2000000
+    cachedInputPerMillionMicros: 500000
+    cacheWriteInputPerMillionMicros: 2000000
+    outputPerMillionMicros: 8000000
+  - provider: openai
+    model: o4-mini
+    inputPerMillionMicros: 1100000
+    cachedInputPerMillionMicros: 275000
+    cacheWriteInputPerMillionMicros: 1100000
+    outputPerMillionMicros: 4400000
+  - provider: openai
+    model: o3-mini
+    inputPerMillionMicros: 1100000
+    cachedInputPerMillionMicros: 550000
+    cacheWriteInputPerMillionMicros: 1100000
+    outputPerMillionMicros: 4400000
+  - provider: openai
+    model: gpt-4-turbo-2024-04-09
+    inputPerMillionMicros: 10000000
+    cachedInputPerMillionMicros: 10000000
+    cacheWriteInputPerMillionMicros: 10000000
+    outputPerMillionMicros: 30000000
+  - provider: openai
+    model: gpt-4-0613
+    inputPerMillionMicros: 30000000
+    cachedInputPerMillionMicros: 30000000
+    cacheWriteInputPerMillionMicros: 30000000
+    outputPerMillionMicros: 60000000
+  - provider: openai
+    model: gpt-3.5-turbo
+    inputPerMillionMicros: 500000
+    cachedInputPerMillionMicros: 500000
+    cacheWriteInputPerMillionMicros: 500000
+    outputPerMillionMicros: 1500000
+  - provider: openai
+    model: gpt-3.5-turbo-0125
+    inputPerMillionMicros: 500000
+    cachedInputPerMillionMicros: 500000
+    cacheWriteInputPerMillionMicros: 500000
+    outputPerMillionMicros: 1500000
   - provider: ollama
     model: gemma4:e4b
     inputPerMillionMicros: 0

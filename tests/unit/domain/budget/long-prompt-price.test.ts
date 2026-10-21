@@ -4,12 +4,21 @@ import {
   costOf,
   priceAt,
   worstCaseCost,
+  type LongPromptTier,
   type Price,
 } from '../../../../src/domain/budget/price.js';
 
 // RF-420, Q-56: a model priced by prompt length (Claude Haiku 5.5: 0.10 / 0.50 USD per million input
 // and output tokens up to 100,000 prompt tokens, 0.50 / 2.50 over) is priced per call at the tier its
 // input tokens reach. The prompt counts every input token, cache reads and writes included.
+
+const tier: LongPromptTier = {
+  overInputTokens: 100_000,
+  inputPerMillionMicros: 500_000n,
+  outputPerMillionMicros: 2_500_000n,
+  cachedInputPerMillionMicros: 50_000n,
+  cacheWriteInputPerMillionMicros: 625_000n,
+};
 
 const haiku: Price = {
   provider: 'anthropic',
@@ -18,15 +27,20 @@ const haiku: Price = {
   outputPerMillionMicros: 500_000n,
   cachedInputPerMillionMicros: 10_000n,
   cacheWriteInputPerMillionMicros: 125_000n,
-  longPrompt: {
-    overInputTokens: 100_000,
-    inputPerMillionMicros: 500_000n,
-    outputPerMillionMicros: 2_500_000n,
-    cachedInputPerMillionMicros: 50_000n,
-    cacheWriteInputPerMillionMicros: 625_000n,
-  },
+  longPrompt: tier,
   currency: 'USD',
 };
+
+function flatPrice(): Price {
+  return {
+    provider: 'openai',
+    model: 'flat',
+    inputPerMillionMicros: 1n,
+    outputPerMillionMicros: 1n,
+    cachedInputPerMillionMicros: 1n,
+    currency: 'USD',
+  };
+}
 
 function call(inputTokens: number, extra: { cached?: number; written?: number } = {}) {
   return {
@@ -80,17 +94,22 @@ describe('the cache-write and worst-case cost of a price by prompt length', () =
   });
 
   it('RF-420 chooses a price by the prompt, and a price without a tier is the price itself', () => {
-    const flat: Price = {
-      provider: 'openai',
-      model: 'flat',
-      inputPerMillionMicros: 1n,
-      outputPerMillionMicros: 1n,
-      cachedInputPerMillionMicros: 1n,
-      currency: 'USD',
-    };
+    const flat = flatPrice();
 
-    expect(priceAt(haiku, 100_000)).toBe(haiku);
+    expect(priceAt(haiku, 100_000)).toMatchObject({ inputPerMillionMicros: 100_000n });
     expect(priceAt(haiku, 100_001)).toMatchObject({ inputPerMillionMicros: 500_000n });
+    // the chosen price has no tier left, so applying it to a sum of many calls cannot re-tier it
+    expect(priceAt(haiku, 100_001)).not.toHaveProperty('longPrompt');
+    expect(costOf(priceAt(haiku, 50_000), call(5_000_000)).micros).toBe(500_000n + 500_000n);
     expect(priceAt(flat, 5_000_000)).toBe(flat);
+  });
+
+  it('RF-427 leaves an entry without a cache-write price without one below its tier', () => {
+    const noWrite: Price = { ...flatPrice(), longPrompt: tier };
+
+    expect(priceAt(noWrite, 10)).not.toHaveProperty('cacheWriteInputPerMillionMicros');
+    expect(priceAt(noWrite, 1_000_000)).toMatchObject({
+      cacheWriteInputPerMillionMicros: 625_000n,
+    });
   });
 });

@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { parse } from 'yaml';
 import { z } from 'zod';
-import type { Price } from '../../domain/budget/price.js';
+import type { LongPromptTier, Price } from '../../domain/budget/price.js';
 import type { PriceTable } from '../../domain/budget/price-table.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -10,12 +10,25 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // `{ schemaVersion, version (date), currency, models: [{ provider, model, inputPerMillionMicros,
 // outputPerMillionMicros, cachedInputPerMillionMicros, cacheWriteInputPerMillionMicros? }] }`. The
 // cache-write price is optional; the price lookup decides what its absence means (P2-16, RF-427).
+// An entry may also carry one `longPrompt` tier (Q-56): `{ overInputTokens, inputPerMillionMicros,
+// outputPerMillionMicros, cachedInputPerMillionMicros, cacheWriteInputPerMillionMicros }`, all
+// required, the prices of a call whose input tokens are over the threshold.
 // Prices are whole micro-dollars per
 // million tokens; the currency is USD (DEC-54). Anything else, a model listed twice, or a file that
 // cannot be read is refused with RST-1602 rather than guessed, so no call is ever priced wrong.
 
 const micros = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const providerKind = z.enum(['ollama', 'openai', 'openai-compatible', 'anthropic', 'fake']);
+
+// Q-56: the prices of a call whose input tokens (cache reads and writes included) are over the
+// threshold; every price is required, so a tier is never completed by a guess.
+const longPromptSchema = z.strictObject({
+  overInputTokens: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER),
+  inputPerMillionMicros: micros,
+  outputPerMillionMicros: micros,
+  cachedInputPerMillionMicros: micros,
+  cacheWriteInputPerMillionMicros: micros,
+});
 
 const priceFileSchema = z.strictObject({
   schemaVersion: z.literal(1),
@@ -29,6 +42,7 @@ const priceFileSchema = z.strictObject({
       outputPerMillionMicros: micros,
       cachedInputPerMillionMicros: micros,
       cacheWriteInputPerMillionMicros: micros.exactOptional(),
+      longPrompt: longPromptSchema.exactOptional(),
     }),
   ),
 });
@@ -39,8 +53,19 @@ function invalid(message: string, cause?: unknown): RosettaError {
   return new RosettaError(ERROR_CODES.priceTableInvalid, message, { cause });
 }
 
+function tierOf(tier: z.infer<typeof longPromptSchema>): LongPromptTier {
+  return {
+    overInputTokens: tier.overInputTokens,
+    inputPerMillionMicros: BigInt(tier.inputPerMillionMicros),
+    outputPerMillionMicros: BigInt(tier.outputPerMillionMicros),
+    cachedInputPerMillionMicros: BigInt(tier.cachedInputPerMillionMicros),
+    cacheWriteInputPerMillionMicros: BigInt(tier.cacheWriteInputPerMillionMicros),
+  };
+}
+
 function priceOf(entry: PriceEntry): Price {
   const cacheWrite = entry.cacheWriteInputPerMillionMicros;
+  const { longPrompt } = entry;
   return {
     provider: entry.provider,
     model: entry.model,
@@ -49,6 +74,7 @@ function priceOf(entry: PriceEntry): Price {
     cachedInputPerMillionMicros: BigInt(entry.cachedInputPerMillionMicros),
     // P2-16: never a zero for a missing cache-write price; the lookup handles its absence.
     ...(cacheWrite === undefined ? {} : { cacheWriteInputPerMillionMicros: BigInt(cacheWrite) }),
+    ...(longPrompt === undefined ? {} : { longPrompt: tierOf(longPrompt) }),
     currency: 'USD',
   };
 }

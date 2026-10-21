@@ -297,7 +297,7 @@ jitter, never shorter than the hint (capped at five minutes), up to `maxRetries`
   call) and prints both answers, with the dated model id, the request id and the usage, or the error code and its
   next step. Paste the output into the pull request.
 
-### 3.5 Recommended model (DEC-106)
+### 3.5 Recommended model and the price sources (DEC-106, Q-56)
 
 The cheapest current OpenAI model with tool calling, checked on OpenAI's pricing and model pages on 2026-10-11, is
 **`gpt-5-nano`**, dated id **`gpt-5-nano-2025-08-07`**: USD 0.05 per million input tokens, 0.005 cached input, 0.40
@@ -305,6 +305,21 @@ output (standard tier). It supports function calling on Chat Completions. It is 
 for every role of the hosted deployment until the reader model spike (P1-47) shows a role needs a stronger model;
 OpenAI recommends `gpt-5.6-luna` (0.20 / 0.02 / 1.20) as the next step up. Prices change: the price table
 `prices/default-prices.yaml` (data-model.md section 3.18) is the source for cost figures, not this section.
+
+**Price sources, checked on 2026-10-21 (Q-56).** The price table holds every Anthropic model available on the Claude API
+(current and legacy, by the Claude API id of its model page) and every OpenAI model of the standard flagship text
+tables, with the prices of these pages:
+
+- Anthropic: <https://platform.claude.com/docs/en/about-claude/pricing> (base input, 5-minute cache write, cache hit,
+  output; Claude Haiku 5.5 has one price up to 100,000 prompt tokens and another over) and the model pages under
+  <https://platform.claude.com/docs/en/models/> for the ids. Retired models and the limited-availability Mythos models
+  are left out.
+- OpenAI: <https://developers.openai.com/api/docs/pricing>, standard tier; the flagship models with a long-context
+  price are priced at it over 272,000 input tokens. The cyber, specialized (chat, Codex, search, embedding,
+  moderation) and fine-tuning tables are not in the price table.
+
+The model list `prices/models.yaml` offers the current models and the cheap ones in the dropdowns; every model on it
+has a price.
 
 ## 4. Anthropic
 
@@ -400,9 +415,10 @@ The back-off is the same as Ollama's (section 2.4).
 
 ### 4.5 Tested models
 
-None yet: the owner's live check fills this section. The price table `prices/default-prices.yaml` holds no Anthropic
-model yet, so a role on Anthropic is refused with `RST-1601` unless the project settings add a price for its model,
-cache-write price included, or turn on `allowUnpriced` for the user's own key (RF-427).
+None yet: the owner's live check fills this section. The price table `prices/default-prices.yaml` holds every Anthropic
+model available on the Claude API (section 3.5), so a role on Anthropic is priced on a server key; a model not in it is refused
+with `RST-1601` unless the project settings add a price for it, cache-write price included, or turn on `allowUnpriced`
+for the user's own key (RF-427).
 
 ## 5. OpenAI-compatible services
 
