@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 85      | 5         | 78         | 2         | 0                  | 28      | 55      | 2      | 41         | 0         |
-| **Total**               | **302** | **77**    | **198**    | **27**    | **0**              | **144** | **146** | **12** | **176**    | **0**     |
+| P3 Report and plan      | 95      | 11        | 82         | 2         | 0                  | 34      | 58      | 3      | 51         | 0         |
+| **Total**               | **312** | **83**    | **202**    | **27**    | **0**              | **150** | **149** | **13** | **186**    | **0**     |
 
 ## Conventions for every card
 
@@ -4122,3 +4122,153 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the limits in the model list, the defaults, the estimate lines and tests.
 - **Done when**: each probe has a passing test; `npm run verify` green.
 - **Refs**: RF-405, RF-201, RF-425, Q-57; issue #740.
+
+### P3-86 - Follow-up: a reasoning model keeps room for its answer
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-402 and RF-405 (the Q-58 scenario), RF-202, RF-208, Q-58; `src/infrastructure/providers/openai/openai-request.ts` (sends `max_completion_tokens`, no reasoning setting), `openai-response.ts`, the Anthropic adapter's thinking settings, `src/application/agent/answer-collector.ts` (continuation of a cut answer), `prices/models.yaml`. Found in the orchestrator's evaluation of 2026-10-21 (Invoice_Generator.xlsm, every role on OpenAI `gpt-5-nano`, reader output limit 4,096): every final answer came back with empty text and `finish_reason: length` after 4,096 output tokens, because the hidden reasoning used the whole budget; the two continuations came back empty the same way, the task ended `InvalidOutput` with no card, the retry did the same, and the plan was refused (RST-1802). The reasoning tokens were billed as output. The builder confirms the request parameters on the provider's API reference (OpenAI reasoning effort for the Chat Completions API; Anthropic thinking and effort for the Messages API), never from memory.
+- **Do**: (1) a role may set a reasoning effort; for a model the shipped list marks as a reasoning model, the adapter sends it (OpenAI `reasoning_effort`, Anthropic `effort` where the model accepts it); the default for every role is `low`; a model that does not accept the setting is never sent it; (2) the response records the reasoning tokens the provider reports (as part of the output tokens in the ledger, shown apart in the call log); (3) an answer that comes back empty with the output limit reached is not asked to continue; it is retried once with the output limit doubled (still under the model's maximum and through the budget guard), and the event names the reason; a second empty answer ends the task as today; (4) `prices/models.yaml` marks the reasoning models of P3-84's list; the start page shows a role's effort.
+- **Review probes**: a recorded `gpt-5-nano` answer with empty content, `finish_reason: length` and reasoning tokens equal to the limit (one retry with the doubled limit, its cards kept); a second empty answer (task ends as today, event logged); a non-reasoning model never gets `reasoning_effort`; the role's effort reaches the request; the reasoning tokens are in the ledger and the call log; an Anthropic model with effort; the doubled limit passes the cap check or is refused cleanly; recorded responses only.
+- **Behaviour to preserve**: RF-202 repairs and continuations of a cut answer with text; RF-208 retry; ADR-003 provider types stay in the adapter; ADR-007 every call metered.
+- **Delivers**: the effort setting, the empty-answer retry, the reasoning tokens and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-402, RF-405, RF-202, RF-208, Q-58; issue #744.
+
+### P3-87 - Follow-up: a decision the brief records is not written twice
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-604, RF-608, RF-609, RF-610; `src/domain/planning/brief-decisions.ts` (the decision records of the style, each chosen layer and the migration), `src/application/plan/handoff-package.ts`, `prompts/planner/package.v4.md` (item 4, `decisions`, "empty when the brief alone decides it"). Found in the orchestrator's evaluation of 2026-10-21: every package of the day (Ollama `gemma4:e4b`, OpenAI `gpt-5-nano`, three brief variants) held the planner's own record of the architecture style and of the migration next to the record the brief writes ("ADR-001 Adopt layered architecture" and "ADR-005 Architecture style: Layered"; "ADR-002 Migration by strangler-fig" and "ADR-006 Migration strategy: Strangler Fig"; once also the back-end framework twice).
+- **Do**: (1) the planner prompt (a new version of the package prompt) says the brief's choices (style, migration, each answered stack layer) already have their records and asks for decisions the cards make necessary; (2) the package drops a planner decision with no source cards that restates a brief choice (its title or decision names the chosen style, the chosen migration strategy or an answered layer's technology), and lists what it dropped in `checks.md`; (3) links that pointed at a dropped decision (components, environments, entity mappings) point at the brief's record instead.
+- **Review probes**: a recorded planner answer with "Adopt layered architecture" and no sources, brief style layered (dropped, links moved to the brief record, listed in checks.md); a planner decision with sources that mentions the style (kept); a decision on email delivery (kept); the stack layer case; ids of the kept records stay in order without gaps; recorded responses only.
+- **Behaviour to preserve**: RF-610 one ADR for the migration strategy; the brief records' text; ADR numbering of the package.
+- **Delivers**: the prompt version, the filter, the checks line and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-604, RF-608, RF-609, RF-610; issue #746.
+
+### P3-88 - Follow-up: the migrations card keeps the data's behaviour, not the screens'
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-631, DEC-135; `src/domain/planning/behaviours-to-keep.ts` (the behaviours of a task are the supported claims of the FEAT, BR, FLOW and SCRN cards behind its requirements), `src/domain/planning/plan-coverage.ts` (the card "Write the database migrations in the chosen stack", made by code, builds every table and so every requirement behind them), `src/infrastructure/handoff/handoff-behaviour-markdown.ts`. Found in the evaluation of 2026-10-21: the migrations card of the `gpt-5-nano` package carried the approval tests of the invoice form, the customer form and the navigation (18 to 25 claims), which no migration can pin; the build trial agent called the lists "copy-pasted and attached to the wrong cards".
+- **Do**: (1) the migrations card made by code keeps only the claims of BR cards whose citations or text name a table or column it creates, and no FEAT, FLOW or SCRN claim; (2) every other card is unchanged; (3) a claim that by this rule no card keeps any more is listed in `checks.md` as kept by no card.
+- **Review probes**: the recorded `gpt-5-nano` plan (the migrations card keeps no FLOW or SCRN claim, the screen cards still keep theirs); a BR claim citing a column of the table (kept on the migrations card); a claim no card keeps (listed in checks.md); recorded responses only.
+- **Behaviour to preserve**: RF-631 behaviours of every planner-written card; RF-627 coverage of the tables by the migrations card.
+- **Delivers**: the rule, the checks line and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-631, RF-627; issue #747.
+
+### P3-89 - Follow-up: the package checks the components against the chosen style
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P3-87
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-608, ADR-018, DEC-76; `prompts/catalogue/*.v1.md` of the six styles (each has "How to check it"), `src/domain/planning/catalogue.ts`, `prompts/planner/package.v4.md` (item 3, `components`), `src/infrastructure/handoff/` (architecture and checks files). Found in the evaluation of 2026-10-21: a brief with the hexagonal style got components "API Gateway, Business Core, Data Access Layer, Presentation Layer, Workflow Service" with the core depending on the data access layer, under the sentence "The components below follow the Hexagonal (ports and adapters) style"; nothing checked it.
+- **Do**: (1) each component carries its role in the chosen style (the planner prompt asks for it; the roles per style are fixed in code: layered presentation, business, data; hexagonal and clean core, port, adapter; modular monolith module and shared kernel; event-driven producer, consumer, broker; microservices service, gateway, store); (2) code checks the dependencies against the style's rule (layered: no upward or skipping call; hexagonal and clean: the core depends on no adapter; modular monolith: a module depends on another only through its public module; event-driven: producers and consumers do not call each other; microservices: no shared store); (3) a broken rule is listed in `checks.md` and as a risk, and the architecture file no longer says the components follow the style when one is broken; (4) a component without a known role is listed, not guessed.
+- **Review probes**: the recorded hexagonal answer (the core-to-data dependency listed, the sentence changed); a clean layered answer (no finding); an unknown role (listed); each style's rule with a passing and a failing case; recorded responses only.
+- **Behaviour to preserve**: RF-608 style recommendation and record; the components diagram.
+- **Delivers**: the roles, the rule check, the checks and risk lines and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-608, DEC-76, ADR-018; issue #748.
+
+### P3-90 - Follow-up: a gap card that names its item by title still builds it
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-627, Q-54; `prompts/planner/gap.v1.md` (rule 1: a card that builds none of the items is not written), `prompts/planner/gap-repair.v1.md`, `src/application/plan/gap-answer.ts`, `src/domain/planning/plan-gap.ts`. Found in the evaluation of 2026-10-21 (Ollama `gemma4:e4b`, brief with a React front end): the package was written but the run ended `Failed` with RST-1806 because the one gap item, `screen:SCRN-005` System Dashboard, was answered with a card "Implement System Dashboard UI" without `builds`; the card was dropped and the repair prompt was never asked.
+- **Do**: (1) when the gap answer holds a card with no valid `builds`, the gap repair call is made once for it with the items it may build (P3-82 repair path), under the budget guard; (2) when the block held exactly one item and the answer exactly one card without `builds`, the card builds that item without a call, and the event names the rule; (3) a card still without an item is dropped as today and the run ends as today.
+- **Review probes**: the recorded answer (one item, one card without builds: linked, run Completed); two items and a card without builds (repair call, its answer links); a repair answer still without builds (dropped, RST-1806 as today); the cap reached before the repair (as today); recorded responses only.
+- **Behaviour to preserve**: RF-627 coverage check; P3-82 repair of gap object positions; a card that builds an id not in the block builds nothing.
+- **Delivers**: the repair path for missing builds, the single-item rule and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-627, Q-54; issue #749.
+
+### P3-91 - Follow-up: a run shows the cap that applies to it
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-1106, RF-422, RF-423, DEC-107; `src/domain/budget/budget.ts` (`capsFor`: on server keys the run cost cap is the lower of the run's cap and the administrator's run cap), `src/application/runs/run-budget-events.ts`, the event `run.started` (its `caps`), the project settings page and the start page. Found in the evaluation of 2026-10-21 (Anthropic `claude-sonnet-5-5`, server key): the project's run cap was $5.00 and `run.started` recorded `maxCostMicros: 5000000`, but the administrator's run cap was $0.50, so the understand run ended `CapReached` (RST-1600) at $0.34 spent with the reason "capMicros 500000"; nothing before the run said $0.50 applied.
+- **Do**: (1) `run.started` records the effective caps with where each comes from (project, administrator, account); (2) the start page and the project settings name the effective run cap when a server key is used and the administrator's cap is lower, with the sentence that the administrator's cap applies; (3) the `CapReached` message names which cap was reached and who can raise it.
+- **Review probes**: server key, project $5.00, administrator $0.50 (run.started records $0.50 from the administrator, the start page says so); own key (the project cap applies, no administrator line); account daily cap reached (the message names the daily cap); recorded events only.
+- **Behaviour to preserve**: RF-1106 cap rules and their order; DEC-107 "Raise cap" stops at the administrator's cap.
+- **Delivers**: the effective caps in the event, the page lines, the message and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-1106, DEC-107; issue #750.
+
+### P3-92 - Follow-up: a package without a chosen stack says so first
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-605, RF-609, DEC-80, Q-59; `web/src/pages/PlanStepButtons.tsx` and `use-plan-setup.ts` ("Use the defaults for the rest"), `src/infrastructure/handoff/` (README of the package). Found in the evaluation of 2026-10-21: three of the day's packages were written with "Use the defaults for the rest", so no layer had a technology, the API contract was "no contract applies", and the first card was "Write the database migrations in the chosen stack" with no stack chosen; nothing at the top of the package said so.
+- **Do** (Q-59, default applies): (1) the "Use the defaults for the rest" button says, when no stack layer is answered, that the package will name no technology and the planner's suggested options stay unused, with a link to the stack step; (2) the package README opens with one line when no layer is answered ("No technology was chosen; the cards are written for any stack. Choose a stack in Plan setup and write the package again."); (3) DEC-80 is unchanged: no layer takes a default technology.
+- **Review probes**: defaults with no layer answered (the button line, the README line); one layer answered (no README line); a saved brief with the full stack (unchanged).
+- **Behaviour to preserve**: DEC-80; RF-604 open questions for defaulted layers.
+- **Delivers**: the two lines and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-605, RF-609, DEC-80, Q-59; issue #751.
+
+### P3-93 - Follow-up: a long answer is not cut by the call timeout
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P3-86
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-401, RF-402, RF-405, RF-208, ADR-007, Q-60; the provider settings `timeoutSeconds` (default 120, per attempt), `src/infrastructure/providers/anthropic/anthropic-provider.ts` and the OpenAI adapter (one request, answer read at the end), `src/application/use-cases/suggest-plan-options.ts` (`CALL_TIMEOUT_MS = 120_000`). The builder confirms the streaming parameters on the providers' API references, never from memory. Found in the evaluation of 2026-10-21: the planner package call ended at 119,996 ms with RST-1505 twice for OpenAI `gpt-5-nano` (third attempt answered in 82 s with 10,627 output tokens) and twice for Anthropic `claude-sonnet-5-5` (planner limit 32,000; the orchestrator stopped the run before the third identical attempt); each timed-out call was recorded with 0 tokens and $0.00 although the provider may have generated and billed the answer.
+- **Do** (Q-60, default applies): (1) a call whose output limit is above 8,192 tokens streams the answer, and the timeout counts the time without a new token (idle), not the whole answer; (2) a call that still times out is metered with its input tokens estimated and its output marked unknown, and the call log says so, instead of $0.00; (3) the retry of a timed-out call that produced no token is not sent again unchanged a third time: after the second timeout the run ends with RST-1505 and a next step that names the timeout setting; (4) the plan options call uses the provider timeout instead of its fixed 120 s.
+- **Review probes**: a recorded stream that takes 300 s with tokens every second (no timeout, answer kept); a stream idle for longer than the timeout (RST-1505); a timed-out call (metered as estimated, the log line); two timeouts in a row (no third attempt, the next step); a small call (not streamed, as today); the options call follows the provider timeout; recorded responses only.
+- **Behaviour to preserve**: RF-208 retry of other transient errors; ADR-007 every call metered; RF-202 continuation of a cut answer.
+- **Delivers**: streaming for long calls, the idle timeout, the metering of timeouts, the retry limit and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-401, RF-402, RF-405, RF-208, ADR-007, Q-60; issue #752.
+
+### P3-94 - Follow-up: the package carries the workbook's formulas
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: L
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-152, RF-155, RF-623, RF-631, RFC-005 section 4.7, ADR-013; `src/infrastructure/sources/workbook/render-formulas.ts` (per sheet `formulas.md`: regions with the formula and the cached value), `render-values.ts`, `table-reference.ts`, `src/application/plan/plan-workbook.ts` (today only adds prompt guidance), `src/infrastructure/handoff/`. Found in the evaluation of 2026-10-21: a build trial agent given only the package of Invoice_Generator.xlsm (Ollama plan) rated it 3 of 10 for a faithful rebuild because every money rule had to be guessed (Agreed Amount Total, Net Amount, VAT to Pay, Final Invoiced Amount, Transfer Savings, due date, dashboard totals); the rendered workbook holds every one of them, for example `T = [Agreed Amount Total]+[Additional Expenses]`, `X = WORKDAY([Invoice Date],14)`, `AB = R*0.5`, with cached results. With Anthropic `claude-sonnet-5-5` the reader found the formulas, but the verifier rejected correct claims such as "Agreed Amount Total (column R) is Amount Line 1 + Amount Line 2 + Amount Line 3" and "VAT to Pay is Net Amount multiplied by the row's VAT rate", because the cited lines of `formulas.md` give the region `R8:R57` but not the column's header (the reader wrote "the header mapping was not read"), so the rules never reached the package.
+- **Do**: (0) the rendered `formulas.md` names, for a region inside a table, the table and the column it fills (for example `## Region R8:R57 (50 formulas), InvoiceTable column "Agreed Amount Total"`), so a reader and the verifier can tie a column letter to its header from the cited lines (a new renderer version; snapshots rendered before keep theirs); (1) a package planned from a workbook has a file `workbook-formulas.md` written by code, never by the model: per sheet and region, the formula once (a region of one formula is one row), the table column it fills when the region is a table column, the structured references written as column names, and up to three cached results; (2) the target data model marks a column "calculated" and links its formula when the column's legacy source is a calculated table column; (3) each task card that builds such a column or a BR requirement whose card cites a formula cell links the formula rows; (4) the README lists the file in the reading order; (5) cached text values pass the same masking as excerpts (ADR-013); numbers and dates are kept.
+- **Review probes**: the renderer names the table column of each Invoice region and of none outside a table; a recorded verifier judgement of the agreed-total claim against the new lines (Supported); the Invoice_Generator fixture (the five Invoice table formulas, the Calculation SUMIFS, the Template SUM, one row each with cached results); a shared formula region; a column with mixed formulas (each formula once); a masked text cached value; a GitHub project (no file); recorded inputs only.
+- **Behaviour to preserve**: RF-155 workbook guidance; RF-623 data model; the package's other files unchanged.
+- **Delivers**: the file, the data model marks, the card links and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-152, RF-155, RF-623, RF-631, RFC-005; issue #753.
+
+### P3-95 - Follow-up: a card's requirements agree with what it builds
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-627, RF-630, RF-631; `src/application/plan/plan-package.ts`, `coverage-answer.ts`, `src/domain/planning/plan-coverage.ts`, `src/application/plan/plan-links.ts`. Found in the evaluation of 2026-10-21 (Ollama `gemma4:e4b`): the planner gave its screen cards the requirement positions 12, 13 and 14 for requirements 11, 12 and 13 (one too high); the coverage call linked the cards to the right screens, so the invoice screen card carried the masterdata requirement and its behaviours, and the dashboard card had "Requirements: none" because position 14 did not exist; nothing reported it.
+- **Do**: (1) after the coverage links, for each card that builds an item, the requirements whose source cards are behind that item are added to the card, and a requirement whose sources share nothing with what the card builds is removed from it when the card builds at least one item; (2) a requirement position outside the list is listed in `checks.md`, not dropped silently; (3) each change is listed in `checks.md`.
+- **Review probes**: the recorded answer (the three screen cards get requirements 11, 12, 13 and their behaviours; position 14 listed); a card that builds nothing (unchanged); a card whose requirement and builds agree (unchanged); recorded responses only.
+- **Behaviour to preserve**: RF-627 coverage; RF-631 behaviours follow the requirements.
+- **Delivers**: the alignment, the checks lines and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-627, RF-630, RF-631; issue #754.
