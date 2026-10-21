@@ -18,6 +18,8 @@ for the catalogue and order journeys and none for the service library (P2-19).
 
 `understand-workbook.json` is an understand run over the `pricing-workbook` fixture (a rendered Excel workbook beside a C# helper, as an uploaded zip holding a workbook): the workbook area reads the Quote sheet's formulas and values (a cell there holds a planted instruction) and writes two `BR` cards and an `ENT` card, the helper area writes one `BR` card; `verifier-all-supported.json` judges it. `planner-workbook.json` holds the planner's plan and product requirements document for a seeded run over that workbook (a quote form, a pricing service and rate data replacing it). Both are P3-50 (RF-155).
 
+`understand-retry-run-again.json` and `understand-retry-run-recovers.json` are the reader calls of a run over Catalog and Services in which Catalog gives no card and Services gives one, followed by the runs that retry Catalog alone (RF-208, Q-43, P3-69): in the first file two retries end without a card again, in the second the retry gives its card.
+
 ## Provenance (RNF-009)
 
 Every file was written by hand for this repository by the Rosetta contributors and is covered by the repository's MIT

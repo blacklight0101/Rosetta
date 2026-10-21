@@ -12,7 +12,7 @@ import { useZipUpload, type ZipUpload, type ZipUploadOptions } from './use-zip-u
 // no source and offers Upload again. File and project names are drawn as text, never as HTML.
 
 const plural = (count: number, one: string, many: string): string =>
-  `${String(count)} ${count === 1 ? one : many}`;
+  `${count.toLocaleString('en-US')} ${count === 1 ? one : many}`;
 
 function HowTo({ limitMb }: { readonly limitMb: number }): JSX.Element {
   return (

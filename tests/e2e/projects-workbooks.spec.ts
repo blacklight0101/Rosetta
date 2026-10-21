@@ -143,7 +143,7 @@ test(
     await page.getByRole('button', { name: 'Upload workbooks' }).click();
 
     await expect(page.getByRole('status').filter({ hasText: '2 workbooks read' })).toBeVisible();
-    await expect(page.getByText('Pricing.xlsx: 4 sheets, 1200 cells, 310 formulas')).toBeVisible();
+    await expect(page.getByText('Pricing.xlsx: 4 sheets, 1,200 cells, 310 formulas')).toBeVisible();
     await expect(page.getByText('1 item left out')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Start a run' })).toBeVisible();
     await expectNoSeriousViolations(page);

@@ -13,14 +13,17 @@ export type JourneyAction =
   | { readonly kind: 'answer'; readonly label: string; readonly href: string }
   | { readonly kind: 'resume'; readonly label: string; readonly runId: string };
 
+/** An action that only opens a page. */
+export type JourneyLink = Extract<JourneyAction, { readonly kind: 'link' }>;
+
 export interface Next {
   readonly action: JourneyAction | undefined;
   /** DEC-154: "Go on with the defaults" next to "Answer N questions"; it opens the brief. */
-  readonly secondary?: JourneyAction;
+  readonly secondary?: JourneyLink;
   readonly here: StepKey;
 }
 
-const link = (label: string, href: string): JourneyAction => ({ kind: 'link', label, href });
+const link = (label: string, href: string): JourneyLink => ({ kind: 'link', label, href });
 
 function afterTheRun(c: Context, setUp: string): Next | undefined {
   const { source } = c;

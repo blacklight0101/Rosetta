@@ -169,7 +169,7 @@ it('RF-150 the summary lists each workbook with its sheets, cells, formulas and 
   const text = within(summary)
     .getAllByRole('listitem')
     .map((item) => item.textContent);
-  expect(text).toContain('Pricing.xlsx: 4 sheets, 1200 cells, 310 formulas, 0 macro modules.');
+  expect(text).toContain('Pricing.xlsx: 4 sheets, 12,247 cells, 310 formulas, 0 macro modules.');
   expect(text).toContain('Costs.xlsm: 2 sheets, 90 cells, 12 formulas, 3 macro modules.');
   expect(text).toContain('Rates.xlsx: 1 sheet, 40 cells, 0 formulas, 0 macro modules.');
   expect(summary.textContent).toContain('1 item left out');
