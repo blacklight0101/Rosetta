@@ -164,7 +164,10 @@ it('RF-405 asks only the configured Ollama server, never an address named in the
   });
 
   expect(response.statusCode).toBe(200);
-  expect(configured.received).toHaveLength(1);
+  expect(configured.received.map((request) => request.path)).toEqual([
+    '/api/tags',
+    ...['/api/show', '/api/show', '/api/show'],
+  ]);
   expect(named.received).toEqual([]);
 });
 

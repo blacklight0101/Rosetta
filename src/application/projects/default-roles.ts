@@ -16,11 +16,10 @@ const MAX_MODEL = 200;
 
 /**
  * The Ollama context size an administrator can set for new projects (Q-23, Q-44): the floor of the
- * automatic choice (ollama-context.ts, which application cannot import) up to a fixed bound, as the
- * trained context of a model is known only to Ollama. web/ keeps the same two numbers.
+ * automatic choice (ollama-context.ts, which application cannot import). The upper bound is the
+ * trained context of the models, which the Default models page checks (Q-44); the server does not.
  */
 export const OLLAMA_CONTEXT_MIN = 4096;
-export const OLLAMA_CONTEXT_MAX = 131_072;
 
 const roleChoice = z.strictObject(
   {
@@ -34,16 +33,9 @@ const roleChoice = z.strictObject(
   invalid,
 );
 
-/** `auto`, or a number of tokens from the floor of the automatic choice to the fixed bound. */
+/** `auto`, or a number of tokens from the floor of the automatic choice; the page bounds it above (Q-44). */
 const contextSize = z.union(
-  [
-    z.literal('auto'),
-    z
-      .number(invalid)
-      .int(invalid)
-      .min(OLLAMA_CONTEXT_MIN, invalid)
-      .max(OLLAMA_CONTEXT_MAX, invalid),
-  ],
+  [z.literal('auto'), z.number(invalid).int(invalid).min(OLLAMA_CONTEXT_MIN, invalid)],
   invalid,
 );
 

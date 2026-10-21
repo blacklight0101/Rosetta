@@ -14,6 +14,7 @@ import { ModelChoice } from './ModelChoice.js';
 import { DEFAULT_CONTEXT_FIELD, DefaultContextField } from './OllamaContextField.js';
 import { useContextSize, type ContextDraft } from './use-context-size.js';
 import type { ModelListState } from './model-lists.js';
+import { contextLimitOf, ollamaModels, usesOllama, type ContextLimit } from './ollama-context.js';
 import { useModelLists } from './use-model-lists.js';
 import { defaultModelProviders } from './provider-choices.js';
 
@@ -58,10 +59,6 @@ const draftOf = (roles: DefaultRoles): Draft => ({
   summariser: roles.summariser ?? { provider: '', model: '' },
 });
 
-/** RF-401: the Ollama context size has a field while a role uses Ollama. */
-const usesOllama = (draft: Draft): boolean =>
-  defaultRoleNames.some((name) => draft[name].provider === 'ollama');
-
 /** The roles that name a provider, with their model trimmed; the roles missing a model. */
 function rolesOf(draft: Draft): {
   readonly roles: DefaultRoles;
@@ -89,7 +86,7 @@ interface Editing {
   readonly refusals: number;
   readonly context: ContextDraft;
   readonly edit: (name: DefaultRoleName, patch: Partial<RoleDraft>) => void;
-  readonly submit: () => Promise<void>;
+  readonly submit: (limit: ContextLimit | undefined) => Promise<void>;
 }
 
 function useEditing(saved: DefaultRoles): Editing {
@@ -103,12 +100,12 @@ function useEditing(saved: DefaultRoles): Editing {
   const [refusals, setRefusals] = useState(0);
   const context = useContextSize(saved.ollamaContextTokens);
 
-  const submit = async (): Promise<void> => {
+  const submit = async (limit: ContextLimit | undefined): Promise<void> => {
     const parsed = rolesOf(draft);
     setFailure(undefined);
     setMessage('');
     setMissing(parsed.missing);
-    const size = context.read(usesOllama(draft));
+    const size = context.read(usesOllama(draft), limit);
     if (parsed.missing.length > 0 || !size.ok) {
       setRefusals((count) => count + 1);
       return;
@@ -194,6 +191,7 @@ function ModelsForm(props: {
   const formRef = useRef<HTMLFormElement>(null);
   const lists = useModelLists(defaultRoleNames.map((name) => editing.draft[name].provider));
   useRefusalFocus(formRef, editing.refusals);
+  const limit = contextLimitOf(ollamaModels(editing.draft), lists['ollama']);
   return (
     <form
       ref={formRef}
@@ -201,7 +199,7 @@ function ModelsForm(props: {
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
-        void editing.submit();
+        void editing.submit(limit);
       }}
     >
       {editing.failure === undefined || namesAField(editing.failure, shownFields) ? null : (
@@ -221,7 +219,7 @@ function ModelsForm(props: {
         />
       ))}
       {usesOllama(editing.draft) ? (
-        <DefaultContextField context={editing.context} failure={editing.failure} />
+        <DefaultContextField context={editing.context} failure={editing.failure} limit={limit} />
       ) : null}
       <div class="rst-projects__actions">
         <Button type="submit" variant="primary" busy={editing.busy}>

@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import { contextPath, ROLE_NAMES, usesOllama, type RoleName } from './project-settings-form.js';
+import { ROLE_NAMES, type RoleName } from './project-settings-form.js';
 import { LimitSetting } from './LimitSetting.js';
 import { ModelChoice } from './ModelChoice.js';
 import { OllamaContextField } from './OllamaContextField.js';
@@ -7,7 +7,7 @@ import type { ModelListState } from './model-lists.js';
 import { ProviderSetting } from './SettingFields.js';
 import type { SectionProps } from './settings-section.js';
 import { ranges, templateDefaults } from './setting-limits.js';
-import { useModelLists } from './use-model-lists.js';
+import { contextPath, usesOllama, type ContextLimit } from './ollama-context.js';
 
 // RF-002, RF-405, DEC-116, DEC-117, DEC-156, design-system.md section 14: the provider, model and
 // output limit of each agent role; only the reader has a turn limit. The limits are sliders (P2-15).
@@ -104,13 +104,18 @@ function RoleFields(
   );
 }
 
-function OllamaContext({ editor, errorFor }: SectionProps): JSX.Element | null {
+function OllamaContext({
+  editor,
+  errorFor,
+  limit,
+}: SectionProps & { readonly limit: ContextLimit | undefined }): JSX.Element | null {
   if (!usesOllama(editor.draft.roles)) return null;
   return (
     <OllamaContextField
       id="ollama-context"
       value={editor.draft.ollamaContext}
       scope="It applies to every Ollama role of this project."
+      limit={limit}
       error={errorFor(contextPath)}
       onChange={(ollamaContext) => {
         editor.change({ ollamaContext });
@@ -120,8 +125,13 @@ function OllamaContext({ editor, errorFor }: SectionProps): JSX.Element | null {
 }
 
 // RF-002
-export function ModelSettings(props: SectionProps): JSX.Element {
-  const lists = useModelLists(ROLE_NAMES.map((role) => props.editor.draft.roles[role].provider));
+export function ModelSettings(
+  props: SectionProps & {
+    readonly lists: Readonly<Record<string, ModelListState>>;
+    readonly limit: ContextLimit | undefined;
+  },
+): JSX.Element {
+  const { lists } = props;
   return (
     <section class="rst-card rst-settings__section" aria-labelledby="models">
       <h2 id="models" class="rst-settings__heading">
@@ -139,7 +149,7 @@ export function ModelSettings(props: SectionProps): JSX.Element {
           list={lists[props.editor.draft.roles[role].provider]}
         />
       ))}
-      <OllamaContext {...props} />
+      <OllamaContext {...props} limit={props.limit} />
     </section>
   );
 }

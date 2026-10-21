@@ -8,6 +8,8 @@ export interface ModelOption {
   readonly label: string;
   /** False when the price table has no price for it: the dropdown says "no price". */
   readonly priced: boolean;
+  /** Ollama only (Q-44): the context the model was trained for, when Ollama named one. */
+  readonly trainedContext?: number | undefined;
 }
 
 export type ModelListState =

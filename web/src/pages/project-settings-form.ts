@@ -1,6 +1,13 @@
 import type { PriceSettings, ProjectSettings, ProviderSettings } from '../api/project-schemas.js';
 import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
-import { contextDraftOf, parseContextSize, withContextSize } from './ollama-context.js';
+import {
+  contextDraftOf,
+  contextPath,
+  parseContextSize,
+  usesOllama,
+  withContextSize,
+  type ContextLimit,
+} from './ollama-context.js';
 import { providerDefaults } from './provider-choices.js';
 
 // RF-002, RF-405, DEC-116, DEC-117: the settings form as text. `draftOf` turns the stored document
@@ -143,15 +150,6 @@ export function shownFields(draft: SettingsDraft): ReadonlySet<string> {
   return fields;
 }
 
-export const contextPath = 'providers.ollama.contextTokens';
-
-/** RF-401: the Ollama context size has a field while a role uses Ollama. */
-export function usesOllama(
-  roles: Readonly<Record<RoleName, { readonly provider: string }>>,
-): boolean {
-  return ROLE_NAMES.some((name) => roles[name].provider === 'ollama');
-}
-
 const notWhole = 'Enter a whole number, for example 4096.';
 const notDollars = 'Enter an amount in dollars, for example 2.50.';
 
@@ -266,7 +264,11 @@ function providersOf(
 }
 
 // RF-002
-export function settingsOf(base: ProjectSettings, draft: SettingsDraft): SettingsResult {
+export function settingsOf(
+  base: ProjectSettings,
+  draft: SettingsDraft,
+  limit?: ContextLimit,
+): SettingsResult {
   const reader = new FieldReader();
   const roles = {
     ...base.roles,
@@ -287,7 +289,7 @@ export function settingsOf(base: ProjectSettings, draft: SettingsDraft): Setting
     ...base.agents,
     parallelism: reader.whole('agents.parallelism', draft.parallelism),
   };
-  const size = usesOllama(draft.roles) ? parseContextSize(draft.ollamaContext) : undefined;
+  const size = usesOllama(draft.roles) ? parseContextSize(draft.ollamaContext, limit) : undefined;
   if (size?.ok === false) reader.problems.push({ field: contextPath, message: size.message });
   if (reader.problems.length > 0) return { ok: false, problems: reader.problems };
   const added = providersOf(base.providers, roles);

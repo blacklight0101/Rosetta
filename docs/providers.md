@@ -67,9 +67,12 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
 - `options.num_ctx` is sent on every call: Ollama's own default context of recent models overflows an 8 GB GPU and
   spills the model to the CPU. The adapter option `contextTokens` (project setting `providers.<name>.contextTokens`,
   wired by P1-18) is `auto` (default) or a number of at least 1 024; a smaller number is refused with `RST-1514`.
-  The project settings page and the Default models page set it as "Ollama context size": Auto, or 4 096 (the floor
-  of the automatic choice) to 131 072 tokens, one value for the provider entry and so for every Ollama role (Q-44).
-  The pages cannot ask Ollama for the trained context of a model, so the upper bound is fixed.
+  The project settings page and the Default models page set it as "Ollama context size": Auto, or from 4 096 (the
+  floor of the automatic choice) up to the smallest trained context among the models of the Ollama roles, one value
+  for the provider entry and so for every Ollama role (Q-44). The trained context comes from the model list
+  (`GET /api/models/ollama`, which asks `POST /api/show` for each installed model, up to 50, with the list timeout); a
+  model whose answer fails or names none has no trained context, and when no model of the roles has one the upper bound
+  falls back to 131 072. The stored settings schema has no upper bound and still accepts any document it accepted.
   `num_predict` carries `maxOutputTokens` and `temperature` the role's temperature.
 - Context size `auto` (DEC-114, Q-23), resolved once per server and model digest and cached for the process;
   concurrent first calls share one resolution. Start at the smaller of the model's trained context

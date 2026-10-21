@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import {
   contextDraftOf,
   parseContextSize,
+  type ContextLimit,
   type ContextResult,
   type ContextSize,
 } from './ollama-context.js';
@@ -16,7 +17,7 @@ export interface ContextDraft {
   /** Shows the saved value again after a save. */
   readonly reset: (saved: ContextSize | undefined) => void;
   /** The size to save; when no role uses Ollama the field is ignored (Auto). */
-  readonly read: (active: boolean) => ContextResult;
+  readonly read: (active: boolean, limit?: ContextLimit) => ContextResult;
 }
 
 // RF-401
@@ -34,8 +35,10 @@ export function useContextSize(saved: ContextSize | undefined): ContextDraft {
       setText(contextDraftOf(value));
       setProblem(undefined);
     },
-    read: (active) => {
-      const result: ContextResult = active ? parseContextSize(text) : { ok: true, value: 'auto' };
+    read: (active, limit) => {
+      const result: ContextResult = active
+        ? parseContextSize(text, limit)
+        : { ok: true, value: 'auto' };
       setProblem(result.ok ? undefined : result.message);
       return result;
     },
