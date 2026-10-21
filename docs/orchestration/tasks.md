@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 79      | 5         | 72         | 2         | 0                  | 27      | 50      | 2      | 35         | 0         |
-| **Total**               | **296** | **77**    | **192**    | **27**    | **0**              | **143** | **141** | **12** | **170**    | **0**     |
+| P3 Report and plan      | 81      | 5         | 74         | 2         | 0                  | 28      | 51      | 2      | 37         | 0         |
+| **Total**               | **298** | **77**    | **194**    | **27**    | **0**              | **144** | **142** | **12** | **172**    | **0**     |
 
 ## Conventions for every card
 
@@ -4032,3 +4032,33 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the fixes and tests.
 - **Done when**: each probe has a passing test; `npm run verify` and the start page e2e green.
 - **Refs**: RF-425, RF-424, Q-44, Q-51; issue #721.
+
+### P3-80 - Follow-up: duplicate cards within one area are merged
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-67
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-250 and RF-243 (the Q-52 scenarios), RF-209, Q-52; `src/application/consolidate/merge-request.ts` (`typesToMerge` asks only about a type that two areas wrote), `src/domain/cards/card-merge.ts` (`MERGEABLE_TYPES` is `BR` and `ENT`), the summariser prompt `prompts/summariser/merge.v*.md`, the open-question merge of RF-243. Found in the orchestrator's fresh-start evaluation of 2026-10-21 (Invoice_Generator.xlsm, one area, a Deepen of 3 rounds on Ollama `gemma4:e4b`): 70 cards, among them "Invoice Table" six times (ENT-001, -004, -007, -010, -013, -016), "Customer Table" six times, each sheet two to four times as a screen, and the same open question twice (OQ-001, OQ-002); consolidation never ran on them because all cards came from one area.
+- **Do**: (1) the summariser is asked about a type when two reader tasks wrote cards of it, also within one area and across the rounds of a Deepen, not only across areas; (2) `SCRN` and `FEAT` join `BR` and `ENT` as mergeable types (a merged screen keeps every field, action and validation with its citations; `FLOW` stays as it is); (3) open questions of one area with the same question are merged like those of several areas (RF-243); (4) a new prompt version where the summariser instructions change, the old kept; the merges are recorded as today.
+- **Review probes**: two `ENT` "Invoice Table" cards of one area from two tasks (merged, every citation kept); one task's single card (no call); two `SCRN` cards for the same sheet (merged, fields kept); two `FEAT` cards (merged); a Deepen whose round 2 rewrites a card of round 1 (merged); two equal questions of one area (one question); a failed or capped summariser call (cards kept, run goes on); the estimate counts the extra calls; recorded responses only.
+- **Behaviour to preserve**: RF-250 never costs a card; P2-35 batches; RF-006 resume replays merges; P3-67 parent cards keep their ids.
+- **Delivers**: the rule, the types, the prompt version if needed and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-250, RF-243, RF-209, Q-52; issue #723.
+
+### P3-81 - Follow-up: "What was not covered" names the files not read
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-76
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-264 and RF-231 (the Q-53 scenario), Q-53; `src/infrastructure/cards/overview-markdown.ts:65`, `src/infrastructure/report/site/overview-section.ts:53`, `web/src/pages/NotCovered.tsx:49`. Found in the orchestrator's fresh-start evaluation of 2026-10-21: an understand run that read 3% of its only area (41 of 42 files not read) said under "What was not covered" only "Every area of the run gave at least one card."
+- **Do**: when first-party files were not read, "What was not covered" says so in every place it is shown (run page, overview, report): the count, the share of first-party tokens not read and the largest files, with the Deepen as the next step; "Every area of the run gave at least one card." stays only when the run read every first-party file.
+- **Review probes**: 41 files not read (named, with the share and the Deepen step) on the run page, in `overview.md` and in the report; every file read (today's sentence); a mix of failed areas and unread files; 360 px, light and dark, axe.
+- **Behaviour to preserve**: RF-231 wording rules; the P3-76 failed-area next steps.
+- **Delivers**: the wording in the three places and tests.
+- **Done when**: each probe has a passing test; `npm run verify` and the run page e2e green.
+- **Refs**: RF-264, RF-231, Q-53; issue #724.
