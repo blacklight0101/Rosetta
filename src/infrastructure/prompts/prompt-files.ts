@@ -28,7 +28,8 @@ const readerPromptNames = {
 const workbookPromptName = 'reader/workbook.v3.md';
 
 const answersPromptName = 'reader/answers.v1.md';
-const rereadPromptName = 'reader/reread.v2.md';
+const rereadPromptName = 'reader/reread.v3.md';
+const parentCardsPromptName = 'reader/parent-cards.v1.md';
 
 /** RF-260, RF-261: fragments of the card format, added only to areas the code map marks (Q-25). */
 const surfacePromptNames = { flows: 'cards/flows.v1.md', screens: 'cards/screens.v2.md' } as const;
@@ -176,4 +177,10 @@ export async function loadAnswersPrompt(promptsFolder: string): Promise<PromptFi
 export async function loadRereadPrompt(promptsFolder: string): Promise<PromptFile> {
   const file = await loadPromptFile(promptsFolder, rereadPromptName);
   return requirePlaceholder(file, readerPlaceholders.reread);
+}
+
+/** The prompt that lists the parent's cards to a Deepen reader (RF-209, DEC-158), checked and hashed. */
+export async function loadParentCardsPrompt(promptsFolder: string): Promise<PromptFile> {
+  const file = await loadPromptFile(promptsFolder, parentCardsPromptName);
+  return requirePlaceholder(file, readerPlaceholders.parentCards);
 }

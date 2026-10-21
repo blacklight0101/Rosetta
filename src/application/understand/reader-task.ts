@@ -151,5 +151,6 @@ export async function runReaderTask(
     signal: execution.signal,
     ...(task.answers === undefined ? {} : { answers: task.answers }),
     ...(task.rejected === undefined ? {} : { rejected: task.rejected }),
+    ...(task.parentCards === undefined ? {} : { parentCards: task.parentCards }),
   });
 }
