@@ -17,10 +17,12 @@ import type { RunOutcome } from '../ports/run-executor.js';
 import { leaveUnverified } from '../verifier/leave-unverified.js';
 import {
   announceDeepen,
+  announceDeepenMerges,
   announceRoundEnd,
   announceRoundStart,
   announceStop,
 } from './deepen-events.js';
+import { mergeDuplicates } from './deepen-consolidation.js';
 import { addQuestions, overviewOf, saveRecord, writeOutputs } from './deepen-outputs.js';
 import type { DeepenParts } from './deepen-parts.js';
 import { runRound } from './deepen-round.js';
@@ -34,7 +36,7 @@ import {
   type DeepenState,
 } from './deepen-state.js';
 
-// RF-209, RF-231, RF-006, DEC-144, DEC-145: a Deepen run, round after round. Each round is planned
+// RF-209, RF-231, RF-006, RF-250, DEC-144, DEC-145: a Deepen run, round after round. Each round is planned
 // from the cards and coverage so far; a round with nothing to do, or one that adds no `Supported`
 // claim and reads no new first-party file, ends the run with "no progress"; so do the round limit,
 // a cap (the run ends `CapReached` and can be resumed) and the owner's Stop. The record of every
@@ -87,10 +89,15 @@ async function finish(
   const written = writtenIn(record);
   const fresh = cardsOf(final).filter((card) => card.claims.some((c) => written.has(c.claimId)));
   await addQuestions(parts, fresh);
-  await writeOutputs(parts, final, await overviewOf(parts, final));
-  await saveRecord(parts, endedDeepen(record, stop, measuresOf(final, parts.scanned.codeMap)));
-  await announceStop(parts, record, stop);
-  if (stop === 'stopped') return { endState: 'Interrupted' };
+  const merged = await mergeDuplicates(parts, cardsOf(final));
+  const overview = await overviewOf(parts, final, merged?.cards);
+  await writeOutputs(parts, final, { overview, merged });
+  if (merged !== undefined) await announceDeepenMerges(parts, merged);
+  // RF-1108: a Stop that came during the merge or the overview ends the Deepen like any Stop.
+  const ended = stop !== 'capReached' && parts.execution.signal.aborted ? 'stopped' : stop;
+  await saveRecord(parts, endedDeepen(record, ended, measuresOf(final, parts.scanned.codeMap)));
+  await announceStop(parts, record, ended);
+  if (ended === 'stopped') return { endState: 'Interrupted' };
   if (stop === 'capReached')
     return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
   return { endState: 'Completed' };

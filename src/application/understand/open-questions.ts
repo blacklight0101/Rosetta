@@ -3,7 +3,7 @@ import { formatCitation } from '../../domain/cards/citation.js';
 import type { OpenQuestion } from '../ports/answers-file.js';
 
 // RF-243, RF-240, DEC-136: the open questions of a run as `answers.md` gets them. The same
-// question asked by several areas is one question that keeps every citation; the questions are
+// question asked by several areas, or twice in one (Q-52), is one question that keeps every citation; the questions are
 // grouped by the area they concern and ordered by how much of the specification depends on them,
 // so the user answers the ones that unlock most first. A question depends on the cards (other than
 // open questions) that cite a file one of its cards cites. Everything is deterministic: ties keep

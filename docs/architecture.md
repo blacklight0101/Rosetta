@@ -692,15 +692,20 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   An error result is a block too, with no excerpts; a call that names no tool gets the source `unknown_tool`, and the
   cards the summariser compares (RF-250) get the source `cards`, with no excerpts.
 - **Consolidation** (RF-250, `src/application/consolidate/`): after the last reader task has ended and its cards are
-  written, the `summariser` role is asked once per type among `BR` and `ENT` that cards of at least two areas have
-  (`typesToMerge`, rules first). Its system prompt is `prompts/summariser/merge.v1.md`; its one user message is the
+  written, the `summariser` role is asked once per type among `BR`, `ENT`, `SCRN` and `FEAT` (`MERGEABLE_TYPES`, in this
+  order) that cards of at least two reader tasks have (`typesToMerge`, Q-52): two tasks of one area ask as two areas do,
+  and so do the rounds of a Deepen (below); two cards of one task are not compared; `FLOW` and `OQ` are never asked. Its
+  system prompt is `prompts/summariser/merge.v2.md` (`merge.v1.md` stays in the repository for the runs that used it); its one user message is the
   cards of that type (id, area, title, summary, claim texts, no code, no citations) as one data block with the source
   `cards`; it has no tools. The answer `{ "merges": [{ ids, title, summary }] }` is parsed like the readers' answers and
   `applyMerges` (domain) does the merge: the first card in card order keeps its id, area and task, takes the new title
   and summary and the lowest confidence, and holds every claim of every merged card (claim ids renumbered under the kept
-  id; status and verdict kept, so a rejected claim stays rejected), `mergedFrom` lists every merged id (the union of the members' own lists, so a chain of merges keeps all) and `mergedAreas` the areas they came from, which the one-area check reads. Cards with
+  id; status and verdict kept, so a rejected claim stays rejected), `mergedFrom` lists every merged id (the union of the members' own lists, so a chain of merges keeps all) and `mergedAreas` the areas they came from. A merged `SCRN` card also gets one `screen` detail (`mergedScreen`, domain): the
+  route of the first, every role, every field once (a field of the same name has the validations of both, required if
+  either says so), every action and every link, so a merged screen keeps every field, action and validation with its
+  citations. Cards with
   other ids stay as they are, so ids have gaps and do not change between reruns of the same answers. A call that fails,
-  an answer that is not a list, an id the summariser was not shown, ids of two types, cards that all come from one area or an `OQ`
+  an answer that is not a list, an id the summariser was not shown, ids of two types, or a `FLOW` or `OQ`
   card leave the cards as they were (a warning in the log); a stopped run asks nothing. The set is written again when
   any merge was made. The merge prompt and the summariser's model version go to the manifest after the first answer. The summariser is a role of the understand run like the reader (`UNDERSTAND_ROLES`): it is part of the cloud consent (the start page names its provider), of the estimate (a share of the readers' tokens), of the Ollama check before the run and of the unpriced rule, and a role cap of its own refuses its calls without stopping the run.
   The step is optional and bounded (P2-35): (1) the cards of a type are shown in batches of at most `MERGE_BATCH_TOKENS`
@@ -712,8 +717,14 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   as they are and what was spent stays on the ledger; (3) `consolidation.json` (data-model.md section 3.7b) records the
   card types the summariser answered about, with the card ids it was shown, and the merges made; a resume makes those
   merges again, in order (so the surviving card keeps its id and `answers.md` keys stay valid), and asks only about a type
-  it has not answered about or that has a card it was not shown. The estimate (RF-425) counts the batches: the summariser
-  adds the merge prompt and an answer for every batch after the first, and the assumptions show the bound and the batches.
+  it has not answered about or that has a card it was not shown. A Deepen ends with the same step (`src/application/deepen/deepen-consolidation.ts`, Q-52): it
+  starts from the consolidation record of the Deepen or, while it has none, of the run it improves (the parent's merges are
+  made again, and a type the parent answered about is asked again only when a round wrote a card of it), writes the merged
+  card set (the task results stay as the readers wrote them, so a resume makes the merges again), removes the files of the
+  cards merged away and publishes `cards.merged` for every merge it stands on. The estimate (RF-425) counts the calls: the
+  summariser adds the merge prompt and an answer for every call after the first, a call for each batch and at least one for
+  each mergeable type a typical run asks about (1, 2 and 4 calls for the low, likely and high figure), and a Deepen's figure
+  adds the same calls; the assumptions show the bound and the batches.
 - **Overview** (RF-264, `src/application/overview/`, `src/domain/overview/`): once the merge is done, the `summariser` role
   is asked once to write the overview of the application. Its system prompt is `prompts/summariser/overview.v1.md`; its
   one user message is the cards whose citations passed (id, type, area, title, summary, the claims that passed; no code, no

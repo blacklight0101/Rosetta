@@ -95,6 +95,30 @@ describe('RF-243 the open questions of a run', () => {
   });
 });
 
+describe('RF-243 equal questions of one area (Q-52)', () => {
+  it('RF-243 two equal open questions of one area are one question keeping both citations', () => {
+    const built = assignCardIds([
+      {
+        agentTaskId: 'reader-001',
+        area: 'invoice',
+        drafts: [question('Who approves an invoice?', checkout, [1, 5])],
+      },
+      {
+        agentTaskId: 'reader-002',
+        area: 'invoice',
+        drafts: [question('Who approves an invoice', search, [2, 3])],
+      },
+    ]);
+    if (!built.ok) throw new Error('the test cards are invalid');
+
+    const questions = openQuestionsOf(built.value, 'run-1');
+
+    expect(questions).toHaveLength(1);
+    expect(questions[0]?.cardId).toBe('OQ-001');
+    expect(questions[0]?.context).toContain(`${search}:2-3`);
+  });
+});
+
 describe('RF-243 what depends on a question', () => {
   it('RF-243 questions do not depend on each other: an open question never counts as a dependant', () => {
     const cards = assignCardIds([

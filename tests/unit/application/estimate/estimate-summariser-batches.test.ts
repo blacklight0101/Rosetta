@@ -33,17 +33,17 @@ async function estimateOf(settings: ProjectSettings): Promise<RunEstimate> {
 }
 
 describe('the summariser batches in the estimate', () => {
-  it('RF-425 P2-35 states the bound and one batch for a small run, as the figures were before', async () => {
+  it('RF-425 P2-35 Q-52 states the bound and the merge calls of a small run: one per type a run asks about', async () => {
     const estimate = await estimateOf(withReader(1000));
 
     expect(estimate.assumptions.summariserBatchTokens).toBe(MERGE_BATCH_TOKENS);
-    expect(estimate.assumptions.summariserBatches).toEqual({ low: 1, likely: 1, high: 1 });
+    expect(estimate.assumptions.summariserBatches).toEqual({ low: 1, likely: 2, high: 4 });
     const summariser = estimate.roles.find((role) => role.role === 'summariser');
-    // The merge (6,100 in, 360 out) and the overview call: the cards read again, and its output.
+    // The merge (6,100 in, 360 out), its second call (800 in, 500 out) and the overview call.
     const overview = estimate.assumptions.overviewOutputTokens.likely;
     expect(summariser?.points.likely).toMatchObject({
-      inputTokens: 12_200,
-      outputTokens: 360 + overview,
+      inputTokens: 13_000,
+      outputTokens: 360 + 500 + overview,
     });
   });
 

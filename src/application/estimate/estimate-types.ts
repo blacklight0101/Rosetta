@@ -63,6 +63,11 @@ export interface ReaderAssumptions {
   readonly overviewOutputTokens: ByScenario<number>;
   /** The most tokens of cards one summariser call is shown; a larger card type goes in batches (P2-35). */
   readonly summariserBatchTokens: number;
+  /**
+   * The least merge calls the summariser makes, one for each mergeable type two reader tasks wrote
+   * (RF-250, Q-52): a run with one area asks too, so the figure no longer assumes a single call.
+   */
+  readonly summariserMergeCalls: ByScenario<number>;
   /** The system prompt and tool definitions sent with every turn. */
   readonly promptOverheadTokens: number;
   /** Added to the prompt of every turn of an area for each of flows and screens it is marked for (Q-25). */

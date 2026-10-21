@@ -53,7 +53,8 @@ describe('the documentation set journey: the three stages', () => {
 
     const roles = providers.requests().map((request) => request.context.role);
     expect(roles.filter((role) => role === 'reader')).toHaveLength(8);
-    expect(roles.filter((role) => role === 'summariser')).toHaveLength(1);
+    // The overview, and the comparison of the screens of three areas (Q-52).
+    expect(roles.filter((role) => role === 'summariser')).toHaveLength(2);
     expect(roles.filter((role) => role === 'planner')).toHaveLength(6);
     expect(providers.coverageRequests()).toHaveLength(1);
   });
