@@ -18,6 +18,7 @@ import { planLinks } from '../plan/plan-links.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
 import { planDocuments } from '../plan/plan-documents.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
+import { planWorkbookFormulas } from '../plan/plan-formulas.js';
 import { planShapes } from '../plan/plan-shapes.js';
 import {
   loadPlanFiles,
@@ -161,9 +162,10 @@ export class BuildPlan implements RunExecutor {
     const covered = links.planned;
     for (const message of links.warnings) await warn(message);
     const shapes = await planShapes(this.deps, inputs);
+    const workbookFormulas = await planWorkbookFormulas(this.deps, inputs);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
-      ...documents,
-      shapes,
+      ...{ ...documents, shapes },
+      workbookFormulas,
     });
     await this.deps.handoff.write(scopeOf(run), handoff);
     // Q-45: the extra call was refused or failed; the package of the first call stays as it is.

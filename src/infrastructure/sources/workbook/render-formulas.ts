@@ -1,4 +1,11 @@
 import { valueParts } from './cell-value-text.js';
+import {
+  rangeColumn,
+  tableColumnText,
+  tableLocator,
+  type ColumnLocator,
+  type TableColumn,
+} from './formula-tables.js';
 import { canonicalRange, rangeCellCount, type PlacedCell } from './cell-order.js';
 import { TextFile, type ByteBudget } from './render-output.js';
 import type { WorkbookCell, WorkbookSheet } from './workbook-model.js';
@@ -26,13 +33,22 @@ function plural(count: number, noun: string): string {
   return `${String(count)} ${noun}${count === 1 ? '' : 's'}`;
 }
 
-function runsOf(cells: readonly PlacedCell[]): PlacedCell[][] {
+function sameTable(locate: ColumnLocator, a: PlacedCell, b: PlacedCell): boolean {
+  const [first, second] = [locate(a.column, a.row), locate(b.column, b.row)];
+  return first?.table === second?.table;
+}
+
+function runsOf(cells: readonly PlacedCell[], locate: ColumnLocator): PlacedCell[][] {
   const byColumn = [...cells].sort((a, b) => a.column - b.column || a.row - b.row);
   const runs: PlacedCell[][] = [];
   let run: PlacedCell[] = [];
   for (const placed of byColumn) {
     const last = run.at(-1);
-    if (last?.column === placed.column && last.row + 1 === placed.row) {
+    if (
+      last?.column === placed.column &&
+      last.row + 1 === placed.row &&
+      sameTable(locate, last, placed)
+    ) {
       run.push(placed);
     } else {
       run = [placed];
@@ -56,7 +72,7 @@ function placementOf(cell: WorkbookCell, masters: ReadonlySet<number>): Placemen
     : 'plain';
 }
 
-function sectionsOf(placed: readonly PlacedCell[]): Sections {
+function sectionsOf(placed: readonly PlacedCell[], locate: ColumnLocator): Sections {
   const formulas = placed.filter((p) => p.cell.formula !== undefined);
   const masters = new Set<number>();
   for (const { cell } of formulas) {
@@ -75,7 +91,7 @@ function sectionsOf(placed: readonly PlacedCell[]): Sections {
     plain,
   };
   for (const item of formulas) targets[placementOf(item.cell, masters)].push(item);
-  for (const run of runsOf(plain)) {
+  for (const run of runsOf(plain, locate)) {
     if (run.length > 1) sections.regions.push(run);
     else sections.singles.push(...run);
   }
@@ -133,28 +149,59 @@ function rangeOf(cell: WorkbookCell): string {
   return (range === undefined ? undefined : canonicalRange(range)) ?? cell.address;
 }
 
-function addRegion(file: TextFile, run: readonly PlacedCell[], date1904: boolean): void {
+/** What the writing of a sheet needs besides the file: the date system and where tables are. */
+interface Sheet {
+  readonly date1904: boolean;
+  readonly locate: ColumnLocator;
+}
+
+/** `, InvoiceTable column "Total"` for a cell or range in a table column; nothing outside one. */
+function tableSuffix(at: TableColumn | undefined): string {
+  return at === undefined ? '' : `, ${tableColumnText(at)}`;
+}
+
+function addRegion(file: TextFile, run: readonly PlacedCell[], sheet: Sheet): void {
   const first = run[0]?.cell.address ?? '';
   const last = run.at(-1)?.cell.address ?? '';
-  file.section(`## Region ${first}:${last} (${plural(run.length, 'formula')})`);
+  const where = run[0] === undefined ? undefined : sheet.locate(run[0].column, run[0].row);
+  file.section(
+    `## Region ${first}:${last} (${plural(run.length, 'formula')})${tableSuffix(where)}`,
+  );
   for (const { cell } of run) {
-    addFormula(file, cell, { head: `${cell.address} = `, tail: '', label: '' }, date1904);
+    const spec = { head: `${cell.address} = `, tail: '', label: '' };
+    addFormula(file, cell, spec, sheet.date1904);
   }
 }
 
-function addShared(file: TextFile, items: readonly PlacedCell[], date1904: boolean): void {
+function addSingles(file: TextFile, singles: readonly PlacedCell[], sheet: Sheet): void {
+  if (singles.length === 0) return;
+  file.section(`## Single cells (${plural(singles.length, 'formula')})`);
+  for (const { cell, column, row } of singles) {
+    const where = sheet.locate(column, row);
+    const kind = where === undefined ? {} : { kind: tableColumnText(where) };
+    addFormula(
+      file,
+      cell,
+      { head: `${cell.address} = `, tail: '', label: '', ...kind },
+      sheet.date1904,
+    );
+  }
+}
+
+function addShared(file: TextFile, items: readonly PlacedCell[], sheet: Sheet): void {
   for (const { cell } of items) {
     const range = rangeOf(cell);
     const count = rangeCellCount(range);
     const size = count === undefined ? '' : `, ${String(count)} cells`;
-    file.section(`## Region ${range} (shared formula${size})`);
+    const where = tableSuffix(rangeColumn(sheet.locate, range));
+    file.section(`## Region ${range} (shared formula${size})${where}`);
     const spec = {
       head: `${range} = `,
       tail: '',
       kind: `written for ${cell.address}`,
       label: cell.address,
     };
-    addFormula(file, cell, spec, date1904);
+    addFormula(file, cell, spec, sheet.date1904);
   }
 }
 
@@ -181,7 +228,8 @@ export function renderFormulas(
   budget: ByteBudget,
 ): string {
   const file = new TextFile(budget);
-  const sections = sectionsOf(placed);
+  const locate = tableLocator(sheet.tables);
+  const sections = sectionsOf(placed, locate);
   const count = placed.filter((p) => p.cell.formula !== undefined).length;
   file.add(`# Formulas of sheet ${quoteText(sheet.name, NAME_CAP)}`);
   file.add(`- Formula cells: ${String(count)}`);
@@ -190,14 +238,10 @@ export function renderFormulas(
     file.add('No formulas.');
     return file.text();
   }
-  for (const run of sections.regions) addRegion(file, run, date1904);
-  if (sections.singles.length > 0) {
-    file.section(`## Single cells (${plural(sections.singles.length, 'formula')})`);
-    for (const { cell } of sections.singles) {
-      addFormula(file, cell, { head: `${cell.address} = `, tail: '', label: '' }, date1904);
-    }
-  }
-  addShared(file, sections.shared, date1904);
+  const written = { date1904, locate };
+  for (const run of sections.regions) addRegion(file, run, written);
+  addSingles(file, sections.singles, written);
+  addShared(file, sections.shared, written);
   addMarked(file, '## Array formulas', sections.arrays, date1904);
   addMarked(file, '## Data tables', sections.tables, date1904);
   return file.text();
