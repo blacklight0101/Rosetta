@@ -115,3 +115,60 @@ describe('the fold of a group', () => {
     expect(within(region).getByText('Third-party code (6)').closest('details')).not.toBeNull();
   });
 });
+
+describe('the files not read', () => {
+  const unread = notCoveredOf(
+    [{ ...base, name: 'Orders', cards: 0, failure: 'the model did not answer' }],
+    {
+      files: Array.from({ length: 41 }, (_, index) => ({
+        path: `src/F${String(index)}.cs`,
+        tokens: 99 - index,
+      })),
+      firstPartyTokens: 5000,
+      firstPartyReadTokens: 100,
+    },
+  );
+
+  async function unreadRegion(): Promise<HTMLElement> {
+    renderLive({
+      [`GET ${runPath}`]: runRow({ queueState: 'Ended', endState: 'Completed' }),
+      [`GET ${runPath}/overview`]: json(200, {
+        overview: { ...full, notCovered: unread },
+      }),
+      [`GET ${runPath}/answers`]: json(200, { questions: [] }),
+    });
+    return screen.findByRole('region', { name: 'What was not covered' });
+  }
+
+  it('RF-264 shows the count, the share, the largest files and the Deepen step, not the old sentence', async () => {
+    const region = await unreadRegion();
+
+    expect(region.textContent).toContain(
+      'First-party files not read: 41 files, 98% of first-party tokens not read.',
+    );
+    expect(region.textContent).toContain('Largest: src/F0.cs (99 tokens)');
+    expect(region.textContent).toContain('Next step: run a Deepen to read them.');
+    expect(region.textContent).not.toContain('Every area of the run gave at least one card.');
+  });
+
+  it('RF-264 keeps the failed-area group beside the files not read (P3-76)', async () => {
+    const region = await unreadRegion();
+
+    expect(within(region).getByText('Its reader could not finish (1)')).toBeTruthy();
+    expect(region.textContent).toContain('Orders: its reader could not finish');
+  });
+});
+
+describe('nothing left out', () => {
+  it('RF-264 says every area gave a card when nothing is left out', async () => {
+    renderLive({
+      [`GET ${runPath}`]: runRow({ queueState: 'Ended', endState: 'Completed' }),
+      [`GET ${runPath}/overview`]: json(200, { overview: { ...full, notCovered: [] } }),
+      [`GET ${runPath}/answers`]: json(200, { questions: [] }),
+    });
+
+    const region = await screen.findByRole('region', { name: 'What was not covered' });
+
+    expect(region.textContent).toContain('Every area of the run gave at least one card.');
+  });
+});

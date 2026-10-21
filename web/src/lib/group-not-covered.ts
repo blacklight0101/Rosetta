@@ -56,3 +56,11 @@ export function groupNotCovered(lines: readonly string[]): readonly CoverageGrou
     return group.length === 0 ? [] : [{ title, lines: group }];
   });
 }
+
+/** RF-264 (Q-53): the line about first-party files not read, apart from the area lines. */
+export function splitUnreadFiles(lines: readonly string[]): {
+  readonly unread: string | undefined;
+  readonly areas: readonly string[];
+} {
+  return { unread: undefined, areas: lines };
+}
