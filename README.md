@@ -97,12 +97,14 @@ journey (scan, understand, Deepen, plan) with every role on one model. Workbooks
 workbook (7 sheets, 335 formulas, 13 VBA modules, about 28,000 tokens of text) and a small loan-amortisation workbook
 (one sheet, PMT/PPMT/IPMT formulas). Costs are the cost ledger's figures; Ollama runs locally and costs nothing.
 
-| Model (every role)           | Workbook | Understand                         | Deepen                  | Plan                     | Cost   |
-| ---------------------------- | -------- | ---------------------------------- | ----------------------- | ------------------------ | ------ |
-| Ollama `gemma4:e4b` (local)  | Invoice  | 8 cards, 12 of 13 claims Supported | 100% read, 65 Supported | Completed, 8 task cards  | $0     |
-| Ollama `gemma4:e4b` (local)  | Loan     | 5 cards, 9 of 9 Supported          | not needed (100% read)  | -                        | $0     |
-| Anthropic `claude-haiku-5-5` | Invoice  | 10 cards, 26 of 31 Supported       | 100% read, 60 Supported | Completed, 13 task cards | $0.136 |
-| Anthropic `claude-haiku-5-5` | Loan     | 100% read, 15 Supported            | 36 Supported            | Completed, 8 task cards  | $0.065 |
+| Model (every role)            | Workbook | Understand                         | Deepen                       | Plan                     | Cost   |
+| ----------------------------- | -------- | ---------------------------------- | ---------------------------- | ------------------------ | ------ |
+| Ollama `gemma4:e4b` (local)   | Invoice  | 8 cards, 12 of 13 claims Supported | 100% read, 65 Supported      | Completed, 8 task cards  | $0     |
+| Ollama `gemma4:e4b` (local)   | Loan     | 5 cards, 9 of 9 Supported          | not needed (100% read)       | -                        | $0     |
+| Anthropic `claude-haiku-5-5`  | Invoice  | 10 cards, 26 of 31 Supported       | 100% read, 60 Supported      | Completed, 13 task cards | $0.136 |
+| Anthropic `claude-haiku-5-5`  | Loan     | 100% read, 15 Supported            | 36 Supported                 | Completed, 8 task cards  | $0.065 |
+| Anthropic `claude-sonnet-5-5` | Invoice  | 14 cards, 33 of 46 Supported       | 18 cards, 67 of 85 Supported | Completed, 18 task cards | $1.67  |
+| OpenAI `gpt-5-nano`           | Invoice  | 10 cards, 42 of 52 Supported       | 14 cards, 55 of 67 Supported | Completed, 5 task cards  | $0.11  |
 
 Evaluated on 2026-10-21. What the runs show:
 
@@ -113,9 +115,20 @@ Evaluated on 2026-10-21. What the runs show:
   when the setting is `auto`, refuses a prompt that would not fit, and keeps a reader's answer when the context runs
   out instead of losing it.
 - The estimate on the start page held for every hosted run (actual cost inside the low-high range).
+- The choices of Plan setup reach the package. Three briefs planned from the same understanding (C# on .NET with a
+  layered style and strangler fig; Python with FastAPI, hexagonal and a full rewrite; TypeScript with React, a
+  modular monolith and parallel change) each produced a package that names only its own technologies, style,
+  migration, principles and team context; only the brief with a separate React front end got an API contract.
+- A developer agent given only the package rebuilt the invoicing slice: from the Ollama package it had to guess
+  nearly every money rule (rated 3 of 10 for a faithful rebuild), from the Sonnet package it built 79 passing tests
+  but still mixed up two calculated columns (6 of 10). Card P3-94 adds the workbook's formulas, named by column,
+  to the package.
+- `gpt-5-nano` is a reasoning model: calls take 30 to 80 seconds, and with the default 4,096-token output limit its
+  answers came back empty (card P3-86). Long planner answers of `gpt-5-nano` and `claude-sonnet-5-5` need more than
+  the default 120-second call timeout (card P3-93); the Sonnet run used 600 seconds.
 - Known limits being fixed: every hosted model is still assumed to have a 128,000-token context and every role the
-  same output limit (card P3-85), so a hosted reader's long answer can be cut and retried; prices for every
-  Anthropic model and a refreshed OpenAI table land with card P3-84.
+  same output limit (card P3-85), so a hosted reader's long answer can be cut and retried; the follow-ups found in
+  the evaluation are cards P3-87 to P3-95.
 
 ## Release 1 scope in three lines
 
