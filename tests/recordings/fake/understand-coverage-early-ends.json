@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "An understand run on the Catalog and Services areas whose tasks end early: the Catalog reader reads Catalog/Details.aspx.cs:1-4, greps for NameLabel and then answers three times (the answer and two repairs) without valid cards (InvalidOutput) and is retried once from the start with the same result; the Services reader reads Services/CatalogService.cs:1-6 and the user stops the run before its next call is answered. Written by hand for the fake provider; no real provider was called.",
+  "description": "An understand run on the Catalog and Services areas whose tasks end early: the Catalog reader reads Catalog/Details.aspx.cs:1-10 (more than half of the area, so the read-more rule of P3-78 asks nothing), greps for NameLabel and then answers three times (the answer and two repairs) without valid cards (InvalidOutput) and is retried once from the start with the same result; the Services reader reads Services/CatalogService.cs:1-9 and the user stops the run before its next call is answered. Written by hand for the fake provider; no real provider was called.",
   "calls": [
     {
       "attempts": [
@@ -14,7 +14,7 @@
                 "arguments": {
                   "path": "Catalog/Details.aspx.cs",
                   "startLine": 1,
-                  "endLine": 4
+                  "endLine": 10
                 }
               }
             ],
@@ -128,7 +128,7 @@
                 "arguments": {
                   "path": "Catalog/Details.aspx.cs",
                   "startLine": 1,
-                  "endLine": 4
+                  "endLine": 10
                 }
               }
             ],
@@ -214,7 +214,7 @@
                 "arguments": {
                   "path": "Services/CatalogService.cs",
                   "startLine": 1,
-                  "endLine": 6
+                  "endLine": 9
                 }
               }
             ],

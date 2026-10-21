@@ -33,6 +33,9 @@ export interface ReaderPrompts {
 
   /** `reader/read-first.v<n>.md`: refuses an answer given before any file of the area was read (RF-206). */
   readonly readFirst: PromptFile;
+
+  /** `reader/read-more.v<n>.md`: refuses once an answer given after reading little of the area (Q-50). */
+  readonly readMore: PromptFile;
 }
 
 /** RF-260, RF-261: the two card types a marked area may also write, one prompt fragment each. */
@@ -51,6 +54,11 @@ export const readerPlaceholders = {
   parentCards: '{{parentCards}}',
   readFirstFiles: '{{files}}',
   readFirstTurns: '{{turns}}',
+  readMorePercent: '{{percent}}',
+  readMoreRead: '{{read}}',
+  readMoreTotal: '{{total}}',
+  readMoreFiles: '{{files}}',
+  readMoreTurns: '{{turns}}',
 } as const;
 
 /** The same on every turn, so providers that cache a stable prefix charge less for it. */
@@ -106,6 +114,27 @@ export function readFirstMessage(
   return prompts.readFirst.text
     .replace(readerPlaceholders.readFirstTurns, String(turns))
     .replace(readerPlaceholders.readFirstFiles, () => filesBlock)
+    .trimEnd();
+}
+
+/** What the read-more refusal tells the reader (P3-78). */
+export interface ReadMoreFacts {
+  readonly percent: number;
+  readonly readTokens: number;
+  readonly tokens: number;
+  readonly filesBlock: string;
+  readonly turns: number;
+}
+
+/** Q-50: the refusal of an answer given after reading little of the area. */
+export function readMoreMessage(prompts: ReaderPrompts, facts: ReadMoreFacts): string {
+  // The files block last: it holds repository text, which must not be read as a placeholder.
+  return prompts.readMore.text
+    .replace(readerPlaceholders.readMorePercent, String(facts.percent))
+    .replace(readerPlaceholders.readMoreRead, String(facts.readTokens))
+    .replace(readerPlaceholders.readMoreTotal, String(facts.tokens))
+    .replace(readerPlaceholders.readMoreTurns, String(facts.turns))
+    .replace(readerPlaceholders.readMoreFiles, () => facts.filesBlock)
     .trimEnd();
 }
 
@@ -169,6 +198,7 @@ export function promptVersionsOf(
     ...surfaceFilesFor(prompts, used),
     ...guidance,
     prompts.readFirst,
+    prompts.readMore,
   ];
   return Object.fromEntries(
     files.map((file) => [file.name, { version: file.version, sha256: file.sha256 }]),

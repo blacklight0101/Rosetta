@@ -67,8 +67,13 @@ describe('an understand run on the C# fixture: coverage', () => {
     ]);
     const root = areaOf(coverage, '(root)');
     const read = root?.files.filter((file) => file.read.length > 0);
-    expect(read).toEqual([{ path: 'Default.aspx.cs', read: [{ startLine: 1, endLine: 14 }] }]);
-    expect(root?.files.map((file) => file.path)).toContain('Web.config');
+    // The root area holds seven files; the reader reads three of them, more than half of its tokens.
+    expect(read).toEqual([
+      { path: 'Default.aspx', read: [{ startLine: 1, endLine: 8 }] },
+      { path: 'Default.aspx.cs', read: [{ startLine: 1, endLine: 14 }] },
+      { path: 'Web.config', read: [{ startLine: 1, endLine: 9 }] },
+    ]);
+    expect(root?.files).toHaveLength(7);
     expect(areaOf(coverage, 'Services')?.files).toEqual([
       { path: 'Services/CatalogService.cs', read: [{ startLine: 1, endLine: 18 }] },
     ]);
@@ -125,14 +130,11 @@ describe('an understand run whose tasks end early: coverage', UNDERSTAND_TIMEOUT
           { path: 'Catalog/Details.aspx', read: [{ startLine: 2, endLine: 2 }] },
           {
             path: 'Catalog/Details.aspx.cs',
-            read: [
-              { startLine: 1, endLine: 4 },
-              { startLine: 7, endLine: 7 },
-            ],
+            read: [{ startLine: 1, endLine: 10 }],
           },
         ],
       ],
-      ['Services', [{ path: 'Services/CatalogService.cs', read: [{ startLine: 1, endLine: 6 }] }]],
+      ['Services', [{ path: 'Services/CatalogService.cs', read: [{ startLine: 1, endLine: 9 }] }]],
     ]);
   });
 });
