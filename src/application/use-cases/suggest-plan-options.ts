@@ -69,8 +69,6 @@ export interface SuggestPlanOptionsRequest {
   readonly sourceRunId?: string;
 }
 
-/** A planner call that has not answered by then is cancelled. */
-const CALL_TIMEOUT_MS = 120_000;
 const TRACE_ID_LENGTH = 32;
 
 export class SuggestPlanOptions {
@@ -157,7 +155,7 @@ export class SuggestPlanOptions {
           .replaceAll('-', '')
           .padEnd(TRACE_ID_LENGTH, '0')
           .slice(0, TRACE_ID_LENGTH),
-        signal: deps.signals.after(CALL_TIMEOUT_MS),
+        signal: deps.signals.after(callLimitMs(project, planner.name)),
         onAnswer: () => Promise.resolve(),
       },
       { ...input, catalogue },
@@ -168,4 +166,15 @@ export class SuggestPlanOptions {
 
 function isCompleted(run: Run): boolean {
   return run.endState === 'Completed';
+}
+
+/**
+ * Q-60: a planner call that has not answered by then is cancelled: the timeout of its provider for
+ * each attempt it may make. The provider's own timeout ends a stalled attempt sooner; this limit
+ * only stops a call that keeps going. A provider the settings do not name has the defaults.
+ */
+export function callLimitMs(project: Project, providerName: string): number {
+  const provider = project.settings.providers[providerName];
+  const { timeoutSeconds, maxRetries } = provider ?? { timeoutSeconds: 120, maxRetries: 2 };
+  return timeoutSeconds * 1000 * (maxRetries + 1);
 }

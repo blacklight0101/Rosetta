@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
 import { OpenAiProvider } from '../../../../../src/infrastructure/providers/openai/openai-provider.js';
 import {
-  chatCompletionBody,
   chatCompletionStreamBody,
+  isStreamed,
 } from '../../../../../src/infrastructure/providers/openai/openai-request.js';
 import { ProviderCallError } from '../../../../../src/infrastructure/providers/provider-call-error.js';
 import { estimateInputTokens } from '../../../../../src/infrastructure/providers/usage-estimate.js';
@@ -46,9 +46,9 @@ afterEach(() => {
 
 describe('OpenAI: when a call streams', () => {
   it('Q-60 streams only when the output limit is above 8,192 tokens', () => {
-    expect(chatCompletionBody({ ...contractRequest(), maxOutputTokens: 8_192 }).stream).toBe(false);
-    expect(chatCompletionBody({ ...contractRequest(), maxOutputTokens: 8_193 }).stream).toBe(true);
-    expect(chatCompletionBody(contractRequest()).stream).toBe(false);
+    expect(isStreamed({ ...contractRequest(), maxOutputTokens: 8_192 })).toBe(false);
+    expect(isStreamed({ ...contractRequest(), maxOutputTokens: 8_193 })).toBe(true);
+    expect(isStreamed(contractRequest())).toBe(false);
   });
 
   it('Q-60 asks for the usage chunk of a stream', () => {

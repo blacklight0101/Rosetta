@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
 import { AnthropicProvider } from '../../../../../src/infrastructure/providers/anthropic/anthropic-provider.js';
-import { messageBody } from '../../../../../src/infrastructure/providers/anthropic/anthropic-request.js';
+import { isStreamed } from '../../../../../src/infrastructure/providers/anthropic/anthropic-request.js';
 import { ProviderCallError } from '../../../../../src/infrastructure/providers/provider-call-error.js';
 import { estimateInputTokens } from '../../../../../src/infrastructure/providers/usage-estimate.js';
 import { contractRequest } from '../../../../contracts/llm-provider.contract.js';
@@ -44,8 +44,8 @@ afterEach(() => {
 
 describe('Anthropic: when a call streams', () => {
   it('Q-60 asks for a stream only when the output limit is above 8,192 tokens', () => {
-    expect(messageBody(contractRequest(), 8_192).stream).toBe(false);
-    expect(messageBody(contractRequest(), 8_193).stream).toBe(true);
+    expect(isStreamed(8_192)).toBe(false);
+    expect(isStreamed(8_193)).toBe(true);
   });
 
   it('Q-60 reads a streamed answer into the same answer a plain call gives', async () => {
