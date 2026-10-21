@@ -17,8 +17,6 @@ export interface TableColumnName {
 
 export interface ParsedNote {
   readonly table?: TableColumnName;
-  /** The cell the cached value is of, when the note names it (a shared formula). */
-  readonly cachedAddress?: string;
   readonly cached?: ParsedValue;
 }
 
@@ -33,7 +31,7 @@ const NOTE_START = new RegExp(
 const NUMBER = /^-?\d+(?:\.\d+)?(?:E[+-]?\d+)?$/iu;
 const DATE = /^\d{4}-\d{2}-\d{2}(?:T[0-9:.]{1,20}(?:Z|[+-]\d{2}:\d{2})?)?$/u;
 const OTHER = /^(?:TRUE|FALSE|#[A-Z0-9/!?]{1,10})$/u;
-const CACHED = /(?:^|; )cached(?: ([A-Za-z]{1,3}[1-9][0-9]{0,6}))?: ([\s\S]*)$/u;
+const CACHED = /(?:^|; )cached(?: [A-Za-z]{1,3}[1-9][0-9]{0,6})?: ([\s\S]*)$/u;
 
 /** A JSON string written by the renderer, or undefined when the text is not one. */
 export function unquoted(text: string): string | undefined {
@@ -57,8 +55,8 @@ function tableColumnOf(text: string): { name: TableColumnName; length: number } 
 }
 
 /** The table column a region heading names after its count, or undefined for none. */
-export function headingTable(suffix: string): TableColumnName | undefined {
-  return suffix.startsWith(', ') ? tableColumnOf(suffix.slice(2))?.name : undefined;
+export function headingTable(suffix: string | undefined): TableColumnName | undefined {
+  return suffix?.startsWith(', ') === true ? tableColumnOf(suffix.slice(2))?.name : undefined;
 }
 
 /** A cached value as it is written: a JSON text, or a number, date, boolean or error as stored. */
@@ -86,10 +84,6 @@ export function parseNote(note: string | undefined): ParsedNote {
   const rest = where === undefined ? note : note.slice(where.length);
   const cached = CACHED.exec(rest);
   const table = where === undefined ? {} : { table: where.name };
-  if (cached?.[2] === undefined) return table;
-  return {
-    ...table,
-    ...(cached[1] === undefined ? {} : { cachedAddress: cached[1] }),
-    cached: valueOf(cached[2]),
-  };
+  if (cached?.[1] === undefined) return table;
+  return { ...table, cached: valueOf(cached[1]) };
 }

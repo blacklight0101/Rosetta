@@ -90,9 +90,9 @@ function cellsOf(range: string): number {
   return (Math.abs(last.row - first.row) + 1) * (Math.abs(last.column - first.column) + 1);
 }
 
-function valueOfCell(cell: RawCell, fallback: string): FormulaValue[] {
-  const { cached, cachedAddress } = cell.note;
-  return cached === undefined ? [] : [{ address: cachedAddress ?? fallback, ...cached }];
+function valueOfCell(cell: RawCell, address: string): FormulaValue[] {
+  const { cached } = cell.note;
+  return cached === undefined ? [] : [{ address, ...cached }];
 }
 
 function rowOf(
@@ -127,7 +127,7 @@ function wholeRow(place: Place, section: RawSection, cell: RawCell): RowWithoutI
   const from = shared ? section.headingLine : cell.startLine;
   return rowOf(place, {
     shape: shared ? 'shared' : 'array',
-    ...{ range, cells: section.count ?? cellsOf(range), ...tableOf(section.table) },
+    ...{ range, cells: cellsOf(range), ...tableOf(section.table) },
     formula: columnNamesOf(cell.formula),
     cached: valueOfCell(cell, firstCell(range)),
     source: { path: place.path, startLine: from, endLine: cell.endLine },
@@ -147,7 +147,7 @@ function groupsOf(section: RawSection): Group[] {
   for (const cell of section.cells) {
     const at = cellOf(cell.head);
     if (at === undefined) continue;
-    const key = relativeForm(cell.formula, at);
+    const key = relativeForm(cell.formula, at.row);
     const letters = cell.head.replace(/\d+$/u, '');
     const found = groups.get(key) ?? { first: cell, letters, cells: [] };
     found.cells.push({ cell, row: at.row });

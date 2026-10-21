@@ -62,29 +62,29 @@ export function cellOf(address: string): { column: number; row: number } | undef
 const TOKEN =
   /"(?:[^"]|"")*"|'(?:[^']|'')*'|\[[^\]]*\]|(?<![\w.$])(\$?)([A-Za-z]{1,3})(\$?)([1-9]\d{0,6})(?![\w(])/gu;
 
-/** One reference as its distance from the cell the formula is in; a fixed part (`$B`, `$1`) is kept. */
-function relativeCell(at: { column: number; row: number }, parts: readonly string[]): string {
-  const [fixedColumn, letters = '', fixedRow, row = ''] = parts;
-  const column =
-    fixedColumn === '$'
-      ? `$${letters.toUpperCase()}`
-      : `C[${String(columnIndexOf(letters) - at.column)}]`;
-  const line = fixedRow === '$' ? `$${row}` : `R[${String(Number(row) - at.row)}]`;
-  return `${column}${line}`;
+/**
+ * One reference with its row as the distance from the row the formula is in; a fixed row (`$1`) is
+ * kept. The column stays as written: the cells of a region are all in one column, so a column that
+ * differs between two formulas differs in the letters.
+ */
+function relativeCell(row: number, parts: readonly string[]): string {
+  const [fixedColumn = '', letters = '', fixedRow, line = ''] = parts;
+  const distance = fixedRow === '$' ? `$${line}` : `R[${String(Number(line) - row)}]`;
+  return `${fixedColumn}${letters}${distance}`;
 }
 
 /**
  * The formula with each cell reference that moves with the row written as its distance from the
- * cell the formula is in, so `R8*0.5` on row 8 and `R9*0.5` on row 9 give the same text. A fixed
- * reference (`$B$1`) is kept, and so are quoted texts, sheet names, brackets and function names.
+ * row the formula is in, so `R8*0.5` on row 8 and `R9*0.5` on row 9 give the same text. A fixed
+ * row (`$1`) is kept, and so are quoted texts, sheet names, brackets and function names.
  */
-export function relativeForm(formula: string, at: { column: number; row: number }): string {
+export function relativeForm(formula: string, row: number): string {
   let out = '';
   let from = 0;
   for (const match of formula.matchAll(TOKEN)) {
     const [token, ...parts] = match;
     out += formula.slice(from, match.index);
-    out += parts[1] === undefined ? token : relativeCell(at, parts);
+    out += parts[1] === undefined ? token : relativeCell(row, parts);
     from = match.index + token.length;
   }
   return out + formula.slice(from);

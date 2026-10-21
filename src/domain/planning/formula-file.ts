@@ -27,8 +27,6 @@ export interface RawSection {
   readonly headingLine: number;
   /** The range in the heading of a region; empty for the other sections. */
   readonly range: string;
-  /** The cell count in the heading of a shared formula. */
-  readonly count: number | undefined;
   readonly table: TableColumnName | undefined;
   readonly cells: RawCell[];
 }
@@ -40,30 +38,25 @@ export interface ParsedFile {
 }
 
 const TITLE = /^# Formulas of sheet (".*")$/u;
-const REGION = /^## Region (\S+) \((\d+) formulas?\)(.*)$/u;
-const SHARED = /^## Region (\S+) \(shared formula(?:, (\d+) cells)?\)(.*)$/u;
+const REGION = /^## Region (\S+) \(\d+ formulas?\)(.*)$/u;
+const SHARED = /^## Region (\S+) \(shared formula(?:, \d+ cells)?\)(.*)$/u;
 const HEAD = /^(\S+) (= |\{= )(.*)$/u;
 const CONTINUED = /^\S+ \(continued\) (.*)$/u;
 const CACHED_CONTINUED = /^\S+ \(cached, continued\) (.*)$/u;
 
 function section(kind: RawSection['kind'], headingLine: number, rest = {}): RawSection {
-  return { kind, headingLine, range: '', count: undefined, table: undefined, cells: [], ...rest };
+  return { kind, headingLine, range: '', table: undefined, cells: [], ...rest };
 }
 
 /** The section a heading opens; undefined for a heading whose lines are not read. */
 function headingOf(line: string, number: number): RawSection | undefined {
   const shared = SHARED.exec(line);
   if (shared?.[1] !== undefined) {
-    const count = shared[2] === undefined ? undefined : Number(shared[2]);
-    return section('shared', number, {
-      range: shared[1],
-      count,
-      table: headingTable(shared[3] ?? ''),
-    });
+    return section('shared', number, { range: shared[1], table: headingTable(shared[2]) });
   }
   const region = REGION.exec(line);
   if (region?.[1] !== undefined) {
-    return section('region', number, { range: region[1], table: headingTable(region[3] ?? '') });
+    return section('region', number, { range: region[1], table: headingTable(region[2]) });
   }
   if (line.startsWith('## Single cells')) return section('single', number);
   return line === '## Array formulas' ? section('array', number) : undefined;

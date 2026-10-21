@@ -106,6 +106,8 @@ it('RF-155 gives nothing when there is no scan of the snapshot', async () => {
   };
 
   expect(await planWorkbookFormulas(deps, inputs)).toBeUndefined();
+  expect(deps.scans.opened).toEqual([]);
+  expect(deps.logger.entries).toEqual([]);
 });
 
 it('RF-155 logs a scan that cannot be opened and gives nothing', async () => {
