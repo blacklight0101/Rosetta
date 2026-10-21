@@ -8,7 +8,9 @@ import type { LlmMessage, LlmRequest } from '../../../application/ports/llm-prov
 // RF-402: the body of one OpenAI chat completion call. Tool calls go in `tools`; earlier calls
 // travel with their ids and JSON-string arguments, and tool results answer them by id.
 // `max_completion_tokens` works for every current model (the older `max_tokens` does not for
-// reasoning models); `temperature` is sent only when the role sets one.
+// reasoning models); `temperature` is sent only when the role sets one. `reasoning_effort` (Chat
+// Completions, developers.openai.com/api/docs/guides/reasoning) is sent only when the request
+// carries an effort, which the provider factory sets for the reasoning models of the shipped list.
 
 function messageOf(message: LlmMessage): ChatCompletionMessageParam {
   switch (message.role) {
@@ -48,6 +50,7 @@ export function chatCompletionBody(request: LlmRequest): ChatCompletionCreatePar
       ? {}
       : { max_completion_tokens: request.maxOutputTokens }),
     ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
+    ...(request.reasoningEffort === undefined ? {} : { reasoning_effort: request.reasoningEffort }),
     stream: false,
   };
 }

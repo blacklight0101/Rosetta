@@ -24,7 +24,11 @@ export interface ModelList {
 /** Q-58: whether the shipped list marks a model of this provider kind as a reasoning model. */
 export type ReasoningModels = (kind: ProviderKind, model: string) => boolean;
 
-// Q-58 (skeleton: the marker is read by the next commit)
+// Q-58
 export function reasoningModelsOf(list: ModelList): ReasoningModels {
-  return () => list.models.length < 0;
+  const keyOf = (kind: string, model: string): string => `${kind}\n${model}`;
+  const marked = new Set(
+    list.models.filter((entry) => entry.reasoning === true).map((e) => keyOf(e.provider, e.model)),
+  );
+  return (kind, model) => marked.has(keyOf(kind, model));
 }

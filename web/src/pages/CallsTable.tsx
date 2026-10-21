@@ -4,8 +4,9 @@ import { StatusBadge } from '../components/StatusBadge.js';
 import { isProblem } from '../lib/api-calls/call-filter.js';
 import { clockText, costText, durationText, tokenText } from '../lib/api-calls/format.js';
 
-// RF-1011, RF-408: the rows of the "API calls" panel. A retried, failed or refused attempt is
-// highlighted by its row, its badge and its error code; colour is never the only sign. The link of
+// RF-1011, RF-408, Q-58: the rows of the "API calls" panel. A retried, failed or refused attempt is
+// highlighted by its row, its badge and its error code; colour is never the only sign. A call that
+// reports reasoning tokens shows them under its output tokens, which include them. The link of
 // a call opens its masked transcript in the panel below.
 
 export interface CallsTableProps {
@@ -90,6 +91,9 @@ function Row(props: CallsTableProps & { readonly call: CallRow }): JSX.Element {
       </td>
       <td data-label="Out" class="rst-table__num">
         {answered ? tokenText(call.outputTokens) : NONE}
+        {answered && call.reasoningTokens !== undefined ? (
+          <div class="rst-table__sub">{tokenText(call.reasoningTokens)} reasoning</div>
+        ) : null}
       </td>
       <td data-label="Cost" class="rst-table__num">
         {costText(call.costMicros)}

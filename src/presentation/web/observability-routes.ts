@@ -48,6 +48,7 @@ function callView(call: RunCall) {
     latencyMs: call.latencyMs,
     inputTokens: call.inputTokens,
     outputTokens: call.outputTokens,
+    ...(call.reasoningTokens === undefined ? {} : { reasoningTokens: call.reasoningTokens }),
     cachedInputTokens: call.cachedInputTokens,
     costMicros: call.costMicros,
     currency: call.currency,

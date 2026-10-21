@@ -12,7 +12,10 @@ import type {
 import type { ReasoningModels } from '../../application/models/model-list.js';
 import type { SecretBox } from '../../application/ports/secret-box.js';
 import type { ServerSettings } from '../../application/ports/server-settings.js';
-import type { ProjectSettings } from '../../application/projects/project-settings.js';
+import {
+  DEFAULT_REASONING_EFFORT,
+  type ProjectSettings,
+} from '../../application/projects/project-settings.js';
 import { ownerLogger } from '../../application/runs/owner-logger.js';
 import { priceOverridesOf } from '../../application/projects/price-overrides.js';
 import { roleBudgetOf } from '../../application/projects/role-budget.js';
@@ -32,6 +35,7 @@ import type { TextMasker } from '../guards/secret-masker.js';
 import type { AdapterBuilder } from './adapter-spec.js';
 import { guardedProvider } from './guarded-provider.js';
 import { resolveAccess, type ProviderAccess, type ServerKeys } from './provider-access.js';
+import { ReasoningEffortProvider } from './reasoning-effort-provider.js';
 import { reservationLifetimeMs } from './reservation-lifetime.js';
 
 // Architecture sections 2 and 7, ADR-003, ADR-006, ADR-007, ADR-015, RF-405, RF-1104, RF-002: the
@@ -143,7 +147,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     const unpriced = this.unpricedOf(request, config.kind, setting.model, access.value);
     if (unpriced !== undefined) return fail(ERROR_CODES.modelUnpriced, unpriced.message);
     const caps = this.capsOf({ request, role }, access.value, serverCaps);
-    const provider = this.wrap({
+    const guarded = this.wrap({
       request,
       name,
       config,
@@ -151,6 +155,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       adapter: adapter.value,
       caps,
     });
+    const provider = this.withEffort(guarded, config.kind, setting);
     return ok({
       provider,
       name,
@@ -160,6 +165,22 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       ...(setting.temperature === undefined ? {} : { temperature: setting.temperature }),
       keySource: access.value.keySource,
     });
+  }
+
+  /**
+   * Q-58: a role on a model the shipped list marks as a reasoning model sends its reasoning effort
+   * (low unless the project sets another); any other model is given none.
+   */
+  private withEffort(
+    provider: LlmProvider,
+    kind: ProviderConfig['kind'],
+    setting: ProjectSettings['roles'][AgentRole],
+  ): LlmProvider {
+    if (this.options.reasoningModels?.(kind, setting.model) !== true) return provider;
+    return new ReasoningEffortProvider(
+      provider,
+      setting.reasoningEffort ?? DEFAULT_REASONING_EFFORT,
+    );
   }
 
   /**

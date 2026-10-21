@@ -11,6 +11,8 @@ const usageSchema = z.object({
   completion_tokens: count.optional(),
   /** Left out by older models and by some compatible services. */
   prompt_tokens_details: z.object({ cached_tokens: count.nullish() }).nullish(),
+  /** Reasoning models: the part of `completion_tokens` spent on hidden reasoning. */
+  completion_tokens_details: z.object({ reasoning_tokens: count.nullish() }).nullish(),
 });
 
 const choiceSchema = z.object({

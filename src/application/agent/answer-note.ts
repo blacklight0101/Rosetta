@@ -4,10 +4,10 @@ import type { Logger } from '../ports/logger.js';
 // log and one run event. It names the reason only, never the answer or any card text, so a run
 // page and `events.jsonl` can explain a retry without holding model output.
 
-/** `refused`: asked to read first or more; `accepted`: let through for lack of room; `kept`: a refused answer read as final because the task ended; `cut`: complete cards kept from a cut-off answer. */
+/** `refused`: asked to read first or more; `accepted`: let through for lack of room; `kept`: a refused answer read as final because the task ended; `cut`: complete cards kept from a cut-off answer; `retried`: an empty answer at the output limit asked again with the limit doubled (Q-58); `empty`: an empty answer at the limit that was not, or no longer, retried. */
 export interface AnswerNote {
-  readonly outcome: 'refused' | 'accepted' | 'kept' | 'cut';
-  /** For example `not-read`, `read-little`, `no-room`, `context-limit`, `max-turns`. */
+  readonly outcome: 'refused' | 'accepted' | 'kept' | 'cut' | 'retried' | 'empty';
+  /** For example `not-read`, `read-little`, `no-room`, `context-limit`, `max-turns`, `empty-at-limit`, `after-retry`. */
   readonly reason: string;
 }
 

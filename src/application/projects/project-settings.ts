@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import type { FieldProblem } from '../../domain/errors/field-problems.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import type { ProviderKind } from '../ports/llm-provider.js';
+import type { ProviderKind, ReasoningEffort } from '../ports/llm-provider.js';
 
 // Data-model.md section 3.1, RF-002, RF-405, RF-010: the project settings document
 // (`projects.settings`). Every field is required except the lists and values the table gives no
@@ -20,6 +20,14 @@ export const PROVIDER_KINDS = [
   'anthropic',
   'fake',
 ] as const satisfies readonly ProviderKind[];
+/** Q-58: the efforts a role may ask for; the ones every model that takes an effort accepts. */
+export const REASONING_EFFORTS = [
+  'low',
+  'medium',
+  'high',
+] as const satisfies readonly ReasoningEffort[];
+/** Q-58: the effort of a role that sets none. */
+export const DEFAULT_REASONING_EFFORT = 'low' satisfies ReasoningEffort;
 export const ROLE_NAMES = ['reader', 'verifier', 'planner', 'summariser'] as const;
 
 const invalid = { error: ERROR_CODES.settingValueInvalid };
@@ -69,6 +77,7 @@ const roleFields = {
   model: z.string(missingModel).trim().min(1, missingModel).max(MAX_TEXT, invalid),
   maxOutputTokens: ranged(256, 32_768),
   temperature: z.number(invalid).min(0, invalid).max(2, invalid).optional(),
+  reasoningEffort: z.enum(REASONING_EFFORTS, invalid).optional(),
 };
 
 const readerSchema = z.strictObject(
