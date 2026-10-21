@@ -213,3 +213,24 @@ it('RF-615 a road with no open question has no Go on with the defaults', () => {
 
   expect(within(journey()).queryByRole('button', { name: 'Go on with the defaults' })).toBeNull();
 });
+
+function stripOn(pagePath: string) {
+  const view = journeyOf(roadSigns['asking'] ?? facts(), projectId);
+  return renderPage(
+    <JourneyStrip view={view} onResumed={() => undefined} pagePath={pagePath} />,
+    {},
+  );
+}
+
+it('RF-615 leaves out "Go on with the defaults" on the page it opens, whatever its query (P3-68)', () => {
+  stripOn(`/projects/${projectId}/plan-setup`);
+
+  expect(within(journey()).queryByRole('button', { name: 'Go on with the defaults' })).toBeNull();
+  expect(within(journey()).getByRole('button', { name: 'Answer 2 questions' })).toBeTruthy();
+});
+
+it('RF-615 keeps "Go on with the defaults" on any other page (P3-68)', () => {
+  stripOn(`/runs/${sourceId}`);
+
+  expect(within(journey()).getByRole('button', { name: 'Go on with the defaults' })).toBeTruthy();
+});

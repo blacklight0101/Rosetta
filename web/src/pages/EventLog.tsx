@@ -4,6 +4,7 @@ import { BreakableText } from '../components/BreakableText.js';
 import { RenderedText } from '../components/RenderedText.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
+import { cutText } from '../lib/cut-text.js';
 import { elapsedLabel } from '../lib/live-run/elapsed.js';
 import { LOG_LIMIT } from '../lib/live-run/log-count.js';
 import type { LogLine, VerdictDetail } from '../lib/live-run/run-state.js';
@@ -39,7 +40,7 @@ function VerdictBadge({ status }: { readonly status: string }): JSX.Element {
 function Reason({ reason }: { readonly reason: string }): JSX.Element {
   const [open, setOpen] = useState(false);
   const cut = reason.length > REASON_SHOWN;
-  const shown = cut && !open ? `${reason.slice(0, REASON_SHOWN).trimEnd()}…` : reason;
+  const shown = cut && !open ? `${cutText(reason, REASON_SHOWN).trimEnd()}…` : reason;
   return (
     <>
       <span class="rst-live-log__reason" data-testid="log-reason">

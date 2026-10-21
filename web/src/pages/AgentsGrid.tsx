@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import type { AgentPanelState, RunState } from '../lib/live-run/run-state.js';
+import { scanSubjectOfRun } from '../lib/live-run/scan-subject.js';
 import { AgentPanel } from './AgentPanel.js';
 
 // RF-1002, design-system.md section 14 (live run): one panel per agent, or the line that says why
@@ -15,7 +16,7 @@ export function AgentsGrid(props: {
     area === undefined ? state.agents : state.agents.filter((agent) => agent.area === area);
   const emptyText =
     state.stage === 'scan'
-      ? 'This run has no agents. A scan reads the repository without a model.'
+      ? `This run has no agents. A scan reads ${scanSubjectOfRun(state.source)} without a model.`
       : 'No agents yet. They appear when the run plans its work.';
   return (
     <section class="rst-live-agents" aria-label="Agents">

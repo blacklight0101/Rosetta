@@ -113,13 +113,14 @@ interface EstimateProps {
 }
 
 function Estimate(props: EstimateProps): JSX.Element {
-  const { likely } = props.estimate.total;
+  const { likely, high } = props.estimate.total;
   const over = overrunOf(props);
+  const cost = BigInt(high.costMicros) > 0n ? `, ${dollars(likely.costMicros)}` : '';
   return (
     <>
       <p class="rst-live-meter__estimate" data-testid="estimate-line">
-        Estimate (likely): {tokensLabel(tokensOf(likely))} tokens, {dollars(likely.costMicros)}.
-        Range {rangeText(props.estimate.total)}.
+        Estimate (likely): {tokensLabel(tokensOf(likely))} tokens{cost}. Range{' '}
+        {rangeText(props.estimate.total)}.
       </p>
       {over === undefined ? null : (
         <p class="rst-live-meter__over" data-testid="estimate-over">

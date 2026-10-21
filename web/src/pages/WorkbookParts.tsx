@@ -11,7 +11,7 @@ import type { FileState } from './workbook-batch.js';
 // cannot reorder what is around it.
 
 const plural = (count: number, one: string, many: string): string =>
-  `${String(count)} ${count === 1 ? one : many}`;
+  `${count.toLocaleString('en-US')} ${count === 1 ? one : many}`;
 
 function stateText(state: FileState, percent: number): string {
   switch (state) {
