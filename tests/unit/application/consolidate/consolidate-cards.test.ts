@@ -183,7 +183,7 @@ describe('consolidateCards when ids are not those shown', () => {
     const cards = cardsAcrossAreas();
     const rule = cards.find((card) => card.id === 'BR-001');
     if (rule === undefined) throw new Error('fixture');
-    const twin = { ...rule, id: 'BR-002', area: 'Billing' };
+    const twin = { ...rule, id: 'BR-002', area: 'Billing', agentTaskId: 'reader-002' };
 
     const result = await consolidateCards(parts, [...cards, twin]);
 

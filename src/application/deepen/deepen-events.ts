@@ -1,4 +1,5 @@
 import type { Card } from '../../domain/cards/card.js';
+import type { RunConsolidation } from '../consolidate/consolidate-run.js';
 import { applyMerges } from '../../domain/cards/card-merge.js';
 import type { DeepenRecord, DeepenRound } from '../../domain/deepen/deepen-record.js';
 import type { RoundPlan } from '../../domain/deepen/round-plan.js';
@@ -97,4 +98,18 @@ export async function announceStop(
 ): Promise<void> {
   const { roundsDone, maxRounds } = record;
   await parts.execution.events.emit('deepen.ended', { stopReason, roundsDone, maxRounds });
+}
+
+/**
+ * RF-250, RF-1004, Q-52: the merges the end of a Deepen stands on, those of the parent made again and
+ * the new ones. This run has not published them, so the pages move their claims by these events.
+ */
+export async function announceDeepenMerges(
+  parts: DeepenParts,
+  merged: RunConsolidation,
+): Promise<void> {
+  for (const move of [...merged.replayedMoves, ...merged.moves]) {
+    const task = merged.cards.find((card) => card.id === move.cardId)?.agentTaskId;
+    await parts.execution.events.emit('cards.merged', { ...move }, task);
+  }
 }

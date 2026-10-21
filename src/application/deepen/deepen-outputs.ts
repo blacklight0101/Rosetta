@@ -4,6 +4,7 @@ import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
 import type { DeepenRecord } from '../../domain/deepen/deepen-record.js';
 import { err, ok } from '../../domain/errors/result.js';
 import type { Overview } from '../../domain/overview/overview.js';
+import type { RunConsolidation } from '../consolidate/consolidate-run.js';
 import { scopeOf } from '../runs/run-scope.js';
 import { openQuestionsOf } from '../understand/open-questions.js';
 import { overviewStep } from '../understand/overview-step.js';
@@ -24,19 +25,33 @@ export function saveRecord(parts: DeepenParts, record: DeepenRecord): Promise<vo
   );
 }
 
-// RF-204, RF-230, RF-006
+/** What the end of a Deepen adds to the files of its rounds: the overview, the cards merged (Q-52). */
+export interface FinalOutputs {
+  readonly overview?: Overview;
+  readonly merged?: RunConsolidation | undefined;
+}
+
+/** The cards of the files: the readers' cards, with the duplicates merged once the Deepen ended. */
+function writtenCards(state: DeepenState, merged: RunConsolidation | undefined): readonly Card[] {
+  return merged?.cards ?? cardsOf(state);
+}
+
+// RF-204, RF-230, RF-006, RF-250
 export async function writeOutputs(
   parts: DeepenParts,
   state: DeepenState,
-  overview?: Overview,
+  final: FinalOutputs = {},
 ): Promise<void> {
   const { deps, execution, scanned, source } = parts;
+  const { overview, merged } = final;
   const scope = scopeOf(execution.run);
+  const kept = new Set(writtenCards(state, merged).map((card) => card.id));
+  const mergedAway = cardsOf(state).filter((card) => !kept.has(card.id));
   const areasWithoutCards = state.results
     .filter((result) => result.withoutCards)
     .map((result) => result.area);
   await deps.cards.writeCards(scope, {
-    ...{ cards: cardsOf(state), source, areasWithoutCards },
+    ...{ cards: writtenCards(state, merged), source, areasWithoutCards, mergedAway },
     ...(overview === undefined ? {} : { overview }),
   });
   await deps.cards.writeCoverage(scope, coverageOf(state, scanned.codeMap));
@@ -64,7 +79,11 @@ function tasksOf(parts: DeepenParts, state: DeepenState): readonly ReaderTask[] 
 }
 
 /** RF-264: the overview of every card of the run, with the areas it explained. */
-export function overviewOf(parts: DeepenParts, state: DeepenState): Promise<Overview> {
+export function overviewOf(
+  parts: DeepenParts,
+  state: DeepenState,
+  cards: readonly Card[] = cardsOf(state),
+): Promise<Overview> {
   const allTasks = tasksOf(parts, state);
   const coverage = new RunCoverage(allTasks);
   for (const area of coverageOf(state, parts.scanned.codeMap)) {
@@ -72,5 +91,5 @@ export function overviewOf(parts: DeepenParts, state: DeepenState): Promise<Over
     if (first !== undefined) coverage.restore(first.agentTaskId, area);
   }
   const thirdParty = thirdPartyAreaNames(parts.scanned.codeMap);
-  return overviewStep({ ...parts, allTasks }, cardsOf(state), { coverage, thirdParty });
+  return overviewStep({ ...parts, allTasks }, cards, { coverage, thirdParty });
 }

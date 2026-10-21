@@ -107,7 +107,7 @@ function screensOf(areas: readonly Area[], codeMap: CodeMap): number {
 }
 
 /**
- * RF-250, RF-264, P2-35: the summariser's tokens. The merge is its share of the readers' tokens, and
+ * RF-250, RF-264, P2-35, Q-52: the summariser's tokens. The merge is its share of the readers' tokens, and
  * each batch of cards after the first resends the merge prompt and gives an answer; the overview
  * then reads the cards once more (the same input again) and writes the overview. The cards the merge
  * is shown are taken to be its share of the readers' answers, one call for each `MERGE_BATCH_TOKENS`.
@@ -119,7 +119,10 @@ function summariserFigures(
 ): { tokens: ByScenario<TokenFigures>; batches: ByScenario<number> } {
   const share = shareTokens(reader, assumptions.summariserSharePercent);
   const batch = (scenario: Scenario): number =>
-    Math.max(1, Math.ceil(share[scenario].outputTokens / MERGE_BATCH_TOKENS));
+    Math.max(
+      assumptions.summariserMergeCalls[scenario],
+      Math.ceil(share[scenario].outputTokens / MERGE_BATCH_TOKENS),
+    );
   const batches = { low: batch('low'), likely: batch('likely'), high: batch('high') };
   const total = (scenario: Scenario): TokenFigures => {
     const extra = batches[scenario] - 1;

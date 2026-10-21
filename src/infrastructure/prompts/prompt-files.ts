@@ -60,7 +60,7 @@ export function requirePlaceholder(file: PromptFile, placeholder: string): Promp
 /** The summariser's merge prompt (RF-250), checked and hashed. */
 // RNF-004
 export function loadMergePrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'summariser/merge.v1.md');
+  return loadPromptFile(promptsFolder, 'summariser/merge.v2.md');
 }
 
 /** The summariser's overview prompt (RF-264), checked and hashed. */

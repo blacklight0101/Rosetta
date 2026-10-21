@@ -7,6 +7,7 @@ import { DEEPEN_ROUNDS, isAllowedRoundLimit } from '../../domain/deepen/stop-rul
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Run } from '../../domain/runs/run.js';
+import { MERGE_ANSWER_TOKENS, MERGE_PROMPT_TOKENS } from '../consolidate/merge-request.js';
 import { roundTasks } from '../deepen/deepen-tasks.js';
 import { latestScan } from '../deepen/latest-scan.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
@@ -17,8 +18,14 @@ import type { TaskResults } from '../ports/task-results.js';
 import { scopeOf } from '../runs/run-scope.js';
 import { assumptionsOf } from './estimate-assumptions.js';
 import { shareTokens, sumPoints, withJudgements } from './estimate-run.js';
-import type { ByScenario, EstimatePoint, RoleEstimate, Scenario } from './estimate-types.js';
-import { readerTokens } from './reader-estimate.js';
+import type {
+  ByScenario,
+  EstimatePoint,
+  ReaderAssumptions,
+  RoleEstimate,
+  Scenario,
+} from './estimate-types.js';
+import { readerTokens, type TokenFigures } from './reader-estimate.js';
 import { estimateRole } from './role-estimate.js';
 
 // RF-209, RF-425, ADR-007, DEC-145: the estimate the owner sees before a Deepen starts. The first
@@ -80,6 +87,25 @@ function byScenario<T>(figure: (scenario: Scenario) => T): ByScenario<T> {
   return { low: figure('low'), likely: figure('likely'), high: figure('high') };
 }
 
+/**
+ * RF-250, Q-52: the summariser at the end of a Deepen. The cards the rounds wrote are compared (one
+ * call for each type asked, each resending the merge prompt), then the overview reads them again.
+ */
+function summariserOf(
+  reader: ByScenario<TokenFigures>,
+  assumptions: ReaderAssumptions,
+): ByScenario<TokenFigures> {
+  return byScenario((scenario) => {
+    const share = shareTokens(reader, assumptions.summariserSharePercent)[scenario];
+    const merges = assumptions.summariserMergeCalls[scenario];
+    return {
+      ...share,
+      inputTokens: share.inputTokens * 2 + merges * MERGE_PROMPT_TOKENS,
+      outputTokens: merges * MERGE_ANSWER_TOKENS + assumptions.overviewOutputTokens[scenario],
+    };
+  });
+}
+
 function times(points: ByScenario<EstimatePoint>, rounds: number): ByScenario<EstimatePoint> {
   return byScenario((scenario) => ({
     inputTokens: points[scenario].inputTokens * rounds,
@@ -135,10 +161,7 @@ export class EstimateDeepen {
       shareTokens(reader, assumptions.verifierSharePercent),
       plan.judge.length,
     );
-    const overview = byScenario((scenario) => ({
-      ...shareTokens(reader, assumptions.summariserSharePercent)[scenario],
-      outputTokens: assumptions.overviewOutputTokens[scenario],
-    }));
+    const overview = summariserOf(reader, assumptions);
     const roles = await Promise.all([
       estimateRole(this.deps, project, { role: 'reader', tokens: reader }),
       estimateRole(this.deps, project, { role: 'verifier', tokens: verifier }),

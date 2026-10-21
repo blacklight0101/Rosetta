@@ -1,5 +1,5 @@
 import type { Card } from '../../domain/cards/card.js';
-import { applyMerges, MERGEABLE_TYPES } from '../../domain/cards/card-merge.js';
+import { applyMerges, MERGEABLE_TYPES, type MergeMoves } from '../../domain/cards/card-merge.js';
 import type { CardType } from '../../domain/cards/card-vocabulary.js';
 import type { RunScope } from '../ports/run-events.js';
 import type { ConsolidationRecord, TaskResults } from '../ports/task-results.js';
@@ -9,12 +9,17 @@ import {
   type ConsolidationParts,
 } from './consolidate-cards.js';
 
-// RF-250, RF-006, P2-35: the summariser step of an understand run that may be a resume. What an
+// RF-250, RF-006, P2-35, Q-52: the summariser step of an understand run that may be a resume. What an
 // earlier session of the run did is in its consolidation record: the card types the summariser
 // answered about (with the ids of the cards it was shown) and the merges it made. A resume makes
 // those merges again, in order, so the card that survived keeps its id (answers.md keys on card
 // ids), and asks only about a type it has not answered about or that has new cards, so nothing is
 // paid twice.
+
+/** What the step came to, and where the claims of the merges it made again went (Q-52, Deepen). */
+export interface RunConsolidation extends Consolidation {
+  readonly replayedMoves: readonly MergeMoves[];
+}
 
 export interface ConsolidationStore {
   readonly store: Pick<TaskResults, 'readConsolidation' | 'writeConsolidation'>;
@@ -60,7 +65,7 @@ export async function consolidateRun(
   parts: ConsolidationParts,
   where: ConsolidationStore,
   cards: readonly Card[],
-): Promise<Consolidation> {
+): Promise<RunConsolidation> {
   const { store, scope } = where;
   const earlier = await store.readConsolidation(scope);
   const replayed = applyMerges(cards, earlier.merges);
@@ -71,5 +76,5 @@ export async function consolidateRun(
   if (JSON.stringify(record) !== JSON.stringify(earlier)) {
     await store.writeConsolidation(scope, record);
   }
-  return { ...asked, merges };
+  return { ...asked, merges, replayedMoves: replayed.moves };
 }

@@ -1,4 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import {
+  MERGE_ANSWER_TOKENS,
+  MERGE_PROMPT_TOKENS,
+} from '../../../../src/application/consolidate/merge-request.js';
 import { EstimateDeepen } from '../../../../src/application/estimate/deepen-estimate.js';
 import type { TaskResult, TaskResults } from '../../../../src/application/ports/task-results.js';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
@@ -135,6 +139,20 @@ describe('RF-209 the estimate before a Deepen', () => {
 
     expect(estimate.overCap).toEqual({ round: false, allRounds: true });
     expect(estimate.cap.maxTokens).toBe(roundTokens * 2);
+  });
+});
+
+describe('RF-250 the summariser calls in the estimate before a Deepen (Q-52)', () => {
+  it('RF-250 counts the merge calls of the end of the Deepen: the prompt and an answer for each', async () => {
+    const estimate = await estimateOf(cloudWithCap());
+
+    const summariser = estimate.roles.find((role) => role.role === 'summariser');
+    const merges = { low: 1, likely: 2, high: 4 };
+    for (const scenario of ['low', 'likely', 'high'] as const) {
+      const point = summariser?.points[scenario];
+      expect(point?.outputTokens).toBeGreaterThanOrEqual(merges[scenario] * MERGE_ANSWER_TOKENS);
+      expect(point?.inputTokens).toBeGreaterThanOrEqual(merges[scenario] * MERGE_PROMPT_TOKENS);
+    }
   });
 });
 

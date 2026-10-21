@@ -1,3 +1,4 @@
+import { MERGEABLE_TYPES } from '../../domain/cards/card-merge.js';
 import { MERGE_BATCH_TOKENS } from '../consolidate/merge-request.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -23,6 +24,15 @@ const VERIFIER_PERCENT: ByScenario<number> = { low: 15, likely: 30, high: 50 };
 const SUMMARISER_PERCENT: ByScenario<number> = { low: 5, likely: 10, high: 20 };
 /** The overview the summariser writes after the run (RF-264), in output tokens. */
 const OVERVIEW_OUTPUT_TOKENS: ByScenario<number> = { low: 800, likely: 1500, high: 3000 };
+/**
+ * The merge calls of the summariser (RF-250, Q-52): one for the types a small run needs, two for a
+ * typical one (rules and entities), one for each mergeable type at the most.
+ */
+const SUMMARISER_MERGE_CALLS: ByScenario<number> = {
+  low: 1,
+  likely: 2,
+  high: MERGEABLE_TYPES.length,
+};
 /** The flows or the screens fragment of the reader prompt (RF-260, RF-261), more than its size. */
 const SURFACE_PROMPT_TOKENS = 900;
 /**
@@ -78,6 +88,7 @@ export function assumptionsOf(settings: ProjectSettings): ReaderAssumptions {
     summariserSharePercent: SUMMARISER_PERCENT,
     overviewOutputTokens: OVERVIEW_OUTPUT_TOKENS,
     summariserBatchTokens: MERGE_BATCH_TOKENS,
+    summariserMergeCalls: SUMMARISER_MERGE_CALLS,
     promptOverheadTokens: PROMPT_OVERHEAD_TOKENS,
     surfacePromptTokens: SURFACE_PROMPT_TOKENS,
     workbookPromptTokens: WORKBOOK_PROMPT_TOKENS,

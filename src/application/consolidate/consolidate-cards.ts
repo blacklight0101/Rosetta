@@ -17,7 +17,7 @@ import { parseMergeAnswer } from './merge-answer.js';
 import { mergeBatches, mergeMessage, typesToMerge } from './merge-request.js';
 
 // RF-250, ADR-005, architecture section 8 (summariser): once the readers of all areas have ended,
-// the summariser is asked, for each type that two areas wrote, which cards describe the same
+// the summariser is asked, for each type that two reader tasks wrote (Q-52), which cards describe the same
 // entity or rule. It sees only the cards. The domain then merges the cards it names, keeping
 // every claim and citation. A call that fails, an answer that is not a list of merges, or a merge
 // that is not valid leaves the cards as they were: consolidation never costs a card. A type with
@@ -189,7 +189,7 @@ async function consolidateType(
   return { ...current, answered: answeredAll ? [type] : [] };
 }
 
-/** The cards with the duplicates of several areas merged, and the merges made. */
+/** The cards with the duplicates of several areas or of one area merged, and the merges made. */
 // RF-250
 export async function consolidateCards(
   parts: ConsolidationParts,

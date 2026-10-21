@@ -41,7 +41,6 @@ describe(
       expect(asked.map((request) => request.context.agentTaskId)).toEqual([
         'summariser-br',
         'summariser-br',
-        'summariser-overview',
       ]);
       expect(JSON.stringify(asked[1]?.messages)).toContain('Details page loads the catalog');
     });

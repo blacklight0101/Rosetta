@@ -11,7 +11,7 @@ import type { ReaderTaskContext } from '../understand/reader-task.js';
 import type { DeepenOptions } from '../understand/understand-options.js';
 
 // RF-209: what a Deepen run needs: what every reader task of an understand run shares, the verifier
-// of both steps (the same role and model as any run, Q-I), the summariser for the overview, and the
+// of both steps (the same role and model as any run, Q-I), the summariser for the merge and the overview, and the
 // stores it reads the completed run from and writes its own outputs to.
 
 interface DeepenDependencies {
@@ -26,6 +26,8 @@ interface DeepenDependencies {
 export interface DeepenParts extends ReaderTaskContext {
   readonly verifier: JudgementContext['verifier'];
   readonly summariser: RoleProvider;
+  /** RF-250, Q-52: the summariser's prompt for merging the duplicate cards the rounds wrote. */
+  readonly mergePrompt: PromptFile;
   readonly overviewPrompt: PromptFile;
   readonly source: CardSource;
   readonly request: DeepenOptions;

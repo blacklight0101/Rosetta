@@ -1,15 +1,21 @@
 import { err, ok, type Result } from '../errors/result.js';
 import type { Card } from './card.js';
+import { mergedScreen } from './screen-merge.js';
 import { CONFIDENCES, type CardType, type Confidence } from './card-vocabulary.js';
 
-// RF-250, ADR-005: cards of several areas that describe the same entity or rule become one card.
+// RF-250, ADR-005, Q-52: cards that describe the same entity, rule, screen or feature become one
+// card, whether they came from several areas or from two reader tasks of one area.
 // The merged card keeps every claim (with its citations, status and verdict) of the cards it
 // replaces, so nothing is lost and a rejected claim stays rejected (RF-302); the merge is recorded
 // in `mergedFrom`. The card keeps the id, area and task of the first of the merged cards in card
 // order, so the ids of the other cards do not change and a rerun gives the same ids.
 
-/** The types consolidation looks at, in the order it asks: rules, then entities (RF-250). */
-export const MERGEABLE_TYPES: readonly CardType[] = ['BR', 'ENT'];
+/**
+ * The types consolidation looks at, in the order it asks: rules, entities, screens, features
+ * (RF-250, Q-52). `FLOW` cards are not merged: a flow is a journey, and two journeys that look
+ * alike are two journeys.
+ */
+export const MERGEABLE_TYPES: readonly CardType[] = ['BR', 'ENT', 'SCRN', 'FEAT'];
 
 /** What the summariser asked for: the cards to merge and the text of the merged card. */
 export interface CardMerge {
@@ -19,12 +25,7 @@ export interface CardMerge {
 }
 
 type MergeProblem =
-  | 'too-few-cards'
-  | 'unknown-card'
-  | 'repeated-card'
-  | 'type-differs'
-  | 'type-not-mergeable'
-  | 'one-area';
+  'too-few-cards' | 'unknown-card' | 'repeated-card' | 'type-differs' | 'type-not-mergeable';
 
 /** Where the claims of one applied merge went: `from` is the id before, `to` the id in the merged card. */
 export interface MergeMoves {
@@ -61,7 +62,6 @@ function membersOf(
   if (first === undefined) return err('too-few-cards');
   if (members.some((card) => card.type !== first.type)) return err('type-differs');
   if (!MERGEABLE_TYPES.includes(first.type)) return err('type-not-mergeable');
-  if (new Set(members.flatMap(areasOf)).size < 2) return err('one-area');
   return ok(members);
 }
 
@@ -72,6 +72,13 @@ function lowestConfidence(cards: readonly Card[]): Confidence {
     (lowest, card) => (rank(card.confidence) > rank(lowest) ? card.confidence : lowest),
     'High',
   );
+}
+
+/** Q-52: the merged screen holds every field, action, validation, role and link of the screens. */
+function screenOf(members: readonly Card[]): Pick<Card, 'screen'> {
+  const screens = members.flatMap((card) => (card.screen === undefined ? [] : [card.screen]));
+  const merged = mergedScreen(screens);
+  return merged === undefined ? {} : { screen: merged };
 }
 
 function mergedCard(members: readonly Card[], merge: CardMerge): Card {
@@ -88,6 +95,7 @@ function mergedCard(members: readonly Card[], merge: CardMerge): Card {
     claims,
     mergedFrom: unique(members.flatMap((card) => card.mergedFrom ?? [card.id])),
     mergedAreas: unique(members.flatMap(areasOf)),
+    ...(first.type === 'SCRN' ? screenOf(members) : {}),
   };
 }
 
@@ -111,7 +119,7 @@ function replaced(cards: readonly Card[], members: readonly Card[], merged: Card
 
 /**
  * Applies the merges one after the other. A merge that is not valid for the cards left (unknown
- * or repeated id, other types, one area, a type that is not mergeable) is skipped with its reason.
+ * or repeated id, other types, a type that is not mergeable) is skipped with its reason.
  */
 export function applyMerges(cards: readonly Card[], merges: readonly CardMerge[]): MergeResult {
   let current = cards;

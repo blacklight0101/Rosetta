@@ -91,7 +91,7 @@ describe('an understand run: what the summariser is given and what is recorded',
     const { h, run } = full.current();
 
     const manifest = await h.manifestOf(run);
-    expect(Object.keys(manifest.promptVersions)).toContain('summariser/merge.v1.md');
+    expect(Object.keys(manifest.promptVersions)).toContain('summariser/merge.v2.md');
     expect(manifest.roles['summariser']?.modelVersion).toBe('fake-model-2026-10-01');
   });
 
