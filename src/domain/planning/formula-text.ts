@@ -42,7 +42,7 @@ export function columnNamesOf(formula: string): string {
 }
 
 /** The 0-based column of 1 to 3 letters. */
-export function columnIndexOf(letters: string): number {
+function columnIndexOf(letters: string): number {
   let column = 0;
   for (const char of letters.toUpperCase())
     column = column * LETTERS + (char.charCodeAt(0) - A + 1);

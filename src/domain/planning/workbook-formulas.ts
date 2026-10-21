@@ -59,7 +59,7 @@ export interface FormulaOptions {
 }
 
 /** The most rows a package lists; the formulas past it are counted, not listed. */
-export const DEFAULT_MAX_ROWS = 2000;
+const DEFAULT_MAX_ROWS = 2000;
 /** The cached results one row shows. */
 const CACHED_SHOWN = 3;
 

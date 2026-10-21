@@ -14,7 +14,7 @@ import { book, cell, num, sheet, text } from './rendered-workbook-fixtures.js';
 // Template sheet with a `SUM`. Every name and number is invented. Built as a typed model, so a test
 // renders it with the real renderer.
 
-export const invoiceColumns = [
+const invoiceColumns = [
   'Invoice No',
   'Invoice Date',
   'Customer',
@@ -49,7 +49,7 @@ const customers = [
 
 const thisRow = (column: string): string => `InvoiceTable[[#This Row],[${column}]]`;
 
-export const invoiceFormulas = {
+const invoiceFormulas = {
   agreed: `${thisRow('Amount Line 1')}+${thisRow('Amount Line 2')}+${thisRow('Amount Line 3')}`,
   withExpenses: `${thisRow('Agreed Amount Total')}+${thisRow('Additional Expenses')}`,
   vat: `${thisRow('Net Amount')}*${thisRow('VAT Rate')}`,
@@ -119,7 +119,7 @@ function cellsOf(line: Line, customer: string): WorkbookCell[] {
   ];
 }
 
-export const invoiceTable: WorkbookTable = {
+const invoiceTable: WorkbookTable = {
   name: 'InvoiceTable',
   range: `A${String(HEADER_ROW)}:O${String(FIRST_ROW + customers.length - 1)}`,
   columns: invoiceColumns,
@@ -134,7 +134,7 @@ function invoiceSheet(): WorkbookSheet {
 }
 
 /** The text of a cell that echoes a customer and a contact key; the key is a fake secret. */
-export const contactNote = `Contact key ${fakeAnthropicKey}`;
+const contactNote = `Contact key ${fakeAnthropicKey}`;
 
 function calculationSheet(): WorkbookSheet {
   const total = (name: string) =>
