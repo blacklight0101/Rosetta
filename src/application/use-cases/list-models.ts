@@ -14,6 +14,8 @@ interface ModelChoice {
   readonly label: string;
   /** False when the price table has no price for the model (RF-427). */
   readonly priced: boolean;
+  /** Ollama only, Q-44: the context the model was trained for, when /api/show named one. */
+  readonly trainedContext?: number;
 }
 
 export interface ModelChoices {
@@ -53,10 +55,15 @@ export class ListModels {
     const answer = await this.dependencies.installed.list();
     if (!answer.ok) return { provider: 'ollama', models: [], reason: answer.reason };
     const names = [...new Set(answer.models)].sort();
+    const trained = answer.trainedContexts ?? {};
     // A local model costs nothing, so it is never "no price" (RF-420).
     return {
       provider: 'ollama',
-      models: names.map((model) => ({ model, label: model, priced: true })),
+      models: names.map((model) => {
+        const trainedContext = trained[model];
+        const base = { model, label: model, priced: true };
+        return trainedContext === undefined ? base : { ...base, trainedContext };
+      }),
     };
   }
 }

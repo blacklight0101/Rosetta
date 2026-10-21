@@ -21,7 +21,7 @@ const range = (low: number, likely: number, high: number) => ({
   high: point(high),
 });
 const role = (priced: boolean) => ({
-  ...{ role: 'reader', provider: 'ollama', kind: 'ollama', model: 'm', keySource: 'user' },
+  ...{ role: 'reader', provider: 'fake', kind: 'fake', model: 'm', keySource: 'user' },
   ...{ priced, ...range(1, 2, 3) },
 });
 

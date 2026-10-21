@@ -90,9 +90,7 @@ function role(name: string, kind: string, provider: string) {
   };
 }
 
-const localRoles = ['reader', 'verifier', 'summariser'].map((name) =>
-  role(name, 'ollama', 'ollama'),
-);
+const localRoles = ['reader', 'verifier', 'summariser'].map((name) => role(name, 'fake', 'fake'));
 export const cloudRoles = ['reader', 'verifier', 'summariser'].map((name) =>
   role(name, 'openai', 'openai'),
 );

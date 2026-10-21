@@ -9,6 +9,7 @@ import type {
   JourneyLink,
   JourneyStep,
   JourneyView,
+  StepLink,
   StepState,
 } from '../lib/journey/journey-steps.js';
 import { ResumeButton } from './ResumeButton.js';
@@ -36,6 +37,7 @@ const words: Readonly<Record<StepState, string>> = {
   locked: 'Locked',
   failed: 'Failed',
   'out-of-date': 'Out of date',
+  gaps: 'With gaps',
 };
 
 const glyphs: Readonly<Record<StepState, GlyphName>> = {
@@ -45,7 +47,22 @@ const glyphs: Readonly<Record<StepState, GlyphName>> = {
   locked: 'dashed-circle',
   failed: 'cross',
   'out-of-date': 'warning-triangle',
+  gaps: 'warning-triangle',
 };
+
+/** RF-627: the files and downloads of a step, plain links because they leave the app. */
+function StepLinks({ links }: { readonly links: readonly StepLink[] }): JSX.Element | null {
+  if (links.length === 0) return null;
+  return (
+    <span class="rst-road__links">
+      {links.map((each) => (
+        <a key={each.href} class="rst-road__link" href={each.href}>
+          {each.label}
+        </a>
+      ))}
+    </span>
+  );
+}
 
 function StepItem({ step }: { readonly step: JourneyStep }): JSX.Element {
   const { state } = step;
@@ -65,6 +82,7 @@ function StepItem({ step }: { readonly step: JourneyStep }): JSX.Element {
       {step.here && state !== 'current' ? <span class="rst-road__here">Current step</span> : null}{' '}
       <span class="rst-road__detail">{step.detail}</span>{' '}
       <span class="rst-road__cost">{step.cost}</span>
+      <StepLinks links={step.links} />
     </li>
   );
 }

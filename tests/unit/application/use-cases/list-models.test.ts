@@ -86,3 +86,18 @@ it('RF-405 does not ask Ollama for the models of another provider', async () => 
 
   expect(installed.asked).toBe(0);
 });
+
+it('RF-401 Q-44 an installed model carries its trained context when Ollama gave one', async () => {
+  const installed = new FakeInstalledModels({
+    ok: true,
+    models: ['llama3:8b', 'gemma4:e4b'],
+    trainedContexts: { 'gemma4:e4b': 131_072 },
+  });
+
+  const answer = await listing(installed).execute('ollama');
+
+  expect(answer.models).toEqual([
+    { model: 'gemma4:e4b', label: 'gemma4:e4b', priced: true, trainedContext: 131_072 },
+    { model: 'llama3:8b', label: 'llama3:8b', priced: true },
+  ]);
+});

@@ -74,7 +74,8 @@
   color: var(--rst-danger-ink);
 }
 
-.rst-road__step--out-of-date .rst-road__state {
+.rst-road__step--out-of-date .rst-road__state,
+.rst-road__step--gaps .rst-road__state {
   background: var(--rst-warn-bg);
   color: var(--rst-warn-ink);
 }
@@ -100,6 +101,12 @@
 .rst-road__cost {
   font-variant-numeric: tabular-nums;
   color: var(--rst-ink-muted);
+}
+
+.rst-road__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-3);
 }
 
 .rst-road__foot {

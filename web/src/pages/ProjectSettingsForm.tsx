@@ -7,18 +7,28 @@ import { useRefusalFocus } from '../lib/use-refusal-focus.js';
 import { CapSettings, IgnoreRules, ScanSettings } from './LimitSettings.js';
 import { ModelSettings } from './ModelSettings.js';
 import { PriceOverrides } from './PriceOverrides.js';
+import { contextLimitOf, ollamaModels } from './ollama-context.js';
 import { providerOptions } from './provider-choices.js';
 import type { SectionProps } from './settings-section.js';
+import type { SettingsDraft } from './project-settings-form.js';
+import { useModelLists } from './use-model-lists.js';
 import { useSettingsDraft, useSettingsSave } from './use-settings-editor.js';
 
 // RF-002, P1-41: the form of the project settings page. One form saves the whole document; a
 // refusal shows next to each field it names, focus goes to the first of them, and what the page
 // has no field for goes to a banner that names it.
 
+/** The model lists of the roles' providers, and the trained context that bounds the Ollama field. */
+function useRoleModels(draft: SettingsDraft) {
+  const lists = useModelLists(Object.values(draft.roles).map((role) => role.provider));
+  return { lists, limit: contextLimitOf(ollamaModels(draft.roles), lists['ollama']) };
+}
+
 // RF-002
 export function ProjectSettingsForm({ project }: { readonly project: Project }): JSX.Element {
   const drafting = useSettingsDraft(project.settings);
-  const saving = useSettingsSave(project, drafting.draft);
+  const { lists, limit } = useRoleModels(drafting.draft);
+  const saving = useSettingsSave(project, drafting.draft, limit);
   const formRef = useRef<HTMLFormElement>(null);
   useRefusalFocus(formRef, saving.refusal);
   // Rows move when one is added or removed, so a refusal about row numbers no longer fits.
@@ -49,7 +59,7 @@ export function ProjectSettingsForm({ project }: { readonly project: Project }):
       }}
     >
       {saving.banner === undefined ? null : <ErrorBanner error={saving.banner} />}
-      <ModelSettings {...section} />
+      <ModelSettings {...section} lists={lists} limit={limit} />
       <CapSettings {...section} roles={project.settings.budget.roles ?? {}} />
       <ScanSettings {...section} />
       <IgnoreRules {...section} />

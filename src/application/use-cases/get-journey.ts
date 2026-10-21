@@ -65,25 +65,23 @@ function chooseSource(list: readonly Run[], named: Run | undefined, sources: Pla
 }
 
 /**
- * The package is the newest completed plan run of the project. It is out of date when the brief was
- * saved after it began, when it was written from another understand run, or when this run ended
- * after it began (DEC-143 Q-C).
+ * Out of date when the brief was saved after the package began, when it was written from another
+ * understand run, or when this run ended after it began (DEC-143 Q-C).
  */
 function handoffOf(
   list: readonly Run[],
   source: Run,
-  briefSavedAt: string | undefined,
-  sources: PlanSources,
-): JourneyHandoff | null {
-  const written = list.find((run) => run.stage === 'plan' && isCompleted(run));
-  if (written === undefined) return null;
-  const from = sources.get(written.id) ?? null;
+  written: { readonly run: Run; readonly gaps: boolean },
+  parts: { readonly briefSavedAt: string | undefined; readonly sources: PlanSources },
+): JourneyHandoff {
+  const { briefSavedAt, sources } = parts;
+  const from = sources.get(written.run.id) ?? null;
   const briefChanged = briefSavedAt !== undefined && isBriefOutOfDate(briefSavedAt, list);
   const otherSource = from !== null && from !== source.runKey;
-  const sourceChanged = source.endedAt !== null && source.endedAt > startOf(written);
+  const sourceChanged = source.endedAt !== null && source.endedAt > startOf(written.run);
   return {
-    ...{ runId: written.id, runKey: written.runKey },
-    outOfDate: briefChanged || otherSource || sourceChanged,
+    ...{ runId: written.run.id, runKey: written.run.runKey },
+    ...{ outOfDate: briefChanged || otherSource || sourceChanged, gaps: written.gaps },
   };
 }
 
@@ -117,8 +115,28 @@ export class GetJourney {
       ...base,
       source: await this.sourceFacts(source),
       plan: plan === undefined ? null : await this.runFacts(plan),
-      handoff: handoffOf(list, source, brief?.savedAt, sources),
+      handoff: await this.handoffFor(list, source, { briefSavedAt: brief?.savedAt, sources }),
     });
+  }
+
+  /**
+   * The package is the newest plan run of the project that wrote one: a run that ended `Completed`,
+   * or one that ended RST-1806 after writing the package with gaps (RF-627, Q-44).
+   */
+  private async handoffFor(
+    list: readonly Run[],
+    source: Run,
+    parts: { readonly briefSavedAt: string | undefined; readonly sources: PlanSources },
+  ): Promise<JourneyHandoff | null> {
+    for (const run of list.filter((each) => each.stage === 'plan')) {
+      if (isCompleted(run)) return handoffOf(list, source, { run, gaps: false }, parts);
+      if (run.endState !== 'Failed') continue;
+      const code = await endCodeOf(this.deps.history, run);
+      if (code === ERROR_CODES.planCoverageGap) {
+        return handoffOf(list, source, { run, gaps: true }, parts);
+      }
+    }
+    return null;
   }
 
   private async sourcesOfPlanRuns(list: readonly Run[]): Promise<PlanSources> {

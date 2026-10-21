@@ -6,7 +6,15 @@ import type { ApiClient, ApiResult } from './client.js';
 
 const modelChoicesSchema = z.object({
   provider: z.string(),
-  models: z.array(z.object({ model: z.string(), label: z.string(), priced: z.boolean() })),
+  models: z.array(
+    z.object({
+      model: z.string(),
+      label: z.string(),
+      priced: z.boolean(),
+      /** Ollama only (Q-44): the trained context of the model, when Ollama named one. */
+      trainedContext: z.number().optional(),
+    }),
+  ),
   reason: z.string().optional(),
 });
 

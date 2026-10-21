@@ -1,5 +1,13 @@
 import type { PriceSettings, ProjectSettings, ProviderSettings } from '../api/project-schemas.js';
 import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
+import {
+  contextDraftOf,
+  contextPath,
+  parseContextSize,
+  usesOllama,
+  withContextSize,
+  type ContextLimit,
+} from './ollama-context.js';
 import { providerDefaults } from './provider-choices.js';
 
 // RF-002, RF-405, DEC-116, DEC-117: the settings form as text. `draftOf` turns the stored document
@@ -32,6 +40,8 @@ export interface PriceDraft {
 
 export interface SettingsDraft {
   readonly roles: Readonly<Record<RoleName, RoleDraft>>;
+  /** The Ollama context size (RF-401): `auto` or the digits of a number of tokens. */
+  readonly ollamaContext: string;
   /** Dollars. */
   readonly runCost: string;
   readonly runTokens: string;
@@ -91,6 +101,7 @@ export function draftOf(settings: ProjectSettings): SettingsDraft {
       planner: roleDraft(settings.roles.planner),
       summariser: roleDraft(settings.roles.summariser),
     },
+    ollamaContext: contextDraftOf(settings.providers['ollama']?.contextTokens),
     runCost: dollarsOf(budget.run.maxCostMicros),
     runTokens: String(budget.run.maxTokens),
     confirmAbove: dollarsOf(budget.confirmAboveCostMicros),
@@ -132,6 +143,7 @@ export function shownFields(draft: SettingsDraft): ReadonlySet<string> {
   for (const role of ROLE_NAMES) {
     for (const name of roleFields) fields.add(`roles.${role}.${name}`);
   }
+  if (usesOllama(draft.roles)) fields.add(contextPath);
   for (const [index] of draft.prices.entries()) {
     for (const name of priceFields) fields.add(`budget.prices.${String(index)}.${name}`);
   }
@@ -252,7 +264,11 @@ function providersOf(
 }
 
 // RF-002
-export function settingsOf(base: ProjectSettings, draft: SettingsDraft): SettingsResult {
+export function settingsOf(
+  base: ProjectSettings,
+  draft: SettingsDraft,
+  limit?: ContextLimit,
+): SettingsResult {
   const reader = new FieldReader();
   const roles = {
     ...base.roles,
@@ -273,7 +289,10 @@ export function settingsOf(base: ProjectSettings, draft: SettingsDraft): Setting
     ...base.agents,
     parallelism: reader.whole('agents.parallelism', draft.parallelism),
   };
+  const size = usesOllama(draft.roles) ? parseContextSize(draft.ollamaContext, limit) : undefined;
+  if (size?.ok === false) reader.problems.push({ field: contextPath, message: size.message });
   if (reader.problems.length > 0) return { ok: false, problems: reader.problems };
-  const providers = providersOf(base.providers, roles);
+  const added = providersOf(base.providers, roles);
+  const providers = size?.ok === true ? withContextSize(added, size.value) : added;
   return { ok: true, settings: { ...base, providers, roles, budget, scan, agents } };
 }

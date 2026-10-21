@@ -57,6 +57,7 @@ it('RF-615 Answer questions in the strip opens the Your questions tab of the pag
       [`GET ${journeyPath}`]: json(200, {
         ...mine,
         source: source({ id: runUuid, openQuestions: 3 }),
+        briefSaved: false,
       }),
     },
   });

@@ -45,7 +45,7 @@ export function facts(over: Partial<JourneyFacts> = {}): JourneyFacts {
 
 /** The package of a plan run that completed. */
 function handoff(outOfDate = false): NonNullable<JourneyFacts['handoff']> {
-  return { runId: planId, runKey: '20261012-103000-plan', outOfDate };
+  return { runId: planId, runKey: '20261012-103000-plan', outOfDate, gaps: false };
 }
 
 export function step(view: JourneyView, key: StepKey): JourneyStep {

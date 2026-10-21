@@ -1,7 +1,9 @@
 import type { Card } from '../../domain/cards/card.js';
+import { applyMerges } from '../../domain/cards/card-merge.js';
 import type { DeepenRecord, DeepenRound } from '../../domain/deepen/deepen-record.js';
 import type { RoundPlan } from '../../domain/deepen/round-plan.js';
 import type { DeepenStopReason } from '../../domain/deepen/stop-rule.js';
+import { scopeOf } from '../runs/run-scope.js';
 import type { DeepenParts } from './deepen-parts.js';
 import { cardsOf, type DeepenState } from './deepen-state.js';
 
@@ -34,6 +36,20 @@ export function seededCounts(cards: readonly Card[]): SeededCounts {
   };
 }
 
+/**
+ * RF-209, RF-250 (Q-44): the cards the parent run holds, which is what its page counts: the cards its
+ * reader tasks wrote with the duplicates of several areas merged as its summariser merged them. Every
+ * claim is kept by a merge, so only the number of cards changes.
+ */
+async function parentCards(parts: DeepenParts, state: DeepenState, parentRunId: string) {
+  const { run } = parts.execution;
+  const parent = await parts.deps.runs.find(run.userId, parentRunId);
+  const cards = cardsOf(state);
+  if (parent === undefined) return cards;
+  const { merges } = await parts.deps.taskResults.readConsolidation(scopeOf(parent));
+  return applyMerges(cards, merges).cards;
+}
+
 /** RF-209: the run to improve and what the owner confirmed, with the cards the Deepen starts from. */
 export async function announceDeepen(
   parts: DeepenParts,
@@ -43,7 +59,7 @@ export async function announceDeepen(
   const { parentRunId, parentRunKey, maxRounds, coveragePass } = record;
   await parts.execution.events.emit('deepen.started', {
     ...{ parentRunId, parentRunKey, maxRounds, coveragePass },
-    seeded: seededCounts(cardsOf(state)),
+    seeded: seededCounts(await parentCards(parts, state, parentRunId)),
   });
 }
 

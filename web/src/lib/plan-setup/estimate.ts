@@ -1,6 +1,6 @@
 import type { PlanCap, PlanEstimate } from '../../api/plan-schemas.js';
 import type { Project } from '../../api/project-schemas.js';
-import { dollars } from '../estimate-math.js';
+import { dollars, isLocalModel, tokensText } from '../estimate-math.js';
 
 // RF-613, RF-143, RF-427, RF-1001: what Plan setup works out of the plan estimate. The planner is
 // the only role of `plan`. A missing price or a missing key stops the run before its first call, so
@@ -70,10 +70,28 @@ export function capFigure(cap: PlanCap, amount: bigint): string {
   return cap.unit === 'micros' ? dollars(amount) : `${amount.toLocaleString('en-US')} tokens`;
 }
 
-export const scenarioCost = (estimate: PlanEstimate, scenario: Scenario): string =>
-  dollars(estimate.planner[scenario].costMicros);
+const tokensOfScenario = (estimate: PlanEstimate, scenario: Scenario): bigint =>
+  BigInt(estimate.planner[scenario].inputTokens + estimate.planner[scenario].outputTokens);
 
-/** The caps a scenario would pass: a warning, never a block. */
+/** RF-613, Q-44: a local planner is shown in tokens, any other in dollars. */
+export function scenarioCost(estimate: PlanEstimate, scenario: Scenario): string {
+  return isLocalModel(estimate.planner.kind)
+    ? tokensText(tokensOfScenario(estimate, scenario))
+    : dollars(estimate.planner[scenario].costMicros);
+}
+
+/** The figure of a scenario in the unit of a cap: tokens for a token cap, the cost for a cost cap. */
+export function scenarioFigure(estimate: PlanEstimate, scenario: Scenario, cap: PlanCap): string {
+  return cap.unit === 'tokens'
+    ? tokensText(tokensOfScenario(estimate, scenario))
+    : dollars(estimate.planner[scenario].costMicros);
+}
+
+/**
+ * The caps a scenario would pass: a warning, never a block. A local model costs nothing, so a cost
+ * cap is never one of them (Q-44).
+ */
 export function overCaps(estimate: PlanEstimate, scenario: Scenario): readonly PlanCap[] {
-  return estimate.caps.filter((cap) => !cap.fits[scenario]);
+  const local = isLocalModel(estimate.planner.kind);
+  return estimate.caps.filter((cap) => !cap.fits[scenario] && !(local && cap.unit === 'micros'));
 }
