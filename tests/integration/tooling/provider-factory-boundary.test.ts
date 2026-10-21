@@ -144,3 +144,18 @@ describe('provider factory boundary: what the provider composition hands out', (
     expect(factory).toBeInstanceOf(GuardedProviderFactory);
   });
 });
+
+describe('provider factory: reasoning models', () => {
+  it('Q-58 every factory the composition root builds is given the reasoning models of the shipped list', async () => {
+    const files = await sourceFiles();
+    const compose = files.find((file) => file.path === 'presentation/compose-providers.ts');
+
+    const blocks = [
+      ...(compose?.text.matchAll(/new GuardedProviderFactory\(\{[\s\S]*?\}\);/gu) ?? []),
+    ].map((match) => match[0]);
+
+    // The server's factory and the evaluation's factory.
+    expect(blocks).toHaveLength(2);
+    for (const block of blocks) expect(block).toMatch(/reasoningModels/u);
+  });
+});

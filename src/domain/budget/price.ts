@@ -6,6 +6,15 @@ import type { TokenUsage } from './token-usage.js';
 // currency. Costs are computed with bigint only and a part of a micro-dollar rounds up, so a cost
 // is never under-counted and no floating-point number ever holds money.
 
+/** The prices of a call whose input tokens are over `overInputTokens` (Q-56). */
+export interface LongPromptTier {
+  readonly overInputTokens: number;
+  readonly inputPerMillionMicros: bigint;
+  readonly outputPerMillionMicros: bigint;
+  readonly cachedInputPerMillionMicros: bigint;
+  readonly cacheWriteInputPerMillionMicros: bigint;
+}
+
 export interface Price {
   /** The provider kind (`openai`, `ollama`, ...), as in the project settings. */
   readonly provider: string;
@@ -20,6 +29,8 @@ export interface Price {
    * writes no tokens to a cache of its own price, so its written tokens are priced as input.
    */
   readonly cacheWriteInputPerMillionMicros?: bigint;
+  /** The prices of a call whose input tokens are over the tier's threshold (Q-56). */
+  readonly longPrompt?: LongPromptTier;
   readonly currency: 'USD';
 }
 
@@ -43,6 +54,29 @@ function larger(left: bigint, right: bigint): bigint {
   return left > right ? left : right;
 }
 
+/**
+ * RF-420, Q-56: the price a call pays by its prompt, which counts every input token, cache reads
+ * and writes included. A prompt over the tier's threshold pays the tier's prices; a prompt of
+ * exactly the threshold or less pays the base prices. The price returned has no tier left, so it
+ * is the same whatever token count it is applied to afterwards. A price without a tier is itself.
+ */
+export function priceAt(price: Price, promptTokens: number): Price {
+  const tier = price.longPrompt;
+  if (tier === undefined) return price;
+  const prices = promptTokens > tier.overInputTokens ? tier : price;
+  return {
+    provider: price.provider,
+    model: price.model,
+    inputPerMillionMicros: prices.inputPerMillionMicros,
+    outputPerMillionMicros: prices.outputPerMillionMicros,
+    cachedInputPerMillionMicros: prices.cachedInputPerMillionMicros,
+    ...(prices.cacheWriteInputPerMillionMicros === undefined
+      ? {}
+      : { cacheWriteInputPerMillionMicros: prices.cacheWriteInputPerMillionMicros }),
+    currency: price.currency,
+  };
+}
+
 /** The cache-write price; the input price for a kind that bills no cache write of its own. */
 function cacheWritePrice(price: Price): bigint {
   return price.cacheWriteInputPerMillionMicros ?? price.inputPerMillionMicros;
@@ -58,7 +92,8 @@ function inputParts(usage: TokenUsage): { uncached: bigint; cached: bigint; writ
 
 /** The cost of a call's usage: uncached, cached and cache-written input, and output (RF-420). */
 // RF-420
-export function costOf(price: Price, usage: TokenUsage): Money {
+export function costOf(base: Price, usage: TokenUsage): Money {
+  const price = priceAt(base, usage.inputTokens);
   const { uncached, cached, written } = inputParts(usage);
   const total =
     uncached * price.inputPerMillionMicros +
@@ -70,7 +105,8 @@ export function costOf(price: Price, usage: TokenUsage): Money {
 
 /** The part of a call's cost that paid for the tokens written to the cache, rounded up (RF-426). */
 // RF-426
-export function cacheWriteCostOf(price: Price, usage: TokenUsage): Money {
+export function cacheWriteCostOf(base: Price, usage: TokenUsage): Money {
+  const price = priceAt(base, usage.inputTokens);
   return microUsd(ceilDivide(inputParts(usage).written * cacheWritePrice(price), perMillion));
 }
 
@@ -80,7 +116,8 @@ export function cacheWriteCostOf(price: Price, usage: TokenUsage): Money {
  * (RF-422, ADR-007).
  */
 // RF-422
-export function worstCaseCost(price: Price, bound: CallBound): Money {
+export function worstCaseCost(base: Price, bound: CallBound): Money {
+  const price = priceAt(base, bound.promptTokens);
   const inputPrice = larger(
     larger(price.inputPerMillionMicros, price.cachedInputPerMillionMicros),
     cacheWritePrice(price),

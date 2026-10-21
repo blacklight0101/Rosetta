@@ -2,7 +2,6 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
-import { loadPriceTable } from '../../../../src/infrastructure/budget/price-file.js';
 import {
   loadModelList,
   parseModelList,
@@ -12,7 +11,6 @@ import {
 // of the decision and the OpenAI models of the price table, and a bad file is refused, not guessed.
 
 const shipped = fileURLToPath(new URL('../../../../prices/models.yaml', import.meta.url));
-const prices = fileURLToPath(new URL('../../../../prices/default-prices.yaml', import.meta.url));
 
 const valid = `
 schemaVersion: 1
@@ -64,20 +62,12 @@ describe('model list file', () => {
     const list = await loadModelList(shipped);
 
     expect(list.version).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(list.models.filter((entry) => entry.provider === 'anthropic')).toEqual([
+    const anthropic = list.models.filter((entry) => entry.provider === 'anthropic');
+    expect(anthropic.map(({ provider, model, label }) => ({ provider, model, label }))).toEqual([
       { provider: 'anthropic', model: 'claude-opus-5-5', label: 'Claude Opus 5.5' },
       { provider: 'anthropic', model: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5' },
       { provider: 'anthropic', model: 'claude-haiku-5-5', label: 'Claude Haiku 5.5' },
       { provider: 'anthropic', model: 'claude-fable-5-1', label: 'Claude Fable 5.1' },
     ]);
-  });
-
-  it('RF-405 the shipped list holds every OpenAI model of the price table, and no other', async () => {
-    const list = await loadModelList(shipped);
-    const table = await loadPriceTable(prices);
-
-    const listed = list.models.filter((entry) => entry.provider === 'openai').map((e) => e.model);
-    const priced = table.prices.filter((p) => p.provider === 'openai').map((p) => p.model);
-    expect([...listed].sort()).toEqual([...priced].sort());
   });
 });

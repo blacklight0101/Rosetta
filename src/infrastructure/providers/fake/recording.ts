@@ -29,6 +29,7 @@ const usageSchema = z.strictObject({
   outputTokens: count,
   cachedInputTokens: count,
   cacheWriteInputTokens: count.exactOptional(),
+  reasoningTokens: count.exactOptional(),
   usageSource: z.enum(['reported', 'estimated']),
 });
 

@@ -37,6 +37,8 @@ export interface ProviderCallRecord {
   readonly cachedInputTokens: number;
   /** The part of `inputTokens` written to the provider's prompt cache (P2-37); absent when none. */
   readonly cacheWriteInputTokens?: number;
+  /** Q-58: the part of `outputTokens` spent on reasoning (OpenAI, Anthropic); absent when not reported. */
+  readonly reasoningTokens?: number;
   readonly usageSource: UsageSource;
   readonly costMicros: number;
   readonly currency: string;

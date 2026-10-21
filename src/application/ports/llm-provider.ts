@@ -12,6 +12,13 @@ export type AgentRole = 'reader' | 'verifier' | 'planner' | 'summariser';
 /** Normalised finish reasons (data-model.md section 3.10); `error` only marks a failed attempt. */
 export type FinishReason = 'stop' | 'length' | 'tool_use' | 'error';
 
+/**
+ * Q-58: how much a reasoning model may think before it answers. Only these three are sent: they are
+ * accepted by every model of the shipped list that takes an effort (OpenAI `reasoning_effort`,
+ * Anthropic `output_config.effort`).
+ */
+export type ReasoningEffort = 'low' | 'medium' | 'high';
+
 /** `estimated` when the provider reported no usage (RF-421). */
 export type UsageSource = 'reported' | 'estimated';
 
@@ -66,6 +73,8 @@ export interface LlmRequest {
   readonly tools: readonly ToolDefinition[];
   readonly maxOutputTokens?: number;
   readonly temperature?: number;
+  /** Q-58: set by the provider factory for a reasoning model; adapters send it where it is accepted. */
+  readonly reasoningEffort?: ReasoningEffort;
   /** Stop, shutdown and caps cancel the call through this signal (RF-422, RNF-002). */
   readonly signal: AbortSignal;
 }
@@ -76,6 +85,8 @@ export interface TokenUsage {
   readonly cachedInputTokens: number;
   /** The part of the input written to the provider's prompt cache (P2-16); absent when none. */
   readonly cacheWriteInputTokens?: number;
+  /** Q-58: the part of `outputTokens` the model spent on reasoning, when the provider reports it. */
+  readonly reasoningTokens?: number;
   readonly usageSource: UsageSource;
 }
 

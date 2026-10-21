@@ -6,10 +6,10 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 
 // RF-405, DEC-156: the model list file (`prices/models.yaml`): `{ schemaVersion, version (date),
-// models: [{ provider, model, label }] }`. Only providers that sell a fixed set of models are
+// models: [{ provider, model, label, reasoning? }] }`. Only providers that sell a fixed set of models are
 // listed. A file that cannot be read, does not match, or lists a model twice is refused with
 // RST-1602 (the same code as the price table it sits beside) rather than guessed, so the dropdown
-// never offers a wrong name.
+// never offers a wrong name. `reasoning: true` marks a model that takes a reasoning effort (Q-58).
 
 const modelListSchema = z.strictObject({
   schemaVersion: z.literal(1),
@@ -19,6 +19,7 @@ const modelListSchema = z.strictObject({
       provider: z.enum(['anthropic', 'openai']),
       model: z.string().min(1).max(200),
       label: z.string().min(1).max(100),
+      reasoning: z.literal(true).exactOptional(),
     }),
   ),
 });

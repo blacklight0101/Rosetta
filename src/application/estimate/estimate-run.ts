@@ -35,6 +35,7 @@ import type {
   Scenario,
 } from './estimate-types.js';
 import { readerTokens, type TokenFigures } from './reader-estimate.js';
+import type { ReasoningModels } from '../models/model-list.js';
 import { estimateRole } from './role-estimate.js';
 
 // RF-425, ADR-007, DEC-13, DEC-54, DEC-107: the estimate before a run (`GET
@@ -54,6 +55,8 @@ export interface EstimateRunDependencies {
   readonly keys: Pick<ProviderKeyRepository, 'find'>;
   /** The shipped price table (RF-420). */
   readonly priceTable: PriceTable;
+  /** Q-58: the models the shipped list marks as reasoning models; the estimate names their effort. */
+  readonly reasoningModels: ReasoningModels;
 }
 
 export interface EstimateRunRequest {
@@ -77,6 +80,8 @@ export function shareTokens(
       inputTokens: ceilPercent(reader[scenario].inputTokens, percent),
       outputTokens: ceilPercent(reader[scenario].outputTokens, percent),
       cacheWriteTokens: ceilPercent(reader[scenario].cacheWriteTokens, percent),
+      // A share has fewer calls, not smaller ones: each still sends the reader's prompt (Q-56).
+      promptTokens: reader[scenario].promptTokens,
     };
   };
   return { low: share('low'), likely: share('likely'), high: share('high') };
@@ -133,6 +138,7 @@ function summariserFigures(
         extra * MERGE_ANSWER_TOKENS +
         assumptions.overviewOutputTokens[scenario],
       cacheWriteTokens: share[scenario].cacheWriteTokens,
+      promptTokens: share[scenario].promptTokens,
     };
   };
   return { tokens: { low: total('low'), likely: total('likely'), high: total('high') }, batches };

@@ -242,11 +242,22 @@ cloud providers off, a scan and an understand run must complete with Ollama only
 - `maxOutputTokens` is sent as `max_completion_tokens` (the older `max_tokens` is refused by reasoning models);
   `temperature` only when the role sets one. Reasoning models such as the GPT-5 family accept only the default
   temperature, so leave it unset for them; their reasoning tokens count in the output tokens.
+- **Reasoning effort (Q-58, RF-402).** A request that carries an effort sends it as `reasoning_effort` (Chat
+  Completions; `reasoning.effort` in the Responses API). The provider factory sets it, `low` unless the role
+  says `medium` or `high`, only for a model the shipped list (`prices/models.yaml`) marks `reasoning: true`; any
+  other model is never sent the field. Only `low`, `medium` and `high` are sent: the reasoning guide lists
+  `none`, `minimal`, `low`, `medium`, `high`, `xhigh` and `max` as the values, "model-dependent", and says `none`
+  returns HTTP 400 on some models (GPT-6 Astra) and `minimal` is not supported on others (GPT-6.1 Sol), while `low` is
+  on every list the model pages give. The GPT-6 models are not marked: their pages say Chat Completions takes function
+  calling only with effort `none` (Sol, Luna) or not at all (Astra, 6.1 Sol), and the reader needs tools. Sources,
+  read 2026-10-21: developers.openai.com/api/docs/guides/reasoning and the Chat Completions reference (`reasoning_effort`;
+  `max_completion_tokens` is an upper bound that includes reasoning tokens) and the model pages.
 - Tool calls keep the ids OpenAI gave them. A call whose arguments are not a JSON object stays visible as text, like
   the Ollama native mode (`tool-call-shape.ts`). A refusal is returned as the answer text.
 - Usage (`usageSource: reported`): `inputTokens` is `prompt_tokens`, which **includes** the cached tokens;
   `cachedInputTokens` is `prompt_tokens_details.cached_tokens`, 0 when OpenAI leaves it out; `outputTokens` is
-  `completion_tokens`. OpenAI caches prompt prefixes of 1024 tokens or more by itself. An answer without usage is
+  `completion_tokens`, which **includes** the reasoning tokens (billed as output); `reasoningTokens` is
+  `completion_tokens_details.reasoning_tokens`, left out when absent or zero. OpenAI caches prompt prefixes of 1024 tokens or more by itself. An answer without usage is
   estimated at about four characters per token and marked `estimated` (RF-421); so is a usage that leaves out one of the two counts (the missing count is estimated).
 - `modelVersion` is the answer's `model`, the dated model id (for example `gpt-5-nano-2025-08-07`, RNF-004);
   `requestId` is the `x-request-id` header, also kept on failed attempts for the call log (RF-408).
@@ -297,7 +308,7 @@ jitter, never shorter than the hint (capped at five minutes), up to `maxRetries`
   call) and prints both answers, with the dated model id, the request id and the usage, or the error code and its
   next step. Paste the output into the pull request.
 
-### 3.5 Recommended model (DEC-106)
+### 3.5 Recommended model and the price sources (DEC-106, Q-56)
 
 The cheapest current OpenAI model with tool calling, checked on OpenAI's pricing and model pages on 2026-10-11, is
 **`gpt-5-nano`**, dated id **`gpt-5-nano-2025-08-07`**: USD 0.05 per million input tokens, 0.005 cached input, 0.40
@@ -305,6 +316,21 @@ output (standard tier). It supports function calling on Chat Completions. It is 
 for every role of the hosted deployment until the reader model spike (P1-47) shows a role needs a stronger model;
 OpenAI recommends `gpt-5.6-luna` (0.20 / 0.02 / 1.20) as the next step up. Prices change: the price table
 `prices/default-prices.yaml` (data-model.md section 3.18) is the source for cost figures, not this section.
+
+**Price sources, checked on 2026-10-21 (Q-56).** The price table holds every Anthropic model available on the Claude API
+(current and legacy, by the Claude API id of its model page) and every OpenAI model of the standard flagship text
+tables, with the prices of these pages:
+
+- Anthropic: <https://platform.claude.com/docs/en/about-claude/pricing> (base input, 5-minute cache write, cache hit,
+  output; Claude Haiku 5.5 has one price up to 100,000 prompt tokens and another over) and the model pages under
+  <https://platform.claude.com/docs/en/models/> for the ids. Retired models and the limited-availability Mythos models
+  are left out.
+- OpenAI: <https://developers.openai.com/api/docs/pricing>, standard tier; the flagship models with a long-context
+  price are priced at it over 272,000 input tokens. The cyber, specialized (chat, Codex, search, embedding,
+  moderation) and fine-tuning tables are not in the price table.
+
+The model list `prices/models.yaml` offers the current models and the cheap ones in the dropdowns; every model on it
+has a price.
 
 ## 4. Anthropic
 
@@ -335,8 +361,15 @@ so every call passes `BudgetGuard(EgressGuard(ObservedProvider(adapter)))` and n
   tool results, and a user message after them, share one user turn; an assistant turn of tool calls only has no empty
   text block.
 - `maxOutputTokens` is sent as `max_tokens`, which Anthropic requires; a call without it is refused with `RST-1603`
-  before anything is sent (every role sets it, RF-422). `temperature` only when the role sets one. Thinking and
-  effort are not sent, so each model runs with its own default.
+  before anything is sent (every role sets it, RF-422). `temperature` only when the role sets one. Thinking is
+  not sent, so each model runs with its own default.
+- **Effort (Q-58, RF-404).** A request that carries an effort sends it as `output_config.effort` (`low`, `medium`,
+  `high`; the API also takes `xhigh` and `max`; no beta header). The provider factory sets it, `low` unless the role
+  says otherwise, only for a model the shipped list marks `reasoning: true`: the four Anthropic models of the list are
+  all on the effort page's list of supported models. Thinking tokens count toward `max_tokens` and are billed as
+  output; `usage.output_tokens_details.thinking_tokens` (a part of `output_tokens`) is kept as `reasoningTokens`.
+  Sources, read 2026-10-21: platform.claude.com/docs/en/build-with-claude/effort and /thinking and the Messages API
+  reference.
 - **Prompt caching (RF-404).** The stable prompt prefix is marked with two of the four cache breakpoints Anthropic
   allows, both `{ "type": "ephemeral" }` (five minutes): the system prompt block, which caches the tools rendered
   before it, and the last block of the last message, because an agent task's conversation is append-only and that
@@ -400,9 +433,10 @@ The back-off is the same as Ollama's (section 2.4).
 
 ### 4.5 Tested models
 
-None yet: the owner's live check fills this section. The price table `prices/default-prices.yaml` holds no Anthropic
-model yet, so a role on Anthropic is refused with `RST-1601` unless the project settings add a price for its model,
-cache-write price included, or turn on `allowUnpriced` for the user's own key (RF-427).
+None yet: the owner's live check fills this section. The price table `prices/default-prices.yaml` holds every Anthropic
+model available on the Claude API (section 3.5), so a role on Anthropic is priced on a server key; a model not in it is refused
+with `RST-1601` unless the project settings add a price for it, cache-write price included, or turn on `allowUnpriced`
+for the user's own key (RF-427).
 
 ## 5. OpenAI-compatible services
 

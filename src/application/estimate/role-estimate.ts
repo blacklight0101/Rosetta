@@ -1,9 +1,12 @@
-import { costOf, type Price } from '../../domain/budget/price.js';
+import { costOf, priceAt, type Price } from '../../domain/budget/price.js';
 import { lookupPrice, type KeySource, type PriceTable } from '../../domain/budget/price-table.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import type { ReasoningModels } from '../models/model-list.js';
+import type { ReasoningEffort } from '../ports/llm-provider.js';
 import type { ProviderKeyRepository } from '../ports/provider-key-repository.js';
 import { priceOverridesOf } from '../projects/price-overrides.js';
+import { DEFAULT_REASONING_EFFORT, type ProjectSettings } from '../projects/project-settings.js';
 import type { Project } from '../projects/project.js';
 import { keyProviderOf } from '../providers/key-choice.js';
 import type {
@@ -25,6 +28,8 @@ export interface RolePricing {
   readonly keys: Pick<ProviderKeyRepository, 'find'>;
   /** The shipped price table (RF-420). */
   readonly priceTable: PriceTable;
+  /** Q-58: the models the shipped list marks as reasoning models; none when left out. */
+  readonly reasoningModels?: ReasoningModels;
 }
 
 export interface RoleTokens {
@@ -41,15 +46,14 @@ export interface RoleTokens {
  * The confirmation threshold of RF-425 is compared with the likely point (start-confirmation.ts),
  * not with the high one.
  */
-function costOfPoint(
-  price: Price,
-  tokens: Pick<TokenFigures, 'inputTokens' | 'outputTokens' | 'cacheWriteTokens'>,
-  scenario: Scenario,
-): bigint {
+function costOfPoint(price: Price, tokens: TokenFigures, scenario: Scenario): bigint {
   const { inputTokens, outputTokens } = tokens;
-  const plain = costOf(price, { inputTokens, outputTokens, cachedInputTokens: 0 }).micros;
+  // Q-56: a model priced by prompt length is priced at the tier the prompt of one call reaches,
+  // not the sum of all its calls: `costOf` takes the tier from the tokens of one call.
+  const tiered = priceAt(price, tokens.promptTokens);
+  const plain = costOf(tiered, { inputTokens, outputTokens, cachedInputTokens: 0 }).micros;
   const written = scenario === 'high' ? inputTokens : tokens.cacheWriteTokens;
-  const withWrites = costOf(price, {
+  const withWrites = costOf(tiered, {
     ...{ inputTokens, outputTokens, cachedInputTokens: 0 },
     cacheWriteInputTokens: written,
   }).micros;
@@ -67,6 +71,16 @@ async function keySourceOf(
   return (await keys.find(userId, keyProvider)) === undefined ? 'server' : 'user';
 }
 
+/** Q-58: the effort the role asks for when its model is a reasoning model, else nothing. */
+function effortOf(
+  pricing: RolePricing,
+  kind: RoleEstimate['kind'],
+  setting: ProjectSettings['roles'][EstimateRole],
+): { readonly reasoningEffort?: ReasoningEffort } {
+  if (pricing.reasoningModels?.(kind, setting.model) !== true) return {};
+  return { reasoningEffort: setting.reasoningEffort ?? DEFAULT_REASONING_EFFORT };
+}
+
 // RF-425, RF-613, RF-420, RF-427, DEC-107
 export async function estimateRole(
   pricing: RolePricing,
@@ -74,7 +88,8 @@ export async function estimateRole(
   { role, tokens }: RoleTokens,
 ): Promise<RoleEstimate> {
   const { settings } = project;
-  const { provider: name, model } = settings.roles[role];
+  const setting = settings.roles[role];
+  const { provider: name, model } = setting;
   const config = Object.hasOwn(settings.providers, name) ? settings.providers[name] : undefined;
   if (config === undefined) throw new RosettaError(ERROR_CODES.settingsProviderUnknown);
   const keySource = await keySourceOf(pricing.keys, project.userId, config.kind);
@@ -92,6 +107,7 @@ export async function estimateRole(
   return {
     ...{ role, provider: name, kind: config.kind, model, keySource },
     priced: lookup.kind === 'priced',
+    ...effortOf(pricing, config.kind, setting),
     points: { low: pointOf('low'), likely: pointOf('likely'), high: pointOf('high') },
   };
 }

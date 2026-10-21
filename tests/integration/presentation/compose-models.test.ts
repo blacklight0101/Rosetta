@@ -23,7 +23,7 @@ it('RF-405 serves the shipped Anthropic and OpenAI lists, priced from the shippe
     'claude-haiku-5-5',
     'claude-fable-5-1',
   ]);
-  expect(anthropic.models.every((entry) => !entry.priced)).toBe(true);
+  expect(anthropic.models.every((entry) => entry.priced)).toBe(true);
   expect(openai.models.length).toBeGreaterThan(0);
   expect(openai.models.every((entry) => entry.priced)).toBe(true);
 });
