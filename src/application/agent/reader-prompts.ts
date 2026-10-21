@@ -54,6 +54,11 @@ export const readerPlaceholders = {
   parentCards: '{{parentCards}}',
   readFirstFiles: '{{files}}',
   readFirstTurns: '{{turns}}',
+  readMorePercent: '{{percent}}',
+  readMoreRead: '{{read}}',
+  readMoreTotal: '{{total}}',
+  readMoreFiles: '{{files}}',
+  readMoreTurns: '{{turns}}',
 } as const;
 
 /** The same on every turn, so providers that cache a stable prefix charge less for it. */
@@ -123,7 +128,14 @@ export interface ReadMoreFacts {
 
 /** Q-50: the refusal of an answer given after reading little of the area. */
 export function readMoreMessage(prompts: ReaderPrompts, facts: ReadMoreFacts): string {
-  return `${prompts.readMore.text}${String(facts.percent)}`;
+  // The files block last: it holds repository text, which must not be read as a placeholder.
+  return prompts.readMore.text
+    .replace(readerPlaceholders.readMorePercent, String(facts.percent))
+    .replace(readerPlaceholders.readMoreRead, String(facts.readTokens))
+    .replace(readerPlaceholders.readMoreTotal, String(facts.tokens))
+    .replace(readerPlaceholders.readMoreTurns, String(facts.turns))
+    .replace(readerPlaceholders.readMoreFiles, () => facts.filesBlock)
+    .trimEnd();
 }
 
 /** The fragments an area with these marks gets, flows first. */
@@ -186,6 +198,7 @@ export function promptVersionsOf(
     ...surfaceFilesFor(prompts, used),
     ...guidance,
     prompts.readFirst,
+    prompts.readMore,
   ];
   return Object.fromEntries(
     files.map((file) => [file.name, { version: file.version, sha256: file.sha256 }]),

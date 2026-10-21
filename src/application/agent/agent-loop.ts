@@ -16,6 +16,7 @@ import {
   readerSystemPrompt,
   readerTaskMessage,
   readFirstMessage,
+  readMoreMessage,
   turnsLeftMessage,
   type ReaderPrompts,
 } from './reader-prompts.js';
@@ -86,7 +87,7 @@ class AgentTask {
   constructor(request: AgentTaskRequest) {
     this.request = request;
     this.system = readerSystemPrompt(request.prompts);
-    this.gate = new ReadGate(request.tools.readableAreaFiles());
+    this.gate = new ReadGate(request.tools.readableAreaEntries());
     this.runner = new ToolRunner(request.tools, this.gate);
     this.charsSince = this.system.length + JSON.stringify(request.tools.definitions).length;
   }
@@ -190,17 +191,25 @@ class AgentTask {
 
   /**
    * RF-206: a final answer before any file of the area was read is not accepted. The agent is told
-   * which files it has not read and keeps its turns to read them.
+   * which files it has not read and keeps its turns to read them. Q-50: so is, once, an answer
+   * after less than half of the area's first-party tokens were read, with the files still unread.
    */
   private refuseUnread(text: string): boolean {
-    const { prompts, tools, settings } = this.request;
-    const turnsLeft = settings.maxTurns - this.turns;
-    const files = this.gate.refuse(turnsLeft);
-    if (files === undefined) return false;
+    const message = this.refusalMessage(this.request.settings.maxTurns - this.turns);
+    if (message === undefined) return false;
     this.messages.push({ role: 'assistant', content: text });
-    const block = tools.renderBlock('list_area_files', files);
-    this.add({ role: 'user', content: readFirstMessage(prompts, block, turnsLeft) });
+    this.add({ role: 'user', content: message });
     return true;
+  }
+
+  private refusalMessage(turnsLeft: number): string | undefined {
+    const { prompts, tools } = this.request;
+    const block = (files: string): string => tools.renderBlock('list_area_files', files);
+    const unread = this.gate.refuse(turnsLeft);
+    if (unread !== undefined) return readFirstMessage(prompts, block(unread), turnsLeft);
+    const more = this.gate.readMore(turnsLeft);
+    if (more === undefined) return undefined;
+    return readMoreMessage(prompts, { ...more, filesBlock: block(more.files), turns: turnsLeft });
   }
 
   /**

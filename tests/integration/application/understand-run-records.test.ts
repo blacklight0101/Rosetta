@@ -83,12 +83,12 @@ describe('an understand run: events', () => {
     const count = (type: string): number => events.filter((event) => event.type === type).length;
     expect(
       ['agent.planned', 'agent.started', 'agent.turn', 'agent.tool.called'].map(count),
-    ).toEqual([5, 5, 11, 6]);
+    ).toEqual([5, 5, 11, 8]);
     expect(
       ['agent.tool.result', 'agent.card.proposed', 'verify.citation.checked', 'agent.ended'].map(
         count,
       ),
-    ).toEqual([6, 5, 7, 5]);
+    ).toEqual([8, 5, 7, 5]);
     expect(events.find((event) => event.type === 'agent.tool.called')?.data).toEqual({
       turn: 1,
       tool: 'read_file',
