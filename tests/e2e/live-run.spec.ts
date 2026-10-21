@@ -2,6 +2,7 @@ import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import {
   agentPanel,
+  expectNotCovered,
   openRunTab,
   openStartPage,
   runStatus,
@@ -15,10 +16,9 @@ import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 import { chooseModel } from './support/choose-model.js';
 
-// RF-1002, RF-1003, RF-424, RF-1004, RF-301, DEC-103, RF-1006, RF-008, RF-1108, RF-1105, P1-35: the live run
-// page, driven by real runs of the test server. The model double replays the recorded understand run
-// of the C# fixture (e2e-provider.ts) and nothing of the API or the event stream is replaced, so what
-// the page shows is what the server sent. The steps run in order, sharing one project and run.
+// RF-1002, RF-1003, RF-424, RF-1004, RF-301, DEC-103, RF-1006, RF-008, RF-1108, RF-1105, P1-35: the live run page,
+// driven by real runs of the test server. The model double replays the recorded understand run of the C# fixture
+// (e2e-provider.ts); nothing of the API or the event stream is replaced. The steps run in order, sharing one run.
 
 test.describe.configure({ mode: 'serial' });
 
@@ -132,10 +132,10 @@ test('RF-264 the overview of the application comes first on the page of a finish
   await expect(overview).toContainText('A catalog web site that lists items and shows one item.');
   await expect(overview.getByRole('link', { name: 'FEAT-001' }).first()).toBeVisible();
   await expect(overview).not.toContainText('send an email');
-  // Controllers was not asked for; the rejected claim of Services leaves it with no card that passed.
-  const covered = overview.getByRole('region', { name: 'What was not covered' });
-  await expect(covered).toContainText(/Not selected for this run \(1\)\s*Controllers/u);
-  await expect(covered).toContainText(/No card passed the citation check \(1\)\s*Services/u);
+  // What was not covered, with the files no reader opened (P3-81);
+  // the checks are in support/live-run-page.ts, which keeps this file under its size limit and
+  // the lines the traceability matrix cites where they were.
+  await expectNotCovered(overview.getByRole('region', { name: 'What was not covered' }));
   // The hostile statement is text: no script ran and nothing was injected into the page.
   await expect(overview.locator('script, img')).toHaveCount(0);
   await expect(overview).toContainText('<script>');

@@ -1,6 +1,9 @@
 import type { Card } from '../../domain/cards/card.js';
+import type { FileEntry } from '../../domain/code-map/file-entry.js';
 import type { Overview } from '../../domain/overview/overview.js';
+import { understandingMeasures } from '../../domain/deepen/understanding-measures.js';
 import type { AreaStanding } from '../../domain/overview/standing.js';
+import type { UnreadFiles } from '../../domain/overview/unread-files.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import {
   consolidationParts,
@@ -19,7 +22,7 @@ import type { RunCoverage } from './run-coverage.js';
 interface OverviewStepParts extends Omit<ConsolidationSource, 'runId' | 'signal' | 'mergePrompt'> {
   readonly execution: Pick<RunExecution, 'run' | 'signal'>;
   readonly overviewPrompt: PromptFile;
-  readonly scanned: PlannedFrom;
+  readonly scanned: PlannedFrom & { readonly codeMap: { readonly files: readonly FileEntry[] } };
   readonly allTasks: readonly ReaderTask[];
 }
 
@@ -46,6 +49,16 @@ function standingOf(input: OverviewStepInput): readonly AreaStanding[] {
   });
 }
 
+/** RF-231 (Q-53): the measures the run already computes say which first-party files were not read. */
+function unreadOf(input: OverviewStepInput): UnreadFiles {
+  const { parts, coverage } = input;
+  const measures = understandingMeasures({
+    ...{ cards: [], coverage: coverage.areas(), files: parts.scanned.codeMap.files },
+  });
+  const { filesNotRead, firstPartyTokens, firstPartyReadTokens } = measures;
+  return { files: filesNotRead, firstPartyTokens, firstPartyReadTokens };
+}
+
 // RF-264
 export function overviewStep(
   parts: OverviewStepParts,
@@ -60,5 +73,9 @@ export function overviewStep(
     signal: execution.signal,
     mergePrompt: overviewPrompt,
   };
-  return writeOverview(consolidationParts(source), { cards, areas: standingOf(input) });
+  return writeOverview(consolidationParts(source), {
+    cards,
+    areas: standingOf(input),
+    unread: unreadOf(input),
+  });
 }

@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 81      | 5         | 74         | 2         | 0                  | 28      | 51      | 2      | 37         | 0         |
-| **Total**               | **298** | **77**    | **194**    | **27**    | **0**              | **144** | **142** | **12** | **172**    | **0**     |
+| P3 Report and plan      | 82      | 5         | 75         | 2         | 0                  | 28      | 52      | 2      | 38         | 0         |
+| **Total**               | **299** | **77**    | **195**    | **27**    | **0**              | **144** | **143** | **12** | **173**    | **0**     |
 
 ## Conventions for every card
 
@@ -4062,3 +4062,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the wording in the three places and tests.
 - **Done when**: each probe has a passing test; `npm run verify` and the run page e2e green.
 - **Refs**: RF-264, RF-231, Q-53; issue #724.
+
+### P3-82 - Follow-up: the gap call keeps the cards a small model writes
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-72
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-627 and RF-630 (the Q-54 scenario), RF-202, Q-45, Q-54; `src/application/plan/gap-answer.ts` (each card parsed with `gapTask.safeParse`, a card that cannot be read is left out without a log line), `src/application/plan/plan-answer.ts` (`position` schema used by `requirements` and `dependsOn`), `src/domain/planning/plan-gap.ts`, `prompts/planner/gap.v1.md`. Found in the orchestrator's fresh-start evaluation of 2026-10-21 (Invoice_Generator.xlsm, planner Ollama `gemma4:e4b`): the gap call answered with one card for each of the 5 uncovered items (4 screens, 1 flow), each naming the right item in `builds`, but wrote `requirements` and `dependsOn` as objects (`[{"position": 3}]`, `[{"position": 4, "builds": ["T-004"]}]`) instead of numbers; every card failed to parse, none was kept, nothing was logged, and the run ended RST-1806 with the 5 gaps.
+- **Do**: (1) where a plan answer expects a list of positions (`requirements`, `dependsOn` of the task cards, in the gap answer and the plan answer), also accept an object with a numeric `position` and read its number; anything else stays refused; (2) log each card left out of a plan or gap answer with its position and the reason (which field, what was wrong), never with answer text; (3) when the gap answer leaves out cards that named a gap in `builds`, the planner gets one repair attempt like RF-202, listing the problems and the expected shape; the repair passes the budget guard and the Ollama context guard and is in the estimate.
+- **Review probes**: the recorded Invoice gap answer (objects with `position`): the 5 cards kept, the run completes with no gap; `{ "position": "3" }` or `{ "id": 3 }` (refused, logged); a gap answer with one unreadable card (repair attempt, its fixed card kept); a repair that still fails (gaps reported as today, RST-1806); the plan answer with object positions (read); the log line names the card position and the field and holds no answer text; recorded responses only.
+- **Behaviour to preserve**: RF-627 never reports a package with gaps as complete; RF-630 card rules (`cardProblem`); ADR-013 untrusted answers; the first package kept when the repair is refused by a guard.
+- **Delivers**: the tolerant positions, the log, the repair and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-627, RF-630, RF-202, Q-45, Q-54; issue #726.

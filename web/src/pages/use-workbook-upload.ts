@@ -7,7 +7,7 @@ import {
   type WorkbookSummary,
 } from '../api/workbook-upload.js';
 import { useApp } from '../app/app-context.js';
-import { workbookProblems, workbookProjectName } from '../lib/workbook-check.js';
+import { refusalLabel, workbookProblems, workbookProjectName } from '../lib/workbook-check.js';
 import {
   useWorkbookFlow,
   type WorkbookFlowOptions,
@@ -23,6 +23,8 @@ import type { FileState } from './workbook-batch.js';
 export interface WorkbookItem {
   readonly file: File;
   readonly state: FileState;
+  /** RF-158: why the file will not be uploaded ("Not a workbook"); shown instead of Waiting. */
+  readonly refusal: string | undefined;
   readonly percent: number;
 }
 
@@ -87,6 +89,7 @@ export function useWorkbookUpload(options: WorkbookFlowOptions): WorkbookUpload 
   const items = files.map((file, index) => ({
     file,
     state: flow.where.states[index] ?? 'waiting',
+    refusal: refusalLabel(file),
     percent: flow.where.percents[index] ?? 0,
   }));
   const current = flow.where.states.indexOf('sending') + 1;

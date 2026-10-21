@@ -32,6 +32,9 @@ const REASONS: readonly Reason[] = [
 
 const OTHER = 'Other';
 
+/** The words the server's sentence about first-party files not read starts with (`unread-files.ts`). */
+const UNREAD_PREFIX = 'First-party files not read: ';
+
 export interface CoverageGroup {
   readonly title: string;
   /** What each line of the group shows: the area, or the whole sentence. */
@@ -55,4 +58,13 @@ export function groupNotCovered(lines: readonly string[]): readonly CoverageGrou
     const group = reasons.filter((reason) => reason.title === title).map((reason) => reason.shown);
     return group.length === 0 ? [] : [{ title, lines: group }];
   });
+}
+
+/** RF-264 (Q-53): the line about first-party files not read, apart from the area lines. */
+export function splitUnreadFiles(lines: readonly string[]): {
+  readonly unread: string | undefined;
+  readonly areas: readonly string[];
+} {
+  const unread = lines.find((line) => line.startsWith(UNREAD_PREFIX));
+  return { unread, areas: lines.filter((line) => line !== unread) };
 }

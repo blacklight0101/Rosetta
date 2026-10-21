@@ -112,6 +112,12 @@ test('RF-158 states the types and limits and refuses an .xls, 21 files and a set
   });
   await expect(page.getByTestId('field-error')).toContainText('save it as .xlsx');
 
+  await field.setInputFiles({ name: 'README.md', mimeType: 'text/markdown', buffer: workbook });
+  await expect(page.getByRole('list', { name: 'Chosen workbooks' })).toContainText(
+    'Not a workbook',
+  );
+  await expect(page.getByRole('list', { name: 'Chosen workbooks' })).not.toContainText('Waiting');
+
   await field.setInputFiles(
     Array.from({ length: 21 }, (_, index) => ({
       name: `Book ${String(index + 1)}.xlsx`,
