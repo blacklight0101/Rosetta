@@ -8,7 +8,9 @@ import { overviewOf } from './run-summary.js';
 // so does a step the run never reached; at most one step is current. The report is built from the page
 // of a finished run, never by the run, so its step waits until a report exists (RF-504, P1-130).
 
-type StepName = 'Snapshot' | 'Scan' | 'Understand' | 'Verify' | 'Report';
+type StepName =
+  | ('Snapshot' | 'Scan' | 'Understand' | 'Verify' | 'Report')
+  | ('Brief' | 'Planner calls' | 'Package' | 'Checks');
 export type StepStatus = 'done' | 'current' | 'stopped' | 'waiting';
 
 export interface Step {
@@ -116,8 +118,36 @@ function readerSteps(state: RunState, phase: RunPhase): readonly Step[] {
   ];
 }
 
-// RF-1002
+/** RF-627: a run that wrote the package and ended with this code found items no task card builds. */
+const PACKAGE_WITH_GAPS = 'RST-1806';
+
+/**
+ * RF-1015 (Q-44): the steps of a plan run: the brief it reads, the planner calls, the package it
+ * writes and the checks on the package. A package written with gaps (RST-1806) has its package done
+ * and its checks stopped (RF-627).
+ */
+function planSteps(state: RunState, phase: RunPhase): readonly Step[] {
+  if (phase.kind === 'queued') {
+    return (['Brief', 'Planner calls', 'Package', 'Checks'] as const).map((name) =>
+      step(name, 'waiting'),
+    );
+  }
+  const completed = completedOf(phase);
+  const gaps = state.ended?.errorCode === PACKAGE_WITH_GAPS;
+  const calls: Progress = completed || gaps ? 'done' : 'working';
+  const written: Progress = completed || gaps ? 'done' : 'idle';
+  const checked: Progress = completed ? 'done' : afterwards(gaps);
+  return [
+    step('Brief', 'done'),
+    step('Planner calls', statusOf(calls, phase)),
+    step('Package', statusOf(written, phase)),
+    step('Checks', gaps ? 'stopped' : statusOf(checked, phase), gaps ? 'gaps found' : undefined),
+  ];
+}
+
+// RF-1002, RF-1015
 export function stepperOf(run: StepperRun, state: RunState, phase: RunPhase): readonly Step[] {
+  if (run.stage === 'plan') return planSteps(state, phase);
   const report = step('Report', run.reportBuilt ? 'done' : 'waiting');
   if (phase.kind === 'queued') {
     return (['Snapshot', 'Scan', 'Understand', 'Verify'] as const)

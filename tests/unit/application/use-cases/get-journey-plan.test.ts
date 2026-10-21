@@ -48,7 +48,7 @@ describe('GetJourney: the plan run', () => {
       value: {
         source: { id: understand?.id },
         plan: { id: plan.id },
-        handoff: { runId: plan.id, runKey: '20261012-100000-plan', outOfDate: false },
+        handoff: { runId: plan.id, runKey: '20261012-100000-plan', outOfDate: false, gaps: false },
       },
     });
   });

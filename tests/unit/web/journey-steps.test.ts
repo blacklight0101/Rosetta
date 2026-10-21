@@ -200,7 +200,10 @@ describe('journeyOf: questions, brief and estimate', () => {
   });
 
   it('RF-615 one open question is not plural', () => {
-    const view = journeyOf(facts({ source: source({ openQuestions: 1 }) }), projectId);
+    const view = journeyOf(
+      facts({ source: source({ openQuestions: 1 }), briefSaved: false }),
+      projectId,
+    );
 
     expect(step(view, 'questions').detail).toBe('1 open question');
   });

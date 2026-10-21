@@ -128,7 +128,7 @@ test('RF-613 the plan estimate shows the planner against the caps and the packag
 
   await openPlanSetup(page);
 
-  await expect(estimate(page)).toContainText(/\$[\d.]+ likely/u);
+  await expect(estimate(page)).toContainText(/(\$[\d.]+|[\d,]+ tokens) likely/u);
   await expect(estimate(page)).toContainText('Run cost cap');
   await expect(writeButton(page)).toBeEnabled();
   await expectNoSeriousViolations(page);
@@ -177,7 +177,7 @@ test('RF-614 RF-604 from the completed understand run to the package: Set up the
   const source = page.getByRole('region', { name: 'Source run' });
   await expect(source).toContainText('-understand');
   await expect(source).toContainText(/\d+ Supported claims?/u);
-  await expect(estimate(page)).toContainText(/\$[\d.]+ likely/u);
+  await expect(estimate(page)).toContainText(/(\$[\d.]+|[\d,]+ tokens) likely/u);
   await expect(writeButton(page)).toBeEnabled();
   await expectNoSeriousViolations(page);
   await writeButton(page).click();

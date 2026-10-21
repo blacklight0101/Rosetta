@@ -24,7 +24,9 @@ export const journeySchema = z.object({
   briefSaved: z.boolean(),
   /** The newest plan run written from the source run. */
   plan: journeyRun.nullable(),
-  handoff: z.object({ runId: z.string(), runKey: z.string(), outOfDate: z.boolean() }).nullable(),
+  handoff: z
+    .object({ runId: z.string(), runKey: z.string(), outOfDate: z.boolean(), gaps: z.boolean() })
+    .nullable(),
 });
 
 export type JourneyFacts = z.output<typeof journeySchema>;
