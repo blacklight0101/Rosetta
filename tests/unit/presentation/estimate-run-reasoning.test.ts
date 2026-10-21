@@ -35,7 +35,7 @@ async function viewOf(settings: ProjectSettings, marked: boolean) {
   const estimate = new EstimateRun({
     ...{ projects: h.projects, runs: h.runs, scans: h.scans, keys: h.keys },
     priceTable: estimatePrices,
-    ...(marked ? { reasoningModels: isReasoning } : {}),
+    reasoningModels: marked ? isReasoning : () => false,
   });
   const project = await projectWithScan(h, userAmy.userId, settings);
   const outcome = await estimate.execute({ actor: userAmy, projectId: project.id });

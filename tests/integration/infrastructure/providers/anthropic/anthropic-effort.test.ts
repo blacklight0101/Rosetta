@@ -47,6 +47,14 @@ describe('AnthropicProvider thinking tokens', () => {
     expect(answer.usage.reasoningTokens).toBe(700);
   });
 
+  it('RF-404 an answer that reports zero thinking tokens reports none', async () => {
+    const { provider } = await start('thinking-tokens-zero');
+
+    const answer = await provider.complete(contractRequest());
+
+    expect(answer.usage.reasoningTokens).toBeUndefined();
+  });
+
   it('RF-404 an answer without a thinking count reports none', async () => {
     const { provider } = await start('contract-text');
 

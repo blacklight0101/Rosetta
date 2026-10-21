@@ -21,10 +21,10 @@ import { textTurn, ungatedLoopSetup, usage } from '../../../support/agent-loop-h
 const whole = JSON.stringify({ cards: [cardObject({ title: 'Checkout' })] });
 
 /** The recorded answer: no text, the whole limit used, every output token spent on reasoning. */
-function emptyAtLimit(limit: number): ScenarioOutcome {
+function emptyAtLimit(limit: number, text = ''): ScenarioOutcome {
   return {
     response: {
-      text: '',
+      text,
       toolCalls: [],
       usage: { ...usage, inputTokens: 900, outputTokens: limit, reasoningTokens: limit },
       finishReason: 'length',
@@ -143,6 +143,48 @@ describe('P3-86 the retry goes through the guards', () => {
     expect(seen.map((each) => each.maxOutputTokens)).toEqual([4096, 8192]);
     expect(result.state).toBe('StoppedByCap');
     expect(result.code).toBe(ERROR_CODES.budgetCapReached);
+  });
+});
+
+describe('P3-86 what counts as an empty answer', () => {
+  it('RF-402 an answer of blanks at the limit counts as empty', async () => {
+    const { fake, request } = ungatedLoopSetup([emptyAtLimit(4096, ' \n '), textTurn(whole)], {
+      maxOutputTokens: 4096,
+    });
+
+    const result = await runAgentTask(request(fake));
+
+    expect(result.state).toBe('Done');
+    expect(fake.requests.map((each) => each.maxOutputTokens)).toEqual([4096, 8192]);
+  });
+
+  it('RF-402 a call with no output limit has nothing to double and is not retried', async () => {
+    const { fake, request } = ungatedLoopSetup([emptyAtLimit(4096), textTurn(whole)]);
+
+    await runAgentTask(request(fake));
+
+    expect(fake.requests.map((each) => each.maxOutputTokens)).toEqual([undefined, undefined]);
+  });
+
+  it('RF-402 an answer that asks for tools is never taken for an empty one', async () => {
+    const asking = {
+      response: {
+        text: '',
+        toolCalls: [
+          { id: 'c1', name: 'read_file', arguments: { path: 'src/Orders/OrderService.cs' } },
+        ],
+        usage,
+        finishReason: 'length' as const,
+      },
+      retried: [],
+    };
+    const { fake, request } = ungatedLoopSetup([asking, textTurn(whole)], {
+      maxOutputTokens: 4096,
+    });
+
+    await runAgentTask(request(fake));
+
+    expect(fake.requests.map((each) => each.maxOutputTokens)).toEqual([4096, 4096]);
   });
 });
 

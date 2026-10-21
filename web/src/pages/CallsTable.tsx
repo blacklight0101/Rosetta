@@ -91,7 +91,7 @@ function Row(props: CallsTableProps & { readonly call: CallRow }): JSX.Element {
       </td>
       <td data-label="Out" class="rst-table__num">
         {answered ? tokenText(call.outputTokens) : NONE}
-        {answered && call.reasoningTokens !== undefined ? (
+        {call.reasoningTokens !== undefined ? (
           <div class="rst-table__sub">{tokenText(call.reasoningTokens)} reasoning</div>
         ) : null}
       </td>

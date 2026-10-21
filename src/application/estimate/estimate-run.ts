@@ -55,8 +55,8 @@ export interface EstimateRunDependencies {
   readonly keys: Pick<ProviderKeyRepository, 'find'>;
   /** The shipped price table (RF-420). */
   readonly priceTable: PriceTable;
-  /** Q-58: the models the shipped list marks as reasoning models; none when left out. */
-  readonly reasoningModels?: ReasoningModels;
+  /** Q-58: the models the shipped list marks as reasoning models; the estimate names their effort. */
+  readonly reasoningModels: ReasoningModels;
 }
 
 export interface EstimateRunRequest {
