@@ -45,6 +45,11 @@ const refused = [
 ];
 
 const kept = [
+  'What is the reason the value in cell B4 is hardcoded?',
+  'What is the meaning of the formula in column F for the business?',
+  'How many rows does the finance team expect in the Loans sheet in a year?',
+  'How many rows does the Loans sheet receive per month?',
+  'How many sheets does the workbook hold in production?',
   'What do REPAIR, DAMAGED and USABLE mean for the business?',
   'Why is the discount capped at 10%?',
   'Why does the Loans sheet use a different rate in column F for loans over 5 years?',
