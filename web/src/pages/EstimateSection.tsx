@@ -1,10 +1,12 @@
 import type { JSX } from 'preact';
 import type { RunEstimate } from '../api/estimate-schemas.js';
+import type { Project } from '../api/project-schemas.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { Glyph } from '../components/Glyph.js';
 import type { CapWarning } from '../lib/cap-warnings.js';
+import { scanSubjectOf } from '../lib/live-run/scan-subject.js';
 import { dollars, percentOf, pricedTotal, unpricedRoles } from '../lib/estimate-math.js';
 import type { EstimateLoad } from './use-estimate.js';
 import { EstimateTable } from './EstimateTable.js';
@@ -38,6 +40,8 @@ interface CapField {
 export interface EstimateSectionProps {
   /** A scan makes no model calls, so there is nothing to estimate. */
   readonly scanOnly: boolean;
+  /** Where the project's code comes from; the scan note names what it reads (RF-150). */
+  readonly sourceKind: Project['sourceKind'];
   readonly estimate: EstimateLoad;
   readonly cap: CapField;
   readonly warnings: readonly CapWarning[];
@@ -136,8 +140,8 @@ function Body(props: EstimateSectionProps & { readonly onRetry: () => void }): J
   if (props.scanOnly) {
     return (
       <p class="rst-settings__note">
-        A scan reads the repository and writes the code map. It makes no model calls and costs
-        nothing.
+        A scan reads {scanSubjectOf(props.sourceKind)} and writes the code map. It makes no model
+        calls and costs nothing.
       </p>
     );
   }

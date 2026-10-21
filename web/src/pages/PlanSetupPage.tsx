@@ -97,7 +97,11 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
   return (
     <div class="rst-plan">
       <Head source={source} error={sourceError} />
-      <JourneyPanel {...{ projectId, runId: sourceRunId }} refresh={String(session.savedVersion)} />
+      <JourneyPanel
+        {...{ projectId, runId: sourceRunId }}
+        refresh={String(session.savedVersion)}
+        pagePath={`/projects/${projectId}/plan-setup`}
+      />
       {session.outOfDate ? <OutOfDate /> : null}
       <PlanSteps current={session.step} onOpen={session.goTo} />
       <section class="rst-plan-card">

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { assumptionsOf } from '../../../../src/application/estimate/estimate-assumptions.js';
+import {
+  assumptionsOf,
+  WORKBOOK_PROMPT_TOKENS,
+} from '../../../../src/application/estimate/estimate-assumptions.js';
 import { readerTokens } from '../../../../src/application/estimate/reader-estimate.js';
 import { areaOf } from '../../../support/estimate-harness.js';
 import { settingsFor } from '../../../support/provider-factory-harness.js';
@@ -14,7 +17,7 @@ const area = areaOf('Pricing.xlsx', 10_000);
 
 describe('the reader estimate with workbook guidance', () => {
   it('RF-155 states the guidance the estimate adds per turn', () => {
-    expect(assumptions.workbookPromptTokens).toBe(1100);
+    expect(assumptions.workbookPromptTokens).toBe(WORKBOOK_PROMPT_TOKENS);
   });
 
   it('RF-155 an area without a workbook costs exactly what it cost before', () => {
@@ -27,9 +30,9 @@ describe('the reader estimate with workbook guidance', () => {
     const tokens = readerTokens([area], assumptions, new Map(), new Set(['Pricing.xlsx']));
 
     expect(tokens.likely).toEqual({
-      inputTokens: 2000 + 2 * 900 + 1100,
+      inputTokens: 2000 + 2 * 900 + WORKBOOK_PROMPT_TOKENS,
       outputTokens: 300 + 2 * 800,
-      cacheWriteTokens: 2000 + 2 * 900 + 1100,
+      cacheWriteTokens: 2000 + 2 * 900 + WORKBOOK_PROMPT_TOKENS,
     });
   });
 });

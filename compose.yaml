@@ -32,7 +32,9 @@ services:
       # Reachable from this machine only (RNF-014).
       - '127.0.0.1:5432:5432'
     healthcheck:
-      test: ['CMD', 'pg_isready', '-U', 'postgres', '-d', 'rosetta']
+      # Over TCP: on an empty volume the image first runs a temporary server that listens on the Unix
+      # socket only, and a socket check would pass before the real server is up (migrate would be refused).
+      test: ['CMD', 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres', '-d', 'rosetta']
       interval: 5s
       timeout: 5s
       retries: 10

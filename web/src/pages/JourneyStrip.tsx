@@ -6,6 +6,7 @@ import { Link } from '../components/Link.js';
 import { costLabel } from '../lib/live-run/format.js';
 import type {
   JourneyAction,
+  JourneyLink,
   JourneyStep,
   JourneyView,
   StepState,
@@ -24,6 +25,8 @@ export interface JourneyStripProps {
   readonly onResumed: () => void;
   /** Opens the questions where the page can show them; any other page opens the run. */
   readonly onAnswer?: (() => void) | undefined;
+  /** The path of the page that holds the strip: a second action that opens this page is left out. */
+  readonly pagePath?: string | undefined;
 }
 
 const words: Readonly<Record<StepState, string>> = {
@@ -91,6 +94,12 @@ function Action(props: {
   );
 }
 
+/** The second action, unless it only opens the page the strip is on. */
+function secondaryOf(view: JourneyView, pagePath: string | undefined): JourneyLink | undefined {
+  const { secondary } = view;
+  return secondary?.href.split('?')[0] === pagePath ? undefined : secondary;
+}
+
 // RF-615
 export function JourneyStrip(props: JourneyStripProps): JSX.Element {
   const { view } = props;
@@ -107,7 +116,7 @@ export function JourneyStrip(props: JourneyStripProps): JSX.Element {
       <div class="rst-road__foot">
         <Action action={view.action} onResumed={props.onResumed} onAnswer={props.onAnswer} />
         <Action
-          action={view.secondary}
+          action={secondaryOf(view, props.pagePath)}
           variant="secondary"
           onResumed={props.onResumed}
           onAnswer={undefined}
