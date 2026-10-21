@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "RF-209, DEC-158: a completed run on Catalog and Services, then a Deepen whose re-read adds its replacement to the Catalog card the parent holds (extends BR-001) and writes one genuinely new rule as a new card. Written by hand for the fake provider; no real provider was called.",
+  "description": "RF-209, DEC-158: a completed run on Catalog and Services, then a Deepen whose re-read adds its replacement to the Catalog card the parent holds (extends BR-001) and writes one genuinely new rule as a new card. Written by hand for the fake provider; no real provider was called. The summariser then compares the rules of the Deepen (Q-52) and merges none.",
   "calls": [
     {
       "attempts": [
@@ -160,6 +160,25 @@
             },
             "finishReason": "stop",
             "requestId": "fake-request-8",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\"merges\": []}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 100,
+              "outputTokens": 10,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-9",
             "modelVersion": "fake-model-2026-10-01"
           }
         }
