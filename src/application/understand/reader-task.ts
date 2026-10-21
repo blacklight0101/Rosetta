@@ -23,6 +23,7 @@ import type { ReaderTask } from './reader-tasks.js';
 import { toolsWithReads, type TaskReads } from './run-coverage.js';
 import { readerTaskSettings, readerToolLimits } from './reader-settings.js';
 import {
+  noteEvent,
   providerWithEvents,
   toolsWithEvents,
   TurnCounter,
@@ -149,6 +150,7 @@ export async function runReaderTask(
     },
     nextCallId: context.nextCallId,
     signal: execution.signal,
+    onNote: noteEvent(events),
     ...(task.answers === undefined ? {} : { answers: task.answers }),
     ...(task.rejected === undefined ? {} : { rejected: task.rejected }),
     ...(task.parentCards === undefined ? {} : { parentCards: task.parentCards }),

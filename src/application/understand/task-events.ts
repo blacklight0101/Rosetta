@@ -1,3 +1,4 @@
+import type { AnswerNote } from '../agent/answer-note.js';
 import type { AgentTaskRequest } from '../agent/agent-loop.js';
 import type { ToolOutcome } from '../agent/read-only-tools.js';
 import type { LlmProvider, LlmResponse } from '../ports/llm-provider.js';
@@ -38,6 +39,13 @@ function shownArguments(value: unknown): Record<string, string | number> {
     else if (typeof item === 'number' && Number.isFinite(item)) shown[key] = item;
   }
   return shown;
+}
+
+/** Q-55: publishes what became of a reader answer as `agent.answer.noted`, the reason only. */
+export function noteEvent(task: Pick<TaskEvents, 'events' | 'agentTaskId'>) {
+  return async (note: AnswerNote): Promise<void> => {
+    await task.events.emit('agent.answer.noted', { ...note }, task.agentTaskId);
+  };
 }
 
 // RF-1002

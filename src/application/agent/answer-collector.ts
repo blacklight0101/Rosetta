@@ -1,6 +1,7 @@
 import type { CardDraft } from '../../domain/cards/card-ids.js';
 import type { Result } from '../../domain/errors/result.js';
 import type { AgentTaskEnd } from './agent-task-result.js';
+import { readCutCards } from '../cards/cut-cards.js';
 import { parseCardsLenient, type CardParse } from '../cards/parse-cards.js';
 import type { OutputProblem } from '../cards/output-problem.js';
 import { renderRepairRequest } from '../cards/repair-request.js';
@@ -30,6 +31,8 @@ export interface CollectedAnswer {
   readonly rawOutputs: readonly string[];
   /** Set when a follow-up could not run: the end the task takes, with the drafts so far. */
   readonly stopped?: AgentTaskEnd;
+  /** Q-55: the answer ended cut off, so its complete cards were kept and the cut one dropped. */
+  readonly cutKept?: true;
 }
 
 function keyOf(draft: CardDraft): string {
@@ -62,6 +65,7 @@ class Collector {
   private read: CardParse = { drafts: [], problems: [], cutOff: false };
   private repairs = 0;
   private continuations = 0;
+  private cutKept = false;
 
   constructor(ask: AskModel, prompts: ReaderPrompts, rows: RowLookup) {
     this.ask = ask;
@@ -116,13 +120,29 @@ class Collector {
     return { text, continuation: false };
   }
 
-  private result(stopped?: AgentTaskEnd): CollectedAnswer {
+  /**
+   * Q-55: an answer still cut off when the follow-ups end (none could be asked, or the
+   * continuations did not finish it) keeps the cards finished before the cut.
+   */
+  private async keepFinishedCards(): Promise<void> {
+    if (!this.read.cutOff) return;
+    const rows = await loadRowIndex(this.text, this.rows);
+    const kept = readCutCards(this.text, rows);
+    if (kept === undefined) return;
+    this.read = kept;
+    this.drafts = mergeDrafts(this.drafts, kept.drafts);
+    this.cutKept = true;
+  }
+
+  private async result(stopped?: AgentTaskEnd): Promise<CollectedAnswer> {
+    await this.keepFinishedCards();
     const { drafts, read } = this;
     return {
       drafts,
       problems: read.problems,
       rawOutputs: this.raws,
       ...(stopped === undefined ? {} : { stopped }),
+      ...(this.cutKept ? { cutKept: true as const } : {}),
     };
   }
 }
