@@ -143,6 +143,14 @@ export const deepenStartedData = z.looseObject({
   }),
 });
 
+/** `retry.started` (RF-208): the run it retries, the areas it reads again, the cards it holds. */
+export const retryStartedData = z.looseObject({
+  parentRunId: text,
+  parentRunKey: text,
+  areas: count,
+  seeded: z.looseObject({ cards: count, claims: count, supported: count }),
+});
+
 /** `deepen.round.started` (RF-209): the counts of the round plan. */
 export const deepenRoundStartedData = z.looseObject({
   round: count,

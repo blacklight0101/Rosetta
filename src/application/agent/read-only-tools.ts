@@ -6,10 +6,12 @@ import { renderDataBlock, type DataBlockSource } from '../../domain/egress/data-
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { isRepositoryPath } from '../../domain/sources/permalink.js';
+import { rowSpans, type RowSpan } from '../cards/row-citations.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { ToolCall, ToolDefinition } from '../ports/llm-provider.js';
 import type { Logger } from '../ports/logger.js';
 import type { RepositoryReader } from '../ports/repository-reader.js';
+import { cardLimits } from '../cards/card-limits.js';
 import { CodeMapIndex } from './code-map-index.js';
 import { parseToolArguments, type ToolRequest } from './tool-arguments.js';
 import { isReaderToolName, readerToolDefinitions, readerToolNames } from './tool-definitions.js';
@@ -108,6 +110,20 @@ export class ReadOnlyTools {
       const found = this.index.resolve(path);
       return found.ok && found.value.skipped === undefined ? [found.value.path] : [];
     });
+  }
+
+  /**
+   * RF-202 (Q-47): the lines of a rendered workbook file by the row they start with, for the
+   * citations that name rows. The file is read like read_file reads it, but nothing of it goes
+   * to the model.
+   */
+  async rowSpans(path: string): Promise<ReadonlyMap<number, RowSpan> | undefined> {
+    if (!isRepositoryPath(path)) return undefined;
+    const found = this.index.resolve(path);
+    if (!found.ok || found.value.skipped !== undefined) return undefined;
+    const request = { path: found.value.path, startLine: 1, endLine: cardLimits.maxLineNumber };
+    const read = await this.reader.readLines(request);
+    return read.ok ? rowSpans(read.value.lines) : undefined;
   }
 
   // RF-201

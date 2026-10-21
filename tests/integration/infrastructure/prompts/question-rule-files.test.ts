@@ -11,6 +11,8 @@ import {
 const oldVersions = [
   ['reader/area.v4.md', '73d8204ea4531826051be0344eddd61022dab225bec185f04c5e904d71e74ecc'],
   ['reader/workbook.v2.md', '1e3b6edc64e59f77d36c9d025d314a7aab5b8b8b502336776b3cd89b41fdb84f'],
+  ['reader/area.v5.md', '59059b03bcaac885cdf202c72fe38e13d8598688eacc45fbc1e3c8f8c505dfa2'],
+  ['reader/workbook.v3.md', 'b46d124bde81292b0ef3aa06d61ce178dfde7ff48455342a0d833a6c5579cad3'],
 ] as const;
 
 async function textsWithTheRule(): Promise<Record<string, string>> {
@@ -55,8 +57,8 @@ describe('the versions of the reader prompts', () => {
   it('RNF-004 the defaults are the new versions, loaded with the hash of their bytes', async () => {
     const prompts = await loadReaderPrompts('prompts');
 
-    expect(prompts.system).toMatchObject({ name: 'reader/area.v5.md', version: 'v5' });
-    expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v3.md', version: 'v3' });
+    expect(prompts.system).toMatchObject({ name: 'reader/area.v6.md', version: 'v6' });
+    expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v4.md', version: 'v4' });
   });
 
   it.each(oldVersions)(
@@ -70,8 +72,8 @@ describe('the versions of the reader prompts', () => {
   );
 
   it.each([
-    ['area.v4', 'area.v5'],
-    ['workbook.v2', 'workbook.v3'],
+    ['area.v5', 'area.v6'],
+    ['workbook.v3', 'workbook.v4'],
   ] as const)('RF-243 %s grows by at most 900 characters in %s', async (before, after) => {
     const size = async (name: string) =>
       (await readFile(`prompts/reader/${name}.md`, 'utf8')).length;

@@ -11,7 +11,7 @@ import {
   startedData,
   stateAfter,
 } from './live-run-fixtures.js';
-import { renderLive } from './live-run-helpers.js';
+import { renderLive, runUuid } from './live-run-helpers.js';
 
 // RF-208, RF-1002: a run in which some areas gave no usable card is never shown as a plain success;
 // the page says how many failed and why, and offers Retry failed areas: a new run of those areas.
@@ -21,7 +21,10 @@ afterEach(() => {
 });
 
 const startPath = '/api/projects/p-1/runs';
-const retryBody = { stage: 'understand', areas: ['Catalog'], cloudConsent: false };
+const retryBody = {
+  ...{ stage: 'understand', areas: ['Catalog'], cloudConsent: false },
+  retryOf: runUuid,
+};
 const started = json(202, {
   id: 'run-2',
   runId: '20261012-110000-understand',

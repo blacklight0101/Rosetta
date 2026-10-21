@@ -213,6 +213,7 @@ class AgentTask {
       text,
       (previous, message) => this.followUp(previous, message),
       prompts,
+      (path) => this.request.tools.rowSpans(path),
     );
     const { drafts, problems, rawOutputs, stopped } = collected;
     const left = { drafts, problems, rawOutputs: problems.length === 0 ? [] : rawOutputs };

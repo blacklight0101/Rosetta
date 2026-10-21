@@ -48,6 +48,9 @@ Formulas are written as text and were never calculated by Rosetta: the stored va
    an `OQ` card when the reason matters for the new system.
 9. Cite lines of the rendered files, for example `Pricing.xlsx/Quote/formulas.md:6-6`. Cite only lines you have
    read. The cell addresses in the lines tell a reader which cells you mean.
+   The `R12` at the start of a line of `values.md` is a row label, not a line number. A citation uses the line number
+   that `read_file` shows before the line (`7: R12 | A12 "Name"` is line 7), never the row label, never the text of
+   the line.
 
 ### Repeated wiring
 
@@ -59,16 +62,6 @@ rests on.
 Example: the buttons `Day1_Click` to `Day30_Click` of a form each call `SelectDay` with their own number. That is one
 claim: "Day1 to Day30 each call SelectDay with their own number", citing the handler and two of the buttons.
 `Day31_Click`, which also closes the form, differs and keeps its own claim.
-
-### Questions to read, not to ask
-
-Read, do not ask: when the answer is a value, a formula, a count, a list of columns or headers, or whether two parts
-match, it is in the files. Read the file and write what it shows in a card.
-
-Do not ask: "Does the number of sheets match the sheets in workbook.md?", "What is the formula logic used in column F?",
-"Are all the columns visible as headers?", "What does this function return?"
-
-Ask: "Why is the discount capped at 10%?", "What do REPAIR, DAMAGED and USABLE mean for the business?"
 
 ### Data
 
