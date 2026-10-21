@@ -128,3 +128,17 @@ export async function openRunTab(
   await tab.click();
   await expect(tab).toHaveAttribute('aria-selected', 'true');
 }
+
+/**
+ * RF-264, P3-81: "What was not covered" of the finished run. Controllers was not asked for; the
+ * rejected claim of Services leaves it with no card that passed; the files no reader opened are
+ * named, with the share of first-party tokens and the Deepen step, and the old sentence is gone.
+ */
+export async function expectNotCovered(covered: Locator): Promise<void> {
+  await expect(covered).toContainText(/Not selected for this run \(1\)\s*Controllers/u);
+  await expect(covered).toContainText(/No card passed the citation check \(1\)\s*Services/u);
+  const unread = /First-party files not read: \d+ files?, \d+% of first-party tokens not read\./u;
+  await expect(covered).toContainText(unread);
+  await expect(covered).toContainText('Next step: run a Deepen to read');
+  await expect(covered).not.toContainText('Every area of the run gave at least one card.');
+}
