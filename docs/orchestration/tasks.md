@@ -3799,7 +3799,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-63
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-401 (the DEC-155 scenario), RF-421, DEC-114, DEC-155; `src/infrastructure/providers/ollama/` (context resolver, request, response); the error catalogue in `docs/conventions.md` (providers range RST-1500..1599); the run page failure banner. Owner test 2026-10-20: a plan run on `gemma4:e4b` with `num_ctx` 32 768 sent about 125 000 characters, Ollama evaluated 16 387 prompt tokens, the format instructions were lost and the run failed with a misleading RST-1803.
 - **Do**: in the Ollama adapter, before a call estimate the prompt tokens (system, messages, tool definitions; the RF-421 estimate of about four characters per token, with a safety margin) and, when the estimate plus the requested output exceeds `num_ctx`, fail the call before sending with a new providers error code; after a call, when the reported `prompt_eval_count` is clearly below the estimate (Ollama cut the prompt), fail with the same code instead of passing the answer on. The message names the estimated input, the context size, the role and the two remedies (a model with a larger context or a cloud model for the role in the project settings, or a larger `contextTokens`). The run ends `Failed` with that code, and the run page and journey show it instead of RST-1803. Add the code to `docs/conventions.md`.
 - **Review probes**: a prompt just under and just over the context (with output reserve); Ollama reporting a cut prompt count; a fixed `contextTokens`; a reader, verifier and planner call (every role); a prompt with tool definitions; the message never includes prompt text or secrets; other providers unchanged.
@@ -3814,7 +3814,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-405 (the DEC-156 scenarios), RF-401, RF-427; DEC-156; `web/src/pages/AdminModelsPage.tsx` and the project model settings page; `prices/default-prices.yaml` and its loader `src/infrastructure/budget/price-file.ts`; `src/infrastructure/providers/ollama/ollama-provider.ts` (`/api/tags`); `docs/design-system.md`; ADR-006 (egress) and the session and role rules of the routes.
 - **Do**: add `prices/models.yaml` (provider, model, label) with the DEC-156 models and its parsed loader; a signed-in route that returns, per provider, the listed models with whether each has a price, and for `ollama` the models installed on the configured Ollama server (`/api/tags`, short timeout, a failure returns an empty list and a reason, never an error page); replace the model text field on both pages with a select built from it plus "Other model..." that shows the text field; keep a saved model that is not listed selected under "Other model..."; changing the provider resets the model choice. Use the existing Ollama adapter code to read the tags (no provider SDK outside its adapter); the route reads only the server's configured Ollama URL, never one from the request.
 - **Review probes**: anthropic and openai lists; a listed model without a price ("no price"); "Other model..." saves free text; a saved unlisted model; Ollama with models, Ollama down (text field and note, save works), Ollama slow (timeout); the route signed out (401) and as a non-admin on the admin page; no URL taken from the request; keyboard and screen reader; 360 px, light and dark, axe.
@@ -3844,7 +3844,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-61
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-209 and RF-230 (the DEC-158 scenarios), RF-250, RFC-003 section 4; DEC-158; the PR #681 cause of the duplicate cards (`src/application/deepen/deepen-tasks.ts`, `prompts/reader/reread.v1.md`, `assignCardIds`); the coverage map from P3-61 (`web/src/lib/live-run/coverage-map.ts`, `CoverageMap.tsx`, `read-run-coverage.ts`).
 - **Do**: (1) give every Deepen reader task (re-read and never-read file) the parent's cards for its area (id, type, title, inside a labelled data block), with a new reader prompt version (keep the old one) that writes a new card only for a fact no listed card holds and otherwise adds the claim to the listed card; the merge of such a claim into the parent's card keeps the parent's id and follows RF-203; record the prompt version in the manifest. (2) On the coverage map, list areas the run was not asked to read apart as "not in this run" and leave them out of the "not read" count. Coordinate with P3-66 (new reader prompt versions for claim grouping): build on its versions if it has merged.
 - **Review probes**: a Deepen over an area whose parent holds an entity card (no second card; the new claim lands on the parent's card id); a genuinely new entity (new card after the parent's ids); a listed card title that carries instructions (treated as data); a run over 2 of 5 areas (3 "not in this run", not counted as not read); a full run (no "not in this run" section); recorded responses only.
@@ -3859,7 +3859,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-61, P3-62, P3-63
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `compose.yaml` and RF-1301, RF-1302; the projects page, the start page, the upload summary, `RunMeter.tsx`, `EventLog.tsx`, `JourneyStrip.tsx`, `journey-action.ts`, `use-focus-first-question.ts`, `src/application/estimate/estimate-assumptions.ts`; `docs/design-system.md`. Found in the orchestrator's evaluation run of 2026-10-21 on a fresh Compose project and by the verifiers of P3-62, P3-63 and P3-66.
 - **Do**: (1) a first `docker compose up` on an empty volume fails because the db health check (`pg_isready -U postgres -d rosetta`) passes over the Unix socket while the image's init-time server runs, and migrate then gets ECONNREFUSED: check over TCP (`-h 127.0.0.1`) so migrate starts only on the real server, and add a test of the compose file; (2) the projects page intro and empty state name Excel workbooks as well as GitHub and zip; (3) the upload summary formats counts with thousands separators ("12,247 cells"); (4) the start page of a project with no scan does not log a 409 in the browser console (do not ask for the understand estimate before a code map exists, or handle the answer quietly); (5) the scan text says "the code or workbooks", not "the repository", for a workbook or zip project; (6) "It is a understand run" reads "an understand run"; (7) with a local model the estimate line does not read "$0.00" (tokens only, as the spend panel does); (8) a cut verdict reason never splits a surrogate pair; (9) on Plan setup the journey's "Go on with the defaults" is not shown as a link to the same page; (10) a focus request for the first unanswered question is not dropped when the field mounts late; (11) `WORKBOOK_PROMPT_TOKENS` matches the current workbook prompt size (with a test that compares it with the prompt file).
 - **Review probes**: compose test of the health check; the projects page with no projects (all three sources named); "12,247"; the start page console with no scan; a zip, a workbook and a GitHub project's scan text; "an understand run"; a local-model estimate line; a 300-character reason with an emoji at 200; Plan setup with open questions; a late-mounting answer field; the workbook prompt size test.
@@ -3874,7 +3874,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-41, P3-61
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-208 (the Q-43 scenario), RF-209, RF-614, RF-615, Q-43; how a Deepen seeds a run from its parent (`src/application/deepen/`); the "Retry failed areas" action and the journey source choice (`src/application/use-cases/get-journey.ts`). Found in the orchestrator's evaluation run of 2026-10-21: an understand run with 64 Supported claims and 3 failed areas; "Retry failed areas" started a run of the 3 areas that failed again, and the project journey then said "No Supported claim to plan from" (RST-1802) with every plan step locked, because the retry run held no card of the first run.
 - **Do**: make a retry run start from the cards, claim statuses and coverage of the run it retries (reuse the Deepen seeding), read only the failed areas, record the link in the manifest and show it on the run page ("Retry of <run>"); its stepper and coverage count only the retried areas as this run's work; the journey and Plan setup take the retry run as the source. A retry whose areas fail again keeps every card of the run it retried.
 - **Review probes**: the evaluation case (retry fails again: the journey still has the 64 Supported claims and offers the questions and the brief); a retry that succeeds (new cards with ids after the parent's, the parent unchanged); a retry of a retry; the stepper "0 of 3 areas", not "of 9"; Plan setup names the retry run as the source; recorded responses only.
@@ -3904,7 +3904,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-64, P3-65
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-401 (the Q-44 scenario), DEC-114, Q-23, Q-44; `web/src/pages/provider-choices.ts`, the model settings and Default models pages (the `ModelChoice` of P3-65), `src/application/projects/project-settings.ts`, the RST-1522 message. Found in the orchestrator's evaluation run of 2026-10-21: the plan run failed RST-1522 and its remedy "set a larger contextTokens" could not be done on any page (the web UI always sends `auto`); 65 536 set through the API let the planner run.
 - **Do**: add a "Context size" field (Auto, or a number of tokens between the floor and the model's trained context) for Ollama roles in project model settings and on the Default models page, saved as `contextTokens`; change the RST-1522 next step to name this field (project settings, the model of the role, Context size); keep `auto` the default.
 - **Review probes**: Auto saved as `auto`; 65536 saved and sent as `num_ctx`; a value under the floor or over the trained context refused with a field message; a non-Ollama role has no field; the RST-1522 text names the field; keyboard, 360 px, axe.
@@ -3949,7 +3949,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-66
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-202 (the Q-47 scenarios), RF-201, RF-206, Q-47; the `read_file` tool and its result block, the card parser that drops a claim for a bad citation, the reader prompts in `prompts/reader/` (the workbook part that explains the `R<n> | ` row prefix). Found in the orchestrator's evaluation run of 2026-10-21 (`Loan.xlsx`, Ollama `gemma4:e4b`): every citation of 7 cards was dropped because the reader cited the line text (`values.md:R2 | C2 0.05`) or the row (`values.md:R8`) instead of line numbers; `read_file` returns the lines without their numbers, and the workbook text starts each line with its row, which reads like a line number.
 - **Do**: (1) `read_file` gives each line with its number (`12: text`), and the result header keeps the range; the prompts say a citation uses these numbers; (2) a citation into a rendered workbook file that names rows (`path:R8`, `path:R8-R12`) is mapped to the lines that start with those rows when each row is found, and dropped otherwise; (3) when the parser drops claims for their citations, the agent gets the RF-202 repair attempt once, with the dropped citations and the expected form, before they are dropped for good; (4) new prompt versions, the old ones kept.
 - **Review probes**: a `read_file` result shows numbered lines; `values.md:R8` and `values.md:R8-R12` mapped to the right lines; a row that is not in the file dropped; a citation holding line text gets the repair attempt and a corrected answer keeps its claims; a second bad answer drops them as today; code projects unchanged apart from the numbered lines; the manifest records the new prompt versions; recorded responses only.
