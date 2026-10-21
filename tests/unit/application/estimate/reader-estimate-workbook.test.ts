@@ -29,7 +29,7 @@ describe('the reader estimate with workbook guidance', () => {
   it('RF-155 a workbook area resends the guidance and both formats and answers their cards once', () => {
     const tokens = readerTokens([area], assumptions, new Map(), new Set(['Pricing.xlsx']));
 
-    expect(tokens.likely).toEqual({
+    expect(tokens.likely).toMatchObject({
       inputTokens: 2000 + 2 * 900 + WORKBOOK_PROMPT_TOKENS,
       outputTokens: 300 + 2 * 800,
       cacheWriteTokens: 2000 + 2 * 900 + WORKBOOK_PROMPT_TOKENS,

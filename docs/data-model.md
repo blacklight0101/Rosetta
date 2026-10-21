@@ -801,7 +801,7 @@ in a `meta` element, only the response header can carry it, and the run file rou
 
 Shipped as `prices/default-prices.yaml` in the Rosetta repository: `{ schemaVersion, version (date),
 currency, models: [{ provider kind, model, inputPerMillionMicros, outputPerMillionMicros,
-cachedInputPerMillionMicros, cacheWriteInputPerMillionMicros? }] }`. Ollama models have price 0. Overrides in the
+cachedInputPerMillionMicros, cacheWriteInputPerMillionMicros?, longPrompt? }] }`. Ollama models have price 0. Overrides in the
 configuration use the same entry shape (RF-420, RF-427). `cacheWriteInputPerMillionMicros` (P2-16, an additive
 optional field, so the schema version stays 1) prices the tokens a call writes to the provider's prompt cache:
 Anthropic bills them at 1.25 times the input price, so an entry of provider kind `anthropic` without it prices
@@ -812,6 +812,15 @@ missing from the table writes for free. The worst case of a call prices its whol
 input, cached input and cache-write prices (RF-422). Every price is a whole number of micro-dollars up to 2^53 - 1 and a model is listed once per
 provider kind; a file that breaks this stops the server with `RST-1602`. A call priced with a project override
 (user's own key only, DEC-107) records the version `<version>+project`.
+
+`longPrompt` (Q-56, an additive optional field, so the schema version stays 1) is the one tier a model may carry for a price by prompt length: `{ overInputTokens, inputPerMillionMicros,
+outputPerMillionMicros, cachedInputPerMillionMicros, cacheWriteInputPerMillionMicros }`, every field required (a tier missing a price,
+a threshold that is not a positive whole number or a second tier stops the server with `RST-1602`). A call whose input tokens, cache reads and
+writes included, are over `overInputTokens` is priced at the tier's prices in the ledger, the meter and the call log; a call of exactly the
+threshold or less is priced at the entry's own. The cap check prices a call at the tier its measured prompt reaches, and the estimate at the
+tier the estimated prompt of one call reaches (the average prompt for the low and likely figures, the largest for the high figure). Claude
+Haiku 5.5 carries a tier over 100,000 tokens and the OpenAI flagships one over 272,000. A project override has no tier: it replaces the
+shipped entry, tier included, on the user's own key.
 
 The model list `prices/models.yaml` (DEC-156, RF-405) sits beside it: `{ schemaVersion: 1, version (date), models: [{ provider (anthropic or openai), model, label }] }`, a model once per provider, read at start-up with the price table; a file that breaks this stops the server with `RST-1602`. It feeds the model dropdowns only and prices nothing: a listed model the price table has no entry for shows as "no price" (RF-427). Ollama is not listed, because its models are the ones installed on the configured server.
 

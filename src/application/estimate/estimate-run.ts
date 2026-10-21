@@ -77,6 +77,8 @@ export function shareTokens(
       inputTokens: ceilPercent(reader[scenario].inputTokens, percent),
       outputTokens: ceilPercent(reader[scenario].outputTokens, percent),
       cacheWriteTokens: ceilPercent(reader[scenario].cacheWriteTokens, percent),
+      // A share has fewer calls, not smaller ones: each still sends the reader's prompt (Q-56).
+      promptTokens: reader[scenario].promptTokens,
     };
   };
   return { low: share('low'), likely: share('likely'), high: share('high') };
@@ -133,6 +135,7 @@ function summariserFigures(
         extra * MERGE_ANSWER_TOKENS +
         assumptions.overviewOutputTokens[scenario],
       cacheWriteTokens: share[scenario].cacheWriteTokens,
+      promptTokens: share[scenario].promptTokens,
     };
   };
   return { tokens: { low: total('low'), likely: total('likely'), high: total('high') }, batches };
