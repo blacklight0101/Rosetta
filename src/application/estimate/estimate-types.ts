@@ -1,5 +1,5 @@
 import type { KeySource } from '../../domain/budget/price-table.js';
-import type { ProviderKind } from '../ports/llm-provider.js';
+import type { ProviderKind, ReasoningEffort } from '../ports/llm-provider.js';
 
 // RF-425, ADR-007: what the estimate before a run answers: the expected tokens and cost of each
 // role as a low, likely and high figure, with the assumptions behind them. Costs are bigint
@@ -33,6 +33,8 @@ export interface RoleEstimate {
   readonly keySource: KeySource;
   /** False for a cloud model missing from the price table: tokens are shown, cost is unknown. */
   readonly priced: boolean;
+  /** Q-58: the effort a reasoning model is asked for; absent for any other model. */
+  readonly reasoningEffort?: ReasoningEffort;
   readonly points: ByScenario<EstimatePoint>;
 }
 

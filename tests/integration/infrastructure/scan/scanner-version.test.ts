@@ -53,6 +53,7 @@ it.each([undefined, 0, 1, 2])(
     const estimate = new EstimateRun({
       ...harness,
       priceTable: estimatePrices,
+      reasoningModels: () => false,
       scans: {
         open: async (scan) => ({ ...(await harness.scans.open(scan)), codeMap: parsed.value }),
       },

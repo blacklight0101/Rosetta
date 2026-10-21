@@ -4,6 +4,8 @@ import type { AgentRole, LlmMessage, LlmProvider, LlmResponse } from '../ports/l
 import type { Logger } from '../ports/logger.js';
 import { collectCards } from './answer-collector.js';
 import { recordNote, type AnswerNote } from './answer-note.js';
+import { logTaskEnd } from './agent-task-log.js';
+import { EmptyAnswerRetry } from './empty-answer-retry.js';
 import { charsPerToken } from './context-room.js';
 import {
   failedCallEnd,
@@ -77,6 +79,7 @@ class AgentTask {
   private readonly messages: LlmMessage[] = [];
   private readonly gate: ReadGate;
   private readonly runner: ToolRunner;
+  private readonly emptyRetry: EmptyAnswerRetry;
   private turns = 0;
   private usage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 };
   private modelVersion: string | null = null;
@@ -91,6 +94,7 @@ class AgentTask {
     this.system = readerSystemPrompt(request.prompts);
     this.gate = new ReadGate(request.tools.readableAreaEntries());
     this.runner = new ToolRunner(request.tools, this.gate);
+    this.emptyRetry = new EmptyAnswerRetry(request.settings.maxOutputTokens);
     this.charsSince = this.system.length + JSON.stringify(request.tools.definitions).length;
   }
 
@@ -146,26 +150,32 @@ class AgentTask {
   }
 
   private async call(): Promise<Result<LlmResponse, AgentTaskEnd>> {
-    const { provider, settings, context, tools, signal } = this.request;
-    const callId = this.request.nextCallId();
     try {
-      const response = await provider.complete({
-        context: { ...context, callId },
-        model: settings.model,
-        system: this.system,
-        messages: [...this.messages],
-        tools: tools.definitions,
-        ...(settings.maxOutputTokens === undefined
-          ? {}
-          : { maxOutputTokens: settings.maxOutputTokens }),
-        ...(settings.temperature === undefined ? {} : { temperature: settings.temperature }),
-        signal,
-      });
-      this.count(response);
-      return ok(response);
+      return ok(
+        await this.emptyRetry.ask(
+          () => this.send(),
+          (note) => this.note(note),
+        ),
+      );
     } catch (error) {
-      return err(failedCallEnd(error, signal));
+      return err(failedCallEnd(error, this.request.signal));
     }
+  }
+
+  private async send(): Promise<LlmResponse> {
+    const { provider, settings, context, tools, signal } = this.request;
+    const response = await provider.complete({
+      context: { ...context, callId: this.request.nextCallId() },
+      model: settings.model,
+      system: this.system,
+      messages: [...this.messages],
+      tools: tools.definitions,
+      ...this.emptyRetry.request,
+      ...(settings.temperature === undefined ? {} : { temperature: settings.temperature }),
+      signal,
+    });
+    this.count(response);
+    return response;
   }
 
   private count(response: LlmResponse): void {
@@ -277,15 +287,7 @@ class AgentTask {
       modelVersion: this.modelVersion,
       messages: [...this.messages],
     });
-    await logger.log({
-      level: result.state === 'Done' ? 'info' : 'warn',
-      logger: 'agent',
-      ...(result.code === undefined ? {} : { code: result.code }),
-      message: 'An agent task ended.',
-      runId: context.runId,
-      agentTaskId: context.agentTaskId,
-      data: { state: result.state, reason: result.reason, turns: result.turns },
-    });
+    await logTaskEnd(logger, context, result);
     return result;
   }
 }
