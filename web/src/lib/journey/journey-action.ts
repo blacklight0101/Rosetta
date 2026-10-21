@@ -42,7 +42,8 @@ function afterTheRun(c: Context, setUp: string): Next | undefined {
       here: 'understand',
     };
   }
-  if (source.openQuestions === 0) return undefined;
+  // RF-615 (Q-44): a saved brief moves the journey on; the questions stay answerable on the run page.
+  if (source.openQuestions === 0 || c.facts.briefSaved) return undefined;
   const count = source.openQuestions;
   const label = `Answer ${String(count)} question${count === 1 ? '' : 's'}`;
   return {
