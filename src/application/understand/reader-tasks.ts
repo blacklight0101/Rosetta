@@ -16,6 +16,10 @@ export interface ReaderTask {
   readonly rejected?: string;
   /** RF-209: the ids of those claims, the only ones a new claim may name as replaced. */
   readonly replaceable?: readonly string[];
+  /** RF-209: the parent's cards for the area (id, type, title), as JSON for a data block. */
+  readonly parentCards?: string;
+  /** RF-209: the ids of those cards, the only ones a card of the task may extend. */
+  readonly extendable?: readonly string[];
 }
 
 export interface UnknownAreas {
