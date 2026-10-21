@@ -184,6 +184,8 @@ the decision log.
 | Q-47 | How does a small model write citations it can get right (RF-202)?                                                                                                     | Product owner                      | P3 (P3-74)                             | `read_file` numbers each line; workbook row citations (`values.md:R8`) are mapped to lines; claims about to be dropped for their citations get the one repair attempt first                                                                                                                              | Default applies                                                                                                                                                                                                    |
 | Q-48 | What does `auto` do when the prompt does not fit the size that stays in GPU memory (RF-401)?                                                                          | Product owner                      | P3 (P3-75)                             | It grows the context, doubling up to the trained context, with a warning that part of the model runs on the CPU; RST-1522 only beyond the trained context                                                                                                                                                | Default applies                                                                                                                                                                                                    |
 | Q-49 | How does the run page show a run with no Supported claim and a failed area (RF-615, RF-231)?                                                                          | Product owner                      | P3 (P3-76)                             | The questions step is Locked like the later steps; a failed area shows its code's next step; counts read as sentences; no empty `(root)` area in a workbook project                                                                                                                                      | Default applies                                                                                                                                                                                                    |
+| Q-50 | Does a reader that answers after reading little of its area keep reading (RF-206)?                                                                                    | Product owner                      | P3 (P3-78)                             | Yes: below half of the area's first-party tokens and with turns left, the answer is refused once with the unread files (formulas, macros and the largest first); the next answer is accepted                                                                                                             | Default applies                                                                                                                                                                                                    |
+| Q-51 | How does the start page estimate read when the roles run on a local model (RF-425)?                                                                                   | Product owner                      | P3 (P3-79)                             | In tokens, with the cap sentence in the unit of the cap, like Plan setup and the Deepen panel (Q-44); priced roles keep dollars                                                                                                                                                                          | Default applies                                                                                                                                                                                                    |
 
 ## 5. Functional requirements (R1)
 
@@ -642,11 +644,12 @@ As a developer using a small local model I want a text protocol for tools so tha
 - Given a model configured with `toolMode: text`, when the agent runs, then tool calls are requested and parsed as JSON blocks in plain text, with the same validation as native calls.
   Verification: integration test with recorded text-protocol responses.
 
-**RF-206 Read before answering** - R1 (M1) - Must - Source DEC-136 - ADR-005
+**RF-206 Read before answering** - R1 (M1) - Must - Source DEC-136, Q-50 - ADR-005
 As a developer I want every reader agent to read its area before it describes it so that no card or question comes from a guess.
 
 - Given a reader agent that gives its final answer without having read any file of its area, when the answer arrives, then it is not accepted: the agent is told which files it has not read and gets its remaining turns to read them; if it still reads none, its area is reported in the coverage as "not read" and its cards are kept with the note "written without reading the area".
 - Given an area with no readable file (only binary or ignored files), when the agent ends, then this rule does not apply and the coverage says why.
+- Given a reader agent that gives its final answer with turns left and less than half of its area's first-party tokens read (Q-50, default applies), when the answer arrives, then it is refused once: the agent is told how much of the area it read, which files it has not read (formulas, macros and the largest first) and how many turns are left, and it continues; the next answer is accepted whatever the coverage.
   Verification: integration test with recorded responses (an agent that answers at turn 1).
 
 **RF-207 One-line citations** - R1 (M1) - Must - Source DEC-136 - ADR-005
@@ -903,10 +906,11 @@ As a developer I want to see tokens and cost grow during the run so that I can i
 - Given a run open in the web UI, when calls complete, then the meter updates with tokens and cost so far, the cap, and the share used (RF-1003).
   Verification: end-to-end test with recorded events.
 
-**RF-425 Estimate before running** - R1 (M1: first scenario, DEC-97) - Must - Source DEC-13 - ADR-007
+**RF-425 Estimate before running** - R1 (M1: first scenario, DEC-97) - Must - Source DEC-13, Q-51 - ADR-007
 As a user I want an estimate before a run so that I know the cost before spending.
 
 - Given a code map and settings, when the start page loads or I press Re-estimate, then it shows the expected tokens and cost per role as a low, likely and high range, with the assumptions used.
+- Given roles on a local model (Q-51, default applies), when the start page shows the estimate, then those roles show tokens and the sentence about the cap is written in the unit of the cap it is compared with; priced roles keep dollars; counts read "1 area", "2 areas".
 - Given an `understand` run whose likely estimate exceeds the configured confirmation threshold, when I start it, then the page shows the estimate and asks me to confirm.
   Verification: unit tests on the estimator; RNF-012 measures accuracy.
 
