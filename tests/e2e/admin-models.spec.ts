@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
+import { answerOllama, ollamaUnreachable, takeDefaultModels } from './support/default-models.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 
@@ -9,23 +10,53 @@ import { signInAs } from './support/sign-in.js';
 // default" keeps the template's model. Every project saves the same values, as they share the
 // server setting.
 
-// The default models are one server setting, so the steps of this file run in order.
-test.describe.configure({ mode: 'serial' });
+// The default models are one server setting and the page fetches the Ollama list when it loads, so
+// each test starts from an empty setting under the turn of the server-wide settings, answers the
+// Ollama list before it opens the page, and waits for the model field to take its final shape
+// (a dropdown, or the text field with its note) before it acts on it (support/default-models.ts).
+
+let giveBack: (() => Promise<void>) | undefined;
 
 test.beforeEach(async ({ context, page }, info) => {
   await signInAs(context, accountFor('admin', info.project.name));
-  await page.goto('/admin/models');
-  await expect(page.getByRole('heading', { name: 'Default models', level: 1 })).toBeVisible();
+  giveBack = await takeDefaultModels(context, info);
+  await answerOllama(page, ollamaUnreachable);
 });
 
+test.afterEach(async () => {
+  await giveBack?.();
+  giveBack = undefined;
+});
+
+async function openModels(page: Page): Promise<void> {
+  await page.goto('/admin/models');
+  await expect(page.getByRole('heading', { name: 'Default models', level: 1 })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save default models' })).toBeVisible();
+}
+
+/** Waits until the role's model is the text field that says Ollama could not be reached. */
+async function expectOllamaTextField(page: Page, role: string): Promise<Locator> {
+  await expect(page.locator(`#default-${role}-model-help`)).toContainText(
+    'Ollama could not be reached. Type the model id',
+  );
+  const model = page.getByLabel(`${role[0]?.toUpperCase() ?? ''}${role.slice(1)} model`, {
+    exact: true,
+  });
+  await expect(model).toHaveJSProperty('tagName', 'INPUT');
+  return model;
+}
+
 test('DEC-106 saves the default model of a role and shows it after a reload', async ({ page }) => {
+  await openModels(page);
   await page.getByLabel('Reader provider').selectOption('ollama');
-  await page.getByLabel('Reader model').fill('gemma4:e4b');
+  const reader = await expectOllamaTextField(page, 'reader');
+  await reader.fill('gemma4:e4b');
 
   await page.getByRole('button', { name: 'Save default models' }).click();
 
   await expect(page.getByRole('status').filter({ hasText: 'Default models saved' })).toBeVisible();
   await page.reload();
+  await expectOllamaTextField(page, 'reader');
   await expect(page.getByLabel('Reader provider')).toHaveValue('ollama');
   await expect(page.getByLabel('Reader model')).toHaveValue('gemma4:e4b');
   await expect(page.getByLabel('Planner provider')).toHaveValue('');
@@ -33,12 +64,16 @@ test('DEC-106 saves the default model of a role and shows it after a reload', as
 });
 
 test('DEC-106 asks for a model when a provider is chosen without one', async ({ page }) => {
+  await openModels(page);
   await page.getByLabel('Verifier provider').selectOption('openai');
-  await page.getByLabel('Verifier model').fill('');
+  // The model of a provider with a list is a dropdown (RF-405): "Choose a model" is the empty choice.
+  const verifier = page.getByLabel('Verifier model', { exact: true });
+  await expect(verifier).toHaveJSProperty('tagName', 'SELECT');
+  await verifier.selectOption('');
 
   await page.getByRole('button', { name: 'Save default models' }).click();
 
-  await expect(page.getByLabel('Verifier model')).toHaveAttribute('aria-invalid', 'true');
+  await expect(verifier).toHaveAttribute('aria-invalid', 'true');
 });
 
 // RF-405, RF-427, DEC-156: the model of a role is chosen from the provider's list. These tests use
@@ -59,6 +94,7 @@ const optionTexts = (select: Locator): Promise<string[]> =>
 test('RF-405 lists the Anthropic models without a price, keeps the choice and passes axe', async ({
   page,
 }) => {
+  await openModels(page);
   await page.getByLabel('Summariser provider').selectOption('anthropic');
   const model = page.getByLabel('Summariser model', { exact: true });
   await expect(model).toHaveJSProperty('tagName', 'SELECT');
@@ -87,6 +123,7 @@ test('RF-405 lists the Anthropic models without a price, keeps the choice and pa
 test('RF-405 lists the priced OpenAI models and saves free text under Other model...', async ({
   page,
 }) => {
+  await openModels(page);
   await page.getByLabel('Summariser provider').selectOption('openai');
   const model = page.getByLabel('Summariser model', { exact: true });
 
@@ -108,6 +145,7 @@ test('RF-405 lists the priced OpenAI models and saves free text under Other mode
 });
 
 test('RF-405 changing the provider clears the model choice', async ({ page }) => {
+  await openModels(page);
   await page.getByLabel('Summariser provider').selectOption('anthropic');
   const model = page.getByLabel('Summariser model', { exact: true });
   await expect(model).toHaveJSProperty('tagName', 'SELECT');
@@ -120,6 +158,7 @@ test('RF-405 changing the provider clears the model choice', async ({ page }) =>
 });
 
 test('RF-405 the model select works from the keyboard', async ({ page }) => {
+  await openModels(page);
   await page.getByLabel('Summariser provider').selectOption('anthropic');
   const model = page.getByLabel('Summariser model', { exact: true });
   await expect(model).toHaveJSProperty('tagName', 'SELECT');
@@ -133,17 +172,14 @@ test('RF-405 the model select works from the keyboard', async ({ page }) => {
 });
 
 test('RF-405 lists the models installed on Ollama and saves one', async ({ page }) => {
-  await page.route('**/api/models/ollama', (route) =>
-    route.fulfill({
-      json: {
-        provider: 'ollama',
-        models: [
-          { model: 'gemma4:e4b', label: 'gemma4:e4b', priced: true },
-          { model: 'qwen3:8b', label: 'qwen3:8b', priced: true },
-        ],
-      },
-    }),
-  );
+  // Set before the page loads, so no list fetched earlier is kept in place of this one.
+  await answerOllama(page, {
+    models: [
+      { model: 'gemma4:e4b', label: 'gemma4:e4b', priced: true },
+      { model: 'qwen3:8b', label: 'qwen3:8b', priced: true },
+    ],
+  });
+  await openModels(page);
   await page.getByLabel('Summariser provider').selectOption('ollama');
   const model = page.getByLabel('Summariser model', { exact: true });
 
@@ -164,13 +200,9 @@ test('RF-405 lists the models installed on Ollama and saves one', async ({ page 
 test('RF-405 Ollama that cannot be reached leaves the text field and a note, and saving works', async ({
   page,
 }) => {
+  await openModels(page);
   await page.getByLabel('Summariser provider').selectOption('ollama');
-
-  const model = page.getByLabel('Summariser model', { exact: true });
-  await expect(page.locator('#default-summariser-model-help')).toContainText(
-    'Ollama could not be reached. Type the model id',
-  );
-  await expect(model).toHaveJSProperty('tagName', 'INPUT');
+  const model = await expectOllamaTextField(page, 'summariser');
   await model.fill('gemma4:e4b');
   await expectNoSeriousViolations(page);
   await saveButton(page).click();
@@ -180,6 +212,7 @@ test('RF-405 Ollama that cannot be reached leaves the text field and a note, and
 });
 
 test('RF-405 the choice fits a 360 px screen without sideways scrolling', async ({ page }) => {
+  await openModels(page);
   await page.setViewportSize({ width: 360, height: 780 });
   await page.getByLabel('Summariser provider').selectOption('anthropic');
   const model = page.getByLabel('Summariser model', { exact: true });
@@ -194,14 +227,16 @@ test('RF-405 the choice fits a 360 px screen without sideways scrolling', async 
   await page.getByLabel('Summariser provider').selectOption('');
 });
 
-// RF-401, Q-44: the Ollama context size of new projects. The reader is on Ollama from the first
-// test of this file; the test gives the size back to Auto when it ends.
+// RF-401, Q-44: the Ollama context size of new projects. Each test starts from an empty setting
+// (the size on Auto) and the setting is cleared again when it ends.
 
 test('RF-401 saves the Ollama context size of new projects and shows it after a reload', async ({
   page,
 }) => {
+  await openModels(page);
   await page.getByLabel('Reader provider').selectOption('ollama');
-  await page.getByLabel('Reader model').fill('gemma4:e4b');
+  const reader = await expectOllamaTextField(page, 'reader');
+  await reader.fill('gemma4:e4b');
   await page.getByLabel('Ollama context size', { exact: true }).selectOption('number');
   const tokens = page.getByLabel('Ollama context size in tokens');
   await tokens.fill('2048');
@@ -224,6 +259,7 @@ test('RF-401 saves the Ollama context size of new projects and shows it after a 
 test('RF-401 the Ollama context size fits a 360 px screen without sideways scrolling', async ({
   page,
 }) => {
+  await openModels(page);
   await page.setViewportSize({ width: 360, height: 780 });
   await page.getByLabel('Reader provider').selectOption('ollama');
   await page.getByLabel('Ollama context size', { exact: true }).selectOption('number');
