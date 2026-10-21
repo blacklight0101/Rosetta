@@ -249,18 +249,36 @@ describe('applyMerges: two screens of one sheet (Q-52)', () => {
     expect(result.cards).toHaveLength(1);
     expect(citationsOf(result.cards)).toEqual(citationsOf(before));
   });
+});
 
-  it('RF-250 a field both screens have is one field with the validations of both', () => {
+function mergedFieldOf(cards: readonly Card[]) {
+  const fields = cards[0]?.screen?.fields ?? [];
+  return { count: fields.length, validations: fields.flatMap((field) => field.validations) };
+}
+
+describe('applyMerges: the same field on two screens (Q-52)', () => {
+  it('RF-250 a field both screens have is one field with the validations and citations of both', () => {
     const [one, two] = twoTasksOneArea('SCRN');
     const field = one?.screen?.fields[0];
     if (!one || !two?.screen || !field) throw new Error('fixture');
-    const same = { ...two, screen: { ...two.screen, fields: [field] } };
+    const email = {
+      text: 'Must be an e-mail.',
+      citations: [{ path: 'Invoice/Sheet1.txt', startLine: 40, endLine: 41 }],
+    };
+    const other = { ...field, validations: [...field.validations, email] };
+    const same = { ...two, screen: { ...two.screen, fields: [other] } };
 
     const result = applyMerges(
       [one, same],
       [{ ids: ['SCRN-001', 'SCRN-002'], title: 'Sheet1', summary: 'One screen.' }],
     );
 
-    expect(result.cards[0]?.screen?.fields).toHaveLength(1);
+    const merged = mergedFieldOf(result.cards);
+    expect(merged.count).toBe(1);
+    expect(merged.validations.map((validation) => validation.text)).toEqual([
+      `${field.name} must be filled.`,
+      'Must be an e-mail.',
+    ]);
+    expect(merged.validations.flatMap((validation) => validation.citations)).toHaveLength(2);
   });
 });

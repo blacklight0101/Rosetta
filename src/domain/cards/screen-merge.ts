@@ -3,7 +3,9 @@ import type { CitedText, ScreenAction, ScreenDetail, ScreenField } from './flow-
 // RF-250, RF-261, Q-52: two `SCRN` cards for the same sheet or page become one card whose screen
 // detail holds everything either one saw: the route of the first, the roles, the fields (a field
 // of the same name once, with the validations of both), the actions and the links, each once and
-// in the order first seen. Nothing is dropped, so no validation citation is lost.
+// in the order first seen. Nothing is dropped, so no validation citation is lost. Two choices lose
+// no claim but are the first card's: the route (the merged card names one; another route stays in
+// the claim "The screen is at the route ..." of its card) and the input kind of a field.
 
 function unique<T>(items: readonly T[]): T[] {
   return [...new Set(items)];
