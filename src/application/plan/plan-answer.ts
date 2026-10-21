@@ -23,6 +23,12 @@ const optionalText = z.string().trim().max(TEXT).default('');
 const ids = z.array(z.string().max(40)).max(MAX_LIST).default([]);
 const texts = z.array(text).max(MAX_LIST);
 const position = z.number().int().min(1).max(MAX_ITEMS);
+// Q-54: a small model writes a position as an object (`{"position": 3}`, with extra keys at times);
+// the number is read. A string, an `id` or any other shape stays refused.
+const listedPosition = z.union([
+  position,
+  z.object({ position }).transform((each) => each.position),
+]);
 const path = z.string().trim().min(1).max(PATH);
 // RF-634: a need of a kind that does not exist is left out; it never makes the answer unusable.
 const need = z.object({ kind: z.enum(identifierKinds), purpose: title });
@@ -64,7 +70,7 @@ const technical = z.object({
 export const taskSchema = z.object({
   title,
   phase: position,
-  requirements: z.array(position).max(MAX_LIST).default([]),
+  requirements: z.array(listedPosition).max(MAX_LIST).default([]),
   acceptanceCriteria: texts.min(1),
   invariant: optionalText,
   riskClass: z.enum(riskClasses).optional().catch(undefined),
@@ -76,7 +82,7 @@ export const taskSchema = z.object({
     .max(MAX_LIST)
     .transform((list) => list.flatMap((each) => (each === null ? [] : [each])))
     .default([]),
-  dependsOn: z.array(position).max(MAX_LIST).default([]),
+  dependsOn: z.array(listedPosition).max(MAX_LIST).default([]),
 });
 
 const answer = z.object({

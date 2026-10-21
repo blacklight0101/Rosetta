@@ -152,6 +152,14 @@ describe('parseGapAnswer: the ids and fields of a card that is left out (Q-54)',
     expect(read({ tasks: [odd] })?.problems[0]?.builds).toEqual([]);
   });
 
+  it('RF-630 Q-54 a kind of guard that does not exist is reported as a value that is not valid', () => {
+    const answer = read({ tasks: [{ ...card, adds: ['regex'] }] });
+
+    expect(answer?.problems.map((each) => [each.position, each.field, each.reason])).toEqual([
+      [1, 'adds', 'is not valid'],
+    ]);
+  });
+
   it('RF-627 Q-54 names a field that is too long or too short for the reason', () => {
     const long = { ...card, title: 't'.repeat(201) };
     const none = { ...card, acceptanceCriteria: [] };

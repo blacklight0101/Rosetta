@@ -55,8 +55,8 @@ describe('EstimatePlan: the planner range', () => {
       ...{ role: 'planner', provider: 'openai', kind: 'openai', model: 'priced-model' },
       ...{ keySource: 'server', priced: true },
     });
-    expect(planner.points.low.outputTokens).toBe(20480);
-    expect(planner.points.likely.outputTokens).toBe(40960);
+    expect(planner.points.low.outputTokens).toBe(24576);
+    expect(planner.points.likely.outputTokens).toBe(49152);
     expect(planner.points.high.outputTokens).toBe(294912);
     expect(planner.points.low.inputTokens).toBeGreaterThan(0);
     expect(planner.points.high.inputTokens).toBeGreaterThan(planner.points.low.inputTokens);

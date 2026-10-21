@@ -69,7 +69,7 @@ describe('BuildPlan: the recorded answer of a small model that writes positions 
     expect(plain(written['checks.md'])).toContain('Every item is built by at least one task card.');
     expect(h.s.logger.entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
-    expect(warned.map((entry) => entry.message).join(' ')).not.toContain('left out');
+    expect(warned.map((entry) => entry.message).join(' ')).not.toContain('of the gap');
   });
 
   it('Q-54 RF-634 the dependsOn objects are read as the positions of the cards of the answer', async () => {
@@ -101,7 +101,7 @@ describe('BuildPlan: a card that cannot be read is logged', () => {
 
     expect(run.endState).toBe('Failed');
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
-    const left = warned.map((entry) => entry.message).filter((text) => text.includes('left out'));
+    const left = warned.map((entry) => entry.message).filter((text) => text.includes('of the gap'));
     expect(left).toHaveLength(2);
     expect(left[0]).toMatch(/position 2 of the gap answer.*field "requirements"/u);
     expect(left[1]).toMatch(/position 3 of the gap answer.*field "requirements"/u);
@@ -128,7 +128,7 @@ describe('BuildPlan: a card that cannot be read is logged', () => {
 
     await h.plan();
 
-    const left = h.s.logger.entries.filter((entry) => entry.message.includes('left out'));
+    const left = h.s.logger.entries.filter((entry) => entry.message.includes('of the gap'));
     expect(left.map((entry) => entry.message).join(' ')).toMatch(/position 2.*field "card"/u);
     expect(h.providers.gapRequests()).toHaveLength(1);
   });
@@ -208,7 +208,7 @@ describe('BuildPlan: a repair that does not fix the answer', () => {
         message: 'The package was written, but 3 item(s) are built by no task card; see checks.md.',
       }),
     );
-    const left = h.s.logger.entries.filter((entry) => entry.message.includes('left out'));
+    const left = h.s.logger.entries.filter((entry) => entry.message.includes('of the gap'));
     expect(left.map((entry) => entry.message)).toEqual([
       expect.stringMatching(/position 2 of the gap answer/u),
       expect.stringMatching(/position 1 of the gap repair answer.*field "requirements"/u),

@@ -155,7 +155,7 @@ export class BuildPlan implements RunExecutor {
     const gapping = { ...linking, prompt: prompts.gap, agentTaskId: 'planner-gap' };
     const specificationDriven = inputs.brief.principles.includes(methodPrinciples.sdd);
     const links = await planLinks(
-      { coverage: linking, gap: gapping, specificationDriven },
+      { coverage: linking, gap: gapping, repairPrompt: prompts.gapRepair, specificationDriven },
       { content: assembly.content, documents },
     );
     const covered = links.planned;
@@ -234,6 +234,13 @@ export class BuildPlan implements RunExecutor {
     if (draft === undefined) return undefined;
     const { specificationDriven } = checks;
     const assembly = assemblePlan(draft, new Set(checks.supported), { specificationDriven });
+    for (const left of assembly.leftOut) {
+      const { position, field, reason } = left;
+      await this.warn(
+        run,
+        `Task card at position ${String(position)} of the plan answer was left out (the field "${field}"). ${reason}`,
+      );
+    }
     const { requirements, entities, tasks, technical } = assembly.dropped;
     if (requirements + entities + tasks + technical > 0) {
       await this.deps.logger.log({

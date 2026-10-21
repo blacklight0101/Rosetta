@@ -33,9 +33,10 @@ describe('BuildPlan: the plan answer with object positions', () => {
     const written = await h.handoffOf(await h.plan());
 
     const cards = plain(written['tasks.md']).split(/^## /mu);
-    const second = cards.find((each) => each.startsWith('T-002')) ?? '';
-    expect(second).toContain('Second card');
-    expect(second).toContain('Depends on: [T-001]');
+    // The first card of the package creates the tables, so the answer's cards are T-002 and T-003.
+    const second = cards.find((each) => each.includes('**Second card**')) ?? '';
+    expect(second).toMatch(/^T-003\n/u);
+    expect(second).toMatch(/Depends on:.*\[T-002\]/u);
     expect(second).toContain('REQ-001');
   });
 
@@ -51,7 +52,7 @@ describe('BuildPlan: the plan answer with object positions', () => {
 
     const left = h.s.logger.entries
       .map((entry) => entry.message)
-      .filter((text) => text.includes('left out'));
+      .filter((text) => text.includes('Task card at position'));
     expect(left.some((text) => /position 2 of the plan answer.*field "phase"/u.test(text))).toBe(
       true,
     );

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { assemblePlan, type LeftOutCard } from '../../../../src/domain/planning/plan-content.js';
+import type { LeftOutCard } from '../../../../src/domain/planning/left-out-card.js';
+import { assemblePlan } from '../../../../src/domain/planning/plan-content.js';
 import type { PlanDraft } from '../../../../src/domain/planning/plan-draft.js';
 import { draftTask } from '../../../support/task-card-fixtures.js';
 
@@ -23,7 +24,7 @@ function draft(): PlanDraft {
 }
 
 describe('assemblePlan: the cards left out are named (Q-54)', () => {
-  function leftOutOf(tasks: PlanDraft['tasks'], options = {}): LeftOutCard[] {
+  function leftOutOf(tasks: PlanDraft['tasks'], options = {}): readonly LeftOutCard[] {
     return assemblePlan({ ...draft(), tasks }, supported, options).leftOut;
   }
 
@@ -56,7 +57,7 @@ describe('assemblePlan: the cards left out are named (Q-54)', () => {
 describe('assemblePlan: more cards left out (Q-54)', () => {
   const specified = { specificationDriven: true };
 
-  function leftOutOf(tasks: PlanDraft['tasks'], options = {}): LeftOutCard[] {
+  function leftOutOf(tasks: PlanDraft['tasks'], options = {}): readonly LeftOutCard[] {
     return assemblePlan({ ...draft(), tasks }, supported, options).leftOut;
   }
 
