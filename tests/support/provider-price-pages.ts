@@ -5,7 +5,7 @@
 // (Standard tier, flagship tables). A dash for the cached input of OpenAI is written as the input
 // price, and OpenAI bills no cache write of its own, so its cache write is the input price.
 
-export interface PageTier {
+interface PageTier {
   /** The prompt length the tier starts after, in input tokens. */
   readonly over: number;
   readonly input: string;
@@ -58,7 +58,7 @@ function openai(
 const opus5 = ['5', '6.25', '0.50', '25'] as const;
 const sonnet46 = ['3', '3.75', '0.30', '15'] as const;
 
-export const haiku55Tier: PageTier = {
+const haiku55Tier: PageTier = {
   over: 100_000,
   input: '0.50',
   cacheWrite: '0.625',
