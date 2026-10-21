@@ -84,6 +84,8 @@ export interface RunUnderstandDependencies {
   readonly answersPrompt: () => Promise<PromptFile>;
   /** Reads the re-read prompt, used by a Deepen run (RF-209, RNF-004). */
   readonly rereadPrompt: () => Promise<PromptFile>;
+  /** Reads the parent cards prompt, used by a Deepen run (RF-209, DEC-158, RNF-004). */
+  readonly parentCardsPrompt: () => Promise<PromptFile>;
   /** RF-241: the cards of earlier runs, read for a re-run and marked `Answered` by it. */
   readonly priorCards: PriorCards;
   readonly clock: Clock;

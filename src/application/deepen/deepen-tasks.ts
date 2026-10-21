@@ -1,3 +1,5 @@
+import type { Card } from '../../domain/cards/card.js';
+import { EXTENDABLE_TYPES } from '../../domain/cards/card-vocabulary.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import type { Area } from '../../domain/code-map/area.js';
 import { byCodeUnit } from '../../domain/code-map/code-unit-order.js';
@@ -79,6 +81,31 @@ function rereadTasks(
   }));
 }
 
+/** The cards of the area: those it wrote and those merged into one of another area (RF-250). */
+function cardsOfArea(cards: readonly Card[], name: string): readonly Card[] {
+  return cards.filter((card) => (card.mergedAreas ?? [card.area]).includes(name));
+}
+
+/**
+ * RF-209, DEC-158: the cards the run holds for the task's area (id, type, title) as JSON for a data
+ * block, and the ids a card of the task may add its claims to. A title is model text: it only ever
+ * travels inside the block. A task whose area holds no card is given neither.
+ */
+function withParentCards(
+  task: Omit<ReaderTask, 'agentTaskId'>,
+  cards: readonly Card[],
+): Omit<ReaderTask, 'agentTaskId'> {
+  const held = cardsOfArea(cards, task.area.name);
+  if (held.length === 0) return task;
+  const listed = held.map(({ id, type, title }) => ({ id, type, title }));
+  const extendable = held.filter((card) => EXTENDABLE_TYPES.includes(card.type));
+  return {
+    ...task,
+    parentCards: JSON.stringify({ cards: listed }, null, 2),
+    extendable: extendable.map((card) => card.id),
+  };
+}
+
 function gapTasks(
   gaps: readonly GapFile[],
   codeMap: TaskMap,
@@ -97,9 +124,11 @@ export function roundTasks(
   plan: RoundPlan,
   codeMap: TaskMap,
   firstNumber: number,
+  cards: readonly Card[] = [],
 ): readonly ReaderTask[] {
   const tasks = [...rereadTasks(plan, codeMap), ...gapTasks(plan.gaps, codeMap)];
   return tasks
     .filter((task) => task.area.files.length > 0)
+    .map((task) => withParentCards(task, cards))
     .map((task, index) => ({ ...task, agentTaskId: taskIdOf(firstNumber + index) }));
 }

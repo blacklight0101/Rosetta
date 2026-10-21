@@ -9,13 +9,14 @@ import { rolesUseTextToolProtocol } from './understand-options.js';
 // the reader's, the flows and screens fragments when some area is marked for them, the workbook
 // guidance when some area holds a rendered workbook, the text tool
 // protocol when a role uses it, the answers prompt when a re-run with answers has a task to run,
-// and the re-read prompt of a Deepen (RF-209).
+// and the re-read prompt and the parent cards prompt of a Deepen (RF-209, DEC-158).
 
 export interface PromptSources {
   readonly prompts: () => Promise<ReaderPrompts>;
   readonly textToolProtocol: () => Promise<PromptFile>;
   readonly answersPrompt: () => Promise<PromptFile>;
   readonly rereadPrompt: () => Promise<PromptFile>;
+  readonly parentCardsPrompt: () => Promise<PromptFile>;
 }
 
 /** Which optional prompts the run uses: the answers (RF-241) and the Deepen re-read (RF-209). */
@@ -37,7 +38,9 @@ export async function runPrompts(
 }> {
   const read = await sources.prompts();
   const answers = use.withAnswers ? { answers: await sources.answersPrompt() } : {};
-  const reread = use.deepen ? { reread: await sources.rereadPrompt() } : {};
+  const reread = use.deepen
+    ? { reread: await sources.rereadPrompt(), parentCards: await sources.parentCardsPrompt() }
+    : {};
   const prompts = { ...read, ...answers, ...reread };
   const versions = promptVersionsOf(prompts, marks, use.workbook);
   if (!rolesUseTextToolProtocol(settings)) return { prompts, versions };

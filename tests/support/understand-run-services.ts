@@ -26,6 +26,7 @@ import {
   loadMergePrompt,
   loadOverviewPrompt,
   loadAnswersPrompt,
+  loadParentCardsPrompt,
   loadRereadPrompt,
   loadReaderPrompts,
 } from '../../src/infrastructure/prompts/prompt-files.js';
@@ -155,6 +156,7 @@ function understandExecutor(
     textToolProtocol: () => loadTextToolProtocol('prompts'),
     answersPrompt: () => loadAnswersPrompt('prompts'),
     rereadPrompt: () => loadRereadPrompt('prompts'),
+    parentCardsPrompt: () => loadParentCardsPrompt('prompts'),
     priorCards: new FilePriorCards(writer),
     ids: new SequenceIdGenerator(),
   });
