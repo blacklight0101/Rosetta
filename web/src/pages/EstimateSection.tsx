@@ -7,7 +7,7 @@ import { Field } from '../components/Field.js';
 import { Glyph } from '../components/Glyph.js';
 import type { CapWarning } from '../lib/cap-warnings.js';
 import { scanSubjectOf } from '../lib/live-run/scan-subject.js';
-import { dollars, percentOf, pricedTotal, unpricedRoles } from '../lib/estimate-math.js';
+import { capComparison } from '../lib/cap-comparison.js';
 import type { EstimateLoad } from './use-estimate.js';
 import { EstimateTable } from './EstimateTable.js';
 import { ServerKeyNote } from './ServerKeyNote.js';
@@ -27,6 +27,8 @@ interface FieldError {
 interface CapField {
   readonly text: string;
   readonly capMicros: bigint;
+  /** `budget.run.maxTokens`: the cap an estimate of local models is compared with (Q-51). */
+  readonly capTokens: number;
   readonly error: FieldError | undefined;
   readonly onInput: (text: string) => void;
   /** `budget.confirmAboveCostMicros` in dollars, which may not be above the cap (DEC-117). */
@@ -49,37 +51,29 @@ export interface EstimateSectionProps {
 
 const hintId = 'cap-hint';
 
-function CapMeter(props: { readonly estimate: RunEstimate; readonly cap: bigint }): JSX.Element {
+function CapMeter(props: { readonly estimate: RunEstimate; readonly cap: CapField }): JSX.Element {
   const { estimate, cap } = props;
-  const likely = pricedTotal(estimate, 'likely');
-  const high = pricedTotal(estimate, 'high');
-  const used = percentOf(likely, cap);
-  const mark = Math.min(100, percentOf(high, cap));
-  const unpriced = unpricedRoles(estimate).map((role) => `${role.provider} / ${role.model}`);
+  const shown = capComparison(estimate, { micros: cap.capMicros, tokens: cap.capTokens });
+  const mark = Math.min(100, shown.mark);
   return (
     <div class="rst-start__meter">
       <div
-        class={used > 100 ? 'rst-cap-meter rst-cap-meter--over' : 'rst-cap-meter'}
+        class={shown.used > 100 ? 'rst-cap-meter rst-cap-meter--over' : 'rst-cap-meter'}
         role="meter"
-        aria-label="Likely cost against the cap"
+        aria-label={shown.label}
         aria-describedby={hintId}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={Math.min(100, used)}
+        aria-valuenow={Math.min(100, shown.used)}
       >
         <div
           class="rst-cap-meter__fill"
-          style={{ inlineSize: `${String(Math.min(100, used))}%` }}
+          style={{ inlineSize: `${String(Math.min(100, shown.used))}%` }}
         />
         <div class="rst-cap-meter__mark" style={{ insetInlineStart: `${String(mark)}%` }} />
       </div>
       <p id={hintId} class="rst-settings__note">
-        Likely {dollars(likely)} is {used}% of the cap; the marker shows the high estimate,{' '}
-        {dollars(high)}.
-        {unpriced.length === 0
-          ? ''
-          : ` Each leaves out ${unpriced.join(', ')}, which has no price, so the cost may be higher.`}{' '}
-        The run stops before any call that could pass the cap.
+        {shown.sentence} The run stops before any call that could pass the cap.
       </p>
     </div>
   );
@@ -117,7 +111,7 @@ function CapFields(props: { readonly cap: CapField; readonly estimate: RunEstima
           announce={false}
           onInput={cap.onInput}
         />
-        <CapMeter estimate={estimate} cap={cap.capMicros} />
+        <CapMeter estimate={estimate} cap={cap} />
       </div>
       <div class="rst-start__threshold">
         <Field
