@@ -172,3 +172,23 @@ describe('nothing left out', () => {
     expect(region.textContent).toContain('Every area of the run gave at least one card.');
   });
 });
+
+describe('a hostile file name in the files not read', () => {
+  it('ADR-013 RF-264 is shown as text on the run page, never as markup', async () => {
+    const hostile = notCoveredOf([], {
+      files: [{ path: 'src/<img src=x onerror=alert(1)>.cs', tokens: 5 }],
+      firstPartyTokens: 10,
+      firstPartyReadTokens: 0,
+    });
+    renderLive({
+      [`GET ${runPath}`]: runRow({ queueState: 'Ended', endState: 'Completed' }),
+      [`GET ${runPath}/overview`]: json(200, { overview: { ...full, notCovered: hostile } }),
+      [`GET ${runPath}/answers`]: json(200, { questions: [] }),
+    });
+
+    const region = await screen.findByRole('region', { name: 'What was not covered' });
+
+    expect(region.querySelector('img')).toBeNull();
+    expect(region.textContent).toContain('<img src=x onerror=alert(1)>');
+  });
+});

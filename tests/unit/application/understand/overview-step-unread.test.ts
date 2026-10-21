@@ -27,9 +27,19 @@ const area: Area = {
   origin: 'folder',
 };
 
-async function overviewOf(readPaths: readonly string[], failure?: string) {
+async function overviewOf(readPaths: readonly string[], failure?: string, extra?: string) {
   const task: ReaderTask = { agentTaskId: 'reader-001', area };
-  const codeMap = { areas: [area], files, symbols: [] };
+  const vendored: FileEntry[] =
+    extra === undefined
+      ? []
+      : [{ path: extra, language: 'javascript', lines: 10, estimatedTokens: 800 }].map(
+          (entry): FileEntry => ({ ...entry, artefactKinds: [], mapLevel: 'coarse' }),
+        );
+  const codeMap = {
+    areas: [{ ...area, files: [...area.files, ...vendored.map((f) => f.path)] }],
+    files: [...files, ...vendored],
+    symbols: [],
+  };
   const parts = {
     ...{ logger: new RecordingLogger(), ids: new SequenceIdGenerator() },
     ...{ traceId: 'a'.repeat(32), nextCallId: () => 'c#1' },
@@ -72,6 +82,14 @@ describe('the overview of a run that left first-party files not read', () => {
   it('RF-264 lists nothing when every first-party file was read and the area gave a card', async () => {
     const overview = await overviewOf(paths);
 
+    expect(overview.notCovered.filter((line) => line.startsWith('First-party files'))).toEqual([]);
+  });
+
+  it('RF-231 leaves third-party files out of the files not read (a vendored library)', async () => {
+    const vendored = 'src/vendor/lib.min.js';
+    const overview = await overviewOf(paths, undefined, vendored);
+
+    expect(overview.notCovered.join(' ')).not.toContain(vendored);
     expect(overview.notCovered.filter((line) => line.startsWith('First-party files'))).toEqual([]);
   });
 });
