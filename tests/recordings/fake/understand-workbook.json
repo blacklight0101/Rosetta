@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "An understand run over the pricing-workbook fixture (a rendered Excel workbook beside a C# helper, as an uploaded zip holding a workbook). The Pricing.xlsx task reads the formulas and the values of the Quote sheet, which hold a planted instruction in a cell, and describes the discount rule, the price lookup and the Quote sheet as an entity; the Tools task reads the helper and describes it. Written by hand for the fake provider; no real provider was called (P3-50).",
+  "description": "An understand run over the pricing-workbook fixture (a rendered Excel workbook beside a C# helper, as an uploaded zip holding a workbook). The Pricing.xlsx task reads the formulas and the values of the Quote sheet and the workbook index (more than half of the area, so the read-more rule of P3-78 asks nothing), which hold a planted instruction in a cell, and describes the discount rule, the price lookup and the Quote sheet as an entity; the Tools task reads the helper and describes it. Written by hand for the fake provider; no real provider was called (P3-50).",
   "calls": [
     {
       "attempts": [
@@ -44,6 +44,15 @@
                   "path": "Pricing.xlsx/Quote/values.md",
                   "startLine": 6,
                   "endLine": 11
+                }
+              },
+              {
+                "id": "call-3",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Pricing.xlsx/workbook.md",
+                  "startLine": 1,
+                  "endLine": 56
                 }
               }
             ],

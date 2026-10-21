@@ -106,9 +106,14 @@ export class ReadOnlyTools {
 
   /** RF-206: the files of the area that can be read, in the code map's spelling; skipped files are left out. */
   readableAreaFiles(): readonly string[] {
+    return this.readableAreaEntries().map((file) => file.path);
+  }
+
+  /** P3-78: the readable files of the area with their lines and tokens. */
+  readableAreaEntries(): readonly FileEntry[] {
     return this.area.files.flatMap((path) => {
       const found = this.index.resolve(path);
-      return found.ok && found.value.skipped === undefined ? [found.value.path] : [];
+      return found.ok && found.value.skipped === undefined ? [found.value] : [];
     });
   }
 

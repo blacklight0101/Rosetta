@@ -22,6 +22,7 @@ const readerPromptNames = {
   repair: 'cards/repair.v2.md',
   continue: 'cards/continue.v1.md',
   readFirst: 'reader/read-first.v1.md',
+  readMore: 'reader/read-more.v1.md',
 } as const;
 
 /** RF-155: added only to areas that hold a rendered workbook. */
@@ -144,19 +145,31 @@ function requirePlaceholders(file: PromptFile, placeholders: readonly string[]):
 // RNF-004
 export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPrompts> {
   const load = (name: string) => loadPromptFile(promptsFolder, name);
-  const [system, cardFormat, task, turnsLeft, repair, resume, flows, screens, readFirst, workbook] =
-    await Promise.all([
-      load(readerPromptNames.system),
-      load(readerPromptNames.cardFormat),
-      load(readerPromptNames.task),
-      load(readerPromptNames.turnsLeft),
-      load(readerPromptNames.repair),
-      load(readerPromptNames.continue),
-      load(surfacePromptNames.flows),
-      load(surfacePromptNames.screens),
-      load(readerPromptNames.readFirst),
-      load(workbookPromptName),
-    ]);
+  const [
+    system,
+    cardFormat,
+    task,
+    turnsLeft,
+    repair,
+    resume,
+    flows,
+    screens,
+    readFirst,
+    readMore,
+    workbook,
+  ] = await Promise.all([
+    load(readerPromptNames.system),
+    load(readerPromptNames.cardFormat),
+    load(readerPromptNames.task),
+    load(readerPromptNames.turnsLeft),
+    load(readerPromptNames.repair),
+    load(readerPromptNames.continue),
+    load(surfacePromptNames.flows),
+    load(surfacePromptNames.screens),
+    load(readerPromptNames.readFirst),
+    load(readerPromptNames.readMore),
+    load(workbookPromptName),
+  ]);
   return {
     system,
     cardFormat,
@@ -169,6 +182,13 @@ export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPr
     readFirst: requirePlaceholders(readFirst, [
       readerPlaceholders.readFirstFiles,
       readerPlaceholders.readFirstTurns,
+    ]),
+    readMore: requirePlaceholders(readMore, [
+      readerPlaceholders.readMorePercent,
+      readerPlaceholders.readMoreRead,
+      readerPlaceholders.readMoreTotal,
+      readerPlaceholders.readMoreFiles,
+      readerPlaceholders.readMoreTurns,
     ]),
   };
 }

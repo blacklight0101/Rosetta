@@ -85,6 +85,7 @@ export function toolsWithEvents(
     definitions: inner.definitions,
     areaOverview: () => inner.areaOverview(),
     readableAreaFiles: () => inner.readableAreaFiles(),
+    readableAreaEntries: () => inner.readableAreaEntries(),
     renderBlock: (source, text) => inner.renderBlock(source, text),
     rowSpans: (path) => inner.rowSpans(path),
     async run(call, ids) {
