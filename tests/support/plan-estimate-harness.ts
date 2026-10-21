@@ -37,6 +37,7 @@ import { MemoryLogger } from './memory-logger.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryOutputWriter } from './memory-output-writer.js';
 import { seedPlanSource, type PlanSourceSeed } from './plan-source-seed.js';
+import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { shippedCatalogue } from './planning-brief-harness.js';
 import { sampleProject } from './project-fixtures.js';
 import { understandSettings } from './understand-run-harness.js';
@@ -68,6 +69,8 @@ export interface PlanEstimateOptions {
   readonly seed?: PlanSourceSeed | false;
   /** RF-155: fields of the project that differ from the GitHub one. */
   readonly project?: Partial<Project>;
+  /** The shipped price table the estimate reads; the fixed one of the estimate harness by default. */
+  readonly priceTable?: PriceTable;
 }
 
 /** The project settings with the planner on this provider and model; the other roles stay local. */
@@ -123,7 +126,7 @@ export async function createPlanEstimateHarness(
       cards: new FileRunCards(files),
       answers: new FileAnswersFile({ writer: files, masker }),
       serverKeys: options.serverKeys ?? { has: () => true },
-      priceTable: estimatePrices,
+      priceTable: options.priceTable ?? estimatePrices,
       catalogue: () => Promise.resolve(shippedCatalogue),
       prompt: () => loadPlannerPrompt('prompts'),
       prdPrompt: () => loadPrdPrompt('prompts'),

@@ -17,6 +17,18 @@ export interface TokenFigures {
   readonly outputTokens: number;
   /** The part of `inputTokens` written to a prompt cache: the conversation at the last turn (P2-37). */
   readonly cacheWriteTokens: number;
+  /**
+   * The estimated prompt of one call of the role, which picks the tier of a model priced by prompt
+   * length (Q-56): the average prompt of the calls for the low and likely figures, the largest one
+   * for the high figure. It is not a part of `inputTokens`, which sums every call.
+   */
+  readonly promptTokens: number;
+}
+
+/** The figures of one area with what the prompt of one call is made from: its calls and largest prompt. */
+interface AreaFigures extends Omit<TokenFigures, 'promptTokens'> {
+  readonly calls: number;
+  readonly largestPrompt: number;
 }
 
 const noMarks: AreaMarks = { flows: false, screens: false };
@@ -33,7 +45,7 @@ function areaTokens(
   scenario: Scenario,
   assumptions: ReaderAssumptions,
   kind: { readonly marks: AreaMarks; readonly workbook: boolean },
-): TokenFigures {
+): AreaFigures {
   const { marks, workbook } = kind;
   const turns = assumptions.turnsPerArea[scenario];
   const answered = assumptions.outputTokensPerTurn[scenario];
@@ -44,14 +56,17 @@ function areaTokens(
   const overhead = assumptions.promptOverheadTokens + surface + guidance;
   let inputTokens = 0;
   let cacheWriteTokens = 0;
+  let largestPrompt = 0;
   for (let turn = 1; turn <= turns; turn += 1) {
     const before = turn - 1;
     const context = overhead + Math.floor((read * before) / turns) + answered * before;
     cacheWriteTokens = Math.min(context, assumptions.contextLimitTokens);
     inputTokens += cacheWriteTokens;
+    largestPrompt = Math.max(largestPrompt, cacheWriteTokens);
   }
   const extra = fragments * assumptions.surfaceOutputTokens[scenario];
-  return { inputTokens, outputTokens: turns * answered + extra, cacheWriteTokens };
+  const outputTokens = turns * answered + extra;
+  return { inputTokens, outputTokens, cacheWriteTokens, calls: turns, largestPrompt };
 }
 
 // RF-425, RF-263
@@ -62,8 +77,8 @@ export function readerTokens(
   /** RF-155: the names of the areas that hold a rendered workbook. */
   workbooks: ReadonlySet<string> = new Set(),
 ): ByScenario<TokenFigures> {
-  const sum = (scenario: Scenario): TokenFigures =>
-    areas
+  const sum = (scenario: Scenario): TokenFigures => {
+    const total = areas
       .map((area) =>
         areaTokens(area, scenario, assumptions, {
           marks: marks.get(area.name) ?? noMarks,
@@ -71,12 +86,18 @@ export function readerTokens(
         }),
       )
       .reduce(
-        (total, each) => ({
-          inputTokens: total.inputTokens + each.inputTokens,
-          outputTokens: total.outputTokens + each.outputTokens,
-          cacheWriteTokens: total.cacheWriteTokens + each.cacheWriteTokens,
+        (all, each) => ({
+          inputTokens: all.inputTokens + each.inputTokens,
+          outputTokens: all.outputTokens + each.outputTokens,
+          cacheWriteTokens: all.cacheWriteTokens + each.cacheWriteTokens,
+          calls: all.calls + each.calls,
+          largestPrompt: Math.max(all.largestPrompt, each.largestPrompt),
         }),
-        { inputTokens: 0, outputTokens: 0, cacheWriteTokens: 0 },
+        { inputTokens: 0, outputTokens: 0, cacheWriteTokens: 0, calls: 0, largestPrompt: 0 },
       );
+    const { calls, largestPrompt, ...figures } = total;
+    const average = calls === 0 ? 0 : Math.ceil(total.inputTokens / calls);
+    return { ...figures, promptTokens: scenario === 'high' ? largestPrompt : average };
+  };
   return { low: sum('low'), likely: sum('likely'), high: sum('high') };
 }

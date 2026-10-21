@@ -85,6 +85,8 @@ export class EstimatePlan {
         outputTokens:
           reserved?.outputTokens ?? ceilPercent(maxOutputTokens, OUTPUT_PERCENT[scenario]),
         cacheWriteTokens: reserved?.inputTokens ?? promptTokens,
+        // Q-56: the high figure reserves the continuations too, so its prompt is never under them.
+        promptTokens: reserved?.inputTokens ?? promptTokens,
       };
     });
     return {
