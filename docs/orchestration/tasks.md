@@ -4009,7 +4009,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-73, P3-74
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-206 (the Q-50 scenario), RF-230, RF-231, Q-50; the RF-206 refusal in the agent loop (`src/application/agent/`, `reader-prompts.ts`, `prompts/reader/read-first.v1.md`), the area coverage the run already computes. Found in the orchestrator's fresh-start evaluation of 2026-10-21 (Invoice_Generator.xlsm, Ollama `gemma4:e4b`, built-in defaults): the reader made one `read_file` call (`workbook.md`), answered after two turns of its budget and covered 3% of its area (1,094 of 28,028 first-party tokens, 41 of 42 files not read); no formula, rule or macro reached a card. The Loan run before P3-74 showed the same pattern.
 - **Do**: when a reader gives its final answer with turns left and less than half of its area's first-party tokens read, refuse that answer once, like the RF-206 refusal: name the unread files with formulas, macros and the largest first, say how much of the area was read and how many turns are left, and let it continue; accept the next answer whatever the coverage; a new prompt file `reader/read-more.v1.md`, recorded in the manifest; the extra turns stay inside the reader's turn budget and the budget guard.
 - **Review probes**: an answer at 3% with turns left (refused once, the list ranks formulas.md and macros first, the agent reads more); a second answer at low coverage (accepted); an answer at 60% (accepted at once); no turns left (accepted, coverage reported as today); a code project (the same rule; the list ranks the largest files first); the manifest records the prompt; recorded responses only.
@@ -4024,7 +4024,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-70
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-425 (the Q-51 scenario), RF-424, Q-44, Q-51; the start page estimate (`web/src/pages/` EstimateSection and its texts), `web/src/lib/estimate-math.ts` (P3-70 wording by the unit of the cap), the workbook upload list. Found in the orchestrator's fresh-start evaluation of 2026-10-21: with every role on Ollama the start page said "Likely $0.00 is 0% of the cap; the marker shows the high estimate, $0.00" and showed $0.00 columns per role, while P3-70 already shows tokens on Plan setup and in the Deepen panel; "Assumptions: 1 areas"; a refused README in the workbook upload stayed "Waiting" in the file list next to the error.
 - **Do**: (1) the understand start page estimate shows tokens for local roles and states the cap it is compared with in that unit, like P3-70 (dollars stay for priced models); (2) "1 area", "2 areas"; (3) a file the workbook upload refuses reads "Not a workbook" in the list, not "Waiting".
 - **Review probes**: all roles local (tokens, no dollar sentence); a priced reader (dollars as today); a mix (each role in its unit, the total in both); 1 and 2 areas; a refused README in the list; 360 px, light and dark, axe.
@@ -4039,7 +4039,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-67
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-250 and RF-243 (the Q-52 scenarios), RF-209, Q-52; `src/application/consolidate/merge-request.ts` (`typesToMerge` asks only about a type that two areas wrote), `src/domain/cards/card-merge.ts` (`MERGEABLE_TYPES` is `BR` and `ENT`), the summariser prompt `prompts/summariser/merge.v*.md`, the open-question merge of RF-243. Found in the orchestrator's fresh-start evaluation of 2026-10-21 (Invoice_Generator.xlsm, one area, a Deepen of 3 rounds on Ollama `gemma4:e4b`): 70 cards, among them "Invoice Table" six times (ENT-001, -004, -007, -010, -013, -016), "Customer Table" six times, each sheet two to four times as a screen, and the same open question twice (OQ-001, OQ-002); consolidation never ran on them because all cards came from one area.
 - **Do**: (1) the summariser is asked about a type when two reader tasks wrote cards of it, also within one area and across the rounds of a Deepen, not only across areas; (2) `SCRN` and `FEAT` join `BR` and `ENT` as mergeable types (a merged screen keeps every field, action and validation with its citations; `FLOW` stays as it is); (3) open questions of one area with the same question are merged like those of several areas (RF-243); (4) a new prompt version where the summariser instructions change, the old kept; the merges are recorded as today.
 - **Review probes**: two `ENT` "Invoice Table" cards of one area from two tasks (merged, every citation kept); one task's single card (no call); two `SCRN` cards for the same sheet (merged, fields kept); two `FEAT` cards (merged); a Deepen whose round 2 rewrites a card of round 1 (merged); two equal questions of one area (one question); a failed or capped summariser call (cards kept, run goes on); the estimate counts the extra calls; recorded responses only.
@@ -4054,7 +4054,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-76
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-264 and RF-231 (the Q-53 scenario), Q-53; `src/infrastructure/cards/overview-markdown.ts:65`, `src/infrastructure/report/site/overview-section.ts:53`, `web/src/pages/NotCovered.tsx:49`. Found in the orchestrator's fresh-start evaluation of 2026-10-21: an understand run that read 3% of its only area (41 of 42 files not read) said under "What was not covered" only "Every area of the run gave at least one card."
 - **Do**: when first-party files were not read, "What was not covered" says so in every place it is shown (run page, overview, report): the count, the share of first-party tokens not read and the largest files, with the Deepen as the next step; "Every area of the run gave at least one card." stays only when the run read every first-party file.
 - **Review probes**: 41 files not read (named, with the share and the Deepen step) on the run page, in `overview.md` and in the report; every file read (today's sentence); a mix of failed areas and unread files; 360 px, light and dark, axe.
@@ -4069,7 +4069,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-72
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-627 and RF-630 (the Q-54 scenario), RF-202, Q-45, Q-54; `src/application/plan/gap-answer.ts` (each card parsed with `gapTask.safeParse`, a card that cannot be read is left out without a log line), `src/application/plan/plan-answer.ts` (`position` schema used by `requirements` and `dependsOn`), `src/domain/planning/plan-gap.ts`, `prompts/planner/gap.v1.md`. Found in the orchestrator's fresh-start evaluation of 2026-10-21 (Invoice_Generator.xlsm, planner Ollama `gemma4:e4b`): the gap call answered with one card for each of the 5 uncovered items (4 screens, 1 flow), each naming the right item in `builds`, but wrote `requirements` and `dependsOn` as objects (`[{"position": 3}]`, `[{"position": 4, "builds": ["T-004"]}]`) instead of numbers; every card failed to parse, none was kept, nothing was logged, and the run ended RST-1806 with the 5 gaps.
 - **Do**: (1) where a plan answer expects a list of positions (`requirements`, `dependsOn` of the task cards, in the gap answer and the plan answer), also accept an object with a numeric `position` and read its number; anything else stays refused; (2) log each card left out of a plan or gap answer with its position and the reason (which field, what was wrong), never with answer text; (3) when the gap answer leaves out cards that named a gap in `builds`, the planner gets one repair attempt like RF-202, listing the problems and the expected shape; the repair passes the budget guard and the Ollama context guard and is in the estimate.
 - **Review probes**: the recorded Invoice gap answer (objects with `position`): the 5 cards kept, the run completes with no gap; `{ "position": "3" }` or `{ "id": 3 }` (refused, logged); a gap answer with one unreadable card (repair attempt, its fixed card kept); a repair that still fails (gaps reported as today, RST-1806); the plan answer with object positions (read); the log line names the card position and the field and holds no answer text; recorded responses only.
