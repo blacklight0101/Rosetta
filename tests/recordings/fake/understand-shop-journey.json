@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "RF-264, P3-22: the understand run of the webforms-shop fixture of understand-shop-model.json with three FEAT cards written by the Services area (search the catalogue, keep a basket, place an order) and the summariser's overview of the application as the ninth call, so the documentation-set journey plans from a run that has features, flows, screens, entities and a rule. Written by hand for the fake provider; no real provider was called.",
+  "description": "RF-264, P3-22: the understand run of the webforms-shop fixture of understand-shop-model.json with three FEAT cards written by the Services area (search the catalogue, keep a basket, place an order) and the summariser's overview of the application as the tenth call, after the summariser compared the screens of the three areas and merged none (Q-52), so the documentation-set journey plans from a run that has features, flows, screens, entities and a rule. Written by hand for the fake provider; no real provider was called.",
   "calls": [
     {
       "attempts": [
@@ -189,6 +189,25 @@
             },
             "finishReason": "stop",
             "requestId": "fake-request-8",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\"merges\": []}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 100,
+              "outputTokens": 10,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-9",
             "modelVersion": "fake-model-2026-10-01"
           }
         }
