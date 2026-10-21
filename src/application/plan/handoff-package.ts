@@ -12,6 +12,7 @@ import type { ExcludedClaim, SourceCard } from '../../domain/planning/plan-sourc
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
 import type { UploadFacts } from '../../domain/sources/upload-facts.js';
+import type { WorkbookFormulas } from '../../domain/planning/workbook-formulas.js';
 
 // RF-601..RF-604, data-model.md section 3.17: everything the hand-off package is written from. The
 // planner's content, checked; the cards it may cite with their supported claims and citations;
@@ -81,6 +82,8 @@ export interface HandoffPackage {
   readonly prdQuestions: readonly DefaultedQuestion[];
   /** RF-632: the shapes measured from the scan; undefined when the scan could not be read. */
   readonly shapes: ScanShapes | undefined;
+  /** P3-94: the formulas of the rendered workbooks; undefined for a project with none (no file is written). */
+  readonly workbookFormulas?: WorkbookFormulas | undefined;
   /** RF-604: the documents that stayed cut off, in the order they were written; empty when none did. */
   readonly incomplete: readonly IncompleteDocument[];
 }

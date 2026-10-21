@@ -7,6 +7,7 @@ import { excludedClaims, supportedCards } from '../../domain/planning/plan-sourc
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
 import type { PlannedDocuments } from './plan-documents.js';
 import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
+import type { WorkbookFormulas } from '../../domain/planning/workbook-formulas.js';
 import type { PlanInputs } from './plan-inputs.js';
 
 // RF-601..RF-604, RF-621, DEC-80: the hand-off package of a plan run from its inputs, the planner's checked
@@ -28,7 +29,10 @@ export function handoffPackageOf(
   inputs: PlanInputs,
   content: PlanContent,
   catalogue: Catalogue,
-  documents: PlannedDocuments & { readonly shapes: ScanShapes | undefined },
+  documents: PlannedDocuments & {
+    readonly shapes: ScanShapes | undefined;
+    readonly workbookFormulas: WorkbookFormulas | undefined;
+  },
 ): HandoffPackage {
   const { prd, dataModel, flows, apiContract, ux, incomplete } = documents;
   const { brief, sourceRun, project, cards, questions, upload } = inputs;
@@ -61,6 +65,7 @@ export function handoffPackageOf(
     ux,
     prdQuestions: prdQuestions(prd),
     shapes: documents.shapes,
+    workbookFormulas: documents.workbookFormulas,
     incomplete,
   };
 }

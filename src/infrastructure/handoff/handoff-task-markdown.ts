@@ -9,6 +9,7 @@ import {
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { behaviourLines, shapeLines } from './handoff-behaviour-markdown.js';
 import { buildsLines } from './handoff-builds-markdown.js';
+import { formulaLines } from './handoff-formulas-markdown.js';
 import { bullets, decisionLink, handoffFiles, idLink } from './handoff-links.js';
 import { parallelCardLines } from './handoff-parallel-markdown.js';
 import { invariantLines, probeLines, riskLines } from './handoff-quality-markdown.js';
@@ -95,6 +96,7 @@ function cardLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper
     `Requirements: ${requirements.length === 0 ? 'none' : requirements.join(', ')}`,
     '',
     ...buildsLines(task, handoff, esc),
+    ...formulaLines(task, handoff),
     ...invariantLines(task, esc),
     ...behaviourLines(task, handoff, esc),
     ...specificationLines(handoff, esc),

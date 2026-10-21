@@ -63,7 +63,7 @@ describe('a scan of an uploaded workbook project', () => {
       kind: 'workbook',
       commitSha: null,
       snapshotHash: published.info.snapshotHash,
-      rendererVersion: '1',
+      rendererVersion: '2',
       workbooks: ['Pricing.xlsx', 'Rates.xlsx'],
     });
   });
