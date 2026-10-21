@@ -23,7 +23,7 @@ const batchOpened = json(201, { batchId: 'b-1' });
 
 export const finishedBody = {
   workbooks: [
-    { name: 'Pricing.xlsx', sheets: 4, cells: 1200, formulas: 310, macroModules: 0 },
+    { name: 'Pricing.xlsx', sheets: 4, cells: 12_247, formulas: 310, macroModules: 0 },
     { name: 'Costs.xlsm', sheets: 2, cells: 90, formulas: 12, macroModules: 3 },
     { name: 'Rates.xlsx', sheets: 1, cells: 40, formulas: 0, macroModules: 0 },
   ],

@@ -204,3 +204,24 @@ it('RF-1002 says the log keeps only the newest 1,000 events once it is full', ()
   render(<EventLog lines={full.log.slice(1)} startedAt={undefined} />);
   expect(screen.queryByText(/Only the newest/u)).toBeNull();
 });
+
+describe('RF-1002 a cut reason never splits a surrogate pair (P3-68)', () => {
+  const loneHigh = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])/u;
+  const shownOf = (reason: string): string => {
+    logOf(start, judged(2, 'Rejected', reason));
+    return screen.getByTestId('log-reason').textContent;
+  };
+
+  it('RF-1002 stops before an emoji that would be cut in half at 200', () => {
+    const shown = shownOf(`${'a'.repeat(199)}😀${'b'.repeat(99)}`);
+
+    expect(shown).toBe(`${'a'.repeat(199)}…`);
+    expect(shown).not.toMatch(loneHigh);
+  });
+
+  it('RF-1002 keeps an emoji that ends exactly at 200', () => {
+    const shown = shownOf(`${'a'.repeat(198)}😀${'b'.repeat(100)}`);
+
+    expect(shown).toBe(`${'a'.repeat(198)}😀…`);
+  });
+});

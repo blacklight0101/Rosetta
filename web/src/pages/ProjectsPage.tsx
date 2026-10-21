@@ -43,7 +43,7 @@ function YourProjects(props: {
     );
   }
   return (
-    <EmptyState message="No projects yet. Paste a public GitHub URL above. The demo repository, eShopLegacyWebForms, is a good first run: about 70 files, a few cents with cloud models, free on Ollama.">
+    <EmptyState message="No projects yet. Paste a public GitHub URL above, or upload a zip or Excel workbooks. The demo repository, eShopLegacyWebForms, is a good first run: about 70 files, a few cents with cloud models, free on Ollama.">
       <Button onClick={onDemo}>Use the demo repository</Button>
     </EmptyState>
   );
@@ -58,8 +58,8 @@ export function ProjectsPage(): JSX.Element {
       <div>
         <h1 class="rst-page__title">Projects</h1>
         <p class="rst-settings__lead">
-          Each project is one public GitHub repository or one zip of your code. Only you can see
-          your projects.
+          Each project is one public GitHub repository, one zip of your code or a set of Excel
+          workbooks. Only you can see your projects.
         </p>
       </div>
       <section class="rst-card rst-settings__section" aria-labelledby="new-project">

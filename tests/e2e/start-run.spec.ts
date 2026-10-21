@@ -47,9 +47,15 @@ function projectIdOf(page: Page): string {
 test('RF-1001 starts a scan from the page before there is a code map and passes axe', async ({
   page,
 }) => {
+  const logged: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') logged.push(message.text());
+  });
   await openStartPage(page);
 
   await expect(page.getByText(/Run a scan first/u)).toBeVisible();
+  // P3-68: no estimate is asked for before a scan, so the browser logs no 409.
+  expect(logged).toEqual([]);
   await expect(page.getByLabel('Understand')).toBeDisabled();
   await expect(page.getByLabel('Scan only')).toBeChecked();
   await expectNoSeriousViolations(page);

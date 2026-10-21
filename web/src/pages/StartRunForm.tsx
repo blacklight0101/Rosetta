@@ -44,6 +44,7 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
       />
       <EstimateSection
         scanOnly={stage === 'scan'}
+        sourceKind={form.project.sourceKind}
         estimate={estimate}
         warnings={warnings}
         onRetry={choice.reestimate}
