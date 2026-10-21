@@ -65,7 +65,8 @@ describe('OllamaProvider with a prompt near the context (output reserve and role
     expect(error.message).toContain('planner');
     expect(error.message).toMatch(/larger context/);
     expect(error.message).toMatch(/cloud model/);
-    expect(error.message).toContain('contextTokens');
+    expect(error.message).toContain('project settings, the model of the role, Context size');
+    expect(error.message).not.toContain('contextTokens');
   });
 
   it.each(['reader', 'verifier', 'planner'] as const)(

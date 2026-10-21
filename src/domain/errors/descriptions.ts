@@ -218,7 +218,7 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     message:
       'The prompt of this role is larger than the context Ollama gives the model, so the call was stopped instead of letting Ollama cut the prompt.',
     nextStep:
-      'Choose a model with a larger context, or a cloud model for this role, in the project settings; or set a larger contextTokens for the Ollama provider.',
+      'Choose a model with a larger context, or a cloud model for this role, in the project settings; or set a larger size in project settings, the model of the role, Context size.',
   },
   'RST-1900': {
     message: 'The address is not a public GitHub repository URL.',

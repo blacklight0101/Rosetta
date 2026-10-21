@@ -7,6 +7,20 @@ import { ROLE_NAMES } from './project-settings.js';
 // providers the roles use are kept, and the reader decides the parallelism: 1 for Ollama (one
 // local GPU), the template's value otherwise.
 
+/** RF-401, Q-44: the context size the administrator chose goes to every Ollama provider entry. */
+function withContextSize(
+  providers: ProjectSettings['providers'],
+  contextTokens: DefaultRoles['ollamaContextTokens'],
+): ProjectSettings['providers'] {
+  if (contextTokens === undefined) return providers;
+  return Object.fromEntries(
+    Object.entries(providers).map(([name, provider]) => [
+      name,
+      provider.kind === 'ollama' ? { ...provider, contextTokens } : provider,
+    ]),
+  );
+}
+
 /** The template with the server's default models applied; the caller validates the result. */
 export function settingsForNewProject(
   template: ProjectSettings,
@@ -22,13 +36,14 @@ export function settingsForNewProject(
   const providers = Object.fromEntries(
     Object.entries(template.providers).filter(([name]) => used.has(name)),
   );
+  const sized = withContextSize(providers, defaultRoles.ollamaContextTokens);
   const readerProvider = roles.reader.provider;
   const readerKind = Object.hasOwn(providers, readerProvider)
     ? providers[readerProvider]?.kind
     : undefined;
   return {
     ...template,
-    providers,
+    providers: sized,
     roles,
     agents: {
       ...template.agents,
