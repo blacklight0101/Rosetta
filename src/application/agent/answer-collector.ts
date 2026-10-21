@@ -4,6 +4,7 @@ import type { AgentTaskEnd } from './agent-task-result.js';
 import { parseCardsLenient, type CardParse } from '../cards/parse-cards.js';
 import type { OutputProblem } from '../cards/output-problem.js';
 import { renderRepairRequest } from '../cards/repair-request.js';
+import { loadRowIndex, type RowLookup } from '../cards/row-citations.js';
 import type { ReaderPrompts } from './reader-prompts.js';
 
 // RF-202, RF-208: what an agent's final answer is worth, with the follow-ups it earns. The first
@@ -53,6 +54,7 @@ export function mergeDrafts(
 class Collector {
   private readonly ask: AskModel;
   private readonly prompts: ReaderPrompts;
+  private readonly rows: RowLookup;
   private drafts: readonly CardDraft[] = [];
   private readonly raws: string[] = [];
   private text = '';
@@ -61,37 +63,43 @@ class Collector {
   private repairs = 0;
   private continuations = 0;
 
-  constructor(ask: AskModel, prompts: ReaderPrompts) {
+  constructor(ask: AskModel, prompts: ReaderPrompts, rows: RowLookup) {
     this.ask = ask;
     this.prompts = prompts;
+    this.rows = rows;
   }
 
   async collect(first: string): Promise<CollectedAnswer> {
     this.raws.push(first);
-    this.take(first);
+    await this.take(first);
     for (;;) {
       const message = this.nextMessage();
       if (message === undefined) return this.result();
       const answer = await this.ask(this.last, message.text);
       if (!answer.ok) return this.result(answer.error);
       this.raws.push(answer.value);
-      if (message.continuation) this.takeContinuation(answer.value);
-      else this.take(answer.value);
+      if (message.continuation) await this.takeContinuation(answer.value);
+      else await this.take(answer.value);
     }
   }
 
-  private take(text: string): void {
+  private async take(text: string): Promise<void> {
     this.text = text;
     this.last = text;
-    this.read = parseCardsLenient(text);
-    this.drafts = mergeDrafts(this.drafts, this.read.drafts);
+    await this.readText();
   }
 
   /** The answer after a continuation is the earlier text with the new fragment joined to it. */
-  private takeContinuation(fragment: string): void {
+  private async takeContinuation(fragment: string): Promise<void> {
     this.text = `${this.text}${fragment}`;
     this.last = fragment;
-    this.read = parseCardsLenient(this.text);
+    await this.readText();
+  }
+
+  /** RF-202: row citations are read as the lines of their rows before the cards are checked. */
+  private async readText(): Promise<void> {
+    const rows = await loadRowIndex(this.text, this.rows);
+    this.read = parseCardsLenient(this.text, rows);
     this.drafts = mergeDrafts(this.drafts, this.read.drafts);
   }
 
@@ -124,6 +132,7 @@ export function collectCards(
   first: string,
   ask: AskModel,
   prompts: ReaderPrompts,
+  rows: RowLookup,
 ): Promise<CollectedAnswer> {
-  return new Collector(ask, prompts).collect(first);
+  return new Collector(ask, prompts, rows).collect(first);
 }

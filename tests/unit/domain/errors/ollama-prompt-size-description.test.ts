@@ -15,5 +15,12 @@ it('RF-401 RST-1522 names the context and the remedies', () => {
   expect(message).toMatch(/larger than the context/);
   expect(nextStep).toMatch(/larger context/);
   expect(nextStep).toMatch(/cloud model/);
-  expect(nextStep).toMatch(/contextTokens/);
+  expect(nextStep).toMatch(/Context size/);
+});
+
+it('Q-44 RST-1522 names the field: project settings, the model of the role, Context size', () => {
+  const { nextStep } = describeError('RST-1522');
+
+  expect(nextStep).toMatch(/project settings, the model of the role, Context size/);
+  expect(nextStep).not.toMatch(/contextTokens/);
 });

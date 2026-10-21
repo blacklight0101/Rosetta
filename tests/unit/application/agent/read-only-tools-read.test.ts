@@ -21,9 +21,8 @@ describe('read_file results', () => {
     expect(block.excerpts).toEqual([
       { path: 'src/Orders/OrderService.cs', startLine: 3, endLine: 5 },
     ]);
-    expect(block.text).toBe(
-      agentFiles['src/Orders/OrderService.cs']?.split('\n').slice(2, 5).join('\n'),
-    );
+    const lines = (agentFiles['src/Orders/OrderService.cs'] ?? '').split('\n').slice(2, 5);
+    expect(block.text).toBe(lines.map((line, at) => `${String(at + 3)}: ${line}`).join('\n'));
   });
 
   it("RF-145 read_file resolves a path to the code map's exact case", async () => {
@@ -141,11 +140,11 @@ describe('read_file skipped files and size limits', () => {
       endLine: 3,
     });
 
-    expect(blockOf(outcome.content).text).toBe('    public d');
+    expect(blockOf(outcome.content).text).toBe('3:     public d');
   });
 
   it('RF-201 read_file stops at the result size limit and cites only the lines it returns', async () => {
-    const { run } = toolsSetup({ maxResultChars: 55 });
+    const { run } = toolsSetup({ maxResultChars: 70 });
 
     const outcome = await run('read_file', {
       path: 'src/Orders/OrderService.cs',

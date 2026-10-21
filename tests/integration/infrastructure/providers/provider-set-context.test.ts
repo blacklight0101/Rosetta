@@ -24,34 +24,38 @@ function unwrapped(result: { ok: true; value: ProviderSet } | { ok: false }): Pr
 }
 
 describe('a project context size reaches the Ollama request', () => {
-  it('RF-401 a project with contextTokens 8192 sends num_ctx 8192 to Ollama', async () => {
-    const server = new FakeOllamaServer(await loadOllamaRecording('contract-text'));
-    const baseUrl = await server.start();
-    try {
-      const textProtocolPrompt = (await loadTextToolProtocol(join(process.cwd(), 'prompts'))).text;
-      const harness = factoryHarness({
-        ollamaUrl: baseUrl,
-        adapters: realAdapters({
-          testMode: true,
-          textProtocolPrompt,
-          logger: new RecordingLogger(),
-        }),
-      });
-      const settings = withContextTokens(
-        settingsFor({ reader: { provider: 'ollama', model: 'contract-model' } }),
-        'ollama',
-        8192,
-      );
-      const set = unwrapped(
-        await harness.factory.build(harness.request({ settings, roles: ['reader'] })),
-      );
-      const reader: LlmProvider | undefined = set.get('reader')?.provider;
+  it.each([8192, 65_536])(
+    'RF-401 a project with contextTokens %i sends that num_ctx to Ollama',
+    async (tokens) => {
+      const server = new FakeOllamaServer(await loadOllamaRecording('contract-text'));
+      const baseUrl = await server.start();
+      try {
+        const textProtocolPrompt = (await loadTextToolProtocol(join(process.cwd(), 'prompts')))
+          .text;
+        const harness = factoryHarness({
+          ollamaUrl: baseUrl,
+          adapters: realAdapters({
+            testMode: true,
+            textProtocolPrompt,
+            logger: new RecordingLogger(),
+          }),
+        });
+        const settings = withContextTokens(
+          settingsFor({ reader: { provider: 'ollama', model: 'contract-model' } }),
+          'ollama',
+          tokens,
+        );
+        const set = unwrapped(
+          await harness.factory.build(harness.request({ settings, roles: ['reader'] })),
+        );
+        const reader: LlmProvider | undefined = set.get('reader')?.provider;
 
-      await reader?.complete(callFor('reader', 'contract-model'));
+        await reader?.complete(callFor('reader', 'contract-model'));
 
-      expect(numCtx(server.chatBodies())).toEqual([8192]);
-    } finally {
-      await server.stop();
-    }
-  });
+        expect(numCtx(server.chatBodies())).toEqual([tokens]);
+      } finally {
+        await server.stop();
+      }
+    },
+  );
 });

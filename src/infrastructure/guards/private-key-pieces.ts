@@ -12,7 +12,8 @@
 // empty remainder (a blank line, a lone `)`) counts inside a key. Prose and code identifiers of 16
 // letters or more right above an orphan END line are masked too, which is the safe side.
 // Linear time: each line is looked at a bounded number of times, and a walk back stops at the
-// previous END. Line breaks stay, so line numbers do not move.
+// previous END. Line breaks stay, so line numbers do not move. The number read_file writes in
+// front of a line (`12: `) is not part of the line.
 // Known limit: a key written inline with no BEGIN or END line, such as the bare base64 body of a
 // DER key in a setting (`key: "MII...`), is not masked. Nothing marks it as a key: these rules
 // start only from a BEGIN or END line, and SecretMasker's password rules match only the names
@@ -92,9 +93,12 @@ function escapedBreakAt(line: string, index: number): boolean {
   );
 }
 
+/** A line number and a colon, as read_file puts them in front of each line (`12: `, RF-202). */
+const lineNumberLead = /^\d{1,9}: /;
+
 /** Where the text left of a line's code wrapping starts. */
 function contentStart(line: string): number {
-  let start = 0;
+  let start = lineNumberLead.exec(line)?.[0].length ?? 0;
   while (start < line.length && leadingCode.has(line.charAt(start))) start += 1;
   // A string prefix (b"...", @"...", $"...", u8"...") before the opening quote.
   const prefix = /^(?:[A-Za-z0-9@$]{1,2})["'`]/.exec(line.slice(start, start + 3));

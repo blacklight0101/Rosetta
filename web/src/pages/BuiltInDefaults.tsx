@@ -17,7 +17,7 @@ export function BuiltInDefaults(props: {
   readonly builtIn: DefaultRoles;
 }): JSX.Element | null {
   const { applied, builtIn } = props;
-  if (Object.keys(applied).length > 0) return null;
+  if (defaultRoleNames.some((name) => applied[name] !== undefined)) return null;
   return (
     <div class="rst-callout rst-callout--info" data-testid="built-in-defaults">
       <p class="rst-settings__note">

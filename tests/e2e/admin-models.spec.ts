@@ -193,3 +193,45 @@ test('RF-405 the choice fits a 360 px screen without sideways scrolling', async 
   expect(fits).toBe(true);
   await page.getByLabel('Summariser provider').selectOption('');
 });
+
+// RF-401, Q-44: the Ollama context size of new projects. The reader is on Ollama from the first
+// test of this file; the test gives the size back to Auto when it ends.
+
+test('RF-401 saves the Ollama context size of new projects and shows it after a reload', async ({
+  page,
+}) => {
+  await page.getByLabel('Reader provider').selectOption('ollama');
+  await page.getByLabel('Reader model').fill('gemma4:e4b');
+  await page.getByLabel('Ollama context size', { exact: true }).selectOption('number');
+  const tokens = page.getByLabel('Ollama context size in tokens');
+  await tokens.fill('2048');
+  await saveButton(page).click();
+  await expect(page.getByText(/at least 4,096/u)).toBeVisible();
+  await expect(tokens).toHaveAttribute('aria-invalid', 'true');
+
+  await tokens.fill('65536');
+  await saveButton(page).click();
+
+  await expect(page.getByRole('status').filter({ hasText: 'Default models saved' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Ollama context size in tokens')).toHaveValue('65536');
+  await expectNoSeriousViolations(page);
+  await page.getByLabel('Ollama context size', { exact: true }).selectOption('auto');
+  await saveButton(page).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Default models saved' })).toBeVisible();
+});
+
+test('RF-401 the Ollama context size fits a 360 px screen without sideways scrolling', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.getByLabel('Reader provider').selectOption('ollama');
+  await page.getByLabel('Ollama context size', { exact: true }).selectOption('number');
+  await expect(page.getByLabel('Ollama context size in tokens')).toBeVisible();
+
+  const fits = await page.evaluate(
+    () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+  );
+
+  expect(fits).toBe(true);
+});

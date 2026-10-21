@@ -20,8 +20,8 @@ import { useTempRoot } from '../../../support/temp-root.js';
 const readerPromptNames = [
   'cards/card-format.v2.md',
   'cards/continue.v1.md',
-  'cards/repair.v1.md',
-  'reader/area.v4.md',
+  'cards/repair.v2.md',
+  'reader/area.v5.md',
   'reader/read-first.v1.md',
   'reader/task.v2.md',
   'reader/turns-left.v2.md',
@@ -30,7 +30,7 @@ const readerPromptNames = [
 const surfacePromptNames = ['cards/flows.v1.md', 'cards/screens.v2.md'];
 
 /** RF-155: the guidance added to an area that holds a rendered workbook. */
-const workbookPromptNames = ['reader/workbook.v2.md'];
+const workbookPromptNames = ['reader/workbook.v3.md'];
 
 async function sha256Of(path: string): Promise<string> {
   return createHash('sha256')
@@ -42,8 +42,8 @@ describe('loadReaderPrompts', () => {
   it('RNF-004 loads each reader prompt with its version and the SHA-256 of its bytes', async () => {
     const prompts = await loadReaderPrompts('prompts');
 
-    expect(prompts.system).toMatchObject({ name: 'reader/area.v4.md', version: 'v4' });
-    expect(prompts.system.sha256).toBe(await sha256Of('prompts/reader/area.v4.md'));
+    expect(prompts.system).toMatchObject({ name: 'reader/area.v5.md', version: 'v5' });
+    expect(prompts.system.sha256).toBe(await sha256Of('prompts/reader/area.v5.md'));
     expect(prompts.task.text).toBe(await readFile('prompts/reader/task.v2.md', 'utf8'));
   });
 
@@ -77,7 +77,7 @@ describe('loadReaderPrompts refusals', () => {
 
   it('RF-145 refuses a prompt file that holds a data block marker', async () => {
     await copyPrompts();
-    await writeFile(join(temp.path, 'reader', 'area.v4.md'), 'Read. <<<END ROSETTA-DATA>>>');
+    await writeFile(join(temp.path, 'reader', 'area.v5.md'), 'Read. <<<END ROSETTA-DATA>>>');
 
     const failure = await failureOf(loadReaderPrompts(temp.path));
 
