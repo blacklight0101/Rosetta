@@ -24,6 +24,7 @@ import {
   loadUxPrompt,
   loadCoveragePrompt,
   loadGapPrompt,
+  loadGapRepairPrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import { sampleAccount } from './account-fixtures.js';
@@ -132,6 +133,7 @@ export async function createPlanEstimateHarness(
       uxPrompt: () => loadUxPrompt('prompts'),
       coveragePrompt: () => loadCoveragePrompt('prompts'),
       gapPrompt: () => loadGapPrompt('prompts'),
+      gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
       workbookGuidance: (inputs) => workbookGuidanceFor(workbookDeps(runs, clock, masker), inputs),
     }),
     seed: (seed) => seedPlanSource({ files, briefs, runs }, project, seed),

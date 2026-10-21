@@ -55,15 +55,15 @@ describe('EstimatePlan: the planner range', () => {
       ...{ role: 'planner', provider: 'openai', kind: 'openai', model: 'priced-model' },
       ...{ keySource: 'server', priced: true },
     });
-    expect(planner.points.low.outputTokens).toBe(20480);
-    expect(planner.points.likely.outputTokens).toBe(40960);
-    expect(planner.points.high.outputTokens).toBe(245760);
+    expect(planner.points.low.outputTokens).toBe(24576);
+    expect(planner.points.likely.outputTokens).toBe(49152);
+    expect(planner.points.high.outputTokens).toBe(294912);
     expect(planner.points.low.inputTokens).toBeGreaterThan(0);
     expect(planner.points.high.inputTokens).toBeGreaterThan(planner.points.low.inputTokens);
     expect(planner.points.low.costMicros).toBeLessThan(planner.points.likely.costMicros);
     expect(planner.points.likely.costMicros).toBeLessThan(planner.points.high.costMicros);
     expect(planner.points.high.costMicros).toBeGreaterThanOrEqual(16_384n);
-    expect(assumptions).toMatchObject({ calls: 5, maxOutputTokens: 16384 });
+    expect(assumptions).toMatchObject({ calls: 6, maxOutputTokens: 16384 });
     expect(assumptions.promptTokens).toBe(planner.points.low.inputTokens);
     expect(estimate).toMatchObject({ currency: 'USD', priceTableVersion: '2026-10-11' });
   });
@@ -98,14 +98,15 @@ describe('EstimatePlan: the PRD call', () => {
       assumptions.dataModelPromptTokens -
       assumptions.flowsPromptTokens -
       assumptions.coveragePromptTokens -
-      assumptions.gapPromptTokens;
+      assumptions.gapPromptTokens -
+      assumptions.gapRepairPromptTokens;
     expect(assumptions.prdPromptTokens).toBeGreaterThan(0);
     expect(planTokens).toBeGreaterThan(0);
     expect(
       Math.abs(planTokens - assumptions.prdPromptTokens - (packageSize - prdSize) / 4),
     ).toBeLessThan(2);
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(5 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(6 * 3 * assumptions.maxOutputTokens);
   });
 });
 
@@ -117,7 +118,7 @@ describe('EstimatePlan: the planner price', () => {
 
     expect(estimate.planner).toMatchObject({ kind: 'ollama', keySource: 'none', priced: true });
     expect(estimate.planner.points.high.costMicros).toBe(0n);
-    expect(estimate.planner.points.high.outputTokens).toBe(245760);
+    expect(estimate.planner.points.high.outputTokens).toBe(294912);
     expect(estimate.withinCaps).toEqual({ low: true, likely: true, high: true });
   });
 
@@ -128,7 +129,7 @@ describe('EstimatePlan: the planner price', () => {
 
     expect(estimate.planner.priced).toBe(false);
     expect(estimate.planner.points.high.costMicros).toBe(0n);
-    expect(estimate.planner.points.high.outputTokens).toBe(245760);
+    expect(estimate.planner.points.high.outputTokens).toBe(294912);
   });
 });
 

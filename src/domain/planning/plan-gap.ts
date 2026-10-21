@@ -2,7 +2,8 @@ import { dependenciesOf, listedFiles, type OrderedCard } from './parallel-cards.
 import { planId, type PlanContent, type PlanTask } from './plan-content.js';
 import type { CoverageItem } from './plan-coverage.js';
 import type { DraftTask } from './plan-draft.js';
-import { cardProblem, type RiskClass } from './task-card-quality.js';
+import { draftFault } from './left-out-card.js';
+import type { RiskClass } from './task-card-quality.js';
 
 // Q-45, RF-627, RF-630, ADR-013, ADR-018: the task cards the planner wrote for the items no card
 // builds, made into cards of the plan. The answer is untrusted: a draft is kept only when it is a
@@ -28,7 +29,17 @@ interface KeptDraft {
   readonly files: readonly string[];
 }
 
+/** A card of the answer the plan does not take: where, why, and the ids it named. */
+export interface GapLeftOut {
+  readonly position: number;
+  readonly field: string;
+  readonly reason: string;
+  readonly builds: readonly string[];
+}
+
 export interface GapOptions {
+  /** The position in the answer of each draft, from 1; the index plus one when not given. */
+  readonly positions?: readonly number[];
   /** RF-607: given SDD, a card that implements no requirement is not written. */
   readonly specificationDriven?: boolean;
 }
@@ -37,26 +48,64 @@ function unique<T>(items: readonly T[]): T[] {
   return [...new Set(items)];
 }
 
+/** The reason of each field that keeps a card out, as a phrase that follows `the field "x"`. */
+const phrases: Readonly<Record<string, string>> = {
+  phase: 'names a phase that the plan does not have',
+  riskClass: 'names no risk class, or one that does not exist',
+  invariant: 'states no invariant',
+  acceptanceCriteria: 'holds a Done-when item that is not a Given, When, Then scenario',
+  probes: 'lists no review probes although the card adds a guard or sits at a risk',
+  builds: 'names no item that is still built by no task card',
+  requirements: 'names no requirement of the plan, and the plan is specification-driven',
+};
+
+function leftOut(position: number, field: string, builds: readonly string[]): GapLeftOut {
+  return { position, field, reason: phrases[field] ?? 'is not valid', builds };
+}
+
+interface Kept {
+  readonly kept: KeptDraft[];
+  readonly leftOut: GapLeftOut[];
+}
+
+/** The field that keeps a draft out of the plan, if any. */
+function faultOf(
+  content: PlanContent,
+  draft: GapDraft,
+  builds: readonly string[],
+  noRequirement: boolean,
+): string | undefined {
+  const fault = draftFault(draft, content.phases.length)?.field;
+  if (fault !== undefined) return fault;
+  if (builds.length === 0) return 'builds';
+  return noRequirement ? 'requirements' : undefined;
+}
+
 function keptDrafts(
   content: PlanContent,
   drafts: readonly GapDraft[],
   uncovered: readonly CoverageItem[],
   options: GapOptions,
-): KeptDraft[] {
-  return drafts.flatMap((draft, index) => {
+): Kept {
+  const result: Kept = { kept: [], leftOut: [] };
+  drafts.forEach((draft, index) => {
+    const position = options.positions?.[index] ?? index + 1;
     const { riskClass } = draft;
-    if (draft.phase < 1 || draft.phase > content.phases.length) return [];
-    if (riskClass === undefined || cardProblem({ ...draft, riskClass }) !== undefined) return [];
     const named = new Set(draft.builds);
     const builds = uncovered.filter((each) => named.has(each.id)).map((each) => each.id);
     const requirements = unique(
       draft.requirements.flatMap((at) => content.requirements[at - 1]?.id ?? []),
     );
-    if (builds.length === 0) return [];
-    if (options.specificationDriven === true && requirements.length === 0) return [];
+    const missing = options.specificationDriven === true && requirements.length === 0;
+    const field = faultOf(content, draft, builds, missing);
+    if (field !== undefined || riskClass === undefined) {
+      result.leftOut.push(leftOut(position, field ?? 'riskClass', draft.builds));
+      return;
+    }
     const files = listedFiles(draft.files);
-    return [{ ...{ position: index + 1, draft, riskClass }, requirements, builds, files }];
+    result.kept.push({ ...{ position, draft, riskClass }, requirements, builds, files });
   });
+  return result;
 }
 
 /** What each card waits for, over the plan's cards and the new ones, as indexes into both. */
@@ -86,9 +135,9 @@ export function addGapTasks(
   drafts: readonly GapDraft[],
   uncovered: readonly CoverageItem[],
   options: GapOptions = {},
-): PlanContent {
-  const kept = keptDrafts(content, drafts, uncovered, options);
-  if (kept.length === 0) return content;
+): { readonly content: PlanContent; readonly leftOut: readonly GapLeftOut[] } {
+  const { kept, leftOut } = keptDrafts(content, drafts, uncovered, options);
+  if (kept.length === 0) return { content, leftOut };
   const first = content.tasks.length;
   const ids = [
     ...content.tasks.map((task) => task.id),
@@ -104,5 +153,5 @@ export function addGapTasks(
       dependsOn: (dependencies[first + at] ?? []).flatMap((on) => ids[on] ?? []),
     };
   });
-  return { ...content, tasks: [...content.tasks, ...added] };
+  return { content: { ...content, tasks: [...content.tasks, ...added] }, leftOut };
 }

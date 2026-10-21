@@ -43,6 +43,7 @@ import {
   loadUxPrompt,
   loadCoveragePrompt,
   loadGapPrompt,
+  loadGapRepairPrompt,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
@@ -72,6 +73,7 @@ function plannerPrompts(folder: string) {
     uxPrompt: () => loadUxPrompt(folder),
     coveragePrompt: () => loadCoveragePrompt(folder),
     gapPrompt: () => loadGapPrompt(folder),
+    gapRepairPrompt: () => loadGapRepairPrompt(folder),
   };
 }
 

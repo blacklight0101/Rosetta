@@ -32,16 +32,36 @@ function isScenario(text: string): boolean {
   return then > when + 1 && then < words.length - 1;
 }
 
-/** Why a draft is not a card an agent can build without guessing; undefined when it is one. */
-// RF-630, RF-635
-export function cardProblem(card: CardQualityFields): string | undefined {
-  if (card.invariant.trim() === '') return 'The card states no invariant.';
+/** The field of a draft that keeps it from being a card, and why. */
+export interface CardFault {
+  readonly field: 'invariant' | 'acceptanceCriteria' | 'probes';
+  readonly reason: string;
+}
+
+/** The first fault that keeps a draft from being a card an agent can build without guessing. */
+// RF-630, RF-635, Q-54
+export function cardFault(card: CardQualityFields): CardFault | undefined {
+  if (card.invariant.trim() === '') {
+    return { field: 'invariant', reason: 'The card states no invariant.' };
+  }
   if (card.acceptanceCriteria.length === 0 || !card.acceptanceCriteria.every(isScenario)) {
-    return 'A Done-when item is not a Given/When/Then scenario.';
+    return {
+      field: 'acceptanceCriteria',
+      reason: 'A Done-when item is not a Given/When/Then scenario.',
+    };
   }
   const atRisk = card.adds.length > 0 || card.riskClass !== 'none';
   if (atRisk && !card.probes.some((probe) => probe.trim() !== '')) {
-    return 'The card adds a guard or sits at a risk and lists no review probes.';
+    return {
+      field: 'probes',
+      reason: 'The card adds a guard or sits at a risk and lists no review probes.',
+    };
   }
   return undefined;
+}
+
+/** Why a draft is not a card an agent can build without guessing; undefined when it is one. */
+// RF-630, RF-635
+export function cardProblem(card: CardQualityFields): string | undefined {
+  return cardFault(card)?.reason;
 }

@@ -27,10 +27,10 @@ describe('EstimatePlan: the data model call', () => {
 
     const { assumptions, planner } = estimate;
     const system = (await readFile('prompts/planner/data-model.v1.md', 'utf8')).length;
-    expect(assumptions.calls).toBe(5);
+    expect(assumptions.calls).toBe(6);
     expect(assumptions.dataModelPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(5 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(6 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 RF-623 does not count it when no ENT claim is supported, since no call is made', async () => {
@@ -38,8 +38,8 @@ describe('EstimatePlan: the data model call', () => {
     const estimate = await estimateOf({ seed: { cards } });
 
     const { assumptions, planner } = estimate;
-    expect(assumptions).toMatchObject({ calls: 4, dataModelPromptTokens: 0 });
-    expect(planner.points.high.outputTokens).toBe(4 * 3 * assumptions.maxOutputTokens);
+    expect(assumptions).toMatchObject({ calls: 5, dataModelPromptTokens: 0 });
+    expect(planner.points.high.outputTokens).toBe(5 * 3 * assumptions.maxOutputTokens);
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
   });
 
@@ -55,13 +55,15 @@ describe('EstimatePlan: the data model call', () => {
       assumptions.dataModelPromptTokens -
       assumptions.flowsPromptTokens -
       assumptions.coveragePromptTokens -
-      assumptions.gapPromptTokens;
+      assumptions.gapPromptTokens -
+      assumptions.gapRepairPromptTokens;
     const sum =
       reservation(plan) +
       reservation(assumptions.prdPromptTokens) +
       reservation(assumptions.dataModelPromptTokens) +
       reservation(assumptions.coveragePromptTokens) +
-      reservation(assumptions.gapPromptTokens);
+      reservation(assumptions.gapPromptTokens) +
+      reservation(assumptions.gapRepairPromptTokens);
     expect(planner.points.high.inputTokens + planner.points.high.outputTokens).toBe(sum);
   });
 });

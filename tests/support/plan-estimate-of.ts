@@ -11,6 +11,7 @@ import {
   loadApiContractPrompt,
   loadCoveragePrompt,
   loadGapPrompt,
+  loadGapRepairPrompt,
   loadDataModelPrompt,
   loadFlowsPrompt,
   loadPlannerPrompt,
@@ -49,6 +50,7 @@ export async function planEstimateOf(
     uxPrompt: () => loadUxPrompt('prompts'),
     coveragePrompt: () => loadCoveragePrompt('prompts'),
     gapPrompt: () => loadGapPrompt('prompts'),
+    gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
   });
   const request = { actor, projectId: project.id };
   const outcome = await estimate.execute(

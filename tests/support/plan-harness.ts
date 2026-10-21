@@ -33,6 +33,7 @@ import {
   loadUxPrompt,
   loadCoveragePrompt,
   loadGapPrompt,
+  loadGapRepairPrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
@@ -131,6 +132,7 @@ export function planExecutor(
     uxPrompt: () => loadUxPrompt('prompts'),
     coveragePrompt: () => loadCoveragePrompt('prompts'),
     gapPrompt: () => loadGapPrompt('prompts'),
+    gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
     ids: new SequenceIdGenerator(),
     scans,
   });
