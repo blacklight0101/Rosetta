@@ -156,3 +156,17 @@ test('RF-401 sets the Ollama context size from the keyboard, refuses a bad one a
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
 });
+
+test('RF-401 the Ollama context size fits a 360 px screen without sideways scrolling', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.getByLabel('Ollama context size', { exact: true }).selectOption('number');
+  await expect(page.getByLabel('Ollama context size in tokens')).toBeVisible();
+
+  const fits = await page.evaluate(
+    () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+  );
+
+  expect(fits).toBe(true);
+});
