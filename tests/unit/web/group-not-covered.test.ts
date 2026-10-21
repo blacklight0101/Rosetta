@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { groupNotCovered } from '../../../web/src/lib/group-not-covered.js';
+import { groupNotCovered, splitUnreadFiles } from '../../../web/src/lib/group-not-covered.js';
 
 // RF-264, P1-173: the groups of "What was not covered" come in a fixed order and never drop a line.
 
@@ -37,4 +37,15 @@ it('RF-264 shows only the area where the reason is the same for the group, the w
 
   expect(groups[0]?.lines).toEqual(['V']);
   expect(groups[2]?.lines).toEqual(['X: its reader could not finish (boom).']);
+});
+
+it('RF-264 sets the line about first-party files not read apart from the area groups, whole', () => {
+  const unread =
+    'First-party files not read: 41 files, 97% of first-party tokens not read. Next step: run a Deepen to read them.';
+
+  const split = splitUnreadFiles([unread, ...lines]);
+
+  expect(split.unread).toBe(unread);
+  expect(split.areas).toEqual(lines);
+  expect(splitUnreadFiles(lines).unread).toBeUndefined();
 });

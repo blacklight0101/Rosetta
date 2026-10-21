@@ -38,7 +38,7 @@ async function overviewOf(snapshotKey: string, folders: readonly string[] = ['Lo
     execution: { run, signal: new AbortController().signal },
     overviewPrompt: { name: 'summariser/overview.v1.md', version: 'v1', sha256: 'ab', text: 'x' },
     scanned: {
-      codeMap: { areas: [loan, root, rates] },
+      codeMap: { areas: [loan, root, rates], files: [] },
       source: { snapshotKey },
       workbookFolders: folders,
     },

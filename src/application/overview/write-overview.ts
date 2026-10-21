@@ -6,6 +6,7 @@ import { eligibleCards } from '../../domain/overview/eligible-cards.js';
 import type { Overview } from '../../domain/overview/overview.js';
 import { questionLinks } from '../../domain/overview/question-links.js';
 import { notCoveredOf, type AreaStanding } from '../../domain/overview/standing.js';
+import type { UnreadFiles } from '../../domain/overview/unread-files.js';
 import {
   chosenNotice,
   isChosenRun,
@@ -30,6 +31,8 @@ export type OverviewParts = ConsolidationParts;
 export interface OverviewInput {
   readonly cards: readonly Card[];
   readonly areas: readonly AreaStanding[];
+  /** RF-231: the first-party files no task read; the overview names them (Q-53). */
+  readonly unread?: UnreadFiles;
 }
 
 async function log(
@@ -106,7 +109,7 @@ export async function writeOverview(parts: OverviewParts, input: OverviewInput):
     ...area,
     cards: eligible.filter((card) => card.area === area.name).length,
   }));
-  const notCovered = notCoveredOf(standing);
+  const notCovered = notCoveredOf(standing, input.unread);
   const reach = reachOf(eligible, input.areas);
   if (parts.signal.aborted) return noticeOverview('unavailable', STOPPED, notCovered);
   if (eligible.length < MIN_CARDS_FOR_OVERVIEW) {

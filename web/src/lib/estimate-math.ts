@@ -23,9 +23,18 @@ export function dollars(micros: bigint): string {
   return `$${microsToDollars(micros.toString())}`;
 }
 
-/** The cost shown for one scenario of a role: the amount, or "unknown" for an unpriced model. */
+/**
+ * The cost shown for one scenario of a role: tokens for a local model (Q-44, Q-51), the amount for
+ * a priced one, "unknown" for an unpriced one.
+ */
 export function roleCost(role: RoleEstimate, scenario: Scenario): string {
+  if (isLocalModel(role.kind)) return tokensText(totalTokens(role, scenario));
   return role.priced ? dollars(BigInt(role[scenario].costMicros)) : 'unknown';
+}
+
+/** Q-51: every role runs on a local model, so the estimate is in tokens and no dollar sentence fits. */
+export function isLocalEstimate(estimate: Pick<RunEstimate, 'roles'>): boolean {
+  return estimate.roles.length > 0 && estimate.roles.every((role) => isLocalModel(role.kind));
 }
 
 /** The roles whose cost the estimate cannot know. */

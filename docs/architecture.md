@@ -119,7 +119,7 @@ src/
                         relation or cardinality is invented, P2-22); ids generated, never taken from the code
     eval/               the quality measures of an evaluation (citation validity, claim match and score, structure score, verifier agreement, estimate accuracy, spread, ratio) and the golden set
     observability/      call statistics and the log scope of a run
-    overview/           the project overview: its build, the eligible cards, the standing, the thin-run rule and the question links
+    overview/           the project overview: its build, the eligible cards, the standing, the thin-run rule, the question links and the line about first-party files not read (`unread-files.ts`, RF-264, Q-53: at most 900 characters, because `overview.json` refuses a longer line)
     deepen/             the Deepen of a completed run (RF-209, RF-231, P2-41): the round plan (`planRound`), the stop
                         rule (`stopAfterRound`, `DEEPEN_ROUNDS`), the understanding measures (`understandingMeasures`,
                         third-party code apart) and the Deepen record of the manifest (`DeepenRecord`, `canDeepen`)

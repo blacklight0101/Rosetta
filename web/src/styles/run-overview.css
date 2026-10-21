@@ -60,3 +60,9 @@ summary.rst-p168-group__title {
 details.rst-p168-group[open] > summary {
   margin-block-end: var(--rst-sp-2);
 }
+
+/* P3-81, RF-264: the line about first-party files not read (paths can be long). */
+.rst-p168-unread {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

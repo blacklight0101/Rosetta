@@ -82,6 +82,12 @@ test('RF-1001 shows the estimate and starts an understand run for the chosen are
   await expect(table.getByRole('row', { name: /reader/u })).toBeVisible();
   await expect(table.getByRole('row', { name: /Total/u })).toBeVisible();
   await expect(page.getByText(/Code will leave this machine/u)).toHaveCount(0);
+  // P3-79, Q-51: the roles are local, so the estimate is in tokens against the token cap.
+  await expect(table).not.toContainText('$');
+  await expect(page.getByRole('meter')).toHaveAccessibleDescription(
+    /run token cap of [\d,]+ tokens/u,
+  );
+  await expect(page.getByText(/Assumptions: \d+ areas?,/u)).toBeVisible();
   const areas = page.getByRole('group', { name: 'Areas from the code map' }).getByRole('checkbox');
   expect(await areas.count()).toBeGreaterThan(0);
   await areas.first().uncheck();
