@@ -70,7 +70,8 @@ jobs:
     name: verify (${{ matrix.os }})
     needs: changes
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    # The full suite takes about 12 minutes of tests plus setup; 15 cancelled runs at the limit.
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:

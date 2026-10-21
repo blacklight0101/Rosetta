@@ -6,21 +6,34 @@
 # flagships and the cheap OpenAI models a person is likely to try; the legacy models are in the
 # price table, and a person can still type any model id under "Other model...". Update the version
 # date when the list changes.
+#
+# `reasoning: true` (Q-58) marks a model that takes a reasoning effort on the provider's API: the
+# adapter then sends the role's effort (default low) as OpenAI `reasoning_effort` or Anthropic
+# `output_config.effort`; a model without the mark never gets one. Checked 2026-10-21 on
+# platform.claude.com/docs/en/build-with-claude/effort (the four Anthropic models are on its list of
+# supported models) and developers.openai.com/api/docs (each model page lists reasoning token
+# support). The four GPT-6 models are not marked: their pages say Chat Completions takes function
+# calling only with effort `none` (Sol, Luna) or not at all (Astra, 6.1 Sol), and the reader needs
+# tools.
 schemaVersion: 1
 version: '2026-10-21'
 models:
   - provider: anthropic
     model: claude-opus-5-5
     label: Claude Opus 5.5
+    reasoning: true
   - provider: anthropic
     model: claude-sonnet-5-5
     label: Claude Sonnet 5.5
+    reasoning: true
   - provider: anthropic
     model: claude-haiku-5-5
     label: Claude Haiku 5.5
+    reasoning: true
   - provider: anthropic
     model: claude-fable-5-1
     label: Claude Fable 5.1
+    reasoning: true
   - provider: openai
     model: gpt-6-astra
     label: GPT-6 astra
@@ -36,30 +49,40 @@ models:
   - provider: openai
     model: gpt-5.6-sol
     label: GPT-5.6 sol
+    reasoning: true
   - provider: openai
     model: gpt-5.6-terra
     label: GPT-5.6 terra
+    reasoning: true
   - provider: openai
     model: gpt-5.6-luna
     label: GPT-5.6 luna
+    reasoning: true
   - provider: openai
     model: gpt-5.5
     label: GPT-5.5
+    reasoning: true
   - provider: openai
     model: gpt-5.4
     label: GPT-5.4
+    reasoning: true
   - provider: openai
     model: gpt-5.4-mini
     label: GPT-5.4 mini
+    reasoning: true
   - provider: openai
     model: gpt-5.4-nano
     label: GPT-5.4 nano
+    reasoning: true
   - provider: openai
     model: gpt-5-mini
     label: GPT-5 mini
+    reasoning: true
   - provider: openai
     model: gpt-5-nano
     label: GPT-5 nano
+    reasoning: true
   - provider: openai
     model: gpt-5-nano-2025-08-07
     label: GPT-5 nano (2025-08-07)
+    reasoning: true

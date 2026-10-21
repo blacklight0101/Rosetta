@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. The shape of a reasoning model that spent its whole output limit on hidden reasoning (seen live on gpt-5-nano with a limit of 4,096, 2026-10-21): empty content, finish_reason length, completion_tokens equal to the limit and all of them reasoning_tokens. The second exchange is the answer to the retry with the doubled limit. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req_FAKE0000000000000000000011"
+      },
+      "body": {
+        "id": "chatcmpl-FAKE0000000000000011",
+        "object": "chat.completion",
+        "created": 1791700000,
+        "model": "gpt-5-nano-2025-08-07",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "",
+              "refusal": null
+            },
+            "logprobs": null,
+            "finish_reason": "length"
+          }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+          "prompt_tokens": 3200,
+          "completion_tokens": 4096,
+          "total_tokens": 7296,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4096,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req_FAKE0000000000000000000012"
+      },
+      "body": {
+        "id": "chatcmpl-FAKE0000000000000012",
+        "object": "chat.completion",
+        "created": 1791700001,
+        "model": "gpt-5-nano-2025-08-07",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"cards\": []}",
+              "refusal": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop"
+          }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+          "prompt_tokens": 3200,
+          "completion_tokens": 5120,
+          "total_tokens": 8320,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 5000,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        }
+      }
+    }
+  ]
+}

@@ -62,7 +62,8 @@ describe('model list file', () => {
     const list = await loadModelList(shipped);
 
     expect(list.version).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(list.models.filter((entry) => entry.provider === 'anthropic')).toEqual([
+    const anthropic = list.models.filter((entry) => entry.provider === 'anthropic');
+    expect(anthropic.map(({ provider, model, label }) => ({ provider, model, label }))).toEqual([
       { provider: 'anthropic', model: 'claude-opus-5-5', label: 'Claude Opus 5.5' },
       { provider: 'anthropic', model: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5' },
       { provider: 'anthropic', model: 'claude-haiku-5-5', label: 'Claude Haiku 5.5' },

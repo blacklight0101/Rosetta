@@ -139,6 +139,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     ...(doubles?.fetch === undefined ? {} : { fetch: doubles.fetch }),
     providers: auth.providers,
     priceTable: auth.priceTable,
+    reasoningModels: auth.reasoningModels,
     streams: auth.streams,
     packs: await composeLanguagePacks(),
   });

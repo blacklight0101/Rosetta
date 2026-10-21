@@ -60,6 +60,7 @@ function composedRuns(dataDir: string) {
     providers: { build: () => Promise.resolve({ ok: true, value: new Map() }) },
     ollamaUrl: undefined,
     priceTable: { version: '2026-10-11', currency: 'USD', prices: [] },
+    reasoningModels: () => false,
     streams,
   });
   return { runs, logger, pool, streams, clock };

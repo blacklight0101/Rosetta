@@ -23,6 +23,7 @@ export interface CallWire {
   readonly latencyMs: number;
   readonly inputTokens: number;
   readonly outputTokens: number;
+  readonly reasoningTokens?: number;
   readonly cachedInputTokens: number;
   readonly costMicros: number;
   readonly currency: string;

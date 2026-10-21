@@ -24,6 +24,8 @@ export const roleEstimate = z.object({
   keySource: z.string(),
   /** False for a cloud model without a price: its cost is zero here and unknown in fact. */
   priced: z.boolean(),
+  /** Q-58: the effort a reasoning model is asked for; absent for any other model. */
+  reasoningEffort: z.string().optional(),
   ...range,
 });
 
