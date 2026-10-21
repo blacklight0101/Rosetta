@@ -28,7 +28,7 @@ import {
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import { sampleAccount } from './account-fixtures.js';
-import { estimatePrices } from './estimate-harness.js';
+import { estimatePrices, noModels } from './estimate-harness.js';
 import { workbookGuidanceFor } from '../../src/application/plan/plan-workbook.js';
 import type { ScanResults } from '../../src/application/ports/scan-results.js';
 import { ERROR_CODES } from '../../src/domain/errors/codes.js';
@@ -37,6 +37,7 @@ import { MemoryLogger } from './memory-logger.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryOutputWriter } from './memory-output-writer.js';
 import { seedPlanSource, type PlanSourceSeed } from './plan-source-seed.js';
+import type { ModelList } from '../../src/application/models/model-list.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { shippedCatalogue } from './planning-brief-harness.js';
 import { sampleProject } from './project-fixtures.js';
@@ -71,6 +72,8 @@ export interface PlanEstimateOptions {
   readonly project?: Partial<Project>;
   /** The shipped price table the estimate reads; the fixed one of the estimate harness by default. */
   readonly priceTable?: PriceTable;
+  /** The shipped model list (Q-57); one without limits by default. */
+  readonly models?: ModelList;
 }
 
 /** The project settings with the planner on this provider and model; the other roles stay local. */
@@ -127,6 +130,7 @@ export async function createPlanEstimateHarness(
       answers: new FileAnswersFile({ writer: files, masker }),
       serverKeys: options.serverKeys ?? { has: () => true },
       priceTable: options.priceTable ?? estimatePrices,
+      models: options.models ?? noModels,
       catalogue: () => Promise.resolve(shippedCatalogue),
       prompt: () => loadPlannerPrompt('prompts'),
       prdPrompt: () => loadPrdPrompt('prompts'),

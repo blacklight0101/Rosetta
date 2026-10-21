@@ -45,8 +45,18 @@ interface EstimateAssumptions extends ReaderAssumptions {
   readonly summariserBatches: ByScenario<number>;
 }
 
+/** The context window and the output limit a role runs with (RF-405, Q-57), as the start page shows them. */
+export interface RoleLimitsView {
+  readonly contextTokens: number;
+  /** True for an Ollama context that is chosen at run time: the context is then the floor the estimate assumed. */
+  readonly contextAutomatic: boolean;
+  readonly maxOutputTokens: number;
+}
+
 /** The assumptions the reader tasks and the summariser's share rest on (known from the settings). */
 export interface ReaderAssumptions {
+  /** The limits of the roles an understand run uses (Q-57). */
+  readonly roleLimits: Readonly<Record<'reader' | 'verifier' | 'summariser', RoleLimitsView>>;
   /** Reader turns per area, from the reader's `maxTurns` (DEC-117 range). */
   readonly turnsPerArea: ByScenario<number>;
   /** Output of each turn, as a share of the reader's `maxOutputTokens`. */

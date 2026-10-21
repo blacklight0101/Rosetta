@@ -2,6 +2,8 @@ import { MERGEABLE_TYPES } from '../../domain/cards/card-merge.js';
 import { MERGE_BATCH_TOKENS } from '../consolidate/merge-request.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { roleLimits } from '../models/role-limits.js';
+import type { ModelList } from '../models/model-list.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
 import { readerParallelism, readerTaskSettings } from '../understand/reader-settings.js';
 import type { ByScenario, ReaderAssumptions, Scenario } from './estimate-types.js';
@@ -65,7 +67,10 @@ function eachScenario(figure: (scenario: Scenario) => number): ByScenario<number
 }
 
 // RF-425, DEC-117
-export function assumptionsOf(settings: ProjectSettings): ReaderAssumptions {
+export function assumptionsOf(
+  settings: ProjectSettings,
+  models: ModelList = { version: '0000-00-00', models: [] },
+): ReaderAssumptions {
   const { reader } = settings.roles;
   const provider = Object.hasOwn(settings.providers, reader.provider)
     ? settings.providers[reader.provider]
@@ -75,7 +80,16 @@ export function assumptionsOf(settings: ProjectSettings): ReaderAssumptions {
   }
   const role = { name: reader.provider, kind: provider.kind, ...reader };
   const task = readerTaskSettings(settings, role);
+  const limitsOf = (name: 'reader' | 'verifier' | 'summariser') => {
+    const { contextTokens, contextAutomatic, maxOutputTokens } = roleLimits(settings, name, models);
+    return { contextTokens, contextAutomatic, maxOutputTokens };
+  };
   return {
+    roleLimits: {
+      reader: limitsOf('reader'),
+      verifier: limitsOf('verifier'),
+      summariser: limitsOf('summariser'),
+    },
     turnsPerArea: eachScenario((scenario) =>
       Math.max(1, ceilPercent(task.maxTurns, TURNS_PERCENT[scenario])),
     ),

@@ -27,6 +27,8 @@ import type {
 import { GuardedProviderFactory } from '../../src/infrastructure/providers/provider-factory.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
 import { contractRequest } from '../contracts/llm-provider.contract.js';
+import type { ModelList } from '../../src/application/models/model-list.js';
+import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { budgetTable } from './budget-harness.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
@@ -105,6 +107,10 @@ export interface FactoryHarnessOptions {
   readonly defaultRoles?: DefaultRoles;
   /** The application log the guards write to; a fresh in-memory one by default. */
   readonly logger?: MemoryLogger;
+  /** The price table; the contract model only, by default. */
+  readonly priceTable?: PriceTable;
+  /** The shipped model list (Q-57); a list without limits by default. */
+  readonly models?: ModelList;
 }
 
 export interface FactoryHarness extends FakeAdapters {
@@ -182,7 +188,8 @@ export function factoryHarness(options: FactoryHarnessOptions = {}): FactoryHarn
     ...{ keys, box, serverSettings, ledger, masker, adapters, clock, logger },
     serverKeys: options.serverKeys ?? {},
     ollamaUrl: options.ollamaUrl,
-    priceTable: budgetTable,
+    priceTable: options.priceTable ?? budgetTable,
+    models: options.models ?? { version: '2026-10-21', models: [] },
     ids: new SequenceIdGenerator(),
   });
   const run = runSinks(masker);

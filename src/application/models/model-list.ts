@@ -9,6 +9,10 @@ interface ListedModel {
   readonly model: string;
   /** The name shown in the dropdown. */
   readonly label: string;
+  /** The context window from the provider's model page, in tokens; absent when not confirmed (Q-57). */
+  readonly contextTokens?: number | undefined;
+  /** The maximum output from the provider's model page, in tokens; absent when not confirmed (Q-57). */
+  readonly maxOutputTokens?: number | undefined;
 }
 
 export interface ModelList {

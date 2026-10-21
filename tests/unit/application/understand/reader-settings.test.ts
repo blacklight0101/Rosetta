@@ -45,3 +45,36 @@ describe('reader settings of an understand run', () => {
     expect(readerTaskSettings(base, role('ollama')).contextTokens).toBe(32_768);
   });
 });
+
+describe('the context of the reader (Q-57)', () => {
+  const hosted = (modelContextTokens: number | undefined): RoleProvider => ({
+    ...role('anthropic'),
+    ...(modelContextTokens === undefined ? {} : { modelContextTokens }),
+  });
+  const base = settingsFor({ reader: { provider: 'anthropic', model: 'm' } });
+
+  it('RF-201 a hosted reader runs with the window its model has in the list', () => {
+    expect(readerTaskSettings(base, hosted(1_000_000)).contextTokens).toBe(1_000_000);
+    expect(readerTaskSettings(base, hosted(1_000_000)).contextShare).toBe(0.8);
+  });
+
+  it('RF-201 a hosted reader without a window in the list keeps 128,000 tokens', () => {
+    expect(readerTaskSettings(base, hosted(undefined)).contextTokens).toBe(128_000);
+  });
+
+  it('RF-201 the number a project sets for the provider wins over the window of the list', () => {
+    const existing = base.providers['anthropic'];
+    if (existing === undefined) throw new Error('The template has no anthropic provider');
+    const providers = { ...base.providers, anthropic: { ...existing, contextTokens: 300_000 } };
+
+    expect(readerTaskSettings({ ...base, providers }, hosted(1_000_000)).contextTokens).toBe(
+      300_000,
+    );
+  });
+
+  it('P3-64 an Ollama reader ignores a window of the list', () => {
+    const local: RoleProvider = { ...role('ollama'), modelContextTokens: 1_000_000 };
+
+    expect(readerTaskSettings(base, local).contextTokens).toBe(32_768);
+  });
+});

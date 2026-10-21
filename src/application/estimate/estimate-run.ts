@@ -1,4 +1,5 @@
 import type { Actor } from '../../domain/accounts/actor.js';
+import type { ModelList } from '../models/model-list.js';
 import type { PriceTable } from '../../domain/budget/price-table.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
@@ -54,6 +55,8 @@ export interface EstimateRunDependencies {
   readonly keys: Pick<ProviderKeyRepository, 'find'>;
   /** The shipped price table (RF-420). */
   readonly priceTable: PriceTable;
+  /** The shipped model list: the context window and the output limit of each model (Q-57). */
+  readonly models: ModelList;
 }
 
 export interface EstimateRunRequest {

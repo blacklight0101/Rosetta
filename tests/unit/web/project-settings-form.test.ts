@@ -138,3 +138,34 @@ it('RF-002 names a cache-write price that is not an amount', () => {
     'budget.prices.0.cacheWriteInputPerMillionMicros',
   ]);
 });
+
+it('Q-57 shows an empty field for a role without an output limit and leaves it out again', () => {
+  const settings = stored();
+  const { provider, model, maxTurns } = settings.roles.reader;
+  const reader = { provider, model, maxTurns };
+  const unset = { ...settings, roles: { ...settings.roles, reader } };
+
+  const draft = draftOf(unset);
+  const result = settingsOf(unset, draft);
+
+  expect(draft.roles.reader.maxOutputTokens).toBe('');
+  expect(result).toEqual({ ok: true, settings: unset });
+  expect(result.ok && 'maxOutputTokens' in result.settings.roles.reader).toBe(false);
+});
+
+it('Q-57 a number typed into the empty field is stored and text that is no number is named', () => {
+  const settings = stored();
+  const base = draftOf(settings);
+  const typed = (maxOutputTokens: string) => ({
+    ...base,
+    roles: { ...base.roles, reader: { ...base.roles.reader, maxOutputTokens } },
+  });
+
+  const stored8k = settingsOf(settings, typed('8000'));
+  const bad = settingsOf(settings, typed('lots'));
+
+  expect(stored8k.ok && stored8k.settings.roles.reader.maxOutputTokens).toBe(8000);
+  expect(bad.ok ? [] : bad.problems.map((problem) => problem.field)).toEqual([
+    'roles.reader.maxOutputTokens',
+  ]);
+});
