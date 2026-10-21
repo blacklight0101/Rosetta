@@ -27,8 +27,10 @@ const whole = JSON.stringify({ cards: [checkout, rounding, mailer] });
 const cut = whole.slice(0, whole.indexOf('after the order') + 5);
 
 function cutTurn(text: string, turnUsage: TokenUsage = usage): ScenarioOutcome {
-  const turn = textTurn(text, turnUsage);
-  return { ...turn, response: { ...turn.response, finishReason: 'length' } };
+  return {
+    response: { text, toolCalls: [], usage: turnUsage, finishReason: 'length' },
+    retried: [],
+  };
 }
 
 describe('P3-83 an answer cut off whose continuation cannot be asked', () => {
@@ -79,6 +81,37 @@ describe('P3-83 an answer cut off whose continuation cannot be asked', () => {
   });
 });
 
+describe('P3-83 an answer cut off with nothing to keep', () => {
+  it('Q-55 a cut after a complete card with no valid claim keeps nothing and notes nothing', async () => {
+    const bad = cardObject({ title: 'Broken', claims: [{ text: 'x', citations: ['nowhere'] }] });
+    const text = `${JSON.stringify({ cards: [bad] }).slice(0, -2)},{"type":"FE`;
+    const notes: unknown[] = [];
+    const { fake, request } = ungatedLoopSetup([cutTurn(text)], { maxTurns: 1 });
+
+    const result = await runAgentTask({
+      ...request(fake),
+      onNote: (note) => {
+        notes.push(note);
+        return Promise.resolve();
+      },
+    });
+
+    expect(result.drafts).toEqual([]);
+    expect(result.reason).toBe('max-turns');
+    expect(notes).toEqual([]);
+  });
+
+  it('Q-55 a cut in prose with no card list in it keeps nothing', async () => {
+    const text = 'The cards are {"type": "FEAT", "title": "Check';
+    const { fake, request } = ungatedLoopSetup([cutTurn(text)], { maxTurns: 1 });
+
+    const result = await runAgentTask(request(fake));
+
+    expect(result.drafts).toEqual([]);
+    expect(result.problems.map((problem) => problem.path)).toEqual(['']);
+  });
+});
+
 describe('P3-83 an answer cut off inside prose or beside a bad card', () => {
   it('Q-55 a cut inside prose and a code fence keeps the complete cards, too', async () => {
     const fenced = `Here are the cards.\n\`\`\`json\n${cut}`;
@@ -99,6 +132,29 @@ describe('P3-83 an answer cut off inside prose or beside a bad card', () => {
     expect(result.drafts.map((draft) => draft.title)).toEqual(['Checkout', 'Tax rounding']);
     expect(result.problems.some((problem) => problem.path.startsWith('cards.1'))).toBe(true);
     expect(result.problems.some((problem) => problem.message.includes('cut off'))).toBe(true);
+  });
+});
+
+describe('P3-83 an answer still cut off when the follow-ups are used up', () => {
+  it('Q-55 two continuations and two repairs that stay cut: the finished cards are kept, nothing is stopped', async () => {
+    const notes: unknown[] = [];
+    const { fake, request } = ungatedLoopSetup(
+      [cutTurn(cut), cutTurn(' and'), cutTurn(' more'), cutTurn(cut), cutTurn(cut)],
+      { maxTurns: 12 },
+    );
+
+    const result = await runAgentTask({
+      ...request(fake),
+      onNote: (note) => {
+        notes.push(note);
+        return Promise.resolve();
+      },
+    });
+
+    expect(fake.requests).toHaveLength(5);
+    expect(result.state).toBe('Done');
+    expect(result.drafts.map((draft) => draft.title)).toEqual(['Checkout', 'Tax rounding']);
+    expect(notes).toEqual([{ outcome: 'cut', reason: 'unfinished' }]);
   });
 });
 

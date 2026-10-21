@@ -149,6 +149,7 @@ export async function runReaderTask(
     },
     nextCallId: context.nextCallId,
     signal: execution.signal,
+    onNote: (note) => execution.events.emit('agent.answer.noted', { ...note }, agentTaskId),
     ...(task.answers === undefined ? {} : { answers: task.answers }),
     ...(task.rejected === undefined ? {} : { rejected: task.rejected }),
     ...(task.parentCards === undefined ? {} : { parentCards: task.parentCards }),

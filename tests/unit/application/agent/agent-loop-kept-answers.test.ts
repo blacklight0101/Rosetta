@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runAgentTask } from '../../../../src/application/agent/agent-loop.js';
+import { needsRetry } from '../../../../src/application/understand/task-retry.js';
 import type { FileEntry } from '../../../../src/domain/code-map/file-entry.js';
 import type { TokenUsage } from '../../../../src/application/ports/llm-provider.js';
 import type { ScenarioOutcome } from '../../../contracts/llm-provider.contract.js';
@@ -81,9 +82,14 @@ describe('P3-83 the refusal is given only with room for one more read and an ans
 
     expect(result.state).toBe('Done');
     expect(result.reason).toBe('final-answer');
+    expect(needsRetry(result)).toBe(false);
     expect(result.drafts.map((draft) => draft.title)).toEqual(['Invoice rules']);
     expect(t.fake.requests).toHaveLength(2);
     expect(t.notes).toEqual([{ outcome: 'accepted', reason: 'no-room' }]);
+    const line = t.logger.entries.find((each) => each.message === 'An agent answer was accepted.');
+    expect(line?.data).toEqual({ outcome: 'accepted', reason: 'no-room' });
+    expect(line?.agentTaskId).toBe('task-orders');
+    expect(t.logger.text()).not.toContain('Invoice rules');
   });
 
   it('Q-50 a refusal with room left reads more, and the second answer is accepted (as P3-78)', async () => {
@@ -102,7 +108,7 @@ describe('P3-83 the refusal is given only with room for one more read and an ans
   });
 
   it('RF-206 an answer before any read is refused even when there is no room (unchanged)', async () => {
-    const t = over([textTurn(shippingCards, tokens(20_000)), textTurn(shippingCards)], {
+    const t = over([textTurn(shippingCards, tokens(17_500)), textTurn(shippingCards)], {
       contextTokens: 24_000,
     });
 
@@ -146,7 +152,7 @@ describe('the room needed is the answer plus 4,000 tokens for one read', () => {
 
 describe('P3-83 a refused answer is read as the final answer when the task ends', () => {
   it('Q-55 a refusal followed by a turn over the context share keeps the first answer (read first)', async () => {
-    const t = over([textTurn(shippingCards, tokens(26_100)), textTurn(shippingCards)], {
+    const t = over([textTurn(shippingCards, tokens(26_200)), textTurn(shippingCards)], {
       contextTokens: 32_768,
     });
 
@@ -203,6 +209,16 @@ describe('P3-83 a refused answer and the turn limit', () => {
 });
 
 describe('P3-83 a refused answer and what follows it', () => {
+  it('Q-55 a refusal followed by a failed call is not kept: only a context or turn end keeps it', async () => {
+    const t = over([toolTurn([read('wb/workbook.md')]), textTurn(shippingCards)]);
+
+    const result = await t.run();
+
+    expect(result.reason).toBe('provider-failed');
+    expect(result.drafts).toEqual([]);
+    expect(t.notes).toEqual([{ outcome: 'refused', reason: 'read-little' }]);
+  });
+
   it('RF-208 a task that ends with no refused answer behind it still ends as before', async () => {
     const t = over(
       [toolTurn([read('wb/workbook.md')]), toolTurn([read('wb/Sheet2/formulas.md')])],
