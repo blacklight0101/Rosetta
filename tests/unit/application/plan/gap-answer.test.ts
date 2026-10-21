@@ -146,6 +146,13 @@ describe('parseGapAnswer: the ids and fields of a card that is left out (Q-54)',
     expect(read({ tasks: [odd] })?.problems[0]?.builds).toEqual(['flow:FLOW-007']);
   });
 
+  it('RF-627 Q-54 the ids of a left-out card are cut to the 500 a card may name', () => {
+    const many = Array.from({ length: 600 }, (_, at) => `flow:F${String(at)}`);
+    const odd = { ...card, requirements: ['3'], builds: many };
+
+    expect(read({ tasks: [odd] })?.problems[0]?.builds).toEqual(many.slice(0, 500));
+  });
+
   it('RF-627 Q-54 a card whose builds list is no list names no id', () => {
     const odd = { ...card, requirements: ['3'], builds: 'flow:FLOW-007' };
 

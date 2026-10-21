@@ -94,6 +94,7 @@ describe('BuildPlan: the repair refused by a cap', () => {
     const run = await h.plan();
 
     expect(run.endState).toBe('Interrupted');
+    expect(await h.handoffOf(run)).toEqual({});
   });
 });
 
