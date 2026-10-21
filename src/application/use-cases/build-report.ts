@@ -11,6 +11,7 @@ import type { ReportWriter } from '../ports/report-writer.js';
 import type { ReportCardFiles } from '../ports/report-card-files.js';
 import type { RunEventHistory, RunScope } from '../ports/run-events.js';
 import type { Logger } from '../ports/logger.js';
+import { plannedAreas } from '../understand/planned-areas.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
@@ -89,7 +90,10 @@ export class BuildReport {
       cardIndex,
       overviewFile: await this.deps.files.read(scope, 'overview.json'),
       documents: await this.documentsOf(scope),
-      areas: scanned?.codeMap.areas.map(({ name, mapLevel }) => ({ name, mapLevel })) ?? [],
+      areas:
+        scanned === undefined
+          ? []
+          : plannedAreas(scanned).map(({ name, mapLevel }) => ({ name, mapLevel })),
       cardDetails: await this.cardDetailsOf(scope, cardIndex, scanned),
       diagrams: await this.diagramsOf(scope),
       downloads,

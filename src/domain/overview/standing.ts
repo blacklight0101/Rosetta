@@ -19,7 +19,8 @@ export interface AreaStanding {
 
 /** RF-615 (Q-49): the next step the catalogue gives the code an area failed with, when it has one. */
 function nextStepOf(failure: string): string {
-  const code = Object.values(ERROR_CODES).find((each) => failure.includes(each));
+  const named = /RST-\d{4}/u.exec(failure)?.[0];
+  const code = Object.values(ERROR_CODES).find((each) => each === named);
   return code === undefined ? '' : ` ${describeError(code).nextStep}`;
 }
 
