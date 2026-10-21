@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { sectionsOf, type OverviewDraft } from '../../../../src/domain/overview/build-overview.js';
 import { eligibleCards } from '../../../../src/domain/overview/eligible-cards.js';
 import { questionLinks } from '../../../../src/domain/overview/question-links.js';
+import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
+import { describeError } from '../../../../src/domain/errors/descriptions.js';
 import { notCoveredOf } from '../../../../src/domain/overview/standing.js';
 import { isChosenRun, isThin, thinNotice } from '../../../../src/domain/overview/thin-run.js';
 import { fullOverview, overviewCards, withStatus } from '../../../support/app-overview-fixtures.js';
@@ -135,7 +137,8 @@ describe('isThin and thinNotice', () => {
 
     expect(notice).toContain('cannot explain the application yet');
     expect(notice).toContain('Next step');
-    expect(notice).toContain('1 card(s) from 1 of 4 area(s)');
+    expect(notice).toContain('Only 1 card from 1 of 4 areas passed the citation check.');
+    expect(notice).not.toMatch(/\(s\)/u);
   });
 
   it('RF-264 says most areas are third-party code when they are', () => {
@@ -150,6 +153,28 @@ describe('isThin and thinNotice', () => {
 
     expect(notice).toContain('Most areas of this repository hold third-party code');
   });
+});
+
+describe('thinNotice wording (Q-49)', () => {
+  it.each([
+    [0, 2, 0, 'No card from 2 areas passed the citation check.'],
+    [0, 1, 0, 'No card from 1 area passed the citation check.'],
+    [1, 2, 1, 'Only 1 card from 1 of 2 areas passed the citation check.'],
+    [2, 4, 1, 'Only 2 cards from 1 of 4 areas passed the citation check.'],
+    [1, 1, 1, 'Only 1 card from 1 area passed the citation check.'],
+    [2, 1, 1, 'Only 2 cards from 1 area passed the citation check.'],
+    [0, 0, 0, 'No area was read, so no card passed the citation check.'],
+  ])(
+    'RF-231 words %i cards from %i areas (%i with a card) as a sentence, never "card(s)"',
+    (cards, areas, areasWithCards, sentence) => {
+      const reach = { cards, areas, areasWithCards, thirdPartyAreas: 0, found: areas, chosen: 0 };
+
+      const notice = thinNotice(reach);
+
+      expect(notice).toContain(sentence);
+      expect(notice).not.toMatch(/\(s\)/u);
+    },
+  );
 });
 
 describe('isChosenRun', () => {
@@ -188,6 +213,25 @@ describe('notCoveredOf', () => {
       'Mail: its reader could not finish (the reader failed).',
       'Empty: no card passed the citation check.',
     ]);
+  });
+
+  it('RF-615 an area that failed with a code shows the next step of that code from the catalogue', () => {
+    const [line] = notCoveredOf([
+      { ...base, name: 'Loan.xlsx', failure: 'failed (RST-1522)', cards: 0 },
+    ]);
+
+    expect(line).toContain('Loan.xlsx: its reader could not finish (failed (RST-1522)).');
+    expect(line).toContain(describeError(ERROR_CODES.ollamaPromptTooLarge).nextStep);
+    expect(line).toContain('Context size');
+  });
+
+  it('RF-615 an area that failed with a word that is no code gets no next step', () => {
+    const [line] = notCoveredOf([
+      { ...base, name: 'Mail', failure: 'failed (RST-0000)', cards: 0 },
+      { ...base, name: 'Plain', failure: 'invalid output', cards: 0 },
+    ]);
+
+    expect(line).toBe('Mail: its reader could not finish (failed (RST-0000)).');
   });
 
   it('RF-264 lists nothing when every area gave a card', () => {

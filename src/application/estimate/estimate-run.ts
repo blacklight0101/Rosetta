@@ -14,6 +14,7 @@ import type { ProviderKeyRepository } from '../ports/provider-key-repository.js'
 import type { RunIndex } from '../ports/run-index.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { Project } from '../projects/project.js';
+import { plannedAreas } from '../understand/planned-areas.js';
 import { planReaderTasks } from '../understand/reader-tasks.js';
 import {
   MERGE_ANSWER_TOKENS,
@@ -151,6 +152,13 @@ function workbookAreaNames(
   return new Set(areas.filter((area) => areaHoldsWorkbook(area, folders)).map((area) => area.name));
 }
 
+/** What the estimate reads of a scan: its code map, the workbook folders and the snapshot's name. */
+interface ScannedFacts {
+  readonly codeMap: CodeMap;
+  readonly workbookFolders: readonly string[] | undefined;
+  readonly source: { readonly snapshotKey: string };
+}
+
 export class EstimateRun {
   private readonly deps: EstimateRunDependencies;
 
@@ -166,7 +174,7 @@ export class EstimateRun {
     const scanned = await this.scanOf(project);
     if (scanned === undefined) return err(ERROR_CODES.codeMapMissing);
     const { codeMap, workbookFolders } = scanned;
-    const tasks = planReaderTasks(codeMap.areas, request.areas);
+    const tasks = planReaderTasks(plannedAreas(scanned), request.areas);
     if (!tasks.ok) return err(ERROR_CODES.areaUnknown);
     const areas = tasks.value.map((task) => task.area);
     const thirdParty = thirdPartyAreaNames(codeMap);
@@ -209,15 +217,13 @@ export class EstimateRun {
   }
 
   /** RF-200: the code map of the project's newest scan that ended `Completed`. */
-  private async scanOf(
-    project: Project,
-  ): Promise<{ codeMap: CodeMap; workbookFolders: readonly string[] | undefined } | undefined> {
+  private async scanOf(project: Project): Promise<ScannedFacts | undefined> {
     const runs = await this.deps.runs.list(project.userId, project.id);
     const scan = runs.find((each: Run) => each.stage === 'scan' && each.endState === 'Completed');
     if (scan === undefined) return undefined;
     try {
-      const { codeMap, workbookFolders } = await this.deps.scans.open(scan);
-      return { codeMap, workbookFolders };
+      const { codeMap, workbookFolders, source } = await this.deps.scans.open(scan);
+      return { codeMap, workbookFolders, source: { snapshotKey: source.snapshotKey } };
     } catch (error) {
       // A scan whose output is gone (RST-1203) leaves no code map to estimate from.
       if (error instanceof RosettaError && error.code === ERROR_CODES.codeMapMissing) {

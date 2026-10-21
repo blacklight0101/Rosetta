@@ -184,6 +184,30 @@ describe('journeyOf: a completed run with nothing to plan from', () => {
   });
 });
 
+describe('journeyOf: a completed run with no Supported claim (Q-49)', () => {
+  it('RF-615 the questions step is locked with "Nothing to plan from", like the steps after it', () => {
+    const view = journeyOf(roadSigns['noClaims'] ?? facts(), projectId);
+
+    expect(step(view, 'questions')).toMatchObject({
+      state: 'locked',
+      detail: 'Nothing to plan from (RST-1802)',
+      href: undefined,
+    });
+    expect(step(view, 'questions').detail).toBe(step(view, 'brief').detail);
+    expect(step(view, 'understand').here).toBe(true);
+  });
+
+  it('RF-615 open questions of a run with no Supported claim do not unlock the questions step', () => {
+    const view = journeyOf(
+      facts({ source: source({ supportedClaims: 0, openQuestions: 2 }), briefSaved: false }),
+      projectId,
+    );
+
+    expect(step(view, 'questions')).toMatchObject({ state: 'locked', href: undefined });
+    expect(view.action).toMatchObject({ kind: 'link', label: 'Start a new run' });
+  });
+});
+
 describe('journeyOf: questions, brief and estimate', () => {
   it('RF-615 open questions make the questions step current, before the plan', () => {
     const view = journeyOf(roadSigns['asking'] ?? facts(), projectId);

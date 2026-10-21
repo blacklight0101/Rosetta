@@ -36,6 +36,26 @@ export function isThin(reach: RunReach): boolean {
 const NEXT_STEP =
   'Next step: start a new scan if the repository changed, then run again on more areas of the application code.';
 
+const countOf = (count: number, one: string, many: string): string =>
+  `${String(count)} ${count === 1 ? one : many}`;
+
+/**
+ * RF-231 (Q-49): how many cards passed the citation check and from how many areas, as a sentence
+ * with singular and plural forms: "No card from 2 areas", "Only 1 card from 1 of 2 areas".
+ */
+function passedSentence(reach: RunReach, areas: number): string {
+  if (areas === 0) return 'No area was read, so no card passed the citation check.';
+  if (reach.cards === 0) {
+    return `No card from ${countOf(areas, 'area', 'areas')} passed the citation check.`;
+  }
+  const cards = countOf(reach.cards, 'card', 'cards');
+  const from =
+    areas === 1
+      ? '1 area'
+      : `${String(reach.areasWithCards)} of ${countOf(areas, 'area', 'areas')}`;
+  return `Only ${cards} from ${from} passed the citation check.`;
+}
+
 /** The sentence a thin overview opens with: what is missing and what to do next. */
 // RF-264
 export function thinNotice(reach: RunReach): string {
@@ -44,7 +64,7 @@ export function thinNotice(reach: RunReach): string {
   const most = !chosen && areas > 0 && reach.thirdPartyAreas * 2 >= areas;
   const why = most
     ? 'Most areas of this repository hold third-party code, which says nothing about the application.'
-    : `Only ${String(reach.cards)} card(s) from ${String(reach.areasWithCards)} of ${String(areas)} area(s) passed the citation check.`;
+    : passedSentence(reach, areas);
   return `This run cannot explain the application yet. ${why} ${NEXT_STEP}`;
 }
 
