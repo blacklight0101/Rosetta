@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-21. Release 1 is built: **286 of 294 cards are Done** (see the [tasks.md totals](docs/orchestration/tasks.md)); P1, P2 and P3 are complete except P3-22 (owner review of the sample package) and the gated cards P1-50, P1-53, P1-54, P1-55, P2-12, P2-14 and P2-34, each waiting for its gate or the owner's check. No hosted deployment before the owner declares the local system ready (G-08, DEC-133). Milestone hand-in: 2026-10-26. The latest state is the first entry of the resume point below._
+_Last updated 2026-10-21. Release 1 is built: **286 of 296 cards are Done** (see the [tasks.md totals](docs/orchestration/tasks.md)); P1, P2 and P3 are complete except P3-22 (owner review of the sample package) and the gated cards P1-50, P1-53, P1-54, P1-55, P2-12, P2-14 and P2-34, each waiting for its gate or the owner's check. No hosted deployment before the owner declares the local system ready (G-08, DEC-133). Milestone hand-in: 2026-10-26. The latest state is the first entry of the resume point below._
 
 ## Current state
 

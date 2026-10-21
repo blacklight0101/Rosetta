@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 77      | 5         | 70         | 2         | 0                  | 26      | 49      | 2      | 33         | 0         |
-| **Total**               | **294** | **77**    | **190**    | **27**    | **0**              | **142** | **140** | **12** | **168**    | **0**     |
+| P3 Report and plan      | 79      | 5         | 72         | 2         | 0                  | 27      | 50      | 2      | 35         | 0         |
+| **Total**               | **296** | **77**    | **192**    | **27**    | **0**              | **143** | **141** | **12** | **170**    | **0**     |
 
 ## Conventions for every card
 
@@ -4002,3 +4002,33 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the spec fix and, if needed, the page fix.
 - **Done when**: the probes hold; `npm run verify` and the admin-models e2e green.
 - **Refs**: RNF-005, RF-405, DEC-106; issue #716.
+
+### P3-78 - Follow-up: the reader reads most of its area before it answers
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-73, P3-74
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-206 (the Q-50 scenario), RF-230, RF-231, Q-50; the RF-206 refusal in the agent loop (`src/application/agent/`, `reader-prompts.ts`, `prompts/reader/read-first.v1.md`), the area coverage the run already computes. Found in the orchestrator's fresh-start evaluation of 2026-10-21 (Invoice_Generator.xlsm, Ollama `gemma4:e4b`, built-in defaults): the reader made one `read_file` call (`workbook.md`), answered after two turns of its budget and covered 3% of its area (1,094 of 28,028 first-party tokens, 41 of 42 files not read); no formula, rule or macro reached a card. The Loan run before P3-74 showed the same pattern.
+- **Do**: when a reader gives its final answer with turns left and less than half of its area's first-party tokens read, refuse that answer once, like the RF-206 refusal: name the unread files with formulas, macros and the largest first, say how much of the area was read and how many turns are left, and let it continue; accept the next answer whatever the coverage; a new prompt file `reader/read-more.v1.md`, recorded in the manifest; the extra turns stay inside the reader's turn budget and the budget guard.
+- **Review probes**: an answer at 3% with turns left (refused once, the list ranks formulas.md and macros first, the agent reads more); a second answer at low coverage (accepted); an answer at 60% (accepted at once); no turns left (accepted, coverage reported as today); a code project (the same rule; the list ranks the largest files first); the manifest records the prompt; recorded responses only.
+- **Behaviour to preserve**: RF-206 (no file read), the turn budget, the budget guard, RF-243 questions.
+- **Delivers**: the rule, the prompt and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-206, RF-230, RF-231, Q-50; issue #720.
+
+### P3-79 - Follow-up: the start page estimate in tokens for a local model
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-70
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-425 (the Q-51 scenario), RF-424, Q-44, Q-51; the start page estimate (`web/src/pages/` EstimateSection and its texts), `web/src/lib/estimate-math.ts` (P3-70 wording by the unit of the cap), the workbook upload list. Found in the orchestrator's fresh-start evaluation of 2026-10-21: with every role on Ollama the start page said "Likely $0.00 is 0% of the cap; the marker shows the high estimate, $0.00" and showed $0.00 columns per role, while P3-70 already shows tokens on Plan setup and in the Deepen panel; "Assumptions: 1 areas"; a refused README in the workbook upload stayed "Waiting" in the file list next to the error.
+- **Do**: (1) the understand start page estimate shows tokens for local roles and states the cap it is compared with in that unit, like P3-70 (dollars stay for priced models); (2) "1 area", "2 areas"; (3) a file the workbook upload refuses reads "Not a workbook" in the list, not "Waiting".
+- **Review probes**: all roles local (tokens, no dollar sentence); a priced reader (dollars as today); a mix (each role in its unit, the total in both); 1 and 2 areas; a refused README in the list; 360 px, light and dark, axe.
+- **Behaviour to preserve**: RF-425 low, likely and high; the confirmation threshold; RF-427 unpriced models.
+- **Delivers**: the fixes and tests.
+- **Done when**: each probe has a passing test; `npm run verify` and the start page e2e green.
+- **Refs**: RF-425, RF-424, Q-44, Q-51; issue #721.
