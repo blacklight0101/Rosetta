@@ -13,6 +13,9 @@ export const behaviouralProject = 'desktop-light';
 /** The tag of a test that runs in all four projects (the visual sweep). */
 export const visualTag = '@visual';
 
+/** The tag of the RF-1108 queue test, which runs in the `queue` project alone (playwright.config.ts). */
+export const queueTag = '@queue';
+
 /** The tag of a test about the 360 px layout, which runs in phone-light as well. */
 export const phoneTag = '@phone';
 
