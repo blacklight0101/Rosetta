@@ -36,6 +36,15 @@ const answer = JSON.stringify({
       acceptanceCriteria: [scenario],
     },
     { title: 'Broken', phase: 1, requirements: [1], acceptanceCriteria: [] },
+    // Not a phase of the plan: the domain leaves it out, and checks.md lists it too.
+    {
+      title: 'Late',
+      phase: 9,
+      requirements: [1],
+      invariant: 'x',
+      riskClass: 'none',
+      acceptanceCriteria: [scenario],
+    },
   ],
 });
 
@@ -50,14 +59,20 @@ describe('BuildPlan: a task card that cannot be read', () => {
     await h.answer(understood, [{ cardId: 'OQ-001', answer: 'Only a manager may cancel.' }]);
     await h.saveBrief({ migration: 'parallel-change' });
 
-    await h.plan();
+    const run = await h.plan();
 
     const left = h.s.logger.entries.filter((entry) =>
       entry.message.includes('of the plan answer was left out'),
     );
-    expect(left).toHaveLength(1);
+    expect(left).toHaveLength(2);
     expect(left[0]?.message).toContain('Task card at position 2');
     expect(left[0]?.message).toContain('the field "acceptanceCriteria"');
+    const checks = (await h.handoffOf(run))['checks.md'] ?? '';
+    expect(checks).toContain('## Left out');
+    expect(checks).toContain('### Task cards');
+    expect(checks).toContain('- 2: the field "acceptanceCriteria". The card is not readable');
+    expect(checks).toContain('- 3: the field "phase". The phase is not a phase of the plan.');
+    expect(checks.split('- 2: the field').length).toBe(2);
     const messages = h.s.logger.entries.map((entry) => entry.message);
     expect(messages.some((message) => message.includes('named no requirement'))).toBe(false);
   });

@@ -5,6 +5,7 @@ import type { PlanContent } from '../../domain/planning/plan-content.js';
 import { prdQuestions } from '../../domain/planning/prd-content.js';
 import { addStyleRisks, checkStyle } from '../../domain/planning/style-rules.js';
 import { excludedClaims, supportedCards } from '../../domain/planning/plan-sources.js';
+import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
 import type { PlannedDocuments } from './plan-documents.js';
 import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
@@ -25,6 +26,29 @@ function principleOf(catalogue: Catalogue, id: string): PackagePrinciple {
   return { id, title, rule, why, check, group };
 }
 
+/** The open questions of the analysis, those nobody answered, with the area of their card. */
+function openQuestionsOf(
+  questions: PlanInputs['questions'],
+  cards: PlanInputs['cards'],
+): HandoffPackage['openQuestions'] {
+  return questions
+    .filter((question) => question.answer.trim() === '')
+    .map(({ cardId, question }) => ({
+      ...{ cardId, question },
+      area: cards.find((card) => card.id === cardId)?.area ?? '',
+    }));
+}
+
+/** P3-101: the task cards the answer left out, by position, for checks.md. */
+function taskCardItems(cards: readonly LeftOutCard[]): HandoffPackage['leftOut'] {
+  return cards.map((each) => ({
+    area: 'Task cards',
+    item: String(each.position),
+    field: each.field,
+    reason: each.reason,
+  }));
+}
+
 // RF-601, RF-604
 export function handoffPackageOf(
   inputs: PlanInputs,
@@ -33,6 +57,7 @@ export function handoffPackageOf(
   documents: PlannedDocuments & {
     readonly shapes: ScanShapes | undefined;
     readonly workbookFormulas: WorkbookFormulas | undefined;
+    readonly leftOut: readonly LeftOutCard[];
   },
 ): HandoffPackage {
   const { prd, dataModel, flows, apiContract, ux, incomplete } = documents;
@@ -59,12 +84,7 @@ export function handoffPackageOf(
     sources,
     excluded: excludedClaims(cards),
     briefQuestions: defaultedQuestions(brief, catalogue),
-    openQuestions: questions
-      .filter((question) => question.answer.trim() === '')
-      .map(({ cardId, question }) => ({
-        ...{ cardId, question },
-        area: cards.find((card) => card.id === cardId)?.area ?? '',
-      })),
+    openQuestions: openQuestionsOf(questions, cards),
     prd,
     dataModel,
     flows,
@@ -74,5 +94,6 @@ export function handoffPackageOf(
     shapes: documents.shapes,
     workbookFormulas: documents.workbookFormulas,
     incomplete,
+    leftOut: taskCardItems(documents.leftOut),
   };
 }

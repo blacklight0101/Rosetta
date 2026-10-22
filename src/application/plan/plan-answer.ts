@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import type { DraftTask, PlanDraft, UnreadableTask } from '../../domain/planning/plan-draft.js';
-import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
 import { identifierKinds } from '../../domain/planning/parallel-cards.js';
 import { guardKinds, riskClasses } from '../../domain/planning/task-card-quality.js';
 import { cardLimits } from '../cards/card-limits.js';
@@ -160,13 +159,6 @@ function readTasks(list: readonly unknown[]): {
     return unreadablePlaceholder;
   });
   return { tasks, unreadableTasks };
-}
-
-/** P3-82: the cards the domain left out, with the cards that could not be read in place of their placeholder. */
-export function leftOutOf(draft: PlanDraft, domainLeftOut: readonly LeftOutCard[]): LeftOutCard[] {
-  const unreadable = draft.unreadableTasks ?? [];
-  const positions = new Set(unreadable.map((each) => each.position));
-  return [...unreadable, ...domainLeftOut.filter((each) => !positions.has(each.position))];
 }
 
 /** The draft of the answer, or undefined when no JSON object of the answer reads as a plan. */

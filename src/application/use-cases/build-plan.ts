@@ -13,7 +13,7 @@ import {
 } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
 import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
-import { leftOutOf, parsePlanAnswer } from '../plan/plan-answer.js';
+import { parsePlanAnswer } from '../plan/plan-answer.js';
 import type { PlanDraft } from '../../domain/planning/plan-draft.js';
 import { planLinks } from '../plan/plan-links.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
@@ -170,7 +170,7 @@ export class BuildPlan implements RunExecutor {
     const shapes = await planShapes(this.deps, inputs);
     const workbookFormulas = await planWorkbookFormulas(this.deps, inputs);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
-      ...{ ...documents, shapes },
+      ...{ ...documents, shapes, leftOut: assembly.leftOut },
       workbookFormulas,
     });
     await this.deps.handoff.write(scopeOf(run), handoff);
@@ -240,7 +240,7 @@ export class BuildPlan implements RunExecutor {
   ): Promise<PlanAssembly | undefined> {
     const { specificationDriven } = checks;
     const assembly = assemblePlan(draft, new Set(checks.supported), { specificationDriven });
-    for (const left of leftOutOf(draft, assembly.leftOut)) {
+    for (const left of assembly.leftOut) {
       const { position, field, reason } = left;
       await this.warn(
         run,
