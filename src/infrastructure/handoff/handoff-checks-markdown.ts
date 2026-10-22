@@ -5,6 +5,7 @@ import {
   type CoverageItem,
 } from '../../domain/planning/plan-coverage.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { decisionLink } from './handoff-links.js';
 
 // RF-627, RF-507, RNF-003: checks.md, what the package checks say about itself. The plan coverage
 // lists every item (feature, table, operation, journey or screen) that no task card builds, kind by
@@ -45,7 +46,23 @@ function coverageLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
   ];
 }
 
+// RF-608, RF-609, RF-610: the planner decisions the package left out because a record of the brief decides them.
+function restatedLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  if (handoff.restated.length === 0) return [];
+  return [
+    '## Decisions the brief already records',
+    '',
+    'The planner wrote these decisions with no source card; each only says again a choice the planning brief records, so the package keeps the record of the brief and links to it.',
+    '',
+    ...handoff.restated.map(
+      (each) => `- ${esc.inline(each.title)}: see ${decisionLink(each.record)}`,
+    ),
+    '',
+  ];
+}
+
 // RF-627
 export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
-  return ['# Package checks', '', ...coverageLines(handoff, esc)].join('\n');
+  const lines = [...coverageLines(handoff, esc), ...restatedLines(handoff, esc)];
+  return ['# Package checks', '', ...lines].join('\n');
 }
