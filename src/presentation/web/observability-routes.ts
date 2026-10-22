@@ -50,6 +50,8 @@ function callView(call: RunCall) {
     outputTokens: call.outputTokens,
     // Q-58: left out of the JSON when the provider reported none.
     reasoningTokens: call.reasoningTokens,
+    // Q-60: true for a timed-out attempt, whose output counts only what arrived.
+    outputUnknown: call.outputUnknown,
     cachedInputTokens: call.cachedInputTokens,
     costMicros: call.costMicros,
     currency: call.currency,

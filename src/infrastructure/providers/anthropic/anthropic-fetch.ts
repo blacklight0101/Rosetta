@@ -25,12 +25,16 @@ function allowedOnly(headers: RequestInit['headers']): Headers {
   return kept;
 }
 
-/** A fetch that strips unexpected headers and caps every answer at `maxBytes`. */
-export function anthropicFetch(
-  maxBytes: number,
-): (input: string | URL | Request, init?: RequestInit) => Promise<Response> {
+/** The shape of `fetch` the client uses. */
+export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+
+/**
+ * A fetch that strips unexpected headers and caps every answer at `maxBytes`; `base` is the global
+ * `fetch`, and a test replays a recorded stream through it.
+ */
+export function anthropicFetch(maxBytes: number, base: FetchLike = fetch): FetchLike {
   return async (input, init) => {
-    const response = await fetch(input, { ...init, headers: allowedOnly(init?.headers) });
+    const response = await base(input, { ...init, headers: allowedOnly(init?.headers) });
     return cappedResponse(response, maxBytes);
   };
 }

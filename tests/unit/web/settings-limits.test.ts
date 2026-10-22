@@ -5,6 +5,7 @@ import {
   parseProjectSettings,
   type ProjectSettings,
 } from '../../../src/application/projects/project-settings.js';
+import { OLLAMA_OUTPUT_TOKENS } from '../../../src/application/models/role-limits.js';
 import { formatAmount, ranges, templateDefaults } from '../../../web/src/pages/setting-limits.js';
 
 // RF-002, DEC-116, DEC-117, P2-15: the sliders start at the values of the settings template and are
@@ -48,18 +49,9 @@ it('RF-002 an amount of a thousand dollars or more groups its thousands', () => 
 });
 
 it('RF-002 the slider defaults equal the values of the settings template', () => {
-  expect(at(raw, ['roles', 'reader', 'maxOutputTokens'])).toBe(
-    templateDefaults.maxOutputTokens.reader,
-  );
-  expect(at(raw, ['roles', 'verifier', 'maxOutputTokens'])).toBe(
-    templateDefaults.maxOutputTokens.verifier,
-  );
-  expect(at(raw, ['roles', 'planner', 'maxOutputTokens'])).toBe(
-    templateDefaults.maxOutputTokens.planner,
-  );
-  expect(at(raw, ['roles', 'summariser', 'maxOutputTokens'])).toBe(
-    templateDefaults.maxOutputTokens.summariser,
-  );
+  // Q-57: the template stores no output limit; the slider default is the Ollama default.
+  expect(at(raw, ['roles', 'reader', 'maxOutputTokens'])).toBeUndefined();
+  expect(templateDefaults.maxOutputTokens).toEqual(OLLAMA_OUTPUT_TOKENS);
   expect(at(raw, ['roles', 'reader', 'maxTurns'])).toBe(templateDefaults.maxTurns);
   expect(at(raw, ['budget', 'run', 'maxCostMicros'])).toBe(micros(templateDefaults.runCost));
   expect(at(raw, ['budget', 'run', 'maxTokens'])).toBe(templateDefaults.runTokens);

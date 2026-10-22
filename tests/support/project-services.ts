@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import { GetPlanSource } from '../../src/application/use-cases/get-plan-source.js';
 import { EstimatePlan } from '../../src/application/estimate/estimate-plan.js';
 import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
@@ -118,6 +119,7 @@ export function projectServices(
       cards: new FileRunCards(answerFiles),
       serverKeys: { has: () => true },
       priceTable: estimatePrices,
+      models: NO_LISTED_MODELS,
       catalogue: () => Promise.resolve(shippedCatalogue),
       prompt: () => loadPlannerPrompt('prompts'),
       prdPrompt: () => loadPrdPrompt('prompts'),

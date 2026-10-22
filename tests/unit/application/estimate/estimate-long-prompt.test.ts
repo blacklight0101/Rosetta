@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../../../src/application/models/model-list.js';
 import { describe, expect, it } from 'vitest';
 import { assumptionsOf } from '../../../../src/application/estimate/estimate-assumptions.js';
 import type { RoleEstimate } from '../../../../src/application/estimate/estimate-types.js';
@@ -46,7 +47,7 @@ function ceilMillion(total: bigint): bigint {
 }
 
 describe('the prompt of one call in the reader figures', () => {
-  const assumptions = assumptionsOf(claudeRoles);
+  const assumptions = assumptionsOf(claudeRoles, NO_LISTED_MODELS);
   const {
     turnsPerArea: turns,
     contextLimitTokens: limit,
@@ -87,7 +88,10 @@ async function estimatedRoles(): Promise<readonly RoleEstimate[]> {
 describe('the estimate of a model priced by prompt length', () => {
   it('RF-420 prices the likely point at the lower tier and the high point at the higher tier', async () => {
     // The likely prompt averages under 100,000 tokens, the largest one is over it.
-    const { likely } = readerTokens([areaOf('Huge', 1_000_000)], assumptionsOf(claudeRoles));
+    const { likely } = readerTokens(
+      [areaOf('Huge', 1_000_000)],
+      assumptionsOf(claudeRoles, NO_LISTED_MODELS),
+    );
     expect(likely.promptTokens).toBeLessThanOrEqual(100_000);
 
     const reader = (await estimatedRoles()).find((each) => each.role === 'reader');

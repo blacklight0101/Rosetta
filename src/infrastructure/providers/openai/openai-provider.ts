@@ -8,12 +8,15 @@ import type {
 import { ERROR_CODES } from '../../../domain/errors/codes.js';
 import { RosettaError } from '../../../domain/errors/rosetta-error.js';
 import { defaultMaxResponseBytes, ResponseTooLargeError } from '../capped-response.js';
+import { idleSignal, type IdleSignal } from '../idle-signal.js';
 import { refuseRealProviderInTests } from '../real-provider-guard.js';
+import { meteredIfTimedOut } from '../timeout-usage.js';
 import { completeWithRetries, type AttemptResult, type Sleep } from '../retrying-call.js';
 import { failedThrown } from './openai-errors.js';
-import { openAiFetch } from './openai-fetch.js';
-import { chatCompletionBody } from './openai-request.js';
+import { openAiFetch, type FetchLike } from './openai-fetch.js';
+import { chatCompletionBody, chatCompletionStreamBody, isStreamed } from './openai-request.js';
 import { llmResponseOf } from './openai-response.js';
+import { streamedCompletion } from './openai-stream.js';
 
 export interface OpenAiProviderOptions {
   /**
@@ -32,6 +35,8 @@ export interface OpenAiProviderOptions {
   /** The size limit of one answer; 8 MiB when not set. */
   readonly maxResponseBytes?: number;
   readonly sleep?: Sleep;
+  /** The `fetch` to use; the global one when not set. A test replays a recorded stream through it. */
+  readonly fetch?: FetchLike;
   /** A random number in [0, 1) for the back-off jitter. */
   readonly random?: () => number;
 }
@@ -84,7 +89,7 @@ export class OpenAiProvider implements LlmProvider {
       maxRetries: 0,
       timeout: options.timeoutSeconds * 1000,
       logLevel: 'off',
-      fetch: openAiFetch(options.maxResponseBytes ?? defaultMaxResponseBytes),
+      fetch: openAiFetch(options.maxResponseBytes ?? defaultMaxResponseBytes, options.fetch),
     });
   }
 
@@ -99,22 +104,50 @@ export class OpenAiProvider implements LlmProvider {
     });
   }
 
+  // Q-60: the timeout of an attempt is the time without a new token when the answer streams, and the
+  // whole attempt when it does not.
   private async attempt(request: LlmRequest): Promise<AttemptResult> {
-    const timeout = AbortSignal.timeout(this.options.timeoutSeconds * 1000);
-    const signal = AbortSignal.any([request.signal, timeout]);
+    const idle = idleSignal(request.signal, this.options.timeoutSeconds * 1000);
+    const received = { text: '' };
     try {
-      const response = await this.client.chat.completions
-        .create(chatCompletionBody(request), { signal })
-        .asResponse();
-      const requestId = response.headers.get('x-request-id') ?? undefined;
-      const answer = llmResponseOf(await jsonOf(response), { request, requestId });
-      if (answer === undefined) return unusable(200, 'OpenAI sent an answer Rosetta cannot read.');
-      return { ok: true, response: answer };
+      return await this.read(request, { idle, received });
     } catch (error) {
       if (error instanceof ResponseTooLargeError) return unusable(200, error.message);
-      const context = { cancelled: request.signal.aborted, timedOut: timeout.aborted };
-      return { ok: false, failed: failedThrown(error, context, request.model) };
+      const context = { cancelled: request.signal.aborted, timedOut: idle.timedOut() };
+      const failed = failedThrown(error, context, request.model);
+      return { ok: false, failed: meteredIfTimedOut(failed, { request, received: received.text }) };
+    } finally {
+      idle.stop();
     }
+  }
+
+  private async read(
+    request: LlmRequest,
+    watch: { readonly idle: IdleSignal; readonly received: { text: string } },
+  ): Promise<AttemptResult> {
+    const { idle, received } = watch;
+    let answer: unknown;
+    let requestId: string | undefined;
+    if (isStreamed(request)) {
+      const onText = (text: string): void => {
+        received.text += text;
+      };
+      const call = { body: chatCompletionStreamBody(request), signal: idle.signal };
+      ({ completion: answer, requestId } = await streamedCompletion(this.client, {
+        ...call,
+        onEvent: idle.touch,
+        onText,
+      }));
+    } else {
+      const response = await this.client.chat.completions
+        .create(chatCompletionBody(request), { signal: idle.signal })
+        .asResponse();
+      requestId = response.headers.get('x-request-id') ?? undefined;
+      answer = await jsonOf(response);
+    }
+    const parsed = llmResponseOf(answer, { request, requestId });
+    if (parsed === undefined) return unusable(200, 'OpenAI sent an answer Rosetta cannot read.');
+    return { ok: true, response: parsed };
   }
 }
 

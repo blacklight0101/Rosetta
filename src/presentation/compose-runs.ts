@@ -1,5 +1,4 @@
 import { createUploadStore } from './compose-uploads.js';
-import { EstimateRun } from '../application/estimate/estimate-run.js';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
@@ -19,12 +18,13 @@ import { StartRun } from '../application/use-cases/start-run.js';
 import { StopRun } from '../application/use-cases/stop-run.js';
 import { SubmitRun } from '../application/use-cases/submit-run.js';
 import { SubscribeRunEvents } from '../application/use-cases/subscribe-run-events.js';
+import type { ModelList } from '../application/models/model-list.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
 import type { ReasoningModels } from '../application/models/model-list.js';
 import { FileAnswersFile } from '../infrastructure/cards/answers-file.js';
 import { RosettaError } from '../domain/errors/rosetta-error.js';
 import { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
-import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
+import { composeEstimateRun } from './compose-estimate.js';
 import { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { FanOutSink } from '../infrastructure/events/fan-out-sink.js';
@@ -88,6 +88,8 @@ export interface RunParts {
   readonly ollamaUrl: string | undefined;
   /** The shipped price table, and the reasoning models (Q-58), the estimate names (RF-425). */
   readonly priceTable: PriceTable;
+  /** The shipped model list (Q-57). */
+  readonly models: ModelList;
   readonly reasoningModels: ReasoningModels;
   /** RF-1101: the open event streams, ended with their session by the session store. */
   readonly streams: StreamRegistry;
@@ -183,10 +185,7 @@ function runServices(service: ServiceParts): RunServices {
       submit: submitRun,
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),
-    estimateRun: new EstimateRun({
-      ...{ projects, runs, scans, priceTable: parts.priceTable },
-      ...{ keys: new PgProviderKeyRepository(parts.pool), reasoningModels: parts.reasoningModels },
-    }),
+    estimateRun: composeEstimateRun(parts, { projects, runs, scans }),
     getRun: new GetRun({ runs, queue, files: new FileRunTextFiles(writer) }),
     getJourney: composeJourney({ ...service, priorCards: cards }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
@@ -197,7 +196,7 @@ function runServices(service: ServiceParts): RunServices {
     }),
     ...composeDeepen({
       ...{ pool: parts.pool, projects, runs, manifests, scans, submit: submitRun, writer },
-      ...{ masker: parts.masker, priceTable: parts.priceTable, ollamaHost },
+      ...{ masker: parts.masker, priceTable: parts.priceTable, models: parts.models, ollamaHost },
     }),
     exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),
     readRunFile: new ReadRunFile({ runs, files: new NodeRunFileReader(parts.dataDir) }),
@@ -285,7 +284,8 @@ export function composeRuns(parts: RunParts): RunComposition {
     logger,
     maxRunning: DEFAULT_MAX_RUNNING_RUNS,
   });
-  const submitRun = new SubmitRun({ runs, manifests, queue, ids, clock, rosettaVersion: version });
+  const submitDeps = { runs, manifests, queue, ids, clock, rosettaVersion: version };
+  const submitRun = new SubmitRun({ ...submitDeps, models: parts.models });
   return {
     queue,
     services: runServices({

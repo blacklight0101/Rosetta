@@ -44,6 +44,16 @@ function lowEstimate(target: EvaluationTarget): EvaluationTarget {
   };
 }
 
+/** The caps are worked from the output limits the roles always had; a hosted default is larger now (Q-57). */
+function withLegacyOutputLimits(roles: ProjectSettings['roles']): ProjectSettings['roles'] {
+  return {
+    ...roles,
+    reader: { ...roles.reader, maxOutputTokens: 4096 },
+    verifier: { ...roles.verifier, maxOutputTokens: 2048 },
+    summariser: { ...roles.summariser, maxOutputTokens: 2048 },
+  };
+}
+
 describe('the evaluation runner: the caps during the runs', () => {
   it(
     'ADR-007 stops the runs at the total cap when the estimate was too low',
@@ -57,6 +67,7 @@ describe('the evaluation runner: the caps during the runs', () => {
       });
       const settings: ProjectSettings = {
         ...cloud,
+        roles: withLegacyOutputLimits(cloud.roles),
         agents: { parallelism: 1 },
         budget: { ...cloud.budget, run: { ...cloud.budget.run, maxCostMicros: 10_000_000 } },
       };

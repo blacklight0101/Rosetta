@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. Hand-written in the documented shape of the provider's server-sent-event stream; no real model was called (ADR-008). OpenAI: three tokens, then the stream stalls.",
+  "exchanges": [
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req_FAKE00000000000000000001"
+      },
+      "frames": [
+        {
+          "data": {
+            "id": "chatcmpl-FAKE0000000000000001",
+            "object": "chat.completion.chunk",
+            "created": 1790000000,
+            "model": "contract-model-2026-08-07",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant",
+                  "content": ""
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE0000000000000001",
+            "object": "chat.completion.chunk",
+            "created": 1790000000,
+            "model": "contract-model-2026-08-07",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "The Catalog "
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE0000000000000001",
+            "object": "chat.completion.chunk",
+            "created": 1790000000,
+            "model": "contract-model-2026-08-07",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "area lists "
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE0000000000000001",
+            "object": "chat.completion.chunk",
+            "created": 1790000000,
+            "model": "contract-model-2026-08-07",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "prod"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "hang": true
+        }
+      ]
+    }
+  ]
+}

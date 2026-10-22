@@ -49,6 +49,8 @@ export interface SuggestOptionsOptions {
   readonly serverKeys?: { readonly openai?: string };
   /** What to seed; the plan cards and a finished scan by default. */
   readonly seed?: PlanSourceSeed;
+  /** The cancel signals of the call; a signal that never fires by default. */
+  readonly signals?: SuggestPlanOptionsDependencies['signals'];
   /** False seeds no finished scan run. */
   readonly scan?: boolean;
 }
@@ -92,7 +94,7 @@ export async function createSuggestOptionsHarness(
     callSinks: options.callSinks ?? (() => factory.sinks),
     catalogue: () => loadCatalogue(promptsFolder),
     prompt: () => loadPlanOptionsPrompt(promptsFolder),
-    signals: { after: () => new AbortController().signal },
+    signals: options.signals ?? { after: () => new AbortController().signal },
   });
   const stores = { files, briefs, runs };
   return { suggest, factory, account, actor: actorOf(account), project, stores };

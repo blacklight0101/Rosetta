@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../../../src/application/models/model-list.js';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
@@ -53,6 +54,7 @@ it.each([undefined, 0, 1, 2])(
     const estimate = new EstimateRun({
       ...harness,
       priceTable: estimatePrices,
+      models: NO_LISTED_MODELS,
       reasoningModels: () => false,
       scans: {
         open: async (scan) => ({ ...(await harness.scans.open(scan)), codeMap: parsed.value }),

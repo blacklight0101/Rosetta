@@ -31,6 +31,7 @@ import {
 } from '../../src/infrastructure/providers/provider-factory.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
 import { contractRequest } from '../contracts/llm-provider.contract.js';
+import { NO_LISTED_MODELS, type ModelList } from '../../src/application/models/model-list.js';
 import { budgetTable } from './budget-harness.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
@@ -111,6 +112,8 @@ export interface FactoryHarnessOptions {
   readonly logger?: MemoryLogger;
   /** The shipped price table; `budgetTable` by default. */
   readonly priceTable?: PriceTable;
+  /** The shipped model list (Q-57); a list without limits by default. */
+  readonly models?: ModelList;
   /** Q-58: which models the shipped list marks as reasoning models; none by default. */
   readonly reasoningModels?: GuardedProviderFactoryOptions['reasoningModels'];
 }
@@ -191,6 +194,7 @@ export function factoryHarness(options: FactoryHarnessOptions = {}): FactoryHarn
     serverKeys: options.serverKeys ?? {},
     ollamaUrl: options.ollamaUrl,
     priceTable: options.priceTable ?? budgetTable,
+    models: options.models ?? NO_LISTED_MODELS,
     ids: new SequenceIdGenerator(),
     ...(options.reasoningModels === undefined ? {} : { reasoningModels: options.reasoningModels }),
   });

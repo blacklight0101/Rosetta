@@ -40,6 +40,8 @@ export interface ProviderCallRecord {
   /** Q-58: the part of `outputTokens` spent on reasoning (OpenAI, Anthropic); absent when not reported. */
   readonly reasoningTokens?: number;
   readonly usageSource: UsageSource;
+  /** Q-60: a timed-out attempt; the output counts only what arrived. */
+  readonly outputUnknown?: boolean;
   readonly costMicros: number;
   readonly currency: string;
   readonly finishReason: FinishReason;

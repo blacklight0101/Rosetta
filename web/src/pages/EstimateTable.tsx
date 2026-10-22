@@ -85,6 +85,22 @@ function IncompleteNote({ estimate }: { readonly estimate: RunEstimate }): JSX.E
   );
 }
 
+/** Q-57: the context window and the output limit of each role, as the estimate assumed them. */
+function limitsText(limits: NonNullable<RunEstimate['assumptions']['roleLimits']>): string {
+  return Object.entries(limits)
+    .map(([role, each]) => {
+      const context = each.contextAutomatic
+        ? `automatic (estimated at ${tokensText(each.contextTokens)})`
+        : tokensText(each.contextTokens);
+      const window =
+        each.modelWindowTokens === undefined
+          ? ''
+          : ` (model window ${tokensText(each.modelWindowTokens)})`;
+      return `${role}: context ${context}${window}, output ${tokensText(each.maxOutputTokens)}`;
+    })
+    .join('; ');
+}
+
 const areasText = (count: number): string => `${String(count)} ${count === 1 ? 'area' : 'areas'}`;
 
 // RF-425
@@ -119,6 +135,9 @@ export function EstimateTable({ estimate }: { readonly estimate: RunEstimate }):
         Assumptions: {areasText(estimate.areas.length)}, {assumptions.turnsPerArea.likely} turns per
         area (likely), price table {estimate.priceTableVersion} ({estimate.currency}).
       </p>
+      {assumptions.roleLimits === undefined ? null : (
+        <p class="rst-settings__note">Limits: {limitsText(assumptions.roleLimits)}.</p>
+      )}
     </>
   );
 }

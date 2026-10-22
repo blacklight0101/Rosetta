@@ -1,6 +1,8 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import type { ModelList } from '../models/model-list.js';
+import { roleLimits } from '../models/role-limits.js';
 import type { Project } from '../projects/project.js';
 import { planInputs, type PlanInputDependencies } from '../plan/plan-inputs.js';
 import { maxPlannerContinuations } from '../plan/plan-continuation.js';
@@ -33,9 +35,15 @@ import { estimateRole, type RolePricing } from './role-estimate.js';
 // Cost comes from the price table like the estimate of an understand run; the caps are the ones the
 // guard checks (plan-caps.ts).
 
+/** The shipped model list: the planner's context window and output limit (Q-57). */
+interface PlanModelDependencies {
+  readonly models: ModelList;
+}
+
 export interface EstimatePlanDependencies
   extends
     PlanInputDependencies,
+    PlanModelDependencies,
     RolePricing,
     PlanCapDependencies,
     PlanKeyDependencies,
@@ -103,7 +111,11 @@ export class EstimatePlan {
     const { project } = inputs.value;
     const planned = await plannedPrompts(this.deps, inputs.value);
     const { calls: prompts } = planned;
-    const { maxOutputTokens } = project.settings.roles.planner;
+    const { maxOutputTokens, contextTokens } = roleLimits(
+      project.settings,
+      'planner',
+      this.deps.models,
+    );
     const calls = await Promise.all(
       prompts.map((each) => this.callOf(project, each.file.text + each.message, maxOutputTokens)),
     );
@@ -117,6 +129,7 @@ export class EstimatePlan {
       keyAvailable: await plannerKeyAvailable(this.deps, project, planner),
       assumptions: {
         ...{ calls: calls.length, promptTokens },
+        contextTokens,
         ...{
           prdPromptTokens: tokensOf(calls, prompts, 'prd'),
           dataModelPromptTokens: tokensOf(calls, prompts, 'dataModel'),

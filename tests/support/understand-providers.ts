@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import { join } from 'node:path';
 import type {
   LlmAttemptObserver,
@@ -194,6 +195,7 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     serverSettings: new MemoryServerSettings({}),
     ledger,
     priceTable: parts.priceTable ?? budgetTable,
+    models: NO_LISTED_MODELS,
     masker,
     adapters: () => adapter,
     clock,

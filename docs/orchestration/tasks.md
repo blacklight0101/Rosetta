@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
-| P1 Milestone slice (M1) | 180     | 67        | 95         | 18        | 0                  | 106     | 66      | 8      | 119        | 0         |
+| P1 Milestone slice (M1) | 181     | 67        | 96         | 18        | 0                  | 106     | 67      | 8      | 119        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
 | P3 Report and plan      | 100     | 12        | 84         | 4         | 0                  | 38      | 59      | 3      | 56         | 0         |
-| **Total**               | **321** | **86**    | **206**    | **29**    | **0**              | **157** | **151** | **13** | **195**    | **0**     |
+| **Total**               | **322** | **86**    | **207**    | **29**    | **0**              | **157** | **152** | **13** | **195**    | **0**     |
 
 ## Conventions for every card
 
@@ -2441,6 +2441,23 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 
 ---
 
+### P1-181 - The Rosetta logo on the landing page, in the app, in the report and in the README
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: DEC-161; docs/design-system.md (tokens, header, landing, sections 3 and 13 for light and dark); `web/` (landing page, app shell header, `index.html`, public assets, web manifest if any); the HTML report and hand-off templates (`templates/` or `src/infrastructure/report/`); `site/` (published sample report); README.md. The owner's asset package path is given by the orchestrator (README.md lists the files).
+- **Do**: (1) add the assets to the repository where the web build serves them (icons 16, 32, 48, 64, 128, 180, 192, 256, 512; `favicon.ico`; `apple-touch-icon.png`; `android-chrome-192x192.png` and `-512x512.png`; `logo/rosetta-full-320w.png`, `-640w.png`, `-960w.png`), never the originals or the 1280 and 1920 px files; (2) favicon, touch icon and PWA icons on every page (landing, sign-in, app, report); (3) landing page: the full logo (responsive `srcset` 320/640/960) in the light theme; in the dark theme the icon with "Rosetta" as live text in the theme's text colour; (4) app header: the icon (32 px, 2x source) with the existing wordmark text; (5) the HTML report and the published sample report show the icon in their header and use the favicon; (6) README.md: the icon (128 px) above the title, with alt text, working in GitHub light and dark mode; (7) docs/design-system.md gets a short Brand section: where each asset is used, the dark-background rule, alt text, minimum sizes; (8) every image has alt text or is marked decorative where the name is already written next to it.
+- **Review probes**: page walk of landing, sign-in, an app page and a report at 1280x800 and 360x780 in light and dark (no unreadable wordmark in dark, no layout shift: width and height set); favicon requested and served (no 404 in the console or network log); axe passes; the image bytes added stay under 2 MB in total.
+- **Behaviour to preserve**: the design-system tokens and layout; the public routes stay public (assets are public); no external image host.
+- **Delivers**: the assets, the page changes, the report header, the README, the design-system Brand section and tests.
+- **Done when**: each probe holds with screenshots in the pull request; `npm run verify` green.
+- **Refs**: DEC-161, design-system.md; issue #777.
+
+---
+
 ## Phase 2 - Full understand
 
 Sized, not dated, until Q-01 is answered (roadmap.md).
@@ -4328,7 +4345,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: RF-627, RF-630, RF-631; `src/application/plan/plan-package.ts`, `coverage-answer.ts`, `src/domain/planning/plan-coverage.ts`, `src/application/plan/plan-links.ts`. Found in the evaluation of 2026-10-21 (Ollama `gemma4:e4b`): the planner gave its screen cards the requirement positions 12, 13 and 14 for requirements 11, 12 and 13 (one too high); the coverage call linked the cards to the right screens, so the invoice screen card carried the masterdata requirement and its behaviours, and the dashboard card had "Requirements: none" because position 14 did not exist; nothing reported it.
-- **Do**: (1) after the coverage links, for each card that builds an item, the requirements whose source cards are behind that item are added to the card, and a requirement whose sources share nothing with what the card builds is removed from it when the card builds at least one item; (2) a requirement position outside the list is listed in `checks.md`, not dropped silently; (3) each change is listed in `checks.md`.
+- **Do**: (1) after the coverage links, for each card that builds an item, the requirements whose source cards are behind that item are added to the card, and a requirement is taken off a card only when its sources share nothing with what the card builds and another card builds an item behind them; a requirement that cites only cards no item is built on (rules, questions) stays where the planner put it (amended 2026-10-22, DEC-160); (2) a requirement position outside the list is listed in `checks.md`, not dropped silently; (3) each change is listed in `checks.md`.
 - **Review probes**: the recorded answer (the three screen cards get requirements 11, 12, 13 and their behaviours; position 14 listed); a card that builds nothing (unchanged); a card whose requirement and builds agree (unchanged); recorded responses only.
 - **Behaviour to preserve**: RF-627 coverage; RF-631 behaviours follow the requirements.
 - **Delivers**: the alignment, the checks lines and tests.

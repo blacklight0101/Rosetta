@@ -4,6 +4,7 @@ import type { EvaluationConfig } from '../../application/eval/evaluation-config.
 import type { EvaluationProblem } from '../../application/eval/run-evaluation.js';
 import type { ProjectSettings } from '../../application/projects/project-settings.js';
 import { ok, type Result } from '../../domain/errors/result.js';
+import { loadModelList } from '../../infrastructure/models/model-list-file.js';
 import { loadPriceTable } from '../../infrastructure/budget/price-file.js';
 import { readAppVersion } from '../../infrastructure/config/app-version.js';
 import {
@@ -61,6 +62,7 @@ async function partsOf(
     serverKeys: { openai: env['OPENAI_API_KEY'], anthropic: env['ANTHROPIC_API_KEY'] },
     ollamaUrl: env['ROSETTA_OLLAMA_URL'],
     priceTable: await loadPriceTable(folder('prices/default-prices.yaml')),
+    models: await loadModelList(folder('prices/models.yaml')),
     totalCapMicros: config.totalCapMicros,
     rosettaVersion: await readAppVersion(),
     packs: await composeLanguagePacks(),
