@@ -14,8 +14,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 182     | 67        | 97         | 18        | 0                  | 106     | 68      | 8      | 120        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 100     | 12        | 84         | 4         | 0                  | 38      | 59      | 3      | 56         | 0         |
-| **Total**               | **323** | **86**    | **208**    | **29**    | **0**              | **157** | **153** | **13** | **196**    | **0**     |
+| P3 Report and plan      | 107     | 14        | 89         | 4         | 0                  | 41      | 63      | 3      | 63         | 0         |
+| P5 Polish (G-10)        | 8       | 3         | 5          | 0         | 0                  | 4       | 4       | 0      | 0          | 0         |
+| **Total**               | **338** | **91**    | **218**    | **29**    | **0**              | **164** | **161** | **13** | **203**    | **0**     |
 
 ## Conventions for every card
 
@@ -4443,3 +4444,262 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; `npm run verify` green.
 - **Refs**: RF-402, RF-405, Q-58, Q-57, PR #757; issue #775.
+
+### P3-101 - Follow-up: a planner answer that writes requirement positions as `{"index": N}` is read, not thrown away
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/plan/plan-answer.ts` (`listedPosition`, `taskSchema`), `src/application/use-cases/build-plan.ts` (`assemble`). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-01: gemma4 wrote `"requirements": [{"index": 1}]` in every task; every task failed the schema, the whole answer was dropped and the run failed RST-1803 with "no requirement it wrote names a supported card"; a second try passed.
+- **Do**: (1) `listedPosition` also accepts `{index: N}` (same meaning as `{position: N}`); (2) one task that still cannot be read is dropped and listed in checks.md instead of failing the whole answer (P3-82 open question 2); (3) an answer that cannot be read at all fails with its own reason, not the "no supported card" message.
+- **Review probes**: the stored answer of the evaluation (index form) assembles; an answer with one unreadable task keeps the others and lists the dropped one; a wholly unreadable answer gives the new reason; mutation: removing the `index` branch fails a test.
+- **Behaviour to preserve**: Q-54 positions; RF-627 gap rules; RST-1803 when no requirement names a supported card.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-620..RF-627, Q-54, P3-82; evaluation EV-01.
+
+---
+
+### P3-102 - Follow-up: one over-long field in the data-model answer drops only that field, not every table
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/plan/data-model-answer.ts` (`legacy.field` is a name of at most 80 characters). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-02: the planner wrote field descriptions of 89 to 113 characters; the whole answer was refused, data-model.md said "no usable table", 69 fields were dropped and the package had no migrations card.
+- **Do**: (1) a field, column or table that fails its schema is dropped (or a too-long text is cut at the limit with an ellipsis) and listed in checks.md, the rest of the answer is kept; (2) the log line names the parse problem instead of "no usable table" when the answer had tables.
+- **Review probes**: an answer with one 113-character legacy field keeps every table and writes the migrations card; the dropped or cut item is listed in checks.md; mutation: restoring whole-answer refusal fails a test.
+- **Behaviour to preserve**: the data-model limits (names, counts); the migrations card rules (P3-88).
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-630..RF-638, P3-88; evaluation EV-02.
+
+---
+
+### P3-103 - Follow-up: `formulas.md` writes a filled-down region once, not once per row
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/sources/workbook/render-formulas.ts`, the code that writes `workbook-formulas.md` (P3-94; it already collapses regions), the workbook renderer version. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), findings EV-03 and EV-22: Asset Manager Inventory `formulas.md` is 4,947 lines (10 regions of 499 rows repeating one relative formula), 157k tokens; the reader read 6.7% and the closing stock, value and state rules never reached a card; Invoice keeps 8 rows of `R*0.5` for one rule.
+- **Do**: (1) cells whose formulas are the same in R1C1 form and adjacent form one region, written once: the range, the formula (A1 form of the first cell and R1C1), the table column name when known (P3-94) and two or three example cells with their cached values; (2) relative copies that differ only by offset fold into the same region; (3) a new renderer version, recorded in the manifest; (4) line numbers and the citation mapping (P3-74) still point to real lines.
+- **Review probes**: Asset Manager Inventory `formulas.md` falls under 10% of its old size and still names every distinct formula; a region with one irregular cell lists that cell apart; a citation of a region line maps to the region; mutation: disabling the fold restores the old size in a test.
+- **Behaviour to preserve**: RF-150..RF-158; P3-74 numbered lines and row citations; P3-94 column names.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-150..RF-158, P3-74, P3-94; evaluation EV-03, EV-22.
+
+---
+
+### P3-104 - Follow-up: a reader card without a `claims` array is kept when its structured block carries cited fields
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the understand card answer schema and its repair (RF-206, RF-208). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-07 (regression on Loan): a SCRN card with the four inputs and the C4 `tenu` validation had no `claims` array ("cards.5.claims: expected array, received undefined"); two identical repairs, card dropped; 5 claims instead of 15.
+- **Do**: (1) a card whose `claims` is missing reads as `claims: []` and keeps the claims its structured block yields (as SCRN fields already do); (2) when a repair returns the same answer, stop repairing and keep the other cards; drop only the unreadable card and note it.
+- **Review probes**: the Loan reader answer of the evaluation keeps the SCRN card with its input and validation claims; an identical repair is not sent twice; mutation: requiring `claims` again fails a test.
+- **Behaviour to preserve**: RF-206, RF-208 (targeted repairs), the citation check of every kept claim.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-206, RF-208; evaluation EV-07.
+
+---
+
+### P3-105 - Follow-up: the workbook reader cites the right file and never reports Rosetta's own index as a feature
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the workbook reader prompt family (the orchestrator gives the next prompt version numbers in the brief), the verifier prompt, RF-208 repairs. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), findings EV-08 and EV-11: Invoice INT-001..005 "Workbook Indexing" claim that `workbook.md` is a workbook feature (Supported, counts as invented); formula and macro claims cite `values.md` lines, so correct rules (VAT to Pay, FormSearch trigger, PDF/Excel export, e-mail draft) are rightly rejected while weak value-based guesses are Supported.
+- **Do**: (1) the reader prompt says `workbook.md`, `values.md`, `formulas.md` and the other rendered files are Rosetta's view of the workbook, never part of it; (2) a formula claim cites `formulas.md` (or `workbook-formulas.md`), a macro claim cites the module file; (3) the verifier rejects a claim about the rendered file names themselves; (4) a targeted repair asks for the formula or macro line when a rule claim cites only values; new prompt versions recorded in the manifest.
+- **Review probes**: recorded answers: a "workbook.md is an index" claim is rejected; a VAT rule claim citing values.md gets the repair and is kept with a formulas.md citation; the prompt texts carry the new rules; mutation: removing the repair rule fails a test.
+- **Behaviour to preserve**: RF-206, RF-208, RF-300 citation check; P3-74 citation forms.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-206, RF-208, RF-300; evaluation EV-08, EV-11.
+
+---
+
+### P3-106 - Follow-up: duplicate cards and identical claims are merged, and screen boilerplate becomes one claim
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: consolidation (P3-80, RF-230), SCRN claim generation, the verifier call. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), findings EV-05 and EV-06: Asset Manager Deepen has three copies of the same open question, five "Product Master Data Table" cards, 53 of 323 Supported texts are exact duplicates; Invoice has six "Invoice Generation Process" flows; one screen card has 136 claims, 21+ of them "Action CommandButtonN starts the handler ButtonClick", about half rejected for identical text and citations.
+- **Do**: (1) consolidation merges cards of one type whose normalised titles match (case, punctuation, plural), keeping every distinct claim; (2) identical claim texts in one card are kept once; (3) screen actions that share one handler become one claim listing the controls; (4) identical claim text with identical citations gets one verdict (cached), so they cannot split.
+- **Review probes**: the evaluation's Asset Manager and Invoice card sets shrink with no distinct Supported claim lost; three identical open questions become one; a 21-button handler gives one claim; mutation: removing the title merge fails a test.
+- **Behaviour to preserve**: P3-80 merge rules and its id rewrite; RF-243 open-question flow.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-230, RF-243, P3-80; evaluation EV-05, EV-06.
+
+---
+
+### P3-107 - Follow-up: an area that fails with repeated tool calls is retried with a changed prompt, and Deepen offers failed areas
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the reader loop guard (RST-1303), the in-run area retry, the Deepen area selection (RF-209). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-10: Asset Manager Inventory#2 and Report failed RST-1303 in both attempts with the identical call sequence (a local model gives the same answer to the same prompt); Deepen skips failed areas; the page says "Run the area again", which cannot help.
+- **Do**: (1) the retry of an area that failed RST-1303 adds a note naming the repeated call and the files not yet read, so the second attempt differs; (2) Deepen lists the areas that failed and reads them by default; (3) the failed area's advice names Deepen or a different reader model.
+- **Review probes**: a recorded loop: the retry prompt differs and names the repeated call; Deepen's plan includes the failed areas; mutation: an unchanged retry prompt fails a test.
+- **Behaviour to preserve**: RST-1303 limits; RF-209 Deepen rounds and caps.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-206, RF-209; evaluation EV-10.
+
+---
+
+## Phase 5 - Polish (held by gate G-10)
+
+No card of this phase starts until the owner opens gate G-10 (DEC-165).
+
+### P5-01 - Partly read files count as not read in coverage and the Deepen coverage pass
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: coverage report, run overview "not covered", Deepen coverage-pass selection (RF-209). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-04: "every first-party file was read" at 24% of tokens; 146k unread tokens of a partly read file are not offered.
+- **Do**: list unread line ranges of partly read files, count them in "not read", offer them to the coverage pass.
+- **Review probes**: a file read to 6.7% shows in "not read" with its unread share; the coverage pass reads its unread ranges.
+- **Behaviour to preserve**: RF-209 caps.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-209; evaluation EV-04.
+
+---
+
+### P5-02 - Open questions the cited lines already answer are refused
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: P3-73 refusal list. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-09: questions ask what column D means while its header "Qty" is in the cited lines; one asks the role of VBA modules already read.
+- **Do**: refuse a question whose answer (a header, a module's read code) is in the cited lines.
+- **Review probes**: the evaluation's column D question is refused; a real business question passes.
+- **Behaviour to preserve**: RF-243.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-243, P3-73; evaluation EV-09.
+
+---
+
+### P5-03 - A reader answer cut at the output limit is continued, not repaired from scratch
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: reader loop, output limit handling (P3-100). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-20: an answer cut at 4,096 tokens got repair prompts, then the task restarted.
+- **Do**: ask the model to continue the cut answer once before repairing or restarting.
+- **Review probes**: a recorded cut answer is completed by one continuation call.
+- **Behaviour to preserve**: Q-58 retry rules.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-206, Q-58; evaluation EV-20.
+
+---
+
+### P5-04 - A run keeps one Ollama context size so the model is not reloaded between calls
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: P3-75 context growth (per call). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-21: the context alternated 65,536 and 32,768; the first planner call after a change timed out at 120 s with no token.
+- **Do**: keep the grown context for the rest of the run (per role).
+- **Review probes**: calls after a growth reuse the grown size; no alternation in a recorded run.
+- **Behaviour to preserve**: P3-75 growth rules.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-402, P3-75; evaluation EV-21.
+
+---
+
+### P5-05 - Journey and run page small fixes
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: journey strip, run page. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), findings EV-12, EV-13, EV-16, EV-19: while a plan runs the journey still says "Review the estimate"; a failed plan points to a Resume button that does not exist; Deepen tiles count 27 cards against 56 and "16/16 areas read" with two failed; the plan run page shows understand panels.
+- **Do**: fix each of the four.
+- **Review probes**: one e2e or unit test per item.
+- **Behaviour to preserve**: RF-615, RF-1016.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-615, RF-1016; evaluation EV-12, EV-13, EV-16, EV-19.
+
+---
+
+### P5-06 - Wording fixes on settings, verdicts and cap warnings
+
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: project settings, run page messages, cap warning. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), findings EV-14, EV-15, EV-17: "Differs from the default of 4" for the Ollama default 1; "No card passed the citation check" when the judgement rejected it; "the 1 first reader calls" and a cap pointer with no link.
+- **Do**: fix each text; link the caps.
+- **Review probes**: a test per text.
+- **Behaviour to preserve**: the message catalogue.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: evaluation EV-14, EV-15, EV-17.
+
+---
+
+### P5-07 - A local-only setup shows tokens, not dollars
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: header total, run meter, start page cap field. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-18 (known since 2026-10-21).
+- **Do**: when every role is local, show tokens in the header, run meter and cap fields.
+- **Review probes**: a local-only setup shows no dollar amount on those three places.
+- **Behaviour to preserve**: P3-79 owner defaults for the start page.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P3-79; evaluation EV-18.
+
+---
+
+### P5-08 - Package quality candidates from the 2026-10-21 build trials
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the hand-off package templates and planner prompts; notes of 2026-10-21 (build trials): fixtures measure repository files, not workbook rows; the Template layout cells; probes without expected outcomes; a "waiting on OQ" tag on every card; boilerplate repetition in tasks.md.
+- **Do**: fix each item the owner keeps after review.
+- **Review probes**: one test per item kept.
+- **Behaviour to preserve**: RF-601..RF-613.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-601..RF-613.
+
+---
