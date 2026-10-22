@@ -3,6 +3,7 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { RunStage } from '../../domain/runs/run-states.js';
+import type { ModelList } from '../models/model-list.js';
 import type { Clock } from '../ports/clock.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -24,6 +25,8 @@ export interface SubmitRunDependencies {
   readonly ids: Pick<IdGenerator, 'runId' | 'uuid'>;
   readonly clock: Clock;
   readonly rosettaVersion: string;
+  /** The shipped model list; the manifest records the output limit each role runs with (Q-57). */
+  readonly models?: ModelList;
 }
 
 export interface SubmitRunRequest {
@@ -107,6 +110,7 @@ export class SubmitRun {
           project: request.project,
           rosettaVersion,
           options: request.options,
+          ...(this.deps.models === undefined ? {} : { models: this.deps.models }),
         }),
       );
     } catch (error) {

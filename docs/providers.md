@@ -158,13 +158,24 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
   its name (`shared/text-tool-protocol.v1.md`) in the manifest's `promptVersions`, next to the reader's prompt files
   (RNF-004).
 
-### 2.4 Retries (RF-406)
+### 2.4 Retries and the timeout (RF-406, Q-60)
 
 Each attempt has its own timeout (`timeoutSeconds`). Rate limits (429), timeouts, server errors (5xx, including a
 cold load that fails with an out-of-memory 500) and a connection dropped mid-answer are retried up to `maxRetries`
 times with exponential back-off from one second, doubled per retry and capped at 30 seconds, with jitter (half to
 all of the delay), and never shorter than a `retry-after` hint (seconds or an HTTP date) (capped at five minutes). Other errors and
 a cancelled call (`RST-1501`) are not retried.
+
+**Long answers (Q-60).** A call with an output limit above 8,192 tokens, on OpenAI and Anthropic, streams its answer
+(`stream: true`; OpenAI with `stream_options.include_usage`, so the last chunk carries the usage). For such a call
+`timeoutSeconds` counts the time without a new token, not the whole answer: every event but a ping (Anthropic) and every
+chunk (OpenAI) starts it again, so an answer that takes five minutes and never stalls for 120 s is kept. A smaller call is
+not streamed and its timeout is the whole call, as before. A call that timed out is metered as estimated: the input
+estimated from the request, the output counted from the text that arrived (none for a call that never answered), and
+`outputUnknown` set in its call-log record, because the provider may have produced and billed more; its ledger row is
+priced the same way, not 0 tokens and $0.00. A call that timed out twice is not sent a third time: it ends with
+`RST-1505`, whose next step names `timeoutSeconds`. The options call of Plan setup is limited by the timeout of the planner
+provider for each attempt it may make, not by a fixed 120 s.
 
 ### 2.5 Tests and the manual live check
 
@@ -219,7 +230,7 @@ cloud providers off, a scan and an understand run must complete with Ollama only
 ## 3. OpenAI
 
 `OpenAiProvider` (`src/infrastructure/providers/openai/openai-provider.ts`, RF-402) calls the Chat Completions API
-(`POST /v1/chat/completions`, `stream: false`) through the `openai` package (baseline in
+(`POST /v1/chat/completions`, `stream: false`; `stream: true` with `stream_options.include_usage` when the output limit is above 8,192 tokens, see section 2.4) through the `openai` package (baseline in
 [environments and delivery](environments-and-delivery.md) section 7). The package is imported only under
 `src/infrastructure/providers/openai/`; the dependency-cruiser rule `openai-sdk-only-in-openai-adapter` enforces it (ADR-003).
 
@@ -332,10 +343,30 @@ tables, with the prices of these pages:
 The model list `prices/models.yaml` offers the current models and the cheap ones in the dropdowns; every model on it
 has a price.
 
+### 3.6 Context window and output limit of the listed models (Q-57)
+
+Every Anthropic and OpenAI model of `prices/models.yaml` carries the context window and the maximum output of its
+provider page, checked on 2026-10-21 (a model without a confirmed number carries none):
+
+| Model                                                                                                       | Context window | Maximum output | Source                                                                                             |
+| ----------------------------------------------------------------------------------------------------------- | -------------- | -------------- | -------------------------------------------------------------------------------------------------- |
+| Claude Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5                                                           | 1,000,000      | 128,000        | <https://platform.claude.com/docs/en/about-claude/models/overview> (1M tokens, 128K tokens)        |
+| GPT-6 astra, GPT-6.1 sol, GPT-6 sol, GPT-6 luna, GPT-5.6 sol, GPT-5.6 terra, GPT-5.6 luna, GPT-5.5, GPT-5.4 | 1,050,000      | 128,000        | the model page of each under <https://developers.openai.com/api/docs/models/>                      |
+| GPT-5.4 mini, GPT-5.4 nano, GPT-5 mini, GPT-5 nano, `gpt-5-nano-2025-08-07`                                 | 400,000        | 128,000        | the same pages; the snapshot has no page of its own and shares the limits of the `gpt-5-nano` page |
+
+A hosted role keeps 128,000 tokens of context, so that a conversation is cut where it always was and the budget
+guard's worst case stays the one the default caps were set for. A project may set `providers.<name>.contextTokens`;
+the window of the model in the list is then the upper bound of that number, and the start page shows it as the model's
+window. The reader stops at 80% of the context (architecture section 8). A role whose project stores no output limit takes the smaller of the model's maximum output
+and the default of the role: reader 8,192, verifier and summariser 4,000, planner 16,384 tokens (sized so that the default run cap of 0.50 USD lets
+the parallel reader calls through on most models; a few dear models still reach the cap sooner). Ollama keeps its own
+context (section 2.2) and defaults. The numbers are for the synchronous API; the larger Batch API output of Anthropic is
+not used.
+
 ## 4. Anthropic
 
 `AnthropicProvider` (`src/infrastructure/providers/anthropic/anthropic-provider.ts`, RF-404) calls the Messages API
-(`POST /v1/messages`, `stream: false`) through the `@anthropic-ai/sdk` package (baseline in
+(`POST /v1/messages`, `stream: false`; `stream: true` when the output limit is above 8,192 tokens, see section 2.4) through the `@anthropic-ai/sdk` package (baseline in
 [environments and delivery](environments-and-delivery.md) section 7). The package is imported only under
 `src/infrastructure/providers/anthropic/`; the dependency-cruiser rule `anthropic-sdk-only-in-anthropic-adapter`
 enforces it (ADR-003). The adapter builder builds it for kind `anthropic` only when the provider factory chose a key,

@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../../../src/application/models/model-list.js';
 import { describe, expect, it } from 'vitest';
 import { assumptionsOf } from '../../../../src/application/estimate/estimate-assumptions.js';
 import { readerTokens } from '../../../../src/application/estimate/reader-estimate.js';
@@ -13,7 +14,7 @@ import { settingsFor } from '../../../support/provider-factory-harness.js';
 function assumptionsFor(maxTurns: number) {
   const base = settingsFor({ reader: { provider: 'openai', model: 'priced-model' } });
   const reader = { ...base.roles.reader, maxTurns, maxOutputTokens: 1000 };
-  return assumptionsOf({ ...base, roles: { ...base.roles, reader } });
+  return assumptionsOf({ ...base, roles: { ...base.roles, reader } }, NO_LISTED_MODELS);
 }
 
 const area = areaOf('Orders', 10_000);
@@ -89,7 +90,7 @@ describe('the reader estimate per turn', () => {
 describe('the reader estimate limits', () => {
   it('RF-425 a turn still never sends more than the context share of the model', () => {
     const base = settingsFor({ reader: { provider: 'ollama', model: 'gemma4:e4b' } });
-    const assumptions = assumptionsOf(base);
+    const assumptions = assumptionsOf(base, NO_LISTED_MODELS);
 
     const tokens = readerTokens([areaOf('Orders', 1_000_000)], assumptions, marks(true, true));
 

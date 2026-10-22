@@ -10,6 +10,7 @@ import type { Run } from '../../domain/runs/run.js';
 import { MERGE_ANSWER_TOKENS, MERGE_PROMPT_TOKENS } from '../consolidate/merge-request.js';
 import { roundTasks } from '../deepen/deepen-tasks.js';
 import { latestScan } from '../deepen/latest-scan.js';
+import type { ModelList } from '../models/model-list.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderKeyRepository } from '../ports/provider-key-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -43,6 +44,8 @@ export interface DeepenEstimateDependencies {
   readonly taskResults: Pick<TaskResults, 'read'>;
   readonly keys: Pick<ProviderKeyRepository, 'find'>;
   readonly priceTable: PriceTable;
+  /** The shipped model list: the context window and output limit of each model (Q-57). */
+  readonly models: ModelList;
 }
 
 export interface DeepenEstimateRequest {
@@ -152,7 +155,7 @@ export class EstimateDeepen {
     const { codeMap } = scanned;
     const coveragePass = request.coveragePass !== false;
     const plan = await this.planOf(run, codeMap, coveragePass);
-    const assumptions = assumptionsOf(project.settings);
+    const assumptions = assumptionsOf(project.settings, this.deps.models);
     const reader = readerTokens(
       roundTasks(plan, codeMap, 1).map((task) => task.area),
       assumptions,

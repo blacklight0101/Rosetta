@@ -17,7 +17,8 @@ const providerSettings = z.looseObject({
 const roleSettings = z.looseObject({
   provider: z.string(),
   model: z.string(),
-  maxOutputTokens: z.number(),
+  // Q-57: absent when the project never set it; the role then takes the default of its model.
+  maxOutputTokens: z.number().optional(),
   maxTurns: z.number().optional(),
 });
 

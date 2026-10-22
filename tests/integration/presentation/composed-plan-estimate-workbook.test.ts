@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../../src/application/models/model-list.js';
 import { cp, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -75,7 +76,12 @@ async function promptTokens(pool: Pool, dataDir: string, ids: readonly string[])
   const services = await composeProjects({
     ...{ pool, logger, clock, masker, dataDir },
     ...{ templatesFolder: 'templates', promptsFolder: 'prompts' },
-    ...{ uploadMaxMb: 10, priceTable: estimatePrices, serverKeys: { has: () => true } },
+    ...{
+      uploadMaxMb: 10,
+      priceTable: estimatePrices,
+      models: NO_LISTED_MODELS,
+      serverKeys: { has: () => true },
+    },
     workbook: { workbookMaxFiles: 20, workbookMaxSheets: 200, workbookMaxCells: 2_000_000 },
   });
   const [userId, projectId] = ids;

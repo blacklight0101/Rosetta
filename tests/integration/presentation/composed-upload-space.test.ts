@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../../src/application/models/model-list.js';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -43,7 +44,12 @@ async function services(freeBytes: number) {
   const masker = new SecretMasker();
   const projects = await composeProjects({
     ...{ pool, clock, masker, dataDir, logger: new MemoryLogger(clock, masker) },
-    ...{ templatesFolder: 'templates', promptsFolder: 'prompts', priceTable: estimatePrices },
+    ...{
+      templatesFolder: 'templates',
+      promptsFolder: 'prompts',
+      priceTable: estimatePrices,
+      models: NO_LISTED_MODELS,
+    },
     ...{ uploadMaxMb: 1, serverKeys: { has: () => true } },
     workbook: { workbookMaxFiles: 5, workbookMaxSheets: 200, workbookMaxCells: 2_000_000 },
     freeBytes: () => Promise.resolve(freeBytes),

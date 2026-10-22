@@ -42,12 +42,11 @@
     "reader": {
       "provider": "ollama",
       "model": "gemma4:e4b",
-      "maxOutputTokens": 4096,
       "maxTurns": 12
     },
-    "verifier": { "provider": "ollama", "model": "gemma4:e4b", "maxOutputTokens": 2048 },
-    "planner": { "provider": "ollama", "model": "gemma4:e4b", "maxOutputTokens": 16384 },
-    "summariser": { "provider": "ollama", "model": "gemma4:e4b", "maxOutputTokens": 2048 }
+    "verifier": { "provider": "ollama", "model": "gemma4:e4b" },
+    "planner": { "provider": "ollama", "model": "gemma4:e4b" },
+    "summariser": { "provider": "ollama", "model": "gemma4:e4b" }
   },
   "budget": {
     "run": { "maxCostMicros": 500000, "maxTokens": 2000000 },

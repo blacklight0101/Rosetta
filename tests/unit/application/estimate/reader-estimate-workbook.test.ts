@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../../../src/application/models/model-list.js';
 import { describe, expect, it } from 'vitest';
 import {
   assumptionsOf,
@@ -12,7 +13,7 @@ import { settingsFor } from '../../../support/provider-factory-harness.js';
 
 const base = settingsFor({ reader: { provider: 'openai', model: 'priced-model' } });
 const reader = { ...base.roles.reader, maxTurns: 1, maxOutputTokens: 1000 };
-const assumptions = assumptionsOf({ ...base, roles: { ...base.roles, reader } });
+const assumptions = assumptionsOf({ ...base, roles: { ...base.roles, reader } }, NO_LISTED_MODELS);
 const area = areaOf('Pricing.xlsx', 10_000);
 
 describe('the reader estimate with workbook guidance', () => {

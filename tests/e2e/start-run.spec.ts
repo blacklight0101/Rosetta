@@ -231,6 +231,10 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
   // The reader runs on OpenAI with the server's key. The test scans the project when it has no code
   // map yet and sets the reader itself, as the consent test does, so it does not depend on the tests
   // before it (or on a .env file: the server reads none).
+  // Q-57: on the reader's default output limit (8,192) the likely cost of the five webforms areas is
+  // about $0.062 (8 turns x 2,458 output tokens per area), so a $0.05 threshold would open the "Start
+  // this run?" question instead. The cap ($0.20) is below the default threshold ($0.25), and the
+  // lower threshold ($0.15) stays well above the likely cost.
   await openScannedStartPage(page);
   await page.getByRole('link', { name: 'Project settings' }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
@@ -245,7 +249,7 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
   const threshold = page.getByLabel('Ask before a run estimated above (USD)', { exact: true });
   await expect(threshold).toHaveValue('0.25');
 
-  await page.getByLabel('Run cap (USD)').fill('0.10');
+  await page.getByLabel('Run cap (USD)').fill('0.20');
   await page.getByRole('button', startButton).click();
 
   await expect(threshold).toHaveAttribute('aria-invalid', 'true');
@@ -253,7 +257,7 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
   await expect(page.getByTestId('run-notice')).toHaveCount(0);
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
-  await threshold.fill('0.05');
+  await threshold.fill('0.15');
   await page.getByRole('button', startButton).click();
 
   const notice = page.getByTestId('run-notice');
@@ -266,8 +270,8 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
   if (await endOfRun.isVisible()) await endOfRun.click();
   await expect(endOfRun).toHaveCount(0, { timeout: 60_000 });
   await page.getByRole('link', { name: 'Start page' }).click();
-  await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.10');
+  await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.20');
   await expect(
     page.getByLabel('Ask before a run estimated above (USD)', { exact: true }),
-  ).toHaveValue('0.05');
+  ).toHaveValue('0.15');
 });

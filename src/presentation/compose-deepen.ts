@@ -7,6 +7,7 @@ import { ResumeRun } from '../application/use-cases/resume-run.js';
 import type { SubmitRun } from '../application/use-cases/submit-run.js';
 import { ReadUnderstanding } from '../application/use-cases/read-understanding.js';
 import { StartDeepen } from '../application/use-cases/start-deepen.js';
+import type { ModelList } from '../application/models/model-list.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
 import { FileTaskResults } from '../infrastructure/cards/file-task-results.js';
 import type { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
@@ -31,6 +32,7 @@ export interface DeepenParts {
   readonly writer: NodeOutputWriter;
   readonly masker: TextMasker;
   readonly priceTable: PriceTable;
+  readonly models: ModelList;
   readonly ollamaHost: string | undefined;
 }
 
@@ -44,7 +46,7 @@ export function composeDeepen(parts: DeepenParts): DeepenServices {
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),
     estimateDeepen: new EstimateDeepen({
-      ...{ projects, runs, scans, priceTable: parts.priceTable },
+      ...{ projects, runs, scans, priceTable: parts.priceTable, models: parts.models },
       taskResults,
       keys: new PgProviderKeyRepository(parts.pool),
     }),
