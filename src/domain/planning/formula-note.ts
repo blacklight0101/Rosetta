@@ -1,6 +1,6 @@
 // RF-152, P3-94: the notes of `formulas.md`. A formula line ends in a note in square brackets that
 // says what the renderer knew of it: the table column of a single formula, `array`, `written for
-// D2` of a shared formula, and the cached result (`cached: 5`, or `cached D2: 5`). The heading of a
+// D2` of a shared formula, `499 cells: B2:B500` of a formula filled down (P3-103), and the cached result (`cached: 5`, or `cached D2: 5`). The heading of a
 // region carries the table column too (`, InvoiceTable column "Total"`). The file is read as text;
 // nothing here is run.
 
@@ -15,8 +15,15 @@ export interface TableColumnName {
   readonly column: string;
 }
 
+/** The cells a folded formula fills (P3-103): how many, and the ranges as written. */
+interface ParsedFill {
+  readonly cells: number;
+  readonly ranges: string;
+}
+
 export interface ParsedNote {
   readonly table?: TableColumnName;
+  readonly fill?: ParsedFill;
   readonly cached?: ParsedValue;
 }
 
@@ -25,12 +32,13 @@ const NAME = '[A-Za-z_][A-Za-z0-9_.]*';
 const TABLE_COLUMN = new RegExp(`^(?:(${NAME})|(${JSON_TEXT})) column (${JSON_TEXT})`, 'u');
 /** How a note starts; the line is split at the first `    [` whose rest is a note. */
 const NOTE_START = new RegExp(
-  `^(?:cached|no cached value|array|data table|written for |(?:${NAME}|${JSON_TEXT}) column )`,
+  `^(?:cached|no cached value|array|data table|written for |[1-9]\\d* cells: |(?:${NAME}|${JSON_TEXT}) column )`,
   'u',
 );
 const NUMBER = /^-?\d+(?:\.\d+)?(?:E[+-]?\d+)?$/iu;
 const DATE = /^\d{4}-\d{2}-\d{2}(?:T[0-9:.]{1,20}(?:Z|[+-]\d{2}:\d{2})?)?$/u;
 const OTHER = /^(?:TRUE|FALSE|#[A-Z0-9/!?]{1,10})$/u;
+const FILL = /^([1-9]\d*) cells: ([^;]*)/u;
 const CACHED = /(?:^|; )cached(?: [A-Za-z]{1,3}[1-9][0-9]{0,6})?: ([\s\S]*)$/u;
 
 /** A JSON string written by the renderer, or undefined when the text is not one. */
@@ -83,7 +91,12 @@ export function parseNote(note: string | undefined): ParsedNote {
   const where = tableColumnOf(note);
   const rest = where === undefined ? note : note.slice(where.length);
   const cached = CACHED.exec(rest);
+  const filled = FILL.exec(rest);
   const table = where === undefined ? {} : { table: where.name };
-  if (cached?.[1] === undefined) return table;
-  return { ...table, cached: valueOf(cached[1]) };
+  const fill =
+    filled?.[1] === undefined || filled[2] === undefined
+      ? {}
+      : { fill: { cells: Number(filled[1]), ranges: filled[2] } };
+  if (cached?.[1] === undefined) return { ...table, ...fill };
+  return { ...table, ...fill, cached: valueOf(cached[1]) };
 }

@@ -173,21 +173,43 @@ function rangesOf(letters: string, rows: readonly number[]): string {
     .join(', ');
 }
 
+/** How many cells a group fills and the range it names: a folded line says so, other cells count one each. */
+function fillOf(group: Group): { cells: number; range: string } {
+  const folded = group.cells.map(({ cell }) => cell.note.fill);
+  if (folded.every((fill) => fill === undefined)) {
+    return {
+      cells: group.cells.length,
+      range: rangesOf(
+        group.letters,
+        group.cells.map(({ row }) => row),
+      ),
+    };
+  }
+  const parts = group.cells.map(({ cell }) => cell.note.fill?.ranges ?? cell.head);
+  const cells = group.cells.reduce((sum, { cell }) => sum + (cell.note.fill?.cells ?? 1), 0);
+  return { cells, range: parts.join(', ') };
+}
+
+/** The cached results of a group: those of its lines, each folded line with its examples. */
+function cachedOf(lines: readonly RawCell[]): FormulaValue[] {
+  const values = lines.flatMap((cell) => [
+    ...valueOfCell(cell, cell.head),
+    ...cell.examples.map(({ address, value }) => ({ address, ...value })),
+  ]);
+  return values.slice(0, CACHED_SHOWN);
+}
+
 function regionRows(place: Place, section: RawSection): RowWithoutId[] {
-  return groupsOf(section).map(({ first, letters, cells }, index) => {
-    const lines = cells.map(({ cell }) => cell);
+  return groupsOf(section).map((group, index) => {
+    const lines = group.cells.map(({ cell }) => cell);
     const start =
       index === 0 ? section.headingLine : Math.min(...lines.map((cell) => cell.startLine));
     return rowOf(place, {
       shape: 'region',
-      range: rangesOf(
-        letters,
-        cells.map(({ row }) => row),
-      ),
-      cells: cells.length,
+      ...fillOf(group),
       ...tableOf(section.table),
-      formula: columnNamesOf(first.formula),
-      cached: lines.flatMap((cell) => valueOfCell(cell, cell.head)).slice(0, CACHED_SHOWN),
+      formula: columnNamesOf(group.first.formula),
+      cached: cachedOf(lines),
       source: {
         path: place.path,
         startLine: start,
