@@ -20,6 +20,7 @@ export const limitsSchema = z.object({
   serverKeys: z.object({
     userDay: amounts,
     serverMonth: z.object({ remainingMicros: micros }),
+    runCapMicros: micros,
   }),
   ownKeys: z.object({ day: amounts.nullable() }),
 });

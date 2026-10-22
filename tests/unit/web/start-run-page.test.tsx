@@ -217,7 +217,8 @@ it('RF-1001 the warning follows the cap field and the meter shows the likely cos
   await ready();
 
   expect(screen.queryByTestId('cap-warning')).toBeNull();
-  expect(screen.getByRole('meter').getAttribute('aria-valuenow')).toBe('20');
+  // RF-1106 (P3-91): on server keys the meter is against the administrator's $0.50 run cap, lower than the $2.00 typed.
+  expect(screen.getByRole('meter').getAttribute('aria-valuenow')).toBe('78');
   fireEvent.input(input('Run cap (USD)'), { target: { value: '0.30' } });
 
   expect(screen.getByTestId('cap-warning').textContent).toContain('$0.09');

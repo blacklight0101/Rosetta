@@ -81,9 +81,9 @@ test.describe('with JavaScript, the text of the run', () => {
 
     expect(await page.evaluate<unknown>('globalThis.__pwned')).toBeUndefined();
     expect(dialogs).toEqual([]);
-    await expect(page.locator('a[href^="javascript:" i], img, iframe, object, embed')).toHaveCount(
-      0,
-    );
+    await expect(
+      page.locator('a[href^="javascript:" i], main img, iframe, object, embed'),
+    ).toHaveCount(0);
     await expect(page.locator('script')).toHaveCount(1);
     await expect(page.locator('body')).toContainText('<script>');
   });

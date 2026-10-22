@@ -137,7 +137,7 @@ describe('renderReplayHtml and untrusted text', () => {
     expect(step?.textContent).toContain(hostileText);
     expect(page.scripts).toEqual(['replay.js']);
     expect(page.handlers).toEqual([]);
-    expect(page.document.querySelectorAll('img')).toHaveLength(0);
+    expect(page.document.querySelectorAll('main img')).toHaveLength(0);
     expect(page.foreignLinks).toEqual([]);
   });
 

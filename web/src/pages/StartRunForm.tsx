@@ -51,6 +51,7 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
         cap={{
           text: form.capText,
           capMicros: form.capMicros,
+          serverRunCap: form.serverRunCap,
           capTokens: form.project.settings.budget.run.maxTokens,
           error: actions.refusals.cap,
           onInput: form.setCapText,
@@ -74,7 +75,7 @@ function Confirmation({ form }: { readonly form: StartForm }): JSX.Element | nul
     <StartConfirmDialog
       estimate={estimate.estimate}
       thresholdMicros={form.thresholdMicros}
-      capMicros={form.capMicros}
+      capMicros={form.runCapMicros}
       busy={actions.busy}
       onConfirm={actions.confirmation.confirm}
       onCancel={actions.confirmation.cancel}

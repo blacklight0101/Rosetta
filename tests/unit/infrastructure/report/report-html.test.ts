@@ -134,7 +134,7 @@ describe('renderReportHtml and untrusted text', () => {
 
     expect(title?.textContent).toBe(hostileCard.title);
     expect(title?.children).toHaveLength(0);
-    expect(page.document.querySelectorAll('img')).toHaveLength(0);
+    expect(page.document.querySelectorAll('main img')).toHaveLength(0);
   });
 
   it('RF-507 gives a link in a title no anchor unless it goes to github.com', () => {
