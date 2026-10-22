@@ -216,6 +216,8 @@ work starts so that a typo never costs money.
 
 - Given valid project settings, when a run starts, then they load and the run continues.
 - Given a numeric setting outside its allowed range (data-model.md section 3.1, DEC-117), when settings are saved, then nothing is saved and the problem is shown next to the field with an error code.
+- Given a role whose output limit (`maxOutputTokens`) is above the maximum output its model has in the shipped model list (32 768 when the list gives none, or the provider has no list; DEC-163), when settings are saved, then nothing is saved and RST-1006 is shown next to that field; the output limit slider of the role tops out at that maximum.
+- Given a stored output limit above the maximum of the model now chosen for the role (the model was changed, or the list changed), when a run starts, then the stored number is not changed and the role runs with the smaller of the stored number and the model's maximum (DEC-163).
 - Given an unknown provider, a missing model for a role or a negative cap, when settings are saved or a run starts, then nothing runs and each problem is shown next to its field with an error code.
 - Given a role whose provider has no key for this user and no server key allowed for them (RF-1104), when a run starts, then it stops before any model call and names the provider, never a value.
   Verification: unit tests on the schema; integration test per failure.
@@ -853,7 +855,7 @@ As a developer I want to run every role on local models so that development cost
 As a developer I want to use OpenAI models for any role so that I can use stronger models where it matters.
 
 - Given an OpenAI key in the environment and a configured model, when a role uses provider `openai`, then calls succeed with tool calling and usage is reported, including cached tokens when the API reports them.
-- Given a role on a reasoning model (Q-58, default applies), when the adapter calls it, then it sends the role's reasoning effort (default `low`) where the model accepts one, records the reasoning tokens the provider reports, and an answer that comes back empty at the output limit is retried once with the limit doubled, up to the model's listed maximum output (32 768 when the list gives none) and under the budget guard, which reserves the worst case of the retried call, instead of being asked to continue.
+- Given a role on a reasoning model (Q-58, default applies), when the adapter calls it, then it sends the role's reasoning effort (default `low`) where the model accepts one, records the reasoning tokens the provider reports, and an answer that comes back empty at the output limit is retried once with the limit doubled, up to the model's listed maximum output (32 768 when the list gives none, DEC-163) and under the budget guard, which reserves the worst case of the retried call, instead of being asked to continue.
   Verification: contract test with recorded responses; one manual live call.
 
 **RF-403 OpenAI-compatible adapter** - R1 - Should - Source DEC-09 - ADR-003

@@ -1,5 +1,6 @@
 import type { AgentRole, ProviderKind } from '../ports/llm-provider.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
+import { FALLBACK_OUTPUT_CEILING, isListed, listedEntry } from './listed-model.js';
 import type { ModelList } from './model-list.js';
 
 // RF-405, RF-201, Q-57: the context window and the output limit a role runs with.
@@ -51,17 +52,6 @@ export interface RoleLimits {
   readonly maxOutputTokens: number;
 }
 
-/** The providers whose models the shipped list describes. */
-function isListed(kind: ProviderKind | undefined): kind is 'anthropic' | 'openai' {
-  return kind === 'anthropic' || kind === 'openai';
-}
-
-/** The entry of the shipped list for a model of a hosted provider; other providers have none. */
-function listedEntry(list: ModelList, kind: ProviderKind | undefined, model: string) {
-  if (!isListed(kind)) return undefined;
-  return list.models.find((entry) => entry.provider === kind && entry.model === model);
-}
-
 /** The context of a role: the project's number up to the model's window, Ollama's floor, or 128,000 (Q-57). */
 export function contextOf(
   configured: number | 'auto' | undefined,
@@ -87,6 +77,20 @@ function defaultOutput(
   return Math.min(modelMaximum ?? HOSTED_OUTPUT_TOKENS[role], HOSTED_OUTPUT_TOKENS[role]);
 }
 
+/** DEC-163: the stored limit (or the default) never above the model's maximum, 32,768 without one. */
+function outputOf(
+  stored: number | undefined,
+  of: {
+    readonly role: AgentRole;
+    readonly kind: ProviderKind | undefined;
+    readonly model: ReturnType<typeof listedEntry>;
+  },
+): number {
+  const maximum = of.model?.maxOutputTokens;
+  const wanted = stored ?? defaultOutput(of.role, of.kind, maximum);
+  return Math.min(wanted, maximum ?? FALLBACK_OUTPUT_CEILING);
+}
+
 /** What the shipped list says of the model's window and maximum output (P3-100). */
 function modelNumbers(
   entry: ReturnType<typeof listedEntry>,
@@ -108,6 +112,6 @@ export function roleLimits(
   return {
     ...contextOf(config?.contextTokens, config?.kind, entry?.contextTokens),
     ...modelNumbers(entry),
-    maxOutputTokens: maxOutputTokens ?? defaultOutput(role, config?.kind, entry?.maxOutputTokens),
+    maxOutputTokens: outputOf(maxOutputTokens, { role, kind: config?.kind, model: entry }),
   };
 }

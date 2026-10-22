@@ -98,25 +98,22 @@ describe('P3-86 an empty answer at the output limit', () => {
 });
 
 describe('P3-86 the doubled limit', () => {
-  it('P3-100 the settings accept a limit up to the largest listed maximum (128,000)', () => {
+  it('RF-402 the largest limit is the largest the settings accept', () => {
     const at = (limit: number) =>
       parseProjectSettings(settingsWith({ 'roles.reader.maxOutputTokens': limit })).ok;
 
-    expect(at(128_000)).toBe(true);
-    expect(at(128_001)).toBe(false);
+    expect(at(OUTPUT_LIMIT_CEILING)).toBe(true);
+    expect(at(OUTPUT_LIMIT_CEILING + 1)).toBe(false);
   });
 
-  it('RF-402 a model without a listed maximum stops at 32,768', async () => {
+  it('RF-402 stops at the largest limit a role accepts', async () => {
     const { fake, request } = ungatedLoopSetup([emptyAtLimit(20_000), textTurn(whole)], {
       maxOutputTokens: 20_000,
     });
 
     await runAgentTask(request(fake));
 
-    expect(fake.requests.map((each) => each.maxOutputTokens)).toEqual([
-      20_000,
-      OUTPUT_LIMIT_CEILING,
-    ]);
+    expect(fake.requests.map((each) => each.maxOutputTokens)).toEqual([20_000, 32_768]);
   });
 
   it('RF-402 a limit already at the largest is not retried; the event says there was no room', async () => {

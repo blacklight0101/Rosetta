@@ -5,6 +5,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Clock } from '../ports/clock.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { Project } from '../projects/project.js';
+import type { ModelList } from '../models/model-list.js';
 import { parseProjectSettings } from '../projects/project-settings.js';
 
 // RF-002, RF-405, RF-1105: Update project settings checks the document against the settings schema
@@ -34,6 +35,8 @@ export interface UpdateProjectSettingsRequest {
 export interface UpdateProjectSettingsDependencies {
   readonly projects: ProjectRepository;
   readonly clock: Clock;
+  /** The shipped model list: the top of each role's output limit (DEC-163). */
+  readonly models: ModelList;
 }
 
 export class UpdateProjectSettings {
@@ -47,11 +50,11 @@ export class UpdateProjectSettings {
   async execute(
     request: UpdateProjectSettingsRequest,
   ): Promise<Result<Project, UpdateSettingsRefusal>> {
-    const { projects, clock } = this.deps;
+    const { projects, clock, models } = this.deps;
     const { userId } = request.actor;
     const existing = await projects.find(userId, request.projectId);
     if (existing === undefined) return err({ code: ERROR_CODES.notFound });
-    const parsed = parseProjectSettings(request.settings);
+    const parsed = parseProjectSettings(request.settings, models);
     if (!parsed.ok) return err({ code: ERROR_CODES.settingsInvalid, problems: parsed.error });
     const updated = await projects.updateSettings({
       userId,

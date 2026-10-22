@@ -180,7 +180,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
     ...uploadsOf(parts, projects, runs),
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
-    updateProjectSettings: new UpdateProjectSettings({ projects, clock }),
+    updateProjectSettings: new UpdateProjectSettings({ projects, clock, models: parts.models }),
     openWorkspace: new OpenWorkspace({
       projects,
       users: new PgUserRepository(pool),

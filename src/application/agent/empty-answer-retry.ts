@@ -1,3 +1,4 @@
+import { FALLBACK_OUTPUT_CEILING } from '../models/listed-model.js';
 import type { LlmResponse } from '../ports/llm-provider.js';
 import type { AnswerNote } from './answer-note.js';
 
@@ -11,7 +12,7 @@ import type { AnswerNote } from './answer-note.js';
 // answer after a good retry is retried again, at the doubled limit, up to the largest.
 
 /** The ceiling of the doubled limit for a model that lists no maximum output. */
-export const OUTPUT_LIMIT_CEILING = 32_768;
+export const OUTPUT_LIMIT_CEILING = FALLBACK_OUTPUT_CEILING;
 
 /** An answer with no text and no tool call that stopped because it reached the output limit. */
 function isEmptyAtLimit(response: LlmResponse): boolean {
