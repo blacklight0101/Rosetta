@@ -106,20 +106,100 @@ jobs:
         if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
         run: npm run deadcode
 
-  # The tests with coverage on both operating systems. Not a required check by itself: the required
-  # `verify (<os>)` checks below aggregate it with the gates.
-  tests:
-    name: tests (${{ matrix.os }})
+  # The unit, web and integration tests on both operating systems, in three shards per operating system
+  # (P1-178). Each shard runs a third of the test files with coverage on and writes a blob report; the
+  # `tests` job below merges the three blobs of an operating system and enforces the coverage thresholds.
+  # Not a required check by itself. To change the shard count, change the matrix list and the `/3` of the
+  # test step together (environments-and-delivery.md section 6; workflow-jobs.test.ts keeps them equal).
+  tests-shard:
+    name: tests (${{ matrix.os }}, shard ${{ matrix.shard }}/3)
     needs: changes
     runs-on: ${{ matrix.os }}
-    # The full suite takes about 12 minutes of tests plus setup; 15 cancelled runs at the limit.
-    timeout-minutes: 25
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        shard: [1, 2, 3]
+        include:
+          - os: ubuntu-latest
+            # Disposable database for the integration tests (P1-06); the credentials are throwaway.
+            # Every Linux shard has its own service container.
+            database-url: postgres://postgres:postgres@127.0.0.1:5432/rosetta_test
+            services:
+              postgres:
+                image: postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+                env:
+                  POSTGRES_USER: postgres
+                  POSTGRES_PASSWORD: postgres
+                  POSTGRES_DB: rosetta_test
+                ports:
+                  - 5432:5432
+                options: >-
+                  --health-cmd "pg_isready -U postgres"
+                  --health-interval 5s
+                  --health-timeout 5s
+                  --health-retries 10
+          - os: windows-latest
+            database-url: ''
+            services: {}
+    services: ${{ matrix.services }}
+    steps:
+      - name: Documentation-only change
+        if: needs.changes.outputs.code == 'false'
+        run: echo "::notice title=Documentation only::The steps of this job are skipped."
+        shell: bash
+      - if: needs.changes.outputs.code != 'false'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: needs.changes.outputs.code != 'false'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # CI=true on the runner keeps lefthook from writing git hooks.
+      - if: needs.changes.outputs.code != 'false'
+        run: npm ci
+      - name: Database tests are skipped on Windows
+        if: runner.os == 'Windows' && needs.changes.outputs.code != 'false'
+        run: echo "::notice title=Database tests skipped::No PostgreSQL service container on Windows runners; the Linux job runs them."
+        shell: bash
+      # The Playwright project runs in the sharded e2e jobs, in parallel with this one; the static gates
+      # run in the `gates` job. The shard does not check the coverage thresholds (it sees a third of the
+      # code): ROSETTA_COVERAGE_SHARD=1 turns them off here, and the `tests` job enforces them on the merge.
+      - name: Tests with coverage (shard)
+        if: needs.changes.outputs.code != 'false'
+        run: npm run test:shard -- "--shard=$SHARD/3" "--outputFile.blob=test-results/blob/blob-$SHARD.json"
+        shell: bash
+        env:
+          SHARD: ${{ matrix.shard }}
+          ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
+          ROSETTA_E2E_OWN_JOB: '1'
+          ROSETTA_COVERAGE_SHARD: '1'
+      - name: Upload the blob report
+        if: needs.changes.outputs.code != 'false'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: blob-${{ matrix.os }}-${{ matrix.shard }}
+          path: test-results/blob/blob-${{ matrix.shard }}.json
+          if-no-files-found: error
+          retention-days: 1
+
+  # The merge of the shards of one operating system (P1-178): downloads the blob reports, merges the test
+  # results and the coverage, enforces the coverage thresholds and prints the test pyramid. Not a required
+  # check by itself: the required `verify (<os>)` checks below aggregate it with the shards and the gates.
+  # For a documentation-only change the Linux leg checks the format and the tests that read the documents.
+  tests:
+    name: tests (${{ matrix.os }})
+    needs: [changes, tests-shard]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
-            # Disposable database for the integration tests (P1-06); the credentials are throwaway.
             database-url: postgres://postgres:postgres@127.0.0.1:5432/rosetta_test
             services:
               postgres:
@@ -156,18 +236,23 @@ jobs:
       # CI=true on the runner keeps lefthook from writing git hooks.
       - if: runner.os == 'Linux' || needs.changes.outputs.code != 'false'
         run: npm ci
-      - name: Database tests are skipped on Windows
-        if: runner.os == 'Windows' && needs.changes.outputs.code != 'false'
-        run: echo "::notice title=Database tests skipped::No PostgreSQL service container on Windows runners; the Linux job runs them."
-        shell: bash
-      # The Playwright project runs in the sharded e2e jobs below, in parallel with this one.
-      # The static gates run in the `gates` job; the tests catch path and line-ending differences.
-      - name: Tests with coverage
+      - name: Download the blob reports of the shards
         if: needs.changes.outputs.code != 'false'
-        run: npm run test:ci
-        env:
-          ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
-          ROSETTA_E2E_OWN_JOB: '1'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: blob-${{ matrix.os }}-*
+          path: test-results/blob
+          merge-multiple: true
+      # A missing blob would silently drop a third of the tests, so the count is checked before the merge.
+      - name: Check that every shard reported
+        if: needs.changes.outputs.code != 'false'
+        run: test "$(find test-results/blob -name 'blob-*.json' | wc -l)" -eq 3
+        shell: bash
+      # The thresholds (vitest.config.ts) apply here, to the coverage of the whole run; the shard switch
+      # is not set. The pyramid is printed from the merged JSON report, as before.
+      - name: Merge the reports, check the coverage thresholds
+        if: needs.changes.outputs.code != 'false'
+        run: npm run test:merge
       # Documentation only: the format check and every test that reads the documents
       # (environments-and-delivery.md section 6 lists them; workflow-docs-only.test.ts keeps the list whole).
       - name: Format check (documentation only)
@@ -187,13 +272,13 @@ jobs:
         env:
           ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
 
-  # The required checks `verify (ubuntu-latest)` and `verify (windows-latest)`: green only when the tests of
-  # that operating system and the gates passed. Runs for every change (no condition but always()), so a
-  # skipped or cancelled job counts as a failure here and cannot be mistaken for a pass.
+  # The required checks `verify (ubuntu-latest)` and `verify (windows-latest)`: green only when the test
+  # shards, the merge of the tests and the gates passed. Runs for every change (no condition but always()),
+  # so a skipped or cancelled job counts as a failure here and cannot be mistaken for a pass.
   verify:
     name: verify (${{ matrix.os }})
     if: always()
-    needs: [gates, tests]
+    needs: [gates, tests-shard, tests]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     strategy:
@@ -201,9 +286,11 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
       - run: |
+          test "$SHARDS" = success
           test "$TESTS" = success
           test "$GATES" = success
         env:
+          SHARDS: ${{ needs.tests-shard.result }}
           TESTS: ${{ needs.tests.result }}
           GATES: ${{ needs.gates.result }}
 

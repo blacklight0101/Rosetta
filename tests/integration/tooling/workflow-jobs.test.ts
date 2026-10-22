@@ -123,7 +123,10 @@ describe('GitHub Actions workflows: test shards', () => {
 describe('GitHub Actions workflows: test merge', () => {
   it('P1-178 the merge keeps the thresholds of the unsharded run and prints the pyramid from the merged report', async () => {
     const all = await scripts();
-    const config = await readFile(join(root, 'vitest.config.ts'), 'utf8');
+    const config = (await readFile(join(root, 'vitest.config.ts'), 'utf8')).replaceAll(
+      '\r\n',
+      '\n',
+    );
 
     expect(all['test:shard']).toContain('--coverage');
     expect(all['test:shard']).toContain('--reporter=blob');

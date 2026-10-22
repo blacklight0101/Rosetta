@@ -19,6 +19,16 @@ const shared = {
 } as const;
 const offline = { ...shared, setupFiles: 'tests/support/block-network.ts' } as const;
 
+// P1-178: CI splits the run in shards (`--shard=n/N --reporter=blob`); a shard sees only part of the code
+// coverage, so it cannot meet the thresholds. ROSETTA_COVERAGE_SHARD=1 turns the check off for a
+// shard run only; the merge job (`vitest --merge-reports --coverage`) never sets it and enforces them.
+const thresholds = {
+  lines: 80,
+  'src/domain/**': { lines: 90, branches: 85 },
+  'src/application/**': { lines: 90, branches: 85 },
+} as const;
+const shardRun = process.env['ROSETTA_COVERAGE_SHARD'] === '1';
+
 export default defineConfig({
   test: {
     ...workers,
@@ -49,11 +59,7 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**/*.ts'],
       reporter: ['text-summary', 'text', 'lcov'],
-      thresholds: {
-        lines: 80,
-        'src/domain/**': { lines: 90, branches: 85 },
-        'src/application/**': { lines: 90, branches: 85 },
-      },
+      ...(shardRun ? {} : { thresholds }),
     },
   },
 });
