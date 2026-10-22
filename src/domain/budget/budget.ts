@@ -63,42 +63,84 @@ export function capsFor(keySource: KeySource, inputs: CapInputs): readonly Usage
 }
 
 function keyCaps(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
-  const { run, server, account } = inputs;
+  const { run, account } = inputs;
   const tokens: UsageCap = { kind: 'run-tokens', limit: run.maxTokens };
   switch (keySource) {
-    case 'server':
+    case 'server': {
+      const runCost = runCostOnServer(inputs);
+      const day = userDayOnServer(inputs);
       return [
-        { kind: 'run-cost', limit: lower(run.maxCostMicros, server.runMicros) },
+        { kind: 'run-cost', limit: runCost.micros, source: runCost.source },
         tokens,
-        { kind: 'user-day', limit: account.dailyCapMicros ?? server.userDayMicros },
-        { kind: 'server-month', limit: server.serverMonthMicros },
+        { kind: 'user-day', limit: day.micros, source: day.source },
+        { kind: 'server-month', limit: inputs.server.serverMonthMicros, source: 'administrator' },
       ];
+    }
     case 'user': {
       const own = account.ownDailyCapMicros;
-      const runCost: UsageCap = { kind: 'run-cost', limit: run.maxCostMicros };
+      const runCost: UsageCap = { kind: 'run-cost', limit: run.maxCostMicros, source: 'project' };
       return own === null ? [runCost, tokens] : [runCost, tokens, { kind: 'own-day', limit: own }];
     }
     case 'none':
-      return [{ kind: 'run-cost', limit: run.maxCostMicros }, tokens];
+      return [{ kind: 'run-cost', limit: run.maxCostMicros, source: 'project' }, tokens];
   }
 }
 
-/** RF-1106, DEC-107 (P3-91): where a cap comes from. Scaffolding: the behaviour comes in the feat commit. */
-export type CapSource = 'project' | 'administrator' | 'account';
+/** RF-1106: the run cost on server keys, the lower of the project's cap and the administrator's. */
+function runCostOnServer(inputs: CapInputs): {
+  readonly micros: bigint;
+  readonly source: 'project' | 'administrator';
+} {
+  const { run, server } = inputs;
+  return {
+    micros: lower(run.maxCostMicros, server.runMicros),
+    source: server.runMicros < run.maxCostMicros ? 'administrator' : 'project',
+  };
+}
 
-/** The caps a run starts with (P3-91). Scaffolding. */
+/** RF-1106: the user's day on server keys: the account's cap when the administrator set one. */
+function userDayOnServer(inputs: CapInputs): {
+  readonly micros: bigint;
+  readonly source: 'account' | 'administrator';
+} {
+  const { account, server } = inputs;
+  const own = account.dailyCapMicros;
+  return own === null
+    ? { micros: server.userDayMicros, source: 'administrator' }
+    : { micros: own, source: 'account' };
+}
+
+/** The effective caps a run starts with, and the source of each (RF-1106, DEC-107). */
 export interface RunStartCaps {
   readonly keySource: KeySource;
   readonly run: { readonly maxCostMicros: bigint; readonly source: 'project' | 'administrator' };
+  /** Only with server keys: the day's cap on them. */
   readonly userDay?: {
     readonly maxCostMicros: bigint;
     readonly source: 'account' | 'administrator';
   };
 }
 
-/** RF-1106 (P3-91). Scaffolding: not implemented yet. */
+/**
+ * RF-1106, DEC-107: the caps a run starts with. A role on a server key makes the run a server-key
+ * run, and then the administrator's run cap applies when it is lower than the project's.
+ */
+// RF-1106
 export function runStartCapsOf(keySources: readonly KeySource[], inputs: CapInputs): RunStartCaps {
-  throw new Error(
-    `P3-91: not implemented for ${String(keySources.length)} roles and ${String(inputs.run.maxCostMicros)}.`,
-  );
+  const keySource = keySourceOfRun(keySources);
+  if (keySource !== 'server') {
+    return { keySource, run: { maxCostMicros: inputs.run.maxCostMicros, source: 'project' } };
+  }
+  const run = runCostOnServer(inputs);
+  const day = userDayOnServer(inputs);
+  return {
+    keySource,
+    run: { maxCostMicros: run.micros, source: run.source },
+    userDay: { maxCostMicros: day.micros, source: day.source },
+  };
+}
+
+function keySourceOfRun(keySources: readonly KeySource[]): KeySource {
+  if (keySources.includes('server')) return 'server';
+  return keySources.includes('user') ? 'user' : 'none';
 }

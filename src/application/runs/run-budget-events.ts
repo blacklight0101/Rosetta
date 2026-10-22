@@ -110,14 +110,18 @@ function runShare(totals: SpendTotals, caps: readonly UsageCap[]): number {
   return Math.max(0, ...shares);
 }
 
-/** `budget.capReached`: a cost cap in micro-dollars, a token cap in tokens; a role cap names its role. */
+/**
+ * `budget.capReached`: a cost cap in micro-dollars, a token cap in tokens; a role cap names its role;
+ * a cap with a source names it (RF-1106), so the message can say who can raise it.
+ */
 function capData(breach: CapBreach): Record<string, unknown> {
   const limit = Number(breach.limit);
   const spent = Number(breach.spent);
   const role = breach.role === undefined ? {} : { role: breach.role };
+  const source = breach.source === undefined ? {} : { capSource: breach.source };
   return breach.kind === 'run-tokens' || breach.kind === 'role-tokens'
-    ? { scope: breach.kind, ...role, capTokens: limit, spentTokens: spent }
-    : { scope: breach.kind, ...role, capMicros: limit, spentMicros: spent };
+    ? { scope: breach.kind, ...role, ...source, capTokens: limit, spentTokens: spent }
+    : { scope: breach.kind, ...role, ...source, capMicros: limit, spentMicros: spent };
 }
 
 // RF-421, RF-1003, RF-1010

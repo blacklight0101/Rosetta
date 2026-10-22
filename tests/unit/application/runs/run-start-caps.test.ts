@@ -12,16 +12,12 @@ import { sampleManifest, sampleRun } from '../../../support/run-fixtures.js';
 // RF-1106, RF-1104, DEC-107: what a run's start caps are, read from the project, the account, the
 // server caps and the key each role of the run would use (the same choice the provider factory makes).
 
-const settings = {
-  ...templateSettings,
-  budget: { ...templateSettings.budget, run: { maxCostMicros: 5_000_000, maxTokens: 2_000_000 } },
-  providers: {
-    ...templateSettings.providers,
-    anthropic: { ...templateSettings.providers.anthropic, keySource: 'user-then-server' as const },
-  },
-};
+const settings = structuredClone(templateSettings);
+settings.budget.run.maxCostMicros = 5_000_000;
+const anthropic = settings.providers['anthropic'];
+if (anthropic !== undefined) anthropic.keySource = 'user-then-server';
 const project = sampleProject({ settings });
-const reader = sampleManifest().roles.reader;
+const reader = sampleManifest().roles['reader'];
 if (reader === undefined) throw new Error('the manifest fixture has no reader role');
 const anthropicReader = { ...reader, provider: 'anthropic', kind: 'anthropic' as const };
 

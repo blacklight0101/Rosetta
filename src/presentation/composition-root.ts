@@ -26,6 +26,7 @@ import { serverKeyPresence } from './server-key-presence.js';
 import { composeProjects } from './compose-projects.js';
 import { scheduledTasks, startScheduledTasks, type ScheduledParts } from './compose-schedule.js';
 import { composeRuns, runStartUpSteps, type RunComposition } from './compose-runs.js';
+import { composeKeySources } from './compose-start-caps.js';
 import { stopWithin, type StopOutcome } from './shutdown.js';
 import { startUp } from './start-up.js';
 import { TestDoubles } from './test-doubles.js';
@@ -137,6 +138,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     parseBudget: { totalMs: environment.scanParseBudgetMs },
     ...{ githubToken: environment.githubToken, ollamaUrl: environment.ollamaUrl },
     ...(doubles?.fetch === undefined ? {} : { fetch: doubles.fetch }),
+    keySources: composeKeySources(pool, environment),
     providers: auth.providers,
     priceTable: auth.priceTable,
     reasoningModels: auth.reasoningModels,

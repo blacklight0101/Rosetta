@@ -62,6 +62,7 @@ function composedRuns(dataDir: string) {
     priceTable: { version: '2026-10-11', currency: 'USD', prices: [] },
     reasoningModels: () => false,
     streams,
+    keySources: { keySourceOf: () => Promise.resolve(undefined) },
   });
   return { runs, logger, pool, streams, clock };
 }
