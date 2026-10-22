@@ -82,8 +82,13 @@ class Collector {
       const answer = await this.ask(this.last, message.text);
       if (!answer.ok) return this.result(answer.error);
       this.raws.push(answer.value);
+      // P3-104: a repair that gives back the same answer cannot fix it; the readable cards are
+      // kept, the unreadable ones stay listed in the problems, and no further repair is sent.
+      const answered = answer.value.trim();
+      const same = !message.continuation && answered !== '' && answered === this.last.trim();
       if (message.continuation) await this.takeContinuation(answer.value);
       else await this.take(answer.value);
+      if (same) return this.result();
     }
   }
 

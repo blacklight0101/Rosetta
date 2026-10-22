@@ -32,10 +32,16 @@ describe('parseCardsLenient on a card without a claims array', () => {
     expect(card?.ok && card.value.claims.map((claim) => claim.text)).toEqual([
       'Field Payments per Year (dropdown, optional) validation: Must be one of: tenu (weekly, 52; monthly, 12; quarterly, 4; yearly, 1)',
       'The screen is at the route Sheet1.',
+      'Field Annual Interest Rate (number, required) is on the screen.',
+      'Field Years (number, required) is on the screen.',
+      'Field Payments per Year (dropdown, optional) is on the screen.',
+      'Field Amount (number, required) is on the screen.',
     ]);
     expect(card?.ok && card.value.claims.every((claim) => claim.citations.length > 0)).toBe(true);
   });
+});
 
+describe('parseCardsLenient on a card without claims and without a cited screen', () => {
   it('RF-208 a SCRN card with no claims array and no cited validation is dropped', () => {
     const bare = { ...loanScreenCard, screen: { ...loanScreenCard.screen, fields: [] } };
 
