@@ -65,15 +65,50 @@ describe('the call log of a call that timed out', () => {
   });
 });
 
+/** A provider whose first attempt times out and is retried, and whose second answers. */
+const timingOutThenAnswering: LlmProvider = {
+  complete: async (_request, observer) => {
+    observer?.attemptStarted();
+    await observer?.attemptRetried({ ...failure, usage: timedOut });
+    observer?.attemptStarted();
+    return {
+      text: 'done',
+      toolCalls: [],
+      usage: { inputTokens: 100, outputTokens: 10, cachedInputTokens: 0, usageSource: 'reported' },
+      finishReason: 'stop',
+    };
+  },
+};
+
 describe('the ledger row of a call that timed out', () => {
-  it('RF-428 books the estimated input, priced, instead of 0 tokens and 0 cost', async () => {
+  it('RF-428 books every timed-out attempt, estimated and priced, when the call fails for good', async () => {
     const h = budgetHarness({ inner: timingOutTwice });
 
     await failureOf(h.guard.complete(budgetRequest(1)));
 
     const [entry] = await h.ledger.runEntries(budgetRun.userId, budgetRun.id);
-    expect(entry).toMatchObject({ inputTokens: 5000, outputTokens: 0, usageSource: 'estimated' });
+    expect(entry).toMatchObject({ inputTokens: 10000, outputTokens: 0, usageSource: 'estimated' });
     // The contract price: 1 USD per million input tokens.
-    expect(entry?.costMicros).toBe(5000n);
+    expect(entry?.costMicros).toBe(10000n);
+    expect(h.costs).toEqual([expect.objectContaining({ inputTokens: 10000, costMicros: 10000n })]);
+  });
+
+  it('RF-428 books the timed-out attempt together with the answer of the retry', async () => {
+    const h = budgetHarness({ inner: timingOutThenAnswering });
+
+    await h.guard.complete(budgetRequest(1));
+
+    const [entry] = await h.ledger.runEntries(budgetRun.userId, budgetRun.id);
+    expect(entry).toMatchObject({
+      inputTokens: 5100,
+      outputTokens: 10,
+      attempt: 2,
+      usageSource: 'estimated',
+    });
+    // 5100 input tokens at 1 USD per million, 10 output tokens at 2 USD per million.
+    expect(entry?.costMicros).toBe(5120n);
+    expect(h.costs).toEqual([
+      expect.objectContaining({ inputTokens: 5100, outputTokens: 10, costMicros: 5120n }),
+    ]);
   });
 });
