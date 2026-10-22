@@ -32,12 +32,15 @@ import type {
   ByScenario,
   ReaderAssumptions,
   EstimatePoint,
+  FirstCalls,
   RunEstimate,
   Scenario,
 } from './estimate-types.js';
 import { readerTokens, type TokenFigures } from './reader-estimate.js';
 import type { ReasoningModels } from '../models/model-list.js';
 import { estimateRole } from './role-estimate.js';
+import { firstCallsOf } from './first-calls.js';
+import type { PlanCapDependencies } from './plan-caps.js';
 
 // RF-425, ADR-007, DEC-13, DEC-54, DEC-107: the estimate before a run (`GET
 // /api/projects/:id/estimate`). From the code map of the project's latest completed scan, the areas
@@ -60,6 +63,8 @@ export interface EstimateRunDependencies {
   readonly models: ModelList;
   /** Q-58: the models the shipped list marks as reasoning models; the estimate names their effort. */
   readonly reasoningModels: ReasoningModels;
+  /** The caps the first calls are checked against (RF-405); absent for an evaluation, which has no accounts. */
+  readonly caps?: PlanCapDependencies;
 }
 
 export interface EstimateRunRequest {
@@ -225,7 +230,19 @@ export class EstimateRun {
       assumptions: { ...assumptions, summariserBatches: summariser.batches },
       roles,
       total: sumPoints(roles.map((role) => role.points)),
+      ...(await this.firstCalls(project, areas.length)),
     });
+  }
+
+  /** RF-405, DEC-159: the reservation of the first reader calls, when the caps are known. */
+  private async firstCalls(
+    project: Project,
+    tasks: number,
+  ): Promise<{ readonly firstCalls?: FirstCalls }> {
+    const { caps } = this.deps;
+    if (caps === undefined) return {};
+    const inputs = { tasks, models: this.deps.models };
+    return { firstCalls: await firstCallsOf({ ...this.deps, ...caps }, project, inputs) };
   }
 
   /** RF-200: the code map of the project's newest scan that ended `Completed`. */
