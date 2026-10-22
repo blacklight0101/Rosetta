@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. Hand-written in the documented shape of the provider's server-sent-event stream; no real model was called (ADR-008). OpenAI: a short streamed text answer with the final usage chunk.",
+  "exchanges": [
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req_FAKE00000000000000000001"
+      },
+      "frames": [
+        {
+          "data": {
+            "id": "chatcmpl-FAKE0000000000000001",
+            "object": "chat.completion.chunk",
+            "created": 1790000000,
+            "model": "contract-model-2026-08-07",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant",
+                  "content": ""
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE0000000000000001",
+            "object": "chat.completion.chunk",
+            "created": 1790000000,
+            "model": "contract-model-2026-08-07",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "The Catalog area "
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE0000000000000001",
+            "object": "chat.completion.chunk",
+            "created": 1790000000,
+            "model": "contract-model-2026-08-07",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "lists products "
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE0000000000000001",
+            "object": "chat.completion.chunk",
+            "created": 1790000000,
+            "model": "contract-model-2026-08-07",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "from the database."
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE0000000000000001",
+            "object": "chat.completion.chunk",
+            "created": 1790000000,
+            "model": "contract-model-2026-08-07",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop"
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE0000000000000001",
+            "object": "chat.completion.chunk",
+            "created": 1790000000,
+            "model": "contract-model-2026-08-07",
+            "choices": [],
+            "usage": {
+              "prompt_tokens": 1200,
+              "completion_tokens": 80,
+              "total_tokens": 1280,
+              "prompt_tokens_details": {
+                "cached_tokens": 1024
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              }
+            }
+          }
+        },
+        {
+          "data": "[DONE]"
+        }
+      ]
+    }
+  ]
+}

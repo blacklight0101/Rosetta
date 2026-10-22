@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import type { CalibrationProblem } from '../../application/eval/run-calibration.js';
 import type { ProjectSettings } from '../../application/projects/project-settings.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { loadModelList } from '../../infrastructure/models/model-list-file.js';
 import { loadPriceTable } from '../../infrastructure/budget/price-file.js';
 import { readAppVersion } from '../../infrastructure/config/app-version.js';
 import {
@@ -86,6 +87,7 @@ async function partsOf(
     serverKeys: { openai: env['OPENAI_API_KEY'], anthropic: env['ANTHROPIC_API_KEY'] },
     ollamaUrl: env['ROSETTA_OLLAMA_URL'],
     priceTable: await loadPriceTable(folder('prices/default-prices.yaml')),
+    models: await loadModelList(folder('prices/models.yaml')),
     rosettaVersion: await readAppVersion(),
     ...{ settings, capMicros, clock, ids, logger, masker },
   };

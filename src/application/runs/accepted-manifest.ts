@@ -2,6 +2,9 @@ import { parseGitHubUrl } from '../../domain/sources/github-repo-ref.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { ManifestSource } from '../../domain/runs/manifest-source.js';
 import type { ManifestCaps, ManifestRole, RunManifest } from '../../domain/runs/run-manifest.js';
+import type { ModelList } from '../models/model-list.js';
+import { NO_LISTED_MODELS } from '../models/model-list.js';
+import { roleLimits } from '../models/role-limits.js';
 import type { Project } from '../projects/project.js';
 import { ROLE_NAMES, type ProjectSettings } from '../projects/project-settings.js';
 
@@ -16,6 +19,8 @@ export interface AcceptedRun {
   readonly rosettaVersion: string;
   /** The start request's options. */
   readonly options: Readonly<Record<string, unknown>>;
+  /** The shipped model list, for the output limit of a role the project leaves unset (Q-57); none by default. */
+  readonly models?: ModelList;
 }
 
 /** A fixed context size is known when the run starts; `auto` is chosen at the first call (DEC-114). */
@@ -27,7 +32,7 @@ function contextOf(
     : { contextTokens: null, contextSource: null };
 }
 
-function rolesOf(settings: ProjectSettings): Record<string, ManifestRole> {
+function rolesOf(settings: ProjectSettings, models: ModelList): Record<string, ManifestRole> {
   return Object.fromEntries(
     ROLE_NAMES.map((name) => {
       const role = settings.roles[name];
@@ -42,7 +47,7 @@ function rolesOf(settings: ProjectSettings): Record<string, ManifestRole> {
           modelDigest: null,
           ...contextOf(provider?.contextTokens),
           toolMode: provider?.toolMode ?? 'native',
-          maxOutputTokens: role.maxOutputTokens,
+          maxOutputTokens: roleLimits(settings, name, models).maxOutputTokens,
           temperature: role.temperature ?? null,
           maxTurns: 'maxTurns' in role ? (role.maxTurns ?? null) : null,
         },
@@ -114,7 +119,7 @@ export function acceptedManifest(accepted: AcceptedRun): RunManifest {
     },
     codemapHash: null,
     options,
-    roles: rolesOf(project.settings),
+    roles: rolesOf(project.settings, accepted.models ?? NO_LISTED_MODELS),
     promptVersions: {},
     security: {
       deniedReads: 0,

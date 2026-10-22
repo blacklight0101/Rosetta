@@ -17,6 +17,7 @@ import { SavePlanningBrief } from '../application/use-cases/save-planning-brief.
 import { StoreUpload } from '../application/use-cases/store-upload.js';
 import { WorkbookBatches } from '../application/use-cases/workbook-batches.js';
 import { UpdateProjectSettings } from '../application/use-cases/update-project-settings.js';
+import type { ModelList } from '../application/models/model-list.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
 import { FileAnswersFile } from '../infrastructure/cards/answers-file.js';
 import { FileRunCards } from '../infrastructure/cards/file-run-cards.js';
@@ -97,6 +98,8 @@ export interface ProjectParts {
   readonly freeBytes?: () => Promise<number>;
   /** The shipped price table the plan estimate prices the planner with (RF-613). */
   readonly priceTable: PriceTable;
+  /** The shipped model list: the planner's context window and output limit (Q-57). */
+  readonly models: ModelList;
   /** Which providers the server holds a key for; the plan estimate says when a call has none. */
   readonly serverKeys: ServerKeyPresence;
 }
@@ -189,10 +192,10 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
     getPlanningBrief: new GetPlanningBrief({ projects, runs, briefs, catalogue }),
     savePlanningBrief: new SavePlanningBrief({ projects, runs, briefs, catalogue, clock }),
     estimatePlan: new EstimatePlan({
-      ...{ projects, runs, briefs, clock, usage, priceTable: parts.priceTable },
-      cards: new FileRunCards(writer),
+      ...{ projects, runs, briefs, clock, usage },
+      ...{ priceTable: parts.priceTable, models: parts.models },
+      ...{ cards: new FileRunCards(writer), users: new PgUserRepository(pool) },
       answers: new FileAnswersFile({ writer, masker }),
-      users: new PgUserRepository(pool),
       serverSettings: settings,
       ...{ keys: new PgProviderKeyRepository(pool), serverKeys: parts.serverKeys },
       catalogue: () => Promise.resolve(catalogue),

@@ -1,3 +1,4 @@
+import type { Money } from '../../domain/budget/money.js';
 import type { Clock } from '../../application/ports/clock.js';
 import type { IdGenerator } from '../../application/ports/id-generator.js';
 import type {
@@ -72,7 +73,7 @@ export class ObservedProvider implements LlmProvider {
         observer?.attemptStarted();
       },
       attemptRetried: async (failure: LlmAttemptFailure) => {
-        await recorder.record(attempts.failed('retried', failure));
+        await recorder.record(attempts.failed('retried', failure, this.costOf(request, failure)));
         await observer?.attemptRetried(failure);
       },
     };
@@ -80,7 +81,8 @@ export class ObservedProvider implements LlmProvider {
     try {
       response = await inner.complete(request, watcher);
     } catch (error) {
-      await recorder.record(attempts.failed('failed', failureOf(error)));
+      const failure = failureOf(error);
+      await recorder.record(attempts.failed('failed', failure, this.costOf(request, failure)));
       throw error;
     }
     const cost = this.options.priceCall({
@@ -92,6 +94,14 @@ export class ObservedProvider implements LlmProvider {
     await this.transcribeAnswer(request, response);
     await recorder.record(record);
     return response;
+  }
+
+  /** Q-60: the price of the usage a failed attempt is metered with, when it has one. */
+  private costOf(request: LlmRequest, failure: LlmAttemptFailure): Money | undefined {
+    const { usage } = failure;
+    if (usage === undefined) return undefined;
+    const { priceCall, target } = this.options;
+    return priceCall({ provider: target.provider, model: request.model, usage });
   }
 
   /**

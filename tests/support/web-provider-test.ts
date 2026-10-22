@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import type { ProviderKeyRepository } from '../../src/application/ports/provider-key-repository.js';
 import type { SecretBox } from '../../src/application/ports/secret-box.js';
 import { TestProviders } from '../../src/application/use-cases/test-providers.js';
@@ -44,7 +45,12 @@ export function providerTestService(parts: ProviderTestParts): ProviderTestServi
   const ids = new SequenceIdGenerator();
   const factory = new GuardedProviderFactory({
     ...{ keys: keys.keys, box: keys.secretBox, serverSettings, clock, ids, logger, masker },
-    ...{ serverKeys: {}, ollamaUrl: 'http://localhost:11434', priceTable: budgetTable },
+    ...{
+      serverKeys: {},
+      ollamaUrl: 'http://localhost:11434',
+      priceTable: budgetTable,
+      models: NO_LISTED_MODELS,
+    },
     ledger: providerLedger,
     adapters: providers.builder,
   });

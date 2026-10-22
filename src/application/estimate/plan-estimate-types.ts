@@ -8,6 +8,8 @@ import type { ByScenario, RoleEstimate } from './estimate-types.js';
 
 /** The numbers every figure of the plan estimate rests on, stated with it. */
 interface PlanAssumptions {
+  /** The planner's context window (RF-405, Q-57). */
+  readonly contextTokens: number;
   /** The plan and the PRD, plus the target data model when a supported `ENT` claim exists (RF-623), the target flows when a verified `FLOW` card exists (RF-625) and the API contract when the brief names a front end (RF-624). */
   readonly calls: number;
   /** The system prompt and the data blocks of the supported cards and the owner's input, at the guard's four characters per token. */

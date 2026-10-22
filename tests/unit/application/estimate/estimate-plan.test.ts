@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
+import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import type { PlanEstimate } from '../../../../src/application/estimate/plan-estimate-types.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import type { Result } from '../../../../src/domain/errors/result.js';
@@ -15,17 +16,29 @@ import { sampleKeyRecord } from '../../../support/provider-key-fixtures.js';
 // RF-613, ADR-007, DEC-81, DEC-107: the estimate before a plan run. The planner makes one call; the
 // estimate gives it as a low, likely and high figure and checks each figure against the caps the
 // budget guard will check the call against. The high figure writes the planner's whole
-// `maxOutputTokens` (16,384 in the template; the high figure also reserves two continuations of each call, RF-604), as the guard's worst case does. Fixed price table: one
+// `maxOutputTokens` (16,384 here, set by the test; the high figure also reserves two continuations of each call, RF-604), as the guard's worst case does. Fixed price table: one
 // cloud model at 250,000 micros per million input tokens and 2,000,000 per million output tokens;
 // a local model is free.
 
 const cloudPlanner = { provider: 'openai', model: 'priced-model' } as const;
 
+/** The planner on this model with the 16,384-token output limit the figures below are worked from (Q-57: a hosted default would be 32,000). */
+function limitedPlanner(
+  planner: { readonly provider: string; readonly model: string },
+  change: (settings: ProjectSettings) => ProjectSettings = (settings) => settings,
+) {
+  return plannerSettings(planner, (settings) => {
+    const { planner: role } = settings.roles;
+    const roles = { ...settings.roles, planner: { ...role, maxOutputTokens: 16_384 } };
+    return change({ ...settings, roles });
+  });
+}
+
 async function estimateOf(
   options: PlanEstimateOptions = {},
 ): Promise<{ readonly h: PlanEstimateHarness; readonly estimate: PlanEstimate }> {
   const h = await createPlanEstimateHarness({
-    settings: plannerSettings(cloudPlanner),
+    settings: limitedPlanner(cloudPlanner),
     ...options,
   });
   return { h, estimate: valueOf(await run(h)) };
@@ -124,7 +137,7 @@ describe('EstimatePlan: the planner price', () => {
 
   it('RF-427 a cloud planner without a price shows tokens, no cost, and only the token caps bind', async () => {
     const { estimate } = await estimateOf({
-      settings: plannerSettings({ provider: 'openai', model: 'unlisted-model' }),
+      settings: limitedPlanner({ provider: 'openai', model: 'unlisted-model' }),
     });
 
     expect(estimate.planner.priced).toBe(false);
@@ -153,7 +166,7 @@ describe('EstimatePlan: against the project caps', () => {
     const limit = first.estimate.planner.points.likely.costMicros;
 
     const { estimate } = await estimateOf({
-      settings: plannerSettings(cloudPlanner, (settings) => ({
+      settings: limitedPlanner(cloudPlanner, (settings) => ({
         ...settings,
         budget: {
           ...settings.budget,
@@ -174,7 +187,7 @@ describe('EstimatePlan: against the role caps', () => {
     const tokens = points.likely.inputTokens + points.likely.outputTokens;
 
     const { estimate } = await estimateOf({
-      settings: plannerSettings(cloudPlanner, (settings) => ({
+      settings: limitedPlanner(cloudPlanner, (settings) => ({
         ...settings,
         budget: { ...settings.budget, roles: { planner: { maxTokens: tokens } } },
       })),
@@ -193,7 +206,7 @@ describe('EstimatePlan: against the account caps', () => {
     const { low, likely } = (await estimateOf()).estimate.planner.points;
     const room = (low.costMicros + likely.costMicros) / 2n;
     const account = { dailyCapMicros: 6_000n + room };
-    const h = await createPlanEstimateHarness({ settings: plannerSettings(cloudPlanner), account });
+    const h = await createPlanEstimateHarness({ settings: limitedPlanner(cloudPlanner), account });
     const row = { userId: h.actor.userId, currency: 'USD', keySource: 'server' } as const;
     h.usage.addCost({ ...row, at: h.clock.now(), costMicros: 6_000n });
     h.usage.addCost({ ...row, at: new Date('2026-10-11T23:59:59.000Z'), costMicros: 9_000n });
@@ -208,7 +221,7 @@ describe('EstimatePlan: against the account caps', () => {
   });
 
   it('RF-1106 a server key is checked against what is left of the server month', async () => {
-    const h = await createPlanEstimateHarness({ settings: plannerSettings(cloudPlanner) });
+    const h = await createPlanEstimateHarness({ settings: limitedPlanner(cloudPlanner) });
     await h.serverSettings.saveCaps({
       ...{ runMicros: 500_000n, userDayMicros: 2_000_000n, serverMonthMicros: 20_000n },
     });
@@ -224,7 +237,7 @@ describe('EstimatePlan: against the account caps', () => {
 
   it('DEC-107 an own key is checked against the own daily cap and not the server caps', async () => {
     const h = await createPlanEstimateHarness({
-      settings: plannerSettings(cloudPlanner),
+      settings: limitedPlanner(cloudPlanner),
       account: { ownDailyCapMicros: 5_000n },
     });
     await h.keys.upsert(sampleKeyRecord(h.actor.userId, 'openai'));

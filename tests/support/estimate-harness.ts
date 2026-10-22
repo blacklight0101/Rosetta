@@ -3,6 +3,7 @@ import type { ProjectSettings } from '../../src/application/projects/project-set
 import type { ScannedSource, ScanResults } from '../../src/application/ports/scan-results.js';
 import type { Area } from '../../src/domain/code-map/area.js';
 import type { FileEntry } from '../../src/domain/code-map/file-entry.js';
+import { NO_LISTED_MODELS, type ModelList } from '../../src/application/models/model-list.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import type { Project } from '../../src/application/projects/project.js';
 import type { Run } from '../../src/domain/runs/run.js';
@@ -130,7 +131,16 @@ export function createEstimateHarness(
   priceTable: PriceTable = estimatePrices,
   workbookFolders: readonly string[] = [],
 ): EstimateHarness {
-  return harnessOver(new FixedScans(areas, files, workbookFolders), priceTable);
+  return harnessOver(new FixedScans(areas, files, workbookFolders), priceTable, NO_LISTED_MODELS);
+}
+
+/** Q-57: the estimate over a model list, whose entries give each model its context and output limit. */
+export function createModelEstimateHarness(
+  areas: readonly Area[],
+  priceTable: PriceTable,
+  models: ModelList,
+): EstimateHarness {
+  return harnessOver(new FixedScans(areas), priceTable, models);
 }
 
 /** Q-49: the estimate over the snapshot of a workbook project (its folder name is a workbook key). */
@@ -139,15 +149,23 @@ export function createWorkbookEstimateHarness(
   workbookFolders: readonly string[],
   snapshotKey: string,
 ): EstimateHarness {
-  return harnessOver(new FixedScans(areas, [], workbookFolders, snapshotKey), estimatePrices);
+  return harnessOver(
+    new FixedScans(areas, [], workbookFolders, snapshotKey),
+    estimatePrices,
+    NO_LISTED_MODELS,
+  );
 }
 
-function harnessOver(scans: FixedScans, priceTable: PriceTable): EstimateHarness {
+function harnessOver(
+  scans: FixedScans,
+  priceTable: PriceTable,
+  models: ModelList,
+): EstimateHarness {
   const projects = new MemoryProjectRepository();
   const runs = new MemoryRunIndex();
   const keys = new MemoryProviderKeyRepository();
   const estimate = new EstimateRun({
-    ...{ projects, runs, scans, keys, priceTable },
+    ...{ projects, runs, scans, keys, priceTable, models },
     reasoningModels: () => false,
   });
   return { estimate, projects, runs, keys, scans };

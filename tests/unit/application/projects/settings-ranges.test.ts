@@ -153,7 +153,9 @@ describe('parseProjectSettings: the threshold at the top of the cap (DEC-117)', 
 
 describe('parseProjectSettings: a missing ranged value (DEC-117)', () => {
   const required = [
-    ...RANGES.map(([field]) => field).filter((field) => field !== 'roles.reader.maxTurns'),
+    ...RANGES.map(([field]) => field).filter(
+      (field) => field !== 'roles.reader.maxTurns' && !field.endsWith('.maxOutputTokens'),
+    ),
     'budget.run.maxCostMicros',
     'budget.confirmAboveCostMicros',
   ];
@@ -163,6 +165,13 @@ describe('parseProjectSettings: a missing ranged value (DEC-117)', () => {
       { field, code: ERROR_CODES.settingValueInvalid },
     ]);
   });
+
+  it.each(RANGES.map(([field]) => field).filter((field) => field.endsWith('.maxOutputTokens')))(
+    'Q-57 %s may be left out: the role then takes the default of its model',
+    (field) => {
+      expect(problemsOf(settingsWith({ [field]: undefined }))).toEqual([]);
+    },
+  );
 
   it('RF-002 the optional reader turn limit may be left out', () => {
     expect(problemsOf(settingsWith({ 'roles.reader.maxTurns': undefined }))).toEqual([]);

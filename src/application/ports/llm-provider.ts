@@ -88,6 +88,11 @@ export interface TokenUsage {
   /** Q-58: the part of `outputTokens` the model spent on reasoning, when the provider reports it. */
   readonly reasoningTokens?: number;
   readonly usageSource: UsageSource;
+  /**
+   * Q-60: set on the usage of a call that timed out: the output counts only what arrived, and the
+   * provider may have produced, and billed, more.
+   */
+  readonly outputUnknown?: boolean;
 }
 
 /**
@@ -133,6 +138,8 @@ export interface LlmAttemptFailure {
   readonly code: ErrorCode;
   readonly httpStatus?: number;
   readonly requestId?: string;
+  /** Q-60: what the attempt used, when it is known or estimated (a timed-out attempt). */
+  readonly usage?: TokenUsage;
 }
 
 /**

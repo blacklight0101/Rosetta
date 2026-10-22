@@ -39,6 +39,13 @@ export interface CallAttemptsOptions {
   readonly transcriptRef: string | undefined;
 }
 
+const noUsage: TokenUsage = {
+  inputTokens: 0,
+  outputTokens: 0,
+  cachedInputTokens: 0,
+  usageSource: 'estimated',
+};
+
 /** What the call log knows about the last attempt of a call that failed for good. */
 export function failureOf(error: unknown): LlmAttemptFailure {
   if (error instanceof ProviderCallError) {
@@ -46,6 +53,7 @@ export function failureOf(error: unknown): LlmAttemptFailure {
       code: error.code,
       ...(error.httpStatus === undefined ? {} : { httpStatus: error.httpStatus }),
       ...(error.requestId === undefined ? {} : { requestId: error.requestId }),
+      ...(error.usage === undefined ? {} : { usage: error.usage }),
     };
   }
   if (error instanceof RosettaError) return { code: error.code };
@@ -72,18 +80,18 @@ export class CallAttempts {
   failed(
     status: Extract<ProviderCallStatus, 'retried' | 'failed'>,
     failure: LlmAttemptFailure,
+    cost?: Money,
   ): ProviderCallRecord {
     const latencyMs = this.elapsedMs();
+    // Q-60: an attempt that timed out is metered as estimated, not as 0 tokens and $0.00.
+    const usage = failure.usage ?? noUsage;
     const record: ProviderCallRecord = {
       ...this.identity(),
       ...(failure.requestId === undefined ? {} : { requestId: failure.requestId }),
       ...this.timing(latencyMs, latencyMs),
-      inputTokens: 0,
-      outputTokens: 0,
-      cachedInputTokens: 0,
-      usageSource: 'estimated',
-      costMicros: 0,
-      currency: 'USD',
+      ...usage,
+      costMicros: Number(cost?.micros ?? 0n),
+      currency: cost?.currency ?? 'USD',
       finishReason: 'error',
       status,
       errorCode: failure.code,
