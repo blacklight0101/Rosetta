@@ -30,7 +30,14 @@ function estimate(change: Partial<DeepenEstimate> = {}): DeepenEstimate {
     currency: 'USD',
     maxRounds: 3,
     coveragePass: true,
-    plan: { judge: 10, reread: 40, outOfScope: 6, unreadFiles: 12, unreadTokens: 3000 },
+    plan: {
+      judge: 10,
+      reread: 40,
+      outOfScope: 6,
+      failedAreas: 0,
+      unreadFiles: 12,
+      unreadTokens: 3000,
+    },
     roles: [role(true)],
     round: range(200_000, 400_000, 900_000),
     allRounds: range(600_000, 1_200_000, 2_700_000),
@@ -48,7 +55,14 @@ describe('RF-209 the first round', () => {
   });
 
   it('RF-209 leaves out what the round does not do, and speaks of one in the singular', () => {
-    const plan = { judge: 1, reread: 1, outOfScope: 0, unreadFiles: 0, unreadTokens: 0 };
+    const plan = {
+      judge: 1,
+      reread: 1,
+      outOfScope: 0,
+      failedAreas: 0,
+      unreadFiles: 0,
+      unreadTokens: 0,
+    };
 
     expect(firstRoundText(estimate({ plan }))).toBe(
       'First round: likely $0.40 (low $0.20, high $0.90). It judges 1 claim, re-reads 1 rejected claim.',
@@ -90,5 +104,20 @@ describe('RF-427 the warnings against the run cap', () => {
 
     expect(texts).toHaveLength(2);
     expect(texts[0]).toContain('first round ($0.90)');
+  });
+
+  it('EV-10 RST-1303 says a round whose work is failed areas reads them again', () => {
+    const plan = {
+      judge: 0,
+      reread: 0,
+      outOfScope: 0,
+      failedAreas: 2,
+      unreadFiles: 0,
+      unreadTokens: 0,
+    };
+
+    expect(firstRoundText(estimate({ plan }))).toBe(
+      'First round: likely $0.40 (low $0.20, high $0.90). It judges 0 claims, re-reads 0 rejected claims and reads again 2 areas that failed.',
+    );
   });
 });

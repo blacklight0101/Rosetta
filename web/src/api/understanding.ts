@@ -86,6 +86,7 @@ const deepenEstimateSchema = z.looseObject({
     judge: count,
     reread: count,
     outOfScope: count,
+    failedAreas: count.default(0),
     unreadFiles: count,
     unreadTokens: count,
   }),
