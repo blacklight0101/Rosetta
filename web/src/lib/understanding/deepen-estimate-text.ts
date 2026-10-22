@@ -50,13 +50,17 @@ export function firstRoundText(estimate: DeepenEstimate): string {
     plan.unreadFiles === 0
       ? ''
       : ` and reads ${plural(plan.unreadFiles, 'first-party file')} never read (${countText(plan.unreadTokens)} tokens)`;
+  const failed =
+    plan.failedAreas === 0
+      ? ''
+      : ` and reads again ${plural(plan.failedAreas, 'area')} that failed`;
   const apart =
     plan.outOfScope === 0
       ? ''
       : ` ${plural(plan.outOfScope, 'rejected claim')} cite only third-party or generated code and are left out of scope.`;
   return (
     `First round: ${costs(estimate.round, estimate)}. It judges ${plural(plan.judge, 'claim')}, ` +
-    `re-reads ${plural(plan.reread, 'rejected claim')}${reads}.${apart}`
+    `re-reads ${plural(plan.reread, 'rejected claim')}${failed}${reads}.${apart}`
   );
 }
 

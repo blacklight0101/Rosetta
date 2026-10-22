@@ -9,6 +9,7 @@ import { marksOf } from '../../domain/code-map/area-surface.js';
 import { areaHoldsWorkbook } from '../../domain/sources/workbook-folders.js';
 import { runAgentTask } from '../agent/agent-loop.js';
 import type { AgentTaskResult } from '../agent/agent-task-result.js';
+import type { RetryNote } from '../agent/retry-note.js';
 import { ReadOnlyTools } from '../agent/read-only-tools.js';
 import { readerPromptsFor, type ReaderPrompts } from '../agent/reader-prompts.js';
 import type { IdGenerator } from '../ports/id-generator.js';
@@ -64,6 +65,8 @@ export interface TaskAttempt {
   readonly callTaskId: string;
   readonly area: Area;
   readonly maxTurns?: number;
+  /** RST-1303: the retry of a task that repeated a call is told which call and which files. */
+  readonly note?: RetryNote;
 }
 
 /** The task's span id: the run's trace prefix and the task's number, 16 hexadecimal characters. */
@@ -103,6 +106,17 @@ function promptsOf(context: ReaderTaskContext, area: Area): ReaderPrompts {
   const { scanned } = context;
   const marks = marksOf(area, scanned.codeMap);
   return readerPromptsFor(context.prompts, marks, areaHoldsWorkbook(area, scanned.workbookFolders));
+}
+
+/** The optional parts of the task message: the owner's answers, a Deepen's data and a retry note. */
+function extrasOf(task: ReaderTask, attempt?: TaskAttempt) {
+  const retryNote = attempt?.note ?? task.retryNote;
+  return {
+    ...(task.answers === undefined ? {} : { answers: task.answers }),
+    ...(task.rejected === undefined ? {} : { rejected: task.rejected }),
+    ...(task.parentCards === undefined ? {} : { parentCards: task.parentCards }),
+    ...(retryNote === undefined ? {} : { retryNote }),
+  };
 }
 
 // RF-201, RF-1002, RF-230: the lines the tools return are kept in `reads` for the coverage.
@@ -151,8 +165,6 @@ export async function runReaderTask(
     nextCallId: context.nextCallId,
     signal: execution.signal,
     onNote: noteEvent(events),
-    ...(task.answers === undefined ? {} : { answers: task.answers }),
-    ...(task.rejected === undefined ? {} : { rejected: task.rejected }),
-    ...(task.parentCards === undefined ? {} : { parentCards: task.parentCards }),
+    ...extrasOf(task, attempt),
   });
 }

@@ -28,6 +28,7 @@ function input(overrides: Partial<RoundInput> = {}): RoundInput {
     files: deepenFiles,
     reread: new Set(),
     writtenHere: new Set(),
+    retriedAreas: new Set(),
     coveragePass: true,
     ...overrides,
   };
@@ -157,10 +158,23 @@ describe('isEmptyRound', () => {
   });
 
   it.each([
-    ['a claim to judge', { judge: ['BR-001.c1'], reread: [], outOfScope: [], gaps: [] }],
+    [
+      'a claim to judge',
+      { judge: ['BR-001.c1'], reread: [], outOfScope: [], gaps: [], failedAreas: [] },
+    ],
     [
       'a file to read',
-      { judge: [], reread: [], outOfScope: [], gaps: [{ path: 'a', area: 'x', tokens: 1 }] },
+      {
+        ...{ judge: [], reread: [], outOfScope: [], failedAreas: [] },
+        gaps: [{ path: 'a', area: 'x', tokens: 1 }],
+      },
+    ],
+    [
+      'a failed area to read',
+      {
+        ...{ judge: [], reread: [], outOfScope: [], gaps: [] },
+        failedAreas: [{ area: 'x', failure: 'failed (RST-1303)', unread: [] }],
+      },
     ],
   ])('RF-209 finds a round with %s not empty', (_name, plan) => {
     expect(isEmptyRound(plan)).toBe(false);

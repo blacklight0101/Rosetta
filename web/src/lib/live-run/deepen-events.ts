@@ -47,9 +47,9 @@ export function onDeepenStarted(state: RunState, event: RunEvent): RunState {
 export function onDeepenRoundStarted(state: RunState, event: RunEvent): RunState {
   const parsed = deepenRoundStartedData.safeParse(event.data);
   if (!parsed.success || state.deepen === undefined) return state;
-  const { round, judge, reread, outOfScope, unreadFiles } = parsed.data;
+  const { round, judge, reread, outOfScope, unreadFiles, failedAreas } = parsed.data;
   const running: DeepenRoundState = {
-    ...{ round, status: 'running', judge, reread, outOfScope, unreadFiles },
+    ...{ round, status: 'running', judge, reread, outOfScope, unreadFiles, failedAreas },
     ...{ newClaims: 0, newSupported: 0, filesRead: 0 },
   };
   return { ...state, deepen: { ...state.deepen, rounds: withRound(state.deepen, running) } };

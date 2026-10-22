@@ -2,6 +2,7 @@ import { mergedRanges, type AreaCoverage } from '../cards/area-coverage.js';
 import type { Card, Claim } from '../cards/card.js';
 import type { Citation } from '../cards/citation.js';
 import { readsByPath } from '../cards/coverage-union.js';
+import { filesNotReadInFull } from '../cards/read-in-full.js';
 import { byCodeUnit } from '../code-map/code-unit-order.js';
 import type { FileEntry } from '../code-map/file-entry.js';
 import { isThirdPartyFile } from '../code-map/third-party.js';
@@ -12,7 +13,10 @@ import { citesOnlyThirdParty } from './understanding-measures.js';
 // claim that cites first-party code, at most once per Deepen, and never a replacement written in
 // this Deepen that was rejected again; it lists a rejected claim whose every citation is in
 // third-party or generated code as out of scope; and, when the coverage pass is ticked, it reads
-// the first-party files of the run's areas that no task read, largest first.
+// the first-party files of the run's areas that no task read, largest first. It also reads again,
+// whole, each area whose every task ended without a usable card (EV-10): such an area has no
+// rejected claim and, once its files were opened, no file that no task read, so nothing else would
+// ever name it. An area is read again once per Deepen.
 
 /** A rejected claim a reader goes back to, with the reason the verifier gave. */
 export interface RereadClaim {
@@ -37,6 +41,15 @@ export interface GapFile {
   readonly tokens: number;
 }
 
+/** An area whose every task ended without a usable card, to be read again. */
+export interface FailedArea {
+  readonly area: string;
+  /** Why it failed, as the coverage says it: a few words with the error code. */
+  readonly failure: string;
+  /** The files of the area not read in full by its tasks, in the area's order. */
+  readonly unread: readonly string[];
+}
+
 export interface RoundPlan {
   /** Claim ids to judge, in card and claim order. */
   readonly judge: readonly string[];
@@ -44,6 +57,8 @@ export interface RoundPlan {
   readonly outOfScope: readonly OutOfScopeClaim[];
   /** Largest first, then by path. */
   readonly gaps: readonly GapFile[];
+  /** In the order the areas first appear in the coverage. */
+  readonly failedAreas: readonly FailedArea[];
 }
 
 export interface RoundInput {
@@ -55,6 +70,8 @@ export interface RoundInput {
   readonly reread: ReadonlySet<string>;
   /** Claims written in this Deepen; a replacement among them is never re-read in it. */
   readonly writtenHere: ReadonlySet<string>;
+  /** The areas this Deepen already read again because they failed, finished or not. */
+  readonly retriedAreas: ReadonlySet<string>;
   /** Q-J: the coverage pass, ticked by default on the estimate. */
   readonly coveragePass: boolean;
 }
@@ -104,6 +121,27 @@ function gapsOf(input: RoundInput): readonly GapFile[] {
   );
 }
 
+/** EV-10: the areas whose every coverage entry failed and that this Deepen has not read again. */
+function failedAreasOf(input: RoundInput): readonly FailedArea[] {
+  const entries = new Map<string, AreaCoverage[]>();
+  for (const entry of input.coverage) {
+    entries.set(entry.area, [...(entries.get(entry.area) ?? []), entry]);
+  }
+  return [...entries].flatMap(([area, held]) => {
+    const failure = held[0]?.failure;
+    if (failure === undefined || held.some((entry) => entry.failure === undefined)) return [];
+    if (input.retriedAreas.has(area)) return [];
+    const reads = readsByPath(held);
+    const paths = held.flatMap((entry) => entry.files.map((file) => file.path));
+    const unread = filesNotReadInFull(
+      [...new Set(paths)],
+      input.files,
+      (path) => reads.get(path) ?? [],
+    );
+    return [{ area, failure, unread }];
+  });
+}
+
 // RF-209
 export function planRound(input: RoundInput): RoundPlan {
   const placed = input.cards.flatMap((card) => card.claims.map((claim) => ({ card, claim })));
@@ -126,10 +164,12 @@ export function planRound(input: RoundInput): RoundPlan {
       reason: OUT_OF_SCOPE_REASON,
     })),
     gaps: gapsOf(input),
+    failedAreas: failedAreasOf(input),
   };
 }
 
 /** A round with nothing to judge, re-read or read makes no progress and is not run. */
 export function isEmptyRound(plan: RoundPlan): boolean {
-  return plan.judge.length === 0 && plan.reread.length === 0 && plan.gaps.length === 0;
+  const none = (list: readonly unknown[]): boolean => list.length === 0;
+  return none(plan.judge) && none(plan.reread) && none(plan.gaps) && none(plan.failedAreas);
 }
