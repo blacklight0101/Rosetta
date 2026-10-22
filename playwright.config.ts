@@ -32,11 +32,32 @@ const selection: Record<(typeof views)[number]['name'], { grep?: RegExp }> = {
   'phone-dark': { grep: visual },
 };
 
-const projects = views.map(({ name, viewport, colorScheme }) => ({
-  name,
-  ...selection[name],
-  use: { browserName: 'chromium' as const, viewport, colorScheme },
-}));
+/**
+ * RF-1108, #771: the run queue is one per server and every worker shares it, so a spec that starts
+ * a run beside another one puts that run ahead of its own. The queue spec therefore runs in the
+ * `queue` project: alone, after the four views have finished.
+ */
+const queueSpec = '**/start-run-queue.spec.ts';
+const queueProject = 'queue';
+
+const projects = [
+  ...views.map(({ name, viewport, colorScheme }) => ({
+    name,
+    ...selection[name],
+    testIgnore: queueSpec,
+    use: { browserName: 'chromium' as const, viewport, colorScheme },
+  })),
+  {
+    name: queueProject,
+    testMatch: queueSpec,
+    dependencies: views.map(({ name }) => name),
+    use: {
+      browserName: 'chromium' as const,
+      viewport: views[0].viewport,
+      colorScheme: 'light' as const,
+    },
+  },
+];
 
 export default defineConfig({
   testDir: 'tests/e2e',

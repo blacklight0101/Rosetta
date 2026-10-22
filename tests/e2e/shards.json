@@ -60,6 +60,7 @@
     "tests/e2e/start-run-answers.spec.ts",
     "tests/e2e/start-run-confirm.spec.ts",
     "tests/e2e/start-run-limits.spec.ts",
+    "tests/e2e/start-run-queue.spec.ts",
     "tests/e2e/start-run.spec.ts",
     "tests/e2e/visual/sweep-public.spec.ts",
     "tests/e2e/visual/sweep-runs.spec.ts",
