@@ -192,6 +192,7 @@ opened it; a `Provisional` gate names the only cards it releases.
 | G-06 | Hosted deployment ready                   | Closed | -          | `sha-<short>` image deployed, smoke test passed, teacher account signs in; by 2026-10-24                                                                                                                                                                                                             |
 | G-07 | Host account and secrets ready            | Closed | -          | the owner creates the host account and stores the secrets after the host ADR of P1-48 merges (DEC-104)                                                                                                                                                                                               |
 | G-08 | Local acceptance                          | Open   | 2026-10-13 | opened by BlackLigth (blacklight0101) after a first hands-on test of the Compose stack ("so far so good"); the bugs that test found are card P1-147 (in progress) and are re-tested by the owner when it merges; releases P1-49 and P1-50, and P1-55 now waits only for G-07 (DEC-133)               |
+| G-09 | Standard modules started                  | Closed | -          | held by the owner: the standard modules checklist of DEC-164 (phase 4) does not start, and no card for it is written, until the owner opens this gate                                                                                                                                                |
 
 ## Decisions pending
 
