@@ -22,6 +22,7 @@ export type RoleName = (typeof ROLE_NAMES)[number];
 export interface RoleDraft {
   readonly provider: string;
   readonly model: string;
+  /** Empty when the project sets no limit: the role takes the default of its model (Q-57). */
   readonly maxOutputTokens: string;
   /** The reader only; empty for the others and for a reader without a limit. */
   readonly maxTurns: string;
@@ -72,7 +73,7 @@ function roleDraft(role: ProjectSettings['roles'][RoleName]): RoleDraft {
   return {
     provider: role.provider,
     model: role.model,
-    maxOutputTokens: String(role.maxOutputTokens),
+    maxOutputTokens: role.maxOutputTokens === undefined ? '' : String(role.maxOutputTokens),
     maxTurns: role.maxTurns === undefined ? '' : String(role.maxTurns),
   };
 }
@@ -193,7 +194,8 @@ function roleOf(
     ...base,
     provider: draft.provider,
     model: draft.model,
-    maxOutputTokens: reader.whole(`${path}.maxOutputTokens`, draft.maxOutputTokens),
+    // Q-57: an empty field leaves the limit out of the document, so the role keeps the default of its model.
+    maxOutputTokens: reader.optionalWhole(`${path}.maxOutputTokens`, draft.maxOutputTokens),
     maxTurns:
       name === 'reader' ? reader.optionalWhole(`${path}.maxTurns`, draft.maxTurns) : base.maxTurns,
   };

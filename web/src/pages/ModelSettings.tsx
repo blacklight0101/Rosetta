@@ -39,6 +39,9 @@ function ReaderTurns({ editor, errorFor }: SectionProps): JSX.Element {
   );
 }
 
+/** Q-57: what an empty output limit means. */
+const unsetOutputHelp = 'Not set: the role uses the default of its model.';
+
 function OutputTokens({
   editor,
   errorFor,
@@ -51,8 +54,10 @@ function OutputTokens({
       path={`roles.${role}.maxOutputTokens`}
       errorFor={errorFor}
       range={ranges.maxOutputTokens}
+      help={editor.draft.roles[role].maxOutputTokens.trim() === '' ? unsetOutputHelp : undefined}
       unit="count"
       defaultValue={templateDefaults.maxOutputTokens[role]}
+      emptyAt={templateDefaults.maxOutputTokens[role]}
       value={editor.draft.roles[role].maxOutputTokens}
       onInput={(maxOutputTokens) => {
         editor.changeRole(role, { maxOutputTokens });

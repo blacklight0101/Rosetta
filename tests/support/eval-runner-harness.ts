@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import type {
@@ -184,6 +185,7 @@ export async function evalParts(options: EvalHarnessOptions): Promise<Evaluation
     serverKeys: options.serverKeys ?? {},
     ollamaUrl: undefined,
     priceTable: options.priceTable ?? budgetTable,
+    models: NO_LISTED_MODELS,
     totalCapMicros: options.totalCapMicros ?? 1_000_000,
     rosettaVersion: '1.2.3-test',
     promptsFolder: 'prompts',

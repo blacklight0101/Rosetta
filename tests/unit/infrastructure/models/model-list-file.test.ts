@@ -69,5 +69,8 @@ describe('model list file', () => {
       { provider: 'anthropic', model: 'claude-haiku-5-5', label: 'Claude Haiku 5.5' },
       { provider: 'anthropic', model: 'claude-fable-5-1', label: 'Claude Fable 5.1' },
     ]);
+    expect(anthropic.map((entry) => [entry.contextTokens, entry.maxOutputTokens])).toEqual(
+      anthropic.map(() => [1_000_000, 128_000]),
+    );
   });
 });

@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
 import type { UploadStore } from '../../src/application/ports/upload-store.js';
 import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
@@ -255,10 +256,8 @@ export function runServices(
       providers: stores.factory,
     }),
     estimateRun: new EstimateRun({
-      projects,
-      runs: runs.runs,
-      scans: new FixedScans(catalogAreas),
-      ...{ keys, priceTable: estimatePrices, reasoningModels: () => false },
+      ...{ projects, runs: runs.runs, scans: new FixedScans(catalogAreas), keys },
+      ...{ priceTable: estimatePrices, models: NO_LISTED_MODELS, reasoningModels: () => false },
     }),
     ...route,
   };

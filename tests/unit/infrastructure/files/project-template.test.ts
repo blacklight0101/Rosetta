@@ -1,3 +1,4 @@
+import { OLLAMA_OUTPUT_TOKENS } from '../../../../src/application/models/role-limits.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -60,11 +61,20 @@ describe('loadProjectTemplate', () => {
 });
 
 describe('loadProjectTemplate: output limits', () => {
-  it('RF-604 the planner may write a whole package: its output limit is 16384, inside the allowed range', () => {
-    const { planner, reader } = templateSettings.roles;
+  it('Q-57 the template stores no output limit, so each role takes the default of its model', () => {
+    const { planner, reader, verifier, summariser } = templateSettings.roles;
 
-    expect(planner.maxOutputTokens).toBe(16_384);
-    expect(planner.maxOutputTokens).toBeLessThanOrEqual(32_768);
-    expect(reader.maxOutputTokens).toBe(4096);
+    expect([planner, reader, verifier, summariser].map((role) => role.maxOutputTokens)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    ]);
+  });
+
+  it('RF-604 the planner of an Ollama project may write a whole package: its default is 16384', () => {
+    expect(OLLAMA_OUTPUT_TOKENS.planner).toBe(16_384);
+    expect(OLLAMA_OUTPUT_TOKENS.planner).toBeLessThanOrEqual(32_768);
+    expect(OLLAMA_OUTPUT_TOKENS.reader).toBe(4096);
   });
 });

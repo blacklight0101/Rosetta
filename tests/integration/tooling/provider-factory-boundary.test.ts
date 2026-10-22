@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../../src/application/models/model-list.js';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -137,7 +138,14 @@ describe('provider factory boundary: what the provider composition hands out', (
     const factory = make({
       ...{ keys: new MemoryProviderKeyRepository(), box: noKeys, serverKeys: {} },
       ...{ ollamaUrl: undefined, serverSettings: new MemoryServerSettings({}) },
-      ...{ ledger: new MemoryCostLedger(), priceTable: budgetTable, masker, clock, logger },
+      ...{
+        ledger: new MemoryCostLedger(),
+        priceTable: budgetTable,
+        models: NO_LISTED_MODELS,
+        masker,
+        clock,
+        logger,
+      },
       ids: new SequenceIdGenerator(),
     });
 
