@@ -82,4 +82,18 @@ export interface PlanDraft {
   readonly risks: readonly DraftRisk[];
   /** The technical requirements document (RF-622). */
   readonly technical: TechnicalDraft;
+  /**
+   * P3-82: the task cards that could not be read. Each keeps its position in `tasks` as a placeholder
+   * the domain leaves out, so the positions the other cards name still point at the right cards.
+   */
+  readonly unreadableTasks?: readonly UnreadableTask[];
+}
+
+export interface UnreadableTask {
+  /** The card's position in the answer, from 1. */
+  readonly position: number;
+  /** The first field that was wrong, or `card` when the card is not an object. */
+  readonly field: string;
+  /** A fixed phrase for the kind of fault; it holds no text of the answer. */
+  readonly reason: string;
 }

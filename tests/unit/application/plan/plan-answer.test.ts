@@ -265,6 +265,16 @@ describe('parsePlanAnswer: positions written as an index (EV-01)', () => {
     expect(draft?.tasks[2]?.dependsOn).toEqual([1]);
   });
 
+  it('RF-601 P3-82 a card that is not an object is listed under the field card', () => {
+    const draft = parsePlanAnswer(
+      JSON.stringify({ requirements: [requirement], tasks: ['Orders'] }),
+    );
+
+    expect(draft?.unreadableTasks).toEqual([
+      expect.objectContaining({ position: 1, field: 'card' }),
+    ]);
+  });
+
   it('RF-601 P3-82 an unreadable card keeps the others and the positions they point at', () => {
     const later = { ...task, title: 'Later', dependsOn: [1] };
     const draft = parsePlanAnswer(

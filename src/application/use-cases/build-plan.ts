@@ -13,7 +13,8 @@ import {
 } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
 import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
-import { parsePlanAnswer } from '../plan/plan-answer.js';
+import { leftOutOf, parsePlanAnswer } from '../plan/plan-answer.js';
+import type { PlanDraft } from '../../domain/planning/plan-draft.js';
 import { planLinks } from '../plan/plan-links.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
 import { planDocuments } from '../plan/plan-documents.js';
@@ -125,7 +126,12 @@ export class BuildPlan implements RunExecutor {
     };
     const input = { cards: supported, brief, catalogue, answered };
     const output = await askPlanner(call, input);
-    const assembly = await this.assemble(run, output, {
+    const draft = parsePlanAnswer(output);
+    if (draft === undefined) {
+      const message = 'The planner answer could not be read: no JSON object in it reads as a plan.';
+      return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
+    }
+    const assembly = await this.assemble(run, draft, {
       supported: supported.map((card) => card.id),
       specificationDriven: brief.principles.includes(methodPrinciples.sdd),
     });
@@ -229,14 +235,12 @@ export class BuildPlan implements RunExecutor {
   /** The planner's answer checked against the supported cards; undefined when nothing is left. */
   private async assemble(
     run: Run,
-    output: string,
+    draft: PlanDraft,
     checks: { readonly supported: readonly string[]; readonly specificationDriven: boolean },
   ): Promise<PlanAssembly | undefined> {
-    const draft = parsePlanAnswer(output);
-    if (draft === undefined) return undefined;
     const { specificationDriven } = checks;
     const assembly = assemblePlan(draft, new Set(checks.supported), { specificationDriven });
-    for (const left of assembly.leftOut) {
+    for (const left of leftOutOf(draft, assembly.leftOut)) {
       const { position, field, reason } = left;
       await this.warn(
         run,
