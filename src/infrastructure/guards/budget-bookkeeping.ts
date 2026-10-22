@@ -33,15 +33,14 @@ export class QuietBookkeeping {
     try {
       await work();
     } catch (error) {
-      const code = error instanceof RosettaError ? error.code : ERROR_CODES.costRecordFailed;
-      await this.logger.log({
-        level: 'error',
-        logger: 'budget',
-        code,
-        message,
-        ...callIds(request),
-      });
+      await this.logFailure(message, request, error);
     }
+  }
+
+  /** Logs the failure of a piece of bookkeeping; a failure of the log itself rejects. */
+  async logFailure(message: string, request: LlmRequest, error: unknown): Promise<void> {
+    const code = error instanceof RosettaError ? error.code : ERROR_CODES.costRecordFailed;
+    await this.logger.log({ level: 'error', logger: 'budget', code, message, ...callIds(request) });
   }
 
   /** P1-96: reports to the budget events, waiting at most `reportTimeoutMs`; a failure is logged. */

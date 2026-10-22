@@ -10,12 +10,12 @@ import { budgetHarness, budgetInstant, budgetRun, type BudgetHarness } from './b
 export const renewalTtlMs = 180_000;
 
 /** The guard's clock follows the fake timers. */
-export const timerClock: Clock = { now: () => new Date() };
+const timerClock: Clock = { now: () => new Date() };
 
 /** The instant `ms` after the harness's start. */
 export const at = (ms: number): Date => new Date(new Date(budgetInstant).getTime() + ms);
 
-export interface CountingLedger {
+interface CountingLedger {
   readonly ledger: MemoryCostLedger;
   /** `settle`, `release` and `renew`, in the order they were asked for. */
   readonly calls: string[];
@@ -24,7 +24,7 @@ export interface CountingLedger {
 }
 
 /** The memory ledger with every settle, release and renewal it was asked for, in order. */
-export function countingLedger(): CountingLedger {
+function countingLedger(): CountingLedger {
   const ledger = new MemoryCostLedger();
   const calls: string[] = [];
   const renewals: Date[] = [];

@@ -1,6 +1,6 @@
 import type { BudgetEvents } from '../../application/ports/budget-events.js';
 import type { Clock } from '../../application/ports/clock.js';
-import type { CostLedger, ReservationKey } from '../../application/ports/cost-ledger.js';
+import type { CostLedger } from '../../application/ports/cost-ledger.js';
 import type { IdGenerator } from '../../application/ports/id-generator.js';
 import type {
   LlmAttemptObserver,
@@ -27,6 +27,7 @@ import {
   totalsOf,
   withEarlier,
   refusedRecord,
+  reservationKeyOf,
   type BudgetCaller,
   type BudgetRun,
   type CallOutcome,
@@ -44,7 +45,8 @@ import { priceCall, worstCaseOf, type BudgetPricing, type CallPrice } from './bu
 //      for a call without an output limit, whose worst case is unknown);
 //   2. it reserves the worst case (the whole prompt, estimated at four characters per token, plus
 //      the maximum output, priced) against every cap that applies, as one step of the CostLedger;
-//      the reservation is renewed while the call runs, so a long stream counts until it ends;
+//      the reservation is renewed while the call runs, so a long stream counts until it ends,
+//      and a call whose reservation would lapse first is stopped with RST-1604 (P3-99);
 //      a call that would pass a cap is not made: it is recorded as `refused-by-cap`, the run's
 //      signal is aborted with RST-1600 and the refusal is thrown; the cap of a role (RF-423) is
 //      the exception: it refuses that role's calls with the same error but leaves the run's
@@ -113,39 +115,48 @@ export class BudgetGuard implements LlmProvider {
   // RF-421, RF-422, RF-428
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
     const plan = this.plan(request);
-    await this.reserve(request, plan);
+    const expiresAt = await this.reserve(request, plan);
     const counted = countAttempts(observer);
+    const { earlier } = counted;
+    // P3-99: aborted when the reservation would lapse before a renewal succeeds (fail closed).
+    const lapse = new AbortController();
     let response: LlmResponse;
     try {
-      response = await this.callHolding(request, counted.observer);
+      response = await this.callHolding(request, counted.observer, { lapse, expiresAt });
     } catch (error) {
-      const { earlier } = counted;
       await this.closeFailed(request, plan, { attempts: counted.attempts(), error, earlier });
-      throw error;
+      if (!lapse.signal.aborted) throw error;
+      throw new RosettaError(ERROR_CODES.costRecordFailed, undefined, { cause: error });
     }
-    await this.settle(
-      request,
-      plan,
-      { attempts: counted.attempts(), earlier: counted.earlier },
-      response,
-    );
+    await this.settle(request, plan, { attempts: counted.attempts(), earlier }, response);
     return response;
   }
 
-  /** RF-422, P3-99: the inner call, its reservation renewed until the call ends. */
+  /**
+   * RF-422, P3-99: the inner call, its reservation renewed until the call ends; when it would
+   * lapse first, the call is cancelled through `hold.lapse`.
+   */
   private async callHolding(
     request: LlmRequest,
     observer: LlmAttemptObserver,
+    hold: { readonly lapse: AbortController; readonly expiresAt: Date },
   ): Promise<LlmResponse> {
     const { inner, ledger, clock, reservationTtlMs } = this.options;
-    const key = this.keyOf(request);
-    const renew = (): Promise<void> =>
-      this.books.quietly('The reservation could not be renewed.', request, () =>
-        ledger.renew(key, new Date(clock.now().getTime() + reservationTtlMs)),
-      );
-    const renewal = renewWhileRunning(renew, Math.floor(reservationTtlMs / 2));
+    const key = reservationKeyOf(this.options.run, request);
+    const renewal = renewWhileRunning({
+      renew: (expiresAt) => ledger.renew(key, expiresAt),
+      failed: (error) =>
+        this.books.logFailure('The reservation could not be renewed.', request, error),
+      lapsing: () => {
+        hold.lapse.abort(new RosettaError(ERROR_CODES.costRecordFailed));
+      },
+      clock,
+      lifetimeMs: reservationTtlMs,
+      expiresAt: hold.expiresAt,
+    });
+    const signal = AbortSignal.any([request.signal, hold.lapse.signal]);
     try {
-      return await inner.complete(request, observer);
+      return await inner.complete({ ...request, signal }, observer);
     } finally {
       await renewal.stop();
     }
@@ -162,11 +173,12 @@ export class BudgetGuard implements LlmProvider {
     return { price, worstCase: worstCaseOf(price.price, { promptTokens, maxOutputTokens }) };
   }
 
-  private async reserve(request: LlmRequest, plan: CallPlan): Promise<void> {
+  /** Reserves the call's worst case and answers when the reservation expires. */
+  private async reserve(request: LlmRequest, plan: CallPlan): Promise<Date> {
     const { ledger, caps, clock, reservationTtlMs, keySource } = this.options;
     const at = clock.now();
     const reservation = {
-      ...this.keyOf(request),
+      ...reservationKeyOf(this.options.run, request),
       role: request.context.role,
       keySource,
       worstCase: plan.worstCase,
@@ -174,6 +186,7 @@ export class BudgetGuard implements LlmProvider {
     };
     const reserved = await ledger.reserve({ reservation, caps, at });
     if (!reserved.ok) await this.refuse(request, reserved.error, at);
+    return reservation.expiresAt;
   }
 
   /** RF-422: records the refused call, stops the run and throws the refusal. */
@@ -266,7 +279,7 @@ export class BudgetGuard implements LlmProvider {
       request,
       async () => {
         if (notSent) {
-          await ledger.release(this.keyOf(request));
+          await ledger.release(reservationKeyOf(this.options.run, request));
           return;
         }
         const outcome = outcomeOf(plan.price, attempts, usage ?? noUsage);
@@ -280,13 +293,5 @@ export class BudgetGuard implements LlmProvider {
   private entryOf(request: LlmRequest, plan: CallPlan, outcome: CallOutcome) {
     const at = this.options.clock.now();
     return ledgerEntryOf(this.caller, request, { at, price: plan.price, outcome });
-  }
-
-  private keyOf(request: LlmRequest): ReservationKey {
-    return {
-      callId: request.context.callId,
-      userId: this.options.run.userId,
-      runId: this.options.run.id,
-    };
   }
 }
