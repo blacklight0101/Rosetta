@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { cardLimits } from '../../../../src/application/cards/card-limits.js';
 import { parsePlanAnswer } from '../../../../src/application/plan/plan-answer.js';
@@ -7,6 +9,20 @@ import { parsePlanAnswer } from '../../../../src/application/plan/plan-answer.js
 import { invariant, scenario } from '../../../support/task-card-fixtures.js';
 
 const requirement = { title: 'Order', statement: 'Place an order.', sources: ['FEAT-001'] };
+const task = { title: 'Orders', phase: 1, requirements: [1], acceptanceCriteria: [scenario] };
+
+/** An answer with one requirement and one task card, the card's fields overridden by `extra`. */
+function answerWith(extra: object): string {
+  return JSON.stringify({ requirements: [requirement], tasks: [{ ...task, ...extra }] });
+}
+
+function tasksOf(extra: object): unknown {
+  return parsePlanAnswer(answerWith(extra))?.tasks;
+}
+
+function unreadableOf(extra: object): unknown {
+  return parsePlanAnswer(answerWith(extra))?.unreadableTasks;
+}
 
 describe('parsePlanAnswer', () => {
   it('RF-601 reads a fenced answer and gives every list it left out as empty', () => {
@@ -32,12 +48,13 @@ describe('parsePlanAnswer', () => {
     expect(parsePlanAnswer('No plan today.')).toBeUndefined();
   });
 
-  it('RF-601 a task card without acceptance criteria makes the answer unusable', () => {
-    const task = { title: 'Orders', phase: 1, requirements: [1], acceptanceCriteria: [] };
+  it('RF-601 P3-82 a task card without acceptance criteria is listed as unreadable and the answer stays', () => {
+    const draft = parsePlanAnswer(answerWith({ acceptanceCriteria: [] }));
 
-    expect(parsePlanAnswer(JSON.stringify({ requirements: [requirement], tasks: [task] }))).toBe(
-      undefined,
-    );
+    expect(draft).toBeDefined();
+    expect(draft?.unreadableTasks).toEqual([
+      expect.objectContaining({ position: 1, field: 'acceptanceCriteria' }),
+    ]);
   });
 
   it('RF-601 a phase without exit criteria makes the answer unusable', () => {
@@ -56,13 +73,6 @@ describe('parsePlanAnswer', () => {
 });
 
 describe('parsePlanAnswer: task-card quality', () => {
-  const task = { title: 'Orders', phase: 1, requirements: [1], acceptanceCriteria: [scenario] };
-
-  function tasksOf(extra: object): unknown {
-    const answer = JSON.stringify({ requirements: [requirement], tasks: [{ ...task, ...extra }] });
-    return parsePlanAnswer(answer)?.tasks;
-  }
-
   it('RF-630 reads the invariant, the risk class, the guard kinds and the probes of a task', () => {
     const extra = {
       ...{ invariant, riskClass: 'money', adds: ['limit', 'filter'] },
@@ -82,12 +92,16 @@ describe('parsePlanAnswer: task-card quality', () => {
     expect(tasksOf({ riskClass: 'catastrophic' })).toMatchObject([{ riskClass: undefined }]);
   });
 
-  it('RF-630 a kind of guard that does not exist makes the answer unusable', () => {
-    expect(tasksOf({ adds: ['regex'] })).toBeUndefined();
+  it('RF-630 P3-82 a kind of guard that does not exist leaves that card unreadable, the others stay', () => {
+    expect(unreadableOf({ adds: ['regex'] })).toEqual([
+      expect.objectContaining({ position: 1, field: 'adds' }),
+    ]);
   });
 
-  it('RF-630 a blank probe makes the answer unusable', () => {
-    expect(tasksOf({ probes: [' '] })).toBeUndefined();
+  it('RF-630 P3-82 a blank probe leaves that card unreadable', () => {
+    expect(unreadableOf({ probes: [' '] })).toEqual([
+      expect.objectContaining({ position: 1, field: 'probes' }),
+    ]);
   });
 });
 
@@ -147,14 +161,23 @@ describe('parsePlanAnswer: the technical part', () => {
   });
 });
 
+const boundedFaults: [string, object, string][] = [
+  ['a blank file', { files: [' '] }, 'files'],
+  [
+    'more files than the bound',
+    { files: Array.from({ length: 51 }, (_, at) => `f${String(at)}`) },
+    'files',
+  ],
+  ['a file longer than the bound', { files: ['x'.repeat(501)] }, 'files'],
+  ['a dependency that is not a position', { dependsOn: [0] }, 'dependsOn'],
+  [
+    'more needs than the bound',
+    { needs: Array.from({ length: 51 }, () => ({ kind: 'port', purpose: 'p' })) },
+    'needs',
+  ],
+];
+
 describe('parsePlanAnswer: parallel-safe cards', () => {
-  const task = { title: 'Orders', phase: 1, requirements: [1], acceptanceCriteria: [scenario] };
-
-  function tasksOf(extra: object): unknown {
-    const answer = JSON.stringify({ requirements: [requirement], tasks: [{ ...task, ...extra }] });
-    return parsePlanAnswer(answer)?.tasks;
-  }
-
   it('RF-634 reads the files, the needed identifiers and the cards a task waits for', () => {
     const extra = {
       files: ['src/orders/', 'tests/orders.test.ts'],
@@ -176,21 +199,12 @@ describe('parsePlanAnswer: parallel-safe cards', () => {
     expect(tasksOf({ needs })).toMatchObject([{ needs: [{ kind: 'port', purpose: 'api' }] }]);
   });
 
-  it.each([
-    ['a blank file', { files: [' '] }],
-    [
-      'more files than the bound',
-      { files: Array.from({ length: 51 }, (_, at) => `f${String(at)}`) },
-    ],
-    ['a file longer than the bound', { files: ['x'.repeat(501)] }],
-    ['a dependency that is not a position', { dependsOn: [0] }],
-    [
-      'more needs than the bound',
-      { needs: Array.from({ length: 51 }, () => ({ kind: 'port', purpose: 'p' })) },
-    ],
-  ])('RF-634 %s makes the answer unusable', (_, extra) => {
-    expect(tasksOf(extra)).toBeUndefined();
-  });
+  it.each(boundedFaults)(
+    'RF-634 P3-82 %s leaves that card unreadable, the answer stays',
+    (_, extra, field) => {
+      expect(unreadableOf(extra)).toEqual([expect.objectContaining({ position: 1, field })]);
+    },
+  );
 });
 
 describe('parsePlanAnswer: the output cap', () => {
@@ -204,13 +218,6 @@ describe('parsePlanAnswer: the output cap', () => {
 });
 
 describe('parsePlanAnswer: positions written as objects (Q-54)', () => {
-  const task = { title: 'Orders', phase: 1, requirements: [1], acceptanceCriteria: [scenario] };
-
-  function tasksOf(extra: object): unknown {
-    const answer = JSON.stringify({ requirements: [requirement], tasks: [{ ...task, ...extra }] });
-    return parsePlanAnswer(answer)?.tasks;
-  }
-
   it('RF-601 Q-54 reads an object with a numeric position in requirements and dependsOn', () => {
     const extra = {
       requirements: [{ position: 3 }, 1],
@@ -225,8 +232,50 @@ describe('parsePlanAnswer: positions written as objects (Q-54)', () => {
     ['an object with an id and no position', { id: 3 }],
     ['a position of 0', { position: 0 }],
     ['null', null],
-  ])('RF-601 Q-54 %s makes the answer unusable, as a text did before', (_name, bad) => {
-    expect(tasksOf({ requirements: [bad] })).toBeUndefined();
-    expect(tasksOf({ dependsOn: [bad] })).toBeUndefined();
+  ])('RF-601 Q-54 %s leaves that card unreadable, as a text did before', (_name, bad) => {
+    expect(unreadableOf({ requirements: [bad] })).toEqual([
+      expect.objectContaining({ position: 1, field: 'requirements' }),
+    ]);
+  });
+});
+
+describe('parsePlanAnswer: positions written as an index (EV-01)', () => {
+  it('RF-601 EV-01 reads an object with an index in requirements and dependsOn', () => {
+    const extra = { requirements: [{ index: 1 }, { index: 2 }], dependsOn: [{ index: 3 }] };
+
+    expect(tasksOf(extra)).toMatchObject([{ requirements: [1, 2], dependsOn: [3] }]);
+  });
+
+  it('RF-601 EV-01 an index of 0 leaves that card unreadable', () => {
+    expect(unreadableOf({ requirements: [{ index: 0 }] })).toEqual([
+      expect.objectContaining({ position: 1, field: 'requirements' }),
+    ]);
+  });
+
+  it('RF-601 EV-01 the recorded index-form answer of the evaluation assembles', async () => {
+    const text = await readFile(
+      join('tests', 'fixtures', 'plan-answers', 'ev01-index-positions.json'),
+      'utf8',
+    );
+    const draft = parsePlanAnswer(text);
+
+    expect(draft?.unreadableTasks).toBeUndefined();
+    expect(draft?.tasks).toHaveLength(7);
+    expect(draft?.tasks[4]?.requirements).toEqual([10, 11]);
+    expect(draft?.tasks[2]?.dependsOn).toEqual([1]);
+  });
+
+  it('RF-601 P3-82 an unreadable card keeps the others and the positions they point at', () => {
+    const later = { ...task, title: 'Later', dependsOn: [1] };
+    const draft = parsePlanAnswer(
+      JSON.stringify({
+        requirements: [requirement],
+        tasks: [task, { ...task, acceptanceCriteria: [] }, later],
+      }),
+    );
+
+    expect(draft?.tasks).toHaveLength(3);
+    expect(draft?.tasks[2]).toMatchObject({ title: 'Later', dependsOn: [1] });
+    expect(draft?.unreadableTasks).toEqual([expect.objectContaining({ position: 2 })]);
   });
 });
