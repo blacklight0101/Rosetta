@@ -31,7 +31,7 @@ function estimate(kind: string, change: Partial<DeepenEstimate> = {}): DeepenEst
     currency: 'USD',
     maxRounds: 3,
     coveragePass: true,
-    plan: { judge: 10, reread: 40, outOfScope: 0, unreadFiles: 0, unreadTokens: 0 },
+    plan: { judge: 10, reread: 40, outOfScope: 0, failedAreas: 0, unreadFiles: 0, unreadTokens: 0 },
     roles: [role(kind)],
     round: range(20_000, 40_000, 90_000, perToken),
     allRounds: range(60_000, 120_000, 270_000, perToken),

@@ -86,6 +86,31 @@ function keptByNoCardLines(handoff: HandoffPackage, esc: MarkdownEscaper): strin
   ];
 }
 
+// P3-101, P3-102: the parts of the plan the package leaves out, grouped by area. The item is a position
+// or a name from the planner's answer and goes through the escaper; the field and the reason are the
+// plan's own words for the fault, never a sentence of the answer.
+function leftOutLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  if (handoff.leftOut.length === 0) return [];
+  const areas = [...new Set(handoff.leftOut.map((each) => each.area))];
+  return [
+    '## Left out',
+    '',
+    'The planner answer named these parts of the plan, and the package leaves them out. Each one is listed by its position or name, with the field that kept it out.',
+    '',
+    ...areas.flatMap((area) => [
+      `### ${esc.inline(area)}`,
+      '',
+      ...handoff.leftOut
+        .filter((each) => each.area === area)
+        .map(
+          (each) =>
+            `- ${esc.inline(each.item)}: the field "${esc.inline(each.field)}". ${esc.inline(each.reason)}`,
+        ),
+      '',
+    ]),
+  ];
+}
+
 // RF-627
 export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const lines = [
@@ -94,6 +119,7 @@ export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     ...restatedLines(handoff, esc),
     ...requirementLines(handoff.content.requirementNotes ?? []),
     ...keptByNoCardLines(handoff, esc),
+    ...leftOutLines(handoff, esc),
   ];
   return ['# Package checks', '', ...lines].join('\n');
 }

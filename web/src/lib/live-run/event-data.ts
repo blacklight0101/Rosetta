@@ -158,6 +158,8 @@ export const deepenRoundStartedData = z.looseObject({
   reread: count,
   outOfScope: count,
   unreadFiles: count,
+  /** EV-10: the names of the failed areas the round reads again; absent from older events. */
+  failedAreas: z.array(z.string()).default([]),
 });
 
 /** `deepen.round.ended` (RF-209): what the round added; `complete` is false when a cap or a Stop cut it. */

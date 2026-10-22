@@ -1,4 +1,4 @@
-import type { DraftTask } from './plan-draft.js';
+import type { DraftTask, PlanDraft } from './plan-draft.js';
 import { cardFault } from './task-card-quality.js';
 
 // Q-54, RF-627, RF-630, ADR-013: a task card of the planner's answer that the package leaves out is
@@ -34,3 +34,17 @@ export const noRequirement: Fault = {
   field: 'requirements',
   reason: 'The card implements no requirement of the plan, and the plan is specification-driven.',
 };
+
+/**
+ * P3-82: the task cards the answer left out: the ones that could not be read, then the domain's. A
+ * card that could not be read is reported once, with its own reason, and its placeholder is not
+ * listed a second time.
+ */
+export function leftOutOf(
+  draft: Pick<PlanDraft, 'unreadableTasks'>,
+  domainLeftOut: readonly LeftOutCard[],
+): LeftOutCard[] {
+  const unreadable = draft.unreadableTasks ?? [];
+  const positions = new Set(unreadable.map((each) => each.position));
+  return [...unreadable, ...domainLeftOut.filter((each) => !positions.has(each.position))];
+}

@@ -129,6 +129,15 @@ function rereadDone(plan: RoundPlan, ended: readonly EndedTask[], aborted: boole
     .map(({ claimId, reason }) => ({ claimId, reason }));
 }
 
+/** EV-10: the failed areas whose new reading ran to an end, counted like a re-read (RF-006). */
+function failedAreasDone(plan: RoundPlan, ended: readonly EndedTask[], aborted: boolean) {
+  const finished = ended.filter(({ outcome }) =>
+    outcome.state === 'StoppedByCap' ? false : outcome.state !== 'Failed' || !aborted,
+  );
+  const areas = new Set(finished.map(({ task }) => task.area.name));
+  return plan.failedAreas.map(({ area }) => area).filter((area) => areas.has(area));
+}
+
 /** RF-209, RF-422, RF-423: a Stop or a cap during the round ends the Deepen. */
 function stopOf(parts: DeepenParts, ended: readonly EndedTask[], cap: CapWatch) {
   const { signal } = parts.execution;
@@ -164,6 +173,7 @@ export async function runRound(
     complete: stopped === undefined,
     judged: plan.judge,
     reread: rereadDone(plan, ended, parts.execution.signal.aborted),
+    failedAreas: failedAreasDone(plan, ended, parts.execution.signal.aborted),
     filesRead: [...after.filesRead].filter((path) => !before.filesRead.has(path)),
     newClaims: newClaimsOf(written),
     tokens: Math.max(0, now.tokens - spent.tokens),

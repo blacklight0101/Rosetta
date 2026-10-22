@@ -204,7 +204,7 @@ src/
                         `validation.md`, `notes.md` (render-index, render-formulas, render-values, render-rules; `formula-tables` names the table column of a formula region or single formula, and a run of formulas is split where its table ends, P3-94; the header of `values.md` lists hidden rows and columns, P3-57); safe segments with `~2` on a clash
                         and a `_` before a device name (workbook-segments); text escaped to one line, a long one continued on lines with the same address (workbook-text); dates
                         from the format code (excel-dates, cell-value-text); lines under the 2,000 character cut and a byte limit for the whole
-                        render, RST-1926 (render-output); `WORKBOOK_RENDERER_VERSION` names the layout (`2` since P3-94). The first table of `workbook.md` maps each
+                        render, RST-1926 (render-output); `WORKBOOK_RENDERER_VERSION` names the layout (`3` since P3-103: a region of equal relative formulas is one line in `formula-fill.ts`; `2` since P3-94). The first table of `workbook.md` maps each
                         safe segment to the real name as a JSON string (cut at 100 characters), which the evidence page label reads
                         macros (P3-47, RF-154): `render-macros` writes each module with source as `macros/<Module>.bas` or `.cls` (every line `L<n> | `, a long line continued with the
                         same prefix), `workbook.md` lists the modules, form controls and a locked, unreadable or compiled-only project, and the counts carry `macroModules`, `macrosSkipped`
@@ -573,7 +573,7 @@ sequenceDiagram
   and the answer is handled as before, with the same event: `retried` and `empty-at-limit`, `empty` and `after-retry`
   or `no-room`), `InvalidOutput` (no valid card after the follow-ups), `TurnLimitReached` (the
   configured maximum turns, `RST-1304`, or the context share, `RST-1305`), or `Failed` with a recorded reason: a
-  model that repeats one call three times (`RST-1303`; a repeated call is answered with an error, not run again) or
+  model that repeats one call three times (`RST-1303`; a repeated call is answered with an error, not run again, and the result names the call; the retry of such a task, and a Deepen of such an area, start with a note built in code, `src/application/agent/retry-note.ts`, that names the call and the files not yet read in full, because a model gives the same answer to the same prompt, EV-10) or
   names unknown tools three times (`RST-1302`), a stop through the shared signal (checked before every turn and
   every tool call, `RST-1501`), or a provider or guard failure with its code. It never throws for a model's
   behaviour; the end, its reason and the turns are logged and returned with the cards, usage, model version and
@@ -771,7 +771,9 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   re-read yet, was not written by this Deepen and has no `Supported` replacement yet (an earlier Deepen's, when a Deepen run is deepened in turn) is re-read once (one reader task per area over its cited first-party
   files, system prompt `prompts/reader/reread.v3.md`, the rejected claims with the verifier's reasons as one data block
   with the source `cards`); a rejected claim that cites only third-party or generated code is never re-read and is
-  listed out of scope; with the coverage pass, first-party files no task read get a reader task (largest first). New
+  listed out of scope; with the coverage pass, first-party files no task read get a reader task (largest first); an
+  area whose every task ended without a usable card is read again whole, once per Deepen, with or without the coverage
+  pass (EV-10, `RoundPlan.failedAreas`). New
   cards take ids after every card of the run; a claim's `replaces` is kept only when it names a claim that task was
   asked to re-read. Every Deepen reader task (a re-read and a reading of a never-read file) is also given the cards
   the run holds for its area (`roundTasks`: id, type and title as one more data block with the source `cards`, prompt

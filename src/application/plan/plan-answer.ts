@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { PlanDraft } from '../../domain/planning/plan-draft.js';
+import type { DraftTask, PlanDraft, UnreadableTask } from '../../domain/planning/plan-draft.js';
 import { identifierKinds } from '../../domain/planning/parallel-cards.js';
 import { guardKinds, riskClasses } from '../../domain/planning/task-card-quality.js';
 import { cardLimits } from '../cards/card-limits.js';
@@ -24,10 +24,12 @@ const ids = z.array(z.string().max(40)).max(MAX_LIST).default([]);
 const texts = z.array(text).max(MAX_LIST);
 const position = z.number().int().min(1).max(MAX_ITEMS);
 // Q-54: a small model writes a position as an object (`{"position": 3}`, with extra keys at times);
-// the number is read. A string, an `id` or any other shape stays refused.
+// the number is read. EV-01: `{"index": 3}` is read the same way. A string, an `id` or any other
+// shape stays refused.
 const listedPosition = z.union([
   position,
   z.object({ position }).transform((each) => each.position),
+  z.object({ index: position }).transform((each) => each.index),
 ]);
 const path = z.string().trim().min(1).max(PATH);
 // RF-634: a need of a kind that does not exist is left out; it never makes the answer unusable.
@@ -116,7 +118,7 @@ const answer = z.object({
     .array(z.object({ name: title, goal: text, exitCriteria: texts.min(1) }))
     .max(MAX_LIST)
     .default([]),
-  tasks: z.array(taskSchema).max(MAX_ITEMS).default([]),
+  tasks: z.array(z.unknown()).max(MAX_ITEMS).default([]),
   risks: z
     .array(z.object({ text, sources: ids }))
     .max(MAX_LIST)
@@ -124,12 +126,53 @@ const answer = z.object({
   technical: technical.default({ integrations: [], security: [], targets: [], environments: [] }),
 });
 
+const UNREADABLE_REASON =
+  'The card is not readable: a field is missing, of the wrong shape or out of its bounds.';
+
+// P3-82: a card that cannot be read holds its place with phase 0, which no plan has, so the domain
+// leaves it out and the positions of the other cards do not move.
+const unreadablePlaceholder: DraftTask = {
+  title: 'Unreadable task card',
+  phase: 0,
+  requirements: [],
+  acceptanceCriteria: [],
+  invariant: '',
+  adds: [],
+  probes: [],
+  files: [],
+  needs: [],
+  dependsOn: [],
+};
+
+/** The cards that read, each at its position, and the ones that did not, by position and field. */
+function readTasks(list: readonly unknown[]): {
+  readonly tasks: DraftTask[];
+  readonly unreadableTasks: UnreadableTask[];
+} {
+  const unreadableTasks: UnreadableTask[] = [];
+  const tasks = list.map((each, index) => {
+    const read = taskSchema.safeParse(each);
+    if (read.success) return read.data;
+    const first = read.error.issues[0]?.path[0];
+    const field = typeof first === 'string' ? first : 'card';
+    unreadableTasks.push({ position: index + 1, field, reason: UNREADABLE_REASON });
+    return unreadablePlaceholder;
+  });
+  return { tasks, unreadableTasks };
+}
+
 /** The draft of the answer, or undefined when no JSON object of the answer reads as a plan. */
-// RF-601
+// RF-601, P3-82
 export function parsePlanAnswer(output: string): PlanDraft | undefined {
   for (const value of searchJson(output.slice(0, cardLimits.maxOutputChars)).values) {
     const parsed = answer.safeParse(value);
-    if (parsed.success) return parsed.data;
+    if (!parsed.success) continue;
+    const { tasks, unreadableTasks } = readTasks(parsed.data.tasks);
+    return {
+      ...parsed.data,
+      tasks,
+      ...(unreadableTasks.length > 0 ? { unreadableTasks } : {}),
+    };
   }
   return undefined;
 }

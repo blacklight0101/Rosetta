@@ -35,7 +35,7 @@ it('RF-623 names the table column of a region and writes the structured referenc
       { address: 'G9', kind: 'plain', text: '186' },
       { address: 'G10', kind: 'plain', text: '197' },
     ],
-    source: { path: `${SHEET}/formulas.md`, startLine: 4, endLine: 9 },
+    source: { path: `${SHEET}/formulas.md`, startLine: 4, endLine: 7 },
   });
 });
 
@@ -66,7 +66,7 @@ it('RF-152 reads a shared formula as one row, with the cached result of its firs
     column: 'Transfer Savings',
     formula: 'G8*0.5',
     cached: [{ address: 'O8', kind: 'plain', text: '87.5' }],
-    source: { startLine: 39, endLine: 40 },
+    source: { startLine: 29, endLine: 30 },
   });
 });
 

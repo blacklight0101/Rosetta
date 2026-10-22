@@ -9,7 +9,13 @@ const count = (n: number, one: string, many: string): string =>
 
 /** What a running round does: judge claims, re-read the rejected ones, read files never read. */
 function runningParts(round: DeepenRoundState): readonly string[] {
-  const { judge, reread, unreadFiles } = round;
+  const { judge, reread, unreadFiles, failedAreas } = round;
+  const failed =
+    failedAreas.length === 0
+      ? []
+      : [
+          `re-reading ${count(failedAreas.length, 'failed area', 'failed areas')} (${failedAreas.join(', ')})`,
+        ];
   return [
     `judging ${count(judge, 'claim', 'claims')}`,
     reread === 0
@@ -18,6 +24,7 @@ function runningParts(round: DeepenRoundState): readonly string[] {
     unreadFiles === 0
       ? 'no unread files to read'
       : `reading ${count(unreadFiles, 'unread file', 'unread files')}`,
+    ...failed,
   ];
 }
 

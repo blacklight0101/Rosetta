@@ -53,7 +53,7 @@ describe('RF-209 the Deepen progress of the run page', () => {
     expect(running?.rounds).toEqual([
       {
         ...{ round: 1, status: 'running', judge: 10, reread: 40, outOfScope: 6 },
-        ...{ unreadFiles: 12, newClaims: 0, newSupported: 0, filesRead: 0 },
+        ...{ unreadFiles: 12, failedAreas: [], newClaims: 0, newSupported: 0, filesRead: 0 },
       },
     ]);
     expect(done?.rounds[0]).toMatchObject({
@@ -147,6 +147,27 @@ describe('RF-209 the Deepen lines of the log', () => {
       'round 1 ended · 30 new claims, 22 supported, 9 files read',
       'stopped: roundLimit after 3 rounds',
     ]);
+  });
+});
+
+describe('EV-10 the failed areas of a round', () => {
+  it('EV-10 keeps the names of the failed areas the round reads again, and none for an older event', () => {
+    const named = stateAfter(
+      deepenStarted(1),
+      ev(2, 'deepen.round.started', {
+        ...{ round: 1, maxRounds: 3, judge: 0, reread: 0 },
+        ...{ outOfScope: 0, unreadFiles: 0, failedAreas: ['Report'] },
+      }),
+    );
+    const older = stateAfter(
+      deepenStarted(1),
+      ev(2, 'deepen.round.started', {
+        ...{ round: 1, maxRounds: 3, judge: 0, reread: 0, outOfScope: 0, unreadFiles: 0 },
+      }),
+    );
+
+    expect(named.deepen?.rounds[0]?.failedAreas).toEqual(['Report']);
+    expect(older.deepen?.rounds[0]?.failedAreas).toEqual([]);
   });
 });
 
