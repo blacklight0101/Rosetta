@@ -120,8 +120,8 @@ async function shardFiles(shard: string): Promise<string[]> {
 
 describe('scripts/run-e2e.mjs plans the queue spec alone on the shard that owns it (RF-1108, #771)', () => {
   it('RF-1108 the owning shard runs its other tests first, then the queue spec alone with one worker', async () => {
-    const plan = await plannedInvocations('3');
-    const files = (await shardFiles('3')).filter((file) => file !== queueSpec);
+    const plan = await plannedInvocations('2');
+    const files = (await shardFiles('2')).filter((file) => file !== queueSpec);
 
     expect(plan).toEqual([
       ['test', ...files, '--grep-invert', '@queue'],
@@ -130,9 +130,9 @@ describe('scripts/run-e2e.mjs plans the queue spec alone on the shard that owns 
   });
 
   it('RF-1108 a shard that does not own the queue spec runs one invocation and never the queue', async () => {
-    const plan = await plannedInvocations('2');
+    const plan = await plannedInvocations('3');
 
-    expect(plan).toEqual([['test', ...(await shardFiles('2'))]]);
+    expect(plan).toEqual([['test', ...(await shardFiles('3'))]]);
   });
 });
 
@@ -180,7 +180,7 @@ async function runWithStubbedPlaywright(exits: {
       STUB_MAIN_EXIT: exits.main,
       STUB_QUEUE_EXIT: exits.queue,
     };
-    const code = await run('node', [script, '--shard=3/3'], { env }).then(
+    const code = await run('node', [script, '--shard=2/3'], { env }).then(
       () => 0,
       (error: unknown) => exitCodeOf(error),
     );
