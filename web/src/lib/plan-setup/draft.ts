@@ -71,6 +71,11 @@ function stackOf(draft: Draft): StackChoice[] {
   );
 }
 
+/** RF-609, Q-59: no stack layer has a choice, so the package names no technology. */
+export function noStackChosen(draft: Draft): boolean {
+  return stackOf(draft).length === 0;
+}
+
 const lines = (text: string): string[] =>
   text
     .split('\n')

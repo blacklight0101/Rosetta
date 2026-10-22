@@ -1045,6 +1045,7 @@ As a developer I want to start `plan` from the web UI once the planning brief is
 
 - Given the source understand run chosen in RF-614, with verified cards and answers, and a saved planning brief, when I start `plan`, then a `handoff/` folder is written using only `Supported` claims and answered questions; `Rejected`, invalid and unverified claims are listed as excluded with their ids.
 - Given a planning brief with unanswered questions, when `plan` runs, then each takes its default and the package lists it in its open-questions file with that default (DEC-80).
+- Given a planning brief in which no stack layer is answered, when `plan` writes the package, then the first line of its README says that no technology was chosen, that the cards are written for any stack, and that a stack is chosen in Plan setup; given one stack layer answered, that line is not written (Q-59, DEC-80).
 - Given a finished package, when its run manifest is read, then it records the planning brief, the catalogue version and the prompt versions used (RNF-004).
   Verification: integration test with recorded responses.
 
@@ -1052,6 +1053,7 @@ As a developer I want to start `plan` from the web UI once the planning brief is
 As a developer I want Rosetta to interview me before it plans, the way a senior architect would, so that the package follows my choices instead of guesses.
 
 - Given a finished `understand` run, when I open Plan setup from it or from the project, then the page names the source run (RF-614) and the questions appear in small groups (principles, architecture, migration, stack, project context, build method), each with a default, the reason it matters and the option Rosetta recommends marked "(Recommended)".
+- Given no stack layer is answered, when I look at "Use the defaults for the rest", then the page says beside it that the package will name no technology and the suggested stack options stay unused, with a link to the Stack step; once one layer is answered the line is not shown (Q-59, DEC-80).
 - Given I accept the defaults or change some answers, when I save, then the planning brief is stored with the project (data-model.md section 3.20) and shown as a "What I recorded" summary that I can edit and save again.
 - Given a saved brief, when I change an answer after a package exists, then the page says the package is out of date and offers to run `plan` again.
   Verification: end-to-end test of the page with the fake provider; unit tests of the brief schema.
