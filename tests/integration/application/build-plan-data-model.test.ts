@@ -234,8 +234,8 @@ describe('BuildPlan: an unusable data model answer', () => {
     const { text, h } = await degraded(answer);
 
     expect(text).not.toContain('The planner wrote no usable table');
-    expect(text).toContain('### workbook');
-    expect(text).toContain('### sheet');
+    expect(text).toContain('### record');
+    expect(text).toContain('### entry');
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     const messages = warned.map((entry) => entry.message).join(' ');
     expect(messages).toContain('is dropped');

@@ -1,56 +1,66 @@
 {
   "tables": [
     {
-      "name": "workbook",
-      "purpose": "Stores information about the primary workbook file.",
+      "name": "record",
+      "purpose": "Keeps one record per imported file.",
       "sources": [
-        "ENT-001",
-        "ENT-022"
+        "ENT-001"
       ],
       "columns": [
         {
-          "name": "name",
+          "name": "id",
+          "type": "uuid",
+          "nullable": true,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "title",
           "type": "varchar(255)",
-          "nullable": false,
+          "nullable": true,
           "legacy": {
             "claim": "ENT-001.c1",
-            "field": "workbook"
+            "field": "Title"
           },
           "risk": ""
         }
       ],
       "primaryKey": [
-        "name"
+        "id"
       ],
-      "uniqueKeys": [
-        [
-          "name"
-        ]
-      ],
+      "uniqueKeys": [],
       "foreignKeys": [],
       "checks": [],
-      "indexes": [
-        {
-          "columns": [
-            "name"
-          ],
-          "unique": true,
-          "reason": "Workbook name is unique."
-        }
-      ]
+      "indexes": []
     },
     {
-      "name": "sheet",
-      "purpose": "Describes the individual sheets within the workbook.",
+      "name": "entry",
+      "purpose": "Keeps the rows of a record.",
       "sources": [
-        "ENT-002",
-        "ENT-023"
+        "ENT-002"
       ],
       "columns": [
         {
-          "name": "name",
-          "type": "varchar(255)",
-          "nullable": false,
+          "name": "record_id",
+          "type": "uuid",
+          "nullable": true,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "label",
+          "type": "varchar(120)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "Label"
+          },
+          "risk": ""
+        },
+        {
+          "name": "range_note",
+          "type": "varchar(50)",
+          "nullable": true,
           "legacy": {
             "claim": "ENT-013.c1",
             "field": "Report sheet uses the range \"A1:R506\" and every visible row of the monthly inventory is kept for the total by row"
@@ -58,89 +68,74 @@
           "risk": ""
         },
         {
-          "name": "name",
-          "type": "varchar(255)",
-          "nullable": false,
-          "legacy": {
-            "claim": "ENT-002.c1",
-            "field": "visible sheets"
-          },
-          "risk": ""
-        },
-        {
-          "name": "cell_range",
-          "type": "varchar(50)",
+          "name": "amount",
+          "type": "numeric(12,2)",
           "nullable": true,
           "legacy": {
-            "claim": "ENT-013.c1",
-            "field": "Report sheet uses the range \"A1:R506\""
+            "claim": "ENT-002.c2",
+            "field": "Amount"
           },
           "risk": ""
         }
       ],
       "primaryKey": [
-        "name"
+        "record_id",
+        "label"
       ],
       "uniqueKeys": [],
       "foreignKeys": [
         {
           "columns": [
-            "name"
+            "record_id"
           ],
-          "references": "workbook",
+          "references": "record",
           "referencedColumns": [
-            "name"
+            "id"
           ]
         }
       ],
-      "checks": [],
-      "indexes": [
-        {
-          "columns": [
-            "name"
-          ],
-          "unique": true,
-          "reason": "Sheet name is unique within a workbook."
-        }
-      ]
+      "checks": [
+        "amount is zero or more"
+      ],
+      "indexes": []
     },
     {
-      "name": "inventory_data_table",
-      "purpose": "Contains inventory data from the Inventory sheet.",
+      "name": "item",
+      "purpose": "Keeps the items of the inventory.",
       "sources": [
-        "ENT-016"
+        "ENT-003"
       ],
       "columns": [
         {
-          "name": "record_id",
-          "type": "integer",
-          "nullable": false,
+          "name": "code",
+          "type": "varchar(40)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "Code"
+          },
+          "risk": ""
+        },
+        {
+          "name": "name",
+          "type": "varchar(200)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c2",
+            "field": "Name"
+          },
+          "risk": ""
+        },
+        {
+          "name": "status",
+          "type": "varchar(20)",
+          "nullable": true,
           "legacy": null,
-          "risk": ""
-        },
-        {
-          "name": "data_range_ref",
-          "type": "varchar(50)",
-          "nullable": true,
-          "legacy": {
-            "claim": "ENT-016.c1",
-            "field": "The Inventory sheet uses the range \"A1:L500\"."
-          },
-          "risk": ""
-        },
-        {
-          "name": "formula_cell_count",
-          "type": "integer",
-          "nullable": true,
-          "legacy": {
-            "claim": "ENT-016.c2",
-            "field": "The Inventory sheet has 5438 non-empty cells and 5391 formula cells."
-          },
           "risk": ""
         }
       ],
       "primaryKey": [
-        "record_id"
+        "code"
       ],
       "uniqueKeys": [],
       "foreignKeys": [],
@@ -148,13 +143,19 @@
       "indexes": [
         {
           "columns": [
-            "data_range_ref"
+            "status"
           ],
           "unique": false,
-          "reason": "Referencing the defined data range."
+          "reason": "Lookups by status."
         }
       ]
     }
   ],
-  "dropped": []
+  "dropped": [
+    {
+      "claim": "ENT-003.c3",
+      "field": "Notes",
+      "reason": "Not needed for the new system."
+    }
+  ]
 }

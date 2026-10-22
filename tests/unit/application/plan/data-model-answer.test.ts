@@ -67,13 +67,9 @@ describe('parseDataModelAnswer: an over-long legacy field (EV-02)', () => {
   it('RF-623 drops only that column: every table is kept and the drop is named', async () => {
     const parsed = parseDataModelAnswer(await readFile(fixturePath, 'utf8'));
 
-    expect(parsed?.draft.tables.map((entry) => entry.name)).toEqual([
-      'workbook',
-      'sheet',
-      'inventory_data_table',
-    ]);
-    // The fixture's sheet has three columns; the over-long one is dropped, the other two are kept.
-    expect(parsed?.draft.tables[1]?.columns).toHaveLength(2);
+    expect(parsed?.draft.tables.map((entry) => entry.name)).toEqual(['record', 'entry', 'item']);
+    // The fixture's entry table has four columns; the over-long one is dropped, three are kept.
+    expect(parsed?.draft.tables[1]?.columns).toHaveLength(3);
     expect(parsed?.problems).toHaveLength(1);
     expect(parsed?.problems[0]).toContain('is dropped');
   });
