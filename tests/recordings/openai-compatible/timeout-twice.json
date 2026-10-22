@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. Two attempts that never answer. Hand-written for the timeout scenario of an OpenAI-compatible Chat Completions call (POST <base URL>/chat/completions, stream false); no real service was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "hang": true
+    },
+    {
+      "hang": true
+    }
+  ]
+}
