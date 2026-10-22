@@ -47,6 +47,10 @@ export class MemoryCostLedger implements CostLedger {
     return Promise.resolve();
   }
 
+  renew(): Promise<void> {
+    return Promise.resolve();
+  }
+
   runEntries(userId: string, runId: string): Promise<readonly LedgerEntry[]> {
     return Promise.resolve(
       this.entries.filter((entry) => entry.userId === userId && entry.runId === runId),

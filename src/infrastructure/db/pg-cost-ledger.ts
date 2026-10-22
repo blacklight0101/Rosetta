@@ -76,6 +76,10 @@ export class PgCostLedger implements CostLedger {
     }
   }
 
+  renew(): Promise<void> {
+    return Promise.resolve();
+  }
+
   async runEntries(userId: string, runId: string): Promise<readonly LedgerEntry[]> {
     try {
       const result = await this.pool.query<Record<string, unknown>>(RUN_ENTRIES, [userId, runId]);
