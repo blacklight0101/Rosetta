@@ -17,6 +17,7 @@ export function assumedComponents(): DraftComponent[] {
   return Array.from({ length: MAX_COMPONENTS }, (_, index) => ({
     name: String(index).padEnd(MAX_NAME, ESCAPED),
     responsibility: ESCAPED.repeat(RESPONSIBILITY_CHARS),
+    role: '',
     dependsOn: [],
   }));
 }

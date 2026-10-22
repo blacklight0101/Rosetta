@@ -80,7 +80,7 @@ export async function loadPlanOptionsPrompt(promptsFolder: string): Promise<Prom
 /** The planner's prompt for the hand-off package (RF-604), checked and hashed. */
 // RNF-004
 export function loadPlannerPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/package.v5.md');
+  return loadPromptFile(promptsFolder, 'planner/package.v6.md');
 }
 
 /** The planner's guidance for a plan that rebuilds workbooks as an application (RF-155), checked and hashed. */
