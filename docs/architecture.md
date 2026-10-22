@@ -32,7 +32,7 @@ flowchart LR
   RST -- SQL --> DB
   RST -- reads snapshots, writes runs --> DATA
   RST -- resolve ref, download snapshot --> GH
-  RST -. local deployment only, host.docker.internal .-> OLL
+  RST -.->|local deployment only, host.docker.internal| OLL
   RST -- HTTPS, masked excerpts --> CLOUD
   DATA -. sample run published by the owner .-> PAGES
 ```
@@ -151,7 +151,7 @@ src/
     budget/             the cost breakdown and the cost report of a run (RF-426, RF-428)
     planning/           the plan options request and answer, the planning brief state and schema, and the recommendation of plan options
     journey/            the facts of the journey from code to package: its types and what is read of a run beyond its row (RF-615, P3-30)
-    models/             the shipped list of models a role can be set to, as the pages offer them (RF-405, DEC-156)
+    models/             the shipped list of models a role can be set to, as the pages offer them (RF-405, DEC-156), and role-limits: the context window and output limit a role runs with (Q-57)
     audit/              the audit retention job and the refusal limiter
     consolidate/        consolidating the cards of a run: the merge request and answer, the consolidation parts and the consolidate run
     eval/               the calibration and evaluation runs: their ports and schemas, the golden and calibration sets, the reports and the experiment
@@ -168,7 +168,7 @@ src/
     guards/             egress-guard (request masking, data-block placement, `JsonlEgressLog`), secret-masker,
                         mask-deep, budget-guard (with its pricing and ledger-row helpers)
     budget/             price-file (`prices/default-prices.yaml`, RF-427), cost-report-files (`cost.json`, `cost.md`)
-    models/             model-list-file (`prices/models.yaml`, the models a role can be set to, RF-405, DEC-156)
+    models/             model-list-file (`prices/models.yaml`, the models a role can be set to with their context window and maximum output, RF-405, DEC-156, Q-57)
     github/             github-hosts (allowlist), github-http-client (redirects, token, rate limits), github-api
                         (ref resolution), tarball-extractor (ADR-019 filter), snapshot-store (partial folders,
                         hash, snapshot.json, read-only), snapshot-record (the three shapes of snapshot.json: GitHub, upload, workbook; `workbook-key` in the domain names the workbook folder beside the upload key), github-snapshot-fetcher, fake-source-fetcher
@@ -514,7 +514,7 @@ sequenceDiagram
       T-->>L: result or error result
     else final answer
       L->>L: refuse it when no file of the area was read (RF-206), or once when less than half of its first-party tokens were (Q-50)
-      L->>L: parse cards (zod), keep the valid ones; up to two repairs or a continuation for the rest
+      L->>L: parse cards (zod), keep the valid ones, then up to two repairs or a continuation for the rest
     end
   end
   L-->>O: cards, transcript, state, usage

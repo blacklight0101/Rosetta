@@ -17,6 +17,7 @@ import type { ProjectSettings } from '../../application/projects/project-setting
 import { silentBudgetEvents } from '../../application/runs/run-budget-events.js';
 import { defaultEvidenceLimits } from '../../application/verifier/cited-lines.js';
 import type { VerifierPrompts } from '../../application/verifier/verifier-prompts.js';
+import type { ModelList } from '../../application/models/model-list.js';
 import type { PriceTable } from '../../domain/budget/price-table.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
@@ -57,6 +58,7 @@ export interface CalibrationParts {
   readonly serverKeys: ServerKeys;
   readonly ollamaUrl: string | undefined;
   readonly priceTable: PriceTable;
+  readonly models: ModelList;
   /** The project settings the models are chosen in: the template's providers and limits. */
   readonly settings: ProjectSettings;
   /** The most the whole calibration may cost, in micro-dollars. */
@@ -93,7 +95,7 @@ async function guardedOf(parts: CalibrationParts): Promise<Guarded> {
   const factory = parts.providers({
     ...{ keys: new MemoryProviderKeyRepository(), box: noUserKeys, serverKeys: parts.serverKeys },
     ...{ ollamaUrl: parts.ollamaUrl, serverSettings, ledger: new MemoryCostLedger() },
-    ...{ priceTable: parts.priceTable, masker, clock, ids, logger },
+    ...{ priceTable: parts.priceTable, models: parts.models, masker, clock, ids, logger },
   });
   const { dailyCapMicros, ...caps } = evaluationCaps({
     totalCapMicros: parts.capMicros,

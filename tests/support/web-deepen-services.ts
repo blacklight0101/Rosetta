@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import { EstimateDeepen } from '../../src/application/estimate/deepen-estimate.js';
 import type { TaskResult } from '../../src/application/ports/task-results.js';
 import { ReadUnderstanding } from '../../src/application/use-cases/read-understanding.js';
@@ -29,6 +30,7 @@ export function deepenServices(
       ...{ projects, runs: runs.runs, scans: new FixedScans(catalogAreas), keys },
       taskResults,
       priceTable: estimatePrices,
+      models: NO_LISTED_MODELS,
     }),
     readUnderstanding: new ReadUnderstanding({
       ...{ runs: runs.runs, scans: new FixedScans(catalogAreas), taskResults },

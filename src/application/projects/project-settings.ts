@@ -63,7 +63,8 @@ const providerSchema = z
     },
     invalid,
   )
-  .refine((provider) => provider.contextTokens === undefined || provider.kind === 'ollama', {
+  // Q-57: `auto` is Ollama's; any provider may carry a number, which then wins over the model's window.
+  .refine((provider) => provider.kind === 'ollama' || provider.contextTokens !== 'auto', {
     error: ERROR_CODES.settingValueInvalid,
     path: ['contextTokens'],
   });
@@ -71,7 +72,8 @@ const providerSchema = z
 const roleFields = {
   provider: z.string(unknownProvider).min(1, unknownProvider),
   model: z.string(missingModel).trim().min(1, missingModel).max(MAX_TEXT, invalid),
-  maxOutputTokens: ranged(256, 32_768),
+  /** Q-57: left out, the role takes the default of its model (role-limits.ts). */
+  maxOutputTokens: ranged(256, 32_768).optional(),
   temperature: z.number(invalid).min(0, invalid).max(2, invalid).optional(),
   reasoningEffort: z.enum(REASONING_EFFORTS, invalid).optional(),
 };

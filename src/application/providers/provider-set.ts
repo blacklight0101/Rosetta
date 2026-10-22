@@ -11,7 +11,10 @@ export interface RoleProvider {
   readonly name: string;
   readonly kind: ProviderKind;
   readonly model: string;
+  /** The role's output limit: the project's, else the default of its model (Q-57). */
   readonly maxOutputTokens: number;
+  /** The context window the shipped model list gives the model; absent when it gives none (Q-57). */
+  readonly modelContextTokens?: number | undefined;
   readonly temperature?: number;
   readonly keySource: KeySource;
 }

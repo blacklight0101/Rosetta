@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
-| P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
+| P1 Milestone slice (M1) | 181     | 67        | 96         | 18        | 0                  | 106     | 67      | 8      | 119        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 95      | 11        | 82         | 2         | 0                  | 34      | 58      | 3      | 51         | 0         |
-| **Total**               | **312** | **83**    | **202**    | **27**    | **0**              | **150** | **149** | **13** | **186**    | **0**     |
+| P3 Report and plan      | 100     | 12        | 84         | 4         | 0                  | 38      | 59      | 3      | 56         | 0         |
+| **Total**               | **322** | **86**    | **207**    | **29**    | **0**              | **157** | **152** | **13** | **195**    | **0**     |
 
 ## Conventions for every card
 
@@ -2379,6 +2379,85 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 
 ---
 
+### P1-177 - Follow-up: the static gates run in their own CI job
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `.github/workflows/ci.yml` (job `verify`), `package.json` (scripts `verify`, `test:ci`), docs/environments-and-delivery.md section 6, `tests/integration/tooling/workflows.test.ts` and `workflow-docs-only.test.ts`. Found on 2026-10-22 from the CI timings of the last 100 runs: a code pull request takes about 8 to 10 minutes and the Linux `verify` job runs typecheck, lint, format, dependency-cruiser and knip before the tests (about 1 to 2 minutes), so the tests start late and a type error is reported only after setup and the earlier gates.
+- **Do**: (1) a new job `gates` on ubuntu-latest runs typecheck, lint, format check, dependency-cruiser and knip in parallel with the tests; (2) the Linux `verify` job runs only the tests with coverage; (3) the required check names of the ruleset (`verify (ubuntu-latest)`, `verify (windows-latest)`, `e2e`, `audit`, `gitleaks`, `dependency-review`, `pr-title`, `codeql`) stay exactly as they are, so the owner does not have to change the ruleset: `gates` must pass for `verify (ubuntu-latest)` to pass (the verify job `needs` it, or an aggregate keeps the name), and the choice is written in section 6; (4) the documentation-only path keeps its behaviour; (5) `npm run verify` is unchanged for local use.
+- **Review probes**: a pull request with a lint error fails `verify (ubuntu-latest)` (through `gates`); a documentation-only pull request still skips the heavy steps; the workflow tests list the new job; required check names unchanged (checked against the ruleset list in the test).
+- **Behaviour to preserve**: every gate still runs on every code pull request; the hardening of ci.yml (pinned actions, read-only token, timeouts, values through env:).
+- **Delivers**: the job split, the section 6 text and the workflow tests.
+- **Done when**: each probe has a passing test or a CI run linked in the pull request; `npm run verify` green.
+- **Refs**: ADR-011, environments-and-delivery.md section 6, P1-01; issue #768.
+
+### P1-178 - Follow-up: the unit and integration tests run in shards on Linux and Windows
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-177
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `.github/workflows/ci.yml`, `vitest.config.ts` (projects and coverage thresholds), `scripts/test-levels.mjs`, docs/environments-and-delivery.md section 6. Found on 2026-10-22: the critical path of CI is the test step of `verify` (about 6 minutes on each operating system for about 15,500 tests in one Vitest run); the e2e job already runs in three shards and finishes in about 3 minutes.
+- **Do**: (1) the Vitest run is split with `--shard=n/N` (N = 3 to start) on ubuntu-latest and on windows-latest, each shard with its own PostgreSQL service where the database tests run (Linux only, as today); (2) each shard writes a blob report; a merge step (`vitest --merge-reports`) builds the coverage report and enforces the same thresholds as today, and `test-levels` prints the pyramid from the merged report; (3) the required check names `verify (ubuntu-latest)` and `verify (windows-latest)` stay, as aggregate jobs that pass only when every shard and the merge passed (the pattern of the `e2e` job); (4) section 6 states the shard count and how to change it.
+- **Review probes**: a failing test in any shard fails its `verify (<os>)` check; coverage below the threshold fails the merge; the merged test count equals the unsharded count (no test runs twice or not at all); a documentation-only pull request still skips the heavy steps; recorded CI timings before and after in the pull request.
+- **Behaviour to preserve**: the coverage thresholds and the test pyramid report; Windows still runs every test (sharded, not reduced); the database tests run on Linux.
+- **Delivers**: the sharded jobs, the coverage merge, the aggregate checks, the section 6 text and the workflow tests.
+- **Done when**: each probe has a passing test or a linked CI run; the critical path of a code pull request is shorter than before (timings in the pull request); `npm run verify` green.
+- **Refs**: ADR-011, environments-and-delivery.md section 6, P1-01, P1-177; issue #769.
+
+### P1-179 - Follow-up: the pre-push hook runs only the tests related to the change
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `lefthook.yml` (pre-push: `npm run typecheck`, `npx vitest run --project unit`), docs/environments-and-delivery.md section 5, `tests/integration/tooling/lefthook-install.test.ts`. Found on 2026-10-22: every push runs the whole unit project (about 9,300 tests, about 5 minutes on the owner's machine, longer when several agents push at once), although CI runs the full suite on the same commit.
+- **Do**: (1) pre-push keeps `npm run typecheck` and runs only the unit and integration tests related to the files changed against the upstream branch (`vitest related` with the changed files, or `--changed <base>`), with a fallback to the unit project when the base cannot be found; (2) section 5 says CI is the full gate and the hook is a fast check; (3) `LEFTHOOK=0` still skips it.
+- **Review probes**: a push that changes one source file runs only its related tests; a push with no source change runs no tests; a push of a new branch with no upstream falls back to the unit project; the hook still fails on a failing related test.
+- **Behaviour to preserve**: CI runs every test; the pre-commit and commit-msg hooks; hooks are not installed by `npm ci --ignore-scripts`.
+- **Delivers**: the hook change, the section 5 text and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: ADR-011, environments-and-delivery.md section 5; issue #770.
+
+### P1-180 - Follow-up: the queue-position end-to-end test does not depend on other workers' runs
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/e2e/start-run-limits.spec.ts:84` (RF-1108 "a queued run turns to started"), `playwright.config.ts`, `scripts/run-e2e.mjs`. Found by the P3-85 verifiers (PR #757, rounds 2 and 3): the test expects "position 1" but the run queue is server-wide and shared by every Playwright worker, so it sees "position 2" or "3" when another spec starts a run at the same time; it failed on main in runs 39612613476, 39587606439, 39564174696 and on PR #757 in run 39759213823.
+- **Do**: make the test independent of other workers: run the queue specs in a serial group or a dedicated project, or assert the position relative to the runs queued before it and then the turn to started; the RF-1108 behaviour asserted stays the same.
+- **Review probes**: the spec passes 20 times in a row in CI with the other e2e specs running in parallel (link the runs); the assertion still fails when the queue never advances (mutation).
+- **Behaviour to preserve**: RF-1108; the three e2e shards and their run time.
+- **Delivers**: the test change and, if needed, the Playwright project setting.
+- **Done when**: each probe holds; `npm run verify` green.
+- **Refs**: RF-1108, PR #757; issue #771.
+
+---
+
+### P1-181 - The Rosetta logo on the landing page, in the app, in the report and in the README
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: DEC-161; docs/design-system.md (tokens, header, landing, sections 3 and 13 for light and dark); `web/` (landing page, app shell header, `index.html`, public assets, web manifest if any); the HTML report and hand-off templates (`templates/` or `src/infrastructure/report/`); `site/` (published sample report); README.md. The owner's asset package path is given by the orchestrator (README.md lists the files).
+- **Do**: (1) add the assets to the repository where the web build serves them (icons 16, 32, 48, 64, 128, 180, 192, 256, 512; `favicon.ico`; `apple-touch-icon.png`; `android-chrome-192x192.png` and `-512x512.png`; `logo/rosetta-full-320w.png`, `-640w.png`, `-960w.png`), never the originals or the 1280 and 1920 px files; (2) favicon, touch icon and PWA icons on every page (landing, sign-in, app, report); (3) landing page: the full logo (responsive `srcset` 320/640/960) in the light theme; in the dark theme the icon with "Rosetta" as live text in the theme's text colour; (4) app header: the icon (32 px, 2x source) with the existing wordmark text; (5) the HTML report and the published sample report show the icon in their header and use the favicon; (6) README.md: the icon (128 px) above the title, with alt text, working in GitHub light and dark mode; (7) docs/design-system.md gets a short Brand section: where each asset is used, the dark-background rule, alt text, minimum sizes; (8) every image has alt text or is marked decorative where the name is already written next to it.
+- **Review probes**: page walk of landing, sign-in, an app page and a report at 1280x800 and 360x780 in light and dark (no unreadable wordmark in dark, no layout shift: width and height set); favicon requested and served (no 404 in the console or network log); axe passes; the image bytes added stay under 2 MB in total.
+- **Behaviour to preserve**: the design-system tokens and layout; the public routes stay public (assets are public); no external image host.
+- **Delivers**: the assets, the page changes, the report header, the README, the design-system Brand section and tests.
+- **Done when**: each probe holds with screenshots in the pull request; `npm run verify` green.
+- **Refs**: DEC-161, design-system.md; issue #777.
+
+---
+
 ## Phase 2 - Full understand
 
 Sized, not dated, until Q-01 is answered (roadmap.md).
@@ -4144,7 +4223,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-604, RF-608, RF-609, RF-610; `src/domain/planning/brief-decisions.ts` (the decision records of the style, each chosen layer and the migration), `src/application/plan/handoff-package.ts`, `prompts/planner/package.v4.md` (item 4, `decisions`, "empty when the brief alone decides it"). Found in the orchestrator's evaluation of 2026-10-21: every package of the day (Ollama `gemma4:e4b`, OpenAI `gpt-5-nano`, three brief variants) held the planner's own record of the architecture style and of the migration next to the record the brief writes ("ADR-001 Adopt layered architecture" and "ADR-005 Architecture style: Layered"; "ADR-002 Migration by strangler-fig" and "ADR-006 Migration strategy: Strangler Fig"; once also the back-end framework twice).
 - **Do**: (1) the planner prompt (a new version of the package prompt) says the brief's choices (style, migration, each answered stack layer) already have their records and asks for decisions the cards make necessary; (2) the package drops a planner decision with no source cards that restates a brief choice (its title or decision names the chosen style, the chosen migration strategy or an answered layer's technology), and lists what it dropped in `checks.md`; (3) links that pointed at a dropped decision (components, environments, entity mappings) point at the brief's record instead.
 - **Review probes**: a recorded planner answer with "Adopt layered architecture" and no sources, brief style layered (dropped, links moved to the brief record, listed in checks.md); a planner decision with sources that mentions the style (kept); a decision on email delivery (kept); the stack layer case; ids of the kept records stay in order without gaps; recorded responses only.
@@ -4272,3 +4351,78 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the alignment, the checks lines and tests.
 - **Done when**: each probe has a passing test; `npm run verify` green.
 - **Refs**: RF-627, RF-630, RF-631; issue #754.
+
+### P3-96 - Follow-up: the start page warns when the caps cannot hold the model's first calls
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-85
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-405, RF-422, RF-1106, Q-57, DEC-159; `src/application/estimate/` (the run and plan estimates), `src/domain/budget/budget.ts` (`capsFor`), `src/infrastructure/guards/budget-guard.ts` (the worst-case reservation), `src/application/models/role-limits.ts`, the start page. Found in fix round 1 of P3-85 (PR #757): under the Q-57 defaults Claude Fable 5.1, Claude Opus 5.5, gpt-6-astra, gpt-5.5, gpt-5.6-sol and gpt-5.4 cannot reserve their first parallel reader calls (and for some the first planner call) within the default 0.50 USD run cap; the owner chose to keep the defaults and warn (DEC-159).
+- **Do**: (1) the estimate computes, per stage, the reservation of the first calls the guard will hold (each role's parallelism times the worst case of one call, as the budget guard computes it) and compares it with the run cap and the daily cap that apply; (2) when either cannot hold it, the start page shows a warning before the run naming the cap and the amount needed, with the existing way to raise the cap; (3) a model that fits shows no warning.
+- **Review probes**: default caps on Claude Sonnet 5.5 (no warning); default caps on Claude Opus 5.5 (warning names the run cap and the amount); run cap raised to 3.00 USD on Opus (no warning); a server key with a lower administrator cap (the administrator's cap is the one named); recorded prices only, no provider call.
+- **Behaviour to preserve**: the budget guard's reservations and CapReached stop; RF-1106 cap order; the P3-85 defaults.
+- **Delivers**: the reservation figure in the estimate, the start page warning and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-405, RF-422, RF-1106, Q-57, DEC-159; P3-85; issue #764.
+
+### P3-97 - Follow-up: a style named in brackets in the catalogue is recognised in a decision title
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P3-87
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/domain/planning/brief-restated.ts` (`styleNames`, lines 71-72), `tests/unit/domain/planning/brief-restated.test.ts`. Found by the P3-87 verifier (PR #758, round 2, MINOR 1): the bracket regexes lack their escapes (`/(([^)]*))/u` and `/([^)]*)/gu`), so the catalogue title without its note and the note itself are never used as names; only the style id works ("Use ports and adapters architecture" is kept although the brief chose hexagonal).
+- **Do**: use `/\(([^)]*)\)/u` for the note and `/\([^)]*\)/gu` to remove it, test first.
+- **Review probes**: hexagonal brief: "Use ports and adapters architecture" is dropped with a link to the brief record; "Adopt hexagonal architecture" still dropped; "Store VAT as a fraction in PostgreSQL" and "Use layered error handling" still kept.
+- **Behaviour to preserve**: RF-608, RF-609, RF-610 as merged in PR #758 (title-only matching).
+- **Delivers**: the fix and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-608, RF-609, PR #758; issue #772.
+
+### P3-98 - Follow-up: a timed-out call to Ollama or an OpenAI-compatible server is metered
+
+- **Difficulty**: 9 (opus)
+- **Size**: S
+- **Depends on**: P3-93
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/providers/retrying-call.ts`, the Ollama and OpenAI-compatible adapters, `src/infrastructure/guards/budget-guard.ts`, docs/providers.md section 2.4. Found by the P3-93 verifier (PR #762, round 1, MINOR 3): those providers get the two-timeout limit but not the estimated metering of P3-93, so their timed-out attempts are still booked as 0 tokens.
+- **Do**: a timed-out attempt on Ollama or an OpenAI-compatible server is metered like OpenAI and Anthropic (estimated input, `usageSource` estimated, booked to the ledger and run totals through the budget guard); a local model's cost stays $0 but its tokens count against a token cap.
+- **Review probes**: Ollama timeout then success books both attempts' tokens; OpenAI-compatible timeout then timeout books both; the run cap and token cap see the booked usage; recorded responses only.
+- **Behaviour to preserve**: ADR-007, RF-421, RF-428; the P3-93 behaviour for OpenAI and Anthropic.
+- **Delivers**: the metering, docs/providers.md and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-421, RF-428, ADR-007, Q-60, PR #762; issue #773.
+
+### P3-99 - Follow-up: a long streamed answer keeps its budget reservation until it ends
+
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P3-93
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/guards/reservation-lifetime.ts`, `src/infrastructure/guards/budget-guard.ts`, the streaming adapters of P3-93. Found by the P3-93 verifier (PR #762, round 1, MINOR 4): the reservation lifetime still assumes a call lasts at most timeout x attempts, so a long stream that keeps receiving data can outlive its reservation and let other calls reserve against money it will still spend.
+- **Do**: a streamed call keeps (or renews) its reservation while it is receiving data, and releases or settles it exactly once when it ends, fails or is aborted; no other call can reserve against the amount it holds.
+- **Review probes**: a 300-second stream with events every few seconds keeps its reservation to the end; two parallel calls near the cap: the second is refused while the first streams; abort releases once; recorded responses and a fake clock only.
+- **Behaviour to preserve**: ADR-007; the P3-93 idle timeout; release or settle exactly once per call.
+- **Delivers**: the reservation change and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-421, RF-428, ADR-007, Q-60, PR #762; issue #774.
+
+### P3-100 - Follow-up: the empty-answer retry may grow the output limit to the model maximum
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-85
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/agent/empty-answer-retry.ts` (`OUTPUT_LIMIT_CEILING` 32,768), `src/application/projects/project-settings.ts` (`ranged(256, 32_768)`), `prices/models.yaml` (`maxOutputTokens`). Found by the P3-85 verifier (PR #757, round 1, MINOR 3): the P3-86 retry doubles the output limit only up to 32,768, not up to the model's listed maximum (128,000 for the current Claude and GPT-5 models), so the planner default of 16,384 has one doubling of room.
+- **Do**: the retry doubles up to the model's listed maximum output (32,768 when the model has no number); the project setting range follows the listed maximum; the budget guard still reserves the worst case of the retried call.
+- **Review probes**: a planner call on a model with a 128,000 maximum doubles to 32,768 then is not doubled again past the maximum; a model without the number stops at 32,768; the retried call is refused cleanly when its worst case passes the cap; recorded responses only.
+- **Behaviour to preserve**: Q-58 (one retry with the limit doubled); DEC-159 default caps.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-402, RF-405, Q-58, Q-57, PR #757; issue #775.

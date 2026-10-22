@@ -42,6 +42,8 @@ export function spikeFactory(parts: SpikeProviderParts): ProviderSetFactory {
     serverSettings: new MemoryServerSettings({}),
     ledger: new MemoryCostLedger(),
     priceTable,
+    // The spike runs on Ollama only, so no model of the shipped list applies (Q-57).
+    models: { version: '2026-10-21', models: [] },
     masker: new SecretMasker(),
     adapters,
     ...{ clock, ids, logger },

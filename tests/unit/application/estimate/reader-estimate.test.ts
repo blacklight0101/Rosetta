@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../../../src/application/models/model-list.js';
 import { describe, expect, it } from 'vitest';
 import { assumptionsOf } from '../../../../src/application/estimate/estimate-assumptions.js';
 import { readerTokens } from '../../../../src/application/estimate/reader-estimate.js';
@@ -24,9 +25,12 @@ function readerSettings(change: {
   return { ...base, roles: { ...base.roles, reader } };
 }
 
+/** The assumptions of settings whose models the list gives no numbers for. */
+const assumptionsFor = (settings: ProjectSettings) => assumptionsOf(settings, NO_LISTED_MODELS);
+
 describe('assumptions of the estimate', () => {
   it('RF-425 states the turns, output per turn and shares the figures rest on', () => {
-    const assumptions = assumptionsOf(readerSettings({ maxTurns: 10, maxOutputTokens: 1000 }));
+    const assumptions = assumptionsFor(readerSettings({ maxTurns: 10, maxOutputTokens: 1000 }));
 
     expect(assumptions.turnsPerArea).toEqual({ low: 3, likely: 6, high: 10 });
     expect(assumptions.outputTokensPerTurn).toEqual({ low: 150, likely: 300, high: 600 });
@@ -41,7 +45,7 @@ describe('assumptions of the estimate', () => {
     const base = readerSettings({ maxTurns: 90, maxOutputTokens: 1000 });
     const many = { ...base, agents: { parallelism: 500 } };
 
-    const assumptions = assumptionsOf(many);
+    const assumptions = assumptionsFor(many);
 
     expect(assumptions.parallelism).toBe(8);
     expect(assumptions.turnsPerArea.high).toBe(50);
@@ -52,7 +56,7 @@ describe('assumptions of the estimate', () => {
     const { provider, model, maxOutputTokens } = base.roles.reader;
     const reader = { provider, model, maxOutputTokens };
 
-    const assumptions = assumptionsOf({ ...base, roles: { ...base.roles, reader } });
+    const assumptions = assumptionsFor({ ...base, roles: { ...base.roles, reader } });
 
     expect(assumptions.turnsPerArea.high).toBe(12);
   });
@@ -60,13 +64,13 @@ describe('assumptions of the estimate', () => {
   it('RF-425 an Ollama reader assumes the smaller context of a local model', () => {
     const settings = readerSettings({ maxTurns: 10, maxOutputTokens: 1000, provider: 'ollama' });
 
-    expect(assumptionsOf(settings).contextLimitTokens).toBe(26_214);
+    expect(assumptionsFor(settings).contextLimitTokens).toBe(26_214);
   });
 });
 
 describe('reader tokens of the estimate', () => {
   it('RF-425 sums the resent context of every turn of every area (likely, two areas)', () => {
-    const assumptions = assumptionsOf(readerSettings({ maxTurns: 10, maxOutputTokens: 1000 }));
+    const assumptions = assumptionsFor(readerSettings({ maxTurns: 10, maxOutputTokens: 1000 }));
 
     const tokens = readerTokens(catalogAreas, assumptions);
 
@@ -82,7 +86,7 @@ describe('reader tokens of the estimate', () => {
   });
 
   it('RF-425 one turn per area sends only the prompt overhead and answers the output share', () => {
-    const assumptions = assumptionsOf(readerSettings({ maxTurns: 1, maxOutputTokens: 1000 }));
+    const assumptions = assumptionsFor(readerSettings({ maxTurns: 1, maxOutputTokens: 1000 }));
 
     const tokens = readerTokens([areaOf('Catalog', 10_000)], assumptions);
 
@@ -104,7 +108,7 @@ describe('reader tokens of the estimate', () => {
   });
 
   it('RF-425 low is below likely is below high', () => {
-    const assumptions = assumptionsOf(readerSettings({ maxTurns: 10, maxOutputTokens: 1000 }));
+    const assumptions = assumptionsFor(readerSettings({ maxTurns: 10, maxOutputTokens: 1000 }));
 
     const tokens = readerTokens(catalogAreas, assumptions);
 
@@ -118,7 +122,7 @@ describe('reader tokens of the estimate', () => {
 describe('reader tokens of the estimate at the limits', () => {
   it('RF-425 a turn never sends more than the context share of the model (high, huge area)', () => {
     const settings = readerSettings({ maxTurns: 10, maxOutputTokens: 1000, provider: 'ollama' });
-    const assumptions = assumptionsOf(settings);
+    const assumptions = assumptionsFor(settings);
 
     const tokens = readerTokens([areaOf('Huge', 1_000_000)], assumptions);
 
@@ -127,7 +131,7 @@ describe('reader tokens of the estimate at the limits', () => {
   });
 
   it('RF-425 no areas give no tokens', () => {
-    const assumptions = assumptionsOf(readerSettings({ maxTurns: 10, maxOutputTokens: 1000 }));
+    const assumptions = assumptionsFor(readerSettings({ maxTurns: 10, maxOutputTokens: 1000 }));
 
     expect(readerTokens([], assumptions).high).toMatchObject({
       inputTokens: 0,

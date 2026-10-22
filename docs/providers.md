@@ -343,6 +343,26 @@ tables, with the prices of these pages:
 The model list `prices/models.yaml` offers the current models and the cheap ones in the dropdowns; every model on it
 has a price.
 
+### 3.6 Context window and output limit of the listed models (Q-57)
+
+Every Anthropic and OpenAI model of `prices/models.yaml` carries the context window and the maximum output of its
+provider page, checked on 2026-10-21 (a model without a confirmed number carries none):
+
+| Model                                                                                                       | Context window | Maximum output | Source                                                                                             |
+| ----------------------------------------------------------------------------------------------------------- | -------------- | -------------- | -------------------------------------------------------------------------------------------------- |
+| Claude Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5                                                           | 1,000,000      | 128,000        | <https://platform.claude.com/docs/en/about-claude/models/overview> (1M tokens, 128K tokens)        |
+| GPT-6 astra, GPT-6.1 sol, GPT-6 sol, GPT-6 luna, GPT-5.6 sol, GPT-5.6 terra, GPT-5.6 luna, GPT-5.5, GPT-5.4 | 1,050,000      | 128,000        | the model page of each under <https://developers.openai.com/api/docs/models/>                      |
+| GPT-5.4 mini, GPT-5.4 nano, GPT-5 mini, GPT-5 nano, `gpt-5-nano-2025-08-07`                                 | 400,000        | 128,000        | the same pages; the snapshot has no page of its own and shares the limits of the `gpt-5-nano` page |
+
+A hosted role keeps 128,000 tokens of context, so that a conversation is cut where it always was and the budget
+guard's worst case stays the one the default caps were set for. A project may set `providers.<name>.contextTokens`;
+the window of the model in the list is then the upper bound of that number, and the start page shows it as the model's
+window. The reader stops at 80% of the context (architecture section 8). A role whose project stores no output limit takes the smaller of the model's maximum output
+and the default of the role: reader 8,192, verifier and summariser 4,000, planner 16,384 tokens (sized so that the default run cap of 0.50 USD lets
+the parallel reader calls through on most models; a few dear models still reach the cap sooner). Ollama keeps its own
+context (section 2.2) and defaults. The numbers are for the synchronous API; the larger Batch API output of Anthropic is
+not used.
+
 ## 4. Anthropic
 
 `AnthropicProvider` (`src/infrastructure/providers/anthropic/anthropic-provider.ts`, RF-404) calls the Messages API
