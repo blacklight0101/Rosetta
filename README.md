@@ -1,9 +1,12 @@
 # Rosetta
 
 Rosetta is an open-source tool for developers and tech leads who inherit a legacy codebase and need to understand it
-before they can replace it. Give it a public GitHub repository URL; it pins the commit, maps the code without AI, then sends a team of AI agents through it to
+before they can replace it. Give it a public GitHub repository URL (pinned to a commit), a zip of a project folder
+or a set of Excel workbooks (`.xlsx`, `.xlsm`: sheets, formulas, validations and VBA macros are rendered to text);
+it maps the source without AI, then sends a team of AI agents through it to
 write a functional specification: features, business rules, data entities, integrations and open questions, where
-every claim cites the file and lines it comes from and a verifier agent rejects what the code does not support.
+every claim cites the file and lines it comes from and a verifier agent rejects what the code does not support. A
+Deepen run reads what the first run left unread and re-reads rejected claims, round by round.
 From that specification it produces a tool-agnostic modernisation hand-off package (target architecture, decision
 records, roadmap and task cards) that any team can build from in its own way. It works with any legacy stack, runs
 against any AI provider (local models through Ollama, OpenAI, Anthropic and OpenAI-compatible services), and keeps
@@ -11,13 +14,15 @@ the cost of every run visible and capped. It is a web application with accounts:
 spawns, live, and the published report replays their work. One container image runs it on your machine with Docker
 Compose or on a server for invited users.
 
-**Status: version v0.1.0 (the milestone slice) is prepared; the owner creates the tag.** The server, the web
-application and the container image run with Docker Compose: you can create a project from a public GitHub URL, scan
-it, run the agents that write the cited specification, watch them live and replay a run. The hosted application, the
-`plan` stage and the other phases are not built yet. [docs/releases.md](docs/releases.md) lists what v0.1.0 delivers
-by requirement area, the known gaps and the checks that wait for the owner. The design documents are in this
-repository: [docs/roadmap.md](docs/roadmap.md) has the phases, [handoff.md](handoff.md) the current state and
-[docs/README.md](docs/README.md) the full map.
+**Status: release 1 is built (2026-10-21) and runs end to end with Docker Compose; the hosted application is not
+deployed yet.** You can create a project from a public GitHub URL, a zip or Excel workbooks, scan it, run the agents
+that write the cited specification, watch them live, Deepen the result, answer the open questions, build the HTML
+report and run `plan` to write the hand-off package, with an estimate before every run and a cap on its cost and
+tokens. The cards still open wait for an owner gate or check (counts in the
+[tasks.md totals](docs/orchestration/tasks.md); current state in [handoff.md](handoff.md)); the hosted deployment
+waits for the owner to declare the local system ready (G-08). [docs/releases.md](docs/releases.md) lists what v0.1.0
+(the milestone slice; the owner creates the tag) delivers by requirement area. The design documents are in this
+repository: [docs/roadmap.md](docs/roadmap.md) has the phases and [docs/README.md](docs/README.md) the full map.
 
 ## Quick start
 
@@ -72,14 +77,58 @@ Open <http://127.0.0.1:8080>, choose Sign in and sign in as the administrator: t
 the password is `ROSETTA_ADMIN_PASSWORD`, both in `.env`. The port is fixed at 8080 (`compose.yaml`); if another program
 uses it, see the troubleshooting table of the runbook. The page asks you to choose a new password before anything else
 opens. On the Projects page, Use the demo repository fills in the address of the demo application
-(eShopLegacyWebForms); choose Create project to add it. A scan needs no model. The agents of the understand stage need
-one: Ollama on the host (section 4 of the runbook) or your own provider key under Settings and keys.
+(eShopLegacyWebForms); choose Create project to add it. The Upload a zip and Excel workbooks tabs on the same page
+create a project from a zip of a folder or from up to 20 workbooks. A scan needs no model. The agents of the
+understand stage need one: Ollama on the host (section 4 of the runbook), your own provider key under Settings and
+keys, or a server key for every user in `.env` (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`; restart with
+`docker compose up -d` after you set one). The models of each role are chosen per project or on the Default models
+page. Before a run that sends code to a cloud provider, the start page asks you to confirm it.
 
 The app is published on `127.0.0.1` only. `docker compose down` stops it and keeps your data, `docker compose down -v`
 deletes it. The steps in full (Ollama on the host, reset, rotating the passwords and troubleshooting) are in
 [docs/runbooks/local.md](docs/runbooks/local.md).
 
 A sample report, made from recorded data of a demo repository, is published at <https://blacklight0101.github.io/Rosetta/> once GitHub Pages is enabled for the repository (source: GitHub Actions).
+
+## Tested providers and models
+
+Automated tests never call a real model (ADR-008); these are live evaluation runs on a clean installation, the whole
+journey (scan, understand, Deepen, plan) with every role on one model. Workbooks used: a macro-enabled invoicing
+workbook (7 sheets, 335 formulas, 13 VBA modules, about 28,000 tokens of text) and a small loan-amortisation workbook
+(one sheet, PMT/PPMT/IPMT formulas). Costs are the cost ledger's figures; Ollama runs locally and costs nothing.
+
+| Model (every role)            | Workbook | Understand                         | Deepen                       | Plan                     | Cost   |
+| ----------------------------- | -------- | ---------------------------------- | ---------------------------- | ------------------------ | ------ |
+| Ollama `gemma4:e4b` (local)   | Invoice  | 8 cards, 12 of 13 claims Supported | 100% read, 65 Supported      | Completed, 8 task cards  | $0     |
+| Ollama `gemma4:e4b` (local)   | Loan     | 5 cards, 9 of 9 Supported          | not needed (100% read)       | -                        | $0     |
+| Anthropic `claude-haiku-5-5`  | Invoice  | 10 cards, 26 of 31 Supported       | 100% read, 60 Supported      | Completed, 13 task cards | $0.136 |
+| Anthropic `claude-haiku-5-5`  | Loan     | 100% read, 15 Supported            | 36 Supported                 | Completed, 8 task cards  | $0.065 |
+| Anthropic `claude-sonnet-5-5` | Invoice  | 14 cards, 33 of 46 Supported       | 18 cards, 67 of 85 Supported | Completed, 18 task cards | $1.67  |
+| OpenAI `gpt-5-nano`           | Invoice  | 10 cards, 42 of 52 Supported       | 14 cards, 55 of 67 Supported | Completed, 5 task cards  | $0.11  |
+
+Evaluated on 2026-10-21. What the runs show:
+
+- Every provider completes the journey. A hosted model writes more precise cards (named business rules such as due
+  dates, VAT and invoice numbering, and flows such as drafting the customer email) and a larger plan; a small local
+  model mostly describes structure (sheets, tables, screens) but is free and keeps the workbook on your machine.
+- A local model's context is small. Rosetta reads the model's trained context from Ollama, grows it to fit a prompt
+  when the setting is `auto`, refuses a prompt that would not fit, and keeps a reader's answer when the context runs
+  out instead of losing it.
+- The estimate on the start page held for every hosted run (actual cost inside the low-high range).
+- The choices of Plan setup reach the package. Three briefs planned from the same understanding (C# on .NET with a
+  layered style and strangler fig; Python with FastAPI, hexagonal and a full rewrite; TypeScript with React, a
+  modular monolith and parallel change) each produced a package that names only its own technologies, style,
+  migration, principles and team context; only the brief with a separate React front end got an API contract.
+- A developer agent given only the package rebuilt the invoicing slice: from the Ollama package it had to guess
+  nearly every money rule (rated 3 of 10 for a faithful rebuild), from the Sonnet package it built 79 passing tests
+  but still mixed up two calculated columns (6 of 10). Card P3-94 adds the workbook's formulas, named by column,
+  to the package.
+- `gpt-5-nano` is a reasoning model: calls take 30 to 80 seconds, and with the default 4,096-token output limit its
+  answers came back empty (card P3-86). Long planner answers of `gpt-5-nano` and `claude-sonnet-5-5` need more than
+  the default 120-second call timeout (card P3-93); the Sonnet run used 600 seconds.
+- Known limits being fixed: every hosted model is still assumed to have a 128,000-token context and every role the
+  same output limit (card P3-85), so a hosted reader's long answer can be cut and retried; the follow-ups found in
+  the evaluation are cards P3-87 to P3-95.
 
 ## Release 1 scope in three lines
 
@@ -124,6 +173,10 @@ Snapshot of the kick-off decisions; the canonical record is [docs/decision-log.m
 ## Read the documents in this order
 
 1. [docs/rfc/RFC-001-rosetta.md](docs/rfc/RFC-001-rosetta.md) - the design proposal: problem, goals and non-goals, alternatives, proposed design, phases, success metrics.
+   Later proposals: [RFC-002](docs/rfc/RFC-002-plan-as-a-run-step.md) (plan as a run step),
+   [RFC-003](docs/rfc/RFC-003-re-read-loop.md) (the re-read loop behind Deepen),
+   [RFC-004](docs/rfc/RFC-004-zip-upload-source.md) (zip upload) and
+   [RFC-005](docs/rfc/RFC-005-excel-workbook-source.md) (Excel workbooks).
 2. [docs/spec/requirements.md](docs/spec/requirements.md) - requirements with acceptance criteria, open questions and traceability.
 3. [docs/adr/README.md](docs/adr/README.md) - the architecture decision records.
 4. [docs/decision-log.md](docs/decision-log.md) - the product owner's decisions (DEC-nn) and where each is applied;
