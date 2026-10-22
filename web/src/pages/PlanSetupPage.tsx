@@ -4,7 +4,6 @@ import type { BriefView, Catalogue, PlanSource } from '../api/plan-schemas.js';
 import type { Project } from '../api/project-schemas.js';
 import { useRouteParams } from '../app/route-params.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
-import { noStackChosen } from '../lib/plan-setup/draft.js';
 import { JourneyPanel } from './JourneyPanel.js';
 import { PlanConsentNotice } from './PlanConsentNotice.js';
 import { PrivateCodeNotice } from './PrivateCodeNotice.js';
@@ -92,6 +91,22 @@ function Consents({ session }: { readonly session: PlanSession }): JSX.Element {
   );
 }
 
+/** The step's buttons, fed by the session (RF-605, Q-59). */
+function Actions({ session }: { readonly session: PlanSession }): JSX.Element {
+  return (
+    <PlanStepButtons
+      step={session.step}
+      saving={session.saving}
+      error={session.error}
+      draft={session.draft}
+      onBack={session.back}
+      onDefaults={session.useDefaults}
+      onSave={session.save}
+      onGoTo={session.goTo}
+    />
+  );
+}
+
 function PlanSetupBody(props: BodyProps): JSX.Element {
   const { projectId, catalogue, view, project, source, sourceError, sourceRunId } = props;
   const session = usePlanSession({ projectId, sourceRunId }, view, project);
@@ -116,18 +131,7 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
           waitingForConsent={session.waitingForConsent}
           askAgain={session.askAgain}
         />
-        <PlanStepButtons
-          step={session.step}
-          saving={session.saving}
-          error={session.error}
-          noStack={noStackChosen(session.draft)}
-          onBack={session.back}
-          onDefaults={session.useDefaults}
-          onSave={session.save}
-          onStack={() => {
-            session.goTo('stack');
-          }}
-        />
+        <Actions session={session} />
       </section>
       <Consents session={session} />
       <PlanRecorded draft={session.draft} catalogue={catalogue} />
