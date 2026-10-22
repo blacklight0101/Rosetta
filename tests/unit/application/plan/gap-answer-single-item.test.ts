@@ -32,11 +32,19 @@ describe('parseGapAnswer: the single-item rule', () => {
     expect(answer?.drafts.map((each) => each.builds)).toEqual([['screen:SCRN-005']]);
   });
 
-  it('RF-627 a card that names builds keeps them and the rule does not apply', () => {
-    const answer = read({ tasks: [{ ...bare, builds: ['flow:FLOW-007'] }] }, 'screen:SCRN-005');
+  it('RF-627 a card that names the item keeps its builds and the rule does not apply', () => {
+    const named = ['screen:SCRN-005', 'flow:FLOW-007'];
+    const answer = read({ tasks: [{ ...bare, builds: named }] }, 'screen:SCRN-005');
 
-    expect(answer?.drafts.map((each) => each.builds)).toEqual([['flow:FLOW-007']]);
+    expect(answer?.drafts.map((each) => each.builds)).toEqual([named]);
     expect(answer?.singleItemRule).toBeUndefined();
+  });
+
+  it('RF-627 a card that names only a title or other ids builds the one item', () => {
+    const answer = read({ tasks: [{ ...bare, builds: ['System Dashboard'] }] }, 'screen:SCRN-005');
+
+    expect(answer?.drafts.map((each) => each.builds)).toEqual([['screen:SCRN-005']]);
+    expect(answer?.singleItemRule).toBe('screen:SCRN-005');
   });
 
   it('RF-627 two cards that name no builds get no rule and are both left out', () => {
