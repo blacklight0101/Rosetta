@@ -7,6 +7,7 @@ import type {
 import type { RunEventHistory, RunEventSink } from '../../src/application/ports/run-events.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
+import type { StartCaps } from '../../src/application/runs/run-start-caps.js';
 import { RunQueue } from '../../src/application/runs/run-queue.js';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import { StopRun } from '../../src/application/use-cases/stop-run.js';
@@ -103,6 +104,8 @@ export interface RunHarnessOptions {
   readonly stages?: readonly RunStage[];
   /** Wraps the executor of a stage, as the composition root wraps the real ones (P3-54). */
   readonly wrapExecutor?: (inner: RunExecutor, stage: RunStage) => RunExecutor;
+  /** The start caps `run.started` records (RF-1106); none when left out, as in a test without a project. */
+  readonly startCaps?: Pick<StartCaps, 'of'>;
 }
 
 const allStages: readonly RunStage[] = ['scan', 'understand', 'verify', 'report', 'plan'];
@@ -128,7 +131,15 @@ function createStores(options: RunHarnessOptions): Stores {
   const events = options.eventStore ?? new MemoryEventSink();
   const broadcaster = new SseBroadcaster(masker);
   const sink = new FanOutSink([events, broadcaster]);
-  const lifecycle = new RunLifecycle({ runs, manifests, sink, history: events, clock, logger });
+  const lifecycle = new RunLifecycle({
+    runs,
+    manifests,
+    sink,
+    history: events,
+    clock,
+    logger,
+    ...(options.startCaps === undefined ? {} : { startCaps: options.startCaps }),
+  });
   return { clock, logger, runs, manifests, events, broadcaster, lifecycle };
 }
 

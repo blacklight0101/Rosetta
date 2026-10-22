@@ -231,6 +231,7 @@ export function limitsAnswer(options: LimitsOptions = {}): Response {
         remainingMicros: dayLeft,
       },
       serverMonth: { remainingMicros: monthLeft },
+      runCapMicros: '500000',
     },
     ownKeys: { day: own },
   });

@@ -147,6 +147,7 @@ function limitsView({ serverKeys, ownKeys }: SpendLimits): Record<string, unknow
     serverKeys: {
       userDay: amountsView(serverKeys.userDay),
       serverMonth: { remainingMicros: serverKeys.serverMonth.remainingMicros.toString() },
+      runCapMicros: serverKeys.runCapMicros.toString(),
     },
     ownKeys: { day: ownKeys.day === null ? null : amountsView(ownKeys.day) },
   };

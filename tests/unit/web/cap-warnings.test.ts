@@ -27,6 +27,7 @@ function limits(parts: {
         remainingMicros: dayLeft,
       },
       serverMonth: { remainingMicros: monthLeft },
+      runCapMicros: 500_000n,
     },
     ownKeys: {
       day:
