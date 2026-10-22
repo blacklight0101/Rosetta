@@ -11,9 +11,25 @@ export interface PlanStepButtonsProps {
   readonly step: StepId;
   readonly saving: boolean;
   readonly error: ApiFailure | undefined;
+  /** True while no stack layer is chosen (Q-59): the defaults button then says so. */
+  readonly noStack: boolean;
   readonly onBack: () => void;
   readonly onDefaults: () => void;
   readonly onSave: () => void;
+  readonly onStack: () => void;
+}
+
+// RF-605, Q-59: the line beside the defaults button while no stack layer is chosen.
+function NoStackLine(props: { readonly onStack: () => void }): JSX.Element {
+  return (
+    <p class="rst-plan-actions__note">
+      No stack is chosen yet: the package will name no technology, and the suggested stack options
+      stay unused.
+      <Button variant="ghost" onClick={props.onStack}>
+        Choose a stack
+      </Button>
+    </p>
+  );
 }
 
 // RF-605
@@ -23,6 +39,7 @@ export function PlanStepButtons(props: PlanStepButtonsProps): JSX.Element {
   return (
     <div class="rst-plan-actions">
       {props.error === undefined ? null : <ErrorBanner error={props.error} />}
+      {props.noStack ? <NoStackLine onStack={props.onStack} /> : null}
       <div class="rst-plan-actions__row">
         {first ? null : <Button onClick={props.onBack}>Back</Button>}
         <span class="rst-plan-actions__spacer" />

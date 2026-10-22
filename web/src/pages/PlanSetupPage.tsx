@@ -4,6 +4,7 @@ import type { BriefView, Catalogue, PlanSource } from '../api/plan-schemas.js';
 import type { Project } from '../api/project-schemas.js';
 import { useRouteParams } from '../app/route-params.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
+import { noStackChosen } from '../lib/plan-setup/draft.js';
 import { JourneyPanel } from './JourneyPanel.js';
 import { PlanConsentNotice } from './PlanConsentNotice.js';
 import { PrivateCodeNotice } from './PrivateCodeNotice.js';
@@ -119,9 +120,13 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
           step={session.step}
           saving={session.saving}
           error={session.error}
+          noStack={noStackChosen(session.draft)}
           onBack={session.back}
           onDefaults={session.useDefaults}
           onSave={session.save}
+          onStack={() => {
+            session.goTo('stack');
+          }}
         />
       </section>
       <Consents session={session} />

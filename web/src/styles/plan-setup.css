@@ -203,6 +203,11 @@
   flex: 1;
 }
 
+.rst-plan-actions__note {
+  margin: 0;
+  font-size: var(--rst-fs-sm);
+}
+
 .rst-plan-recorded {
   margin: 0;
   display: grid;
