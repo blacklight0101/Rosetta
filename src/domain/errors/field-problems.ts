@@ -1,7 +1,7 @@
 import type { ErrorCode } from './codes.js';
 import { RosettaError } from './rosetta-error.js';
 
-// RF-002, RF-010, RF-007: a refusal that points at fields (a comment-only change for the hook timing). Each problem names its field, its own
+// RF-002, RF-010, RF-007: a refusal that points at fields. Each problem names its field, its own
 // code and, where the catalogue message is too general, a plain reason. The HTTP layer lists them
 // next to the code of the refusal, so a form can show each one beside its field.
 
