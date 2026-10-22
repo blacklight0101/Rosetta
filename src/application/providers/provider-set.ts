@@ -15,6 +15,8 @@ export interface RoleProvider {
   readonly maxOutputTokens: number;
   /** The context window the shipped model list gives the model; absent when it gives none (Q-57). */
   readonly modelContextTokens?: number | undefined;
+  /** The maximum output the shipped model list gives the model; absent when it gives none (P3-100). */
+  readonly modelMaxOutputTokens?: number | undefined;
   readonly temperature?: number;
   readonly keySource: KeySource;
 }

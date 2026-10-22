@@ -10,6 +10,8 @@ export interface ModelOption {
   readonly priced: boolean;
   /** Ollama only (Q-44): the context the model was trained for, when Ollama named one. */
   readonly trainedContext?: number | undefined;
+  /** DEC-163: the maximum output the shipped list gives the model, when it gives one. */
+  readonly maxOutputTokens?: number | undefined;
 }
 
 export type ModelListState =

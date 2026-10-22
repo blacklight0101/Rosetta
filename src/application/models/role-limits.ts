@@ -1,5 +1,6 @@
 import type { AgentRole, ProviderKind } from '../ports/llm-provider.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
+import { FALLBACK_OUTPUT_CEILING, isListed, listedEntry } from './listed-model.js';
 import type { ModelList } from './model-list.js';
 
 // RF-405, RF-201, Q-57: the context window and the output limit a role runs with.
@@ -46,18 +47,9 @@ export interface RoleLimits {
   readonly contextAutomatic: boolean;
   /** The window the shipped list gives the model, the upper bound of a context number; undefined when it gives none or for another provider. */
   readonly modelContextTokens: number | undefined;
+  /** The maximum output the shipped list gives the model, the ceiling of the empty-answer retry (P3-100); undefined when it gives none. */
+  readonly modelMaxOutputTokens: number | undefined;
   readonly maxOutputTokens: number;
-}
-
-/** The providers whose models the shipped list describes. */
-function isListed(kind: ProviderKind | undefined): kind is 'anthropic' | 'openai' {
-  return kind === 'anthropic' || kind === 'openai';
-}
-
-/** The entry of the shipped list for a model of a hosted provider; other providers have none. */
-function listedEntry(list: ModelList, kind: ProviderKind | undefined, model: string) {
-  if (!isListed(kind)) return undefined;
-  return list.models.find((entry) => entry.provider === kind && entry.model === model);
 }
 
 /** The context of a role: the project's number up to the model's window, Ollama's floor, or 128,000 (Q-57). */
@@ -85,6 +77,27 @@ function defaultOutput(
   return Math.min(modelMaximum ?? HOSTED_OUTPUT_TOKENS[role], HOSTED_OUTPUT_TOKENS[role]);
 }
 
+/** DEC-163: the stored limit (or the default) never above the model's maximum, 32,768 without one. */
+function outputOf(
+  stored: number | undefined,
+  of: {
+    readonly role: AgentRole;
+    readonly kind: ProviderKind | undefined;
+    readonly model: ReturnType<typeof listedEntry>;
+  },
+): number {
+  const maximum = of.model?.maxOutputTokens;
+  const wanted = stored ?? defaultOutput(of.role, of.kind, maximum);
+  return Math.min(wanted, maximum ?? FALLBACK_OUTPUT_CEILING);
+}
+
+/** What the shipped list says of the model's window and maximum output (P3-100). */
+function modelNumbers(
+  entry: ReturnType<typeof listedEntry>,
+): Pick<RoleLimits, 'modelContextTokens' | 'modelMaxOutputTokens'> {
+  return { modelContextTokens: entry?.contextTokens, modelMaxOutputTokens: entry?.maxOutputTokens };
+}
+
 // RF-405, RF-201, Q-57
 export function roleLimits(
   settings: ProjectSettings,
@@ -98,7 +111,7 @@ export function roleLimits(
   const entry = listedEntry(list, config?.kind, model);
   return {
     ...contextOf(config?.contextTokens, config?.kind, entry?.contextTokens),
-    modelContextTokens: entry?.contextTokens,
-    maxOutputTokens: maxOutputTokens ?? defaultOutput(role, config?.kind, entry?.maxOutputTokens),
+    ...modelNumbers(entry),
+    maxOutputTokens: outputOf(maxOutputTokens, { role, kind: config?.kind, model: entry }),
   };
 }

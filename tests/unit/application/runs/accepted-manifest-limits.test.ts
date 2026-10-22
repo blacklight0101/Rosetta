@@ -46,9 +46,15 @@ describe('the output limits in the accepted manifest', () => {
   });
 
   it('Q-57 records the number the project stores', () => {
+    const manifest = manifestOf({ 'roles.reader.maxOutputTokens': 2_000 }, list);
+
+    expect(manifest.roles['reader']?.maxOutputTokens).toBe(2_000);
+  });
+
+  it('DEC-163 records the maximum of the model for a stored number above it', () => {
     const manifest = manifestOf({ 'roles.reader.maxOutputTokens': 8_000 }, list);
 
-    expect(manifest.roles['reader']?.maxOutputTokens).toBe(8_000);
+    expect(manifest.roles['reader']?.maxOutputTokens).toBe(3_000);
   });
 
   it('Q-57 without a model list a hosted role takes the default of its role', () => {

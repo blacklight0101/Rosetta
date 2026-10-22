@@ -16,6 +16,8 @@ interface ModelChoice {
   readonly priced: boolean;
   /** Ollama only, Q-44: the context the model was trained for, when /api/show named one. */
   readonly trainedContext?: number;
+  /** DEC-163: the maximum output the shipped list gives the model, the top of its output slider. */
+  readonly maxOutputTokens?: number;
 }
 
 export interface ModelChoices {
@@ -43,10 +45,11 @@ export class ListModels {
     const { list, prices } = this.dependencies;
     const models = list.models
       .filter((entry) => entry.provider === provider)
-      .map(({ model, label }) => ({
+      .map(({ model, label, maxOutputTokens }) => ({
         model,
         label,
         priced: lookupPrice(prices, [], { provider, model, keySource: 'server' }).kind === 'priced',
+        ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }),
       }));
     return { provider, models };
   }

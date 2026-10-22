@@ -41,6 +41,7 @@ interface AgentTaskSettings {
   /** The share of the context the conversation may reach, for example 0.8. */
   readonly contextShare: number;
   readonly maxOutputTokens?: number;
+  readonly maxOutputCeiling?: number;
   readonly temperature?: number;
 }
 
@@ -94,7 +95,7 @@ class AgentTask {
     this.system = readerSystemPrompt(request.prompts);
     this.gate = new ReadGate(request.tools.readableAreaEntries());
     this.runner = new ToolRunner(request.tools, this.gate);
-    this.emptyRetry = new EmptyAnswerRetry(request.settings.maxOutputTokens);
+    this.emptyRetry = new EmptyAnswerRetry(request.settings);
     this.charsSince = this.system.length + JSON.stringify(request.tools.definitions).length;
   }
 

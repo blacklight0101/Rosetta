@@ -1,4 +1,5 @@
 import type { Actor } from '../../src/domain/accounts/actor.js';
+import { NO_LISTED_MODELS, type ModelList } from '../../src/application/models/model-list.js';
 import type { DefaultRoles } from '../../src/application/projects/default-roles.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
 import { GetProject } from '../../src/application/use-cases/get-project.js';
@@ -37,7 +38,10 @@ export interface ProjectHarness {
   readonly openWorkspace: OpenWorkspace;
 }
 
-export function projectHarness(defaultRoles: DefaultRoles = {}): ProjectHarness {
+export function projectHarness(
+  defaultRoles: DefaultRoles = {},
+  models: ModelList = NO_LISTED_MODELS,
+): ProjectHarness {
   const projects = new MemoryProjectRepository();
   const serverSettings = new MemoryServerSettings(defaultRoles);
   const users = new MemoryUserRepository();
@@ -61,7 +65,7 @@ export function projectHarness(defaultRoles: DefaultRoles = {}): ProjectHarness 
     }),
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
-    updateProjectSettings: new UpdateProjectSettings({ projects, clock }),
+    updateProjectSettings: new UpdateProjectSettings({ projects, clock, models }),
     openWorkspace: new OpenWorkspace({ projects, users, auditLog: audit, logger, clock }),
   };
 }

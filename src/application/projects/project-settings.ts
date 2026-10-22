@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import type { FieldProblem } from '../../domain/errors/field-problems.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { outputCeilingOf } from '../models/listed-model.js';
+import { NO_LISTED_MODELS, type ModelList } from '../models/model-list.js';
 import type { ProviderKind, ReasoningEffort } from '../ports/llm-provider.js';
 
 // Data-model.md section 3.1, RF-002, RF-405, RF-010: the project settings document
@@ -73,7 +75,8 @@ const roleFields = {
   provider: z.string(unknownProvider).min(1, unknownProvider),
   model: z.string(missingModel).trim().min(1, missingModel).max(MAX_TEXT, invalid),
   /** Q-57: left out, the role takes the default of its model (role-limits.ts). */
-  maxOutputTokens: ranged(256, 32_768).optional(),
+  /** DEC-163: the top is the model's own maximum, checked with the model list (`outputLimitProblems`). */
+  maxOutputTokens: z.number(invalid).int(invalid).min(256, invalid).optional(),
   temperature: z.number(invalid).min(0, invalid).max(2, invalid).optional(),
   reasoningEffort: z.enum(REASONING_EFFORTS, invalid).optional(),
 };
@@ -239,20 +242,36 @@ function reservedProviderProblems(input: unknown): FieldProblem[] {
     .map((name) => ({ field: `providers.${name}`, code: ERROR_CODES.settingValueInvalid }));
 }
 
+/** DEC-163: a role whose output limit is above the maximum its model lists (32,768 when none). */
+function outputLimitProblems(settings: ProjectSettings, models: ModelList): FieldProblem[] {
+  return ROLE_NAMES.flatMap((name) => {
+    const role = settings.roles[name];
+    if (role.maxOutputTokens === undefined) return [];
+    const kind = Object.hasOwn(settings.providers, role.provider)
+      ? settings.providers[role.provider]?.kind
+      : undefined;
+    if (role.maxOutputTokens <= outputCeilingOf(models, kind, role.model)) return [];
+    return [{ field: `roles.${name}.maxOutputTokens`, code: ERROR_CODES.settingValueInvalid }];
+  });
+}
+
 /**
  * Parses a settings document (RF-002). A refusal lists every problem with its field and code,
- * ordered by field and without duplicates; nothing is cast.
+ * ordered by field and without duplicates; nothing is cast. A role's output limit may go up to the
+ * maximum its model has in `models` (32,768 when the list gives none, DEC-163).
  */
 // RF-002
 export function parseProjectSettings(
   input: unknown,
+  models: ModelList = NO_LISTED_MODELS,
 ): Result<ProjectSettings, readonly FieldProblem[]> {
   const reserved = reservedProviderProblems(input);
   const parsed = projectSettingsSchema.safeParse(input);
-  if (parsed.success && reserved.length === 0) return ok(parsed.data);
+  const over = parsed.success ? outputLimitProblems(parsed.data, models) : [];
+  if (parsed.success && reserved.length === 0 && over.length === 0) return ok(parsed.data);
   const problems = new Map<string, FieldProblem>();
   const issues = parsed.success ? [] : parsed.error.issues.flatMap(problemsOf);
-  for (const problem of [...issues, ...reserved]) {
+  for (const problem of [...issues, ...reserved, ...over]) {
     problems.set(`${problem.field}|${problem.code}`, problem);
   }
   return err([...problems.values()].sort(byField));
