@@ -54,12 +54,18 @@ const answer = z.object({
     .default([]),
 });
 
+/** What the answer read as: the draft, and the parts the parser dropped (named, for the log). */
+export interface DataModelParse {
+  readonly draft: DataModelDraft;
+  readonly problems: readonly string[];
+}
+
 /** The draft of the answer, or undefined when no JSON object of the answer reads as a data model. */
 // RF-623
-export function parseDataModelAnswer(output: string): DataModelDraft | undefined {
+export function parseDataModelAnswer(output: string): DataModelParse | undefined {
   for (const value of searchJson(output.slice(0, cardLimits.maxOutputChars)).values) {
     const parsed = answer.safeParse(value);
-    if (parsed.success) return parsed.data;
+    if (parsed.success) return { draft: parsed.data, problems: [] };
   }
   return undefined;
 }

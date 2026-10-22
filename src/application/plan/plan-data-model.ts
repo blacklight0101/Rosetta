@@ -43,8 +43,8 @@ export async function planDataModel(
     return { assembly: assembleDataModel(emptyDraft, legacy, database), readable: true };
   const message = dataModelMessage(input, call.tags);
   const output = await askPlannerWith(call, message);
-  const draft = parseDataModelAnswer(output);
-  const assembly = assembleDataModel(draft ?? emptyDraft, legacy, database);
+  const parsed = parseDataModelAnswer(output);
+  const assembly = assembleDataModel(parsed?.draft ?? emptyDraft, legacy, database);
   return { assembly, readable: assembly.model.tables.length > 0 };
 }
 
