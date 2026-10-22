@@ -27,34 +27,83 @@ describe('GitHub Actions workflows: files', () => {
     expect(dependabot).toContain('package-ecosystem: github-actions');
   });
 
-  it('RNF-001 the CI workflow runs verify on ubuntu and windows with a PostgreSQL 17 service on Linux', async () => {
-    const text = await ci();
+  it('RNF-001 the CI workflow runs the tests on ubuntu and windows with a PostgreSQL 17 service on Linux', async () => {
+    const text = await ciJob('tests');
 
     expect(text).toContain('ubuntu-latest');
     expect(text).toContain('windows-latest');
     expect(text).toContain('image: postgres:17');
     expect(text).toContain('ROSETTA_TEST_DATABASE_URL');
     expect(text).toContain('node-version-file: .nvmrc');
-    expect(text).toContain('run: npm run verify');
+    expect(text).toContain('run: npm run test:ci');
+    expect(text).not.toContain('run: npm run verify');
   });
 
-  it('RNF-001 Linux runs every gate of verify and Windows runs only the tests', async () => {
-    const text = await ci();
+  it('P1-177 the static gates run in their own Linux job, one step per gate, in parallel with the tests', async () => {
+    const gates = await ciJob('gates');
+    const tests = await ciJob('tests');
 
-    expect(text).toMatch(/if: runner\.os == 'Linux'[^\n]*\n\s+run: npm run verify\n/u);
-    expect(text).toMatch(/if: runner\.os == 'Windows'[^\n]*\n\s+run: npm run test:ci\n/u);
-    expect(text).not.toMatch(/if: runner\.os == 'Windows'[^\n]*\n\s+run: npm run verify/u);
-    expect(text).toContain('name: verify (${{ matrix.os }})');
+    expect(gates).toMatch(/^ {4}runs-on: ubuntu-latest$/mu);
+    expect(gates).toMatch(/^ {4}needs: changes$/mu);
+    for (const script of ['typecheck', 'lint', 'format:check', 'arch', 'deadcode']) {
+      expect(gates).toContain(`run: npm run ${script}`);
+    }
+    // The tests job does not wait for the gates and does not repeat them.
+    expect(tests).not.toMatch(/needs:.*gates/u);
+    for (const script of ['typecheck', 'lint', 'arch', 'deadcode']) {
+      expect(tests).not.toContain(`run: npm run ${script}`);
+    }
   });
 
-  it('RNF-005 the e2e shards install Chromium before Playwright runs, and verify does not', async () => {
+  it('P1-177 the required checks verify (ubuntu-latest) and verify (windows-latest) aggregate the tests and the gates', async () => {
+    const verify = await ciJob('verify');
+
+    expect(verify).toContain('name: verify (${{ matrix.os }})');
+    expect(verify).toMatch(/^ {8}os: [ubuntu-latest, windows-latest]$/mu);
+    expect(verify).toMatch(/^ {4}needs: [gates, tests]$/mu);
+    expect(verify).toContain('if: always()');
+    expect(verify).toContain('TESTS: ${{ needs.tests.result }}');
+    expect(verify).toContain('GATES: ${{ needs.gates.result }}');
+    expect(verify).toContain('test "$TESTS" = success');
+    expect(verify).toContain('test "$GATES" = success');
+  });
+
+  it('P1-177 the check names of the ruleset are all still reported by a workflow', async () => {
+    const required = [
+      'verify (ubuntu-latest)',
+      'verify (windows-latest)',
+      'e2e',
+      'audit',
+      'gitleaks',
+      'dependency-review',
+      'pr-title',
+      'codeql',
+    ];
+    const names = (await load()).flatMap((workflow) =>
+      workflow.lines.flatMap((line) => {
+        const match = /^s+name: (.+)$/u.exec(line);
+        return match?.[1] === undefined ? [] : [match[1].replace(/^['"]|['"]$/gu, '')];
+      }),
+    );
+    const expanded = names.flatMap((name) =>
+      name.includes('${{ matrix.os }}')
+        ? ['ubuntu-latest', 'windows-latest'].map((os) => name.replace('${{ matrix.os }}', os))
+        : [name],
+    );
+
+    for (const check of required) {
+      expect(expanded.map((name) => name.toLowerCase())).toContain(check);
+    }
+  });
+
+  it('RNF-005 the e2e shards install Chromium before Playwright runs, and the tests job does not', async () => {
     const shard = await ciJob('e2e-shard');
     const install = shard.indexOf('npx playwright install --with-deps chromium');
 
     expect(install).toBeGreaterThan(-1);
     expect(install).toBeLessThan(shard.indexOf('node scripts/run-e2e.mjs'));
-    // verify skips the Playwright project (ROSETTA_E2E_OWN_JOB=1), so it needs no browser.
-    expect(await ciJob('verify')).not.toContain('playwright install');
+    // The tests job skips the Playwright project (ROSETTA_E2E_OWN_JOB=1), so it needs no browser.
+    expect(await ciJob('tests')).not.toContain('playwright install');
   });
 
   it('DEC-35 the pull request title reaches commitlint through env: TITLE', async () => {
