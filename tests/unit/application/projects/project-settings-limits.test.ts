@@ -45,8 +45,8 @@ describe('the output limit of a role', () => {
   it.each([
     [255, false],
     [256, true],
-    [32_768, true],
-    [32_769, false],
+    [128_000, true],
+    [128_001, false],
   ])('RF-002 a stored output limit of %i is accepted: %s', (value, accepted) => {
     const result = parseProjectSettings(settingsWith({ 'roles.reader.maxOutputTokens': value }));
 
