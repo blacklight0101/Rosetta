@@ -76,7 +76,8 @@ async function gapRound(
     repair === undefined
       ? gapMessage(input, call.tags)
       : gapRepairMessage(input, repair, call.tags);
-  const answer = parseGapAnswer(await askPlannerWith(call, message));
+  const only = report.uncovered.length === 1 ? report.uncovered[0]?.id : undefined;
+  const answer = parseGapAnswer(await askPlannerWith(call, message), only);
   const positions = answer?.positions;
   const taken = addGapTasks(content, answer?.drafts ?? [], report.uncovered, {
     ...{ specificationDriven, ...(positions === undefined ? {} : { positions }) },
@@ -92,19 +93,36 @@ async function gapRound(
 /** What to log about an answer: the cards left out, by position and field, or that it was no answer. */
 function roundWarnings(round: Round, label: string, unreadable: string): string[] {
   if (round.answer === undefined) return [unreadable];
-  return round.problems.map(
-    ({ position, field, reason }) =>
-      `Task card at position ${String(position)} of the ${label} was left out: the field "${field}" ${reason}.`,
-  );
+  const rule = round.answer.singleItemRule;
+  const ruled =
+    rule === undefined
+      ? []
+      : [
+          `The single-item rule (RF-627) gave the only uncovered item, ${rule}, to the card without builds in the ${label}.`,
+        ];
+  return [
+    ...ruled,
+    ...round.problems.map(
+      ({ position, field, reason }) =>
+        `Task card at position ${String(position)} of the ${label} was left out: the field "${field}" ${reason}.`,
+    ),
+  ];
 }
 
-/** The cards left out that named an item which is still built by no card. */
-function namedGaps(
+/**
+ * The cards left out that call for the repair (RF-627): one that named an item which is still built
+ * by no card, or one that names no builds at all.
+ */
+function repairable(
   problems: readonly GapProblem[],
   uncovered: readonly CoverageItem[],
 ): GapProblem[] {
   const open = new Set(uncovered.map((item) => item.id));
-  return problems.filter((problem) => problem.builds.some((id) => open.has(id)));
+  return problems.filter(
+    (problem) =>
+      problem.builds.some((id) => open.has(id)) ||
+      (problem.field === 'builds' && problem.builds.length === 0),
+  );
 }
 
 /** The call for the items still uncovered and, when cards were left out that named one, the repair. */
@@ -115,7 +133,7 @@ async function planGap(calls: LinkCalls, covered: PlannedCoverage): Promise<Plan
   }
   const first = await gapRound(calls.gap, covered, { specificationDriven });
   const warnings = roundWarnings(first, 'gap answer', UNREADABLE_GAP);
-  const problems = namedGaps(first.problems, first.planned.report.uncovered);
+  const problems = repairable(first.problems, first.planned.report.uncovered);
   if (problems.length === 0) return { planned: first.planned, warnings };
   const repair = { prompt: calls.repairPrompt, problems };
   try {

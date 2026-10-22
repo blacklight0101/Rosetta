@@ -42,6 +42,8 @@ export interface GapAnswer {
   /** The position in the answer (from 1) of each draft, so a later fault names the right card. */
   readonly positions: number[];
   readonly problems: GapProblem[];
+  /** RF-627: set when the single-item rule gave the one card that named no builds the one item. */
+  readonly singleItemRule?: string;
 }
 
 function reasonOf(code: string): string {
@@ -68,22 +70,43 @@ function problemOf(position: number, error: z.ZodError, card: unknown): GapProbl
 }
 
 /** The cards of the answer that read as cards and the ones that did not, or undefined when no JSON object reads as a list of them. */
-// Q-45, Q-54
-export function parseGapAnswer(output: string): GapAnswer | undefined {
+/** RF-627: a card that names no builds, its list missing or empty. */
+function namesNoBuilds(card: unknown): boolean {
+  if (typeof card !== 'object' || card === null) return false;
+  return !('builds' in card) || (Array.isArray(card.builds) && card.builds.length === 0);
+}
+
+/** RF-627: the card with the one item it builds in place of the builds it did not name. */
+function buildingOnly(card: unknown, item: string): unknown {
+  return typeof card === 'object' && card !== null ? { ...card, builds: [item] } : card;
+}
+
+// Q-45, Q-54, RF-627: `uncoveredItem` is the one item the block holds, when it holds exactly one.
+export function parseGapAnswer(output: string, uncoveredItem?: string): GapAnswer | undefined {
   for (const value of searchJson(output.slice(0, cardLimits.maxOutputChars)).values) {
     const parsed = answer.safeParse(value);
     if (!parsed.success) continue;
+    const cards = parsed.data.tasks;
+    const single =
+      uncoveredItem !== undefined && cards.length === 1 && namesNoBuilds(cards[0])
+        ? uncoveredItem
+        : undefined;
     const drafts: GapDraft[] = [];
     const positions: number[] = [];
     const problems: GapProblem[] = [];
-    parsed.data.tasks.forEach((each, index) => {
-      const card = gapTask.safeParse(each);
+    cards.forEach((each, index) => {
+      const card = gapTask.safeParse(single === undefined ? each : buildingOnly(each, single));
       if (card.success) {
         drafts.push(card.data);
         positions.push(index + 1);
       } else problems.push(problemOf(index + 1, card.error, each));
     });
-    return { drafts, positions, problems };
+    return {
+      drafts,
+      positions,
+      problems,
+      ...(single === undefined ? {} : { singleItemRule: single }),
+    };
   }
   return undefined;
 }
