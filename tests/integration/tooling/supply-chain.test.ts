@@ -18,10 +18,10 @@ import { load, runLines } from '../../support/workflow-files.js';
 const DIGEST = `sha256:${'a'.repeat(64)}`;
 
 describe('CI service images are pinned by digest', () => {
-  it('RNF-003 the three PostgreSQL service images of ci.yml carry a sha256 digest', async () => {
+  it('RNF-003 the four PostgreSQL service images of ci.yml carry a sha256 digest', async () => {
     const images = await workflowImages('ci.yml');
 
-    expect(images.filter((image) => image.startsWith('postgres'))).toHaveLength(3);
+    expect(images.filter((image) => image.startsWith('postgres'))).toHaveLength(4);
     expect(images.filter((image) => !isDigestPinned(image))).toEqual([]);
   });
 

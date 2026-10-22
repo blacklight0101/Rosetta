@@ -130,7 +130,7 @@ describe('GitHub Actions workflows: the changes script', () => {
 });
 
 describe('GitHub Actions workflows: documentation-only gating', () => {
-  it.each(['tests', 'gates', 'e2e-shard', 'image', 'compose-smoke'])(
+  it.each(['tests-shard', 'gates', 'e2e-shard', 'image', 'compose-smoke'])(
     'RNF-001 job %s needs the changes job and has no job-level condition',
     async (id) => {
       const job = await ciJob(id);
@@ -139,6 +139,13 @@ describe('GitHub Actions workflows: documentation-only gating', () => {
       expect(job).not.toMatch(/^ {4}if:/mu);
     },
   );
+
+  it('RNF-001 the tests job needs the changes job and the shards and has no job-level condition', async () => {
+    const job = await ciJob('tests');
+
+    expect(job).toMatch(/^ {4}needs: \[changes, tests-shard\]$/mu);
+    expect(job).not.toMatch(/^ {4}if:/mu);
+  });
 
   it.each(['gates', 'e2e-shard', 'image', 'compose-smoke'])(
     'RNF-001 every step of %s but the notice and the failure log runs only for code',
@@ -156,7 +163,7 @@ describe('GitHub Actions workflows: documentation-only gating', () => {
 
   it('RNF-001 every condition fails closed: only an output of exactly false skips work', async () => {
     const jobsText = await Promise.all(
-      ['tests', 'gates', 'e2e-shard', 'image', 'compose-smoke'].map(ciJob),
+      ['tests-shard', 'tests', 'gates', 'e2e-shard', 'image', 'compose-smoke'].map(ciJob),
     );
     const cleanup = (await steps('compose-smoke')).find((step) => step.includes('down -v')) ?? '';
 
@@ -178,7 +185,7 @@ describe('GitHub Actions workflows: documentation-only checks', () => {
     const all = await steps('tests');
     const named = (text: string): string => all.find((step) => step.includes(text)) ?? '';
 
-    expect(named('run: npm run test:ci')).toContain(code);
+    expect(named('run: npm run test:merge')).toContain(code);
     expect(named('run: npm run format:check')).toContain(docsOnlyOnLinux);
     expect(named('npx vitest run')).toContain(docsOnlyOnLinux);
   });

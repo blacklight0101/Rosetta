@@ -28,14 +28,14 @@ describe('GitHub Actions workflows: files', () => {
   });
 
   it('RNF-001 the CI workflow runs the tests on ubuntu and windows with a PostgreSQL 17 service on Linux', async () => {
-    const text = await ciJob('tests');
+    const text = await ciJob('tests-shard');
 
     expect(text).toContain('ubuntu-latest');
     expect(text).toContain('windows-latest');
     expect(text).toContain('image: postgres:17');
     expect(text).toContain('ROSETTA_TEST_DATABASE_URL');
     expect(text).toContain('node-version-file: .nvmrc');
-    expect(text).toContain('run: npm run test:ci');
+    expect(text).toContain('run: npm run test:shard');
     expect(text).not.toContain('run: npm run verify');
   });
 
@@ -46,7 +46,7 @@ describe('GitHub Actions workflows: files', () => {
     expect(install).toBeGreaterThan(-1);
     expect(install).toBeLessThan(shard.indexOf('node scripts/run-e2e.mjs'));
     // The tests job skips the Playwright project (ROSETTA_E2E_OWN_JOB=1), so it needs no browser.
-    expect(await ciJob('tests')).not.toContain('playwright install');
+    expect(await ciJob('tests-shard')).not.toContain('playwright install');
   });
 
   it('DEC-35 the pull request title reaches commitlint through env: TITLE', async () => {
