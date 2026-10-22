@@ -40,7 +40,7 @@ describe('row citations of a rendered workbook', () => {
     const { request, loop } = workbookLoop([
       toolTurn([readValues]),
       textTurn(answer(rowless)),
-      textTurn(answer(rowless)),
+      textTurn(answer(cardWith(`${valuesPath}:R6`))),
       textTurn(answer(rowless)),
       textTurn(answer(cardWith(`${valuesPath}:2-3`))),
     ]);
@@ -81,7 +81,7 @@ describe('citations that hold line text', () => {
     const { request, loop } = workbookLoop([
       toolTurn([readValues]),
       textTurn(answer(cardWith(written))),
-      textTurn(answer(cardWith(written))),
+      textTurn(answer(cardWith(`${valuesPath}:R2 | C2 0.06`))),
       textTurn(answer(cardWith(written))),
     ]);
 

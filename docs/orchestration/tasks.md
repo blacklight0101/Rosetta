@@ -12,11 +12,11 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
-| P1 Milestone slice (M1) | 182     | 67        | 97         | 18        | 0                  | 106     | 68      | 8      | 120        | 0         |
+| P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
 | P3 Report and plan      | 107     | 14        | 89         | 4         | 0                  | 41      | 63      | 3      | 63         | 0         |
 | P5 Polish (G-10)        | 8       | 3         | 5          | 0         | 0                  | 4       | 4       | 0      | 0          | 0         |
-| **Total**               | **338** | **91**    | **218**    | **29**    | **0**              | **164** | **161** | **13** | **203**    | **0**     |
+| **Total**               | **339** | **91**    | **219**    | **29**    | **0**              | **165** | **161** | **13** | **204**    | **0**     |
 
 ## Conventions for every card
 
@@ -2473,6 +2473,23 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the test changes, the list of flaky tests with run links and the ten slowest integration files in the pull request body.
 - **Done when**: each probe holds; CI green on Windows and Linux.
 - **Refs**: RF-141, RF-506, RF-1108; issue #795.
+
+---
+
+### P1-183 - Follow-up: the end-to-end jobs install Chromium in seconds, not minutes
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `.github/workflows/ci.yml` (the two `Install Chromium` steps: `npx playwright install --with-deps chromium`), the supply-chain tests of the workflow (pinned actions, image digests), docs/environments-and-delivery.md section 6. Found 2026-10-22: the step normally takes about 20 s but took 10 to 12 minutes on PR #800 (shards 1 and 3, run attempt 1), so the e2e shards were cancelled at their 15-minute limit while still running tests; seen also on PRs #799 and #790.
+- **Do**: (1) find from the logs whether the browser download or the system packages (`--with-deps`, apt) is the slow part; (2) make the step fast and steady: cache the Playwright browser folder keyed on the Playwright version, install system packages only on a cache miss or use the pinned Playwright container image, whichever the logs support; (3) give the install step its own short timeout so a stuck install fails fast instead of eating the test time; (4) keep the job's 15-minute limit and every test.
+- **Review probes**: three CI runs in a row with the install step under one minute (links); a cache miss still installs and passes; new actions pinned to full SHAs older than the cooldown, or the image pinned by digest; the supply-chain tests pass and cover the new pin.
+- **Behaviour to preserve**: the three e2e shards, the compose smoke job, the required check names, read-only permissions.
+- **Delivers**: the workflow change, the test updates and a line in docs/environments-and-delivery.md section 6.
+- **Done when**: each probe holds; CI green on Windows and Linux.
+- **Refs**: RNF-005; issue #804.
 
 ---
 
