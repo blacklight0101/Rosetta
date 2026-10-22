@@ -26,8 +26,8 @@ describe('the reader prompts and the line numbers', () => {
     const prompts = await loadReaderPrompts('prompts');
 
     expect(prompts.system).toMatchObject({ name: 'reader/area.v6.md', version: 'v6' });
-    expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v4.md', version: 'v4' });
-    expect(prompts.repair).toMatchObject({ name: 'cards/repair.v2.md', version: 'v2' });
+    expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v5.md', version: 'v5' });
+    expect(prompts.repair).toMatchObject({ name: 'cards/repair.v3.md', version: 'v3' });
     expect(prompts.system.sha256).toBe(await sha256Of('prompts/reader/area.v6.md'));
   });
 

@@ -14,6 +14,7 @@ import {
   type EvidenceLimits,
   type SkipLookup,
 } from './cited-lines.js';
+import { renderedFileReason } from './rendered-file-claim.js';
 import { parseVerdictAnswer, type JudgedStatus } from './verdict-answer.js';
 import { verifierRetryMessage, type VerifierPrompts } from './verifier-prompts.js';
 
@@ -56,6 +57,8 @@ export interface ClaimJudgeParts {
   /** RF-100: the files the scan skipped (binary, too large) are never read or sent. */
   readonly skipReason: SkipLookup;
   readonly call: JudgementCall;
+  /** P3-105: the rendered workbook folders of the snapshot; a claim about their files is rejected. */
+  readonly workbookFolders?: readonly string[] | undefined;
   /** Records the model version of each answer (RNF-004). */
   readonly onAnswer?: (response: LlmResponse) => Promise<void>;
 }
@@ -152,6 +155,8 @@ export async function judgeClaim(
   parentSpanId: string,
 ): Promise<Judgement> {
   if (parts.call.signal.aborted) return stopOf(parts.call.signal);
+  const rendered = renderedFileReason(claim, parts.workbookFolders);
+  if (rendered !== undefined) return { kind: 'judged', status: 'Rejected', reason: rendered };
   const evidence = await readCitedLines(
     parts.reader,
     claim.citations,

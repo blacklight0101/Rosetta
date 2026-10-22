@@ -167,7 +167,7 @@ export interface JudgementContext {
     readonly events: Pick<RunEventPublisher, 'emit'>;
     readonly signal: AbortSignal;
   };
-  readonly scanned: Pick<ScannedSource, 'reader' | 'codeMap'>;
+  readonly scanned: Pick<ScannedSource, 'reader' | 'codeMap' | 'workbookFolders'>;
   readonly settings: ProjectSettings;
   readonly updates: ManifestUpdates;
   readonly nextCallId: () => string;
@@ -191,6 +191,7 @@ export function judgementPartsOf(context: JudgementContext, clock: Clock): Claim
     judge: {
       ...{ role: verifier.role, prompts: verifier.prompts, reader: context.scanned.reader },
       ids: context.ids,
+      workbookFolders: context.scanned.workbookFolders,
       skipReason: (path) => index.skipReasonOf(path),
       limits: { ...defaultEvidenceLimits, maxLines: settings.scan.excerptMaxLines },
       call: {

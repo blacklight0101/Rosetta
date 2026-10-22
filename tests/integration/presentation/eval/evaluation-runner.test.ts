@@ -74,7 +74,7 @@ describe('the evaluation runner with the fake provider', () => {
       expect(Object.keys(experiment.value.promptVersions)).toEqual(
         expect.arrayContaining([
           'reader/task.v2.md',
-          'verifier/claim.v1.md',
+          'verifier/claim.v2.md',
           'verifier/retry.v1.md',
         ]),
       );

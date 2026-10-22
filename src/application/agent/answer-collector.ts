@@ -4,6 +4,7 @@ import type { AgentTaskEnd } from './agent-task-result.js';
 import { readCutCards } from '../cards/cut-cards.js';
 import { parseCardsLenient, type CardParse } from '../cards/parse-cards.js';
 import type { OutputProblem } from '../cards/output-problem.js';
+import { valuesOnlyRuleProblems } from '../cards/rule-citations.js';
 import { renderRepairRequest } from '../cards/repair-request.js';
 import { loadRowIndex, type RowLookup } from '../cards/row-citations.js';
 import type { ReaderPrompts } from './reader-prompts.js';
@@ -44,12 +45,16 @@ function keyOf(draft: CardDraft): string {
 export function mergeDrafts(
   earlier: readonly CardDraft[],
   later: readonly CardDraft[],
+  asked: ReadonlySet<string> = new Set(),
 ): readonly CardDraft[] {
   const merged = [...earlier];
   for (const draft of later) {
     const at = merged.findIndex((each) => keyOf(each) === keyOf(draft));
+    // P3-105: a card the repair asked about is replaced by the answer, even with fewer claims.
     if (at < 0) merged.push(draft);
-    else if (draft.claims.length >= (merged[at]?.claims.length ?? 0)) merged[at] = draft;
+    else if (asked.has(keyOf(draft)) || draft.claims.length >= (merged[at]?.claims.length ?? 0)) {
+      merged[at] = draft;
+    }
   }
   return merged;
 }
@@ -58,6 +63,7 @@ class Collector {
   private readonly ask: AskModel;
   private readonly prompts: ReaderPrompts;
   private readonly rows: RowLookup;
+  private readonly workbookFolders: readonly string[];
   private drafts: readonly CardDraft[] = [];
   private readonly raws: string[] = [];
   private text = '';
@@ -66,8 +72,17 @@ class Collector {
   private repairs = 0;
   private continuations = 0;
   private cutKept = false;
+  /** P3-105: the rule citations were asked about once; the cards asked about, until the answer. */
+  private ruleAsked = false;
+  private asked: ReadonlySet<string> = new Set();
 
-  constructor(ask: AskModel, prompts: ReaderPrompts, rows: RowLookup) {
+  constructor(
+    ask: AskModel,
+    prompts: ReaderPrompts,
+    rows: RowLookup,
+    workbookFolders: readonly string[],
+  ) {
+    this.workbookFolders = workbookFolders;
     this.ask = ask;
     this.prompts = prompts;
     this.rows = rows;
@@ -109,20 +124,39 @@ class Collector {
   private async readText(): Promise<void> {
     const rows = await loadRowIndex(this.text, this.rows);
     this.read = parseCardsLenient(this.text, rows);
-    this.drafts = mergeDrafts(this.drafts, this.read.drafts);
+    this.drafts = mergeDrafts(this.drafts, this.read.drafts, this.asked);
+    this.asked = new Set();
   }
 
   /** The next follow-up, or undefined when the answer is clean or the follow-ups are used up. */
   private nextMessage(): { text: string; continuation: boolean } | undefined {
-    if (this.read.problems.length === 0) return undefined;
+    const rules = this.ruleHints();
+    if (this.read.problems.length === 0 && rules.length === 0) return undefined;
     if (this.read.cutOff && this.continuations < maxContinuations) {
       this.continuations += 1;
       return { text: this.prompts.continue.text.trimEnd(), continuation: true };
     }
     if (this.repairs >= maxRepairs) return undefined;
     this.repairs += 1;
-    const text = renderRepairRequest(this.prompts.repair.text, this.read.problems).trimEnd();
+    const problems = [...this.read.problems, ...rules];
+    const text = renderRepairRequest(this.prompts.repair.text, problems).trimEnd();
     return { text, continuation: false };
+  }
+
+  /**
+   * P3-105: the rule claims that cite only values, the first time the answer is otherwise
+   * readable or a repair is sent anyway; the cards they sit on are then replaced by the answer.
+   */
+  private ruleHints(): readonly OutputProblem[] {
+    if (this.ruleAsked || this.read.cutOff || this.repairs >= maxRepairs) return [];
+    const hints = valuesOnlyRuleProblems(this.read.drafts, this.workbookFolders);
+    if (hints.length === 0) return [];
+    const hinted = this.read.drafts.filter(
+      (draft) => valuesOnlyRuleProblems([draft], this.workbookFolders).length > 0,
+    );
+    this.ruleAsked = true;
+    this.asked = new Set(hinted.map(keyOf));
+    return hints;
   }
 
   /**
@@ -152,12 +186,18 @@ class Collector {
   }
 }
 
+/** What the answer's citations are read against: the row spans and the rendered workbook folders. */
+interface CitationScope {
+  readonly rows: RowLookup;
+  readonly workbookFolders?: readonly string[] | undefined;
+}
+
 // RF-208
 export function collectCards(
   first: string,
   ask: AskModel,
   prompts: ReaderPrompts,
-  rows: RowLookup,
+  scope: CitationScope,
 ): Promise<CollectedAnswer> {
-  return new Collector(ask, prompts, rows).collect(first);
+  return new Collector(ask, prompts, scope.rows, scope.workbookFolders ?? []).collect(first);
 }

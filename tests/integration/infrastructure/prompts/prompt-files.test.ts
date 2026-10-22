@@ -20,7 +20,7 @@ import { useTempRoot } from '../../../support/temp-root.js';
 const readerPromptNames = [
   'cards/card-format.v2.md',
   'cards/continue.v1.md',
-  'cards/repair.v2.md',
+  'cards/repair.v3.md',
   'reader/area.v6.md',
   'reader/read-first.v1.md',
   'reader/read-more.v1.md',
@@ -31,7 +31,7 @@ const readerPromptNames = [
 const surfacePromptNames = ['cards/flows.v1.md', 'cards/screens.v2.md'];
 
 /** RF-155: the guidance added to an area that holds a rendered workbook. */
-const workbookPromptNames = ['reader/workbook.v4.md'];
+const workbookPromptNames = ['reader/workbook.v5.md'];
 
 async function sha256Of(path: string): Promise<string> {
   return createHash('sha256')

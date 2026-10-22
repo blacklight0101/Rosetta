@@ -165,6 +165,7 @@ export async function runReaderTask(
     nextCallId: context.nextCallId,
     signal: execution.signal,
     onNote: noteEvent(events),
+    workbookFolders: context.scanned.workbookFolders,
     ...extrasOf(task, attempt),
   });
 }
