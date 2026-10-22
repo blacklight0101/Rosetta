@@ -46,6 +46,16 @@ describe('reader settings of an understand run', () => {
   });
 });
 
+describe('the output ceiling of the reader (P3-100)', () => {
+  it('RF-402 the retry ceiling is the maximum output the model lists, none when it lists none', () => {
+    const base = settingsFor({ reader: { provider: 'anthropic', model: 'm' } });
+    const listed = { ...role('anthropic'), modelMaxOutputTokens: 128_000 };
+
+    expect(readerTaskSettings(base, listed).maxOutputCeiling).toBe(128_000);
+    expect(readerTaskSettings(base, role('anthropic')).maxOutputCeiling).toBeUndefined();
+  });
+});
+
 describe('the context of the reader (Q-57)', () => {
   const hosted = (modelContextTokens: number | undefined): RoleProvider => ({
     ...role('anthropic'),

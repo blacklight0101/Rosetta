@@ -6,7 +6,7 @@ import { OllamaContextField } from './OllamaContextField.js';
 import type { ModelListState } from './model-lists.js';
 import { ProviderSetting } from './SettingFields.js';
 import type { SectionProps } from './settings-section.js';
-import { ranges, templateDefaults } from './setting-limits.js';
+import { ranges, templateDefaults, type Range } from './setting-limits.js';
 import { contextPath, usesOllama, type ContextLimit } from './ollama-context.js';
 
 // RF-002, RF-405, DEC-116, DEC-117, DEC-156, design-system.md section 14: the provider, model and
@@ -42,18 +42,28 @@ function ReaderTurns({ editor, errorFor }: SectionProps): JSX.Element {
 /** Q-57: what an empty output limit means. */
 const unsetOutputHelp = 'Not set: the role uses the default of its model.';
 
+/** DEC-163: the output slider tops out at the maximum the chosen model lists, else 32,768. */
+function outputRange(list: ModelListState | undefined, model: string): Range {
+  const listed = list?.status === 'ready' ? list.models.find((e) => e.model === model) : undefined;
+  return { ...ranges.maxOutputTokens, max: listed?.maxOutputTokens ?? ranges.maxOutputTokens.max };
+}
+
 function OutputTokens({
   editor,
   errorFor,
   role,
-}: SectionProps & { readonly role: RoleName }): JSX.Element {
+  list,
+}: SectionProps & {
+  readonly role: RoleName;
+  readonly list: ModelListState | undefined;
+}): JSX.Element {
   return (
     <LimitSetting
       id={`role-${role}-output`}
       label={`${roleText[role].title} max output tokens`}
       path={`roles.${role}.maxOutputTokens`}
       errorFor={errorFor}
-      range={ranges.maxOutputTokens}
+      range={outputRange(list, editor.draft.roles[role].model)}
       help={editor.draft.roles[role].maxOutputTokens.trim() === '' ? unsetOutputHelp : undefined}
       unit="count"
       defaultValue={templateDefaults.maxOutputTokens[role]}
@@ -102,7 +112,7 @@ function RoleFields(
             editor.changeRole(role, { model });
           }}
         />
-        <OutputTokens {...props} role={role} />
+        <OutputTokens {...props} role={role} list={list} />
         {role === 'reader' ? <ReaderTurns {...props} /> : null}
       </div>
     </div>

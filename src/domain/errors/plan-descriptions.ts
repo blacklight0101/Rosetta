@@ -35,7 +35,7 @@ export const PLAN_ERROR_DESCRIPTIONS: Readonly<Record<PlanErrorCode, ErrorDescri
     message:
       'The planner answer was cut off at the output limit, even after it was asked to continue.',
     nextStep:
-      'Raise Planner max output tokens in Project settings (up to 32,768), or choose a planner model that writes longer answers, then write the package again.',
+      'Raise Planner max output tokens in Project settings (up to the maximum of the planner model, 32,768 when none is listed), or choose a planner model that writes longer answers, then write the package again.',
   },
   'RST-1806': {
     message:

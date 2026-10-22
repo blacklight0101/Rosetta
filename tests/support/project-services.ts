@@ -107,7 +107,7 @@ export function projectServices(
     }),
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
-    updateProjectSettings: new UpdateProjectSettings({ projects, clock }),
+    updateProjectSettings: new UpdateProjectSettings({ projects, clock, models: NO_LISTED_MODELS }),
     openWorkspace: new OpenWorkspace({ projects, users, auditLog, logger, clock }),
     getProjectCost: new GetProjectCost({ projects, costs }),
     getAccountTotals: new GetAccountTotals({ costs, caps }),

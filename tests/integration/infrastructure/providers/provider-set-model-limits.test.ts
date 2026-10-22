@@ -73,6 +73,18 @@ describe('the limits of a role in the provider set', () => {
   });
 });
 
+describe('the model maximum output of a role in the provider set (P3-100)', () => {
+  it('RF-402 the reader task of a Haiku 5.5 role may grow its retry to the 128,000 the list gives', async () => {
+    const settings = withoutOutputLimits(settingsFor({ reader: haiku }));
+
+    const reader = (await setFor(settings)).get('reader');
+    if (reader === undefined) throw new Error('No reader');
+
+    expect(reader.modelMaxOutputTokens).toBe(128_000);
+    expect(readerTaskSettings(settings, reader).maxOutputCeiling).toBe(128_000);
+  });
+});
+
 describe('what a project sets and the local roles in the provider set', () => {
   it('RF-405 the number a project sets for the output and for the context wins', async () => {
     const base = withContextTokens(settingsFor({ reader: haiku }), 'anthropic', 200_000);

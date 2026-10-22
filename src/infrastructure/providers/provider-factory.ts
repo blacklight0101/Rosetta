@@ -168,6 +168,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       model: setting.model,
       maxOutputTokens: limits.maxOutputTokens,
       modelContextTokens: limits.modelContextTokens,
+      modelMaxOutputTokens: limits.modelMaxOutputTokens,
       ...(setting.temperature === undefined ? {} : { temperature: setting.temperature }),
       keySource: access.value.keySource,
     });

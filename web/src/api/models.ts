@@ -13,6 +13,8 @@ const modelChoicesSchema = z.object({
       priced: z.boolean(),
       /** Ollama only (Q-44): the trained context of the model, when Ollama named one. */
       trainedContext: z.number().optional(),
+      /** DEC-163: the maximum output the model lists, the top of its output slider. */
+      maxOutputTokens: z.number().optional(),
     }),
   ),
   reason: z.string().optional(),

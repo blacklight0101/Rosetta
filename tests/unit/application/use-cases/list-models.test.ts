@@ -101,3 +101,23 @@ it('RF-401 Q-44 an installed model carries its trained context when Ollama gave 
     { model: 'llama3:8b', label: 'llama3:8b', priced: true },
   ]);
 });
+
+it('RF-402 DEC-163 a listed model carries its maximum output, so the settings page can bound the slider', async () => {
+  const list = {
+    version: '2026-10-22',
+    models: [
+      { provider: 'anthropic', model: 'a', label: 'A', maxOutputTokens: 128_000 },
+      { provider: 'anthropic', model: 'b', label: 'B' },
+    ],
+  };
+  const answer = await new ListModels({
+    list,
+    prices: testModelPrices,
+    installed: new FakeInstalledModels(),
+  }).execute('anthropic');
+
+  expect(answer.models).toEqual([
+    { model: 'a', label: 'A', priced: false, maxOutputTokens: 128_000 },
+    { model: 'b', label: 'B', priced: false },
+  ]);
+});
