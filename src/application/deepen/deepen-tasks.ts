@@ -4,8 +4,14 @@ import { formatCitation } from '../../domain/cards/citation.js';
 import type { Area } from '../../domain/code-map/area.js';
 import { byCodeUnit } from '../../domain/code-map/code-unit-order.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
+import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { isThirdPartyFile } from '../../domain/code-map/third-party.js';
-import type { GapFile, RereadClaim, RoundPlan } from '../../domain/deepen/round-plan.js';
+import type {
+  FailedArea,
+  GapFile,
+  RereadClaim,
+  RoundPlan,
+} from '../../domain/deepen/round-plan.js';
 import type { TaskResult } from '../ports/task-results.js';
 import type { ReaderTask } from '../understand/reader-tasks.js';
 
@@ -119,6 +125,23 @@ function gapTasks(
   }));
 }
 
+/**
+ * EV-10: a failed area is read again over every file of the area. When it ended on a repeated
+ * call (RST-1303) the task starts with a note: the same prompt would give the same loop.
+ */
+function failedTasks(
+  failed: readonly FailedArea[],
+  codeMap: TaskMap,
+): readonly Omit<ReaderTask, 'agentTaskId'>[] {
+  return failed.map(({ area, failure, unread }) => {
+    const known = codeMap.areas.find((each) => each.name === area);
+    const task = { area: known ?? areaOf(area, [], codeMap) };
+    return failure.includes(ERROR_CODES.agentRepeatedCalls)
+      ? { ...task, retryNote: { unread } }
+      : task;
+  });
+}
+
 // RF-209
 export function roundTasks(
   plan: RoundPlan,
@@ -126,7 +149,16 @@ export function roundTasks(
   firstNumber: number,
   cards: readonly Card[] = [],
 ): readonly ReaderTask[] {
-  const tasks = [...rereadTasks(plan, codeMap), ...gapTasks(plan.gaps, codeMap)];
+  // A failed area is read whole, so its unread files need no task of their own.
+  const failed = new Set(plan.failedAreas.map((each) => each.area));
+  const tasks = [
+    ...rereadTasks(plan, codeMap),
+    ...gapTasks(
+      plan.gaps.filter((gap) => !failed.has(gap.area)),
+      codeMap,
+    ),
+    ...failedTasks(plan.failedAreas, codeMap),
+  ];
   return tasks
     .filter((task) => task.area.files.length > 0)
     .map((task) => withParentCards(task, cards))

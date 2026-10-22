@@ -1,0 +1,404 @@
+```json
+{
+  "summary": "Planner answer of evaluation EV-01 (gemma4, index-form requirement positions), trimmed to what the test reads.",
+  "requirements": [
+    {
+      "title": "Calculate dynamic product counts",
+      "statement": "The system must dynamically calculate named ranges representing item counts based on the presence of entries in specific columns across data tables like Inventory, Product Master, Report, and Stock In-Out.",
+      "sources": [
+        "BR-001"
+      ]
+    },
+    {
+      "title": "Calculate initial stock quantity",
+      "statement": "The initial stock quantity for an item must be calculated by summing entries from the Stock In-Out sheet that correspond to 'Opening Stock' for that item.",
+      "sources": [
+        "BR-002"
+      ]
+    },
+    {
+      "title": "Determine item state",
+      "statement": "The item state (USABLE, DAMAGED, or REPAIR) must be determined by comparing quantities recorded in the Usable, Damaged, and Repair quantity columns for an item.",
+      "sources": [
+        "BR-003"
+      ]
+    },
+    {
+      "title": "Calculate value in stock movements",
+      "statement": "The total value in the Stock In-Out sheet must be calculated by multiplying the recorded Quantity by the Purchase price per Unit, provided the main identifier field is not empty.",
+      "sources": [
+        "BR-005"
+      ]
+    },
+    {
+      "title": "Calculate total asset count",
+      "statement": "The total count of current assets must be calculated by summing the values in the designated quantity column of the Inventory sheet.",
+      "sources": [
+        "BR-007"
+      ]
+    },
+    {
+      "title": "Calculate total asset value",
+      "statement": "The total asset value must be calculated as the sum of values in the designated value column of the Inventory sheet.",
+      "sources": [
+        "BR-008"
+      ]
+    },
+    {
+      "title": "Calculate estimated asset worth",
+      "statement": "The estimated asset worth must be calculated as the sum of values in the designated value column of the Inventory sheet.",
+      "sources": [
+        "BR-009"
+      ]
+    },
+    {
+      "title": "Calculate asset counts from product master",
+      "statement": "Summary counts for Damaged Assets, Repairable Assets, and Usable Assets must be calculated by summing respective quantity columns from the Product Master sheet.",
+      "sources": [
+        "BR-010"
+      ]
+    },
+    {
+      "title": "Manage date visibility in calendar",
+      "statement": "The system must execute a date loading routine when the selected month or year changes, contingent on both being specified.",
+      "sources": [
+        "BR-013"
+      ]
+    },
+    {
+      "title": "Validate asset state quantities",
+      "statement": "When updating inventory, the entered Damaged, Repair, and Usable Quantities must not exceed the total Asset Quantity, and the entered quantities must not exceed pre-existing quantities listed in the Inventory worksheet.",
+      "sources": [
+        "BR-014"
+      ]
+    },
+    {
+      "title": "Derive unit cost from product master",
+      "statement": "The Purchase price per Unit in the Stock In-Out sheet must be populated by looking up the item's ID in the Product Master sheet and retrieving the 10th column value.",
+      "sources": [
+        "BR-018"
+      ]
+    },
+    {
+      "title": "Calculate total cost value",
+      "statement": "The Total Cost Value in the Stock In-Out sheet must be calculated based on the recorded Quantity multiplied by the asset's unit cost.",
+      "sources": [
+        "BR-037"
+      ]
+    },
+    {
+      "title": "Derive current value per unit",
+      "statement": "The Current Value Per Unit in the Stock In-Out sheet must be derived from data within the system.",
+      "sources": [
+        "BR-043"
+      ]
+    },
+    {
+      "title": "Display asset manager data",
+      "statement": "The system must display the asset manager data containing fields like Item Code, Item Description, Item Category, Quantity, Store Location, Purchase Price, and Current Value.",
+      "sources": [
+        "SCRN-001"
+      ]
+    }
+  ],
+  "components": [],
+  "decisions": [],
+  "entities": [],
+  "phases": [
+    {
+      "name": "Phase 1: Inventory and Product Master Core",
+      "goal": "Establish foundational data models for Products and track the physical status of assets (Product Master replacement).",
+      "exitCriteria": [
+        "The Product Catalog can be maintained by an administrator.",
+        "Asset state determination logic is fully implemented and passing unit tests against legacy data."
+      ]
+    },
+    {
+      "name": "Phase 2: Stock Movement and Ledger",
+      "goal": "Implement the transaction logging capability, replacing the Stock In-Out sheet logic.",
+      "exitCriteria": [
+        "All new stock movements are successfully recorded in the Stock Movement Ledger.",
+        "The system can accurately calculate value based on recorded transactions."
+      ]
+    },
+    {
+      "name": "Phase 3: Reporting and Metrics",
+      "goal": "Replace the summary reports by calculating asset totals (count, value, worth) dynamically.",
+      "exitCriteria": [
+        "All summary metrics previously calculated in the Support sheet (Total Asset Count, Total Value, etc.) are produced by the new system.",
+        "The Inventory Report can be generated without data copy operations."
+      ]
+    },
+    {
+      "name": "Phase 4: Ancillary Functionality",
+      "goal": "Migrate remaining features, including date selection interfaces, without impacting core inventory tracking.",
+      "exitCriteria": [
+        "The calendar interface functionality is fully replaced.",
+        "The legacy system can be retired safely."
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "title": "Implement Product Catalog Management",
+      "phase": 1,
+      "requirements": [
+        {
+          "index": 1
+        }
+      ],
+      "acceptanceCriteria": [
+        "Given a new item code, when an administrator submits the form, then the Product Catalog stores the item with all required fields.",
+        "Given an existing item code, when an administrator updates the description, then the Product Catalog reflects the updated description."
+      ],
+      "invariant": "Every item stored in the Product Catalog must have a unique Item Code.",
+      "riskClass": "data loss",
+      "adds": [
+        "check"
+      ],
+      "probes": [
+        "An item with a duplicate Item Code.",
+        "An item submitted without an Item Category."
+      ],
+      "files": [
+        "src/product-catalog/ProductCatalogService.ts",
+        "src/product-catalog/ProductCatalogRepository.ts"
+      ],
+      "needs": [
+        {
+          "kind": "configuration key",
+          "purpose": "database connection string for product catalog"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "title": "Implement State Calculation Service",
+      "phase": 1,
+      "requirements": [
+        {
+          "index": 2
+        }
+      ],
+      "acceptanceCriteria": [
+        "Given Usable=5, Damaged=0, Repair=0, when calculating state, then the state returned is 'USABLE'.",
+        "Given Usable=0, Damaged=3, Repair=1, when calculating state, then the state returned is 'DAMAGED'."
+      ],
+      "invariant": "The item state must be determined by the quantity that has the highest value, defaulting to blank if all inputs are zero.",
+      "riskClass": "none",
+      "adds": [],
+      "probes": [
+        "All quantity inputs are zero.",
+        "All quantity inputs are extremely large numbers."
+      ],
+      "files": [
+        "src/business/ItemStateService.ts"
+      ],
+      "needs": [],
+      "dependsOn": []
+    },
+    {
+      "title": "Implement Stock Movement Recording",
+      "phase": 2,
+      "requirements": [
+        {
+          "index": 3
+        }
+      ],
+      "acceptanceCriteria": [
+        "Given a valid asset ID and quantity, when a transaction is recorded as 'IN', then a new row is added to the Stock Movement Ledger with the corresponding transaction type.",
+        "Given a valid asset ID and quantity, when a transaction is recorded as 'OUT', then a new row is added to the Stock Movement Ledger with the corresponding transaction type."
+      ],
+      "invariant": "A transaction record must correctly capture the item ID, date, quantity, and whether it is an IN or OUT movement.",
+      "riskClass": "money",
+      "adds": [
+        "check"
+      ],
+      "probes": [
+        "Transaction date is in the future.",
+        "Transaction quantity is zero."
+      ],
+      "files": [
+        "src/business/InventoryUpdateService.ts",
+        "src/data/StockMovementRepository.ts"
+      ],
+      "needs": [
+        {
+          "kind": "error code",
+          "purpose": "Asset ID not found in Product Catalog"
+        }
+      ],
+      "dependsOn": [
+        1
+      ]
+    },
+    {
+      "title": "Implement Total Asset Metric Calculation",
+      "phase": 3,
+      "requirements": [
+        {
+          "index": 4
+        },
+        {
+          "index": 5
+        },
+        {
+          "index": 6
+        },
+        {
+          "index": 7
+        },
+        {
+          "index": 8
+        }
+      ],
+      "acceptanceCriteria": [
+        "Given the current Inventory data, when the Total Asset Count is requested, then the service returns the sum of the quantities in the designated column.",
+        "Given the current Inventory data, when the Total Asset Value is requested, then the service returns the sum of values in the designated value column.",
+        "Given the current Inventory data, when the Estimated Asset Worth is requested, then the service returns the sum of values in the designated value column.",
+        "Given the Product Catalog data, when Damaged Asset count is requested, then the service returns the sum of the Damaged Quantity column.",
+        "Given the Product Catalog data, when Usable Asset count is requested, then the service returns the sum of the Usable Quantity column."
+      ],
+      "invariant": "All aggregated asset metrics must accurately reflect the state of the underlying Inventory and Product Catalog data.",
+      "riskClass": "data loss",
+      "adds": [
+        "limit"
+      ],
+      "probes": [
+        "Inventory contains negative quantities.",
+        "Product Catalog contains missing quantity values."
+      ],
+      "files": [
+        "src/business/AssetMetricsService.ts",
+        "src/data/InventoryRepository.ts"
+      ],
+      "needs": [
+        {
+          "kind": "configuration key",
+          "purpose": "inventory data access configuration"
+        }
+      ],
+      "dependsOn": [
+        1
+      ]
+    },
+    {
+      "title": "Implement Transaction Validation Logic",
+      "phase": 2,
+      "requirements": [
+        {
+          "index": 10
+        },
+        {
+          "index": 11
+        }
+      ],
+      "acceptanceCriteria": [
+        "Given a transaction where Damaged Quantity exceeds Total Asset Quantity, when the update is attempted, then the system returns an error stating the violation.",
+        "Given a transaction where Repair Quantity exceeds existing Repair Items quantity, when the update is attempted, then the system returns an error stating the violation."
+      ],
+      "invariant": "No transaction is persisted if it violates any physical quantity limits defined by the system rules.",
+      "riskClass": "money",
+      "adds": [
+        "filter",
+        "parser"
+      ],
+      "probes": [
+        "Input quantity exceeds total asset quantity by 1.",
+        "Input quantity exceeds existing quantity by a small amount."
+      ],
+      "files": [
+        "src/business/InventoryUpdateService.ts"
+      ],
+      "needs": [
+        {
+          "kind": "error code",
+          "purpose": "quantity violation detected"
+        }
+      ],
+      "dependsOn": [
+        3
+      ]
+    },
+    {
+      "title": "Implement Value and Unit Cost Calculation",
+      "phase": 2,
+      "requirements": [
+        {
+          "index": 4
+        },
+        {
+          "index": 9
+        },
+        {
+          "index": 12
+        }
+      ],
+      "acceptanceCriteria": [
+        "Given Quantity=2 and Purchase price per Unit=40000, when calculating Total Value, then the result is 80000.",
+        "Given Quantity=1 and Purchase price per Unit=130000, when calculating Total Cost Value, then the result matches expected logic based on available data.",
+        "Given an asset ID and the Product Catalog, when requesting Purchase Price per Unit, then the correct lookup value is returned."
+      ],
+      "invariant": "All calculated monetary values (Total Value, Total Cost Value) must strictly adhere to the multiplication rules defined in the legacy system.",
+      "riskClass": "money",
+      "adds": [
+        "parser"
+      ],
+      "probes": [
+        "Purchase price is zero.",
+        "Quantity is zero."
+      ],
+      "files": [
+        "src/business/ValuationService.ts",
+        "src/data/ProductCatalogRepository.ts"
+      ],
+      "needs": [
+        {
+          "kind": "error code",
+          "purpose": "price lookup failure"
+        }
+      ],
+      "dependsOn": [
+        1
+      ]
+    },
+    {
+      "title": "Develop Calendar View Component",
+      "phase": 4,
+      "requirements": [
+        {
+          "index": 14
+        }
+      ],
+      "acceptanceCriteria": [
+        "Given the current month set to October 2024, when the Next button is clicked, then the displayed month changes to November 2024.",
+        "Given the current month set to January 2024, when the Previous button is clicked, then the displayed month changes to December 2023."
+      ],
+      "invariant": "The calendar view must always display valid month and year combinations, handling rollovers correctly.",
+      "riskClass": "none",
+      "adds": [],
+      "probes": [
+        "Transitioning from December to January.",
+        "Transitioning from January to December."
+      ],
+      "files": [
+        "src/presentation/CalendarViewComponent.tsx"
+      ],
+      "needs": [
+        {
+          "kind": "configuration key",
+          "purpose": "initial calendar month/year"
+        }
+      ],
+      "dependsOn": []
+    }
+  ],
+  "risks": [],
+  "technical": {
+    "integrations": [],
+    "security": [],
+    "targets": [],
+    "environments": []
+  }
+}
+```

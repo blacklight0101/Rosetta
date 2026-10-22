@@ -1,6 +1,7 @@
 import {
   endedDeepen,
   rereadIn,
+  retriedAreasIn,
   withOutOfScope,
   withRound,
   writtenIn,
@@ -58,6 +59,7 @@ async function nextRound(
   const plan = planRound({
     ...{ cards: cardsOf(state), coverage: coverageEntriesOf(state), files: codeMap.files },
     ...{ reread: rereadIn(record), writtenHere: writtenIn(record) },
+    retriedAreas: retriedAreasIn(record),
     coveragePass: record.coveragePass,
   });
   const listed = withOutOfScope(record, plan.outOfScope);

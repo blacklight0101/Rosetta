@@ -92,7 +92,8 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
   },
   'RST-1303': {
     message: 'The agent task ended because the model kept repeating the same tool call.',
-    nextStep: 'Run the area again, or choose a more capable model for the reader role.',
+    nextStep:
+      'Deepen the run: it reads the area again with a changed prompt; or choose a more capable model for the reader role.',
   },
   'RST-1304': {
     message: 'The agent task used all its turns before it gave its final answer.',

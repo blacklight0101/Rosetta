@@ -62,7 +62,7 @@ describe('RF-209 the events of a Deepen run', UNDERSTAND_TIMEOUT, () => {
     const [, begun, ended, stop] = deepenEvents(events);
     expect(begun?.data).toEqual({
       ...{ round: 1, maxRounds: 2, judge: 0, reread: 1 },
-      ...{ outOfScope: 0, unreadFiles: 0 },
+      ...{ outOfScope: 0, unreadFiles: 0, failedAreas: [] },
     });
     expect(ended?.data).toMatchObject({
       ...{ round: 1, complete: true, newClaims: 1, newSupported: 1 },

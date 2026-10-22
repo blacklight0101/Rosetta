@@ -239,9 +239,12 @@ describe('BuildPlan: an unusable data model answer', () => {
     expect(model).not.toContain('The planner wrote no usable table');
     for (const table of ['record', 'entry', 'item']) expect(model).toContain(`### ${table}`);
     expect(files['tasks.md'] ?? '').toContain('Write the database migrations in the chosen stack');
+    const checks = files['checks.md'] ?? '';
+    expect(checks).toContain('### Data model');
+    expect(checks).toContain('- range\\_note: the field "table entry columns 3".');
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     const messages = warned.map((entry) => entry.message).join(' ');
-    expect(messages).toContain('is dropped');
+    expect(messages).toContain('dropped parts that failed their schema');
     expect(messages).not.toContain('no usable table');
   });
 

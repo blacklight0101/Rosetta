@@ -157,6 +157,8 @@ export interface DeepenRoundState {
   readonly reread: number;
   readonly outOfScope: number;
   readonly unreadFiles: number;
+  /** EV-10: the failed areas the round reads again. */
+  readonly failedAreas: readonly string[];
   /** What the round added; zero until it ends. */
   readonly newClaims: number;
   readonly newSupported: number;

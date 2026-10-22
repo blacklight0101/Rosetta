@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { DataModelDraft, DraftColumn, DraftTable } from '../../domain/planning/data-model.js';
+import type { DataModelDraft, DraftTable } from '../../domain/planning/data-model.js';
 import { cardLimits } from '../cards/card-limits.js';
 import { searchJson } from '../cards/extract-json.js';
 
@@ -15,6 +15,11 @@ const MAX_COLUMNS = 200;
 const MAX_LIST = 50;
 const NAME = 80;
 const TEXT = 2000;
+
+const FAILS = 'The part fails its schema, so the parser drops it; the rest of the answer is kept.';
+const PAST_LIMIT = 'The list is past its count limit, so the parser drops this item.';
+const NOT_LIST = 'The value is not a list, so the parser drops it.';
+const NO_COLUMN = 'The table has no valid column, so the parser drops it.';
 
 const name = z.string().trim().min(1).max(NAME);
 const text = z.string().trim().min(1).max(TEXT);
@@ -59,7 +64,14 @@ const answerShape = z.object({
   dropped: z.unknown().optional(),
 });
 
-type Problems = string[];
+/** A part of the answer the parser dropped: its name (or label), the schema path and a fixed reason. */
+export interface DataModelProblem {
+  readonly item: string;
+  readonly field: string;
+  readonly reason: string;
+}
+
+type Problems = DataModelProblem[];
 
 /** Where a list is read from, how many items it may keep, and where its problems are named. */
 interface Scope {
@@ -68,21 +80,21 @@ interface Scope {
   readonly problems: Problems;
 }
 
-/** What the answer read as: the draft, and the parts the parser dropped (named, for the log). */
+/** What the answer read as: the draft, and the parts the parser dropped (named, for the log and checks.md). */
 export interface DataModelParse {
   readonly draft: DataModelDraft;
-  readonly problems: readonly string[];
+  readonly problems: readonly DataModelProblem[];
 }
 
 function pick<T>(
   schema: z.ZodType<T>,
   value: unknown,
-  where: string,
+  path: { readonly item: string; readonly field: string },
   problems: Problems,
 ): T | undefined {
   const parsed = schema.safeParse(value);
   if (parsed.success) return parsed.data;
-  problems.push(`${where} is dropped: ${parsed.error.issues[0]?.message ?? 'it is not valid'}`);
+  problems.push({ ...path, reason: FAILS });
   return undefined;
 }
 
@@ -93,26 +105,36 @@ function scopeOf(where: string, problems: Problems, max = MAX_LIST): Scope {
 function listOf(value: unknown, scope: Scope): unknown[] {
   if (value === undefined) return [];
   if (Array.isArray(value)) return value;
-  scope.problems.push(`${scope.where} is not a list and is dropped`);
+  scope.problems.push({ item: scope.where, field: scope.where, reason: NOT_LIST });
   return [];
+}
+
+/** The name a list item carries, when it is an object with one; otherwise its place in the list. */
+function nameOf(value: unknown, label: string): string {
+  if (typeof value === 'object' && value !== null && 'name' in value) {
+    const named = value.name;
+    if (typeof named === 'string' && named.trim() !== '') return named.trim();
+  }
+  return label;
 }
 
 /** Reads the items of a list with `schema`: keeps the ones that read, names the ones refused. */
 function itemsIn<T>(schema: z.ZodType<T>, value: unknown, scope: Scope): T[] {
   const kept: T[] = [];
   listOf(value, scope).forEach((item, index) => {
-    const label = `${scope.where} ${String(index + 1)}`;
+    const field = `${scope.where} ${String(index + 1)}`;
+    const itemName = nameOf(item, field);
     if (kept.length === scope.max) {
-      scope.problems.push(`${label} is past the limit of ${String(scope.max)} and is dropped`);
+      scope.problems.push({ item: itemName, field, reason: PAST_LIMIT });
       return;
     }
-    const read = pick(schema, item, label, scope.problems);
+    const read = pick(schema, item, { item: itemName, field }, scope.problems);
     if (read !== undefined) kept.push(read);
   });
   return kept;
 }
 
-function parseColumns(raw: unknown, where: string, problems: Problems): DraftColumn[] {
+function parseColumns(raw: unknown, where: string, problems: Problems) {
   return itemsIn(column, raw, scopeOf(`${where} columns`, problems, MAX_COLUMNS));
 }
 
@@ -127,16 +149,21 @@ function parseKeys(raw: z.infer<typeof tableRaw>, where: string, problems: Probl
 }
 
 function parseTable(value: unknown, label: string, problems: Problems): DraftTable | undefined {
-  const raw = pick(tableRaw, value, label, problems);
+  const raw = pick(tableRaw, value, { item: label, field: label }, problems);
   if (raw === undefined) return undefined;
-  const tableName = pick(name, raw.name, `${label} name`, problems);
+  const tableName = pick(name, raw.name, { item: label, field: `${label} name` }, problems);
   if (tableName === undefined) return undefined;
   const where = `table ${tableName}`;
-  const purpose = pick(optionalText, raw.purpose ?? '', `${where} purpose`, problems);
+  const purpose = pick(
+    optionalText,
+    raw.purpose ?? '',
+    { item: tableName, field: `${where} purpose` },
+    problems,
+  );
   if (purpose === undefined) return undefined;
   const columns = parseColumns(raw.columns, where, problems);
   if (columns.length === 0) {
-    problems.push(`${where} is dropped: it has no valid column`);
+    problems.push({ item: tableName, field: where, reason: NO_COLUMN });
     return undefined;
   }
   const sources = itemsIn(z.string().max(40), raw.sources, scopeOf(`${where} sources`, problems));
@@ -149,7 +176,7 @@ function readAnswer(shape: z.infer<typeof answerShape>): DataModelParse {
   listOf(shape.tables, scopeOf('tables', problems, MAX_TABLES)).forEach((value, index) => {
     const label = `table ${String(index + 1)}`;
     if (tables.length === MAX_TABLES) {
-      problems.push(`${label} is past the limit of ${String(MAX_TABLES)} and is dropped`);
+      problems.push({ item: label, field: label, reason: PAST_LIMIT });
       return;
     }
     const table = parseTable(value, label, problems);

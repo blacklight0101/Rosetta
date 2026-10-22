@@ -71,7 +71,11 @@ describe('parseDataModelAnswer: an over-long legacy field (EV-02)', () => {
     // The fixture's entry table has four columns; the over-long one is dropped, three are kept.
     expect(parsed?.draft.tables[1]?.columns).toHaveLength(3);
     expect(parsed?.problems).toHaveLength(1);
-    expect(parsed?.problems[0]).toContain('is dropped');
+    expect(parsed?.problems[0]).toMatchObject({
+      item: 'range_note',
+      field: 'table entry columns 3',
+    });
+    expect(parsed?.problems[0]?.reason).toContain('fails its schema');
   });
 });
 
@@ -82,7 +86,7 @@ describe('parseDataModelAnswer: a part that fails its schema', () => {
     const parsed = parseDataModelAnswer(JSON.stringify({ tables: [table, broken] }));
 
     expect(parsed?.draft.tables.map((entry) => entry.name)).toEqual(['customer']);
-    expect(parsed?.problems.join(' ')).toContain('empty');
+    expect(JSON.stringify(parsed?.problems)).toContain('empty');
   });
 
   it('RF-623 an oversized purpose drops that table and names it, the others are kept', () => {
@@ -91,7 +95,7 @@ describe('parseDataModelAnswer: a part that fails its schema', () => {
     const parsed = parseDataModelAnswer(JSON.stringify({ tables: [long, table] }));
 
     expect(parsed?.draft.tables.map((entry) => entry.name)).toEqual(['customer']);
-    expect(parsed?.problems.join(' ')).toContain('long');
+    expect(JSON.stringify(parsed?.problems)).toContain('long');
   });
 
   it('RF-623 items past a count limit are dropped and named; the limit still holds', () => {
@@ -101,7 +105,7 @@ describe('parseDataModelAnswer: a part that fails its schema', () => {
 
     expect(parsed?.draft.tables[0]?.columns).toHaveLength(200);
     expect(parsed?.problems).toHaveLength(1);
-    expect(parsed?.problems[0]).toContain('limit');
+    expect(parsed?.problems[0]?.reason).toContain('count limit');
   });
 
   it('RF-623 an answer with tables and none usable is kept as unusable and says why', () => {

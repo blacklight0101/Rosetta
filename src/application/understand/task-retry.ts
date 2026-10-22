@@ -1,6 +1,8 @@
+import { filesNotReadInFull } from '../../domain/cards/read-in-full.js';
 import type { Area } from '../../domain/code-map/area.js';
 import type { AgentTaskResult } from '../agent/agent-task-result.js';
 import { mergeDrafts } from '../agent/answer-collector.js';
+import type { RetryNote } from '../agent/retry-note.js';
 import { runReaderTask, type ReaderTaskContext, type TaskAttempt } from './reader-task.js';
 import { readerTaskSettings } from './reader-settings.js';
 import type { ReaderTask } from './reader-tasks.js';
@@ -9,7 +11,9 @@ import type { TaskReads } from './run-coverage.js';
 // RF-208, DEC-138: a reader task that ends with no usable card is run once more from the start,
 // with a fresh conversation. An area the model's context was too small for is split in two and
 // each half is read on its own. A retry is never retried, and the retry as a whole stays within one
-// turn limit: a split gives each half half of it. Every call of a retry goes through the same
+// turn limit: a split gives each half half of it. A task that ended on a repeated call (RST-1303)
+// is sent a note naming the call and the files it has not read in full: a model gives the same
+// answer to the same prompt, so a retry with the prompt it had would loop the same way (EV-10). Every call of a retry goes through the same
 // guarded provider as the first run, so the budget guard counts it like any other (ADR-007).
 
 /**
@@ -90,6 +94,8 @@ interface RetryPlan {
   readonly tokensOf: (path: string) => number;
   /** The turn limit of one task. */
   readonly turns: number;
+  /** RST-1303: what the retry is told when the task ended on a repeated call. */
+  readonly note?: RetryNote;
 }
 
 /**
@@ -101,7 +107,11 @@ interface RetryPlan {
 // RF-208
 export function retryAttempts(plan: RetryPlan): readonly TaskAttempt[] {
   const { agentTaskId, area } = plan.task;
-  const fresh: TaskAttempt = { callTaskId: `${agentTaskId}-retry`, area };
+  const fresh: TaskAttempt = {
+    callTaskId: `${agentTaskId}-retry`,
+    area,
+    ...(plan.note === undefined ? {} : { note: plan.note }),
+  };
   if (plan.reason !== 'context-limit') return [fresh];
   const halves = halvesOf(area, plan.tokensOf);
   if (halves === undefined) return [];
@@ -114,13 +124,33 @@ export function retryAttempts(plan: RetryPlan): readonly TaskAttempt[] {
   }));
 }
 
-function planOf(context: ReaderTaskContext, task: ReaderTask, after: AgentTaskResult): RetryPlan {
+/** RST-1303: the call the task repeated and the files of its area not yet read in full. */
+function noteOf(
+  context: ReaderTaskContext,
+  task: ReaderTask,
+  after: AgentTaskResult,
+  reads: TaskReads,
+) {
+  if (after.reason !== 'repeated-calls') return {};
+  const readOf = (path: string) => reads.all().filter((line) => line.path === path);
+  const unread = filesNotReadInFull(task.area.files, context.scanned.codeMap.files, readOf);
+  const repeated = after.repeatedCall;
+  return { note: { ...(repeated === undefined ? {} : { repeated }), unread } };
+}
+
+function planOf(
+  context: ReaderTaskContext,
+  task: ReaderTask,
+  after: AgentTaskResult,
+  reads: TaskReads,
+): RetryPlan {
   const files = new Map(context.scanned.codeMap.files.map((file) => [file.path, file]));
   return {
     task,
     reason: after.reason,
     tokensOf: (path) => files.get(path)?.estimatedTokens ?? 0,
     turns: readerTaskSettings(context.settings, context.role).maxTurns,
+    ...noteOf(context, task, after, reads),
   };
 }
 
@@ -133,7 +163,7 @@ export async function runReaderTaskWithRetry(
   const first = await runReaderTask(context, task, reads);
   if (!needsRetry(first)) return first;
   const results = [first];
-  for (const attempt of retryAttempts(planOf(context, task, first))) {
+  for (const attempt of retryAttempts(planOf(context, task, first, reads))) {
     results.push(await runReaderTask(context, task, reads, attempt));
   }
   return combineResults(results);

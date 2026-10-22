@@ -6,7 +6,15 @@ import type { DeepenRoundState } from '../../../web/src/lib/live-run/run-state.j
 // does in plain words, with the plural of every count right and no number standing alone.
 
 const round = (changes: Partial<DeepenRoundState>): DeepenRoundState => ({
-  ...{ round: 1, status: 'done', judge: 0, reread: 0, outOfScope: 0, unreadFiles: 0 },
+  ...{
+    round: 1,
+    status: 'done',
+    judge: 0,
+    reread: 0,
+    outOfScope: 0,
+    unreadFiles: 0,
+    failedAreas: [],
+  },
   ...{ newClaims: 0, newSupported: 0, filesRead: 0 },
   ...changes,
 });
@@ -57,5 +65,17 @@ describe('RF-209 the line of a Deepen round', () => {
     expect(roundText(round({ status: 'cut' }), 3)).toBe(
       'Round 1 of 3, cut short by a cap or by Stop.',
     );
+  });
+});
+
+describe('EV-10 the failed areas of a Deepen round', () => {
+  it('EV-10 names the failed areas a running round reads again', () => {
+    const text = roundText(round({ status: 'running', failedAreas: ['Inventory#2', 'Report'] }), 3);
+
+    expect(text).toContain('re-reading 2 failed areas (Inventory#2, Report)');
+  });
+
+  it('EV-10 says nothing of failed areas when the round has none', () => {
+    expect(roundText(round({ status: 'running' }), 3)).not.toContain('failed');
   });
 });

@@ -30,6 +30,7 @@ const gaps = {
   reread: [],
   outOfScope: [],
   gaps: [{ path: 'src/Orders/Order.cs', area: 'orders', tokens: 20 }],
+  failedAreas: [],
 };
 
 async function firstMessage(withParent: boolean): Promise<string> {

@@ -23,7 +23,7 @@ export const PLAN_ERROR_DESCRIPTIONS: Readonly<Record<PlanErrorCode, ErrorDescri
   },
   'RST-1803': {
     message:
-      'The planner did not answer with a usable plan: no requirement it wrote names a supported card.',
+      'The planner did not answer with a usable plan: its answer could not be read, or no requirement it wrote names a supported card.',
     nextStep:
       'Write the package again, or choose a more capable model for the planner role in the project settings.',
   },

@@ -3,7 +3,7 @@ import { assembleDataModel } from '../../domain/planning/data-model-assembly.js'
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
-import { parseDataModelAnswer } from './data-model-answer.js';
+import { parseDataModelAnswer, type DataModelProblem } from './data-model-answer.js';
 import { dataModelMessage } from './data-model-message.js';
 
 // RF-623, RF-262, ADR-018: the target data model of a plan run. When the supported cards hold at
@@ -29,7 +29,7 @@ export interface PlannedDataModel {
   readonly assembly: DataModelAssembly;
   readonly readable: boolean;
   /** The parts of the planner's answer the parser dropped, named; empty for none. */
-  readonly problems: readonly string[];
+  readonly problems: readonly DataModelProblem[];
   /** Whether the planner's answer had a table list at all. */
   readonly answered: boolean;
 }
@@ -66,7 +66,7 @@ export async function planDataModel(
 export function dataModelWarnings(planned: PlannedDataModel): string[] {
   const { readable, assembly, problems, answered } = planned;
   const { tables, columns, keys, sources } = assembly.leftOut;
-  const named = problems.join('; ');
+  const named = problems.map((problem) => `${problem.field} (${problem.item})`).join('; ');
   const unusable = readable
     ? []
     : [
