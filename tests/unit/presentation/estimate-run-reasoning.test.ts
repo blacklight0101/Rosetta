@@ -1,3 +1,4 @@
+import { NO_LISTED_MODELS } from '../../../src/application/models/model-list.js';
 import { z } from 'zod';
 import { describe, expect, it } from 'vitest';
 import { EstimateRun } from '../../../src/application/estimate/estimate-run.js';
@@ -35,6 +36,7 @@ async function viewOf(settings: ProjectSettings, marked: boolean) {
   const estimate = new EstimateRun({
     ...{ projects: h.projects, runs: h.runs, scans: h.scans, keys: h.keys },
     priceTable: estimatePrices,
+    models: NO_LISTED_MODELS,
     reasoningModels: marked ? isReasoning : () => false,
   });
   const project = await projectWithScan(h, userAmy.userId, settings);

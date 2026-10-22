@@ -80,6 +80,15 @@ function toolsOf(request: LlmRequest): Tool[] {
   }));
 }
 
+/** Q-60: the output limit above which the answer is streamed (the idle timeout needs a stream). */
+const streamAboveTokens = 8_192;
+
+/** Q-60: a call with a long answer streams it. */
+export function isStreamed(maxTokens: number): boolean {
+  return maxTokens > streamAboveTokens;
+}
+
+/** The body of one call; the stream helper of the SDK turns `stream` on for a streamed one. */
 export function messageBody(
   request: LlmRequest,
   maxTokens: number,

@@ -7,6 +7,7 @@ import type {
   LlmProvider,
   LlmRequest,
   LlmResponse,
+  TokenUsage,
 } from '../../application/ports/llm-provider.js';
 import type { Logger } from '../../application/ports/logger.js';
 import type { ProviderCallRecorder } from '../../application/ports/provider-call-recorder.js';
@@ -24,11 +25,13 @@ import {
   noUsage,
   outcomeOf,
   totalsOf,
+  withEarlier,
   refusedRecord,
   type BudgetCaller,
   type BudgetRun,
   type CallOutcome,
 } from './budget-records.js';
+import { withinTimeLimit } from './within-time-limit.js';
 import { priceCall, worstCaseOf, type BudgetPricing, type CallPrice } from './budget-pricing.js';
 
 // RF-420..RF-422, RF-427, RF-428, RF-1106, ADR-007, DEC-107, DEC-112: the outermost decorator of
@@ -90,23 +93,7 @@ interface CallPlan {
   readonly price: CallPrice;
   readonly worstCase: WorstCase;
 }
-
 const spanIdLength = 16;
-
-/** The work, or RST-2104 once `limitMs` has passed without it settling (P1-96). */
-async function withinTimeLimit(work: Promise<void>, limitMs: number): Promise<void> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const late = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => {
-      reject(new RosettaError(ERROR_CODES.runEventLogFailed, 'The budget events did not answer.'));
-    }, limitMs);
-  });
-  try {
-    await Promise.race([work, late]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
 export class BudgetGuard implements LlmProvider {
   private readonly options: BudgetGuardOptions;
@@ -123,21 +110,26 @@ export class BudgetGuard implements LlmProvider {
     const plan = this.plan(request);
     await this.reserve(request, plan);
     let attempts = 0;
+    // Q-60: the usage of attempts retried before the one that closes the call; all are metered.
+    const earlier: TokenUsage[] = [];
     const counting: LlmAttemptObserver = {
       attemptStarted: () => {
         attempts += 1;
         observer?.attemptStarted();
       },
-      attemptRetried: (failure) => observer?.attemptRetried(failure) ?? Promise.resolve(),
+      attemptRetried: (failure) => {
+        if (failure.usage !== undefined) earlier.push(failure.usage);
+        return observer?.attemptRetried(failure) ?? Promise.resolve();
+      },
     };
     let response: LlmResponse;
     try {
       response = await this.options.inner.complete(request, counting);
     } catch (error) {
-      await this.closeFailed(request, plan, { attempts, error });
+      await this.closeFailed(request, plan, { attempts, error, earlier });
       throw error;
     }
-    await this.settle(request, plan, attempts, response);
+    await this.settle(request, plan, { attempts, earlier }, response);
     return response;
   }
 
@@ -206,11 +198,11 @@ export class BudgetGuard implements LlmProvider {
   private async settle(
     request: LlmRequest,
     plan: CallPlan,
-    attempts: number,
+    metered: { readonly attempts: number; readonly earlier: readonly TokenUsage[] },
     response: LlmResponse,
   ): Promise<void> {
-    const { usage } = response;
-    const outcome = outcomeOf(plan.price, attempts, usage);
+    const usage = withEarlier(response.usage, metered.earlier);
+    const outcome = outcomeOf(plan.price, metered.attempts, usage);
     const { costMicros } = outcome;
     const entry = this.entryOf(request, plan, outcome);
     try {
@@ -236,12 +228,23 @@ export class BudgetGuard implements LlmProvider {
   private async closeFailed(
     request: LlmRequest,
     plan: CallPlan,
-    failed: { readonly attempts: number; readonly error: unknown },
+    failed: {
+      readonly attempts: number;
+      readonly error: unknown;
+      readonly earlier: readonly TokenUsage[];
+    },
   ): Promise<void> {
     const { ledger } = this.options;
-    const { attempts, error } = failed;
-    const notSent = attempts === 0 || (error instanceof ProviderCallError && error.notSent);
-    const usage = error instanceof ProviderCallError ? error.usage : undefined;
+    const { attempts, error, earlier } = failed;
+    const last = error instanceof ProviderCallError ? error.usage : undefined;
+    // An earlier attempt was sent and metered, so the call is a row even if the last was not sent.
+    const notSent =
+      earlier.length === 0 &&
+      (attempts === 0 || (error instanceof ProviderCallError && error.notSent));
+    const usage =
+      last === undefined && earlier.length === 0
+        ? undefined
+        : withEarlier(last ?? noUsage, earlier);
     await this.quietly('The cost of a failed call could not be recorded.', request, async () => {
       if (notSent) {
         await ledger.release({

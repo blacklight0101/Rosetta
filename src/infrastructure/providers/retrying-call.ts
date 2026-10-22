@@ -13,7 +13,11 @@ import { backoffDelayMs } from './retry-backoff.js';
 // RF-406, ADR-003: the retry loop every adapter shares. An adapter makes one attempt and
 // classifies its failure; this loop tells the attempt observer, waits with jittered exponential
 // back-off (never shorter than a retry-after hint) and stops on a permanent failure, when the
-// retries are used up or when the call is cancelled.
+// retries are used up, when the call has timed out twice (Q-60: a third identical attempt would wait
+// as long again and, like the first two, most likely not answer) or when the call is cancelled.
+
+/** Q-60: the timeouts after which a call is not sent again. */
+const maxTimeouts = 2;
 
 /** One failed attempt as an adapter classified it. */
 export interface AttemptFailed {
@@ -67,16 +71,23 @@ async function backOff(retry: number, failed: AttemptFailed, call: RetryingCall)
   }
 }
 
+/** The failure the attempt observer is told about: with the usage the attempt is metered with. */
+function withUsage(failed: AttemptFailed): LlmAttemptFailure {
+  return failed.usage === undefined ? failed.failure : { ...failed.failure, usage: failed.usage };
+}
+
 /** Runs attempts until one answers or the call fails for good (RF-406). */
 export async function completeWithRetries(call: RetryingCall): Promise<LlmResponse> {
   const { observer, signal, policy } = call;
+  let timeouts = 0;
   for (let retry = 0; ; retry += 1) {
     if (signal.aborted) throw cancelled(signal);
     observer?.attemptStarted();
     const result = await call.attempt();
     if (result.ok) return result.response;
     const { failed } = result;
-    if (!failed.retryable || retry >= policy.maxRetries) {
+    if (failed.failure.code === ERROR_CODES.providerTimeout) timeouts += 1;
+    if (!failed.retryable || retry >= policy.maxRetries || timeouts >= maxTimeouts) {
       throw new ProviderCallError(failed.failure, {
         cause: failed.cause,
         message: failed.message,
@@ -84,7 +95,7 @@ export async function completeWithRetries(call: RetryingCall): Promise<LlmRespon
         usage: failed.usage,
       });
     }
-    await observer?.attemptRetried(failed.failure);
+    await observer?.attemptRetried(withUsage(failed));
     await backOff(retry + 1, failed, call);
   }
 }

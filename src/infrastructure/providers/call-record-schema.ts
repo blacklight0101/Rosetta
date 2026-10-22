@@ -43,6 +43,7 @@ const callSchema = z.object({
   cacheWriteInputTokens: count.optional(),
   reasoningTokens: count.optional(),
   usageSource: z.enum(['reported', 'estimated']),
+  outputUnknown: z.boolean().optional(),
   costMicros: count,
   currency: z.string(),
   finishReason: z.enum(['stop', 'length', 'tool_use', 'error']),
@@ -64,6 +65,20 @@ function ollamaOf(parsed: ParsedOllama): NonNullable<StoredCall['ollama']> {
   };
 }
 
+/** The optional parts of the usage that the line holds. */
+function usageExtras(parts: {
+  readonly cacheWriteInputTokens: number | undefined;
+  readonly reasoningTokens: number | undefined;
+  readonly outputUnknown: boolean | undefined;
+}) {
+  const { cacheWriteInputTokens, reasoningTokens, outputUnknown } = parts;
+  return {
+    ...(cacheWriteInputTokens === undefined ? {} : { cacheWriteInputTokens }),
+    ...(reasoningTokens === undefined ? {} : { reasoningTokens }),
+    ...(outputUnknown === undefined ? {} : { outputUnknown }),
+  };
+}
+
 /** The attempt a line holds, or undefined when the line is not a complete record. */
 // RF-408
 export function parseCallLine(value: unknown): StoredCall | undefined {
@@ -71,11 +86,10 @@ export function parseCallLine(value: unknown): StoredCall | undefined {
   if (!parsed.success) return undefined;
   const { modelVersion, requestId, errorCode, httpStatus, ollama, transcriptRef, ...rest } =
     parsed.data;
-  const { cacheWriteInputTokens, reasoningTokens, ...required } = rest;
+  const { cacheWriteInputTokens, reasoningTokens, outputUnknown, ...required } = rest;
   return {
     ...required,
-    ...(cacheWriteInputTokens === undefined ? {} : { cacheWriteInputTokens }),
-    ...(reasoningTokens === undefined ? {} : { reasoningTokens }),
+    ...usageExtras({ cacheWriteInputTokens, reasoningTokens, outputUnknown }),
     ...(modelVersion === undefined ? {} : { modelVersion }),
     ...(requestId === undefined ? {} : { requestId }),
     ...(errorCode === undefined ? {} : { errorCode }),

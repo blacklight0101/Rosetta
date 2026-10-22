@@ -234,3 +234,27 @@ describe('SuggestPlanOptions: a chosen source run that cannot be used (RF-614)',
     expect(h.factory.ledger.entries).toHaveLength(0);
   });
 });
+
+describe('SuggestPlanOptions: how long the call may run', () => {
+  it('Q-60 limits the call by the timeout of the planner provider and its attempts, not by 120 s', async () => {
+    const base = settingsFor({ planner: { provider: 'fake', model: 'fake-planner' } });
+    const fake = base.providers['fake'];
+    if (fake === undefined) throw new Error('the template has no fake provider');
+    const settings = {
+      ...base,
+      providers: { ...base.providers, fake: { ...fake, timeoutSeconds: 200, maxRetries: 2 } },
+    };
+    const limits: number[] = [];
+    const signals = {
+      after: (milliseconds: number) => {
+        limits.push(milliseconds);
+        return new AbortController().signal;
+      },
+    };
+    const h = await harness({ settings, signals });
+
+    await ask(h);
+
+    expect(limits).toEqual([200_000 * 3]);
+  });
+});

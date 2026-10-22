@@ -22,6 +22,8 @@ interface LimitProps extends SettingBase {
   /** The top of the slider when it is lower than the range's own top. */
   readonly max?: number;
   readonly defaultValue: number;
+  /** Where the slider sits while the field is empty, for a limit that may be left unset (Q-57). */
+  readonly emptyAt?: number;
   readonly unit: LimitUnit;
   /** No range hint while the value that sets this range is itself invalid (P2-29). */
   readonly hideHint?: boolean;
@@ -95,6 +97,11 @@ function RangeInput(props: RangeInputProps): JSX.Element {
   );
 }
 
+/** Where the slider sits: at the number, at `emptyAt` for an empty field, else at the bottom. */
+function sliderAt(current: number | undefined, emptyAt: number | undefined, range: Range): number {
+  return current ?? emptyAt ?? range.min;
+}
+
 // RF-002
 export function LimitSetting(props: LimitProps): JSX.Element {
   const { id, value, range, unit, defaultValue } = props;
@@ -102,7 +109,7 @@ export function LimitSetting(props: LimitProps): JSX.Element {
   const current = numberOf(value);
   // A slider takes a value beyond its ends only by the browser's own clamping, so the number is
   // passed as it is; text that is not a number shows the bottom of the slider.
-  const shown = current ?? range.min;
+  const shown = sliderAt(current, value.trim() === '' ? props.emptyAt : undefined, range);
   const rangeId = `${id}-range`;
   const rangeTextId = `${rangeId}-text`;
   const warningId = `${rangeId}-warning`;
