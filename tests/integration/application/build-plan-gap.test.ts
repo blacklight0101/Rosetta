@@ -6,7 +6,11 @@ import {
   withoutPhases,
   withoutTasks,
 } from '../../support/coverage-plan-harness.js';
-import { closingGapRecording, gapRecordingOf } from '../../support/gap-plan-harness.js';
+import {
+  closingGapRecording,
+  gapRecordingOf,
+  gapRecordingOfAll,
+} from '../../support/gap-plan-harness.js';
 import { seededUxPlan } from '../../support/ux-plan-harness.js';
 import { useTempRoot } from '../../support/temp-root.js';
 
@@ -198,19 +202,20 @@ describe('BuildPlan: answers that close nothing', () => {
     expect(warned.map((entry) => entry.message).join(' ')).toContain('task cards for the');
   });
 
-  it('Q-45 a card that builds no gap adds nothing, and the call is made once', async () => {
+  it('Q-45 RF-627 a card that builds no gap adds nothing, and one repair is asked, not more', async () => {
     const nothing = {
       ...card,
       title: 'Nothing new',
       builds: ['feature:F-001', 'table:customer', 'operation:ghost'],
     };
-    const h = await gappedPlan(gapRecordingOf(JSON.stringify({ tasks: [nothing] })));
+    const none = JSON.stringify({ tasks: [] });
+    const h = await gappedPlan(gapRecordingOfAll(JSON.stringify({ tasks: [nothing] }), none));
 
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
     expect(plain((await h.handoffOf(run))['tasks.md'])).not.toContain('Nothing new');
-    expect(h.providers.gapRequests()).toHaveLength(1);
+    expect(h.providers.gapRequests()).toHaveLength(2);
   });
 });
 

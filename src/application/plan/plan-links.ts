@@ -111,7 +111,8 @@ function roundWarnings(round: Round, label: string, unreadable: string): string[
 
 /**
  * The cards left out that call for the repair (RF-627): one that named an item which is still built
- * by no card, or one that names no builds at all.
+ * by no card, or one whose builds are no valid builds for the block (missing, empty, or naming
+ * nothing uncovered, a title for example).
  */
 function repairable(
   problems: readonly GapProblem[],
@@ -119,9 +120,7 @@ function repairable(
 ): GapProblem[] {
   const open = new Set(uncovered.map((item) => item.id));
   return problems.filter(
-    (problem) =>
-      problem.builds.some((id) => open.has(id)) ||
-      (problem.field === 'builds' && problem.builds.length === 0),
+    (problem) => problem.field === 'builds' || problem.builds.some((id) => open.has(id)),
   );
 }
 
@@ -133,7 +132,9 @@ async function planGap(calls: LinkCalls, covered: PlannedCoverage): Promise<Plan
   }
   const first = await gapRound(calls.gap, covered, { specificationDriven });
   const warnings = roundWarnings(first, 'gap answer', UNREADABLE_GAP);
-  const problems = repairable(first.problems, first.planned.report.uncovered);
+  // RF-627: once the first round covered every item there is nothing for a repair to build.
+  const open = first.planned.report.uncovered;
+  const problems = open.length === 0 ? [] : repairable(first.problems, open);
   if (problems.length === 0) return { planned: first.planned, warnings };
   const repair = { prompt: calls.repairPrompt, problems };
   try {

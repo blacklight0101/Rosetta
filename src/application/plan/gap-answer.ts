@@ -69,12 +69,13 @@ function problemOf(position: number, error: z.ZodError, card: unknown): GapProbl
   return { position, field, reason: reasonOf(issue?.code ?? ''), builds: namedIds(card) };
 }
 
-/** The cards of the answer that read as cards and the ones that did not, or undefined when no JSON object reads as a list of them. */
-/** RF-627: a card that names no builds, its list missing or empty. */
-function namesNoBuilds(card: unknown): boolean {
+/** RF-627: a card with no valid builds for the block: its list is missing, empty or names no item of the block (the one item given). */
+function namesNoBuilds(card: unknown, item: string): boolean {
   if (typeof card !== 'object' || card === null) return false;
-  return !('builds' in card) || (Array.isArray(card.builds) && card.builds.length === 0);
+  return !('builds' in card) || !Array.isArray(card.builds) || !card.builds.includes(item);
 }
+
+/** The cards of the answer that read as cards and the ones that did not, or undefined when no JSON object reads as a list of them. */
 
 /** RF-627: the card with the one item it builds in place of the builds it did not name. */
 function buildingOnly(card: unknown, item: string): unknown {
@@ -88,7 +89,7 @@ export function parseGapAnswer(output: string, uncoveredItem?: string): GapAnswe
     if (!parsed.success) continue;
     const cards = parsed.data.tasks;
     const single =
-      uncoveredItem !== undefined && cards.length === 1 && namesNoBuilds(cards[0])
+      uncoveredItem !== undefined && cards.length === 1 && namesNoBuilds(cards[0], uncoveredItem)
         ? uncoveredItem
         : undefined;
     const drafts: GapDraft[] = [];
