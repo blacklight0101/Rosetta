@@ -1,6 +1,10 @@
 import type { ModelList, ReasoningModels } from '../application/models/model-list.js';
 import type { ScanResults } from '../application/ports/scan-results.js';
 import { EstimateRun } from '../application/estimate/estimate-run.js';
+import type { Clock } from '../application/ports/clock.js';
+import { PgAccountUsage } from '../infrastructure/db/pg-account-usage.js';
+import { PgServerSettings } from '../infrastructure/db/pg-server-settings.js';
+import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
 import type { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
 import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
@@ -16,6 +20,7 @@ export interface EstimateParts {
   readonly models: ModelList;
   /** Q-58: the models the shipped list marks as reasoning models; the estimate names their effort. */
   readonly reasoningModels: ReasoningModels;
+  readonly clock: Clock;
 }
 
 // RF-425
@@ -33,5 +38,12 @@ export function composeEstimateRun(
     priceTable: parts.priceTable,
     models: parts.models,
     reasoningModels: parts.reasoningModels,
+    // RF-405: the caps the first calls are checked against.
+    caps: {
+      users: new PgUserRepository(parts.pool),
+      serverSettings: new PgServerSettings(parts.pool),
+      usage: new PgAccountUsage(parts.pool),
+      clock: parts.clock,
+    },
   });
 }

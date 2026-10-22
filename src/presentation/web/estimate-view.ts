@@ -1,6 +1,7 @@
 import type {
   ByScenario,
   EstimatePoint,
+  FirstCalls,
   RunEstimate,
 } from '../../application/estimate/estimate-types.js';
 
@@ -23,6 +24,22 @@ function rangeView(points: ByScenario<EstimatePoint>): Record<string, unknown> {
   };
 }
 
+function firstCallsView(firstCalls: FirstCalls): Record<string, unknown> {
+  const { calls, promptTokens, maxOutputTokens } = firstCalls;
+  return {
+    ...{ calls, promptTokens, maxOutputTokens },
+    perCallMicros: firstCalls.perCallMicros.toString(),
+    reservedMicros: firstCalls.reservedMicros.toString(),
+    reservedTokens: firstCalls.reservedTokens.toString(),
+    adminRunCapMicros: firstCalls.adminRunCapMicros?.toString() ?? null,
+    caps: firstCalls.caps.map((cap) => ({
+      ...{ kind: cap.kind, unit: cap.unit, fits: cap.fits },
+      limit: cap.limit.toString(),
+      spent: cap.spent.toString(),
+    })),
+  };
+}
+
 // RF-425
 export function estimateView(estimate: RunEstimate): Record<string, unknown> {
   const { priceTableVersion, currency, areas, assumptions } = estimate;
@@ -36,5 +53,8 @@ export function estimateView(estimate: RunEstimate): Record<string, unknown> {
       ...rangeView(role.points),
     })),
     total: rangeView(estimate.total),
+    ...(estimate.firstCalls === undefined
+      ? {}
+      : { firstCalls: firstCallsView(estimate.firstCalls) }),
   };
 }
