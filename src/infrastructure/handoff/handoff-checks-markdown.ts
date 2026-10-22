@@ -7,6 +7,7 @@ import {
 } from '../../domain/planning/plan-coverage.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { decisionLink } from './handoff-links.js';
+import { requirementLines } from './handoff-requirement-notes-markdown.js';
 
 // RF-627, RF-507, RNF-003: checks.md, what the package checks say about itself. The plan coverage
 // lists every item (feature, table, operation, journey or screen) that no task card builds, kind by
@@ -89,6 +90,7 @@ export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
   const lines = [
     ...coverageLines(handoff, esc),
     ...restatedLines(handoff, esc),
+    ...requirementLines(handoff.content.requirementNotes ?? []),
     ...keptByNoCardLines(handoff, esc),
   ];
   return ['# Package checks', '', ...lines].join('\n');
