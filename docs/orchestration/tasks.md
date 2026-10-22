@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 95      | 11        | 82         | 2         | 0                  | 34      | 58      | 3      | 51         | 0         |
-| **Total**               | **312** | **83**    | **202**    | **27**    | **0**              | **150** | **149** | **13** | **186**    | **0**     |
+| P3 Report and plan      | 96      | 11        | 83         | 2         | 0                  | 35      | 58      | 3      | 52         | 0         |
+| **Total**               | **313** | **83**    | **203**    | **27**    | **0**              | **151** | **149** | **13** | **187**    | **0**     |
 
 ## Conventions for every card
 
@@ -4272,3 +4272,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the alignment, the checks lines and tests.
 - **Done when**: each probe has a passing test; `npm run verify` green.
 - **Refs**: RF-627, RF-630, RF-631; issue #754.
+
+### P3-96 - Follow-up: the start page warns when the caps cannot hold the model's first calls
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-85
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-405, RF-422, RF-1106, Q-57, DEC-159; `src/application/estimate/` (the run and plan estimates), `src/domain/budget/budget.ts` (`capsFor`), `src/infrastructure/guards/budget-guard.ts` (the worst-case reservation), `src/application/models/role-limits.ts`, the start page. Found in fix round 1 of P3-85 (PR #757): under the Q-57 defaults Claude Fable 5.1, Claude Opus 5.5, gpt-6-astra, gpt-5.5, gpt-5.6-sol and gpt-5.4 cannot reserve their first parallel reader calls (and for some the first planner call) within the default 0.50 USD run cap; the owner chose to keep the defaults and warn (DEC-159).
+- **Do**: (1) the estimate computes, per stage, the reservation of the first calls the guard will hold (each role's parallelism times the worst case of one call, as the budget guard computes it) and compares it with the run cap and the daily cap that apply; (2) when either cannot hold it, the start page shows a warning before the run naming the cap and the amount needed, with the existing way to raise the cap; (3) a model that fits shows no warning.
+- **Review probes**: default caps on Claude Sonnet 5.5 (no warning); default caps on Claude Opus 5.5 (warning names the run cap and the amount); run cap raised to 3.00 USD on Opus (no warning); a server key with a lower administrator cap (the administrator's cap is the one named); recorded prices only, no provider call.
+- **Behaviour to preserve**: the budget guard's reservations and CapReached stop; RF-1106 cap order; the P3-85 defaults.
+- **Delivers**: the reservation figure in the estimate, the start page warning and tests.
+- **Done when**: each probe has a passing test; `npm run verify` green.
+- **Refs**: RF-405, RF-422, RF-1106, Q-57, DEC-159; P3-85; issue #764.
