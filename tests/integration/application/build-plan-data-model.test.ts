@@ -229,13 +229,16 @@ describe('BuildPlan: an unusable data model answer', () => {
     expect(warned.map((entry) => entry.message).join(' ')).toContain('no usable table');
   });
 
-  it('RF-623 one over-long legacy field keeps every table and the log names the drop (EV-02)', async () => {
+  it('RF-623 one over-long legacy field keeps every table, writes the migrations card and logs the drop (EV-02)', async () => {
     const answer = await readFile('tests/fixtures/planner/data-model-long-field.json', 'utf8');
-    const { text, h } = await degraded(answer);
+    const h = await seeded(await withSecondAnswer(answer));
+    const run = await h.plan();
+    const files = await h.handoffOf(run);
 
-    expect(text).not.toContain('The planner wrote no usable table');
-    expect(text).toContain('### record');
-    expect(text).toContain('### entry');
+    const model = files['data-model.md'] ?? '';
+    expect(model).not.toContain('The planner wrote no usable table');
+    for (const table of ['record', 'entry', 'item']) expect(model).toContain(`### ${table}`);
+    expect(files['tasks.md'] ?? '').toContain('Write the database migrations in the chosen stack');
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     const messages = warned.map((entry) => entry.message).join(' ');
     expect(messages).toContain('is dropped');
