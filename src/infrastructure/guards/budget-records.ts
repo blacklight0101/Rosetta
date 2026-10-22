@@ -138,11 +138,11 @@ export function refusedRecord(
 /**
  * Q-60, RF-428: the usage of a call's earlier retried attempts added to its closing usage. Every
  * attempt is metered, so a retried timeout is billed with the call that closes. With nothing
- * earlier the closing usage is returned as it is; a sum that holds an estimate is an estimate.
+ * earlier the closing usage is returned as it is; the sum is an estimate when one part is.
  */
 export function withEarlier(
   closing: CallOutcome['usage'],
-  earlier: readonly TokenUsage[],
+  earlier: readonly CallOutcome['usage'][],
 ): CallOutcome['usage'] {
   if (earlier.length === 0) return closing;
   const all = [closing, ...earlier];
@@ -154,6 +154,6 @@ export function withEarlier(
     outputTokens: sum((usage) => usage.outputTokens),
     cachedInputTokens: sum((usage) => usage.cachedInputTokens),
     ...(cacheWrite === 0 ? {} : { cacheWriteInputTokens: cacheWrite }),
-    usageSource: 'estimated',
+    usageSource: all.some((usage) => usage.usageSource === 'estimated') ? 'estimated' : 'reported',
   };
 }
