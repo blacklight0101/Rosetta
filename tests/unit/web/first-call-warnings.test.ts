@@ -36,6 +36,7 @@ it('RF-405 the run cap that cannot hold the first calls is named with the amount
   expect(rest).toEqual([]);
   expect(warning?.id).toBe('first-calls-run-cost');
   expect(warning?.text).toContain('4 first reader calls');
+  expect(warning?.text.split(' ').length).toBeLessThan(50);
   expect(warning?.text).toContain('run cap of $0.50');
   expect(warning?.text).toContain('$0.78');
   expect(warning?.text).toContain('Raise the run cap');
@@ -46,11 +47,21 @@ it('RF-405 a run cap raised on the page to 3.00 USD removes the warning', () => 
 });
 
 it('RF-1106 a lower administrator cap is the one named, and the page cannot raise it', () => {
+  // The page passes the effective run cap (run-cap.ts): the administrator's, as it is the lower.
   const estimate = withFirstCalls({ adminRunCapMicros: '300000' });
-  const [warning] = textOf(estimate, 3_000_000n);
+  const [warning] = textOf(estimate, 300_000n);
 
   expect(warning?.text).toContain("administrator's run cap of $0.30");
   expect(warning?.text).not.toContain('Raise the run cap');
+});
+
+it('RF-1106 a project cap lower than the administrator is still the run cap, which the page can raise', () => {
+  const estimate = withFirstCalls({ adminRunCapMicros: '3000000' });
+  const [warning] = textOf(estimate, 500_000n);
+
+  expect(warning?.text).toContain('run cap of $0.50');
+  expect(warning?.text).toContain('Raise the run cap');
+  expect(warning?.text).not.toContain('administrator');
 });
 
 it('RF-1106 another cap that is short is named on its own', () => {

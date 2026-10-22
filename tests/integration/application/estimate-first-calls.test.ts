@@ -40,7 +40,10 @@ interface Options {
   readonly caps?: { runMicros: bigint; userDayMicros: bigint; serverMonthMicros: bigint };
 }
 
-async function estimateOn(target: typeof opus, options: Options = {}): Promise<RunEstimate> {
+async function estimateOn(
+  target: typeof opus,
+  options: Options & { readonly areaCount?: number } = {},
+): Promise<RunEstimate> {
   const base = withoutOutputLimits(
     settingsFor({ reader: target, verifier: target, summariser: target }),
   );
@@ -55,7 +58,7 @@ async function estimateOn(target: typeof opus, options: Options = {}): Promise<R
           },
         };
   const harness = await createCappedEstimateHarness(
-    { areas, priceTable: table, models: list },
+    { areas: areas.slice(0, options.areaCount ?? areas.length), priceTable: table, models: list },
     { userId: userAmy.userId, ...(options.caps === undefined ? {} : { caps: options.caps }) },
   );
   const project = await projectWithScan(harness, userAmy.userId, settings);
@@ -74,6 +77,14 @@ describe('the reservation of the first calls', () => {
 
     expect(estimate.firstCalls?.calls).toBe(4);
     expect(unfit(estimate)).toEqual([]);
+  });
+
+  it('RF-405 fewer areas than the reader parallelism reserve only as many calls as there are areas', async () => {
+    const two = await estimateOn(opus, { areaCount: 2 });
+    const four = await estimateOn(opus);
+
+    expect(two.firstCalls?.calls).toBe(2);
+    expect(two.firstCalls?.reservedMicros).toBe((four.firstCalls?.reservedMicros ?? 0n) / 2n);
   });
 
   it('RF-405 the reservation is the guard worst case of one call times the parallel calls', async () => {
