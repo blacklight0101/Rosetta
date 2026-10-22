@@ -26,7 +26,7 @@ function lineOf(note: RequirementNote): string {
   if (note.kind === 'added') {
     return `- ${task} gained ${requirement}: ${SHARED} are behind what the task builds.`;
   }
-  return `- ${task} lost ${requirement}: ${none}.`;
+  return `- ${task} lost ${requirement}: ${none}, and another card builds an item behind them.`;
 }
 
 /** The section about the requirements of the task cards; nothing when no note was made. */
