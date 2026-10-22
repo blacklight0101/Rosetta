@@ -130,7 +130,7 @@ a:hover {
 .masthead {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: 4px 16px;
   padding-block: 16px 8px;
 }
@@ -140,9 +140,18 @@ a:hover {
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 16px;
   font-weight: 650;
   color: var(--rst-brand);
+}
+
+.brand img {
+  flex: none;
+  width: 28px;
+  height: 28px;
 }
 
 .run {

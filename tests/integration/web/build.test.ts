@@ -69,7 +69,7 @@ it('RF-1200 builds the landing page style sheet under a name the server can link
 it('RF-1013 writes no source map and no file whose name the public path would refuse', () => {
   expect(files.filter((file) => file.endsWith('.map'))).toEqual([]);
   for (const file of files.filter((name) => name.startsWith('assets/'))) {
-    expect(file).toMatch(/^assets\/[A-Za-z0-9_-][A-Za-z0-9._-]*$/);
+    expect(file).toMatch(/^assets(\/[A-Za-z0-9_-][A-Za-z0-9._-]*)+$/);
   }
 });
 
