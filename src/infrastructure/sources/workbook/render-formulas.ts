@@ -6,6 +6,7 @@ import {
   type ColumnLocator,
   type TableColumn,
 } from './formula-tables.js';
+import { MIN_FOLD, fillGroups, exampleCells, rangesText, type FillGroup } from './formula-fill.js';
 import { canonicalRange, rangeCellCount, type PlacedCell } from './cell-order.js';
 import { TextFile, type ByteBudget } from './render-output.js';
 import type { WorkbookCell, WorkbookSheet } from './workbook-model.js';
@@ -14,7 +15,8 @@ import { NAME_CAP, quoteText, splitText } from './workbook-text.js';
 // RF-152, Q-36, RFC-005 section 4.4: `formulas.md`. One line per formula cell, the address first,
 // grouped in regions: a run of formulas down one column is a region, a shared formula (Excel's
 // fill-down form) is one line for its whole range, written for its first cell, and an array formula
-// is one line for its range, marked. A long formula, or a long cached text, goes on
+// is one line for its range, marked. Inside a run, the cells that hold the same formula, shifted by
+// their row, are one line (P3-103): the formula of the first, the cells it fills and a few examples. A long formula, or a long cached text, goes on
 // continuation lines that start with the same address, so no line passes RF-146 and nothing is cut.
 
 const FORMULA_CHUNK = 800;
@@ -160,6 +162,29 @@ function tableSuffix(at: TableColumn | undefined): string {
   return at === undefined ? '' : `, ${tableColumnText(at)}`;
 }
 
+/** One example cell after a folded formula: `B251 (example) 2510`; none when the cell has no cached value or a long one. */
+function addExample(file: TextFile, placed: PlacedCell, date1904: boolean): void {
+  const parts = valueParts(placed.cell, date1904, CACHED_CHUNK);
+  const [piece] = parts ?? [];
+  if (parts?.length === 1 && piece !== undefined)
+    file.add(`${placed.cell.address} (example) ${piece}`);
+}
+
+/** A group of fewer than four cells is written cell by cell; a larger group once, with the cells it fills. */
+function addGroup(file: TextFile, group: FillGroup, date1904: boolean): void {
+  const { first, cells } = group;
+  const head = `${first.cell.address} = `;
+  if (cells.length < MIN_FOLD) {
+    for (const { cell } of cells) {
+      addFormula(file, cell, { head: `${cell.address} = `, tail: '', label: '' }, date1904);
+    }
+    return;
+  }
+  const kind = `${String(cells.length)} cells: ${rangesText(cells)}`;
+  addFormula(file, first.cell, { head, tail: '', kind, label: first.cell.address }, date1904);
+  for (const example of exampleCells(cells)) addExample(file, example, date1904);
+}
+
 function addRegion(file: TextFile, run: readonly PlacedCell[], sheet: Sheet): void {
   const first = run[0]?.cell.address ?? '';
   const last = run.at(-1)?.cell.address ?? '';
@@ -167,10 +192,7 @@ function addRegion(file: TextFile, run: readonly PlacedCell[], sheet: Sheet): vo
   file.section(
     `## Region ${first}:${last} (${plural(run.length, 'formula')})${tableSuffix(where)}`,
   );
-  for (const { cell } of run) {
-    const spec = { head: `${cell.address} = `, tail: '', label: '' };
-    addFormula(file, cell, spec, sheet.date1904);
-  }
+  for (const group of fillGroups(run)) addGroup(file, group, sheet.date1904);
 }
 
 function addSingles(file: TextFile, singles: readonly PlacedCell[], sheet: Sheet): void {

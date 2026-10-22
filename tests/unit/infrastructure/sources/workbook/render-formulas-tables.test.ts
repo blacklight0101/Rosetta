@@ -130,8 +130,8 @@ it('RF-152 leaves a header cell and a column the table does not list unnamed', (
   ]);
 });
 
-it('RF-152 is 2 once the regions name their table column', () => {
-  expect(WORKBOOK_RENDERER_VERSION).toBe('2');
+it('RF-152 is 3 once the regions name their table column', () => {
+  expect(WORKBOOK_RENDERER_VERSION).toBe('3');
 });
 
 const shared = (text: string, range?: string, index = 0) => ({

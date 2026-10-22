@@ -12,7 +12,7 @@ import { FixedClock } from '../../support/fixed-clock.js';
 import { fixturePassword } from '../../support/account-fixtures.js';
 import { hasTestDatabase, useTestDatabase, type TestDatabase } from '../../support/postgres.js';
 import { fixtureSecret } from '../../support/provider-key-fixtures.js';
-import { sampleBook } from '../../support/workbook-staging-harness.js';
+import { sampleBook, stagedNames } from '../../support/workbook-staging-harness.js';
 import { removeWritableTree } from '../../support/writable-temp-root.js';
 
 // RF-150, RF-157, RF-134, RFC-005 section 4.2: the composed application, not a hand-wired one. A batch
@@ -219,8 +219,10 @@ describe.skipIf(!hasTestDatabase)('the composed application and a shutdown', () 
       duplex: 'half',
     };
     const arriving = send(`${batch.base}/${batch.batchId}/files`, init).catch(() => undefined);
+    // The batch folder exists from the moment the batch opens; the file is arriving once its `.part`
+    // file is in it, which is when the server holds the request that the stop has to end.
     await vi.waitFor(async () => {
-      expect(await readdir(join(dataDir, 'sources'))).toHaveLength(1);
+      expect(await stagedNames(dataDir)).toHaveLength(1);
     });
 
     await application.stop();

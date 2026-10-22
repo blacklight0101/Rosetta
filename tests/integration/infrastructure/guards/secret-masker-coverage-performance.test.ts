@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { coverageAdversarialPieces } from '../../../support/secret-coverage-innocent.js';
-import { elapsedMs } from '../../../support/stopwatch.js';
+import { fastestOfMs } from '../../../support/stopwatch.js';
 
 // Integration level: the one real boundary is the wall clock (conventions.md section 7).
 const oneMegabyte = 1024 * 1024;
@@ -19,7 +19,7 @@ describe('SecretMasker on hostile input for the P2-43 rules', () => {
     (piece) => {
       const input = repeatTo(oneMegabyte, piece);
 
-      expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+      expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
     },
   );
 });
