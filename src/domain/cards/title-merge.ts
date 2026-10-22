@@ -4,8 +4,8 @@ import type { Card } from './card.js';
 // P3-106, RF-230, RF-250, EV-05: two cards of one type whose titles are the same once case,
 // punctuation and plurals are ignored describe one thing twice (two reader tasks wrote it), so they
 // are one card without asking a model. The first card's title and summary stay; the merge keeps every
-// distinct claim (`applyMerges`). `FLOW` cards count too: a title that is the same word for word is
-// the same journey written again.
+// distinct claim (`applyMerges`). `FLOW` cards are left out: two journeys with one title are two
+// journeys, each with its own trigger, steps and branches (RF-260).
 
 function singular(word: string): string {
   return word.length > 3 && word.endsWith('s') && !word.endsWith('ss') ? word.slice(0, -1) : word;
@@ -25,6 +25,7 @@ export function normalisedTitle(title: string): string {
 export function titleMerges(cards: readonly Card[]): readonly CardMerge[] {
   const groups = new Map<string, Card[]>();
   for (const card of cards) {
+    if (card.type === 'FLOW') continue;
     const key = `${card.type}\u0000${normalisedTitle(card.title)}`;
     const group = groups.get(key);
     if (group === undefined) groups.set(key, [card]);

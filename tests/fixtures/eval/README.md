@@ -17,7 +17,12 @@ hold the duplicate cards and repeated claims the evaluation found, so `title-mer
 
 ## Provenance (RNF-009)
 
-Written by hand for this repository by the Rosetta contributors and covered by the repository's MIT licence. It
-describes no real application and copies no text from anywhere.
+`golden-csharp.json` and `golden-shop.json` were written by hand for this repository by the Rosetta contributors, cover
+fixtures that are made up, and are under the repository's MIT licence. They describe no real application and copy no
+text from anywhere.
+
+`p3-106-asset-manager-deepen.json` and `p3-106-invoice-deepen.json` are not hand-written: they are trimmed card sets
+from two evaluation runs over public test workbooks (see above). They hold text a local model wrote about those
+workbooks, with citations into them, and nothing else.
 
 Nothing here comes from the owner's employer (DEC-03).

@@ -32,10 +32,10 @@ function partsOf(provider: LlmProvider): ConsolidationParts {
   };
 }
 
-function flow(id: string, text: string): Card {
+function entity(id: string, text: string): Card {
   return {
-    ...{ id, type: 'FLOW', title: 'Invoice Generation Process', summary: 'S', area: 'a' },
-    ...{ agentTaskId: `t-${id}`, confidence: 'High', flow: { trigger: 't', outcome: 'o' } },
+    ...{ id, type: 'ENT', title: 'Product Master Data Table', summary: 'S', area: 'a' },
+    ...{ agentTaskId: `t-${id}`, confidence: 'High' },
     claims: [
       {
         claimId: `${id}.c1`,
@@ -59,31 +59,31 @@ function memory(initial: ConsolidationRecord = { types: [], merges: [] }) {
   return store;
 }
 
-const flows = [flow('FLOW-001', 'One.'), flow('FLOW-002', 'Two.')];
+const pair = [entity('ENT-001', 'One.'), entity('ENT-002', 'Two.')];
 
 describe('P3-106 consolidateRun: cards with one title', () => {
   it('RF-230 merges them with no model call and records the merge', async () => {
     const provider = new NoCalls();
     const store = memory();
 
-    const result = await consolidateRun(partsOf(provider), { store, scope }, flows);
+    const result = await consolidateRun(partsOf(provider), { store, scope }, pair);
 
     expect(provider.requests).toEqual([]);
-    expect(result.cards.map((card) => card.id)).toEqual(['FLOW-001']);
+    expect(result.cards.map((card) => card.id)).toEqual(['ENT-001']);
     expect(result.cards[0]?.claims.map((claim) => claim.text)).toEqual(['One.', 'Two.']);
     expect(result.merges).toHaveLength(1);
-    expect(result.moves.map((move) => move.from)).toEqual([['FLOW-001', 'FLOW-002']]);
+    expect(result.moves.map((move) => move.from)).toEqual([['ENT-001', 'ENT-002']]);
     expect(store.record.merges).toEqual(result.merges);
   });
 
   it('RF-006 a resume makes the recorded merge again and records nothing new', async () => {
     const first = memory();
-    await consolidateRun(partsOf(new NoCalls()), { store: first, scope }, flows);
+    await consolidateRun(partsOf(new NoCalls()), { store: first, scope }, pair);
     const again = memory(first.record);
 
-    const result = await consolidateRun(partsOf(new NoCalls()), { store: again, scope }, flows);
+    const result = await consolidateRun(partsOf(new NoCalls()), { store: again, scope }, pair);
 
-    expect(result.cards.map((card) => card.id)).toEqual(['FLOW-001']);
+    expect(result.cards.map((card) => card.id)).toEqual(['ENT-001']);
     expect(result.merges).toEqual(first.record.merges);
     expect(result.replayedMoves).toHaveLength(1);
     expect(result.moves).toEqual([]);
@@ -94,8 +94,8 @@ describe('P3-106 consolidateRun: cards with one title', () => {
 describe('P3-106 consolidateRun: a card with a repeated claim', () => {
   it('EV-05 keeps the claim once, with no merge and no model call, and says where the claims went', async () => {
     const provider = new NoCalls();
-    const one = flow('ENT-001', 'Same.');
-    const repeated: Card = { ...one, type: 'ENT', claims: [...one.claims, ...one.claims] };
+    const one = entity('ENT-001', 'Same.');
+    const repeated: Card = { ...one, claims: [...one.claims, ...one.claims] };
 
     const result = await consolidateRun(partsOf(provider), { store: memory(), scope }, [repeated]);
 

@@ -93,14 +93,15 @@ describe('P3-106 titleMerges: open questions and flows', () => {
     ]);
   });
 
-  it('RF-230 flows with one title merge too: they describe the same journey twice', () => {
+  it('RF-260 flows with one title stay two cards: two journeys are two journeys', () => {
     const flow = { trigger: 't', outcome: 'o' };
     const cards = [
       { ...cardOf('FLOW-001', 'FLOW', 'Invoice Generation Process', ['Step.']), flow },
       { ...cardOf('FLOW-002', 'FLOW', 'Invoice Generation Process', ['Step two.']), flow },
     ];
 
-    expect(mergedBy(cards).map((card) => card.id)).toEqual(['FLOW-001']);
+    expect(titleMerges(cards)).toEqual([]);
+    expect(mergedBy(cards).map((card) => card.id)).toEqual(['FLOW-001', 'FLOW-002']);
   });
 });
 
@@ -127,15 +128,17 @@ describe('P3-106 the evaluation card sets', () => {
   it('EV-05 Asset Manager: the five Product Master Data Table cards and the three open questions merge', async () => {
     const after = mergedBy(await evalCards('asset-manager'));
 
-    const titles = after.map((card) => `${card.type} ${normalisedTitle(card.title)}`);
+    const titles = after
+      .filter((card) => card.type !== 'FLOW')
+      .map((card) => `${card.type} ${normalisedTitle(card.title)}`);
     expect(new Set(titles).size).toBe(titles.length);
     expect(after.filter((card) => card.type === 'OQ')).toHaveLength(3);
     expect(after.filter((card) => card.title === 'Product Master Data Table')).toHaveLength(1);
   });
 
-  it('EV-05 Invoice: the six Invoice Generation Process flows are one', async () => {
+  it('RF-260 Invoice: the Invoice Generation Process flows stay separate journeys', async () => {
     const after = mergedBy(await evalCards('invoice'));
 
-    expect(after.filter((card) => card.title === 'Invoice Generation Process')).toHaveLength(1);
+    expect(after.filter((card) => card.title === 'Invoice Generation Process')).toHaveLength(6);
   });
 });

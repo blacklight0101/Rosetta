@@ -2,7 +2,7 @@ import type { ClaimStatus } from './card-vocabulary.js';
 import { formatCitation, type Citation } from './citation.js';
 
 // P3-106, RF-230, EV-05: a claim text that a card holds twice is kept once. Two claims are the same
-// when their text, status, target and the claim they replace are the same; a Rejected claim is
+// when their text, status, target, branches and the claim they replace are the same; a Rejected claim is
 // never folded into a Supported one with the same words (RF-302), and a flow's steps are never
 // folded by the card that makes them (a step may repeat). A copy that is not judged yet brings its
 // cited lines to the kept claim, so the judgement sees every range the agent gave; a judged claim
@@ -14,6 +14,7 @@ interface Foldable {
   readonly status?: ClaimStatus;
   readonly target?: string | undefined;
   readonly replaces?: string | undefined;
+  readonly branches?: unknown;
 }
 
 export interface Collapsed<T> {
@@ -23,8 +24,8 @@ export interface Collapsed<T> {
 }
 
 function keyOf(claim: Foldable): string {
-  const { text, status = 'Proposed', target = '', replaces = '' } = claim;
-  return JSON.stringify([text.trim(), status, target, replaces]);
+  const { text, status = 'Proposed', target = '', replaces = '', branches = [] } = claim;
+  return JSON.stringify([text.trim(), status, target, replaces, branches]);
 }
 
 function withLinesOf<T extends Foldable>(claim: T, copies: readonly T[]): T {

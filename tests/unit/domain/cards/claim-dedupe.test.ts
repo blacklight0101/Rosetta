@@ -155,3 +155,19 @@ describe('P3-106 foldRepeatedClaims', () => {
     expect(foldRepeatedClaims([flow])).toEqual({ cards: [flow], moves: [] });
   });
 });
+
+describe('P3-106 steps that differ only in branches', () => {
+  const branch = { number: 1, text: 'On error, stop.', citations: [one] };
+
+  it('RF-260 two claims with one text and different branches are both kept', () => {
+    const plain = claim('ENT-001', 1, 'Step.');
+    const cards = [
+      card('ENT-001', [plain]),
+      card('ENT-002', [{ ...claim('ENT-002', 1, 'Step.'), branches: [branch] }]),
+    ];
+
+    const [merged] = applyMerges(cards, [merge]).cards;
+
+    expect(merged?.claims.map((each) => each.branches ?? [])).toEqual([[], [branch]]);
+  });
+});

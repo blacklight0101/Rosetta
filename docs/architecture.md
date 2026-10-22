@@ -708,10 +708,10 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   An error result is a block too, with no excerpts; a call that names no tool gets the source `unknown_tool`, and the
   cards the summariser compares (RF-250) get the source `cards`, with no excerpts.
 - **Duplicates without a model** (P3-106, RF-230, EV-05, EV-06): before the summariser is asked, `consolidateRun` merges
-  the cards of one type, of any type including `FLOW` and `OQ`, whose titles are the same once case, punctuation and a plural
+  the cards of one type, of any type but `FLOW` (two journeys are two journeys), whose titles are the same once case, punctuation and a plural
   `s` are ignored (`titleMerges`, `domain/cards/title-merge.ts`; the first card's title, summary and, for an `OQ`, question
   stay), then keeps a claim once when a card states it twice (`foldRepeatedClaims`; the same text, status, target and
-  replaced claim, so a Rejected claim is never folded into a Supported one and the steps of a flow are left alone; a
+  replaced claim, so a Rejected claim is never folded into a Supported one and the steps of a flow are left alone, branches being part of what makes a claim the same; a
   copy not yet judged lends its citations to the kept claim). `applyMerges` does the same for every merge. The claims are
   renumbered and the move of each is published as `cards.merged` (a fold has the card as its only `from`). Title merges are
   recorded in `consolidation.json` like the summariser's, so a resume makes them again (`applyMerges` is given every card
