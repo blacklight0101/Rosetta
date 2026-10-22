@@ -1,6 +1,12 @@
 import { defineConfig } from '@playwright/test';
 import { e2eOrigin } from './tests/e2e/support/server-config.js';
-import { behaviouralProject, phoneTag, views, visualTag } from './tests/e2e/support/views.js';
+import {
+  behaviouralProject,
+  phoneTag,
+  queueTag as queueTagName,
+  views,
+  visualTag,
+} from './tests/e2e/support/views.js';
 
 // P1-13, architecture section 17, orchestration README section 1: Chromium against the test server
 // (tests/e2e/support/serve.ts: disposable database, ROSETTA_TEST=1, fake provider, fake GitHub).
@@ -32,11 +38,33 @@ const selection: Record<(typeof views)[number]['name'], { grep?: RegExp }> = {
   'phone-dark': { grep: visual },
 };
 
-const projects = views.map(({ name, viewport, colorScheme }) => ({
-  name,
-  ...selection[name],
-  use: { browserName: 'chromium' as const, viewport, colorScheme },
-}));
+/**
+ * RF-1108, #771: the run queue is one per server and every worker shares it, so a spec that starts
+ * a run beside another one puts that run ahead of its own. Tests tagged `@queue` run in the
+ * `queue` project only, and the views leave them out. Projects with `dependencies` are not used
+ * here: Playwright runs a dependency project's whole test set, ignoring the file filter, so each
+ * shard would run the entire suite.
+ */
+const queueTag = new RegExp(queueTagName, 'u');
+const queueProject = 'queue';
+
+const projects = [
+  ...views.map(({ name, viewport, colorScheme }) => ({
+    name,
+    ...selection[name],
+    grepInvert: queueTag,
+    use: { browserName: 'chromium' as const, viewport, colorScheme },
+  })),
+  {
+    name: queueProject,
+    grep: queueTag,
+    use: {
+      browserName: 'chromium' as const,
+      viewport: views[0].viewport,
+      colorScheme: 'light' as const,
+    },
+  },
+];
 
 export default defineConfig({
   testDir: 'tests/e2e',

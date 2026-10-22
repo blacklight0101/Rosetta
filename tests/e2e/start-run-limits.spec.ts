@@ -2,20 +2,19 @@ import { z } from 'zod';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { openScannedStartPage } from './support/cost-run.js';
-import { openStartPage, runStatus, startUnderstand } from './support/live-run-page.js';
+import { openStartPage } from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
 import { leaveOnlyThisInTheDay } from './support/seed-limits.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 import { chooseModel } from './support/choose-model.js';
 
-// RF-002, RF-1001, RF-1106, RF-1108, DEC-108, P1-106: what the start page and the settings page read
+// RF-002, RF-1001, RF-1106, DEC-108, P1-106: what the start page and the settings page read
 // from the server, driven against the test server. Two tabs cannot overwrite each other's settings (a
-// save made from an older version is refused with RST-1007); a queued run's place is read again
-// while it waits and the notice turns to "started" when the run before it ends; the estimate warning
-// names what is really left of the user's day. The account is the one of the `start-run` kind, which
-// this spec file has to itself; the steps run in order because they share its project and runs, and
-// the last one leaves the account with an almost spent day.
+// save made from an older version is refused with RST-1007); the estimate warning names what is
+// really left of the user's day. The queue position (RF-1108) is in start-run-queue.spec.ts. The
+// steps run in order because they share the account's project and runs, and the last one leaves
+// the account with an almost spent day.
 
 test.describe.configure({ mode: 'serial' });
 
@@ -79,29 +78,6 @@ test('RF-113 the start page announces an outdated code map and holds an Understa
   await expect(page.getByText('The code map is out of date.')).toHaveCount(0);
   await expect(startButton).toBeEnabled();
   await page.unroute('**/api/projects/*/estimate*');
-});
-
-test('RF-1108 a queued run turns to started on the start page when the run before it ends', async ({
-  page,
-  context,
-}) => {
-  const held = await startUnderstand(page, ['Controllers']);
-  await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-  await page.getByRole('button', { name: /^Start run/u }).click();
-  const notice = page.getByTestId('run-notice');
-  await expect(notice).toContainText('Queued');
-  await expect(notice).toContainText('position 1');
-
-  const other = await context.newPage();
-  await other.goto(held);
-  await other.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(other)).toContainText('Interrupted', { timeout: 30_000 });
-  await other.close();
-
-  await expect(notice).toContainText('Run started', { timeout: 30_000 });
-  await expect(notice.getByRole('button', { name: 'Cancel queued run' })).toHaveCount(0);
-  await expectNoSeriousViolations(page);
 });
 
 test('DEC-108 the warning names what is left of the day, not the whole cap', async ({

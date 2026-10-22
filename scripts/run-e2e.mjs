@@ -22,6 +22,25 @@ const ownJob = process.env.ROSETTA_E2E_OWN_JOB === '1';
 // twice as long as shard 3 (#325). tests/integration/tooling/e2e-shards.test.ts keeps the map whole.
 const SHARD_PREFIX = '--shard=';
 
+// RF-1108, #771: the run queue is one per server and every worker shares it, so the queue spec
+// (tagged @queue) must not run beside other specs. The invocation that owns it runs its other tests
+// first, then the spec alone in a second, serial invocation of the `queue` project, with its own
+// report folder. ROSETTA_E2E_PLAYWRIGHT_CLI replaces the Playwright CLI (tests only).
+const QUEUE_SPEC = 'tests/e2e/start-run-queue.spec.ts';
+const QUEUE_TAG = '@queue';
+const QUEUE_PROJECT = 'queue';
+const QUEUE_OUTPUT = 'test-results/queue';
+
+/** The Playwright argument lists of one run: one, or two on the run that owns the queue spec. */
+function invocationsOf(passThrough, fullRun) {
+  if (!fullRun && !passThrough.includes(QUEUE_SPEC)) return [['test', ...passThrough]];
+  const others = passThrough.filter((arg) => arg !== QUEUE_SPEC);
+  return [
+    ['test', ...others, '--grep-invert', QUEUE_TAG],
+    ['test', QUEUE_SPEC, '--project', QUEUE_PROJECT, '--workers=1', '--output', QUEUE_OUTPUT],
+  ];
+}
+
 /** The spec files of the shard named by a --shard argument. */
 async function shardSpecs(shardArgument) {
   const index = shardArgument.slice(SHARD_PREFIX.length).split('/')[0];
@@ -36,6 +55,8 @@ async function shardSpecs(shardArgument) {
 
 const shardArgument = args.find((arg) => arg.startsWith(SHARD_PREFIX));
 const plainArgs = args.filter((arg) => arg !== shardArgument);
+// A run without a shard or file arguments runs the whole project.
+const fullRun = shardArgument === undefined && plainArgs.every((arg) => arg.startsWith('-'));
 let passThrough = [];
 let shardError;
 try {
@@ -62,7 +83,9 @@ if (shardError !== undefined) {
   // Both flags are needed: a stray DRY_RUN variable must not pass as a run that tested nothing.
   if (process.env.ROSETTA_E2E_DRY_RUN_ACK === '1') {
     process.stderr.write('DRY RUN, no tests run.\n');
-    process.stdout.write(`${JSON.stringify(passThrough)}\n`);
+    const plan = invocationsOf(passThrough, fullRun);
+    const printed = process.env.ROSETTA_E2E_DRY_RUN_PLAN === '1' ? plan : passThrough;
+    process.stdout.write(`${JSON.stringify(printed)}\n`);
   } else {
     process.stderr.write(
       'run-e2e: ROSETTA_E2E_DRY_RUN=1 also needs ROSETTA_E2E_DRY_RUN_ACK=1; refusing, no tests run.\n',
@@ -83,7 +106,17 @@ if (shardError !== undefined) {
   process.exitCode = 1;
 } else {
   const vite = join(dirname(require.resolve('vite/package.json')), 'bin', 'vite.js');
-  const playwright = require.resolve('@playwright/test/cli');
+  const playwright =
+    process.env.ROSETTA_E2E_PLAYWRIGHT_CLI ?? require.resolve('@playwright/test/cli');
   const built = await runNode(vite, ['build', '--config', 'web/vite.config.ts']);
-  process.exitCode = built === 0 ? await runNode(playwright, ['test', ...passThrough]) : built;
+  if (built !== 0) {
+    process.exitCode = built;
+  } else {
+    // Every invocation runs, even after a failed one; the run fails with the first failure.
+    const codes = [];
+    for (const invocation of invocationsOf(passThrough, fullRun)) {
+      codes.push(await runNode(playwright, invocation));
+    }
+    process.exitCode = codes.find((code) => code !== 0) ?? 0;
+  }
 }
