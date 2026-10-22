@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "The Catalog task reads Catalog/Details.aspx.cs lines 5-8 and answers a card with one valid claim and one claim whose citation has no line numbers; its two repairs answer the same, so the claim stays dropped and the card is kept. Written by hand for the fake provider; no real provider was called.",
+  "description": "The Catalog task reads Catalog/Details.aspx.cs lines 5-8 and answers a card with one valid claim and one claim whose citation has no line numbers; its repair answers the same (P3-104: the second repair is then not sent), so the claim stays dropped and the card is kept. Written by hand for the fake provider; no real provider was called.",
   "calls": [
     {
       "attempts": [
