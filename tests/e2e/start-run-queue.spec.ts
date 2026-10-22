@@ -1,5 +1,6 @@
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
+import { openScannedStartPage } from './support/cost-run.js';
 import { openStartPage, runStatus, startUnderstand } from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
@@ -15,6 +16,7 @@ test(
   { tag: queueTag },
   async ({ page, context }, info) => {
     await signInAs(context, accountFor('start-run', info.project.name));
+    await openScannedStartPage(page);
     const held = await startUnderstand(page, ['Controllers']);
     await openStartPage(page);
     await page.getByLabel('Scan only').check();
