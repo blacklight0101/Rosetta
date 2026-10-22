@@ -46,6 +46,7 @@ describe('the limits of a hosted role', () => {
       contextTokens: 128_000,
       contextAutomatic: false,
       modelContextTokens: 1_000_000,
+      modelMaxOutputTokens: 128_000,
       maxOutputTokens: 8_192,
     });
   });
