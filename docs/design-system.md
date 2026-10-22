@@ -72,8 +72,8 @@ need 3:1), `role-planner` on `surface-2` 4.33:1 (graphic, needs 3:1), `ink-muted
 | `lh-body` / `lh-head`              | 1.45 / 1.2                                                                        |                                                                     |
 
 All numbers use tabular figures (`font-variant-numeric: tabular-nums` on the root), so counters do not jitter while
-they update. The wordmark is the word "Rosetta" in the sans stack, weight 700, letter-spacing -0.02em; there is no
-logo (DEC-44).
+they update. The wordmark text is the word "Rosetta" in the sans stack, weight 700, letter-spacing -0.02em (DEC-44);
+the logo icon that sits beside it is in section 15, Brand (DEC-161).
 
 ### 2.3 Spacing
 
