@@ -134,8 +134,11 @@ describe('TestProviders: the time limit', () => {
     await harness.testProviders.execute({ actor: harness.actor });
 
     expect(harness.signals.delays).toEqual([60_000, 60_000, 60_000, 60_000]);
+    // The budget guard passes a signal that follows the port's (and its own stop, P3-99).
     const sent = harness.fakeList.map((fake) => fake.requests[0]?.signal);
-    expect(sent).toEqual(harness.signals.controllers.map((controller) => controller.signal));
+    expect(sent.map((signal) => signal?.aborted)).toEqual([false, false, false, false]);
+    for (const controller of harness.signals.controllers) controller.abort();
+    expect(sent.map((signal) => signal?.aborted)).toEqual([true, true, true, true]);
   });
 });
 
