@@ -166,3 +166,97 @@ describe('README with the checks', () => {
     expect(Object.keys(files)).toContain('checks.md');
   });
 });
+
+describe('checks.md: behaviour no card keeps', () => {
+  const migrationTitle = 'Write the database migrations in the chosen stack';
+
+  it('RF-631 lists the feature behaviour the migrations card dropped and no card keeps', () => {
+    const requirementId = handoffOf('Plain text.').content.requirements[0]?.id ?? '';
+    const tasks = [
+      planTask({
+        id: 'T-001',
+        title: migrationTitle,
+        requirements: [requirementId],
+        builds: ['table:customer'],
+      }),
+      planTask({ id: 'T-002', requirements: [] }),
+    ];
+
+    const checks = plain(filesOf(tasks)['checks.md']);
+
+    expect(checks).toContain('## Behaviour kept by no card');
+    expect(checks).toContain('- FEAT-001.c1 (FEAT-001): Plain text.');
+  });
+
+  it('RF-631 lists nothing when another card keeps the behaviour', () => {
+    const requirementId = handoffOf('Plain text.').content.requirements[0]?.id ?? '';
+    const tasks = [
+      planTask({
+        id: 'T-001',
+        title: migrationTitle,
+        requirements: [requirementId],
+        builds: ['table:customer'],
+      }),
+      planTask({ id: 'T-002', requirements: [requirementId] }),
+    ];
+
+    const checks = plain(filesOf(tasks)['checks.md']);
+
+    expect(checks).not.toContain('## Behaviour kept by no card');
+  });
+});
+
+function withNotes(notes: NonNullable<HandoffPackage['content']['requirementNotes']>) {
+  const base = withTasks([planTask()]);
+  return renderHandoff({ ...base, content: { ...base.content, requirementNotes: notes } }, masker);
+}
+
+describe('checks.md: the requirements of the task cards', () => {
+  it('RF-627 lists each change and each position outside the list', () => {
+    const checks = plain(
+      withNotes([
+        { kind: 'position', card: 9, position: 14, count: 13 },
+        { kind: 'added', task: 'T-008', requirement: 'REQ-011' },
+        { kind: 'removed', task: 'T-008', requirement: 'REQ-012' },
+        { kind: 'unmatched', task: 'T-009', requirement: 'REQ-013', kept: 1 },
+      ])['checks.md'],
+    );
+
+    expect(checks).toContain('## Requirements of the task cards');
+    expect(checks).toContain(
+      'The task card at position 9 of the plan answer lists requirement position 14, but the plan has 13 requirements; that position was ignored.',
+    );
+    expect(checks).toContain(
+      'T-008 gained REQ-011: its source cards are behind what the task builds.',
+    );
+    expect(checks).toContain(
+      'T-008 lost REQ-012: its source cards share nothing with what the task builds, and another card builds an item behind them.',
+    );
+    expect(checks).toContain(
+      'T-009 keeps REQ-013 although its source cards share nothing with what the task builds: it is the only requirement of the card.',
+    );
+  });
+
+  it('RF-627 a package with no note has no such section', () => {
+    expect(plain(filesOf([planTask()])['checks.md'])).not.toContain(
+      'Requirements of the task cards',
+    );
+  });
+});
+
+describe('checks.md: a card whose requirements all fit nothing it builds', () => {
+  it('RF-627 a card that keeps several requirements does not say each is the only one', () => {
+    const checks = plain(
+      withNotes([
+        { kind: 'unmatched', task: 'T-009', requirement: 'REQ-013', kept: 3 },
+        { kind: 'unmatched', task: 'T-009', requirement: 'REQ-014', kept: 3 },
+      ])['checks.md'],
+    );
+
+    expect(checks).toContain(
+      'T-009 keeps REQ-013 although its source cards share nothing with what the task builds: the card keeps all 3 of its requirements.',
+    );
+    expect(checks).toContain('T-009 keeps REQ-014 although');
+    expect(checks).not.toContain('only requirement');
+  });
+});

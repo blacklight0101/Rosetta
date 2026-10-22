@@ -4,9 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Rosetta</title>
-    <!-- No favicon file: a file at the root would need a session (P1-09); an empty data URL
-         stops the browser asking for /favicon.ico. -->
-    <link rel="icon" href="data:," />
+    <!-- DEC-161: the brand files sit under /assets/brand/ because only /assets/ is public (P1-09);
+         a file at the root, such as /favicon.ico, would need a session. -->
+    <link rel="icon" href="/assets/brand/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/rosetta-icon-32.png" />
+    <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
+    <link rel="manifest" href="/assets/brand/site.webmanifest" />
   </head>
   <body class="rst-root">
     <div id="root"></div>

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "description": "RF-627, P3-21: the planner's answer to the coverage call of a plan run, whichever calls came before it (the harness routes the planner-coverage task to this file). Task 1 builds the order feature, table, operations, journey and screen, task 2 the rest; it also names a feature that does not exist, a text that is no id and repeats a link, all of which build nothing. Written by hand for the fake provider; no real provider was called.",
+  "description": "RF-627, P3-21: the planner's answer to the coverage call of a plan run, whichever calls came before it (the harness routes the planner-coverage task to this file). Task 1 builds the order and free shipping features, the order table, operations, journey and screen, task 2 the rest (the customer table and operations, never a feature, so the cancellation card is built on no feature that a requirement cites); it also names a feature that does not exist, a text that is no id and repeats a link, all of which build nothing. Written by hand for the fake provider; no real provider was called.",
   "calls": [
     {
       "attempts": [
         {
           "response": {
-            "text": "```json\n{\n  \"links\": [\n    {\n      \"task\": 1,\n      \"builds\": [\n        \"feature:F-001\",\n        \"feature:F-003\",\n        \"table:customer_order\",\n        \"operation:listOrders\",\n        \"operation:placeOrder\",\n        \"operation:getOrder\",\n        \"flow:FLOW-001\",\n        \"screen:SCRN-003\"\n      ]\n    },\n    {\n      \"task\": 2,\n      \"builds\": [\n        \"feature:F-002\",\n        \"feature:F-004\",\n        \"table:customer\",\n        \"operation:listCustomers\",\n        \"operation:signIn\",\n        \"screen:SCRN-001\",\n        \"feature:F-099\",\n        \"not an id\"\n      ]\n    },\n    {\n      \"task\": 2,\n      \"builds\": [\n        \"feature:F-002\"\n      ]\n    }\n  ]\n}\n```",
+            "text": "```json\n{\n  \"links\": [\n    {\n      \"task\": 1,\n      \"builds\": [\n        \"feature:F-001\",\n        \"feature:F-003\",\n        \"feature:F-002\",\n        \"table:customer_order\",\n        \"operation:listOrders\",\n        \"operation:placeOrder\",\n        \"operation:getOrder\",\n        \"flow:FLOW-001\",\n        \"screen:SCRN-003\"\n      ]\n    },\n    {\n      \"task\": 2,\n      \"builds\": [\n        \"feature:F-004\",\n        \"table:customer\",\n        \"operation:listCustomers\",\n        \"operation:signIn\",\n        \"screen:SCRN-001\",\n        \"feature:F-099\",\n        \"not an id\"\n      ]\n    },\n    {\n      \"task\": 2,\n      \"builds\": [\n        \"table:customer\"\n      ]\n    }\n  ]\n}\n```",
             "toolCalls": [],
             "usage": {
               "inputTokens": 1500,
