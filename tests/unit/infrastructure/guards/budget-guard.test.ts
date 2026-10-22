@@ -15,6 +15,7 @@ import {
   contractPrice,
 } from '../../../support/budget-harness.js';
 import { recordingOf } from '../../../support/fake-recordings.js';
+import { settleFails } from '../../../support/ledger-fixtures.js';
 
 // RF-420, RF-421, RF-422, RF-428, RF-1106, ADR-007: the budget guard prices every call, reserves
 // its worst case against the caps before it is made, writes one ledger row after it and stops the
@@ -142,15 +143,7 @@ describe('BudgetGuard failed calls', () => {
 
   it('RF-421 fails closed when the ledger row cannot be written: the answer does not reach the caller', async () => {
     const h = budgetHarness();
-    const failing = budgetHarness({
-      ledger: {
-        reserve: (request) => h.ledger.reserve(request),
-        settle: () => Promise.reject(new Error('disk full')),
-        release: (key) => h.ledger.release(key),
-        runEntries: (userId, runId) => h.ledger.runEntries(userId, runId),
-        purgeExpired: (at) => h.ledger.purgeExpired(at),
-      },
-    });
+    const failing = budgetHarness({ ledger: settleFails(h.ledger) });
 
     expect(await codeOf(failing.guard.complete(budgetRequest()))).toBe(
       ERROR_CODES.costRecordFailed,

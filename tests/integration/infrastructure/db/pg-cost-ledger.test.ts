@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { DatabasePool } from '../../../../src/infrastructure/db/pool.js';
 import { PgCostLedger } from '../../../../src/infrastructure/db/pg-cost-ledger.js';
 import { costLedgerContract } from '../../../contracts/cost-ledger.contract.js';
+import { costLedgerRenewalContract } from '../../../contracts/cost-ledger-renewal.contract.js';
 import { costLedgerRoleContract } from '../../../contracts/cost-ledger-roles.contract.js';
 import { newId, user } from '../../../support/db-rows.js';
 import { entryOf, ledgerNow, reservationOf, worst } from '../../../support/ledger-fixtures.js';
@@ -32,6 +33,15 @@ describe.skipIf(!hasTestDatabase)('PgCostLedger roles', () => {
   const database = useTestDatabase();
 
   costLedgerRoleContract('PgCostLedger', async () => {
+    const { pool } = await database.createSchema({ migrate: true });
+    return { ledger: new PgCostLedger(pool), addUser: () => addUser(pool), newRunId: newId };
+  });
+});
+
+describe.skipIf(!hasTestDatabase)('PgCostLedger renewals', () => {
+  const database = useTestDatabase();
+
+  costLedgerRenewalContract('PgCostLedger', async () => {
     const { pool } = await database.createSchema({ migrate: true });
     return { ledger: new PgCostLedger(pool), addUser: () => addUser(pool), newRunId: newId };
   });

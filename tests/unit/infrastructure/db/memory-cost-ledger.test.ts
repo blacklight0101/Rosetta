@@ -1,6 +1,7 @@
 import { describe } from 'vitest';
 import { MemoryCostLedger } from '../../../../src/infrastructure/db/memory-cost-ledger.js';
 import { costLedgerContract } from '../../../contracts/cost-ledger.contract.js';
+import { costLedgerRenewalContract } from '../../../contracts/cost-ledger-renewal.contract.js';
 import { costLedgerRoleContract } from '../../../contracts/cost-ledger-roles.contract.js';
 import { SequenceIdGenerator } from '../../../support/sequence-id-generator.js';
 
@@ -19,6 +20,17 @@ describe('MemoryCostLedger', () => {
 
 describe('MemoryCostLedger roles', () => {
   costLedgerRoleContract('MemoryCostLedger', () => {
+    const ids = new SequenceIdGenerator();
+    return Promise.resolve({
+      ledger: new MemoryCostLedger(),
+      addUser: () => Promise.resolve(ids.uuid()),
+      newRunId: () => ids.uuid(),
+    });
+  });
+});
+
+describe('MemoryCostLedger renewals', () => {
+  costLedgerRenewalContract('MemoryCostLedger', () => {
     const ids = new SequenceIdGenerator();
     return Promise.resolve({
       ledger: new MemoryCostLedger(),

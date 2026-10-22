@@ -97,3 +97,15 @@ export async function spendAt(
   await reserveAt(ledger, reservation, [], at);
   await ledger.settle(entryOf(reservation, { at, costMicros: spend.costMicros }));
 }
+
+/** A ledger whose ledger rows cannot be written. */
+export function settleFails(ledger: CostLedger): CostLedger {
+  return {
+    reserve: (request) => ledger.reserve(request),
+    settle: () => Promise.reject(new Error('disk full')),
+    release: (key) => ledger.release(key),
+    renew: (key, expiresAt) => ledger.renew(key, expiresAt),
+    runEntries: (userId, runId) => ledger.runEntries(userId, runId),
+    purgeExpired: (at) => ledger.purgeExpired(at),
+  };
+}

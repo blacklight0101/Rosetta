@@ -17,6 +17,7 @@ import {
   LOCK_SERVER,
   LOCK_USER,
   reservationKeyValues,
+  RENEW_RESERVATION,
   reservationValues,
   RUN_ENTRIES,
   SPENT,
@@ -33,7 +34,8 @@ import type { DatabaseClient, DatabasePool } from './pool.js';
 // user takes the user lock and every server-key reservation the server lock, always in that
 // order, so two checks that share a cap run one after the other and cannot both pass its last
 // cent, and no two transactions wait on each other in a cycle. Settling inserts the ledger row and
-// deletes the reservation in one transaction, so a concurrent check sees one or the other.
+// deletes the reservation in one transaction, so a concurrent check sees one or the other. A
+// renewal (P3-99) only moves the expiry of a row that still exists; it never inserts one.
 
 function queryFailed(error: unknown): RosettaError {
   return new RosettaError(ERROR_CODES.databaseQueryFailed, undefined, { cause: error });
@@ -71,6 +73,14 @@ export class PgCostLedger implements CostLedger {
   async release(key: ReservationKey): Promise<void> {
     try {
       await this.pool.query(DELETE_RESERVATION, reservationKeyValues(key));
+    } catch (error) {
+      throw queryFailed(error);
+    }
+  }
+
+  async renew(key: ReservationKey, expiresAt: Date): Promise<void> {
+    try {
+      await this.pool.query(RENEW_RESERVATION, [...reservationKeyValues(key), expiresAt]);
     } catch (error) {
       throw queryFailed(error);
     }
