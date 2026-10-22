@@ -4,6 +4,7 @@ import type { Project } from '../api/project-schemas.js';
 import type { RunStageChoice } from '../api/runs.js';
 import { capWarnings, type CapWarning } from '../lib/cap-warnings.js';
 import { cloudRoles, pricedTotal } from '../lib/estimate-math.js';
+import { effectiveRunCapMicros, usesServerKeys } from '../lib/run-cap.js';
 import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import { providerNames } from './provider-choices.js';
 import { startGate, type StartGate } from './start-gate.js';
@@ -58,7 +59,18 @@ export interface StartForm {
   readonly setUrl: (url: string) => void;
   readonly capText: string;
   readonly setCapText: (text: string) => void;
+  /** The typed cap of the project, as the user sees it in the field. */
   readonly capMicros: bigint;
+  /**
+   * RF-1106, DEC-107: the cap a run starts with: the typed cap, or the administrator's run cap when
+   * the run uses server keys and that cap is lower.
+   */
+  readonly runCapMicros: bigint;
+  /** RF-1106: the administrator's run cap on server keys, and whether the estimate uses them. */
+  readonly serverRunCap: {
+    readonly administrator: bigint | undefined;
+    readonly serverKeys: boolean;
+  };
   readonly thresholdText: string;
   /** The threshold as typed, or the project's when it is not an amount. */
   readonly thresholdMicros: bigint;
@@ -101,6 +113,31 @@ function warningsOf(input: {
   const { stage, estimate, capMicros, limits } = input;
   if (stage !== 'understand' || estimate.status !== 'ready') return [];
   return capWarnings({ estimate: estimate.estimate, runCapMicros: capMicros, limits });
+}
+
+/**
+ * RF-1106, DEC-107: the run cap a run starts with (the administrator's run cap when the estimate uses
+ * server keys and that cap is lower than the typed one), the figures the page names it with, and the
+ * cap warnings computed against that cap.
+ */
+function runCapsOf(input: {
+  readonly stage: RunStageChoice;
+  readonly estimate: EstimateLoad;
+  readonly limits: ReturnType<typeof useSpendLimits>;
+  readonly typed: bigint;
+}): {
+  readonly runCapMicros: bigint;
+  readonly serverRunCap: StartForm['serverRunCap'];
+  readonly warnings: readonly CapWarning[];
+} {
+  const { stage, estimate, limits, typed } = input;
+  const serverRunCap = {
+    administrator: limits?.serverKeys.runCapMicros,
+    serverKeys: estimate.status === 'ready' && usesServerKeys(estimate.estimate),
+  };
+  const runCapMicros = effectiveRunCapMicros({ typed, ...serverRunCap });
+  const warnings = warningsOf({ stage, estimate, capMicros: runCapMicros, limits });
+  return { runCapMicros, serverRunCap, warnings };
 }
 
 /** RF-425: the likely cost of the priced roles, the figure the threshold is compared with. */
@@ -161,7 +198,7 @@ export function useStartForm(loaded: Project): StartForm {
   const stage = estimate.status === 'none' ? 'scan' : chosenStage;
   const roles = stage === 'understand' ? consentRoles(estimate, refused) : [];
   const names = providerNames(roles.map((role) => role.provider));
-  const warnings = warningsOf({ stage, estimate, capMicros: fields.capMicros, limits });
+  const runCaps = runCapsOf({ stage, estimate, limits, typed: fields.capMicros });
   const privateCode = usePrivateCode(project, roles.length > 0, (saved) => {
     setProject(saved);
     setRefused(false);
@@ -188,8 +225,8 @@ export function useStartForm(loaded: Project): StartForm {
     ...noSourceOf(project),
   });
   return {
-    ...{ project, choice, stage, setStage, url, setUrl, ...fields },
-    ...{ consent: { roles, names, checked, set: setChecked }, warnings, gate, actions, setProject },
+    ...{ project, choice, stage, setStage, url, setUrl, ...fields, ...runCaps },
+    ...{ consent: { roles, names, checked, set: setChecked }, gate, actions, setProject },
     privateCode,
     rerun,
     library: { chosen: libraryChosen, ...confirmed.library },

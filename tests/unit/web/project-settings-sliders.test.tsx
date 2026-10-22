@@ -57,10 +57,10 @@ const described = (element: HTMLElement): string =>
 
 // The numeric settings of DEC-117 as the page shows them: label, min, max, step.
 const bounds: readonly (readonly [string, string, string, string])[] = [
-  ['Reader max output tokens', '256', '32768', '256'],
-  ['Verifier max output tokens', '256', '32768', '256'],
-  ['Planner max output tokens', '256', '32768', '256'],
-  ['Summariser max output tokens', '256', '32768', '256'],
+  ['Reader max output tokens', '256', '128000', '256'],
+  ['Verifier max output tokens', '256', '128000', '256'],
+  ['Planner max output tokens', '256', '128000', '256'],
+  ['Summariser max output tokens', '256', '128000', '256'],
   ['Reader max turns', '1', '50', '1'],
   ['Run cost cap (USD)', '0', '100', '0.01'],
   ['Run token cap', '0', '50000000', '1000'],

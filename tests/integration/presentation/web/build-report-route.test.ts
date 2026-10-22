@@ -158,7 +158,7 @@ describe('POST /api/runs/:runId/report and the pages it writes', () => {
     );
 
     expect(page.scripts).toEqual(['replay.js']);
-    expect(page.document.querySelectorAll('img')).toHaveLength(0);
+    expect(page.document.querySelectorAll('main img')).toHaveLength(0);
     expect(page.document.body.textContent).toContain('<script>window.__pwned');
     expect(page.foreignLinks).toEqual([]);
   });

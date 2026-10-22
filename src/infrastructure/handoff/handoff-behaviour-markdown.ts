@@ -18,7 +18,12 @@ export function behaviourLines(
   handoff: HandoffPackage,
   esc: MarkdownEscaper,
 ): string[] {
-  const kept = behavioursToKeep(task, handoff.content.requirements, handoff.sources);
+  const kept = behavioursToKeep(
+    task,
+    handoff.content.requirements,
+    handoff.sources,
+    handoff.dataModel.tables,
+  );
   if (kept.length === 0) return [];
   return [
     'Behaviour to keep:',

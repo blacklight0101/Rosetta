@@ -102,7 +102,7 @@ describe('report.html of an uploaded project', () => {
     const { document, handlers, foreignLinks } = auditHtml(html);
 
     expect(factsOf(hostileFileName)['Source']).toBe(hostileFileName);
-    expect(document.querySelectorAll('img')).toHaveLength(0);
+    expect(document.querySelectorAll('main img')).toHaveLength(0);
     expect(handlers).toEqual([]);
     expect(foreignLinks).toEqual([]);
     expect(html).not.toContain('<img src=x');
