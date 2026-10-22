@@ -17,8 +17,13 @@ function draft(): PlanDraft {
       { title: 'Shipping', statement: 'Ship free over 50.', sources: ['BR-001', 'X-1', 'BR-001'] },
     ],
     components: [
-      { name: 'Web', responsibility: 'Pages.', dependsOn: ['Service', 'Web', 'Mainframe'] },
-      { name: 'Service', responsibility: 'Rules.', dependsOn: [] },
+      {
+        name: 'Web',
+        responsibility: 'Pages.',
+        role: '',
+        dependsOn: ['Service', 'Web', 'Mainframe'],
+      },
+      { name: 'Service', responsibility: 'Rules.', role: '', dependsOn: [] },
     ],
     decisions: [
       { title: 'One service', context: 'C.', decision: 'D.', consequences: '', sources: ['X-1'] },
