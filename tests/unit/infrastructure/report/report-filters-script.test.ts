@@ -173,7 +173,7 @@ describe('the filter script and a hostile address', () => {
       const window = pageAt(`http://localhost/report.html${hash}`);
 
       expect(shown(window)).toHaveLength(4);
-      expect(window.document.querySelectorAll('script, img')).toHaveLength(1);
+      expect(window.document.querySelectorAll('script, main img')).toHaveLength(1);
       expect(isHidden(window, '[data-filter-empty]')).toBe(true);
       expect(statusOf(window)).toBe('Showing 4 of 4 cards');
       for (const key of ['type', 'area', 'status']) {

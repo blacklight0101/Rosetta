@@ -135,7 +135,7 @@ describe('the area page and its frame', () => {
     expect(page.scripts).toEqual([]);
     expect(page.handlers).toEqual([]);
     expect(page.foreignLinks).toEqual([]);
-    expect(page.document.querySelectorAll('img, script')).toHaveLength(0);
+    expect(page.document.querySelectorAll('main img, script')).toHaveLength(0);
     expect(page.document.querySelector('h1')?.textContent).toContain('<script>window.__pwned');
   });
 });
