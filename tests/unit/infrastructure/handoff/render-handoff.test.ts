@@ -139,3 +139,24 @@ describe('renderHandoff: the invariant and the review probes', () => {
     },
   );
 });
+
+describe('renderHandoff stack line (Q-59)', () => {
+  const noStack = (): ReturnType<typeof handoffOf> => {
+    const handoff = handoffOf('Plain text.');
+    return { ...handoff, brief: { ...handoff.brief, stack: [] } };
+  };
+
+  it('RF-604 opens the README with one line when no stack layer is answered', () => {
+    const readme = renderHandoff(noStack(), masker)['README.md'] ?? '';
+
+    expect(readme.split('\n')[2]).toBe(
+      'No technology was chosen; the cards are written for any stack. Choose a stack in Plan setup and write the package again.',
+    );
+  });
+
+  it('RF-604 writes no such line when one stack layer is answered', () => {
+    const readme = renderHandoff(handoffOf('Plain text.'), masker)['README.md'] ?? '';
+
+    expect(readme).not.toContain('No technology was chosen');
+  });
+});
