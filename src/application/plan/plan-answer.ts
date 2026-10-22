@@ -96,6 +96,7 @@ const answer = z.object({
       z.object({
         name: title,
         responsibility: optionalText,
+        role: z.string().trim().max(TITLE).catch('').default(''),
         dependsOn: z.array(z.string().max(TITLE)).max(MAX_LIST).default([]),
       }),
     )
