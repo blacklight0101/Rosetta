@@ -66,8 +66,50 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
-  verify:
-    name: verify (${{ matrix.os }})
+  # The static gates (P1-177): typecheck, lint, format, architecture and dead code, in parallel with
+  # the tests. They give the same answer on every operating system, so they run once, on Linux.
+  # One step per gate, so a failure names its gate; a failed step does not hide the later ones.
+  gates:
+    name: gates
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Documentation-only change
+        if: needs.changes.outputs.code == 'false'
+        run: echo "::notice title=Documentation only::The gates are skipped; the tests job checks the format."
+      - if: needs.changes.outputs.code != 'false'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: needs.changes.outputs.code != 'false'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # CI=true on the runner keeps lefthook from writing git hooks.
+      - if: needs.changes.outputs.code != 'false'
+        run: npm ci
+      - name: Type check
+        if: needs.changes.outputs.code != 'false'
+        run: npm run typecheck
+      - name: Lint (zero warnings)
+        if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+        run: npm run lint
+      - name: Format check
+        if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+        run: npm run format:check
+      - name: Architecture rule
+        if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+        run: npm run arch
+      - name: Dead code and dependencies
+        if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+        run: npm run deadcode
+
+  # The tests with coverage on both operating systems. Not a required check by itself: the required
+  # `verify (<os>)` checks below aggregate it with the gates.
+  tests:
+    name: tests (${{ matrix.os }})
     needs: changes
     runs-on: ${{ matrix.os }}
     # The full suite takes about 12 minutes of tests plus setup; 15 cancelled runs at the limit.
@@ -119,16 +161,9 @@ jobs:
         run: echo "::notice title=Database tests skipped::No PostgreSQL service container on Windows runners; the Linux job runs them."
         shell: bash
       # The Playwright project runs in the sharded e2e jobs below, in parallel with this one.
-      - name: Every gate (npm run verify)
-        if: runner.os == 'Linux' && needs.changes.outputs.code != 'false'
-        run: npm run verify
-        env:
-          ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
-          ROSETTA_E2E_OWN_JOB: '1'
-      # Windows runs only the tests: typecheck, lint, format, arch and deadcode do not depend on the
-      # operating system and run in the Linux job; the tests catch path and line-ending differences.
-      - name: Tests only (the other gates run on Linux)
-        if: runner.os == 'Windows' && needs.changes.outputs.code != 'false'
+      # The static gates run in the `gates` job; the tests catch path and line-ending differences.
+      - name: Tests with coverage
+        if: needs.changes.outputs.code != 'false'
         run: npm run test:ci
         env:
           ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
@@ -151,6 +186,26 @@ jobs:
           tests/unit/web/tokens.test.ts
         env:
           ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
+
+  # The required checks `verify (ubuntu-latest)` and `verify (windows-latest)`: green only when the tests of
+  # that operating system and the gates passed. Runs for every change (no condition but always()), so a
+  # skipped or cancelled job counts as a failure here and cannot be mistaken for a pass.
+  verify:
+    name: verify (${{ matrix.os }})
+    if: always()
+    needs: [gates, tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - run: |
+          test "$TESTS" = success
+          test "$GATES" = success
+        env:
+          TESTS: ${{ needs.tests.result }}
+          GATES: ${{ needs.gates.result }}
 
   e2e-shard:
     name: e2e (shard ${{ matrix.shard }}/3)

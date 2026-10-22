@@ -59,3 +59,21 @@ it('RF-1001 limits that cannot be read leave the page without a limit warning, n
     expect(screen.queryByTestId('cap-warning')).toBeNull();
   });
 });
+
+it('RF-405 DEC-159 the start page warns before the run that the caps cannot hold the first calls', async () => {
+  const firstCalls = {
+    ...{ calls: 4, promptTokens: 6000, maxOutputTokens: 8192, perCallMicros: '195000' },
+    ...{ reservedMicros: '780000', reservedTokens: '56768', adminRunCapMicros: null },
+    caps: [{ kind: 'run-cost', unit: 'micros', limit: '500000', spent: '0', fits: false }],
+  };
+  renderStart({
+    [`GET ${estimatePath}`]: json(200, { ...cloudEstimate, firstCalls }),
+    [limitsPath]: limitsAnswer({}),
+  });
+  await ready();
+
+  await waitFor(() => {
+    expect(screen.getByTestId('cap-warning').textContent).toContain('4 first reader calls');
+  });
+  expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.50');
+});

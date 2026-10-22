@@ -41,6 +41,29 @@ export const roleEstimate = z.object({
 
 export type RoleEstimate = z.output<typeof roleEstimate>;
 
+const micros = z.string().regex(/^\d{1,18}$/u);
+
+/** RF-405, DEC-159: the reservation of the first reader calls and the caps that must hold it. */
+const firstCalls = z.object({
+  calls: z.number(),
+  promptTokens: z.number(),
+  maxOutputTokens: z.number(),
+  perCallMicros: micros,
+  reservedMicros: micros,
+  reservedTokens: micros,
+  /** The administrator's run cap when the roles use the server's key. */
+  adminRunCapMicros: micros.nullable(),
+  caps: z.array(
+    z.object({
+      kind: z.string(),
+      unit: z.enum(['micros', 'tokens']),
+      limit: micros,
+      spent: micros,
+      fits: z.boolean(),
+    }),
+  ),
+});
+
 export const estimateSchema = z.object({
   codeMap: z
     .object({
@@ -60,6 +83,7 @@ export const estimateSchema = z.object({
   assumptions: z.looseObject({ turnsPerArea: scenarioNumbers, roleLimits: roleLimits.optional() }),
   roles: z.array(roleEstimate),
   total: z.object(range),
+  firstCalls: firstCalls.optional(),
 });
 
 export type RunEstimate = z.output<typeof estimateSchema>;

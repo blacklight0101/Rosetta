@@ -146,7 +146,7 @@ src/
                         round's reader tasks, the run's state and measures, and the outputs and record it writes
     cards/              the card schema, lenient parsing that keeps valid cards and claims (`parseCardsLenient`), the repair request (RF-202, RF-208)
     verifier/           citation check (step 1, `checkCitations`, P1-33), judgement of one claim (step 2, `judgeClaim`, P2-02)
-    estimate/           `EstimateRun`, the assumptions and the reader's token estimate (RF-425, P1-30)
+    estimate/           `EstimateRun`, the assumptions and the reader's token estimate (RF-425, P1-30); `first-calls.ts` reserves the first parallel reader calls as the budget guard does and checks them against the caps that apply, so the start page can warn (RF-405, DEC-159, P3-96)
     accounts/           the account summary shown to administration (RF-1102: no password hash, no lockout counters) and the administered account
     budget/             the cost breakdown and the cost report of a run (RF-426, RF-428)
     planning/           the plan options request and answer, the planning brief state and schema, and the recommendation of plan options
