@@ -1,7 +1,7 @@
 import type { CardType, ClaimStatus } from '../cards/card-vocabulary.js';
 import type { Citation } from '../cards/citation.js';
 import {
-  actionClaimText,
+  actionClaimTexts,
   detailKindOf,
   type DetailKind,
   fieldClaimText,
@@ -116,8 +116,8 @@ function supportedScreen(card: SourceCard, all: readonly SourceClaim[]): { scree
     field,
     judged: judge('field', fieldClaimText(field)),
   }));
-  const actions = screen.actions.filter(
-    (action) => judge('action', actionClaimText(action)) === 'supported',
+  const actions = screen.actions.filter((action) =>
+    actionClaimTexts(screen.actions, action).some((text) => judge('action', text) === 'supported'),
   );
   return {
     screen: {

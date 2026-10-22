@@ -49,6 +49,18 @@ function taskCardItems(cards: readonly LeftOutCard[]): HandoffPackage['leftOut']
   }));
 }
 
+/** P3-102: the data-model parts the parser dropped, for checks.md (area "Data model"). */
+function dataModelItems(
+  problems: PlannedDocuments['dataModelProblems'],
+): HandoffPackage['leftOut'] {
+  return problems.map((each) => ({
+    area: 'Data model',
+    item: each.item,
+    field: each.field,
+    reason: each.reason,
+  }));
+}
+
 // RF-601, RF-604
 export function handoffPackageOf(
   inputs: PlanInputs,
@@ -94,6 +106,6 @@ export function handoffPackageOf(
     shapes: documents.shapes,
     workbookFormulas: documents.workbookFormulas,
     incomplete,
-    leftOut: taskCardItems(documents.leftOut),
+    leftOut: [...taskCardItems(documents.leftOut), ...dataModelItems(documents.dataModelProblems)],
   };
 }

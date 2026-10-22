@@ -1,0 +1,161 @@
+{
+  "tables": [
+    {
+      "name": "record",
+      "purpose": "Keeps one record per imported file.",
+      "sources": [
+        "ENT-001"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": true,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "title",
+          "type": "varchar(255)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "Title"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "entry",
+      "purpose": "Keeps the rows of a record.",
+      "sources": [
+        "ENT-002"
+      ],
+      "columns": [
+        {
+          "name": "record_id",
+          "type": "uuid",
+          "nullable": true,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "label",
+          "type": "varchar(120)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "Label"
+          },
+          "risk": ""
+        },
+        {
+          "name": "range_note",
+          "type": "varchar(50)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-013.c1",
+            "field": "Report sheet uses the range \"A1:R506\" and every visible row of the monthly inventory is kept for the total by row"
+          },
+          "risk": ""
+        },
+        {
+          "name": "amount",
+          "type": "numeric(12,2)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c2",
+            "field": "Amount"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "record_id",
+        "label"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [
+        {
+          "columns": [
+            "record_id"
+          ],
+          "references": "record",
+          "referencedColumns": [
+            "id"
+          ]
+        }
+      ],
+      "checks": [
+        "amount is zero or more"
+      ],
+      "indexes": []
+    },
+    {
+      "name": "item",
+      "purpose": "Keeps the items of the inventory.",
+      "sources": [
+        "ENT-003"
+      ],
+      "columns": [
+        {
+          "name": "code",
+          "type": "varchar(40)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "Code"
+          },
+          "risk": ""
+        },
+        {
+          "name": "name",
+          "type": "varchar(200)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c2",
+            "field": "Name"
+          },
+          "risk": ""
+        },
+        {
+          "name": "status",
+          "type": "varchar(20)",
+          "nullable": true,
+          "legacy": null,
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "code"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": [
+        {
+          "columns": [
+            "status"
+          ],
+          "unique": false,
+          "reason": "Lookups by status."
+        }
+      ]
+    }
+  ],
+  "dropped": [
+    {
+      "claim": "ENT-003.c3",
+      "field": "Notes",
+      "reason": "Not needed for the new system."
+    }
+  ]
+}

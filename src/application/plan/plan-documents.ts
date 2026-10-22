@@ -9,6 +9,7 @@ import { askPlanner, type PlannerCall } from './ask-planner.js';
 import type { IncompleteDocument } from './handoff-package.js';
 import { apiContractWarnings, planApiContract } from './plan-api-contract.js';
 import { dataModelWarnings, planDataModel } from './plan-data-model.js';
+import type { DataModelProblem } from './data-model-answer.js';
 import { flowsWarnings, planFlows } from './plan-flows.js';
 import type { PlanMessageInput } from './plan-message.js';
 import { parsePrdAnswer } from './prd-answer.js';
@@ -34,6 +35,8 @@ export interface PlannedDocuments {
   readonly flows: TargetFlows;
   readonly apiContract: ApiContract;
   readonly ux: TargetUx;
+  /** P3-102: the parts of the data-model answer the parser dropped, listed in checks.md. */
+  readonly dataModelProblems: readonly DataModelProblem[];
   /** RF-604: the documents whose answer stayed cut off, in the order they were written. */
   readonly incomplete: readonly IncompleteDocument[];
 }
@@ -125,6 +128,7 @@ export async function planDocuments(
     flows: flows.flows,
     apiContract: api.contract,
     ux: ux.ux,
+    dataModelProblems: model.problems,
     incomplete,
   };
 }
