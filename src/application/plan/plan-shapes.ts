@@ -22,7 +22,7 @@ export interface PlanShapeDependencies {
 /** RF-155, RF-632: the newest completed scan of the snapshot the source run read, if any. */
 export async function scanOfSourceRun(
   deps: Pick<PlanShapeDependencies, 'runs'>,
-  inputs: PlanInputs,
+  inputs: Pick<PlanInputs, 'project' | 'sourceRun'>,
 ): Promise<Run | undefined> {
   const { project, sourceRun } = inputs;
   if (sourceRun.snapshotKey === null) return undefined;
