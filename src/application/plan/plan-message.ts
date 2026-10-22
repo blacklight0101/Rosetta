@@ -4,6 +4,7 @@ import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
+import { styleRoles } from '../../domain/planning/style-rules.js';
 import type { RecordedQuestion } from '../ports/answers-file.js';
 
 // RF-604, RF-145, ADR-013: what the planner is given. Two data blocks, each with its own fresh tag:
@@ -38,10 +39,11 @@ function principlesOf(brief: PlanningBrief, catalogue: Catalogue): object[] {
   });
 }
 
-/** The chosen style with its rule, so the components follow it (RF-608). */
+/** The chosen style with its rule and the roles a component can have in it, so the components follow it (RF-608). */
 function styleOf(brief: PlanningBrief, catalogue: Catalogue): object {
-  const entry = catalogue.entries.find((each) => each.id === brief.architecture.style);
-  return { id: brief.architecture.style, title: entry?.title, rule: entry?.rule };
+  const { style } = brief.architecture;
+  const entry = catalogue.entries.find((each) => each.id === style);
+  return { id: style, title: entry?.title, rule: entry?.rule, roles: styleRoles[style] };
 }
 
 function ownerText(input: PlanMessageInput): string {

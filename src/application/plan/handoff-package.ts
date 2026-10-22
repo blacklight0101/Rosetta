@@ -2,6 +2,7 @@ import type { ApiContract } from '../../domain/planning/api-contract.js';
 import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
 import type { RestatedDecision } from '../../domain/planning/brief-restated.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
+import type { StyleCheck } from '../../domain/planning/style-rules.js';
 import type { TargetDataModel } from '../../domain/planning/data-model.js';
 import type { TargetFlows } from '../../domain/planning/target-flows.js';
 import type { TargetUx } from '../../domain/planning/target-ux.js';
@@ -63,6 +64,8 @@ export interface HandoffPackage {
   readonly choices: BriefChoices;
   /** RF-608: the planner decisions left out because the record of the brief already decides them. */
   readonly restated: readonly RestatedDecision[];
+  /** RF-608: the components that break the rule of the chosen style, and those with no role of it. */
+  readonly styleCheck: StyleCheck;
   /** The target tables, with the legacy source of each column and the dropped legacy fields (RF-623). */
   readonly dataModel: TargetDataModel;
   /** The main journeys mapped to target components, and those out of scope (RF-625). */

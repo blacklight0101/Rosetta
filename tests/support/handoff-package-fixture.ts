@@ -7,6 +7,7 @@ import { noUx } from '../../src/domain/planning/target-ux.js';
 import { emptyPrd, prdQuestions, type PrdContent } from '../../src/domain/planning/prd-content.js';
 import { assemblePlan } from '../../src/domain/planning/plan-content.js';
 import type { PlanDraft } from '../../src/domain/planning/plan-draft.js';
+import { noStyleFindings } from '../../src/domain/planning/style-rules.js';
 import { buildBrief } from '../../src/domain/planning/planning-brief.js';
 import { draftTask } from './task-card-fixtures.js';
 import { targetModel } from './data-model-fixtures.js';
@@ -23,8 +24,8 @@ function draft(text: string): PlanDraft {
     summary: text,
     requirements: [{ title: text, statement: text, sources: ['FEAT-001'] }],
     components: [
-      { name: text, responsibility: text, dependsOn: ['Store'] },
-      { name: 'Store', responsibility: 'Keeps data.', dependsOn: [] },
+      { name: text, responsibility: text, role: 'business', dependsOn: ['Store'] },
+      { name: 'Store', responsibility: 'Keeps data.', role: 'data', dependsOn: [] },
     ],
     decisions: [{ title: text, context: text, decision: text, consequences: text, sources: [] }],
     entities: [{ legacy: text, target: text, notes: text, sources: ['FEAT-001'] }],
@@ -137,6 +138,7 @@ export function handoffOf(
       decisions: content.decisions.map((decision) => ({ ...decision, options: [text] })),
     },
     restated: [],
+    styleCheck: noStyleFindings,
     dataModel: dataModelOf(text),
     flows: flowsOf(text),
     apiContract: noApiContract(text),

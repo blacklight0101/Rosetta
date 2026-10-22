@@ -22,10 +22,14 @@ function requestAccess(contactEmail: string | undefined): string {
   return `<a class="btn sec" href="mailto:${esc(contactEmail)}">Request access</a>`;
 }
 
+// DEC-161: the icon is decorative, the name is written next to it; its size is set so the header does not shift.
+const headerIcon =
+  '<img src="/assets/brand/rosetta-icon-32.png" srcset="/assets/brand/rosetta-icon-64.png 2x" alt="" width="32" height="32">';
+
 function renderHeader(options: LandingOptions): string {
   return `<header class="top">
   <div class="wrap">
-    <a class="brand" href="/">Rosetta</a>
+    <a class="brand" href="/">${headerIcon}Rosetta</a>
     <nav aria-label="Sections">
       <a class="lnk" href="#how">How it works</a><a class="lnk" href="#evidence">Evidence</a><a class="lnk" href="#cost">Cost</a><a class="lnk" href="#about">About</a>
     </nav>
@@ -36,8 +40,24 @@ function renderHeader(options: LandingOptions): string {
 </header>`;
 }
 
+// DEC-161: the full logo (responsive 320, 640 and 960 px files) on a light page; on a dark page the icon
+// with the name as live text, because the wordmark of the PNG is dark navy. The page has no script, so
+// the choice follows prefers-color-scheme in a picture element and in landing.css.
+const brandSources = ['320', '640', '960'].map((w) => `/assets/brand/rosetta-full-${w}w.png ${w}w`);
+
+function renderBrand(): string {
+  return `<div class="brand-lockup">
+    <picture class="brand-hero">
+      <source media="(prefers-color-scheme: dark)" srcset="/assets/brand/rosetta-icon-128.png 1x, /assets/brand/rosetta-icon-256.png 2x" width="128" height="128">
+      <img src="/assets/brand/rosetta-full-320w.png" srcset="${brandSources.join(', ')}" sizes="160px" alt="Rosetta" width="160" height="160">
+    </picture>
+    <span class="brand-hero-text" aria-hidden="true">Rosetta</span>
+  </div>`;
+}
+
 function renderHero(): string {
   return `<section class="wrap hero">
+  ${renderBrand()}
   <h1>Watch AI agents read your legacy code, and check every word they write.</h1>
   <div class="hero-aside">
     <p class="lede">Start from a public GitHub URL, a zip of your code or one or more Excel workbooks. Readers explore each area, a verifier tests every claim against the lines it cites, and the spend runs against a cap you set.</p>
@@ -117,7 +137,10 @@ function renderHead(): string {
 <meta name="robots" content="noindex, nofollow">
 <meta name="description" content="${esc(description)}">
 <title>Rosetta - watch AI agents read legacy code</title>
-<link rel="icon" href="data:,">
+<link rel="icon" href="/assets/brand/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/rosetta-icon-32.png">
+<link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png">
+<link rel="manifest" href="/assets/brand/site.webmanifest">
 <link rel="stylesheet" href="/assets/landing.css">
 </head>`;
 }

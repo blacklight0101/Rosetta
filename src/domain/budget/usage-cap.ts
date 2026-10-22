@@ -14,9 +14,16 @@ import { err, ok, type Result } from '../errors/result.js';
 type CapKind =
   'run-cost' | 'run-tokens' | 'role-cost' | 'role-tokens' | 'user-day' | 'own-day' | 'server-month';
 
+/**
+ * Where a cap's limit comes from (RF-1106, DEC-107): the project's settings, the administrator's
+ * server caps, or the account's own daily cap set by the administrator. A role cap has none.
+ */
+type CapSource = 'project' | 'administrator' | 'account';
+
 export interface UsageCap {
   readonly kind: CapKind;
   readonly limit: bigint;
+  readonly source?: CapSource;
 }
 
 /** What is already spent or reserved against each kind of cap. */
@@ -46,6 +53,8 @@ export interface CapBreach {
   readonly needed: bigint;
   /** The role of a role cap's breach (RF-423); set by the budget guard. */
   readonly role?: string;
+  /** Where the limit comes from, when the cap has a source (RF-1106). */
+  readonly source?: CapSource;
 }
 
 function neededFor(kind: CapKind, worstCase: WorstCase): bigint {
@@ -63,7 +72,8 @@ export function checkCaps(
     const needed = neededFor(cap.kind, worstCase);
     const already = spent[cap.kind];
     if (already + needed > cap.limit) {
-      return err({ kind: cap.kind, limit: cap.limit, spent: already, needed });
+      const source = cap.source === undefined ? {} : { source: cap.source };
+      return err({ kind: cap.kind, limit: cap.limit, spent: already, needed, ...source });
     }
   }
   return ok(undefined);

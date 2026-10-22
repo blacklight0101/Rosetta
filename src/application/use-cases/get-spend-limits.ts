@@ -27,6 +27,8 @@ export interface SpendLimits {
   readonly serverKeys: {
     readonly userDay: Amounts;
     readonly serverMonth: { readonly remainingMicros: bigint };
+    /** The administrator's run cap on server keys (RF-1106, DEC-107): a run on them stops at it when lower. */
+    readonly runCapMicros: bigint;
   };
   readonly ownKeys: { readonly day: Amounts | null };
 }
@@ -76,6 +78,7 @@ export class GetSpendLimits {
         serverMonth: {
           remainingMicros: amountsOf(caps.serverMonthMicros, usd(month)).remainingMicros,
         },
+        runCapMicros: caps.runMicros,
       },
       ownKeys: { day: ownCap === null ? null : amountsOf(ownCap, usd(today.own)) },
     };

@@ -292,6 +292,6 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       },
     });
     if (!isCeilinged(request)) return caps;
-    return caps.map((cap) => ({ ...cap, limit: providerTestCeiling(cap) }));
+    return caps.map((cap) => ({ kind: cap.kind, limit: providerTestCeiling(cap) }));
   }
 }

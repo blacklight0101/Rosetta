@@ -23,7 +23,7 @@ function message(
     {
       flowCards: flowCardsOf(cards),
       cards,
-      components: components.map((each) => ({ ...each, dependsOn: [] })),
+      components: components.map((each) => ({ ...each, role: '', dependsOn: [] })),
     },
     () => ids.dataBlockTag(),
   );
