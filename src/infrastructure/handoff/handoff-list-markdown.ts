@@ -177,6 +177,9 @@ function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     [`[Target architecture](${handoffFiles.architecture})`],
     ['Architecture decision records', ...decisionLines(handoff, esc)],
     [`[Entity mapping](${handoffFiles.entities})`],
+    ...(handoff.workbookFormulas === undefined
+      ? []
+      : [[`[Workbook formulas](${handoffFiles.workbookFormulas})`]]),
     [`[Roadmap](${handoffFiles.roadmap})`],
     [`[Task cards](${handoffFiles.tasks})`],
     [`[Risks](${handoffFiles.risks})`],
