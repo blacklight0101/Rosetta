@@ -1,6 +1,7 @@
 import { err, ok, type Result } from '../errors/result.js';
 import type { CardType, ClaimStatus, Confidence, OpenQuestionState } from './card-vocabulary.js';
 import type { Citation } from './citation.js';
+import { collapseClaims } from './claim-dedupe.js';
 import { canTransitionClaim } from './claim-transitions.js';
 import {
   flowFields,
@@ -129,7 +130,10 @@ function claimsOf(input: CardInput): Result<readonly Claim[], CardProblem> {
   // RF-261: the validations and actions of a screen are claims after the ones the agent wrote.
   const derived: readonly ClaimInput[] =
     input.type === 'SCRN' && input.screen ? screenClaims(input.screen, input.claims) : [];
-  for (const [index, claim] of [...input.claims, ...derived].entries()) {
+  // P3-106: a claim text written twice is one claim; the steps of a flow may repeat.
+  const written = [...input.claims, ...derived];
+  const unique = input.type === 'FLOW' ? written : collapseClaims(written).kept;
+  for (const [index, claim] of unique.entries()) {
     const made = claimFrom(input, index + 1, claim);
     if (!made.ok) return made;
     claims.push(made.value);
