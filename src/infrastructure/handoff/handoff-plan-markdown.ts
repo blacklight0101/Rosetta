@@ -5,6 +5,7 @@ import { fenced } from '../cards/flow-diagram-section.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { decisionLink, handoffFiles, sourceLinks } from './handoff-links.js';
+import { followsStyle } from './handoff-style-markdown.js';
 
 // RF-601, RF-602, RF-603, ADR-013: the planning documents of the hand-off package: requirements,
 // target architecture, decision records and entity mapping (the roadmap and the task cards are in
@@ -33,13 +34,23 @@ export function requirementsMarkdown(handoff: HandoffPackage, esc: MarkdownEscap
   ].join('\n');
 }
 
+/** RF-608: the sentence on the style; it no longer says the components follow it when a rule is broken. */
+function followingSentence(handoff: HandoffPackage, esc: MarkdownEscaper): string {
+  const { style, choices } = handoff;
+  const record = choices.style === '' ? '' : ` (${decisionLink(choices.style)})`;
+  if (!followsStyle(handoff)) {
+    return `The components below do not all follow the ${esc.inline(style.title)} style${record}: at least one dependency breaks its rule. See [the package checks](${handoffFiles.checks}) and [the risks](${handoffFiles.risks}). How to check it: ${esc.inline(style.check)}`;
+  }
+  return `The components below follow the ${esc.inline(style.title)} style${record}. How to check it: ${esc.inline(style.check)}`;
+}
+
 // RF-601, RF-603
 export function architectureMarkdown(
   handoff: HandoffPackage,
   esc: MarkdownEscaper,
   masker: TextMasker,
 ): string {
-  const { content, style, choices } = handoff;
+  const { content, style } = handoff;
   const masked = content.components.map((component) => ({
     name: masker.mask(component.name).text,
     dependsOn: component.dependsOn.map((name) => masker.mask(name).text),
@@ -54,7 +65,7 @@ export function architectureMarkdown(
     '',
     '## Following the style',
     '',
-    `The components below follow the ${esc.inline(style.title)} style${choices.style === '' ? '' : ` (${decisionLink(choices.style)})`}. How to check it: ${esc.inline(style.check)}`,
+    followingSentence(handoff, esc),
     '',
     '## Components',
     '',
@@ -63,7 +74,7 @@ export function architectureMarkdown(
       ? ['The planner named no component.']
       : content.components.map(
           (component) =>
-            `- **${esc.inline(component.name)}**: ${esc.inline(component.responsibility)}`,
+            `- **${esc.inline(component.name)}**${component.role === '' ? '' : ` (${esc.inline(component.role)})`}: ${esc.inline(component.responsibility)}`,
         )),
     '',
   ].join('\n');

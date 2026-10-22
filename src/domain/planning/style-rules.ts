@@ -23,14 +23,14 @@ export type BrokenRuleKind =
   'upward' | 'skipping' | 'core-on-adapter' | 'module-on-module' | 'direct-call' | 'shared-store';
 
 /** A dependency that breaks the rule of the style. */
-export interface BrokenRule {
+interface BrokenRule {
   readonly from: string;
   readonly to: string;
   readonly rule: BrokenRuleKind;
 }
 
 /** A component whose role is empty or is not a role of the style. */
-export interface UnknownRole {
+interface UnknownRole {
   readonly name: string;
   readonly role: string;
 }
