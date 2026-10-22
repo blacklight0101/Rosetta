@@ -122,3 +122,50 @@ it('DEC-126 leaves the /dev/gallery route out of the production bundle', async (
   const scripts = await Promise.all(files.filter((f) => f.endsWith('.js')).map(textOf));
   expect(scripts.join('\n')).not.toContain('/dev/gallery');
 });
+
+const brandFiles = [
+  'android-chrome-192x192.png',
+  'android-chrome-512x512.png',
+  'apple-touch-icon.png',
+  'favicon.ico',
+  'rosetta-full-320w.png',
+  'rosetta-full-640w.png',
+  'rosetta-full-960w.png',
+  'site.webmanifest',
+  ...[16, 32, 48, 64, 128, 180, 192, 256, 512].map((size) => `rosetta-icon-${String(size)}.png`),
+];
+
+it('DEC-161 ships the brand files under assets/brand/ and nothing larger than the 960 px logo', async () => {
+  const brand = files.filter((file) => file.startsWith('assets/brand/'));
+  expect(brand).toEqual(brandFiles.map((name) => `assets/brand/${name}`).sort());
+  expect(brand.filter((file) => /original|1280w|1920w/.test(file))).toEqual([]);
+  const sizes = await Promise.all(
+    brand.map(async (file) => (await readFile(join(outDir, file))).length),
+  );
+  expect(sizes.reduce((sum, size) => sum + size, 0)).toBeLessThan(2 * 1024 * 1024);
+});
+
+it('DEC-161 links the favicon and the touch icon from index.html and serves them without a session', async () => {
+  const html = await textOf('index.html');
+  expect(html).toContain('href="/assets/brand/favicon.ico"');
+  expect(html).toContain('href="/assets/brand/apple-touch-icon.png"');
+  expect(html).toContain('href="/assets/brand/site.webmanifest"');
+  expect(html).not.toContain('href="data:,"');
+
+  current = createTestServer({ staticRoot: outDir });
+  for (const name of ['favicon.ico', 'rosetta-icon-32.png', 'site.webmanifest']) {
+    const response = await current.server.inject({ method: 'GET', url: `/assets/brand/${name}` });
+    expect(response.statusCode).toBe(200);
+  }
+});
+
+it('DEC-161 lists the PWA icons in the manifest', async () => {
+  const manifest: unknown = JSON.parse(await textOf('assets/brand/site.webmanifest'));
+  expect(manifest).toMatchObject({
+    name: 'Rosetta',
+    icons: [
+      { src: '/assets/brand/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+      { src: '/assets/brand/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+  });
+});
