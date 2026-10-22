@@ -167,22 +167,19 @@ describe('README with the checks', () => {
   });
 });
 
-describe('checks.md: the requirements of the task cards', () => {
-  function withNotes(notes: NonNullable<HandoffPackage['content']['requirementNotes']>) {
-    const base = withTasks([planTask()]);
-    return renderHandoff(
-      { ...base, content: { ...base.content, requirementNotes: notes } },
-      masker,
-    );
-  }
+function withNotes(notes: NonNullable<HandoffPackage['content']['requirementNotes']>) {
+  const base = withTasks([planTask()]);
+  return renderHandoff({ ...base, content: { ...base.content, requirementNotes: notes } }, masker);
+}
 
+describe('checks.md: the requirements of the task cards', () => {
   it('RF-627 lists each change and each position outside the list', () => {
     const checks = plain(
       withNotes([
         { kind: 'position', card: 9, position: 14, count: 13 },
         { kind: 'added', task: 'T-008', requirement: 'REQ-011' },
         { kind: 'removed', task: 'T-008', requirement: 'REQ-012' },
-        { kind: 'unmatched', task: 'T-009', requirement: 'REQ-013' },
+        { kind: 'unmatched', task: 'T-009', requirement: 'REQ-013', kept: 1 },
       ])['checks.md'],
     );
 
@@ -205,5 +202,22 @@ describe('checks.md: the requirements of the task cards', () => {
     expect(plain(filesOf([planTask()])['checks.md'])).not.toContain(
       'Requirements of the task cards',
     );
+  });
+});
+
+describe('checks.md: a card whose requirements all fit nothing it builds', () => {
+  it('RF-627 a card that keeps several requirements does not say each is the only one', () => {
+    const checks = plain(
+      withNotes([
+        { kind: 'unmatched', task: 'T-009', requirement: 'REQ-013', kept: 3 },
+        { kind: 'unmatched', task: 'T-009', requirement: 'REQ-014', kept: 3 },
+      ])['checks.md'],
+    );
+
+    expect(checks).toContain(
+      'T-009 keeps REQ-013 although its source cards share nothing with what the task builds: the card keeps all 3 of its requirements.',
+    );
+    expect(checks).toContain('T-009 keeps REQ-014 although');
+    expect(checks).not.toContain('only requirement');
   });
 });

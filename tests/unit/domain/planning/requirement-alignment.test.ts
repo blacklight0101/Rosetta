@@ -101,7 +101,60 @@ describe('alignRequirements: what stays as it is', () => {
 
     expect(content.tasks[0]?.requirements).toEqual(['REQ-004']);
     expect(content.requirementNotes).toEqual([
-      { kind: 'unmatched', task: 'T-001', requirement: 'REQ-004' },
+      { kind: 'unmatched', task: 'T-001', requirement: 'REQ-004', kept: 1 },
+    ]);
+  });
+});
+
+// A rule or a question card is no item, so a requirement citing only such cards belongs to no
+// other card and is never taken off.
+describe('alignRequirements: a requirement no item is built on', () => {
+  const withRule: PlanContent['requirements'] = [
+    ...requirements,
+    { id: 'REQ-005', title: 'Rule', statement: 'Ship free.', sources: ['BR-001', 'OQ-001'] },
+  ];
+
+  it('RF-627 RF-631 a requirement whose source cards are behind no item stays on the card', () => {
+    const task = planTask({ requirements: ['REQ-001', 'REQ-005'], builds: ['feature:F-001'] });
+
+    const content = aligned([task], { requirements: withRule });
+
+    expect(content.tasks[0]?.requirements).toEqual(['REQ-001', 'REQ-005']);
+    expect(content.requirementNotes).toBeUndefined();
+  });
+
+  it('RF-627 it stays when the card gains others, and the others are still corrected', () => {
+    const task = planTask({ requirements: ['REQ-004', 'REQ-005'], builds: ['feature:F-001'] });
+
+    const content = aligned([task], { requirements: withRule });
+
+    expect(content.tasks[0]?.requirements).toEqual(['REQ-001', 'REQ-005']);
+    expect(content.requirementNotes).toEqual([
+      { kind: 'added', task: 'T-001', requirement: 'REQ-001' },
+      { kind: 'removed', task: 'T-001', requirement: 'REQ-004' },
+    ]);
+  });
+
+  it('RF-627 a card whose requirements are all of this kind is left alone, with no note', () => {
+    const task = planTask({ requirements: ['REQ-005'], builds: ['feature:F-001'] });
+    const only = withRule.filter((each) => each.id !== 'REQ-001');
+
+    const content = aligned([task], { requirements: only });
+
+    expect(content.tasks[0]?.requirements).toEqual(['REQ-005']);
+    expect(content.requirementNotes).toBeUndefined();
+  });
+
+  it('RF-627 when all that the card lists would go, each one kept says how many it keeps', () => {
+    const task = planTask({ requirements: ['REQ-003', 'REQ-004'], builds: ['screen:SCRN-001'] });
+    const none = requirements.filter((each) => each.id !== 'REQ-002');
+
+    const content = aligned([task], { requirements: none });
+
+    expect(content.tasks[0]?.requirements).toEqual(['REQ-003', 'REQ-004']);
+    expect(content.requirementNotes).toEqual([
+      { kind: 'unmatched', task: 'T-001', requirement: 'REQ-003', kept: 2 },
+      { kind: 'unmatched', task: 'T-001', requirement: 'REQ-004', kept: 2 },
     ]);
   });
 });
