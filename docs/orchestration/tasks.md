@@ -2386,7 +2386,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `.github/workflows/ci.yml` (job `verify`), `package.json` (scripts `verify`, `test:ci`), docs/environments-and-delivery.md section 6, `tests/integration/tooling/workflows.test.ts` and `workflow-docs-only.test.ts`. Found on 2026-10-22 from the CI timings of the last 100 runs: a code pull request takes about 8 to 10 minutes and the Linux `verify` job runs typecheck, lint, format, dependency-cruiser and knip before the tests (about 1 to 2 minutes), so the tests start late and a type error is reported only after setup and the earlier gates.
 - **Do**: (1) a new job `gates` on ubuntu-latest runs typecheck, lint, format check, dependency-cruiser and knip in parallel with the tests; (2) the Linux `verify` job runs only the tests with coverage; (3) the required check names of the ruleset (`verify (ubuntu-latest)`, `verify (windows-latest)`, `e2e`, `audit`, `gitleaks`, `dependency-review`, `pr-title`, `codeql`) stay exactly as they are, so the owner does not have to change the ruleset: `gates` must pass for `verify (ubuntu-latest)` to pass (the verify job `needs` it, or an aggregate keeps the name), and the choice is written in section 6; (4) the documentation-only path keeps its behaviour; (5) `npm run verify` is unchanged for local use.
 - **Review probes**: a pull request with a lint error fails `verify (ubuntu-latest)` (through `gates`); a documentation-only pull request still skips the heavy steps; the workflow tests list the new job; required check names unchanged (checked against the ruleset list in the test).
@@ -2401,7 +2401,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-177
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `.github/workflows/ci.yml`, `vitest.config.ts` (projects and coverage thresholds), `scripts/test-levels.mjs`, docs/environments-and-delivery.md section 6. Found on 2026-10-22: the critical path of CI is the test step of `verify` (about 6 minutes on each operating system for about 15,500 tests in one Vitest run); the e2e job already runs in three shards and finishes in about 3 minutes.
 - **Do**: (1) the Vitest run is split with `--shard=n/N` (N = 3 to start) on ubuntu-latest and on windows-latest, each shard with its own PostgreSQL service where the database tests run (Linux only, as today); (2) each shard writes a blob report; a merge step (`vitest --merge-reports`) builds the coverage report and enforces the same thresholds as today, and `test-levels` prints the pyramid from the merged report; (3) the required check names `verify (ubuntu-latest)` and `verify (windows-latest)` stay, as aggregate jobs that pass only when every shard and the merge passed (the pattern of the `e2e` job); (4) section 6 states the shard count and how to change it.
 - **Review probes**: a failing test in any shard fails its `verify (<os>)` check; coverage below the threshold fails the merge; the merged test count equals the unsharded count (no test runs twice or not at all); a documentation-only pull request still skips the heavy steps; recorded CI timings before and after in the pull request.
@@ -2416,7 +2416,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `lefthook.yml` (pre-push: `npm run typecheck`, `npx vitest run --project unit`), docs/environments-and-delivery.md section 5, `tests/integration/tooling/lefthook-install.test.ts`. Found on 2026-10-22: every push runs the whole unit project (about 9,300 tests, about 5 minutes on the owner's machine, longer when several agents push at once), although CI runs the full suite on the same commit.
 - **Do**: (1) pre-push keeps `npm run typecheck` and runs only the unit and integration tests related to the files changed against the upstream branch (`vitest related` with the changed files, or `--changed <base>`), with a fallback to the unit project when the base cannot be found; (2) section 5 says CI is the full gate and the hook is a fast check; (3) `LEFTHOOK=0` still skips it.
 - **Review probes**: a push that changes one source file runs only its related tests; a push with no source change runs no tests; a push of a new branch with no upstream falls back to the unit project; the hook still fails on a failing related test.
@@ -2431,7 +2431,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/e2e/start-run-limits.spec.ts:84` (RF-1108 "a queued run turns to started"), `playwright.config.ts`, `scripts/run-e2e.mjs`. Found by the P3-85 verifiers (PR #757, rounds 2 and 3): the test expects "position 1" but the run queue is server-wide and shared by every Playwright worker, so it sees "position 2" or "3" when another spec starts a run at the same time; it failed on main in runs 39612613476, 39587606439, 39564174696 and on PR #757 in run 39759213823.
 - **Do**: make the test independent of other workers: run the queue specs in a serial group or a dedicated project, or assert the position relative to the runs queued before it and then the turn to started; the RF-1108 behaviour asserted stays the same.
 - **Review probes**: the spec passes 20 times in a row in CI with the other e2e specs running in parallel (link the runs); the assertion still fails when the queue never advances (mutation).
@@ -2448,7 +2448,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: DEC-161; docs/design-system.md (tokens, header, landing, sections 3 and 13 for light and dark); `web/` (landing page, app shell header, `index.html`, public assets, web manifest if any); the HTML report and hand-off templates (`templates/` or `src/infrastructure/report/`); `site/` (published sample report); README.md. The owner's asset package path is given by the orchestrator (README.md lists the files).
 - **Do**: (1) add the assets to the repository where the web build serves them (icons 16, 32, 48, 64, 128, 180, 192, 256, 512; `favicon.ico`; `apple-touch-icon.png`; `android-chrome-192x192.png` and `-512x512.png`; `logo/rosetta-full-320w.png`, `-640w.png`, `-960w.png`), never the originals or the 1280 and 1920 px files; (2) favicon, touch icon and PWA icons on every page (landing, sign-in, app, report); (3) landing page: the full logo (responsive `srcset` 320/640/960) in the light theme; in the dark theme the icon with "Rosetta" as live text in the theme's text colour; (4) app header: the icon (32 px, 2x source) with the existing wordmark text; (5) the HTML report and the published sample report show the icon in their header and use the favicon; (6) README.md: the icon (128 px) above the title, with alt text, working in GitHub light and dark mode; (7) docs/design-system.md gets a short Brand section: where each asset is used, the dark-background rule, alt text, minimum sizes; (8) every image has alt text or is marked decorative where the name is already written next to it.
 - **Review probes**: page walk of landing, sign-in, an app page and a report at 1280x800 and 360x780 in light and dark (no unreadable wordmark in dark, no layout shift: width and height set); favicon requested and served (no 404 in the console or network log); axe passes; the image bytes added stay under 2 MB in total.
@@ -2465,7 +2465,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the CI history of the last three days on main and on pull requests (`gh run list`, `gh run view --log-failed`), `tests/integration/presentation/composed-workbook-upload.test.ts` (RF-1108 DEC-149 "stops a file that is arriving", 30 s timeout), the secret-masker timing test (RF-141, 500 ms, fails on Windows), the `build-plan-*` and `understand-*` integration files ("The run has not ended" `vi.waitFor` timeouts), `tests/integration/**/replay-script.test.ts` (RF-506), `tests/e2e/admin-models.spec.ts` (model field turns from input to dropdown when the list loads). Owner priority 2026-10-22: reruns of flaky jobs slow every merge.
 - **Do**: (1) list every test that failed in CI in that window and passed on rerun of the same commit, with its run links; (2) fix each one so it waits for the state it checks (an event, a status, a fake clock) instead of a wall-clock budget, or isolates the shared server state it depends on; (3) keep every assertion; a test is never skipped, retried or given a longer timeout as the fix; (4) list the ten slowest integration files with their time and leave them as they are unless the fix above touches them.
 - **Review probes**: each fixed test passes 10 times in a row under load (`vitest run <file> --repeat` or CI reruns, links in the pull request); a mutation that breaks the behaviour each test checks still fails it; no new `retry`, `skip` or larger timeout in the diff.
@@ -2482,7 +2482,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `.github/workflows/ci.yml` (the two `Install Chromium` steps: `npx playwright install --with-deps chromium`), the supply-chain tests of the workflow (pinned actions, image digests), docs/environments-and-delivery.md section 6. Found 2026-10-22: the step normally takes about 20 s but took 10 to 12 minutes on PR #800 (shards 1 and 3, run attempt 1), so the e2e shards were cancelled at their 15-minute limit while still running tests; seen also on PRs #799 and #790.
 - **Do**: (1) find from the logs whether the browser download or the system packages (`--with-deps`, apt) is the slow part; (2) make the step fast and steady: cache the Playwright browser folder keyed on the Playwright version, install system packages only on a cache miss or use the pinned Playwright container image, whichever the logs support; (3) give the install step its own short timeout so a stuck install fails fast instead of eating the test time; (4) keep the job's 15-minute limit and every test.
 - **Review probes**: three CI runs in a row with the install step under one minute (links); a cache miss still installs and passes; new actions pinned to full SHAs older than the cooldown, or the image pinned by digest; the supply-chain tests pass and cover the new pin.
@@ -4228,7 +4228,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-84
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-405 and RF-201 (the Q-57 scenario), RF-425, Q-57; `src/application/understand/reader-settings.ts` (`CLOUD_CONTEXT_TOKENS = 128_000` for every Anthropic and OpenAI model, `CONTEXT_SHARE = 0.8`), `src/application/projects/default-settings.ts` (role `maxOutputTokens`: reader 4096, verifier and summariser 2048, planner 16384, whatever the model), `prices/models.yaml` (the shipped model list, refreshed by P3-84), `src/application/estimate/estimate-assumptions.ts`, the start page estimate. Found in the orchestrator's review of 2026-10-21: the local Ollama models get their context from the server (P3-64, P3-75), but every hosted model is assumed to have 128,000 tokens of context and every role the same output limit; the current Claude models have a 1M-token window and 128,000 output tokens (platform.claude.com models overview, 2026-10-21), and the reader's 4,096-token output limit cut the Invoice answer on Ollama (P3-83). Sources for the limits: the providers' model pages (Anthropic models overview and each model's page; OpenAI model pages); the builder copies every number from them, never from memory.
 - **Do**: (1) each Anthropic and OpenAI entry of `prices/models.yaml` carries its context window and its maximum output tokens from the provider's model page (a model without a confirmed number is left without it); (2) a hosted role's context is the model's window when the list gives one, otherwise 128,000 as today; a number set in the project's provider settings still wins; the reader stops at its context share as today; (3) a role whose output limit is not set by the project uses a default per kind: for a hosted model the smaller of the model's maximum output and a role default (reader 8,192, verifier and summariser 4,000, planner 16,384; amended 2026-10-21, Q-57), for Ollama today's defaults; a hosted reader's context share stays at 102,400 tokens unless the project sets a context, and a new project with default roles and default caps lets the reader's parallel calls and the first planner call through the budget guard for every listed model, or the start page refuses that model before the run; (4) the start page's estimate and its Assumptions line show each role's context and output limit; the estimate uses them; (5) a price tier (P3-84) still applies per call, so a reader whose context share lets prompts pass a tier threshold is estimated at the higher tier for those calls.
 - **Review probes**: a reader on Claude Haiku 5.5 (context 1M from the list, output 16,000); a model in the list without a window (128,000 as today); a project that sets its own context (its number); a project that sets the reader's output limit (its number); an OpenAI model with its window; Ollama unchanged (P3-64, P3-75); the start page shows the limits; the estimate with a larger context grows and passes the cap check; recorded responses only.
@@ -4273,7 +4273,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-631, DEC-135; `src/domain/planning/behaviours-to-keep.ts` (the behaviours of a task are the supported claims of the FEAT, BR, FLOW and SCRN cards behind its requirements), `src/domain/planning/plan-coverage.ts` (the card "Write the database migrations in the chosen stack", made by code, builds every table and so every requirement behind them), `src/infrastructure/handoff/handoff-behaviour-markdown.ts`. Found in the evaluation of 2026-10-21: the migrations card of the `gpt-5-nano` package carried the approval tests of the invoice form, the customer form and the navigation (18 to 25 claims), which no migration can pin; the build trial agent called the lists "copy-pasted and attached to the wrong cards".
 - **Do**: (1) the migrations card made by code keeps only the claims of BR cards whose citations or text name a table or column it creates, and no FEAT, FLOW or SCRN claim; (2) every other card is unchanged; (3) a claim that by this rule no card keeps any more is listed in `checks.md` as kept by no card.
 - **Review probes**: the recorded `gpt-5-nano` plan (the migrations card keeps no FLOW or SCRN claim, the screen cards still keep theirs); a BR claim citing a column of the table (kept on the migrations card); a claim no card keeps (listed in checks.md); recorded responses only.
@@ -4288,7 +4288,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-87
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-608, ADR-018, DEC-76; `prompts/catalogue/*.v1.md` of the six styles (each has "How to check it"), `src/domain/planning/catalogue.ts`, `prompts/planner/package.v4.md` (item 3, `components`), `src/infrastructure/handoff/` (architecture and checks files). Found in the evaluation of 2026-10-21: a brief with the hexagonal style got components "API Gateway, Business Core, Data Access Layer, Presentation Layer, Workflow Service" with the core depending on the data access layer, under the sentence "The components below follow the Hexagonal (ports and adapters) style"; nothing checked it.
 - **Do**: (1) each component carries its role in the chosen style (the planner prompt asks for it; the roles per style are fixed in code: layered presentation, business, data; hexagonal and clean core, port, adapter; modular monolith module and shared kernel; event-driven producer, consumer, broker; microservices service, gateway, store); (2) code checks the dependencies against the style's rule (layered: no upward or skipping call; hexagonal and clean: the core depends on no adapter; modular monolith: a module depends on another only through its public module; event-driven: producers and consumers do not call each other; microservices: no shared store); (3) a broken rule is listed in `checks.md` and as a risk, and the architecture file no longer says the components follow the style when one is broken; (4) a component without a known role is listed, not guessed.
 - **Review probes**: the recorded hexagonal answer (the core-to-data dependency listed, the sentence changed); a clean layered answer (no finding); an unknown role (listed); each style's rule with a passing and a failing case; recorded responses only.
@@ -4303,7 +4303,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-627, Q-54; `prompts/planner/gap.v1.md` (rule 1: a card that builds none of the items is not written), `prompts/planner/gap-repair.v1.md`, `src/application/plan/gap-answer.ts`, `src/domain/planning/plan-gap.ts`. Found in the evaluation of 2026-10-21 (Ollama `gemma4:e4b`, brief with a React front end): the package was written but the run ended `Failed` with RST-1806 because the one gap item, `screen:SCRN-005` System Dashboard, was answered with a card "Implement System Dashboard UI" without `builds`; the card was dropped and the repair prompt was never asked.
 - **Do**: (1) when the gap answer holds a card with no valid `builds`, the gap repair call is made once for it with the items it may build (P3-82 repair path), under the budget guard; (2) when the block held exactly one item and the answer exactly one card without `builds`, the card builds that item without a call, and the event names the rule; (3) a card still without an item is dropped as today and the run ends as today.
 - **Review probes**: the recorded answer (one item, one card without builds: linked, run Completed); two items and a card without builds (repair call, its answer links); a repair answer still without builds (dropped, RST-1806 as today); the cap reached before the repair (as today); recorded responses only.
@@ -4318,7 +4318,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-1106, RF-422, RF-423, DEC-107; `src/domain/budget/budget.ts` (`capsFor`: on server keys the run cost cap is the lower of the run's cap and the administrator's run cap), `src/application/runs/run-budget-events.ts`, the event `run.started` (its `caps`), the project settings page and the start page. Found in the evaluation of 2026-10-21 (Anthropic `claude-sonnet-5-5`, server key): the project's run cap was $5.00 and `run.started` recorded `maxCostMicros: 5000000`, but the administrator's run cap was $0.50, so the understand run ended `CapReached` (RST-1600) at $0.34 spent with the reason "capMicros 500000"; nothing before the run said $0.50 applied.
 - **Do**: (1) `run.started` records the effective caps with where each comes from (project, administrator, account); (2) the start page and the project settings name the effective run cap when a server key is used and the administrator's cap is lower, with the sentence that the administrator's cap applies; (3) the `CapReached` message names which cap was reached and who can raise it.
 - **Review probes**: server key, project $5.00, administrator $0.50 (run.started records $0.50 from the administrator, the start page says so); own key (the project cap applies, no administrator line); account daily cap reached (the message names the daily cap); recorded events only.
@@ -4333,7 +4333,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-605, RF-609, DEC-80, Q-59; `web/src/pages/PlanStepButtons.tsx` and `use-plan-setup.ts` ("Use the defaults for the rest"), `src/infrastructure/handoff/` (README of the package). Found in the evaluation of 2026-10-21: three of the day's packages were written with "Use the defaults for the rest", so no layer had a technology, the API contract was "no contract applies", and the first card was "Write the database migrations in the chosen stack" with no stack chosen; nothing at the top of the package said so.
 - **Do** (Q-59, default applies): (1) the "Use the defaults for the rest" button says, when no stack layer is answered, that the package will name no technology and the planner's suggested options stay unused, with a link to the stack step; (2) the package README opens with one line when no layer is answered ("No technology was chosen; the cards are written for any stack. Choose a stack in Plan setup and write the package again."); (3) DEC-80 is unchanged: no layer takes a default technology.
 - **Review probes**: defaults with no layer answered (the button line, the README line); one layer answered (no README line); a saved brief with the full stack (unchanged).
@@ -4348,7 +4348,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-86
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-401, RF-402, RF-405, RF-208, ADR-007, Q-60; the provider settings `timeoutSeconds` (default 120, per attempt), `src/infrastructure/providers/anthropic/anthropic-provider.ts` and the OpenAI adapter (one request, answer read at the end), `src/application/use-cases/suggest-plan-options.ts` (`CALL_TIMEOUT_MS = 120_000`). The builder confirms the streaming parameters on the providers' API references, never from memory. Found in the evaluation of 2026-10-21: the planner package call ended at 119,996 ms with RST-1505 twice for OpenAI `gpt-5-nano` (third attempt answered in 82 s with 10,627 output tokens) and twice for Anthropic `claude-sonnet-5-5` (planner limit 32,000; the orchestrator stopped the run before the third identical attempt); each timed-out call was recorded with 0 tokens and $0.00 although the provider may have generated and billed the answer.
 - **Do** (Q-60, default applies): (1) a call whose output limit is above 8,192 tokens streams the answer, and the timeout counts the time without a new token (idle), not the whole answer; (2) a call that still times out is metered with its input tokens estimated and its output marked unknown, and the call log says so, instead of $0.00; (3) the retry of a timed-out call that produced no token is not sent again unchanged a third time: after the second timeout the run ends with RST-1505 and a next step that names the timeout setting; (4) the plan options call uses the provider timeout instead of its fixed 120 s.
 - **Review probes**: a recorded stream that takes 300 s with tokens every second (no timeout, answer kept); a stream idle for longer than the timeout (RST-1505); a timed-out call (metered as estimated, the log line); two timeouts in a row (no third attempt, the next step); a small call (not streamed, as today); the options call follows the provider timeout; recorded responses only.
@@ -4378,7 +4378,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-627, RF-630, RF-631; `src/application/plan/plan-package.ts`, `coverage-answer.ts`, `src/domain/planning/plan-coverage.ts`, `src/application/plan/plan-links.ts`. Found in the evaluation of 2026-10-21 (Ollama `gemma4:e4b`): the planner gave its screen cards the requirement positions 12, 13 and 14 for requirements 11, 12 and 13 (one too high); the coverage call linked the cards to the right screens, so the invoice screen card carried the masterdata requirement and its behaviours, and the dashboard card had "Requirements: none" because position 14 did not exist; nothing reported it.
 - **Do**: (1) after the coverage links, for each card that builds an item, the requirements whose source cards are behind that item are added to the card, and a requirement is taken off a card only when its sources share nothing with what the card builds and another card builds an item behind them; a requirement that cites only cards no item is built on (rules, questions) stays where the planner put it (amended 2026-10-22, DEC-160); (2) a requirement position outside the list is listed in `checks.md`, not dropped silently; (3) each change is listed in `checks.md`.
 - **Review probes**: the recorded answer (the three screen cards get requirements 11, 12, 13 and their behaviours; position 14 listed); a card that builds nothing (unchanged); a card whose requirement and builds agree (unchanged); recorded responses only.
@@ -4393,7 +4393,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-85
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-405, RF-422, RF-1106, Q-57, DEC-159; `src/application/estimate/` (the run and plan estimates), `src/domain/budget/budget.ts` (`capsFor`), `src/infrastructure/guards/budget-guard.ts` (the worst-case reservation), `src/application/models/role-limits.ts`, the start page. Found in fix round 1 of P3-85 (PR #757): under the Q-57 defaults Claude Fable 5.1, Claude Opus 5.5, gpt-6-astra, gpt-5.5, gpt-5.6-sol and gpt-5.4 cannot reserve their first parallel reader calls (and for some the first planner call) within the default 0.50 USD run cap; the owner chose to keep the defaults and warn (DEC-159).
 - **Do**: (1) the estimate computes, per stage, the reservation of the first calls the guard will hold (each role's parallelism times the worst case of one call, as the budget guard computes it) and compares it with the run cap and the daily cap that apply; (2) when either cannot hold it, the start page shows a warning before the run naming the cap and the amount needed, with the existing way to raise the cap; (3) a model that fits shows no warning.
 - **Review probes**: default caps on Claude Sonnet 5.5 (no warning); default caps on Claude Opus 5.5 (warning names the run cap and the amount); run cap raised to 3.00 USD on Opus (no warning); a server key with a lower administrator cap (the administrator's cap is the one named); recorded prices only, no provider call.
@@ -4408,7 +4408,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-87
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/planning/brief-restated.ts` (`styleNames`, lines 71-72), `tests/unit/domain/planning/brief-restated.test.ts`. Found by the P3-87 verifier (PR #758, round 2, MINOR 1): the bracket regexes lack their escapes (`/(([^)]*))/u` and `/([^)]*)/gu`), so the catalogue title without its note and the note itself are never used as names; only the style id works ("Use ports and adapters architecture" is kept although the brief chose hexagonal).
 - **Do**: use `/\(([^)]*)\)/u` for the note and `/\([^)]*\)/gu` to remove it, test first.
 - **Review probes**: hexagonal brief: "Use ports and adapters architecture" is dropped with a link to the brief record; "Adopt hexagonal architecture" still dropped; "Store VAT as a fraction in PostgreSQL" and "Use layered error handling" still kept.
@@ -4423,7 +4423,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-93
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/providers/retrying-call.ts`, the Ollama and OpenAI-compatible adapters, `src/infrastructure/guards/budget-guard.ts`, docs/providers.md section 2.4. Found by the P3-93 verifier (PR #762, round 1, MINOR 3): those providers get the two-timeout limit but not the estimated metering of P3-93, so their timed-out attempts are still booked as 0 tokens.
 - **Do**: a timed-out attempt on Ollama or an OpenAI-compatible server is metered like OpenAI and Anthropic (estimated input, `usageSource` estimated, booked to the ledger and run totals through the budget guard); a local model's cost stays $0 but its tokens count against a token cap.
 - **Review probes**: Ollama timeout then success books both attempts' tokens; OpenAI-compatible timeout then timeout books both; the run cap and token cap see the booked usage; recorded responses only.
@@ -4438,7 +4438,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-93
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/guards/reservation-lifetime.ts`, `src/infrastructure/guards/budget-guard.ts`, the streaming adapters of P3-93. Found by the P3-93 verifier (PR #762, round 1, MINOR 4): the reservation lifetime still assumes a call lasts at most timeout x attempts, so a long stream that keeps receiving data can outlive its reservation and let other calls reserve against money it will still spend.
 - **Do**: a streamed call keeps (or renews) its reservation while it is receiving data, and releases or settles it exactly once when it ends, fails or is aborted; no other call can reserve against the amount it holds.
 - **Review probes**: a 300-second stream with events every few seconds keeps its reservation to the end; two parallel calls near the cap: the second is refused while the first streams; abort releases once; recorded responses and a fake clock only.
@@ -4453,7 +4453,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-85
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/agent/empty-answer-retry.ts` (`OUTPUT_LIMIT_CEILING` 32,768), `src/application/projects/project-settings.ts` (`ranged(256, 32_768)`), `prices/models.yaml` (`maxOutputTokens`). Found by the P3-85 verifier (PR #757, round 1, MINOR 3): the P3-86 retry doubles the output limit only up to 32,768, not up to the model's listed maximum (128,000 for the current Claude and GPT-5 models), so the planner default of 16,384 has one doubling of room.
 - **Do**: the retry doubles up to the model's listed maximum output (32,768 when the model has no number); the project setting range follows the listed maximum; the budget guard still reserves the worst case of the retried call.
 - **Review probes**: a planner call on a model with a 128,000 maximum doubles to 32,768 then is not doubled again past the maximum; a model without the number stops at 32,768; the retried call is refused cleanly when its worst case passes the cap; recorded responses only.
@@ -4468,7 +4468,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/plan/plan-answer.ts` (`listedPosition`, `taskSchema`), `src/application/use-cases/build-plan.ts` (`assemble`). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-01: gemma4 wrote `"requirements": [{"index": 1}]` in every task; every task failed the schema, the whole answer was dropped and the run failed RST-1803 with "no requirement it wrote names a supported card"; a second try passed.
 - **Do**: (1) `listedPosition` also accepts `{index: N}` (same meaning as `{position: N}`); (2) one task that still cannot be read is dropped and listed in checks.md instead of failing the whole answer (P3-82 open question 2); (3) an answer that cannot be read at all fails with its own reason, not the "no supported card" message.
 - **Review probes**: the stored answer of the evaluation (index form) assembles; an answer with one unreadable task keeps the others and lists the dropped one; a wholly unreadable answer gives the new reason; mutation: removing the `index` branch fails a test.
@@ -4485,7 +4485,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/plan/data-model-answer.ts` (`legacy.field` is a name of at most 80 characters). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-02: the planner wrote field descriptions of 89 to 113 characters; the whole answer was refused, data-model.md said "no usable table", 69 fields were dropped and the package had no migrations card.
 - **Do**: (1) a field, column or table that fails its schema is dropped (or a too-long text is cut at the limit with an ellipsis) and listed in checks.md, the rest of the answer is kept; (2) the log line names the parse problem instead of "no usable table" when the answer had tables.
 - **Review probes**: an answer with one 113-character legacy field keeps every table and writes the migrations card; the dropped or cut item is listed in checks.md; mutation: restoring whole-answer refusal fails a test.
@@ -4502,7 +4502,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/sources/workbook/render-formulas.ts`, the code that writes `workbook-formulas.md` (P3-94; it already collapses regions), the workbook renderer version. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), findings EV-03 and EV-22: Asset Manager Inventory `formulas.md` is 4,947 lines (10 regions of 499 rows repeating one relative formula), 157k tokens; the reader read 6.7% and the closing stock, value and state rules never reached a card; Invoice keeps 8 rows of `R*0.5` for one rule.
 - **Do**: (1) cells whose formulas are the same in R1C1 form and adjacent form one region, written once: the range, the formula (A1 form of the first cell and R1C1), the table column name when known (P3-94) and two or three example cells with their cached values; (2) relative copies that differ only by offset fold into the same region; (3) a new renderer version, recorded in the manifest; (4) line numbers and the citation mapping (P3-74) still point to real lines.
 - **Review probes**: Asset Manager Inventory `formulas.md` falls under 10% of its old size and still names every distinct formula; a region with one irregular cell lists that cell apart; a citation of a region line maps to the region; mutation: disabling the fold restores the old size in a test.
@@ -4519,7 +4519,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the understand card answer schema and its repair (RF-206, RF-208). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-07 (regression on Loan): a SCRN card with the four inputs and the C4 `tenu` validation had no `claims` array ("cards.5.claims: expected array, received undefined"); two identical repairs, card dropped; 5 claims instead of 15.
 - **Do**: (1) a card whose `claims` is missing reads as `claims: []` and keeps the claims its structured block yields (as SCRN fields already do); (2) when a repair returns the same answer, stop repairing and keep the other cards; drop only the unreadable card and note it.
 - **Review probes**: the Loan reader answer of the evaluation keeps the SCRN card with its input and validation claims; an identical repair is not sent twice; mutation: requiring `claims` again fails a test.
@@ -4536,7 +4536,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the workbook reader prompt family (the orchestrator gives the next prompt version numbers in the brief), the verifier prompt, RF-208 repairs. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), findings EV-08 and EV-11: Invoice INT-001..005 "Workbook Indexing" claim that `workbook.md` is a workbook feature (Supported, counts as invented); formula and macro claims cite `values.md` lines, so correct rules (VAT to Pay, FormSearch trigger, PDF/Excel export, e-mail draft) are rightly rejected while weak value-based guesses are Supported.
 - **Do**: (1) the reader prompt says `workbook.md`, `values.md`, `formulas.md` and the other rendered files are Rosetta's view of the workbook, never part of it; (2) a formula claim cites `formulas.md` (or `workbook-formulas.md`), a macro claim cites the module file; (3) the verifier rejects a claim about the rendered file names themselves; (4) a targeted repair asks for the formula or macro line when a rule claim cites only values; new prompt versions recorded in the manifest.
 - **Review probes**: recorded answers: a "workbook.md is an index" claim is rejected; a VAT rule claim citing values.md gets the repair and is kept with a formulas.md citation; the prompt texts carry the new rules; mutation: removing the repair rule fails a test.
@@ -4553,7 +4553,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: consolidation (P3-80, RF-230), SCRN claim generation, the verifier call. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), findings EV-05 and EV-06: Asset Manager Deepen has three copies of the same open question, five "Product Master Data Table" cards, 53 of 323 Supported texts are exact duplicates; Invoice has six "Invoice Generation Process" flows; one screen card has 136 claims, 21+ of them "Action CommandButtonN starts the handler ButtonClick", about half rejected for identical text and citations.
 - **Do**: (1) consolidation merges cards of one type whose normalised titles match (case, punctuation, plural), keeping every distinct claim; (2) identical claim texts in one card are kept once; (3) screen actions that share one handler become one claim listing the controls; (4) identical claim text with identical citations gets one verdict (cached), so they cannot split.
 - **Review probes**: the evaluation's Asset Manager and Invoice card sets shrink with no distinct Supported claim lost; three identical open questions become one; a 21-button handler gives one claim; mutation: removing the title merge fails a test.
@@ -4570,7 +4570,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the reader loop guard (RST-1303), the in-run area retry, the Deepen area selection (RF-209). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-10: Asset Manager Inventory#2 and Report failed RST-1303 in both attempts with the identical call sequence (a local model gives the same answer to the same prompt); Deepen skips failed areas; the page says "Run the area again", which cannot help.
 - **Do**: (1) the retry of an area that failed RST-1303 adds a note naming the repeated call and the files not yet read, so the second attempt differs; (2) Deepen lists the areas that failed and reads them by default; (3) the failed area's advice names Deepen or a different reader model.
 - **Review probes**: a recorded loop: the retry prompt differs and names the repeated call; Deepen's plan includes the failed areas; mutation: an unchanged retry prompt fails a test.
