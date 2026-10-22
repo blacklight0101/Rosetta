@@ -12,9 +12,12 @@ const script = join(process.cwd(), 'scripts', 'pre-push-tests.mjs');
 
 interface Plan {
   readonly mode: 'none' | 'related' | 'full';
-  readonly args: readonly string[];
+  readonly base: string | null;
+  readonly steps: readonly (readonly string[])[];
   readonly reason: string;
 }
+
+type Tracking = 'upstream' | 'no-upstream' | 'no-origin';
 
 // Git runs inside the test without the variables a hook environment sets (GIT_DIR and friends).
 async function git(cwd: string, args: readonly string[]): Promise<void> {
@@ -43,12 +46,9 @@ async function write(path: string, content: string): Promise<void> {
 }
 
 // A work repository whose origin/main holds one commit; the task branch is one commit ahead with
-// the given files. `tracking` false creates the branch without an upstream, as a new branch does.
-async function repository(
-  root: string,
-  files: readonly string[],
-  tracking = true,
-): Promise<string> {
+// the given files. `upstream` tracks origin/main; `no-upstream` has no upstream; `no-origin` also
+// has no origin/main, so no base can be read.
+async function repository(root: string, files: readonly string[], tracking: Tracking = 'upstream') {
   const work = join(root, 'work');
   await mkdir(work);
   await git(work, ['init', '--quiet', '-b', 'main']);
@@ -61,11 +61,12 @@ async function repository(
   await git(work, [
     'checkout',
     '--quiet',
-    tracking ? '--track' : '--no-track',
+    tracking === 'upstream' ? '--track' : '--no-track',
     '-b',
     'task/p1-179-probe',
     'origin/main',
   ]);
+  if (tracking === 'no-origin') await git(work, ['update-ref', '-d', 'refs/remotes/origin/main']);
   for (const file of files) await write(join(work, file), 'export const value = 1;\n');
   await git(work, ['add', '-A']);
   await git(work, ['commit', '--quiet', '-m', 'change']);
@@ -81,27 +82,56 @@ describe('pre-push test selection', () => {
   const tmp = useTempRoot('rosetta-prepush-');
 
   it('RNF-005 a push that changes one source file runs only the tests related to it', async () => {
-    const work = await repository(tmp.path, ['src/application/use-case.ts']);
-    const plan = await planFor(work);
+    const plan = await planFor(await repository(tmp.path, ['src/application/use-case.ts']));
+    const args = plan.steps.flat();
 
     expect(plan.mode).toBe('related');
-    expect(plan.args).toEqual(
-      expect.arrayContaining(['--changed', 'origin/main', '--passWithNoTests']),
+    expect(args).toEqual(expect.arrayContaining(['--changed', 'origin/main', '--passWithNoTests']));
+  });
+
+  it('RNF-005 a related run never includes the integration project', async () => {
+    const plan = await planFor(await repository(tmp.path, ['src/application/use-case.ts']));
+
+    expect(plan.steps.flat()).not.toContain('integration');
+  });
+
+  it('RNF-005 a documentation-only push runs the documentation consistency tests only', async () => {
+    const plan = await planFor(await repository(tmp.path, ['docs/handoff-note.md']));
+
+    expect(plan.mode).toBe('related');
+    expect(plan.steps).toEqual([
+      [
+        'run',
+        '--project',
+        'unit',
+        '--project',
+        'integration',
+        'tests/unit/docs',
+        'tests/integration/docs',
+      ],
+    ]);
+  });
+});
+
+describe('pre-push test base', () => {
+  const tmp = useTempRoot('rosetta-prepush-base-');
+
+  it('RNF-005 a new branch with no upstream takes the merge-base with origin/main as its base', async () => {
+    const plan = await planFor(
+      await repository(tmp.path, ['src/application/use-case.ts'], 'no-upstream'),
     );
+
+    expect(plan.mode).toBe('related');
+    expect(plan.steps.flat()).toContain('--changed');
+    expect(plan.base).toMatch(/^[0-9a-f]{40}$/u);
   });
 
-  it('RNF-005 a push with no source change runs no tests', async () => {
-    const work = await repository(tmp.path, ['docs/handoff-note.md']);
+  it('RNF-005 a new branch with no origin/main to compare against falls back to the unit project', async () => {
+    const plan = await planFor(
+      await repository(tmp.path, ['src/application/use-case.ts'], 'no-origin'),
+    );
 
-    expect((await planFor(work)).mode).toBe('none');
-  });
-
-  it('RNF-005 a new branch with no upstream falls back to the unit project', async () => {
-    const work = await repository(tmp.path, ['src/application/use-case.ts'], false);
-    const plan = await planFor(work);
-
-    expect(plan.mode).toBe('full');
-    expect(plan.args).toEqual(['run', '--project', 'unit']);
+    expect(plan).toMatchObject({ mode: 'full', steps: [['run', '--project', 'unit']] });
   });
 
   it.each([
@@ -122,9 +152,8 @@ describe('pre-push test selection', () => {
       { length: 30 },
       (_, index) => `src/application/part-${String(index)}.ts`,
     );
-    const work = await repository(tmp.path, files);
 
-    expect((await planFor(work)).mode).toBe('full');
+    expect((await planFor(await repository(tmp.path, files))).mode).toBe('full');
   });
 });
 
