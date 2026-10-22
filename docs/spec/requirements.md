@@ -1075,6 +1075,7 @@ As a developer I want Rosetta to recommend an architecture from what it found in
 
 - Given the code map and the verified cards, when Plan setup opens, then Rosetta proposes the two best-fitting styles from layered (N-tier), modular monolith, hexagonal, Clean, event-driven and microservices, each with its trade-offs, the evidence (card ids) behind it and one marked recommended.
 - Given I choose a style, when the package is written, then it contains an ADR for the style with the options considered, the evidence and the reason, and a target architecture that follows the style.
+- Given I choose a style and a planner decision with no source card names it by its catalogue title, by the note in brackets of that title or by its id, when the package is written, then the decision is left out, its links point at the style's ADR and the package lists it as restated.
   Verification: integration test with recorded responses.
 
 **RF-609 Target stack per layer** - R1 - Must - Source DEC-78 - ADR-018
