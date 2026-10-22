@@ -8,9 +8,11 @@ import { Glyph } from '../components/Glyph.js';
 import type { CapWarning } from '../lib/cap-warnings.js';
 import { scanSubjectOf } from '../lib/live-run/scan-subject.js';
 import { capComparison } from '../lib/cap-comparison.js';
+import { effectiveRunCapMicros } from '../lib/run-cap.js';
 import type { EstimateLoad } from './use-estimate.js';
 import { EstimateTable } from './EstimateTable.js';
 import { ServerKeyNote } from './ServerKeyNote.js';
+import { ServerRunCapNote } from './ServerRunCapNote.js';
 
 // RF-425, RF-1001, DEC-71, DEC-108, DEC-117, design-system.md section 14 (Start run): the estimate
 // card. The run cap is editable here, with a meter of the likely cost against it and a marker at the
@@ -27,6 +29,11 @@ interface FieldError {
 interface CapField {
   readonly text: string;
   readonly capMicros: bigint;
+  /** RF-1106: the administrator's run cap on server keys, and whether the estimate uses them. */
+  readonly serverRunCap: {
+    readonly administrator: bigint | undefined;
+    readonly serverKeys: boolean;
+  };
   /** `budget.run.maxTokens`: the cap an estimate of local models is compared with (Q-51). */
   readonly capTokens: number;
   readonly error: FieldError | undefined;
@@ -53,7 +60,8 @@ const hintId = 'cap-hint';
 
 function CapMeter(props: { readonly estimate: RunEstimate; readonly cap: CapField }): JSX.Element {
   const { estimate, cap } = props;
-  const shown = capComparison(estimate, { micros: cap.capMicros, tokens: cap.capTokens });
+  const micros = effectiveRunCapMicros({ typed: cap.capMicros, ...cap.serverRunCap });
+  const shown = capComparison(estimate, { micros, tokens: cap.capTokens });
   const mark = Math.min(100, shown.mark);
   return (
     <div class="rst-start__meter">
@@ -160,6 +168,12 @@ function Body(props: EstimateSectionProps & { readonly onRetry: () => void }): J
   return (
     <>
       <CapFields cap={cap} estimate={estimate.estimate} />
+      <ServerRunCapNote
+        serverKeys={cap.serverRunCap.serverKeys}
+        administrator={cap.serverRunCap.administrator}
+        typed={cap.capMicros}
+        where="start"
+      />
       <Warnings warnings={warnings} />
       <ServerKeyNote estimate={estimate.estimate} />
       <EstimateTable estimate={estimate.estimate} />

@@ -1,5 +1,6 @@
 import type { RunEvent } from '../../api/run-events.js';
 import { toolText } from './tool-text.js';
+import { capReachedText } from './cap-text.js';
 
 // RF-1002: the short text of an event in the verbose log, for example `Catalog read_file
 // Catalog/Edit.aspx.cs:40-80`. Every value comes from the event and is shown as text; a long one is
@@ -76,7 +77,7 @@ const writers: Readonly<Record<string, Writer>> = {
     `stopped: ${field(data, 'stopReason')} after ${field(data, 'roundsDone')} rounds`,
   'budget.warning': (data) =>
     `${field(data, 'scope')} at ${field(data, 'sharePercent')}% of its cap`,
-  'budget.capReached': (data) => `${field(data, 'role')} ${field(data, 'scope')} reached its cap`,
+  'budget.capReached': (data) => capReachedText(data),
   'run.ended': (data) =>
     `${field(data, 'endState')}${data['errorCode'] === undefined ? '' : ` · ${field(data, 'errorCode')}`}`,
 };

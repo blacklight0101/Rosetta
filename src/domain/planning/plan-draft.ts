@@ -16,6 +16,8 @@ export interface DraftRequirement {
 export interface DraftComponent {
   readonly name: string;
   readonly responsibility: string;
+  /** RF-608: the component's role in the chosen style; empty when the planner left it out. */
+  readonly role: string;
   /** Names of other components. */
   readonly dependsOn: readonly string[];
 }

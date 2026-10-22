@@ -16,6 +16,14 @@ import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { RunEventPublisher } from './run-event-publisher.js';
 import { scopeOf } from './run-scope.js';
+import { startCapsDataOf, type StartCaps } from './run-start-caps.js';
+import type { RunStartCaps } from '../../domain/budget/budget.js';
+import type { ManifestCaps } from '../../domain/runs/run-manifest.js';
+
+/** The manifest's caps with the run cap the run starts with, so the page meter shows that cap (RF-1106). */
+function effectiveCapsOf(caps: ManifestCaps, effective: RunStartCaps): ManifestCaps {
+  return { ...caps, run: { ...caps.run, maxCostMicros: Number(effective.run.maxCostMicros) } };
+}
 
 // RF-003, RF-126, RF-1006, RNF-002: the steps of a run that touch more than the index. At its start
 // the manifest gets the start time and `run.started` opens the event log; when it ends the index
@@ -30,6 +38,11 @@ export interface RunLifecycleDependencies {
   readonly history: RunEventHistory;
   readonly clock: Clock;
   readonly logger: Logger;
+  /**
+   * The caps a run starts with (RF-1106, DEC-107), recorded on `run.started`; a run without it
+   * records the caps of its manifest only (a test without a project).
+   */
+  readonly startCaps?: Pick<StartCaps, 'of'>;
 }
 
 export interface StartedRun {
@@ -59,12 +72,14 @@ export class RunLifecycle {
     }
     const manifest = markManifestStarted(stored, now.toISOString());
     await manifests.write(scope, manifest);
+    const effective = await this.deps.startCaps?.of(started, manifest);
     const events = await RunEventPublisher.open({ scope, ...this.eventParts() });
     await events.emit('run.started', {
       stage: started.stage,
       source: manifest.source,
       roles: manifest.roles,
-      caps: manifest.caps,
+      caps: effective === undefined ? manifest.caps : effectiveCapsOf(manifest.caps, effective),
+      ...(effective === undefined ? {} : { effectiveCaps: startCapsDataOf(effective) }),
     });
     return { run: started, manifest, events };
   }

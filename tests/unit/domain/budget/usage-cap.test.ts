@@ -23,13 +23,17 @@ const inputs: CapInputs = {
 describe('caps of a call (DEC-107)', () => {
   it('RF-422 with server keys the run cap is the lower of the run and the administrator cap', () => {
     expect(capsFor('server', inputs)).toEqual([
-      { kind: 'run-cost', limit: 500_000n },
+      { kind: 'run-cost', limit: 500_000n, source: 'administrator' },
       { kind: 'run-tokens', limit: 2_000_000n },
-      { kind: 'user-day', limit: 1_000_000n },
-      { kind: 'server-month', limit: 10_000_000n },
+      { kind: 'user-day', limit: 1_000_000n, source: 'administrator' },
+      { kind: 'server-month', limit: 10_000_000n, source: 'administrator' },
     ]);
     const lowRun = { ...inputs, run: { maxCostMicros: 100_000n, maxTokens: 5n } };
-    expect(capsFor('server', lowRun)[0]).toEqual({ kind: 'run-cost', limit: 100_000n });
+    expect(capsFor('server', lowRun)[0]).toEqual({
+      kind: 'run-cost',
+      limit: 100_000n,
+      source: 'project',
+    });
   });
 
   it('RF-1106 with server keys an account daily cap set by the administrator replaces the default', () => {
@@ -37,18 +41,19 @@ describe('caps of a call (DEC-107)', () => {
 
     expect(capsFor('server', { ...inputs, account })).toContainEqual({
       kind: 'user-day',
+      source: 'account',
       limit: 250_000n,
     });
   });
 
   it('RF-1106 with the user own keys only the run caps and the own daily cap apply', () => {
     expect(capsFor('user', inputs)).toEqual([
-      { kind: 'run-cost', limit: 2_000_000n },
+      { kind: 'run-cost', limit: 2_000_000n, source: 'project' },
       { kind: 'run-tokens', limit: 2_000_000n },
     ]);
     const account = { dailyCapMicros: 1n, ownDailyCapMicros: 300_000n };
     expect(capsFor('user', { ...inputs, account })).toEqual([
-      { kind: 'run-cost', limit: 2_000_000n },
+      { kind: 'run-cost', limit: 2_000_000n, source: 'project' },
       { kind: 'run-tokens', limit: 2_000_000n },
       { kind: 'own-day', limit: 300_000n },
     ]);
