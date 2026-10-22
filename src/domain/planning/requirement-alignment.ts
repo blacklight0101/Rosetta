@@ -7,7 +7,9 @@ import type { RequirementNote } from './requirement-notes.js';
 // for every screen card, in the evaluation of 2026-10-21), while the coverage links name the items
 // by id, which code checks. So once the cards are linked, a card that builds an item gets every
 // requirement that cites a source card of that item, and loses the ones that cite none of the
-// source cards of what it builds. A card that builds nothing, and an item with no source card,
+// source cards of what it builds but cite one behind another item (so another card has them). A
+// requirement that cites only cards no item is built on (a rule, a question) has no other card to
+// go to, so it is never taken off. A card that builds nothing, and an item with no source card,
 // change nothing; the last requirement of a card is never taken off. Every change is a note.
 
 type Sources = ReadonlyMap<string, ReadonlySet<string>>;
@@ -48,19 +50,31 @@ interface Aligned {
 function alignTask(task: PlanTask, plan: PlanContent, sources: Sources): Aligned {
   const behind = new Set(task.builds.flatMap((id) => [...(sources.get(id) ?? [])]));
   if (behind.size === 0) return { task, notes: [] };
+  const anywhere = new Set([...sources.values()].flatMap((cards) => [...cards]));
   const wanted = plan.requirements
     .filter((each) => each.sources.some((card) => behind.has(card)))
     .map((each) => each.id);
-  const note = (kind: 'added' | 'removed' | 'unmatched', requirement: string): RequirementNote => ({
+  // Listed by the card and behind no item of the package: no other card can have it.
+  const homeless = plan.requirements
+    .filter((each) => task.requirements.includes(each.id))
+    .filter((each) => !each.sources.some((card) => anywhere.has(card)))
+    .map((each) => each.id);
+  const kept = plan.requirements
+    .map((each) => each.id)
+    .filter((id) => wanted.includes(id) || homeless.includes(id));
+  const removed = task.requirements.filter((id) => !kept.includes(id));
+  const note = (kind: 'added' | 'removed', requirement: string): RequirementNote => ({
     ...{ kind, task: task.id, requirement },
   });
   if (wanted.length === 0) {
-    return { task, notes: task.requirements.map((id) => note('unmatched', id)) };
+    const unmatched = (requirement: string): RequirementNote => ({
+      ...{ kind: 'unmatched', task: task.id, requirement, kept: task.requirements.length },
+    });
+    return { task, notes: removed.map(unmatched) };
   }
   const added = wanted.filter((id) => !task.requirements.includes(id));
-  const removed = task.requirements.filter((id) => !wanted.includes(id));
   return {
-    task: { ...task, requirements: wanted },
+    task: { ...task, requirements: kept },
     notes: [...added.map((id) => note('added', id)), ...removed.map((id) => note('removed', id))],
   };
 }

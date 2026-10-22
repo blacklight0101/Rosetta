@@ -13,12 +13,19 @@ export type RequirementNote =
     }
   /**
    * Code put a requirement on a task card (`added`), took it off (`removed`), or kept it because
-   * it was the only one the card had (`unmatched`), from the cards behind what the task builds.
+   * none of the requirements of the card fit what it builds (`unmatched`, `kept` being the number
+   * of requirements the card keeps), from the cards behind what the task builds.
    */
   | {
-      readonly kind: 'added' | 'removed' | 'unmatched';
+      readonly kind: 'added' | 'removed';
       readonly task: string;
       readonly requirement: string;
+    }
+  | {
+      readonly kind: 'unmatched';
+      readonly task: string;
+      readonly requirement: string;
+      readonly kept: number;
     };
 
 /** The requirement positions the draft tasks name that are outside the list of `count` requirements. */

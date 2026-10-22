@@ -15,12 +15,18 @@ function lineOf(note: RequirementNote): string {
     return `- The task card at position ${String(card)} of the plan answer lists requirement position ${String(position)}, but the plan has ${size}; that position was ignored.`;
   }
   const { task, requirement } = note;
+  const none = `${SHARED} share nothing with what the task builds`;
+  if (note.kind === 'unmatched') {
+    const why =
+      note.kept === 1
+        ? 'it is the only requirement of the card'
+        : `the card keeps all ${String(note.kept)} of its requirements`;
+    return `- ${task} keeps ${requirement} although ${none}: ${why}.`;
+  }
   if (note.kind === 'added') {
     return `- ${task} gained ${requirement}: ${SHARED} are behind what the task builds.`;
   }
-  const none = `${SHARED} share nothing with what the task builds`;
-  if (note.kind === 'removed') return `- ${task} lost ${requirement}: ${none}.`;
-  return `- ${task} keeps ${requirement} although ${none}: it is the only requirement of the card.`;
+  return `- ${task} lost ${requirement}: ${none}.`;
 }
 
 /** The section about the requirements of the task cards; nothing when no note was made. */
