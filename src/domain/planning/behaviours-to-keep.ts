@@ -1,4 +1,5 @@
 import type { Citation } from '../cards/citation.js';
+import type { ModelTable } from './data-model.js';
 import type { PlanTask } from './plan-content.js';
 import type { SourceCard } from './plan-sources.js';
 
@@ -36,3 +37,15 @@ export function behavioursToKeep(
         .map(({ claimId, text, citations }) => ({ cardId: card.id, claimId, text, citations })),
     );
 }
+
+// RF-631: test-first stub, so the test file type-checks before the rule is written.
+/* eslint-disable @typescript-eslint/no-unused-vars -- test-first stub, implemented in the next commit */
+export function behavioursKeptByNoCard(
+  _tasks: readonly PlanTask[],
+  _requirements: readonly { readonly id: string; readonly sources: readonly string[] }[],
+  _sources: readonly SourceCard[],
+  _tables: readonly ModelTable[],
+): KeptBehaviour[] {
+  return [];
+}
+/* eslint-enable @typescript-eslint/no-unused-vars */
