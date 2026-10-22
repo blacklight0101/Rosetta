@@ -1,4 +1,7 @@
-import { EstimateRun } from '../../src/application/estimate/estimate-run.js';
+import {
+  EstimateRun,
+  type EstimateRunDependencies,
+} from '../../src/application/estimate/estimate-run.js';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import type { ScannedSource, ScanResults } from '../../src/application/ports/scan-results.js';
 import type { Area } from '../../src/domain/code-map/area.js';
@@ -10,6 +13,13 @@ import type { Run } from '../../src/domain/runs/run.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
+import type { ServerCaps } from '../../src/domain/budget/budget.js';
+import type { UserAccount } from '../../src/domain/accounts/user.js';
+import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
+import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
+import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
+import { sampleAccount } from './account-fixtures.js';
+import { FixedClock } from './fixed-clock.js';
 import { MemoryRepositoryReader } from './memory-repository-reader.js';
 import { sampleProject } from './project-fixtures.js';
 import { sampleRun } from './run-fixtures.js';
@@ -156,10 +166,41 @@ export function createWorkbookEstimateHarness(
   );
 }
 
+/** P3-96: what the caps of the first calls are read from; the account is stored under `userId`. */
+export interface CappedEstimateOptions {
+  readonly userId: string;
+  readonly account?: Partial<UserAccount>;
+  /** The administrator's caps; the memory defaults (run 0.50, user day 1.00, month 10.00 USD) when absent. */
+  readonly caps?: ServerCaps;
+}
+
+/** P3-96: the estimate with the caps the budget guard checks the first calls against. */
+export async function createCappedEstimateHarness(
+  inputs: {
+    readonly areas: readonly Area[];
+    readonly priceTable: PriceTable;
+    readonly models: ModelList;
+  },
+  options: CappedEstimateOptions,
+): Promise<EstimateHarness> {
+  const users = new MemoryUserRepository();
+  await users.insert(sampleAccount({ id: options.userId, ...options.account }));
+  const serverSettings = new MemoryServerSettings({});
+  if (options.caps !== undefined) await serverSettings.saveCaps(options.caps);
+  const capDeps = {
+    users,
+    serverSettings,
+    usage: new MemoryAccountUsage(),
+    clock: new FixedClock('2026-10-22T10:00:00.000Z'),
+  };
+  return harnessOver(new FixedScans(inputs.areas), inputs.priceTable, inputs.models, capDeps);
+}
+
 function harnessOver(
   scans: FixedScans,
   priceTable: PriceTable,
   models: ModelList,
+  capDeps?: EstimateRunDependencies['caps'],
 ): EstimateHarness {
   const projects = new MemoryProjectRepository();
   const runs = new MemoryRunIndex();
@@ -167,6 +208,7 @@ function harnessOver(
   const estimate = new EstimateRun({
     ...{ projects, runs, scans, keys, priceTable, models },
     reasoningModels: () => false,
+    ...(capDeps === undefined ? {} : { caps: capDeps }),
   });
   return { estimate, projects, runs, keys, scans };
 }

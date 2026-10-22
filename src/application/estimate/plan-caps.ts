@@ -57,13 +57,14 @@ export async function planCaps(
   deps: PlanCapDependencies,
   project: Project,
   call: Pick<RoleEstimate, 'keySource' | 'points'>,
+  role: 'planner' | 'reader' = 'planner',
 ): Promise<{ readonly caps: readonly PlanCap[]; readonly withinCaps: ByScenario<boolean> }> {
   const { settings } = project;
   const account = await deps.users.findById(project.userId);
   const { run } = settings.budget;
   const caps = capsFor(call.keySource, {
     run: { maxCostMicros: BigInt(run.maxCostMicros), maxTokens: BigInt(run.maxTokens) },
-    role: roleBudgetOf(settings, 'planner'),
+    role: roleBudgetOf(settings, role),
     server: await deps.serverSettings.caps(),
     account: {
       dailyCapMicros: account?.dailyCapMicros ?? null,

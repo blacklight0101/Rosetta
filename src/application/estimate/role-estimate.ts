@@ -81,12 +81,22 @@ function effortOf(
   return { reasoningEffort: setting.reasoningEffort ?? DEFAULT_REASONING_EFFORT };
 }
 
-// RF-425, RF-613, RF-420, RF-427, DEC-107
-export async function estimateRole(
+/** The role's setting, provider, key source and price lookup. */
+interface PricedRole {
+  readonly setting: ProjectSettings['roles'][EstimateRole];
+  readonly name: string;
+  readonly model: string;
+  readonly config: ProjectSettings['providers'][string];
+  readonly keySource: KeySource;
+  readonly lookup: ReturnType<typeof lookupPrice>;
+}
+
+/** The role's provider, key source and price lookup, as the estimate and the first calls both need them. */
+export async function priceOfRole(
   pricing: RolePricing,
   project: Project,
-  { role, tokens }: RoleTokens,
-): Promise<RoleEstimate> {
+  role: EstimateRole,
+): Promise<PricedRole> {
   const { settings } = project;
   const setting = settings.roles[role];
   const { provider: name, model } = setting;
@@ -98,6 +108,20 @@ export async function estimateRole(
     model,
     keySource,
   });
+  return { setting, name, model, config, keySource, lookup };
+}
+
+// RF-425, RF-613, RF-420, RF-427, DEC-107
+export async function estimateRole(
+  pricing: RolePricing,
+  project: Project,
+  { role, tokens }: RoleTokens,
+): Promise<RoleEstimate> {
+  const { setting, name, model, config, keySource, lookup } = await priceOfRole(
+    pricing,
+    project,
+    role,
+  );
   const pointOf = (scenario: Scenario): EstimatePoint => {
     const { inputTokens, outputTokens } = tokens[scenario];
     const costMicros =

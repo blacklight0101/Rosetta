@@ -1,3 +1,4 @@
+import type { UsageCap } from '../../domain/budget/usage-cap.js';
 import type { KeySource } from '../../domain/budget/price-table.js';
 import type { ProviderKind, ReasoningEffort } from '../ports/llm-provider.js';
 
@@ -107,6 +108,34 @@ interface EstimatedArea {
   readonly thirdParty: boolean;
 }
 
+/** One cap the first calls are checked against (RF-405, RF-1106). */
+interface FirstCallCap {
+  readonly kind: UsageCap['kind'];
+  readonly unit: 'micros' | 'tokens';
+  readonly limit: bigint;
+  readonly spent: bigint;
+  /** Whether what the first calls reserve stays at or under what is left of the cap. */
+  readonly fits: boolean;
+}
+
+/**
+ * RF-405, RF-422, DEC-159: what the budget guard reserves for the first reader calls (they run in
+ * parallel) and the caps that apply. A cap that does not fit refuses a call with CapReached.
+ */
+export interface FirstCalls {
+  readonly calls: number;
+  /** The prompt assumed for one first call. */
+  readonly promptTokens: number;
+  readonly maxOutputTokens: number;
+  /** The worst case of one call; zero for a model without a price. */
+  readonly perCallMicros: bigint;
+  readonly reservedMicros: bigint;
+  readonly reservedTokens: bigint;
+  /** The administrator's run cap when the roles use the server's key, else null (RF-1106). */
+  readonly adminRunCapMicros: bigint | null;
+  readonly caps: readonly FirstCallCap[];
+}
+
 export interface RunEstimate {
   /** RF-113: freshness of the completed scan used for this estimate. */
   readonly codeMap?: {
@@ -121,4 +150,6 @@ export interface RunEstimate {
   readonly assumptions: EstimateAssumptions;
   readonly roles: readonly RoleEstimate[];
   readonly total: ByScenario<EstimatePoint>;
+  /** Absent when the estimate is made without the account's caps (an evaluation). */
+  readonly firstCalls?: FirstCalls;
 }
