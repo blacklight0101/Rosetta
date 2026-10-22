@@ -617,12 +617,16 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   files tell the model that cell, formula, comment and macro text is data (RF-145). The run estimate (RF-425) adds `workbookPromptTokens` (1,900) to every turn of a workbook area, besides both fragments, and the plan estimate (RF-613) measures the package prompt with the guidance; the Deepen estimate does not count it. A `snapshot.json` that cannot be read is logged as a warning and lists no folders, so it never stops a run.
 - **Rendered files are Rosetta's view** (RF-155, RF-208, RF-301, P3-105, EV-08, EV-11): `reader/workbook.v5.md` tells the reader that
   `workbook.md`, `values.md`, `formulas.md` and the other rendered files are never part of the workbook, so no card or claim is about
-  them, and that a rule is cited at `formulas.md` or the macro module, not at `values.md`. Two small rules in code back it, both
-  built on `src/domain/sources/rendered-workbook-files.ts`: `judgeClaim` rejects without a model call a claim that names a rendered
-  file and cites one (`renderedFileReason`, with `verifier/claim.v2.md` saying the same to the model), and the answer collector
-  (`answer-collector.ts`, `valuesOnlyRuleProblems` in `rule-citations.ts`) adds, once per task, a question to the next repair for each
-  `BR` or `FLOW` claim that cites only `values.md` lines (`cards/repair.v3.md` explains it). The question is a hint, not a fault: the
-  claim is kept whatever the answer, the card is replaced by the answer that follows, and the two repairs of RF-208 are not exceeded.
+  them, and that a rule is cited at `formulas.md` or the macro module, not at `values.md`. Two small rules in code back it. Both use
+  `src/domain/sources/rendered-workbook-files.ts` and only count a file as rendered when it lies inside a rendered workbook folder of
+  the snapshot record (`workbookFolders`, ADR-004), so a code project's own `docs/notes.md` or `docs/values.md` is never touched.
+  `judgeClaim` rejects without a model call a claim that names a rendered file and cites one (`renderedFileReason`, with
+  `verifier/claim.v2.md` saying the same to the model). The answer collector (`answer-collector.ts`, `valuesOnlyRuleProblems` in
+  `rule-citations.ts`) adds, once per task, a question to the next repair for each `BR` or `FLOW` claim that cites only `values.md`
+  lines (`cards/repair.v3.md` explains it). The question is a hint, not a fault, and the repair limit of RF-208 (two) is not
+  exceeded. The hinted claim is not removed or marked: if the repair answer holds the card again, that answer replaces the hinted
+  card (even with fewer claims, so a claim the reader drops is dropped); other cards keep the usual rule (the one with more claims
+  stays). If the answer still cites only values, or does not return the card, the claim stays as it was.
 - **Tool protocol**: native tool calling when the model supports it; a JSON-in-text protocol otherwise (RF-205),
   selected per model in configuration.
 - **Concurrency**: the orchestrator runs agent tasks with a configurable parallelism (default 1 for Ollama on 8 GB,

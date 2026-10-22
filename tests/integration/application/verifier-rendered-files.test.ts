@@ -26,11 +26,19 @@ const supported = {
 const rendered = new MemoryRepositoryReader({
   [INDEX]: Array.from({ length: 110 }, (_, index) => `line ${String(index + 1)}`).join('\n'),
   'docs/README.md': 'Open workbook.md first.',
+  'docs/notes.md': 'Release notes.',
 });
 
-async function judged(claim: Parameters<typeof judgeClaim>[1]) {
+async function judged(
+  claim: Parameters<typeof judgeClaim>[1],
+  folders: readonly string[] = ['Invoice_Generator.xlsm'],
+) {
   const h = await verifierHarness({ recording: recordingOf(supported) });
-  const judgement = await judgeClaim({ ...h.parts, reader: rendered }, claim, span);
+  const judgement = await judgeClaim(
+    { ...h.parts, reader: rendered, workbookFolders: folders },
+    claim,
+    span,
+  );
   return { judgement, calls: h.requests().length };
 }
 
@@ -63,5 +71,20 @@ describe('the verifier and the rendered files of a workbook', () => {
 
     expect(calls).toBe(1);
     expect(judgement).toMatchObject({ kind: 'judged' });
+  });
+
+  it('RF-301 judges by the model a claim of a code project about its own docs/notes.md', async () => {
+    const claim = {
+      claimId: 'ENT-002.c1',
+      text: 'The release process is described in notes.md.',
+      citations: [{ path: 'docs/notes.md', startLine: 1, endLine: 1 }],
+    };
+
+    const { judgement, calls } = await judged(claim, []);
+    const inWorkbookProject = await judged(claim);
+
+    expect(calls).toBe(1);
+    expect(judgement).toMatchObject({ kind: 'judged', status: 'Supported' });
+    expect(inWorkbookProject.calls).toBe(1);
   });
 });

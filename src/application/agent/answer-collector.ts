@@ -63,6 +63,7 @@ class Collector {
   private readonly ask: AskModel;
   private readonly prompts: ReaderPrompts;
   private readonly rows: RowLookup;
+  private readonly workbookFolders: readonly string[];
   private drafts: readonly CardDraft[] = [];
   private readonly raws: string[] = [];
   private text = '';
@@ -75,7 +76,13 @@ class Collector {
   private ruleAsked = false;
   private asked: ReadonlySet<string> = new Set();
 
-  constructor(ask: AskModel, prompts: ReaderPrompts, rows: RowLookup) {
+  constructor(
+    ask: AskModel,
+    prompts: ReaderPrompts,
+    rows: RowLookup,
+    workbookFolders: readonly string[],
+  ) {
+    this.workbookFolders = workbookFolders;
     this.ask = ask;
     this.prompts = prompts;
     this.rows = rows;
@@ -142,10 +149,13 @@ class Collector {
    */
   private ruleHints(): readonly OutputProblem[] {
     if (this.ruleAsked || this.read.cutOff || this.repairs >= maxRepairs) return [];
-    const hints = valuesOnlyRuleProblems(this.read.drafts);
+    const hints = valuesOnlyRuleProblems(this.read.drafts, this.workbookFolders);
     if (hints.length === 0) return [];
+    const hinted = this.read.drafts.filter(
+      (draft) => valuesOnlyRuleProblems([draft], this.workbookFolders).length > 0,
+    );
     this.ruleAsked = true;
-    this.asked = new Set(this.read.drafts.map(keyOf));
+    this.asked = new Set(hinted.map(keyOf));
     return hints;
   }
 
@@ -176,12 +186,18 @@ class Collector {
   }
 }
 
+/** What the answer's citations are read against: the row spans and the rendered workbook folders. */
+interface CitationScope {
+  readonly rows: RowLookup;
+  readonly workbookFolders?: readonly string[] | undefined;
+}
+
 // RF-208
 export function collectCards(
   first: string,
   ask: AskModel,
   prompts: ReaderPrompts,
-  rows: RowLookup,
+  scope: CitationScope,
 ): Promise<CollectedAnswer> {
-  return new Collector(ask, prompts, rows).collect(first);
+  return new Collector(ask, prompts, scope.rows, scope.workbookFolders ?? []).collect(first);
 }

@@ -94,7 +94,10 @@ describe('the repair prompt v3 and the question it carries', () => {
       ],
     });
 
-    const message = renderRepairRequest(repair.text, valuesOnlyRuleProblems([vat]));
+    const message = renderRepairRequest(
+      repair.text,
+      valuesOnlyRuleProblems([vat], ['Invoice_Generator.xlsm']),
+    );
 
     expect(message).toContain('VAT to Pay Calculation');
     expect(message).toContain('formulas.md');

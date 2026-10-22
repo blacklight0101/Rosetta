@@ -16,13 +16,17 @@ function excerpt(text: string): string {
 }
 
 /** The rule claims of these cards that cite only values lines, one problem each. */
-export function valuesOnlyRuleProblems(drafts: readonly CardDraft[]): readonly OutputProblem[] {
+export function valuesOnlyRuleProblems(
+  drafts: readonly CardDraft[],
+  workbookFolders: readonly string[] = [],
+): readonly OutputProblem[] {
   return drafts
     .filter((draft) => RULE_TYPES.includes(draft.type))
     .flatMap((draft) =>
       draft.claims.flatMap((claim, index) => {
         const only =
-          claim.citations.length > 0 && claim.citations.every((c) => isValuesFile(c.path));
+          claim.citations.length > 0 &&
+          claim.citations.every((c) => isValuesFile(c.path, workbookFolders));
         if (!only) return [];
         return {
           path: `${draft.type} "${draft.title}" claim ${String(index + 1)}`,

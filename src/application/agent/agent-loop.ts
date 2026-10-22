@@ -53,6 +53,8 @@ export interface AgentTaskRequest {
   readonly parentCards?: string;
   /** RST-1303: a retry of an area that ended on a repeated call: a note added to the task message. */
   readonly retryNote?: RetryNote;
+  /** P3-105: the rendered workbook folders of the snapshot, for the rule-citation question. */
+  readonly workbookFolders?: readonly string[] | undefined;
   /** Q-55: told why an answer was refused, accepted for lack of room, kept or cut (never its text). */
   readonly onNote?: (note: AnswerNote) => Promise<void>;
 }
@@ -246,7 +248,10 @@ ${retryNoteMessage(retryNote, (source, text) => tools.renderBlock(source, text))
       text,
       (previous, message) => this.followUp(previous, message),
       prompts,
-      (path) => this.request.tools.rowSpans(path),
+      {
+        rows: (path) => this.request.tools.rowSpans(path),
+        workbookFolders: this.request.workbookFolders,
+      },
     );
     const { drafts, problems, rawOutputs, stopped } = collected;
     if (collected.cutKept)
