@@ -1,4 +1,5 @@
 import type { RunEstimate } from '../api/estimate-schemas.js';
+import { effectiveRunCapMicros, usesServerKeys } from './run-cap.js';
 import { dollars, tokensText } from './estimate-math.js';
 
 // RF-405, RF-422, RF-1106, DEC-159: the budget guard reserves the worst case of every call in
@@ -47,7 +48,11 @@ interface Short {
 }
 
 /** The caps that cannot hold the reservation; the run cap is judged against the one typed. */
-function shortCaps(first: FirstCalls, runCapMicros: bigint): readonly Short[] {
+function shortCaps(
+  estimate: RunEstimate,
+  first: FirstCalls,
+  runCapMicros: bigint,
+): readonly Short[] {
   const admin = first.adminRunCapMicros === null ? undefined : BigInt(first.adminRunCapMicros);
   const reserved = BigInt(first.reservedMicros);
   return first.caps.flatMap((cap): Short[] => {
@@ -58,8 +63,11 @@ function shortCaps(first: FirstCalls, runCapMicros: bigint): readonly Short[] {
         ? []
         : [{ kind, unit, limit: BigInt(cap.limit), spent, administrator: false }];
     }
-    const administrator = admin !== undefined && admin < runCapMicros;
-    const limit = administrator ? admin : runCapMicros;
+    // `runCapMicros` is the effective cap the page passes (run-cap.ts): when it is the
+    // administrator's, that is the cap to name and the page cannot raise it.
+    const serverKeys = usesServerKeys(estimate);
+    const limit = effectiveRunCapMicros({ typed: runCapMicros, administrator: admin, serverKeys });
+    const administrator = serverKeys && admin !== undefined && admin <= limit;
     return reserved > limit ? [{ kind, unit, limit, spent, administrator }] : [];
   });
 }
@@ -74,12 +82,11 @@ function textOf(first: FirstCalls, cap: Short): string {
   const raise = cap.administrator
     ? 'The page cannot raise it: ask an administrator to raise the run cap.'
     : (raising[cap.kind] ?? '');
+  const reserved = amount(cap.unit, reservedOf(first, cap.unit));
   return (
-    `The caps cannot hold the model's ${String(first.calls)} first reader calls: each one reserves ` +
-    `its worst case up front, together ${amount(cap.unit, reservedOf(first, cap.unit))}, and the ` +
-    `${name} of ${amount(cap.unit, cap.limit)} cannot take it (at least ` +
-    `${amount(cap.unit, needed)} is needed). ${raise} Start stays available; the run then ` +
-    `ends cleanly with CapReached.`
+    `The caps cannot hold the ${String(first.calls)} first reader calls: they reserve ${reserved} ` +
+    `together and the ${name} of ${amount(cap.unit, cap.limit)} is too low (at least ` +
+    `${amount(cap.unit, needed)} needed). ${raise}`
   );
 }
 
@@ -90,7 +97,7 @@ export function firstCallWarnings(
 ): readonly FirstCallWarning[] {
   const first = estimate.firstCalls;
   if (first === undefined || first.calls === 0) return [];
-  return shortCaps(first, runCapMicros).map((cap) => ({
+  return shortCaps(estimate, first, runCapMicros).map((cap) => ({
     id: `first-calls-${cap.kind}`,
     text: textOf(first, cap),
   }));
