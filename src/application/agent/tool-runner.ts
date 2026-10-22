@@ -1,6 +1,7 @@
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import type { ToolCall } from '../ports/llm-provider.js';
 import type { AgentTaskEnd } from './agent-task-result.js';
+import type { RepeatedCall } from './retry-note.js';
 import type { AgentToolSet } from './agent-tool-set.js';
 import type { ReadGate } from './read-gate.js';
 import type { ToolCallIds, ToolOutcome } from './read-only-tools.js';
@@ -24,6 +25,8 @@ export class ToolRunner {
   private readonly gate: ReadGate;
   private readonly seen = new Set<string>();
   private repeated = 0;
+  /** The call the model made again the last time it did. */
+  private lastRepeat: RepeatedCall | undefined;
   private unknownCalls = 0;
 
   constructor(tools: AgentToolSet, gate: ReadGate) {
@@ -46,7 +49,11 @@ export class ToolRunner {
   /** The end of the task when the model loops, else undefined. */
   loopEnd(): AgentTaskEnd | undefined {
     if (this.repeated >= maxRepeatedCalls) {
-      return { reason: 'repeated-calls', code: ERROR_CODES.agentRepeatedCalls };
+      return {
+        reason: 'repeated-calls',
+        code: ERROR_CODES.agentRepeatedCalls,
+        ...(this.lastRepeat === undefined ? {} : { repeatedCall: this.lastRepeat }),
+      };
     }
     if (this.unknownCalls >= maxUnknownToolCalls) {
       return { reason: 'unknown-tools', code: ERROR_CODES.toolUnknown };
@@ -63,6 +70,7 @@ export class ToolRunner {
       return false;
     }
     this.repeated += 1;
+    this.lastRepeat = { tool: name, arguments: JSON.stringify(args ?? null) };
     return true;
   }
 

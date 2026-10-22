@@ -23,11 +23,14 @@ export function readsByPath(entries: readonly AreaCoverage[]): ReadonlyMap<strin
   return reads;
 }
 
-/** What the first entry of an area says beside its lines. */
-function extrasOf(entry: AreaCoverage): Partial<AreaCoverage> {
+/**
+ * What the first entry of an area says beside its lines. A failure is kept only while every task of
+ * the area failed: an area a Deepen read again without failing has recovered (RF-209).
+ */
+function extrasOf(entry: AreaCoverage, recovered: boolean): Partial<AreaCoverage> {
   const { failure, surface, note } = entry;
   return {
-    ...(failure === undefined ? {} : { failure }),
+    ...(failure === undefined || recovered ? {} : { failure }),
     ...(surface === undefined ? {} : { surface }),
     ...(note === undefined ? {} : { note }),
   };
@@ -48,7 +51,8 @@ export function unionCoverage(
     const lines = area.files.flatMap((path) =>
       (reads.get(path) ?? []).map((range) => ({ path, ...range })),
     );
-    listed.set(area.name, { ...areaCoverage(area, files, lines), ...extrasOf(entry) });
+    const recovered = entries.some((each) => each.area === area.name && each.failure === undefined);
+    listed.set(area.name, { ...areaCoverage(area, files, lines), ...extrasOf(entry, recovered) });
   }
   return [...listed.values()];
 }

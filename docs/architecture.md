@@ -573,7 +573,7 @@ sequenceDiagram
   and the answer is handled as before, with the same event: `retried` and `empty-at-limit`, `empty` and `after-retry`
   or `no-room`), `InvalidOutput` (no valid card after the follow-ups), `TurnLimitReached` (the
   configured maximum turns, `RST-1304`, or the context share, `RST-1305`), or `Failed` with a recorded reason: a
-  model that repeats one call three times (`RST-1303`; a repeated call is answered with an error, not run again) or
+  model that repeats one call three times (`RST-1303`; a repeated call is answered with an error, not run again, and the result names the call; the retry of such a task, and a Deepen of such an area, start with a note built in code, `src/application/agent/retry-note.ts`, that names the call and the files not yet read in full, because a model gives the same answer to the same prompt, EV-10) or
   names unknown tools three times (`RST-1302`), a stop through the shared signal (checked before every turn and
   every tool call, `RST-1501`), or a provider or guard failure with its code. It never throws for a model's
   behaviour; the end, its reason and the turns are logged and returned with the cards, usage, model version and
@@ -763,7 +763,9 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   re-read yet, was not written by this Deepen and has no `Supported` replacement yet (an earlier Deepen's, when a Deepen run is deepened in turn) is re-read once (one reader task per area over its cited first-party
   files, system prompt `prompts/reader/reread.v3.md`, the rejected claims with the verifier's reasons as one data block
   with the source `cards`); a rejected claim that cites only third-party or generated code is never re-read and is
-  listed out of scope; with the coverage pass, first-party files no task read get a reader task (largest first). New
+  listed out of scope; with the coverage pass, first-party files no task read get a reader task (largest first); an
+  area whose every task ended without a usable card is read again whole, once per Deepen, with or without the coverage
+  pass (EV-10, `RoundPlan.failedAreas`). New
   cards take ids after every card of the run; a claim's `replaces` is kept only when it names a claim that task was
   asked to re-read. Every Deepen reader task (a re-read and a reading of a never-read file) is also given the cards
   the run holds for its area (`roundTasks`: id, type and title as one more data block with the source `cards`, prompt

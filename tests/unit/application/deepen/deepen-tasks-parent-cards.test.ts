@@ -43,6 +43,7 @@ const reread: RoundPlan = {
   ],
   outOfScope: [],
   gaps: [],
+  failedAreas: [],
 };
 
 const gap: RoundPlan = {

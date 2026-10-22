@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "description": "RF-209, RST-1303: the Services claim of the run is supported; the claim a Deepen writes for the Catalog area it read again is supported. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: Line 12 lowers the stock by one.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-2",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: Line 7 sets the label to the fixed text Item.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-3",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

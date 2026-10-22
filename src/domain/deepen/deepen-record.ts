@@ -28,6 +28,8 @@ export interface DeepenRound {
   readonly complete: boolean;
   readonly judged: readonly string[];
   readonly reread: readonly { readonly claimId: string; readonly reason: string }[];
+  /** EV-10: the areas that had failed and that the round read again. */
+  readonly failedAreas: readonly string[];
   /** First-party files the round read lines of for the first time. */
   readonly filesRead: readonly string[];
   readonly newClaims: readonly DeepenNewClaim[];
@@ -110,6 +112,11 @@ export function reopenedDeepen(record: DeepenRecord): DeepenRecord {
 /** RF-209: the claims this Deepen sent back to a reader, in any round, finished or not. */
 export function rereadIn(record: DeepenRecord): ReadonlySet<string> {
   return new Set(record.rounds.flatMap((round) => round.reread.map((each) => each.claimId)));
+}
+
+/** EV-10: the failed areas this Deepen read again, in any round, finished or not. */
+export function retriedAreasIn(record: DeepenRecord): ReadonlySet<string> {
+  return new Set(record.rounds.flatMap((round) => round.failedAreas));
 }
 
 /** RF-209: only an understand run that ended `Completed` can be deepened (a Deepen run too, Q-L). */

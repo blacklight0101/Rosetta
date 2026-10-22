@@ -1,5 +1,6 @@
 import type { Area } from '../../domain/code-map/area.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import type { RetryNote } from '../agent/retry-note.js';
 
 // RF-200, DEC-15: the reader tasks of an understand run: one per area of the code map, or one per
 // area the start request named, always in the code map's area order (so card ids follow it,
@@ -20,6 +21,8 @@ export interface ReaderTask {
   readonly parentCards?: string;
   /** RF-209: the ids of those cards, the only ones a card of the task may extend. */
   readonly extendable?: readonly string[];
+  /** RST-1303: a Deepen task over an area that ended on a repeated call starts with this note. */
+  readonly retryNote?: RetryNote;
 }
 
 export interface UnknownAreas {

@@ -31,6 +31,7 @@ async function firstMessage(): Promise<string> {
       ],
       outOfScope: [],
       gaps: [],
+      failedAreas: [],
     },
     agentCodeMap,
     3,

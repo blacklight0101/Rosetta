@@ -65,6 +65,8 @@ export interface DeepenEstimate {
     readonly judge: number;
     readonly reread: number;
     readonly outOfScope: number;
+    /** EV-10: areas that failed and that the round reads again. */
+    readonly failedAreas: number;
     readonly unreadFiles: number;
     readonly unreadTokens: number;
   };
@@ -127,6 +129,7 @@ function planSummary(plan: RoundPlan): DeepenEstimate['plan'] {
     judge: plan.judge.length,
     reread: plan.reread.length,
     outOfScope: plan.outOfScope.length,
+    failedAreas: plan.failedAreas.length,
     unreadFiles: plan.gaps.length,
     unreadTokens: plan.gaps.reduce((sum, gap) => sum + gap.tokens, 0),
   };
@@ -193,6 +196,7 @@ export class EstimateDeepen {
       coverage: results.map((result) => result.coverage),
       files: codeMap.files,
       ...{ reread: new Set<string>(), writtenHere: new Set<string>(), coveragePass },
+      retriedAreas: new Set<string>(),
     });
   }
 }

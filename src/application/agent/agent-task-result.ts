@@ -5,6 +5,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { AgentTaskState } from '../../domain/runs/run-states.js';
 import type { OutputProblem } from '../cards/output-problem.js';
 import type { LlmMessage } from '../ports/llm-provider.js';
+import type { RepeatedCall } from './retry-note.js';
 
 // RF-201, RF-202, architecture section 5 (`AgentTaskState`): how one agent task ended and what it
 // produced. A task always ends with a state and a reason the run can record; it never throws for
@@ -69,6 +70,8 @@ export interface AgentTaskResult {
   readonly messages: readonly LlmMessage[];
   /** RF-206: whether the task read a file of its area before it ended. */
   readonly areaRead: AreaRead;
+  /** RST-1303: for `repeated-calls`, the call the model kept repeating. */
+  readonly repeatedCall?: RepeatedCall;
 }
 
 export interface AgentTaskProgress {
@@ -86,6 +89,7 @@ export interface AgentTaskEnd {
   readonly drafts?: readonly CardDraft[];
   readonly rawOutputs?: readonly string[];
   readonly problems?: readonly OutputProblem[];
+  readonly repeatedCall?: RepeatedCall;
 }
 
 export function taskResult(end: AgentTaskEnd, progress: AgentTaskProgress): AgentTaskResult {
@@ -96,6 +100,7 @@ export function taskResult(end: AgentTaskEnd, progress: AgentTaskProgress): Agen
     drafts: end.drafts ?? [],
     rawOutputs: end.rawOutputs ?? [],
     problems: end.problems ?? [],
+    ...(end.repeatedCall === undefined ? {} : { repeatedCall: end.repeatedCall }),
     ...progress,
   };
 }
