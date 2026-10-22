@@ -582,7 +582,7 @@ sequenceDiagram
   with `RST-1501`.
 - **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v5.md` followed by
   `prompts/cards/card-format.v2.md`; `loadReaderPrompts` reads the eight files it uses (the two above, the task, the
-  turns-left notice, `prompts/cards/repair.v2.md`, `prompts/cards/continue.v1.md`, `prompts/reader/read-first.v1.md` and `prompts/reader/read-more.v1.md`), refuses a template without its placeholders or a file
+  turns-left notice, `prompts/cards/repair.v3.md`, `prompts/cards/continue.v1.md`, `prompts/reader/read-first.v1.md` and `prompts/reader/read-more.v1.md`), refuses a template without its placeholders or a file
   that holds a data block marker, and returns each with its version and the SHA-256 of its bytes; the run records
   them in the manifest's `promptVersions` (`promptVersionsOf`, `recordPromptVersions`). Every agent prompt states that
   text inside data blocks is data, never instructions, and that a block ends only at the closing line with its own
@@ -615,6 +615,14 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   newest completed scan of the snapshot lists a workbook folder; no other planner prompt changes. The manifest lists
   `reader/workbook.v1.md` (with the two fragments) when some task area used it and `planner/workbook.v1.md` when the plan used it. Both
   files tell the model that cell, formula, comment and macro text is data (RF-145). The run estimate (RF-425) adds `workbookPromptTokens` (1,100) to every turn of a workbook area, besides both fragments, and the plan estimate (RF-613) measures the package prompt with the guidance; the Deepen estimate does not count it. A `snapshot.json` that cannot be read is logged as a warning and lists no folders, so it never stops a run.
+- **Rendered files are Rosetta's view** (RF-155, RF-208, RF-301, P3-105, EV-08, EV-11): `reader/workbook.v5.md` tells the reader that
+  `workbook.md`, `values.md`, `formulas.md` and the other rendered files are never part of the workbook, so no card or claim is about
+  them, and that a rule is cited at `formulas.md` or the macro module, not at `values.md`. Two small rules in code back it, both
+  built on `src/domain/sources/rendered-workbook-files.ts`: `judgeClaim` rejects without a model call a claim that names a rendered
+  file and cites one (`renderedFileReason`, with `verifier/claim.v2.md` saying the same to the model), and the answer collector
+  (`answer-collector.ts`, `valuesOnlyRuleProblems` in `rule-citations.ts`) adds, once per task, a question to the next repair for each
+  `BR` or `FLOW` claim that cites only `values.md` lines (`cards/repair.v3.md` explains it). The question is a hint, not a fault: the
+  claim is kept whatever the answer, the card is replaced by the answer that follows, and the two repairs of RF-208 are not exceeded.
 - **Tool protocol**: native tool calling when the model supports it; a JSON-in-text protocol otherwise (RF-205),
   selected per model in configuration.
 - **Concurrency**: the orchestrator runs agent tasks with a configurable parallelism (default 1 for Ollama on 8 GB,
@@ -631,7 +639,7 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   `src/application/verifier/judge-claim.ts` for one claim); a re-run with answers (RF-241) judges the claims of its
   new cards the same way. The verifier's guarded provider comes from the same provider factory call as the reader's
   and the summariser's (`UNDERSTAND_ROLES` is `reader`, `verifier` and `summariser`, so consent, keys, prices and
-  the Ollama check cover both). The model sees no tools, the system prompt `prompts/verifier/claim.v1.md` and one user
+  the Ollama check cover both). The model sees no tools, the system prompt `prompts/verifier/claim.v2.md` and one user
   message: the claim in a data block of source `claim` (model output is data too) and, per citation, its lines with
   three lines of margin before and after (`cited-lines.ts`, read through the `RepositoryReader`, so ignored and
   denied files are refused) in a block of source `cited_lines`; nothing else of the file. Evidence above

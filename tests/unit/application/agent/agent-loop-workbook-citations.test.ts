@@ -27,7 +27,7 @@ describe('runAgentTask when a rule claim cites only values', () => {
 
     expect(fake.requests).toHaveLength(2);
     const asked = fake.requests[1]?.messages.at(-1)?.content ?? '';
-    expect(asked).toContain('Invoice_Generator.xlsm/Invoice/values.md');
+    expect(asked).toContain('VAT to Pay Calculation');
     expect(asked).toMatch(/formulas\.md/u);
     const rule = result.drafts.find((draft) => draft.type === 'BR');
     expect(rule && citedPaths(rule)).toEqual(['Invoice_Generator.xlsm/Invoice/formulas.md']);

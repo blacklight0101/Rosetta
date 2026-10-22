@@ -58,7 +58,7 @@ describe('the versions of the reader prompts', () => {
     const prompts = await loadReaderPrompts('prompts');
 
     expect(prompts.system).toMatchObject({ name: 'reader/area.v6.md', version: 'v6' });
-    expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v4.md', version: 'v4' });
+    expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v5.md', version: 'v5' });
   });
 
   it.each(oldVersions)(

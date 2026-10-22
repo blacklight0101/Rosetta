@@ -58,14 +58,14 @@ describe('an understand run: prompts', () => {
       'cards/card-format.v2.md',
       'cards/continue.v1.md',
       'cards/flows.v1.md',
-      'cards/repair.v2.md',
+      'cards/repair.v3.md',
       'cards/screens.v2.md',
       'reader/area.v6.md',
       'reader/read-first.v1.md',
       'reader/read-more.v1.md',
       'reader/task.v2.md',
       'reader/turns-left.v2.md',
-      'verifier/claim.v1.md',
+      'verifier/claim.v2.md',
       'verifier/retry.v1.md',
     ]);
     expect(manifest.promptVersions['reader/area.v6.md']?.version).toBe('v6');

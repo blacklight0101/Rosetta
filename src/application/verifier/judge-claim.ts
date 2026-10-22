@@ -14,6 +14,7 @@ import {
   type EvidenceLimits,
   type SkipLookup,
 } from './cited-lines.js';
+import { renderedFileReason } from './rendered-file-claim.js';
 import { parseVerdictAnswer, type JudgedStatus } from './verdict-answer.js';
 import { verifierRetryMessage, type VerifierPrompts } from './verifier-prompts.js';
 
@@ -152,6 +153,8 @@ export async function judgeClaim(
   parentSpanId: string,
 ): Promise<Judgement> {
   if (parts.call.signal.aborted) return stopOf(parts.call.signal);
+  const rendered = renderedFileReason(claim);
+  if (rendered !== undefined) return { kind: 'judged', status: 'Rejected', reason: rendered };
   const evidence = await readCitedLines(
     parts.reader,
     claim.citations,

@@ -25,6 +25,7 @@ const supported = {
 
 const rendered = new MemoryRepositoryReader({
   [INDEX]: Array.from({ length: 110 }, (_, index) => `line ${String(index + 1)}`).join('\n'),
+  'docs/README.md': 'Open workbook.md first.',
 });
 
 async function judged(claim: Parameters<typeof judgeClaim>[1]) {
@@ -57,7 +58,7 @@ describe('the verifier and the rendered files of a workbook', () => {
     const { judgement, calls } = await judged({
       claimId: 'ENT-001.c1',
       text: 'The README tells a maintainer to open workbook.md first.',
-      citations: [{ path: INDEX, startLine: 1, endLine: 2 }],
+      citations: [{ path: 'docs/README.md', startLine: 1, endLine: 1 }],
     });
 
     expect(calls).toBe(1);

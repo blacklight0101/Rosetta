@@ -19,14 +19,14 @@ const readerPromptNames = {
   cardFormat: 'cards/card-format.v2.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
-  repair: 'cards/repair.v2.md',
+  repair: 'cards/repair.v3.md',
   continue: 'cards/continue.v1.md',
   readFirst: 'reader/read-first.v1.md',
   readMore: 'reader/read-more.v1.md',
 } as const;
 
 /** RF-155: added only to areas that hold a rendered workbook. */
-const workbookPromptName = 'reader/workbook.v4.md';
+const workbookPromptName = 'reader/workbook.v5.md';
 
 const answersPromptName = 'reader/answers.v1.md';
 const rereadPromptName = 'reader/reread.v3.md';

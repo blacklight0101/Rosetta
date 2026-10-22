@@ -40,3 +40,14 @@ describe('mergeDrafts', () => {
     expect(merged).toHaveLength(2);
   });
 });
+
+describe('mergeDrafts for a card the repair asked about', () => {
+  it('P3-105 the answer replaces the card even with fewer claims', () => {
+    const earlier = draftOf({ title: 'VAT', claims: [claim('one'), claim('two')] });
+    const later = draftOf({ title: 'VAT', claims: [claim('one')] });
+
+    const merged = mergeDrafts([earlier], [later], new Set([`${later.type}\u0000vat`]));
+
+    expect(merged[0]?.claims).toHaveLength(1);
+  });
+});
