@@ -1,3 +1,5 @@
+<img src="web/public/assets/brand/rosetta-icon-128.png" alt="Rosetta: an open book, code on the left page, a diagram on the right" width="128" height="128">
+
 # Rosetta
 
 Rosetta is an open-source tool for developers and tech leads who inherit a legacy codebase and need to understand it

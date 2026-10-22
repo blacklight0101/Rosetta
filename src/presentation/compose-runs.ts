@@ -1,4 +1,3 @@
-import { createUploadStore } from './compose-uploads.js';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
@@ -13,7 +12,6 @@ import { ListAnswers } from '../application/use-cases/list-answers.js';
 import { RecordAnswers } from '../application/use-cases/record-answers.js';
 import { ReopenQuestion } from '../application/use-cases/reopen-question.js';
 import { ReadRunFile } from '../application/use-cases/read-run-file.js';
-import { RunScan } from '../application/use-cases/run-scan.js';
 import { StartRun } from '../application/use-cases/start-run.js';
 import { StopRun } from '../application/use-cases/stop-run.js';
 import { SubmitRun } from '../application/use-cases/submit-run.js';
@@ -37,12 +35,14 @@ import { FileRunTextFiles } from '../infrastructure/files/file-run-text-files.js
 import { NodeRunFileReader } from '../infrastructure/files/node-run-file-reader.js';
 import { YazlArchiveWriter } from '../infrastructure/files/yazl-archive-writer.js';
 import type { FetchFunction } from '../infrastructure/github/github-http-client.js';
-import { GitHubSnapshotFetcher } from '../infrastructure/github/github-snapshot-fetcher.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import type { LanguagePackRegistry } from '../infrastructure/scan/packs/pack-registry.js';
-import { SnapshotScanPipeline } from '../infrastructure/scan/scan-pipeline.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
+import type { KeySourceLookup } from '../application/ports/key-source-lookup.js';
+import { composeStartCaps } from './compose-start-caps.js';
+import { composeScan } from './compose-scan.js';
+import type { GitHubSnapshotFetcher } from '../infrastructure/github/github-snapshot-fetcher.js';
 import type { StreamRegistry } from './web/event-stream.js';
 import { composeRunReads } from './compose-run-reads.js';
 import { composeDeepen, composeResume } from './compose-deepen.js';
@@ -93,6 +93,8 @@ export interface RunParts {
   readonly reasoningModels: ReasoningModels;
   /** RF-1101: the open event streams, ended with their session by the session store. */
   readonly streams: StreamRegistry;
+  /** RF-1106, DEC-107: whether a role would use the user's or the server's key, for the start caps. */
+  readonly keySources: KeySourceLookup;
 }
 
 export interface RunComposition {
@@ -108,42 +110,6 @@ export interface RunComposition {
   discardPartialSnapshots(): Promise<void>;
   /** Ends the runs the earlier process left running and starts what can start (RF-1108). */
   recover(): Promise<void>;
-}
-
-interface ScanParts {
-  readonly executor: RunScan;
-  readonly fetcher: GitHubSnapshotFetcher;
-}
-
-/** The scan stage: the snapshot fetcher and the executor that fetches, scans and records. */
-function composeScan(
-  parts: RunParts,
-  stores: { readonly writer: NodeOutputWriter; readonly manifests: FileRunManifestStore },
-  projects: PgProjectRepository,
-): ScanParts {
-  const { logger, clock, masker, dataDir } = parts;
-  const fetcher = new GitHubSnapshotFetcher({
-    ...{ dataDir, clock, logger, idGenerator: new TimestampIdGenerator(clock) },
-    githubToken: parts.githubToken,
-    ...(parts.fetch === undefined ? {} : { fetch: parts.fetch }),
-  });
-  const pipeline = new SnapshotScanPipeline({
-    ...{
-      writer: stores.writer,
-      masker,
-      logger,
-      packs: parts.packs,
-      parseBudget: parts.parseBudget,
-    },
-  });
-  const { manifests } = stores;
-  return {
-    fetcher,
-    executor: new RunScan({
-      ...{ fetcher, projects, pipeline, manifests, clock, logger },
-      uploads: createUploadStore(dataDir),
-    }),
-  };
 }
 
 function keepAliveScheduler(logger: Logger): IntervalScheduler {
@@ -258,6 +224,7 @@ export function composeRuns(parts: RunParts): RunComposition {
   const log = new JsonlEventLog({ writer, masker });
   const broadcaster = new SseBroadcaster(masker);
   const manifests = new FileRunManifestStore({ writer, masker });
+  const projects = new PgProjectRepository(pool);
   const lifecycle = new RunLifecycle({
     runs,
     manifests,
@@ -265,9 +232,9 @@ export function composeRuns(parts: RunParts): RunComposition {
     history: log,
     clock,
     logger,
+    startCaps: composeStartCaps(pool, projects, parts.keySources),
   });
-  const projects = new PgProjectRepository(pool);
-  const scan = composeScan(parts, { writer, manifests }, projects);
+  const scan = composeScan({ ...parts, writer, manifests, projects });
   const answers = new FileAnswersFile({ writer, masker });
   const stage = { ...parts, writer, manifests, projects, runs, ids, answers };
   const queue = new RunQueue({

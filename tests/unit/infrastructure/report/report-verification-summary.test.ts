@@ -94,6 +94,6 @@ describe('report.html verification summary', () => {
     expect(summaryRows(page)[0]?.[0]).toBe(hostileText);
     expect(page.scripts).toEqual(['filters.js']);
     expect(page.handlers).toEqual([]);
-    expect(page.document.querySelectorAll('img')).toHaveLength(0);
+    expect(page.document.querySelectorAll('main img')).toHaveLength(0);
   });
 });

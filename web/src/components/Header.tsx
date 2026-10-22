@@ -1,8 +1,8 @@
 import type { ComponentChildren, JSX } from 'preact';
 import type { ThemePreference } from '../lib/theme.js';
-import { Link } from './Link.js';
 import { StatusBadge } from './StatusBadge.js';
 import { ThemeToggle } from './ThemeToggle.js';
+import { Wordmark } from './Wordmark.js';
 
 // design-system.md section 3: the signed-in header carries the wordmark, the project's repository
 // when a project is open, the totals pill (RF-1010, a slot filled by its own card), the user with
@@ -30,9 +30,7 @@ export interface HeaderProps {
 export function Header(props: HeaderProps): JSX.Element {
   return (
     <header class="rst-header" role="banner">
-      <Link href="/" class="rst-wordmark">
-        Rosetta
-      </Link>
+      <Wordmark />
       {props.repository === undefined ? null : (
         <span class="rst-mono rst-header__repository" data-testid="header-repository">
           {props.repository}

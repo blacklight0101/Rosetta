@@ -64,6 +64,7 @@ function composedRuns(dataDir: string) {
     models: NO_LISTED_MODELS,
     reasoningModels: () => false,
     streams,
+    keySources: { keySourceOf: () => Promise.resolve(undefined) },
   });
   return { runs, logger, pool, streams, clock };
 }

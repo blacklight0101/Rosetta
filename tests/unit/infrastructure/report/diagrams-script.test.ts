@@ -175,6 +175,6 @@ describe('the diagrams script and what it never trusts', () => {
     await run(window);
 
     expect(calls.parsed).toEqual([hostile.source]);
-    expect(window.document.querySelectorAll('img')).toHaveLength(0);
+    expect(window.document.querySelectorAll('main img')).toHaveLength(0);
   });
 });

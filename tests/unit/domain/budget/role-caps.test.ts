@@ -40,7 +40,7 @@ describe('caps of a role', () => {
 
     const caps = capsFor('user', { ...inputs, role });
 
-    expect(caps).toContainEqual({ kind: 'run-cost', limit: 2_000_000n });
+    expect(caps).toContainEqual({ kind: 'run-cost', limit: 2_000_000n, source: 'project' });
     expect(caps).toContainEqual({ kind: 'run-tokens', limit: 2_000_000n });
   });
 });
