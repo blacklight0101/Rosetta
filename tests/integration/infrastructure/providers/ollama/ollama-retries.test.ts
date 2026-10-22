@@ -46,7 +46,13 @@ describe('OllamaProvider retries', () => {
     const response = await provider.complete(contractRequest(), attempts);
 
     expect(response.finishReason).toBe('stop');
-    expect(attempts.retried).toEqual([{ code: ERROR_CODES.providerTimeout }]);
+    // Q-60: a timed-out attempt is metered as estimated, with its output unknown.
+    expect(attempts.retried).toMatchObject([
+      {
+        code: ERROR_CODES.providerTimeout,
+        usage: { usageSource: 'estimated', outputUnknown: true },
+      },
+    ]);
   });
 
   it('RF-406 honours a retry-after hint', async () => {

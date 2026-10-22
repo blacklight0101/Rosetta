@@ -173,7 +173,10 @@ chunk (OpenAI) starts it again, so an answer that takes five minutes and never s
 not streamed and its timeout is the whole call, as before. A call that timed out is metered as estimated: the input
 estimated from the request, the output counted from the text that arrived (none for a call that never answered), and
 `outputUnknown` set in its call-log record, because the provider may have produced and billed more; its ledger row is
-priced the same way, not 0 tokens and $0.00. A call that timed out twice is not sent a third time: it ends with
+priced the same way, not 0 tokens and $0.00. Ollama and OpenAI-compatible calls are never streamed, so an attempt of
+theirs that timed out is metered the same way with no output received; on Ollama it is priced at $0, as every local
+call, but its estimated tokens count against the token caps. An Ollama model-list request (`/api/tags`) that timed
+out sent no prompt and is not metered. A call that timed out twice is not sent a third time: it ends with
 `RST-1505`, whose next step names `timeoutSeconds`. The options call of Plan setup is limited by the timeout of the planner
 provider for each attempt it may make, not by a fixed 120 s.
 
@@ -526,7 +529,8 @@ with `RST-1506`.
 
 ### 5.4 Retries and permanent errors (RF-406)
 
-The same retry loop and back-off as OpenAI (section 3.3). The codes are those of the OpenAI table, with messages that
+The same retry loop and back-off as OpenAI (section 3.3); an attempt that timed out is metered as estimated
+(section 2.4). The codes are those of the OpenAI table, with messages that
 name the OpenAI-compatible service and the account settings instead of OpenAI and `OPENAI_API_KEY`:
 
 | Failure                                                                                       | Code       | Retried                                                            |
