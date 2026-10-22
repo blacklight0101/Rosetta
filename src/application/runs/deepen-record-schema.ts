@@ -29,6 +29,7 @@ const roundSchema = z.object({
   complete: z.boolean(),
   judged: z.array(text),
   reread: z.array(z.object({ claimId: text, reason: text })),
+  failedAreas: z.array(text).default([]),
   filesRead: z.array(text),
   newClaims: z.array(
     z.object({ claimId: text, status: z.enum(CLAIM_STATUSES), replaces: text.optional() }),

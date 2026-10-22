@@ -119,6 +119,7 @@ describe('RF-209 the estimate before a Deepen', () => {
       judge: 1,
       reread: 1,
       outOfScope: 1,
+      failedAreas: 0,
       unreadFiles: 1,
       unreadTokens: 300,
     });

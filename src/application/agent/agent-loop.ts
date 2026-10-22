@@ -1,6 +1,6 @@
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import type { AgentRole, LlmMessage, LlmProvider, LlmResponse } from '../ports/llm-provider.js';
+import type { LlmMessage, LlmProvider, LlmResponse } from '../ports/llm-provider.js';
 import type { Logger } from '../ports/logger.js';
 import { collectCards } from './answer-collector.js';
 import { recordNote, type AnswerNote } from './answer-note.js';
@@ -15,7 +15,9 @@ import {
   type AgentTaskResult,
 } from './agent-task-result.js';
 import type { AgentToolSet } from './agent-tool-set.js';
+import type { AgentTaskContext, AgentTaskSettings } from './agent-task-settings.js';
 import { ReadGate } from './read-gate.js';
+import { retryNoteMessage, type RetryNote } from './retry-note.js';
 import { refusalFor } from './refusal.js';
 import {
   readerSystemPrompt,
@@ -31,27 +33,6 @@ import { ToolRunner } from './tool-runner.js';
 // answer, the turn limit, the context share, a stop or a model that loops. The system prompt and
 // the tools stay the same on every turn (a stable prefix for providers that cache it); repository
 // content enters only as data blocks in user and tool messages.
-
-interface AgentTaskSettings {
-  readonly model: string;
-  /** Model calls before the task ends as `TurnLimitReached` (RF-201). */
-  readonly maxTurns: number;
-  /** The model's context in tokens. */
-  readonly contextTokens: number;
-  /** The share of the context the conversation may reach, for example 0.8. */
-  readonly contextShare: number;
-  readonly maxOutputTokens?: number;
-  readonly maxOutputCeiling?: number;
-  readonly temperature?: number;
-}
-
-interface AgentTaskContext {
-  readonly runId: string;
-  readonly agentTaskId: string;
-  readonly role: AgentRole;
-  readonly traceId: string;
-  readonly parentSpanId: string;
-}
 
 export interface AgentTaskRequest {
   readonly provider: LlmProvider;
@@ -70,6 +51,8 @@ export interface AgentTaskRequest {
   readonly rejected?: string;
   /** RF-209: the parent's cards for the area, as JSON, sent as one data block after the area's. */
   readonly parentCards?: string;
+  /** RST-1303: a retry of an area that ended on a repeated call: a note added to the task message. */
+  readonly retryNote?: RetryNote;
   /** Q-55: told why an answer was refused, accepted for lack of room, kept or cut (never its text). */
   readonly onNote?: (note: AnswerNote) => Promise<void>;
 }
@@ -106,8 +89,17 @@ class AgentTask {
     const deepen = { rejected: block('cards', rejected), parentCards: block('cards', parentCards) };
     const owner = block('owner_answers', answers);
     const content = readerTaskMessage(prompts, tools.areaOverview(), owner, deepen);
-    this.add({ role: 'user', content });
+    this.add({ role: 'user', content: await this.withRetryNote(content) });
     return this.result(await this.explore());
+  }
+
+  private async withRetryNote(content: string): Promise<string> {
+    const { retryNote, tools } = this.request;
+    if (retryNote === undefined) return content;
+    await this.note({ outcome: 'retried', reason: 'repeated-calls' });
+    return `${content}
+
+${retryNoteMessage(retryNote, (source, text) => tools.renderBlock(source, text))}`;
   }
 
   private async explore(): Promise<AgentTaskEnd> {

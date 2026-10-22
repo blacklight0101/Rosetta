@@ -151,6 +151,7 @@ export const deepenRoundStarted = (seq: number, round: number): RunEvent =>
     ...{ round, maxRounds: 3, judge: 10, reread: 40 },
     outOfScope: 6,
     unreadFiles: 12,
+    failedAreas: [],
   });
 
 export const deepenRoundEnded = (seq: number, round: number, complete = true): RunEvent =>

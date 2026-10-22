@@ -75,6 +75,7 @@ export async function announceRoundStart(
     ...{ round, maxRounds, judge: plan.judge.length, reread: plan.reread.length },
     outOfScope: plan.outOfScope.length,
     unreadFiles: plan.gaps.length,
+    failedAreas: plan.failedAreas.map((each) => each.area),
   });
 }
 

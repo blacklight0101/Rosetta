@@ -14,7 +14,7 @@ import type {
   PlanDraft,
 } from './plan-draft.js';
 import { unknownPositions, type RequirementNote } from './requirement-notes.js';
-import { draftFault, noRequirement, type LeftOutCard } from './left-out-card.js';
+import { draftFault, leftOutOf, noRequirement, type LeftOutCard } from './left-out-card.js';
 import type { GuardKind, RiskClass } from './task-card-quality.js';
 import { assembleTechnical, type TechnicalContent } from './technical-content.js';
 
@@ -235,7 +235,7 @@ export function assemblePlan(
     draft.decisions.map((_, index) => planId('ADR', index + 1)),
   );
   return {
-    leftOut,
+    leftOut: leftOutOf(draft, leftOut),
     content: {
       summary: draft.summary,
       requirements: requirements.kept,

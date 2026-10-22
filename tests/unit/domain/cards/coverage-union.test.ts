@@ -47,3 +47,29 @@ describe('unionCoverage', () => {
     expect(union[0]?.files[0]).toEqual({ path: 'src/a.cs', read: [{ startLine: 1, endLine: 20 }] });
   });
 });
+
+describe('unionCoverage failures', () => {
+  it('RF-209 RST-1303 an area that failed and was read again without failing no longer says it failed', () => {
+    const failed = {
+      ...coverageOf('src', [{ path: 'src/a.cs', read: 10 }]),
+      failure: 'failed (RST-1303)',
+    };
+    const again = coverageOf('src', [{ path: 'src/a.cs', read: 100 }]);
+
+    const [row] = unionCoverage([failed, again], areas, files);
+
+    expect(row?.failure).toBeUndefined();
+  });
+
+  it('RF-208 an area whose every task failed says why it failed', () => {
+    const failed = {
+      ...coverageOf('src', [{ path: 'src/a.cs', read: 10 }]),
+      failure: 'failed (RST-1303)',
+    };
+    const again = { ...failed, failure: 'invalid output (RST-1300)' };
+
+    const [row] = unionCoverage([failed, again], areas, files);
+
+    expect(row?.failure).toBe('failed (RST-1303)');
+  });
+});

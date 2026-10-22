@@ -46,6 +46,18 @@ interface UnansweredQuestion {
   readonly question: string;
 }
 
+/**
+ * A part of the plan the package leaves out (P3-101 task cards, P3-102 data model parts): the area it
+ * belongs to, its position or name, the field that kept it out and a fixed reason. The checks list
+ * them grouped by area; no text of the planner's answer is in the reason.
+ */
+interface LeftOutItem {
+  readonly area: string;
+  readonly item: string;
+  readonly field: string;
+  readonly reason: string;
+}
+
 export interface HandoffPackage {
   /** The legacy repository and the commit the cards were read at. */
   readonly repository: { readonly url: string; readonly commitSha: string | null };
@@ -89,4 +101,6 @@ export interface HandoffPackage {
   readonly workbookFormulas?: WorkbookFormulas | undefined;
   /** RF-604: the documents that stayed cut off, in the order they were written; empty when none did. */
   readonly incomplete: readonly IncompleteDocument[];
+  /** P3-101: the parts of the plan the package leaves out, listed in checks.md by area. */
+  readonly leftOut: readonly LeftOutItem[];
 }
