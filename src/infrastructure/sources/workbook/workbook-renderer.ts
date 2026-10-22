@@ -22,7 +22,7 @@ import { capName } from './workbook-text.js';
  * Changes whenever the text a workbook renders to changes, so a snapshot can be told from one made by
  * another renderer (the record of RF-126 keeps it). A newer renderer needs a new upload (Q-37).
  */
-export const WORKBOOK_RENDERER_VERSION = '1';
+export const WORKBOOK_RENDERER_VERSION = '2';
 
 /** The bytes of rendered text one render may produce, for all its workbooks together. */
 export const DEFAULT_MAX_TOTAL_BYTES = 256 * 1024 * 1024;

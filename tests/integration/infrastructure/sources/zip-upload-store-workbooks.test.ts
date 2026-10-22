@@ -36,7 +36,7 @@ describe('ZipUploadStore and workbook snapshots', () => {
 
     const snapshot = await storeIn(setup.dataDir).read(key);
 
-    expect(snapshot).toMatchObject({ kind: 'workbook', key, rendererVersion: '1' });
+    expect(snapshot).toMatchObject({ kind: 'workbook', key, rendererVersion: '2' });
     expect(snapshot?.rootDir).toContain(key);
   });
 
