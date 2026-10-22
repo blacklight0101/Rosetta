@@ -234,3 +234,20 @@ describe('the default of a PRD question', () => {
     expect(text).toContain('would change what users see today and is not allowed');
   });
 });
+
+describe('the migrations card on a task card', () => {
+  it('RF-631 the migrations card lists no feature behaviour, only the rules that name its tables', () => {
+    const requirementId = handoffOf('Plain text.').content.requirements[0]?.id ?? '';
+    const files = filesOf(
+      'Plain text.',
+      withTask({
+        id: 'T-001',
+        title: 'Write the database migrations in the chosen stack',
+        requirements: [requirementId],
+        builds: ['table:customer'],
+      }),
+    );
+
+    expect(firstCard(files)).not.toContain('FEAT-001.c1');
+  });
+});

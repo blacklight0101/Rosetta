@@ -1,9 +1,12 @@
 import type { JSX } from 'preact';
 import { Field } from '../components/Field.js';
+import { dollarsToMicros, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import { LimitSetting } from './LimitSetting.js';
 import { RoleCapNotice, type RoleCaps } from './RoleCapNotice.js';
+import { ServerRunCapNote } from './ServerRunCapNote.js';
 import type { SectionProps } from './settings-section.js';
 import { confirmCeiling, ranges, runCostOutOfRange, templateDefaults } from './setting-limits.js';
+import { useSpendLimits } from './use-spend-limits.js';
 
 // RF-002, RF-422, RF-425, DEC-116, DEC-117: the run caps, the scan limits and the ignore rules.
 // Each number is a number field with a slider bounded by its DEC-117 range (card P2-15). Dollars
@@ -63,6 +66,8 @@ function CapNumbers({ editor, errorFor }: SectionProps): JSX.Element {
 // RF-422, RF-423 (the role caps as a notice, P2-26)
 export function CapSettings(props: SectionProps & { readonly roles: RoleCaps }): JSX.Element {
   const { editor, errorFor, roles } = props;
+  const limits = useSpendLimits();
+  const typed = dollarsToMicros(editor.draft.runCost, RUN_COST_MAX_MICROS);
   return (
     <section class="rst-card rst-settings__section" aria-labelledby="caps">
       <h2 id="caps" class="rst-settings__heading">
@@ -72,6 +77,12 @@ export function CapSettings(props: SectionProps & { readonly roles: RoleCaps }):
         A run stops cleanly when it reaches either cap. Amounts are in US dollars.
       </p>
       <CapNumbers {...props} />
+      <ServerRunCapNote
+        serverKeys={false}
+        administrator={limits?.serverKeys.runCapMicros}
+        typed={typed === undefined ? 0n : BigInt(typed)}
+        where="settings"
+      />
       <RoleCapNotice
         roles={roles}
         runCost={editor.draft.runCost}

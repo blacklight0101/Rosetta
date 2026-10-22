@@ -1,4 +1,5 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
+import { behavioursKeptByNoCard } from '../../domain/planning/behaviours-to-keep.js';
 import {
   coverageItems,
   coverageOf,
@@ -7,6 +8,7 @@ import {
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { decisionLink } from './handoff-links.js';
 import { requirementLines } from './handoff-requirement-notes-markdown.js';
+import { styleLines } from './handoff-style-markdown.js';
 
 // RF-627, RF-507, RNF-003: checks.md, what the package checks say about itself. The plan coverage
 // lists every item (feature, table, operation, journey or screen) that no task card builds, kind by
@@ -62,12 +64,36 @@ function restatedLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
   ];
 }
 
+// RF-631: the legacy behaviour the migrations card no longer keeps and no task card keeps.
+function keptByNoCardLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const lost = behavioursKeptByNoCard(
+    handoff.content.tasks,
+    handoff.content.requirements,
+    handoff.sources,
+    handoff.dataModel.tables,
+  );
+  if (lost.length === 0) return [];
+  return [
+    '## Behaviour kept by no card',
+    '',
+    'The migrations card keeps only the business rules that name a table or a column it creates. Each behaviour below was kept by it before and no task card keeps it now; the owner decides whether a card must build it.',
+    '',
+    ...lost.map(
+      (each) =>
+        `- ${esc.inline(each.claimId)} (${esc.inline(each.cardId)}): ${esc.inline(each.text)}`,
+    ),
+    '',
+  ];
+}
+
 // RF-627
 export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const lines = [
     ...coverageLines(handoff, esc),
+    ...styleLines(handoff, esc),
     ...restatedLines(handoff, esc),
     ...requirementLines(handoff.content.requirementNotes ?? []),
+    ...keptByNoCardLines(handoff, esc),
   ];
   return ['# Package checks', '', ...lines].join('\n');
 }

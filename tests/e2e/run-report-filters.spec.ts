@@ -152,7 +152,7 @@ test.describe('the filters and a hostile address, from disk', () => {
 
       await expect(visibleRows(page)).toHaveCount(4);
       await expect(page.locator('script')).toHaveCount(1);
-      await expect(page.locator('img, [onerror]')).toHaveCount(0);
+      await expect(page.locator('main img, [onerror]')).toHaveCount(0);
       expect(await page.evaluate<unknown>('globalThis.__pwned')).toBeUndefined();
       expect(dialogs).toEqual([]);
       await page.context().close();

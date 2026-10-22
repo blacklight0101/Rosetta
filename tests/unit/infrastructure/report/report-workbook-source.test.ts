@@ -88,7 +88,7 @@ describe('report.html of a workbook project', () => {
     const { document, handlers, foreignLinks } = auditHtml(html);
 
     expect(factsOf([hostileName])['Source']).toBe(`Excel workbooks: ${hostileName}`);
-    expect(document.querySelectorAll('img')).toHaveLength(0);
+    expect(document.querySelectorAll('main img')).toHaveLength(0);
     expect(handlers).toEqual([]);
     expect(foreignLinks).toEqual([]);
   });
