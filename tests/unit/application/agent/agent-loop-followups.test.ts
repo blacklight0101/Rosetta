@@ -178,7 +178,9 @@ describe('runAgentTask asks a cut-off answer to continue', () => {
 
   it('RF-208 an answer cut off twice is continued twice and then repaired at most twice: five turns, no loop', async () => {
     const { fake, request } = ungatedLoopSetup(
-      Array.from({ length: 8 }, () => textTurn('{"cards": [{"type": "FEAT", "title"')),
+      Array.from({ length: 8 }, (_, turn) =>
+        textTurn(`{"cards": [{"type": "FEAT", "title${String(turn)}"`),
+      ),
       { maxTurns: 12 },
     );
 

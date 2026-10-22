@@ -237,7 +237,9 @@ describe('a card with a claim that stays invalid', UNDERSTAND_TIMEOUT, () => {
     expect(logged).toContain('some claims or cards were dropped');
     expect(logged).toContain('cards.0.claims.1.citations.0');
     const raw = await readFile(join(h.runFolder(run), 'invalid-output', 'reader-001.txt'), 'utf8');
-    expect(raw).toContain('=== attempt 3 ===');
-    expect(h.providers.requests()).toHaveLength(4);
+    // P3-104: the first repair gave the same answer, so no second repair was sent.
+    expect(raw).toContain('=== attempt 2 ===');
+    expect(raw).not.toContain('=== attempt 3 ===');
+    expect(h.providers.requests()).toHaveLength(3);
   });
 });

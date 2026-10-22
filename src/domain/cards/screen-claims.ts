@@ -103,7 +103,8 @@ export function screenClaims(
   const validations = screen.fields.flatMap((field) =>
     field.validations.map((validation) => validationClaim(field, validation)),
   );
-  const evidence = screenEvidence(written);
+  // A screen the agent wrote no claim for cites the lines of its validations (P3-104).
+  const evidence = screenEvidence(written.length > 0 ? written : validations);
   const actions = screen.actions.map((action) => ({
     text: actionClaimText(action),
     citations: evidence,
