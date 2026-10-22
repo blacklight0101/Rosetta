@@ -1,6 +1,7 @@
-// RNF-005 / ADR-011: the test step of the pre-push hook (lefthook.yml). It runs the unit and integration
-// tests related to the files the push changes against the upstream branch, and the whole unit project when
-// the change or the base calls for it. CI runs every test (environments-and-delivery.md section 5).
+// RNF-005 / ADR-011: the test step of the pre-push hook (lefthook.yml). It runs the unit and web tests
+// related to the files the push changes, the documentation consistency tests when a document changed, and
+// the whole unit project when the change or the base calls for it. Integration and end-to-end tests run in
+// CI (environments-and-delivery.md section 5).
 // Usage: node scripts/pre-push-tests.mjs [--plan]   (--plan prints the plan as JSON and runs nothing)
 import { execFile, spawn } from 'node:child_process';
 import { join } from 'node:path';
@@ -19,9 +20,11 @@ const supportCode = /^tests\/support\/|(?:^|\/)setup\.ts$/u;
 const testedRoots = /^(?:src|web\/src|tests\/unit|tests\/integration|tests\/e2e)\//u;
 const codeFile = /\.(?:ts|tsx|mjs|cjs|js)$/u;
 const docFile = /^docs\/|\.md$/u;
+// The documentation consistency tests read the documents; they are cheap (about 5 s), so a document change runs them.
+const docTests = ['tests/unit/docs', 'tests/integration/docs'];
 
-// Classifies one changed path: 'code' runs through Vitest's related selection, 'doc' runs nothing,
-// 'other' (configuration, support code, scripts, workflows, data) needs the whole unit project.
+// Classifies one changed path: 'code' runs through Vitest's related selection, 'doc' runs the documentation
+// tests, 'other' (configuration, support code, scripts, workflows, data) needs the whole unit project.
 export function classify(file) {
   if (docFile.test(file)) return 'doc';
   if (sharedConfig.test(file) || configModule.test(file) || supportCode.test(file)) return 'other';
@@ -32,14 +35,26 @@ export function classify(file) {
 const fullPlan = (base, reason) => ({
   mode: 'full',
   base,
-  args: ['run', '--project', 'unit'],
+  steps: [['run', '--project', 'unit']],
   reason,
 });
 
-// Decides what the push runs. `base` is the upstream branch or null; `changed` lists the paths the
-// push changes against it, or null when Git cannot tell.
+const relatedStep = (base) => [
+  'run',
+  '--project',
+  'unit',
+  '--project',
+  'web',
+  '--changed',
+  base,
+  '--passWithNoTests',
+];
+const docStep = ['run', '--project', 'unit', '--project', 'integration', ...docTests];
+
+// Decides what the push runs. `base` is the commit or ref the change is measured from, or null when none can
+// be read; `changed` lists the paths the push changes against it, or null when Git cannot tell.
 export function planPrePushTests({ base, changed }) {
-  if (base === null) return fullPlan(base, 'no upstream branch: the whole unit project runs');
+  if (base === null) return fullPlan(base, 'no base to compare with: the whole unit project runs');
   if (changed === null)
     return fullPlan(base, 'the changed files are unknown: the whole unit project runs');
   if (changed.length > maxRelatedFiles) {
@@ -55,36 +70,45 @@ export function planPrePushTests({ base, changed }) {
       'configuration, test support or other files changed: the whole unit project runs',
     );
   }
-  if (!kinds.includes('code'))
-    return { mode: 'none', base, args: [], reason: 'no source change: no tests run' };
+  const steps = [];
+  if (kinds.includes('code')) steps.push(relatedStep(base));
+  if (kinds.includes('doc')) steps.push(docStep);
+  if (steps.length === 0) return { mode: 'none', base, steps: [], reason: 'nothing to test' };
   return {
     mode: 'related',
     base,
-    args: [
-      'run',
-      '--project',
-      'unit',
-      '--project',
-      'integration',
-      '--project',
-      'web',
-      '--changed',
-      base,
-      '--passWithNoTests',
-    ],
-    reason: 'the unit and integration tests related to the change run',
+    steps,
+    reason:
+      'the unit and web tests related to the change run; documentation tests run when a document changed',
   };
+}
+
+// Runs each step of the plan in order with its own Vitest run; the first failing step fails the push.
+// Vitest runs through its own entry point: no shell, so the same command works on Windows and Linux.
+export async function runPlan(plan, { spawnChild }) {
+  const vitest = join(process.cwd(), 'node_modules', 'vitest', 'vitest.mjs');
+  for (const step of plan.steps) {
+    const code = await spawnChild(process.execPath, [vitest, ...step]);
+    if (code !== 0) return code;
+  }
+  return 0;
 }
 
 async function git(args) {
   const { stdout } = await execute('git', args);
-  return stdout;
+  return stdout.trim();
 }
 
-// The upstream branch of the current branch, or null when it has none (a new branch).
-async function upstreamOf() {
+// The base of the push: the upstream branch when there is one; otherwise the merge-base with origin/main (a new
+// branch); otherwise null.
+async function baseOf() {
   try {
-    return (await git(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'])).trim();
+    return await git(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}']);
+  } catch {
+    // no upstream: a new branch
+  }
+  try {
+    return await git(['merge-base', 'origin/main', 'HEAD']);
   } catch {
     return null;
   }
@@ -100,16 +124,9 @@ async function changedSince(base) {
 }
 
 async function currentPlan() {
-  const base = await upstreamOf();
+  const base = await baseOf();
   const changed = base === null ? null : await changedSince(base);
   return planPrePushTests({ base, changed });
-}
-
-// Runs Vitest through its own entry point: no shell, so the same command works on Windows and Linux.
-export async function runPlan(plan, { spawnChild }) {
-  if (plan.mode === 'none') return 0;
-  const vitest = join(process.cwd(), 'node_modules', 'vitest', 'vitest.mjs');
-  return spawnChild(process.execPath, [vitest, ...plan.args]);
 }
 
 function spawnAndWait(command, args) {

@@ -28,6 +28,6 @@ pre-push:
   commands:
     typecheck:
       run: npm run typecheck
-    # The unit and integration tests related to the push (scripts/pre-push-tests.mjs); CI runs them all.
+    # The unit, web and documentation tests the push needs (scripts/pre-push-tests.mjs); CI runs every test.
     tests:
       run: node scripts/pre-push-tests.mjs
