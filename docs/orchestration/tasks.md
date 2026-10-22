@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
-| P1 Milestone slice (M1) | 181     | 67        | 96         | 18        | 0                  | 106     | 67      | 8      | 119        | 0         |
+| P1 Milestone slice (M1) | 182     | 67        | 97         | 18        | 0                  | 106     | 68      | 8      | 120        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
 | P3 Report and plan      | 100     | 12        | 84         | 4         | 0                  | 38      | 59      | 3      | 56         | 0         |
-| **Total**               | **322** | **86**    | **207**    | **29**    | **0**              | **157** | **152** | **13** | **195**    | **0**     |
+| **Total**               | **323** | **86**    | **208**    | **29**    | **0**              | **157** | **153** | **13** | **196**    | **0**     |
 
 ## Conventions for every card
 
@@ -2455,6 +2455,23 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the assets, the page changes, the report header, the README, the design-system Brand section and tests.
 - **Done when**: each probe holds with screenshots in the pull request; `npm run verify` green.
 - **Refs**: DEC-161, design-system.md; issue #777.
+
+---
+
+### P1-182 - Follow-up: the tests that fail in CI without a code cause wait for what they check, not for a fixed time
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the CI history of the last three days on main and on pull requests (`gh run list`, `gh run view --log-failed`), `tests/integration/presentation/composed-workbook-upload.test.ts` (RF-1108 DEC-149 "stops a file that is arriving", 30 s timeout), the secret-masker timing test (RF-141, 500 ms, fails on Windows), the `build-plan-*` and `understand-*` integration files ("The run has not ended" `vi.waitFor` timeouts), `tests/integration/**/replay-script.test.ts` (RF-506), `tests/e2e/admin-models.spec.ts` (model field turns from input to dropdown when the list loads). Owner priority 2026-10-22: reruns of flaky jobs slow every merge.
+- **Do**: (1) list every test that failed in CI in that window and passed on rerun of the same commit, with its run links; (2) fix each one so it waits for the state it checks (an event, a status, a fake clock) instead of a wall-clock budget, or isolates the shared server state it depends on; (3) keep every assertion; a test is never skipped, retried or given a longer timeout as the fix; (4) list the ten slowest integration files with their time and leave them as they are unless the fix above touches them.
+- **Review probes**: each fixed test passes 10 times in a row under load (`vitest run <file> --repeat` or CI reruns, links in the pull request); a mutation that breaks the behaviour each test checks still fails it; no new `retry`, `skip` or larger timeout in the diff.
+- **Behaviour to preserve**: every requirement the tests cover (RF-141, RF-506, RF-1108, DEC-149, DEC-106); the CI shards and their run time.
+- **Delivers**: the test changes, the list of flaky tests with run links and the ten slowest integration files in the pull request body.
+- **Done when**: each probe holds; CI green on Windows and Linux.
+- **Refs**: RF-141, RF-506, RF-1108; issue #795.
 
 ---
 
