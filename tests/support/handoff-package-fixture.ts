@@ -23,8 +23,8 @@ function draft(text: string): PlanDraft {
     summary: text,
     requirements: [{ title: text, statement: text, sources: ['FEAT-001'] }],
     components: [
-      { name: text, responsibility: text, dependsOn: ['Store'] },
-      { name: 'Store', responsibility: 'Keeps data.', dependsOn: [] },
+      { name: text, responsibility: text, role: 'business', dependsOn: ['Store'] },
+      { name: 'Store', responsibility: 'Keeps data.', role: 'data', dependsOn: [] },
     ],
     decisions: [{ title: text, context: text, decision: text, consequences: text, sources: [] }],
     entities: [{ legacy: text, target: text, notes: text, sources: ['FEAT-001'] }],
