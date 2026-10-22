@@ -26,7 +26,7 @@ export function readerParallelism(settings: ProjectSettings): number {
 /** What the limits need of a role; the estimate (RF-425) knows a role by its settings alone. */
 export type ReaderRole = Pick<
   RoleProvider,
-  'name' | 'kind' | 'model' | 'maxOutputTokens' | 'modelContextTokens'
+  'name' | 'kind' | 'model' | 'maxOutputTokens' | 'modelContextTokens' | 'modelMaxOutputTokens'
 > & {
   readonly temperature?: number | undefined;
 };
@@ -48,6 +48,9 @@ export function readerTaskSettings(
     contextTokens: contextTokensOf(settings, role),
     contextShare: CONTEXT_SHARE,
     maxOutputTokens: role.maxOutputTokens,
+    ...(role.modelMaxOutputTokens === undefined
+      ? {}
+      : { maxOutputCeiling: role.modelMaxOutputTokens }),
     ...(role.temperature === undefined ? {} : { temperature: role.temperature }),
   };
 }

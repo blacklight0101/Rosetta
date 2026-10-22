@@ -853,7 +853,7 @@ As a developer I want to run every role on local models so that development cost
 As a developer I want to use OpenAI models for any role so that I can use stronger models where it matters.
 
 - Given an OpenAI key in the environment and a configured model, when a role uses provider `openai`, then calls succeed with tool calling and usage is reported, including cached tokens when the API reports them.
-- Given a role on a reasoning model (Q-58, default applies), when the adapter calls it, then it sends the role's reasoning effort (default `low`) where the model accepts one, records the reasoning tokens the provider reports, and an answer that comes back empty at the output limit is retried once with the limit doubled, under the model's maximum and the budget guard, instead of being asked to continue.
+- Given a role on a reasoning model (Q-58, default applies), when the adapter calls it, then it sends the role's reasoning effort (default `low`) where the model accepts one, records the reasoning tokens the provider reports, and an answer that comes back empty at the output limit is retried once with the limit doubled, up to the model's listed maximum output (32 768 when the list gives none) and under the budget guard, which reserves the worst case of the retried call, instead of being asked to continue.
   Verification: contract test with recorded responses; one manual live call.
 
 **RF-403 OpenAI-compatible adapter** - R1 - Should - Source DEC-09 - ADR-003

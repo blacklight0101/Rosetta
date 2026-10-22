@@ -564,8 +564,8 @@ sequenceDiagram
   publishes the run event `agent.answer.noted` and an application log line with the reason only, never answer text,
   `answer-note.ts`; Q-58: an answer that comes back empty with `finishReason: length`, because a reasoning model's
   hidden reasoning used the whole output limit, is not asked to continue: the call is made once more with the limit
-  doubled, up to 32 768 (the largest a role accepts), as one more call through the same guards, and the doubled limit
-  stays for the task (`EmptyAnswerRetry`); a second empty answer, or a limit already at the largest, ends the retries
+  doubled, up to the maximum output the shipped model list gives the model (32 768 when it gives none; P3-100), as one more call through the same guards, and the doubled limit
+  stays for the task (`EmptyAnswerRetry`); a second empty answer, or a limit already at that maximum, ends the retries
   and the answer is handled as before, with the same event: `retried` and `empty-at-limit`, `empty` and `after-retry`
   or `no-room`), `InvalidOutput` (no valid card after the follow-ups), `TurnLimitReached` (the
   configured maximum turns, `RST-1304`, or the context share, `RST-1305`), or `Failed` with a recorded reason: a

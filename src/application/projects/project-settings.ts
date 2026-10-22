@@ -37,6 +37,8 @@ const MAX_IGNORE_RULES = 100_000;
 const MAX_LIST = 200;
 const MAX_RUN_COST_MICROS = 100_000_000;
 const MAX_RUN_TOKENS = 50_000_000;
+/** P3-100: the largest maximum output of a model in the shipped list (prices/models.yaml). */
+const MAX_OUTPUT_TOKENS = 128_000;
 
 /** A whole number from zero up: caps, prices, token and byte limits. */
 const cap = z.number(invalid).int(invalid).min(0, negative);
@@ -73,7 +75,7 @@ const roleFields = {
   provider: z.string(unknownProvider).min(1, unknownProvider),
   model: z.string(missingModel).trim().min(1, missingModel).max(MAX_TEXT, invalid),
   /** Q-57: left out, the role takes the default of its model (role-limits.ts). */
-  maxOutputTokens: ranged(256, 32_768).optional(),
+  maxOutputTokens: ranged(256, MAX_OUTPUT_TOKENS).optional(),
   temperature: z.number(invalid).min(0, invalid).max(2, invalid).optional(),
   reasoningEffort: z.enum(REASONING_EFFORTS, invalid).optional(),
 };

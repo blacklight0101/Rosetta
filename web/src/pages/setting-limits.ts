@@ -12,7 +12,7 @@ export interface Range {
 export type LimitUnit = 'count' | 'dollars';
 
 export const ranges = {
-  maxOutputTokens: { min: 256, max: 32_768, step: 256 },
+  maxOutputTokens: { min: 256, max: 128_000, step: 256 },
   maxTurns: { min: 1, max: 50, step: 1 },
   runCost: { min: 0, max: 100, step: 0.01 },
   confirmAbove: { min: 0, max: 100, step: 0.01 },

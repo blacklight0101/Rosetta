@@ -46,6 +46,8 @@ export interface RoleLimits {
   readonly contextAutomatic: boolean;
   /** The window the shipped list gives the model, the upper bound of a context number; undefined when it gives none or for another provider. */
   readonly modelContextTokens: number | undefined;
+  /** The maximum output the shipped list gives the model, the ceiling of the empty-answer retry (P3-100); undefined when it gives none. */
+  readonly modelMaxOutputTokens: number | undefined;
   readonly maxOutputTokens: number;
 }
 
@@ -85,6 +87,13 @@ function defaultOutput(
   return Math.min(modelMaximum ?? HOSTED_OUTPUT_TOKENS[role], HOSTED_OUTPUT_TOKENS[role]);
 }
 
+/** What the shipped list says of the model's window and maximum output (P3-100). */
+function modelNumbers(
+  entry: ReturnType<typeof listedEntry>,
+): Pick<RoleLimits, 'modelContextTokens' | 'modelMaxOutputTokens'> {
+  return { modelContextTokens: entry?.contextTokens, modelMaxOutputTokens: entry?.maxOutputTokens };
+}
+
 // RF-405, RF-201, Q-57
 export function roleLimits(
   settings: ProjectSettings,
@@ -98,7 +107,7 @@ export function roleLimits(
   const entry = listedEntry(list, config?.kind, model);
   return {
     ...contextOf(config?.contextTokens, config?.kind, entry?.contextTokens),
-    modelContextTokens: entry?.contextTokens,
+    ...modelNumbers(entry),
     maxOutputTokens: maxOutputTokens ?? defaultOutput(role, config?.kind, entry?.maxOutputTokens),
   };
 }

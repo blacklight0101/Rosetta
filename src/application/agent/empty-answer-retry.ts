@@ -4,13 +4,13 @@ import type { AnswerNote } from './answer-note.js';
 // RF-402, Q-58: a reasoning model can spend its whole output limit on hidden reasoning and answer
 // with empty text and `finishReason: length`. Asking such an answer to continue only repeats the
 // waste, so the call is made once more with the limit doubled. The doubled limit never passes the
-// largest limit a role accepts (the settings range), and the retry is one more call through the
+// maximum output the model lists (P3-100), or 32,768 when the list gives none, and the retry is one more call through the
 // same guards, so the caps apply to it like to any other call. The limit stays doubled for the rest
 // of the task, because the model has shown it needs the room. After a retry that is empty too, or
 // at the largest limit, no more retries are made and the answer is handled as before. A later empty
 // answer after a good retry is retried again, at the doubled limit, up to the largest.
 
-/** The largest `maxOutputTokens` a role accepts (`project-settings.ts`, DEC-117). */
+/** The ceiling of the doubled limit for a model that lists no maximum output. */
 export const OUTPUT_LIMIT_CEILING = 32_768;
 
 /** An answer with no text and no tool call that stopped because it reached the output limit. */
@@ -26,9 +26,12 @@ function isEmptyAtLimit(response: LlmResponse): boolean {
 export class EmptyAnswerRetry {
   private current: number | undefined;
   private spent = false;
+  private readonly ceiling: number;
 
-  constructor(limit: number | undefined) {
-    this.current = limit;
+  /** `maxOutputCeiling` (Q-58, P3-100) is the model's listed maximum output, when the list gives one. */
+  constructor(settings: { readonly maxOutputTokens?: number; readonly maxOutputCeiling?: number }) {
+    this.current = settings.maxOutputTokens;
+    this.ceiling = settings.maxOutputCeiling ?? OUTPUT_LIMIT_CEILING;
   }
 
   /** The output limit of the next call, as the field of the request (none when the role has none). */
@@ -62,7 +65,7 @@ export class EmptyAnswerRetry {
   }
 
   private doubled(): number | undefined {
-    if (this.current === undefined || this.current >= OUTPUT_LIMIT_CEILING) return undefined;
-    return Math.min(this.current * 2, OUTPUT_LIMIT_CEILING);
+    if (this.current === undefined || this.current >= this.ceiling) return undefined;
+    return Math.min(this.current * 2, this.ceiling);
   }
 }
