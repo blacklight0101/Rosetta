@@ -41,6 +41,49 @@ function screenEvidence(claims: readonly DerivedClaim[]): readonly Citation[] {
   return evidence;
 }
 
+/** The actions that start the same handler and flow, in the order first seen (P3-106). */
+function actionGroups(actions: readonly ScreenAction[]): readonly (readonly ScreenAction[])[] {
+  const groups = new Map<string, ScreenAction[]>();
+  for (const action of actions) {
+    const key = JSON.stringify([action.handler, action.flow]);
+    const group = groups.get(key) ?? [];
+    if (group.length === 0) groups.set(key, group);
+    if (!group.some((each) => each.label === action.label)) group.push(action);
+  }
+  return [...groups.values()];
+}
+
+function listOf(labels: readonly string[]): string {
+  const last = labels.at(-1) ?? '';
+  return labels.length < 2 ? last : `${labels.slice(0, -1).join(', ')} and ${last}`;
+}
+
+/**
+ * The claim text for the actions of one group (P3-106, EV-06): one action keeps the text of
+ * `actionClaimText`; several that start the same handler are one claim that lists the controls.
+ */
+function groupClaimText(group: readonly ScreenAction[]): string {
+  const [first] = group;
+  if (first === undefined) return '';
+  if (group.length === 1) return actionClaimText(first);
+  return `Actions ${listOf(group.map((action) => action.label))} start ${startsOf(first)}.`;
+}
+
+/**
+ * The texts that can state `action` among the `actions` of a screen: its own claim from before
+ * actions were grouped and the claim of its group (P3-106). `plan` keeps the action when either is
+ * Supported.
+ */
+export function actionClaimTexts(
+  actions: readonly ScreenAction[],
+  action: ScreenAction,
+): readonly string[] {
+  const same = (other: ScreenAction): boolean =>
+    other.label === action.label && other.handler === action.handler && other.flow === action.flow;
+  const group = actionGroups(actions).find((each) => each.some(same));
+  return [...new Set([actionClaimText(action), groupClaimText(group ?? [action])])];
+}
+
 /** The text of the claim that states an action, so a reader of the card can find it again (RF-626). */
 export function actionClaimText(action: ScreenAction): string {
   return `Action ${action.label} starts ${startsOf(action)}.`;
@@ -104,18 +147,10 @@ export function screenClaims(
     field.validations.map((validation) => validationClaim(field, validation)),
   );
   const evidence = screenEvidence(written);
-  const actions = screen.actions.map((action) => ({
-    text: actionClaimText(action),
+  const actions = actionGroups(screen.actions).map((group) => ({
+    text: groupClaimText(group),
     citations: evidence,
   }));
   const detail = detailTexts(screen).map((text) => ({ text, citations: evidence }));
   return [...validations, ...actions, ...detail];
-}
-
-// P3-106 stub
-export function actionClaimTexts(
-  _all: readonly ScreenAction[],
-  action: ScreenAction,
-): readonly string[] {
-  return [actionClaimText(action)];
 }

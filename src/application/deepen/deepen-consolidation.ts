@@ -48,5 +48,5 @@ export async function mergeDuplicates(
   };
   const where = { store: await recordsOf(parts), scope: scopeOf(execution.run) };
   const merged = await consolidateRun(consolidationParts(source), where, cards);
-  return merged.merges.length === 0 ? undefined : merged;
+  return merged.merges.length === 0 && merged.moves.length === 0 ? undefined : merged;
 }

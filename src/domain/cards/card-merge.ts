@@ -1,5 +1,6 @@
 import { err, ok, type Result } from '../errors/result.js';
 import type { Card } from './card.js';
+import { collapseClaims } from './claim-dedupe.js';
 import { mergedScreen } from './screen-merge.js';
 import { CONFIDENCES, type CardType, type Confidence } from './card-vocabulary.js';
 
@@ -53,6 +54,7 @@ function unique<T>(items: readonly T[]): T[] {
 function membersOf(
   cards: readonly Card[],
   merge: CardMerge,
+  types: readonly CardType[],
 ): Result<readonly Card[], MergeProblem> {
   if (merge.ids.length < 2) return err('too-few-cards');
   if (new Set(merge.ids).size !== merge.ids.length) return err('repeated-card');
@@ -61,7 +63,7 @@ function membersOf(
   const [first] = members;
   if (first === undefined) return err('too-few-cards');
   if (members.some((card) => card.type !== first.type)) return err('type-differs');
-  if (!MERGEABLE_TYPES.includes(first.type)) return err('type-not-mergeable');
+  if (!types.includes(first.type)) return err('type-not-mergeable');
   return ok(members);
 }
 
@@ -81,32 +83,40 @@ function screenOf(members: readonly Card[]): Pick<Card, 'screen'> {
   return merged === undefined ? {} : { screen: merged };
 }
 
-function mergedCard(members: readonly Card[], merge: CardMerge): Card {
+/** A merged card and where each claim of the cards it replaces went (`keptIndex`, P3-106). */
+function mergedCard(members: readonly Card[], merge: CardMerge) {
   const [first] = members;
   if (first === undefined) throw new Error('A merge has at least two cards.');
-  const claims = members
-    .flatMap((card) => card.claims)
-    .map((claim, index) => ({ ...claim, claimId: `${first.id}.c${String(index + 1)}` }));
-  return {
+  // P3-106: a claim that two of the cards state alike is kept once.
+  const { kept, keptIndex } = collapseClaims(members.flatMap((card) => card.claims));
+  const claims = kept.map((claim, index) => ({
+    ...claim,
+    claimId: `${first.id}.c${String(index + 1)}`,
+  }));
+  const card: Card = {
     ...first,
     title: merge.title,
     summary: merge.summary,
     confidence: lowestConfidence(members),
     claims,
-    mergedFrom: unique(members.flatMap((card) => card.mergedFrom ?? [card.id])),
+    mergedFrom: unique(members.flatMap((each) => each.mergedFrom ?? [each.id])),
     mergedAreas: unique(members.flatMap(areasOf)),
     ...(first.type === 'SCRN' ? screenOf(members) : {}),
   };
+  return { card, keptIndex };
 }
 
-/** The claims whose id the merge changed: the merged card's claims, in order, against the old ones. */
-function movesOf(members: readonly Card[], merged: Card): MergeMoves {
+/** The claims whose id the merge changed: each old claim against the claim that stands for it. */
+function movesOf(
+  members: readonly Card[],
+  merged: { readonly card: Card; readonly keptIndex: readonly number[] },
+): MergeMoves {
   const before = members.flatMap((card) => card.claims.map((claim) => claim.claimId));
-  const claims = merged.claims.flatMap((claim, index) => {
-    const from = before[index];
-    return from === undefined || from === claim.claimId ? [] : [{ from, to: claim.claimId }];
+  const claims = before.flatMap((from, index) => {
+    const to = merged.card.claims[merged.keptIndex[index] ?? -1]?.claimId;
+    return to === undefined || to === from ? [] : [{ from, to }];
   });
-  return { cardId: merged.id, from: members.map((card) => card.id), claims };
+  return { cardId: merged.card.id, from: members.map((card) => card.id), claims };
 }
 
 function replaced(cards: readonly Card[], members: readonly Card[], merged: Card): Card[] {
@@ -119,23 +129,56 @@ function replaced(cards: readonly Card[], members: readonly Card[], merged: Card
 
 /**
  * Applies the merges one after the other. A merge that is not valid for the cards left (unknown
- * or repeated id, other types, a type that is not mergeable) is skipped with its reason.
+ * or repeated id, other types, a type that is not in `types`) is skipped with its reason. The
+ * summariser's merges are of `MERGEABLE_TYPES`; those of the same title (P3-106) are of any type.
  */
-export function applyMerges(cards: readonly Card[], merges: readonly CardMerge[]): MergeResult {
+export function applyMerges(
+  cards: readonly Card[],
+  merges: readonly CardMerge[],
+  types: readonly CardType[] = MERGEABLE_TYPES,
+): MergeResult {
   let current = cards;
   const applied: CardMerge[] = [];
   const moves: MergeMoves[] = [];
   const skipped: { merge: CardMerge; problem: MergeProblem }[] = [];
   for (const merge of merges) {
-    const members = membersOf(current, merge);
+    const members = membersOf(current, merge, types);
     if (!members.ok) {
       skipped.push({ merge, problem: members.error });
       continue;
     }
     const merged = mergedCard(members.value, merge);
-    current = replaced(current, members.value, merged);
+    current = replaced(current, members.value, merged.card);
     applied.push(merge);
     moves.push(movesOf(members.value, merged));
   }
   return { cards: current, applied, moves, skipped };
+}
+
+/**
+ * P3-106, RF-230, EV-05: a card that states the same claim twice keeps it once (a card made by
+ * merging does already). The claims are numbered again; each change is a move, as a merge's are, with
+ * the card as its only `from`. `FLOW` steps are left alone.
+ */
+export function foldRepeatedClaims(cards: readonly Card[]): {
+  readonly cards: readonly Card[];
+  readonly moves: readonly MergeMoves[];
+} {
+  const moves: MergeMoves[] = [];
+  const folded = cards.map((card) => {
+    if (card.type === 'FLOW') return card;
+    const { kept, keptIndex } = collapseClaims(card.claims);
+    if (kept.length === card.claims.length) return card;
+    const claims = kept.map((claim, index) => ({
+      ...claim,
+      claimId: `${card.id}.c${String(index + 1)}`,
+    }));
+    const changed = card.claims.flatMap((claim, index) => {
+      const to = claims[keptIndex[index] ?? -1]?.claimId;
+      return to === undefined || to === claim.claimId ? [] : [{ from: claim.claimId, to }];
+    });
+    moves.push({ cardId: card.id, from: [card.id], claims: changed });
+    return { ...card, claims };
+  });
+  return { cards: folded, moves };
 }

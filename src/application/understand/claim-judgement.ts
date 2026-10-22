@@ -17,6 +17,7 @@ import {
   CAP_UNVERIFIED_REASON,
   judgeClaim,
   type ClaimJudgeParts,
+  type Judgement,
 } from '../verifier/judge-claim.js';
 import type { VerifierPrompts } from '../verifier/verifier-prompts.js';
 import { readerParallelism } from './reader-settings.js';
@@ -104,9 +105,16 @@ export async function judgeClaims(
   // RF-423: the verifier's own cap refuses its calls without stopping the run; once a call is
   // refused or cancelled, no further claim is sent.
   const halt = { stopped: false, capped: false };
+  // P3-106, EV-06: a text with the same citations as a claim already sent has that claim's
+  // judgement, so the two cannot split and the verifier is paid once.
+  const sent = new Map<string, Promise<Judgement>>();
   await runPool(pending, options, async (each) => {
     if (halt.stopped || halt.capped) return;
-    const judgement = await judgeClaim(judge, each.claim, spanIdOf(judge.call.traceId, each.index));
+    const key = JSON.stringify([each.claim.text, each.claim.citations]);
+    const asked =
+      sent.get(key) ?? judgeClaim(judge, each.claim, spanIdOf(judge.call.traceId, each.index));
+    sent.set(key, asked);
+    const judgement = await asked;
     if (judgement.kind === 'judged') await decide(each, judgement.status, judgement.reason);
     else halt[judgement.kind] = true;
   });

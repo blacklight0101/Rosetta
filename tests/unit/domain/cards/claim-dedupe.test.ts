@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { applyMerges, type CardMerge } from '../../../../src/domain/cards/card-merge.js';
+import {
+  applyMerges,
+  foldRepeatedClaims,
+  type CardMerge,
+} from '../../../../src/domain/cards/card-merge.js';
 import type { Card, Claim } from '../../../../src/domain/cards/card.js';
 import { createCard } from '../../../../src/domain/cards/card.js';
 import { draftOf } from '../../../support/card-fixtures.js';
@@ -110,5 +114,44 @@ describe('P3-106 a new card keeps an identical claim once', () => {
     });
 
     expect(made.ok && made.value.claims).toHaveLength(2);
+  });
+});
+
+describe('P3-106 foldRepeatedClaims', () => {
+  const repeated = card('ENT-001', [
+    claim('ENT-001', 1, 'A.'),
+    claim('ENT-001', 2, 'A.'),
+    claim('ENT-001', 3, 'B.'),
+  ]);
+
+  it('EV-05 a card that states a claim twice keeps it once and the claims run on without a gap', () => {
+    const result = foldRepeatedClaims([repeated, card('ENT-002', [claim('ENT-002', 1, 'A.')])]);
+
+    expect(result.cards[0]?.claims.map((each) => [each.claimId, each.text])).toEqual([
+      ['ENT-001.c1', 'A.'],
+      ['ENT-001.c2', 'B.'],
+    ]);
+    expect(result.cards[1]?.claims).toHaveLength(1);
+  });
+
+  it('RF-250 the move names the claim that stands for each one that changed', () => {
+    const { moves } = foldRepeatedClaims([repeated]);
+
+    expect(moves).toEqual([
+      {
+        cardId: 'ENT-001',
+        from: ['ENT-001'],
+        claims: [
+          { from: 'ENT-001.c2', to: 'ENT-001.c1' },
+          { from: 'ENT-001.c3', to: 'ENT-001.c2' },
+        ],
+      },
+    ]);
+  });
+
+  it('RF-260 the steps of a flow are left alone', () => {
+    const flow = { ...repeated, type: 'FLOW' as const };
+
+    expect(foldRepeatedClaims([flow])).toEqual({ cards: [flow], moves: [] });
   });
 });

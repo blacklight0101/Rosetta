@@ -90,3 +90,18 @@ describe('P3-106 consolidateRun: cards with one title', () => {
     expect(again.record).toEqual(first.record);
   });
 });
+
+describe('P3-106 consolidateRun: a card with a repeated claim', () => {
+  it('EV-05 keeps the claim once, with no merge and no model call, and says where the claims went', async () => {
+    const provider = new NoCalls();
+    const one = flow('ENT-001', 'Same.');
+    const repeated: Card = { ...one, type: 'ENT', claims: [...one.claims, ...one.claims] };
+
+    const result = await consolidateRun(partsOf(provider), { store: memory(), scope }, [repeated]);
+
+    expect(provider.requests).toEqual([]);
+    expect(result.merges).toEqual([]);
+    expect(result.cards[0]?.claims).toHaveLength(1);
+    expect(result.moves).toHaveLength(1);
+  });
+});

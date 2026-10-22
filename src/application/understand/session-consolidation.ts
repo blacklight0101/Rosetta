@@ -38,7 +38,8 @@ export async function consolidateStep(
   });
   const where = { store: deps.taskResults, scope };
   const merged = await consolidateRun(parts, where, state.cards);
-  if (merged.merges.length === 0) return undefined;
+  // P3-106: a card that kept a repeated claim once changed without a merge.
+  if (merged.merges.length === 0 && merged.moves.length === 0) return undefined;
   const kept = new Set(merged.cards.map((card) => card.id));
   const mergedAway = state.cards.filter((card) => !kept.has(card.id));
   const changes = changesOf(step.rerun, merged.cards);

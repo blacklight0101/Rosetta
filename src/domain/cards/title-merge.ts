@@ -1,11 +1,38 @@
 import type { CardMerge } from './card-merge.js';
 import type { Card } from './card.js';
 
-// P3-106 (stub for the red commit).
-export function normalisedTitle(title: string): string {
-  return title;
+// P3-106, RF-230, RF-250, EV-05: two cards of one type whose titles are the same once case,
+// punctuation and plurals are ignored describe one thing twice (two reader tasks wrote it), so they
+// are one card without asking a model. The first card's title and summary stay; the merge keeps every
+// distinct claim (`applyMerges`). `FLOW` cards count too: a title that is the same word for word is
+// the same journey written again.
+
+function singular(word: string): string {
+  return word.length > 3 && word.endsWith('s') && !word.endsWith('ss') ? word.slice(0, -1) : word;
 }
 
+/** The title with case, punctuation, spacing and a plural `s` taken out, to compare titles. */
+export function normalisedTitle(title: string): string {
+  const words = title
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+  return words.map(singular).join(' ');
+}
+
+/** The merges of the cards that share a type and a normalised title, in card order. */
+// RF-230
 export function titleMerges(cards: readonly Card[]): readonly CardMerge[] {
-  return cards.flatMap(() => []);
+  const groups = new Map<string, Card[]>();
+  for (const card of cards) {
+    const key = `${card.type}\u0000${normalisedTitle(card.title)}`;
+    const group = groups.get(key);
+    if (group === undefined) groups.set(key, [card]);
+    else group.push(card);
+  }
+  return [...groups.values()].flatMap((group) => {
+    const [first] = group;
+    if (first === undefined || group.length < 2) return [];
+    return [{ ids: group.map((card) => card.id), title: first.title, summary: first.summary }];
+  });
 }

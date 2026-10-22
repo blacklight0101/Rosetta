@@ -1,6 +1,12 @@
 import type { Card } from '../../domain/cards/card.js';
-import { applyMerges, MERGEABLE_TYPES, type MergeMoves } from '../../domain/cards/card-merge.js';
-import type { CardType } from '../../domain/cards/card-vocabulary.js';
+import {
+  applyMerges,
+  foldRepeatedClaims,
+  MERGEABLE_TYPES,
+  type MergeMoves,
+} from '../../domain/cards/card-merge.js';
+import { CARD_TYPES, type CardType } from '../../domain/cards/card-vocabulary.js';
+import { titleMerges } from '../../domain/cards/title-merge.js';
 import type { RunScope } from '../ports/run-events.js';
 import type { ConsolidationRecord, TaskResults } from '../ports/task-results.js';
 import {
@@ -68,13 +74,19 @@ export async function consolidateRun(
 ): Promise<RunConsolidation> {
   const { store, scope } = where;
   const earlier = await store.readConsolidation(scope);
-  const replayed = applyMerges(cards, earlier.merges);
+  // Recorded merges are of any type: the title merge of P3-106 also merges flows and open questions.
+  const replayed = applyMerges(cards, earlier.merges, CARD_TYPES);
+  // P3-106, RF-230: cards of one type with one title are one card, with no model call.
+  const titled = applyMerges(replayed.cards, titleMerges(replayed.cards), CARD_TYPES);
+  // P3-106, RF-230: a card that states a claim twice keeps it once; the claims are renumbered.
+  const folded = foldRepeatedClaims(titled.cards);
   const skip = answeredBefore(earlier, cards);
-  const asked = await consolidateCards(parts, replayed.cards, { skip });
-  const merges = [...replayed.applied, ...asked.merges];
+  const asked = await consolidateCards(parts, folded.cards, { skip });
+  const merges = [...replayed.applied, ...titled.applied, ...asked.merges];
   const record = recordAfter(earlier, cards, { answered: asked.answered, merges });
   if (JSON.stringify(record) !== JSON.stringify(earlier)) {
     await store.writeConsolidation(scope, record);
   }
-  return { ...asked, merges, replayedMoves: replayed.moves };
+  const moves = [...titled.moves, ...folded.moves, ...asked.moves];
+  return { ...asked, merges, moves, replayedMoves: replayed.moves };
 }

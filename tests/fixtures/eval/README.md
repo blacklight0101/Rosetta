@@ -10,6 +10,11 @@ actions of its four screens, its entities with one relation, one business rule a
 evaluation runner test replays `tests/recordings/fake/understand-shop-model.json` and
 `verifier-shop-model.json` over it (P2-23). Its version is `2026-10-17.shop`, at the made-up commit `cccc...`.
 
+`p3-106-asset-manager-deepen.json` and `p3-106-invoice-deepen.json` are the card sets of two Deepen runs of the
+2026-10-22 evaluation (P3-106, EV-05, EV-06), trimmed to card type, title, area, claim texts, citations and statuses.
+Their sources are public test workbooks (Asset Manager and Invoice Generator, run with a local Ollama model). They
+hold the duplicate cards and repeated claims the evaluation found, so `title-merge.test.ts` can count them before and after.
+
 ## Provenance (RNF-009)
 
 Written by hand for this repository by the Rosetta contributors and covered by the repository's MIT licence. It

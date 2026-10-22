@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyMerges } from '../../../../src/domain/cards/card-merge.js';
+import { applyMerges, foldRepeatedClaims } from '../../../../src/domain/cards/card-merge.js';
 import { CARD_TYPES } from '../../../../src/domain/cards/card-vocabulary.js';
 import type { Card } from '../../../../src/domain/cards/card.js';
 import { normalisedTitle, titleMerges } from '../../../../src/domain/cards/title-merge.js';
@@ -23,6 +23,11 @@ function cardOf(id: string, type: Card['type'], title: string, texts: readonly s
 
 function mergedBy(cards: readonly Card[]): Card[] {
   return [...applyMerges(cards, titleMerges(cards), CARD_TYPES).cards];
+}
+
+/** What the consolidation step does without a model: the title merge, then the repeated claims. */
+function consolidated(cards: readonly Card[]): readonly Card[] {
+  return foldRepeatedClaims(mergedBy(cards)).cards;
 }
 
 describe('P3-106 normalisedTitle', () => {
@@ -105,11 +110,17 @@ describe('P3-106 the evaluation card sets', () => {
     async (run) => {
       const before = await evalCards(run);
 
-      const after = mergedBy(before);
+      const after = consolidated(before);
 
       expect(after.length).toBeLessThan(before.length);
       expect(supportedTexts(after)).toEqual(supportedTexts(before));
-      expect(claimCount(after)).toBeLessThanOrEqual(claimCount(before));
+      expect(claimCount(after)).toBeLessThan(claimCount(before));
+      for (const card of after) {
+        const texts = card.claims
+          .filter((claim) => claim.status === 'Supported')
+          .map((claim) => claim.text);
+        expect(texts).toHaveLength(new Set(texts).size);
+      }
     },
   );
 

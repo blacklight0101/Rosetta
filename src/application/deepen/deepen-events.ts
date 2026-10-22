@@ -1,6 +1,7 @@
 import type { Card } from '../../domain/cards/card.js';
 import type { RunConsolidation } from '../consolidate/consolidate-run.js';
 import { applyMerges } from '../../domain/cards/card-merge.js';
+import { CARD_TYPES } from '../../domain/cards/card-vocabulary.js';
 import type { DeepenRecord, DeepenRound } from '../../domain/deepen/deepen-record.js';
 import type { RoundPlan } from '../../domain/deepen/round-plan.js';
 import type { DeepenStopReason } from '../../domain/deepen/stop-rule.js';
@@ -48,7 +49,7 @@ async function parentCards(parts: DeepenParts, state: DeepenState, parentRunId: 
   const cards = cardsOf(state);
   if (parent === undefined) return cards;
   const { merges } = await parts.deps.taskResults.readConsolidation(scopeOf(parent));
-  return applyMerges(cards, merges).cards;
+  return applyMerges(cards, merges, CARD_TYPES).cards;
 }
 
 /** RF-209: the run to improve and what the owner confirmed, with the cards the Deepen starts from. */

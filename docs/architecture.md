@@ -707,6 +707,17 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   with `scripts/make-marker-confusables.mjs`, whose output carries the full Unicode License v3 notice.
   An error result is a block too, with no excerpts; a call that names no tool gets the source `unknown_tool`, and the
   cards the summariser compares (RF-250) get the source `cards`, with no excerpts.
+- **Duplicates without a model** (P3-106, RF-230, EV-05, EV-06): before the summariser is asked, `consolidateRun` merges
+  the cards of one type, of any type including `FLOW` and `OQ`, whose titles are the same once case, punctuation and a plural
+  `s` are ignored (`titleMerges`, `domain/cards/title-merge.ts`; the first card's title, summary and, for an `OQ`, question
+  stay), then keeps a claim once when a card states it twice (`foldRepeatedClaims`; the same text, status, target and
+  replaced claim, so a Rejected claim is never folded into a Supported one and the steps of a flow are left alone; a
+  copy not yet judged lends its citations to the kept claim). `applyMerges` does the same for every merge. The claims are
+  renumbered and the move of each is published as `cards.merged` (a fold has the card as its only `from`). Title merges are
+  recorded in `consolidation.json` like the summariser's, so a resume makes them again (`applyMerges` is given every card
+  type for the replay). A `SCRN` card states the actions that start one handler as one claim ("Actions A, B and C start the
+  handler H."; `screen-claims.ts`); `plan` keeps an action when its own claim or its group's is Supported. The judgement step
+  sends a claim text with the same citations as one already sent once and gives both claims that verdict.
 - **Consolidation** (RF-250, `src/application/consolidate/`): after the last reader task has ended and its cards are
   written, the `summariser` role is asked once per type among `BR`, `ENT`, `SCRN` and `FEAT` (`MERGEABLE_TYPES`, in this
   order) that cards of at least two reader tasks have (`typesToMerge`, Q-52): two tasks of one area ask as two areas do,

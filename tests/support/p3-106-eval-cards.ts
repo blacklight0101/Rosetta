@@ -40,9 +40,12 @@ const files: Record<EvalRun, string> = {
 };
 
 function cardOf(stored: StoredCard): Card {
-  const { claims, ...rest } = stored;
+  const { claims, question, whyItMatters, flow, ...rest } = stored;
   return {
     ...rest,
+    ...(question === undefined ? {} : { question }),
+    ...(whyItMatters === undefined ? {} : { whyItMatters }),
+    ...(flow === undefined ? {} : { flow }),
     summary: '',
     claims: claims.map((claim, index) => ({
       claimId: `${stored.id}.c${String(index + 1)}`,
