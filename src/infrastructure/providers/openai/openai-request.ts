@@ -1,5 +1,6 @@
 import type {
   ChatCompletionCreateParamsNonStreaming,
+  ChatCompletionCreateParamsStreaming,
   ChatCompletionMessageParam,
   ChatCompletionTool,
 } from 'openai/resources/chat/completions';
@@ -53,4 +54,20 @@ export function chatCompletionBody(request: LlmRequest): ChatCompletionCreatePar
     ...(request.reasoningEffort === undefined ? {} : { reasoning_effort: request.reasoningEffort }),
     stream: false,
   };
+}
+
+/** Q-60: the output limit above which the answer is streamed (the idle timeout needs a stream). */
+const streamAboveTokens = 8_192;
+
+/** Q-60: a call whose output limit is above 8,192 tokens streams its answer. */
+export function isStreamed(request: LlmRequest): boolean {
+  return (request.maxOutputTokens ?? 0) > streamAboveTokens;
+}
+
+/**
+ * The body of a streamed call. `stream_options.include_usage` makes the last chunk, which has no
+ * choices, carry the token counts (developers.openai.com, Chat Completions streaming).
+ */
+export function chatCompletionStreamBody(request: LlmRequest): ChatCompletionCreateParamsStreaming {
+  return { ...chatCompletionBody(request), stream: true, stream_options: { include_usage: true } };
 }

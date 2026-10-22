@@ -27,12 +27,16 @@ export function allowedOnly(headers: RequestInit['headers']): Headers {
   return kept;
 }
 
-/** A fetch that strips unexpected headers, refuses redirects and caps every answer at `maxBytes`. */
-export function openAiFetch(
-  maxBytes: number,
-): (input: string | URL | Request, init?: RequestInit) => Promise<Response> {
+/** The shape of `fetch` the client uses. */
+export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+
+/**
+ * A fetch that strips unexpected headers, refuses redirects and caps every answer at `maxBytes`;
+ * `base` is the global `fetch`, and a test replays a recorded stream through it.
+ */
+export function openAiFetch(maxBytes: number, base: FetchLike = fetch): FetchLike {
   return async (input, init) => {
-    const response = await fetch(input, {
+    const response = await base(input, {
       ...init,
       headers: allowedOnly(init?.headers),
       redirect: 'error',

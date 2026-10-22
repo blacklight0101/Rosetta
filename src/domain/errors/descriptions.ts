@@ -148,7 +148,8 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
   },
   'RST-1505': {
     message: 'The AI provider did not answer in time.',
-    nextStep: 'Resume the run to check the unverified claims again.',
+    nextStep:
+      'Raise timeoutSeconds for this provider in the project settings, or choose a faster model, then resume the run to check the unverified claims again.',
   },
   'RST-1506': {
     message: 'The call to the AI provider failed.',
