@@ -229,6 +229,25 @@ describe('BuildPlan: an unusable data model answer', () => {
     expect(warned.map((entry) => entry.message).join(' ')).toContain('no usable table');
   });
 
+  it('RF-623 one over-long legacy field keeps every table, writes the migrations card and logs the drop (EV-02)', async () => {
+    const answer = await readFile('tests/fixtures/planner/data-model-long-field.json', 'utf8');
+    const h = await seeded(await withSecondAnswer(answer));
+    const run = await h.plan();
+    const files = await h.handoffOf(run);
+
+    const model = files['data-model.md'] ?? '';
+    expect(model).not.toContain('The planner wrote no usable table');
+    for (const table of ['record', 'entry', 'item']) expect(model).toContain(`### ${table}`);
+    expect(files['tasks.md'] ?? '').toContain('Write the database migrations in the chosen stack');
+    const checks = files['checks.md'] ?? '';
+    expect(checks).toContain('### Data model');
+    expect(checks).toContain('- range\\_note: the field "table entry columns 3".');
+    const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
+    const messages = warned.map((entry) => entry.message).join(' ');
+    expect(messages).toContain('dropped parts that failed their schema');
+    expect(messages).not.toContain('no usable table');
+  });
+
   it('RF-623 an answer whose tables the checks all refuse is treated the same way', async () => {
     const table = { name: 'bad name;', columns: [{ name: 'id', type: 'uuid' }] };
     const { text } = await degraded(JSON.stringify({ tables: [table] }));
