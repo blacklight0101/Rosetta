@@ -134,3 +134,26 @@ export function refusedRecord(
     errorCode: ERROR_CODES.budgetCapReached,
   };
 }
+
+/**
+ * Q-60, RF-428: the usage of a call's earlier retried attempts added to its closing usage. Every
+ * attempt is metered, so a retried timeout is billed with the call that closes. With nothing
+ * earlier the closing usage is returned as it is; a sum that holds an estimate is an estimate.
+ */
+export function withEarlier(
+  closing: CallOutcome['usage'],
+  earlier: readonly TokenUsage[],
+): CallOutcome['usage'] {
+  if (earlier.length === 0) return closing;
+  const all = [closing, ...earlier];
+  const sum = (pick: (usage: TokenUsage) => number | undefined): number =>
+    all.reduce((total, usage) => total + (pick(usage) ?? 0), 0);
+  const cacheWrite = sum((usage) => usage.cacheWriteInputTokens);
+  return {
+    inputTokens: sum((usage) => usage.inputTokens),
+    outputTokens: sum((usage) => usage.outputTokens),
+    cachedInputTokens: sum((usage) => usage.cachedInputTokens),
+    ...(cacheWrite === 0 ? {} : { cacheWriteInputTokens: cacheWrite }),
+    usageSource: 'estimated',
+  };
+}

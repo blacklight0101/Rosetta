@@ -73,6 +73,7 @@ const timingOutThenAnswering: LlmProvider = {
     observer?.attemptStarted();
     return {
       text: 'done',
+      modelVersion: 'contract-model',
       toolCalls: [],
       usage: { inputTokens: 100, outputTokens: 10, cachedInputTokens: 0, usageSource: 'reported' },
       finishReason: 'stop',
