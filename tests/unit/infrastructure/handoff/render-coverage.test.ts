@@ -166,3 +166,42 @@ describe('README with the checks', () => {
     expect(Object.keys(files)).toContain('checks.md');
   });
 });
+
+describe('checks.md: behaviour no card keeps', () => {
+  const migrationTitle = 'Write the database migrations in the chosen stack';
+
+  it('RF-631 lists the feature behaviour the migrations card dropped and no card keeps', () => {
+    const requirementId = handoffOf('Plain text.').content.requirements[0]?.id ?? '';
+    const tasks = [
+      planTask({
+        id: 'T-001',
+        title: migrationTitle,
+        requirements: [requirementId],
+        builds: ['table:customer'],
+      }),
+      planTask({ id: 'T-002', requirements: [] }),
+    ];
+
+    const checks = plain(filesOf(tasks)['checks.md']);
+
+    expect(checks).toContain('## Behaviour kept by no card');
+    expect(checks).toContain('- FEAT-001.c1 (FEAT-001): Plain text.');
+  });
+
+  it('RF-631 lists nothing when another card keeps the behaviour', () => {
+    const requirementId = handoffOf('Plain text.').content.requirements[0]?.id ?? '';
+    const tasks = [
+      planTask({
+        id: 'T-001',
+        title: migrationTitle,
+        requirements: [requirementId],
+        builds: ['table:customer'],
+      }),
+      planTask({ id: 'T-002', requirements: [requirementId] }),
+    ];
+
+    const checks = plain(filesOf(tasks)['checks.md']);
+
+    expect(checks).not.toContain('## Behaviour kept by no card');
+  });
+});
