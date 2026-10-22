@@ -38,6 +38,7 @@ import {
   type PromptFacts,
 } from './ollama-prompt-guard.js';
 import { llmResponseOf } from './ollama-response.js';
+import { meteredIfTimedOut } from '../timeout-usage.js';
 import { digestOf, parseChat } from './ollama-wire.js';
 
 export interface OllamaProviderOptions {
@@ -162,7 +163,10 @@ export class OllamaProvider implements LlmProvider {
     const refused = refusedPrompt(facts);
     if (refused !== undefined) return { ok: false, failed: refused };
     const result = await exchange({ ...this.target('/api/chat', request), body });
-    if (!result.ok) return result;
+    // Q-60: the chat is not streamed, so a timed-out attempt received no text; a local model
+    // costs nothing, but its estimated tokens still count against a token cap.
+    if (!result.ok)
+      return { ok: false, failed: meteredIfTimedOut(result.failed, { request, received: '' }) };
     const chat = parseChat(result.body);
     if (chat === undefined) return invalidAnswer();
     // DEC-155: Ollama cut the prompt; the answer is not the one the prompt asked for.

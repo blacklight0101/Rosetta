@@ -43,7 +43,7 @@ describe('caps of a call that belongs to no run', () => {
 
     expect(caps).toEqual(
       expect.arrayContaining([
-        { kind: 'run-cost', limit: BigInt(runCost.maxCostMicros) },
+        { kind: 'run-cost', limit: BigInt(runCost.maxCostMicros), source: 'project' },
         { kind: 'run-tokens', limit: BigInt(runCost.maxTokens) },
         { kind: 'role-cost', limit: 300_000n },
       ]),

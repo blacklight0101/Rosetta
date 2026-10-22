@@ -10,6 +10,7 @@ import { ERROR_CODES } from '../../../domain/errors/codes.js';
 import { RosettaError } from '../../../domain/errors/rosetta-error.js';
 import { refuseRealProviderInTests } from '../real-provider-guard.js';
 import { completeWithRetries, type AttemptResult, type Sleep } from '../retrying-call.js';
+import { meteredIfTimedOut } from '../timeout-usage.js';
 import type { FetchLike } from './agent-fetch.js';
 import { compatibleFailure } from './openai-compatible-errors.js';
 import { chatCompletionBody } from './openai-request.js';
@@ -129,7 +130,9 @@ export class OpenAiCompatibleProvider implements LlmProvider {
       return { ok: true, response: answer };
     } catch (error) {
       const context = { cancelled: request.signal.aborted, timedOut: timeout.aborted };
-      return { ok: false, failed: compatibleFailure(error, context, request.model) };
+      const failed = compatibleFailure(error, context, request.model);
+      // Q-60: the answer is not streamed, so a timed-out attempt received no text.
+      return { ok: false, failed: meteredIfTimedOut(failed, { request, received: '' }) };
     }
   }
 }

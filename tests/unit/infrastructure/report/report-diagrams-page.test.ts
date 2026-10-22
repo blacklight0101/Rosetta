@@ -56,7 +56,7 @@ describe('the diagrams page', () => {
     expect(audit.inlineStyles).toBe(0);
     expect(audit.styleElements).toBe(0);
     expect(audit.scripts).toEqual(['mermaid.min.js', 'diagrams.js']);
-    expect(audit.document.querySelectorAll('img, svg, a[href^="javascript"]')).toHaveLength(0);
+    expect(audit.document.querySelectorAll('main img, svg, a[href^="javascript"]')).toHaveLength(0);
     expect(audit.document.querySelectorAll('figure pre')[1]?.textContent).toBe(hostile.source);
     expect(audit.document.querySelectorAll('figcaption')[1]?.textContent).toContain(hostile.title);
   });

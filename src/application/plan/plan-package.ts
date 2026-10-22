@@ -3,6 +3,7 @@ import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
 import { prdQuestions } from '../../domain/planning/prd-content.js';
+import { addStyleRisks, checkStyle } from '../../domain/planning/style-rules.js';
 import { excludedClaims, supportedCards } from '../../domain/planning/plan-sources.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
 import type { PlannedDocuments } from './plan-documents.js';
@@ -39,16 +40,22 @@ export function handoffPackageOf(
   const sources = supportedCards(cards);
   const supported = new Set(sources.map((card) => card.id));
   const decided = decideOnce(content, brief, catalogue, supported);
+  const style = principleOf(catalogue, brief.architecture.style);
+  const styleCheck = checkStyle(brief.architecture.style, decided.content.components);
   return {
     repository: { url: project.sourceUrl, commitSha: sourceRun.commitSha },
     ...(upload === undefined ? {} : { upload }),
     sourceRun: sourceRun.runKey,
     brief,
-    style: principleOf(catalogue, brief.architecture.style),
+    style,
     principles: brief.principles.map((id) => principleOf(catalogue, id)),
-    content: decided.content,
+    content: {
+      ...decided.content,
+      risks: addStyleRisks(decided.content.risks, styleCheck, style.title),
+    },
     choices: decided.choices,
     restated: decided.restated,
+    styleCheck,
     sources,
     excluded: excludedClaims(cards),
     briefQuestions: defaultedQuestions(brief, catalogue),
