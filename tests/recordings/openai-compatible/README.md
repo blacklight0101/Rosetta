@@ -2,7 +2,8 @@
 
 Canned answers of an OpenAI-compatible Chat Completions API (`POST <base URL>/chat/completions`, `stream: false`)
 for the fake OpenAI server (`tests/support/fake-openai-server.ts`) and the `OpenAiCompatibleProvider` tests
-(RF-403, ADR-008). One file per scenario of the contract suite, plus an unknown model and an account without credit.
+(RF-403, ADR-008). One file per scenario of the contract suite, plus an unknown model, an account without credit and
+two attempts that time out (Q-60).
 They follow the shape compatible services such as OpenRouter, Groq or DeepSeek send: a vendor-prefixed model id, a
 `gen-` answer id, an extra `provider` field the adapter ignores, a numeric error `code`, and a usage that may leave out
 `prompt_tokens_details`.
