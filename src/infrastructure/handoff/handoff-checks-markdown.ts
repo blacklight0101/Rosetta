@@ -6,6 +6,7 @@ import {
 } from '../../domain/planning/plan-coverage.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { decisionLink } from './handoff-links.js';
+import { requirementLines } from './handoff-requirement-notes-markdown.js';
 import { styleLines } from './handoff-style-markdown.js';
 
 // RF-627, RF-507, RNF-003: checks.md, what the package checks say about itself. The plan coverage
@@ -68,6 +69,7 @@ export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     ...coverageLines(handoff, esc),
     ...styleLines(handoff, esc),
     ...restatedLines(handoff, esc),
+    ...requirementLines(handoff.content.requirementNotes ?? []),
   ];
   return ['# Package checks', '', ...lines].join('\n');
 }

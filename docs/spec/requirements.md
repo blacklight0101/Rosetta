@@ -1189,14 +1189,18 @@ As a designer and a front-end developer I want the target screens planned so tha
 - Given a card written before screens were checked this way (no derived claim of that kind on the card), when the package is written, then its fields are drawn marked "not checked" and none is sent to the planner; its route, roles and links are shown as before.
   Verification: structure test (every `SCRN` card is mapped); the wireframes pass an HTML check with no script, no event attribute and no external resource.
 
-**RF-627 Implementation plan** - R1 - Must - Source DEC-134, Q-45, Q-54 - ADR-018
+**RF-627 Implementation plan** - R1 - Must - Source DEC-134, DEC-160, Q-45, Q-54 - ADR-018
 As a modernisation team I want an implementation plan that covers every document of the package so that nothing in it is left without work.
 
 - Given the package, when the plan is written, then the roadmap (RF-601) has phases with exit criteria and the task cards cover the whole set: every PRD feature, every target table, every API operation, every target flow and every main screen is named by at least one task card, and each card links the items it builds.
 - Given an item no card covers, when the package is checked, then it is listed as a gap in the package's checks file and the run is not reported as complete.
 - Given items no card covers after the planner's answer (Q-45, default applies), when the package is checked, then the planner gets one more call that lists only the uncovered items and asks for task cards that build them; the gaps left after that call are listed as above.
 - Given a plan or gap answer whose task cards give `requirements` or `dependsOn` positions as objects with a numeric `position` (Q-54, default applies), when it is parsed, then the numbers are read; every card left out of the answer is logged with its position and the reason, never with answer text; when the gap answer leaves out cards that named a gap, the planner gets one repair attempt listing the problems, through the budget and context guards, before the gaps are reported.
-  Verification: structure test of the coverage of the plan.
+- Given a task card that builds an item and a requirement whose source cards are behind that item, when the plan is checked, then the card lists the requirement, even when the planner named another position (DEC-160).
+- Given a task card that lists a requirement whose source cards share nothing with what the card builds, when another card builds an item behind those source cards, then the requirement is taken off the first card (DEC-160).
+- Given a requirement that cites only cards no item is built on (a rule or a question card), or whose items no other card builds, when the plan is checked, then it stays on the card the planner put it on; and a card none of whose requirements fit what it builds keeps its own, with a note that says so (DEC-160).
+- Given a task card whose `requirements` name a position outside the list, or a card whose requirements code changed, when the package is written, then `checks.md` lists the position and each requirement added, taken off or kept, never silently (DEC-160).
+  Verification: structure test of the coverage of the plan; unit and integration tests of the alignment of the requirements of the task cards.
 
 **RF-630 Task cards an agent can build without guessing** - R1 - Must - Source DEC-135 - ADR-018
 As a team building with AI agents I want each task card to state what must hold and how it will be attacked so that the first attempt meets the review.

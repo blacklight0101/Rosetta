@@ -152,6 +152,28 @@ describe('RF-608 microservices: no shared store', () => {
   });
 });
 
+describe('RF-608 microservices: only services share a store', () => {
+  it('RF-608 a gateway and a service on one store is not a shared store', () => {
+    const check = checkStyle('microservices', [
+      part('Gateway', 'gateway', ['Orders db']),
+      part('Orders', 'service', ['Orders db']),
+      part('Orders db', 'store'),
+    ]);
+    expect(check.broken).toEqual([]);
+  });
+});
+
+describe('RF-608 a dependency listed twice is one finding', () => {
+  it('RF-608 a duplicate dependsOn entry gives one broken rule and one risk', () => {
+    const check = checkStyle('layered', [
+      part('Rules', 'business'),
+      part('Tables', 'data', ['Rules', 'Rules']),
+    ]);
+    expect(check.broken).toEqual([{ from: 'Tables', to: 'Rules', rule: 'upward' }]);
+    expect(addStyleRisks([], check, 'Layered')).toHaveLength(1);
+  });
+});
+
 describe('RF-608 a component without a known role is listed, not guessed', () => {
   it('RF-608 an empty role and a role of another style are listed, and their dependencies are not judged', () => {
     const check = checkStyle('hexagonal', [

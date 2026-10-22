@@ -110,7 +110,7 @@ function judgedEdges(style: ArchitectureStyleId, components: readonly DraftCompo
     if (known !== undefined && !roles.has(name)) roles.set(name, known);
   }
   return components.flatMap((component) =>
-    component.dependsOn.flatMap((to) => {
+    [...new Set(component.dependsOn)].flatMap((to) => {
       const fromRole = roles.get(component.name);
       const toRole = roles.get(to);
       if (fromRole === undefined || toRole === undefined) return [];
