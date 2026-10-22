@@ -4,8 +4,8 @@ import { defineConfig } from 'vite';
 
 // P1-12, P1-15, RF-1013: the front end builds into dist/web/ for the Fastify static server (P1-07). The
 // server answers only `/`, `/sign-in` and files under `/assets/` without a session (P1-09), so
-// every built file except index.html lands under `assets/`: there is no public folder (a
-// favicon or robots file at the root would need a session) and no inline script or style (the
+// every built file except index.html lands under `assets/`; the public folder holds only `assets/brand/`
+// (DEC-161), because a file at the root, such as a favicon, would need a session. There is no inline script or style (the
 // content security policy allows neither). The landing page (P1-15) is written by the server, which
 // links its style sheet as /assets/landing.css, so that one file keeps a name without a hash.
 const webRoot = fileURLToPath(new URL('.', import.meta.url));
@@ -13,7 +13,7 @@ const apiTarget = 'http://127.0.0.1:8080';
 
 export default defineConfig({
   root: webRoot,
-  publicDir: false,
+  publicDir: fileURLToPath(new URL('public/', import.meta.url)),
   plugins: [preact()],
   build: {
     outDir: fileURLToPath(new URL('../dist/web/', import.meta.url)),

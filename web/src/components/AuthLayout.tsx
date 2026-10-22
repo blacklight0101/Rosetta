@@ -1,5 +1,5 @@
 import type { ComponentChildren, JSX } from 'preact';
-import { Link } from './Link.js';
+import { Wordmark } from './Wordmark.js';
 
 // design-system.md section 14 (sign in, change password): a page without the shell. The wordmark
 // on the left, a slot on the right (a link on the sign-in page, the user and Sign out on the
@@ -16,9 +16,7 @@ export function AuthLayout({ end, children }: AuthLayoutProps): JSX.Element {
   return (
     <div class="rst-auth">
       <header class="rst-auth__header" role="banner">
-        <Link href="/" class="rst-wordmark">
-          Rosetta
-        </Link>
+        <Wordmark />
         <span class="rst-header__spacer" />
         {end}
       </header>

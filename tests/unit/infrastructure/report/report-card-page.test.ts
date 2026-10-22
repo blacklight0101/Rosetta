@@ -156,7 +156,7 @@ describe('the card page and hostile text', () => {
     expect(page.handlers).toEqual([]);
     expect(page.foreignLinks).toEqual([]);
     expect(page.inlineStyles).toBe(0);
-    expect(page.document.querySelectorAll('img, script')).toHaveLength(0);
+    expect(page.document.querySelectorAll('main img, script')).toHaveLength(0);
   });
 });
 

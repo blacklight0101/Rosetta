@@ -19,6 +19,8 @@ export interface HtmlAudit {
 }
 
 function isLocal(address: string): boolean {
+  // DEC-161: the Rosetta icon is an inline PNG data address; it reaches no other site.
+  if (address.startsWith('data:image/png;base64,')) return true;
   return !/^[a-z][a-z0-9+.-]*:/iu.test(address) && !address.startsWith('//');
 }
 
