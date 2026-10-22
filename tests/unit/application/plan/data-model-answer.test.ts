@@ -72,7 +72,8 @@ describe('parseDataModelAnswer: an over-long legacy field (EV-02)', () => {
       'sheet',
       'inventory_data_table',
     ]);
-    expect(parsed?.draft.tables[1]?.columns).toHaveLength(3);
+    // The fixture's sheet has three columns; the over-long one is dropped, the other two are kept.
+    expect(parsed?.draft.tables[1]?.columns).toHaveLength(2);
     expect(parsed?.problems).toHaveLength(1);
     expect(parsed?.problems[0]).toContain('is dropped');
   });

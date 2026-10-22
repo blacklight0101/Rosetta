@@ -58,32 +58,22 @@
           "risk": ""
         },
         {
+          "name": "name",
+          "type": "varchar(255)",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "visible sheets"
+          },
+          "risk": ""
+        },
+        {
           "name": "cell_range",
           "type": "varchar(50)",
           "nullable": true,
           "legacy": {
             "claim": "ENT-013.c1",
             "field": "Report sheet uses the range \"A1:R506\""
-          },
-          "risk": ""
-        },
-        {
-          "name": "formula_cells_count",
-          "type": "integer",
-          "nullable": true,
-          "legacy": {
-            "claim": "ENT-023.c3",
-            "field": "Inventory sheet uses the range A1:L500, with 5438 non-empty cells and 5391 formula cells."
-          },
-          "risk": ""
-        },
-        {
-          "name": "non_empty_cells_count",
-          "type": "integer",
-          "nullable": true,
-          "legacy": {
-            "claim": "ENT-023.c3",
-            "field": "Inventory sheet uses the range A1:L500, with 5438 non-empty cells and 5391 formula cells."
           },
           "risk": ""
         }
@@ -147,16 +137,6 @@
             "field": "The Inventory sheet has 5438 non-empty cells and 5391 formula cells."
           },
           "risk": ""
-        },
-        {
-          "name": "non_empty_cell_count",
-          "type": "integer",
-          "nullable": true,
-          "legacy": {
-            "claim": "ENT-016.c2",
-            "field": "The Inventory sheet has 5438 non-empty cells and 5391 formula cells."
-          },
-          "risk": ""
         }
       ],
       "primaryKey": [
@@ -176,202 +156,5 @@
       ]
     }
   ],
-  "dropped": [
-    {
-      "claim": "ENT-001.c2",
-      "field": "The workbook is named \"Asset Manager.xlsm\"."
-    },
-    {
-      "claim": "ENT-001.c3",
-      "field": "The workbook is named \"Asset Manager.xlsm\"."
-    },
-    {
-      "claim": "ENT-002.c2",
-      "field": "The workbook contains 5 sheets."
-    },
-    {
-      "claim": "ENT-002.c3",
-      "field": "The workbook contains 5 sheets."
-    },
-    {
-      "claim": "ENT-002.c4",
-      "field": "There are 5 sheets in the workbook: Report, Inventory, Stock In-Out, Product Master, and Support."
-    },
-    {
-      "claim": "ENT-003.c1",
-      "field": "The data range for Inventory is A1:L500."
-    },
-    {
-      "claim": "ENT-003.c2",
-      "field": "The Inventory sheet utilizes a defined name \"_xlnm._FilterDatabase\" referring to its range."
-    },
-    {
-      "claim": "ENT-003.c3",
-      "field": "The Inventory sheet uses range A1:L500 and contains 5391 formula cells."
-    },
-    {
-      "claim": "ENT-003.c4",
-      "field": "The data range for Product Master is A1:O498."
-    },
-    {
-      "claim": "ENT-003.c5",
-      "field": "The Product Master sheet utilizes a defined name \"_xlnm._FilterDatabase\" referring to its range."
-    },
-    {
-      "claim": "ENT-003.c6",
-      "field": "The Product Master sheet uses range A1:O498, contains 282 formula cells, and has 1 comment."
-    },
-    {
-      "claim": "ENT-005.c1",
-      "field": "The data range for Stock In-Out is A1:N100."
-    },
-    {
-      "claim": "ENT-005.c2",
-      "field": "The Stock In-Out sheet utilizes a defined name \"_xlnm._FilterDatabase\" referring to its range."
-    },
-    {
-      "claim": "ENT-005.c3",
-      "field": "The Stock In-Out sheet uses range A1:N100 and contains 396 formula cells."
-    },
-    {
-      "claim": "ENT-005.c5",
-      "field": "Column E retrieves data from the 'Product Master' sheet, specifically column 10, based on the values in Column A."
-    },
-    {
-      "claim": "ENT-005.c6",
-      "field": "Column G retrieves data from the 'Product Master' sheet, specifically column 11, based on the values in Column A."
-    },
-    {
-      "claim": "ENT-005.c7",
-      "field": "The final calculated values are present in columns F and H, derived from multiplications involving columns D, E, and G."
-    },
-    {
-      "claim": "ENT-005.c9",
-      "field": "The table contains records for equipment such as PRINTER (SHARP-AR-5316E), HPLJ.420-PCL-6F-SB ON WEKC ANDOVER1 (PRINTER), PRINTER- HP- OFFICE JET PRO-T8600, and others."
-    },
-    {
-      "claim": "ENT-006.c1",
-      "field": "The data range for Support is A1:L7."
-    },
-    {
-      "claim": "ENT-006.c2",
-      "field": "The 'AssetCategory' name is derived dynamically from column H in the Support sheet."
-    },
-    {
-      "claim": "ENT-006.c3",
-      "field": "The 'StoredBy' name is derived dynamically from column L in the Support sheet."
-    },
-    {
-      "claim": "ENT-006.c4",
-      "field": "The 'StoreRoom' name is derived dynamically from column J in the Support sheet."
-    },
-    {
-      "claim": "ENT-006.c7",
-      "field": "The sheet also contains columns for Asset Category, Store Location, and Stored/Taken By."
-    },
-    {
-      "claim": "ENT-006.c8",
-      "field": "Asset status categories include 'Computer Hardware', 'Devices & Gadgets ', 'Wires & Cables', 'Records & Data', 'Stationaries & Office Tools', and 'Laboratory'."
-    },
-    {
-      "claim": "ENT-006.c9",
-      "field": "The Support sheet uses the range \"A1:L7\"."
-    },
-    {
-      "claim": "ENT-006.c10",
-      "field": "The Support sheet has 29 non-empty cells and 6 formula cells."
-    },
-    {
-      "claim": "ENT-006.c11",
-      "field": "The sheet state is visible and the used range is A1:L7."
-    },
-    {
-      "claim": "ENT-006.c12",
-      "field": "The sheet contains columns for Asset Category (H1:H7), Store Location (J1:J7), and Stored/Taken By (L1:L7)."
-    },
-    {
-      "claim": "ENT-006.c13",
-      "field": "The sheet contains labeled data points such as 'Current Asset' (A1), 'Tot. Asset Value' (A2), 'Est. Asset Worth' (A3), 'Damaged Asset' (A4), 'Repairable Asset' (A5), and 'Usable Asset' (A6)."
-    },
-    {
-      "claim": "ENT-006.c14",
-      "field": "The AssetCategory is defined using data from Support!$H$2 onwards, counting populated cells in column H."
-    },
-    {
-      "claim": "ENT-006.c15",
-      "field": "The StoredBy and StoreRoom are defined using data from Support!$L$2 and Support!$J$2 onwards, counting populated cells in columns L and J respectively."
-    },
-    {
-      "claim": "ENT-007.c1",
-      "field": "The table includes columns for Item Code, Date, Item Category, Item Description, Quantity, Item(s) State, Qty (Usable), Qty (Damaged), Qty (Repair), Store Location, Date In-Use, Taken By/Stored by, Purchase Price, Current Value, and Note (Purpose of Storage or retrieval)."
-    },
-    {
-      "claim": "ENT-010.c2",
-      "field": "The 'Item(s) State' column indicates an item's condition as REPAIR, DAMAGED, or USABLE, which is often accompanied by formulas."
-    },
-    {
-      "claim": "ENT-011.c1",
-      "field": "The sheet tracks asset count under 'Current Asset' (A1:B1)."
-    },
-    {
-      "claim": "ENT-011.c2",
-      "field": "The sheet tracks total asset value under 'Tot. Asset Value' (A2:B2)."
-    },
-    {
-      "claim": "ENT-011.c3",
-      "field": "The sheet tracks estimated asset worth under 'Est. Asset Worth' (A3:B3)."
-    },
-    {
-      "claim": "ENT-011.c4",
-      "field": "The sheet tracks damaged asset count under 'Damaged Asset' (A4:B4)."
-    },
-    {
-      "claim": "ENT-011.c5",
-      "field": "The sheet tracks repairable asset count under 'Repairable Asset' (A5:B5)."
-    },
-    {
-      "claim": "ENT-011.c6",
-      "field": "The sheet tracks usable asset count under 'Usable Asset' (A6:B6)."
-    },
-    {
-      "claim": "ENT-011.c7",
-      "field": "The sheet contains columns for 'Asset Category' (H1) and 'Store Location' (J1)."
-    },
-    {
-      "claim": "ENT-013.c2",
-      "field": "The Report sheet contains 5443 non-empty cells and 0 formula cells."
-    },
-    {
-      "claim": "ENT-016.c3",
-      "field": "A definition for Inventory Data Table exists."
-    },
-    {
-      "claim": "ENT-017.c1",
-      "field": "The Product Master sheet uses the range \"A1:O498\"."
-    },
-    {
-      "claim": "ENT-020.c1",
-      "field": "The table structure includes columns for Item Code, Date, Item Category, Item Description, Quantity, and various quantity counts based on Item State (Usable, Damaged, Repair)."
-    },
-    {
-      "claim": "ENT-020.c2",
-      "field": "The 'Item(s) State' field in column F indicates the condition of the item, which can be 'REPAIR', 'DAMAGED', or 'USABLE'."
-    },
-    {
-      "claim": "ENT-020.c3",
-      "field": "The quantity of an item is tracked across several states: 'Qty (Usable)' (Column G), 'Qty (Damaged)' (Column H), and 'Qty (Repair)' (Column I)."
-    },
-    {
-      "claim": "ENT-020.c4",
-      "field": "The sheet tracks the purchase price (Column M), current value (Column N), and a note/purpose (Column O) for each item."
-    },
-    {
-      "claim": "ENT-025.c1",
-      "field": "The Product Master Data Table is filtered within the range 'Product Master'!$C$1:$O$41."
-    },
-    {
-      "claim": "ENT-025.c2",
-      "field": "The Product_ID is defined in the Product_Master sheet and refers to the count of entries in column C."
-    }
-  ]
+  "dropped": []
 }

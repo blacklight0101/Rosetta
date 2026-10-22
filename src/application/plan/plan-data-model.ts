@@ -28,6 +28,10 @@ function databaseOf(brief: PlanningBrief): string | null {
 export interface PlannedDataModel {
   readonly assembly: DataModelAssembly;
   readonly readable: boolean;
+  /** The parts of the planner's answer the parser dropped, named; empty for none. */
+  readonly problems: readonly string[];
+  /** Whether the planner's answer had a table list at all. */
+  readonly answered: boolean;
 }
 
 const emptyDraft = { tables: [], dropped: [] } as const;
@@ -40,28 +44,45 @@ export async function planDataModel(
   const database = databaseOf(input.brief);
   const legacy = legacyClaimsOf(input.cards);
   if (legacy.length === 0)
-    return { assembly: assembleDataModel(emptyDraft, legacy, database), readable: true };
+    return {
+      assembly: assembleDataModel(emptyDraft, legacy, database),
+      readable: true,
+      problems: [],
+      answered: false,
+    };
   const message = dataModelMessage(input, call.tags);
   const output = await askPlannerWith(call, message);
   const parsed = parseDataModelAnswer(output);
   const assembly = assembleDataModel(parsed?.draft ?? emptyDraft, legacy, database);
-  return { assembly, readable: assembly.model.tables.length > 0 };
+  return {
+    assembly,
+    readable: assembly.model.tables.length > 0,
+    problems: parsed?.problems ?? [],
+    answered: parsed !== undefined,
+  };
 }
 
 /** RF-623: what to log about a planned data model: an unusable answer, and what the checks refused. */
 export function dataModelWarnings(planned: PlannedDataModel): string[] {
-  const { readable, assembly } = planned;
+  const { readable, assembly, problems, answered } = planned;
   const { tables, columns, keys, sources } = assembly.leftOut;
+  const named = problems.join('; ');
   const unusable = readable
     ? []
     : [
-        'The planner answer for the data model had no usable table; every legacy field is listed as dropped.',
+        answered && problems.length > 0
+          ? `The planner answer for the data model had tables it could not read: ${named}; every legacy field is listed as dropped.`
+          : 'The planner answer for the data model had no usable table; every legacy field is listed as dropped.',
       ];
+  const parts =
+    readable && problems.length > 0
+      ? [`The planner data model dropped parts that failed their schema: ${named}.`]
+      : [];
   const refused =
     tables + columns + keys + sources === 0
       ? []
       : [
           `The planner data model had items the checks refused; ${String(tables)} table(s), ${String(columns)} column(s), ${String(keys)} key(s) or index(es) and ${String(sources)} legacy source(s) were left out.`,
         ];
-  return [...unusable, ...refused];
+  return [...unusable, ...parts, ...refused];
 }

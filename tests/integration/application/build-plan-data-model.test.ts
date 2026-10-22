@@ -229,6 +229,19 @@ describe('BuildPlan: an unusable data model answer', () => {
     expect(warned.map((entry) => entry.message).join(' ')).toContain('no usable table');
   });
 
+  it('RF-623 one over-long legacy field keeps every table and the log names the drop (EV-02)', async () => {
+    const answer = await readFile('tests/fixtures/planner/data-model-long-field.json', 'utf8');
+    const { text, h } = await degraded(answer);
+
+    expect(text).not.toContain('The planner wrote no usable table');
+    expect(text).toContain('### workbook');
+    expect(text).toContain('### sheet');
+    const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
+    const messages = warned.map((entry) => entry.message).join(' ');
+    expect(messages).toContain('is dropped');
+    expect(messages).not.toContain('no usable table');
+  });
+
   it('RF-623 an answer whose tables the checks all refuse is treated the same way', async () => {
     const table = { name: 'bad name;', columns: [{ name: 'id', type: 'uuid' }] };
     const { text } = await degraded(JSON.stringify({ tables: [table] }));
