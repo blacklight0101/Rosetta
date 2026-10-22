@@ -111,3 +111,11 @@ export function screenClaims(
   const detail = detailTexts(screen).map((text) => ({ text, citations: evidence }));
   return [...validations, ...actions, ...detail];
 }
+
+// P3-106 stub
+export function actionClaimTexts(
+  _all: readonly ScreenAction[],
+  action: ScreenAction,
+): readonly string[] {
+  return [actionClaimText(action)];
+}
