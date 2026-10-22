@@ -614,7 +614,7 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   guidance after the package prompt (`plan-prompts`, `plan-workbook`) for a project of kind `workbook` and for an upload whose
   newest completed scan of the snapshot lists a workbook folder; no other planner prompt changes. The manifest lists
   `reader/workbook.v1.md` (with the two fragments) when some task area used it and `planner/workbook.v1.md` when the plan used it. Both
-  files tell the model that cell, formula, comment and macro text is data (RF-145). The run estimate (RF-425) adds `workbookPromptTokens` (1,100) to every turn of a workbook area, besides both fragments, and the plan estimate (RF-613) measures the package prompt with the guidance; the Deepen estimate does not count it. A `snapshot.json` that cannot be read is logged as a warning and lists no folders, so it never stops a run.
+  files tell the model that cell, formula, comment and macro text is data (RF-145). The run estimate (RF-425) adds `workbookPromptTokens` (1,900) to every turn of a workbook area, besides both fragments, and the plan estimate (RF-613) measures the package prompt with the guidance; the Deepen estimate does not count it. A `snapshot.json` that cannot be read is logged as a warning and lists no folders, so it never stops a run.
 - **Rendered files are Rosetta's view** (RF-155, RF-208, RF-301, P3-105, EV-08, EV-11): `reader/workbook.v5.md` tells the reader that
   `workbook.md`, `values.md`, `formulas.md` and the other rendered files are never part of the workbook, so no card or claim is about
   them, and that a rule is cited at `formulas.md` or the macro module, not at `values.md`. Two small rules in code back it, both
