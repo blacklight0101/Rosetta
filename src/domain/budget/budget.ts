@@ -82,3 +82,23 @@ function keyCaps(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
       return [{ kind: 'run-cost', limit: run.maxCostMicros }, tokens];
   }
 }
+
+/** RF-1106, DEC-107 (P3-91): where a cap comes from. Scaffolding: the behaviour comes in the feat commit. */
+export type CapSource = 'project' | 'administrator' | 'account';
+
+/** The caps a run starts with (P3-91). Scaffolding. */
+export interface RunStartCaps {
+  readonly keySource: KeySource;
+  readonly run: { readonly maxCostMicros: bigint; readonly source: 'project' | 'administrator' };
+  readonly userDay?: {
+    readonly maxCostMicros: bigint;
+    readonly source: 'account' | 'administrator';
+  };
+}
+
+/** RF-1106 (P3-91). Scaffolding: not implemented yet. */
+export function runStartCapsOf(keySources: readonly KeySource[], inputs: CapInputs): RunStartCaps {
+  throw new Error(
+    `P3-91: not implemented for ${String(keySources.length)} roles and ${String(inputs.run.maxCostMicros)}.`,
+  );
+}

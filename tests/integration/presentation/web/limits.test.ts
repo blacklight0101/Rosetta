@@ -33,6 +33,7 @@ interface Limits {
   readonly serverKeys: {
     readonly userDay: Amounts;
     readonly serverMonth: { readonly remainingMicros: string };
+    readonly runCapMicros: string;
   };
   readonly ownKeys: { readonly day: Amounts | null };
 }
@@ -51,6 +52,7 @@ describe('GET /api/account/limits', () => {
       serverKeys: {
         userDay: { capMicros: '1000000', spentMicros: '0', remainingMicros: '1000000' },
         serverMonth: { remainingMicros: '10000000' },
+        runCapMicros: '500000',
       },
       ownKeys: { day: null },
     });
@@ -152,5 +154,14 @@ describe('GET /api/account/limits: own keys and sessions', () => {
     const response = await test.server.inject({ method: 'GET', url: '/api/account/limits' });
 
     expect(response.statusCode).toBe(401);
+  });
+});
+
+describe('GET /api/account/limits: the run cap of the administrator', () => {
+  it('RF-1106 the administrator run cap is named, so the start page and the project settings can show the cap that applies', async () => {
+    test = createTestServer();
+    const { browser } = await signedIn('amy');
+
+    expect((await limitsOf(browser)).serverKeys.runCapMicros).toBe('500000');
   });
 });
