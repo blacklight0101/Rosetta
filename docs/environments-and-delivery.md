@@ -109,7 +109,11 @@ before commit (ADR-008).
   applying and the advisory fails the job again.
 - Commits follow Conventional Commits, checked by commitlint ([conventions](conventions.md) section 9).
 - Git hooks (lefthook): `pre-commit` formats and lints staged files; `commit-msg` runs commitlint; `pre-push` runs
-  `typecheck` and the unit tests. Hooks help; CI is the gate. Humans install them with `npm run hooks:install`
+  `typecheck`, then `scripts/pre-push-tests.mjs`, which runs the unit and integration tests related to the files the
+  push changes against its upstream branch (Vitest `--changed`). It runs no tests when no source file changed, and
+  the whole unit project when the upstream is unknown (a new branch), when configuration, test support or scripts
+  changed, or when more than 25 files changed. The hook is a fast check, not the full gate: CI runs every test on the
+  same commit (section 6). Hooks help; CI is the gate. Humans install them with `npm run hooks:install`
   (a plain `npm ci` also does, through lefthook's postinstall). Agents install with `npm ci --ignore-scripts`,
   because worktrees share one `.git/hooks` folder; `LEFTHOOK=0` does not stop the postinstall, `CI=true` does
   (see `lefthook.yml`).

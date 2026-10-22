@@ -28,5 +28,6 @@ pre-push:
   commands:
     typecheck:
       run: npm run typecheck
-    unit:
-      run: npx vitest run --project unit
+    # The unit and integration tests related to the push (scripts/pre-push-tests.mjs); CI runs them all.
+    tests:
+      run: node scripts/pre-push-tests.mjs
