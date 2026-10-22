@@ -89,11 +89,15 @@ class Receiving extends Transform {
   }
 }
 
-/** Passes the chunks of `source` on, and fails when none arrives for `stallMs`. */
+/**
+ * Passes the chunks of `source` on, and fails when none arrives for `stallMs`. A stop (`signal`) ends the
+ * wait at once: a body that is silent at that moment would otherwise hold the stop for `stallMs`.
+ */
 async function* withoutStalls(
   source: AsyncIterable<Uint8Array>,
-  stallMs: number,
+  limits: { readonly stallMs: number; readonly signal: AbortSignal },
 ): AsyncGenerator<Uint8Array> {
+  const { stallMs, signal } = limits;
   const iterator = source[Symbol.asyncIterator]();
   try {
     for (;;) {
@@ -103,8 +107,17 @@ async function* withoutStalls(
           reject(uploadTimedOut('stopped sending'));
         }, stallMs);
       });
-      const next = await Promise.race([iterator.next(), stalled]).finally(() => {
+      let stop: (() => void) | undefined;
+      const stopped = new Promise<never>((_resolve, reject) => {
+        stop = (): void => {
+          reject(signal.reason instanceof Error ? signal.reason : new Error('stopped'));
+        };
+        if (signal.aborted) stop();
+        else signal.addEventListener('abort', stop, { once: true });
+      });
+      const next = await Promise.race([iterator.next(), stalled, stopped]).finally(() => {
         clearTimeout(timer);
+        if (stop !== undefined) signal.removeEventListener('abort', stop);
       });
       if (next.done === true) return;
       yield next.value;
@@ -130,7 +143,7 @@ export async function receiveZip(request: IntakeRequest, zipPath: string): Promi
   const counter = new Receiving(request.limitBytes, request.format ?? ZIP_FORMAT);
   try {
     await pipeline(
-      withoutStalls(request.body, request.stallMs),
+      withoutStalls(request.body, { stallMs: request.stallMs, signal: request.signal }),
       counter,
       createWriteStream(zipPath, { flags: 'wx' }),
       { signal: request.signal },

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { bodyOf, endlessZipLike } from '../../../support/upload-store-harness.js';
 import {
@@ -207,6 +207,30 @@ describe('DiskWorkbookStaging.receive an aborted file', () => {
 
     await expect(staging.receive(id, request('Pricing.xlsx', broken))).rejects.toThrow();
 
+    expect(await stagedNames(dataDir)).toEqual([]);
+  });
+});
+
+describe('DiskWorkbookStaging.receive a file stopped while its sender is silent', () => {
+  it('RF-150 DEC-149 ends a file whose sender went silent when the request is aborted, not when the silence times out', async () => {
+    const { staging, dataDir } = await folders();
+    const id = await staging.open(MB);
+    const controller = new AbortController();
+    const silent = (async function* () {
+      yield Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+      await new Promise<void>(() => undefined);
+    })();
+    const arriving = staging.receive(id, {
+      ...request('Silent.xlsx', silent),
+      signal: controller.signal,
+    });
+    await vi.waitFor(async () => {
+      expect(await stagedNames(dataDir)).toHaveLength(1);
+    });
+
+    controller.abort(new Error('the server is stopping'));
+
+    await expect(arriving).rejects.toThrow('the server is stopping');
     expect(await stagedNames(dataDir)).toEqual([]);
   });
 });

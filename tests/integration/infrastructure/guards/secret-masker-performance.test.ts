@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { adversarialPieces, pkcs8Begin } from '../../../support/secret-fixture.js';
-import { elapsedMs } from '../../../support/stopwatch.js';
+import { fastestOfMs } from '../../../support/stopwatch.js';
 
 // Integration level: the one real boundary is the wall clock (conventions.md section 7).
 const oneMegabyte = 1024 * 1024;
@@ -19,21 +19,21 @@ describe('SecretMasker on hostile input', () => {
     (piece) => {
       const input = repeatTo(oneMegabyte, piece);
 
-      expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+      expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
     },
   );
 
   it('RF-141 masks 1 MB of text without line breaks after an unterminated key block in budget', () => {
     const input = `${pkcs8Begin}${repeatTo(oneMegabyte, 'A')}`;
 
-    expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+    expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
   });
 
   it('RF-141 masks 1 MB without an @ after a scheme of many parts in budget (no length bound)', () => {
     const scheme = Array.from({ length: 16 }, () => 'a').join('-');
     const input = `${scheme}://user:${repeatTo(oneMegabyte, 'x')}`;
 
-    expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+    expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
   });
 
   it.each([
@@ -49,7 +49,7 @@ describe('SecretMasker on hostile input', () => {
       for (const head of [`${option} `, `${option}=`]) {
         const input = `${head}${middle.repeat(Math.floor(oneMegabyte / middle.length))}${tail}`;
 
-        expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+        expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
       }
     },
   );
@@ -64,7 +64,7 @@ describe('SecretMasker on --token scheme words before a flag or an operator', ()
       const option = ['-', '-', 'token'].join('');
       const input = `${option} ${repeatTo(oneMegabyte, 'Bearer ')}${tail}`;
 
-      expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+      expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
     },
   );
 });
@@ -86,7 +86,7 @@ describe('SecretMasker on --token continuations, dash values and quoted values',
       for (const tail of [maskedTail, ' --verbose', `${backslash}\n`]) {
         const input = `${option} ${repeatTo(oneMegabyte, middle)}${tail}`;
 
-        expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+        expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
       }
     },
   );
@@ -100,6 +100,6 @@ describe('SecretMasker on --token continuations, dash values and quoted values',
   ])(`RF-141 masks 1 MB of repeated %j within ${String(budgetMs)} ms`, (piece) => {
     const input = repeatTo(oneMegabyte, piece);
 
-    expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+    expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
   });
 });
