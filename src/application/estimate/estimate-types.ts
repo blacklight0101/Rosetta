@@ -109,7 +109,7 @@ interface EstimatedArea {
 }
 
 /** One cap the first calls are checked against (RF-405, RF-1106). */
-export interface FirstCallCap {
+interface FirstCallCap {
   readonly kind: UsageCap['kind'];
   readonly unit: 'micros' | 'tokens';
   readonly limit: bigint;

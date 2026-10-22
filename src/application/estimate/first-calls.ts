@@ -17,7 +17,7 @@ import { readerParallelism } from '../understand/reader-settings.js';
  * tools and the first message. The same figure as the test that sends every listed model through
  * the guard under the default caps.
  */
-export const FIRST_CALL_PROMPT_TOKENS = 6_000;
+const FIRST_CALL_PROMPT_TOKENS = 6_000;
 
 export interface FirstCallsInputs {
   /** The reader tasks the run starts (one per area). */
