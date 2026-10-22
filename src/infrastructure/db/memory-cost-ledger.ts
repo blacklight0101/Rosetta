@@ -47,7 +47,9 @@ export class MemoryCostLedger implements CostLedger {
     return Promise.resolve();
   }
 
-  renew(): Promise<void> {
+  renew(key: ReservationKey, expiresAt: Date): Promise<void> {
+    const held = this.reservations.get(keyOf(key));
+    if (held !== undefined) this.reservations.set(keyOf(key), { ...held, expiresAt });
     return Promise.resolve();
   }
 

@@ -1,6 +1,6 @@
 import type { BudgetEvents } from '../../application/ports/budget-events.js';
 import type { Clock } from '../../application/ports/clock.js';
-import type { CostLedger } from '../../application/ports/cost-ledger.js';
+import type { CostLedger, ReservationKey } from '../../application/ports/cost-ledger.js';
 import type { IdGenerator } from '../../application/ports/id-generator.js';
 import type {
   LlmAttemptObserver,
@@ -31,7 +31,9 @@ import {
   type BudgetRun,
   type CallOutcome,
 } from './budget-records.js';
-import { withinTimeLimit } from './within-time-limit.js';
+import { countAttempts } from './attempt-count.js';
+import { callIds, QuietBookkeeping } from './budget-bookkeeping.js';
+import { renewWhileRunning } from './reservation-renewal.js';
 import { priceCall, worstCaseOf, type BudgetPricing, type CallPrice } from './budget-pricing.js';
 
 // RF-420..RF-422, RF-427, RF-428, RF-1106, ADR-007, DEC-107, DEC-112: the outermost decorator of
@@ -42,6 +44,7 @@ import { priceCall, worstCaseOf, type BudgetPricing, type CallPrice } from './bu
 //      for a call without an output limit, whose worst case is unknown);
 //   2. it reserves the worst case (the whole prompt, estimated at four characters per token, plus
 //      the maximum output, priced) against every cap that applies, as one step of the CostLedger;
+//      the reservation is renewed while the call runs, so a long stream counts until it ends;
 //      a call that would pass a cap is not made: it is recorded as `refused-by-cap`, the run's
 //      signal is aborted with RST-1600 and the refusal is thrown; the cap of a role (RF-423) is
 //      the exception: it refuses that role's calls with the same error but leaves the run's
@@ -98,39 +101,54 @@ const spanIdLength = 16;
 export class BudgetGuard implements LlmProvider {
   private readonly options: BudgetGuardOptions;
   private readonly caller: BudgetCaller;
+  private readonly books: QuietBookkeeping;
 
   constructor(options: BudgetGuardOptions) {
     this.options = options;
     const { run, target, keySource } = options;
     this.caller = { run, target, keySource };
+    this.books = new QuietBookkeeping(options.logger, options.reportTimeoutMs);
   }
 
   // RF-421, RF-422, RF-428
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
     const plan = this.plan(request);
     await this.reserve(request, plan);
-    let attempts = 0;
-    // Q-60: the usage of attempts retried before the one that closes the call; all are metered.
-    const earlier: TokenUsage[] = [];
-    const counting: LlmAttemptObserver = {
-      attemptStarted: () => {
-        attempts += 1;
-        observer?.attemptStarted();
-      },
-      attemptRetried: (failure) => {
-        if (failure.usage !== undefined) earlier.push(failure.usage);
-        return observer?.attemptRetried(failure) ?? Promise.resolve();
-      },
-    };
+    const counted = countAttempts(observer);
     let response: LlmResponse;
     try {
-      response = await this.options.inner.complete(request, counting);
+      response = await this.callHolding(request, counted.observer);
     } catch (error) {
-      await this.closeFailed(request, plan, { attempts, error, earlier });
+      const { earlier } = counted;
+      await this.closeFailed(request, plan, { attempts: counted.attempts(), error, earlier });
       throw error;
     }
-    await this.settle(request, plan, { attempts, earlier }, response);
+    await this.settle(
+      request,
+      plan,
+      { attempts: counted.attempts(), earlier: counted.earlier },
+      response,
+    );
     return response;
+  }
+
+  /** RF-422, P3-99: the inner call, its reservation renewed until the call ends. */
+  private async callHolding(
+    request: LlmRequest,
+    observer: LlmAttemptObserver,
+  ): Promise<LlmResponse> {
+    const { inner, ledger, clock, reservationTtlMs } = this.options;
+    const key = this.keyOf(request);
+    const renew = (): Promise<void> =>
+      this.books.quietly('The reservation could not be renewed.', request, () =>
+        ledger.renew(key, new Date(clock.now().getTime() + reservationTtlMs)),
+      );
+    const renewal = renewWhileRunning(renew, Math.floor(reservationTtlMs / 2));
+    try {
+      return await inner.complete(request, observer);
+    } finally {
+      await renewal.stop();
+    }
   }
 
   /** The call's price and worst case; refused when it has no price or no output limit. */
@@ -145,12 +163,10 @@ export class BudgetGuard implements LlmProvider {
   }
 
   private async reserve(request: LlmRequest, plan: CallPlan): Promise<void> {
-    const { ledger, caps, clock, reservationTtlMs, run, keySource } = this.options;
+    const { ledger, caps, clock, reservationTtlMs, keySource } = this.options;
     const at = clock.now();
     const reservation = {
-      callId: request.context.callId,
-      userId: run.userId,
-      runId: run.id,
+      ...this.keyOf(request),
       role: request.context.role,
       keySource,
       worstCase: plan.worstCase,
@@ -168,7 +184,7 @@ export class BudgetGuard implements LlmProvider {
     const roleStop = breach.kind === 'role-cost' || breach.kind === 'role-tokens';
     const reported: CapBreach = roleStop ? { ...breach, role: request.context.role } : breach;
     const spanId = ids.uuid().replaceAll('-', '').slice(-spanIdLength);
-    await this.quietly('The refused call could not be recorded.', request, () =>
+    await this.books.quietly('The refused call could not be recorded.', request, () =>
       recorder.record(refusedRecord(target, request, { at, spanId })),
     );
     await logger.log({
@@ -176,7 +192,7 @@ export class BudgetGuard implements LlmProvider {
       logger: 'budget',
       code: ERROR_CODES.budgetCapReached,
       message: `A model call was refused: it could pass the ${breach.kind} cap.`,
-      ...this.ids(request),
+      ...callIds(request),
       data: {
         cap: breach.kind,
         ...(roleStop ? { role: request.context.role } : {}),
@@ -186,7 +202,7 @@ export class BudgetGuard implements LlmProvider {
       },
     });
     // RF-422: the run's cap event; a reporter that fails changes neither the stop nor the refusal.
-    await this.report('The cap event could not be published.', request, () =>
+    await this.books.report('The cap event could not be published.', request, () =>
       this.options.budgetEvents.capReached(reported),
     );
     // RF-250: the summariser's step is optional; its refusal never stops the run (P2-35).
@@ -210,12 +226,12 @@ export class BudgetGuard implements LlmProvider {
     } catch (error) {
       throw new RosettaError(ERROR_CODES.costRecordFailed, undefined, { cause: error });
     }
-    await this.quietly('The run totals could not be updated.', request, () =>
+    await this.books.quietly('The run totals could not be updated.', request, () =>
       this.options.costs.addCall(totalsOf(usage, costMicros)),
     );
     // RF-1003: the run's usage event, after the row is written; it never fails the call.
     const { caps, budgetEvents } = this.options;
-    await this.report('The usage event could not be published.', request, () =>
+    await this.books.report('The usage event could not be published.', request, () =>
       budgetEvents.callRecorded({ entry, caps }),
     );
   }
@@ -245,20 +261,20 @@ export class BudgetGuard implements LlmProvider {
       last === undefined && earlier.length === 0
         ? undefined
         : withEarlier(last ?? noUsage, earlier);
-    await this.quietly('The cost of a failed call could not be recorded.', request, async () => {
-      if (notSent) {
-        await ledger.release({
-          callId: request.context.callId,
-          userId: this.options.run.userId,
-          runId: this.options.run.id,
-        });
-        return;
-      }
-      const outcome = outcomeOf(plan.price, attempts, usage ?? noUsage);
-      await ledger.settle(this.entryOf(request, plan, outcome));
-      if (usage !== undefined)
-        await this.options.costs.addCall(totalsOf(usage, outcome.costMicros));
-    });
+    await this.books.quietly(
+      'The cost of a failed call could not be recorded.',
+      request,
+      async () => {
+        if (notSent) {
+          await ledger.release(this.keyOf(request));
+          return;
+        }
+        const outcome = outcomeOf(plan.price, attempts, usage ?? noUsage);
+        await ledger.settle(this.entryOf(request, plan, outcome));
+        if (usage !== undefined)
+          await this.options.costs.addCall(totalsOf(usage, outcome.costMicros));
+      },
+    );
   }
 
   private entryOf(request: LlmRequest, plan: CallPlan, outcome: CallOutcome) {
@@ -266,35 +282,11 @@ export class BudgetGuard implements LlmProvider {
     return ledgerEntryOf(this.caller, request, { at, price: plan.price, outcome });
   }
 
-  /** P1-96: reports to the budget events, waiting at most `reportTimeoutMs`; a failure is logged. */
-  private report(message: string, request: LlmRequest, work: () => Promise<void>): Promise<void> {
-    return this.quietly(message, request, () =>
-      withinTimeLimit(work(), this.options.reportTimeoutMs),
-    );
-  }
-
-  /** Runs bookkeeping whose failure must not hide the call's own outcome; a failure is logged. */
-  private async quietly(
-    message: string,
-    request: LlmRequest,
-    work: () => Promise<void>,
-  ): Promise<void> {
-    try {
-      await work();
-    } catch (error) {
-      const code = error instanceof RosettaError ? error.code : ERROR_CODES.costRecordFailed;
-      await this.options.logger.log({
-        level: 'error',
-        logger: 'budget',
-        code,
-        message,
-        ...this.ids(request),
-      });
-    }
-  }
-
-  private ids(request: LlmRequest): { runId: string; agentTaskId: string; callId: string } {
-    const { runId, agentTaskId, callId } = request.context;
-    return { runId, agentTaskId, callId };
+  private keyOf(request: LlmRequest): ReservationKey {
+    return {
+      callId: request.context.callId,
+      userId: this.options.run.userId,
+      runId: this.options.run.id,
+    };
   }
 }

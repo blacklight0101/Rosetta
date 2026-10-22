@@ -156,6 +156,26 @@ describe('BudgetGuard closing a renewed reservation', () => {
 });
 
 describe('BudgetGuard when a renewal fails', () => {
+  it('RF-422 waits for a renewal under way before it settles the call', async () => {
+    const h = harness(after(95_000));
+    const renew = h.ledger.renew.bind(h.ledger);
+    h.ledger.renew = async (key: ReservationKey, expiresAt: Date) => {
+      h.calls.push('renewal started');
+      await new Promise((resolve) => setTimeout(resolve, 10_000));
+      await renew(key, expiresAt);
+    };
+    const call = h.guard.complete(budgetRequest(1));
+
+    await vi.advanceTimersByTimeAsync(95_000);
+    expect(h.calls).toEqual(['renewal started']);
+    await vi.advanceTimersByTimeAsync(10_000);
+    await call;
+
+    expect(h.calls).toEqual(['renewal started', 'renew', 'settle']);
+    await vi.advanceTimersByTimeAsync(3_600_000);
+    expect(h.calls).toHaveLength(3);
+  });
+
   it('RF-422 logs a renewal that fails and tries again at the next one', async () => {
     const h = harness(after(200_000));
     const renew = h.ledger.renew.bind(h.ledger);

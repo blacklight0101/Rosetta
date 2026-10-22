@@ -909,6 +909,7 @@ As a developer I want every model call metered so that cost is never invisible.
 As a developer I want a token and cost cap per run that stops the run cleanly so that I never overspend.
 
 - Given a run cap, when the next call's worst case (prompt tokens plus maximum output) would exceed it, then the call is not made, running tasks stop, all results so far are saved, and the run ends with the end state `CapReached`, shown in the page.
+- Given a call in flight whose answer keeps arriving for longer than its timeout x attempts (a streamed answer, Q-60), when another call reserves its worst case, then the first call's reservation still counts against every cap until the first call ends: the budget guard renews it while the call runs, and when the call answers, fails or is aborted it settles or releases the reservation exactly once, after its last renewal; a renewal that fails is logged and tried again, and a reservation of a call that no longer runs (the server stopped) expires after its lifetime (P3-99).
 - Given no cap configured, when a run with a paid provider starts, then the default run cap from the project settings template applies; with server keys the effective run cap is the lower of the run's cap and the administrator's run cap (RF-1106, DEC-107).
   Verification: integration tests with the fake provider.
 
