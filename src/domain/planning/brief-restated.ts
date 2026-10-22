@@ -69,8 +69,8 @@ function styleNames(brief: PlanningBrief, catalogue: Catalogue): Words[] {
   return catalogue.styles
     .filter((style) => style.id === brief.architecture.style)
     .flatMap((style) => {
-      const note = /(([^)]*))/u.exec(style.title)?.[1] ?? '';
-      return [style.title.replace(/([^)]*)/gu, ''), note, style.id].map(wordsOf);
+      const note = /\(([^)]*)\)/u.exec(style.title)?.[1] ?? '';
+      return [style.title.replace(/\([^)]*\)/gu, ''), note, style.id].map(wordsOf);
     });
 }
 

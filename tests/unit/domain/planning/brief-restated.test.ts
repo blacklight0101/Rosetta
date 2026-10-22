@@ -79,6 +79,38 @@ describe('decideOnce: the style', () => {
   });
 });
 
+describe('decideOnce: a style named in brackets in the catalogue', () => {
+  const hexagonal: BriefAnswers = { architecture: { style: 'hexagonal' } };
+
+  it('RF-608 drops a decision that names the chosen style by the note in its catalogue title', () => {
+    const { content, restated, choices } = decided(hexagonal, [
+      decision('Use ports and adapters architecture'),
+    ]);
+
+    expect(restated).toEqual([
+      { title: 'Use ports and adapters architecture', record: choices.style },
+    ]);
+    expect(content.decisions.map((each) => each.title)).not.toContain(
+      'Use ports and adapters architecture',
+    );
+  });
+
+  it('RF-608 drops a decision that names the chosen style by its id', () => {
+    const { restated } = decided(hexagonal, [decision('Adopt hexagonal architecture')]);
+
+    expect(restated.map((each) => each.title)).toEqual(['Adopt hexagonal architecture']);
+  });
+
+  it('RF-608 keeps decisions on other subjects under a bracketed style', () => {
+    const { restated } = decided(hexagonal, [
+      decision('Store VAT as a fraction in PostgreSQL', 'VAT is a fraction.'),
+      decision('Use layered error handling', 'Each layer wraps the error of the one below.'),
+    ]);
+
+    expect(restated).toEqual([]);
+  });
+});
+
 describe('decideOnce: only the title counts', () => {
   it('RF-608 keeps a decision whose text mentions a choice of the brief but whose title is about something else', () => {
     const { restated } = decided(
