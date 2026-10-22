@@ -124,6 +124,11 @@ export function coverageOf(
 
 const MIGRATION_TITLE = 'Write the database migrations in the chosen stack';
 
+/** The card that writes the migrations, made by code (RF-623); the planner's cards never carry its title. */
+export function isMigrationCard(task: PlanTask): boolean {
+  return task.title === MIGRATION_TITLE;
+}
+
 function migrationCard(content: PlanContent, tables: readonly ModelTable[]): PlanTask {
   const sources = new Set(tables.flatMap((table) => table.sources));
   const count = `${String(tables.length)} table${tables.length === 1 ? '' : 's'}`;

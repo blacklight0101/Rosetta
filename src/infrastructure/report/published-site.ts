@@ -1,5 +1,6 @@
 import type { ReportModel } from '../../application/report/report-model.js';
 import type { TextMasker } from '../guards/secret-masker.js';
+import { ICON_32, ICON_64 } from './brand-icon.js';
 import { escapeHtml } from './html-text.js';
 import type { DiagramAssets } from './report-assets.js';
 import { renderReplayHtml } from './replay-html.js';
@@ -79,11 +80,12 @@ function renderIndex(runKey: string): string {
 <meta name="referrer" content="${REPORT_REFERRER}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Rosetta sample report - ${run}</title>
+<link rel="icon" type="image/png" href="${ICON_32}">
 <link rel="stylesheet" href="report.css">
 </head>
 <body>
 <header class="masthead">
-<p class="brand">Rosetta</p>
+<p class="brand"><img src="${ICON_64}" alt="" width="28" height="28">Rosetta</p>
 <p class="run">Run <span class="mono">${run}</span></p>
 </header>
 <main id="main">
