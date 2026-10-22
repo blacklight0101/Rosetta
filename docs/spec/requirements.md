@@ -1192,7 +1192,9 @@ As a modernisation team I want an implementation plan that covers every document
 - Given an item no card covers, when the package is checked, then it is listed as a gap in the package's checks file and the run is not reported as complete.
 - Given items no card covers after the planner's answer (Q-45, default applies), when the package is checked, then the planner gets one more call that lists only the uncovered items and asks for task cards that build them; the gaps left after that call are listed as above.
 - Given a plan or gap answer whose task cards give `requirements` or `dependsOn` positions as objects with a numeric `position` (Q-54, default applies), when it is parsed, then the numbers are read; every card left out of the answer is logged with its position and the reason, never with answer text; when the gap answer leaves out cards that named a gap, the planner gets one repair attempt listing the problems, through the budget and context guards, before the gaps are reported.
-  Verification: structure test of the coverage of the plan.
+- Given a gap answer with a task card that names no `builds` (the list is missing or empty) while more than one item is uncovered, when it is parsed, then the planner gets one repair attempt for that card, listing its problem, as for a card that names a gap; a card that still names no builds after the repair is left out, logged with its position and field, and the gaps are reported as before.
+- Given exactly one uncovered item and a gap answer of exactly one task card that names no `builds`, when it is parsed, then the card builds that item without another call, and the log names the single-item rule (RF-627); a card that names builds keeps them.
+  Verification: structure test of the coverage of the plan; the gap answer scenarios are tests of the gap call with recorded answers.
 
 **RF-630 Task cards an agent can build without guessing** - R1 - Must - Source DEC-135 - ADR-018
 As a team building with AI agents I want each task card to state what must hold and how it will be attacked so that the first attempt meets the review.
