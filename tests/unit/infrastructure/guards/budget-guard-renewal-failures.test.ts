@@ -120,11 +120,22 @@ describe('BudgetGuard when renewals keep failing', () => {
     await vi.advanceTimersByTimeAsync(1);
 
     expect(await call).toMatchObject({ code: ERROR_CODES.costRecordFailed });
-    expect(await callReservationGone(h)).toBe(true);
     await vi.advanceTimersByTimeAsync(3_600_000);
     expect(h.calls.filter((name) => name !== 'failed renew')).toEqual(['settle']);
+    expect(await callReservationGone(h)).toBe(true);
     expect(h.stops).toEqual([]);
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('RF-422 stops the call at the deadline when a renewal never answers', async () => {
+    const h = renewalHarness(answersAfter(400_000));
+    h.ledger.renew = () => new Promise<never>(() => undefined);
+    const call = failureOf(h.guard.complete(request));
+
+    await vi.advanceTimersByTimeAsync(150_000);
+
+    expect(await call).toMatchObject({ code: ERROR_CODES.costRecordFailed });
+    expect(h.calls).toEqual(['settle']);
   });
 
   it('RF-422 stops a call that was never sent and releases its reservation once', async () => {
