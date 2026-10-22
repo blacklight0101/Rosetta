@@ -32,7 +32,7 @@ flowchart LR
   RST -- SQL --> DB
   RST -- reads snapshots, writes runs --> DATA
   RST -- resolve ref, download snapshot --> GH
-  RST -. local deployment only, host.docker.internal .-> OLL
+  RST -.->|local deployment only, host.docker.internal| OLL
   RST -- HTTPS, masked excerpts --> CLOUD
   DATA -. sample run published by the owner .-> PAGES
 ```
@@ -514,7 +514,7 @@ sequenceDiagram
       T-->>L: result or error result
     else final answer
       L->>L: refuse it when no file of the area was read (RF-206), or once when less than half of its first-party tokens were (Q-50)
-      L->>L: parse cards (zod), keep the valid ones; up to two repairs or a continuation for the rest
+      L->>L: parse cards (zod), keep the valid ones, then up to two repairs or a continuation for the rest
     end
   end
   L-->>O: cards, transcript, state, usage
