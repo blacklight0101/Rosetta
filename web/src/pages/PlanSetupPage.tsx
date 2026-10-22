@@ -91,6 +91,22 @@ function Consents({ session }: { readonly session: PlanSession }): JSX.Element {
   );
 }
 
+/** The step's buttons, fed by the session (RF-605, Q-59). */
+function Actions({ session }: { readonly session: PlanSession }): JSX.Element {
+  return (
+    <PlanStepButtons
+      step={session.step}
+      saving={session.saving}
+      error={session.error}
+      draft={session.draft}
+      onBack={session.back}
+      onDefaults={session.useDefaults}
+      onSave={session.save}
+      onGoTo={session.goTo}
+    />
+  );
+}
+
 function PlanSetupBody(props: BodyProps): JSX.Element {
   const { projectId, catalogue, view, project, source, sourceError, sourceRunId } = props;
   const session = usePlanSession({ projectId, sourceRunId }, view, project);
@@ -115,14 +131,7 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
           waitingForConsent={session.waitingForConsent}
           askAgain={session.askAgain}
         />
-        <PlanStepButtons
-          step={session.step}
-          saving={session.saving}
-          error={session.error}
-          onBack={session.back}
-          onDefaults={session.useDefaults}
-          onSave={session.save}
-        />
+        <Actions session={session} />
       </section>
       <Consents session={session} />
       <PlanRecorded draft={session.draft} catalogue={catalogue} />

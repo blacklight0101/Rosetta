@@ -4,6 +4,7 @@ import type {
   ProviderKind,
 } from '../../src/application/ports/llm-provider.js';
 import type { BudgetEvents, RecordedCall } from '../../src/application/ports/budget-events.js';
+import type { Clock } from '../../src/application/ports/clock.js';
 import type { CostLedger } from '../../src/application/ports/cost-ledger.js';
 import type { Price } from '../../src/domain/budget/price.js';
 import type { KeySource, PriceTable } from '../../src/domain/budget/price-table.js';
@@ -68,6 +69,10 @@ export interface BudgetHarnessOptions {
   readonly reportTimeoutMs?: number;
   /** Also called with each stop, after it is kept in `stops`. */
   readonly stopRun?: (reason: RosettaError) => void;
+  /** How long a reservation counts; 600 seconds by default. */
+  readonly reservationTtlMs?: number;
+  /** The guard's clock; a clock fixed at `budgetInstant` by default. */
+  readonly clock?: Clock;
 }
 
 /** How long a reservation counts and how long the guard waits for the reporter. */
@@ -75,7 +80,10 @@ function timesOf(options: BudgetHarnessOptions): {
   reservationTtlMs: number;
   reportTimeoutMs: number;
 } {
-  return { reservationTtlMs: 600_000, reportTimeoutMs: options.reportTimeoutMs ?? 5_000 };
+  return {
+    reservationTtlMs: options.reservationTtlMs ?? 600_000,
+    reportTimeoutMs: options.reportTimeoutMs ?? 5_000,
+  };
 }
 
 /** The run's prices: the shipped table, the project's overrides and its unpriced rule. */
@@ -129,7 +137,7 @@ export interface BudgetHarness {
 }
 
 export function budgetHarness(options: BudgetHarnessOptions = {}): BudgetHarness {
-  const clock = new FixedClock(budgetInstant);
+  const clock = options.clock ?? new FixedClock(budgetInstant);
   const fake = new FakeProvider({
     testMode: true,
     recording: options.recording ?? recordingOf(contractScenarios.text, contractScenarios.text),

@@ -27,34 +27,26 @@ describe('GitHub Actions workflows: files', () => {
     expect(dependabot).toContain('package-ecosystem: github-actions');
   });
 
-  it('RNF-001 the CI workflow runs verify on ubuntu and windows with a PostgreSQL 17 service on Linux', async () => {
-    const text = await ci();
+  it('RNF-001 the CI workflow runs the tests on ubuntu and windows with a PostgreSQL 17 service on Linux', async () => {
+    const text = await ciJob('tests-shard');
 
     expect(text).toContain('ubuntu-latest');
     expect(text).toContain('windows-latest');
     expect(text).toContain('image: postgres:17');
     expect(text).toContain('ROSETTA_TEST_DATABASE_URL');
     expect(text).toContain('node-version-file: .nvmrc');
-    expect(text).toContain('run: npm run verify');
+    expect(text).toContain('run: npm run test:shard');
+    expect(text).not.toContain('run: npm run verify');
   });
 
-  it('RNF-001 Linux runs every gate of verify and Windows runs only the tests', async () => {
-    const text = await ci();
-
-    expect(text).toMatch(/if: runner\.os == 'Linux'[^\n]*\n\s+run: npm run verify\n/u);
-    expect(text).toMatch(/if: runner\.os == 'Windows'[^\n]*\n\s+run: npm run test:ci\n/u);
-    expect(text).not.toMatch(/if: runner\.os == 'Windows'[^\n]*\n\s+run: npm run verify/u);
-    expect(text).toContain('name: verify (${{ matrix.os }})');
-  });
-
-  it('RNF-005 the e2e shards install Chromium before Playwright runs, and verify does not', async () => {
+  it('RNF-005 the e2e shards install Chromium before Playwright runs, and the tests job does not', async () => {
     const shard = await ciJob('e2e-shard');
     const install = shard.indexOf('npx playwright install --with-deps chromium');
 
     expect(install).toBeGreaterThan(-1);
     expect(install).toBeLessThan(shard.indexOf('node scripts/run-e2e.mjs'));
-    // verify skips the Playwright project (ROSETTA_E2E_OWN_JOB=1), so it needs no browser.
-    expect(await ciJob('verify')).not.toContain('playwright install');
+    // The tests job skips the Playwright project (ROSETTA_E2E_OWN_JOB=1), so it needs no browser.
+    expect(await ciJob('tests-shard')).not.toContain('playwright install');
   });
 
   it('DEC-35 the pull request title reaches commitlint through env: TITLE', async () => {

@@ -47,6 +47,12 @@ export class MemoryCostLedger implements CostLedger {
     return Promise.resolve();
   }
 
+  renew(key: ReservationKey, expiresAt: Date): Promise<void> {
+    const held = this.reservations.get(keyOf(key));
+    if (held !== undefined) this.reservations.set(keyOf(key), { ...held, expiresAt });
+    return Promise.resolve();
+  }
+
   runEntries(userId: string, runId: string): Promise<readonly LedgerEntry[]> {
     return Promise.resolve(
       this.entries.filter((entry) => entry.userId === userId && entry.runId === runId),

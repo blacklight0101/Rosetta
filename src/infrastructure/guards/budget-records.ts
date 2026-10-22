@@ -1,4 +1,4 @@
-import type { LedgerEntry } from '../../application/ports/cost-ledger.js';
+import type { LedgerEntry, ReservationKey } from '../../application/ports/cost-ledger.js';
 import type { LlmRequest } from '../../application/ports/llm-provider.js';
 import type { ProviderCallRecord } from '../../application/ports/provider-call-recorder.js';
 import type { ProviderRun } from '../../application/ports/provider-set-factory.js';
@@ -156,4 +156,9 @@ export function withEarlier(
     ...(cacheWrite === 0 ? {} : { cacheWriteInputTokens: cacheWrite }),
     usageSource: all.some((usage) => usage.usageSource === 'estimated') ? 'estimated' : 'reported',
   };
+}
+
+/** The reservation of one call of the run (P3-99: renewed while the call runs). */
+export function reservationKeyOf(run: BudgetRun, request: LlmRequest): ReservationKey {
+  return { callId: request.context.callId, userId: run.userId, runId: run.id };
 }

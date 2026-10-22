@@ -84,6 +84,12 @@ export interface CostLedger {
   reserve(request: ReservationRequest): Promise<Result<void, CapBreach>>;
   /** Inserts the call's ledger row and deletes its reservation (same user, run, call) in one step. */
   settle(entry: LedgerEntry): Promise<void>;
+  /**
+   * RF-422, P3-99: moves the expiry of a call's live reservation to `expiresAt`, so a call that
+   * runs longer than its first expiry keeps counting; a reservation already settled, released or
+   * purged is not brought back.
+   */
+  renew(key: ReservationKey, expiresAt: Date): Promise<void>;
   /** Deletes the reservation of a call that was never sent. */
   release(key: ReservationKey): Promise<void>;
   /** The rows of one of the user's runs, in the order they were written (RF-426, RF-1105). */

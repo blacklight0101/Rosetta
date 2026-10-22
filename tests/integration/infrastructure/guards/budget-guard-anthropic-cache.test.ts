@@ -57,6 +57,10 @@ class WatchedLedger implements CostLedger {
     return this.inner.release(key);
   }
 
+  renew(key: ReservationKey, expiresAt: Date): Promise<void> {
+    return this.inner.renew(key, expiresAt);
+  }
+
   runEntries(userId: string, runId: string): Promise<readonly LedgerEntry[]> {
     return this.inner.runEntries(userId, runId);
   }

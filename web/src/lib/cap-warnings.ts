@@ -1,5 +1,6 @@
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import type { SpendLimits } from '../api/limits-schemas.js';
+import { firstCallWarnings } from './first-call-warnings.js';
 import { dollars, ownKeyTotal, pricedTotal, serverKeyTotal } from './estimate-math.js';
 
 // RF-1001, RF-1106, DEC-107, DEC-108: when the likely estimate is above a cap, a warning names the
@@ -11,7 +12,7 @@ import { dollars, ownKeyTotal, pricedTotal, serverKeyTotal } from './estimate-ma
 // A limit the page could not read (undefined) is left out, never guessed.
 
 export interface CapWarning {
-  readonly id: 'run' | 'user-day' | 'server-month' | 'own-day';
+  readonly id: 'run' | 'user-day' | 'server-month' | 'own-day' | `first-calls-${string}`;
   readonly text: string;
 }
 
@@ -87,5 +88,6 @@ export function capWarnings(inputs: CapInputs): readonly CapWarning[] {
     limits === undefined
       ? []
       : [...serverWarnings(estimate, limits), ...ownWarning(estimate, limits)];
-  return run === undefined ? limited : [run, ...limited];
+  const first = firstCallWarnings(estimate, runCapMicros);
+  return [...(run === undefined ? [] : [run]), ...limited, ...first];
 }

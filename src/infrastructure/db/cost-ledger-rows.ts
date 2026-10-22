@@ -61,7 +61,11 @@ export const INSERT_ENTRY =
 export const DELETE_RESERVATION =
   'DELETE FROM cost_reservations WHERE call_id = $1 AND user_id = $2 AND run_id IS NOT DISTINCT FROM $3';
 
-/** The parameters of DELETE_RESERVATION. */
+/** P3-99: moves the expiry of one live reservation ($1..$3 as above, $4 the new expiry). */
+export const RENEW_RESERVATION =
+  'UPDATE cost_reservations SET expires_at = $4 WHERE call_id = $1 AND user_id = $2 AND run_id IS NOT DISTINCT FROM $3';
+
+/** The parameters of DELETE_RESERVATION and the first three of RENEW_RESERVATION. */
 export function reservationKeyValues(key: ReservationKey): unknown[] {
   return [key.callId, key.userId, key.runId];
 }

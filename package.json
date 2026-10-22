@@ -21,6 +21,8 @@
     "deadcode": "knip",
     "test": "vitest run",
     "test:ci": "vitest run --coverage --reporter=default --reporter=json --outputFile.json=test-results/vitest.json && node scripts/test-levels.mjs --report test-results/vitest.json && node scripts/run-e2e.mjs --ci",
+    "test:shard": "vitest run --coverage --coverage.reporter=text-summary --reporter=default --reporter=blob",
+    "test:merge": "vitest run --merge-reports=test-results/blob --coverage --reporter=default --reporter=json --outputFile.json=test-results/vitest.json && node scripts/test-levels.mjs --report test-results/vitest.json",
     "test:levels": "vitest run --reporter=json --outputFile.json=test-results/vitest.json && node scripts/test-levels.mjs --report test-results/vitest.json",
     "test:e2e": "node scripts/run-e2e.mjs",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run arch && npm run deadcode && npm run test:ci",

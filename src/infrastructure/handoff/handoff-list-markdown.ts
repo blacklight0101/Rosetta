@@ -228,6 +228,16 @@ function apiContractSection(handoff: HandoffPackage, esc: MarkdownEscaper): stri
   ];
 }
 
+// RF-604, Q-59, DEC-80: the first line of the README when no stack layer was chosen; nothing when one was.
+function noStackLines(handoff: HandoffPackage): string[] {
+  return handoff.brief.stack.length > 0
+    ? []
+    : [
+        'No technology was chosen; the cards are written for any stack. Choose a stack in Plan setup and write the package again.',
+        '',
+      ];
+}
+
 // RF-601, RF-603, RF-620
 export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const { repository, brief } = handoff;
@@ -239,6 +249,7 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
   return [
     '# Modernisation hand-off package',
     '',
+    ...noStackLines(handoff),
     `Planned from the analysis of ${analysed} (understand run ${esc.inline(handoff.sourceRun)}), with the planning brief saved at ${esc.inline(brief.savedAt)}.`,
     '',
     'Only claims the verifier found supported by the code were used. Every requirement names its source cards, and every source card lists its citations into the legacy code. The files are plain Markdown (the API contract, when there is one, is YAML); the diagrams are Mermaid.',
