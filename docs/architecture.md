@@ -204,7 +204,7 @@ src/
                         `validation.md`, `notes.md` (render-index, render-formulas, render-values, render-rules; `formula-tables` names the table column of a formula region or single formula, and a run of formulas is split where its table ends, P3-94; the header of `values.md` lists hidden rows and columns, P3-57); safe segments with `~2` on a clash
                         and a `_` before a device name (workbook-segments); text escaped to one line, a long one continued on lines with the same address (workbook-text); dates
                         from the format code (excel-dates, cell-value-text); lines under the 2,000 character cut and a byte limit for the whole
-                        render, RST-1926 (render-output); `WORKBOOK_RENDERER_VERSION` names the layout (`2` since P3-94). The first table of `workbook.md` maps each
+                        render, RST-1926 (render-output); `WORKBOOK_RENDERER_VERSION` names the layout (`3` since P3-103: a region of equal relative formulas is one line in `formula-fill.ts`; `2` since P3-94). The first table of `workbook.md` maps each
                         safe segment to the real name as a JSON string (cut at 100 characters), which the evidence page label reads
                         macros (P3-47, RF-154): `render-macros` writes each module with source as `macros/<Module>.bas` or `.cls` (every line `L<n> | `, a long line continued with the
                         same prefix), `workbook.md` lists the modules, form controls and a locked, unreadable or compiled-only project, and the counts carry `macroModules`, `macrosSkipped`

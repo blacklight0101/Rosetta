@@ -120,7 +120,7 @@ const cite = (path: string, startLine: number, endLine = startLine) => ({
 });
 
 it('RF-631 links the rows whose lines the citation touches, each once, in order', () => {
-  const citations = [cite(`${SHEET}/formulas.md`, 9, 12), cite(`${SHEET}/formulas.md`, 10)];
+  const citations = [cite(`${SHEET}/formulas.md`, 7, 9), cite(`${SHEET}/formulas.md`, 10)];
 
   expect(ids(formulasCitedBy(invoice(), citations))).toEqual(['F-003', 'F-004']);
 });
@@ -132,7 +132,7 @@ it('RF-631 links a row when the citation holds the heading line of its region', 
 it('RF-631 links nothing for another file, lines between regions or no formulas', () => {
   const other = cite('Invoice_Sample.xlsm/Template/values.md', 5);
 
-  expect(formulasCitedBy(invoice(), [other, cite(`${SHEET}/formulas.md`, 10)])).toEqual([]);
+  expect(formulasCitedBy(invoice(), [other, cite(`${SHEET}/formulas.md`, 8)])).toEqual([]);
   expect(formulasCitedBy(invoice(), [cite(`${SHEET}/formulas.md`, 1, 3)])).toEqual([]);
   expect(formulasCitedBy(undefined, [other])).toEqual([]);
 });

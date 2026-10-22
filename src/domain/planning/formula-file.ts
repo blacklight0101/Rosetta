@@ -4,6 +4,8 @@ import {
   splitNote,
   unquoted,
   type ParsedNote,
+  type ParsedValue,
+  valueOf,
   type TableColumnName,
 } from './formula-note.js';
 
@@ -18,8 +20,15 @@ export interface RawCell {
   readonly head: string;
   readonly formula: string;
   readonly note: ParsedNote;
+  /** The example cells that follow a formula filled down (P3-103), with their cached results. */
+  readonly examples: readonly RawExample[];
   readonly startLine: number;
   readonly endLine: number;
+}
+
+interface RawExample {
+  readonly address: string;
+  readonly value: ParsedValue;
 }
 
 export interface RawSection {
@@ -42,6 +51,7 @@ const REGION = /^## Region (\S+) \(\d+ formulas?\)(.*)$/u;
 const SHARED = /^## Region (\S+) \(shared formula(?:, \d+ cells)?\)(.*)$/u;
 const HEAD = /^(\S+) (= |\{= )(.*)$/u;
 const CONTINUED = /^\S+ \(continued\) (.*)$/u;
+const EXAMPLE = /^(\S+) \(example\) (.*)$/u;
 const CACHED_CONTINUED = /^\S+ \(cached, continued\) (.*)$/u;
 
 function section(kind: RawSection['kind'], headingLine: number, rest = {}): RawSection {
@@ -72,6 +82,8 @@ interface Building {
   note: string | undefined;
   /** The text of a long cached value that came on lines of its own. */
   readonly extra: string[];
+  /** The example cells that came on lines of their own. */
+  readonly examples: RawExample[];
 }
 
 function take(building: Building, chunk: string, number: number): void {
@@ -91,8 +103,22 @@ function finish(building: Building): RawCell {
       : { ...parsed, cached: { kind: 'text', text: `${cached.text}${extra}` } };
   return {
     ...{ head: building.head, formula: building.chunks.join(''), note },
+    examples: building.examples,
     ...{ startLine: building.startLine, endLine: building.endLine },
   };
+}
+
+/** A line that goes on with the formula being read: more text, more of a cached text, or an example. */
+function addLine(building: Building, line: string, number: number): void {
+  const more = CONTINUED.exec(line)?.[1];
+  const cached = CACHED_CONTINUED.exec(line)?.[1];
+  const example = EXAMPLE.exec(line);
+  if (more !== undefined) take(building, more, number);
+  else if (cached !== undefined) building.extra.push(cached);
+  else if (example?.[1] !== undefined && example[2] !== undefined) {
+    building.examples.push({ address: example[1], value: valueOf(example[2]) });
+    building.endLine = number;
+  }
 }
 
 /** Adds one line of a section to the formula being read, or starts the next one. */
@@ -102,16 +128,12 @@ function feed(open: RawSection, building: Building | undefined, line: string, nu
     if (building !== undefined) open.cells.push(finish(building));
     const next: Building = {
       ...{ head: head[1], array: head[2] === '{= ', chunks: [], startLine: number },
-      ...{ endLine: number, note: undefined, extra: [] },
+      ...{ endLine: number, note: undefined, extra: [], examples: [] },
     };
     take(next, head[3], number);
     return next;
   }
-  const more = CONTINUED.exec(line)?.[1];
-  const cached = CACHED_CONTINUED.exec(line)?.[1];
-  if (building === undefined) return undefined;
-  if (more !== undefined) take(building, more, number);
-  else if (cached !== undefined) building.extra.push(cached);
+  if (building !== undefined) addLine(building, line, number);
   return building;
 }
 

@@ -152,10 +152,18 @@ export function appendClaims(card: Card, inputs: readonly ClaimInput[]): Result<
   return ok({ ...card, claims: [...card.claims, ...added] });
 }
 
+/** P3-104: a SCRN whose screen has a cited validation has claims even when the agent wrote none. */
+function hasScreenClaims(input: CardInput): boolean {
+  return (
+    input.type === 'SCRN' &&
+    (input.screen?.fields.some((field) => field.validations.length > 0) ?? false)
+  );
+}
+
 // RF-202: at least one claim, each with at least one citation; an OQ also has its question; a FLOW
 // its trigger and outcome and cited branches (RF-260); a SCRN its cited validations (RF-261).
 export function createCard(input: CardInput): Result<Card, CardProblem> {
-  if (input.claims.length === 0) return err('no-claims');
+  if (input.claims.length === 0 && !hasScreenClaims(input)) return err('no-claims');
   if (input.claims.some((claim) => claim.citations.length === 0)) {
     return err('claim-without-citation');
   }

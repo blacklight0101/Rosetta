@@ -41,7 +41,7 @@ describe('GitHub Actions workflows: files', () => {
 
   it('RNF-005 the e2e shards install Chromium before Playwright runs, and the tests job does not', async () => {
     const shard = await ciJob('e2e-shard');
-    const install = shard.indexOf('npx playwright install --with-deps chromium');
+    const install = shard.indexOf('npx playwright install chromium');
 
     expect(install).toBeGreaterThan(-1);
     expect(install).toBeLessThan(shard.indexOf('node scripts/run-e2e.mjs'));
@@ -55,6 +55,32 @@ describe('GitHub Actions workflows: files', () => {
     expect(text).toContain('TITLE: ${{ github.event.pull_request.title }}');
     expect(text).toContain('"$TITLE"');
   });
+});
+
+describe('GitHub Actions workflows: Chromium install (P1-183)', () => {
+  it.each(['e2e-shard', 'compose-smoke'])(
+    'P1-183 %s installs Chromium fast: cached browsers, no apt on the usual path, a short step timeout',
+    async (id) => {
+      const text = await ciJob(id);
+      const from = text.indexOf('- name: Install Chromium');
+      const step = text.slice(from, text.indexOf('\n      - ', from + 1));
+
+      // The apt mirror stalled for 10 minutes on PR #800; `--with-deps` runs apt on every call.
+      expect(step).not.toContain('--with-deps');
+      expect(step).toMatch(/timeout-minutes: [1-5]\n/u);
+      // System packages only when Chromium cannot start without them.
+      expect(step).toContain('npx playwright install chromium');
+      expect(step).toMatch(/\.launch\(\)[\s\S]*npx playwright install-deps chromium/u);
+      // The browser folder is cached, keyed on the Playwright version of the lockfile.
+      expect(text).toContain('path: ~/.cache/ms-playwright');
+      expect(text).toMatch(
+        /key: playwright-\$\{\{ runner\.os \}\}-\$\{\{ steps\.playwright-version\.outputs\.version \}\}/u,
+      );
+      expect(text).toMatch(/uses: actions\/cache@[0-9a-f]{40} # v\d+\.\d+\.\d+/u);
+      // The job limit stays.
+      expect(text).toMatch(/\n {4}timeout-minutes: (15|20)\n/u);
+    },
+  );
 });
 
 describe('GitHub Actions workflows: e2e shards', () => {
@@ -245,7 +271,7 @@ describe('GitHub Actions workflows: compose smoke job', () => {
   it('RNF-005 installs Chromium for the smoke and has a timeout', async () => {
     const text = await smoke();
 
-    expect(text).toContain('npx playwright install --with-deps chromium');
+    expect(text).toContain('npx playwright install chromium');
     expect(text).toMatch(/timeout-minutes: \d+/u);
   });
 });

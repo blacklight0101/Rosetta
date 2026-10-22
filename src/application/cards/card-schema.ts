@@ -46,10 +46,9 @@ const cardShape = z.object({
   area: text(cardLimits.maxAreaChars),
   summary: text(cardLimits.maxSummaryChars),
   confidence: ignoringCase(CONFIDENCES),
-  claims: z
-    .array(agentClaimSchema)
-    .min(1, 'A card needs at least one claim.')
-    .max(cardLimits.maxClaims),
+  // P3-104: a missing `claims` reads as none; the refinement below keeps such a card only when its
+  // screen carries cited validations, which become its claims (RF-261).
+  claims: z.array(agentClaimSchema).max(cardLimits.maxClaims).default([]),
   question: text(cardLimits.maxQuestionChars).optional(),
   whyItMatters: text(cardLimits.maxQuestionChars).optional(),
   flow: flowSchema.optional(),
@@ -87,8 +86,23 @@ function draftOf(value: ParsedCard): CardDraft {
   }
 }
 
+/** A SCRN with a cited validation has claims of its own even when the agent wrote none (RF-261). */
+function hasScreenClaims(value: ParsedCard): boolean {
+  return (
+    value.type === 'SCRN' &&
+    (value.screen?.fields.some((field) => field.validations.length > 0) ?? false)
+  );
+}
+
 export const agentCardSchema = cardShape
   .superRefine((value, context) => {
+    if (value.claims.length === 0 && !hasScreenClaims(value)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['claims'],
+        message: 'A card needs at least one claim.',
+      });
+    }
     for (const field of neededBy[value.type] ?? []) {
       if (value[field] === undefined) {
         context.addIssue({
