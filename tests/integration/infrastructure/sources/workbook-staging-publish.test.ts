@@ -52,7 +52,7 @@ describe('DiskWorkbookStaging.publish', () => {
       schemaVersion: 1,
       kind: 'workbook',
       uploadedAt,
-      rendererVersion: '2',
+      rendererVersion: '3',
       snapshotHash: published.info.snapshotHash,
       fileCount: tree.length,
     });

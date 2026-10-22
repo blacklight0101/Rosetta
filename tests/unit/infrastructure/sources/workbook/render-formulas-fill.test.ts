@@ -58,12 +58,12 @@ it('RF-152 writes a region of 499 equal relative formulas as one formula line', 
   );
 });
 
-it('RF-152 shows two example cells with their cached values after the formula', () => {
+it('RF-152 shows the next two cells as examples with their cached values after the formula', () => {
   const content = render(column('B', 2, 500, (row) => `A${String(row)}*2`));
 
   const lines = linesOf(content);
   const at = lines.findIndex((line) => line.startsWith('B2 = '));
-  expect(lines.slice(at + 1, at + 3)).toEqual(['B251 (example) 2510', 'B500 (example) 5000']);
+  expect(lines.slice(at + 1, at + 3)).toEqual(['B3 (example) 30', 'B4 (example) 40']);
 });
 
 it('RF-152 falls under 10% of its old size for ten regions of 499 rows', () => {
@@ -90,10 +90,10 @@ it('RF-152 lists a cell with another formula apart and keeps the runs of the oth
   const content = render(cells);
 
   expect(formulaLines(content)).toEqual([
-    'B2 = A2*2    [499 cells: B2:B249, B251:B500; cached B2: 20]',
+    'B2 = A2*2    [498 cells: B2:B249, B251:B500; cached B2: 20]',
     'B250 = A250*3    [cached: 2500]',
   ]);
-  expect(linesOf(content)).toContain('## Region B2:B500 (500 formulas)');
+  expect(linesOf(content)).toContain('## Region B2:B500 (499 formulas)');
 });
 
 it('RF-152 names every distinct formula of a region once', () => {
@@ -163,8 +163,8 @@ it('P3-94 reads the cached results of the first and the example cells of a folde
 
   expect(row?.cached.map((value) => [value.address, value.text])).toEqual([
     ['B2', '20'],
-    ['B251', '2510'],
-    ['B500', '5000'],
+    ['B3', '30'],
+    ['B4', '40'],
   ]);
 });
 
@@ -179,4 +179,11 @@ it('P3-94 reads a folded region next to an irregular cell as two rows', () => {
     ['B2:B9, B11:B50', 48, 'A2*2'],
     ['B10', 1, 'A10*9'],
   ]);
+});
+
+it('RF-152 keeps a group of three equal formulas cell by cell, as the examples would show them all', () => {
+  const content = render(column('B', 2, 4, (row) => `A${String(row)}*2`));
+
+  expect(formulaLines(content)).toHaveLength(3);
+  expect(content).not.toContain('(example)');
 });
