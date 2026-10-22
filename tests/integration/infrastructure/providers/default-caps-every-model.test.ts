@@ -105,10 +105,12 @@ async function refusedOf(entry: ModelList['models'][number], role: AgentRole, co
   return refused;
 }
 
-// The models whose default calls the guard still refuses with the default run cap, because one call
-// at their price (output at 20 to 50 USD a million) is a large part of 0.50 USD: they are listed so
-// that a change in either direction is seen, and the owner decides what a project on them does
-// (Q-57). Every other model of the list passes.
+// DEC-159, Q-57: a listed model whose default first-call reservations do not fit the default caps
+// (0.50 USD a run, 1.00 USD a user day) is refused cleanly with CapReached; that is accepted
+// behaviour, and the start-page warning is the follow-up P3-96. These lists are the contract: the
+// tests compare them with the real guard in both directions, so a model that fits but is listed, or
+// is refused but not listed, fails and the list cannot drift. The dearest "pro" models are not in
+// prices/models.yaml, so they are not covered here.
 const readerRefused = [
   'claude-opus-5-5',
   'claude-fable-5-1',
@@ -128,11 +130,20 @@ async function refusedModels(role: AgentRole, count: number): Promise<string[]> 
 }
 
 describe('the default caps and every model of the shipped list', () => {
-  it('RF-422 Q-57 the default four parallel readers pass the budget guard on every listed model but these', async () => {
+  it('DEC-159 Q-57 the models the task names fit the default caps for readers and planner', () => {
+    const named = ['claude-sonnet-5-5', 'claude-haiku-5-5', 'gpt-5-nano', 'gpt-5-mini'];
+    for (const name of named) {
+      expect(readerRefused).not.toContain(name);
+      expect(plannerRefused).not.toContain(name);
+      expect(list.models.map((entry) => entry.model)).toContain(name);
+    }
+  });
+
+  it('RF-422 Q-57 the default four parallel readers pass the budget guard on every listed model except those named in DEC-159', async () => {
     expect(await refusedModels('reader', 4)).toEqual(readerRefused);
   });
 
-  it('RF-422 Q-57 the first planner call passes the budget guard on every listed model but these', async () => {
+  it('RF-422 Q-57 the first planner call passes the budget guard on every listed model except those named in DEC-159', async () => {
     expect(await refusedModels('planner', 1)).toEqual(plannerRefused);
   });
 
