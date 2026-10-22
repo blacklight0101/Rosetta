@@ -102,9 +102,9 @@ describe('alignRequirements: what stays as it is', () => {
     const content = aligned([task, other], { requirements: only });
 
     expect(content.tasks[0]?.requirements).toEqual(['REQ-004']);
-    expect(content.requirementNotes?.filter((each) => each.task === 'T-001')).toEqual([
-      { kind: 'unmatched', task: 'T-001', requirement: 'REQ-004', kept: 1 },
-    ]);
+    expect(
+      content.requirementNotes?.filter((each) => 'task' in each && each.task === 'T-001'),
+    ).toEqual([{ kind: 'unmatched', task: 'T-001', requirement: 'REQ-004', kept: 1 }]);
   });
 });
 
@@ -132,7 +132,9 @@ describe('alignRequirements: a requirement no item is built on', () => {
     const content = aligned([task, other], { requirements: withRule });
 
     expect(content.tasks[0]?.requirements).toEqual(['REQ-001', 'REQ-005']);
-    expect(content.requirementNotes?.filter((each) => each.task === 'T-001')).toEqual([
+    expect(
+      content.requirementNotes?.filter((each) => 'task' in each && each.task === 'T-001'),
+    ).toEqual([
       { kind: 'added', task: 'T-001', requirement: 'REQ-001' },
       { kind: 'removed', task: 'T-001', requirement: 'REQ-004' },
     ]);
@@ -191,7 +193,9 @@ describe('alignRequirements: a requirement is taken off only where another card 
     const content = aligned([task, others], { requirements: none });
 
     expect(content.tasks[0]?.requirements).toEqual(['REQ-003', 'REQ-004']);
-    expect(content.requirementNotes?.filter((each) => each.task === 'T-001')).toEqual([
+    expect(
+      content.requirementNotes?.filter((each) => 'task' in each && each.task === 'T-001'),
+    ).toEqual([
       { kind: 'unmatched', task: 'T-001', requirement: 'REQ-003', kept: 2 },
       { kind: 'unmatched', task: 'T-001', requirement: 'REQ-004', kept: 2 },
     ]);

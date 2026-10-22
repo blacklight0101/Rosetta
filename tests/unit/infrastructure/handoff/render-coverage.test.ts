@@ -191,7 +191,7 @@ describe('checks.md: the requirements of the task cards', () => {
       'T-008 gained REQ-011: its source cards are behind what the task builds.',
     );
     expect(checks).toContain(
-      'T-008 lost REQ-012: its source cards share nothing with what the task builds.',
+      'T-008 lost REQ-012: its source cards share nothing with what the task builds, and another card builds an item behind them.',
     );
     expect(checks).toContain(
       'T-009 keeps REQ-013 although its source cards share nothing with what the task builds: it is the only requirement of the card.',

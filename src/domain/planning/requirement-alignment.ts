@@ -7,9 +7,9 @@ import type { RequirementNote } from './requirement-notes.js';
 // for every screen card, in the evaluation of 2026-10-21), while the coverage links name the items
 // by id, which code checks. So once the cards are linked, a card that builds an item gets every
 // requirement that cites a source card of that item, and loses the ones that cite none of the
-// source cards of what it builds but cite one behind another item (so another card has them). A
-// requirement that cites only cards no item is built on (a rule, a question) has no other card to
-// go to, so it is never taken off. A card that builds nothing, and an item with no source card,
+// source cards of what it builds but cite one behind an item another card builds. A requirement
+// that no other card builds an item behind (it cites only a rule or a question, or an item nobody
+// builds) has no other card to go to, so it is never taken off (DEC-160). A card that builds nothing, and an item with no source card,
 // change nothing; the last requirement of a card is never taken off. Every change is a note.
 
 type Sources = ReadonlyMap<string, ReadonlySet<string>>;
@@ -47,21 +47,31 @@ interface Aligned {
   readonly notes: readonly RequirementNote[];
 }
 
+/** The source cards behind what the given task cards build. */
+function cardsBehind(tasks: readonly PlanTask[], sources: Sources): Set<string> {
+  return new Set(
+    tasks.flatMap((each) => each.builds.flatMap((id) => [...(sources.get(id) ?? [])])),
+  );
+}
+
 function alignTask(task: PlanTask, plan: PlanContent, sources: Sources): Aligned {
-  const behind = new Set(task.builds.flatMap((id) => [...(sources.get(id) ?? [])]));
+  const behind = cardsBehind([task], sources);
   if (behind.size === 0) return { task, notes: [] };
-  const anywhere = new Set([...sources.values()].flatMap((cards) => [...cards]));
+  const elsewhere = cardsBehind(
+    plan.tasks.filter((each) => each.id !== task.id),
+    sources,
+  );
   const wanted = plan.requirements
     .filter((each) => each.sources.some((card) => behind.has(card)))
     .map((each) => each.id);
-  // Listed by the card and behind no item of the package: no other card can have it.
-  const homeless = plan.requirements
+  // Listed by the card, and no other card builds an item behind it: it has nowhere else to go.
+  const stranded = plan.requirements
     .filter((each) => task.requirements.includes(each.id))
-    .filter((each) => !each.sources.some((card) => anywhere.has(card)))
+    .filter((each) => !each.sources.some((card) => elsewhere.has(card)))
     .map((each) => each.id);
   const kept = plan.requirements
     .map((each) => each.id)
-    .filter((id) => wanted.includes(id) || homeless.includes(id));
+    .filter((id) => wanted.includes(id) || stranded.includes(id));
   const removed = task.requirements.filter((id) => !kept.includes(id));
   const note = (kind: 'added' | 'removed', requirement: string): RequirementNote => ({
     ...{ kind, task: task.id, requirement },
