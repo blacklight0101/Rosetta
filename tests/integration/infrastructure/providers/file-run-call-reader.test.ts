@@ -183,7 +183,7 @@ describe('FileRunCallReader error text', () => {
     await recorder.record({ ...sampleRecord, status: 'failed', errorMessage: 'bad_request: no' });
     await recorder.record({ ...sampleRecord, callId: `${runKey}#2` });
 
-    const calls = await readerOf().calls(scopeOf(amy));
+    const { calls } = await readerOf().log(scopeOf(amy));
 
     expect(calls[0]?.errorMessage).toBe('bad_request: no');
     expect(calls[1]).not.toHaveProperty('errorMessage');
