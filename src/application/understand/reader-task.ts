@@ -116,6 +116,7 @@ function extrasOf(task: ReaderTask, attempt?: TaskAttempt) {
     ...(task.rejected === undefined ? {} : { rejected: task.rejected }),
     ...(task.parentCards === undefined ? {} : { parentCards: task.parentCards }),
     ...(retryNote === undefined ? {} : { retryNote }),
+    ...(task.unreadRanges === undefined ? {} : { unreadRanges: task.unreadRanges }),
   };
 }
 

@@ -18,6 +18,7 @@ import type { AgentToolSet } from './agent-tool-set.js';
 import type { AgentTaskContext, AgentTaskSettings } from './agent-task-settings.js';
 import { ReadGate } from './read-gate.js';
 import { retryNoteMessage, type RetryNote } from './retry-note.js';
+import { withUnreadRanges, type UnreadRanges } from './unread-ranges-note.js';
 import { refusalFor } from './refusal.js';
 import {
   readerSystemPrompt,
@@ -53,6 +54,7 @@ export interface AgentTaskRequest {
   readonly parentCards?: string;
   /** RST-1303: a retry of an area that ended on a repeated call: a note added to the task message. */
   readonly retryNote?: RetryNote;
+  readonly unreadRanges?: readonly UnreadRanges[];
   /** P3-105: the rendered workbook folders of the snapshot, for the rule-citation question. */
   readonly workbookFolders?: readonly string[] | undefined;
   /** Q-55: told why an answer was refused, accepted for lack of room, kept or cut (never its text). */
@@ -91,7 +93,8 @@ class AgentTask {
     const deepen = { rejected: block('cards', rejected), parentCards: block('cards', parentCards) };
     const owner = block('owner_answers', answers);
     const content = readerTaskMessage(prompts, tools.areaOverview(), owner, deepen);
-    this.add({ role: 'user', content: await this.withRetryNote(content) });
+    const noted = withUnreadRanges(content, this.request);
+    this.add({ role: 'user', content: await this.withRetryNote(noted) });
     return this.result(await this.explore());
   }
 

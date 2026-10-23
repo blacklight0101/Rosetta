@@ -120,8 +120,9 @@ describe('RF-209 the estimate before a Deepen', () => {
       reread: 1,
       outOfScope: 1,
       failedAreas: 0,
-      unreadFiles: 1,
-      unreadTokens: 300,
+      // EV-04: files read in part count with the tokens of their unread lines.
+      unreadFiles: 3,
+      unreadTokens: 446,
     });
     expect(estimate.roles.map((role) => role.role)).toEqual(['reader', 'verifier', 'summariser']);
     expect(estimate).toMatchObject({ maxRounds: 3, coveragePass: true, currency: 'USD' });

@@ -34,7 +34,8 @@ describe('planRound failed areas', () => {
   it('RF-209 offers an area that failed although all its files were opened, with the files not read in full', () => {
     const plan = planRound(input());
 
-    expect(plan.gaps).toEqual([]);
+    // EV-04: the partly read files are also gaps; the failed area is read whole, so no task of their own.
+    expect(plan.gaps.map((gap) => gap.path)).toEqual(['src/b.cs', 'src/c.cs']);
     expect(plan.failedAreas).toEqual([{ area: 'src', failure, unread: ['src/b.cs', 'src/c.cs'] }]);
     expect(isEmptyRound(plan)).toBe(false);
   });
@@ -54,7 +55,7 @@ describe('planRound failed areas', () => {
   });
 
   it('RF-209 offers an area once per Deepen: one that was already read again is not offered again', () => {
-    const plan = planRound(input({ retriedAreas: new Set(['src']) }));
+    const plan = planRound(input({ retriedAreas: new Set(['src']), coveragePass: false }));
 
     expect(plan.failedAreas).toEqual([]);
     expect(isEmptyRound(plan)).toBe(true);
