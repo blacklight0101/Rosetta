@@ -54,6 +54,7 @@ export interface MarkdownEscaper {
   inline(text: string): string;
   block(text: string): string;
   label(text: string): string;
+  url(text: string): string;
 }
 
 export function markdownEscaper(masker: TextMasker): MarkdownEscaper {
@@ -62,5 +63,6 @@ export function markdownEscaper(masker: TextMasker): MarkdownEscaper {
     inline: (text) => escapeInline(masked(text)),
     block: (text) => escapeBlock(masked(text)),
     label: (text) => escapeLabel(masked(text)),
+    url: (text) => escapeInline(masked(text)),
   };
 }
