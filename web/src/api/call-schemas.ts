@@ -32,6 +32,8 @@ const callSchema = z.object({
   finishReason: z.string(),
   status: z.enum(CALL_STATUSES),
   errorCode: z.string().optional(),
+  /** P5-21: the provider's error type and message, masked and cut at 500 characters. */
+  errorMessage: z.string().optional(),
   httpStatus: count.optional(),
   ollama: z
     .looseObject({

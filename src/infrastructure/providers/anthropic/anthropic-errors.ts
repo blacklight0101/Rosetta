@@ -5,6 +5,7 @@ import {
   APIUserAbortError,
 } from '@anthropic-ai/sdk';
 import { ERROR_CODES, type ErrorCode } from '../../../domain/errors/codes.js';
+import { networkErrorText, providerErrorText, withProviderError } from '../error-text.js';
 import { retryHintMs } from '../retry-backoff.js';
 import type { AttemptFailed } from '../retrying-call.js';
 
@@ -18,6 +19,8 @@ interface FailedStatus {
   readonly status: number;
   readonly requestId?: string | undefined;
   readonly retryAfterMs?: number | undefined;
+  /** RF-408: the error type and message Anthropic sent, kept in the call record and the log. */
+  readonly text?: string | undefined;
 }
 
 export interface ThrownContext {
@@ -75,12 +78,25 @@ function permanent(response: FailedStatus, model: string): AttemptFailed | undef
 }
 
 function failedStatus(response: FailedStatus, model: string): AttemptFailed {
+  return withProviderError(classified(response, model), response.text);
+}
+
+function classified(response: FailedStatus, model: string): AttemptFailed {
   const { status } = response;
   const stop = permanent(response, model);
   if (stop !== undefined) return stop;
   if (status === 429) return failed(ERROR_CODES.providerRateLimited, response, true);
   if (status === 408) return failed(ERROR_CODES.providerTimeout, response, true);
   return failed(ERROR_CODES.providerCallFailed, response, status >= 500);
+}
+
+/** RF-408: the type and message of the error in the body Anthropic answered with. */
+function bodyText(error: object): string | undefined {
+  const body: unknown = Reflect.get(error, 'error');
+  if (typeof body !== 'object' || body === null) return undefined;
+  const inner: unknown = Reflect.get(body, 'error');
+  const detail = typeof inner === 'object' && inner !== null ? inner : body;
+  return providerErrorText(Reflect.get(detail, 'type'), Reflect.get(detail, 'message'));
 }
 
 /** The HTTP side of an SDK status error, read field by field (the SDK types them loosely). */
@@ -91,6 +107,7 @@ function statusOf(error: object): FailedStatus | undefined {
   const known = headers instanceof Headers ? headers : new Headers();
   return {
     status,
+    text: bodyText(error),
     requestId: known.get('request-id') ?? undefined,
     retryAfterMs: retryHintMs(known),
   };
@@ -127,9 +144,12 @@ export function failedThrown(error: unknown, context: ThrownContext, model: stri
       : undefined;
   if (response !== undefined) return failedStatus(response, model);
   // A failed connection: the SDK error holds no key, only the transport failure.
-  return {
-    failure: { code: ERROR_CODES.providerCallFailed },
-    retryable: true,
-    cause: safeCause(error),
-  };
+  return withProviderError(
+    {
+      failure: { code: ERROR_CODES.providerCallFailed },
+      retryable: true,
+      cause: safeCause(error),
+    },
+    networkErrorText(error),
+  );
 }

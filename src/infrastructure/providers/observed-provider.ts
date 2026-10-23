@@ -13,7 +13,10 @@ import type {
   ProviderCallRecorder,
   TranscriptEntry,
 } from '../../application/ports/provider-call-recorder.js';
+import type { TextMasker } from '../guards/secret-masker.js';
 import { CallAttempts, failureOf, type CallPricer, type ProviderTarget } from './call-attempts.js';
+import { boundedErrorText } from './error-text.js';
+import { ProviderCallError } from './provider-call-error.js';
 import { laterRef } from './provider-call-lines.js';
 
 export interface ObservedProviderOptions {
@@ -25,6 +28,8 @@ export interface ObservedProviderOptions {
   readonly priceCall: CallPricer;
   /** The project setting `output.transcripts` (DEC-43). */
   readonly transcripts: boolean;
+  /** RF-408: masks the provider's error text before a record or a log entry keeps it. */
+  readonly masker: TextMasker;
 }
 
 const spanIdLength = 16;
@@ -72,7 +77,8 @@ export class ObservedProvider implements LlmProvider {
         attempts.started();
         observer?.attemptStarted();
       },
-      attemptRetried: async (failure: LlmAttemptFailure) => {
+      attemptRetried: async (raw: LlmAttemptFailure) => {
+        const failure = this.maskedFailure(raw);
         await recorder.record(attempts.failed('retried', failure, this.costOf(request, failure)));
         await observer?.attemptRetried(failure);
       },
@@ -81,7 +87,8 @@ export class ObservedProvider implements LlmProvider {
     try {
       response = await inner.complete(request, watcher);
     } catch (error) {
-      const failure = failureOf(error);
+      const failure = this.maskedFailure(failureOf(error));
+      if (error instanceof ProviderCallError) error.providerError = failure.providerError;
       await recorder.record(attempts.failed('failed', failure, this.costOf(request, failure)));
       throw error;
     }
@@ -94,6 +101,16 @@ export class ObservedProvider implements LlmProvider {
     await this.transcribeAnswer(request, response);
     await recorder.record(record);
     return response;
+  }
+
+  /** RF-408: the failure with its provider error text masked and cut, or without it. */
+  private maskedFailure(failure: LlmAttemptFailure): LlmAttemptFailure {
+    const { providerError, ...rest } = failure;
+    const text =
+      providerError === undefined
+        ? undefined
+        : boundedErrorText(providerError, this.options.masker);
+    return text === undefined ? rest : { ...rest, providerError: text };
   }
 
   /** Q-60: the price of the usage a failed attempt is metered with, when it has one. */

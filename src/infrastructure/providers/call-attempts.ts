@@ -53,6 +53,7 @@ export function failureOf(error: unknown): LlmAttemptFailure {
       code: error.code,
       ...(error.httpStatus === undefined ? {} : { httpStatus: error.httpStatus }),
       ...(error.requestId === undefined ? {} : { requestId: error.requestId }),
+      ...(error.providerError === undefined ? {} : { providerError: error.providerError }),
       ...(error.usage === undefined ? {} : { usage: error.usage }),
     };
   }
@@ -95,6 +96,7 @@ export class CallAttempts {
       finishReason: 'error',
       status,
       errorCode: failure.code,
+      ...(failure.providerError === undefined ? {} : { errorMessage: failure.providerError }),
       ...(failure.httpStatus === undefined ? {} : { httpStatus: failure.httpStatus }),
       ...this.link(),
     };

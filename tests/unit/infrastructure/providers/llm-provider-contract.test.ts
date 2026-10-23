@@ -31,6 +31,7 @@ llmProviderContract('ObservedProvider around FakeProvider', (scenario) =>
       target: { provider: 'local-fake', kind: 'fake', endpointHost: 'fake.invalid' },
       priceCall: () => microUsd(0n),
       transcripts: true,
+      masker: new SecretMasker(),
     }),
   ),
 );

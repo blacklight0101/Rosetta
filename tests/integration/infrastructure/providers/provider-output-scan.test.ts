@@ -80,6 +80,7 @@ describe('provider output scan', () => {
       target: { provider: 'local-fake', kind: 'fake', endpointHost: 'fake.invalid' },
       priceCall: () => microUsd(0n),
       transcripts: true,
+      masker: new SecretMasker(),
     });
     // One agent task for every case: each new task costs a transcript file of its own, the slowest
     // disk operation of the call log on Windows (P1-141). The masking is per line, so it is still
@@ -144,6 +145,7 @@ async function callWithConfig(runDir: string): Promise<void> {
     target: { provider: 'local-fake', kind: 'fake', endpointHost: 'fake.invalid' },
     priceCall: () => microUsd(0n),
     transcripts: true,
+    masker: new SecretMasker(),
   });
   const request = contractRequest();
   await provider.complete({

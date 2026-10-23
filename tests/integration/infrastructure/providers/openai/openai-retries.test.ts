@@ -58,7 +58,9 @@ describe('OpenAiProvider retries temporary failures', () => {
     const response = await provider.complete(contractRequest(), attempts);
 
     expect(response.finishReason).toBe('stop');
-    expect(attempts.retried).toEqual([{ code: ERROR_CODES.providerRateLimited, httpStatus: 429 }]);
+    expect(attempts.retried).toMatchObject([
+      { code: ERROR_CODES.providerRateLimited, httpStatus: 429 },
+    ]);
     expect(waits).toEqual([750]);
   });
 
@@ -68,7 +70,7 @@ describe('OpenAiProvider retries temporary failures', () => {
 
     await provider.complete(contractRequest(), attempts);
 
-    expect(attempts.retried).toEqual([
+    expect(attempts.retried).toMatchObject([
       {
         code: ERROR_CODES.providerCallFailed,
         httpStatus: 500,

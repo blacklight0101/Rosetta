@@ -31,6 +31,11 @@ function StatusCell({ call }: { readonly call: CallRow }): JSX.Element {
       {call.errorCode === undefined ? null : (
         <span class="rst-mono rst-p137-code"> {call.errorCode}</span>
       )}
+      {call.errorMessage === undefined ? null : (
+        <div class="rst-table__sub" data-testid="call-error-message">
+          {call.errorMessage}
+        </div>
+      )}
     </td>
   );
 }

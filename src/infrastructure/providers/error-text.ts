@@ -25,7 +25,10 @@ export function providerErrorText(type: unknown, message: unknown): string | und
 
 /** The error name of a failure with no answer from the provider (a reset, a refused connection). */
 export function networkErrorText(error: unknown): string | undefined {
-  return error instanceof Error && error.name !== '' ? error.name : undefined;
+  if (!(error instanceof Error)) return undefined;
+  // An SDK error class often keeps the name `Error`; its class name tells more.
+  const name = error.name === 'Error' ? error.constructor.name : error.name;
+  return name === '' ? undefined : name;
 }
 
 /**

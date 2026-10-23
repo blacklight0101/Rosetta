@@ -58,6 +58,7 @@ export function guardedProvider(parts: GuardedParts): LlmProvider {
     target,
     priceCall: pricerFor(pricing, { kind: target.kind, keySource }),
     transcripts: parts.transcripts,
+    masker,
   });
   const egress = new EgressGuard({
     inner: observed,

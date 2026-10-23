@@ -1,4 +1,5 @@
 import { ERROR_CODES } from '../../../domain/errors/codes.js';
+import { networkErrorText, providerErrorText, withProviderError } from '../error-text.js';
 import { retryAfterMs } from '../retry-backoff.js';
 import type { AttemptFailed } from '../retrying-call.js';
 
@@ -35,6 +36,13 @@ export function modelMissing(model: string, httpStatus?: number): AttemptFailed 
 }
 
 export function failedStatus(response: FailedResponse, model: string): AttemptFailed {
+  return withProviderError(
+    classified(response, model),
+    providerErrorText(undefined, response.error),
+  );
+}
+
+function classified(response: FailedResponse, model: string): AttemptFailed {
   const { status, error } = response;
   const hint = retryAfterMs(response.retryAfter);
   if (status === 404 && error.includes('not found')) return modelMissing(model, status);
@@ -80,12 +88,20 @@ export function failedThrown(error: unknown, context: ThrownContext): AttemptFai
     (code) => typeof code === 'string' && unreachableCodes.has(code),
   );
   if (unreachable) {
-    return {
-      failure: { code: ERROR_CODES.ollamaUnreachable },
-      retryable: false,
-      message: `Ollama is not reachable at ${context.host}. Start it with: ollama serve (or open the Ollama app), and check ROSETTA_OLLAMA_URL.`,
-      cause: error,
-    };
+    return withProviderError(
+      {
+        failure: { code: ERROR_CODES.ollamaUnreachable },
+        retryable: false,
+        message: `Ollama is not reachable at ${context.host}. Start it with: ollama serve (or open the Ollama app), and check ROSETTA_OLLAMA_URL.`,
+        cause: error,
+      },
+      networkErrorText(error),
+    );
   }
-  return { failure: { code: ERROR_CODES.providerCallFailed }, retryable: true, cause: error };
+  const failed = {
+    failure: { code: ERROR_CODES.providerCallFailed },
+    retryable: true,
+    cause: error,
+  };
+  return withProviderError(failed, networkErrorText(error));
 }
