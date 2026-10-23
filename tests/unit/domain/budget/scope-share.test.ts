@@ -60,6 +60,20 @@ describe('the reader share of a scope cap', () => {
 
     expect(scopeShare(caps)).toEqual([]);
   });
+});
+
+describe('the reader share of a scope cap on a resume', () => {
+  it('RF-429 RF-006 P5-18 a resume adds the readers own earlier spend in the run to the share', () => {
+    const caps = capsFor('server', {
+      ...inputs,
+      scopeSpent: { 'user-day': 200_000n },
+      readerRunMicros: 150_000n,
+    });
+
+    expect(scopeShare(caps)).toEqual([
+      { kind: 'role-cost', limit: 150_000n + (800_000n * share) / 100n, source: 'reserve' },
+    ]);
+  });
 
   it('RF-429 P5-18 a scope with nothing left gives a zero share, so the readers cannot start', () => {
     const caps = capsFor('server', { ...inputs, scopeSpent: { 'user-day': 1_500_000n } });

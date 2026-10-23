@@ -62,6 +62,8 @@ export interface CapInputs {
   readonly verifier?: boolean;
   /** P5-18: the spend of the scope caps at run start, so the readers' share can be taken of their room. */
   readonly scopeSpent?: ScopeSpent;
+  /** P5-18: what this run's readers spent in an earlier session (a resume); 0 on a first start. */
+  readonly readerRunMicros?: bigint;
   readonly server: ServerCaps;
   readonly account: AccountCaps;
 }
@@ -111,7 +113,11 @@ function sharePercentOf(inputs: CapInputs): number | undefined {
  * run cost cap is the smallest gets no such cap and behaves as before. Role cap, so it stops the
  * readers only; the guard still refuses any call over any cap (DEC-112).
  */
-function scopeShareCaps(keys: readonly UsageCap[], spent: ScopeSpent): readonly UsageCap[] {
+function scopeShareCaps(
+  keys: readonly UsageCap[],
+  spent: ScopeSpent,
+  earlier: bigint,
+): readonly UsageCap[] {
   const runCost = keys.find((cap) => cap.kind === 'run-cost');
   let room: bigint | undefined;
   for (const cap of keys) {
@@ -124,7 +130,8 @@ function scopeShareCaps(keys: readonly UsageCap[], spent: ScopeSpent): readonly 
   return [
     {
       kind: 'role-cost',
-      limit: (room * BigInt(READER_SHARE_PERCENT)) / 100n,
+      // A role cap counts the run's whole reader spend, so a resume adds what it already used.
+      limit: earlier + (room * BigInt(READER_SHARE_PERCENT)) / 100n,
       source: 'reserve',
     },
   ];
@@ -144,7 +151,7 @@ export function capsFor(keySource: KeySource, inputs: CapInputs): readonly Usage
     inputs.scopeSpent !== undefined &&
     !own.some((cap) => cap.kind === 'role-cost')
   ) {
-    shares.push(...scopeShareCaps(keys, inputs.scopeSpent));
+    shares.push(...scopeShareCaps(keys, inputs.scopeSpent, inputs.readerRunMicros ?? 0n));
   }
   return [...keys, ...own, ...shares];
 }

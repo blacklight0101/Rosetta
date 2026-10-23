@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import type { ServerCaps } from '../../../src/domain/budget/budget.js';
 import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
-import { serverKeyText } from '../../support/provider-factory-harness.js';
+import { serverKeyText, userKeyText } from '../../support/provider-factory-harness.js';
 import { useTempRoot } from '../../support/temp-root.js';
 import { readJson, UNDERSTAND_TIMEOUT } from '../../support/understand-full-run.js';
 import {
@@ -38,13 +38,17 @@ const openRoles = understandSettings((settings) => ({
 }));
 
 async function underScope(caps: Partial<ServerCaps>, priorSpendMicros?: bigint) {
+  const prior =
+    priorSpendMicros === undefined
+      ? {}
+      : { priorSpend: { micros: priorSpendMicros, keySource: 'server' as const } };
   const h = await createUnderstandHarness({
     dataDir: temp.path,
     recording: 'understand-scope-cap.json',
     verifierRecording: 'verifier-all-supported.json',
     settings: openRoles,
     openAiKey: { of: 'server', key: serverKeyText },
-    ...(priorSpendMicros === undefined ? {} : { priorSpendMicros }),
+    ...prior,
     serverCaps: {
       runMicros: roomy,
       userDayMicros: roomy,
@@ -116,3 +120,97 @@ describe.each(SCOPES)(
     });
   },
 );
+
+describe(
+  'an understand run near a scope cap that part of is already spent',
+  UNDERSTAND_TIMEOUT,
+  () => {
+    it('RF-429 P5-18 the share is of what the day has left at run start, not of the whole cap', async () => {
+      const earlier = 100_000n;
+      const { h, run } = await underScope({ userDayMicros: SCOPE + earlier }, earlier);
+
+      expect(run.endState).toBe('CapReached');
+      const manifest = await h.manifestOf(run);
+      expect(manifest.agentTasks.map((task) => [task.area, task.state])).toEqual([
+        ['Catalog', 'Done'],
+        ['Services', 'StoppedByCap'],
+      ]);
+      const capEvents = (await h.eventsOf(run)).filter(
+        (event) => event.type === 'budget.capReached',
+      );
+      expect(capEvents.map((event) => event.data)).toMatchObject([
+        { scope: 'role-cost', role: 'reader', capSource: 'reserve' },
+      ]);
+      expect(await judged(h, run)).toEqual([expect.objectContaining({ Supported: 1 })]);
+    });
+  },
+);
+
+describe('an understand run on the user own key near the own daily cap', UNDERSTAND_TIMEOUT, () => {
+  it('RF-429 P5-18 the readers stop at their share of what the own-day cap has left', async () => {
+    const earlier = 100_000n;
+    const h = await createUnderstandHarness({
+      dataDir: temp.path,
+      recording: 'understand-scope-cap.json',
+      verifierRecording: 'verifier-all-supported.json',
+      settings: openRoles,
+      openAiKey: { of: 'user', key: userKeyText },
+      ownDailyCapMicros: SCOPE + earlier,
+      priorSpend: { micros: earlier, keySource: 'user' },
+    });
+    await h.scan();
+
+    const run = await h.understand({ areas: ['Catalog', 'Services'], cloudConsent: true });
+
+    expect(run.endState).toBe('CapReached');
+    const capEvents = (await h.eventsOf(run)).filter((event) => event.type === 'budget.capReached');
+    expect(capEvents.map((event) => event.data)).toMatchObject([
+      { scope: 'role-cost', role: 'reader', capSource: 'reserve' },
+    ]);
+    expect(await judged(h, run)).toEqual([expect.objectContaining({ Supported: 1 })]);
+  });
+});
+
+describe('a resumed understand run near a scope cap', UNDERSTAND_TIMEOUT, () => {
+  it('RF-429 RF-006 P5-18 the next day the readers go on: their earlier spend does not count against the new share', async () => {
+    const { h, run } = await underScope({ userDayMicros: SCOPE });
+    expect(run.endState).toBe('CapReached');
+    h.stores.clock.advance(24 * 60 * 60 * 1000);
+
+    const resumed = await h.resume(run);
+
+    expect(resumed.ok).toBe(true);
+    const manifest = await h.manifestOf(run);
+    expect(manifest.agentTasks.map((task) => [task.area, task.state])).toEqual([
+      ['Catalog', 'Done'],
+      ['Services', 'Done'],
+    ]);
+    expect(await judged(h, run)).toEqual([expect.objectContaining({ Unverified: 0 })]);
+  });
+});
+
+describe('an understand run whose run cap binds', UNDERSTAND_TIMEOUT, () => {
+  it('RF-429 P5-18 a scope cap far above the run cap adds no cost share: the readers stop only by the token share', async () => {
+    const h = await createUnderstandHarness({
+      dataDir: temp.path,
+      recording: 'understand-cap.json',
+      verifierRecording: 'verifier-all-supported.json',
+      settings: understandSettings((settings) => ({
+        ...settings,
+        roles: openRoles.roles,
+        budget: { ...settings.budget, run: { maxCostMicros: 50_000_000, maxTokens: 293_000 } },
+      })),
+      openAiKey: { of: 'server', key: serverKeyText },
+      serverCaps: { runMicros: roomy, userDayMicros: roomy, serverMonthMicros: roomy },
+    });
+    await h.scan();
+
+    const run = await h.understand({ areas: ['Catalog', 'Services'], cloudConsent: true });
+
+    expect(run.endState).toBe('CapReached');
+    const capEvents = (await h.eventsOf(run)).filter((event) => event.type === 'budget.capReached');
+    expect(capEvents.map((event) => event.data)).toMatchObject([
+      { scope: 'role-tokens', role: 'reader', capSource: 'reserve' },
+    ]);
+  });
+});
