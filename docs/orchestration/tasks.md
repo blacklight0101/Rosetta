@@ -15,8 +15,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
 | P3 Report and plan      | 131     | 16        | 111        | 4         | 0                  | 54      | 73      | 4      | 87         | 0         |
-| P5 Polish (G-10)        | 23      | 8         | 15         | 0         | 0                  | 13      | 10      | 0      | 0          | 0         |
-| **Total**               | **378** | **98**    | **251**    | **29**    | **0**              | **187** | **177** | **14** | **228**    | **0**     |
+| P5 Polish (G-10)        | 27      | 8         | 19         | 0         | 0                  | 14      | 13      | 0      | 0          | 0         |
+| **Total**               | **382** | **98**    | **255**    | **29**    | **0**              | **188** | **180** | **14** | **228**    | **0**     |
 
 ## Conventions for every card
 
@@ -5381,5 +5381,73 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: RNF-010, design system; app sweep 2026-10-23.
+
+---
+
+### P5-24 - Security controls of the plan are kept, not left out
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the plan answer schema (`src/application/plan/plan-answer.ts`, the `technical.security` control with `invariant` and `alternative`, `src/domain/planning/technical-content.ts`), the planner prompt (`prompts/planner/package.v7.md`), the unreadable-item rule of P3-126, the TRD security section (`handoff-trd-security.ts`). Owner review of a real package (eShopModernizing, Haiku 5.5, 2026-10-23): both `technical.security` items were left out for the field "alternative", so the package has no security controls although the legacy code hard-codes credentials and exposes the database.
+- **Do**: find from recorded answers why the field is refused (a null, a list, an over-long text or a missing key) and accept every shape the prompt allows with a safe reading: an empty, null or missing `alternative` or `invariant` reads as none; an over-long text is cut at its bound with a marker rather than dropping the control; a list of strings is joined. A security control is left out only when its name or approach is unreadable, and then checks.md says so as today. The prompt states the field shapes once, with an example of a control without an alternative.
+- **Review probes**: a recorded eShop-style answer whose two controls carry the field shapes found => both controls are kept in the TRD and in a task card; a control without `alternative` => kept; a control with an unreadable approach => still left out and listed in checks.md; mutation: restoring the strict field => the controls are dropped again.
+- **Behaviour to preserve**: P3-126 (an unreadable item is left out and listed), RF-601..RF-613, the masked secrets of RF-140..RF-149.
+- **Delivers**: the change, a recorded answer and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P3-126, RF-601; owner package review 2026-10-23.
+
+---
+
+### P5-25 - The chosen stack is checked for contradictions, and ADRs state context, options and sources
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the stack layers of the planning brief and the plan options catalogue (`/api/plan/catalogue`), the ADR writer of the package, the API contract rule ("no contract applies"), checks.md. Owner review of a real package (eShopModernizing, 2026-10-23): ADR-005 chooses ASP.NET Core Minimal APIs for the back end while ADR-006 chooses Razor Pages and the README says no API contract applies because Razor Pages is rendered by the server; nothing points out that a server-rendered front end needs no separate API back end, or that a Minimal API back end needs a contract. Each ADR is about 17 lines of boilerplate, lists no alternatives and says "Source cards: none".
+- **Do**: (1) a stack consistency check: a small, versioned rule table in the catalogue (for example a server-rendered front end with an API-only back end; an API back end without a contract; a data access choice the database does not support) flags each clash in checks.md and as an open question with the legacy-keeping default, and the README says the stack has an open clash; Rosetta never changes the owner's choice. (2) Each stack ADR states its context from the source cards (the legacy technology and the claims behind the layer), the options the catalogue offered with one line each, the choice, its consequences for the task cards, and the source cards it rests on; an ADR with no supporting card says why.
+- **Review probes**: the eShop brief (Razor Pages with Minimal APIs, no contract) => one clash in checks.md and one open question; a consistent brief => no clash; a stack ADR => lists the catalogue options and at least one source card when the cards name the legacy layer; mutation: removing the rule table entry => the clash is hidden.
+- **Behaviour to preserve**: RF-601..RF-613, the owner's stack choice is never changed, P5-08 shared card text.
+- **Delivers**: the change, the rule table, recordings and tests; RF text for the check.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-601..RF-613; owner package review 2026-10-23.
+
+---
+
+### P5-26 - Package files read cleanly as plain text, and open questions stay short
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the Markdown text escaping of the package and the cards (`src/infrastructure/cards/markdown-text.ts` and its callers), the link rendering (`handoff-links.ts`), the open questions writer. Owner review of a real package (eShopModernizing, 2026-10-23): text is escaped everywhere (`20261023\-143644\-understand`, `\(ADRs\)`, `non\-development`, `C\#`) and the source URL reads `https&#58;//github.com/...`; the files are meant to be read raw by people and agents. open-questions.md has 860 lines and 761 table rows, mostly the claims left out, burying the eight questions that need an answer.
+- **Do**: escape only what would change the Markdown meaning in its position (a leading `#`, `-`, `+` or digit-dot at line start, `|` inside a table cell, backticks, `*`/`_` runs that would start emphasis, `<`/`&` that would start HTML or an entity, `[`/`]` that would form a link); hyphens, parentheses, dots and `#` inside words stay plain; the source URL is written as a plain URL (keep RF-145/RF-507: untrusted text cannot inject HTML or links). open-questions.md lists the questions that need an answer first; the claims left out move to a grouped summary (counts per area and kind, with the 20 most important) and a full list in a separate file linked from it.
+- **Review probes**: the rendered package of the recorded eShop plan => no `\-`, `\(`, `\)`, `\.` or `&#58;` outside the positions above; a hostile claim text with `<script>`, `[x](javascript:...)`, a leading `#` and a table pipe => stays inert and renders as text; open-questions.md of that package => under 150 lines and starts with the brief and PRD questions; the full left-out list => holds every claim; mutation: escaping nothing => the hostile text forms a link.
+- **Behaviour to preserve**: RF-145, RF-507, RF-1013 (untrusted text rendered as text), RF-601..RF-613, P3-121 (the cap stop and claims never judged are stated).
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-145, RF-507, RF-601; owner package review 2026-10-23.
+
+---
+
+### P5-27 - Target flow diagrams map their steps and keep their order
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the target flow writer and diagram (`src/domain/diagrams/target-flow-diagram.ts`, `flow-sequence.ts`), the components of the target architecture, the legacy flow cards. Owner review of a real package (eShopModernizing, 2026-10-23): in FLOW-001 the trigger sentence is drawn as the first participant, the arrows jump from step 2 to step 5 because unmapped steps are skipped, and most steps read "not mapped" to a target component.
+- **Do**: the trigger is drawn as a note or an actor named for who or what starts the flow, not as a participant holding the sentence; every legacy step appears in order (an unmapped step is drawn on the nearest component with a marker, so no step number is skipped); each step is mapped to the target component whose responsibility or source cards cover the code it cites, and only a step with no such component reads "not mapped", with checks.md counting them.
+- **Review probes**: the recorded eShop FLOW-001 => an actor for the trigger, steps 1 to 5 in order, the routing and database steps mapped to their components; a flow whose every step maps => no marker; a step whose code no component covers => "not mapped" and counted in checks.md; the Mermaid => parses (existing diagram parse test); mutation: skipping unmapped steps again => the order probe fails.
+- **Behaviour to preserve**: RF-620..RF-627 (documentation set flows), the Mermaid parse guard, P5-08 shared card text.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-620..RF-627; owner package review 2026-10-23.
 
 ---
