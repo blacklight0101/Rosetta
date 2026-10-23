@@ -14,9 +14,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 125     | 16        | 105        | 4         | 0                  | 50      | 71      | 4      | 81         | 0         |
+| P3 Report and plan | 126 | 16 | 106 | 4 | 0 | 50 | 72 | 4 | 82 | 0 |
 | P5 Polish (G-10)        | 19      | 7         | 12         | 0         | 0                  | 11      | 8       | 0      | 0          | 0         |
-| **Total**               | **368** | **97**    | **242**    | **29**    | **0**              | **181** | **173** | **14** | **222**    | **0**     |
+| **Total** | **369** | **97** | **243** | **29** | **0** | **181** | **174** | **14** | **223** | **0** |
 
 ## Conventions for every card
 
@@ -4884,6 +4884,23 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: RF-209, RF-230; Haiku battery HB-06.
+
+---
+
+### P3-126 - Follow-up: one unreadable item of the plan answer no longer fails the whole plan
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: plan answer parsing (`src/application/plan/plan-answer.ts`: the answer schema, `technical` lists, `parsePlanAnswer`), P3-82 (gap call repaired once), P3-101 and P3-102 (Left out lists). Haiku 5.5 battery of 2026-10-23 on an uploaded legacy project: the planner answer was valid JSON with every top-level key, but two items of `technical.security` and both items of `technical.environments` did not match the schema, so the whole answer was refused (RST-1803, "no JSON object in it reads as a plan") after one call and the run failed with no package.
+- **Do**: (1) each item of the plan answer lists (requirements, components, decisions, entities, phases, risks and every `technical` list) is read on its own like task cards: an item that does not read is left out and listed in checks.md "Left out" with its list, position and the field that failed; (2) the answer is refused only when no requirement reads; (3) a refused answer gets one repair call that names the failing paths before the run fails (as the gap call does, P3-82).
+- **Review probes**: a recorded answer with two bad security items and two bad environment items writes a package and lists the four items in checks.md; an answer with no readable requirement is still refused; the repair call is made once; mutation: whole-answer parsing fails a test.
+- **Behaviour to preserve**: RF-601 schema; P3-101/P3-102 Left out format; Q-54 positions.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-601, RF-620..RF-627, P3-82, P3-101; Haiku battery 2026-10-23.
 
 ---
 
