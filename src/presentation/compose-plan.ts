@@ -33,6 +33,7 @@ import {
   loadCoveragePrompt,
   loadGapPrompt,
   loadGapRepairPrompt,
+  loadPlanRepairPrompt,
   loadPlannerPromptTexts,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
@@ -95,6 +96,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
     coveragePrompt: () => loadCoveragePrompt(promptsFolder),
     gapPrompt: () => loadGapPrompt(promptsFolder),
     gapRepairPrompt: () => loadGapRepairPrompt(promptsFolder),
+    planRepairPrompt: () => loadPlanRepairPrompt(promptsFolder),
     ids: parts.ids,
   });
 }

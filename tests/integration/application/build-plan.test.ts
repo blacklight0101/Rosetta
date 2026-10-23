@@ -48,9 +48,7 @@ beforeEach(async () => {
   h = await harness();
 });
 
-afterEach(async () => {
-  await rm(dataDir, { recursive: true, force: true });
-});
+afterEach(() => rm(dataDir, { recursive: true, force: true }));
 
 describe('BuildPlan: what the planner is sent', () => {
   it('RF-604 sends the planner only the supported claims and the answered questions', async () => {
@@ -153,6 +151,7 @@ describe('BuildPlan: the run manifest', () => {
       'planner/coverage.v1.md': { version: 'v1', sha256: await sha('coverage.v1.md') },
       'planner/gap.v1.md': { version: 'v1', sha256: await sha('gap.v1.md') },
       'planner/gap-repair.v1.md': { version: 'v1', sha256: await sha('gap-repair.v1.md') },
+      'planner/plan-repair.v1.md': { version: 'v1', sha256: await sha('plan-repair.v1.md') },
     });
     expect(manifest.roles['planner']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.source.commitSha).toBe('3f786850e387550fdab836ed7e6dc881de23001b');

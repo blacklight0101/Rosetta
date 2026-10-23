@@ -34,6 +34,7 @@ import {
   loadCoveragePrompt,
   loadGapPrompt,
   loadGapRepairPrompt,
+  loadPlanRepairPrompt,
   loadPrdPrompt,
   loadPlannerPromptTexts,
 } from '../../src/infrastructure/prompts/prompt-files.js';
@@ -135,6 +136,7 @@ export function planExecutor(
     coveragePrompt: () => loadCoveragePrompt('prompts'),
     gapPrompt: () => loadGapPrompt('prompts'),
     gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
+    planRepairPrompt: () => loadPlanRepairPrompt('prompts'),
     ids: new SequenceIdGenerator(),
     scans,
   });

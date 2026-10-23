@@ -57,12 +57,15 @@ describe('parsePlanAnswer', () => {
     ]);
   });
 
-  it('RF-601 a phase without exit criteria makes the answer unusable', () => {
+  it('RF-601 a phase without exit criteria is left out and the answer stays', () => {
     const phase = { name: 'First', goal: 'Orders.', exitCriteria: [] };
 
-    expect(
-      parsePlanAnswer(JSON.stringify({ requirements: [requirement], phases: [phase] })),
-    ).toBeUndefined();
+    const draft = parsePlanAnswer(JSON.stringify({ requirements: [requirement], phases: [phase] }));
+
+    expect(draft?.phases).toEqual([]);
+    expect(draft?.unreadableItems).toEqual([
+      expect.objectContaining({ list: 'phases', position: 1, field: 'exitCriteria' }),
+    ]);
   });
 
   it('RF-601 refuses a text longer than its bound', () => {
@@ -129,34 +132,35 @@ describe('parsePlanAnswer: the technical part', () => {
     });
   });
 
-  it('RF-622 DEC-135 a control whose approach is none of the known ones makes the answer unusable', () => {
+  it('RF-622 DEC-135 a control whose approach is none of the known ones is left out, the answer stays', () => {
     const control = { ...technical.security[0], approach: 'blocklist-ish' };
 
     expect(
       parsePlanAnswer(
         JSON.stringify({ requirements: [requirement], technical: { security: [control] } }),
-      ),
-    ).toBeUndefined();
+      )?.technical.security,
+    ).toEqual([]);
   });
 
-  it('RF-622 an integration action other than keep or replace makes the answer unusable', () => {
+  it('RF-622 an integration action other than keep or replace is left out, the answer stays', () => {
     const integration = { card: 'INT-001', action: 'ignore', note: '' };
 
     expect(
       parsePlanAnswer(
         JSON.stringify({ requirements: [requirement], technical: { integrations: [integration] } }),
-      ),
-    ).toBeUndefined();
+      )?.technical.integrations,
+    ).toEqual([]);
   });
 
-  it('RF-622 refuses a decision position below 1 and a text longer than its bound', () => {
+  it('RF-622 leaves out an item with a decision position below 1 and a text longer than its bound', () => {
     const environment = { name: 'Staging', purpose: 'x'.repeat(2001) };
     const position = { card: 'INT-001', action: 'keep', note: '', decision: 0 };
 
     for (const bad of [{ environments: [environment] }, { integrations: [position] }]) {
-      expect(
-        parsePlanAnswer(JSON.stringify({ requirements: [requirement], technical: bad })),
-      ).toBeUndefined();
+      const draft = parsePlanAnswer(
+        JSON.stringify({ requirements: [requirement], technical: bad }),
+      );
+      expect(draft?.unreadableItems).toHaveLength(1);
     }
   });
 });
