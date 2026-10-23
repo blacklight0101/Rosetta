@@ -14,9 +14,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 128     | 16        | 108        | 4         | 0                  | 52      | 72      | 4      | 84         | 0         |
+| P3 Report and plan      | 129     | 16        | 109        | 4         | 0                  | 53      | 72      | 4      | 85         | 0         |
 | P5 Polish (G-10)        | 19      | 7         | 12         | 0         | 0                  | 11      | 8       | 0      | 0          | 0         |
-| **Total**               | **371** | **97**    | **245**    | **29**    | **0**              | **183** | **174** | **14** | **225**    | **0**     |
+| **Total**               | **372** | **97**    | **246**    | **29**    | **0**              | **184** | **174** | **14** | **226**    | **0**     |
 
 ## Conventions for every card
 
@@ -4935,6 +4935,23 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: RF-141, RF-145; P3-116, P3-127.
+
+---
+
+### P3-129 - Follow-up: OpenAI reasoning models accept tool calls on Chat Completions
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the OpenAI request body (`src/infrastructure/providers/openai/openai-request.ts`), the reasoning effort wiring (`provider-factory.ts` `withEffort`, `ReasoningEffortProvider`, `project-settings.ts` `REASONING_EFFORTS`). Evaluation of 2026-10-23 (OpenAI, gpt-6-luna on every role): every reader call failed with HTTP 400 and Understand ended Failed (RST-1506) at no cost. OpenAI answers "Function tools with reasoning_effort are not supported for <model> in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'". A probe with synthetic content showed the same 400 for gpt-6-luna, gpt-6-sol, gpt-5.6-luna and gpt-5.5 at effort `low`, and 200 for each at `none`; a call without tools takes `low`.
+- **Do**: a Chat Completions request that carries tools sends `reasoning_effort: "none"` to a model on the reasoning list; a request without tools keeps the effort the role sets (default low, Q-58). The run log notes once per run that the effort was lowered for tool calls. `temperature` stays unsent unless the role sets it.
+- **Review probes**: a recorded reader request with tools for gpt-6-luna has `reasoning_effort: "none"`; a summariser request without tools has `low`; a model off the reasoning list gets no `reasoning_effort`; mutation: sending the role effort with tools fails the first probe; a contract test replays the recorded 400 body and shows it is reported as a request error, not retried.
+- **Behaviour to preserve**: RF-402, Q-58 (default effort low, retry rules), the Anthropic and Ollama adapters.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-402, Q-58; evaluation of 2026-10-23 (OpenAI run).
 
 ---
 
