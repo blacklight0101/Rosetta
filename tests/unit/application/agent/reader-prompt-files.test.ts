@@ -93,3 +93,36 @@ describe('P3-78 the read-more prompt', () => {
     expect(text).toMatch(/next answer/iu);
   });
 });
+
+describe('P5-13 data-binding controls are part of the screen', () => {
+  it('P5-13 the reader prompt v8 is the system prompt and names the data-source control families', async () => {
+    const text = await readFile('prompts/reader/area.v8.md', 'utf8');
+
+    for (const control of [
+      'SqlDataSource',
+      'ObjectDataSource',
+      'EntityDataSource',
+      'LinqDataSource',
+      'XmlDataSource',
+      'AccessDataSource',
+    ]) {
+      expect(text).toContain(control);
+    }
+  });
+
+  it('P5-13 the reader prompt v8 says a data-binding control is part of the screen, not an INT card', async () => {
+    const text = await readFile('prompts/reader/area.v8.md', 'utf8');
+
+    expect(text).toMatch(/data-binding controls? (are|is) part of the screen/iu);
+    expect(text).toMatch(/not an? `?INT`? card/iu);
+    expect(text).toMatch(/data-source control lines/iu);
+  });
+
+  it('P5-13 the reader prompt v8 keeps the v7 rules: read before answering and the data-block rule', async () => {
+    const text = await readFile('prompts/reader/area.v8.md', 'utf8');
+
+    expect(text).toContain(dataBlockRule);
+    expect(text).toContain(tagRule);
+    expect(text).toMatch(/read before you answer/iu);
+  });
+});
