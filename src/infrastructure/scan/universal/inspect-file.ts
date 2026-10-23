@@ -9,6 +9,7 @@ import type { TextMasker } from '../../guards/secret-masker.js';
 import type { ScannedFile, SqlStatement } from './scan-types.js';
 import { extractEmbeddedStatements } from './sql-embedded.js';
 import { extractScriptStatements } from './sql-script.js';
+import { isVendoredContent } from './vendor-content.js';
 
 // RF-100..RF-103: everything the scan records about one file, from its bytes.
 
@@ -53,13 +54,16 @@ export function inspectFile(path: string, content: FileBytes, masker: TextMasker
   if (isBinary(bytes)) return { file: skippedFile(path, 'binary', sha256), sql: [] };
   const text = decodeText(bytes);
   const language = detectLanguage(path, text.slice(0, headCharacters));
+  const estimatedTokens = estimateTokens(text);
+  const vendored = isVendoredContent(path, text.slice(0, headCharacters), estimatedTokens);
   const file: ScannedFile = {
     path,
     language,
     lines: countLines(text),
-    estimatedTokens: estimateTokens(text),
+    estimatedTokens,
     sha256,
     artefactKinds: artefactKindsOf(path),
+    ...(vendored ? { vendored: true as const } : {}),
   };
   return { file, sql: sqlOf(path, language, text, masker) };
 }

@@ -176,6 +176,22 @@ interface ScannedFacts {
   readonly source: { readonly snapshotKey: string };
 }
 
+/**
+ * P3-112: the areas the start page offers. One with no readable file (zero tokens) is left out. It
+ * is filtered here, not in plannedAreas, so a run stored before this change still resumes.
+ */
+function offeredAreas(
+  areas: readonly Area[],
+  thirdParty: ReadonlySet<string>,
+): RunEstimate['areas'] {
+  return areas
+    .filter((area) => area.estimatedTokens > 0)
+    .map(({ name, estimatedTokens, files }) => ({
+      ...{ name, estimatedTokens, files: files.length },
+      thirdParty: thirdParty.has(name),
+    }));
+}
+
 export class EstimateRun {
   private readonly deps: EstimateRunDependencies;
 
@@ -223,10 +239,7 @@ export class EstimateRun {
       },
       priceTableVersion: this.deps.priceTable.version,
       currency: this.deps.priceTable.currency,
-      areas: areas.map(({ name, estimatedTokens, files }) => ({
-        ...{ name, estimatedTokens, files: files.length },
-        thirdParty: thirdParty.has(name),
-      })),
+      areas: offeredAreas(areas, thirdParty),
       assumptions: { ...assumptions, summariserBatches: summariser.batches },
       roles,
       total: sumPoints(roles.map((role) => role.points)),

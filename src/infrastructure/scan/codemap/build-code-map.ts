@@ -61,6 +61,7 @@ function entryOf(file: ScannedFile, mapLevel: MapLevel): FileEntry {
     artefactKinds: file.artefactKinds,
     mapLevel,
     ...(file.skipped === undefined ? {} : { skipped: file.skipped }),
+    ...(file.vendored === true ? { vendored: true as const } : {}),
   };
 }
 
