@@ -148,6 +148,7 @@ export function disjointMerges(merges: readonly CardMerge[]): readonly CardMerge
     const ids = merge.ids.filter((id) => !taken.has(id));
     if (ids.length < 2) return [];
     for (const id of ids) taken.add(id);
+    // A trimmed group keeps the title and summary written for the larger group (P5-19).
     return [ids.length === merge.ids.length ? merge : { ...merge, ids }];
   });
 }
