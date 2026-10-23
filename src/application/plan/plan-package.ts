@@ -1,8 +1,9 @@
 import { decideOnce } from '../../domain/planning/brief-restated.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
+import { copiedExamples, exampleSentencesOfAll } from '../../domain/planning/copied-example.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
-import { prdQuestions } from '../../domain/planning/prd-content.js';
+import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content.js';
 import { addStyleRisks, checkStyle } from '../../domain/planning/style-rules.js';
 import { excludedClaims, supportedCards } from '../../domain/planning/plan-sources.js';
 import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
@@ -61,6 +62,15 @@ function dataModelItems(
   }));
 }
 
+/** P3-117: the sentences of the PRD and the plan that copy an example of a planner prompt. */
+function copiedIn(
+  prd: PrdContent,
+  plan: PlanContent,
+  promptTexts: readonly string[],
+): HandoffPackage['copiedExamples'] {
+  return copiedExamples({ prd, plan }, exampleSentencesOfAll(promptTexts));
+}
+
 // RF-601, RF-604
 export function handoffPackageOf(
   inputs: PlanInputs,
@@ -70,6 +80,8 @@ export function handoffPackageOf(
     readonly shapes: ScanShapes | undefined;
     readonly workbookFormulas: WorkbookFormulas | undefined;
     readonly leftOut: readonly LeftOutCard[];
+    /** P3-117: the texts of the planner prompts the example sentences are read from. */
+    readonly examples: readonly string[];
   },
 ): HandoffPackage {
   const { prd, dataModel, flows, apiContract, ux, incomplete } = documents;
@@ -106,6 +118,7 @@ export function handoffPackageOf(
     shapes: documents.shapes,
     workbookFormulas: documents.workbookFormulas,
     incomplete,
+    copiedExamples: copiedIn(prd, decided.content, documents.examples),
     leftOut: [...taskCardItems(documents.leftOut), ...dataModelItems(documents.dataModelProblems)],
   };
 }

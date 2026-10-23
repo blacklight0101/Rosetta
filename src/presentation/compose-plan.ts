@@ -33,6 +33,7 @@ import {
   loadCoveragePrompt,
   loadGapPrompt,
   loadGapRepairPrompt,
+  loadPlannerPromptTexts,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
@@ -89,6 +90,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
     apiContractPrompt: () => loadApiContractPrompt(promptsFolder),
     continuePrompt: () => loadPlannerContinuePrompt(promptsFolder),
     workbookPrompt: () => loadPlannerWorkbookPrompt(promptsFolder),
+    promptTexts: () => loadPlannerPromptTexts(promptsFolder),
     uxPrompt: () => loadUxPrompt(promptsFolder),
     coveragePrompt: () => loadCoveragePrompt(promptsFolder),
     gapPrompt: () => loadGapPrompt(promptsFolder),

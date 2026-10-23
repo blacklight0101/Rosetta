@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { loadRecording } from '../../../src/infrastructure/providers/fake/recording.js';
 import type { Recording } from '../../../src/infrastructure/providers/fake/recording.js';
+import { plain } from '../../support/plan-method-harness.js';
 import { createPlanHarness } from '../../support/plan-harness.js';
 import { planCards, planQuestions } from '../../support/plan-cards.js';
 
@@ -46,7 +47,7 @@ async function checksOf(prd: object): Promise<string> {
   const run = await h.understandRun({ cards: planCards(), questions: planQuestions });
   await h.answer(run, [{ cardId: 'OQ-001', answer: 'Only a manager may cancel a paid order.' }]);
   await h.saveBrief({ architecture: { style: 'hexagonal' }, migration: 'parallel-change' });
-  return (await h.handoffOf(await h.plan()))['checks.md'] ?? '';
+  return plain((await h.handoffOf(await h.plan()))['checks.md']);
 }
 
 describe('P3-117 a package that copies the example of a planner prompt', () => {
@@ -70,12 +71,12 @@ describe('P3-117 a package that copies the example of a planner prompt', () => {
     expect(checks).not.toContain('Every order is audited');
   });
 
-  it('P3-117 a package of its own sentences has no such section', async () => {
+  it('P3-117 a PRD of its own sentences lists none of its sentences', async () => {
     const checks = await checksOf({
       problem: { text: 'Nobody can tell which pages touch the stock.', sources: ['BR-001'] },
       rules: [{ text: 'Every order is audited.', sources: ['BR-001'] }],
     });
 
-    expect(checks).not.toContain('Copied from a prompt example');
+    expect(checks).not.toContain('- PRD,');
   });
 });

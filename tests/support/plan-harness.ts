@@ -35,6 +35,7 @@ import {
   loadGapPrompt,
   loadGapRepairPrompt,
   loadPrdPrompt,
+  loadPlannerPromptTexts,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
 import { loadRecording } from '../../src/infrastructure/providers/fake/recording.js';
@@ -129,6 +130,7 @@ export function planExecutor(
     apiContractPrompt: () => loadApiContractPrompt('prompts'),
     continuePrompt: () => loadPlannerContinuePrompt('prompts'),
     workbookPrompt: () => loadPlannerWorkbookPrompt('prompts'),
+    promptTexts: () => loadPlannerPromptTexts('prompts'),
     uxPrompt: () => loadUxPrompt('prompts'),
     coveragePrompt: () => loadCoveragePrompt('prompts'),
     gapPrompt: () => loadGapPrompt('prompts'),

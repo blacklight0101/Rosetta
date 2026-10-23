@@ -1,4 +1,5 @@
 import type { ApiContract } from '../../domain/planning/api-contract.js';
+import type { CopiedExample } from '../../domain/planning/copied-example.js';
 import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
 import type { RestatedDecision } from '../../domain/planning/brief-restated.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
@@ -101,6 +102,8 @@ export interface HandoffPackage {
   readonly workbookFormulas?: WorkbookFormulas | undefined;
   /** RF-604: the documents that stayed cut off, in the order they were written; empty when none did. */
   readonly incomplete: readonly IncompleteDocument[];
+  /** P3-117: the sentences of the PRD and the plan that copy an example sentence of a planner prompt. */
+  readonly copiedExamples: readonly CopiedExample[];
   /** P3-101: the parts of the plan the package leaves out, listed in checks.md by area. */
   readonly leftOut: readonly LeftOutItem[];
 }

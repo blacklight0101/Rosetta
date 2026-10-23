@@ -27,7 +27,6 @@ import {
   planPromptVersions,
   type PlanFiles,
   type PlanPromptSources,
-  type PlanPrompts,
 } from '../plan/plan-prompts.js';
 import { handoffPackageOf } from '../plan/plan-package.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
@@ -70,6 +69,7 @@ interface Finish {
   readonly input: PlanMessageInput;
   readonly assembly: PlanAssembly;
   readonly inputs: PlanInputs;
+  readonly files: PlanFiles;
 }
 
 /** The codes whose own message is logged: the cut-off answer (RST-1805) and the prompt size (RST-1522). */
@@ -139,15 +139,13 @@ export class BuildPlan implements RunExecutor {
       const message = 'The planner answer named no requirement with a supported card.';
       return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
     }
-    return this.finish({ ...{ run, call, input, assembly }, inputs: inputs.value }, prompts);
+    return this.finish({ ...{ run, call, input, assembly, files }, inputs: inputs.value });
   }
 
-  /**
-   * RF-621..RF-627: the documents, the links of the task cards to the items they build, and the
-   * package. An item no task card builds is listed in checks.md and ends the run RST-1806.
-   */
-  private async finish(parts: Finish, prompts: PlanPrompts): Promise<RunOutcome> {
-    const { run, call, input, assembly, inputs } = parts;
+  /** RF-621..RF-627: the documents, the task card links and the package; an unbuilt item: RST-1806. */
+  private async finish(parts: Finish): Promise<RunOutcome> {
+    const { run, call, input, assembly, inputs, files } = parts;
+    const { prompts, examples } = files;
     const warn = (message: string): Promise<void> => this.warn(run, message);
     const documents = await planDocuments(
       call,
@@ -170,7 +168,7 @@ export class BuildPlan implements RunExecutor {
     const shapes = await planShapes(this.deps, inputs);
     const workbookFormulas = await planWorkbookFormulas(this.deps, inputs);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
-      ...{ ...documents, shapes, leftOut: assembly.leftOut },
+      ...{ ...documents, shapes, leftOut: assembly.leftOut, examples },
       workbookFormulas,
     });
     await this.deps.handoff.write(scopeOf(run), handoff);

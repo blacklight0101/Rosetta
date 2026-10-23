@@ -56,7 +56,7 @@ function setup(pieces: readonly Piece[], onCutOff?: PlannerCall['onCutOff']) {
       ...{ provider, name: 'fake', kind: 'fake', model: 'm', maxOutputTokens: limit },
       keySource: 'user',
     },
-    prompt: { name: 'planner/package.v6.md', version: 'v6', sha256: 'b'.repeat(64), text: 'plan' },
+    prompt: { name: 'planner/package.v7.md', version: 'v7', sha256: 'b'.repeat(64), text: 'plan' },
     continuePrompt,
     agentTaskId: 'planner-package',
     updates: new ManifestUpdates(new MemoryRunManifestStore(), scopeFor()),
