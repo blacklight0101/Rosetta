@@ -13,6 +13,12 @@ import {
 import { FailingMasker } from '../../../support/failing-masker.js';
 import { failureOf } from '../../../support/failure-of.js';
 import { keyedSecretCases, secretCases } from '../../../support/secret-fixture.js';
+import {
+  apiSecret,
+  mailSecret,
+  smtpSecret,
+  syntheticAppSettings,
+} from '../../../support/secret-setting-shapes.js';
 
 // RF-141, DEC-57: the egress guard masks every part of every message before a call leaves, adds
 // the counts to the run record and blocks the call when the masker fails.
@@ -108,6 +114,19 @@ describe('EgressGuard mask counts', () => {
     // reads another file, so the key is not carried into it.
     expect(counts['private-key']).toBe(once['private-key'] * 4);
     expect(counts['password']).toBe(once.password * 4 + keyedSecretCases.length);
+  });
+
+  it('RF-141 masks the synthetic web.config in a tool result and counts two passwords and a token', async () => {
+    const { guard, fake, manifest } = await egressHarness();
+
+    await guard.complete(requestWith(readConversation(toolResult({ text: syntheticAppSettings }))));
+
+    const sent = fake.requests[0]?.messages[2]?.content ?? '';
+    for (const value of [smtpSecret, mailSecret, apiSecret]) expect(sent).not.toContain(value);
+    expect(sent).toContain('PageSize');
+    const counts = (await manifest())?.masking;
+    expect(counts?.['password']).toBe(2);
+    expect(counts?.['bearer-token']).toBe(1);
   });
 
   it('RF-141 counts a secret once per agent task although every call repeats it', async () => {

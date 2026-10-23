@@ -29,12 +29,6 @@ export const syntheticAppSettings = [
   '</appSettings>',
 ].join('\n');
 
-/** The same text with the three values masked: two passwords and one token. */
-export const syntheticAppSettingsMasked = syntheticAppSettings
-  .replace(smtpSecret, '[MASKED:password]')
-  .replace(mailSecret, '[MASKED:password]')
-  .replace(apiSecret, '[MASKED:bearer-token]');
-
 const one = (
   name: string,
   kind: SecretKind,
@@ -150,6 +144,24 @@ export const settingSecretCases: readonly ShapeCase[] = [
     [
       `{"text":"<add key=\\"SmtpPassword\\" value=\\"${pw}\\"/>"}`,
       '{"text":"<add key=\\"SmtpPassword\\" value=\\"[MASKED:password]\\"/>"}',
+    ],
+    pw,
+  ),
+  one(
+    'an appSettings password written with HTML entities',
+    'password',
+    [
+      `&lt;add key=&quot;SmtpPassword&quot; value=&quot;${pw}&quot;/&gt;`,
+      '&lt;add key=&quot;SmtpPassword&quot; value=&quot;[MASKED:password]&quot;/&gt;',
+    ],
+    pw,
+  ),
+  one(
+    'a user setting with a value element written with HTML entities',
+    'password',
+    [
+      `&lt;setting name=&quot;SmtpPassword&quot;&gt;&lt;value&gt;${pw}&lt;/value&gt;&lt;/setting&gt;`,
+      '&lt;setting name=&quot;SmtpPassword&quot;&gt;&lt;value&gt;[MASKED:password]&lt;/value&gt;&lt;/setting&gt;',
     ],
     pw,
   ),

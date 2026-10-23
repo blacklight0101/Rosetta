@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { microUsd } from '../../../../src/domain/budget/money.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { FakeProvider } from '../../../../src/infrastructure/providers/fake/fake-provider.js';
+import { YazlArchiveWriter } from '../../../../src/infrastructure/files/yazl-archive-writer.js';
 import { JsonlProviderCallLog } from '../../../../src/infrastructure/providers/jsonl-provider-call-log.js';
 import { ObservedProvider } from '../../../../src/infrastructure/providers/observed-provider.js';
 import type { Recording } from '../../../../src/infrastructure/providers/fake/recording.js';
@@ -11,7 +12,15 @@ import { contractRequest } from '../../../contracts/llm-provider.contract.js';
 import { fakeResponse } from '../../../support/fake-recordings.js';
 import { FixedClock } from '../../../support/fixed-clock.js';
 import { keyedSecretCases, secretCases } from '../../../support/secret-fixture.js';
+import {
+  apiSecret,
+  mailSecret,
+  smtpSecret,
+  syntheticAppSettings,
+} from '../../../support/secret-setting-shapes.js';
 import { SequenceIdGenerator } from '../../../support/sequence-id-generator.js';
+import { scopeFor } from '../../../support/run-event-fixtures.js';
+import { collectBytes, filesOf, readZip } from '../../../support/zip-reader.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
 /** Every file under `root`, concatenated. */
@@ -92,5 +101,91 @@ describe('provider output scan', () => {
     for (const secret of secrets) {
       expect(written).not.toContain(secret);
     }
+  });
+});
+
+/** An answer that quotes the synthetic web.config. */
+function configRecording(): Recording {
+  return {
+    schemaVersion: 1,
+    description: 'an answer that quotes a web.config',
+    calls: [
+      {
+        attempts: [
+          {
+            response: fakeResponse({
+              text: syntheticAppSettings,
+              toolCalls: [],
+              requestId: 'req-settings',
+              modelVersion: 'fake-1',
+              finishReason: 'stop',
+              usage: {
+                inputTokens: 1,
+                outputTokens: 1,
+                cachedInputTokens: 0,
+                usageSource: 'reported',
+              },
+            }),
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/** One call whose request and answer both carry the synthetic web.config, logged into the run folder. */
+async function callWithConfig(runDir: string): Promise<void> {
+  const recording = configRecording();
+  const provider = new ObservedProvider({
+    inner: new FakeProvider({ testMode: true, recording }),
+    recorder: new JsonlProviderCallLog({ runDir, masker: new SecretMasker() }),
+    clock: new FixedClock('2026-10-11T09:05:03.007Z'),
+    ids: new SequenceIdGenerator(),
+    target: { provider: 'local-fake', kind: 'fake', endpointHost: 'fake.invalid' },
+    priceCall: () => microUsd(0n),
+    transcripts: true,
+  });
+  const request = contractRequest();
+  await provider.complete({
+    ...request,
+    context: { ...request.context, agentTaskId: 'reader-settings', callId: 'settings-1' },
+    messages: [{ role: 'user', content: syntheticAppSettings }],
+  });
+}
+
+describe('provider output scan of key/value settings', () => {
+  const tmp = useTempRoot('rosetta-scan-settings-');
+  const scope = scopeFor('20261011-090503-understand');
+  const runDir = (): string =>
+    join(tmp.path, 'users', scope.userId, 'projects', scope.projectId, 'runs', scope.runKey);
+
+  function expectNoValues(text: string): void {
+    for (const secret of [smtpSecret, mailSecret, apiSecret]) {
+      expect(text).not.toContain(secret);
+    }
+  }
+
+  it('RF-141 the transcripts and the call log hold none of the values of the synthetic web.config', async () => {
+    await callWithConfig(runDir());
+
+    const written = await everything(tmp.path);
+
+    expect(written).toContain('[MASKED:password]');
+    expect(written).toContain('[MASKED:bearer-token]');
+    expect(written).toContain('PageSize');
+    expectNoValues(written);
+  });
+
+  it('RF-008, RF-141 the run zip holds none of the values of the synthetic web.config', async () => {
+    await callWithConfig(runDir());
+
+    const archive = await new YazlArchiveWriter(tmp.path).archive(scope, 'run');
+    if (!archive.ok) throw new Error('the run folder was not archived');
+    const files = filesOf(await readZip(await collectBytes(archive.value)));
+
+    const text = Object.values(files).join('\n');
+    expect(Object.keys(files).some((name) => name.includes('transcripts/'))).toBe(true);
+    expect(text).toContain('[MASKED:password]');
+    expectNoValues(text);
   });
 });
