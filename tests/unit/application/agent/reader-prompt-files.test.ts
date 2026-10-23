@@ -19,7 +19,7 @@ describe('prompt files', () => {
   it('RF-145 the reader has its versioned prompt files', () => {
     expect(agentPrompts).toEqual(
       expect.arrayContaining([
-        'reader/area.v7.md',
+        'reader/area.v8.md',
         'reader/read-first.v1.md',
         'reader/read-more.v1.md',
         'reader/task.v2.md',
@@ -51,7 +51,7 @@ describe('prompt files', () => {
   });
 
   it('RF-201 the reader prompt names every tool and no other', async () => {
-    const text = await readFile('prompts/reader/area.v7.md', 'utf8');
+    const text = await readFile('prompts/reader/area.v8.md', 'utf8');
 
     for (const tool of ['list_area_files', 'read_file', 'grep', 'codemap_query']) {
       expect(text).toContain(`\`${tool}`);
@@ -62,7 +62,7 @@ describe('prompt files', () => {
 
 describe('RF-206 the read-first prompts', () => {
   it('RF-206 the reader prompt tells the reader to read its area before it answers', async () => {
-    const text = await readFile('prompts/reader/area.v7.md', 'utf8');
+    const text = await readFile('prompts/reader/area.v8.md', 'utf8');
 
     expect(text).toMatch(/read before you answer/iu);
     expect(text).toMatch(/not accepted/iu);
@@ -91,5 +91,49 @@ describe('P3-78 the read-more prompt', () => {
     expect(text).toMatch(/formulas/iu);
     expect(text).toMatch(/macros/iu);
     expect(text).toMatch(/next answer/iu);
+  });
+});
+
+describe('P5-13 data-binding controls are part of the screen', () => {
+  it('P5-13 the reader prompt v8 is the system prompt and names the data-source control families', async () => {
+    const text = await readFile('prompts/reader/area.v8.md', 'utf8');
+
+    for (const control of [
+      'SqlDataSource',
+      'ObjectDataSource',
+      'EntityDataSource',
+      'LinqDataSource',
+      'XmlDataSource',
+      'AccessDataSource',
+    ]) {
+      expect(text).toContain(control);
+    }
+  });
+
+  it("P5-13 the reader prompt v8 makes a data-source control bound to the application's own data part of the screen", async () => {
+    const text = await readFile('prompts/reader/area.v8.md', 'utf8');
+
+    expect(text).toMatch(/binds to the\s+application's own data,\s+it is part of the screen/iu);
+    expect(text).toMatch(/data-source control lines/iu);
+    expect(text).not.toMatch(/whatever database or service it names/iu);
+    expect(text).not.toMatch(/only a data-source control line/iu);
+  });
+
+  it('P5-13 the reader prompt v8 keeps an external database or service reached by a data-source control as an INT card', async () => {
+    const text = await readFile('prompts/reader/area.v8.md', 'utf8');
+
+    expect(text).toMatch(/another application's database, a web service or a remote API/iu);
+    expect(text).toMatch(
+      /data-source control whose\s+connection or service points at another system/iu,
+    );
+    expect(text).toMatch(/`INT` card even when a data-source control reaches it/u);
+  });
+
+  it('P5-13 the reader prompt v8 keeps the earlier rules: read before answering and the data-block rule', async () => {
+    const text = await readFile('prompts/reader/area.v8.md', 'utf8');
+
+    expect(text).toContain(dataBlockRule);
+    expect(text).toContain(tagRule);
+    expect(text).toMatch(/read before you answer/iu);
   });
 });

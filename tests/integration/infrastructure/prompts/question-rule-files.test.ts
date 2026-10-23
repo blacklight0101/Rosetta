@@ -57,7 +57,7 @@ describe('the versions of the reader prompts', () => {
   it('RNF-004 the defaults are the new versions, loaded with the hash of their bytes', async () => {
     const prompts = await loadReaderPrompts('prompts');
 
-    expect(prompts.system).toMatchObject({ name: 'reader/area.v7.md', version: 'v7' });
+    expect(prompts.system).toMatchObject({ name: 'reader/area.v8.md', version: 'v8' });
     expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v5.md', version: 'v5' });
   });
 
