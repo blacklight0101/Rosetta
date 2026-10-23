@@ -78,6 +78,13 @@ export function providerOptions(
   return [...names].map((value) => ({ value, label: providerLabel(value) }));
 }
 
+/** The kind of a provider entry by its name, as the server reads it (default-settings.ts). */
+export function kindOfProvider(
+  settings: ProjectSettings,
+): (provider: string) => string | undefined {
+  return (provider) => settings.providers[provider]?.kind ?? providerDefaults[provider]?.kind;
+}
+
 /** DEC-106: the providers an administrator can make the default of a role for new projects. */
 export const defaultModelProviders: readonly { readonly value: string; readonly label: string }[] =
   ['ollama', 'openai', 'anthropic', 'openai-compatible'].map((value) => ({

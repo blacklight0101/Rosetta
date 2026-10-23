@@ -10,9 +10,19 @@ import { dollars, tokensText } from './estimate-math.js';
 
 type FirstCalls = NonNullable<RunEstimate['firstCalls']>;
 
+/** The caps the project settings page holds; the administrator's run cap is not one of them. */
+const projectCapKinds: ReadonlySet<string> = new Set([
+  'run-cost',
+  'run-tokens',
+  'role-cost',
+  'role-tokens',
+]);
+
 export interface FirstCallWarning {
   readonly id: `first-calls-${string}`;
   readonly text: string;
+  /** True when the cap named is one the project settings page holds. */
+  readonly projectCaps: boolean;
 }
 
 const capNames: Readonly<Record<string, string>> = {
@@ -100,5 +110,6 @@ export function firstCallWarnings(
   return shortCaps(estimate, first, runCapMicros).map((cap) => ({
     id: `first-calls-${cap.kind}`,
     text: textOf(first, cap),
+    projectCaps: projectCapKinds.has(cap.kind) && !cap.administrator,
   }));
 }

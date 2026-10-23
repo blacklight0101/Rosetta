@@ -14,7 +14,7 @@ export interface AreaStanding {
   readonly ended: boolean;
   /** Why the area gave no usable card (RF-208), when it did not. */
   readonly failure?: string | undefined;
-  /** Cards of the area that passed the citation check. */
+  /** Cards of the area left after the citation check and the judgement. */
   readonly cards: number;
 }
 
@@ -34,7 +34,8 @@ function sentenceOf(area: AreaStanding): string | undefined {
   if (area.failure !== undefined) {
     return `${name}: its reader could not finish (${area.failure}).${nextStepOf(area.failure)}`;
   }
-  if (area.cards === 0) return `${name}: no card passed the citation check and the judgement.`;
+  if (area.cards === 0)
+    return `${name}: no card was left after the citation check and the judgement.`;
   return undefined;
 }
 

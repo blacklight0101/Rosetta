@@ -91,8 +91,6 @@ function CapMeter(props: { readonly estimate: RunEstimate; readonly cap: CapFiel
 }
 
 /** The caps of the project are where a run cap or a first-call reservation is changed. */
-const namesProjectCaps = (id: CapWarning['id']): boolean =>
-  id === 'run' || id.startsWith('first-calls-');
 
 function Warnings({
   warnings,
@@ -111,7 +109,7 @@ function Warnings({
           </span>
           <p>
             {warning.text}
-            {namesProjectCaps(warning.id) ? (
+            {warning.projectCaps ? (
               <>
                 {' '}
                 <Link href={capsHref}>Review the caps</Link>

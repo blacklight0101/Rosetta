@@ -1,6 +1,6 @@
 import type { JSX } from 'preact';
-import { useRef } from 'preact/hooks';
-import type { Project } from '../api/project-schemas.js';
+import { useEffect, useRef } from 'preact/hooks';
+import type { Project, ProjectSettings } from '../api/project-schemas.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { useRefusalFocus } from '../lib/use-refusal-focus.js';
@@ -8,11 +8,11 @@ import { CapSettings, IgnoreRules, ScanSettings } from './LimitSettings.js';
 import { ModelSettings } from './ModelSettings.js';
 import { PriceOverrides } from './PriceOverrides.js';
 import { contextLimitOf, ollamaModels } from './ollama-context.js';
-import { providerOptions } from './provider-choices.js';
+import { kindOfProvider, providerOptions } from './provider-choices.js';
 import type { SectionProps } from './settings-section.js';
 import type { SettingsDraft } from './project-settings-form.js';
 import { useModelLists } from './use-model-lists.js';
-import { useSettingsDraft, useSettingsSave } from './use-settings-editor.js';
+import { useSettingsDraft, useSettingsSave, type DraftEditor } from './use-settings-editor.js';
 
 // RF-002, P1-41: the form of the project settings page. One form saves the whole document; a
 // refusal shows next to each field it names, focus goes to the first of them, and what the page
@@ -25,11 +25,33 @@ function useRoleModels(draft: SettingsDraft) {
 }
 
 // RF-002
+/** P5-06: a link to a section (`#caps`) brings that section into view once the form is on the page. */
+function useHashScroll(): void {
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (id !== '') document.getElementById(id)?.scrollIntoView();
+  }, []);
+}
+
+function sectionOf(
+  settings: ProjectSettings,
+  editor: DraftEditor,
+  errorFor: SectionProps['errorFor'],
+): SectionProps {
+  return {
+    editor,
+    errorFor,
+    providers: providerOptions(settings),
+    kindOf: kindOfProvider(settings),
+  };
+}
+
 export function ProjectSettingsForm({ project }: { readonly project: Project }): JSX.Element {
   const drafting = useSettingsDraft(project.settings);
   const { lists, limit } = useRoleModels(drafting.draft);
   const saving = useSettingsSave(project, drafting.draft, limit);
   const formRef = useRef<HTMLFormElement>(null);
+  useHashScroll();
   useRefusalFocus(formRef, saving.refusal);
   // Rows move when one is added or removed, so a refusal about row numbers no longer fits.
   const editor = {
@@ -43,11 +65,7 @@ export function ProjectSettingsForm({ project }: { readonly project: Project }):
       saving.forgetRefusal();
     },
   };
-  const section: SectionProps = {
-    editor,
-    errorFor: saving.errorFor,
-    providers: providerOptions(project.settings),
-  };
+  const section = sectionOf(project.settings, editor, saving.errorFor);
   return (
     <form
       ref={formRef}

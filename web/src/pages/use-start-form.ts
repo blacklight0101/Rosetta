@@ -110,10 +110,16 @@ function warningsOf(input: {
   readonly estimate: EstimateLoad;
   readonly capMicros: bigint;
   readonly limits: ReturnType<typeof useSpendLimits>;
+  readonly runCapFromProject: boolean;
 }): readonly CapWarning[] {
-  const { stage, estimate, capMicros, limits } = input;
+  const { stage, estimate, capMicros, limits, runCapFromProject } = input;
   if (stage !== 'understand' || estimate.status !== 'ready') return [];
-  return capWarnings({ estimate: estimate.estimate, runCapMicros: capMicros, limits });
+  return capWarnings({
+    estimate: estimate.estimate,
+    runCapMicros: capMicros,
+    limits,
+    runCapFromProject,
+  });
 }
 
 /**
@@ -137,7 +143,13 @@ function runCapsOf(input: {
     serverKeys: estimate.status === 'ready' && usesServerKeys(estimate.estimate),
   };
   const runCapMicros = effectiveRunCapMicros({ typed, ...serverRunCap });
-  const warnings = warningsOf({ stage, estimate, capMicros: runCapMicros, limits });
+  const warnings = warningsOf({
+    stage,
+    estimate,
+    capMicros: runCapMicros,
+    limits,
+    runCapFromProject: runCapMicros === typed,
+  });
   return { runCapMicros, serverRunCap, warnings };
 }
 

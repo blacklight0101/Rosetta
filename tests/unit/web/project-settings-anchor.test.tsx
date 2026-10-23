@@ -9,26 +9,33 @@ import { projectOf } from './project-fixtures.js';
 
 const route = '/api/projects/p-1';
 
-type ScrollSpy = {
+interface ScrollWatch {
   readonly ids: string[];
-  readonly original: typeof Element.prototype.scrollIntoView;
-};
+  readonly before: PropertyDescriptor | undefined;
+}
 
-let spy: ScrollSpy | undefined;
+let watch: ScrollWatch | undefined;
 
 afterEach(() => {
-  if (spy !== undefined) Element.prototype.scrollIntoView = spy.original;
-  spy = undefined;
+  if (watch !== undefined) {
+    if (watch.before === undefined) Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
+    else Object.defineProperty(Element.prototype, 'scrollIntoView', watch.before);
+  }
+  watch = undefined;
   window.location.hash = '';
 });
 
 function watchScroll(): string[] {
   const ids: string[] = [];
-  const original = Element.prototype.scrollIntoView;
-  spy = { ids, original };
-  Element.prototype.scrollIntoView = function scrollIntoView(this: Element) {
-    ids.push(this.id);
-  };
+  const before = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollIntoView');
+  watch = { ids, before };
+  Object.defineProperty(Element.prototype, 'scrollIntoView', {
+    configurable: true,
+    writable: true,
+    value: function scrollIntoView(this: Element): void {
+      ids.push(this.id);
+    },
+  });
   return ids;
 }
 
