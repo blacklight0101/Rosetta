@@ -22,7 +22,8 @@ import { ownerLogger } from '../../application/runs/owner-logger.js';
 import { priceOverridesOf } from '../../application/projects/price-overrides.js';
 import { roleBudgetOf } from '../../application/projects/role-budget.js';
 import type { ProviderSet, RoleProvider } from '../../application/providers/provider-set.js';
-import { capsFor, type ServerCaps } from '../../domain/budget/budget.js';
+import { capsFor, type ScopeSpent, type ServerCaps } from '../../domain/budget/budget.js';
+import type { AccountUsage } from '../../application/ports/account-usage.js';
 import type { PriceTable } from '../../domain/budget/price-table.js';
 import type { UsageCap } from '../../domain/budget/usage-cap.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
@@ -39,6 +40,8 @@ import { guardedProvider } from './guarded-provider.js';
 import { resolveAccess, type ProviderAccess, type ServerKeys } from './provider-access.js';
 import { ReasoningEffortProvider } from './reasoning-effort-provider.js';
 import { reservationLifetimeMs } from './reservation-lifetime.js';
+import { isCeilinged, providerTestCeiling } from './provider-ceiling.js';
+import { scopeSpentAt } from './scope-spend.js';
 
 // Architecture sections 2 and 7, ADR-003, ADR-006, ADR-007, ADR-015, RF-405, RF-1104, RF-002: the
 // provider factory, the only way to get a provider. For each role asked for it picks the provider
@@ -55,6 +58,8 @@ export interface GuardedProviderFactoryOptions {
   readonly ollamaUrl: string | undefined;
   readonly serverSettings: ServerSettings;
   readonly ledger: CostLedger;
+  /** P5-18: read at run start so readers stop at a share of the scope caps' room (RF-429). */
+  readonly usage?: Pick<AccountUsage, 'userDay' | 'serverMonth'>;
   /** The shipped price table, loaded at start-up (RF-420). */
   readonly priceTable: PriceTable;
   /** The shipped model list: each model's context window and maximum output (Q-57). */
@@ -78,26 +83,10 @@ interface WrapParts {
   readonly caps: readonly UsageCap[];
 }
 
-/** RF-407: the most one provider test call may cost or use, whoever pays (worst case, before the call). */
-const testCeiling = { costMicros: 100_000n, tokens: 2_000n } as const;
-
-/**
- * ADR-007: a call that belongs to no run is held to the ceiling, unless it is a known call of a
- * project: the options of Plan setup (stage `plan`, with a project to book it to) keep the project's
- * caps and their role's cap. The rule fails closed: a run-less call of any other stage, the Test
- * button included, gets the small ceiling, so a new kind of call cannot spend the project budget
- * before someone decides it may.
- */
-function isCeilinged(request: ProviderSetRequest): boolean {
-  const { run } = request;
-  if (run.id !== null) return false;
-  return !(run.stage === 'plan' && run.projectId !== null);
-}
-
-function providerTestCeiling(cap: UsageCap): bigint {
-  if (cap.kind === 'run-cost') return testCeiling.costMicros;
-  if (cap.kind === 'run-tokens') return testCeiling.tokens;
-  return cap.limit;
+/** The administrator's caps and what the scope caps have spent when the run starts (P5-18). */
+interface ScopeCaps {
+  readonly server: ServerCaps;
+  readonly scopeSpent: ScopeSpent | undefined;
 }
 
 export class GuardedProviderFactory implements ProviderSetFactory {
@@ -115,10 +104,15 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       throw new Error('The account of the request is not the user of its run.');
     }
     const serverCaps = await this.options.serverSettings.caps();
+    const { usage, clock } = this.options;
+    const reads = usage !== undefined && !isCeilinged(request) && request.roles.includes('reader');
+    const scopeSpent = reads
+      ? await scopeSpentAt(usage, request.account.id, clock.now())
+      : undefined;
     const set = new Map<AgentRole, RoleProvider>();
     const problems: ProviderProblem[] = [];
     for (const role of request.roles) {
-      const built = await this.buildRole(request, role, serverCaps);
+      const built = await this.buildRole(request, role, { server: serverCaps, scopeSpent });
       if (built.ok) set.set(role, built.value);
       else problems.push(built.error);
     }
@@ -128,7 +122,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
   private async buildRole(
     request: ProviderSetRequest,
     role: AgentRole,
-    serverCaps: ServerCaps,
+    scope: ScopeCaps,
   ): Promise<Result<RoleProvider, ProviderProblem>> {
     const setting = request.settings.roles[role];
     const { provider: name } = setting;
@@ -151,7 +145,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     const unpriced = this.unpricedOf(request, config.kind, setting.model, access.value);
     if (unpriced !== undefined) return fail(ERROR_CODES.modelUnpriced, unpriced.message);
     const limits = roleLimits(request.settings, role, this.options.models);
-    const caps = this.capsOf({ request, role }, access.value, serverCaps);
+    const caps = this.capsOf({ request, role }, access.value, scope);
     const guarded = this.wrap({
       request,
       name,
@@ -278,7 +272,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
   private capsOf(
     { request, role }: { readonly request: ProviderSetRequest; readonly role: AgentRole },
     access: ProviderAccess,
-    server: ServerCaps,
+    { server, scopeSpent }: ScopeCaps,
   ): readonly UsageCap[] {
     const { run } = request.settings.budget;
     const caps = capsFor(access.keySource, {
@@ -288,6 +282,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       // RF-429: readers and verifier stop at a share of the run caps; the summariser keeps the rest.
       reader: role === 'reader' && !isCeilinged(request),
       verifier: role === 'verifier' && !isCeilinged(request),
+      ...(scopeSpent === undefined ? {} : { scopeSpent }),
       server,
       account: {
         dailyCapMicros: request.account.dailyCapMicros,

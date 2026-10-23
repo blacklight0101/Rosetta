@@ -11,6 +11,7 @@ import type { OutputWriter } from '../../src/application/ports/output-writer.js'
 import type { ProviderSinks } from '../../src/application/ports/provider-set-factory.js';
 import type { RunScope } from '../../src/application/ports/run-events.js';
 import { MemoryCostLedger } from '../../src/infrastructure/db/memory-cost-ledger.js';
+import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
 import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
 import { runPath } from '../../src/infrastructure/files/workspace-paths.js';
@@ -145,6 +146,8 @@ export interface UnderstandProviderParts {
   readonly ownOpenAiKey?: { readonly userId: string; readonly key: string };
   /** P5-18: the administrator's caps; the shipped defaults when left out. */
   readonly serverCaps?: ServerCaps;
+  /** P5-18: server-key spend of this user earlier in the same UTC day and month. */
+  readonly priorSpend?: { readonly userId: string; readonly micros: bigint };
   /** P2-24: an Anthropic key of this user's own. */
   readonly ownAnthropicKey?: { readonly userId: string; readonly key: string };
 }
@@ -179,6 +182,22 @@ function seedOwnKeys(
   }
 }
 
+/** P5-18: the administrator's caps and the spend the scope caps start with. */
+function scopeStores(parts: UnderstandProviderParts) {
+  const usage = new MemoryAccountUsage();
+  if (parts.priorSpend !== undefined) {
+    usage.addCost({
+      userId: parts.priorSpend.userId,
+      costMicros: parts.priorSpend.micros,
+      at: parts.clock.now(),
+      currency: 'USD',
+    });
+  }
+  const serverSettings = new MemoryServerSettings({});
+  if (parts.serverCaps !== undefined) void serverSettings.saveCaps(parts.serverCaps);
+  return { usage, serverSettings };
+}
+
 export function understandProviders(parts: UnderstandProviderParts): UnderstandProviders {
   const { dataDir, writer, masker, clock, logger } = parts;
   const adapter = new HookedProvider(recordingsOf(parts), {
@@ -186,8 +205,7 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     ...{ beforeVerifier: parts.beforeVerifierCall, beforeGap: parts.beforeGapCall },
   });
   const ledger = new SpyLedger(new MemoryCostLedger());
-  const serverSettings = new MemoryServerSettings({});
-  if (parts.serverCaps !== undefined) void serverSettings.saveCaps(parts.serverCaps);
+  const { usage, serverSettings } = scopeStores(parts);
   const keys = new MemoryProviderKeyRepository();
   const box = new AesGcmSecretBox({ current: fixtureSecret(3) });
   seedOwnKeys(parts, keys, box);
@@ -199,6 +217,7 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     ollamaUrl: 'http://127.0.0.1:11434',
     serverSettings,
     ledger,
+    usage,
     priceTable: parts.priceTable ?? budgetTable,
     models: NO_LISTED_MODELS,
     masker,

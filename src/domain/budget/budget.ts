@@ -43,6 +43,16 @@ export interface RoleBudget {
   readonly maxTokens?: bigint;
 }
 
+/** The caps of a scope wider than the run, whose room is what the account has left (DEC-107). */
+type ScopeKind = 'user-day' | 'own-day' | 'server-month';
+
+function isScope(kind: UsageCap['kind']): kind is ScopeKind {
+  return kind === 'user-day' || kind === 'own-day' || kind === 'server-month';
+}
+
+/** P5-18: what is already spent against each scope cap when the run starts; none when unknown. */
+export type ScopeSpent = Readonly<Partial<Record<ScopeKind, bigint>>>;
+
 export interface CapInputs {
   readonly run: RunBudget;
   readonly role?: RoleBudget;
@@ -50,6 +60,8 @@ export interface CapInputs {
   readonly reader?: boolean;
   /** RF-429: the call's role is the verifier, which stops at its share of the run token cap unless it has its own. */
   readonly verifier?: boolean;
+  /** P5-18: the spend of the scope caps at run start, so the readers' share can be taken of their room. */
+  readonly scopeSpent?: ScopeSpent;
   readonly server: ServerCaps;
   readonly account: AccountCaps;
 }
@@ -92,15 +104,49 @@ function sharePercentOf(inputs: CapInputs): number | undefined {
   return inputs.verifier === true ? VERIFIER_SHARE_PERCENT : undefined;
 }
 
+/**
+ * RF-429, P5-18: a reader with no cost cap of its own, whose run is bound by a scope cap (the user's
+ * day, the server's month) rather than the run cost cap, is held to `READER_SHARE_PERCENT` of the
+ * room that scope has left at run start. The smallest remaining of the three binds; a run whose
+ * run cost cap is the smallest gets no such cap and behaves as before. Role cap, so it stops the
+ * readers only; the guard still refuses any call over any cap (DEC-112).
+ */
+function scopeShareCaps(keys: readonly UsageCap[], spent: ScopeSpent): readonly UsageCap[] {
+  const runCost = keys.find((cap) => cap.kind === 'run-cost');
+  let room: bigint | undefined;
+  for (const cap of keys) {
+    const used = isScope(cap.kind) ? spent[cap.kind] : undefined;
+    if (used === undefined) continue;
+    const left = cap.limit > used ? cap.limit - used : 0n;
+    room = room === undefined ? left : lower(room, left);
+  }
+  if (room === undefined || (runCost !== undefined && room >= runCost.limit)) return [];
+  return [
+    {
+      kind: 'role-cost',
+      limit: (room * BigInt(READER_SHARE_PERCENT)) / 100n,
+      source: 'reserve',
+    },
+  ];
+}
+
 // RF-422, RF-423, RF-429, RF-1106
 export function capsFor(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
   const keys = keyCaps(keySource, inputs);
   const own = roleCaps(inputs.role);
   const percent = sharePercentOf(inputs);
-  if (percent === undefined || own.some((cap) => cap.kind === 'role-tokens')) {
-    return [...keys, ...own];
+  const shares: UsageCap[] = [];
+  if (percent !== undefined && !own.some((cap) => cap.kind === 'role-tokens')) {
+    shares.push(...shareCaps(keys, percent));
   }
-  return [...keys, ...own, ...shareCaps(keys, percent)];
+  if (
+    inputs.reader === true &&
+    inputs.scopeSpent !== undefined &&
+    !own.some((cap) => cap.kind === 'role-cost')
+  ) {
+    shares.push(...scopeShareCaps(keys, inputs.scopeSpent));
+  }
+  return [...keys, ...own, ...shares];
 }
 
 function keyCaps(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {

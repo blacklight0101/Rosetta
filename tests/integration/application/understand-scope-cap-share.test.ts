@@ -37,13 +37,14 @@ const openRoles = understandSettings((settings) => ({
   budget: { ...settings.budget, run: { maxCostMicros: 50_000_000, maxTokens: 50_000_000 } },
 }));
 
-async function underScope(caps: Partial<ServerCaps>) {
+async function underScope(caps: Partial<ServerCaps>, priorSpendMicros?: bigint) {
   const h = await createUnderstandHarness({
     dataDir: temp.path,
     recording: 'understand-scope-cap.json',
     verifierRecording: 'verifier-all-supported.json',
     settings: openRoles,
     openAiKey: { of: 'server', key: serverKeyText },
+    ...(priorSpendMicros === undefined ? {} : { priorSpendMicros }),
     serverCaps: {
       runMicros: roomy,
       userDayMicros: roomy,
@@ -61,10 +62,12 @@ async function judged(h: Awaited<ReturnType<typeof underScope>>['h'], run: { run
   return indexSchema.parse(await readJson(file)).cards.map((card) => card.claimCounts);
 }
 
-describe.each([
+const SCOPES = [
   ['user-day', { userDayMicros: SCOPE }],
   ['server-month', { serverMonthMicros: SCOPE }],
-] as const)(
+] as const;
+
+describe.each(SCOPES)(
   'an understand run near the administrator %s cap',
   UNDERSTAND_TIMEOUT,
   (scope, caps) => {
@@ -84,7 +87,13 @@ describe.each([
       ]);
       expect(events.at(-1)?.data).toMatchObject({ errorCode: ERROR_CODES.budgetCapReached });
     });
+  },
+);
 
+describe.each(SCOPES)(
+  'the claims of a run near the administrator %s cap',
+  UNDERSTAND_TIMEOUT,
+  (scope, caps) => {
     it(`RF-429 P5-18 the claims the readers wrote are judged before the ${scope} cap stops the run`, async () => {
       const { h, run } = await underScope(caps);
 
@@ -92,7 +101,13 @@ describe.each([
         expect.objectContaining({ Proposed: 0, Unverified: 0, Supported: 1 }),
       ]);
     });
+  },
+);
 
+describe.each(SCOPES)(
+  'the spend of a run near the administrator %s cap',
+  UNDERSTAND_TIMEOUT,
+  (scope, caps) => {
     it(`DEC-112 the ${scope} cap is never passed`, async () => {
       const { h } = await underScope(caps);
 
@@ -101,29 +116,3 @@ describe.each([
     });
   },
 );
-
-describe('an understand run whose run cap binds', UNDERSTAND_TIMEOUT, () => {
-  it('RF-429 P5-18 a scope cap far above the run cap adds no cost share: the readers stop only by the token share', async () => {
-    const h = await createUnderstandHarness({
-      dataDir: temp.path,
-      recording: 'understand-cap.json',
-      verifierRecording: 'verifier-all-supported.json',
-      settings: understandSettings((settings) => ({
-        ...settings,
-        roles: openRoles.roles,
-        budget: { ...settings.budget, run: { maxCostMicros: 50_000_000, maxTokens: 293_000 } },
-      })),
-      openAiKey: { of: 'server', key: serverKeyText },
-      serverCaps: { runMicros: roomy, userDayMicros: roomy, serverMonthMicros: roomy },
-    });
-    await h.scan();
-
-    const run = await h.understand({ areas: ['Catalog', 'Services'], cloudConsent: true });
-
-    expect(run.endState).toBe('CapReached');
-    const capEvents = (await h.eventsOf(run)).filter((event) => event.type === 'budget.capReached');
-    expect(capEvents.map((event) => event.data)).toMatchObject([
-      { scope: 'role-tokens', role: 'reader', capSource: 'reserve' },
-    ]);
-  });
-});

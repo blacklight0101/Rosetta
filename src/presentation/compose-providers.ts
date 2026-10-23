@@ -10,6 +10,7 @@ import { TestProviders } from '../application/use-cases/test-providers.js';
 import type { Environment } from '../infrastructure/config/environment.js';
 import { loadPriceTable } from '../infrastructure/budget/price-file.js';
 import type { ModelList } from '../application/models/model-list.js';
+import { PgAccountUsage } from '../infrastructure/db/pg-account-usage.js';
 import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
 import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
 import { PgServerSettings } from '../infrastructure/db/pg-server-settings.js';
@@ -120,6 +121,7 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
     ollamaUrl: environment.ollamaUrl,
     serverSettings,
     ledger: new PgCostLedger(pool),
+    usage: new PgAccountUsage(pool),
     priceTable,
     models,
     masker,

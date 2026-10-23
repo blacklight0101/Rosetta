@@ -89,6 +89,8 @@ export interface UnderstandHarnessOptions {
   readonly refuseRemoval?: boolean;
   /** P5-18: the administrator's caps (run, user day, server month); the defaults when left out. */
   readonly serverCaps?: ServerCaps;
+  /** P5-18: micro-dollars the user already spent on the server keys earlier today and this month. */
+  readonly priorSpendMicros?: bigint;
   readonly openAiKey?: { readonly of: 'server' | 'user'; readonly key: string };
   /** P2-24: an Anthropic key the run's user owns. */
   readonly anthropicKey?: string;
@@ -242,6 +244,9 @@ export async function createUnderstandHarness(
     ...(options.decorateAnswer === undefined ? {} : { decorateAnswer: options.decorateAnswer }),
     ...(options.priceTable === undefined ? {} : { priceTable: options.priceTable }),
     ...(options.serverCaps === undefined ? {} : { serverCaps: options.serverCaps }),
+    ...(options.priorSpendMicros === undefined
+      ? {}
+      : { priorSpend: { userId: account.id, micros: options.priorSpendMicros } }),
     ...keysOf(options.openAiKey),
     ...(options.anthropicKey === undefined
       ? {}
