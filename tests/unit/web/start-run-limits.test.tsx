@@ -71,7 +71,7 @@ it('RF-1001 limits that cannot be read leave the page without a limit warning, n
 it('RF-405 DEC-159 the start page warns before the run that the caps cannot hold the first calls', async () => {
   const firstCalls = {
     ...{ calls: 4, promptTokens: 6000, maxOutputTokens: 8192, perCallMicros: '195000' },
-    ...{ reservedMicros: '780000', reservedTokens: '56768', adminRunCapMicros: null },
+    ...{ reservedMicros: '780000', reservedTokens: '56768', adminRunCapMicros: '500000' },
     caps: [{ kind: 'run-cost', unit: 'micros', limit: '500000', spent: '0', fits: false }],
   };
   renderStart({
@@ -84,12 +84,9 @@ it('RF-405 DEC-159 the start page warns before the run that the caps cannot hold
     expect(screen.getByTestId('cap-warning').textContent).toContain('4 first reader calls');
   });
   expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.50');
-  expect(screen.getByRole('link', { name: 'Review the caps' }).getAttribute('href')).toBe(
-    '/projects/p-1/settings#caps',
-  );
 });
 
-it('RF-405 the first-call warning links the caps of the project settings', async () => {
+it('P5-06 a first-call reservation on the project cap links the caps of the project settings', async () => {
   const firstCalls = {
     calls: 1,
     promptTokens: 6000,
@@ -98,17 +95,20 @@ it('RF-405 the first-call warning links the caps of the project settings', async
     reservedMicros: '780000',
     reservedTokens: '14192',
     adminRunCapMicros: null,
-    caps: [{ kind: 'run-cost', unit: 'micros', limit: '500000', spent: '0', fits: false }],
+    caps: [{ kind: 'run-cost', unit: 'micros', limit: '300000', spent: '0', fits: false }],
   };
   renderStart({
-    [`GET ${estimatePath}`]: json(200, { ...cloudEstimate, firstCalls }),
+    [`GET ${projectPath}`]: json(200, projectWithCap(300_000)),
+    [`GET ${estimatePath}`]: json(200, { ...cloudEstimateAt('100000'), firstCalls }),
     [limitsPath]: limitsAnswer({}),
   });
   await ready();
 
-  const link = await screen.findByRole('link', { name: 'Review the caps' });
-  expect(link.getAttribute('href')).toBe('/projects/p-1/settings#caps');
+  await waitFor(() => {
+    expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.30');
+  });
   expect(screen.getByTestId('cap-warning').textContent).toContain('the 1 first reader call:');
+  expect(capsLink()).not.toBeNull();
 });
 
 // P5-06: the "Review the caps" link goes only to caps the project settings page holds.
@@ -116,13 +116,14 @@ const capsLink = (): HTMLElement | null => screen.queryByRole('link', { name: 'R
 
 it('P5-06 a run cap warning on the project cap links the caps', async () => {
   renderStart({
+    [`GET ${projectPath}`]: json(200, projectWithCap(300_000)),
     [`GET ${estimatePath}`]: json(200, cloudEstimateAt('600000')),
     [limitsPath]: limitsAnswer({}),
   });
   await ready();
 
   await waitFor(() => {
-    expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.50');
+    expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.30');
   });
   expect(capsLink()).not.toBeNull();
 });
@@ -222,6 +223,44 @@ it('P5-06 a first-call reservation on a daily cap has no caps link', async () =>
 
   await waitFor(() => {
     expect(screen.getByTestId('cap-warning').textContent).toContain('first reader calls');
+  });
+  expect(capsLink()).toBeNull();
+});
+
+// P5-06 round 2: equal project and administrator caps resolve to the administrator, so raising the
+// project cap changes nothing and the page offers no link to the project caps.
+it('P5-06 equal project and administrator run caps give the run warning no caps link', async () => {
+  renderStart({
+    [`GET ${estimatePath}`]: json(200, cloudEstimateAt('600000')),
+    [limitsPath]: limitsAnswer({}),
+  });
+  await ready();
+
+  await waitFor(() => {
+    expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.50');
+  });
+  expect(capsLink()).toBeNull();
+});
+
+it('P5-06 equal project and administrator run caps give the first-call warning no caps link', async () => {
+  const firstCalls = {
+    calls: 4,
+    promptTokens: 6000,
+    maxOutputTokens: 8192,
+    perCallMicros: '195000',
+    reservedMicros: '780000',
+    reservedTokens: '56768',
+    adminRunCapMicros: '500000',
+    caps: [{ kind: 'run-cost', unit: 'micros', limit: '500000', spent: '0', fits: false }],
+  };
+  renderStart({
+    [`GET ${estimatePath}`]: json(200, { ...cloudEstimateAt('100000'), firstCalls }),
+    [limitsPath]: limitsAnswer({}),
+  });
+  await ready();
+
+  await waitFor(() => {
+    expect(screen.getByTestId('cap-warning').textContent).toContain('The page cannot raise it');
   });
   expect(capsLink()).toBeNull();
 });
