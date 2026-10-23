@@ -70,13 +70,14 @@ function eShopShaped(): { files: FileEntry[]; areas: Area[] } {
   const kube = Array.from({ length: 20 }, (_, index) =>
     entry(`.kube/schema/v1.18/resource-${String(index)}.json`, 50_000 + index * 6_000),
   );
+  const flagged = [entry('src/Web/Assets/odd-name.js', 90_000, { vendored: true })];
   const ownFiles = [
     entry('src/Web/Scripts/app.js', 1_200),
     entry('src/Web/Controllers/CatalogController.cs', 3_000),
     entry('src/Web/Models/CatalogItem.cs', 800),
     entry('src/Web/Content/Site.css', 600),
   ];
-  const files = [...library, ...kube, ...ownFiles];
+  const files = [...library, ...kube, ...flagged, ...ownFiles];
   const folderOf = (path: string): string => path.split('/').slice(0, -1).join('/');
   const byFolder = new Map<string, string[]>();
   for (const file of files) {
@@ -93,6 +94,13 @@ function eShopShaped(): { files: FileEntry[]; areas: Area[] } {
   return { files, areas };
 }
 
+const ownPaths = [
+  'src/Web/Scripts/app.js',
+  'src/Web/Controllers/CatalogController.cs',
+  'src/Web/Models/CatalogItem.cs',
+  'src/Web/Content/Site.css',
+];
+
 describe('P3-112 the eShop-shaped scan', () => {
   it('"Own code only" keeps under one million tokens', () => {
     const map = eShopShaped();
@@ -103,6 +111,7 @@ describe('P3-112 the eShop-shaped scan', () => {
 
     expect(ownTokens).toBeLessThan(1_000_000);
     expect([...thirdParty]).toContain('.kube/schema/v1.18');
+    expect([...thirdParty]).toContain('src/Web/Assets');
   });
 
   it('the own Scripts/app.js is still listed and first-party, so its area stays offered', () => {
@@ -112,5 +121,9 @@ describe('P3-112 the eShop-shaped scan', () => {
     expect(app !== undefined && isThirdPartyFile(app)).toBe(false);
     expect(thirdPartyAreaNames(map).has('src/Web/Scripts')).toBe(false);
     expect(map.files.map((file) => file.path)).toContain('src/Web/Scripts/app.js');
+    for (const path of ownPaths) {
+      const file = map.files.find((each) => each.path === path);
+      expect(file !== undefined && !isThirdPartyFile(file)).toBe(true);
+    }
   });
 });

@@ -24,6 +24,16 @@ describe('isVendoredContent', () => {
     expect(isVendoredContent('Scripts/app.js', own, 20)).toBe(false);
   });
 
+  it.each([
+    '// Uses jQuery v3.6.0 (MIT)\nfunction a() {}\n',
+    '/* Order form. Requires bootstrap 3.3 modal. Licensed under company policy */\nfunction a() {}\n',
+    '// Wrapper around lodash 4.17 helpers. License: proprietary\nfunction a() {}\n',
+    '// Based on d3 v7.0 example, BSD\nfunction a() {}\n',
+    '/* Our grid. Requires Bootstrap v3.3.7, MIT licence */\nfunction a() {}\n',
+  ])('own header %j is not vendored', (header) => {
+    expect(isVendoredContent('Scripts/order.js', header, 20)).toBe(false);
+  });
+
   it('a library header on a non-script file is ignored', () => {
     expect(isVendoredContent('Docs/notes.md', jquery, 20)).toBe(false);
   });

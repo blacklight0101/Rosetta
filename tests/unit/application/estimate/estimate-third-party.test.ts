@@ -36,4 +36,19 @@ describe('RF-1001 third-party areas', () => {
       { name: 'Scripts#1', estimatedTokens: 1000, files: 2, thirdParty: true },
     ]);
   });
+
+  it('P3-112 does not offer an area with no readable file (zero tokens)', async () => {
+    const empty = entry('Images/logo.png', 0, { lines: 0, skipped: 'binary' });
+    const own = entry('Catalog/List.aspx.cs', 500);
+    const areas: readonly Area[] = [
+      { ...areaOf('Catalog', 500), files: [own.path] },
+      { ...areaOf('Images', 0), files: [empty.path] },
+    ];
+    const harness = createEstimateHarness(areas, [own, empty]);
+    const project = await projectWithScan(harness, userAmy.userId, local);
+
+    const outcome = await harness.estimate.execute({ actor: userAmy, projectId: project.id });
+
+    expect(outcome.ok && outcome.value.areas.map((each) => each.name)).toEqual(['Catalog']);
+  });
 });
