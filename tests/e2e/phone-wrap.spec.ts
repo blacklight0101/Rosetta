@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { expectNoSeriousViolations } from './support/axe.js';
 import { expect, test } from './support/fixtures.js';
 import { openStartPage, runStatus, startAndOpenLiveRun } from './support/live-run-page.js';
 import { openPlanSetup } from './support/plan-setup-page.js';
@@ -49,6 +50,7 @@ test(
 
     await expect(page.getByText(longPath)).toBeVisible();
     await expectNoSidewaysScroll(page);
+    await expectNoSeriousViolations(page);
   },
 );
 
@@ -63,6 +65,7 @@ test(
 
     await expect(page.getByText(longPath)).toBeVisible();
     await expectNoSidewaysScroll(page);
+    await expectNoSeriousViolations(page);
   },
 );
 
@@ -80,5 +83,6 @@ test(
 
     await expect(page.getByText(longPath)).toBeVisible();
     await expectNoSidewaysScroll(page);
+    await expectNoSeriousViolations(page);
   },
 );
