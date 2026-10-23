@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "description": "RF-243, P5-02: the Assets reader asks what \"Qty\" represents, which the cited comment defines, and a genuine question; the run drops the first and logs it. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Assets/Asset.cs",
+                  "startLine": 1,
+                  "endLine": 3
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"OQ\",\n      \"title\": \"Quantity label\",\n      \"area\": \"Assets\",\n      \"summary\": \"The asset class carries a quantity label.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The class is labelled with a quantity comment.\",\n          \"citations\": [\n            \"Assets/Asset.cs:1-3\"\n          ]\n        }\n      ],\n      \"question\": \"What does \\\"Qty\\\" represent?\",\n      \"whyItMatters\": \"Names the field.\"\n    },\n    {\n      \"type\": \"OQ\",\n      \"title\": \"Who counts assets\",\n      \"area\": \"Assets\",\n      \"summary\": \"The asset class carries a quantity label.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The class is labelled with a quantity comment.\",\n          \"citations\": [\n            \"Assets/Asset.cs:1-3\"\n          ]\n        }\n      ],\n      \"question\": \"Who counts the assets on hand each month?\",\n      \"whyItMatters\": \"Decides who owns the count.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}
