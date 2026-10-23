@@ -1,4 +1,6 @@
 import type { Area } from '../../domain/code-map/area.js';
+import type { CodeMap } from '../../domain/code-map/code-map.js';
+import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
 import { ok, type Result } from '../../domain/errors/result.js';
 import type { ProjectRef } from '../ports/answers-file.js';
 import {
@@ -24,12 +26,15 @@ export interface TaskPlan {
 
 export async function planTasks(input: {
   readonly areas: readonly Area[];
+  /** P3-123: its third-party areas are read after own code, and not by default. */
+  readonly scanned?: { readonly codeMap: CodeMap };
   readonly options: UnderstandOptions;
   readonly project: ProjectRef;
   readonly rerun: RerunDependencies;
 }): Promise<Result<TaskPlan, UnknownAreas>> {
   const { areas, options, project } = input;
-  const tasks = planReaderTasks(areas, options.areas);
+  const library = input.scanned ? thirdPartyAreaNames(input.scanned.codeMap) : new Set<string>();
+  const tasks = planReaderTasks(areas, options.areas, library);
   if (!tasks.ok || options.withAnswers !== true) {
     return tasks.ok ? ok({ tasks: tasks.value }) : tasks;
   }
@@ -40,7 +45,7 @@ export async function planTasks(input: {
   );
   const wanted = areasToRun(plan, options.areas);
   const chosen = onlyAreas(plan, wanted);
-  const planned = wanted.length === 0 ? undefined : planReaderTasks(areas, wanted);
+  const planned = wanted.length === 0 ? undefined : planReaderTasks(areas, wanted, library);
   const list = planned?.ok === true ? planned.value : [];
   return ok({ tasks: withAnswersOf(list, chosen), rerun: { deps: input.rerun, plan: chosen } });
 }

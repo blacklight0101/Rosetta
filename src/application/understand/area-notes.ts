@@ -36,3 +36,21 @@ export function coverageNoteOf(
 export function withoutQuestions(drafts: readonly CardDraft[]): readonly CardDraft[] {
   return drafts.filter((draft) => draft.type !== 'OQ');
 }
+
+// Words that say an area is third-party code: what a card of a library area is about when it only
+// restates that. A card of own code in a library area is not expected, so the match is loose.
+const LIBRARY_WORDS =
+  /third[- ]?party|vendor(?:ed)?|librar(?:y|ies)|minified|\.min\.|bundle|generated|jquery|bootstrap|framework/iu;
+
+/**
+ * P3-123, RF-243: an area of third-party code writes no FEAT or BR card that only says it holds
+ * third-party code. A FEAT or BR card whose title or summary names libraries is dropped; other
+ * card types are kept.
+ */
+export function withoutLibraryDescriptions(drafts: readonly CardDraft[]): readonly CardDraft[] {
+  return drafts.filter(
+    (draft) =>
+      (draft.type !== 'FEAT' && draft.type !== 'BR') ||
+      !LIBRARY_WORDS.test(`${draft.title} ${draft.summary}`),
+  );
+}

@@ -192,6 +192,18 @@ function offeredAreas(
     }));
 }
 
+/**
+ * P3-123: with no area list the figures are for the default (own code), but the list still offers
+ * every area, because the start page builds its picker from it.
+ */
+function offeredFor(
+  planned: readonly Area[],
+  covered: readonly Area[],
+  requested: readonly string[] | undefined,
+): readonly Area[] {
+  return (requested ?? []).length > 0 ? planned.filter((area) => covered.includes(area)) : planned;
+}
+
 export class EstimateRun {
   private readonly deps: EstimateRunDependencies;
 
@@ -207,10 +219,12 @@ export class EstimateRun {
     const scanned = await this.scanOf(project);
     if (scanned === undefined) return err(ERROR_CODES.codeMapMissing);
     const { codeMap, workbookFolders } = scanned;
-    const tasks = planReaderTasks(plannedAreas(scanned), request.areas);
+    const planned = plannedAreas(scanned);
+    const thirdParty = thirdPartyAreaNames(codeMap);
+    const tasks = planReaderTasks(planned, request.areas, thirdParty);
     if (!tasks.ok) return err(ERROR_CODES.areaUnknown);
     const areas = tasks.value.map((task) => task.area);
-    const thirdParty = thirdPartyAreaNames(codeMap);
+    const offered = offeredFor(planned, areas, request.areas);
     const assumptions = assumptionsOf(project.settings, this.deps.models);
     const marks = new Map(areas.map((area) => [area.name, marksOf(area, codeMap)]));
     const workbooks = workbookAreaNames(areas, workbookFolders);
@@ -239,7 +253,8 @@ export class EstimateRun {
       },
       priceTableVersion: this.deps.priceTable.version,
       currency: this.deps.priceTable.currency,
-      areas: offeredAreas(areas, thirdParty),
+      areas: offeredAreas(offered, thirdParty),
+      libraryAreas: areas.filter((area) => thirdParty.has(area.name)).length,
       assumptions: { ...assumptions, summariserBatches: summariser.batches },
       roles,
       total: sumPoints(roles.map((role) => role.points)),

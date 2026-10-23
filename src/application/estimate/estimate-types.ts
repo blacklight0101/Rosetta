@@ -147,6 +147,12 @@ export interface RunEstimate {
   readonly currency: 'USD';
   /** The areas the estimate covers, in the code map's order. */
   readonly areas: readonly EstimatedArea[];
+  /**
+   * P3-123: how many of the areas the figures cover hold only third-party code. The figures cover
+   * the own code when the request names no area and the project has library areas; a count above
+   * zero is a warning that library areas were asked for and are read last.
+   */
+  readonly libraryAreas: number;
   readonly assumptions: EstimateAssumptions;
   readonly roles: readonly RoleEstimate[];
   readonly total: ByScenario<EstimatePoint>;

@@ -6,7 +6,7 @@ import type { CardDraft } from '../../../../src/domain/cards/card-ids.js';
 // holds third-party code.
 
 function draft(type: CardDraft['type'], title: string, summary: string): CardDraft {
-  return { type, title, summary, area: 'Scripts', confidence: 'high', claims: [] };
+  return { type, title, summary, area: 'Scripts', confidence: 'High', claims: [] };
 }
 
 describe('cards of a third-party area', () => {
