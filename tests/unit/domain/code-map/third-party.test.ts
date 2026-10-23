@@ -45,6 +45,19 @@ const thirdPartyFiles = [
   'bower_components/x/x.js',
   'wwwroot/lib/jquery/dist/jquery.js',
   'wwwroot/lib/bootstrap/dist/js/bootstrap.js',
+  'Content/bootstrap-grid.css',
+  'Content/bootstrap-grid.min.css',
+  'Content/bootstrap-grid.css.map',
+  'Content/bootstrap-grid.min.css.map',
+  'Content/bootstrap-reboot.css',
+  'Content/bootstrap-reboot.min.css',
+  'Content/bootstrap-reboot.css.map',
+  'Content/bootstrap-reboot.min.css.map',
+  'Content/bootstrap-utilities.css',
+  'Content/bootstrap-utilities.min.css',
+  'Content/bootstrap-utilities.css.map',
+  'Content/bootstrap-utilities.min.css.map',
+  'Scripts/bootstrap-grid.min.css',
 ];
 
 const ownFiles = [
@@ -62,6 +75,7 @@ const ownFiles = [
   'jquery-notes/readme.js',
   'web/webforms.js',
   'Content/Site.css',
+  'Content/bootstrap-grid-custom.css',
   'Domain/Vendor/Vendor.cs',
   'Procurement/Vendor/VendorService.cs',
   'vendor/acme/Thing.cs',
