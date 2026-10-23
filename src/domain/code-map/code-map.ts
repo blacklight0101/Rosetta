@@ -85,7 +85,7 @@ interface LanguagePackUse {
 }
 
 /** RF-113: increase when scanner changes make older maps worth rebuilding. */
-export const CURRENT_SCANNER_VERSION = 1;
+export const CURRENT_SCANNER_VERSION = 3;
 
 export interface CodeMap {
   readonly schemaVersion: 1;

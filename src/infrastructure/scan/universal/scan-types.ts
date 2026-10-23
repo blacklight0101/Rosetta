@@ -21,6 +21,8 @@ export interface ScannedFile {
   /** Sorted, without duplicates. */
   readonly artefactKinds: readonly ArtefactKind[];
   readonly skipped?: SkipReason;
+  /** P3-112: a vendored library or generated schema, seen in the file's head. */
+  readonly vendored?: true;
 }
 
 /** RF-100: an entry the scan left out by default, with its rule and how many files it holds. */
