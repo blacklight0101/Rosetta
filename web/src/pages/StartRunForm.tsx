@@ -48,6 +48,7 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
         sourceKind={form.project.sourceKind}
         estimate={estimate}
         warnings={warnings}
+        capsHref={`/projects/${form.project.id}/settings#caps`}
         onRetry={choice.reestimate}
         cap={{
           text: form.capText,

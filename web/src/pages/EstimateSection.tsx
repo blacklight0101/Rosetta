@@ -5,6 +5,7 @@ import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { Glyph } from '../components/Glyph.js';
+import { Link } from '../components/Link.js';
 import type { CapWarning } from '../lib/cap-warnings.js';
 import { scanSubjectOf } from '../lib/live-run/scan-subject.js';
 import { capComparison } from '../lib/cap-comparison.js';
@@ -54,6 +55,8 @@ export interface EstimateSectionProps {
   readonly estimate: EstimateLoad;
   readonly cap: CapField;
   readonly warnings: readonly CapWarning[];
+  /** The project's settings page with its caps section, linked from a cap warning. */
+  readonly capsHref: string;
 }
 
 const hintId = 'cap-hint';
@@ -87,7 +90,16 @@ function CapMeter(props: { readonly estimate: RunEstimate; readonly cap: CapFiel
   );
 }
 
-function Warnings({ warnings }: { readonly warnings: readonly CapWarning[] }): JSX.Element | null {
+/** The caps of the project are where a run cap or a first-call reservation is changed. */
+const namesProjectCaps = (id: CapWarning['id']): boolean => id === 'run' || id.startsWith('first-calls-');
+
+function Warnings({
+  warnings,
+  capsHref,
+}: {
+  readonly warnings: readonly CapWarning[];
+  readonly capsHref: string;
+}): JSX.Element | null {
   if (warnings.length === 0) return null;
   return (
     <div class="rst-callout rst-callout--warn" role="status" data-testid="cap-warning">
@@ -96,7 +108,15 @@ function Warnings({ warnings }: { readonly warnings: readonly CapWarning[] }): J
           <span class="rst-callout__icon">
             <Glyph name="warning-triangle" />
           </span>
-          <p>{warning.text}</p>
+          <p>
+            {warning.text}
+            {namesProjectCaps(warning.id) ? (
+              <>
+                {' '}
+                <Link href={capsHref}>Review the caps</Link>
+              </>
+            ) : null}
+          </p>
         </div>
       ))}
     </div>
@@ -174,7 +194,7 @@ function Body(props: EstimateSectionProps & { readonly onRetry: () => void }): J
         typed={cap.capMicros}
         where="start"
       />
-      <Warnings warnings={warnings} />
+      <Warnings warnings={warnings} capsHref={props.capsHref} />
       <ServerKeyNote estimate={estimate.estimate} />
       <EstimateTable estimate={estimate.estimate} />
     </>

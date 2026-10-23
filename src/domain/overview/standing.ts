@@ -34,7 +34,7 @@ function sentenceOf(area: AreaStanding): string | undefined {
   if (area.failure !== undefined) {
     return `${name}: its reader could not finish (${area.failure}).${nextStepOf(area.failure)}`;
   }
-  if (area.cards === 0) return `${name}: no card passed the citation check.`;
+  if (area.cards === 0) return `${name}: no card passed the citation check and the judgement.`;
   return undefined;
 }
 

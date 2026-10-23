@@ -26,7 +26,7 @@ const capNames: Readonly<Record<string, string>> = {
 };
 
 const raising: Readonly<Record<string, string>> = {
-  'run-cost': 'Raise the run cap above.',
+  'run-cost': "Raise the run cap in the project's caps.",
   'run-tokens': "Raise the run token cap in the project's caps.",
   'role-cost': "Raise the reader's cost cap in the project's caps.",
   'role-tokens': "Raise the reader's token cap in the project's caps.",
@@ -84,7 +84,7 @@ function textOf(first: FirstCalls, cap: Short): string {
     : (raising[cap.kind] ?? '');
   const reserved = amount(cap.unit, reservedOf(first, cap.unit));
   return (
-    `The caps cannot hold the ${String(first.calls)} first reader calls: they reserve ${reserved} ` +
+    `The caps cannot hold the ${String(first.calls)} first reader ${first.calls === 1 ? 'call' : 'calls'}: they reserve ${reserved} ` +
     `together and the ${name} of ${amount(cap.unit, cap.limit)} is too low (at least ` +
     `${amount(cap.unit, needed)} needed). ${raise}`
   );

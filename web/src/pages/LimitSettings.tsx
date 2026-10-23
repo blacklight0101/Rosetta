@@ -154,6 +154,11 @@ function ScanNumbers({ editor, errorFor }: SectionProps): JSX.Element {
   );
 }
 
+// default-settings.ts: a reader on Ollama runs one task at a time; the other providers take the template's 4.
+function parallelismDefault(provider: string): number {
+  return provider === 'ollama' ? 1 : templateDefaults.parallelism;
+}
+
 function ParallelReaders({ editor, errorFor }: SectionProps): JSX.Element {
   return (
     <div class="rst-settings__grid">
@@ -165,7 +170,7 @@ function ParallelReaders({ editor, errorFor }: SectionProps): JSX.Element {
         errorFor={errorFor}
         range={ranges.parallelism}
         unit="count"
-        defaultValue={templateDefaults.parallelism}
+        defaultValue={parallelismDefault(editor.draft.roles.reader.provider)}
         value={editor.draft.parallelism}
         onInput={(parallelism) => {
           editor.change({ parallelism });
