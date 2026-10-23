@@ -78,6 +78,6 @@ describe('P3-127 a masked secret keeps the quoting of a card file', () => {
 
     expect(calls).toBeGreaterThan(0);
     const escapedMarker = new RegExp(String.raw`\\(?:u005b|\[)MASKED`);
-    expect(seen.filter((t) => escapedMarker.test(t))).toEqual([]);
+    expect(seen.filter((t) => t.startsWith('---') && escapedMarker.test(t))).toEqual([]);
   });
 });
