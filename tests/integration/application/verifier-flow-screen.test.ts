@@ -90,13 +90,13 @@ describe('verifier checks of a SCRN card', () => {
     expect(screen?.claims[1]?.verdict?.reason).toContain('no length is checked');
   });
 
-  it('RF-626 ADR-005 a rejected route and a rejected field are Rejected by the verifier step on their own', async () => {
+  it('RF-626 ADR-005 a rejected route is Rejected by the model and a field on the page is Supported by the lines (P3-122)', async () => {
     const drafts = [screenDraftWithMadeUpClaims];
     const [screen] = (await judged(drafts, 'verifier-flow-screen-derived.json')).cards;
 
     expect(statusesOf(screen)?.slice(3)).toEqual([
       ['SCRN-001.c4', 'Rejected'],
-      ['SCRN-001.c5', 'Rejected'],
+      ['SCRN-001.c5', 'Supported'],
     ]);
     expect(screen?.claims[3]?.text).toBe('The screen is at the route /Catalog/Details.aspx.');
     expect(screen?.claims[4]?.text).toBe('Field NameLabel (label, optional) is on the screen.');

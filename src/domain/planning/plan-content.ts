@@ -12,6 +12,7 @@ import type {
   DraftRisk,
   DraftTask,
   PlanDraft,
+  UnreadableItem,
 } from './plan-draft.js';
 import { unknownPositions, type RequirementNote } from './requirement-notes.js';
 import { draftFault, leftOutOf, noRequirement, type LeftOutCard } from './left-out-card.js';
@@ -92,6 +93,8 @@ export interface PlanAssembly {
   readonly content: PlanContent;
   /** Q-54: the task cards of the draft that the package leaves out, by position and field. */
   readonly leftOut: readonly LeftOutCard[];
+  /** P3-126: the items of the other lists that could not be read, by list, position and field. */
+  readonly unreadable: readonly UnreadableItem[];
   /** How many items the draft had that the package leaves out. */
   readonly dropped: {
     readonly requirements: number;
@@ -206,6 +209,14 @@ function componentsOf(drafts: readonly DraftComponent[]): DraftComponent[] {
   }));
 }
 
+/** The entity mappings that cite a supported card, with only the supported ones kept. */
+function entitiesOf(drafts: readonly DraftEntity[], supported: ReadonlySet<string>): DraftEntity[] {
+  return drafts.flatMap((entity) => {
+    const sources = knownSources(entity.sources, supported);
+    return sources.length === 0 ? [] : [{ ...entity, sources }];
+  });
+}
+
 export interface AssemblyOptions {
   /** RF-607: given SDD, a task that implements no requirement is not written. */
   readonly specificationDriven?: boolean;
@@ -218,10 +229,7 @@ export function assemblePlan(
   options: AssemblyOptions = {},
 ): PlanAssembly {
   const requirements = requirementsOf(draft.requirements, supported);
-  const entities = draft.entities.flatMap((entity) => {
-    const sources = knownSources(entity.sources, supported);
-    return sources.length === 0 ? [] : [{ ...entity, sources }];
-  });
+  const entities = entitiesOf(draft.entities, supported);
   const specified = options.specificationDriven === true;
   const { tasks, leftOut } = tasksOf(draft, requirements.idAt, specified);
   const notes = unknownPositions(draft.tasks, draft.requirements.length);
@@ -236,6 +244,7 @@ export function assemblePlan(
   );
   return {
     leftOut: leftOutOf(draft, leftOut),
+    unreadable: draft.unreadableItems ?? [],
     content: {
       summary: draft.summary,
       requirements: requirements.kept,

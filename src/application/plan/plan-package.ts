@@ -7,6 +7,8 @@ import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content
 import { addStyleRisks, checkStyle } from '../../domain/planning/style-rules.js';
 import { excludedClaims, supportedCards } from '../../domain/planning/plan-sources.js';
 import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
+import type { UnreadableItem } from '../../domain/planning/plan-draft.js';
+import { placeOf } from './plan-repair.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
 import type { PlannedDocuments } from './plan-documents.js';
 import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
@@ -50,6 +52,29 @@ function taskCardItems(cards: readonly LeftOutCard[]): HandoffPackage['leftOut']
   }));
 }
 
+/** P3-126: the items of the other lists of the answer that could not be read, for checks.md. */
+function unreadableItems(items: readonly UnreadableItem[]): HandoffPackage['leftOut'] {
+  return items.map((each) => ({
+    area: 'Plan answer',
+    item: placeOf(each),
+    field: each.field,
+    reason: each.reason,
+  }));
+}
+
+/** P3-101, P3-102, P3-126: every part of the plan the package leaves out, for checks.md. */
+export function leftOutItems(documents: {
+  readonly leftOut: readonly LeftOutCard[];
+  readonly unreadable: readonly UnreadableItem[];
+  readonly dataModelProblems: PlannedDocuments['dataModelProblems'];
+}): HandoffPackage['leftOut'] {
+  return [
+    ...taskCardItems(documents.leftOut),
+    ...unreadableItems(documents.unreadable),
+    ...dataModelItems(documents.dataModelProblems),
+  ];
+}
+
 /** P3-102: the data-model parts the parser dropped, for checks.md (area "Data model"). */
 function dataModelItems(
   problems: PlannedDocuments['dataModelProblems'],
@@ -79,7 +104,7 @@ export function handoffPackageOf(
   documents: PlannedDocuments & {
     readonly shapes: ScanShapes | undefined;
     readonly workbookFormulas: WorkbookFormulas | undefined;
-    readonly leftOut: readonly LeftOutCard[];
+    readonly leftOut: HandoffPackage['leftOut'];
     /** P3-117: the texts of the planner prompts the example sentences are read from. */
     readonly examples: readonly string[];
   },
@@ -119,6 +144,6 @@ export function handoffPackageOf(
     workbookFormulas: documents.workbookFormulas,
     incomplete,
     copiedExamples: copiedIn(prd, decided.content, documents.examples),
-    leftOut: [...taskCardItems(documents.leftOut), ...dataModelItems(documents.dataModelProblems)],
+    leftOut: documents.leftOut,
   };
 }

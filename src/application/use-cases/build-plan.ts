@@ -13,7 +13,8 @@ import {
 } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
 import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
-import { parsePlanAnswer } from '../plan/plan-answer.js';
+import { readPlanAnswer } from '../plan/plan-answer.js';
+import { draftAfterRepair, unreadableMessages } from '../plan/plan-repair.js';
 import type { PlanDraft } from '../../domain/planning/plan-draft.js';
 import { planLinks } from '../plan/plan-links.js';
 import { windowOfRole } from '../plan/plan-window.js';
@@ -28,7 +29,7 @@ import {
   type PlanFiles,
   type PlanPromptSources,
 } from '../plan/plan-prompts.js';
-import { handoffPackageOf } from '../plan/plan-package.js';
+import { handoffPackageOf, leftOutItems } from '../plan/plan-package.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
 import type { HandoffWriter } from '../ports/handoff-writer.js';
 import type { IdGenerator } from '../ports/id-generator.js';
@@ -126,7 +127,7 @@ export class BuildPlan implements RunExecutor {
     };
     const input = { cards: supported, brief, catalogue, answered };
     const output = await askPlanner(call, input);
-    const draft = parsePlanAnswer(output);
+    const draft = await draftAfterRepair(call, input, prompts.planRepair, readPlanAnswer(output));
     if (draft === undefined) {
       const message = 'The planner answer could not be read: no JSON object in it reads as a plan.';
       return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
@@ -168,8 +169,8 @@ export class BuildPlan implements RunExecutor {
     const shapes = await planShapes(this.deps, inputs);
     const workbookFormulas = await planWorkbookFormulas(this.deps, inputs);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
-      ...{ ...documents, shapes, leftOut: assembly.leftOut, examples },
-      workbookFormulas,
+      ...{ ...documents, shapes, examples, workbookFormulas },
+      leftOut: leftOutItems({ ...assembly, dataModelProblems: documents.dataModelProblems }),
     });
     await this.deps.handoff.write(scopeOf(run), handoff);
     // Q-45: the extra call was refused or failed; the package of the first call stays as it is.
@@ -238,6 +239,7 @@ export class BuildPlan implements RunExecutor {
   ): Promise<PlanAssembly | undefined> {
     const { specificationDriven } = checks;
     const assembly = assemblePlan(draft, new Set(checks.supported), { specificationDriven });
+    for (const message of unreadableMessages(assembly.unreadable)) await this.warn(run, message);
     for (const left of assembly.leftOut) {
       const { position, field, reason } = left;
       await this.warn(

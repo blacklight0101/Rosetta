@@ -15,6 +15,7 @@ import {
   type SkipLookup,
 } from './cited-lines.js';
 import { renderedFileReason } from './rendered-file-claim.js';
+import { screenFieldVerdict } from './screen-field-check.js';
 import { parseVerdictAnswer, type JudgedStatus } from './verdict-answer.js';
 import { verifierRetryMessage, type VerifierPrompts } from './verifier-prompts.js';
 
@@ -32,6 +33,8 @@ export type Judgement =
       readonly kind: 'judged';
       readonly status: JudgedStatus | 'Unverified';
       readonly reason: string;
+      /** P3-122: true when a rule decided it and no model was called; the run log counts them. */
+      readonly withoutModel?: true;
     }
   | { readonly kind: 'stopped' }
   /** RF-304: a cap refused the call or stopped the run; the claim is left `Unverified`. */
@@ -156,7 +159,9 @@ export async function judgeClaim(
 ): Promise<Judgement> {
   if (parts.call.signal.aborted) return stopOf(parts.call.signal);
   const rendered = renderedFileReason(claim, parts.workbookFolders);
-  if (rendered !== undefined) return { kind: 'judged', status: 'Rejected', reason: rendered };
+  if (rendered !== undefined) {
+    return { kind: 'judged', status: 'Rejected', reason: rendered, withoutModel: true };
+  }
   const evidence = await readCitedLines(
     parts.reader,
     claim.citations,
@@ -164,6 +169,9 @@ export async function judgeClaim(
     parts.skipReason,
   );
   if (!evidence.ok) return unverified(evidence.error);
+  // P3-122: a derived field claim the cited lines decide costs no call.
+  const field = screenFieldVerdict(claim, evidence.value);
+  if (field !== undefined) return { kind: 'judged', ...field, withoutModel: true };
   const asked: LlmMessage[] = [
     { role: 'user', content: evidenceMessage(parts, claim, evidence.value) },
   ];

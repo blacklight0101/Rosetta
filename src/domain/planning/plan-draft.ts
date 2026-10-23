@@ -87,12 +87,24 @@ export interface PlanDraft {
    * the domain leaves out, so the positions the other cards name still point at the right cards.
    */
   readonly unreadableTasks?: readonly UnreadableTask[];
+  /** P3-126: the items of the other lists left out because they could not be read. */
+  readonly unreadableItems?: readonly UnreadableItem[];
 }
 
 export interface UnreadableTask {
   /** The card's position in the answer, from 1. */
   readonly position: number;
   /** The first field that was wrong, or `card` when the card is not an object. */
+  readonly field: string;
+  /** A fixed phrase for the kind of fault; it holds no text of the answer. */
+  readonly reason: string;
+}
+
+export interface UnreadableItem {
+  /** The list, for example `risks` or `technical.security`. */
+  readonly list: string;
+  /** The item's position in the answer's list, from 1. */
+  readonly position: number;
   readonly field: string;
   /** A fixed phrase for the kind of fault; it holds no text of the answer. */
   readonly reason: string;

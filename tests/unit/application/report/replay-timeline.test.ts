@@ -199,4 +199,20 @@ describe('buildReplay judgement step', () => {
       },
     ]);
   });
+
+  it('P3-122 says how many claims were judged without a model call when the event counts them', () => {
+    const judged = buildReplay(replayDemoRunKey, [
+      event(1, 'verify.judgement.ended', {
+        supported: 4,
+        rejected: 2,
+        unverified: 0,
+        notJudged: 0,
+        withoutModel: 3,
+      }),
+    ]);
+
+    expect(judged.steps.map((step) => step.text)).toEqual([
+      '4 supported, 2 rejected, 0 unverified, 0 not judged, 3 judged without a model call',
+    ]);
+  });
 });
