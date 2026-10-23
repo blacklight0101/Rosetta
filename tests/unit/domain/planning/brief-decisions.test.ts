@@ -11,7 +11,7 @@ const supported = new Set(['FEAT-001', 'BR-001']);
 
 function decisionsFor(answers: BriefAnswers, after = 0): ReturnType<typeof briefDecisions> {
   const brief = { ...buildBrief(answers, shippedCatalogue), savedAt: '2026-10-12T09:30:00.000Z' };
-  return briefDecisions(brief, shippedCatalogue, supported, after);
+  return briefDecisions(brief, shippedCatalogue, { supported, cards: [], tasks: [] }, after);
 }
 
 describe('briefDecisions: the style', () => {

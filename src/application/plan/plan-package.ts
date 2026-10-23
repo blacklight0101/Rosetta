@@ -130,7 +130,7 @@ export function handoffPackageOf(
   const { brief, sourceRun, project, cards, questions, upload } = inputs;
   const sources = supportedCards(cards);
   const supported = new Set(sources.map((card) => card.id));
-  const decided = decideOnce(content, brief, catalogue, supported);
+  const decided = decideOnce(content, brief, catalogue, { supported, cards: sources });
   const style = principleOf(catalogue, brief.architecture.style);
   const styleCheck = checkStyle(brief.architecture.style, decided.content.components);
   return {

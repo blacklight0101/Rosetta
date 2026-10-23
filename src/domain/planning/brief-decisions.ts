@@ -1,6 +1,7 @@
 import type { ArchitectureStyle, Catalogue } from './catalogue.js';
 import { layerNames } from './brief-questions.js';
 import { migrationStrategyInfo } from './migration-strategy.js';
+import type { SourceCard } from './plan-sources.js';
 import { planId, type PlanDecision } from './plan-content.js';
 import { migrationStrategies, type PlanningBrief, type StackLayer } from './planning-brief.js';
 
@@ -25,6 +26,18 @@ export interface BriefChoices {
   readonly style: string;
   readonly migration: string;
   readonly stack: readonly PackageStack[];
+}
+
+/** What the records of the brief are written from (RF-633): the supported cards, in card order, and the task cards. */
+export interface BriefEvidence {
+  /** The ids of the cards with a supported claim. */
+  readonly supported: ReadonlySet<string>;
+  readonly cards: readonly SourceCard[];
+  readonly tasks: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly files: readonly string[];
+  }[];
 }
 
 export interface BriefDecisions {
@@ -118,12 +131,12 @@ function stackDecision(entry: PlanningBrief['stack'][number], id: string): PlanD
 export function briefDecisions(
   brief: PlanningBrief,
   catalogue: Catalogue,
-  supported: ReadonlySet<string>,
+  evidence: BriefEvidence,
   after: number,
 ): BriefDecisions {
   let next = after;
   const nextId = (): string => planId('ADR', ++next);
-  const style = styleDecision(brief, catalogue, supported, nextId());
+  const style = styleDecision(brief, catalogue, evidence.supported, nextId());
   const layers = brief.stack.map((entry) => stackDecision(entry, nextId()));
   const migration = migrationDecision(brief, nextId());
   return {
