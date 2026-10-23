@@ -100,7 +100,7 @@ export function messageBody(
     messages: withLastBreakpoint(turnsOf(request.messages)),
     ...(request.tools.length > 0 ? { tools: toolsOf(request) } : {}),
     ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
-    ...(request.reasoningEffort === undefined
+    ...(request.reasoningEffort === undefined || request.reasoningEffort === 'none'
       ? {}
       : { output_config: { effort: request.reasoningEffort } }),
     stream: false,

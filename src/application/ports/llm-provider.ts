@@ -19,6 +19,13 @@ export type FinishReason = 'stop' | 'length' | 'tool_use' | 'error';
  */
 export type ReasoningEffort = 'low' | 'medium' | 'high';
 
+/**
+ * P3-129: what a request may carry. `none` is internal: OpenAI accepts function tools on Chat
+ * Completions only with `reasoning_effort: none`, so the provider factory's wrapper sets it for a
+ * call with tools. It is never a setting a project can choose.
+ */
+type RequestReasoningEffort = ReasoningEffort | 'none';
+
 /** `estimated` when the provider reported no usage (RF-421). */
 export type UsageSource = 'reported' | 'estimated';
 
@@ -74,7 +81,7 @@ export interface LlmRequest {
   readonly maxOutputTokens?: number;
   readonly temperature?: number;
   /** Q-58: set by the provider factory for a reasoning model; adapters send it where it is accepted. */
-  readonly reasoningEffort?: ReasoningEffort;
+  readonly reasoningEffort?: RequestReasoningEffort;
   /** Stop, shutdown and caps cancel the call through this signal (RF-422, RNF-002). */
   readonly signal: AbortSignal;
 }
