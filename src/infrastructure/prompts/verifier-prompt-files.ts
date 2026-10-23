@@ -9,7 +9,7 @@ import { loadPromptFile, requirePlaceholder } from './prompt-files.js';
 // its placeholder. A change creates a new version file and the names below change with it.
 
 const verifierPromptNames = {
-  system: 'verifier/claim.v2.md',
+  system: 'verifier/claim.v3.md',
   retry: 'verifier/retry.v1.md',
 } as const;
 
