@@ -277,7 +277,7 @@ that I can share or archive it in one piece.
 **RF-100 Walk the repository** - R1 (M1) - Must - Source DEC-11 - ADR-004
 As a developer I want a scan run to list every relevant file so that later stages see the whole system.
 
-- Given a snapshot (and the configured subpath, if any), when a scan runs, then every file is listed except default ignores (version-control folders, build output such as `bin/`, `obj/`, `node_modules/`, `packages/`, and binary files) and paths matching the ignore rules (RF-140).
+- Given a snapshot (and the configured subpath, if any), when a scan runs, then every file is listed except default ignores (version-control folders, build output such as `bin/`, `obj/`, `node_modules/`, `packages/`, IDE settings folders `.vs/`, `.idea/`, `.vscode/`, backup copy folders named `Backup`, `Backups`, `Backup1`, `Backup 2024` or `Backup_old` (a name such as `BackupService` is first-party code), `*.suo` and `*.user` files, and binary files). Each entry left out is listed in the scan summary as ignored; nothing is dropped silently (P3-118) and paths matching the ignore rules (RF-140).
 - Given a file larger than the configured limit, when scanning, then it is listed with a `skipped: too large` reason and never read by agents.
   Verification: integration tests on fixture repositories.
 
@@ -955,6 +955,14 @@ As a developer I want the tokens and cost of every run on a project added up so 
 - Given the ledger, when I open a project's cost page, then it shows the project totals and a breakdown by run, stage, role, provider and model; local models show tokens with a cost of zero.
 - Given a price table change, when totals are shown, then each line keeps the cost computed at the time of the call and the price table version it used.
   Verification: unit tests on the ledger totals; integration test with an interrupted run.
+
+**RF-429 Keep a share of the cap for verifying** - R1 - Should - Source EV-27 (evaluation pass 2), P3-111 - ADR-007
+As a developer I want a run that reaches its token cap during the readers to still verify what they wrote so that its claims can be planned.
+
+- Given a run whose reader role has no token cap of its own, when the readers use 70% of the run token cap, then their next calls are refused as a role cap of the readers (RF-423), they end `StoppedByCap`, the claims they wrote are judged by the verifier with the rest of the cap, and the run ends `CapReached`, so its Supported claims can be planned; the cap message says the readers stopped at their share and the run cap can be raised.
+- Given a reader token cap in the project settings, when the readers reach it, then that cap applies as before (RF-423, RF-304) and no share is added; the share is of tokens only, so the first reader calls of a model that fits the default cost cap are still let through (Q-57).
+- Given the start page for an understand run on local models only, when the likely tokens of the chosen selection are above the run token cap, then the page names both figures and asks to confirm before it starts (RF-425).
+  Verification: unit tests of the caps and the start page; integration test with the fake provider where the readers reach their share and the verifier judges the claim.
 
 ### 5.6 Report (RF-500..RF-599)
 

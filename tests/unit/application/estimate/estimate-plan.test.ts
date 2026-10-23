@@ -104,7 +104,7 @@ describe('EstimatePlan: the PRD call', () => {
 
     const { assumptions, planner } = estimate;
     const packageSize = (await readFile('prompts/planner/package.v6.md', 'utf8')).length;
-    const prdSize = (await readFile('prompts/planner/prd.v1.md', 'utf8')).length;
+    const prdSize = (await readFile('prompts/planner/prd.v2.md', 'utf8')).length;
     const planTokens =
       assumptions.promptTokens -
       assumptions.prdPromptTokens -

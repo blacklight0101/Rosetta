@@ -1,3 +1,5 @@
+import { chmod, readdir, readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import {
@@ -245,5 +247,43 @@ describe('the batch routes and a refused workbook', () => {
     });
     expect(jsonOf(finished)['message']).toContain('longer than 8,192');
     expect(shown.json()).toMatchObject({ source: null });
+  });
+});
+
+async function storedProject(
+  setup: Awaited<ReturnType<ReturnType<typeof useWorkbookServers>>>,
+): Promise<{ readonly projectId: string; readonly infoFile: string }> {
+  const { amy, dataDir } = setup;
+  const projectId = await createWorkbookProject(amy);
+  const batchId = await openBatch(amy, projectId);
+  await putFile(amy, { projectId, batchId }, { name: 'Pricing.xlsx', bytes: await sampleBook() });
+  await finishBatch(amy, { projectId, batchId });
+  const folder = (await readdir(join(dataDir, 'sources'))).find((n) => n.startsWith('workbook__'));
+  if (folder === undefined) throw new Error('no workbook snapshot');
+  return { projectId, infoFile: join(dataDir, 'sources', folder, 'snapshot.json') };
+}
+
+describe('the renderer of the stored workbooks (P3-108, EV-23)', () => {
+  it('RF-152 a project at the current renderer is not reported as older', async () => {
+    const open = await setup();
+    const { projectId } = await storedProject(open);
+
+    const shown = await open.amy.request({ method: 'GET', url: `/api/projects/${projectId}` });
+
+    expect(jsonOf(shown)['renderedWithOlderRenderer']).toBeUndefined();
+  });
+
+  it('RF-152 a project rendered at version 2 is reported as older; its snapshot is not changed', async () => {
+    const open = await setup();
+    const { projectId, infoFile } = await storedProject(open);
+    const info = JSON.parse(await readFile(infoFile, 'utf8')) as Record<string, unknown>;
+    await chmod(infoFile, 0o644);
+    await writeFile(infoFile, JSON.stringify({ ...info, rendererVersion: '2' }));
+    const before = await readFile(infoFile, 'utf8');
+
+    const shown = await open.amy.request({ method: 'GET', url: `/api/projects/${projectId}` });
+
+    expect(jsonOf(shown)['renderedWithOlderRenderer']).toBe(true);
+    expect(await readFile(infoFile, 'utf8')).toBe(before);
   });
 });

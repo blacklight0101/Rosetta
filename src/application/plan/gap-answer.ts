@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { GapDraft } from '../../domain/planning/plan-gap.js';
 import { cardLimits } from '../cards/card-limits.js';
 import { searchJson } from '../cards/extract-json.js';
-import { taskSchema } from './plan-answer.js';
+import { gapTaskSchema } from './plan-answer.js';
 
 // Q-45, Q-54, RF-627, RF-630, ADR-013: the planner's task cards for the items no card builds are
 // untrusted text. They are read as one JSON object (fenced or inside prose, like the other planner
@@ -17,7 +17,7 @@ const MAX_CARDS = 50;
 const MAX_BUILDS = 500;
 const ID = 300;
 
-const gapTask = taskSchema
+const gapTask = gapTaskSchema
   .omit({ needs: true })
   .extend({ builds: z.array(z.string().max(ID)).max(MAX_BUILDS) });
 

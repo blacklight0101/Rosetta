@@ -7,6 +7,8 @@ import type { ArtefactKind } from '../../../domain/code-map/artefact.js';
 interface NameFacts {
   /** Lower-case file name. */
   readonly name: string;
+  /** Whether the path lies under `.github/workflows/`. */
+  readonly workflow: boolean;
   readonly extension: string;
   /** The name without its last extension. */
   readonly stem: string;
@@ -47,6 +49,18 @@ const manifestNames = setOf(
   'gemfile',
 );
 const manifestExtensions = setOf('csproj', 'vbproj', 'fsproj');
+/** IDE project and solution files, and publish profiles: build and deployment configuration. */
+const deploymentExtensions = setOf('pubxml', 'sln', 'csproj', 'vbproj', 'fsproj', 'sqlproj');
+const deploymentNames = setOf(
+  'azure-pipelines.yml',
+  'bitbucket-pipelines.yml',
+  '.gitlab-ci.yml',
+  '.travis.yml',
+  'appveyor.yml',
+  'jenkinsfile',
+  'dockerfile',
+);
+const yamlExtensions = setOf('yml', 'yaml');
 
 const rules: readonly Rule[] = [
   { kind: 'page', applies: (file) => pageExtensions.has(file.extension) },
@@ -69,6 +83,13 @@ const rules: readonly Rule[] = [
   },
   { kind: 'database-script', applies: (file) => file.extension === 'sql' },
   {
+    kind: 'deployment',
+    applies: (file) =>
+      deploymentExtensions.has(file.extension) ||
+      deploymentNames.has(file.name) ||
+      (file.workflow && yamlExtensions.has(file.extension)),
+  },
+  {
     kind: 'manifest',
     applies: (file) => manifestNames.has(file.name) || manifestExtensions.has(file.extension),
   },
@@ -77,7 +98,8 @@ const rules: readonly Rule[] = [
 /** The kinds of a repository-relative path, sorted; empty for a file no rule knows. */
 export function artefactKindsOf(path: string): readonly ArtefactKind[] {
   const name = baseName(path).toLowerCase();
-  const facts: NameFacts = { name, extension: extensionOf(name), stem: stemOf(name) };
+  const workflow = `/${path.toLowerCase()}`.includes('/.github/workflows/');
+  const facts: NameFacts = { name, workflow, extension: extensionOf(name), stem: stemOf(name) };
   return rules
     .filter((rule) => rule.applies(facts))
     .map((rule) => rule.kind)

@@ -3,6 +3,7 @@ import type { RoleEstimate } from '../api/estimate-schemas.js';
 import type { Project } from '../api/project-schemas.js';
 import type { RunStageChoice } from '../api/runs.js';
 import { capWarnings, type CapWarning } from '../lib/cap-warnings.js';
+import { localLikelyTokens } from '../lib/start-confirmation.js';
 import { cloudRoles, pricedTotal } from '../lib/estimate-math.js';
 import { effectiveRunCapMicros, usesServerKeys } from '../lib/run-cap.js';
 import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
@@ -145,6 +146,12 @@ function likelyOf(estimate: EstimateLoad): bigint | undefined {
   return estimate.status === 'ready' ? pricedTotal(estimate.estimate, 'likely') : undefined;
 }
 
+/** RF-425, RF-429: the likely cost and, for a local estimate, the likely tokens, to confirm against the caps. */
+function likelihoodOf(estimate: EstimateLoad) {
+  const tokens = estimate.status === 'ready' ? localLikelyTokens(estimate.estimate) : undefined;
+  return { likelyMicros: likelyOf(estimate), likelyTokens: tokens };
+}
+
 /** DEC-117: the run cap and the confirm threshold as the user types them, from the project's own. */
 function useLimitFields(project: Project) {
   const [capText, setCapText] = useState(microsToDollars(runCapOf(project).toString()));
@@ -208,7 +215,7 @@ export function useStartForm(loaded: Project): StartForm {
     ...{ project, stage, url, ...fields, areas: choice.chosen, consent: checked },
     privateConfirmed: privateCode.confirmed,
     withAnswers: rerun.answered > 0 && rerun.checked,
-    likelyMicros: likelyOf(estimate),
+    ...likelihoodOf(estimate),
     onSaved: setProject,
     onConsentRefused: () => {
       setRefused(true);

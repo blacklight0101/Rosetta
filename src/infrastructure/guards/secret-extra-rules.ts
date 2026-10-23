@@ -7,6 +7,7 @@ import {
   tokenScheme,
   tokenValue,
 } from './secret-option-pieces.js';
+import { settingRules } from './secret-setting-rules.js';
 import { caseless, notMasked, placeholderValue } from './secret-value-pieces.js';
 
 // P2-43 (RF-141, RNF-003): the secret shapes the first rules missed. They run after those rules, so a
@@ -54,8 +55,6 @@ const authorization = String.raw`\bAuthorization["']?[ \t]{0,16}[:=][ \t]{0,16}[
 // The literal `://` comes first, so the scan jumps from one to the next; the scheme is checked behind it.
 const urlScheme = String.raw`://(?<=\b[A-Za-z][A-Za-z0-9+.-]{0,31}://)`;
 const b64 = '[A-Za-z0-9._~+/=-]';
-// The words in front of a name that make an XML setting a secret (`Password`, `Vendor.ApiKey`).
-const xmlSecretName = String.raw`(?:${caseless('password')}|${caseless('passwd')}|${caseless('pwd')}|${caseless('secret')}|${caseless('token')}|${caseless('api')}[_-]?${caseless('key')})`;
 
 export const extraRules: readonly ExtraRule[] = [
   {
@@ -152,14 +151,7 @@ export const extraRules: readonly ExtraRule[] = [
       'g',
     ),
   },
-  {
-    // `<add key="Password" value="..."/>` in a .NET configuration file.
-    kind: 'password',
-    pattern: new RegExp(
-      String.raw`(?<keep><add[ \t]+key=["'][\w.:-]*${xmlSecretName}["'][ \t]+value=["'])${notMasked}[^"'\r\n<>]+`,
-      'g',
-    ),
-  },
+  ...settingRules,
   {
     // A session cookie set by a response header: the name holds `session`, `sid`, `token`, `auth`.
     kind: 'bearer-token',
@@ -170,4 +162,5 @@ export const extraRules: readonly ExtraRule[] = [
   },
   keyedRule('bearer-token', tokenName),
   keyedRule('password', secretName),
+  keyedRule('password', wordEnd('pass', 'Pass')),
 ];

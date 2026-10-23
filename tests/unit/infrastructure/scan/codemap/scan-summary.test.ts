@@ -71,6 +71,10 @@ const expected = `# Scan summary
 | --- | ---: | ---: | --- | --- |
 | (root) | 3 | 30 | coarse | folder |
 | Web | 3 | 150 | symbols | folder |
+
+## Ignored by default
+
+None.
 `;
 
 describe('scan-summary.md', () => {
@@ -91,6 +95,21 @@ describe('scan-summary.md', () => {
     );
     expect(renderScanSummary({ codeMap: sample(), durationMs: 61_500 })).toContain(
       '- Scan duration: 61.5 s\n',
+    );
+  });
+
+  it('RF-100 lists every default-ignored entry with its rule and file count, never silently', () => {
+    const text = renderScanSummary({
+      codeMap: sample(),
+      durationMs: 10,
+      ignored: [
+        { path: '.vs', rule: 'IDE settings', files: 2 },
+        { path: 'Backup', rule: 'backup copy', files: 1 },
+      ],
+    });
+
+    expect(text).toContain(
+      '## Ignored by default\n\n| Path | Rule | Files |\n| --- | --- | ---: |\n| .vs | IDE settings | 2 |\n| Backup | backup copy | 1 |\n',
     );
   });
 

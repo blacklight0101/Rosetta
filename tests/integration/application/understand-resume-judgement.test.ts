@@ -58,6 +58,8 @@ describe('RF-304 resuming a run the cap stopped in the judgement step', UNDERSTA
         budget: {
           ...settings.budget,
           run: { maxCostMicros: 500_000, maxTokens: CAP_AFTER_READERS },
+          // RF-429: a reader cap of its own replaces the readers' share, so the cap is met in the judgement.
+          roles: { reader: { maxTokens: CAP_AFTER_READERS } },
         },
       };
     });

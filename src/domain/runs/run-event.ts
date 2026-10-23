@@ -16,6 +16,7 @@ export type RunEventType =
   | 'agent.tool.called'
   | 'agent.tool.result'
   | 'agent.card.proposed'
+  | 'agent.claims.dropped'
   | 'agent.ended'
   | 'verify.citation.checked'
   | 'verify.judgement.started'

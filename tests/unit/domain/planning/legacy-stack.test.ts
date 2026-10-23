@@ -37,6 +37,30 @@ describe('the legacy stack of the code map', () => {
     ]);
     expect(stack.areas).toEqual(['(root)']);
   });
+});
+
+describe('the legacy stack markers under the cap', () => {
+  it('RF-609 keeps the configuration, database and manifest markers when deployment files fill the cap', () => {
+    const deployment = Array.from({ length: 45 }, (_, index) =>
+      entry(`a/Profile${String(index).padStart(2, '0')}.pubxml`, 5, {
+        language: 'xml',
+        artefactKinds: ['deployment'],
+      }),
+    );
+    const map = codeMapOf([
+      ...deployment,
+      entry('z/Web.config', 20, { language: 'xml', artefactKinds: ['configuration'] }),
+      entry('z/shop.csproj', 10, { language: 'xml', artefactKinds: ['deployment', 'manifest'] }),
+    ]);
+
+    const { markers } = legacyStackOf(map);
+
+    expect(markers).toHaveLength(40);
+    expect(markers.slice(0, 2)).toEqual([
+      { path: 'z/Web.config', kind: 'configuration' },
+      { path: 'z/shop.csproj', kind: 'manifest' },
+    ]);
+  });
 
   it('RF-609 leaves out skipped files and files of an unknown language', () => {
     const map = codeMapOf([

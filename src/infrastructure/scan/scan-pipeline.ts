@@ -17,6 +17,7 @@ import { runPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { buildCodeMap } from './codemap/build-code-map.js';
 import { writeScanOutputs } from './codemap/write-scan-outputs.js';
+import type { UniversalScan } from './universal/scan-types.js';
 import type { LanguagePackRegistry } from './packs/pack-registry.js';
 import { analyseWithPacks, type PackScan } from './packs/pack-scan.js';
 import type { ParseBudget } from './packs/parse-budget.js';
@@ -40,6 +41,8 @@ export interface SnapshotScanPipelineOptions {
 interface Mapped {
   readonly codeMap: CodeMap;
   readonly overParseBudget: number;
+  /** The entries the default ignores left out, for the scan summary (RF-100). */
+  readonly ignored: UniversalScan['ignored'];
 }
 
 function overParseBudget(packScan: PackScan): number {
@@ -195,6 +198,10 @@ export class SnapshotScanPipeline implements ScanPipeline {
         `The scan could not build a valid code map (${built.error}).`,
       );
     }
-    return { codeMap: built.value, overParseBudget: overParseBudget(packScan) };
+    return {
+      codeMap: built.value,
+      overParseBudget: overParseBudget(packScan),
+      ignored: scan.ignored,
+    };
   }
 }

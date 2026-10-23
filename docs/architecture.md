@@ -103,7 +103,8 @@ src/
     code-map/           CodeMap, FileEntry, Area, Artefact, MapLevel; area grouping (folder buckets, linked sets); the code-unit comparator every sorted list uses
     cards/              Card, CardType, Claim, Citation, ClaimStatus, Verdict, card ids, the claim transitions (`createCard`, `transitionClaim`, `assignCardIds`)
     budget/             TokenUsage, Price (`costOf`, `worstCaseCost` in integer micro-USD), PriceTable
-                        (`lookupPrice`), UsageCap and `checkCaps`, the caps of a call (`capsFor`, DEC-107),
+                        (`lookupPrice`), UsageCap and `checkCaps`, the caps of a call (`capsFor`, DEC-107; a reader
+                        with no token cap of its own also gets 70% of the run token cap as a role cap, RF-429),
                         UTC day and month (`utcPeriodsOf`), `isCapStop`
     runs/               Run (start and end transitions), RunManifest (with `recordPromptVersions`, RNF-004), RunEndState, RunQueueState, AgentTaskState, RunEvent types, the queue rules (`runsToStart`, `queuePositions`)
     sources/            GitHubRepoRef, CommitSha, Permalink
@@ -719,8 +720,9 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   with `scripts/make-marker-confusables.mjs`, whose output carries the full Unicode License v3 notice.
   An error result is a block too, with no excerpts; a call that names no tool gets the source `unknown_tool`, and the
   cards the summariser compares (RF-250) get the source `cards`, with no excerpts.
+- **Bookkeeping claims** (P3-110, RF-230, RF-300, EV-26): when a reader task ends, `withoutBookkeeping` (`application/cards/bookkeeping-claims.ts`, understand and Deepen alike) drops the claims that name a card id and cite no file of the code map, or cite only a token that cannot be a file name (the tag of the existing-card block); a card left with no claim goes too. The count is published as `agent.claims.dropped` under the task. A claim with a wrong file path is kept for the citation check (RF-300).
 - **Duplicates without a model** (P3-106, RF-230, EV-05, EV-06): before the summariser is asked, `consolidateRun` merges
-  the cards of one type, of any type but `FLOW` (two journeys are two journeys), whose titles are the same once case, punctuation and a plural
+  the cards of one area and one type (P3-110, EV-25: the same title in two areas is two subjects, so the area is part of the key), of any type but `FLOW` (two journeys are two journeys), whose titles are the same once case, punctuation and a plural
   `s` are ignored (`titleMerges`, `domain/cards/title-merge.ts`; the first card's title, summary and, for an `OQ`, question
   stay), then keeps a claim once when a card states it twice (`foldRepeatedClaims`; the same text, status, target and
   replaced claim, so a Rejected claim is never folded into a Supported one and the steps of a flow are left alone, branches being part of what makes a claim the same; a
@@ -792,7 +794,7 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   cards take ids after every card of the run; a claim's `replaces` is kept only when it names a claim that task was
   asked to re-read. Every Deepen reader task (a re-read and a reading of a never-read file) is also given the cards
   the run holds for its area (`roundTasks`: id, type and title as one more data block with the source `cards`, prompt
-  `prompts/reader/parent-cards.v1.md`, DEC-158). A card of the answer that carries the optional field `extends` with
+  `prompts/reader/parent-cards.v2.md`, DEC-158). A card of the answer that carries the optional field `extends` with
   the id of a listed `FEAT`, `BR`, `ENT` or `INT` card of its own type is not a new card: `assignCardIds` leaves it
   out and `extendCards` (domain) adds its claims to the listed card, which keeps its id, numbered on from its last
   claim; they pass the citation check and the judgement like any new claim, and `replaces` follows the same rule.

@@ -16,6 +16,12 @@ import { MemoryLogger } from '../../../support/memory-logger.js';
 import { plainDetail, reportModel, shippingCitation } from '../../../support/report-fixtures.js';
 import { scopeFor } from '../../../support/run-event-fixtures.js';
 import { fakeOpenAiKey } from '../../../support/secret-fixture.js';
+import {
+  apiSecret,
+  mailSecret,
+  smtpSecret,
+  syntheticAppSettings,
+} from '../../../support/secret-setting-shapes.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
 // RF-500, RF-502, RNF-003: the pages of the areas and the cards are written into `report/` beside
@@ -88,5 +94,36 @@ describe('FileReportWriter and the area and card pages', () => {
     await writer().write(scope, model);
 
     expect(await readPage(cardPageName('BR-001'))).toBe(first);
+  });
+});
+
+describe('FileReportWriter and the key/value settings in cited lines', () => {
+  it('RF-141 masks the key/value settings of a web.config shown as cited lines', async () => {
+    const config: ReportCardDetail = {
+      ...plainDetail,
+      claims: [
+        {
+          claimId: 'BR-001.c1',
+          text: 'Reads the mail settings.',
+          status: 'Supported',
+          citations: [
+            {
+              ...shippingCitation,
+              path: 'Web.config',
+              excerpt: { kind: 'lines', firstLine: 10, lines: syntheticAppSettings.split('\n') },
+            },
+          ],
+        },
+      ],
+    };
+
+    await writer().write(scope, reportModel({ cardDetails: [config] }));
+    const page = await readPage(cardPageName('BR-001'));
+
+    for (const secret of [smtpSecret, mailSecret, apiSecret]) {
+      expect(page).not.toContain(secret);
+    }
+    expect(page).toContain('SmtpPassword');
+    expect(page).toContain('PageSize');
   });
 });

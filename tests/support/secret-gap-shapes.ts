@@ -4,6 +4,11 @@
 
 import type { SecretKind } from '../../src/infrastructure/guards/secret-masker.js';
 import { fakeValue } from './fake-value.js';
+import {
+  settingAdversarialPieces,
+  settingInnocentTexts,
+  settingSecretCases,
+} from './secret-setting-shapes.js';
 
 interface ShapeCase {
   readonly name: string;
@@ -19,7 +24,7 @@ const cdataOpen = ['<!', 'CDATA', ''].join('[');
 const cdataClose = [']]', ''].join('>');
 
 /** One case per shape of P1-124, in the order of the card. */
-export const gapSecretCases: readonly ShapeCase[] = [
+const ownSecretCases: readonly ShapeCase[] = [
   {
     name: 'a mysql -p password after two positional words',
     kind: 'password',
@@ -79,7 +84,7 @@ export const gapSecretCases: readonly ShapeCase[] = [
 ];
 
 /** Text close to the new shapes that is not a secret. */
-export const gapInnocentTexts: readonly string[] = [
+const ownInnocentTexts: readonly string[] = [
   'mysql is used in many places -pretty often',
   'mysql -u root catalog -p',
   'mysql catalog, orders -pending',
@@ -88,7 +93,7 @@ export const gapInnocentTexts: readonly string[] = [
 ];
 
 /** Hostile pieces for the new patterns (RF-141 linear time), built from pieces like the cases. */
-export const gapAdversarialPieces: readonly string[] = [
+const ownAdversarialPieces: readonly string[] = [
   'mysql a ',
   'mysql -u a b ',
   'mysql a -u ',
@@ -99,4 +104,12 @@ export const gapAdversarialPieces: readonly string[] = [
   `<password>${cdataOpen}`,
   `<pwd> ${cdataOpen}a]`,
   `<password>${cdataOpen}]]`,
+];
+
+// P3-116: the key/value settings travel with these shapes into the shared fixture.
+export const gapSecretCases: readonly ShapeCase[] = [...ownSecretCases, ...settingSecretCases];
+export const gapInnocentTexts: readonly string[] = [...ownInnocentTexts, ...settingInnocentTexts];
+export const gapAdversarialPieces: readonly string[] = [
+  ...ownAdversarialPieces,
+  ...settingAdversarialPieces,
 ];

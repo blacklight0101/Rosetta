@@ -86,7 +86,7 @@ describe('RF-209 what a Deepen over a parent card leaves', UNDERSTAND_TIMEOUT, (
 
     const { promptVersions } = await h.manifestOf(deep);
     expect(promptVersions['reader/reread.v3.md']).toMatchObject({ version: 'v3' });
-    expect(promptVersions['reader/parent-cards.v1.md']).toMatchObject({ version: 'v1' });
+    expect(promptVersions['reader/parent-cards.v2.md']).toMatchObject({ version: 'v2' });
   });
 });
 

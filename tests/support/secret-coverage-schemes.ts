@@ -112,10 +112,10 @@ const schemeCases: readonly CoverageCase[] = [
   ),
   one(
     'an XML appSettings API key',
-    'password',
+    'api-key',
     [
       `<add key="Vendor.ApiKey" value="${token}"/>`,
-      '<add key="Vendor.ApiKey" value="[MASKED:password]"/>',
+      '<add key="Vendor.ApiKey" value="[MASKED:api-key]"/>',
     ],
     token,
   ),

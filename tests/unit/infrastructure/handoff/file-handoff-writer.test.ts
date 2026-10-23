@@ -8,9 +8,16 @@ import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { err, ok, type Result } from '../../../../src/domain/errors/result.js';
 import {
   emptyCounts,
+  SecretMasker,
   type TextMasker,
 } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { FileHandoffWriter } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
+import {
+  apiSecret,
+  mailSecret,
+  smtpSecret,
+  syntheticAppSettings,
+} from '../../../support/secret-setting-shapes.js';
 import { handoffOf } from '../../../support/handoff-package-fixture.js';
 
 // RF-601, RNF-003, data-model.md section 3.17: the package goes through the workspace writer; a
@@ -91,5 +98,20 @@ describe('FileHandoffWriter', () => {
     const readme = [...writer.files].find(([path]) => path.endsWith('/handoff/README.md'))?.[1];
     expect(readme).toContain('# [MASKED:title]');
     expect(readme).not.toContain('Modernisation hand-off package');
+  });
+
+  it('RF-141 the package holds none of the values of the key/value settings of a web.config', async () => {
+    const writer = new SpyWriter();
+
+    await new FileHandoffWriter({ writer, masker: new SecretMasker() }).write(
+      scope,
+      handoffOf(syntheticAppSettings),
+    );
+
+    const written = [...writer.files.values()].join('\n');
+    expect(written).toContain('SmtpPassword');
+    for (const secret of [smtpSecret, mailSecret, apiSecret]) {
+      expect(written).not.toContain(secret);
+    }
   });
 });
