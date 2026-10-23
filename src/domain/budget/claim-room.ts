@@ -28,10 +28,8 @@ export interface RoomFacts {
     readonly runMicros: bigint;
     /** The readers' share of the run token cap, or the reader token cap of the project. */
     readonly readerTokens: bigint;
-    /** The verifier's share of the run token cap, or the verifier token cap of the project. */
+    /** The verifier's share of the run token cap (a verifier cap of the project does not shrink it). */
     readonly verifierTokens: bigint;
-    /** The verifier cost cap of the project, when it sets one. */
-    readonly verifierMicros?: bigint;
     /** The least a reader call needs: its output limit, which every worst case includes. */
     readonly callTokens: bigint;
   };
@@ -81,9 +79,7 @@ function judgingFits(facts: RoomFacts): boolean {
       limits.runMicros,
       READERS_AND_VERIFIER_PERCENT,
     );
-  const ownCost =
-    limits.verifierMicros === undefined || verifier.micros + micros <= limits.verifierMicros;
-  return together && own && !dear && ownCost;
+  return together && own && !dear;
 }
 
 // RF-429

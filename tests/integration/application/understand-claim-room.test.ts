@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
+import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
 import type { ProjectSettings } from '../../../src/application/projects/project-settings.js';
 import type { Run } from '../../../src/domain/runs/run.js';
 import { useTempRoot } from '../../support/temp-root.js';
@@ -141,5 +142,42 @@ describe('resuming a run whose claims were written before the stop', UNDERSTAND_
 
     expect(readerTasksAsked(h)).toEqual(['reader-001']);
     expect(await claimTotals(h, run)).toMatchObject({ Supported: 12, Unverified: 0 });
+  });
+});
+
+describe('a reader whose own token cap the room check lets through', UNDERSTAND_TIMEOUT, () => {
+  it('RF-423 RF-429 the budget guard still refuses the call that would pass the reader cap: StoppedByCap, RST-1600 recorded', async () => {
+    // Catalog uses 200,330 tokens. The room check needs the 8,192 of one more call (208,522); the
+    // guard needs that and the prompt as well, so a cap just above the first refuses the call.
+    const settings = understandSettings((s) => ({
+      ...s,
+      budget: {
+        ...s.budget,
+        run: { maxCostMicros: 50_000_000, maxTokens: 1_000_000 },
+        roles: { reader: { maxTokens: 208_600 } },
+      },
+    }));
+    const h = await createUnderstandHarness({
+      dataDir: temp.path,
+      recording: 'understand-cap.json',
+      verifierRecording: 'verifier-all-supported.json',
+      settings,
+    });
+    await h.scan();
+
+    const run = await h.understand({ areas });
+
+    expect(run.endState).toBe('CapReached');
+    expect((await h.manifestOf(run)).agentTasks.map((task) => [task.area, task.state])).toEqual([
+      ['Catalog', 'Done'],
+      ['Services', 'StoppedByCap'],
+    ]);
+    const events = await h.eventsOf(run);
+    const caps = events.filter((event) => event.type === 'budget.capReached');
+    expect(caps.map((event) => event.data)).toMatchObject([
+      { scope: 'role-tokens', role: 'reader' },
+    ]);
+    expect(events.some((event) => event.type === 'budget.readersStopped')).toBe(false);
+    expect(events.at(-1)?.data).toMatchObject({ errorCode: ERROR_CODES.budgetCapReached });
   });
 });

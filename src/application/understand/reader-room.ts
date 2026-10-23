@@ -11,16 +11,13 @@ import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import type { RunExecution } from '../ports/run-executor.js';
 import type { RunBudgetEvents } from '../runs/run-budget-events.js';
 import { RULE_VERDICT_MODEL } from './claim-judgement.js';
-import { announceReadersStopped } from './readers-stopped.js';
+import { announceReadersStopped, type ReadersStop } from './readers-stopped.js';
 
 // RF-429, P5-20, DEC-170: the room check of the readers of an understand run. Before a reader task
 // starts, and before a reader takes another turn, the run asks whether the readers' own share has
 // room for one more call and whether the claims written and not yet judged could still be judged
 // with what the caps leave. Once it says no it says no for good: no task starts, a task that is
 // running ends at its next turn, and the run says once why.
-
-/** Why the readers stopped: their share is used up, or the claims written could not all be judged. */
-export type ReadersStop = 'share' | 'judging';
 
 /** Where the check reads the spend by role, and where it speaks. */
 export interface ReaderRoomSources {
@@ -52,14 +49,13 @@ function roomLimitsOf(settings: ProjectSettings, reader: RoleProvider): RoomFact
     tokens: BigInt(run.maxTokens),
     micros: BigInt(run.maxCostMicros),
   };
-  const verifier = roleBudgetOf(settings, 'verifier');
   const readerCap = roleBudgetOf(settings, 'reader').maxTokens;
   return {
     runTokens: caps.tokens,
     runMicros: caps.micros,
     readerTokens: readerCap ?? percentOf(caps.tokens, READER_SHARE_PERCENT),
-    verifierTokens: verifier.maxTokens ?? percentOf(caps.tokens, VERIFIER_SHARE_PERCENT),
-    ...(verifier.maxCostMicros === undefined ? {} : { verifierMicros: verifier.maxCostMicros }),
+    // A verifier cap of the project is the owner's choice to cut judging short, not a reason to stop reading.
+    verifierTokens: percentOf(caps.tokens, VERIFIER_SHARE_PERCENT),
     callTokens: BigInt(reader.maxOutputTokens),
   };
 }
