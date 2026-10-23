@@ -20,6 +20,14 @@ describe('cards of a third-party area', () => {
     expect(kept.map((card) => card.title)).toEqual(['Order total']);
   });
 
+  it('P3-123 keeps a card that describes what a library script does', () => {
+    const kept = withoutLibraryDescriptions([
+      draft('BR', 'Library sets up a plugin namespace', 'Library sets up a plugin namespace.'),
+    ]);
+
+    expect(kept).toHaveLength(1);
+  });
+
   it('P3-123 keeps the other card types untouched', () => {
     const kept = withoutLibraryDescriptions([
       draft('ENT', 'Library', 'A library book.'),

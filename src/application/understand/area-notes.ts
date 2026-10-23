@@ -40,7 +40,7 @@ export function withoutQuestions(drafts: readonly CardDraft[]): readonly CardDra
 // Words that say an area is third-party code: what a card of a library area is about when it only
 // restates that. A card of own code in a library area is not expected, so the match is loose.
 const LIBRARY_WORDS =
-  /third[- ]?party|vendor(?:ed)?|librar(?:y|ies)|minified|\.min\.|bundle|generated|jquery|bootstrap|framework/iu;
+  /third[- ]?party|vendor(?:ed)?|minified|\.min\.|generated|jquery|bootstrap|libraries|(?:js|javascript|css) library/iu;
 
 /**
  * P3-123, RF-243: an area of third-party code writes no FEAT or BR card that only says it holds
