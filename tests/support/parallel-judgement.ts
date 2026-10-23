@@ -1,3 +1,6 @@
+import { assignCardIds } from '../../src/domain/cards/card-ids.js';
+import type { Card } from '../../src/domain/cards/card.js';
+import { draftOf } from './card-fixtures.js';
 import type { LlmProvider } from '../../src/application/ports/llm-provider.js';
 import type { RepositoryReader } from '../../src/application/ports/repository-reader.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
@@ -104,4 +107,22 @@ export async function budgetedVerifier(
   });
   link.guard = budget.guard;
   return { verifier, budget };
+}
+
+/** Cards with one claim each, citing the same lines of `Default.aspx.cs`, one per text. */
+export function cardsOfTexts(texts: readonly string[]): readonly Card[] {
+  const made = assignCardIds(
+    texts.map((text, n) => ({
+      agentTaskId: `reader-00${String(n)}`,
+      area: `area-${String(n)}`,
+      drafts: [
+        draftOf({
+          title: `Card ${String(n)}`,
+          claims: [{ text, citations: [{ path: 'Default.aspx.cs', startLine: 8, endLine: 12 }] }],
+        }),
+      ],
+    })),
+  );
+  if (!made.ok) throw new Error('The fixture cards are invalid.');
+  return made.value;
 }
