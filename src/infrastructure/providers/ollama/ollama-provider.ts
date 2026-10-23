@@ -8,6 +8,7 @@ import type { Logger } from '../../../application/ports/logger.js';
 import { ERROR_CODES } from '../../../domain/errors/codes.js';
 import { RosettaError } from '../../../domain/errors/rosetta-error.js';
 import { refuseRealProviderInTests } from '../real-provider-guard.js';
+import { requestWaitMs } from '../prompt-wait.js';
 import {
   completeWithRetries,
   type AttemptFailed,
@@ -162,7 +163,9 @@ export class OllamaProvider implements LlmProvider {
     // DEC-155: a prompt that does not fit is refused before anything is sent.
     const refused = refusedPrompt(facts);
     if (refused !== undefined) return { ok: false, failed: refused };
-    const result = await exchange({ ...this.target('/api/chat', request), body });
+    const target = this.target('/api/chat', request);
+    const waitMs = requestWaitMs(target.timeoutMs, request);
+    const result = await exchange({ ...target, timeoutMs: waitMs, body });
     // Q-60: the chat is not streamed, so a timed-out attempt received no text; a local model
     // costs nothing, but its estimated tokens still count against a token cap.
     if (!result.ok)
