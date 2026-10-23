@@ -12,6 +12,12 @@ import {
   transcriptUrl,
   type CallsSetup,
 } from '../../../support/call-routes-harness.js';
+import {
+  apiSecret,
+  mailSecret,
+  smtpSecret,
+  syntheticAppSettings,
+} from '../../../support/secret-setting-shapes.js';
 import type { TestServer } from '../../../support/web-server.js';
 
 // RF-1011, RF-408, RF-1105: GET /api/runs/:runId/calls/:seq/transcript through the server with a
@@ -56,6 +62,23 @@ describe('GET /api/runs/:runId/calls/:seq/transcript', () => {
     expect(entries.map((entry) => entry.role)).toEqual(['system', 'user', 'assistant']);
     expect(entries[1]).toMatchObject({ seq: 2, content: 'Read Catalog.' });
     expect(second.json()).toMatchObject({ entries: [{ role: 'tool', content: 'file text' }] });
+  });
+
+  it('RF-141 masks the key/value settings of a web.config that a stored transcript holds', async () => {
+    const { test, amy, run } = await setup();
+    await seedCallLog(test.callFiles, run, [localCall(run, { agentTaskId: 'reader-001' })]);
+    await seedTranscript(test.callFiles, run, 'reader-001', [
+      { callId: `${run.runKey}#1`, role: 'tool', content: syntheticAppSettings },
+    ]);
+
+    const response = await amy.request({ method: 'GET', url: transcriptUrl(run, 1) });
+
+    expect(response.statusCode).toBe(200);
+    for (const secret of [smtpSecret, mailSecret, apiSecret]) {
+      expect(response.body).not.toContain(secret);
+    }
+    expect(response.body).toContain('[MASKED:password]');
+    expect(response.body).toContain('PageSize');
   });
 
   it('RF-1011 gives an empty list for a call whose run kept no transcript', async () => {
