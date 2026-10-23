@@ -50,6 +50,29 @@ function coverageLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
   ];
 }
 
+// RF-625: the steps of a target flow no component covers, and those the code placed from the files
+// they cite instead of the planner, counted per flow.
+function unmappedFlowLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const rows = handoff.flows.flows.flatMap((flow) => {
+    const none = flow.steps.filter((step) => step.component === null).length;
+    const inferred = flow.steps.filter((step) => step.inferred).length;
+    return none + inferred === 0
+      ? []
+      : [
+          `- ${esc.inline(flow.cardId)}: ${String(none)} of ${String(flow.steps.length)} steps not mapped, ${String(inferred)} inferred`,
+        ];
+  });
+  if (rows.length === 0) return [];
+  return [
+    '## Flow steps not mapped or inferred',
+    '',
+    'No component of the target architecture covers the code a not mapped step cites, so the flow file shows it as not mapped and draws it on the nearest component. An inferred step was placed by Rosetta from the files it cites, not by the planner; check it.',
+    '',
+    ...rows,
+    '',
+  ];
+}
+
 // RF-608, RF-609, RF-610: the planner decisions the package left out because a record of the brief decides them.
 function restatedLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   if (handoff.restated.length === 0) return [];
@@ -165,6 +188,7 @@ export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
   const lines = [
     ...sourceStopLines(handoff),
     ...coverageLines(handoff, esc),
+    ...unmappedFlowLines(handoff, esc),
     ...styleLines(handoff, esc),
     ...restatedLines(handoff, esc),
     ...requirementLines(handoff.content.requirementNotes ?? []),

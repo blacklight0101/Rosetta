@@ -48,7 +48,10 @@ export async function planFlows(call: PlannerCall, input: FlowsInput): Promise<P
   }
   const output = await askPlannerWith(call, flowsMessage({ ...input, flowCards }, call.tags));
   const draft = parseFlowsAnswer(output);
-  const assembly = assembleFlows(draft, flowCards, { components: names, allCards: input.cards });
+  const assembly = assembleFlows(draft, flowCards, {
+    ...{ components: names, described: input.components },
+    allCards: input.cards,
+  });
   return { flows: assembly.flows, readable: draft !== undefined, leftOut: assembly.leftOut };
 }
 

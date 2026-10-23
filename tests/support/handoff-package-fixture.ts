@@ -100,7 +100,10 @@ function dataModelOf(text: string): HandoffPackage['dataModel'] {
 
 /** RF-625: one mapped journey and one journey out of scope, with this text in every model field. */
 function flowsOf(text: string): HandoffPackage['flows'] {
-  const step = { claimId: 'FLOW-001.c1', text, touches: 'FEAT-001', component: text, action: text };
+  const step = {
+    ...{ claimId: 'FLOW-001.c1', text, touches: 'FEAT-001', component: text },
+    ...{ action: text, files: [], inferred: false },
+  };
   const unmapped = { ...step, claimId: 'FLOW-001.c2', touches: null, component: null, action: '' };
   return {
     flows: [
