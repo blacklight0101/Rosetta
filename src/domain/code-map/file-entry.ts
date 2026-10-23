@@ -22,6 +22,8 @@ export interface FileEntry {
   readonly artefactKinds: readonly ArtefactKind[];
   readonly mapLevel: MapLevel;
   readonly skipped?: SkipReason;
+  /** P3-112: the scan read a library header or a generated schema; absent otherwise. */
+  readonly vendored?: true;
 }
 
 export type FileEntryProblem =
