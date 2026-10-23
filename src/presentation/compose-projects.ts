@@ -132,6 +132,7 @@ function uploadsOf(
     workbookRenderer: new WorkbookRendererCheck({
       uploads,
       currentVersion: WORKBOOK_RENDERER_VERSION,
+      logger,
     }),
     storeUpload: new StoreUpload({
       ...{ projects, runs, logger, clock, auditLog },

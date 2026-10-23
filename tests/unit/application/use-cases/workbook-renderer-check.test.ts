@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Logger } from '../../../../src/application/ports/logger.js';
 import type { SentSnapshot } from '../../../../src/application/ports/source-fetcher.js';
 import { WorkbookRendererCheck } from '../../../../src/application/use-cases/workbook-renderer-check.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
@@ -16,6 +17,7 @@ function checkWith(rendererVersion: string | undefined, kind: 'workbook' | 'uplo
   return new WorkbookRendererCheck({
     uploads: { read: () => Promise.resolve(snapshot) },
     currentVersion: '3',
+    logger: { log: () => Promise.resolve() } as unknown as Logger,
   });
 }
 
@@ -38,4 +40,21 @@ describe('WorkbookRendererCheck', () => {
       false,
     );
   });
+});
+
+it('RF-152 a snapshot that cannot be read gives false and one warning, not an error', async () => {
+  const entries: unknown[] = [];
+  const check = new WorkbookRendererCheck({
+    uploads: { read: () => Promise.reject(new Error('corrupt snapshot.json')) },
+    currentVersion: '3',
+    logger: {
+      log: (entry: unknown) => {
+        entries.push(entry);
+        return Promise.resolve();
+      },
+    } as unknown as Logger,
+  });
+
+  expect(await check.isOlder(workbookProject)).toBe(false);
+  expect(entries).toMatchObject([{ level: 'warn', logger: 'sources' }]);
 });

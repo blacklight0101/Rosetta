@@ -105,6 +105,7 @@ function uploadServices(
     workbookRenderer: new WorkbookRendererCheck({
       uploads: upload.store,
       currentVersion: WORKBOOK_RENDERER_VERSION,
+      logger,
     }),
   };
 }

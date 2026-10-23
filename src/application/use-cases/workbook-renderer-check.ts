@@ -1,3 +1,4 @@
+import type { Logger } from '../ports/logger.js';
 import type { UploadStore } from '../ports/upload-store.js';
 import type { Project } from '../projects/project.js';
 
@@ -9,6 +10,7 @@ export interface WorkbookRendererCheckDependencies {
   readonly uploads: Pick<UploadStore, 'read'>;
   /** The renderer version this server writes (`WORKBOOK_RENDERER_VERSION`). */
   readonly currentVersion: string;
+  readonly logger: Logger;
 }
 
 export class WorkbookRendererCheck {
@@ -22,8 +24,19 @@ export class WorkbookRendererCheck {
   // RF-152
   async isOlder(project: Project): Promise<boolean> {
     if (project.sourceKind !== 'workbook' || project.upload === undefined) return false;
-    const snapshot = await this.deps.uploads.read(project.upload.snapshotKey);
-    if (snapshot?.kind !== 'workbook') return false;
-    return snapshot.rendererVersion !== this.deps.currentVersion;
+    try {
+      const snapshot = await this.deps.uploads.read(project.upload.snapshotKey);
+      if (snapshot?.kind !== 'workbook') return false;
+      return snapshot.rendererVersion !== this.deps.currentVersion;
+    } catch (error) {
+      // A corrupt or unreadable snapshot must not make the project page fail.
+      await this.deps.logger.log({
+        level: 'warn',
+        logger: 'sources',
+        message: 'The stored workbook snapshot could not be read to check its renderer.',
+        data: { reason: error instanceof Error ? error.message : 'unknown' },
+      });
+      return false;
+    }
   }
 }
