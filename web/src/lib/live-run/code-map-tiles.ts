@@ -118,3 +118,8 @@ export function tilesOf(
   const left = (tile: Tile): boolean => tile.state === 'library';
   return [...tiles.filter((tile) => !left(tile)), ...tiles.filter(left)];
 }
+
+// P5-05 (EV-16): the cards a tile says. Stub until the fix lands.
+export function cardsText(tile: Tile): string {
+  return String(tile.cards);
+}

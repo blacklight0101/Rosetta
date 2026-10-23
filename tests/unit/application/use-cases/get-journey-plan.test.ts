@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { scopeOf } from '../../../../src/application/runs/run-scope.js';
 import { addPlanRun } from '../../../support/journey-seed.js';
+import { sampleManifest, sampleRun } from '../../../support/run-fixtures.js';
 import {
   actor,
   briefSavedAt,
@@ -100,5 +102,35 @@ describe('GetJourney: the plan run (2)', () => {
     const result = await journey.execute({ actor, projectId: project.id, runId: understand?.id });
 
     expect(result).toMatchObject({ ok: true, value: { plan: { id: again.id } } });
+  });
+});
+
+describe('GetJourney: a plan run that is queued', () => {
+  it('EV-12 a queued plan run is the journey plan before its manifest names the source', async () => {
+    const { project, parts, seed, journey } = await setup();
+    const understand = await seed();
+    const queued = sampleRun({
+      ...{ userId: project.userId, projectId: project.id, stage: 'plan' },
+      ...{ runKey: '20261012-110000-plan', queueState: 'Queued', endState: null, startedAt: null },
+      queuedAt: briefSavedAt + hour,
+    });
+    await parts.runs.insert(queued);
+    // RF-614: the start names the source by its id; the planner records the folder name later.
+    await parts.manifests.write(
+      scopeOf(queued),
+      sampleManifest({
+        runId: queued.runKey,
+        stage: 'plan',
+        endState: null,
+        options: { sourceRunId: understand?.id },
+      }),
+    );
+
+    const result = await journey.execute({ actor, projectId: project.id, runId: understand?.id });
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: { plan: { id: queued.id, queueState: 'Queued' } },
+    });
   });
 });

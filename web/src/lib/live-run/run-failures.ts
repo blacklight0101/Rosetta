@@ -25,3 +25,8 @@ export const GENERIC_FAILURE = {
   message: 'The run ended with an error.',
   nextStep: 'Look the code up in the error catalogue, or report it.',
 } as const;
+
+// P5-05 (EV-13): the next step a failed run shows for its stage. Stub until the fix lands.
+export function nextStepFor(_stage: string, nextStep: string): string {
+  return nextStep;
+}
