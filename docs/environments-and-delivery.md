@@ -232,7 +232,7 @@ Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/set
 exceptions only in `audit-exceptions.json`, each with a reason and an expiry date; top-level `permissions: contents: read`; third-party actions pinned to a full commit SHA with the
 version in a comment; no `pull_request_target`; no secrets in CI (tests never call providers). Dependabot updates npm
 packages and GitHub Actions weekly, grouped by minor and patch, with a 14-day cooldown so it proposes only
-versions that are two weeks old (DEC-125).
+versions that are two weeks old (DEC-125); a release that fixes a security advisory is adopted at once (DEC-169).
 
 ## 7. Package and tool baseline
 
