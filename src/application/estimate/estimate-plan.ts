@@ -130,6 +130,7 @@ export class EstimatePlan {
       assumptions: {
         ...{ calls: calls.length, promptTokens },
         contextTokens,
+        ...{ windowTokens: 0, fitsWindow: true, oversizedCalls: [], omittedCards: 0 },
         ...{
           prdPromptTokens: tokensOf(calls, prompts, 'prd'),
           dataModelPromptTokens: tokensOf(calls, prompts, 'dataModel'),

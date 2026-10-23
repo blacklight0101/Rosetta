@@ -19,6 +19,8 @@ export interface PlanMessageInput {
   readonly catalogue: Catalogue;
   /** Only the questions with an answer. */
   readonly answered: readonly RecordedQuestion[];
+  /** P3-113: the ids of the cards the prompt names by title only, to fit the planner's window. */
+  readonly omitted?: ReadonlySet<string>;
 }
 
 function cardsText(cards: readonly SourceCard[]): string {
