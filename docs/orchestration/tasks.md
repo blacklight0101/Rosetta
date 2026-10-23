@@ -14,9 +14,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 115     | 15        | 96         | 4         | 0                  | 46      | 65      | 4      | 71         | 0         |
-| P5 Polish (G-10)        | 9       | 4         | 5          | 0         | 0                  | 5       | 4       | 0      | 0          | 0         |
-| **Total**               | **348** | **93**    | **226**    | **29**    | **0**              | **171** | **163** | **14** | **212**    | **0**     |
+| P3 Report and plan      | 120     | 16        | 100        | 4         | 0                  | 49      | 67      | 4      | 76         | 0         |
+| P5 Polish (G-10)        | 13      | 6         | 7          | 0         | 0                  | 7       | 6       | 0      | 0          | 0         |
+| **Total**               | **357** | **96**    | **232**    | **29**    | **0**              | **176** | **167** | **14** | **217**    | **0**     |
 
 ## Conventions for every card
 
@@ -4717,6 +4717,91 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 
 ---
 
+### P3-116 - Follow-up: the secret masker masks passwords and tokens held in key/value settings
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the secret masker (RF-141, RF-140..RF-147) and its pattern list, the manifest's masked-secret counters. Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic): connection strings were masked, but a password held as `<add key="..." value="..."/>` in an appSettings block reached the stored reader transcripts, the call-transcript endpoint and the run zip, and the manifest counted 0 passwords. Synthetic reproduction: a zip whose `web.config` holds `<appSettings><add key="SmtpPassword" value="Example7"/><add key="MailPassword" value="Example8"/><add key="ApiToken" value="Example9"/></appSettings>`; run scan and understand; the three values appear in `transcripts/reader-*.jsonl`.
+- **Do**: (1) mask the value of key/value settings whose key names a secret (password, pass, pwd, secret, token, apikey, api_key, key with a secret-like value), in XML attributes (`key=`/`value=`, `name=`/`value=`), JSON, YAML, INI and `.env` forms; (2) count each masked value in the manifest under its kind; (3) everything Rosetta stores or serves (transcripts, excerpts, cards, report, package, run zip) goes through the same masker, with a test for each output.
+- **Review probes**: the synthetic config above: no value appears in any transcript, the call-transcript response or the run zip, and the counters show 3; a setting such as `<add key="PageSize" value="20"/>` is not masked; mutation: removing the key/value rule fails a test.
+- **Behaviour to preserve**: RF-141 timing budget (P1-182); existing masking of connection strings, keys and tokens.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-140..RF-147, RNF-003; evaluation EV-35.
+
+---
+
+### P3-117 - Follow-up: the planner never copies its prompt's worked example into the package
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: planner prompts (`prompts/planner/prd.v1.md`, `package.v1..v3.md`; the orchestrator assigns new version numbers: next free number of each file), the package checks. Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic) and pass 2 (eShopModernizing): the PRD of both packages repeats the prompt's example word for word ("Automatic refunds" out of scope, "Card numbers are never stored", a shipping-threshold risk, the example ADR), with invented source ids.
+- **Do**: (1) the example in each planner prompt is marked as an example of form only and uses placeholder text that cannot pass as content (for example "<the problem in one sentence>"); (2) a package check flags any sentence of the package that matches an example sentence of the prompts, and the package lists it in checks.md; (3) new prompt versions recorded in the manifest.
+- **Review probes**: a recorded planner answer that copies the example is flagged in checks.md; the new prompts contain no shop or payment example text; mutation: removing the check fails a test.
+- **Behaviour to preserve**: RF-601..RF-613 package contents; old prompt versions kept for replays.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-601..RF-613; evaluation EV-34.
+
+---
+
+### P3-118 - Follow-up: IDE folders, backups and publish settings are not product code
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the scan's default ignore and third-party rules, the reader prompt's guidance on build and deployment files. Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic): the IDE settings folder (37% of the token estimate, two identical large config copies) and a Backup folder were first-party and selected by default; they produced the only open questions; a publish profile became FEAT, BR and INT cards and a task card "implement publication to file system". Synthetic reproduction: a zip with 3 small pages, `.vs/config/applicationhost.config` (1,000 lines), `Backup/App.sln` and `Properties/PublishProfiles/Staging.pubxml`.
+- **Do**: (1) `.vs/`, `.idea/`, `.vscode/` settings, `bin/`, `obj/`, `Backup*/` folders and `*.suo`, `*.user` files are ignored by default (listed in the scan summary as ignored, never silently); (2) publish profiles (`*.pubxml`), CI files and IDE project files are marked as build and deployment configuration: they can be read for the deployment section, but the reader prompt and the planner treat them as deployment facts, never product features.
+- **Review probes**: the synthetic zip scans without the IDE and Backup folders (listed as ignored); no FEAT or task card about publishing; mutation: removing the ignore rule fails a test.
+- **Behaviour to preserve**: RF-100..RF-112 scan; first-party code is never hidden without being listed.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-100..RF-112; evaluation EV-37, EV-39.
+
+---
+
+### P3-119 - Follow-up: VB.NET files and inline server script give symbols and entities
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the scan's language packs (the C# pack gives symbols; RF-100..RF-112), the entity candidates from SQL strings. Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic): `.vb` files and `<script runat="server">` blocks in `.aspx` pages gave no symbols, and many SQL statements gave 0 candidate entities. Synthetic reproduction: a zip with `Module1.vb` (a class with a Sub and two Functions), `Page.aspx` with a server script block holding `Page_Load` and an `INSERT INTO tblThing` string, and `Page.aspx.vb`.
+- **Do**: (1) a VB.NET pack gives classes, modules, Subs, Functions and Properties with their lines (a light parser like the C# pack is enough); (2) server script blocks in `.aspx`/`.ascx` pages are scanned with the page language; (3) table names in SQL strings (INSERT/UPDATE/DELETE/FROM/JOIN) become entity candidates, for every language.
+- **Review probes**: the synthetic zip gives the class, Subs and Functions, the inline Page_Load and an entity candidate `tblThing`; the C# pack output is unchanged; mutation: disabling the VB pack fails a test.
+- **Behaviour to preserve**: RF-100..RF-112 scan and code map; read-only tools (DEC-17).
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-100..RF-112; evaluation EV-36.
+
+---
+
+### P3-120 - Follow-up: the data model follows the chosen database and keeps legacy keys
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: data-model prompt and checks (P3-102, P3-115), Plan setup brief (database choice). Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic): under a SQL Server brief the data model used PostgreSQL types (uuid, boolean, timestamp with time zone), replaced integer legacy ids with uuid without a migration note, missed a status column a requirement depends on and a status lookup table present in the code. Synthetic reproduction: a project with SQL strings against `tblOrders(id int, status_id int, ...)`, a rule "status 6 means deleted" and a `tblStatus` table; brief SQL Server.
+- **Do**: (1) the data-model prompt receives the chosen database and its type names; a check flags types that do not belong to it (listed in checks.md); (2) a legacy integer key stays the key type unless the brief asks otherwise, and a change of key type gets a migration note; (3) a column or table named by a requirement or a rule card but missing from the model is listed in checks.md.
+- **Review probes**: the synthetic project under SQL Server gets SQL Server types, keeps int keys, has status_id and tblStatus or lists them as missing; mutation: removing the type check fails a test.
+- **Behaviour to preserve**: P3-102 and P3-115 rules; RF-630..RF-638.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-630..RF-638; evaluation EV-40.
+
+---
+
 ## Phase 5 - Polish (held by gate G-10)
 
 No card of this phase starts until the owner opens gate G-10 (DEC-165).
@@ -4871,5 +4956,73 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: evaluation EV-33.
+
+---
+
+### P5-10 - Lines a tool only listed do not count as read
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: coverage (P5-01 is the display side). Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic), finding EV-38: `codemap_query` results count their one-line ranges as read, so a long page that was only queried shows as read.
+- **Do**: count as read only lines returned by read_file (or a full excerpt), not the single lines a query lists.
+- **Review probes**: a recorded run: a page only queried stays unread.
+- **Behaviour to preserve**: RF-209.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-209; evaluation EV-38.
+
+---
+
+### P5-11 - The answers page lists the questions that survived consolidation
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: answers API and page. Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic), finding EV-41: the page lists question ids merged away and misses the real one.
+- **Do**: list the open questions of the consolidated card set.
+- **Review probes**: a run with merged questions lists the surviving ids.
+- **Behaviour to preserve**: RF-243.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-243; evaluation EV-41.
+
+---
+
+### P5-12 - Consolidation merge groups do not overlap and do not join different screens
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: consolidation (P3-80, P3-106, P3-110). Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic), finding EV-42: one card in five merge groups; a start page and a login page merged into one card and one task; FLOW and INT never consolidated.
+- **Do**: a card joins at most one merge group; two SCRN cards with different routes never merge; decide FLOW/INT rules with the owner.
+- **Review probes**: recorded merges with overlap resolve to one group; two routes stay apart.
+- **Behaviour to preserve**: P3-106, P3-110.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-230; evaluation EV-42.
+
+---
+
+### P5-13 - Data-binding controls are not reported as integrations
+
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: reader guidance for web-forms pages. Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic), finding EV-43: two data-source controls on a page became INT cards and task cards.
+- **Do**: the reader prompt treats page data-binding controls as part of the screen, not an external integration.
+- **Review probes**: a recorded page with two data-source controls gives no INT card.
+- **Behaviour to preserve**: RF-206.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: evaluation EV-43.
 
 ---
