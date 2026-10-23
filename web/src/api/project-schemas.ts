@@ -90,6 +90,8 @@ export const projectSchema = z.object({
     .default(null),
   /** True when the source was replaced after the last run started (RF-128). */
   codeChangedSinceLastRun: z.boolean().default(false),
+  /** P3-108: the stored workbooks were rendered by an older renderer; they must be uploaded again. */
+  renderedWithOlderRenderer: z.boolean().default(false),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

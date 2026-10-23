@@ -19,6 +19,12 @@ import { RefusingWriter } from '../../../support/refusing-writer.js';
 import { reportModel, plainCard } from '../../../support/report-fixtures.js';
 import { scopeFor } from '../../../support/run-event-fixtures.js';
 import { fakeOpenAiKey } from '../../../support/secret-fixture.js';
+import {
+  apiSecret,
+  mailSecret,
+  smtpSecret,
+  syntheticAppSettings,
+} from '../../../support/secret-setting-shapes.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
 // RF-504, RF-506, RF-1013, DEC-112: the report files of a run are written into its `report/`
@@ -133,6 +139,21 @@ describe('FileReportWriter and failures', () => {
 
     for (const path of paths) {
       expect(await readFile(join(runFolder(), path), 'utf8')).not.toContain(fakeOpenAiKey);
+    }
+  });
+
+  it('RF-141 masks the key/value settings of a web.config in model text in every file', async () => {
+    const model = reportModel({
+      cards: [{ ...plainCard, title: `Config ${syntheticAppSettings} here` }],
+    });
+
+    await writerOver().write(scope, model);
+
+    for (const path of paths) {
+      const text = await readFile(join(runFolder(), path), 'utf8');
+      for (const secret of [smtpSecret, mailSecret, apiSecret]) {
+        expect(text).not.toContain(secret);
+      }
     }
   });
 

@@ -25,4 +25,9 @@ text from anywhere.
 from two evaluation runs over public test workbooks (see above). They hold text a local model wrote about those
 workbooks, with citations into them, and nothing else.
 
+`p3-110-invoice-deepen2.json` and `p3-110-eshop-deepen2.json` are trimmed task-result card sets of the 2026-10-23
+Deepen runs (pass 2) over two public projects: the Invoice Generator workbook and the eShopModernizing sample on
+GitHub. The eShop file keeps only the cards whose type and title repeat in more than one area (claim text cut to 240
+characters). They are the cards as the readers wrote them, before consolidation (P3-110, EV-25, EV-26).
+
 Nothing here comes from the owner's employer (DEC-03).

@@ -13,6 +13,12 @@ import {
 import { FailingMasker } from '../../../support/failing-masker.js';
 import { MemoryOutputWriter } from '../../../support/memory-output-writer.js';
 import { fakeOpenAiKey } from '../../../support/secret-fixture.js';
+import {
+  apiSecret,
+  mailSecret,
+  smtpSecret,
+  syntheticAppSettings,
+} from '../../../support/secret-setting-shapes.js';
 
 describe('writeCardOutputs keeps rejected claims', () => {
   it('RF-302 a rejected claim is written with its status and reason, never dropped', async () => {
@@ -70,6 +76,37 @@ describe('writeCardOutputs masks secrets', () => {
 
     await expect(attempt).rejects.toBeInstanceOf(RosettaError);
     expect(writer.writes).toEqual([]);
+  });
+});
+
+describe('writeCardOutputs masks key/value settings', () => {
+  it('RF-141 the key/value settings of a web.config in model text are masked in every file', async () => {
+    const config = [
+      {
+        agentTaskId: 't',
+        area: 'x',
+        drafts: [
+          draftOf({
+            title: 'Mail settings',
+            claims: [
+              {
+                text: `Config holds ${syntheticAppSettings}`,
+                citations: [{ path: 'Web.config', startLine: 1, endLine: 5 }],
+              },
+            ],
+          }),
+        ],
+      },
+    ];
+
+    const { writer } = await writeCards(cardsOf(config));
+
+    for (const text of writer.files.values()) {
+      for (const secret of [smtpSecret, mailSecret, apiSecret]) {
+        expect(text).not.toContain(secret);
+      }
+    }
+    expect(fileOf(writer, 'cards/FEAT/FEAT-001.md')).toContain('SmtpPassword');
   });
 });
 

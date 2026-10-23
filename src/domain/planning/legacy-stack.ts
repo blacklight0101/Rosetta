@@ -9,7 +9,7 @@ import type { ArtefactKind } from '../code-map/artefact.js';
 
 const MAX_MARKERS = 40;
 const MAX_AREAS = 40;
-const MARKER_KINDS = ['configuration', 'database-script', 'manifest'] as const;
+const MARKER_KINDS = ['configuration', 'database-script', 'manifest', 'deployment'] as const;
 
 type MarkerKind = Extract<ArtefactKind, (typeof MARKER_KINDS)[number]>;
 
@@ -50,13 +50,17 @@ function languagesOf(map: CodeMap): LegacyLanguage[] {
     .sort((a, b) => b.lines - a.lines || byCodeUnit(a.language, b.language));
 }
 
+/** Configuration, database and manifest markers first, then deployment files, so the cap never drops them. */
 function markersOf(map: CodeMap): LegacyMarker[] {
   const markers: LegacyMarker[] = [];
   for (const file of map.files) {
     const kind = markerKindOf(file.artefactKinds);
     if (kind !== undefined) markers.push({ path: file.path, kind });
   }
-  return markers.sort((a, b) => byCodeUnit(a.path, b.path)).slice(0, MAX_MARKERS);
+  const rank = (kind: MarkerKind): number => MARKER_KINDS.indexOf(kind);
+  return markers
+    .sort((a, b) => rank(a.kind) - rank(b.kind) || byCodeUnit(a.path, b.path))
+    .slice(0, MAX_MARKERS);
 }
 
 /** The legacy stack the scan found in a code map. */

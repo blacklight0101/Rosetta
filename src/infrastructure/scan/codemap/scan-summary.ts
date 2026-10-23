@@ -5,6 +5,7 @@ import {
   type CodeMapSource,
 } from '../../../domain/code-map/code-map.js';
 import { byCodeUnit } from '../../../domain/code-map/code-unit-order.js';
+import type { IgnoredEntry } from '../universal/scan-types.js';
 
 // RF-105, RF-112, RNF-007: `scan-summary.md`, a readable view of the code map (data-model 3.5). It
 // is generated and never read back. The scan duration is the only value that differs between two
@@ -16,6 +17,8 @@ export interface ScanSummaryInput {
   readonly durationMs: number;
   /** Files a pack claims that stayed coarse because the parse budget was spent (P1-75). */
   readonly overParseBudget?: number;
+  /** RF-100: the entries the default ignores left out; listed, never silent. */
+  readonly ignored?: readonly IgnoredEntry[];
 }
 
 interface Totals {
@@ -91,6 +94,15 @@ function skippedNote(input: ScanSummaryInput): string {
   return notes.length === 0 ? '' : ` (${notes.join(', ')})`;
 }
 
+function ignoredSection(ignored: readonly IgnoredEntry[]): string {
+  if (ignored.length === 0) return 'None.';
+  return table(
+    ['Path', 'Rule', 'Files'],
+    [false, false, true],
+    ignored.map((entry) => [cell(entry.path), cell(entry.rule), String(entry.files)]),
+  );
+}
+
 function sourceLines(source: CodeMapSource, subpath: string): string[] {
   if (isUploadSource(source)) {
     return [
@@ -145,6 +157,8 @@ export function renderScanSummary(input: ScanSummaryInput): string {
       [false, true, true, false, false],
       areaRows(codeMap),
     ),
+    '## Ignored by default',
+    ignoredSection(input.ignored ?? []),
   ];
   return `${sections.join('\n\n')}\n`;
 }

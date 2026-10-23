@@ -15,6 +15,7 @@ import { GetPlanSource } from '../application/use-cases/get-plan-source.js';
 import { GetPlanningBrief } from '../application/use-cases/get-planning-brief.js';
 import { SavePlanningBrief } from '../application/use-cases/save-planning-brief.js';
 import { StoreUpload } from '../application/use-cases/store-upload.js';
+import { WorkbookRendererCheck } from '../application/use-cases/workbook-renderer-check.js';
 import { WorkbookBatches } from '../application/use-cases/workbook-batches.js';
 import { UpdateProjectSettings } from '../application/use-cases/update-project-settings.js';
 import type { ModelList } from '../application/models/model-list.js';
@@ -51,6 +52,7 @@ import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-gene
 import type { WorkbookSettings } from '../infrastructure/config/workbook-settings.js';
 import { SpaceReservation } from '../infrastructure/sources/space-reservation.js';
 import { DEFAULT_WORKBOOK_LIMITS } from '../infrastructure/sources/workbook/workbook-limits.js';
+import { WORKBOOK_RENDERER_VERSION } from '../infrastructure/sources/workbook/workbook-renderer.js';
 import { DiskWorkbookStaging } from '../infrastructure/sources/workbook-staging.js';
 import type { PlanInputs } from '../application/plan/plan-inputs.js';
 import { workbookGuidanceFor } from '../application/plan/plan-workbook.js';
@@ -112,7 +114,7 @@ function uploadsOf(
   parts: ProjectParts,
   projects: ProjectRepository,
   runs: RunIndex,
-): Pick<ProjectServices, 'storeUpload' | 'workbookBatches'> {
+): Pick<ProjectServices, 'storeUpload' | 'workbookBatches' | 'workbookRenderer'> {
   const { pool, logger, clock, masker, dataDir } = parts;
   const reservation = new SpaceReservation({
     dataDir,
@@ -127,6 +129,11 @@ function uploadsOf(
   const limitBytes = uploadLimitBytes(parts.uploadMaxMb);
   const auditLog = new PgAuditLog(pool, masker);
   return {
+    workbookRenderer: new WorkbookRendererCheck({
+      uploads,
+      currentVersion: WORKBOOK_RENDERER_VERSION,
+      logger,
+    }),
     storeUpload: new StoreUpload({
       ...{ projects, runs, logger, clock, auditLog },
       uploads,

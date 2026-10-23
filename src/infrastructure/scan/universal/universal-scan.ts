@@ -1,8 +1,14 @@
 import type { RepositoryReader } from '../../../application/ports/repository-reader.js';
 import { byCodeUnit } from '../../../domain/code-map/code-unit-order.js';
-import { isDefaultIgnored } from './default-ignores.js';
+import { defaultIgnoreOf } from './default-ignores.js';
 import { inspectFile } from './inspect-file.js';
-import type { ScanOptions, ScannedFile, SqlStatement, UniversalScan } from './scan-types.js';
+import type {
+  IgnoredEntry,
+  ScanOptions,
+  ScannedFile,
+  SqlStatement,
+  UniversalScan,
+} from './scan-types.js';
 
 // RF-100..RF-103, RF-124, ADR-004: the universal layer of the scan. It reads only through the
 // RepositoryReader port (so ignore rules, the deny list and the subpath already apply), holds one
@@ -20,8 +26,14 @@ export async function scanRepository(
   const files: ScannedFile[] = [];
   const sqlStatements: SqlStatement[] = [];
   const unreadable: string[] = [];
+  const ignored = new Map<string, { rule: string; files: number }>();
   for (const path of await reader.listFiles()) {
-    if (isDefaultIgnored(path, reader.subpath)) continue;
+    const left = defaultIgnoreOf(path, reader.subpath);
+    if (left !== undefined) {
+      const seen = ignored.get(left.path);
+      ignored.set(left.path, { rule: left.rule, files: (seen?.files ?? 0) + 1 });
+      continue;
+    }
     const read = await reader.readBytes({ path, maxBytes: options.maxFileBytes });
     if (!read.ok) {
       unreadable.push(path);
@@ -39,5 +51,8 @@ export async function scanRepository(
       invalidNames: [...reader.skippedPaths.invalidNames].sort(byCodeUnit),
     },
     unreadable: unreadable.sort(byCodeUnit),
+    ignored: [...ignored]
+      .map(([path, entry]): IgnoredEntry => ({ path, rule: entry.rule, files: entry.files }))
+      .sort((left, right) => byCodeUnit(left.path, right.path)),
   };
 }

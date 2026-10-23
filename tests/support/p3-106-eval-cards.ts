@@ -32,11 +32,14 @@ const storedCards = z.array(
 );
 type StoredCard = z.infer<typeof storedCards>[number];
 
-export type EvalRun = 'asset-manager' | 'invoice';
+export type EvalRun = 'asset-manager' | 'invoice' | 'invoice-2' | 'eshop-2';
 
 const files: Record<EvalRun, string> = {
   'asset-manager': 'p3-106-asset-manager-deepen.json',
   invoice: 'p3-106-invoice-deepen.json',
+  // P3-110, EV-25, EV-26: pass 2 of the evaluation (2026-10-23), public projects only.
+  'invoice-2': 'p3-110-invoice-deepen2.json',
+  'eshop-2': 'p3-110-eshop-deepen2.json',
 };
 
 function cardOf(stored: StoredCard): Card {

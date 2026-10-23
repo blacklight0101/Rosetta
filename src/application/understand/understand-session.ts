@@ -31,6 +31,7 @@ import { failedOutcome, sessionOutcome, type TaskOutcome } from './session-outco
 import { TaskLog } from './task-log.js';
 import { runPool } from './task-pool.js';
 import { taskResultOf } from './task-result-of.js';
+import { withoutBookkeeping } from '../cards/bookkeeping-claims.js';
 import { withoutThirdPartyQuestions } from './third-party-questions.js';
 import { runReaderTaskWithRetry } from './task-retry.js';
 
@@ -117,7 +118,10 @@ export class UnderstandSession {
           return failedOutcome(error);
         },
       );
-      const outcome = await withoutThirdPartyQuestions(this.log, this.thirdParty, task, result);
+      const quiet = await withoutThirdPartyQuestions(this.log, this.thirdParty, task, result);
+      // P3-110, EV-26: claims that only restate card ids or cite a non-file never reach the check.
+      const where = { agentTaskId: task.agentTaskId, codeMap: this.parts.scanned.codeMap };
+      const outcome = await withoutBookkeeping(execution.events, where, quiet);
       const failure = areaFailureOf(outcome);
       const cards = outcome.drafts;
       const note = coverageNoteOf(outcome.areaRead, this.thirdParty.has(task.area.name));

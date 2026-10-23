@@ -6,6 +6,7 @@ import type { CreateProject } from '../../application/use-cases/create-project.j
 import type { GetProject } from '../../application/use-cases/get-project.js';
 import type { ListProjects } from '../../application/use-cases/list-projects.js';
 import type { StoreUpload } from '../../application/use-cases/store-upload.js';
+import type { WorkbookRendererCheck } from '../../application/use-cases/workbook-renderer-check.js';
 import type { WorkbookBatches } from '../../application/use-cases/workbook-batches.js';
 import type { OpenWorkspace } from '../../application/use-cases/open-workspace.js';
 import type { UpdateProjectSettings } from '../../application/use-cases/update-project-settings.js';
@@ -61,6 +62,8 @@ export interface ProjectServices
   readonly storeUpload: StoreUpload;
   /** RF-150: the batches of a workbook project (workbook-batch-routes.ts). */
   readonly workbookBatches: WorkbookBatches;
+  /** P3-108: whether the workbooks a project holds were rendered by an older renderer. */
+  readonly workbookRenderer: WorkbookRendererCheck;
 }
 
 const CREATE_BODY_LIMIT_BYTES = 4096;
@@ -184,10 +187,15 @@ function registerRead(server: FastifyInstance, services: ProjectServices): void 
         projectId: request.params.id,
       });
       if (!outcome.ok) throw notFound();
+      // P3-108, EV-23: only the page of one project asks, so a list costs no snapshot read.
+      const older = await services.workbookRenderer.isOlder(outcome.value);
       return reply
         .status(200)
         .header('etag', etagOf(outcome.value))
-        .send(projectView(outcome.value));
+        .send({
+          ...projectView(outcome.value),
+          ...(older ? { renderedWithOlderRenderer: true } : {}),
+        });
     },
   );
 }

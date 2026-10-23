@@ -42,7 +42,15 @@ const fileSchema = z.strictObject({
   sha256: z.string().length(64).optional(),
   artefactKinds: z
     .array(
-      z.enum(['configuration', 'controller', 'database-script', 'entry-point', 'manifest', 'page']),
+      z.enum([
+        'configuration',
+        'controller',
+        'database-script',
+        'deployment',
+        'entry-point',
+        'manifest',
+        'page',
+      ]),
     )
     .max(6),
   mapLevel,
