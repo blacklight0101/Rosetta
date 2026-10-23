@@ -17,8 +17,9 @@ export interface ListRunCallsDependencies {
   readonly manifests: RunManifestStore;
 }
 
-/** The most attempts one answer lists, newest last; the summary always counts them all. */
-export const MAX_LISTED_CALLS = 2000;
+/** P5-22: attempts in one answer when the request names no limit, and the most it may name. */
+export const DEFAULT_CALLS_PAGE = 100;
+export const MAX_CALLS_PAGE = 500;
 
 export interface RunCall extends StoredCall {
   /** The area of the agent task when the manifest knows it, else the agent task id. */
@@ -33,6 +34,8 @@ export interface RunCallsView {
   readonly total: number;
   readonly calls: readonly RunCall[];
   readonly summary: readonly ProviderRoleSummary[];
+  /** The `seq` to continue after; none on the last page. */
+  readonly nextCursor?: string;
 }
 
 export class ListRunCalls {
@@ -46,6 +49,8 @@ export class ListRunCalls {
   async execute(request: {
     readonly actor: Actor;
     readonly runId: string;
+    readonly limit?: number;
+    readonly after?: number;
   }): Promise<Result<RunCallsView, 'not-found'>> {
     const run = await this.deps.runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
@@ -60,7 +65,7 @@ export class ListRunCalls {
       runState: run.queueState,
       total: stored.length,
       calls: stored
-        .slice(-MAX_LISTED_CALLS)
+        .slice(-MAX_CALLS_PAGE)
         .map((call) => ({ ...call, agent: areas.get(call.agentTaskId) ?? call.agentTaskId })),
       summary: summarizeCalls(stored),
     });

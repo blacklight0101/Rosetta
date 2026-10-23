@@ -57,6 +57,8 @@ export interface PlanEstimateHarness {
   readonly usage: MemoryAccountUsage;
   readonly keys: MemoryProviderKeyRepository;
   readonly serverSettings: MemoryServerSettings;
+  /** The memory folder of the run files, for tests that count reads. */
+  readonly files: MemoryOutputWriter;
   readonly clock: FixedClock;
   /** Seeds (or re-seeds) the plan sources of the project. */
   seed(seed?: PlanSourceSeed): Promise<Run | undefined>;
@@ -123,7 +125,7 @@ export async function createPlanEstimateHarness(
   const [usage, keys] = [new MemoryAccountUsage(), new MemoryProviderKeyRepository()];
   const serverSettings = new MemoryServerSettings({});
   const harness: PlanEstimateHarness = {
-    ...{ account, project, usage, keys, serverSettings, clock },
+    ...{ account, project, usage, keys, serverSettings, clock, files },
     actor: actorOf(account),
     estimate: new EstimatePlan({
       ...{ projects, runs, briefs, users, serverSettings, usage, keys, clock },

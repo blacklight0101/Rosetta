@@ -51,7 +51,7 @@ describe('FileRunCallReader calls', () => {
     await recorder.record(sampleRecord);
     await recorder.record({ ...sampleRecord, callId: `${runKey}#2`, attempt: 1, status: 'failed' });
 
-    const calls = await readerOf().calls(scopeOf(amy));
+    const calls = (await readerOf().log(scopeOf(amy))).calls;
 
     expect(calls.map((call) => [call.seq, call.callId, call.status])).toEqual([
       [1, sampleRecord.callId, 'ok'],
@@ -73,21 +73,21 @@ describe('FileRunCallReader calls', () => {
     await recorder.record({ ...sampleRecord, cacheWriteInputTokens: 300 });
     await recorder.record({ ...sampleRecord, callId: `${runKey}#2` });
 
-    const calls = await readerOf().calls(scopeOf(amy));
+    const calls = (await readerOf().log(scopeOf(amy))).calls;
 
     expect(calls[0]?.cacheWriteInputTokens).toBe(300);
     expect(calls[1]).not.toHaveProperty('cacheWriteInputTokens');
   });
 
   it('RF-1011 gives no attempts for a run without a call log', async () => {
-    expect(await readerOf().calls(scopeOf(amy))).toEqual([]);
+    expect((await readerOf().log(scopeOf(amy))).calls).toEqual([]);
   });
 
   it("RF-1105 reads only the owner's workspace: the same run folder under another user is empty", async () => {
     await recorderOf(amy).record(sampleRecord);
 
-    expect(await readerOf().calls(scopeOf(bob))).toEqual([]);
-    expect(await readerOf().calls(scopeOf(amy))).toHaveLength(1);
+    expect((await readerOf().log(scopeOf(bob))).calls).toEqual([]);
+    expect((await readerOf().log(scopeOf(amy))).calls).toHaveLength(1);
   });
 });
 
@@ -98,7 +98,7 @@ describe('FileRunCallReader damaged lines', () => {
     const torn = '{"schemaVersion":1,"seq":10,"x';
     await appendFile(file, `not json\n{"schemaVersion":1,"seq":9}\n${torn}`, 'utf8');
 
-    const calls = await readerOf().calls(scopeOf(amy));
+    const calls = (await readerOf().log(scopeOf(amy))).calls;
 
     expect(calls.map((call) => call.seq)).toEqual([1]);
   });
@@ -112,7 +112,7 @@ describe('FileRunCallReader damaged lines', () => {
       'utf8',
     );
 
-    const calls = await readerOf().calls(scopeOf(amy));
+    const calls = (await readerOf().log(scopeOf(amy))).calls;
 
     expect(JSON.stringify(calls)).not.toContain(fakeOpenAiKey);
     expect(calls[0]?.model).toContain('[MASKED:');

@@ -1,6 +1,11 @@
-import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
+import type {
+  FileStatReader,
+  OutputWriter,
+  WorkspaceFile,
+} from '../../application/ports/output-writer.js';
 import type { RunScope } from '../../application/ports/run-events.js';
 import type {
+  RunCallLog,
   RunCallReader,
   StoredCall,
   StoredTranscriptEntry,
@@ -17,8 +22,10 @@ import { parseCallLine, parseTranscriptLine } from './call-record-schema.js';
 // is not a record are left out.
 
 export interface FileRunCallReaderOptions {
-  readonly reader: Pick<OutputWriter, 'readText'>;
+  readonly reader: Pick<OutputWriter, 'readText'> & FileStatReader;
   readonly masker: TextMasker;
+  /** How many runs' call logs are kept; a few by default. */
+  readonly runsKept?: number;
 }
 
 // The agent task id becomes a file name (provider-call-lines.ts): only a plain name is read.
@@ -44,6 +51,11 @@ export class FileRunCallReader implements RunCallReader {
 
   constructor(options: FileRunCallReaderOptions) {
     this.options = options;
+  }
+
+  // RF-1011
+  log(): Promise<RunCallLog> {
+    return Promise.reject(new Error('not implemented'));
   }
 
   // RF-1011

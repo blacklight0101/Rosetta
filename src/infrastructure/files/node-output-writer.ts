@@ -14,6 +14,8 @@ import { basename, dirname, join } from 'node:path';
 import type { Stats } from 'node:fs';
 import type { Logger } from '../../application/ports/logger.js';
 import type {
+  FileFacts,
+  FileStatReader,
   OutputWriter,
   TextLineReader,
   WorkspaceFile,
@@ -71,7 +73,7 @@ async function* completeLinesOf(path: string): AsyncGenerator<string> {
   }
 }
 
-export class NodeOutputWriter implements OutputWriter, TextLineReader {
+export class NodeOutputWriter implements OutputWriter, TextLineReader, FileStatReader {
   readonly #dataDir: string;
   readonly #logger: Logger;
 
@@ -123,6 +125,14 @@ export class NodeOutputWriter implements OutputWriter, TextLineReader {
       if (hasCode(error, 'ENOENT')) return this.#refuse('not-found', file);
       throw error;
     }
+  }
+
+  async statFile(file: WorkspaceFile): Promise<Result<FileFacts, WriteRefusal>> {
+    const target = await this.#resolve(file, 'read');
+    if (!target.ok) return target;
+    const stats = await statOrUndefined(target.value);
+    if (stats === undefined) return this.#refuse('not-found', file);
+    return ok({ size: stats.size, modifiedMs: stats.mtimeMs });
   }
 
   async remove(file: WorkspaceFile): Promise<Result<void, WriteRefusal>> {
