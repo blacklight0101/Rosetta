@@ -440,7 +440,7 @@ writes. It is absent for a run whose summariser step answered nothing.
 (RST-1300)`); feeds the web UI
   coverage map (RF-1005, through `GET /api/runs/:runId/coverage`, which lists every file as read or not read) and the report. Areas keep the order of the run and list only tasks that ended; `files` is
   every file of the area in the area's order, `read` the line ranges the task's tools returned (a read, the lines of
-  grep matches, the statements of a code map entry), cut to the file, sorted and merged, empty for a file not read;
+  grep matches; the statements a code map query lists are not a read, RF-209), cut to the file, sorted and merged, empty for a file not read;
   lines of files outside the area are not counted. `tokens` is the area's estimated tokens, `readTokens` each file's
   estimated tokens in proportion to its lines read (rounded per file, then summed), `readTokenShare` their ratio from 0
   to 1 with four decimals (0 for an area without tokens). It holds no times, so the same coverage gives the same bytes. Rewritten with

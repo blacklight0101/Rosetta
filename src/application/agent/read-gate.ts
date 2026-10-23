@@ -6,8 +6,8 @@ import type { AreaRead } from './agent-task-result.js';
 
 // RF-206, DEC-136, Q-50: a reader must read before it answers. The gate remembers whether a tool
 // gave the task lines of a file of its area, and says when a final answer is to be refused instead
-// of accepted. A read of a file outside the area, a failed call and a call that returned no file
-// line (a symbol query) do not count. An area with no readable file (only binary or skipped files)
+// of accepted. A read of a file outside the area, a failed call, a call that returned no file
+// line (a symbol query) and the statement lines a path query only lists (RF-209) do not count. An area with no readable file (only binary or skipped files)
 // has nothing to read, so the rule does not apply to it. An answer after a read of less than half
 // of the area's first-party tokens is refused once more, with the files still unread.
 
@@ -50,7 +50,7 @@ export class ReadGate {
 
   /** Notes what a tool call gave the task. */
   note(outcome: ToolOutcome): void {
-    if (outcome.error !== undefined) return;
+    if (outcome.error !== undefined || outcome.listed === true) return;
     for (const excerpt of outcome.excerpts ?? []) {
       if (!this.readable.has(excerpt.path)) continue;
       this.hasRead = true;
