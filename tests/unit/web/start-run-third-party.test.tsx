@@ -97,7 +97,7 @@ it('RF-1001 ticking a third-party area adds it to the selection', async () => {
   expect(input('Scripts#1').checked).toBe(true);
   await waitFor(() => {
     expect(
-      calls.filter((call) => call.method === 'GET' && call.path === estimatePath).length,
+      calls.filter((call) => call.method === 'POST' && call.path === estimatePath).length,
     ).toBeGreaterThan(1);
   });
   expect(input('Catalog').checked).toBe(true);

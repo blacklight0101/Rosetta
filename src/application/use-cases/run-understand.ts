@@ -177,7 +177,7 @@ export class RunUnderstand implements RunExecutor {
     const deps = { answers: this.deps.answers, cards: this.deps.priorCards };
     const ref = { userId: run.userId, projectId: run.projectId };
     const areas = plannedAreas(scanned);
-    const planned = await planTasks({ areas, options, project: ref, rerun: deps });
+    const planned = await planTasks({ areas, options, project: ref, rerun: deps, scanned });
     if (!planned.ok) return this.unknownAreas(run, planned.error);
     const { tasks, rerun } = planned.value;
     const scheduled = await scheduleTasks(this.deps, execution, { tasks, scanned, options });

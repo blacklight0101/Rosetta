@@ -104,7 +104,7 @@ it('RF-1018 Select all ticks every area, Select none clears, Own code only resto
   });
 });
 
-it('RF-1018 Select all asks for the plain estimate of every area', async () => {
+it('RF-425 Select all names every area, because the plain estimate covers own code only', async () => {
   const { calls } = renderStart(estimateAnswers(mixed));
   await ready();
   const gets = () => calls.filter((c) => c.method === 'GET' && c.path === estimatePath).length;
@@ -113,8 +113,9 @@ it('RF-1018 Select all asks for the plain estimate of every area', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Select all' }));
 
   await waitFor(() => {
-    expect(gets()).toBe(before + 1);
+    expect(estimateBodies(calls).at(-1)).toEqual({ areas: every });
   });
+  expect(gets()).toBe(before);
 });
 
 it('RF-1018 the filter narrows the list by name, whatever the case, and keeps the choice', async () => {
