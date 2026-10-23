@@ -15,7 +15,7 @@ import type { RunEventHistory } from '../ports/run-events.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { scopeOf } from '../runs/run-scope.js';
-import { waitsForAnswer, withStates } from './question-states.js';
+import { waitsForAnswer, consolidatedStates } from './question-states.js';
 
 // RF-615, RF-614, RF-1105, DEC-142, DEC-143: Get journey gives the journey strip the facts it is drawn
 // from: the understand run the package is written from, its open questions, whether a brief is
@@ -171,7 +171,7 @@ export class GetJourney {
     const project = { userId: run.userId, projectId: run.projectId };
     const cards = supportedCards(await this.deps.cards.cardsOf(scopeOf(run)));
     const asked = await this.deps.answers.questionsOf(project, run.runKey);
-    const stated = await withStates(this.deps.priorCards, project, run.runKey, asked);
+    const stated = await consolidatedStates(this.deps.priorCards, project, run.runKey, asked);
     return {
       ...facts,
       supportedClaims: claimsOf(cards),

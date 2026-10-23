@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import { vi } from 'vitest';
 import type { AnswerEntry } from '../../src/application/ports/answers-file.js';
 import type { ScanResults } from '../../src/application/ports/scan-results.js';
@@ -116,6 +117,7 @@ export function planExecutor(
     ...{ projects, runs, manifests, logger, users: s.users },
     briefs: new FilePlanningBriefStore({ writer, masker }),
     cards: new FileRunCards(writer),
+    priorCards: new FilePriorCards(writer),
     answers: new FileAnswersFile({ writer, masker }),
     providers: providers.factory,
     runSinks: providers.runSinks,

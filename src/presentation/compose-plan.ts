@@ -11,6 +11,7 @@ import type { RunManifestStore } from '../application/ports/run-manifest-store.j
 import { BuildPlan } from '../application/use-cases/build-plan.js';
 import { FileCostReportWriter } from '../infrastructure/budget/cost-report-files.js';
 import { FileRunCards } from '../infrastructure/cards/file-run-cards.js';
+import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
 import { composeScanResults } from './compose-understand.js';
 import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
@@ -70,6 +71,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
     scans: composeScanResults(parts),
     briefs: new FilePlanningBriefStore({ writer, masker }),
     cards: new FileRunCards(writer),
+    priorCards: new FilePriorCards(writer),
     answers: parts.answers,
     providers: parts.providers,
     runSinks: (scope) => ({

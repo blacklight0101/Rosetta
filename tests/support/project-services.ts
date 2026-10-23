@@ -1,4 +1,5 @@
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
+import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import { GetPlanSource } from '../../src/application/use-cases/get-plan-source.js';
 import { EstimatePlan } from '../../src/application/estimate/estimate-plan.js';
 import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
@@ -136,6 +137,7 @@ export function projectServices(
     estimatePlan: new EstimatePlan({
       ...{ projects, runs, briefs, answers, users, serverSettings, usage, clock, keys },
       cards: new FileRunCards(answerFiles),
+      priorCards: new FilePriorCards(answerFiles),
       serverKeys: { has: () => true },
       priceTable: estimatePrices,
       models: NO_LISTED_MODELS,

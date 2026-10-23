@@ -4,6 +4,7 @@ import type {
   ProjectRef,
   RecordedQuestion,
 } from '../../src/application/ports/answers-file.js';
+import type { PriorCards } from '../../src/application/ports/prior-cards.js';
 import type { ReportDownloads } from '../../src/application/ports/report-downloads.js';
 import type { ReportCardFiles } from '../../src/application/ports/report-card-files.js';
 import type { ReportWriter } from '../../src/application/ports/report-writer.js';
@@ -99,6 +100,7 @@ export function reportFigures(): {
   readonly costs: MemoryCostTotals;
   readonly clock: FixedClock;
   readonly cards: FixedReportCards;
+  readonly priorCards: Pick<PriorCards, 'cardsOf'>;
   readonly downloads: RecordingReportDownloads;
 } {
   return {
@@ -106,6 +108,7 @@ export function reportFigures(): {
     costs: new MemoryCostTotals(),
     clock: new FixedClock('2026-10-12T11:00:00.000Z'),
     cards: new FixedReportCards(),
+    priorCards: { cardsOf: () => Promise.resolve([]) },
     downloads: new RecordingReportDownloads(),
   };
 }

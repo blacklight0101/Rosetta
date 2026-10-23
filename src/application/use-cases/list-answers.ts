@@ -3,7 +3,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { AnswersFile } from '../ports/answers-file.js';
 import type { PriorCards } from '../ports/prior-cards.js';
 import type { RunIndex } from '../ports/run-index.js';
-import { withStates, type StatedQuestion } from './question-states.js';
+import { consolidatedStates, type StatedQuestion } from './question-states.js';
 
 // RF-1007, RF-240, RF-1105: List answers gives the live run page the open questions the run added
 // to its project's `answers.md`, with the answers recorded so far
@@ -32,6 +32,6 @@ export class ListAnswers {
     if (run === undefined) return err('not-found');
     const project = { userId: run.userId, projectId: run.projectId };
     const questions = await this.deps.answers.questionsOf(project, run.runKey);
-    return ok(await withStates(this.deps.cards, project, run.runKey, questions));
+    return ok(await consolidatedStates(this.deps.cards, project, run.runKey, questions));
   }
 }

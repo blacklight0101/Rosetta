@@ -5,7 +5,8 @@ import type { Logger } from '../ports/logger.js';
 import type { PriorCards, QuestionReopener } from '../ports/prior-cards.js';
 import type { RunIndex } from '../ports/run-index.js';
 import { askingTheSame } from '../understand/answer-rerun.js';
-import { withStates, type StatedQuestion } from './question-states.js';
+import { consolidatedQuestions } from '../understand/consolidated-questions.js';
+import { consolidatedStates, type StatedQuestion } from './question-states.js';
 
 // RF-241, RF-1007, RF-1105: Reopen question lets the user open a question that a re-run marked
 // `Answered` again, so an answer edited after that is used by the next re-run with answers (a re-run
@@ -40,17 +41,19 @@ export class ReopenQuestion {
     const run = await runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
     const project = { userId: run.userId, projectId: run.projectId };
-    const questions = await answers.questionsOf(project, run.runKey);
-    if (!questions.some((question) => question.cardId === request.cardId)) return err('not-found');
-    if (run.queueState !== 'Ended') return err('run-not-ended');
+    const filed = await answers.questionsOf(project, run.runKey);
     const earlier = await cards.cardsOf(project, run.runKey);
+    // P5-11: only a question of the consolidated set can be reopened, a merged-away id is not one.
+    const listed = consolidatedQuestions(filed, earlier);
+    if (!listed.some((question) => question.cardId === request.cardId)) return err('not-found');
+    if (run.queueState !== 'Ended') return err('run-not-ended');
     const card = earlier.find((each) => each.id === request.cardId && each.type === 'OQ');
     const answered = (card === undefined ? [] : askingTheSame(card, earlier))
       .filter((each) => each.questionState === 'Answered')
       .map((each) => each.id);
     const reopened = answered.length === 0 ? [] : await cards.reopen(project, run.runKey, answered);
     if (reopened.length > 0) await this.log(run, request.cardId, reopened);
-    return ok(await withStates(cards, project, run.runKey, questions));
+    return ok(await consolidatedStates(cards, project, run.runKey, filed));
   }
 
   private async log(

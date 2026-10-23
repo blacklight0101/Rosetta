@@ -177,7 +177,11 @@ function answerServices(
 function reportOf(
   runs: RunHarness,
   outputs: RunOutputs,
-  extra: { readonly answers: AnswersFile; readonly clock: Clock },
+  extra: {
+    readonly answers: AnswersFile;
+    readonly priorCards: PriorCards;
+    readonly clock: Clock;
+  },
 ): BuildReport {
   return new BuildReport({
     runs: runs.runs,
@@ -186,6 +190,7 @@ function reportOf(
     files: outputs.text,
     writer: outputs.reportWriter,
     cards: new FixedReportCards(),
+    priorCards: extra.priorCards,
     downloads: outputs.reportDownloads,
     scans: new FixedScans(catalogAreas),
     logger: new RecordingLogger(),
@@ -245,7 +250,7 @@ export function runServices(
     }),
     exportZip: new ExportZip({ runs: runs.runs, archives: outputs.archives }),
     readRunFile: new ReadRunFile({ runs: runs.runs, files: outputs.files }),
-    buildReport: reportOf(runs, outputs, { answers, clock }),
+    buildReport: reportOf(runs, outputs, { answers, priorCards: stores.priorCards, clock }),
     ...answerAndJourney(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
     startRun: new StartRun({ ...runs, projects, briefs: stores.briefs }),

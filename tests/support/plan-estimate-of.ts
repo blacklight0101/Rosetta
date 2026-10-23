@@ -1,4 +1,5 @@
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
+import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import { EstimatePlan } from '../../src/application/estimate/estimate-plan.js';
 import type { PlanEstimate } from '../../src/application/estimate/plan-estimate-types.js';
 import type { Project } from '../../src/application/projects/project.js';
@@ -47,6 +48,7 @@ export async function planEstimateOf(
     },
     briefs: new FilePlanningBriefStore({ writer, masker }),
     cards: new FileRunCards(writer),
+    priorCards: new FilePriorCards(writer),
     answers: new FileAnswersFile({ writer, masker }),
     usage: new MemoryAccountUsage(),
     serverSettings: new MemoryServerSettings({}),

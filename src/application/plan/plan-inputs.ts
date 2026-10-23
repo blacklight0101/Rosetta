@@ -6,6 +6,8 @@ import type { Run } from '../../domain/runs/run.js';
 import type { UploadFacts } from '../../domain/sources/upload-facts.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { AnswersFile, RecordedQuestion } from '../ports/answers-file.js';
+import type { PriorCards } from '../ports/prior-cards.js';
+import { consolidatedQuestions } from '../understand/consolidated-questions.js';
 import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunCards } from '../ports/run-cards.js';
@@ -27,6 +29,8 @@ export interface PlanInputDependencies {
   readonly briefs: PlanningBriefStore;
   readonly cards: RunCards;
   readonly answers: Pick<AnswersFile, 'questionsOf'>;
+  /** P5-11: the merges consolidation made, to list the questions that survived it. */
+  readonly priorCards: Pick<PriorCards, 'cardsOf'>;
 }
 
 export interface PlanInputs {
@@ -35,7 +39,7 @@ export interface PlanInputs {
   readonly sourceRun: Run;
   /** Every card of the source run, with every claim. */
   readonly cards: readonly SourceCard[];
-  /** The source run's open questions, answered or not, in file order. */
+  /** The source run's open questions after consolidation (P5-11), answered or not, in file order. */
   readonly questions: readonly RecordedQuestion[];
   /** RF-131: the zip, its upload date and hash, for a project of kind `upload`. */
   readonly upload?: UploadFacts;
@@ -110,7 +114,11 @@ export async function planInputs(
   const sourceRun = found.value;
   const cards = await deps.cards.cardsOf(scopeOf(sourceRun));
   if (supportedCards(cards).length === 0) return err(problems.claims);
-  const questions = await deps.answers.questionsOf(ref, sourceRun.runKey);
+  const filed = await deps.answers.questionsOf(ref, sourceRun.runKey);
+  const questions = consolidatedQuestions(
+    filed,
+    await deps.priorCards.cardsOf(ref, sourceRun.runKey),
+  );
   const upload =
     project.sourceKind === 'github'
       ? undefined
