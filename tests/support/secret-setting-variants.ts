@@ -109,8 +109,8 @@ export const variantSecretCases: readonly ShapeCase[] = [
     'a short secret in YAML',
     'password',
     [
-      `auth:\n  client_secret: ${shortTk}\n  port: 25`,
-      `auth:\n  client_secret: ${pwMask}\n  port: 25`,
+      `auth:\n  Client_Secret: ${shortTk}\n  port: 25`,
+      `auth:\n  Client_Secret: ${pwMask}\n  port: 25`,
     ],
     shortTk,
   ),
@@ -129,7 +129,7 @@ export const variantSecretCases: readonly ShapeCase[] = [
   one(
     'a secret value glued to a raw tag',
     'password',
-    [`<li>secret: ${pw}</li>`, `<li>secret: ${pwMask}</li>`],
+    [`<li>Secret: ${pw}</li>`, `<li>Secret: ${pwMask}</li>`],
     pw,
   ),
 ];
