@@ -108,21 +108,16 @@ describe(
   'an understand run whose reader greps and queries the code map',
   UNDERSTAND_TIMEOUT,
   () => {
-    it('RF-230 the lines of grep matches and of code map statements count as read', async () => {
+    it('RF-230 RF-209 the lines of grep matches count as read, the code map statements do not', async () => {
       const ended = await endedRun({ recording: 'understand-grep-codemap.json' }, 'Services');
 
       expect(ended.taskStates).toEqual(['Done']);
-      // Line 8 is the only grep match; lines 7, 12 and 13 are the code map's SQL statements.
+      // Line 8 is the only grep match; lines 7, 12 and 13 are the code map's SQL statements, which
+      // a query only lists (EV-38).
       expect(ended.files).toEqual([
-        {
-          path: 'Services/CatalogService.cs',
-          read: [
-            { startLine: 7, endLine: 8 },
-            { startLine: 12, endLine: 13 },
-          ],
-        },
+        { path: 'Services/CatalogService.cs', read: [{ startLine: 8, endLine: 8 }] },
       ]);
-      expect(ended.markdown).toContain('| Services/CatalogService.cs | 7\\-8, 12\\-13 |');
+      expect(ended.markdown).toContain('| Services/CatalogService.cs | 8\\-8 |');
     });
   },
 );
