@@ -210,7 +210,12 @@ export class OllamaProvider implements LlmProvider {
     };
     const first = build(auto);
     if (auto.source === 'fixed') return first;
-    const grown = await this.contexts.grow(ref, auto, neededTokens(first.facts));
+    const grown = await this.contexts.grow(
+      ref,
+      auto,
+      neededTokens(first.facts),
+      request.context.runId,
+    );
     if (grown === undefined) return build(auto, this.contexts.trainedContext(ref));
     return grown === auto ? first : build(grown);
   }

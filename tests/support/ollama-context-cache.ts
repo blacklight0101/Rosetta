@@ -10,4 +10,5 @@ export function clearContextCache(cache: ContextCache): void {
   cache.fixedChecked.clear();
   cache.trained.clear();
   cache.grownWarned.clear();
+  cache.kept.clear();
 }
