@@ -2,6 +2,7 @@ import type { CardChanges, CardRef } from '../../application/understand/card-cha
 import { countClaims, type Card } from '../../domain/cards/card.js';
 import { incompleteSteps } from '../../domain/cards/flow-completeness.js';
 import type { Overview } from '../../domain/overview/overview.js';
+import { maskCardText } from './mask-card-text.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { cardPath } from './card-markdown.js';
 import { citationLink, FROM_RUN_FOLDER, type PermalinkSource } from './citation-link.js';
@@ -75,12 +76,14 @@ export interface SpecExtras {
 }
 
 export function renderSpec(
-  cards: readonly Card[],
+  allCards: readonly Card[],
   source: PermalinkSource,
   masker: TextMasker,
   extras: SpecExtras = {},
 ): string {
   const { areasWithoutCards = [], changes, overview } = extras;
+  // P3-127: paths and ids are masked before they are escaped into links, which the last pass cannot read.
+  const cards = maskCardText(allCards, masker);
   const esc = markdownEscaper(masker);
   const lines = ['# Specification', ''];
   if (overview !== undefined) {

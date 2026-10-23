@@ -9,6 +9,7 @@ import {
   stepHeader,
   stepMark,
 } from './card-detail-markdown.js';
+import { maskCard } from './mask-card-text.js';
 import { flowDiagramSection } from './flow-diagram-section.js';
 import { citationLink, FROM_CARD_FILE, type PermalinkSource } from './citation-link.js';
 import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
@@ -128,8 +129,8 @@ function bodyOf(
 }
 
 /**
- * The whole file. Every value of the card is masked once, before anything is quoted or escaped
- * (`maskDeep`: header, body and diagram all read the masked card). The finished text is NOT masked
+ * The whole file. Every string of the card is masked once, before anything is quoted or escaped
+ * (`maskCard`: header, body and diagram all read the masked card). The finished text is NOT masked
  * again (P3-127): by then a marker is written as `\u005bMASKED` or `\[MASKED`, which the masker
  * does not know as a marker, so it read the marker as a value and replaced it together with the
  * backslash of the closing `\\"`, which ended the YAML string early. A FLOW card also gets its
@@ -142,7 +143,7 @@ export function renderCardFile(
   masker: TextMasker,
   cards: readonly Card[],
 ): string {
-  const safe = maskDeep(card, masker) as Card; // maskDeep keeps the shape of what it is given
+  const safe = maskCard(card, masker);
   const header = renderYamlHeader(maskDeep(headerOf(safe), masker));
   const body = bodyOf(
     safe,
