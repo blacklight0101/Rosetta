@@ -27,7 +27,7 @@ describe('questions a definition in the cited lines answers', () => {
       'AssetRepository',
     ],
     ['What does `Qty` hold?', 'Const Qty = 5', 'Qty'],
-    ['What does `unit_cost` store?', 'unit_cost = price * rate', 'unit_cost'],
+    ['What does `unit_cost` store?', 'unit_cost = 12.5', 'unit_cost'],
     ['What is the "Qty" column used for?', "' Qty: quantity on hand", 'Qty'],
     ['What is the purpose of the `ResetAll` routine', 'Function ResetAll()', 'ResetAll'],
   ])('RF-243 P5-02 refuses: %s', (question, cited, name) => {
@@ -72,7 +72,10 @@ describe('questions of another shape or with a tail', () => {
     'team',
     'volume',
     'agreed',
+    'expect',
+    'expects',
     'expected',
+    'third party',
     'production',
     'who',
     'external',
@@ -104,6 +107,12 @@ describe('words of intent and conditions', () => {
     'with',
     'for',
     'per',
+    'whenever',
+    'but',
+    'without',
+    'between',
+    'than',
+    'then',
   ])('RF-243 P5-02 keeps a question with the condition word "%s"', (word) => {
     expect(
       nameAnsweredByCitedLines(`What does ${qty} ${word} the warehouse mean`, sheet),
@@ -130,6 +139,63 @@ describe('lines that are not definitions', () => {
     ).toBeUndefined();
     expect(
       nameAnsweredByCitedLines('What does `ResetAll` do', 'x = "Sub ResetAll()"'),
+    ).toBeUndefined();
+  });
+});
+
+describe('rows and values that are not a header', () => {
+  const closed = 'Status\nOpen\nClosed';
+
+  it.each([
+    ['Laptop,Qty,5'],
+    ['Laptop,5,Qty'],
+    ['Asset tag,Description\n| Laptop | Qty |'],
+    ['Asset tag,Description\nLaptop,Qty'],
+  ])('RF-243 P5-02 keeps a data row that holds the name: %j', (cited) => {
+    expect(nameAnsweredByCitedLines('What does "Qty" mean', cited)).toBeUndefined();
+  });
+
+  it('RF-243 P5-02 keeps a value of a column, and refuses the header only', () => {
+    expect(nameAnsweredByCitedLines('What does "Closed" mean', closed)).toBeUndefined();
+    expect(nameAnsweredByCitedLines('What does the "Open" column contain', closed)).toBeUndefined();
+    expect(nameAnsweredByCitedLines('What does the "Status" column contain', closed)).toBe(
+      'Status',
+    );
+    expect(
+      nameAnsweredByCitedLines('What does the "Status" column contain', 'Open\nStatus\nClosed'),
+    ).toBeUndefined();
+  });
+
+  it('RF-243 P5-02 reads a header row without numbers in its first line only', () => {
+    expect(nameAnsweredByCitedLines('What does "Qty" mean', 'Asset tag,Qty,Cost')).toBe('Qty');
+    expect(nameAnsweredByCitedLines('What does "Qty" mean', 'Asset tag\nQty')).toBeUndefined();
+  });
+});
+
+describe('assignments that do not define the name', () => {
+  it.each([['Qty = Qty + 1'], ['qty_new = rs("QTY")'], ['x = Qty + 1'], ['Total = Qty * Price']])(
+    'RF-243 P5-02 keeps: %s',
+    (line) => {
+      expect(nameAnsweredByCitedLines('What does `Qty` hold', line)).toBeUndefined();
+      expect(nameAnsweredByCitedLines('What does `qty_new` hold', line)).toBeUndefined();
+    },
+  );
+
+  it('RF-243 P5-02 counts an assignment of a literal to the name alone', () => {
+    expect(nameAnsweredByCitedLines('What does `Qty` hold', 'Qty = 5')).toBe('Qty');
+  });
+});
+
+describe('TODO and FIXME lines', () => {
+  it('RF-243 P5-02 does not count a TODO line with no question mark', () => {
+    expect(
+      nameAnsweredByCitedLines('What does `ResetAll` do', 'Sub ResetAll() TODO'),
+    ).toBeUndefined();
+  });
+
+  it('RF-243 P5-02 does not count a FIXME line with no question mark', () => {
+    expect(
+      nameAnsweredByCitedLines('What does `ResetAll` do', 'Sub ResetAll() FIXME'),
     ).toBeUndefined();
   });
 });
