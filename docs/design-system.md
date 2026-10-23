@@ -142,6 +142,10 @@ such project it shows the line "Open a project to see its pages" and no link. Th
 (Dashboard, Areas, Cards, Open questions, Run replay, Cost), centred content up to 1180 px wide; summary cards
 reflow from four columns to one.
 
+**Long text wraps (P5-23).** The content column (`.rst-main`) sets `overflow-wrap: anywhere`, so unbroken text such as a
+file path, an area name, a run id or a model name wraps inside the column and never scrolls the page sideways at 360 px;
+the ghost button (`.rst-button--ghost`) wraps its label inside its box. Do not add a per-page fix for this.
+
 ## 4. Input and ergonomics
 
 - Keyboard: logical tab order; Enter submits the start form; Esc closes dialogs and returns focus to the button that

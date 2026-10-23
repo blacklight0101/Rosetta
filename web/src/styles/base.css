@@ -207,6 +207,9 @@ select {
   width: 100%;
   max-width: 72rem;
   padding: var(--rst-sp-5) var(--rst-sp-6);
+  /* P5-23: unbroken text (file paths, area names, run ids, model names) wraps anywhere inside the
+     content column, so a long word never widens the page at 360 px. Inherited by the content. */
+  overflow-wrap: anywhere;
 }
 
 .rst-main:focus {
