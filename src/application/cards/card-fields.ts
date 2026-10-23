@@ -6,6 +6,7 @@ import {
   type CitationProblem,
 } from '../../domain/cards/citation.js';
 import { cardLimits } from './card-limits.js';
+import { decodeTextEscapes } from './card-text-escapes.js';
 
 // RF-202, ADR-005: the field readers every card schema shares (card, FLOW and SCRN).
 
@@ -63,4 +64,8 @@ export function ignoringCase<T extends string>(
     .pipe(z.enum(values));
 }
 
-export const text = (max: number): z.ZodString => z.string().trim().min(1).max(max);
+// P5-09: the literal escapes a model left in card and claim text are decoded before the checks.
+export const text = (
+  max: number,
+): z.ZodPipe<z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>, z.ZodString> =>
+  z.string().transform(decodeTextEscapes).pipe(z.string().trim().min(1).max(max));
