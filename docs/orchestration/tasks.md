@@ -15,8 +15,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
 | P3 Report and plan      | 131     | 16        | 111        | 4         | 0                  | 54      | 73      | 4      | 87         | 0         |
-| P5 Polish (G-10)        | 20      | 7         | 13         | 0         | 0                  | 11      | 9       | 0      | 0          | 0         |
-| **Total**               | **375** | **97**    | **249**    | **29**    | **0**              | **185** | **176** | **14** | **228**    | **0**     |
+| P5 Polish (G-10)        | 23      | 8         | 15         | 0         | 0                  | 13      | 10      | 0      | 0          | 0         |
+| **Total**               | **378** | **98**    | **251**    | **29**    | **0**              | **187** | **177** | **14** | **228**    | **0**     |
 
 ## Conventions for every card
 
@@ -5330,5 +5330,56 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Delivers**: the change, tests, the DEC row and RF-429 text.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: RF-429, Q-61, DEC-166, DEC-168; P5-15, P5-18; Haiku battery eShop re-run.
+
+---
+
+### P5-21 - A failed provider call keeps the provider's error message
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the provider call record (`provider-calls.jsonl`, RF-408), the run log (RF-009), the API calls and logs page (RF-1011), the provider adapters' error mapping (Anthropic, OpenAI Chat Completions and Responses, Ollama), the secret masker (RF-140..RF-149). Evaluation of 2026-10-23: every reader call of an OpenAI run failed with HTTP 400; the call records held only `httpStatus` 400 and RST-1506, the run log said "provider-failed", and the provider's reason ("Function tools with reasoning_effort are not supported ...") had to be found by repeating the request by hand. App sweep of 2026-10-23: no call record or log entry carries a provider error text.
+- **Do**: when a provider answers with an error, the call record keeps the provider's error type and message, masked by the secret masker and cut to 500 characters with a marker, plus the provider request id when given; the run log `warn` entry of the failed call carries the same text; the API calls and logs page shows it beside the call. A network error keeps its error name. No request or response body is stored beyond the error text.
+- **Review probes**: a recorded OpenAI 400 with an error body yields a call record and log entry with the masked message; an error text holding a secret-shaped value is masked; a 2 kB message is cut with the marker; an Anthropic and an Ollama error are kept the same way; a call that succeeds stores no error field; mutation: removing the masking lets the synthetic secret through.
+- **Behaviour to preserve**: RF-408, RF-009, RF-1011, RF-140..RF-149 (masking), RF-402 retry rules.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-408, RF-009, RF-1011; P3-129; app sweep 2026-10-23.
+
+---
+
+### P5-22 - The calls page, a call transcript and the plan setup load fast on a large run
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: `GET /api/runs/:runId/calls`, `GET /api/runs/:runId/calls/:seq/transcript` (`get-call-transcript.ts`, the run call reader), the API calls and logs page, `POST /api/projects/:id/plan-estimate` and the plan setup page. App sweep of 2026-10-23 on the eval stack: on an understand run with 878 calls, `/calls` takes 4.1 s and returns 464 kB in one answer (a `limit` is ignored); every transcript takes 2.4 to 4.1 s whatever its size (737 bytes took 2.4 s), because the whole call log is read and parsed to find one call; the plan setup page of the same project takes 5.2 s.
+- **Do**: the run call reader parses a run's call log once and keeps it (per run, invalidated when the log grows or the run is deleted, bounded in memory); a transcript is found by its call without parsing every call; `/calls` answers in pages (`limit` and a cursor) with the summary per role computed once, and the calls page loads more on demand; the plan estimate reuses what it already read. Keep scoping to the user (RF-1105).
+- **Review probes**: on a recorded run of 900 calls, a transcript answers in under 300 ms after the first read and `/calls?limit=50` returns 50 calls with a cursor and the full summary; the calls page shows the first page and loads the next; a run that is still writing shows its new calls; another user's run still answers 404; plan setup of the recorded project loads in under 1.5 s; mutation: removing the cache brings back a full parse per transcript (a test counts parses).
+- **Behaviour to preserve**: RF-1011, RF-408, RF-1105, P3-28 plan setup.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-1011, RF-408; app sweep 2026-10-23.
+
+---
+
+### P5-23 - Long paths wrap on a phone and plan costs show cents
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the design system (`docs/design-system.md`), the run page, the plan setup page (journey steps and area lists), the start page model switch button. App sweep of 2026-10-23 at 360 px: the plan setup page scrolls sideways by 22 px on workbook projects and 180 px on a large repository, and a run page by 233 px, because file paths of up to 119 characters do not wrap; the start page button "Switch every role to Ollama (gemma4:e4b)" sticks out by 5 px; the plan setup journey shows a cost as "$0.105619" instead of the cents used elsewhere.
+- **Do**: paths, area names, run ids and model names wrap anywhere on narrow screens (a design-system text utility, not per-page fixes); the button label wraps; journey costs use the shared cost format.
+- **Review probes**: at 360 px the plan setup, run and start pages of the recorded projects do not scroll sideways (e2e at phone size, with a 120-character path); the journey shows "$0.11" for 105,619 micros; axe still passes.
+- **Behaviour to preserve**: RNF-010 accessibility, the design system tokens.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RNF-010, design system; app sweep 2026-10-23.
 
 ---
