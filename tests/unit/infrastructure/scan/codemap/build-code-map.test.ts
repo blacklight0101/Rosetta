@@ -229,3 +229,30 @@ describe('building the code map (limits and order)', () => {
     expect(result).toEqual({ ok: false, error: 'duplicate-file' });
   });
 });
+
+describe('building the code map (entity candidates)', () => {
+  it('RF-103 adds an entity candidate for a table named in a SQL string, beside the pack entities', () => {
+    const map = build(
+      input([file('Module1.vb', { language: 'vb' })], {
+        sql: [
+          {
+            path: 'Module1.vb',
+            line: 19,
+            verb: 'INSERT',
+            text: 'INSERT INTO tblThing (Id) VALUES (1)',
+          },
+        ],
+        packs: {
+          entities: [
+            { name: 'Order', path: 'Module1.vb', startLine: 2, source: 'Shop.Ctx.Orders' },
+          ],
+        },
+      }),
+    );
+
+    expect(map.entities).toEqual([
+      { name: 'Order', path: 'Module1.vb', startLine: 2, source: 'Shop.Ctx.Orders' },
+      { name: 'tblThing', path: 'Module1.vb', startLine: 19, source: 'sql:INSERT' },
+    ]);
+  });
+});

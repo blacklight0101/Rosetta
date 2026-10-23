@@ -29,15 +29,15 @@ async function scannedText(folder: string): Promise<string> {
 
 it('RF-113 scan output records a scanner version and preserves it when read', async () => {
   const text = await scannedText('runs/version');
-  expect(JSON.parse(text)).toMatchObject({ scannerVersion: 1 });
-  expect(parseCodeMap(text)).toMatchObject({ ok: true, value: { scannerVersion: 1 } });
+  expect(JSON.parse(text)).toMatchObject({ scannerVersion: 2 });
+  expect(parseCodeMap(text)).toMatchObject({ ok: true, value: { scannerVersion: 2 } });
 });
 
 it.each([undefined, 0, 1, 2])(
   'RF-113 the estimate says whether a code map of scanner version %s is out of date',
   async (scannerVersion) => {
     const text = (await scannedText('runs/freshness')).replace(
-      / {2}"scannerVersion": 1,\r?\n/u,
+      / {2}"scannerVersion": 2,\r?\n/u,
       '',
     );
     const versioned =
@@ -64,8 +64,8 @@ it.each([undefined, 0, 1, 2])(
     expect(result.ok && estimateView(result.value)).toMatchObject({
       codeMap: {
         scannerVersion: scannerVersion ?? null,
-        currentScannerVersion: 1,
-        outdated: (scannerVersion ?? 0) < 1,
+        currentScannerVersion: 2,
+        outdated: (scannerVersion ?? 0) < 2,
       },
     });
   },

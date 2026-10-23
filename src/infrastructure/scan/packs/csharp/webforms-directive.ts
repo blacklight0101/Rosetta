@@ -161,3 +161,28 @@ export function codeBehindReference(path: string, text: string): PackReference |
     ...(symbol === undefined || symbol === '' ? {} : { symbol }),
   };
 }
+
+export type PageLanguage = 'csharp' | 'vb' | 'other';
+
+const languageIds = new Map<string, PageLanguage>([
+  ['c#', 'csharp'],
+  ['cs', 'csharp'],
+  ['csharp', 'csharp'],
+  ['vb', 'vb'],
+  ['vb.net', 'vb'],
+  ['visualbasic', 'vb'],
+]);
+
+/**
+ * The language of the server code of a page (RF-111): the `Language` attribute of its directive;
+ * without one, the extension of the code-behind file; without that, C#. A language that is neither
+ * C# nor VB.NET (for example `JScript`) is `other`.
+ */
+export function pageLanguage(text: string): PageLanguage {
+  const directive = pageDirective(text);
+  if (directive === undefined) return 'csharp';
+  const declared = directive.attributes.get('language')?.trim().toLowerCase();
+  if (declared !== undefined && declared !== '') return languageIds.get(declared) ?? 'other';
+  const codeFile = (codeFileOf(directive) ?? '').toLowerCase();
+  return codeFile.endsWith('.vb') ? 'vb' : 'csharp';
+}
