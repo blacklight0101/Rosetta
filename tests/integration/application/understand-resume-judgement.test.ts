@@ -16,8 +16,8 @@ import {
 
 const temp = useTempRoot('rosetta-understand-resume-judgement-');
 const areas = ['Catalog', 'Services'];
-/** Enough for both reader tasks, not for the verifier's first call. */
-const CAP_AFTER_READERS = 210_000;
+/** Enough for both reader tasks (and, P5-20, for the readers to leave 10% over the claim they wrote), not for the verifier first call. */
+const CAP_AFTER_READERS = 230_000;
 
 /** The cap the owner raises before pressing Resume. */
 function raised(settings: ProjectSettings): ProjectSettings {

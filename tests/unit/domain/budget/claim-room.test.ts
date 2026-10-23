@@ -6,7 +6,7 @@ import {
   type RoomFacts,
 } from '../../../../src/domain/budget/claim-room.js';
 
-// RF-429, P5-20, DEC-169: whether the readers of a run may start another task or turn, from what the
+// RF-429, P5-20, DEC-170: whether the readers of a run may start another task or turn, from what the
 // readers and the verifier have spent, the claims written and not yet judged, and the caps.
 
 const none = { tokens: 0n, micros: 0n };

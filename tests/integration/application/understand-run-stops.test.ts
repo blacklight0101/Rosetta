@@ -50,7 +50,7 @@ describe('an understand run stopped by its cap', UNDERSTAND_TIMEOUT, () => {
         agentTaskId: 'reader-002',
         area: 'Services',
         role: 'reader',
-        state: 'StoppedByCap',
+        state: 'Planned',
         turns: 0,
         cards: 0,
       },

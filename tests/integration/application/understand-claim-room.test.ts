@@ -11,7 +11,7 @@ import {
   type UnderstandHarness,
 } from '../../support/understand-run-harness.js';
 
-// RF-429, P5-20, DEC-169: the readers of a run stop starting work when the claims they wrote could no
+// RF-429, P5-20, DEC-170: the readers of a run stop starting work when the claims they wrote could no
 // longer be judged with what the caps leave, or when their own share has no room for another call.
 // understand-claim-heavy.json: Catalog uses about 33,000 tokens and writes twelve claims; Services
 // would read a file and give no card. At a run cap of 100,000 tokens the verifier share is 20,000,
@@ -133,7 +133,9 @@ describe('resuming a run whose claims were written before the stop', UNDERSTAND_
     const run = await h.understand({ areas });
     expect(run.endState).toBe('CapReached');
     expect(await claimTotals(h, run)).toMatchObject({ Unverified: 12 });
-    await h.changeSettings(withRun(100_000));
+    await h.changeSettings((settings) => {
+      return { ...settings, budget: { ...withRun(100_000)(settings).budget, roles: {} } };
+    });
 
     await h.resume(run);
 

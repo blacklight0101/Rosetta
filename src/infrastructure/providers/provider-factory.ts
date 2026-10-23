@@ -41,6 +41,16 @@ import { scopeStartOf, type ScopeStart } from './scope-spend.js';
 
 export type { GuardedProviderFactoryOptions } from './provider-factory-options.js';
 
+/** P5-20: the run caps among a role's caps, for the readers' room check. */
+function runCapsOf(caps: readonly UsageCap[]): {
+  readonly tokens: bigint;
+  readonly micros: bigint;
+} {
+  const limit = (kind: UsageCap['kind']): bigint =>
+    caps.find((cap) => cap.kind === kind)?.limit ?? 0n;
+  return { tokens: limit('run-tokens'), micros: limit('run-cost') };
+}
+
 type ProviderConfig = ProjectSettings['providers'][string];
 interface WrapParts {
   readonly request: ProviderSetRequest;
@@ -136,6 +146,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       modelMaxOutputTokens: limits.modelMaxOutputTokens,
       ...(setting.temperature === undefined ? {} : { temperature: setting.temperature }),
       keySource: access.value.keySource,
+      runCaps: runCapsOf(caps),
     });
   }
 

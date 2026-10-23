@@ -13,7 +13,7 @@ import type { RetryNote } from '../agent/retry-note.js';
 import { ReadOnlyTools } from '../agent/read-only-tools.js';
 import { readerPromptsFor, type ReaderPrompts } from '../agent/reader-prompts.js';
 import type { IdGenerator } from '../ports/id-generator.js';
-import type { LlmResponse } from '../ports/llm-provider.js';
+import type { LlmProvider, LlmResponse } from '../ports/llm-provider.js';
 import type { Logger } from '../ports/logger.js';
 import type { RunExecution } from '../ports/run-executor.js';
 import type { ScannedSource } from '../ports/scan-results.js';
@@ -21,6 +21,7 @@ import type { ProjectSettings } from '../projects/project-settings.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
 import type { ReaderTask } from './reader-tasks.js';
+import type { ReaderRoom } from './reader-room.js';
 import { toolsWithReads, type TaskReads } from './run-coverage.js';
 import { readerTaskSettings, readerToolLimits } from './reader-settings.js';
 import {
@@ -51,9 +52,16 @@ export interface ReaderTaskContext {
   readonly traceId: string;
   /** RF-145: the random tag of every data block the tools write. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
+  /** P5-20: the room check, before each turn of a reader (absent for a Deepen run). */
+  readonly room?: ReaderRoom;
 }
 
 const READER = 'reader';
+
+/** P5-20: the reader's provider, held to the room check when the run has one. */
+function guarded(context: ReaderTaskContext, task: ReaderTask, provider: LlmProvider): LlmProvider {
+  return context.room === undefined ? provider : context.room.guard(provider, task.agentTaskId);
+}
 
 /**
  * RF-208: how a retry differs from the first run of a task. It is a fresh conversation, so its
@@ -148,7 +156,7 @@ export async function runReaderTask(
     ids: context.ids,
   });
   return runAgentTask({
-    provider: providerWithEvents(role.provider, events, turns),
+    provider: providerWithEvents(guarded(context, task, role.provider), events, turns),
     tools: toolsWithEvents(toolsWithReads(tools, reads), events, turns),
     prompts: promptsOf(context, area),
     logger,

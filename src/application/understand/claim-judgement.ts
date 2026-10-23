@@ -59,7 +59,7 @@ interface Decided {
 }
 
 /** The name a verdict of a rule carries where the judgement step names its model (P3-122). */
-const RULE_VERDICT_MODEL = 'rule';
+export const RULE_VERDICT_MODEL = 'rule';
 
 /** The span of a claim's calls: the run's trace prefix, `f` and the claim's number in hex. */
 function spanIdOf(traceId: string, index: number): string {

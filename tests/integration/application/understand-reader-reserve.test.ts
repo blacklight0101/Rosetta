@@ -48,14 +48,15 @@ describe(
       const manifest = await h.manifestOf(run);
       expect(manifest.agentTasks.map((task) => [task.area, task.state])).toEqual([
         ['Catalog', 'Done'],
-        ['Services', 'StoppedByCap'],
+        ['Services', 'Planned'],
       ]);
       const events = await h.eventsOf(run);
       expect(events.at(-1)?.data).toMatchObject({ errorCode: ERROR_CODES.budgetCapReached });
       const capEvents = events.filter((event) => event.type === 'budget.capReached');
-      expect(capEvents.map((event) => event.data)).toMatchObject([
-        { scope: 'role-tokens', role: 'reader', capSource: 'reserve' },
-      ]);
+      expect(capEvents).toEqual([]);
+      // P5-20: no task starts to be refused; the run says once that the readers stopped.
+      const stops = events.filter((event) => event.type === 'budget.readersStopped');
+      expect(stops.map((event) => event.data)).toMatchObject([{ reason: 'share' }]);
     });
 
     it('RF-429 the claims the readers wrote are judged by the verifier, its claim is Supported, not left Unverified', async () => {
