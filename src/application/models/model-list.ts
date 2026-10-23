@@ -19,6 +19,8 @@ interface ListedModel {
   readonly reasoning?: true;
   /** P3-130: the model cannot call tools on Chat Completions. */
   readonly noTools?: true;
+  /** P3-131: calls with tools go to the Responses API instead of Chat Completions. */
+  readonly responsesApi?: true;
 }
 
 export interface ModelList {
@@ -59,6 +61,21 @@ export function noToolModelsOf(list: ModelList): ToolLessModels {
 ${model}`;
   const marked = new Set(
     list.models.filter((entry) => entry.noTools === true).map((e) => keyOf(e.provider, e.model)),
+  );
+  return (kind, model) => marked.has(keyOf(kind, model));
+}
+
+/** P3-131: whether the shipped list routes a model's calls with tools through the Responses API. */
+export type ResponsesModels = (kind: ProviderKind, model: string) => boolean;
+
+// P3-131
+export function responsesModelsOf(list: ModelList): ResponsesModels {
+  const keyOf = (kind: string, model: string): string => `${kind}
+${model}`;
+  const marked = new Set(
+    list.models
+      .filter((entry) => entry.responsesApi === true)
+      .map((e) => keyOf(e.provider, e.model)),
   );
   return (kind, model) => marked.has(keyOf(kind, model));
 }

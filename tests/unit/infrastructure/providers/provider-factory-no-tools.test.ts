@@ -39,6 +39,27 @@ function settingsOn(reader: string, summariser: string): ProjectSettings {
   });
 }
 
+/**
+ * P3-131: the shipped list now routes gpt-6-astra and gpt-6.1-sol through the Responses API, so the
+ * `noTools` mark (kept for future models) is put on them here to test the refusal.
+ */
+function withNoTools(list: ModelList): ModelList {
+  const stuck = ['gpt-6-astra', 'gpt-6.1-sol'];
+  return {
+    ...list,
+    models: list.models.map((entry) =>
+      stuck.includes(entry.model)
+        ? {
+            provider: entry.provider,
+            model: entry.model,
+            label: entry.label,
+            noTools: true as const,
+          }
+        : entry,
+    ),
+  };
+}
+
 function harnessOn(list: ModelList) {
   return factoryHarness({
     serverKeys: { openai: serverKeyText },
@@ -50,7 +71,7 @@ function harnessOn(list: ModelList) {
 
 describe('a model that cannot call tools, given to a role that does', () => {
   it('P3-130 gpt-6-astra on the reader is refused at start naming the model and the role, with no call', async () => {
-    const harness = harnessOn(await loadModelList(shipped));
+    const harness = harnessOn(withNoTools(await loadModelList(shipped)));
 
     const built = await harness.factory.build(
       harness.request({
@@ -71,7 +92,7 @@ describe('a model that cannot call tools, given to a role that does', () => {
   });
 
   it('P3-130 gpt-6.1-sol on the reader is refused the same way', async () => {
-    const harness = harnessOn(await loadModelList(shipped));
+    const harness = harnessOn(withNoTools(await loadModelList(shipped)));
 
     const built = await harness.factory.build(
       harness.request({
@@ -87,7 +108,7 @@ describe('a model that cannot call tools, given to a role that does', () => {
 
 describe('a model that cannot call tools, given to a role without tools', () => {
   it('P3-130 gpt-6-astra on the summariser (no tools) runs', async () => {
-    const harness = harnessOn(await loadModelList(shipped));
+    const harness = harnessOn(withNoTools(await loadModelList(shipped)));
     const built = await harness.factory.build(
       harness.request({
         settings: settingsOn('gpt-6-luna', 'gpt-6-astra'),

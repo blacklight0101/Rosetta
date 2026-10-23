@@ -1,19 +1,11 @@
-import type { ModelList } from '../../application/models/model-list.js';
 import { roleLimits } from '../../application/models/role-limits.js';
-import type { Clock } from '../../application/ports/clock.js';
-import type { CostLedger } from '../../application/ports/cost-ledger.js';
-import type { IdGenerator } from '../../application/ports/id-generator.js';
+import type { GuardedProviderFactoryOptions } from './provider-factory-options.js';
 import type { AgentRole, LlmProvider } from '../../application/ports/llm-provider.js';
-import type { Logger } from '../../application/ports/logger.js';
-import type { ProviderKeyRepository } from '../../application/ports/provider-key-repository.js';
 import type {
   ProviderProblem,
   ProviderSetFactory,
   ProviderSetRequest,
 } from '../../application/ports/provider-set-factory.js';
-import type { ReasoningModels, ToolLessModels } from '../../application/models/model-list.js';
-import type { SecretBox } from '../../application/ports/secret-box.js';
-import type { ServerSettings } from '../../application/ports/server-settings.js';
 import {
   DEFAULT_REASONING_EFFORT,
   type ProjectSettings,
@@ -23,8 +15,6 @@ import { priceOverridesOf } from '../../application/projects/price-overrides.js'
 import { roleBudgetOf } from '../../application/projects/role-budget.js';
 import type { ProviderSet, RoleProvider } from '../../application/providers/provider-set.js';
 import { capsFor, type ServerCaps } from '../../domain/budget/budget.js';
-import type { AccountUsage } from '../../application/ports/account-usage.js';
-import type { PriceTable } from '../../domain/budget/price-table.js';
 import type { UsageCap } from '../../domain/budget/usage-cap.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
@@ -34,10 +24,8 @@ import {
   priceCall,
   type BudgetPricing,
 } from '../guards/budget-pricing.js';
-import type { TextMasker } from '../guards/secret-masker.js';
-import type { AdapterBuilder } from './adapter-spec.js';
 import { guardedProvider } from './guarded-provider.js';
-import { resolveAccess, type ProviderAccess, type ServerKeys } from './provider-access.js';
+import { resolveAccess, type ProviderAccess } from './provider-access.js';
 import { withRoleEffort, type EffortNote } from './reasoning-effort-provider.js';
 import { toolRoleProblem } from './tool-role-problem.js';
 import { reservationLifetimeMs } from './reservation-lifetime.js';
@@ -51,30 +39,7 @@ import { scopeStartOf, type ScopeStart } from './scope-spend.js';
 // served (no usable key, a provider this server does not offer, a cloud model without a price on
 // its key, RF-427) is a problem naming the provider; nothing has been called by then.
 
-export interface GuardedProviderFactoryOptions {
-  readonly keys: ProviderKeyRepository;
-  /** Opens the user's sealed keys; the only decryption of a key in the system. */
-  readonly box: SecretBox;
-  readonly serverKeys: ServerKeys;
-  readonly ollamaUrl: string | undefined;
-  readonly serverSettings: ServerSettings;
-  readonly ledger: CostLedger;
-  /** P5-18: read at run start so readers stop at a share of the scope caps' room (RF-429). */
-  readonly usage?: Pick<AccountUsage, 'userDay' | 'serverMonth'>;
-  /** The shipped price table, loaded at start-up (RF-420). */
-  readonly priceTable: PriceTable;
-  /** The shipped model list: each model's context window and maximum output (Q-57). */
-  readonly models: ModelList;
-  readonly masker: TextMasker;
-  readonly adapters: AdapterBuilder;
-  /** Q-58: the models the shipped list marks as reasoning models; none when left out. */
-  readonly reasoningModels?: ReasoningModels;
-  /** P3-130: the models the shipped list marks as unable to call tools; none when left out. */
-  readonly toolLessModels?: ToolLessModels;
-  readonly clock: Clock;
-  readonly ids: IdGenerator;
-  readonly logger: Logger;
-}
+export type { GuardedProviderFactoryOptions } from './provider-factory-options.js';
 
 type ProviderConfig = ProjectSettings['providers'][string];
 interface WrapParts {
@@ -184,6 +149,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     return withRoleEffort(provider, {
       kind,
       marked: this.options.reasoningModels?.(kind, setting.model) === true,
+      responses: this.options.responsesModels?.(kind, setting.model) === true,
       effort: setting.reasoningEffort ?? DEFAULT_REASONING_EFFORT,
       note,
     });

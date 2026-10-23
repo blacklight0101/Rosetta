@@ -118,6 +118,8 @@ export interface FactoryHarnessOptions {
   readonly reasoningModels?: GuardedProviderFactoryOptions['reasoningModels'];
   /** P3-130: which models the shipped list marks as unable to call tools; none by default. */
   readonly toolLessModels?: GuardedProviderFactoryOptions['toolLessModels'];
+  /** P3-131: which models the shipped list routes through the Responses API; none by default. */
+  readonly responsesModels?: GuardedProviderFactoryOptions['responsesModels'];
 }
 
 export interface FactoryHarness extends FakeAdapters {
@@ -177,11 +179,12 @@ function runSinks(masker: SecretMasker): RunSinks {
 /** Q-58, P3-130: the marks of the shipped list the factory is given, when the test gives any. */
 function modelMarks(
   options: FactoryHarnessOptions,
-): Pick<GuardedProviderFactoryOptions, 'reasoningModels' | 'toolLessModels'> {
-  const { reasoningModels, toolLessModels } = options;
+): Pick<GuardedProviderFactoryOptions, 'reasoningModels' | 'toolLessModels' | 'responsesModels'> {
+  const { reasoningModels, toolLessModels, responsesModels } = options;
   return {
     ...(reasoningModels === undefined ? {} : { reasoningModels }),
     ...(toolLessModels === undefined ? {} : { toolLessModels }),
+    ...(responsesModels === undefined ? {} : { responsesModels }),
   };
 }
 

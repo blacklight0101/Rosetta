@@ -28,7 +28,7 @@ export interface ReceivedRequest {
 }
 
 /** Chooses the exchange that answers a request; undefined answers 404. */
-export type Route = (method: string, path: string) => RecordedExchange | undefined;
+export type Route = (method: string, path: string, body?: unknown) => RecordedExchange | undefined;
 
 export interface FakeServerOptions {
   /** False starts a loopback server that the test-mode check must not trust (default true). */
@@ -106,8 +106,9 @@ export class FakeHttpServer {
     const path = request.url ?? '';
     const method = request.method ?? '';
     const headers = headersOf(request);
-    this.received.push({ method, path, headers, body: await bodyOf(request) });
-    const exchange = this.route(method, path);
+    const body = await bodyOf(request);
+    this.received.push({ method, path, headers, body });
+    const exchange = this.route(method, path, body);
     sendJson(response, exchange ?? { status: 404, body: { error: 'not recorded' } });
   }
 }

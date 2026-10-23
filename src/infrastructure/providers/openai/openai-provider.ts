@@ -17,6 +17,9 @@ import { failedThrown } from './openai-errors.js';
 import { openAiFetch, type FetchLike } from './openai-fetch.js';
 import { chatCompletionBody, chatCompletionStreamBody, isStreamed } from './openai-request.js';
 import { llmResponseOf } from './openai-response.js';
+import { responsesBody, responsesStreamBody } from './openai-responses-request.js';
+import { llmResponseOfResponses } from './openai-responses-response.js';
+import { streamedResponse } from './openai-responses-stream.js';
 import { streamedCompletion } from './openai-stream.js';
 
 export interface OpenAiProviderOptions {
@@ -35,6 +38,8 @@ export interface OpenAiProviderOptions {
   readonly testMode: boolean;
   /** The size limit of one answer; 8 MiB when not set. */
   readonly maxResponseBytes?: number;
+  /** P3-131: whether a model's calls with tools go to `/v1/responses`; none do when not set. */
+  readonly usesResponses?: (model: string) => boolean;
   readonly sleep?: Sleep;
   /** The `fetch` to use; the global one when not set. A test replays a recorded stream through it. */
   readonly fetch?: FetchLike;
@@ -62,7 +67,8 @@ function unusable(httpStatus: number, message: string, cause?: unknown): Attempt
   return { ok: false, failed: { failure, retryable: false, message, cause } };
 }
 
-// RF-402, RF-406, ADR-003: the OpenAI adapter. It calls the Chat Completions API through the
+// RF-402, RF-406, ADR-003, P3-131: the OpenAI adapter. It calls the Chat Completions API (the
+// Responses API for a call with tools on a model `usesResponses` names) through the
 // `openai` package with the SDK's own retries off, so every attempt passes the shared retry loop
 // and the attempt observer; each attempt has a timeout and the caller's abort signal.
 export class OpenAiProvider implements LlmProvider {
@@ -127,30 +133,75 @@ export class OpenAiProvider implements LlmProvider {
     request: LlmRequest,
     watch: { readonly idle: IdleSignal; readonly received: { text: string } },
   ): Promise<AttemptResult> {
+    const viaResponses =
+      this.options.usesResponses?.(request.model) === true && request.tools.length > 0;
+    const { answer, requestId } = viaResponses
+      ? await this.readResponses(request, watch)
+      : await this.readChat(request, watch);
+    const context = { request, requestId };
+    const parsed = viaResponses
+      ? llmResponseOfResponses(answer, context)
+      : llmResponseOf(answer, context);
+    if (parsed === undefined) return unusable(200, 'OpenAI sent an answer Rosetta cannot read.');
+    return { ok: true, response: parsed };
+  }
+
+  // P3-131: a call with tools on a model the list routes through the Responses API.
+  private async readResponses(request: LlmRequest, watch: Watch): Promise<Read> {
     const { idle, received } = watch;
-    let answer: unknown;
-    let requestId: string | undefined;
+    if (isStreamed(request)) {
+      const call = { body: responsesStreamBody(request), signal: idle.signal };
+      const onText = (text: string): void => {
+        received.text += text;
+      };
+      const streamed = await streamedResponse(this.client, {
+        ...call,
+        onEvent: idle.touch,
+        onText,
+      });
+      return { answer: streamed.response, requestId: streamed.requestId };
+    }
+    const response = await this.client.responses
+      .create(responsesBody(request), { signal: idle.signal })
+      .asResponse();
+    return {
+      answer: await jsonOf(response),
+      requestId: response.headers.get('x-request-id') ?? undefined,
+    };
+  }
+
+  private async readChat(request: LlmRequest, watch: Watch): Promise<Read> {
+    const { idle, received } = watch;
     if (isStreamed(request)) {
       const onText = (text: string): void => {
         received.text += text;
       };
       const call = { body: chatCompletionStreamBody(request), signal: idle.signal };
-      ({ completion: answer, requestId } = await streamedCompletion(this.client, {
+      const streamed = await streamedCompletion(this.client, {
         ...call,
         onEvent: idle.touch,
         onText,
-      }));
-    } else {
-      const response = await this.client.chat.completions
-        .create(chatCompletionBody(request), { signal: idle.signal })
-        .asResponse();
-      requestId = response.headers.get('x-request-id') ?? undefined;
-      answer = await jsonOf(response);
+      });
+      return { answer: streamed.completion, requestId: streamed.requestId };
     }
-    const parsed = llmResponseOf(answer, { request, requestId });
-    if (parsed === undefined) return unusable(200, 'OpenAI sent an answer Rosetta cannot read.');
-    return { ok: true, response: parsed };
+    const response = await this.client.chat.completions
+      .create(chatCompletionBody(request), { signal: idle.signal })
+      .asResponse();
+    return {
+      answer: await jsonOf(response),
+      requestId: response.headers.get('x-request-id') ?? undefined,
+    };
   }
+}
+
+interface Watch {
+  readonly idle: IdleSignal;
+  readonly received: { text: string };
+}
+
+interface Read {
+  readonly answer: unknown;
+  readonly requestId: string | undefined;
 }
 
 /** The JSON body, or the text when it is not JSON (the schema then refuses it). */

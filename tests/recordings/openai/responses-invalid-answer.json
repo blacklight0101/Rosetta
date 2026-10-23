@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. A 200 body that is not a response. Hand-written in the documented shape of OpenAI's Responses API answer (POST /v1/responses, stream false, store false); no real model was called and no key is held (ADR-008).",
+  "chat": [],
+  "responses": [
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req_FAKE0000000000000000000005"
+      },
+      "body": {
+        "unexpected": true
+      }
+    }
+  ]
+}

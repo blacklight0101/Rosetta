@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { responsesModelsOf } from '../../../../src/application/models/model-list.js';
 import {
   loadModelList,
   parseModelList,
@@ -52,6 +53,8 @@ describe('the shipped model list: reasoning models', () => {
       'anthropic/claude-sonnet-5-5',
       'anthropic/claude-haiku-5-5',
       'anthropic/claude-fable-5-1',
+      'openai/gpt-6-astra',
+      'openai/gpt-6.1-sol',
       'openai/gpt-6-sol',
       'openai/gpt-6-luna',
       'openai/gpt-5.6-sol',
@@ -67,16 +70,36 @@ describe('the shipped model list: reasoning models', () => {
     ]);
   });
 
-  it('P3-130 marks gpt-6-astra and gpt-6.1-sol as models that cannot call tools, and no other', async () => {
+  it('P3-131 routes gpt-6-astra and gpt-6.1-sol through the Responses API, marks no model noTools, and moves no other', async () => {
     const list = await loadModelList(shipped);
 
-    const toolless = list.models.filter((entry) => entry.noTools === true);
+    const routed = list.models.filter((entry) => entry.responsesApi === true);
 
-    expect(toolless.map((entry) => `${entry.provider}/${entry.model}`)).toEqual([
+    expect(routed.map((entry) => `${entry.provider}/${entry.model}`)).toEqual([
       'openai/gpt-6-astra',
       'openai/gpt-6.1-sol',
     ]);
-    expect(toolless.every((entry) => entry.reasoning === undefined)).toBe(true);
+    expect(routed.every((entry) => entry.reasoning === true)).toBe(true);
+    expect(list.models.filter((entry) => entry.noTools === true)).toEqual([]);
+  });
+});
+
+describe('model list responsesApi marker', () => {
+  const text = marked.replace('reasoning: true', 'responsesApi: true');
+
+  it('P3-131 reads the marker and builds the lookup', () => {
+    const list = parseModelList(text);
+
+    expect(list.models[0]).toMatchObject({ model: 'gpt-5-nano', responsesApi: true });
+    expect(responsesModelsOf(list)('openai', 'gpt-5-nano')).toBe(true);
+    expect(responsesModelsOf(list)('openai', 'other')).toBe(false);
+    expect(responsesModelsOf(parseModelList(marked))('openai', 'gpt-5-nano')).toBe(false);
+  });
+
+  it('P3-131 refuses a marker that is not true', () => {
+    expect(() =>
+      parseModelList(text.replace('responsesApi: true', 'responsesApi: false')),
+    ).toThrow();
   });
 });
 

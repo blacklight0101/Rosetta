@@ -16,6 +16,8 @@ const recordingSchema = z.strictObject({
   schemaVersion: z.literal(1),
   description: z.string().min(1),
   chat: z.array(exchangeSchema),
+  /** P3-131: the answers of `POST /v1/responses`. */
+  responses: z.array(exchangeSchema).default([]),
 });
 
 export type OpenAiRecording = z.infer<typeof recordingSchema>;
@@ -23,6 +25,25 @@ export type OpenAiRecording = z.infer<typeof recordingSchema>;
 const recordingsRoot = join(process.cwd(), 'tests', 'recordings');
 
 const chatCompletionsPath = '/v1/chat/completions';
+const responsesPath = '/v1/responses';
+
+/** What OpenAI answers a Responses call that carries Chat Completions fields: HTTP 400. */
+const unsupportedBody: RecordedExchange = {
+  status: 400,
+  body: {
+    error: {
+      message: "Unsupported parameter: 'messages'. Responses takes 'input'.",
+      type: 'invalid_request_error',
+      param: 'messages',
+      code: 'unsupported_parameter',
+    },
+  },
+};
+
+function isResponsesBody(body: unknown): boolean {
+  if (typeof body !== 'object' || body === null) return false;
+  return Array.isArray(Reflect.get(body, 'input')) && !Reflect.has(body, 'messages');
+}
 
 /** Parses `tests/recordings/<folder>/<name>.json` (`openai` by default; `openai-compatible` for RF-403). */
 export async function loadOpenAiRecording(
@@ -34,18 +55,29 @@ export async function loadOpenAiRecording(
 }
 
 function openAiRoute(recording: OpenAiRecording) {
-  let next = 0;
-  return (method: string, path: string): RecordedExchange | undefined => {
-    if (method !== 'POST' || path !== chatCompletionsPath) return undefined;
-    const exchange = recording.chat[next];
-    next += 1;
-    return exchange;
+  let nextChat = 0;
+  let nextResponse = 0;
+  return (method: string, path: string, body?: unknown): RecordedExchange | undefined => {
+    if (method !== 'POST') return undefined;
+    if (path === responsesPath) {
+      if (!isResponsesBody(body)) return unsupportedBody;
+      nextResponse += 1;
+      return recording.responses[nextResponse - 1];
+    }
+    if (path !== chatCompletionsPath) return undefined;
+    nextChat += 1;
+    return recording.chat[nextChat - 1];
   };
 }
 
 export class FakeOpenAiServer extends FakeHttpServer {
   constructor(recording: OpenAiRecording, options: FakeServerOptions = {}) {
     super(openAiRoute(recording), options);
+  }
+
+  /** P3-131: the Responses bodies received, in order. */
+  responseBodies(): unknown[] {
+    return this.bodiesOf(responsesPath);
   }
 
   /** The chat completion bodies received, in order. */

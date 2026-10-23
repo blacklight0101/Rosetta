@@ -1,3 +1,4 @@
+import type { ResponsesModels } from '../../application/models/model-list.js';
 import type { Logger } from '../../application/ports/logger.js';
 import { PublicAddressAgent } from '../security/public-address-agent.js';
 import type { AdapterBuilder, AdapterSpec } from './adapter-spec.js';
@@ -21,6 +22,8 @@ export interface RealAdapterParts {
   readonly testMode: boolean;
   /** The text of prompts/shared/text-tool-protocol.v1.md (RF-205). */
   readonly textProtocolPrompt: string;
+  /** P3-131: the models the shipped list routes through the Responses API (calls with tools). */
+  readonly responsesModels?: ResponsesModels;
   readonly logger: Logger;
 }
 
@@ -44,7 +47,7 @@ function compatibleAdapter(
 
 // RF-401, RF-402, RF-403, RF-404
 export function realAdapters(parts: RealAdapterParts): AdapterBuilder {
-  const { testMode, textProtocolPrompt, logger } = parts;
+  const { testMode, textProtocolPrompt, logger, responsesModels } = parts;
   return (spec) => {
     const { baseUrl, timeoutSeconds, maxRetries } = spec;
     switch (spec.kind) {
@@ -59,6 +62,9 @@ export function realAdapters(parts: RealAdapterParts): AdapterBuilder {
         return new OpenAiProvider({
           ...{ baseUrl, timeoutSeconds, maxRetries, testMode },
           apiKey: spec.apiKey,
+          ...(responsesModels === undefined
+            ? {}
+            : { usesResponses: (model: string) => responsesModels('openai', model) }),
         });
       case 'anthropic':
         if (spec.apiKey === undefined) return undefined;

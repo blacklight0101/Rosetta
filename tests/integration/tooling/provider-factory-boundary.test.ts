@@ -178,4 +178,17 @@ describe('provider factory: reasoning models', () => {
     expect(blocks).toHaveLength(2);
     for (const block of blocks) expect(block).toMatch(/toolLessModels/u);
   });
+
+  it('P3-131 every factory and every set of real adapters the composition root builds knows the models that use the Responses API', async () => {
+    const files = await sourceFiles();
+    const compose = files.find((file) => file.path === 'presentation/compose-providers.ts');
+    const text = compose?.text ?? '';
+
+    const factories = [...text.matchAll(/new GuardedProviderFactory\(\{[\s\S]*?\}\);?/gu)];
+    const adapters = [...text.matchAll(/realAdapters\(\{[\s\S]*?\}\)/gu)];
+
+    expect(factories).toHaveLength(2);
+    expect(adapters).toHaveLength(2);
+    for (const block of [...factories, ...adapters]) expect(block[0]).toMatch(/responsesModels/u);
+  });
 });
