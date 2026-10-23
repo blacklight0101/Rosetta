@@ -8,7 +8,7 @@ import { evalCards } from '../../../support/p3-106-eval-cards.js';
 // before the citation check and counted. A claim with a real file stays, and so does a claim whose
 // path is only wrong (the citation check marks that one, RF-300).
 
-const files: ReadonlySet<string> = new Set(['src/a.cs']);
+const files: ReadonlySet<string> = new Set(['src/a.cs', 'Makefile']);
 
 function draftOf(claims: readonly { text: string; path: string }[]): CardDraft {
   return {
@@ -74,6 +74,12 @@ describe('P3-110 withoutBookkeepingClaims keeps evidence', () => {
 
     expect(texts(result.task)).toHaveLength(1);
     expect(result.dropped).toBe(0);
+  });
+
+  it('RF-300 a claim that cites a dotless file of the code map stays', () => {
+    const task = taskOf(draftOf([{ text: 'The build runs make.', path: 'Makefile' }]));
+
+    expect(withoutBookkeepingClaims(task, files).dropped).toBe(0);
   });
 
   it('RF-300 a claim with a wrong file path stays, for the citation check to mark', () => {

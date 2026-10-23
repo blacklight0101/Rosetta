@@ -21,7 +21,8 @@ function isFileName(path: string): boolean {
 function isBookkeeping(claim: ClaimInput, files: ReadonlySet<string>): boolean {
   const { text, citations } = claim;
   if (citations.length === 0) return false;
-  if (citations.every((citation) => !isFileName(citation.path))) return true;
+  if (citations.every((citation) => !files.has(citation.path) && !isFileName(citation.path)))
+    return true;
   const cited = citations.some((citation) => files.has(citation.path));
   return !cited && CARD_ID.test(text);
 }
