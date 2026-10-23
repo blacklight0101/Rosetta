@@ -36,6 +36,14 @@ interface PlanAssumptions {
   readonly continuationsPerCall: number;
   /** The output of each scenario as a share of `maxOutputTokens`, in percent. */
   readonly outputPercent: ByScenario<number>;
+  /** P3-113: the window the prompts are packed to. */
+  readonly windowTokens: number;
+  /** P3-113: whether every call fits the window with room for its answer. */
+  readonly fitsWindow: boolean;
+  /** P3-113: the calls that cannot fit the window even with no card in full. */
+  readonly oversizedCalls: readonly string[];
+  /** P3-113: the most cards any call names by title only. */
+  readonly omittedCards: number;
   /** The cards the planner is shown: those with a `Supported` claim. */
   readonly supportedCards: number;
   /** The open questions with an answer, which the planner is also shown. */

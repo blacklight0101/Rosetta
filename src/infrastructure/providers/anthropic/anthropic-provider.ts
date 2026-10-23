@@ -9,6 +9,7 @@ import { ERROR_CODES } from '../../../domain/errors/codes.js';
 import { RosettaError } from '../../../domain/errors/rosetta-error.js';
 import { defaultMaxResponseBytes, ResponseTooLargeError } from '../capped-response.js';
 import { idleSignal, type IdleSignal } from '../idle-signal.js';
+import { requestWaitMs } from '../prompt-wait.js';
 import { refuseRealProviderInTests } from '../real-provider-guard.js';
 import { meteredIfTimedOut } from '../timeout-usage.js';
 import { completeWithRetries, type AttemptResult, type Sleep } from '../retrying-call.js';
@@ -111,7 +112,8 @@ export class AnthropicProvider implements LlmProvider {
   // Q-60: the timeout of an attempt is the time without a new token when the answer streams, and the
   // whole attempt when it does not.
   private async attempt(request: LlmRequest, maxTokens: number): Promise<AttemptResult> {
-    const idle = idleSignal(request.signal, this.options.timeoutSeconds * 1000);
+    const idleMs = this.options.timeoutSeconds * 1000;
+    const idle = idleSignal(request.signal, idleMs, requestWaitMs(idleMs, request));
     const received = { text: '' };
     try {
       return await this.read(request, maxTokens, { idle, received });

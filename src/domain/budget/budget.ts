@@ -31,6 +31,9 @@ interface AccountCaps {
   readonly ownDailyCapMicros: bigint | null;
 }
 
+/** RF-429, EV-27: the share of the run token cap the readers may use; the rest verifies their claims. */
+export const READER_SHARE_PERCENT = 70;
+
 /** The caps of the role that makes the call (`budget.roles.<role>`, RF-423); none when unset. */
 export interface RoleBudget {
   readonly maxCostMicros?: bigint;
@@ -40,6 +43,8 @@ export interface RoleBudget {
 export interface CapInputs {
   readonly run: RunBudget;
   readonly role?: RoleBudget;
+  /** RF-429: the call's role is a reader, which stops at a share of the run token cap unless it has its own. */
+  readonly reader?: boolean;
   readonly server: ServerCaps;
   readonly account: AccountCaps;
 }
@@ -57,9 +62,31 @@ function roleCaps(role: RoleBudget | undefined): readonly UsageCap[] {
   return caps;
 }
 
-// RF-422, RF-423, RF-1106
+/**
+ * RF-429: a reader with no token cap of its own is held to a share of the run token cap of its key
+ * source, so the run keeps what the verifier needs for the claims the readers wrote. The share is
+ * a role cap, so it stops the readers only, never the run (RF-423). It counts tokens only: a share
+ * of the cost cap would refuse the first reader calls of models that fit the default cap today
+ * (Q-57, DEC-159).
+ */
+function readerShareCaps(keys: readonly UsageCap[]): readonly UsageCap[] {
+  return keys
+    .filter((cap) => cap.kind === 'run-tokens')
+    .map((cap) => ({
+      kind: 'role-tokens',
+      limit: (cap.limit * BigInt(READER_SHARE_PERCENT)) / 100n,
+      source: 'reserve',
+    }));
+}
+
+// RF-422, RF-423, RF-429, RF-1106
 export function capsFor(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
-  return [...keyCaps(keySource, inputs), ...roleCaps(inputs.role)];
+  const keys = keyCaps(keySource, inputs);
+  const own = roleCaps(inputs.role);
+  if (inputs.reader !== true || own.some((cap) => cap.kind === 'role-tokens')) {
+    return [...keys, ...own];
+  }
+  return [...keys, ...own, ...readerShareCaps(keys)];
 }
 
 function keyCaps(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {

@@ -103,3 +103,32 @@ describe('RF-427 the plan estimate with a priced model', () => {
     expect(card().textContent).not.toContain('($0.40) could pass the Run token cap');
   });
 });
+
+describe('P3-113 the plan estimate against the planner window', () => {
+  it('EV-29 warns, naming the window, when a prompt cannot fit it', async () => {
+    const tooBig = {
+      ...planEstimate,
+      assumptions: {
+        ...planEstimate.assumptions,
+        ...{ windowTokens: 32_768, fitsWindow: false, oversizedCalls: ['plan', 'prd'] },
+      },
+    };
+    renderPlan({
+      [`GET ${base}/planning-brief`]: json(200, savedBrief),
+      [`GET ${base}/plan-estimate`]: json(200, tooBig),
+    });
+    await ready();
+
+    expect(card().textContent).toContain('cannot fit the 32,768-token window');
+  });
+
+  it('EV-29 says nothing about the window when the prompts fit', async () => {
+    renderPlan({
+      [`GET ${base}/planning-brief`]: json(200, savedBrief),
+      [`GET ${base}/plan-estimate`]: json(200, planEstimate),
+    });
+    await ready();
+
+    expect(card().textContent).not.toContain('token window');
+  });
+});

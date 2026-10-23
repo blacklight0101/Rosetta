@@ -16,6 +16,7 @@ import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
 import { parsePlanAnswer } from '../plan/plan-answer.js';
 import type { PlanDraft } from '../../domain/planning/plan-draft.js';
 import { planLinks } from '../plan/plan-links.js';
+import { windowOfRole } from '../plan/plan-window.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
 import { planDocuments } from '../plan/plan-documents.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
@@ -49,7 +50,7 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // them with the catalogue and prompt versions, asks the planner through the guarded provider (RF-621,
 // RF-623..RF-627 add the PRD, data model, flows, API contract, user interface and task items) and writes
 // `handoff/` (an item no card builds: RST-1806). Only `Supported` claims and answered questions reach
-// the planner. The cost report is written at every end.
+// the planner, packed to its window (P3-113). The cost report is written at every end.
 
 export interface BuildPlanDependencies
   extends PlanInputDependencies, PlanPromptSources, RunSinkDependencies {
@@ -78,7 +79,6 @@ const namesItsCause = new Set<ErrorCode>([
 ]);
 
 const failed = (errorCode: ErrorCode): RunOutcome => ({ endState: 'Failed', errorCode });
-
 export class BuildPlan implements RunExecutor {
   private readonly deps: BuildPlanDependencies;
 
@@ -121,8 +121,8 @@ export class BuildPlan implements RunExecutor {
     const call = {
       ...{ run, planner, prompt: prompts.plan, agentTaskId: 'planner-package', updates, signal },
       continuePrompt: prompts.continue,
-      tags: () => this.deps.ids.dataBlockTag(),
-      callId: callIds(run),
+      ...{ tags: () => this.deps.ids.dataBlockTag(), callId: callIds(run) },
+      window: windowOfRole(planner, inputs.value.project.settings),
     };
     const input = { cards: supported, brief, catalogue, answered };
     const output = await askPlanner(call, input);
