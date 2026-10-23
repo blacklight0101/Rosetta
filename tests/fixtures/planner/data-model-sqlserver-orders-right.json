@@ -1,0 +1,35 @@
+{
+  "tables": [
+    {
+      "name": "orders",
+      "purpose": "Keeps one order.",
+      "sources": ["ENT-001"],
+      "columns": [
+        { "name": "id", "type": "int", "nullable": false, "legacy": { "claim": "ENT-001.c1", "field": "id" }, "risk": "" },
+        { "name": "status_id", "type": "int", "nullable": false, "legacy": { "claim": "ENT-001.c1", "field": "status_id" }, "risk": "" },
+        { "name": "total", "type": "decimal(10,2)", "nullable": true, "legacy": { "claim": "ENT-001.c1", "field": "total" }, "risk": "" },
+        { "name": "created_at", "type": "datetime2", "nullable": false, "legacy": null, "risk": "" }
+      ],
+      "primaryKey": ["id"],
+      "uniqueKeys": [],
+      "foreignKeys": [{ "columns": ["status_id"], "references": "tbl_status", "referencedColumns": ["id"] }],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "tbl_status",
+      "purpose": "Lists the order statuses.",
+      "sources": ["ENT-002"],
+      "columns": [
+        { "name": "id", "type": "int", "nullable": false, "legacy": { "claim": "ENT-002.c1", "field": "id" }, "risk": "" },
+        { "name": "name", "type": "nvarchar(50)", "nullable": false, "legacy": { "claim": "ENT-002.c1", "field": "name" }, "risk": "" }
+      ],
+      "primaryKey": ["id"],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    }
+  ],
+  "dropped": []
+}

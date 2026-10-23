@@ -1,12 +1,15 @@
 import { formatCitation } from '../../domain/cards/citation.js';
 import { renderDataBlock } from '../../domain/egress/data-block.js';
+import { databaseTypeNames } from './data-model-database.js';
 import { omittedSummary } from './plan-packing.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 
 // RF-623, RF-145, ADR-013: what the planner is given to write the data model. Two data blocks, each
 // with its own fresh tag: the `ENT` cards with only their `Supported` claims, each with its claim
-// id (so the planner can name the legacy field a column comes from) and citations, and the owner's database choice and data migration note.
+// id (so the planner can name the legacy field a column comes from) and citations, with the claims of
+// the rule and requirement cards (P3-120: the columns and tables they name), and the owner's database
+// choice with its type names (null for a database the code does not know) and data migration note.
 // Both blocks are data; nothing of them is in the system prompt.
 
 export interface DataModelMessageInput {
@@ -30,7 +33,16 @@ function cardsText(input: DataModelMessageInput): string {
           citations: citations.map(formatCitation),
         })),
     }));
-  const json = JSON.stringify({ entityCards }, null, 2);
+  const ruleCards = input.cards
+    .filter((card) => card.type === 'BR' || card.type === 'FEAT')
+    .map(({ id, title, claims }) => ({
+      ...{ id, title },
+      claims: claims
+        .filter((claim) => claim.status === 'Supported')
+        .map(({ claimId, text }) => ({ claimId, text })),
+    }))
+    .filter((card) => card.claims.length > 0);
+  const json = JSON.stringify({ entityCards, ruleCards }, null, 2);
   const summary = omittedSummary(entities.filter((card) => omitted.has(card.id)));
   return summary === ''
     ? json
@@ -44,7 +56,10 @@ function ownerText(brief: PlanningBrief): string {
     brief.stack.find((entry) => entry.layer === layer)?.choice ?? null;
   return JSON.stringify(
     {
-      targetStack: { database: choice('database'), dataAccess: choice('data-access') },
+      targetStack: {
+        ...{ database: choice('database'), dataAccess: choice('data-access') },
+        databaseTypes: databaseTypeNames(choice('database')),
+      },
       dataMigration: brief.context.dataMigration,
     },
     null,
