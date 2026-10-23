@@ -68,13 +68,19 @@ export function cardProblem(card: CardQualityFields): string | undefined {
 
 /**
  * P5-08: whether a review probe states what must happen. A probe is written `<input> => <expected
- * outcome>`; the arrow forms `->` and the arrow character, or the word "expected", are read the
- * same way, because a model writes the arrow in several ways. Both sides need a word.
+ * outcome>`. These count as an outcome: an arrow (`=>`, `->` or the arrow character) with a word on
+ * both sides, outside a backtick span (a file name may hold `=>`); `expected:` or `expected <text>`
+ * or `expect <text>` followed by text; and a stated verdict ("refused", "rejected"). A bare word
+ * such as "nothing expected", "what is expected?" or "expected-value" is not an outcome.
  */
 // RF-630
 export function probeStatesOutcome(probe: string): boolean {
-  const arrow = /^(.*?)(?:=>|->|→)(.*)$/su.exec(probe);
-  if (arrow !== null)
-    return /\p{L}|\p{N}/u.test(arrow[1] ?? '') && /\p{L}|\p{N}/u.test(arrow[2] ?? '');
-  return /\bexpected\b/iu.test(probe);
+  const text = probe.replaceAll(/`[^`]*`/gu, '_');
+  const arrow = /^(.*?)(?:=>|->|→)(.*)$/su.exec(text);
+  if (arrow !== null) {
+    return /[\p{L}\p{N}]/u.test(arrow[1] ?? '') && /[\p{L}\p{N}]/u.test(arrow[2] ?? '');
+  }
+  return /\bexpect(?:ed:|ed\s+[\p{L}\p{N}]|s?\s+[\p{L}\p{N}])|\b(?:refused|rejected)\b/iu.test(
+    text,
+  );
 }

@@ -120,6 +120,19 @@ describe('P5-08 item 4: only a card that depends on a question is marked as wait
     expect(roadmap).not.toContain('[T-002](tasks.md#t-002):');
   });
 
+  it('RF-637 no brief question marks any card, whichever layer it names', () => {
+    const brief = ['principles', 'architecture', 'migration', 'buildMethod', 'stack.database'].map(
+      (id) => ({ id, question: 'Q?', answer: 'A.' }),
+    );
+    const roadmap = plain(filesOf({ ...two, briefQuestions: brief })['roadmap.md']);
+
+    expect(roadmap).not.toContain('[T-002](tasks.md#t-002):');
+    expect(roadmap).not.toMatch(
+      /tasks\.md#t-\d+\): .*(principles|architecture|buildMethod|stack\.)/u,
+    );
+    expect(roadmap).toMatch(/- \[T-001\]\(tasks\.md#t-001\): OQ-001/u);
+  });
+
   it('RF-637 a question of the brief marks no card and the open questions say it covers the whole build', () => {
     const files = filesOf(two);
 
