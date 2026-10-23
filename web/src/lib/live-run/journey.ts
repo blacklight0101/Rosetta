@@ -3,6 +3,7 @@ import { JUDGEMENT_EXPLAINED, verifyDetail, waitsForJudgement } from './judgemen
 import type { RunPhase } from './run-phase.js';
 import type { AgentPanelState, RunState } from './run-state.js';
 import { scanSubjectOfRun } from './scan-subject.js';
+import { endedWithoutCard } from './run-summary.js';
 
 // RF-1015, DEC-137: the run journey of the page while a run works: map the code, read, check
 // citations, explain, your questions. Exactly one step is current while the run works; the steps
@@ -63,7 +64,11 @@ function readers(state: RunState): readonly AgentPanelState[] {
  * on it has ended (a Deepen sends several agents into one area), and the total is the map's own
  * areas, so the step and "Map the code" count the same things.
  */
-function areasRead(input: JourneyInput): { readonly read: number; readonly of: number } {
+function areasRead(input: JourneyInput): {
+  readonly read: number;
+  readonly of: number;
+  readonly failed: number;
+} {
   const own = input.tiles.filter((tile) => tile.state !== 'library');
   const ofMap = new Set(own.map((tile) => tile.name));
   const byArea = new Map<string, AgentPanelState[]>();
@@ -71,10 +76,15 @@ function areasRead(input: JourneyInput): { readonly read: number; readonly of: n
     if (input.tiles.length > 0 && !ofMap.has(agent.area)) continue;
     byArea.set(agent.area, [...(byArea.get(agent.area) ?? []), agent]);
   }
-  const read = [...byArea.values()].filter((agents) => agents.every(finished)).length;
+  // EV-16, RF-208: an area is failed when one of its agents ended without a card: the rule of the
+  // tiles and the failed-areas notice (`endedWithoutCard`), so the three always agree.
+  const failedArea = (agents: readonly AgentPanelState[]): boolean => agents.some(endedWithoutCard);
+  const all = [...byArea.values()];
+  const read = all.filter((agents) => agents.every(finished) && !failedArea(agents)).length;
+  const failed = all.filter(failedArea).length;
   // RF-208: a retry reads only the areas it names; the rest it holds as they were.
   const retried = input.state.retry?.areas;
-  return { read, of: retried ?? Math.max(own.length, byArea.size) };
+  return { read, of: retried ?? Math.max(own.length, byArea.size), failed };
 }
 
 function readStep(input: JourneyInput, mapDone: boolean): Core {
@@ -82,10 +92,11 @@ function readStep(input: JourneyInput, mapDone: boolean): Core {
   if (!mapDone || input.phase.kind === 'queued') return { status: 'later', detail: 'area by area' };
   const all = readers(input.state);
   if (all.length === 0) return { status: 'current', detail: 'planning the areas' };
-  const { read, of } = areasRead(input);
+  const { read, of, failed } = areasRead(input);
+  const failedText = failed === 0 ? '' : `, ${String(failed)} failed`;
   return {
     status: all.every(finished) ? 'done' : 'current',
-    detail: `${String(read)} of ${String(of)} areas`,
+    detail: `${String(read)} of ${String(of)} areas${failedText}`,
   };
 }
 

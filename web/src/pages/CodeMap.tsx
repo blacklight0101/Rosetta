@@ -1,7 +1,7 @@
 import type { JSX } from 'preact';
 import { Glyph, type GlyphName } from '../components/Glyph.js';
 import { areaLabel } from '../lib/live-run/area-label.js';
-import type { Tile, TileState } from '../lib/live-run/code-map-tiles.js';
+import { cardsText, type Tile, type TileState } from '../lib/live-run/code-map-tiles.js';
 
 // RF-1016, DEC-137, design-system.md section 5 (living code map): the areas of the code as tiles
 // sized by their estimated tokens. A tile says its state in words and a glyph: waiting, being read
@@ -40,7 +40,7 @@ const count = (n: number, one: string, many: string): string =>
 
 function metaOf(tile: Tile): string {
   const files = count(tile.filesRead, 'file', 'files');
-  const cards = tile.cards === 0 ? '' : ` · ${count(tile.cards, 'card', 'cards')}`;
+  const cards = tile.cards === 0 ? '' : ` · ${cardsText(tile)}`;
   switch (tile.state) {
     case 'library':
       return 'library, left out';
