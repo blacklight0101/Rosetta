@@ -4,6 +4,13 @@ import type { OutputProblem } from '../cards/output-problem.js';
 import type { Logger } from '../ports/logger.js';
 import type { ReaderTask } from './reader-tasks.js';
 
+/** An open question dropped because its cited lines answer it (RF-243, P5-02). */
+export interface RefusedQuestion {
+  readonly question: string;
+  readonly name: string;
+  readonly citation: string;
+}
+
 /** What the reader tasks of one run log about how they ended (RF-208, RNF-002). */
 export class TaskLog {
   private readonly logger: Logger;
@@ -29,6 +36,16 @@ export class TaskLog {
   /** RF-243: an area of third-party code writes no open question. */
   thirdPartyQuestions(task: ReaderTask): Promise<void> {
     const text = `The area "${task.area.name}" is third-party code; its open questions and cards that only describe library code were dropped.`;
+    return this.warn(task, text);
+  }
+
+  /** RF-243, P5-02: the open questions dropped because the lines they cite already answer them. */
+  answeredQuestions(task: ReaderTask, refused: readonly RefusedQuestion[]): Promise<void> {
+    const listed = refused.map(
+      ({ question, name, citation }) =>
+        `"${question}" (the cited lines ${citation} already hold "${name}")`,
+    );
+    const text = `The reader of area "${task.area.name}" asked questions the code answers; they were dropped: ${listed.join(' | ')}`;
     return this.warn(task, text);
   }
 

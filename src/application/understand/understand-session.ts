@@ -32,6 +32,7 @@ import { TaskLog } from './task-log.js';
 import { runPool } from './task-pool.js';
 import { taskResultOf } from './task-result-of.js';
 import { withoutBookkeeping } from '../cards/bookkeeping-claims.js';
+import { withoutAnsweredQuestions } from './answered-questions.js';
 import { withoutThirdPartyQuestions } from './third-party-questions.js';
 import { runReaderTaskWithRetry } from './task-retry.js';
 
@@ -118,7 +119,14 @@ export class UnderstandSession {
           return failedOutcome(error);
         },
       );
-      const quiet = await withoutThirdPartyQuestions(this.log, this.thirdParty, task, result);
+      const asked = await withoutThirdPartyQuestions(this.log, this.thirdParty, task, result);
+      // RF-243, P5-02: a question the lines it cites already answer is not asked.
+      const quiet = await withoutAnsweredQuestions(
+        this.log,
+        this.parts.scanned.reader,
+        task,
+        asked,
+      );
       // P3-110, EV-26: claims that only restate card ids or cite a non-file never reach the check.
       const where = { agentTaskId: task.agentTaskId, codeMap: this.parts.scanned.codeMap };
       const outcome = await withoutBookkeeping(execution.events, where, quiet);
