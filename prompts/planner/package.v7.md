@@ -92,7 +92,13 @@ Plan the target system from that input and nothing else:
      patterns (blocked words, file extensions, hosts, characters or keywords), `allowlist` when it works by listing
      what is permitted, and `other` otherwise. For every denylist write the `invariant`, what must always hold
      for the control to do its job, and the `alternative`, an allowlist or a rule that does not depend on the shape of
-     the input, when one exists.
+     the input, when one exists. Field shapes: `name`, `approach` and `description` are required text; `invariant`
+     and `alternative` are each one text of at most 2000 characters, never a list or an object; when a control has
+     no alternative, write `"alternative": ""` (or leave the key out), never `null`. A control whose `name` or
+     `approach` cannot be read is left out of the package; a text that is too long is cut. Example of a control
+     without an alternative: `{"name": "Secrets kept outside the code", "approach": "other", "description":
+"Credentials are read from the environment.", "invariant": "", "alternative": "", "sources": ["BR-001"],
+"decision": null}`.
    - `targets`: non-functional targets (speed, availability, volume, retention) that a card or an answer states,
      each with its card ids in `sources`. A target nobody stated is not written.
    - `environments`: the environments (for example test and production) that the brief or the answers show, with
@@ -195,7 +201,7 @@ support. The positions in `phase`, `requirements` and `dependsOn` are examples o
         "approach": "<denylist, allowlist or other>",
         "description": "<how the control works>",
         "invariant": "<what must always hold>",
-        "alternative": "<an allowlist or a rule that does not depend on the input, when one exists>",
+        "alternative": "<an allowlist or a rule that does not depend on the input, or an empty text when none exists>",
         "sources": ["<card id>"],
         "decision": null
       }

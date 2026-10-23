@@ -16,6 +16,7 @@ import {
   type PlanProblem,
   type PlanReading,
 } from './plan-reading.js';
+import { softText } from './soft-text.js';
 import { searchJson } from '../cards/extract-json.js';
 import {
   integrationActions,
@@ -37,6 +38,8 @@ const PATH = 500;
 const title = z.string().trim().min(1).max(TITLE);
 const text = z.string().trim().min(1).max(TEXT);
 const optionalText = z.string().trim().max(TEXT).default('');
+
+const controlText = softText(TEXT);
 const ids = z.array(z.string().max(40)).max(MAX_LIST).default([]);
 const texts = z.array(text).max(MAX_LIST);
 const position = z.number().int().min(1).max(MAX_ITEMS);
@@ -69,7 +72,7 @@ const integration = z.object({
 });
 const control = z.object({
   ...{ name: title, approach: z.enum(securityApproaches), description: text },
-  ...{ invariant: optionalText, alternative: optionalText, sources: ids, decision },
+  ...{ invariant: controlText, alternative: controlText, sources: ids, decision },
 });
 const target = z.object({ name: title, target: text, sources: ids, decision });
 const environment = z.object({ name: title, purpose: text, decision });

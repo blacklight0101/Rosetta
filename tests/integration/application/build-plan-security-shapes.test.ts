@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -92,11 +92,19 @@ describe('BuildPlan: the security controls of a small model are kept', () => {
     expect(all).not.toContain('technical.security, position 2');
   });
 
-  it('P5-24 both controls name their source card, which a task card shows', async () => {
+  it('P5-24 RF-622 the TRD security section names the source card of the kept controls', async () => {
     const all = await planned();
     const trd = all.slice(all.indexOf('## Security and data protection'));
 
     expect(trd).toContain('Source cards:');
     expect(trd).toContain('BR-001');
+  });
+
+  it('P5-24 the planner prompt states the field shapes once, with a control without an alternative', async () => {
+    const prompt = await readFile('prompts/planner/package.v7.md', 'utf8');
+
+    expect(prompt).toContain('never a list or an object');
+    expect(prompt).toContain('never `null`');
+    expect(prompt).toContain('"alternative": ""');
   });
 });
