@@ -7,6 +7,7 @@ import {
   type PackScan,
 } from '../../../../../src/infrastructure/scan/packs/pack-scan.js';
 import { composeLanguagePacks } from '../../../../../src/presentation/composition-root.js';
+import { bytesReader } from '../../../../support/bytes-reader.js';
 import { FixedClock } from '../../../../support/fixed-clock.js';
 import { MemoryLogger } from '../../../../support/memory-logger.js';
 import { TestLanguagePack } from '../../../../support/test-language-pack.js';
@@ -152,5 +153,29 @@ describe('the composition root', () => {
       expect(registry.packFor(path)?.name).toBe('csharp');
     }
     expect(registry.packFor('main.php')).toBeUndefined();
+  });
+
+  it('RF-111 registers the VB pack for .vb and maps a synthetic Module1.vb through it', async () => {
+    const registry = await composeLanguagePacks();
+    const text = [
+      'Public Class ThingRepo',
+      '  Public Sub Save()',
+      '  End Sub',
+      'End Class',
+      '',
+    ].join('\n');
+
+    expect(registry.packFor('Module1.vb')?.name).toBe('vb');
+    const result = await analyseWithPacks({
+      files: [
+        { path: 'Module1.vb', language: 'vb', lines: 4, estimatedTokens: 1, artefactKinds: [] },
+      ],
+      reader: bytesReader({ 'Module1.vb': text }),
+      registry,
+      logger: newLogger(),
+      maxFileBytes,
+    });
+    expect(result.symbols.map((symbol) => symbol.name)).toEqual(['ThingRepo', 'Save']);
+    expect(result.languagePacks).toEqual([{ name: 'vb', version: '1.0.0' }]);
   });
 });

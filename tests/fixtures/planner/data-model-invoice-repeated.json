@@ -1,0 +1,296 @@
+{
+  "tables": [
+    {
+      "name": "invoice_records",
+      "purpose": "Manages invoice records containing detailed line item information, customer details, and payment status.",
+      "sources": [
+        "ENT-001"
+      ],
+      "columns": [
+        {
+          "name": "invoice_number",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "Invoice number"
+          },
+          "risk": ""
+        },
+        {
+          "name": "invoice_date",
+          "type": "date",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "Invoice Date"
+          },
+          "risk": ""
+        },
+        {
+          "name": "final_invoiced_amount",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "Final Invoiced Amount"
+          },
+          "risk": ""
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "Status"
+          },
+          "risk": ""
+        },
+        {
+          "name": "customer_identification",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c2",
+            "field": "customer identification"
+          },
+          "risk": ""
+        },
+        {
+          "name": "company_name",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c2",
+            "field": "company name"
+          },
+          "risk": ""
+        },
+        {
+          "name": "vat_information",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c2",
+            "field": "VAT information"
+          },
+          "risk": ""
+        },
+        {
+          "name": "net_amount",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c4",
+            "field": "Net Amount"
+          },
+          "risk": ""
+        },
+        {
+          "name": "invoice_date_2",
+          "type": "date",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c4",
+            "field": "Invoice Date"
+          },
+          "risk": ""
+        },
+        {
+          "name": "status_2",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c4",
+            "field": "Status"
+          },
+          "risk": ""
+        },
+        {
+          "name": "payment_terms",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c8",
+            "field": "Payment terms"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "invoice_number"
+      ],
+      "uniqueKeys": [
+        [
+          "invoice_number"
+        ]
+      ],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": [
+        {
+          "columns": [
+            "invoice_number"
+          ],
+          "unique": true,
+          "reason": "Invoice number is unique for each record."
+        }
+      ]
+    },
+    {
+      "name": "customer_master_data",
+      "purpose": "Maintains a master list of customers containing essential contact and identifier information.",
+      "sources": [
+        "ENT-002"
+      ],
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "Customer"
+          },
+          "risk": ""
+        },
+        {
+          "name": "company",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "Company"
+          },
+          "risk": ""
+        },
+        {
+          "name": "uid",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "UID"
+          },
+          "risk": ""
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "Email"
+          },
+          "risk": ""
+        },
+        {
+          "name": "name_contact",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c7",
+            "field": "names"
+          },
+          "risk": ""
+        },
+        {
+          "name": "address_contact",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c7",
+            "field": "addresses"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "uid"
+      ],
+      "uniqueKeys": [
+        [
+          "uid"
+        ]
+      ],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": [
+        {
+          "columns": [
+            "uid"
+          ],
+          "unique": true,
+          "reason": "UID is the unique identifier for a customer."
+        }
+      ]
+    },
+    {
+      "name": "vba_control_glossary",
+      "purpose": "Tracks components, types, and associated procedures for controls within the workbook.",
+      "sources": [
+        "ENT-003"
+      ],
+      "columns": [
+        {
+          "name": "control_type",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "Control Type"
+          },
+          "risk": ""
+        },
+        {
+          "name": "location",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "Location"
+          },
+          "risk": ""
+        },
+        {
+          "name": "related_events_sub_procedures",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "Related Events/Sub Procedures"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "control_type"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": [
+        {
+          "columns": [
+            "control_type"
+          ],
+          "unique": true,
+          "reason": "Control type is likely used as a unique identifier."
+        }
+      ]
+    }
+  ],
+  "dropped": [
+    {
+      "claim": "ENT-001.c8",
+      "field": "Invoice",
+      "reason": "The field name 'Invoice' from this claim was not mapped to a specific column in the new model."
+    },
+    {
+      "claim": "ENT-001.c8",
+      "field": "Date",
+      "reason": "The field name 'Date' from this claim was not mapped to a specific column in the new model."
+    }
+  ]
+}

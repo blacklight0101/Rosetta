@@ -21,6 +21,7 @@ import {
 import type { MapLevel } from '../../../domain/code-map/map-level.js';
 import { err, type Result } from '../../../domain/errors/result.js';
 import { pathFilter } from '../../files/ignore-rules.js';
+import { entitiesFromSql } from '../universal/sql-entities.js';
 import { maskCodeMap } from './mask-code-map.js';
 import type { PackScan } from '../packs/pack-scan.js';
 import type { ScannedFile, UniversalScan } from '../universal/scan-types.js';
@@ -89,7 +90,9 @@ function rawTexts(input: BuildCodeMapInput): {
     symbols: input.packs.symbols.map((symbol) => ({ ...symbol })),
     links: input.packs.links.map((link) => ({ ...link })),
     sqlStatements: input.scan.sqlStatements.map((statement) => ({ ...statement })),
-    entities: input.packs.entities.map((entity) => ({ ...entity })),
+    entities: [...input.packs.entities, ...entitiesFromSql(input.scan.sqlStatements)].map(
+      (entity) => ({ ...entity }),
+    ),
   };
 }
 

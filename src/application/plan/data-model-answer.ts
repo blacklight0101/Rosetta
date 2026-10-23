@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { DataModelDraft, DraftTable } from '../../domain/planning/data-model.js';
 import { cardLimits } from '../cards/card-limits.js';
 import { searchJson } from '../cards/extract-json.js';
+import { NO_REAL_COLUMN, withoutPlaceholders } from './data-model-placeholders.js';
 
 // RF-623, ADR-013: the planner's data model is untrusted text. It is read as one JSON object
 // (fenced or inside prose, like the other planner answers) with every list and text bounded; which
@@ -161,9 +162,11 @@ function parseTable(value: unknown, label: string, problems: Problems): DraftTab
     problems,
   );
   if (purpose === undefined) return undefined;
-  const columns = parseColumns(raw.columns, where, problems);
+  const read = parseColumns(raw.columns, where, problems);
+  const columns = withoutPlaceholders(read, where, problems);
   if (columns.length === 0) {
-    problems.push({ item: tableName, field: where, reason: NO_COLUMN });
+    const reason = read.length === 0 ? NO_COLUMN : NO_REAL_COLUMN;
+    problems.push({ item: tableName, field: where, reason });
     return undefined;
   }
   const sources = itemsIn(z.string().max(40), raw.sources, scopeOf(`${where} sources`, problems));

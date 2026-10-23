@@ -1,0 +1,93 @@
+{
+  "tables": [
+    {
+      "name": "product_master",
+      "purpose": "Holds product attributes and their determined status.",
+      "sources": [
+        "ENT-001"
+      ],
+      "columns": [
+        {
+          "name": "product_id",
+          "type": "text",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-001.c5",
+            "field": "Product_ID"
+          },
+          "risk": ""
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "product status"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "product_id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [
+        "The product status is one of USABLE, DAMAGED, or REPAIR."
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "product_id"
+          ],
+          "unique": true,
+          "reason": "Product ID is the identifier."
+        }
+      ]
+    },
+    {
+      "name": "inventory_stock_data",
+      "purpose": "Holds records of asset status from the inventory sheet.",
+      "sources": [
+        "ENT-002"
+      ],
+      "columns": [
+        {
+          "name": "some_asset_field_1",
+          "type": "text",
+          "nullable": true,
+          "legacy": null,
+          "risk": ""
+        }
+      ],
+      "primaryKey": [],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "stock_in_out_transaction_log",
+      "purpose": "Logs asset movement transactions.",
+      "sources": [
+        "ENT-005"
+      ],
+      "columns": [
+        {
+          "name": "some_transaction_field_1",
+          "type": "text",
+          "nullable": true,
+          "legacy": null,
+          "risk": ""
+        }
+      ],
+      "primaryKey": [],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    }
+  ],
+  "dropped": []
+}

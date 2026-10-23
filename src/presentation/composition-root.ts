@@ -7,6 +7,7 @@ import { readAppVersion } from '../infrastructure/config/app-version.js';
 import type { Environment } from '../infrastructure/config/environment.js';
 import { PgDatabaseHealth } from '../infrastructure/db/pg-database-health.js';
 import { createAppPool, type DatabasePool } from '../infrastructure/db/pool.js';
+import { VbPack } from '../infrastructure/scan/packs/vb/vb-pack.js';
 import { CSharpPack } from '../infrastructure/scan/packs/csharp/csharp-pack.js';
 import { LanguagePackRegistry } from '../infrastructure/scan/packs/pack-registry.js';
 import { SecretMasker, type TextMasker } from '../infrastructure/guards/secret-masker.js';
@@ -193,7 +194,7 @@ function closer(created: CreatedServer): () => Promise<void> {
 // RF-110, ADR-004: the language packs of this release. Adding a language is one line here and a pack
 // under src/infrastructure/scan/packs/; the scan itself never names a stack.
 export async function composeLanguagePacks(): Promise<LanguagePackRegistry> {
-  return new LanguagePackRegistry([await CSharpPack.create()]);
+  return new LanguagePackRegistry([await CSharpPack.create(), new VbPack()]);
 }
 
 function createScheduler(logger: Logger): IntervalScheduler {
