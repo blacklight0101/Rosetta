@@ -8,4 +8,6 @@ export interface SectionProps {
   readonly errorFor: (field: string) => FieldIssue | undefined;
   /** The providers a role or a price can name. */
   readonly providers: readonly { readonly value: string; readonly label: string }[];
+  /** The kind of a provider entry by its name (`ollama`, `openai`...); the name is free, the kind decides. */
+  readonly kindOf: (provider: string) => string | undefined;
 }

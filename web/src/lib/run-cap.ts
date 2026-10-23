@@ -9,12 +9,25 @@ export function usesServerKeys(estimate: RunEstimate): boolean {
   return estimate.roles.some((role) => role.keySource === 'server');
 }
 
-/** The cap a run is held to: the lower of the typed cap and, on server keys, the administrator's. */
+/**
+ * True when the administrator's run cap binds a run on server keys. Equal values bind to the
+ * administrator: raising the project cap then changes nothing, so the page offers no link to it.
+ */
+export function administratorRunCapBinds(input: {
+  readonly typed: bigint;
+  readonly administrator: bigint | undefined;
+  readonly serverKeys: boolean;
+}): boolean {
+  const { typed, administrator, serverKeys } = input;
+  return serverKeys && administrator !== undefined && administrator <= typed;
+}
+
+/** The cap a run is held to: the administrator's when it binds, else the typed cap. */
 export function effectiveRunCapMicros(input: {
   readonly typed: bigint;
   readonly administrator: bigint | undefined;
   readonly serverKeys: boolean;
 }): bigint {
-  const { typed, administrator, serverKeys } = input;
-  return serverKeys && administrator !== undefined && administrator < typed ? administrator : typed;
+  const { typed, administrator } = input;
+  return administrator !== undefined && administratorRunCapBinds(input) ? administrator : typed;
 }

@@ -14,6 +14,8 @@ import { dollars, ownKeyTotal, pricedTotal, serverKeyTotal } from './estimate-ma
 export interface CapWarning {
   readonly id: 'run' | 'user-day' | 'server-month' | 'own-day' | `first-calls-${string}`;
   readonly text: string;
+  /** True when the cap named is one the project settings page holds (its caps section). */
+  readonly projectCaps: boolean;
 }
 
 interface CapInputs {
@@ -21,6 +23,8 @@ interface CapInputs {
   readonly runCapMicros: bigint;
   /** What is left of each cap, from the server; undefined while unknown. */
   readonly limits: SpendLimits | undefined;
+  /** False when the run cap in force is the administrator's, which the project settings page does not hold. */
+  readonly runCapFromProject?: boolean;
 }
 
 const stops = 'Start stays available; the run stops cleanly when it reaches a cap.';
@@ -30,7 +34,11 @@ function over(likely: bigint, left: bigint): string {
   return `${dollars(likely)}, is ${dollars(likely - left)} over what is left`;
 }
 
-function runWarning(estimate: RunEstimate, capMicros: bigint): CapWarning | undefined {
+function runWarning(
+  estimate: RunEstimate,
+  capMicros: bigint,
+  projectCaps: boolean,
+): CapWarning | undefined {
   const likely = pricedTotal(estimate, 'likely');
   if (likely <= capMicros) return undefined;
   return {
@@ -38,6 +46,7 @@ function runWarning(estimate: RunEstimate, capMicros: bigint): CapWarning | unde
     text:
       `The likely estimate, ${dollars(likely)}, is ${dollars(likely - capMicros)} over the ` +
       `run cap of ${dollars(capMicros)}. ${stops}`,
+    projectCaps,
   };
 }
 
@@ -48,6 +57,7 @@ function serverWarnings(estimate: RunEstimate, limits: SpendLimits): CapWarning[
   if (likely > userDay.remainingMicros) {
     warnings.push({
       id: 'user-day',
+      projectCaps: false,
       text:
         `The likely estimate on the server's keys, ${over(likely, userDay.remainingMicros)} of ` +
         `your daily cap today: ${dollars(userDay.remainingMicros)} left of ` +
@@ -57,6 +67,7 @@ function serverWarnings(estimate: RunEstimate, limits: SpendLimits): CapWarning[
   if (likely > serverMonth.remainingMicros) {
     warnings.push({
       id: 'server-month',
+      projectCaps: false,
       text:
         `The likely estimate on the server's keys, ${over(likely, serverMonth.remainingMicros)} of ` +
         `the server's monthly cap: ${dollars(serverMonth.remainingMicros)} left this month. ${stops}`,
@@ -72,6 +83,7 @@ function ownWarning(estimate: RunEstimate, limits: SpendLimits): CapWarning[] {
   return [
     {
       id: 'own-day',
+      projectCaps: false,
       text:
         `The likely estimate on your own keys, ${over(likely, day.remainingMicros)} of your ` +
         `daily cap on your own keys: ${dollars(day.remainingMicros)} left of ` +
@@ -83,11 +95,11 @@ function ownWarning(estimate: RunEstimate, limits: SpendLimits): CapWarning[] {
 // RF-1001, RF-1106, DEC-108
 export function capWarnings(inputs: CapInputs): readonly CapWarning[] {
   const { estimate, runCapMicros, limits } = inputs;
-  const run = runWarning(estimate, runCapMicros);
+  const run = runWarning(estimate, runCapMicros, inputs.runCapFromProject ?? true);
   const limited =
     limits === undefined
       ? []
       : [...serverWarnings(estimate, limits), ...ownWarning(estimate, limits)];
-  const first = firstCallWarnings(estimate, runCapMicros);
+  const first = firstCallWarnings(estimate, runCapMicros, inputs.runCapFromProject ?? true);
   return [...(run === undefined ? [] : [run]), ...limited, ...first];
 }

@@ -10,9 +10,14 @@ import { dollars, tokensText } from './estimate-math.js';
 
 type FirstCalls = NonNullable<RunEstimate['firstCalls']>;
 
+/** The caps the project settings page holds; the administrator's run cap is not one of them. */
+const projectCapKinds: ReadonlySet<string> = new Set(['run-tokens', 'role-cost', 'role-tokens']);
+
 export interface FirstCallWarning {
   readonly id: `first-calls-${string}`;
   readonly text: string;
+  /** True when the cap named is one the project settings page holds. */
+  readonly projectCaps: boolean;
 }
 
 const capNames: Readonly<Record<string, string>> = {
@@ -26,7 +31,7 @@ const capNames: Readonly<Record<string, string>> = {
 };
 
 const raising: Readonly<Record<string, string>> = {
-  'run-cost': 'Raise the run cap above.',
+  'run-cost': "Raise the run cap in the project's caps.",
   'run-tokens': "Raise the run token cap in the project's caps.",
   'role-cost': "Raise the reader's cost cap in the project's caps.",
   'role-tokens': "Raise the reader's token cap in the project's caps.",
@@ -84,21 +89,27 @@ function textOf(first: FirstCalls, cap: Short): string {
     : (raising[cap.kind] ?? '');
   const reserved = amount(cap.unit, reservedOf(first, cap.unit));
   return (
-    `The caps cannot hold the ${String(first.calls)} first reader calls: they reserve ${reserved} ` +
+    `The caps cannot hold the ${String(first.calls)} first reader ${first.calls === 1 ? 'call' : 'calls'}: they reserve ${reserved} ` +
     `together and the ${name} of ${amount(cap.unit, cap.limit)} is too low (at least ` +
     `${amount(cap.unit, needed)} needed). ${raise}`
   );
 }
 
 // RF-405, DEC-159
+/**
+ * `runCapFromProject`: the run cap the page holds is the project's, not the administrator's binding
+ * one (see administratorRunCapBinds in run-cap.ts); it decides the link on a run-cost reservation.
+ */
 export function firstCallWarnings(
   estimate: RunEstimate,
   runCapMicros: bigint,
+  runCapFromProject = true,
 ): readonly FirstCallWarning[] {
   const first = estimate.firstCalls;
   if (first === undefined || first.calls === 0) return [];
   return shortCaps(estimate, first, runCapMicros).map((cap) => ({
     id: `first-calls-${cap.kind}`,
     text: textOf(first, cap),
+    projectCaps: cap.kind === 'run-cost' ? runCapFromProject : projectCapKinds.has(cap.kind),
   }));
 }

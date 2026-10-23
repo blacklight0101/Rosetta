@@ -5,7 +5,7 @@ import type { RunStageChoice } from '../api/runs.js';
 import { capWarnings, type CapWarning } from '../lib/cap-warnings.js';
 import { localLikelyTokens } from '../lib/start-confirmation.js';
 import { cloudRoles, pricedTotal } from '../lib/estimate-math.js';
-import { effectiveRunCapMicros, usesServerKeys } from '../lib/run-cap.js';
+import { administratorRunCapBinds, effectiveRunCapMicros, usesServerKeys } from '../lib/run-cap.js';
 import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import { providerNames } from './provider-choices.js';
 import { startGate, type StartGate } from './start-gate.js';
@@ -110,10 +110,16 @@ function warningsOf(input: {
   readonly estimate: EstimateLoad;
   readonly capMicros: bigint;
   readonly limits: ReturnType<typeof useSpendLimits>;
+  readonly runCapFromProject: boolean;
 }): readonly CapWarning[] {
-  const { stage, estimate, capMicros, limits } = input;
+  const { stage, estimate, capMicros, limits, runCapFromProject } = input;
   if (stage !== 'understand' || estimate.status !== 'ready') return [];
-  return capWarnings({ estimate: estimate.estimate, runCapMicros: capMicros, limits });
+  return capWarnings({
+    estimate: estimate.estimate,
+    runCapMicros: capMicros,
+    limits,
+    runCapFromProject,
+  });
 }
 
 /**
@@ -137,7 +143,13 @@ function runCapsOf(input: {
     serverKeys: estimate.status === 'ready' && usesServerKeys(estimate.estimate),
   };
   const runCapMicros = effectiveRunCapMicros({ typed, ...serverRunCap });
-  const warnings = warningsOf({ stage, estimate, capMicros: runCapMicros, limits });
+  const warnings = warningsOf({
+    stage,
+    estimate,
+    capMicros: runCapMicros,
+    limits,
+    runCapFromProject: !administratorRunCapBinds({ typed, ...serverRunCap }),
+  });
   return { runCapMicros, serverRunCap, warnings };
 }
 

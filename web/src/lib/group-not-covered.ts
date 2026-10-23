@@ -24,8 +24,8 @@ const REASONS: readonly Reason[] = [
     areaOnly: true,
   },
   {
-    title: 'No card passed the citation check',
-    marker: ': no card passed the citation check.',
+    title: 'No card was left after the citation check and the judgement',
+    marker: ': no card was left after the citation check and the judgement.',
     areaOnly: true,
   },
 ];
