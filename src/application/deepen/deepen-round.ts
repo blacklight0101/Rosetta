@@ -8,7 +8,11 @@ import type { DeepenStopReason } from '../../domain/deepen/stop-rule.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { scopeOf } from '../runs/run-scope.js';
-import { announceCards, announceExtensions } from '../understand/announce-cards.js';
+import {
+  announceCards,
+  announceExtensions,
+  announceReplaced,
+} from '../understand/announce-cards.js';
 import { judgementPartsOf, runJudgementStep } from '../understand/claim-judgement.js';
 import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import { checkCitations } from '../verifier/citation-check.js';
@@ -57,6 +61,11 @@ interface RoundCards {
   readonly claimIds: ReadonlySet<string>;
 }
 
+/** RF-300: the line count of every file of the code map, to check the citations folded into a claim. */
+function lineCounts(parts: DeepenParts): ReadonlyMap<string, number> {
+  return new Map(parts.scanned.codeMap.files.map((file) => [file.path, file.lines]));
+}
+
 /**
  * RF-203, RF-300, RF-301, RF-209: the new cards with ids, the claims added to the parent's cards,
  * the citation check and the judgement of every new claim.
@@ -70,7 +79,7 @@ async function newCardsOf(
   const tasks = ended.map(taskCardsOf);
   const assigned = assignCardIds(tasks, cardsOf(state));
   if (!assigned.ok) throw new RosettaError(ERROR_CODES.cardOutputInvalid, assigned.error);
-  const extension = extendCards(tasks, cardsOf(state));
+  const extension = extendCards(tasks, cardsOf(state), lineCounts(parts));
   if (!extension.ok) throw new RosettaError(ERROR_CODES.cardOutputInvalid, extension.error);
   const at = parts.deps.clock.now().toISOString();
   const all = [...assigned.value, ...extension.value.cards];
@@ -78,6 +87,7 @@ async function newCardsOf(
   const { events } = parts.execution;
   await announceCards(events, checked, checked.cards.slice(0, assigned.value.length));
   await announceExtensions(events, checked, extension.value);
+  await announceReplaced(events, extension.value);
   const claimIds = new Set([
     ...assigned.value.flatMap((card) => card.claims.map((claim) => claim.claimId)),
     ...extension.value.claims.map((claim) => claim.claimId),
