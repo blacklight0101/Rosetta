@@ -176,7 +176,7 @@ export const precisionInnocentTexts: readonly string[] = [
   `${tokenOption}= value, then more`,
   `${tokenOption}= switch`,
   `${tokenOption}= is set elsewhere`,
-  `${apiKeyName}=abcd123`,
+  `${apiKeyName}=abcdefg`,
   'apiKey: string;',
   `if (${apiKeyName} == expected) { return; }`,
 ];

@@ -9,7 +9,15 @@ const unicodeEscape = /(?<!\\)\\u([0-9a-fA-F]{4})/g;
 const lineOrTabEscape = /(^|[\s.!?;,)\]"'])\\([nt])/g;
 const htmlChars = '<>&"\'`';
 
+// P5-19: never a backslash (a decoded backslash would start a new escape, so decoding twice would
+// differ from decoding once), and never an invisible format or separator character: the general
+// punctuation block U+2000..U+206F (zero-width, bidi controls, U+2028/U+2029) and U+FEFF.
+function isInvisibleOrBackslash(code: number): boolean {
+  return code === 0x5c || (code >= 0x2000 && code <= 0x206f) || code === 0xfeff;
+}
+
 function isDecodable(code: number): boolean {
+  if (isInvisibleOrBackslash(code)) return false;
   if (code === 0x09 || code === 0x0a) return true;
   if (code >= 0x20 && code <= 0x7e) return !htmlChars.includes(String.fromCharCode(code));
   return code >= 0xa0 && (code < 0xd800 || code > 0xdfff);
