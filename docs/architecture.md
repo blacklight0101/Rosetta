@@ -651,8 +651,15 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   three lines of margin before and after (`cited-lines.ts`, read through the `RepositoryReader`, so ignored and
   denied files are refused) in a block of source `cited_lines`; nothing else of the file. Evidence above
   `scan.excerptMaxLines` lines or 40 000 characters is not cut: the claim is `Unverified` and no call is made, and
-  a cited range that is not `1 <= start <= end` in whole lines is refused before the margin is added. The
-  answer is exactly `Reason: <one line>` then `Verdict: Supported|Rejected` (`verdict-answer.ts`; the verdict word
+  a cited range that is not `1 <= start <= end` in whole lines is refused before the margin is added. A derived
+  screen field claim ("Field X (text, optional) is on the screen", RF-626, P3-122, HB-02) is decided by those
+  same lines without a model (`screen-field-check.ts`, in `judgeClaim` after the evidence is read): the field name,
+  compared as whole words without regard to case, underscores, hyphens, spaces or camelCase (`Asset Tag`,
+  `asset_tag` and `txtAssetTag` hold `AssetTag`), present in the lines is `Supported`, absent is `Rejected` with
+  the reason "The cited lines do not contain the field name X."; a name with no letter or digit, lines the scan
+  did not read and every other claim are undecided and go to the model. Such a verdict names the model `rule`
+  (it is a verdict, not a gap: DEC-18, DEC-19), and `verify.judgement.ended` counts them in `withoutModel`
+  (the claims of the rendered-file rule above are in it too). The answer is exactly `Reason: <one line>` then `Verdict: Supported|Rejected` (`verdict-answer.ts`; the verdict word
   is compared in ASCII, so a Unicode case fold such as `ſupported` is no verdict); any other
   answer, a tool call or a cut answer gets one retry that names the problem (`prompts/verifier/retry.v1.md`), and a
   second bad answer leaves the claim `Unverified`. A failed call leaves it `Unverified` with its code. A cap

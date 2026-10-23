@@ -149,11 +149,14 @@ const closingHandlers: Readonly<Record<string, Handler>> = {
     text: `${v.claimId}: ${v.status} - ${v.reason}`,
   })),
   'verify.judgement.ended': reading(
-    z.object({ supported: count, rejected: count, unverified: count, notJudged: count }),
+    z.object({
+      ...{ supported: count, rejected: count, unverified: count, notJudged: count },
+      withoutModel: count.optional(),
+    }),
     (v) => ({
       kind: 'verdict',
       label: 'Judgement ended',
-      text: `${String(v.supported)} supported, ${String(v.rejected)} rejected, ${String(v.unverified)} unverified, ${String(v.notJudged)} not judged`,
+      text: `${String(v.supported)} supported, ${String(v.rejected)} rejected, ${String(v.unverified)} unverified, ${String(v.notJudged)} not judged${v.withoutModel === undefined ? '' : `, ${String(v.withoutModel)} judged without a model call`}`,
     }),
   ),
   'usage.recorded': reading(z.object({ role: text, model: text, costMicros: count }), (v) => ({

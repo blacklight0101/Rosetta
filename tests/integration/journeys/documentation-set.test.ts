@@ -168,14 +168,14 @@ describe('the documentation set journey: screen claims', () => {
   it('RF-626 a screen detail the verifier rejected reaches neither the planner nor the wireframe', () => {
     const { specification, documents, providers } = current();
 
-    expect(specification['spec.md']).toContain('SCRN-003.c7 [Rejected] Field ShippingList');
+    expect(specification['spec.md']).toContain('SCRN-003.c7 [Rejected] Field PromoCode');
     const call = providers.requests().find((each) => each.context.agentTaskId === 'planner-ux');
     const sent = call?.messages.map((message) => message.content).join('\n') ?? '';
     expect(sent).toContain('EmailBox');
-    expect(sent).not.toContain('ShippingList');
+    expect(sent).not.toContain('PromoCode');
     const wireframe = documents['ux/wireframes/SCRN-003.html'] ?? '';
     expect(wireframe).toContain('EmailBox (text, required)');
-    expect(wireframe).not.toContain('ShippingList');
+    expect(wireframe).not.toContain('PromoCode');
   });
 
   it('RF-626 the wireframes hold no script, no event attribute and no external resource', () => {

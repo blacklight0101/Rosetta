@@ -53,7 +53,12 @@ interface Decided {
   readonly status: Exclude<ClaimStatus, 'Proposed' | 'CitationInvalid'>;
   readonly reason: string;
   readonly at: string;
+  /** P3-122: a rule decided it and no model was called. */
+  readonly withoutModel: boolean;
 }
+
+/** The name a verdict of a rule carries where the judgement step names its model (P3-122). */
+const RULE_VERDICT_MODEL = 'rule';
 
 /** The span of a claim's calls: the run's trace prefix, `f` and the claim's number in hex. */
 function spanIdOf(traceId: string, index: number): string {
@@ -79,7 +84,7 @@ function withVerdicts(card: Card, decided: ReadonlyMap<string, Decided>, model: 
     const moved = transitionClaim(judged, claim.claimId, status, {
       step: 'judgement',
       reason,
-      model,
+      model: verdict.withoutModel ? RULE_VERDICT_MODEL : model,
       at,
     });
     if (moved.ok) judged = moved.value;
@@ -95,8 +100,13 @@ export async function judgeClaims(
 ): Promise<readonly Card[]> {
   const { judge, events, clock } = parts;
   const decided = new Map<string, Decided>();
-  const decide = async ({ card, claim }: Pending, status: Decided['status'], reason: string) => {
-    decided.set(claim.claimId, { status, reason, at: clock.now().toISOString() });
+  const decide = async (
+    { card, claim }: Pending,
+    status: Decided['status'],
+    reason: string,
+    withoutModel = false,
+  ) => {
+    decided.set(claim.claimId, { status, reason, withoutModel, at: clock.now().toISOString() });
     const data = { claimId: claim.claimId, status, reason };
     await events.emit('verify.claim.judged', data, card.agentTaskId);
   };
@@ -115,8 +125,9 @@ export async function judgeClaims(
       sent.get(key) ?? judgeClaim(judge, each.claim, spanIdOf(judge.call.traceId, each.index));
     sent.set(key, asked);
     const judgement = await asked;
-    if (judgement.kind === 'judged') await decide(each, judgement.status, judgement.reason);
-    else halt[judgement.kind] = true;
+    if (judgement.kind === 'judged') {
+      await decide(each, judgement.status, judgement.reason, judgement.withoutModel === true);
+    } else halt[judgement.kind] = true;
   });
   // RF-304: a cap (the verifier's or the run's) leaves every claim not judged `Unverified`; any
   // other stop leaves them `Proposed`.
@@ -133,8 +144,10 @@ export async function judgeClaims(
 
 /** How the claims the step was given ended: by verdict, or not judged (a stop of the run). */
 function stepCounts(cards: readonly Card[], claimIds: ReadonlySet<string>) {
-  const counts = { supported: 0, rejected: 0, unverified: 0, notJudged: 0 };
+  const counts = { supported: 0, rejected: 0, unverified: 0, notJudged: 0, withoutModel: 0 };
   const claims = cards.flatMap((card) => card.claims).filter((c) => claimIds.has(c.claimId));
+  // P3-122: the claims a rule decided without a model call.
+  counts.withoutModel = claims.filter((c) => c.verdict?.model === RULE_VERDICT_MODEL).length;
   for (const { status } of claims) {
     if (status === 'Supported') counts.supported += 1;
     else if (status === 'Rejected') counts.rejected += 1;
