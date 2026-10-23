@@ -16,9 +16,10 @@ type CapKind =
 
 /**
  * Where a cap's limit comes from (RF-1106, DEC-107): the project's settings, the administrator's
- * server caps, or the account's own daily cap set by the administrator. A role cap has none.
+ * server caps, or the account's own daily cap set by the administrator. A role cap has none, except
+ * the readers' share of the run caps that keeps the rest for verifying (`reserve`, RF-429).
  */
-type CapSource = 'project' | 'administrator' | 'account';
+type CapSource = 'project' | 'administrator' | 'account' | 'reserve';
 
 export interface UsageCap {
   readonly kind: CapKind;
