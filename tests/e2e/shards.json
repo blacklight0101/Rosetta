@@ -18,7 +18,8 @@
     "tests/e2e/smoke.spec.ts",
     "tests/e2e/visual/sweep-admin.spec.ts",
     "tests/e2e/shared-account.spec.ts",
-    "tests/e2e/start-button-contrast.spec.ts"
+    "tests/e2e/start-button-contrast.spec.ts",
+    "tests/e2e/phone-wrap.spec.ts"
   ],
   "2": [
     "tests/e2e/start-run-queue.spec.ts",
