@@ -1,1 +1,7 @@
-[]
+[
+  {
+    "id": "GHSA-mrhx-c7xc-m3w5",
+    "reason": "zod memory use on oversized constrained collections; the fix 4.6.6 (2026-10-11) is under the two-week age of DEC-125 until 2026-10-25, when card P5-24 upgrades zod and removes this entry; request bodies are size-limited and model answers are bounded by the output token limit",
+    "expires": "2026-10-26"
+  }
+]
