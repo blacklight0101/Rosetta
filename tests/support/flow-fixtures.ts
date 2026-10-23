@@ -81,7 +81,10 @@ export function checkoutDraft(): FlowsDraft {
 
 /** A checked flow with this text in every field a person can read; its second step maps nothing. */
 export function mappedFlow(text: string): MappedFlow {
-  const step = { claimId: 'FLOW-001.c1', text, touches: null, component: text, action: text };
+  const step = {
+    ...{ claimId: 'FLOW-001.c1', text, touches: null, component: text },
+    ...{ action: text, files: [] },
+  };
   return {
     ...{ cardId: 'FLOW-001', title: text, trigger: text, outcome: text },
     steps: [step, { ...step, claimId: 'FLOW-001.c2', component: null, action: '' }],

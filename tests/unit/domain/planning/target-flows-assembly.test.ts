@@ -65,7 +65,7 @@ describe('assembleFlows: mapping', () => {
 });
 
 describe('assembleFlows: steps the checks refuse', () => {
-  it('RF-625 a step of another card, a repeated step and an unknown card are refused', () => {
+  it('RF-625 a step of another card, a repeated step and an unknown card are refused and counted', () => {
     const draft: FlowsDraft = {
       flows: [
         {
@@ -82,7 +82,11 @@ describe('assembleFlows: steps the checks refuse', () => {
 
     const { flows, leftOut } = assembled(draft);
 
-    expect(flows.flows[0]?.steps.map((step) => step.component)).toEqual(['Database', null, null]);
+    expect(flows.flows[0]?.steps.map((step) => step.component)).toEqual([
+      'Database',
+      'Database',
+      'Database',
+    ]); // the others cite the same file
     expect(leftOut).toEqual({ flows: 1, steps: 2 });
   });
 
