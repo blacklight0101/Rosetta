@@ -17,25 +17,38 @@ import { caseless, notMasked } from './secret-value-pieces.js';
 // of backslashes (RF-141 time budget). A rule is anchored on its key word, and the value is read once.
 
 const escaped = String.raw`\\{1,4}`;
-const close = String.raw`${escaped}\k<q>`;
+// The value ends at an escaped quote of the same kind with the same number of backslashes as the one
+// that opened it, and not inside a longer run, so a deeper-escaped quote in the value (`\\\"inner`)
+// does not end it and the tail is not left visible.
+const close = String.raw`(?<!\\)\k<e>\k<q>`;
 const valueChar = String.raw`(?:(?!${close})[^\r\n])`;
 
-// What is never a secret as a whole value: a switch, or a placeholder (`<password>`, `{token}`,
-// `${PASSWORD}`, `$PASSWORD`, `xxxx`).
+// What is never a secret as a whole value: a switch, a placeholder (`<password>`, `{token}`,
+// `${PASSWORD}`, `$PASSWORD`, `xxxx`), a constant (`YOUR_API_KEY`) or a name under a known root of
+// the configuration (`config.secret`, `process.env.KEY`).
 const word = String.raw`[A-Za-z][A-Za-z_-]{0,29}`;
-const notSecret = String.raw`(?:${nonSecretWord}|<${word}>|\{${word}\}|\[${word}\]|\$\{?[A-Z][A-Z0-9_]{0,40}\}?|[Xx]{4,})`;
+const knownRoot = String.raw`(?:process\.env|import\.meta\.env|os\.environ|env|config|settings|options|opts|props|args|params|vars|secrets|this|self)\.[A-Za-z_]\w{0,63}`;
+const notSecret = String.raw`(?:${nonSecretWord}|<${word}>|\{${word}\}|\[${word}\]|\$\{?[A-Z][A-Z0-9_]{0,40}\}?|[Xx]{4,}|[A-Z]+(?:_[A-Z]+)+|${knownRoot})`;
 const number = String.raw`\d+(?:\.\d+)?`;
+const code = String.raw`(?!${valueChar}{0,256}?[()\[\]{}>$])`;
 
-const keyEnd = String.raw`(?:${escaped}["'])?["']?[ \t]{0,16}(?::=|[:=])[ \t]{0,16}${escaped}(?<q>["'])`;
+const keyEnd = String.raw`(?:${escaped}["'])?["']?[ \t]{0,16}(?::=|[:=])[ \t]{0,16}(?<e>${escaped})(?<q>["'])`;
 
-function escapedRule(kind: SettingRule['kind'], name: string, password: boolean): SettingRule {
-  // A `password` name masks any value, as the plain form does. Under any other name the value needs a
-  // digit or a symbol and is not code,
-  // as for the rules of a short value, so a word such as `string` stays.
-  const skip = password ? '(?!)' : `${notSecret}|${number}`;
-  const shape = password
-    ? ''
-    : String.raw`(?=${valueChar}{0,256}?[0-9+=!@#%^*~])(?!${valueChar}{0,256}?[()\[\]{}>$])`;
+// How much of P3-116 precision a name applies to its value:
+//  - `any`: a password name masks any value, as the plain form does;
+//  - `named`: an API key or secret name masks a value that is not a switch, number, placeholder,
+//    constant or code, with or without a digit, as the plain form does;
+//  - `strict`: a token name also needs a digit or a symbol (a word such as `string` is a type).
+type Precision = 'any' | 'named' | 'strict';
+
+function escapedRule(kind: SettingRule['kind'], name: string, precision: Precision): SettingRule {
+  const skip = precision === 'any' ? '(?!)' : `${notSecret}|${number}`;
+  const shape =
+    precision === 'any'
+      ? ''
+      : precision === 'named'
+        ? code
+        : `(?=${valueChar}{0,256}?[0-9+=!@#%^*~])${code}`;
   return {
     kind,
     pattern: new RegExp(
@@ -50,8 +63,8 @@ const secretName = String.raw`(?:(?<![A-Za-z0-9])${caseless('secret')}|(?<=[A-Za
 const apiKeyName = String.raw`(?:(?<![A-Za-z0-9])${apiKeyWords}|(?<=[A-Za-z0-9])Api[_-]?Key)`;
 
 export const escapedQuoteRules: readonly SettingRule[] = [
-  escapedRule('password', passwordName, true),
-  escapedRule('password', secretName, false),
-  escapedRule('api-key', apiKeyName, false),
-  escapedRule('bearer-token', tokenWords, false),
+  escapedRule('password', passwordName, 'any'),
+  escapedRule('password', secretName, 'named'),
+  escapedRule('api-key', apiKeyName, 'named'),
+  escapedRule('bearer-token', tokenWords, 'strict'),
 ];

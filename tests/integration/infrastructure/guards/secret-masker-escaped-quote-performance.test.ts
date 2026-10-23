@@ -24,6 +24,10 @@ describe('SecretMasker on escaped quotes without a closing quote', () => {
       'many keys that each open a different quote',
       repeatTo(oneMegabyte, `Password=${bs}'a Password=${eq}b `),
     ],
+    [
+      'many keys with a deeper-escaped quote in the value',
+      repeatTo(oneMegabyte, `Password=${eq}a${bs}${bs}${bs}"b `),
+    ],
     ['many opening quotes and no key', repeatTo(oneMegabyte, eq)],
     ['many keys with an empty value', repeatTo(oneMegabyte, `api_key=${eq}${eq} `)],
   ])(`RF-141 masks 1 MB of %s within ${String(budgetMs)} ms`, (_name, input) => {
