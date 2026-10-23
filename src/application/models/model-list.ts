@@ -70,5 +70,12 @@ export type ResponsesModels = (kind: ProviderKind, model: string) => boolean;
 
 // P3-131
 export function responsesModelsOf(list: ModelList): ResponsesModels {
-  return () => list.models.length < 0;
+  const keyOf = (kind: string, model: string): string => `${kind}
+${model}`;
+  const marked = new Set(
+    list.models
+      .filter((entry) => entry.responsesApi === true)
+      .map((e) => keyOf(e.provider, e.model)),
+  );
+  return (kind, model) => marked.has(keyOf(kind, model));
 }

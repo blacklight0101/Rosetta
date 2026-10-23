@@ -264,10 +264,12 @@ cloud providers off, a scan and an understand run must complete with Ollama only
   returns HTTP 400 on some models (GPT-6 Astra) and `minimal` is not supported on others (GPT-6.1 Sol), while `low` is
   on every list the model pages give. GPT-6 Sol and Luna are marked: Chat Completions takes function
   calling with them only with effort `none` (P3-129 sends `none` with tools; without the mark the default effort
-  made every reader call HTTP 400, P3-130). GPT-6 Astra and GPT-6.1 Sol take no function tools at any effort, so the
-  list marks them `noTools: true` (not `reasoning`): a run that gives one to the reader, the only role that calls
-  tools, is refused before any call with `RST-1523` naming the model and the role, and the settings pages say the
-  same under the model; the verifier, planner and summariser may use them. Sources,
+  made every reader call HTTP 400, P3-130). GPT-6 Astra and GPT-6.1 Sol take no function tools on Chat Completions at any effort, so
+  the list marks them `responsesApi: true` and `reasoning: true` (P3-131, section 3.7): their calls with tools go to
+  the Responses API and keep the role effort. `noTools: true` stays in the list format for a model that cannot call
+  tools on any route Rosetta uses: a run that gives one to the reader, the only role that calls tools, is refused
+  before any call with `RST-1523` naming the model and the role, and the settings pages say the same under the
+  model; the verifier, planner and summariser may use it. No listed model carries it now. Sources,
   read 2026-10-21: developers.openai.com/api/docs/guides/reasoning and the Chat Completions reference (`reasoning_effort`;
   `max_completion_tokens` is an upper bound that includes reasoning tokens) and the model pages.
 - Tool calls keep the ids OpenAI gave them. A call whose arguments are not a JSON object stays visible as text, like
@@ -369,6 +371,52 @@ and the default of the role: reader 8,192, verifier and summariser 4,000, planne
 the parallel reader calls through on most models; a few dear models still reach the cap sooner). Ollama keeps its own
 context (section 2.2) and defaults. The numbers are for the synchronous API; the larger Batch API output of Anthropic is
 not used.
+
+### 3.7 The Responses API route (P3-131)
+
+An OpenAI model that the shipped list marks `responsesApi: true` (today `gpt-6-astra` and `gpt-6.1-sol`) sends its
+**calls with tools** to `POST /v1/responses`; its calls without tools, every other model and every
+`openai-compatible` service stay on Chat Completions, byte for byte as in sections 3.2 to 3.4. The adapter decides
+per call (`usesResponses(model)` option, filled from the list by `realAdapters`); the reader is the only role whose
+calls carry tools.
+
+- **Body** (`openai-responses-request.ts`): `model`; `instructions` (the system prompt); `input` items; `tools` as
+  `{ type: 'function', name, description, parameters, strict: false }`; `max_output_tokens`; `reasoning: { effort }`
+  when the request carries one; `temperature` only when the role sets one (these are reasoning models); `store: false`
+  and `stream`. A streamed call (output limit above 8,192 tokens, Q-60) sets `stream: true`; the Responses stream
+  needs no `stream_options`.
+- **Input items.** The calls are stateless, so every earlier turn travels again: a user message item, an assistant
+  message item (left out when the turn had no text), a `function_call` item per earlier tool call (`call_id`, `name`,
+  `arguments` as a JSON string) and a `function_call_output` item (`call_id`, `output`) per tool result. Ids are the
+  `call_id` OpenAI sent.
+- **Reasoning items are not carried between turns.** With `store: false` OpenAI also accepts the turns without the
+  reasoning items of earlier turns (probed 2026-10-23 on both models, no `include`), so Rosetta does not request
+  `reasoning.encrypted_content`. The cost is that the model re-thinks each turn; if a model later needs them, the
+  encrypted items would be kept next to the tool calls in the conversation (a follow-up).
+- **Effort.** On this route the role's effort (default low, Q-58) is sent with tools too; the P3-129 rule (effort
+  `none` for tool calls, with its run log note) applies only to Chat Completions models.
+- **Reading the answer** (`openai-responses-response.ts`): text from `message` items (`output_text`, or a `refusal`),
+  tool calls from `function_call` items (arguments that are not a JSON object stay visible as text), other items
+  (`reasoning`) are ignored. Finish reason: `tool_use` with tool calls; `length` when `status` is `incomplete` with
+  `incomplete_details.reason` `max_output_tokens` (P5-03); otherwise `stop`. `modelVersion` is `model`.
+- **Usage:** `inputTokens` is `input_tokens` (includes the cached ones), `cachedInputTokens` is
+  `input_tokens_details.cached_tokens`, `outputTokens` is `output_tokens` (includes reasoning),
+  `reasoningTokens` is `output_tokens_details.reasoning_tokens` (left out when zero). `cache_write_tokens` is not
+  a separate figure: OpenAI bills it at the input price, and the price table has no cache-write price for OpenAI.
+  Missing counts are estimated and marked `estimated` (RF-421).
+- **Streaming** (`openai-responses-stream.ts`): `response.output_text.delta` and `response.function_call_arguments.delta`
+  feed the received-text counter (timeout metering, Q-60); `response.output_item.done` items are kept; the last
+  event, `response.completed` or `response.incomplete`, carries the whole response with its usage and is the answer.
+  A stream without such an event, or one that ends with `response.failed` or `error`, fails the attempt (retried
+  like any other failed connection). Every event restarts the idle timeout.
+- **Errors and retries** are the same as section 3.3: the SDK's status errors go through the same mapping.
+- **Tests:** the contract suite runs against `tests/recordings/openai/responses-*.json` (hand-written, FAKE ids);
+  the fake server answers HTTP 400 to a body without `input` or with `messages`, so sending the Chat Completions
+  body to `/v1/responses` fails them. Streams are in `tests/recordings/streams/openai-responses-*.json`.
+- **Possible follow-up:** `gpt-6-luna` and `gpt-6-sol` work on Chat Completions with effort `none` for tool calls;
+  marking them `responsesApi: true` would let them keep the role effort with tools. They were not moved in P3-131.
+- Sources, read 2026-10-23: developers.openai.com/api/docs (Responses API reference and streaming events,
+  function calling guide, reasoning guide).
 
 ## 4. Anthropic
 

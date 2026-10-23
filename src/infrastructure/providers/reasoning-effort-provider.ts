@@ -73,6 +73,8 @@ export interface RoleEffort {
   readonly kind: ProviderKind;
   /** The shipped list marks the role's model as a reasoning model (Q-58). */
   readonly marked: boolean;
+  /** P3-131: the list routes the model's calls with tools through the Responses API. */
+  readonly responses?: boolean;
   readonly effort: ReasoningEffort;
   readonly note: EffortNote;
 }
@@ -83,7 +85,9 @@ export interface RoleEffort {
  */
 export function withRoleEffort(provider: LlmProvider, role: RoleEffort): LlmProvider {
   if (!role.marked) return provider;
-  if (role.kind !== 'openai') return new ReasoningEffortProvider(provider, role.effort);
+  // P3-131: Responses takes function tools with any effort, so the role effort is kept.
+  if (role.kind !== 'openai' || role.responses === true)
+    return new ReasoningEffortProvider(provider, role.effort);
   return new ReasoningEffortProvider(provider, role.effort, {
     toolEffort: 'none',
     loweredNote: loweredEffortNote(role.note),

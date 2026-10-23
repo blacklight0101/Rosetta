@@ -6,12 +6,12 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 
 // RF-405, DEC-156: the model list file (`prices/models.yaml`): `{ schemaVersion, version (date),
-// models: [{ provider, model, label, contextTokens?, maxOutputTokens?, reasoning?, noTools? }] }`; the two numbers
+// models: [{ provider, model, label, contextTokens?, maxOutputTokens?, reasoning?, noTools?, responsesApi? }] }`; the two numbers
 // are the context window and the maximum output of the provider's model page (Q-57). Only providers
 // that sell a fixed set of models are listed. A file that cannot be read, does not match, or lists a
 // model twice is refused with
 // RST-1602 (the same code as the price table it sits beside) rather than guessed, so the dropdown
-// never offers a wrong name. `reasoning: true` marks a model that takes a reasoning effort (Q-58); `noTools: true` marks one that cannot call tools (P3-130).
+// never offers a wrong name. `reasoning: true` marks a model that takes a reasoning effort (Q-58); `noTools: true` marks one that cannot call tools (P3-130); `responsesApi: true` marks one whose calls with tools go to the Responses API (P3-131).
 
 const modelListSchema = z.strictObject({
   schemaVersion: z.literal(1),
@@ -27,6 +27,8 @@ const modelListSchema = z.strictObject({
       reasoning: z.literal(true).exactOptional(),
       // P3-130: cannot call tools on Chat Completions at any effort.
       noTools: z.literal(true).exactOptional(),
+      // P3-131: calls with tools go to the Responses API.
+      responsesApi: z.literal(true).exactOptional(),
     }),
   ),
 });

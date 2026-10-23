@@ -149,6 +149,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     return withRoleEffort(provider, {
       kind,
       marked: this.options.reasoningModels?.(kind, setting.model) === true,
+      responses: this.options.responsesModels?.(kind, setting.model) === true,
       effort: setting.reasoningEffort ?? DEFAULT_REASONING_EFFORT,
       note,
     });

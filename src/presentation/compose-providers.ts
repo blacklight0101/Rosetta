@@ -6,6 +6,8 @@ import type { PriceTable } from '../domain/budget/price-table.js';
 import {
   noToolModelsOf,
   reasoningModelsOf,
+  responsesModelsOf,
+  type ResponsesModels,
   type ReasoningModels,
 } from '../application/models/model-list.js';
 import { loadModelList } from '../infrastructure/models/model-list-file.js';
@@ -62,13 +64,17 @@ export interface ProviderParts {
 }
 
 /** The adapters of this release, or, in the end-to-end tests, the model double for every kind. */
-async function adaptersFor(parts: ProviderParts): Promise<AdapterBuilder> {
+async function adaptersFor(
+  parts: ProviderParts,
+  responsesModels: ResponsesModels,
+): Promise<AdapterBuilder> {
   const double = parts.doubles?.provider;
   if (double !== undefined) return () => double;
   return realAdapters({
     testMode: parts.environment.test,
     textProtocolPrompt: (await loadTextToolProtocol(promptsFolder)).text,
     logger: parts.logger,
+    responsesModels,
   });
 }
 
@@ -85,12 +91,16 @@ export type GuardedFactoryMaker = (parts: GuardedFactoryParts) => ProviderSetFac
  */
 export async function evaluationProviderFactory(logger: Logger): Promise<GuardedFactoryMaker> {
   const textProtocolPrompt = (await loadTextToolProtocol(promptsFolder)).text;
-  const adapters = realAdapters({ testMode: false, textProtocolPrompt, logger });
   const list = await loadModelList(modelsFile);
+  const responsesModels = responsesModelsOf(list);
+  const adapters = realAdapters({ testMode: false, textProtocolPrompt, logger, responsesModels });
   const reasoningModels = reasoningModelsOf(list);
   const toolLessModels = noToolModelsOf(list);
   return (parts) =>
-    new GuardedProviderFactory({ ...parts, adapters, reasoningModels, toolLessModels });
+    new GuardedProviderFactory({
+      ...parts,
+      ...{ adapters, reasoningModels, toolLessModels, responsesModels },
+    });
 }
 
 export interface ComposedProviders {
@@ -116,6 +126,7 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
   const priceTable = await loadPriceTable(priceFile);
   const models = await loadModelList(modelsFile);
   const reasoningModels = reasoningModelsOf(models);
+  const responsesModels = responsesModelsOf(models);
   const factory = new GuardedProviderFactory({
     keys: new PgProviderKeyRepository(pool),
     box: secretBox,
@@ -127,9 +138,10 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
     priceTable,
     models,
     masker,
-    adapters: await adaptersFor(parts),
+    adapters: await adaptersFor(parts, responsesModels),
     reasoningModels,
     toolLessModels: noToolModelsOf(models),
+    responsesModels,
     ...{ clock, ids, logger },
   });
   const template = await loadProjectTemplate(templatesFolder);
