@@ -19,6 +19,30 @@ describe('default ignores', () => {
   });
 
   it.each([
+    '.vs/config/applicationhost.config',
+    'src/Web/.vs/config/a.config',
+    '.idea/workspace.xml',
+    '.vscode/launch.json',
+    'Backup/App.sln',
+    'BackupOld/Shop.cs',
+    'src/Backup 2025/a.cs',
+  ])(
+    'RF-100 ignores %s because a folder on the way is an IDE settings or backup folder',
+    (path) => {
+      expect(isDefaultIgnored(path)).toBe(true);
+    },
+  );
+
+  it.each(['Web/ShopWeb.csproj.user', 'Shop.suo'])(
+    'RF-100 ignores %s because it is an IDE user file',
+    (path) => {
+      expect(isDefaultIgnored(path)).toBe(true);
+    },
+  );
+});
+
+describe('default ignores (binary files)', () => {
+  it.each([
     'logo.png',
     'assets/Photo.JPG',
     'lib/Shop.dll',
@@ -40,6 +64,9 @@ describe('default ignores', () => {
     '.github/workflows/ci.yml',
     'docs/node_modules.md',
     'image.svg',
+    'Properties/PublishProfiles/Staging.pubxml',
+    'src/backup.txt',
+    'src/Backupper.cs',
   ])('RF-100 keeps %s', (path) => {
     expect(isDefaultIgnored(path)).toBe(false);
   });

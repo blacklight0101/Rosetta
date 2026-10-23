@@ -61,8 +61,8 @@ describe('artefact rules (part 2)', () => {
 describe('artefact rules (part 3)', () => {
   it.each([
     ['packages.config', ['manifest']],
-    ['ShopWeb.csproj', ['manifest']],
-    ['Lib.vbproj', ['manifest']],
+    ['ShopWeb.csproj', ['deployment', 'manifest']],
+    ['Lib.vbproj', ['deployment', 'manifest']],
     ['pom.xml', ['manifest']],
     ['composer.json', ['manifest']],
     ['package.json', ['manifest']],
@@ -83,5 +83,19 @@ describe('artefact rules (part 3)', () => {
     'src/Order.cs',
   ])('RF-102 %s has no known kind and is still a file', (path) => {
     expect(artefactKindsOf(path)).toEqual([]);
+  });
+});
+
+describe('artefact rules (part 4)', () => {
+  it.each([
+    ['Properties/PublishProfiles/Staging.pubxml', ['deployment']],
+    ['Shop.sln', ['deployment']],
+    ['.github/workflows/ci.yml', ['deployment']],
+    ['azure-pipelines.yml', ['deployment']],
+    ['.gitlab-ci.yml', ['deployment']],
+    ['Jenkinsfile', ['deployment']],
+    ['Dockerfile', ['deployment']],
+  ])('RF-102 %s is build and deployment configuration', (path, kinds) => {
+    expect(artefactKindsOf(path)).toEqual(kinds);
   });
 });
