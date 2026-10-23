@@ -68,6 +68,10 @@ export const roadSigns: Readonly<Record<string, JourneyFacts>> = {
   capped: facts({
     source: source({ endState: 'CapReached', errorCode: 'RST-1403', supportedClaims: 0 }),
   }),
+  cappedWithClaims: facts({
+    source: source({ endState: 'CapReached', errorCode: 'RST-1403', supportedClaims: 3 }),
+    briefSaved: false,
+  }),
   noClaims: facts({ source: source({ supportedClaims: 0 }) }),
   asking: facts({ source: source({ openQuestions: 2 }), briefSaved: false }),
   noBrief: facts({ briefSaved: false }),

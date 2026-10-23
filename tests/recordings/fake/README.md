@@ -21,6 +21,8 @@ for the catalogue and order journeys and none for the service library (P2-19).
 
 `understand-retry-run-again.json` and `understand-retry-run-recovers.json` are the reader calls of a run over Catalog and Services in which Catalog gives no card and Services gives one, followed by the runs that retry Catalog alone (RF-208, Q-43, P3-69): in the first file two retries end without a card again, in the second the retry gives its card.
 
+`verifier-heavy-supported.json` is `verifier-all-supported.json` with 6,000 input tokens reported for each verdict, so a run cap can be set at which the verdicts would use everything the readers left; the share of the run token cap the verifier may use keeps the rest for the summariser (RF-429, P3-121).
+
 ## Provenance (RNF-009)
 
 Every file was written by hand for this repository by the Rosetta contributors and is covered by the repository's MIT

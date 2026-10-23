@@ -61,7 +61,30 @@ it('RST-1802 a completed run with no Supported claim offers no plan and says why
   expect(within(turn()).queryByRole('button', { name: 'Set up the plan' })).toBeNull();
 });
 
-it.each(['CapReached', 'Failed', 'Interrupted'] as const)(
+it('RF-614 P3-121 a run that ended CapReached with a Supported claim offers Set up the plan beside Resume', async () => {
+  await openEnded({ judged: 'Supported', endState: 'CapReached', questions: [] });
+
+  await waitFor(() => {
+    expect(setUp()).toBeTruthy();
+  });
+  expect(turn().textContent).toContain('stopped at a cap');
+  expect(screen.getAllByRole('button', { name: 'Resume run' })).toHaveLength(1);
+  fireEvent.click(setUp());
+  expect(window.location.pathname + window.location.search).toBe(
+    `/projects/p-1/plan-setup?run=${runUuid}`,
+  );
+});
+
+it('RST-1802 a run that ended CapReached with no Supported claim offers no plan', async () => {
+  await openEnded({ judged: 'Rejected', endState: 'CapReached', questions: [] });
+
+  await waitFor(() => {
+    expect(turn().textContent).toContain('Resume it');
+  });
+  expect(within(turn()).queryByRole('button', { name: 'Set up the plan' })).toBeNull();
+});
+
+it.each(['Failed', 'Interrupted'] as const)(
   'RF-614 RF-006 a run that ended %s offers Resume, not Set up the plan',
   async (endState) => {
     await openEnded({ judged: 'Supported', endState, questions: [] });

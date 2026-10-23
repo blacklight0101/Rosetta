@@ -88,19 +88,6 @@ describe('BuildPlan: what the source run supplies and refuses', () => {
     expect(firstMessage()).not.toContain('Any clerk may cancel.');
   });
 
-  it('RST-1802 a named run that ended CapReached fails the run before any model call', async () => {
-    const stopped = await h.understandRun({
-      ...{ cards: planCards(), runKey: olderKey, endState: 'CapReached' },
-    });
-    await h.understandRun({ cards: planCards(), runKey: newerKey });
-
-    const run = await h.plan({ sourceRunId: stopped.id });
-
-    expect(run).toMatchObject({ endState: 'Failed' });
-    expect(h.providers.requests()).toHaveLength(0);
-    expect((await h.manifestOf(run)).sourceRunId).toBeNull();
-  });
-
   it('RST-1802 a plan run with no source run records none', async () => {
     const run = await h.plan();
 

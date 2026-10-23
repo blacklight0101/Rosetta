@@ -115,6 +115,23 @@ describe('GET /api/projects/:id/journey (2)', () => {
   });
 });
 
+describe('GET /api/projects/:id/journey (capped source)', () => {
+  it('RF-615 RF-614 P3-121 counts the Supported claims of a run that ended CapReached, open questions stay 0', async () => {
+    const { amy, project, stores } = await setup();
+    const stopped = runOf(
+      await seedPlanSource(stores, project, {
+        run: { runKey: '20261013-090000-understand', endState: 'CapReached' },
+      }),
+    );
+
+    const response = await amy.request({ method: 'GET', url: journeyUrl(project.id, stopped.id) });
+
+    const body = response.json<{ source: { supportedClaims: number; openQuestions: number } }>();
+    expect(body.source.supportedClaims).toBeGreaterThan(0);
+    expect(body.source.openQuestions).toBe(0);
+  });
+});
+
 describe('GET /api/projects/:id/journey (3)', () => {
   it('RF-615 gives null for the end of a run that is still running', async () => {
     const { amy, project, stores } = await setup();

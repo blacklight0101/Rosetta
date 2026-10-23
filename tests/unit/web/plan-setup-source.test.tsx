@@ -63,6 +63,27 @@ describe('Plan setup names its source run', () => {
   });
 });
 
+describe('Plan setup lists a run that stopped at a cap', () => {
+  const capped = { ...chosen, endState: 'CapReached', supportedClaims: 5 };
+
+  it('RF-614 P3-121 says the run stopped at a cap and that only its judged claims are used', async () => {
+    window.history.pushState({}, '', '/projects/p-1/plan-setup?run=run-7');
+    renderPlan({ [`GET ${base}/plan-source`]: json(200, capped) });
+    await ready();
+
+    expect(source().textContent).toContain('5 Supported claims');
+    expect(source().textContent).toContain('stopped at a cap');
+    expect(source().textContent).toContain('Resume');
+  });
+
+  it('RF-614 P3-121 a completed run carries no such note', async () => {
+    renderPlan();
+    await ready();
+
+    expect(source().textContent).not.toContain('stopped at a cap');
+  });
+});
+
 describe('Plan setup uses the source run it names', () => {
   it('RF-614 the estimate is read for the chosen run', async () => {
     window.history.pushState({}, '', '/projects/p-1/plan-setup?run=run-7');

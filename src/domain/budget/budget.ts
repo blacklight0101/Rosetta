@@ -34,6 +34,9 @@ interface AccountCaps {
 /** RF-429, EV-27: the share of the run token cap the readers may use; the rest verifies their claims. */
 export const READER_SHARE_PERCENT = 70;
 
+/** RF-429, P3-121: the share of the run token cap the verifier may use; the rest is the summariser's. */
+export const VERIFIER_SHARE_PERCENT = 20;
+
 /** The caps of the role that makes the call (`budget.roles.<role>`, RF-423); none when unset. */
 export interface RoleBudget {
   readonly maxCostMicros?: bigint;
@@ -45,6 +48,8 @@ export interface CapInputs {
   readonly role?: RoleBudget;
   /** RF-429: the call's role is a reader, which stops at a share of the run token cap unless it has its own. */
   readonly reader?: boolean;
+  /** RF-429: the call's role is the verifier, which stops at its share of the run token cap unless it has its own. */
+  readonly verifier?: boolean;
   readonly server: ServerCaps;
   readonly account: AccountCaps;
 }
