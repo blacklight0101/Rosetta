@@ -672,7 +672,7 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   with the reason that a cap was reached (RF-304); a stop by the user, shutdown or a cancelled call gives no
   verdict and no further claim is sent, so those claims keep `Proposed`. The step is published between
   `verify.judgement.started` and `verify.judgement.ended` (RF-1014: the live page shows "waiting for judgement"
-  only until the end), each verdict as `verify.claim.judged` in claim order as soon as every claim before it has its verdict (`call-turn.ts`: `OrderedPublisher`; the first call of each claim is also sent in claim order, `CallTurn`, so call ids and recorded answers do not depend on which call ends first, P5-15), and the cards are written again at
+  only until the end), each verdict as `verify.claim.judged` in claim order as soon as every claim before it has its verdict (`call-turn.ts`: `OrderedPublisher`; the first call of each claim is also sent in claim order, `CallTurn`, so call ids and recorded answers of first calls do not depend on which call ends first; retries are numbered in arrival order; a claim not yet answered holds back the events after it until it ends or times out; a repeated claim gives its turn up at once, P5-15), and the cards are written again at
   the end (RF-302: nothing is removed). Every call, including a retry, reserves its worst case in the budget guard and is metered; once a cap refuses a call, claims still queued or waiting to retry send no further call and are left `Unverified`;
   the verifier's prompt files and model version are recorded in the manifest (RNF-004). When the run starts with a
   verifier of the reader's model family (`src/domain/verifier/model-family.ts`: the model id's last path part, in

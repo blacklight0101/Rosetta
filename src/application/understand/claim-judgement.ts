@@ -142,8 +142,10 @@ export async function judgeClaims(
       if (halted() !== undefined) return;
       const key = JSON.stringify([each.claim.text, each.claim.citations]);
       const spanId = spanIdOf(judge.call.traceId, each.index);
-      const asked =
-        sent.get(key) ?? judgeClaim({ ...judge, halted, turn: mine }, each.claim, spanId);
+      const earlier = sent.get(key);
+      // A repeated claim sends no call, so it gives its turn up before it waits for the first one.
+      if (earlier !== undefined) mine.pass();
+      const asked = earlier ?? judgeClaim({ ...judge, halted, turn: mine }, each.claim, spanId);
       sent.set(key, asked);
       const judgement = await asked;
       if (judgement.kind !== 'judged') halt[judgement.kind] = true;
