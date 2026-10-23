@@ -1,5 +1,6 @@
 import { formatCitation } from '../../domain/cards/citation.js';
 import { renderDataBlock } from '../../domain/egress/data-block.js';
+import { omittedSummary } from './plan-packing.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 
@@ -11,11 +12,15 @@ import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 export interface DataModelMessageInput {
   readonly cards: readonly SourceCard[];
   readonly brief: PlanningBrief;
+  /** P3-113: the ids of the `ENT` cards the prompt names by title only, to fit the planner's window. */
+  readonly omitted?: ReadonlySet<string>;
 }
 
 function cardsText(input: DataModelMessageInput): string {
-  const entityCards = input.cards
-    .filter((card) => card.type === 'ENT')
+  const omitted = input.omitted ?? new Set<string>();
+  const entities = input.cards.filter((card) => card.type === 'ENT');
+  const entityCards = entities
+    .filter((card) => !omitted.has(card.id))
     .map(({ id, title, summary, claims }) => ({
       ...{ id, title, summary },
       claims: claims
@@ -25,7 +30,13 @@ function cardsText(input: DataModelMessageInput): string {
           citations: citations.map(formatCitation),
         })),
     }));
-  return JSON.stringify({ entityCards }, null, 2);
+  const json = JSON.stringify({ entityCards }, null, 2);
+  const summary = omittedSummary(entities.filter((card) => omitted.has(card.id)));
+  return summary === ''
+    ? json
+    : `${json}
+
+${summary}`;
 }
 
 function ownerText(brief: PlanningBrief): string {

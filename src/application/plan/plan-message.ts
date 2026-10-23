@@ -6,6 +6,7 @@ import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import { styleRoles } from '../../domain/planning/style-rules.js';
 import type { RecordedQuestion } from '../ports/answers-file.js';
+import { omittedSummary } from './plan-packing.js';
 
 // RF-604, RF-145, ADR-013: what the planner is given. Two data blocks, each with its own fresh tag:
 // the cards with only their `Supported` claims and the citations of each (never the code), and the
@@ -23,15 +24,23 @@ export interface PlanMessageInput {
   readonly omitted?: ReadonlySet<string>;
 }
 
-function cardsText(cards: readonly SourceCard[]): string {
-  const listed = cards.map(({ id, type, title, summary, claims }) => ({
+function cardsText(input: PlanMessageInput): string {
+  const omitted = input.omitted ?? new Set<string>();
+  const shown = input.cards.filter((card) => !omitted.has(card.id));
+  const listed = shown.map(({ id, type, title, summary, claims }) => ({
     ...{ id, type, title, summary },
     claims: claims.map((claim) => ({
       text: claim.text,
       citations: claim.citations.map(formatCitation),
     })),
   }));
-  return JSON.stringify(listed, null, 2);
+  const json = JSON.stringify(listed, null, 2);
+  const summary = omittedSummary(input.cards.filter((card) => omitted.has(card.id)));
+  return summary === ''
+    ? json
+    : `${json}
+
+${summary}`;
 }
 
 function principlesOf(brief: PlanningBrief, catalogue: Catalogue): object[] {
@@ -75,10 +84,7 @@ function ownerText(input: PlanMessageInput): string {
 /** The user message: the cards block, then the owner's block, each with a tag of its own. */
 // RF-604, RF-145
 export function planMessage(input: PlanMessageInput, tags: () => string): string {
-  const cards = renderDataBlock(
-    { source: 'cards', excerpts: [], text: cardsText(input.cards) },
-    tags(),
-  );
+  const cards = renderDataBlock({ source: 'cards', excerpts: [], text: cardsText(input) }, tags());
   const owner = renderDataBlock(
     { source: 'owner_answers', excerpts: [], text: ownerText(input) },
     tags(),

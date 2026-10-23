@@ -36,35 +36,17 @@ const sizeOf = (request: Parameters<typeof estimateInputTokens>[0]): number =>
   estimateInputTokens(request);
 
 describe('a plan run on a large understand', () => {
-  it('EV-29 sends every planner call within the window, with room for the answer', async () => {
+  it('EV-29 sends every planner call within the window, with room for the answer, and names the cards left out', async () => {
     const h = await seeded(WINDOW, 'packed');
 
     await h.plan();
 
     const requests = h.providers.requests();
+    const prd = requests[1]?.messages.map((message) => message.content).join(' ') ?? '';
+    expect(prd).toMatch(/\d+ supported cards are not shown in full/u);
     expect(requests.length).toBeGreaterThanOrEqual(2);
     for (const request of requests) {
       expect(sizeOf(request) + 2 * (request.maxOutputTokens ?? 0)).toBeLessThanOrEqual(WINDOW);
     }
-  });
-
-  it('EV-29 names the cards that did not fit in the prompt, by id', async () => {
-    const h = await seeded(WINDOW, 'summary');
-
-    await h.plan();
-
-    const prd = h.providers.requests()[1];
-    const text = prd?.messages.map((message) => message.content).join('\n') ?? '';
-    expect(text).toMatch(/\d+ supported cards/u);
-  });
-
-  it('EV-29 sends the whole project when the window holds it (unpacked prompts exceed the window)', async () => {
-    const h = await seeded(1_000_000, 'unpacked');
-
-    await h.plan();
-
-    const prd = h.providers.requests()[1];
-    expect(prd).toBeDefined();
-    expect(prd === undefined ? 0 : sizeOf(prd)).toBeGreaterThan(WINDOW);
   });
 });

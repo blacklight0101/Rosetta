@@ -48,7 +48,7 @@ function typeOf(recorded: string): CardType {
 }
 
 /** The inputs of the cards, numbered per type as a run numbers them. */
-export function largeCardInputs(): CardInput[] {
+function largeCardInputs(): CardInput[] {
   const { areas, cards } = shape;
   const counts = new Map<CardType, number>();
   return cards.map(([recorded, area, titleChars, summaryChars, claims], index) => {
