@@ -4,7 +4,7 @@ import type { CoverageListing } from '../api/coverage.js';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import type { RunRow } from '../api/run-schemas.js';
 import { Tabs, type TabSpec } from '../components/Tabs.js';
-import { tilesOf, type CodeAreaInfo } from '../lib/live-run/code-map-tiles.js';
+import { tilesOf, type CodeAreaInfo, type Tile } from '../lib/live-run/code-map-tiles.js';
 import { journeyOf } from '../lib/live-run/journey.js';
 import { logCountOf } from '../lib/live-run/log-count.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
@@ -149,14 +149,23 @@ function Details(props: DetailsProps): JSX.Element {
   );
 }
 
-/** EV-19: the retry and Deepen notices, which only an understand run has. */
-function UnderstandNotices({ state }: { readonly state: RunState }): JSX.Element {
-  return (
-    <>
-      {state.retry === undefined ? null : <RetryNotice retry={state.retry} />}
-      {state.deepen === undefined ? null : <DeepenProgress progress={state.deepen} />}
-    </>
-  );
+/** The stepper of a plan run (its plan steps only, RF-1015) or the run journey of an understand run. */
+function StepsOf(props: {
+  readonly run: RunRow;
+  readonly stage: string;
+  readonly phase: RunPhase;
+  readonly state: RunState;
+  readonly tiles: readonly Tile[];
+}): JSX.Element {
+  const { run, stage, phase, state, tiles } = props;
+  if (stage === 'plan') {
+    return (
+      <RunStepper
+        steps={stepperOf({ stage, commitSha: run.commitSha, reportBuilt: false }, state, phase)}
+      />
+    );
+  }
+  return <RunJourney steps={journeyOf({ stage, phase, state, tiles })} />;
 }
 
 // RF-1015
@@ -175,14 +184,9 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
   return (
     <>
       <Facts state={state} source={props.source} />
-      {stage === 'plan' ? (
-        <RunStepper
-          steps={stepperOf({ stage, commitSha: run.commitSha, reportBuilt: false }, state, phase)}
-        />
-      ) : (
-        <RunJourney steps={journeyOf({ stage, phase, state, tiles })} />
-      )}
-      {stage === 'plan' ? null : <UnderstandNotices state={state} />}
+      <StepsOf {...{ run, stage, phase, state, tiles }} />
+      {state.retry === undefined ? null : <RetryNotice retry={state.retry} />}
+      {state.deepen === undefined ? null : <DeepenProgress progress={state.deepen} />}
       <div class="rst-running__grid">
         {stage === 'plan' ? null : (
           <CodeMap

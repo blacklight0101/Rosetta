@@ -3,6 +3,7 @@ import { JUDGEMENT_EXPLAINED, verifyDetail, waitsForJudgement } from './judgemen
 import type { RunPhase } from './run-phase.js';
 import type { AgentPanelState, RunState } from './run-state.js';
 import { scanSubjectOfRun } from './scan-subject.js';
+import { endedWithoutCard } from './run-summary.js';
 
 // RF-1015, DEC-137: the run journey of the page while a run works: map the code, read, check
 // citations, explain, your questions. Exactly one step is current while the run works; the steps
@@ -75,10 +76,10 @@ function areasRead(input: JourneyInput): {
     if (input.tiles.length > 0 && !ofMap.has(agent.area)) continue;
     byArea.set(agent.area, [...(byArea.get(agent.area) ?? []), agent]);
   }
-  const failedArea = (agents: readonly AgentPanelState[]): boolean =>
-    agents.some((agent) => agent.state === 'Failed');
+  // EV-16, RF-208: an area is failed when one of its agents ended without a card: the rule of the
+  // tiles and the failed-areas notice (`endedWithoutCard`), so the three always agree.
+  const failedArea = (agents: readonly AgentPanelState[]): boolean => agents.some(endedWithoutCard);
   const all = [...byArea.values()];
-  // EV-16: an area whose agent failed is not read, whatever else ended.
   const read = all.filter((agents) => agents.every(finished) && !failedArea(agents)).length;
   const failed = all.filter(failedArea).length;
   // RF-208: a retry reads only the areas it names; the rest it holds as they were.
