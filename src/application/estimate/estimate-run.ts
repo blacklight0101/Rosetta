@@ -254,7 +254,6 @@ export class EstimateRun {
       priceTableVersion: this.deps.priceTable.version,
       currency: this.deps.priceTable.currency,
       areas: offeredAreas(offered, thirdParty),
-      libraryAreas: areas.filter((area) => thirdParty.has(area.name)).length,
       assumptions: { ...assumptions, summariserBatches: summariser.batches },
       roles,
       total: sumPoints(roles.map((role) => role.points)),

@@ -37,20 +37,22 @@ export function withoutQuestions(drafts: readonly CardDraft[]): readonly CardDra
   return drafts.filter((draft) => draft.type !== 'OQ');
 }
 
-// Words that say an area is third-party code: what a card of a library area is about when it only
-// restates that. A card of own code in a library area is not expected, so the match is loose.
-const LIBRARY_WORDS =
-  /third[- ]?party|vendor(?:ed)?|minified|\.min\.|generated|jquery|bootstrap|libraries|(?:js|javascript|css) library/iu;
+// P3-123: a card that only says what the area is: its title starts with the word (`Third-party
+// libraries`, `Vendored jQuery`), or its summary starts by saying the area holds such code (`The
+// area holds only third-party code.`). A rule of the application that mentions a library
+// (`jQuery validation requires a non-empty field`, `vendor payment terms`) is kept.
+const LIBRARY_TITLE = /^(?:the\s+)?(?:third[- ]?party|vendored|minified|generated|bundled)\b/iu;
+const LIBRARY_SUMMARY =
+  /^(?:the\s+)?[\w.\- ]{0,30}\b(?:holds|contains|consists of|is made up of|is|are)\s+(?:only\s+)?(?:a\s+)?(?:third[- ]?party|vendored|minified|generated)\b/iu;
 
 /**
  * P3-123, RF-243: an area of third-party code writes no FEAT or BR card that only says it holds
- * third-party code. A FEAT or BR card whose title or summary names libraries is dropped; other
- * card types are kept.
+ * third-party code. Other cards, and the other card types, are kept.
  */
 export function withoutLibraryDescriptions(drafts: readonly CardDraft[]): readonly CardDraft[] {
   return drafts.filter(
     (draft) =>
       (draft.type !== 'FEAT' && draft.type !== 'BR') ||
-      !LIBRARY_WORDS.test(`${draft.title} ${draft.summary}`),
+      !(LIBRARY_TITLE.test(draft.title.trim()) || LIBRARY_SUMMARY.test(draft.summary.trim())),
   );
 }

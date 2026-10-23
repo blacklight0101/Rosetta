@@ -104,7 +104,7 @@ it('RF-1018 Select all ticks every area, Select none clears, Own code only resto
   });
 });
 
-it('P3-123 Select all names every area, because the plain estimate covers own code only', async () => {
+it('RF-425 Select all names every area, because the plain estimate covers own code only', async () => {
   const { calls } = renderStart(estimateAnswers(mixed));
   await ready();
   const gets = () => calls.filter((c) => c.method === 'GET' && c.path === estimatePath).length;

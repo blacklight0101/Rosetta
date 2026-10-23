@@ -16,8 +16,8 @@ const local = settingsFor({
   verifier: { provider: 'ollama', model: 'gemma4:e4b' },
 });
 
-describe('P3-123 the default estimate', () => {
-  it('P3-123 without an area list the totals are for the own code and the list still offers every area', async () => {
+describe('RF-425 the default estimate', () => {
+  it('RF-425 without an area list the totals are for the own code and the list still offers every area', async () => {
     const vendored = entry('Scripts/jquery-3.4.1.js', 900);
     const own = entry('Catalog/List.aspx.cs', 500);
     const areas: readonly Area[] = [
@@ -37,7 +37,6 @@ describe('P3-123 the default estimate', () => {
       'Scripts#1',
     ]);
     expect(byDefault.ok && byDefault.value.total).toEqual(own1.ok && own1.value.total);
-    expect(byDefault.ok && byDefault.value.libraryAreas).toBe(0);
-    expect(both.ok && both.value.libraryAreas).toBe(1);
+    expect(both.ok && both.value.total).not.toEqual(own1.ok && own1.value.total);
   });
 });
