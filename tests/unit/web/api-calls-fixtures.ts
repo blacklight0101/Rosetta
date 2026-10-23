@@ -30,6 +30,7 @@ export interface CallWire {
   readonly finishReason: string;
   readonly status: 'ok' | 'retried' | 'failed' | 'refused-by-cap';
   readonly errorCode?: string;
+  readonly errorMessage?: string;
   readonly httpStatus?: number;
   readonly ollama?: {
     readonly loadDurationMs: number;
