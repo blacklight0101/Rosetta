@@ -48,7 +48,7 @@ describe('GetJourney: the understand run', () => {
 });
 
 describe('GetJourney: the understand run (stopped)', () => {
-  it('RF-615 a run that stopped gives its error code and no claims or questions', async () => {
+  it('RF-615 P3-121 a run that stopped at a cap gives its error code, its Supported claims and no questions', async () => {
     const { project, parts, seed, journey } = await setup();
     const stopped = await seed({ brief: false, run: { endState: 'CapReached' } });
     const scope = {
@@ -65,7 +65,7 @@ describe('GetJourney: the understand run (stopped)', () => {
       value: {
         source: {
           ...{ endState: 'CapReached', errorCode: 'RST-1403' },
-          ...{ supportedClaims: 0, openQuestions: 0 },
+          ...{ supportedClaims: 4, openQuestions: 0 },
         },
       },
     });

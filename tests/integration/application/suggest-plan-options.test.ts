@@ -212,11 +212,11 @@ describe('SuggestPlanOptions: a chosen source run that cannot be used (RF-614)',
     });
   }
 
-  it('RST-1802 refuses a chosen run that ended CapReached, making no call', async () => {
+  it('RST-1802 refuses a chosen run that ended Failed, making no call', async () => {
     const h = await harness();
     const stopped = await seedPlanSource(h.stores, h.project, {
       brief: false,
-      run: { runKey: '20261012-100000-understand', endState: 'CapReached' },
+      run: { runKey: '20261012-100000-understand', endState: 'Failed' },
     });
 
     const result = await askFrom(h, stopped?.id ?? '');

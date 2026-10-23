@@ -6,10 +6,11 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { signedInOf } from './request-actor.js';
 
 // RF-614, RF-605, RF-1105: the understand run Plan setup plans from. GET /api/projects/:id/plan-source
-// answers `{ runId, runKey, endedAt, areas, supportedClaims, newest }` for the run named by `?run=`
-// (a run id), or for the project's newest understand run that ended `Completed` when none is named.
+// answers `{ runId, runKey, endedAt, endState, areas, supportedClaims, newest }` for the run named by
+// `?run=` (a run id), or for the project's newest understand run that ended `Completed`, else its
+// newest that ended `CapReached`, when none is named (P3-121).
 // It needs a session. Another user's project, an unknown run id, another user's run and a run of
-// another project answer 404; a run that did not complete, or one with no supported claim, and a
+// another project answer 404; a run that failed or was interrupted, or one with no supported claim, and a
 // project with no such run answer 409 (RST-1802); a run id longer than an id answers 400.
 
 export interface PlanSourceServices {

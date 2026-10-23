@@ -56,7 +56,7 @@ describe('role caps of the provider factory', () => {
       ]),
     );
     expect(verifierHeld?.reservation.role).toBe('verifier');
-    expect(kindsOf(verifierHeld?.caps ?? [])).toEqual([]);
+    expect(kindsOf(verifierHeld?.caps ?? [])).toEqual(['role-tokens']);
   });
 
   it('RF-423 a role cap of zero stops that role before any call, and the other role still answers', async () => {

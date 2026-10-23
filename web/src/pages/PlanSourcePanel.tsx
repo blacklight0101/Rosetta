@@ -5,8 +5,8 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 
 // RF-614, RF-605, design-system.md section 14 (Plan setup): names the understand run the package is
 // written from: its folder name, when it ended, the areas of its cards and how many Supported claims
-// it holds; says when it is the newest completed run of the project. A project with no usable run
-// shows the reason instead.
+// it holds; says when it is the newest completed run of the project and when the run stopped at a cap
+// (P3-121). A project with no usable run shows the reason instead.
 
 export interface PlanSourcePanelProps {
   readonly source: PlanSource | undefined;
@@ -25,10 +25,19 @@ function Description({ source }: { readonly source: PlanSource }): JSX.Element {
         {source.endedAt === null ? '' : `, which ended ${when(source.endedAt)}`}
         {`. Areas: ${source.areas.length === 0 ? 'none named' : source.areas.join(', ')}. ${claims}.`}
       </p>
+      {source.endState === 'CapReached' ? (
+        <p class="rst-plan-note">
+          This run stopped at a cap. The package uses only its Supported claims; the claims it never
+          judged are listed as excluded, and checks.md says how many. Resume the run first to judge
+          the rest.
+        </p>
+      ) : null}
       {source.newest ? (
         <p class="rst-plan-note">
-          It is the newest completed understand run of the project. To plan from another run, open
-          Plan setup from that run's page.
+          {source.endState === 'CapReached'
+            ? 'It is the newest understand run of the project that can be planned from.'
+            : 'It is the newest completed understand run of the project.'}{' '}
+          To plan from another run, open Plan setup from that run's page.
         </p>
       ) : null}
     </>

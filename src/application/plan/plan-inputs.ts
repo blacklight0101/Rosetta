@@ -16,8 +16,8 @@ import { scopeOf } from '../runs/run-scope.js';
 import { planSourceRun } from './plan-source.js';
 
 // RF-604, RF-614, DEC-80: what a plan run is written from: the project, its saved planning brief, the
-// understand run the plan was started from (the newest one that ended `Completed` when none was
-// named), that run's cards and the open questions it found with their answers. A project without a
+// understand run the plan was started from (the newest one that ended `Completed`, else the newest
+// that ended `CapReached`, when none was named), that run's cards and the open questions it found with their answers. A project without a
 // saved brief (RST-1801), without such a run, or whose run has no supported claim (RST-1802) stops the
 // run before any model call; a named run that is not the user's is not found (RF-1105).
 
@@ -54,7 +54,7 @@ const problems = {
   },
   run: {
     code: ERROR_CODES.planSourceMissing,
-    message: 'There is no understand run that ended Completed to plan from.',
+    message: 'There is no understand run that ended Completed or at its cap to plan from.',
   },
   missing: { code: ERROR_CODES.notFound, message: 'The source run of the plan run is gone.' },
   claims: {

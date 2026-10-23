@@ -127,9 +127,23 @@ function copiedExampleLines(handoff: HandoffPackage, esc: MarkdownEscaper): stri
   ];
 }
 
+// RF-604, P3-121: the source run ended at a cap; only the claims it had judged were used.
+function sourceStopLines(handoff: HandoffPackage): string[] {
+  const stop = handoff.sourceStop;
+  if (stop === undefined) return [];
+  const { unjudgedClaims: left, totalClaims: total } = stop;
+  return [
+    '## Source run stopped at a cap',
+    '',
+    `The understand run this package was planned from (${handoff.sourceRun}) stopped at a cap before it finished. Only its Supported claims were used. ${String(left)} of ${String(total)} claim${total === 1 ? '' : 's'} ${left === 1 ? 'was' : 'were'} never judged and ${left === 1 ? 'is' : 'are'} excluded; the areas it did not read are not in the package. Resume the run, then write the package again to cover them.`,
+    '',
+  ];
+}
+
 // RF-627
 export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const lines = [
+    ...sourceStopLines(handoff),
     ...coverageLines(handoff, esc),
     ...styleLines(handoff, esc),
     ...restatedLines(handoff, esc),

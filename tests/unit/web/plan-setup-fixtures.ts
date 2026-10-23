@@ -180,5 +180,6 @@ export const planSource = {
   endedAt: '2026-10-12T09:41:00.000Z',
   areas: ['Orders', 'Catalog'],
   supportedClaims: 12,
+  endState: 'Completed',
   newest: true,
 };

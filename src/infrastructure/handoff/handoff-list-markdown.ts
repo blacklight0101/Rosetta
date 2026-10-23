@@ -238,6 +238,15 @@ function noStackLines(handoff: HandoffPackage): string[] {
       ];
 }
 
+// RF-604, P3-121: the first lines of the README when the source run stopped at a cap.
+function sourceStopLines(handoff: HandoffPackage): string[] {
+  if (handoff.sourceStop === undefined) return [];
+  return [
+    'The understand run this package was planned from stopped at a cap before it finished, so the package covers only the claims it had judged. checks.md says how many were left out.',
+    '',
+  ];
+}
+
 // RF-601, RF-603, RF-620
 export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const { repository, brief } = handoff;
@@ -250,6 +259,7 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     '# Modernisation hand-off package',
     '',
     ...noStackLines(handoff),
+    ...sourceStopLines(handoff),
     `Planned from the analysis of ${analysed} (understand run ${esc.inline(handoff.sourceRun)}), with the planning brief saved at ${esc.inline(brief.savedAt)}.`,
     '',
     'Only claims the verifier found supported by the code were used. Every requirement names its source cards, and every source card lists its citations into the legacy code. The files are plain Markdown (the API contract, when there is one, is YAML); the diagrams are Mermaid.',

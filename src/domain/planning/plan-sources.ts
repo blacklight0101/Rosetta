@@ -155,3 +155,21 @@ export function excludedClaims(cards: readonly SourceCard[]): ExcludedClaim[] {
     ),
   );
 }
+
+/** RF-604, P3-121: what a source run that stopped at a cap left unjudged, for the package to say. */
+export interface SourceStop {
+  /** The claims the verifier never judged (`Unverified` or `Proposed`); they are excluded. */
+  readonly unjudgedClaims: number;
+  readonly totalClaims: number;
+}
+
+/** RF-604, P3-121: the stop of a source run that ended `CapReached`; undefined for any other end. */
+export function sourceStopOf(
+  endState: string | null,
+  cards: readonly SourceCard[],
+): SourceStop | undefined {
+  if (endState !== 'CapReached') return undefined;
+  const claims = cards.flatMap((card) => card.claims);
+  const unjudged = claims.filter((c) => c.status === 'Unverified' || c.status === 'Proposed');
+  return { unjudgedClaims: unjudged.length, totalClaims: claims.length };
+}

@@ -281,17 +281,17 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     server: ServerCaps,
   ): readonly UsageCap[] {
     const { run } = request.settings.budget;
-    const { account } = request;
     const caps = capsFor(access.keySource, {
       run: { maxCostMicros: BigInt(run.maxCostMicros), maxTokens: BigInt(run.maxTokens) },
       // RF-423: a call held to the ceiling belongs to no run, so a role's run caps do not apply to it.
       ...(isCeilinged(request) ? {} : { role: roleBudgetOf(request.settings, role) }),
-      // RF-429: the readers stop at a share of the run caps, so the verifier has what is left.
+      // RF-429: readers and verifier stop at a share of the run caps; the summariser keeps the rest.
       reader: role === 'reader' && !isCeilinged(request),
+      verifier: role === 'verifier' && !isCeilinged(request),
       server,
       account: {
-        dailyCapMicros: account.dailyCapMicros,
-        ownDailyCapMicros: account.ownDailyCapMicros,
+        dailyCapMicros: request.account.dailyCapMicros,
+        ownDailyCapMicros: request.account.ownDailyCapMicros,
       },
     });
     if (!isCeilinged(request)) return caps;

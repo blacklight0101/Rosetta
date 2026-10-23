@@ -50,6 +50,8 @@ type PlanSources = ReadonlyMap<string, string | null>;
 const isUnderstand = (run: Run): boolean => run.stage === 'understand';
 const isCompleted = (run: Run): boolean => run.endState === 'Completed';
 const isJourneyRun = (run: Run): boolean => isUnderstand(run) || run.stage === 'plan';
+const claimsOf = (cards: readonly { readonly claims: readonly unknown[] }[]): number =>
+  cards.reduce((sum, card) => sum + card.claims.length, 0);
 const startOf = (run: Run): number => run.startedAt ?? run.queuedAt;
 
 /** The newest completed understand run of the project, else its newest understand run. */
@@ -153,9 +155,16 @@ export class GetJourney {
     };
   }
 
-  /** The run, and for a run that ended `Completed` its Supported claims and its open questions. */
+  /**
+   * The run, and for a run that ended `Completed` its Supported claims and its open questions; for a
+   * run that ended `CapReached` its Supported claims, which a plan can use (P3-121), and no question.
+   */
   private async sourceFacts(run: Run): Promise<JourneySource> {
     const facts = await this.runFacts(run);
+    if (run.endState === 'CapReached') {
+      const kept = supportedCards(await this.deps.cards.cardsOf(scopeOf(run)));
+      return { ...facts, supportedClaims: claimsOf(kept), openQuestions: 0 };
+    }
     if (!isCompleted(run)) return { ...facts, supportedClaims: 0, openQuestions: 0 };
     const project = { userId: run.userId, projectId: run.projectId };
     const cards = supportedCards(await this.deps.cards.cardsOf(scopeOf(run)));
@@ -163,7 +172,7 @@ export class GetJourney {
     const stated = await withStates(this.deps.priorCards, project, run.runKey, asked);
     return {
       ...facts,
-      supportedClaims: cards.reduce((sum, card) => sum + card.claims.length, 0),
+      supportedClaims: claimsOf(cards),
       openQuestions: stated.filter(waitsForAnswer).length,
     };
   }

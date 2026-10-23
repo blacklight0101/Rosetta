@@ -6,7 +6,7 @@ import type {
 
 // RF-615, RST-1802: what every step of the journey reads: the facts, the two runs and the page of
 // Plan setup, and the questions the facts answer (is a run working, did it complete, did it stop,
-// why can the plan not be taken).
+// why can the plan not be taken; a run that stopped at a cap with Supported claims can, P3-121).
 
 export type StepKey =
   'scan' | 'understand' | 'questions' | 'brief' | 'estimate' | 'plan' | 'package';
@@ -48,6 +48,15 @@ export function lockReason(source: JourneySourceFacts | null): string | undefine
   if (source === null) return 'Needs an understand run';
   const phase = phaseOf(source);
   if (phase === 'working') return 'Needs the finished run';
-  if (phase === 'stopped') return 'Needs a completed run: resume it first';
+  if (phase === 'stopped' && !plannableAtCap(source)) {
+    return 'Needs a completed run: resume it first';
+  }
   return source.supportedClaims === 0 ? 'Nothing to plan from (RST-1802)' : undefined;
+}
+
+/** P3-121: a run that stopped at a cap with Supported claims can be planned from (RF-604). */
+export function plannableAtCap(
+  run: Pick<JourneySourceFacts, 'endState' | 'supportedClaims'>,
+): boolean {
+  return run.endState === 'CapReached' && run.supportedClaims > 0;
 }

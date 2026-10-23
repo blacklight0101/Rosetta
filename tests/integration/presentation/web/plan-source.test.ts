@@ -97,15 +97,56 @@ describe('GET /api/projects/:id/plan-source', () => {
     expect(response.statusCode).toBe(404);
     expect(response.json()).toMatchObject({ code: ERROR_CODES.notFound });
   });
+});
 
-  it('RST-1802 a run that ended CapReached answers 409', async () => {
+describe('GET /api/projects/:id/plan-source: a run that stopped', () => {
+  it('RST-1802 a run that ended Failed or Interrupted answers 409', async () => {
     const { amy, project, seed } = await setup();
-    const stopped = runOf(await seed({ brief: false, run: { endState: 'CapReached' } }));
+    for (const endState of ['Failed', 'Interrupted'] as const) {
+      const runKey = `2026101${endState === 'Failed' ? '2' : '3'}-090000-understand`;
+      const stopped = runOf(await seed({ brief: false, run: { endState, runKey } }));
+
+      const response = await amy.request({ method: 'GET', url: sourceUrl(project.id, stopped.id) });
+
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toMatchObject({ code: ERROR_CODES.planSourceMissing });
+    }
+  });
+
+  it('RST-1802 a run that ended CapReached with no Supported claim answers 409', async () => {
+    const { amy, project, seed } = await setup();
+    const stopped = runOf(await seed({ brief: false, cards: [], run: { endState: 'CapReached' } }));
 
     const response = await amy.request({ method: 'GET', url: sourceUrl(project.id, stopped.id) });
 
     expect(response.statusCode).toBe(409);
     expect(response.json()).toMatchObject({ code: ERROR_CODES.planSourceMissing });
+  });
+
+  it('RF-614 P3-121 a run that ended CapReached with Supported claims is named with its end state', async () => {
+    const { amy, project, seed } = await setup();
+    const stopped = runOf(
+      await seed({
+        brief: false,
+        run: { endState: 'CapReached', runKey: '20261014-090000-understand' },
+      }),
+    );
+
+    const response = await amy.request({ method: 'GET', url: sourceUrl(project.id, stopped.id) });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      ...{ runId: stopped.id, endState: 'CapReached', newest: false },
+      supportedClaims: expect.any(Number) as number,
+    });
+  });
+
+  it('RF-614 a completed run is named with its end state', async () => {
+    const { amy, project, older } = await setup();
+
+    const response = await amy.request({ method: 'GET', url: sourceUrl(project.id, older.id) });
+
+    expect(response.json()).toMatchObject({ endState: 'Completed' });
   });
 });
 
