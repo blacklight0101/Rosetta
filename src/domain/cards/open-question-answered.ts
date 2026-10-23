@@ -49,14 +49,15 @@ function escaped(name: string): string {
 
 const edge = String.raw`[\p{L}\p{N}_]`;
 
+const literal = String.raw`(?:-?\d[\d.,_]*|"[^"]*"|'[^']*'|true|false|null|nothing|empty)`;
+
+/** Patterns that define the name on any line of a cited range. */
 function definitionPatterns(name: string): readonly RegExp[] {
   const n = `(?<!${edge})${escaped(name)}(?!${edge})`;
   const flags = 'iu';
   return [
-    // a header cell or label: the whole line, or one cell of a table or CSV row, or `D: Qty`
-    new RegExp(String.raw`^\s*(?:[A-Za-z]{1,3}\s*[:.)\-]\s*)?${n}\s*$`, flags),
-    new RegExp(String.raw`(?:^|[|\t,;])\s*${n}\s*(?:[|\t,;]|$)`, flags),
-    // `col: Qty` or `column D: Qty`
+    // `D: Qty`, `col D = Qty`: a label line
+    new RegExp(String.raw`^\s*[A-Za-z]{1,3}\s*[:.)\-]\s*${n}\s*$`, flags),
     new RegExp(
       String.raw`^\s*(?:col(?:umn)?\s*[A-Za-z0-9]{1,3}|[A-Za-z]{1,3})\s*[:=]\s*${n}\s*$`,
       flags,
@@ -66,20 +67,35 @@ function definitionPatterns(name: string): readonly RegExp[] {
       String.raw`^\s*(?:(?:public|private|friend|static|export|default|abstract|sealed|internal)\s+)*(?:sub|function|class|module|def|interface)\s+${n}`,
       flags,
     ),
+    // the name is the only target and the value is a literal, never a read of the name or a column
     new RegExp(
-      String.raw`^\s*(?:(?:const|dim|var|let|public|private|static|readonly)\s+)*(?:[\w.<>\[\]]+\s+)?${n}\s*(?::\s*[\w.<>\[\]]+\s*)?=\s*\S`,
+      String.raw`^\s*(?:(?:const|dim|var|let|public|private|static|readonly)\s+)*(?:[\w.<>\[\]]+\s+)?${n}\s*(?::\s*[\w.<>\[\]]+\s*)?=\s*${literal}\s*;?\s*(?:'.*|//.*)?$`,
       flags,
     ),
     new RegExp(String.raw`^\s*(?:'|//|#|--|/?\*)\s*${n}\s*[:=\-]\s*\S`, flags),
   ];
 }
 
+/** Patterns that define the name only on the first line of a cited range, the header row. */
+function headerPatterns(name: string): readonly RegExp[] {
+  const n = `(?<!${edge})${escaped(name)}(?!${edge})`;
+  return [
+    new RegExp(String.raw`^\s*${n}\s*$`, 'iu'),
+    new RegExp(String.raw`(?:^|[|\t,;])\s*${n}\s*(?:[|\t,;]|$)`, 'iu'),
+  ];
+}
+
+const dataCell = /(?:^|[|\t,;])\s*-?\d[\d.,]*\s*(?:[|\t,;]|$)/u;
+
 function defines(cited: string, name: string): boolean {
   const patterns = definitionPatterns(name);
-  return cited
-    .split(/\r?\n/u)
-    .filter((line) => !line.includes('?') && !/\b(?:TODO|FIXME)\b/iu.test(line))
-    .some((line) => patterns.some((pattern) => pattern.test(line)));
+  const header = headerPatterns(name);
+  return cited.split(/\r?\n/u).some((line, index) => {
+    if (line.includes('?') || /\b(?:TODO|FIXME)\b/iu.test(line)) return false;
+    if (patterns.some((pattern) => pattern.test(line))) return true;
+    // a header row has no number in it: `Laptop,Qty,5` is a data row
+    return index === 0 && !dataCell.test(line) && header.some((pattern) => pattern.test(line));
+  });
 }
 
 /** The name the cited lines define that the question asks about, or undefined when the question stands. */
