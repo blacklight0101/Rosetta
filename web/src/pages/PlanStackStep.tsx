@@ -42,7 +42,9 @@ function LayerRow({ layer, options, draft, change, problem }: LayerRowProps): JS
             name={`stack-${layer.id}`}
             checked={picked?.choice === option && !picked.custom}
             onChange={() => {
-              change(chooseLayer(draft, layer.id, option, false));
+              change(
+                chooseLayer(draft, layer.id, { choice: option, custom: false, offered: options }),
+              );
             }}
           />{' '}
           {option}
@@ -56,7 +58,7 @@ function LayerRow({ layer, options, draft, change, problem }: LayerRowProps): JS
         error={problem === undefined ? undefined : { message: problem }}
         placeholder={`Max ${String(MAX_CHOICE)} characters`}
         onInput={(text) => {
-          change(chooseLayer(draft, layer.id, text, true));
+          change(chooseLayer(draft, layer.id, { choice: text, custom: true, offered: options }));
         }}
       />
     </div>

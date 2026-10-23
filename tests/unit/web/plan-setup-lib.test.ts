@@ -29,13 +29,30 @@ describe('plan setup draft', () => {
   });
 
   it('RF-609 drops a layer whose technology was cleared', () => {
-    const picked = chooseLayer(draft, 'database', 'PostgreSQL', true);
-    const cleared = chooseLayer(picked, 'database', '  ', true);
+    const picked = chooseLayer(draft, 'database', { choice: 'PostgreSQL', custom: true });
+    const cleared = chooseLayer(picked, 'database', { choice: '  ', custom: true });
 
     expect(answersOf(picked).stack).toEqual([
       { layer: 'database', choice: 'PostgreSQL', custom: true },
     ]);
     expect(answersOf(cleared).stack).toBeUndefined();
+  });
+
+  it('RF-609 sends the options the page showed for the layer with the choice', () => {
+    const picked = chooseLayer(draft, 'database', {
+      choice: 'PostgreSQL 17',
+      custom: false,
+      offered: ['SQL Server 2022', 'PostgreSQL 17'],
+    });
+
+    expect(answersOf(picked).stack).toEqual([
+      {
+        layer: 'database',
+        choice: 'PostgreSQL 17',
+        custom: false,
+        offered: ['SQL Server 2022', 'PostgreSQL 17'],
+      },
+    ]);
   });
 
   it('RF-611 names the questions that are too long or not a number', () => {

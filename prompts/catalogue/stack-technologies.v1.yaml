@@ -1,0 +1,182 @@
+# Technologies the stack check and the stack records know, per layer.
+# RF-609, RNF-004: part of the versioned catalogue; its name carries the version and the catalogue SHA-256 covers it.
+technologies:
+  - layer: language-runtime
+    name: C# on .NET
+    aliases:
+      - c#
+      - .net
+      - dotnet
+    traits: []
+    description: A typed language and runtime with a large standard library; the usual target for ASP.NET Core.
+  - layer: language-runtime
+    name: Java
+    aliases:
+      - java
+      - jvm
+    traits: []
+    description: A typed language on the JVM with a mature ecosystem for long-lived services.
+  - layer: language-runtime
+    name: TypeScript on Node.js
+    aliases:
+      - typescript
+      - node.js
+      - node
+    traits: []
+    description: One typed language for server and browser code, run on Node.js.
+  - layer: language-runtime
+    name: Python
+    aliases:
+      - python
+    traits: []
+    description: A dynamic language with a wide library set, strong for data and scripting work.
+  - layer: backend-framework
+    name: ASP.NET Core Minimal APIs
+    aliases:
+      - minimal api
+      - minimal apis
+    traits:
+      - api-only
+    description: Small HTTP endpoints without controllers; serves data, not pages.
+  - layer: backend-framework
+    name: ASP.NET Core Web API
+    aliases:
+      - web api
+      - webapi
+    traits:
+      - api-only
+    description: Controller-based HTTP APIs with model binding and validation; serves data, not pages.
+  - layer: backend-framework
+    name: FastAPI
+    aliases:
+      - fastapi
+    traits:
+      - api-only
+    description: A Python framework for typed HTTP APIs with generated OpenAPI documents.
+  - layer: backend-framework
+    name: ASP.NET Core MVC
+    aliases:
+      - asp.net core mvc
+      - aspnet core mvc
+    traits: []
+    description: Controllers and views in one application; serves pages and, when needed, data.
+  - layer: front-end
+    name: Razor Pages
+    aliases:
+      - razor pages
+      - razor
+    traits:
+      - server-rendered
+    description: Page-based views rendered on the server; no separate API is needed.
+  - layer: front-end
+    name: Blazor Server
+    aliases:
+      - blazor server
+    traits:
+      - server-rendered
+    description: Components rendered on the server and updated over a live connection.
+  - layer: front-end
+    name: React
+    aliases:
+      - react
+    traits:
+      - single-page
+    description: A browser component library; the back end offers an API the pages call.
+  - layer: front-end
+    name: Angular
+    aliases:
+      - angular
+    traits:
+      - single-page
+    description: A browser application framework; the back end offers an API the pages call.
+  - layer: database
+    name: SQL Server
+    aliases:
+      - sql server
+      - mssql
+    traits: []
+    description: A relational database common in .NET estates; the closest match to a legacy SQL Server.
+  - layer: database
+    name: PostgreSQL
+    aliases:
+      - postgresql
+      - postgres
+    traits: []
+    description: An open-source relational database with strong standards support.
+  - layer: database
+    name: SQLite
+    aliases:
+      - sqlite
+    traits: []
+    description: A file-based relational database; fits a small single-node system.
+  - layer: data-access
+    name: Entity Framework Core
+    aliases:
+      - entity framework
+      - ef core
+      - efcore
+    traits: []
+    description: An object-relational mapper with migrations and change tracking.
+  - layer: data-access
+    name: Dapper
+    aliases:
+      - dapper
+    traits: []
+    description: A thin mapper over plain SQL; full control of each query.
+  - layer: data-access
+    name: ADO.NET
+    aliases:
+      - ado.net
+    traits: []
+    description: The low-level .NET database API; most code, no hidden behaviour.
+  - layer: testing
+    name: xUnit
+    aliases:
+      - xunit
+    traits: []
+    description: A .NET test framework with constructor-per-test isolation.
+  - layer: testing
+    name: Vitest
+    aliases:
+      - vitest
+    traits: []
+    description: A fast test runner for TypeScript projects.
+  - layer: testing
+    name: pytest
+    aliases:
+      - pytest
+    traits: []
+    description: A Python test runner with fixtures and plain assertions.
+  - layer: hosting
+    name: IIS
+    aliases:
+      - iis
+    traits: []
+    description: The Windows web server; keeps an existing Windows deployment as it is.
+  - layer: hosting
+    name: Docker containers
+    aliases:
+      - docker
+      - container
+      - containers
+    traits: []
+    description: One image that runs the same locally and on any container host.
+  - layer: hosting
+    name: Azure App Service
+    aliases:
+      - app service
+      - azure
+    traits: []
+    description: A managed web host that removes server upkeep.
+  - layer: backend-framework
+    name: Fastify
+    aliases:
+      - fastify
+    traits: []
+    description: A Node.js web framework for HTTP services; serves pages or an API.
+  - layer: backend-framework
+    name: ASP.NET Core Razor Pages
+    aliases:
+      - asp.net core razor pages
+    traits: []
+    description: Page-based ASP.NET Core application; serves pages and, when needed, data.

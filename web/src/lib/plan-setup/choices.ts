@@ -32,13 +32,20 @@ export function chooseStyle(draft: Draft, options: PlanOptions | undefined, styl
   ]);
 }
 
-/** RF-609: the draft with a technology chosen for a layer; an empty choice takes the layer back. */
-export function chooseLayer(draft: Draft, layer: string, choice: string, custom: boolean): Draft {
+/**
+ * RF-609: the draft with a technology chosen for a layer; an empty choice takes the layer back.
+ * `offered` is what the page showed for the layer, kept so the stack record can list it.
+ */
+export function chooseLayer(
+  draft: Draft,
+  layer: string,
+  pick: { readonly choice: string; readonly custom: boolean; readonly offered?: readonly string[] },
+): Draft {
+  const { choice, custom, offered = [] } = pick;
   const others = Object.fromEntries(Object.entries(draft.stack).filter(([key]) => key !== layer));
   if (choice.trim() === '') return { ...draft, stack: others };
-  return withAnswered({ ...draft, stack: { ...others, [layer]: { layer, choice, custom } } }, [
-    `stack.${layer}`,
-  ]);
+  const entry = { layer, choice, custom, ...(offered.length === 0 ? {} : { offered }) };
+  return withAnswered({ ...draft, stack: { ...others, [layer]: entry } }, [`stack.${layer}`]);
 }
 
 /** The principles kept, in catalogue order. */

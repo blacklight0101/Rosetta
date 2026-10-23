@@ -25,7 +25,11 @@ export const catalogueSchema = z.object({
 export type Catalogue = z.output<typeof catalogueSchema>;
 export type CatalogueEntry = Catalogue['entries'][number];
 
-const stackChoice = z.object({ layer: z.string(), choice: z.string(), custom: z.boolean() });
+const stackChoice = z.object({
+  ...{ layer: z.string(), choice: z.string(), custom: z.boolean() },
+  /** The options Plan setup showed for the layer when the choice was made (RF-609). */
+  offered: z.array(z.string()).readonly().optional(),
+});
 
 /** The brief as the server keeps it, or its defaults while none is saved (`savedAt` null). */
 const briefSchema = z.object({

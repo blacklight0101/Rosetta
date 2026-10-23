@@ -928,11 +928,11 @@ nothing is sent without `--yes` (RF-143). The tests drive the same code with the
 
 The answers saved by Plan setup (RF-605, ADR-018): `{ schemaVersion, savedAt, catalogueVersion,
 principles: [entryId], architecture: { style, recommended: [style], evidence: [cardId] },
-migration: "strangler-fig" | "parallel-change" | "rewrite", stack: [{ layer, choice, custom }],
+migration: "strangler-fig" | "parallel-change" | "rewrite", stack: [{ layer, choice, custom, offered? }],
 context: { teamSize, experience, deadline, keepIntegrations: [text], dataMigration }, buildMethod: { aiAssisted },
 defaulted: [questionId] }`. `defaulted` lists the questions that took their default, so the package can list them
 as open questions (RF-604). Free-text answers are untrusted input: they reach the planner only inside labelled data
-blocks (ADR-013). `plan` copies the brief and the catalogue version into the run manifest (RNF-004).
+blocks (ADR-013). `offered` (P5-25, optional, at most five texts) holds the options Plan setup showed for the layer when the choice was made; the stack decision record lists them. `plan` copies the brief and the catalogue version into the run manifest (RNF-004).
 
 Rules (P3-06): a question the user did not answer takes its default and is named in `defaulted`, as `principles`,
 `architecture`, `migration`, `stack.<layer>` (one per layer of RF-609: `language-runtime`, `backend-framework`,
