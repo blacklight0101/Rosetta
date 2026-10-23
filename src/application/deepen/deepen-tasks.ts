@@ -116,13 +116,18 @@ function gapTasks(
   gaps: readonly GapFile[],
   codeMap: TaskMap,
 ): readonly Omit<ReaderTask, 'agentTaskId'>[] {
-  return [...byArea(gaps)].map(([name, files]) => ({
-    area: areaOf(
+  return [...byArea(gaps)].map(([name, files]) => {
+    const area = areaOf(
       name,
       files.map((file) => file.path),
       codeMap,
-    ),
-  }));
+    );
+    // EV-04: the lines of a partly read file that no task read, so the reader goes to them.
+    const partly = files.flatMap(({ path, unreadRanges }) =>
+      unreadRanges === undefined ? [] : [{ path, ranges: unreadRanges }],
+    );
+    return partly.length === 0 ? { area } : { area, unreadRanges: partly };
+  });
 }
 
 /**

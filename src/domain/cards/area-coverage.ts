@@ -84,7 +84,19 @@ export function mergedRanges(ranges: readonly LineRange[], lines: number): LineR
   return merged;
 }
 
-function linesIn(ranges: readonly LineRange[]): number {
+/** RF-230, RF-209: the lines of a file of `lines` lines that none of the ranges read, merged, in order. */
+export function unreadRanges(read: readonly LineRange[], lines: number): LineRange[] {
+  const gaps: LineRange[] = [];
+  let next = 1;
+  for (const range of mergedRanges(read, lines)) {
+    if (range.startLine > next) gaps.push({ startLine: next, endLine: range.startLine - 1 });
+    next = range.endLine + 1;
+  }
+  if (next <= lines) gaps.push({ startLine: next, endLine: lines });
+  return gaps;
+}
+
+export function linesIn(ranges: readonly LineRange[]): number {
   return ranges.reduce((sum, range) => sum + range.endLine - range.startLine + 1, 0);
 }
 

@@ -34,6 +34,22 @@ describe('RF-231 the view of the measures of a run', () => {
     expect(view.measures?.filesNotReadCount).toBe(14);
   });
 
+  it('RF-231 keeps the unread share of a partly read file and leaves its line ranges out', () => {
+    const base = measures(1);
+    const partly = {
+      path: 'src/big.cs',
+      tokens: 933,
+      unreadShare: 0.933,
+      unreadRanges: [{ startLine: 68, endLine: 1000 }],
+    };
+
+    const view = understandingView({ measures: { ...base, filesNotRead: [partly] }, deepen: null });
+
+    expect(view.measures?.filesNotRead).toEqual([
+      { path: 'src/big.cs', tokens: 933, unreadShare: 0.933 },
+    ]);
+  });
+
   it('RF-231 keeps every other measure as it is', () => {
     const view = understandingView({ measures: measures(2), deepen: null });
 

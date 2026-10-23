@@ -7,9 +7,22 @@ import type { Understanding } from '../../application/use-cases/read-understandi
 
 const LISTED = 10;
 
+/** The page shows a file not read with its tokens and unread share; the line ranges stay out of the answer. */
+type ListedFile = Omit<UnderstandingMeasures['filesNotRead'][number], 'unreadRanges'>;
+
 export interface UnderstandingView {
-  readonly measures: (UnderstandingMeasures & { readonly filesNotReadCount: number }) | null;
+  readonly measures:
+    | (Omit<UnderstandingMeasures, 'filesNotRead'> & {
+        readonly filesNotRead: readonly ListedFile[];
+        readonly filesNotReadCount: number;
+      })
+    | null;
   readonly deepen: Understanding['deepen'];
+}
+
+function listed(file: UnderstandingMeasures['filesNotRead'][number]): ListedFile {
+  const { path, tokens, unreadShare } = file;
+  return unreadShare === undefined ? { path, tokens } : { path, tokens, unreadShare };
 }
 
 // RF-231
@@ -19,7 +32,7 @@ export function understandingView(understanding: Understanding): UnderstandingVi
   return {
     measures: {
       ...measures,
-      filesNotRead: measures.filesNotRead.slice(0, LISTED),
+      filesNotRead: measures.filesNotRead.slice(0, LISTED).map(listed),
       filesNotReadCount: measures.filesNotRead.length,
     },
     deepen,

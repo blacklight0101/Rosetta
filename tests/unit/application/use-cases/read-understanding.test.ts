@@ -109,7 +109,11 @@ describe('RF-231 reading the understanding of an ended run', () => {
       wellCovered: false,
       thirdParty: { claims: 1 },
     });
-    expect(outcome.value.measures?.filesNotRead.map((file) => file.path)).toEqual(['src/b.cs']);
+    expect(outcome.value.measures?.filesNotRead.map((file) => file.path)).toEqual([
+      'src/b.cs',
+      'src/a.cs',
+      'src/c.cs',
+    ]);
     expect(outcome.value.deepen).toBeNull();
   });
 

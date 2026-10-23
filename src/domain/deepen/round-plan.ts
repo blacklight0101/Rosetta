@@ -1,4 +1,10 @@
-import { mergedRanges, type AreaCoverage } from '../cards/area-coverage.js';
+import {
+  mergedRanges,
+  tokensRead,
+  unreadRanges,
+  type AreaCoverage,
+  type LineRange,
+} from '../cards/area-coverage.js';
 import type { Card, Claim } from '../cards/card.js';
 import type { Citation } from '../cards/citation.js';
 import { readsByPath } from '../cards/coverage-union.js';
@@ -34,11 +40,15 @@ export interface OutOfScopeClaim {
   readonly reason: string;
 }
 
-/** A first-party file of the run's areas that no task read. */
+/**
+ * A first-party file of the run's areas that no task read, or that tasks read only in part (EV-04):
+ * then `unreadRanges` are the lines no task read and `tokens` those lines' share of the file.
+ */
 export interface GapFile {
   readonly path: string;
   readonly area: string;
   readonly tokens: number;
+  readonly unreadRanges?: readonly LineRange[];
 }
 
 /** An area whose every task ended without a usable card, to be read again. */
@@ -100,7 +110,27 @@ function rereadOf({ card, claim }: Placed): RereadClaim {
   return { claimId, area: card.area, text, citations, reason: claim.verdict?.reason ?? '' };
 }
 
-/** RF-209, Q-J: the first-party files no entry read lines of, largest first, then by path. */
+/**
+ * EV-04: a tail of a partly read file is offered to the coverage pass only if it is worth a task:
+ * at least this many tokens or this share of the file. A smaller tail is still listed as not read.
+ */
+const MIN_TAIL_TOKENS = 500;
+const MIN_TAIL_SHARE = 0.1;
+
+/** EV-04: what is left to read of a file, whole when no line was read; undefined when nothing is. */
+function gapOf(file: FileEntry, area: string, reads: readonly LineRange[]): GapFile | undefined {
+  const read = mergedRanges(reads, file.lines);
+  const unread = unreadRanges(read, file.lines);
+  if (unread.length === 0 || file.estimatedTokens <= 0) return undefined;
+  const { path } = file;
+  if (read.length === 0) return { path, area, tokens: file.estimatedTokens };
+  const tokens = file.estimatedTokens - tokensRead(file, read);
+  const share = tokens / file.estimatedTokens;
+  if (tokens <= 0 || (tokens < MIN_TAIL_TOKENS && share < MIN_TAIL_SHARE)) return undefined;
+  return { path, area, tokens, unreadRanges: unread };
+}
+
+/** RF-209, Q-J, EV-04: the first-party files, or parts of them, no entry read, largest first, then by path. */
 function gapsOf(input: RoundInput): readonly GapFile[] {
   if (!input.coveragePass) return [];
   const files = new Map(input.files.map((file) => [file.path, file]));
@@ -110,10 +140,8 @@ function gapsOf(input: RoundInput): readonly GapFile[] {
     for (const { path } of entry.files) {
       const file = files.get(path);
       if (file === undefined || gaps.has(path) || isThirdPartyFile(file)) continue;
-      const read = mergedRanges(reads.get(path) ?? [], file.lines).length > 0;
-      if (!read && file.estimatedTokens > 0) {
-        gaps.set(path, { path, area: entry.area, tokens: file.estimatedTokens });
-      }
+      const gap = gapOf(file, entry.area, reads.get(path) ?? []);
+      if (gap !== undefined) gaps.set(path, gap);
     }
   }
   return [...gaps.values()].sort(

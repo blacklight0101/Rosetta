@@ -137,7 +137,7 @@ describe('planRound coverage pass', () => {
   });
 
   it('RF-209 counts a file read by any task of the run as read', () => {
-    const later = coverageOf('src', [{ path: 'src/b.cs', read: 3 }]);
+    const later = coverageOf('src', [{ path: 'src/b.cs', read: 300 }]);
 
     const plan = planRound(input({ coverage: [partly, later] }));
 

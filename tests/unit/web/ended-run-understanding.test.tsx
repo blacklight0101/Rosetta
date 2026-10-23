@@ -197,3 +197,21 @@ describe('RF-231 the summary of a run that did not complete', () => {
     expect(screen.queryByRole('tab', { name: /^Overview/u })).toBeNull();
   });
 });
+
+describe('RF-231 files read in part', () => {
+  it('RF-231 shows a partly read file with its unread tokens and share, not as an unread file', async () => {
+    const partly = {
+      ...measures(),
+      filesNotRead: [
+        { path: 'Orders/Big.cs', tokens: 146_000, unreadShare: 0.933 },
+        { path: 'Catalog/Search.cs', tokens: 900 },
+      ],
+    };
+    await openEnded({ extra: { [understandingPath]: understanding(partly) } });
+
+    const list = within(await summary()).getByRole('list', { name: 'Largest files not read' });
+
+    expect(list.textContent).toContain('Orders/Big.cs (146,000 tokens unread, 93.3% of the file)');
+    expect(list.textContent).toContain('Catalog/Search.cs (900 tokens)');
+  });
+});
