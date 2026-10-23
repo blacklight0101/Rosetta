@@ -159,3 +159,5 @@ am and what to do next.
 | Q-D | Should Plan setup still be reachable from the project page without a run?          | Yes, and it picks the newest completed run, named on the page so the choice is visible.                   |
 | Q-E | Should the start page show an indicative plan cost before the brief exists?        | No: it states that the plan is estimated and confirmed later; an early figure would be a guess (RNF-012). |
 | Q-F | Should a failed plan run be resumable like RF-006?                                 | No in R1: "Try the plan again" starts a new plan run after a new estimate.                                |
+
+Note 2026-10-23: the owner answered Q-61 (DEC-166) and amended Q-B: `plan` may run on a `CapReached` understand run with at least one `Supported` claim; Resume is still offered.

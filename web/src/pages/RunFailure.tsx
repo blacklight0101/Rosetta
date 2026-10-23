@@ -3,7 +3,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { getErrorDescription, type ErrorDescription } from '../api/error-catalogue.js';
 import { useApp } from '../app/app-context.js';
 import { Link } from '../components/Link.js';
-import { fixFor, GENERIC_FAILURE } from '../lib/live-run/run-failures.js';
+import { fixFor, GENERIC_FAILURE, nextStepFor } from '../lib/live-run/run-failures.js';
 
 // RF-1108, RNF-008: a run that ended with an error shows the code, what it means and what to do, as
 // every error of the application does: the words are the server's catalogue for any code (read from
@@ -26,7 +26,14 @@ function useDescription(code: string): ErrorDescription {
 }
 
 // RF-1108
-export function RunFailure({ code }: { readonly code: string }): JSX.Element {
+export function RunFailure({
+  code,
+  stage = 'understand',
+}: {
+  readonly code: string;
+  /** EV-13: the stage of the run; a plan run never points to Resume. */
+  readonly stage?: string;
+}): JSX.Element {
   const text = useDescription(code);
   const fix = fixFor(code);
   return (
@@ -35,7 +42,7 @@ export function RunFailure({ code }: { readonly code: string }): JSX.Element {
         <span class="rst-mono rst-callout__code">{code}</span> {text.message}
       </p>
       <p class="rst-callout__next-step">
-        {text.nextStep}
+        {nextStepFor(stage, text.nextStep)}
         {fix === undefined ? null : (
           <>
             {' '}
