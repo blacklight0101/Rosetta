@@ -33,6 +33,8 @@ export interface PlanPromptSources {
   readonly gapPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the one repair attempt of the gap call (Q-54). */
   readonly gapRepairPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the one repair attempt of the plan answer (P3-126). */
+  readonly planRepairPrompt: () => Promise<PromptFile>;
   /**
    * P3-117: the text of every planner prompt file of every version, for the check of copied
    * examples; the prompts of the run alone when absent.
@@ -43,7 +45,10 @@ export interface PlanPromptSources {
 }
 
 type PlanPrompts = Readonly<
-  Record<keyof DocumentPrompts | 'plan' | 'coverage' | 'gap' | 'gapRepair' | 'continue', PromptFile>
+  Record<
+    keyof DocumentPrompts | 'plan' | 'coverage' | 'gap' | 'gapRepair' | 'planRepair' | 'continue',
+    PromptFile
+  >
 >;
 
 export interface PlanFiles {
@@ -61,25 +66,38 @@ export async function loadPlanFiles(
   sources: PlanPromptSources & PlanShapeDependencies,
   inputs: PlanInputs,
 ): Promise<PlanFiles> {
-  const [catalogue, plan, prd, dataModel, flows, apiContract, ux, coverage, gap, gapRepair, cont] =
-    await Promise.all([
-      sources.catalogue(),
-      sources.prompt(),
-      sources.prdPrompt(),
-      sources.dataModelPrompt(),
-      sources.flowsPrompt(),
-      sources.apiContractPrompt(),
-      sources.uxPrompt(),
-      sources.coveragePrompt(),
-      sources.gapPrompt(),
-      sources.gapRepairPrompt(),
-      sources.continuePrompt(),
-    ]);
+  const [
+    catalogue,
+    plan,
+    prd,
+    dataModel,
+    flows,
+    apiContract,
+    ux,
+    coverage,
+    gap,
+    gapRepair,
+    cont,
+    planRepair,
+  ] = await Promise.all([
+    sources.catalogue(),
+    sources.prompt(),
+    sources.prdPrompt(),
+    sources.dataModelPrompt(),
+    sources.flowsPrompt(),
+    sources.apiContractPrompt(),
+    sources.uxPrompt(),
+    sources.coveragePrompt(),
+    sources.gapPrompt(),
+    sources.gapRepairPrompt(),
+    sources.continuePrompt(),
+    sources.planRepairPrompt(),
+  ]);
   const guidance = await workbookGuidanceFor(sources, inputs);
   const older = (await sources.promptTexts?.()) ?? [];
   const prompts = {
     ...{ plan: withWorkbookGuidance(plan, guidance), prd, dataModel, flows },
-    ...{ apiContract, ux, coverage, gap, gapRepair, continue: cont },
+    ...{ apiContract, ux, coverage, gap, gapRepair, planRepair, continue: cont },
   };
   const examples = [...Object.values(prompts).map((file) => file.text), ...older];
   return { catalogue, prompts, examples, ...(guidance === undefined ? {} : { guidance }) };
