@@ -22,14 +22,18 @@ describe('the versions of the Deepen prompts', () => {
     const parentCards = await loadParentCardsPrompt('prompts');
 
     expect(reread).toMatchObject({ name: 'reader/reread.v3.md', version: 'v3' });
-    expect(parentCards).toMatchObject({ name: 'reader/parent-cards.v1.md', version: 'v1' });
+    expect(parentCards).toMatchObject({ name: 'reader/parent-cards.v2.md', version: 'v2' });
     expect(reread.sha256).toBe(await sha256Of('prompts/reader/reread.v3.md'));
-    expect(parentCards.sha256).toBe(await sha256Of('prompts/reader/parent-cards.v1.md'));
+    expect(parentCards.sha256).toBe(await sha256Of('prompts/reader/parent-cards.v2.md'));
   });
 
   it.each([
     ['reader/reread.v1.md', 'b96cbcfa68bbe85518f366dbc785510096d4a33a799a705b25f08c484ac6a273'],
     ['reader/reread.v2.md', '4b80e381faf03db1ba1e4af009929c582810913a9728e4e1c545e8b9065fff0f'],
+    [
+      'reader/parent-cards.v1.md',
+      '85e2462f381e5339fbd2735a7953d7693f4fa0c6b25a2455c70a7c2c983ad832',
+    ],
   ])('RNF-004 the old version %s stays unchanged', async (name, sha256) => {
     expect((await loadPromptFile('prompts', name)).sha256).toBe(sha256);
   });
@@ -67,6 +71,14 @@ describe('the words of the Deepen prompts', () => {
     expect(text).toMatch(/id, type and title/iu);
     expect(text).toContain('{{parentCards}}');
     expect(text.match(/\{\{parentCards\}\}/gu)).toHaveLength(1);
+  });
+
+  it('EV-26 the card list prompt: the list is data to compare with, never restated, never cited', async () => {
+    const { text } = await loadParentCardsPrompt('prompts');
+
+    expect(text).toMatch(/never write a card id/iu);
+    expect(text).toMatch(/never cite the block/iu);
+    expect(text).toMatch(/not a file/iu);
   });
 
   it('DEC-158 the card list prompt asks for the same type and a cited claim, and refuses an invented id', async () => {
