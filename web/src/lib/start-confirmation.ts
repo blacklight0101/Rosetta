@@ -18,3 +18,16 @@ export function needsConfirmation(input: ConfirmationInput): boolean {
   if (likelyMicros === undefined) return false;
   return likelyMicros > thresholdMicros && likelyMicros > confirmedMicros;
 }
+
+export interface CapConfirmationInput {
+  /** The likely tokens of the whole estimate; undefined while there is no estimate or it is priced. */
+  readonly likelyTokens: number | undefined;
+  readonly capTokens: number;
+  /** The highest likely token count the user already confirmed, 0 if none. */
+  readonly confirmedTokens: number;
+}
+
+// RF-429
+export function needsCapConfirmation(input: CapConfirmationInput): boolean {
+  return input.capTokens < 0;
+}
