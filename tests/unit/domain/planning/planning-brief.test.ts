@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { noStackData } from '../../../../src/domain/planning/stack-data.js';
 import type { Catalogue } from '../../../../src/domain/planning/catalogue.js';
 import {
   briefProblems,
@@ -20,7 +21,13 @@ const entries = [
   sampleEntry('solid', 'design-principles', true),
   sampleEntry('mikado', 'modernisation'),
 ];
-const catalogue: Catalogue = { version: 3, sha256: 'a'.repeat(64), entries, styles: [] };
+const catalogue: Catalogue = {
+  version: 3,
+  sha256: 'a'.repeat(64),
+  entries,
+  styles: [],
+  stack: noStackData,
+};
 
 describe('buildBrief: no answers', () => {
   it('RF-605 a brief with no answers takes the default of every question and lists them all', () => {

@@ -43,8 +43,18 @@ function recordsFor(answers: BriefAnswers, withCards = cards) {
 
 const stack: BriefAnswers = {
   stack: [
-    { layer: 'front-end', choice: 'Razor Pages', custom: false },
-    { layer: 'database', choice: 'PostgreSQL 17', custom: true },
+    {
+      layer: 'front-end',
+      choice: 'Razor views with htmx',
+      custom: false,
+      offered: ['Razor views with htmx', 'React with Vite'],
+    },
+    {
+      layer: 'database',
+      choice: 'Postgres 17 on our servers',
+      custom: true,
+      offered: ['SQL Server 2022', 'PostgreSQL 17'],
+    },
   ],
 };
 
@@ -67,18 +77,34 @@ describe('briefDecisions: the stack record (RF-609)', () => {
     expect(hosting?.sources).toEqual([]);
   });
 
-  it('RF-609 lists the catalogue options for the layer with one line each and marks the choice', () => {
+  it('RF-609 lists the options the owner was offered with one line each and marks the choice', () => {
     const [frontEnd, database] = recordsFor(stack);
 
-    expect(frontEnd?.options.length).toBeGreaterThanOrEqual(3);
-    const chosen = frontEnd?.options.filter((each) => each.includes('(chosen)')) ?? [];
-    expect(chosen).toHaveLength(1);
-    expect(chosen[0]).toMatch(/^Razor Pages \(chosen\): .+/u);
-    expect(frontEnd?.options.some((each) => each.startsWith('React:'))).toBe(true);
-    expect(database?.options.filter((each) => each.includes('(chosen)'))).toHaveLength(1);
-    expect(database?.options.some((each) => each.startsWith('PostgreSQL (chosen)'))).toBe(true);
+    expect(frontEnd?.options).toHaveLength(2);
+    expect(frontEnd?.options[0]).toMatch(/^Razor views with htmx \(chosen\): .+/u);
+    expect(frontEnd?.options[1]).toMatch(/^React with Vite: .+/u);
+    // a typed choice is added next to the options that were offered, not instead of them
+    expect(database?.options).toHaveLength(3);
+    expect(database?.options[0]).toMatch(
+      /^Postgres 17 on our servers \(chosen\): typed by the owner/u,
+    );
+    expect(database?.options.slice(1).some((each) => each.startsWith('SQL Server 2022:'))).toBe(
+      true,
+    );
   });
 
+  it('RF-609 lists no fixed table when the brief recorded no offer', () => {
+    const [hosting] = recordsFor({
+      stack: [{ layer: 'hosting', choice: 'IIS', custom: false }],
+    });
+
+    expect(hosting?.options).toEqual([
+      'IIS (chosen): the options Rosetta offered were not recorded for this brief.',
+    ]);
+  });
+});
+
+describe('briefDecisions: the task cards of the stack record (RF-609)', () => {
   it('RF-609 names the task cards that touch the layer', () => {
     const [frontEnd, database] = recordsFor(stack);
 

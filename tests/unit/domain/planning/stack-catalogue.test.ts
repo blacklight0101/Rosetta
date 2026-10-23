@@ -1,18 +1,20 @@
 import { describe, expect, it } from 'vitest';
+import { stackLayers } from '../../../../src/domain/planning/planning-brief.js';
 import {
   mentions,
-  stackTechnologies,
   technologiesNamed,
   traitsOf,
 } from '../../../../src/domain/planning/stack-catalogue.js';
-import { stackLayers } from '../../../../src/domain/planning/planning-brief.js';
+import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 
-// RF-609: the technology table behind the stack check and the options of the stack records.
+// RF-609: the technology table of the shipped catalogue behind the stack check.
+
+const technologies = shippedCatalogue.stack.technologies;
 
 describe('stack catalogue', () => {
   it('RF-609 offers at least two technologies with a one-line description for every layer', () => {
     for (const layer of stackLayers) {
-      const own = stackTechnologies.filter((tech) => tech.layer === layer);
+      const own = technologies.filter((tech) => tech.layer === layer);
       expect(own.length).toBeGreaterThanOrEqual(2);
       for (const tech of own) expect(tech.description).not.toContain('\n');
     }
@@ -25,8 +27,9 @@ describe('stack catalogue', () => {
   });
 
   it('RF-609 reads the traits of a free-text choice and nothing from an unknown one', () => {
-    expect(traitsOf('front-end', 'Razor Pages').has('server-rendered')).toBe(true);
-    expect(traitsOf('backend-framework', 'ASP.NET Core Minimal APIs').has('api-only')).toBe(true);
-    expect(technologiesNamed('front-end', 'Our own toolkit')).toEqual([]);
+    expect(traitsOf(technologies, 'front-end', 'Razor Pages').has('server-rendered')).toBe(true);
+    const minimal = traitsOf(technologies, 'backend-framework', 'ASP.NET Core Minimal APIs');
+    expect(minimal.has('api-only')).toBe(true);
+    expect(technologiesNamed(technologies, 'front-end', 'Our own toolkit')).toEqual([]);
   });
 });

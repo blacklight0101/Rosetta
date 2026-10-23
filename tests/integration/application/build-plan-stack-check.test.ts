@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { shippedCatalogue } from '../../support/planning-brief-harness.js';
 import { plain, seededApiPlan, withApiAnswer } from '../../support/api-plan-harness.js';
 
 // RF-609, RF-624: the stack consistency check in a written package. The owner's choice is
@@ -29,7 +30,12 @@ const eShop = {
   migration: 'strangler-fig',
   stack: [
     { layer: 'backend-framework', choice: 'ASP.NET Core Minimal APIs', custom: false },
-    { layer: 'front-end', choice: 'Razor Pages', custom: false },
+    {
+      layer: 'front-end',
+      choice: 'Razor Pages',
+      custom: false,
+      offered: ['Razor Pages', 'React'],
+    },
   ],
 } as const;
 
@@ -94,8 +100,21 @@ describe('BuildPlan: the stack check, no clash and the ADRs (RF-609)', () => {
       .find((text) => text.includes('Technology for the front end layer'));
     expect(adr).toBeDefined();
     expect(adr).toContain('## Options considered');
-    expect(adr).toContain('React:');
-    expect(adr).toContain('Razor Pages (chosen):');
+    expect(adr).toContain('React: ');
+    expect(adr).toContain('Razor Pages (chosen): ');
+    expect(adr).not.toContain('Blazor Server');
     expect(adr).not.toContain('The package names a technology only where');
+  });
+});
+
+describe('BuildPlan: the manifest and the stack files (RF-609, RNF-004)', () => {
+  it('RF-609 RNF-004 the manifest records the SHA-256 of a catalogue that holds the stack files', async () => {
+    const h = await seededApiPlan(dataDir, { brief: eShop });
+
+    const manifest = await h.manifestOf(await h.plan());
+
+    const { version, sha256 } = shippedCatalogue;
+    expect(manifest.catalogue).toEqual({ version, sha256 });
+    expect(shippedCatalogue.stack.rulesVersion).toBe(1);
   });
 });

@@ -8,6 +8,7 @@ import {
   stackOptions,
   touchingTasks,
 } from './stack-adr.js';
+import type { StackTechnology } from './stack-data.js';
 import type { SourceCard } from './plan-sources.js';
 import { planId, type PlanDecision } from './plan-content.js';
 import { migrationStrategies, type PlanningBrief, type StackLayer } from './planning-brief.js';
@@ -120,12 +121,13 @@ function stackDecision(
   entry: PlanningBrief['stack'][number],
   id: string,
   evidence: BriefEvidence,
+  technologies: readonly StackTechnology[],
 ): PlanDecision {
   const name = layerName(entry.layer);
   const origin = entry.custom
     ? 'The owner typed this choice.'
     : 'The owner picked it from the options Rosetta offered.';
-  const touching = touchingTasks(evidence.tasks, entry.layer, entry.choice);
+  const touching = touchingTasks(evidence.tasks, technologies, entry);
   return {
     id,
     title: `Technology for the ${name} layer: ${entry.choice}`,
@@ -133,7 +135,7 @@ function stackDecision(
     context: stackContext(name, entry.layer, evidence.cards),
     decision: `Use ${entry.choice} for the ${name} layer. ${origin}`,
     consequences: stackConsequences(name, entry.choice, touching),
-    options: stackOptions(entry.layer, entry.choice, entry.custom),
+    options: stackOptions(technologies, entry),
     sources: describingCards(evidence.cards, entry.layer).map((card) => card.id),
   };
 }
@@ -149,7 +151,9 @@ export function briefDecisions(
   let next = after;
   const nextId = (): string => planId('ADR', ++next);
   const style = styleDecision(brief, catalogue, evidence.supported, nextId());
-  const layers = brief.stack.map((entry) => stackDecision(entry, nextId(), evidence));
+  const layers = brief.stack.map((entry) =>
+    stackDecision(entry, nextId(), evidence, catalogue.stack.technologies),
+  );
   const migration = migrationDecision(brief, nextId());
   return {
     decisions: [...(style === undefined ? [] : [style]), ...layers, migration],

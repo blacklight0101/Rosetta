@@ -3,6 +3,7 @@ import type { CopiedExample } from '../../domain/planning/copied-example.js';
 import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
 import type { RestatedDecision } from '../../domain/planning/brief-restated.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
+import type { StackClash } from '../../domain/planning/stack-rules.js';
 import type { StyleCheck } from '../../domain/planning/style-rules.js';
 import type { TargetDataModel } from '../../domain/planning/data-model.js';
 import type { TargetFlows } from '../../domain/planning/target-flows.js';
@@ -79,6 +80,8 @@ export interface HandoffPackage {
   readonly restated: readonly RestatedDecision[];
   /** RF-608: the components that break the rule of the chosen style, and those with no role of it. */
   readonly styleCheck: StyleCheck;
+  /** RF-609: the clashes the stack check found in the brief's stack and the API contract decision. */
+  readonly stackClashes?: readonly StackClash[] | undefined;
   /** The target tables, with the legacy source of each column and the dropped legacy fields (RF-623). */
   readonly dataModel: TargetDataModel;
   /** The main journeys mapped to target components, and those out of scope (RF-625). */

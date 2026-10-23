@@ -33,6 +33,11 @@ interface StackChoice {
   readonly choice: string;
   /** True when the user typed their own instead of picking a pre-filled option. */
   readonly custom: boolean;
+  /**
+   * The options Plan setup showed for the layer when the choice was made (RF-609); the stack record
+   * lists them. Absent in a brief saved before they were recorded.
+   */
+  readonly offered?: readonly string[] | undefined;
 }
 
 interface ProjectContext {

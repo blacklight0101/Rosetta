@@ -10,6 +10,7 @@ import {
   type Catalogue,
   type CatalogueEntry,
 } from '../../domain/planning/catalogue.js';
+import { noStackData } from '../../domain/planning/stack-data.js';
 import { parseCatalogueEntry, parseCatalogueReadme } from './catalogue-entry-file.js';
 
 // RF-606, DEC-84, RNF-004: the catalogue folder `prompts/catalogue/`. Every file is named
@@ -81,5 +82,6 @@ export async function loadCatalogue(promptsFolder: string): Promise<Catalogue> {
     sha256: sha256Of(files),
     entries: sorted,
     styles: sorted.filter(isArchitectureStyle),
+    stack: noStackData,
   };
 }

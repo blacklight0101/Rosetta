@@ -1,5 +1,5 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
-import { stackClashes } from '../../domain/planning/stack-rules.js';
+import type { StackClash } from '../../domain/planning/stack-rules.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { handoffFiles } from './handoff-links.js';
 
@@ -7,8 +7,8 @@ import { handoffFiles } from './handoff-links.js';
 // ids, the question and the default are Rosetta's words; the clash text holds the owner's choices,
 // which are free text, so it goes through the escaper.
 
-function clashesOf(handoff: HandoffPackage): ReturnType<typeof stackClashes> {
-  return stackClashes(handoff.brief, handoff.apiContract);
+function clashesOf(handoff: HandoffPackage): readonly StackClash[] {
+  return handoff.stackClashes ?? [];
 }
 
 /** The checks.md section: each clash, with the rule that found it and the question that answers it. */

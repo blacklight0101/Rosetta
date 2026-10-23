@@ -1,7 +1,8 @@
 import { byCodeUnit } from '../code-map/code-unit-order.js';
 import type { SourceCard } from './plan-sources.js';
 import type { StackLayer } from './planning-brief.js';
-import { layerTerms, mentions, stackTechnologies, technologiesNamed } from './stack-catalogue.js';
+import { layerTerms, mentions, technologiesNamed } from './stack-catalogue.js';
+import type { StackTechnology } from './stack-data.js';
 
 // RF-609: what a stack decision record states besides the choice. Everything here is computed from
 // the source cards, the task cards and the technology table; no model writes any of it. A card
@@ -50,30 +51,50 @@ export function stackContext(
   return `${head} The source cards that describe the legacy ${name} are ${list.join(', ')}; the choice below is made knowing what they say.`;
 }
 
-/** The catalogue options for the layer, one line each; the choice is marked, and added if unknown. */
+function sameOption(left: string, right: string): boolean {
+  return left.trim().toLowerCase() === right.trim().toLowerCase();
+}
+
+/**
+ * The options the owner was offered for the layer (recorded with the brief), one line each with the
+ * description of the technology the catalogue knows it as; the choice is marked, and a typed choice
+ * is added. A brief that recorded no offer says so instead of listing a fixed table.
+ */
 // RF-609
-export function stackOptions(layer: StackLayer, choice: string, custom: boolean): string[] {
-  const named = new Set(technologiesNamed(layer, choice).map((tech) => tech.name));
-  const options = stackTechnologies
-    .filter((tech) => tech.layer === layer)
-    .map((tech) => `${tech.name}${named.has(tech.name) ? ' (chosen)' : ''}: ${tech.description}`);
-  if (named.size > 0) return options;
-  const origin = custom
-    ? 'typed by the owner; the catalogue does not describe it.'
-    : 'the catalogue does not describe it.';
-  return [`${choice} (chosen): ${origin}`, ...options];
+export function stackOptions(
+  technologies: readonly StackTechnology[],
+  entry: {
+    readonly layer: StackLayer;
+    readonly choice: string;
+    readonly offered?: readonly string[] | undefined;
+  },
+): string[] {
+  const { layer, choice } = entry;
+  const offered = entry.offered ?? [];
+  if (offered.length === 0) {
+    return [`${choice} (chosen): the options Rosetta offered were not recorded for this brief.`];
+  }
+  const lines = offered.map((option) => {
+    const mark = sameOption(option, choice) ? ' (chosen)' : '';
+    const known = technologiesNamed(technologies, layer, option)[0];
+    return `${option}${mark}: ${known?.description ?? 'Offered by Rosetta; the catalogue has no further description of it.'}`;
+  });
+  return offered.some((option) => sameOption(option, choice))
+    ? lines
+    : [`${choice} (chosen): typed by the owner instead of one of the options offered.`, ...lines];
 }
 
 /** The task cards whose title or files name the layer or the chosen technology. */
 // RF-609
 export function touchingTasks(
   tasks: readonly TaskRef[],
-  layer: StackLayer,
-  choice: string,
+  technologies: readonly StackTechnology[],
+  entry: { readonly layer: StackLayer; readonly choice: string },
 ): string[] {
+  const { layer, choice } = entry;
   const terms = [
     ...layerTerms[layer],
-    ...technologiesNamed(layer, choice).flatMap((t) => t.aliases),
+    ...technologiesNamed(technologies, layer, choice).flatMap((t) => t.aliases),
   ];
   return tasks
     .filter((task) => {

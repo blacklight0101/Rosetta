@@ -1,3 +1,5 @@
+import type { StackData } from './stack-data.js';
+
 // RF-606, ADR-018, DEC-73, DEC-74, DEC-84: the principle catalogue `plan` chooses from. Each entry
 // is one versioned Markdown file under `prompts/catalogue/` with a one-line rule, why it matters and
 // how to check it; an architecture style adds when to choose it and when to look elsewhere
@@ -58,6 +60,8 @@ export interface Catalogue {
   /** Every entry, styles included, in group order and then by id. */
   readonly entries: readonly CatalogueEntry[];
   readonly styles: readonly ArchitectureStyle[];
+  /** RF-609: the technologies and rules of the stack check; part of the hashed folder. */
+  readonly stack: StackData;
 }
 
 export function isArchitectureStyleId(id: string): id is ArchitectureStyleId {
