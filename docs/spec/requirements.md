@@ -277,7 +277,7 @@ that I can share or archive it in one piece.
 **RF-100 Walk the repository** - R1 (M1) - Must - Source DEC-11 - ADR-004
 As a developer I want a scan run to list every relevant file so that later stages see the whole system.
 
-- Given a snapshot (and the configured subpath, if any), when a scan runs, then every file is listed except default ignores (version-control folders, build output such as `bin/`, `obj/`, `node_modules/`, `packages/`, and binary files) and paths matching the ignore rules (RF-140).
+- Given a snapshot (and the configured subpath, if any), when a scan runs, then every file is listed except default ignores (version-control folders, build output such as `bin/`, `obj/`, `node_modules/`, `packages/`, IDE settings folders `.vs/`, `.idea/`, `.vscode/`, `Backup*/` folders, `*.suo` and `*.user` files, and binary files); every entry left out is listed in the scan summary as ignored, never silently (P3-118) and paths matching the ignore rules (RF-140).
 - Given a file larger than the configured limit, when scanning, then it is listed with a `skipped: too large` reason and never read by agents.
   Verification: integration tests on fixture repositories.
 

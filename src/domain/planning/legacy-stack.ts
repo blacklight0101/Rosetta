@@ -9,7 +9,7 @@ import type { ArtefactKind } from '../code-map/artefact.js';
 
 const MAX_MARKERS = 40;
 const MAX_AREAS = 40;
-const MARKER_KINDS = ['configuration', 'database-script', 'manifest'] as const;
+const MARKER_KINDS = ['configuration', 'database-script', 'manifest', 'deployment'] as const;
 
 type MarkerKind = Extract<ArtefactKind, (typeof MARKER_KINDS)[number]>;
 

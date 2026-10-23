@@ -92,7 +92,7 @@ describe('a plan run over a workbook project', () => {
 
     const prd = h.providers.requests()[1];
 
-    expect(prd?.system).toBe(await readFile('prompts/planner/prd.v1.md', 'utf8'));
+    expect(prd?.system).toBe(await readFile('prompts/planner/prd.v2.md', 'utf8'));
   });
 
   it('RNF-004 the manifest records the guidance file with its version and hash', async () => {

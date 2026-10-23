@@ -61,7 +61,7 @@ describe('universal scan of the C# WebForms fixture (continued)', () => {
       'Global.asax': ['entry-point'],
       'Global.asax.cs': ['entry-point'],
       'Services/CatalogService.cs': [],
-      'ShopWeb.csproj': ['manifest'],
+      'ShopWeb.csproj': ['deployment', 'manifest'],
       'Web.config': ['configuration'],
       'packages.config': ['manifest'],
     });

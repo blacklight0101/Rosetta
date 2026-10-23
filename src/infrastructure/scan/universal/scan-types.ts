@@ -23,6 +23,14 @@ export interface ScannedFile {
   readonly skipped?: SkipReason;
 }
 
+/** RF-100: an entry the scan left out by default, with its rule and how many files it holds. */
+export interface IgnoredEntry {
+  /** The topmost ignored folder, or the ignored file itself. */
+  readonly path: string;
+  readonly rule: string;
+  readonly files: number;
+}
+
 /** RF-103: a statement and where it starts. */
 export interface SqlStatement {
   readonly path: string;
@@ -49,4 +57,6 @@ export interface UniversalScan {
   readonly skippedPaths: SkippedPaths;
   /** Files the reader listed but refused to read, sorted; they are not in `files`. */
   readonly unreadable: readonly string[];
+  /** Entries left out by the default ignores, sorted by path; listed in the scan summary. */
+  readonly ignored: readonly IgnoredEntry[];
 }
