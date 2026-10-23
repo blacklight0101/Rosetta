@@ -166,4 +166,16 @@ describe('provider factory: reasoning models', () => {
     expect(blocks).toHaveLength(2);
     for (const block of blocks) expect(block).toMatch(/reasoningModels/u);
   });
+
+  it('P3-130 every factory the composition root builds is given the models that cannot call tools', async () => {
+    const files = await sourceFiles();
+    const compose = files.find((file) => file.path === 'presentation/compose-providers.ts');
+
+    const blocks = [
+      ...(compose?.text.matchAll(/new GuardedProviderFactory\(\{[\s\S]*?\}\);?/gu) ?? []),
+    ].map((match) => match[0]);
+
+    expect(blocks).toHaveLength(2);
+    for (const block of blocks) expect(block).toMatch(/toolLessModels/u);
+  });
 });

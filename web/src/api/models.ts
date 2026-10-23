@@ -15,6 +15,8 @@ const modelChoicesSchema = z.object({
       trainedContext: z.number().optional(),
       /** DEC-163: the maximum output the model lists, the top of its output slider. */
       maxOutputTokens: z.number().optional(),
+      /** P3-130: the model cannot call tools on Chat Completions. */
+      noTools: z.literal(true).optional(),
     }),
   ),
   reason: z.string().optional(),

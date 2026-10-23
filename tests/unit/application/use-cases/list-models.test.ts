@@ -121,3 +121,20 @@ it('RF-402 DEC-163 a listed model carries its maximum output, so the settings pa
     { model: 'b', label: 'B', priced: false },
   ]);
 });
+
+it('P3-130 passes the noTools mark of a listed model on, and leaves it off the others', async () => {
+  const list = {
+    version: '2026-10-23',
+    models: [
+      { provider: 'openai', model: 'gpt-5-nano', label: 'GPT-5 nano' },
+      { provider: 'openai', model: 'gpt-6-astra', label: 'GPT-6 astra', noTools: true as const },
+    ],
+  };
+  const answer = await new ListModels({
+    list,
+    prices: testModelPrices,
+    installed: new FakeInstalledModels(),
+  }).execute('openai');
+
+  expect(answer.models.map((entry) => entry.noTools)).toEqual([undefined, true]);
+});

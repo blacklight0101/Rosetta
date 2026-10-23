@@ -52,6 +52,8 @@ describe('the shipped model list: reasoning models', () => {
       'anthropic/claude-sonnet-5-5',
       'anthropic/claude-haiku-5-5',
       'anthropic/claude-fable-5-1',
+      'openai/gpt-6-sol',
+      'openai/gpt-6-luna',
       'openai/gpt-5.6-sol',
       'openai/gpt-5.6-terra',
       'openai/gpt-5.6-luna',
@@ -65,12 +67,32 @@ describe('the shipped model list: reasoning models', () => {
     ]);
   });
 
-  it('Q-58 leaves the GPT-6 models unmarked', async () => {
+  it('P3-130 marks gpt-6-astra and gpt-6.1-sol as models that cannot call tools, and no other', async () => {
     const list = await loadModelList(shipped);
 
-    const unmarked = list.models.filter((entry) => entry.model.startsWith('gpt-6'));
+    const toolless = list.models.filter((entry) => entry.noTools === true);
 
-    expect(unmarked.length).toBe(4);
-    expect(unmarked.every((entry) => entry.reasoning === undefined)).toBe(true);
+    expect(toolless.map((entry) => `${entry.provider}/${entry.model}`)).toEqual([
+      'openai/gpt-6-astra',
+      'openai/gpt-6.1-sol',
+    ]);
+    expect(toolless.every((entry) => entry.reasoning === undefined)).toBe(true);
+  });
+});
+
+describe('model list noTools marker', () => {
+  const text = marked.replace('reasoning: true', 'noTools: true');
+
+  it('P3-130 reads the marker', () => {
+    expect(parseModelList(text).models[0]).toEqual({
+      provider: 'openai',
+      model: 'gpt-5-nano',
+      label: 'GPT-5 nano',
+      noTools: true,
+    });
+  });
+
+  it('P3-130 refuses a marker that is not true', () => {
+    expect(() => parseModelList(text.replace('noTools: true', 'noTools: false'))).toThrow();
   });
 });

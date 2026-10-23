@@ -222,6 +222,12 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     nextStep:
       'Choose a model with a larger context, or a cloud model for this role, in the project settings; or set a larger size in project settings, the model of the role, Context size.',
   },
+  'RST-1523': {
+    message:
+      'The model of a role that calls tools cannot call tools on this provider, so the run was stopped before any call.',
+    nextStep:
+      'Choose another model for the reader in the project settings (gpt-6-luna and gpt-6-sol call tools); a model that cannot call tools may still be used for the verifier, planner and summariser.',
+  },
   'RST-1900': {
     message: 'The address is not a public GitHub repository URL.',
     nextStep:

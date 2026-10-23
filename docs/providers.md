@@ -262,8 +262,12 @@ cloud providers off, a scan and an understand run must complete with Ollama only
   other model is never sent the field. Only `low`, `medium` and `high` are sent: the reasoning guide lists
   `none`, `minimal`, `low`, `medium`, `high`, `xhigh` and `max` as the values, "model-dependent", and says `none`
   returns HTTP 400 on some models (GPT-6 Astra) and `minimal` is not supported on others (GPT-6.1 Sol), while `low` is
-  on every list the model pages give. The GPT-6 models are not marked: their pages say Chat Completions takes function
-  calling only with effort `none` (Sol, Luna) or not at all (Astra, 6.1 Sol), and the reader needs tools. Sources,
+  on every list the model pages give. GPT-6 Sol and Luna are marked: Chat Completions takes function
+  calling with them only with effort `none` (P3-129 sends `none` with tools; without the mark the default effort
+  made every reader call HTTP 400, P3-130). GPT-6 Astra and GPT-6.1 Sol take no function tools at any effort, so the
+  list marks them `noTools: true` (not `reasoning`): a run that gives one to the reader, the only role that calls
+  tools, is refused before any call with `RST-1523` naming the model and the role, and the settings pages say the
+  same under the model; the verifier, planner and summariser may use them. Sources,
   read 2026-10-21: developers.openai.com/api/docs/guides/reasoning and the Chat Completions reference (`reasoning_effort`;
   `max_completion_tokens` is an upper bound that includes reasoning tokens) and the model pages.
 - Tool calls keep the ids OpenAI gave them. A call whose arguments are not a JSON object stays visible as text, like

@@ -12,6 +12,8 @@ export interface ModelOption {
   readonly trainedContext?: number | undefined;
   /** DEC-163: the maximum output the shipped list gives the model, when it gives one. */
   readonly maxOutputTokens?: number | undefined;
+  /** P3-130: the model cannot call tools on Chat Completions. */
+  readonly noTools?: true | undefined;
 }
 
 export type ModelListState =

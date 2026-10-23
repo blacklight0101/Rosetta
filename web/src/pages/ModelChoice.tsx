@@ -14,6 +14,8 @@ export interface ModelChoiceProps {
   readonly label: string;
   readonly value: string;
   readonly disabled?: boolean;
+  /** P3-130: the role calls tools, so a model that cannot call them is flagged. */
+  readonly needsTools?: boolean;
   /** The list of the role's provider; undefined for a provider with no list. */
   readonly list: ModelListState | undefined;
   readonly error: { readonly code?: string; readonly message: string } | undefined;
@@ -36,6 +38,12 @@ function noteOf(list: ModelListState | undefined): string | undefined {
   return 'No models are listed for this provider. Type the model id.';
 }
 
+/** P3-130: why a listed model is a poor choice for a role that calls tools (the server's RST-1523 text). */
+function noToolsNote(chosen: ModelOption | undefined, needsTools: boolean): string | undefined {
+  if (!needsTools || chosen?.noTools !== true) return undefined;
+  return `The model ${chosen.model} cannot call tools on Chat Completions, and this role calls tools, so a run would be refused (RST-1523). Choose another model.`;
+}
+
 function optionsOf(models: readonly ModelOption[]): readonly { value: string; label: string }[] {
   return [
     { value: '', label: 'Choose a model' },
@@ -45,6 +53,10 @@ function optionsOf(models: readonly ModelOption[]): readonly { value: string; la
     })),
     { value: OTHER, label: 'Other model...' },
   ];
+}
+
+function pricedNote(chosen: ModelOption | undefined): string | undefined {
+  return chosen?.priced === false ? noPrice : undefined;
 }
 
 function PlainText(props: ModelChoiceProps): JSX.Element {
@@ -82,7 +94,11 @@ function Listed(
         label={props.label}
         value={showText ? OTHER : value}
         options={optionsOf(models)}
-        help={!showText && chosen?.priced === false ? noPrice : undefined}
+        help={
+          showText
+            ? undefined
+            : (noToolsNote(chosen, props.needsTools === true) ?? pricedNote(chosen))
+        }
         error={showText ? undefined : error}
         announce={false}
         onChange={(next) => {

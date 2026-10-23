@@ -116,6 +116,8 @@ export interface FactoryHarnessOptions {
   readonly models?: ModelList;
   /** Q-58: which models the shipped list marks as reasoning models; none by default. */
   readonly reasoningModels?: GuardedProviderFactoryOptions['reasoningModels'];
+  /** P3-130: which models the shipped list marks as unable to call tools; none by default. */
+  readonly toolLessModels?: GuardedProviderFactoryOptions['toolLessModels'];
 }
 
 export interface FactoryHarness extends FakeAdapters {
@@ -172,6 +174,17 @@ function runSinks(masker: SecretMasker): RunSinks {
   return { sinks, calls, stops, metered, egressLines };
 }
 
+/** Q-58, P3-130: the marks of the shipped list the factory is given, when the test gives any. */
+function modelMarks(
+  options: FactoryHarnessOptions,
+): Pick<GuardedProviderFactoryOptions, 'reasoningModels' | 'toolLessModels'> {
+  const { reasoningModels, toolLessModels } = options;
+  return {
+    ...(reasoningModels === undefined ? {} : { reasoningModels }),
+    ...(toolLessModels === undefined ? {} : { toolLessModels }),
+  };
+}
+
 export function factoryHarness(options: FactoryHarnessOptions = {}): FactoryHarness {
   const clock = new FixedClock(factoryInstant);
   const masker = new SecretMasker();
@@ -196,7 +209,7 @@ export function factoryHarness(options: FactoryHarnessOptions = {}): FactoryHarn
     priceTable: options.priceTable ?? budgetTable,
     models: options.models ?? NO_LISTED_MODELS,
     ids: new SequenceIdGenerator(),
-    ...(options.reasoningModels === undefined ? {} : { reasoningModels: options.reasoningModels }),
+    ...modelMarks(options),
   });
   const run = runSinks(masker);
   return {

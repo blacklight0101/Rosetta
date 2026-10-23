@@ -11,7 +11,7 @@ import type {
   ProviderSetFactory,
   ProviderSetRequest,
 } from '../../application/ports/provider-set-factory.js';
-import type { ReasoningModels } from '../../application/models/model-list.js';
+import type { ReasoningModels, ToolLessModels } from '../../application/models/model-list.js';
 import type { SecretBox } from '../../application/ports/secret-box.js';
 import type { ServerSettings } from '../../application/ports/server-settings.js';
 import {
@@ -39,6 +39,7 @@ import type { AdapterBuilder } from './adapter-spec.js';
 import { guardedProvider } from './guarded-provider.js';
 import { resolveAccess, type ProviderAccess, type ServerKeys } from './provider-access.js';
 import { withRoleEffort, type EffortNote } from './reasoning-effort-provider.js';
+import { toolRoleProblem } from './tool-role-problem.js';
 import { reservationLifetimeMs } from './reservation-lifetime.js';
 import { isCeilinged, providerTestCeiling } from './provider-ceiling.js';
 import { scopeStartOf, type ScopeStart } from './scope-spend.js';
@@ -68,6 +69,8 @@ export interface GuardedProviderFactoryOptions {
   readonly adapters: AdapterBuilder;
   /** Q-58: the models the shipped list marks as reasoning models; none when left out. */
   readonly reasoningModels?: ReasoningModels;
+  /** P3-130: the models the shipped list marks as unable to call tools; none when left out. */
+  readonly toolLessModels?: ToolLessModels;
   readonly clock: Clock;
   readonly ids: IdGenerator;
   readonly logger: Logger;
@@ -112,11 +115,10 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       logger: ownerLogger(this.options.logger, request.run.userId),
     };
     for (const role of request.roles) {
-      const built = await this.buildRole(request, role, {
-        server: serverCaps,
-        ...start,
-        effortNote,
-      });
+      const scope = { server: serverCaps, ...start, effortNote };
+      const built =
+        toolRoleProblem(this.options.toolLessModels, request.settings, role) ??
+        (await this.buildRole(request, role, scope));
       if (built.ok) set.set(role, built.value);
       else problems.push(built.error);
     }

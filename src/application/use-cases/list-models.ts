@@ -18,6 +18,8 @@ interface ModelChoice {
   readonly trainedContext?: number;
   /** DEC-163: the maximum output the shipped list gives the model, the top of its output slider. */
   readonly maxOutputTokens?: number;
+  /** P3-130: the shipped list marks the model as unable to call tools on Chat Completions. */
+  readonly noTools?: true;
 }
 
 export interface ModelChoices {
@@ -45,11 +47,12 @@ export class ListModels {
     const { list, prices } = this.dependencies;
     const models = list.models
       .filter((entry) => entry.provider === provider)
-      .map(({ model, label, maxOutputTokens }) => ({
+      .map(({ model, label, maxOutputTokens, noTools }) => ({
         model,
         label,
         priced: lookupPrice(prices, [], { provider, model, keySource: 'server' }).kind === 'priced',
         ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }),
+        ...(noTools === true ? { noTools } : {}),
       }));
     return { provider, models };
   }
