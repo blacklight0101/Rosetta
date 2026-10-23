@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { AgentRole, LlmRequest } from '../../../../../src/application/ports/llm-provider.js';
 import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
 import { observedHarness } from '../../../../support/observed-harness.js';
 import { numCtx, useFakeOllama } from '../../../../support/ollama-harness.js';
@@ -109,5 +110,23 @@ describe('OllamaProvider with a fixed contextTokens that is too small', () => {
     expect(error.message).toContain('8192');
     expect(server.chatBodies()).toEqual([]);
     expect(server.bodiesOf('/api/generate')).toEqual([]);
+  });
+});
+
+describe('OllamaProvider keeps the grown context for the rest of a run (P5-04, EV-21)', () => {
+  const inRun = (request: LlmRequest, runId: string, role: AgentRole): LlmRequest => ({
+    ...request,
+    context: { ...request.context, runId, role },
+  });
+
+  it('P5-04 sends 65,536 on every request of a run and its roles, not on another run', async () => {
+    const { provider, server } = await start('context-trained-large-run');
+
+    await provider.complete(inRun(requestOf(40_000), 'run-a', 'planner'));
+    await provider.complete(inRun(requestOf(1_000), 'run-a', 'planner'));
+    await provider.complete(inRun(requestOf(1_000), 'run-a', 'reader'));
+    await provider.complete(inRun(requestOf(1_000), 'run-b', 'planner'));
+
+    expect(numCtx(server.chatBodies())).toEqual([65_536, 65_536, 65_536, 32_768]);
   });
 });

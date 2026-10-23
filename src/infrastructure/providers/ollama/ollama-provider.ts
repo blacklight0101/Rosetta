@@ -214,7 +214,7 @@ export class OllamaProvider implements LlmProvider {
       ref,
       auto,
       neededTokens(first.facts),
-      `${request.context.runId} ${request.context.role}`,
+      request.context.runId,
     );
     if (grown === undefined) return build(auto, this.contexts.trainedContext(ref));
     return grown === auto ? first : build(grown);

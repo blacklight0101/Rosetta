@@ -47,7 +47,7 @@ export interface ContextCache {
   readonly trained: Map<string, number | undefined>;
   /** Server, digest and size of the grown sizes already warned about (Q-48). */
   readonly grownWarned: Set<string>;
-  /** The largest grown size sent so far by server, digest and role, kept for the run (P5-04). */
+  /** The largest grown size sent so far by server, digest and run, kept for the run and shared by its roles (P5-04). */
   readonly kept: Map<string, number>;
 }
 
@@ -71,6 +71,9 @@ export interface ContextResolverDeps {
   /** The current time in milliseconds, for the back-off after a fallback. */
   readonly now: () => number;
 }
+
+/** The most kept sizes (run and model) the cache holds; the oldest are dropped first. */
+export const KEPT_LIMIT = 256;
 
 const spills = (residency: Residency): boolean => residency.sizeVram < residency.size;
 
@@ -116,7 +119,7 @@ export class OllamaContextResolver {
    * Q-48: the choice to send for a prompt of `needed` tokens (prompt estimate plus output reserve).
    * It is `auto` when that holds them; else the smallest size, doubling from `auto` and never
    * above the trained context, that does, with one warning per model and size that part of the
-   * model runs on the CPU. A size grown to is kept per `scope` (run and role) for the rest of the run (P5-04).
+   * model runs on the CPU. A size grown to is kept per `scope` (the run), shared by every role on the model for the rest of the run (P5-04).
    * Undefined when even the trained context is too small or not known, and
    * for a fixed size, which is never changed.
    */
@@ -134,7 +137,7 @@ export class OllamaContextResolver {
     if (auto.source === 'fixed' || trained === undefined || needed > trained) return undefined;
     const tokens = doubledTo(auto.tokens, needed, trained);
     if (kept >= tokens) return grownTo(kept);
-    this.deps.cache.kept.set(keptKey, tokens);
+    this.keep(keptKey, tokens);
     await this.warnGrown(ref, tokens, auto.tokens);
     return grownTo(tokens);
   }
@@ -204,6 +207,17 @@ export class OllamaContextResolver {
       { model: ref.model, contextSize: tokens, reason },
     );
     return { tokens, source: 'auto-fallback' };
+  }
+
+  /** Remembers the size, dropping the oldest entries above the limit so the map stays small. */
+  private keep(key: string, tokens: number): void {
+    const { kept } = this.deps.cache;
+    kept.delete(key);
+    kept.set(key, tokens);
+    for (const oldest of kept.keys()) {
+      if (kept.size <= KEPT_LIMIT) break;
+      kept.delete(oldest);
+    }
   }
 
   private async warnGrown(ref: ModelRef, tokens: number, automatic: number): Promise<void> {
