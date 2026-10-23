@@ -12,6 +12,7 @@ import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { parseApiContractAnswer } from './api-contract-answer.js';
 import { apiContractMessage } from './api-contract-message.js';
+import { MEASURING_TAG, omittedFor } from './plan-call-packing.js';
 
 // RF-624, RF-603, ADR-018: the API contract of a plan run. When the brief names a front end and the
 // supported cards hold a `FEAT` or `FLOW` card, the planner is asked once more, through the same
@@ -50,7 +51,11 @@ export async function planApiContract(
     const contract = noApiContract(scope.reason);
     return { contract, asked: false, readable: true, leftOut: nothingLeftOut };
   }
-  const output = await askPlannerWith(call, apiContractMessage({ cards, brief }, call.tags));
+  const omitted = omittedFor(call, servableCards(cards), (each) =>
+    apiContractMessage({ cards, brief, omitted: each }, () => MEASURING_TAG),
+  );
+  const message = apiContractMessage({ cards, brief, omitted }, call.tags);
+  const output = await askPlannerWith(call, message);
   const servable = servableCards(cards).map((card) => card.id);
   const assembly = assembleApiContract(parseApiContractAnswer(output), servable, dataModel);
   return { ...assembly, asked: true };

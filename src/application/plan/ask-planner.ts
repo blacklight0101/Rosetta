@@ -15,7 +15,9 @@ import {
   maxPlannerContinuations,
 } from './plan-continuation.js';
 import { resumePoint } from './json-tail.js';
+import { packedInput } from './plan-call-packing.js';
 import { planMessage, type PlanMessageInput } from './plan-message.js';
+import type { PlanWindow } from './plan-packing.js';
 
 // RF-604, RF-621, ADR-003, ADR-006, ADR-007: a model call of a plan run (the plan, then the PRD).
 // It goes to the planner's guarded provider (budget guard, egress guard, call log) that the provider factory built for the
@@ -40,11 +42,14 @@ export interface PlannerCall {
   /** One numbering for every call of the run (RF-408): both calls share one counter. */
   readonly callId: () => string;
   readonly signal: AbortSignal;
+  /** P3-113: the planner's window and output limit; the cards are packed to it. Unknown: nothing is packed. */
+  readonly window?: PlanWindow | undefined;
 }
 
 // RF-604
 export function askPlanner(call: PlannerCall, input: PlanMessageInput): Promise<string> {
-  return askPlannerWith(call, planMessage(input, call.tags));
+  // P3-113: the cards that do not fit the planner's window are named by title only.
+  return askPlannerWith(call, planMessage(packedInput(call, input), call.tags));
 }
 
 /** RF-623: a call with a user message the caller built (the data model has its own input). */

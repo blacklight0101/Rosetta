@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { needsConfirmation } from '../../../web/src/lib/start-confirmation.js';
+import {
+  needsCapConfirmation,
+  needsConfirmation,
+} from '../../../web/src/lib/start-confirmation.js';
 
 // RF-425, DEC-97: when the start page asks before an expensive run.
 
@@ -30,5 +33,21 @@ describe('needsConfirmation', () => {
 
   it('RF-425 has nothing to ask about without an estimate', () => {
     expect(ask(undefined, 0n)).toBe(false);
+  });
+});
+
+describe('needsCapConfirmation', () => {
+  const over = (likely: number | undefined, cap: number, confirmed = 0): boolean =>
+    needsCapConfirmation({ likelyTokens: likely, capTokens: cap, confirmedTokens: confirmed });
+
+  it('RF-429 asks only when the likely tokens are above the run token cap', () => {
+    expect(over(2_000_001, 2_000_000)).toBe(true);
+    expect(over(2_000_000, 2_000_000)).toBe(false);
+    expect(over(undefined, 2_000_000)).toBe(false);
+  });
+
+  it('RF-429 does not ask again for a figure already confirmed, but does for a higher one', () => {
+    expect(over(3_000_000, 2_000_000, 3_000_000)).toBe(false);
+    expect(over(3_000_001, 2_000_000, 3_000_000)).toBe(true);
   });
 });

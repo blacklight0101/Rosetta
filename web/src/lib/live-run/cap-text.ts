@@ -39,7 +39,20 @@ function userDayText(data: Readonly<Record<string, unknown>>): string {
     : `${text} The administrator can raise it.`;
 }
 
+/** RF-429: the readers' share of the run cap, kept apart from a cap the project set for the role. */
+function reserveText(data: Readonly<Record<string, unknown>>): string {
+  const cap =
+    data['scope'] === 'role-tokens'
+      ? tokens(data['capTokens'])
+      : (micros(data['capMicros']) ?? 'its amount');
+  return (
+    `The readers stopped at ${cap}, their share of the run cap. The rest is kept to verify the claims they wrote. ` +
+    'Raise the run cap in the project settings to read further.'
+  );
+}
+
 function roleText(data: Readonly<Record<string, unknown>>): string {
+  if (data['capSource'] === 'reserve') return reserveText(data);
   const role = typeof data['role'] === 'string' ? data['role'] : 'a';
   const cap =
     data['scope'] === 'role-tokens'
