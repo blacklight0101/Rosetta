@@ -56,6 +56,11 @@
 .rst-root .rst-button--ghost {
   background: transparent;
   color: var(--rst-brand);
+  /* P5-23: a long label wraps inside its box instead of sticking out of a 360 px column. */
+  max-inline-size: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .rst-root .rst-button--ghost:hover {
