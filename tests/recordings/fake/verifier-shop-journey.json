@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "Written by hand for this repository; no real provider was called. P3-22: the verifier of the documentation-set journey over the webforms-shop demo (understand-shop-journey.json). It answers Supported to every claim except three: the second step of the first flow (FLOW-001.c2), the free statement of the first screen (SCRN-001.c1) and the field ShippingList of the checkout screen (SCRN-003.c7), which it rejects, so the journey can check that a rejected screen detail never reaches the wireframes (RF-626, P3-29).",
+  "description": "Written by hand for this repository; no real provider was called. P3-22: the verifier of the documentation-set journey over the webforms-shop demo (understand-shop-journey.json). It answers Supported to every claim it is asked except two: the second step of the first flow (FLOW-001.c2) and the free statement of the first screen (SCRN-001.c1), which it rejects. The derived field claims (\"Field X is on the screen\") are decided by their cited lines without a model call (P3-122), so it holds no answer for them; the field PromoCode of the checkout screen (SCRN-003.c7) is not in its cited lines and is rejected by that rule, so the journey can check that a rejected screen detail never reaches the wireframes (RF-626, P3-29).",
   "calls": [
     {
       "attempts": [
@@ -130,25 +130,6 @@
             },
             "finishReason": "stop",
             "requestId": "fake-verifier-7",
-            "modelVersion": "fake-judge-2026-10-01"
-          }
-        }
-      ]
-    },
-    {
-      "attempts": [
-        {
-          "response": {
-            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
-            "toolCalls": [],
-            "usage": {
-              "inputTokens": 420,
-              "outputTokens": 40,
-              "cachedInputTokens": 0,
-              "usageSource": "reported"
-            },
-            "finishReason": "stop",
-            "requestId": "fake-verifier-8",
             "modelVersion": "fake-judge-2026-10-01"
           }
         }
@@ -301,25 +282,6 @@
             },
             "finishReason": "stop",
             "requestId": "fake-verifier-16",
-            "modelVersion": "fake-judge-2026-10-01"
-          }
-        }
-      ]
-    },
-    {
-      "attempts": [
-        {
-          "response": {
-            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
-            "toolCalls": [],
-            "usage": {
-              "inputTokens": 420,
-              "outputTokens": 40,
-              "cachedInputTokens": 0,
-              "usageSource": "reported"
-            },
-            "finishReason": "stop",
-            "requestId": "fake-verifier-17",
             "modelVersion": "fake-judge-2026-10-01"
           }
         }
@@ -510,44 +472,6 @@
             },
             "finishReason": "stop",
             "requestId": "fake-verifier-27",
-            "modelVersion": "fake-judge-2026-10-01"
-          }
-        }
-      ]
-    },
-    {
-      "attempts": [
-        {
-          "response": {
-            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
-            "toolCalls": [],
-            "usage": {
-              "inputTokens": 420,
-              "outputTokens": 40,
-              "cachedInputTokens": 0,
-              "usageSource": "reported"
-            },
-            "finishReason": "stop",
-            "requestId": "fake-verifier-28",
-            "modelVersion": "fake-judge-2026-10-01"
-          }
-        }
-      ]
-    },
-    {
-      "attempts": [
-        {
-          "response": {
-            "text": "Reason: The cited lines name no field called ShippingList.\nVerdict: Rejected",
-            "toolCalls": [],
-            "usage": {
-              "inputTokens": 420,
-              "outputTokens": 40,
-              "cachedInputTokens": 0,
-              "usageSource": "reported"
-            },
-            "finishReason": "stop",
-            "requestId": "fake-verifier-29",
             "modelVersion": "fake-judge-2026-10-01"
           }
         }
