@@ -68,7 +68,7 @@ export function slowReader(
   };
 }
 
-export const judgeModelTable = {
+const judgeModelTable = {
   version: 't',
   currency: 'USD',
   prices: [{ ...contractPrice, model: 'judge-model' }],

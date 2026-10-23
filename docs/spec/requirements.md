@@ -807,6 +807,7 @@ As a developer I want a model to check that the cited lines support each claim s
 - Given a verifier answer that is not one of the allowed values, when it is parsed, then the claim gets one retry and otherwise stays `Unverified`.
 - Given the verifier's answer format, when it is produced, then the reason is written before the verdict (DEC-57).
 - Given a configuration where the `verifier` role uses the same model family as the `reader` role, when a run starts, then a warning names the self-preference risk; the run continues.
+- Given `agents.parallelism` of 2 or more, when the claims are judged, then up to that many judgements run at the same time, each call is reserved against the caps and metered on its own (DEC-13), and concurrent reservations never pass a cap (DEC-112); the first call of each claim is sent in claim order, and the verdict events are published in claim order, so the verdicts, the cards, the events and the call ids are the same as with parallelism 1 on the same recorded responses, whichever call ends first (P5-15, HB-08).
   Verification: integration tests with recorded responses; unit test on the family check.
 
 **RF-302 Keep rejected claims** - R1 (M1) - Must - Source DEC-19, DEC-144 - ADR-005
@@ -825,6 +826,7 @@ As a developer I want counts per status and area so that I can judge the run's r
 As a developer I want claims not yet checked when a cap is reached marked `Unverified` so that I can resume verification later (RF-006).
 
 - Given a cap reached during verification, when the run stops, then the claims not yet judged are `Unverified`.
+- Given a cap that refuses a verifier call while other judgements are queued or waiting to send a retry, when it is refused, then those judgements end at once without a further call (P5-15, HB-08).
   Verification: integration test.
 
 **RF-305 Calibrate the verifier** - R1 - Should - Source DEC-57 - ADR-005, ADR-008
