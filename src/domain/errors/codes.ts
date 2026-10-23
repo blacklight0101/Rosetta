@@ -87,6 +87,7 @@ export const ERROR_CODES = {
   anthropicCreditExhausted: 'RST-1520',
   privateCodeNotConfirmed: 'RST-1521',
   ollamaPromptTooLarge: 'RST-1522',
+  modelCannotCallTools: 'RST-1523',
   budgetCapReached: 'RST-1600',
   modelUnpriced: 'RST-1601',
   priceTableInvalid: 'RST-1602',

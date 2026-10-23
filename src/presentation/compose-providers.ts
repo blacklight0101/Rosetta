@@ -3,7 +3,11 @@ import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { SecretBox } from '../application/ports/secret-box.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
-import { reasoningModelsOf, type ReasoningModels } from '../application/models/model-list.js';
+import {
+  noToolModelsOf,
+  reasoningModelsOf,
+  type ReasoningModels,
+} from '../application/models/model-list.js';
 import { loadModelList } from '../infrastructure/models/model-list-file.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
 import { TestProviders } from '../application/use-cases/test-providers.js';
@@ -57,10 +61,15 @@ export interface ProviderParts {
   readonly doubles: TestDoubles | undefined;
 }
 
-/** Q-58: the models the shipped list marks as reasoning models; a bad list stops the start-up. */
-async function loadReasoningModels(): Promise<ReasoningModels> {
-  return reasoningModelsOf(await loadModelList(modelsFile));
+/** Q-58, P3-130: what the shipped list marks (reasoning, no tools); a bad list stops the start-up. */
+async function loadModelMarks(): Promise<ModelMarks> {
+  const list = await loadModelList(modelsFile);
+  return { reasoningModels: reasoningModelsOf(list), toolLessModels: noToolModelsOf(list) };
 }
+
+type ModelMarks = Required<
+  Pick<GuardedProviderFactoryOptions, 'reasoningModels' | 'toolLessModels'>
+>;
 
 /** The adapters of this release, or, in the end-to-end tests, the model double for every kind. */
 async function adaptersFor(parts: ProviderParts): Promise<AdapterBuilder> {
@@ -87,8 +96,8 @@ export type GuardedFactoryMaker = (parts: GuardedFactoryParts) => ProviderSetFac
 export async function evaluationProviderFactory(logger: Logger): Promise<GuardedFactoryMaker> {
   const textProtocolPrompt = (await loadTextToolProtocol(promptsFolder)).text;
   const adapters = realAdapters({ testMode: false, textProtocolPrompt, logger });
-  const reasoningModels = await loadReasoningModels();
-  return (parts) => new GuardedProviderFactory({ ...parts, adapters, reasoningModels });
+  const marks = await loadModelMarks();
+  return (parts) => new GuardedProviderFactory({ ...parts, adapters, ...marks });
 }
 
 export interface ComposedProviders {
@@ -127,6 +136,7 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
     masker,
     adapters: await adaptersFor(parts),
     reasoningModels,
+    toolLessModels: noToolModelsOf(models),
     ...{ clock, ids, logger },
   });
   const template = await loadProjectTemplate(templatesFolder);

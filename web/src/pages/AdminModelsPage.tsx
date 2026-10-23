@@ -167,6 +167,7 @@ function RoleFields(props: {
           placeholder="Dated model id"
           value={role.model}
           disabled={role.provider === ''}
+          needsTools={name === 'reader'}
           list={role.provider === '' ? undefined : list}
           error={
             editing.missing.includes(name)

@@ -94,6 +94,7 @@ const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.providerKeyMissing]: 409,
   [ERROR_CODES.providerUnavailable]: 409,
   [ERROR_CODES.modelUnpriced]: 409,
+  [ERROR_CODES.modelCannotCallTools]: 409,
   [ERROR_CODES.budgetCapReached]: 409,
   [ERROR_CODES.providerCallFailed]: 502,
   [ERROR_CODES.planOptionsInvalid]: 502,

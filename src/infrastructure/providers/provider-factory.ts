@@ -39,6 +39,7 @@ import type { AdapterBuilder } from './adapter-spec.js';
 import { guardedProvider } from './guarded-provider.js';
 import { resolveAccess, type ProviderAccess, type ServerKeys } from './provider-access.js';
 import { withRoleEffort, type EffortNote } from './reasoning-effort-provider.js';
+import { toolRoleProblem } from './tool-role-problem.js';
 import { reservationLifetimeMs } from './reservation-lifetime.js';
 import { isCeilinged, providerTestCeiling } from './provider-ceiling.js';
 import { scopeStartOf, type ScopeStart } from './scope-spend.js';
@@ -114,11 +115,10 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       logger: ownerLogger(this.options.logger, request.run.userId),
     };
     for (const role of request.roles) {
-      const built = await this.buildRole(request, role, {
-        server: serverCaps,
-        ...start,
-        effortNote,
-      });
+      const scope = { server: serverCaps, ...start, effortNote };
+      const built =
+        toolRoleProblem(this.options.toolLessModels, request.settings, role) ??
+        (await this.buildRole(request, role, scope));
       if (built.ok) set.set(role, built.value);
       else problems.push(built.error);
     }

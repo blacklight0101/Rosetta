@@ -47,11 +47,12 @@ export class ListModels {
     const { list, prices } = this.dependencies;
     const models = list.models
       .filter((entry) => entry.provider === provider)
-      .map(({ model, label, maxOutputTokens }) => ({
+      .map(({ model, label, maxOutputTokens, noTools }) => ({
         model,
         label,
         priced: lookupPrice(prices, [], { provider, model, keySource: 'server' }).kind === 'priced',
         ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }),
+        ...(noTools === true ? { noTools } : {}),
       }));
     return { provider, models };
   }

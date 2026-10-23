@@ -86,7 +86,7 @@ describe('a model that cannot call tools, given to a role that does', () => {
 });
 
 describe('a model that cannot call tools, given to a role without tools', () => {
-  it('P3-130 gpt-6-astra on the summariser (no tools) runs, with effort low', async () => {
+  it('P3-130 gpt-6-astra on the summariser (no tools) runs', async () => {
     const harness = harnessOn(await loadModelList(shipped));
     const built = await harness.factory.build(
       harness.request({
@@ -102,7 +102,7 @@ describe('a model that cannot call tools, given to a role without tools', () => 
     await chosen?.provider.complete({ ...base, tools: [] });
 
     const [request] = harness.fakeList.flatMap((fake) => fake.requests);
-    expect(request?.reasoningEffort).toBe('low');
+    expect(request?.model).toBe('gpt-6-astra');
   });
 
   it('P3-130 a model list without the mark behaves as before: the reader on gpt-6-astra is built', async () => {

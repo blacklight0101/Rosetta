@@ -107,6 +107,7 @@ function RoleFields(
           label={`${title} model`}
           value={draft.model}
           list={list}
+          needsTools={role === 'reader'}
           error={errorFor(`${path}.model`)}
           onChange={(model) => {
             editor.changeRole(role, { model });

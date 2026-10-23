@@ -2,7 +2,7 @@
 // (`prices/models.yaml`, versioned like the price table). Only providers that sell a fixed set of
 // models appear here; Ollama lists what is installed on the server instead.
 
-import type { ProviderKind } from '../ports/llm-provider.js';
+import type { AgentRole, ProviderKind } from '../ports/llm-provider.js';
 
 interface ListedModel {
   /** The provider kind, for example `anthropic`. */
@@ -40,6 +40,14 @@ export function reasoningModelsOf(list: ModelList): ReasoningModels {
     list.models.filter((entry) => entry.reasoning === true).map((e) => keyOf(e.provider, e.model)),
   );
   return (kind, model) => marked.has(keyOf(kind, model));
+}
+
+/** P3-130: the roles whose calls carry tools; only the reader reads files through tools. */
+export const TOOL_ROLES: readonly AgentRole[] = ['reader'];
+
+/** P3-130: the sentence that says why a model cannot serve a role that calls tools. */
+export function noToolsReason(model: string, role: AgentRole): string {
+  return `The model ${model} cannot call tools on Chat Completions, and the ${role} role calls tools. Choose another model for the ${role}.`;
 }
 
 /** P3-130: whether the shipped list marks a model as unable to call tools on Chat Completions. */
