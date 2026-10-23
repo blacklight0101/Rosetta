@@ -14,9 +14,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 129     | 16        | 109        | 4         | 0                  | 53      | 72      | 4      | 85         | 0         |
+| P3 Report and plan      | 131     | 16        | 111        | 4         | 0                  | 54      | 73      | 4      | 87         | 0         |
 | P5 Polish (G-10)        | 19      | 7         | 12         | 0         | 0                  | 11      | 8       | 0      | 0          | 0         |
-| **Total**               | **372** | **97**    | **246**    | **29**    | **0**              | **184** | **174** | **14** | **226**    | **0**     |
+| **Total**               | **374** | **97**    | **248**    | **29**    | **0**              | **185** | **175** | **14** | **228**    | **0**     |
 
 ## Conventions for every card
 
@@ -4952,6 +4952,40 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: RF-402, Q-58; evaluation of 2026-10-23 (OpenAI run).
+
+---
+
+### P3-130 - Follow-up: the GPT-6 models are marked as reasoning models and tool roles refuse models that cannot call tools
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-129
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the shipped model list (`prices/models.yaml`, `src/application/models/model-list.ts`), the provider factory effort wiring (P3-129), the run start checks. Evaluation of 2026-10-23 after P3-129: the OpenAI run with gpt-6-luna on every role still failed (every reader call HTTP 400) because the list does not mark gpt-6-luna as a reasoning model, so no effort is sent, and OpenAI's default effort refuses tools. A probe with Rosetta's own reader tools and synthetic content showed: gpt-6-luna and gpt-6-sol answer 200 with effort none and tools, 400 with tools and no effort; gpt-6-astra and gpt-6.1-sol answer 400 with tools at every effort ("does not support 'none' with this model"; "Function tools with reasoning_effort are not supported"), and 200 without tools at low.
+- **Do**: mark gpt-6-luna and gpt-6-sol `reasoning: true`. Give the list a way to mark a model that cannot call tools on Chat Completions (gpt-6-astra, gpt-6.1-sol); a run that gives such a model to a role that calls tools is refused before any call, with a message that names the model and the role. A role without tools may still use it. The settings page shows the same reason when such a model is picked for a tool role.
+- **Review probes**: gpt-6-luna on a reader sends effort none with tools and low without (P3-129 rule now reached); gpt-6-astra on a reader is refused at start with no provider call and no cost; gpt-6-astra on the summariser runs; a model list without the new mark behaves as before; mutation: removing the mark lets the run start and the first call fail.
+- **Behaviour to preserve**: Q-58, P3-129, RF-402, the Anthropic list entries.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: Q-58, RF-402; P3-129; evaluation of 2026-10-23 (OpenAI run).
+
+---
+
+### P3-131 - Follow-up: OpenAI calls with tools can go through the Responses API
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-130
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the OpenAI adapter (`src/infrastructure/providers/openai/`), the model list mark from P3-130, OpenAI's Responses API docs (developers.openai.com). OpenAI's error for tools on Chat Completions says "use /v1/responses"; gpt-6-astra and gpt-6.1-sol can only call tools there, and the GPT-6 models can keep their reasoning effort with tools there.
+- **Do**: an OpenAI model the list marks for it sends calls with tools to `/v1/responses` (input items, function tools, function call outputs by call id, `reasoning.effort`, `max_output_tokens`, streaming with usage) and reads tool calls, text, finish reason and token counts back into the same `LlmResponse`. Chat Completions stays the route for every other model and for openai-compatible. The P3-130 refusal no longer applies to a model that uses this route. The adapter is recorded in a contract test like the Chat Completions one.
+- **Review probes**: a recorded Responses exchange with one tool call and its output round-trips through the agent loop; usage and cost match the recorded counts; a streamed answer cut at the output limit is reported like the Chat Completions one (P5-03); a model not marked keeps Chat Completions byte for byte; mutation: sending the Chat Completions body to /v1/responses fails the contract test.
+- **Behaviour to preserve**: RF-402, Q-58, Q-60 streaming, P3-129, P5-03, the budget guard and cost records.
+- **Delivers**: the change, contract tests, and docs/providers.md updated.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-402, Q-58, Q-60; P3-129, P3-130.
 
 ---
 
