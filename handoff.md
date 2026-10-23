@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-23. Release 1 is built: **323 of 339 cards are Done** (see the [tasks.md totals](docs/orchestration/tasks.md)); P1, P2 and P3 are complete except P3-22 (owner review of the sample package) and the gated cards P1-50, P1-53, P1-54, P1-55, P2-12, P2-14 and P2-34, each waiting for its gate or the owner's check. No hosted deployment before the owner declares the local system ready (G-08, DEC-133). Milestone hand-in: 2026-10-26. The latest state is the first entry of the resume point below._
+_Last updated 2026-10-23. Release 1 is built: **335 of 357 cards are Done** (see the [tasks.md totals](docs/orchestration/tasks.md)); P1, P2 and P3 are complete except P3-22 (owner review of the sample package) and the gated cards P1-50, P1-53, P1-54, P1-55, P2-12, P2-14 and P2-34, each waiting for its gate or the owner's check. No hosted deployment before the owner declares the local system ready (G-08, DEC-133). Milestone hand-in: 2026-10-26. The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -29,6 +29,8 @@ _Last updated 2026-10-23. Release 1 is built: **323 of 339 cards are Done** (see
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Resume (2026-10-23, fix round 2).** Evaluation pass 2 (workbooks re-run, eShopModernizing) and pass 3 (a private legacy web-forms project, local Ollama only; details stay in the owner vault) gave P3-108..P3-120. Merged: P3-108 #816, P3-109 #814, P3-110 #817, P3-111 #822 (RF-429 reader share of the token cap), P3-112 #826, P3-113 #824 (plan packed to the planner window), P3-114 #813, P3-115 #821, P3-116 #820 and #825 (secret masker: key/value settings), P3-117 #827, P3-118 #819, P3-119 #823 (VB.NET pack, scanner version 3 with P3-112); set to Done in this status pull request: 335 of 357 cards are Done. In flight: P3-120 #828 (fix round 1). Next (owner plan): a Haiku 5.5 battery on the eval stack (Asset Manager, Loan, Invoice, eShopModernizing; never the private project), then fix round 3; if idle with no owner input, the owner allowed a few of the most important phase 5 cards (G-10 conditionally opened for that case). Open minors of this round are in the owner vault (Open Follow-ups).
 
 **Resume (2026-10-22, in progress).** The owner delegated every merge of this session to the orchestrator, including `needs-owner` documentation pull requests, each still under green CI and, for cards, a posted verifier PASS. Merged today: P3-87 #758, DEC-159 #765 (dear models refused on default caps, start-page warning card P3-96), the Mermaid fix #767. In flight: P3-85 #757 (PASS round 3, re-running CI after the update), P3-93 #762 (opus fix round), P3-95 #766 (verifier round 1). New follow-up cards, queued after the current ones: P1-177 (static gates in their own job), P1-178 (sharded tests on Linux and Windows), P1-179 (pre-push runs related tests), P1-180 (queue-position e2e flake), P3-97..P3-100 (verifier minors of P3-87, P3-93, P3-85). After the cards: Ollama evaluation passes on the Excel workbooks, on `dotnet-architecture/eShopModernizing` and on a zipped legacy project kept outside the repository (results reported to the owner before any card). Local E2E cannot run: Docker Desktop fails to start (stale `sailor-ingest.sock`), see the vault learning on orphaned AF_UNIX sockets.
 
