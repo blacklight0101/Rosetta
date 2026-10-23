@@ -71,7 +71,8 @@ export async function announceMerges(
 /**
  * P3-125, RF-209: how many claims a Deepen task wrote that the card already held, as
  * `agent.claims.replaced` under the task: `folded` into a claim that stands, `rejected` for a
- * restated rejected claim (kept, DEC-19). Published only for a task that has some.
+ * restated rejected claim (kept, DEC-19); `citationsDropped` counts citations left out because the
+ * code map has no such file or lines (RF-300). Published only for a task that has some.
  */
 export async function announceReplaced(
   events: RunEventPublisher,
@@ -82,9 +83,10 @@ export async function announceReplaced(
     const own = extension.replaced.filter((each) => each.agentTaskId === agentTaskId);
     const folded = own.filter(({ kind }) => kind === 'folded').length;
     const count = own.length;
+    const citationsDropped = own.reduce((sum, each) => sum + each.citationsDropped, 0);
     await events.emit(
       'agent.claims.replaced',
-      { count, folded, rejected: count - folded },
+      { count, folded, rejected: count - folded, citationsDropped },
       agentTaskId,
     );
   }

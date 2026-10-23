@@ -56,7 +56,7 @@ describe('P3-125 a Deepen that states a rejected claim again', UNDERSTAND_TIMEOU
 
     const replaced = events.filter((event) => event.type === 'agent.claims.replaced');
     expect(replaced.map((event) => [event.agentTaskId, event.data])).toEqual([
-      ['reader-003', { count: 3, folded: 1, rejected: 2 }],
+      ['reader-003', { count: 3, folded: 1, rejected: 2, citationsDropped: 0 }],
     ]);
   });
 });

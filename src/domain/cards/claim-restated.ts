@@ -24,8 +24,33 @@ function normalisedText(text: string): string {
   return text
     .normalize('NFKC')
     .toLowerCase()
+    .replace(/n['’]t(?![a-z])/gu, ' not')
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
+}
+
+const NEGATIONS: ReadonlySet<string> = new Set(['not', 'no', 'never', 'without', 'cannot', 'none']);
+/** P3-125: how much of their words two claims share to be the same claim (Jaccard index). */
+const SIMILARITY = 0.8;
+
+function wordsOf(normalised: string): ReadonlySet<string> {
+  return new Set(normalised.split(' '));
+}
+
+function pick(words: ReadonlySet<string>, keep: (word: string) => boolean): string {
+  return [...words].filter(keep).sort().join(' ');
+}
+
+/** Same words ignoring case and punctuation, or nearly (Jaccard >= 0.8) with the same negations and numbers. */
+function sameWords(a: string, b: string): boolean {
+  if (a === '' || b === '') return false;
+  if (a === b) return true;
+  const [one, two] = [wordsOf(a), wordsOf(b)];
+  const shared = [...one].filter((word) => two.has(word)).length;
+  if (shared / (one.size + two.size - shared) < SIMILARITY) return false;
+  const negation = (word: string): boolean => NEGATIONS.has(word);
+  const number = (word: string): boolean => /\p{N}/u.test(word);
+  return pick(one, negation) === pick(two, negation) && pick(one, number) === pick(two, number);
 }
 
 function overlap(a: Citation, b: Citation): boolean {
@@ -36,20 +61,31 @@ function sharesLines(a: readonly Citation[], b: readonly Citation[]): boolean {
   return a.some((one) => b.some((other) => overlap(one, other)));
 }
 
-/** The claim of `claims` with the same words as `input` and the given statuses, by overlap or not. */
+/** The claim of `claims` with the same words as `input` and the given statuses, the exact words first. */
 function same(
   claims: readonly Claim[],
   input: ClaimInput,
   where: { readonly statuses: readonly ClaimStatus[]; readonly overlapping: boolean },
 ): Claim | undefined {
   const text = normalisedText(input.text);
-  if (text === '') return undefined;
-  return claims.find(
+  const candidates = claims.filter(
     (claim) =>
       where.statuses.includes(claim.status) &&
-      normalisedText(claim.text) === text &&
       sharesLines(claim.citations, input.citations) === where.overlapping,
   );
+  const exact = candidates.find((claim) => text !== '' && normalisedText(claim.text) === text);
+  return exact ?? candidates.find((claim) => sameWords(normalisedText(claim.text), text));
+}
+
+/**
+ * RF-300: whether a citation names a file of the code map (`lines`: path to line count) and a range
+ * inside it; the same test as the citation check, applied to a citation folded into a claim.
+ */
+export function citationHolds(citation: Citation, lines: ReadonlyMap<string, number>): boolean {
+  const { path, startLine, endLine } = citation;
+  const count = lines.get(path);
+  const whole = Number.isInteger(startLine) && Number.isInteger(endLine);
+  return count !== undefined && whole && startLine >= 1 && endLine >= startLine && endLine <= count;
 }
 
 /** What the card's claims make of a claim a Deepen task wrote for it. */

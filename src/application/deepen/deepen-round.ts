@@ -61,6 +61,11 @@ interface RoundCards {
   readonly claimIds: ReadonlySet<string>;
 }
 
+/** RF-300: the line count of every file of the code map, to check the citations folded into a claim. */
+function lineCounts(parts: DeepenParts): ReadonlyMap<string, number> {
+  return new Map(parts.scanned.codeMap.files.map((file) => [file.path, file.lines]));
+}
+
 /**
  * RF-203, RF-300, RF-301, RF-209: the new cards with ids, the claims added to the parent's cards,
  * the citation check and the judgement of every new claim.
@@ -74,7 +79,7 @@ async function newCardsOf(
   const tasks = ended.map(taskCardsOf);
   const assigned = assignCardIds(tasks, cardsOf(state));
   if (!assigned.ok) throw new RosettaError(ERROR_CODES.cardOutputInvalid, assigned.error);
-  const extension = extendCards(tasks, cardsOf(state));
+  const extension = extendCards(tasks, cardsOf(state), lineCounts(parts));
   if (!extension.ok) throw new RosettaError(ERROR_CODES.cardOutputInvalid, extension.error);
   const at = parts.deps.clock.now().toISOString();
   const all = [...assigned.value, ...extension.value.cards];
