@@ -17,15 +17,21 @@ describe('default ignores', () => {
   ])('RF-100 ignores %s because a folder on the way is build output or version control', (path) => {
     expect(isDefaultIgnored(path)).toBe(true);
   });
+});
 
+describe('default ignores (IDE and backup folders)', () => {
   it.each([
     '.vs/config/applicationhost.config',
     'src/Web/.vs/config/a.config',
     '.idea/workspace.xml',
     '.vscode/launch.json',
     'Backup/App.sln',
-    'BackupOld/Shop.cs',
     'src/Backup 2025/a.cs',
+    'backups/x.cs',
+    'Backup1/x.cs',
+    'Backup2024-05-01/x.cs',
+    'backup_old/x.cs',
+    'backup-old/x.cs',
   ])(
     'RF-100 ignores %s because a folder on the way is an IDE settings or backup folder',
     (path) => {
@@ -67,6 +73,10 @@ describe('default ignores (binary files)', () => {
     'Properties/PublishProfiles/Staging.pubxml',
     'src/backup.txt',
     'src/Backupper.cs',
+    'BackupOld/Shop.cs',
+    'src/BackupService/Svc.cs',
+    'BackupManager/x.cs',
+    'Backupper/x.cs',
   ])('RF-100 keeps %s', (path) => {
     expect(isDefaultIgnored(path)).toBe(false);
   });
