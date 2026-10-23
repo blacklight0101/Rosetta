@@ -2,11 +2,11 @@
 // when the leading comment of a script or style sheet is a library banner, or when it is a large
 // JSON file declaring a `$schema` (generated schema).
 //
-// A banner needs all of: a known library name immediately followed by a full `x.y.z` version
+// A banner needs all of: a known library name opening the comment, immediately followed by a full `x.y.z` version
 // (`jQuery JavaScript Library v3.4.1`, `Bootstrap v3.3.7`, `lodash 4.17.21`), a recognised
-// open-source licence in the same comment, no word that says the file merely uses the library
-// before the name (`uses`, `requires`, `based on`, `wrapper around`, `depends on`), and no
-// `proprietary`, `internal` or `company` wording. Own code that mentions a library is not flagged.
+// open-source licence in the same comment, and no `proprietary`, `internal` or `company` wording.
+// The library name opens the comment (P5-19), so a header that merely mentions a library after
+// other words is own code. Own code that mentions a library is not flagged.
 
 const SCRIPT_OR_STYLE = /\.(?:js|css|scss|less)$/iu;
 const JSON_FILE = /\.json$/iu;
@@ -38,24 +38,24 @@ const LIBRARY_NAMES = [
   'animate\\.css',
   'normalize\\.css',
 ].join('|');
+// P5-19: the library name opens the comment, after the comment marker and an optional `@license` or
+// `@preserve` tag, as real banners do (`/*! jQuery v3.6.0`, ` * Bootstrap v3.3.7`).
+const BANNER_START = String.raw`^(?:\/\*+|\/\/+)?[\s*!/]*(?:@(?:license|preserve)[\s*]*)?`;
 const NAME_AND_VERSION = new RegExp(
-  `\\b(?:${LIBRARY_NAMES})(?:\\s+(?:JavaScript|CSS|Library|Framework|Plugin))*\\s+v?\\d+\\.\\d+\\.\\d+`,
+  String.raw`${BANNER_START}(?:${LIBRARY_NAMES})(?:\s+(?:JavaScript|CSS|Library|Framework|Plugin))*\s+v?\d+\.\d+\.\d+`,
   'iu',
 );
 /** A recognised open-source licence. */
 const LICENCE = /\b(?:MIT|Apache|BSD|ISC|GPL|LGPL|MPL|SIL OFL)\b/iu;
 const NOT_OPEN_SOURCE = /\b(?:proprietary|internal|company|confidential)\b/iu;
-const USE_VERBS =
-  /\b(?:uses?|using|requires?|based on|wrapper|wraps|depends? on|built (?:on|with)|extends|needs)\b/iu;
 /** The leading comment block (a block comment or consecutive line comments), where a banner lives. */
 const LEADING_BLOCK = /^\s*(?:\/\*[\s\S]*?\*\/|(?:\/\/[^\n]*\n?)+)/u;
 const SCHEMA_KEY = /"\$schema"\s*:/u;
 
 function hasLibraryBanner(head: string): boolean {
   const block = LEADING_BLOCK.exec(head.slice(0, HEADER_CHARACTERS))?.[0] ?? '';
-  const name = NAME_AND_VERSION.exec(block);
-  if (name === null || !LICENCE.test(block) || NOT_OPEN_SOURCE.test(block)) return false;
-  return !USE_VERBS.test(block.slice(0, name.index));
+  if (!NAME_AND_VERSION.test(block)) return false;
+  return LICENCE.test(block) && !NOT_OPEN_SOURCE.test(block);
 }
 
 /** Whether the head of a file (its first characters) says it is third-party. */

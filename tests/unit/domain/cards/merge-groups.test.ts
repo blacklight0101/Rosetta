@@ -52,6 +52,28 @@ describe('P5-12 disjointMerges', () => {
     ]);
   });
 
+  it('P5-19 a later group that shares a card keeps its remaining cards when two or more are left', () => {
+    const merges = [merge('E-1', 'E-2'), merge('E-1', 'E-3', 'E-4'), merge('E-5', 'E-6')];
+
+    const result = disjointMerges(merges);
+
+    expect(result.map((each) => each.ids)).toEqual([
+      ['E-1', 'E-2'],
+      ['E-3', 'E-4'],
+      ['E-5', 'E-6'],
+    ]);
+    expect(result[1]).toMatchObject({ title: 'Merged', summary: 'Merged.' });
+  });
+
+  it('P5-19 a later group left with one card is dropped, and its card stays free for a third', () => {
+    const merges = [merge('E-1', 'E-2'), merge('E-1', 'E-3'), merge('E-3', 'E-4')];
+
+    expect(disjointMerges(merges).map((each) => each.ids)).toEqual([
+      ['E-1', 'E-2'],
+      ['E-3', 'E-4'],
+    ]);
+  });
+
   it('merges that share no card are all kept, in order', () => {
     const merges = [merge('E-1', 'E-2'), merge('E-3', 'E-4')];
 

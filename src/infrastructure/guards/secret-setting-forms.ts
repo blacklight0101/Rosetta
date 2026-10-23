@@ -51,6 +51,7 @@ export const explicitRules: readonly SettingRule[] = [
   explicitRule('password', explicit('secret', 'Secret')),
   explicitRule(
     'api-key',
-    String.raw`(?:(?<=[A-Za-z0-9][_.-])${apiKeyWords}|(?<=[A-Za-z0-9])Api[_-]?Key)`,
+    // P5-19: also the bare name (`api_key`, `API_KEY`, `apiKey`), not preceded by a letter or digit.
+    String.raw`(?:(?<![A-Za-z0-9])${apiKeyWords}|(?<=[A-Za-z0-9])Api[_-]?Key)`,
   ),
 ];

@@ -14,9 +14,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 127     | 16        | 107        | 4         | 0                  | 51      | 72      | 4      | 83         | 0         |
+| P3 Report and plan      | 128     | 16        | 108        | 4         | 0                  | 52      | 72      | 4      | 84         | 0         |
 | P5 Polish (G-10)        | 19      | 7         | 12         | 0         | 0                  | 11      | 8       | 0      | 0          | 0         |
-| **Total**               | **370** | **97**    | **244**    | **29**    | **0**              | **182** | **174** | **14** | **224**    | **0**     |
+| **Total**               | **371** | **97**    | **245**    | **29**    | **0**              | **183** | **174** | **14** | **225**    | **0**     |
 
 ## Conventions for every card
 
@@ -4918,6 +4918,23 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: RF-141, RF-604, RF-201; Haiku battery 2026-10-23 (fix round 3 re-run).
+
+---
+
+### P3-128 - Follow-up: a secret written between backslash-escaped quotes is masked
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the secret masker (`src/infrastructure/guards/secret-masker.ts`, `secret-setting-forms.ts`) and the files it masks (card files, `answers.md`, provider requests). Review of P3-127 (2026-10-23): raw text that quotes a setting with literal backslash-escaped quotes, such as a synthetic `Password=\"FAKE-pw\" and \"x\"`, leaves the value unmasked: the masker takes the backslash as the end of the value. Found with synthetic values on the code before and after P3-127, in card files and in answers.md.
+- **Do**: a setting value that starts with an escaped quote is read up to the matching escaped quote and masked whole; the backslashes stay in place.
+- **Review probes**: the synthetic shape above is masked in a card file, in answers.md and in a provider request; a plain and a JSON-quoted value are masked as before; mutation: the old value pattern lets the value through; the P3-116 precision cases still pass.
+- **Behaviour to preserve**: RF-140..RF-149, P3-116 precision (no masking of ordinary settings), P3-127 quoting.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-141, RF-145; P3-116, P3-127.
 
 ---
 
