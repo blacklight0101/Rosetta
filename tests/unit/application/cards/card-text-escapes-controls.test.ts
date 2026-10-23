@@ -21,6 +21,19 @@ describe('decodeTextEscapes refuses invisible characters (P5-19)', () => {
     expect(decodeTextEscapes(text)).toBe(text);
   });
 
+  it.each([
+    ['\\u2013', '–'],
+    ['\\u2014', '—'],
+    ['\\u2018', '‘'],
+    ['\\u2019', '’'],
+    ['\\u201c', '“'],
+    ['\\u201d', '”'],
+    ['\\u2026', '…'],
+    ['\\u2022', '•'],
+  ])('the punctuation escape %s is decoded to the real character', (escape, character) => {
+    expect(decodeTextEscapes(`a ${escape} b`)).toBe(`a ${character} b`);
+  });
+
   it('a plain letter and a non-breaking space are still decoded', () => {
     expect(decodeTextEscapes('\\u0041\\u00a0b')).toBe('A b');
   });
