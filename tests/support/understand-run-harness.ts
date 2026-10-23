@@ -14,6 +14,7 @@ import type { Run } from '../../src/domain/runs/run.js';
 import type { MemoryLogger } from './memory-logger.js';
 import type { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
 import { projectPath, runPath } from '../../src/infrastructure/files/workspace-paths.js';
+import type { ServerCaps } from '../../src/domain/budget/budget.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { readerRecordingOf, verifierRecordingOf } from './understand-recordings.js';
 import { sampleAccount } from './account-fixtures.js';
@@ -86,6 +87,8 @@ export interface UnderstandHarnessOptions {
   /** RF-427: the server's OpenAI key, or one the run's user owns; a cloud reader needs one. */
   /** A workspace that refuses to remove a card file, for a merge whose files cannot go. */
   readonly refuseRemoval?: boolean;
+  /** P5-18: the administrator's caps (run, user day, server month); the defaults when left out. */
+  readonly serverCaps?: ServerCaps;
   readonly openAiKey?: { readonly of: 'server' | 'user'; readonly key: string };
   /** P2-24: an Anthropic key the run's user owns. */
   readonly anthropicKey?: string;
@@ -238,6 +241,7 @@ export async function createUnderstandHarness(
     ...(await verifierRecordingOf(options.verifierRecording)),
     ...(options.decorateAnswer === undefined ? {} : { decorateAnswer: options.decorateAnswer }),
     ...(options.priceTable === undefined ? {} : { priceTable: options.priceTable }),
+    ...(options.serverCaps === undefined ? {} : { serverCaps: options.serverCaps }),
     ...keysOf(options.openAiKey),
     ...(options.anthropicKey === undefined
       ? {}

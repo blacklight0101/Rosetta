@@ -1,0 +1,129 @@
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
+import type { ServerCaps } from '../../../src/domain/budget/budget.js';
+import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
+import { serverKeyText } from '../../support/provider-factory-harness.js';
+import { useTempRoot } from '../../support/temp-root.js';
+import { readJson, UNDERSTAND_TIMEOUT } from '../../support/understand-full-run.js';
+import {
+  createUnderstandHarness,
+  understandSettings,
+} from '../../support/understand-run-harness.js';
+
+// RF-429, RF-422, DEC-112, P5-18: the readers of a run on a server key stop at their share of the
+// cap that binds the run, here the administrator's user-day or server-month cost cap, so the claims
+// they wrote are judged with what is left. The recording understand-scope-cap.json has a Services
+// reader that uses 90,000 input tokens (about 90,000 micro-dollars at the contract model's price) on
+// its first call: without the share it spends the day's room and the verifier is refused.
+
+const temp = useTempRoot('rosetta-understand-scope-cap-share-');
+
+const indexSchema = z.object({
+  cards: z.array(z.object({ claimCounts: z.record(z.string(), z.number()) })),
+});
+
+const roomy = 50_000_000n;
+const SCOPE = 293_000n;
+const openRoles = understandSettings((settings) => ({
+  ...settings,
+  roles: Object.fromEntries(
+    Object.entries(settings.roles).map(([role, setting]) => [
+      role,
+      { ...setting, provider: 'openai', model: 'contract-model' },
+    ]),
+  ) as typeof settings.roles,
+  // The run cost and token caps are far away: only the scope cap binds.
+  budget: { ...settings.budget, run: { maxCostMicros: 50_000_000, maxTokens: 50_000_000 } },
+}));
+
+async function underScope(caps: Partial<ServerCaps>) {
+  const h = await createUnderstandHarness({
+    dataDir: temp.path,
+    recording: 'understand-scope-cap.json',
+    verifierRecording: 'verifier-all-supported.json',
+    settings: openRoles,
+    openAiKey: { of: 'server', key: serverKeyText },
+    serverCaps: {
+      runMicros: roomy,
+      userDayMicros: roomy,
+      serverMonthMicros: roomy,
+      ...caps,
+    },
+  });
+  await h.scan();
+  const run = await h.understand({ areas: ['Catalog', 'Services'], cloudConsent: true });
+  return { h, run };
+}
+
+async function judged(h: Awaited<ReturnType<typeof underScope>>['h'], run: { runKey: string }) {
+  const file = join(h.runFolder(run as never), 'cards', 'index.json');
+  return indexSchema.parse(await readJson(file)).cards.map((card) => card.claimCounts);
+}
+
+describe.each([
+  ['user-day', { userDayMicros: SCOPE }],
+  ['server-month', { serverMonthMicros: SCOPE }],
+] as const)(
+  'an understand run near the administrator %s cap',
+  UNDERSTAND_TIMEOUT,
+  (scope, caps) => {
+    it(`RF-429 P5-18 the readers stop at their share of the ${scope} cap, not the run`, async () => {
+      const { h, run } = await underScope(caps);
+
+      expect(run.endState).toBe('CapReached');
+      const manifest = await h.manifestOf(run);
+      expect(manifest.agentTasks.map((task) => [task.area, task.state])).toEqual([
+        ['Catalog', 'Done'],
+        ['Services', 'StoppedByCap'],
+      ]);
+      const events = await h.eventsOf(run);
+      const capEvents = events.filter((event) => event.type === 'budget.capReached');
+      expect(capEvents.map((event) => event.data)).toMatchObject([
+        { scope: 'role-cost', role: 'reader', capSource: 'reserve' },
+      ]);
+      expect(events.at(-1)?.data).toMatchObject({ errorCode: ERROR_CODES.budgetCapReached });
+    });
+
+    it(`RF-429 P5-18 the claims the readers wrote are judged before the ${scope} cap stops the run`, async () => {
+      const { h, run } = await underScope(caps);
+
+      expect(await judged(h, run)).toEqual([
+        expect.objectContaining({ Proposed: 0, Unverified: 0, Supported: 1 }),
+      ]);
+    });
+
+    it(`DEC-112 the ${scope} cap is never passed`, async () => {
+      const { h } = await underScope(caps);
+
+      const spent = h.providers.ledger.entries.reduce((sum, entry) => sum + entry.costMicros, 0n);
+      expect(spent).toBeLessThanOrEqual(SCOPE);
+    });
+  },
+);
+
+describe('an understand run whose run cap binds', UNDERSTAND_TIMEOUT, () => {
+  it('RF-429 P5-18 a scope cap far above the run cap adds no cost share: the readers stop only by the token share', async () => {
+    const h = await createUnderstandHarness({
+      dataDir: temp.path,
+      recording: 'understand-cap.json',
+      verifierRecording: 'verifier-all-supported.json',
+      settings: understandSettings((settings) => ({
+        ...settings,
+        roles: openRoles.roles,
+        budget: { ...settings.budget, run: { maxCostMicros: 50_000_000, maxTokens: 293_000 } },
+      })),
+      openAiKey: { of: 'server', key: serverKeyText },
+      serverCaps: { runMicros: roomy, userDayMicros: roomy, serverMonthMicros: roomy },
+    });
+    await h.scan();
+
+    const run = await h.understand({ areas: ['Catalog', 'Services'], cloudConsent: true });
+
+    expect(run.endState).toBe('CapReached');
+    const capEvents = (await h.eventsOf(run)).filter((event) => event.type === 'budget.capReached');
+    expect(capEvents.map((event) => event.data)).toMatchObject([
+      { scope: 'role-tokens', role: 'reader', capSource: 'reserve' },
+    ]);
+  });
+});

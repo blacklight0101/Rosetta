@@ -22,6 +22,7 @@ import type { Recording } from '../../src/infrastructure/providers/fake/recordin
 import { JsonlProviderCallLog } from '../../src/infrastructure/providers/jsonl-provider-call-log.js';
 import { GuardedProviderFactory } from '../../src/infrastructure/providers/provider-factory.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
+import type { ServerCaps } from '../../src/domain/budget/budget.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { budgetTable } from './budget-harness.js';
 import type { FixedClock } from './fixed-clock.js';
@@ -142,6 +143,8 @@ export interface UnderstandProviderParts {
   readonly serverOpenAiKey?: string;
   /** RF-427: an OpenAI key of this user's own (a cloud reader on the user's key). */
   readonly ownOpenAiKey?: { readonly userId: string; readonly key: string };
+  /** P5-18: the administrator's caps; the shipped defaults when left out. */
+  readonly serverCaps?: ServerCaps;
   /** P2-24: an Anthropic key of this user's own. */
   readonly ownAnthropicKey?: { readonly userId: string; readonly key: string };
 }
@@ -183,6 +186,8 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     ...{ beforeVerifier: parts.beforeVerifierCall, beforeGap: parts.beforeGapCall },
   });
   const ledger = new SpyLedger(new MemoryCostLedger());
+  const serverSettings = new MemoryServerSettings({});
+  if (parts.serverCaps !== undefined) void serverSettings.saveCaps(parts.serverCaps);
   const keys = new MemoryProviderKeyRepository();
   const box = new AesGcmSecretBox({ current: fixtureSecret(3) });
   seedOwnKeys(parts, keys, box);
@@ -192,7 +197,7 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     serverKeys: parts.serverOpenAiKey === undefined ? {} : { openai: parts.serverOpenAiKey },
     // An Ollama provider needs the address (RF-401); the adapter is the fake, so it is never called.
     ollamaUrl: 'http://127.0.0.1:11434',
-    serverSettings: new MemoryServerSettings({}),
+    serverSettings,
     ledger,
     priceTable: parts.priceTable ?? budgetTable,
     models: NO_LISTED_MODELS,
