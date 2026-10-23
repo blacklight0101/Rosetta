@@ -1,14 +1,19 @@
-import { screen, within } from '@testing-library/preact';
+import { fireEvent, screen, within } from '@testing-library/preact';
 import { expect, it } from 'vitest';
 import { json } from './fake-api.js';
+import { projectOf } from './project-fixtures.js';
 import {
   cloudEstimate,
   estimateOf,
   estimatePath,
   localEstimate,
+  projectPath,
+  projectWithTokenCap,
   roleOf,
+  runAnswer,
+  runsPath,
 } from './start-run-fixtures.js';
-import { describedText, ready, renderStart } from './start-run-helpers.js';
+import { describedText, input, ready, renderStart, start } from './start-run-helpers.js';
 
 // RF-425 (Q-51, P3-79): the start page estimate for roles on a local model reads in tokens, with the
 // sentence about the cap in the unit of the cap it is compared with; priced roles keep dollars; a
@@ -112,4 +117,64 @@ it('RF-425 the assumptions read 1 area for one', async () => {
   const note = screen.getByText(/Assumptions:/u).textContent;
   expect(note).toContain('Assumptions: 1 area, ');
   expect(note).not.toContain('1 areas');
+});
+
+// P5-07: a local run costs nothing, so the start page asks for a token cap and never for dollars.
+const estimateCard = (): HTMLElement => {
+  const card = document.querySelector<HTMLElement>('[aria-labelledby="estimate-heading"]');
+  if (card === null) throw new Error('No estimate card.');
+  return card;
+};
+
+it('P5-07 a local-only estimate shows the run token cap field and no dollar field', async () => {
+  renderStart({ [`GET ${estimatePath}`]: json(200, localEstimate) });
+  await ready();
+
+  expect(input('Run cap (tokens)').value).toBe('2000000');
+  expect(screen.queryByLabelText(/Run cap \(USD\)/u)).toBeNull();
+  expect(screen.queryByLabelText(/Ask before a run estimated above/u)).toBeNull();
+  expect(estimateCard().textContent).not.toContain('$');
+  expect(estimateCard().textContent).not.toContain('USD');
+});
+
+it('P5-07 saving the token cap changes only maxTokens and leaves the dollar settings', async () => {
+  const { calls } = renderStart({
+    [`GET ${estimatePath}`]: json(200, localEstimate),
+    [`PUT ${projectPath}/settings`]: json(200, projectWithTokenCap(500_000)),
+    [`POST ${runsPath}`]: runAnswer('understand', null),
+  });
+  await ready();
+
+  fireEvent.input(input('Run cap (tokens)'), { target: { value: '500000' } });
+  fireEvent.click(start());
+
+  await screen.findByTestId('run-notice');
+  const put = calls.find((call) => call.method === 'PUT');
+  const budget = (put?.body as { budget: Record<string, unknown> }).budget;
+  const before = (projectOf('p-1', 'octo/demo', {}).settings as { budget: Record<string, unknown> })
+    .budget;
+  expect(budget).toEqual({
+    ...before,
+    run: { ...(before.run as object), maxTokens: 500_000 },
+  });
+});
+
+it('P5-07 a token cap that is not a whole number is refused next to its field', async () => {
+  const { calls } = renderStart({ [`GET ${estimatePath}`]: json(200, localEstimate) });
+  await ready();
+
+  fireEvent.input(input('Run cap (tokens)'), { target: { value: 'lots' } });
+  fireEvent.click(start());
+
+  await screen.findByText(/whole number of tokens/u);
+  expect(calls.some((call) => call.method !== 'GET')).toBe(false);
+});
+
+it('P5-07 a mixed estimate keeps both dollar fields and no token field', async () => {
+  renderStart({ [`GET ${estimatePath}`]: json(200, cloudEstimate) });
+  await ready();
+
+  expect(input('Run cap (USD)').value).toBe('0.50');
+  expect(input('Ask before a run estimated above (USD)').value).toBe('0.25');
+  expect(screen.queryByLabelText('Run cap (tokens)')).toBeNull();
 });
