@@ -29,3 +29,12 @@ it('RF-1003 the value text says the level in words, so colour is not the only si
   expect(topBarMeterOf(1_700_000, 2_000_000).valueText).toContain('approaching the cap');
   expect(topBarMeterOf(1_950_000, 2_000_000).valueText).toContain('at the cap');
 });
+
+// P5-07: a run on local models only has tokens, so its meter counts tokens against the token cap.
+it('P5-07 a local run meter counts tokens against the token cap and names no dollars', () => {
+  const meter = topBarMeterOf(1_200_000, 2_000_000, 'tokens');
+
+  expect(meter).toMatchObject({ share: 60, level: 'ok', spent: '1,200,000 tokens' });
+  expect(meter.cap).toBe('2,000,000 tokens');
+  expect(meter.valueText).toBe('1,200,000 tokens of 2,000,000 tokens (60%)');
+});

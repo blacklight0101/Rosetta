@@ -115,7 +115,7 @@ it('RF-425 a threshold of zero asks for any run that costs something, and not fo
   expect(starts(paid.calls)).toBe(0);
 });
 
-it('RF-425 a run on local models costs nothing, so it never asks, even with a threshold of zero', async () => {
+it('RF-425 a run on local models costs nothing, so it never asks about dollars and has no threshold field', async () => {
   const { calls } = renderStart({
     [`GET ${estimatePath}`]: json(200, localEstimate),
     [`POST ${runsPath}`]: runAnswer('understand', null),
@@ -123,7 +123,7 @@ it('RF-425 a run on local models costs nothing, so it never asks, even with a th
   });
   await ready();
 
-  fireEvent.input(input('Ask before a run estimated above (USD)'), { target: { value: '0' } });
+  expect(screen.queryByLabelText('Ask before a run estimated above (USD)')).toBeNull();
   fireEvent.click(start());
 
   await screen.findByTestId('run-notice');

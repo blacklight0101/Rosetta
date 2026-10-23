@@ -54,7 +54,8 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
           text: form.capText,
           capMicros: form.capMicros,
           serverRunCap: form.serverRunCap,
-          capTokens: form.project.settings.budget.run.maxTokens,
+          capTokens: form.capTokens,
+          tokens: { text: form.tokensText, onInput: form.setTokensText },
           error: actions.refusals.cap,
           onInput: form.setCapText,
           threshold: {
@@ -74,7 +75,7 @@ function Confirmation({ form }: { readonly form: StartForm }): JSX.Element | nul
   const { estimate } = choice;
   if (!actions.confirmation.asking || estimate.status !== 'ready') return null;
   const likelyTokens = localLikelyTokens(estimate.estimate);
-  const capTokens = form.project.settings.budget.run.maxTokens;
+  const capTokens = form.capTokens;
   const over = likelyTokens !== undefined && likelyTokens > capTokens;
   return (
     <StartConfirmDialog

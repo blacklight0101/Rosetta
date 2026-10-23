@@ -4,8 +4,9 @@ import type { Project } from '../api/project-schemas.js';
 import type { RunStageChoice } from '../api/runs.js';
 import { capWarnings, type CapWarning } from '../lib/cap-warnings.js';
 import { localLikelyTokens } from '../lib/start-confirmation.js';
-import { cloudRoles, pricedTotal } from '../lib/estimate-math.js';
+import { cloudRoles, isLocalEstimate, pricedTotal } from '../lib/estimate-math.js';
 import { administratorRunCapBinds, effectiveRunCapMicros, usesServerKeys } from '../lib/run-cap.js';
+import { tokensOf } from '../lib/token-cap.js';
 import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import { providerNames } from './provider-choices.js';
 import { startGate, type StartGate } from './start-gate.js';
@@ -72,6 +73,12 @@ export interface StartForm {
     readonly administrator: bigint | undefined;
     readonly serverKeys: boolean;
   };
+  /** P5-07: the run token cap as typed, and the cap the page uses (the project's when it is not a count). */
+  readonly tokensText: string;
+  readonly setTokensText: (text: string) => void;
+  readonly capTokens: number;
+  /** P5-07: every role runs on a local model, so the page asks for a token cap, not dollars. */
+  readonly local: boolean;
   readonly thresholdText: string;
   /** The threshold as typed, or the project's when it is not an amount. */
   readonly thresholdMicros: bigint;
@@ -136,6 +143,7 @@ function runCapsOf(input: {
   readonly runCapMicros: bigint;
   readonly serverRunCap: StartForm['serverRunCap'];
   readonly warnings: readonly CapWarning[];
+  readonly local: boolean;
 } {
   const { stage, estimate, limits, typed } = input;
   const serverRunCap = {
@@ -150,7 +158,8 @@ function runCapsOf(input: {
     limits,
     runCapFromProject: !administratorRunCapBinds({ typed, ...serverRunCap }),
   });
-  return { runCapMicros, serverRunCap, warnings };
+  const local = estimate.status === 'ready' && isLocalEstimate(estimate.estimate);
+  return { runCapMicros, serverRunCap, warnings, local };
 }
 
 /** RF-425: the likely cost of the priced roles, the figure the threshold is compared with. */
@@ -161,7 +170,7 @@ function likelyOf(estimate: EstimateLoad): bigint | undefined {
 /** RF-425, RF-429: the likely cost and, for a local estimate, the likely tokens, to confirm against the caps. */
 function likelihoodOf(estimate: EstimateLoad) {
   const tokens = estimate.status === 'ready' ? localLikelyTokens(estimate.estimate) : undefined;
-  return { likelyMicros: likelyOf(estimate), likelyTokens: tokens };
+  return { likelyMicros: likelyOf(estimate), likelyTokens: tokens, local: tokens !== undefined };
 }
 
 /** DEC-117: the run cap and the confirm threshold as the user types them, from the project's own. */
@@ -170,10 +179,15 @@ function useLimitFields(project: Project) {
   const [thresholdText, setThresholdText] = useState(
     microsToDollars(String(project.settings.budget.confirmAboveCostMicros)),
   );
+  const [tokensText, setTokensText] = useState(String(project.settings.budget.run.maxTokens));
   const { budget } = project.settings;
   const capMicros = micros(capText, budget.run.maxCostMicros);
   const thresholdMicros = micros(thresholdText, budget.confirmAboveCostMicros);
-  return { capText, setCapText, thresholdText, setThresholdText, capMicros, thresholdMicros };
+  const capTokens = tokensOf(tokensText) ?? budget.run.maxTokens;
+  return {
+    ...{ capText, setCapText, thresholdText, setThresholdText, capMicros, thresholdMicros },
+    ...{ tokensText, setTokensText, capTokens },
+  };
 }
 
 /** RF-113, RF-1018: whether the user confirmed the old code map and the library areas. */

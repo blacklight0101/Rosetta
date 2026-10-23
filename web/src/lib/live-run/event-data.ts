@@ -106,6 +106,8 @@ export const startedData = z.looseObject({
     })
     .optional(),
   caps: z.looseObject({ run: capPair }).optional(),
+  // P5-07: the provider kind of each role, for the top bar meter's unit.
+  roles: z.record(z.string(), z.looseObject({ kind: text.optional() })).optional(),
 });
 
 export const resolvedData = z.looseObject({ url: text.optional(), commitSha: text.optional() });

@@ -112,6 +112,30 @@ describe('totals pill', () => {
   });
 });
 
+describe('totals pill for a local-only account', () => {
+  it('P5-07 shows tokens and no dollar amount when every call ran on a local model', async () => {
+    appAt('/projects', 'user', () => ({ ...userTotals, local: true }));
+
+    const totals = await pill();
+
+    await waitFor(() => {
+      expect(totals.textContent).toContain('Your total');
+    });
+    expect(totals.textContent).toContain('1,280,000 tokens');
+    expect(totals.textContent).not.toContain('$');
+  });
+
+  it('P5-07 keeps the dollars of an account with a priced model', async () => {
+    appAt('/projects', 'user', () => ({ ...userTotals, local: false }));
+
+    const totals = await pill();
+
+    await waitFor(() => {
+      expect(totals.textContent).toContain('$3.88');
+    });
+  });
+});
+
 describe('totals pill during a run', () => {
   it('RF-1010 reads the ledger again when a page announces a model call, without a reload', async () => {
     let answer = userTotals;
@@ -123,6 +147,7 @@ describe('totals pill during a run', () => {
 
     answer = {
       totals: usageTotals({ cost: [{ currency: 'USD', costMicros: '4100000' }] }),
+      local: false,
       server: null,
     };
     fireEvent.click(screen.getByRole('button', { name: 'Model call' }));

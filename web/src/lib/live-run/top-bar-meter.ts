@@ -1,4 +1,5 @@
-import { costLabel } from './format.js';
+import { costLabel, tokensLabel } from './format.js';
+import type { MeterUnit } from './run-meter-reading.js';
 import { shareOf } from './run-summary.js';
 
 // RF-1003, RF-1010, DEC-49, design-system.md section 5 (cost meter): what the "This run" meter of the
@@ -16,6 +17,8 @@ export interface TopBarMeter {
   /** The level in words, shown beside the meter from the warning level on. */
   readonly note: string | undefined;
   readonly valueText: string;
+  /** P5-07: tokens for a run on local models, micro-dollars otherwise. */
+  readonly unit: MeterUnit;
 }
 
 const WARN_FROM = 80;
@@ -28,22 +31,27 @@ function levelOf(costMicros: number, capMicros: number): MeterLevel {
   return costMicros * 100 >= capMicros * WARN_FROM ? 'warn' : 'ok';
 }
 
+/** P5-07: a run on local models only has tokens, so its meter names tokens and no dollars. */
+const labelOf = (unit: MeterUnit, amount: number): string =>
+  unit === 'tokens' ? `${tokensLabel(amount)} tokens` : costLabel(amount);
+
 // RF-1003
-export function topBarMeterOf(costMicros: number, capMicros: number): TopBarMeter {
-  const share = shareOf(costMicros, capMicros);
-  const level = levelOf(costMicros, capMicros);
-  const spent = costLabel(costMicros);
-  const cap = costLabel(capMicros);
+export function topBarMeterOf(spent: number, cap: number, unit: MeterUnit = 'micros'): TopBarMeter {
+  const share = shareOf(spent, cap);
+  const level = levelOf(spent, cap);
+  const spentText = labelOf(unit, spent);
+  const capText = labelOf(unit, cap);
   const words = { ok: undefined, warn: 'approaching the cap', danger: 'at the cap' }[level];
   const note =
     words === undefined ? undefined : `${words.charAt(0).toUpperCase()}${words.slice(1)}`;
-  const valueText = `${spent} of ${cap} (${String(share)}%)`;
+  const valueText = `${spentText} of ${capText} (${String(share)}%)`;
   return {
     share,
     level,
-    spent,
-    cap,
+    spent: spentText,
+    cap: capText,
     note,
+    unit,
     valueText: words === undefined ? valueText : `${valueText}, ${words}`,
   };
 }

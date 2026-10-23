@@ -9,6 +9,8 @@ import type { CapsView } from './get-caps.js';
 
 export interface AccountTotals {
   readonly totals: UsageTotals;
+  /** P5-07: every call of the user ran on a local model; false for no call at all. */
+  readonly local: boolean;
   /** The administrator only: the caps and the server-key spend of this month. */
   readonly server: CapsView | undefined;
 }
@@ -33,6 +35,7 @@ export class GetAccountTotals {
       this.deps.costs.userSummary(actor.userId),
       actor.role === 'admin' ? this.deps.caps.execute() : Promise.resolve(undefined),
     ]);
-    return { totals: totalsOf(groups), server };
+    const local = groups.length > 0 && groups.every((group) => group.local);
+    return { totals: totalsOf(groups), local, server };
   }
 }

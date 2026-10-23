@@ -7,7 +7,10 @@ import { useApp } from '../app/app-context.js';
 import { usePublishRunMeter, type RunMeterReading } from '../app/run-meter-signal.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
+import { runMeterReadingOf } from '../lib/live-run/run-meter-reading.js';
+import { runIsLocal } from '../lib/live-run/run-local.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
+import { roleTotalsOf } from '../lib/live-run/run-summary.js';
 import { EndedBody } from './EndedBody.js';
 import { PlanJourney } from './JourneyPlacement.js';
 import { PauseUpdates } from './PauseUpdates.js';
@@ -45,12 +48,29 @@ function costOf(state: RunState, run: RunRow): number {
   return Math.max(run.totals.costMicros, state.ended?.costMicros ?? 0, roles);
 }
 
-/** The run's cost against its cap for the top bar, only while the run works and its cap is known. */
+/** The tokens of every role so far. */
+function tokensOf(state: RunState): number {
+  return roleTotalsOf(state).reduce((sum, role) => sum + role.inputTokens + role.outputTokens, 0);
+}
+
+/**
+ * The run's spend against its cap for the top bar, only while the run works and its cap is known:
+ * tokens against the token cap when every model the run uses is local (P5-07, from `run.started`), else the cost against its cap.
+ */
 // RF-1003
-function meterOf(state: RunState, run: RunRow, phase: RunPhase): RunMeterReading | undefined {
-  const capMicros = state.caps?.maxCostMicros ?? 0;
-  if (phase.kind !== 'running' || !(capMicros > 0)) return undefined;
-  return { costMicros: costOf(state, run), capMicros };
+function meterOf(
+  state: RunState,
+  run: RunRow,
+  phase: RunPhase,
+  local: boolean,
+): RunMeterReading | undefined {
+  if (phase.kind !== 'running') return undefined;
+  return runMeterReadingOf({
+    caps: state.caps,
+    costMicros: costOf(state, run),
+    tokens: tokensOf(state),
+    local,
+  });
 }
 
 function useStop(runId: string): {
@@ -91,7 +111,6 @@ export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps)
   const { state } = stream;
   const view = usePauseUpdates(state);
   const stop = useStop(run.id);
-  usePublishRunMeter(meterOf(state, run, phase));
   const planned = state.agents.some((agent) => agent.state !== 'Planned');
   const stage = state.stage ?? run.stage;
   const estimate = useRunEstimate(
@@ -99,6 +118,7 @@ export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps)
     stage,
     planned ? state.agents.map((agent) => agent.area) : [],
   );
+  usePublishRunMeter(meterOf(state, run, phase, runIsLocal(state)));
   return (
     <div class="rst-live">
       <RunStatusBar

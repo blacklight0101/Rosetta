@@ -15,12 +15,13 @@ export function usageTotals(overrides: Partial<UsageTotals> = {}): UsageTotals {
   };
 }
 
-export const userTotals: AccountTotals = { totals: usageTotals(), server: null };
+export const userTotals: AccountTotals = { totals: usageTotals(), local: false, server: null };
 
 /** The administrator's answer: $8.50 of the server's $10.00 this month (85%). */
 export function adminTotals(serverMicros = '8500000'): AccountTotals {
   return {
     totals: usageTotals(),
+    local: false,
     server: {
       caps: { runMicros: '500000', userDayMicros: '1000000', serverMonthMicros: '10000000' },
       serverMonthToDate: [{ currency: 'USD', costMicros: serverMicros }],

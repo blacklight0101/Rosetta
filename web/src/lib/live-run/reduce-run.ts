@@ -70,6 +70,7 @@ export function initialRunState(): RunState {
     stage: undefined,
     source: undefined,
     caps: undefined,
+    roleKinds: {},
     scan: undefined,
     agents: [],
     cards: [],

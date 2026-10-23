@@ -23,11 +23,13 @@ function added(group: LedgerGroup | undefined, entry: LedgerEntry): LedgerGroup 
     const { priceTableVersion, inputTokens, outputTokens, cachedInputTokens, costMicros } = entry;
     return {
       ...{ runId, stage, role, provider, model, keySource, currency, costKnown, priceTableVersion },
-      ...{ calls: 1, inputTokens, outputTokens, cachedInputTokens, costMicros, firstAt: entry.at },
+      ...{ local: keySource === 'none', calls: 1, inputTokens, outputTokens, cachedInputTokens },
+      ...{ costMicros, firstAt: entry.at },
     };
   }
   return {
     ...group,
+    local: group.local && entry.keySource === 'none',
     calls: group.calls + 1,
     inputTokens: group.inputTokens + entry.inputTokens,
     outputTokens: group.outputTokens + entry.outputTokens,
@@ -51,6 +53,7 @@ const noCalls = (entry: LedgerEntry): SummaryGroup => ({
   currency: entry.currency,
   costKnown: entry.costKnown,
   priceTableVersion: entry.priceTableVersion,
+  local: entry.keySource === 'none',
   calls: 0,
   inputTokens: 0,
   outputTokens: 0,
@@ -64,6 +67,7 @@ function summaryOf(entries: readonly LedgerEntry[]): readonly SummaryGroup[] {
     const known = groups.get(summaryKey(entry)) ?? noCalls(entry);
     groups.set(summaryKey(entry), {
       ...known,
+      local: known.local && entry.keySource === 'none',
       calls: known.calls + 1,
       inputTokens: known.inputTokens + entry.inputTokens,
       outputTokens: known.outputTokens + entry.outputTokens,

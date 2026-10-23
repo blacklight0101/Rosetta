@@ -222,6 +222,7 @@ describe('GET /api/account/totals', () => {
         unknownCostCalls: 0,
         priceTableVersions: ['2026-10-11', '2026-10-12'],
       },
+      local: false,
       server: null,
     });
   });

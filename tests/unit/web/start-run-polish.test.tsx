@@ -11,7 +11,15 @@ import {
   runsPath,
   unpricedEstimate,
 } from './start-run-fixtures.js';
-import { describedText, input, ready, renderStart, start } from './start-run-helpers.js';
+import {
+  consentLabel,
+  describedText,
+  input,
+  priced,
+  ready,
+  renderStart,
+  start,
+} from './start-run-helpers.js';
 
 // RF-1001, RF-425, RF-1104, DEC-117, P1-107: the start page polish. The meter says which models the
 // likely cost leaves out, a role on the server's key warns that the run may be refused, and the
@@ -63,7 +71,7 @@ it('RF-1104 no server key warning when every role uses the own key or a local mo
 });
 
 it('RF-1001 shows the confirm threshold of the project next to the run cap', async () => {
-  renderStart();
+  renderStart(priced);
   await ready();
 
   expect(input(thresholdLabel).value).toBe('0.25');
@@ -71,10 +79,11 @@ it('RF-1001 shows the confirm threshold of the project next to the run cap', asy
 });
 
 it('RF-1001 a run cap below the confirm threshold is refused next to the threshold without a request', async () => {
-  const { calls } = renderStart();
+  const { calls } = renderStart(priced);
   await ready();
 
   fireEvent.input(input('Run cap (USD)'), { target: { value: '0.10' } });
+  fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
   await waitFor(() => {
@@ -86,6 +95,7 @@ it('RF-1001 a run cap below the confirm threshold is refused next to the thresho
 
 it('RF-1001 a lowered threshold is saved with the lowered cap before the run starts', async () => {
   const { calls } = renderStart({
+    ...priced,
     [`PUT ${projectPath}/settings`]: json(200, projectWithCap(100_000)),
     [`POST ${runsPath}`]: runAnswer('understand', null),
   });
@@ -93,6 +103,7 @@ it('RF-1001 a lowered threshold is saved with the lowered cap before the run sta
 
   fireEvent.input(input('Run cap (USD)'), { target: { value: '0.10' } });
   fireEvent.input(input(thresholdLabel), { target: { value: '0.05' } });
+  fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
   await screen.findByTestId('run-notice');
@@ -104,6 +115,7 @@ it('RF-1001 a lowered threshold is saved with the lowered cap before the run sta
 
 it('RF-1001 a threshold the server refuses shows next to the threshold field', async () => {
   const { calls } = renderStart({
+    ...priced,
     [`PUT ${projectPath}/settings`]: failure(400, 'RST-1005', [
       { field: 'budget.confirmAboveCostMicros', code: 'RST-1006' },
     ]),
@@ -111,6 +123,7 @@ it('RF-1001 a threshold the server refuses shows next to the threshold field', a
   await ready();
 
   fireEvent.input(input(thresholdLabel), { target: { value: '0.20' } });
+  fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
   await waitFor(() => {
@@ -121,10 +134,11 @@ it('RF-1001 a threshold the server refuses shows next to the threshold field', a
 });
 
 it('RF-1001 a threshold that is not an amount is refused next to its field without a request', async () => {
-  const { calls } = renderStart();
+  const { calls } = renderStart(priced);
   await ready();
 
   fireEvent.input(input(thresholdLabel), { target: { value: 'soon' } });
+  fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
   await waitFor(() => {

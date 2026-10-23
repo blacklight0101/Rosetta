@@ -28,13 +28,13 @@ const GROUPS_TAIL =
  * only, so the answer stays a handful of rows however many runs the ledger holds. `user_id = $1`
  * walks the `(user_id, at)` index, and no sort or group is per run, stage or model.
  */
-const USER_SUMMARY = `SELECT currency, cost_known, price_table_version, count(*)::int AS calls, sum(input_tokens)::text AS input_tokens, sum(output_tokens)::text AS output_tokens, sum(cached_input_tokens)::text AS cached_input_tokens, sum(cost_micros)::text AS cost_micros FROM cost_ledger WHERE user_id = $1 GROUP BY currency, cost_known, price_table_version ORDER BY currency COLLATE "C", cost_known, price_table_version COLLATE "C"`;
+const USER_SUMMARY = `SELECT currency, cost_known, price_table_version, bool_and(key_source = 'none') AS local, count(*)::int AS calls, sum(input_tokens)::text AS input_tokens, sum(output_tokens)::text AS output_tokens, sum(cached_input_tokens)::text AS cached_input_tokens, sum(cost_micros)::text AS cost_micros FROM cost_ledger WHERE user_id = $1 GROUP BY currency, cost_known, price_table_version ORDER BY currency COLLATE "C", cost_known, price_table_version COLLATE "C"`;
 
 /**
  * RF-1008: the sums of every asked project in one scan of the user's rows, per project, currency,
  * known cost and price table version; the number of groups does not grow with the runs or calls.
  */
-const PROJECT_SUMMARIES = `SELECT project_id::text AS project_id, currency, cost_known, price_table_version, count(*)::int AS calls, sum(input_tokens)::text AS input_tokens, sum(output_tokens)::text AS output_tokens, sum(cached_input_tokens)::text AS cached_input_tokens, sum(cost_micros)::text AS cost_micros FROM cost_ledger WHERE user_id = $1 AND project_id = ANY($2::uuid[]) GROUP BY project_id, currency, cost_known, price_table_version ORDER BY project_id::text COLLATE "C", currency COLLATE "C", cost_known, price_table_version COLLATE "C"`;
+const PROJECT_SUMMARIES = `SELECT project_id::text AS project_id, currency, cost_known, price_table_version, bool_and(key_source = 'none') AS local, count(*)::int AS calls, sum(input_tokens)::text AS input_tokens, sum(output_tokens)::text AS output_tokens, sum(cached_input_tokens)::text AS cached_input_tokens, sum(cost_micros)::text AS cost_micros FROM cost_ledger WHERE user_id = $1 AND project_id = ANY($2::uuid[]) GROUP BY project_id, currency, cost_known, price_table_version ORDER BY project_id::text COLLATE "C", currency COLLATE "C", cost_known, price_table_version COLLATE "C"`;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -56,7 +56,9 @@ const summaryRow = z.object({
   cost_micros: integerText,
 });
 
-const projectSummaryRow = summaryRow.extend({ project_id: z.string() });
+/** P5-07: a summary group also says whether every row of it ran on a local model. */
+const summaryGroupRow = summaryRow.extend({ local: z.boolean() });
+const projectSummaryRow = summaryGroupRow.extend({ project_id: z.string() });
 
 const groupRow = summaryRow.extend({
   run_id: z.string().nullable(),
@@ -68,11 +70,12 @@ const groupRow = summaryRow.extend({
   first_at: z.date(),
 });
 
-function toSummary(row: z.infer<typeof summaryRow>): SummaryGroup {
+function toSummary(row: z.infer<typeof summaryRow>, local: boolean): SummaryGroup {
   return {
     currency: row.currency,
     costKnown: row.cost_known,
     priceTableVersion: row.price_table_version,
+    local,
     calls: row.calls,
     inputTokens: row.input_tokens,
     outputTokens: row.output_tokens,
@@ -84,7 +87,7 @@ function toSummary(row: z.infer<typeof summaryRow>): SummaryGroup {
 function toGroup(row: unknown): LedgerGroup {
   const parsed = groupRow.parse(row);
   return {
-    ...toSummary(parsed),
+    ...toSummary(parsed, parsed.key_source === 'none'),
     runId: parsed.run_id,
     stage: parsed.stage,
     role: parsed.role,
@@ -104,7 +107,10 @@ export class PgCostTotals implements CostTotals {
 
   // RF-1010
   async userSummary(userId: string): Promise<readonly SummaryGroup[]> {
-    return (await this.rows(USER_SUMMARY, [userId])).map((row) => toSummary(summaryRow.parse(row)));
+    return (await this.rows(USER_SUMMARY, [userId])).map((row) => {
+      const parsed = summaryGroupRow.parse(row);
+      return toSummary(parsed, parsed.local);
+    });
   }
 
   // RF-1008
@@ -117,7 +123,7 @@ export class PgCostTotals implements CostTotals {
     const rows = await this.rows(PROJECT_SUMMARIES, [userId, ids]);
     return rows.map((row) => {
       const parsed = projectSummaryRow.parse(row);
-      return { ...toSummary(parsed), projectId: parsed.project_id };
+      return { ...toSummary(parsed, parsed.local), projectId: parsed.project_id };
     });
   }
 

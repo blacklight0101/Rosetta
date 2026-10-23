@@ -255,9 +255,14 @@ test(
     const group = page.getByTestId('topbar-run-meter');
     await expect(group).toBeVisible({ timeout: 30_000 });
     await expect(group).toContainText('This run');
-    await expect(group).toContainText(/\$\d+(\.\d+)? of \$\d+\.\d\d/u);
+    // P5-07: the e2e project reads on Ollama, so the meter counts tokens against the token cap.
+    await expect(group).toContainText(/[\d,]+ tokens of [\d,]+ tokens/u);
+    await expect(group).not.toContainText('$');
     await expect(runMeter(page)).toHaveAttribute('aria-valuenow', /^\d+$/u);
-    await expect(runMeter(page)).toHaveAttribute('aria-valuetext', /^\$\S+ of \$\S+ \(\d+%\)/u);
+    await expect(runMeter(page)).toHaveAttribute(
+      'aria-valuetext',
+      /^[\d,]+ tokens of [\d,]+ tokens \(\d+%\)/u,
+    );
     await expect(page.getByTestId('header-totals')).toBeVisible();
     const meterBox = await boxOf(group);
     await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });

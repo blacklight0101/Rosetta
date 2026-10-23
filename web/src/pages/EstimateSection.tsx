@@ -9,6 +9,7 @@ import { Link } from '../components/Link.js';
 import type { CapWarning } from '../lib/cap-warnings.js';
 import { scanSubjectOf } from '../lib/live-run/scan-subject.js';
 import { capComparison } from '../lib/cap-comparison.js';
+import { isLocalEstimate } from '../lib/estimate-math.js';
 import { effectiveRunCapMicros } from '../lib/run-cap.js';
 import type { EstimateLoad } from './use-estimate.js';
 import { EstimateTable } from './EstimateTable.js';
@@ -37,6 +38,8 @@ interface CapField {
   };
   /** `budget.run.maxTokens`: the cap an estimate of local models is compared with (Q-51). */
   readonly capTokens: number;
+  /** P5-07: the run token cap field of a local estimate, which has no dollar fields. */
+  readonly tokens: { readonly text: string; readonly onInput: (text: string) => void };
   readonly error: FieldError | undefined;
   readonly onInput: (text: string) => void;
   /** `budget.confirmAboveCostMicros` in dollars, which may not be above the cap (DEC-117). */
@@ -122,9 +125,33 @@ function Warnings({
   );
 }
 
+/** P5-07: a run on local models costs nothing, so its one cap is the token cap, with its meter. */
+function TokenCapField(props: {
+  readonly cap: CapField;
+  readonly estimate: RunEstimate;
+}): JSX.Element {
+  const { cap, estimate } = props;
+  return (
+    <div class="rst-start__cap">
+      <Field
+        kind="text"
+        id="run-cap-tokens"
+        label="Run cap (tokens)"
+        value={cap.tokens.text}
+        error={cap.error}
+        describedBy={hintId}
+        announce={false}
+        onInput={cap.tokens.onInput}
+      />
+      <CapMeter estimate={estimate} cap={cap} />
+    </div>
+  );
+}
+
 /** The run cap with its meter, and the confirm threshold beside it (DEC-117). */
 function CapFields(props: { readonly cap: CapField; readonly estimate: RunEstimate }): JSX.Element {
   const { cap, estimate } = props;
+  if (isLocalEstimate(estimate)) return <TokenCapField cap={cap} estimate={estimate} />;
   return (
     <>
       <div class="rst-start__cap">
