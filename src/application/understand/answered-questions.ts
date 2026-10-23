@@ -1,38 +1,23 @@
 import type { CardDraft } from '../../domain/cards/card-ids.js';
-import type { Citation } from '../../domain/cards/citation.js';
 import { nameAnsweredByCitedLines } from '../../domain/cards/open-question-answered.js';
 import type { RepositoryReader } from '../ports/repository-reader.js';
 import type { ReaderTask } from './reader-tasks.js';
 import type { RefusedQuestion, TaskLog } from './task-log.js';
 
-/** The lines the draft's claims cite, joined; a range that cannot be read adds nothing (the question stands). */
-async function citedText(
-  reader: Pick<RepositoryReader, 'readLines'>,
-  citations: readonly Citation[],
-): Promise<string> {
-  const texts: string[] = [];
-  for (const { path, startLine, endLine } of citations) {
-    const read = await reader.readLines({ path, startLine, endLine }).catch(() => undefined);
-    if (read?.ok === true) texts.push(read.value.lines.join('\n'));
-  }
-  return texts.join('\n');
-}
-
+/** The cited range that defines the name a question asks about, with the name; a range that cannot be read adds nothing (the question stands). */
 async function refusalOf(
   reader: Pick<RepositoryReader, 'readLines'>,
   draft: CardDraft,
 ): Promise<RefusedQuestion | undefined> {
-  if (draft.type !== 'OQ' || draft.question === undefined) return undefined;
-  for (const claim of draft.claims) {
-    const name = nameAnsweredByCitedLines(draft.question, await citedText(reader, claim.citations));
-    const cited = claim.citations[0];
-    if (name !== undefined && cited !== undefined) {
-      const { path, startLine, endLine } = cited;
-      return {
-        question: draft.question,
-        name,
-        citation: `${path}:${String(startLine)}-${String(endLine)}`,
-      };
+  const { question } = draft;
+  if (draft.type !== 'OQ' || question === undefined) return undefined;
+  for (const { citations } of draft.claims) {
+    for (const { path, startLine, endLine } of citations) {
+      const read = await reader.readLines({ path, startLine, endLine }).catch(() => undefined);
+      if (read?.ok !== true) continue;
+      const name = nameAnsweredByCitedLines(question, read.value.lines.join('\n'));
+      if (name === undefined) continue;
+      return { question, name, citation: `${path}:${String(startLine)}-${String(endLine)}` };
     }
   }
   return undefined;
