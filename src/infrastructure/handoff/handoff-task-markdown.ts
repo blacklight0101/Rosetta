@@ -12,7 +12,12 @@ import { buildsLines } from './handoff-builds-markdown.js';
 import { formulaLines } from './handoff-formulas-markdown.js';
 import { bullets, decisionLink, handoffFiles, idLink } from './handoff-links.js';
 import { parallelCardLines } from './handoff-parallel-markdown.js';
-import { invariantLines, probeLines, riskLines } from './handoff-quality-markdown.js';
+import {
+  guardTestRule,
+  invariantLines,
+  probeLines,
+  riskLines,
+} from './handoff-quality-markdown.js';
 
 // RF-601, RF-607, RF-609, RF-611, RF-612, RF-630, RF-634, RF-635, DEC-75: the task cards. Each is in one
 // phase, names the requirements it builds, the invariant it makes true and its acceptance criteria,
@@ -99,18 +104,32 @@ function cardLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper
     ...formulaLines(task, handoff),
     ...invariantLines(task, esc),
     ...behaviourLines(task, handoff, esc),
-    ...specificationLines(handoff, esc),
-    ...technologyLines(handoff, esc),
     'Acceptance criteria:',
     '',
     ...bullets(task.acceptanceCriteria, esc, 'None stated.'),
     '',
     ...probeLines(task, esc),
-    ...shapeLines(task),
+    ...shapeLines(task, handoff.workbookFormulas !== undefined),
     ...parallelCardLines(task, esc),
     ...testLines(task, handoff, esc),
-    ...checklistLines(handoff, esc),
   ];
+}
+
+/** P5-08: the guard test rule, stated once for every card that adds a guard. */
+function guardTestLines(handoff: HandoffPackage): string[] {
+  if (!handoff.content.tasks.some((task) => task.adds.length > 0)) return [];
+  return [guardTestRule, ''];
+}
+
+/** P5-08: what every card shares (checklist, specification check, technology, guard test), written once. */
+function sharedLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const lines = [
+    ...specificationLines(handoff, esc),
+    ...technologyLines(handoff, esc),
+    ...checklistLines(handoff, esc),
+    ...guardTestLines(handoff),
+  ];
+  return lines.length === 0 ? [] : ['**Applies to every card**', '', ...lines];
 }
 
 // RF-601, RF-607, RF-609, RF-611, RF-612
@@ -120,6 +139,7 @@ export function tasksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): st
     '',
     'Work a developer can pick up, each in one phase of the roadmap with its acceptance criteria.',
     '',
+    ...sharedLines(handoff, esc),
     ...handoff.content.tasks.flatMap((task) => cardLines(task, handoff, esc)),
   ].join('\n');
 }

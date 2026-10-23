@@ -123,11 +123,13 @@ describe('RF-607 SOLID and KISS on the task cards', () => {
   it('RF-607 given SOLID or KISS, every card has a review checklist that names the principle and what to look for', async () => {
     const files = await packageOf({ principles: ['solid', 'kiss'] });
 
-    for (const card of cardsOf(files)) {
-      expect(card).toContain('\nReview checklist:\n\n');
-      expect(card).toContain(`- ${entryOf('solid').title}: ${entryOf('solid').check}`);
-      expect(card).toContain(`- ${entryOf('kiss').title}: ${entryOf('kiss').check}`);
-    }
+    // P5-08: the checklist is the same for every card, so it is written once before the cards.
+    const tasks = plain(files['tasks.md']);
+    const shared = tasks.slice(0, tasks.indexOf('\n## T-'));
+    expect(shared).toContain('\nReview checklist:\n\n');
+    expect(shared).toContain(`- ${entryOf('solid').title}: ${entryOf('solid').check}`);
+    expect(shared).toContain(`- ${entryOf('kiss').title}: ${entryOf('kiss').check}`);
+    for (const card of cardsOf(files)) expect(card).not.toContain('Review checklist');
   });
 
   it('RF-607 without a design principle no card has a review checklist', async () => {

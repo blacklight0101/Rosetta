@@ -65,7 +65,10 @@ Plan the target system from that input and nothing else:
      when it adds none.
    - `probes`: the review probes, concrete hostile or edge inputs that a reviewer and the builder will try: other
      spellings and letter cases, encodings, neighbouring code paths that do the same thing, values one step past a
-     limit. Required when `adds` is not empty or `riskClass` is not `none`; otherwise an empty list.
+     limit. Write each probe as the input, then `=>`, then the expected outcome: what must happen for that input
+     (accepted, refused with which error, stored as which value). A probe with no expected outcome cannot be
+     checked and Rosetta lists it as incomplete. Required when `adds` is not empty or `riskClass` is not `none`;
+     otherwise an empty list.
    - `files`: the files and folders the task expects to change, written as paths from the root of the new
      repository (`src/<area>/`, `tests/<area>/<name>.test.ts`). Cards that list the same file or folder cannot be
      built at the same time, so list what the task really changes, no more and no less. Paths are literal: a folder
@@ -165,7 +168,7 @@ support. The positions in `phase`, `requirements` and `dependsOn` are examples o
       "invariant": "<what must hold when the work is done>",
       "riskClass": "<security boundary, data loss, money or none>",
       "adds": ["<check, filter, limit or parser>"],
-      "probes": ["<a hostile or edge input to try>"],
+      "probes": ["<a hostile or edge input to try> => <the expected outcome>"],
       "files": ["src/<area>/", "tests/<area>/"],
       "needs": [
         {

@@ -143,10 +143,14 @@ it('P3-94 writes no workbook-formulas.md for a package without workbook formulas
   expect(files['README.md']).not.toContain(FILE);
 });
 
+// P5-08: fixtures.md and tasks.md point at workbook data, not repository files.
 it('P3-94 leaves every other file of the package as it was', () => {
   const others = (files: Readonly<Record<string, string>>) =>
     Object.fromEntries(
-      Object.entries(files).filter(([path]) => path !== 'README.md' && path !== FILE),
+      Object.entries(files).filter(
+        ([path]) =>
+          path !== 'README.md' && path !== FILE && path !== 'fixtures.md' && path !== 'tasks.md',
+      ),
     );
 
   expect(others(filesOf({ workbookFormulas: invoice() }))).toEqual(others(filesOf()));

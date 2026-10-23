@@ -19,19 +19,16 @@ export function invariantLines(task: PlanTask, esc: MarkdownEscaper): string[] {
   return [`Invariant: ${esc.inline(task.invariant)}`, ''];
 }
 
+/** P5-08: stated once at the top of the task cards, not on every card that adds a guard. */
+export const guardTestRule =
+  'Guard test: write a test for each guard a card adds that fails when the guard is removed; the reviewer removes the guard to confirm it.';
+
 /** The guards the card adds, its review probes and the guard test they call for (RF-630, RF-633). */
 // RF-630, RF-633
 export function probeLines(task: PlanTask, esc: MarkdownEscaper): string[] {
   const adds = task.adds.length === 0 ? [] : [`Adds: ${task.adds.join(', ')}`, ''];
-  const guardTest =
-    task.adds.length === 0
-      ? []
-      : [
-          'Guard test: write a test for each guard above that fails when the guard is removed; the reviewer removes the guard to confirm it.',
-          '',
-        ];
   if (task.probes.length === 0) return adds;
-  return [...adds, 'Review probes:', '', ...bullets(task.probes, esc, ''), '', ...guardTest];
+  return [...adds, 'Review probes:', '', ...bullets(task.probes, esc, ''), ''];
 }
 
 // RF-633

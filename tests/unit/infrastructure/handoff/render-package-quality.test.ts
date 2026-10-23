@@ -27,12 +27,20 @@ function withTasks(tasks: ReturnType<typeof planTask>[]): Partial<HandoffPackage
 
 const shapes = {
   ...{ files: 3, totalBytes: 3000, unreadable: 0, beyondTotal: 0 },
-  largest: [{ path: 'Invoice.xlsm/Invoice/sheet.md', kind: 'doc' as const, bytes: 2000 }],
-  byKind: [{ kind: 'doc' as const, files: 3, bytes: 3000 }],
+  largest: [
+    {
+      path: 'Invoice.xlsm/Invoice/sheet.md',
+      kind: 'documentation' as const,
+      bytes: 2000,
+      encoding: undefined,
+      lineEnding: undefined,
+    },
+  ],
+  byKind: [{ kind: 'documentation' as const, files: 3, bytes: 3000 }],
   deepest: [{ path: 'Invoice.xlsm/Invoice/sheet.md', depth: 3 }],
   unusualNames: [],
-  encodings: [{ name: 'utf-8' as const, files: 3 }],
-  lineEndings: [{ name: 'lf' as const, files: 3 }],
+  encodings: [{ name: 'UTF-8' as const, files: 3 }],
+  lineEndings: [{ name: 'LF' as const, files: 3 }],
 };
 
 describe('P5-08 item 1: fixtures of a workbook point at workbook data', () => {
@@ -115,7 +123,7 @@ describe('P5-08 item 4: only a card that depends on a question is marked as wait
   it('RF-637 a question of the brief marks no card and the open questions say it covers the whole build', () => {
     const files = filesOf(two);
 
-    expect(plain(files['roadmap.md'])).not.toContain('migration');
+    expect(plain(files['roadmap.md'])).not.toMatch(/tasks\.md#t-\d+\): .*migration/u);
     expect(plain(files['open-questions.md'])).toMatch(/whole build/u);
   });
 });

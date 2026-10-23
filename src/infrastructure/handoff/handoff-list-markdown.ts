@@ -91,7 +91,7 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     '',
     '## Planning brief questions that took their default',
     '',
-    'Nobody answered these questions when the brief was saved; the package was written with the default shown. Confirm or change each one.',
+    'Nobody answered these questions when the brief was saved; the package was written with the default shown. Confirm or change each one. A question of the brief applies to the whole build, so it marks no single card as waiting.',
     '',
     ...briefQuestionLines(handoff, esc),
     '',

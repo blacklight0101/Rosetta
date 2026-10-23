@@ -65,3 +65,16 @@ export function cardFault(card: CardQualityFields): CardFault | undefined {
 export function cardProblem(card: CardQualityFields): string | undefined {
   return cardFault(card)?.reason;
 }
+
+/**
+ * P5-08: whether a review probe states what must happen. A probe is written `<input> => <expected
+ * outcome>`; the arrow forms `->` and the arrow character, or the word "expected", are read the
+ * same way, because a model writes the arrow in several ways. Both sides need a word.
+ */
+// RF-630
+export function probeStatesOutcome(probe: string): boolean {
+  const arrow = /^(.*?)(?:=>|->|→)(.*)$/su.exec(probe);
+  if (arrow !== null)
+    return /\p{L}|\p{N}/u.test(arrow[1] ?? '') && /\p{L}|\p{N}/u.test(arrow[2] ?? '');
+  return /\bexpected\b/iu.test(probe);
+}

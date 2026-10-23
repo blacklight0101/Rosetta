@@ -24,7 +24,7 @@ Write the task cards that build the items of the first block. A card may build o
    - `acceptanceCriteria`: the Done-when items, each written as Given, When, Then in that order, with concrete inputs, never "valid input" or "an error".
    - `riskClass`: exactly one of `security boundary`, `data loss`, `money` or `none`. Take the first three whenever one applies, however small the card is.
    - `adds`: the kinds of guard the card adds, from `check`, `filter`, `limit` and `parser`; an empty list when it adds none.
-   - `probes`: the review probes, concrete hostile or edge inputs a reviewer will try: other spellings and letter cases, encodings, neighbouring code paths that do the same thing, values one step past a limit. Required when `adds` is not empty or `riskClass` is not `none`; otherwise an empty list.
+   - `probes`: the review probes, concrete hostile or edge inputs a reviewer will try: other spellings and letter cases, encodings, neighbouring code paths that do the same thing, values one step past a limit. Write each probe as the input, then `=>`, then the expected outcome (what must happen for that input); a probe with no expected outcome cannot be checked. Required when `adds` is not empty or `riskClass` is not `none`; otherwise an empty list.
    - `files`: the files and folders the card expects to change, written as paths from the root of the new repository, with no patterns and no absolute paths; list what the card really changes.
    - `dependsOn`: the positions, counted from 1 in your own `tasks` list, of the cards you write that must be done first; an empty list for none. Only name an earlier card of your list.
      A card that states no invariant, a Done-when item that is not Given, When, Then, no risk class, or no probes where they are required is not written by Rosetta, so state them all.
@@ -50,8 +50,8 @@ Answer with one JSON object and nothing else. When no card is needed, answer wit
       "riskClass": "money",
       "adds": ["limit"],
       "probes": [
-        "A refund of 60.00, 60,00 and 6e1.",
-        "A second refund of an order refunded in full."
+        "A refund of 60.00, 60,00 and 6e1 => each is read as the same amount or refused, never as 600.",
+        "A second refund of an order refunded in full => refused, and the order total is unchanged."
       ],
       "files": ["src/refunds/", "tests/refunds/"],
       "dependsOn": [],

@@ -15,6 +15,11 @@ the workbook, from those cards only, with these rules on top of the ones above.
   application with the same steps in the same order.
 - The outputs become reports: each sheet or range that people read or print is a report or a screen the
   application produces.
+- A template sheet (a sheet people copy, fill in or print, such as a form, an invoice or a report layout) is
+  described by its layout cells: for each one give the sheet and the cell address (for example `Template!B4`),
+  say whether it is a fixed label (text that never changes), an input cell, or a cell filled by a formula or by
+  another sheet, and name the merged areas and the print area when the cards state them. Plan the report so that
+  it reproduces that layout cell by cell; use only the cells the cards cite and do not invent a cell address.
 - A workbook is also where people kept data by hand. Plan how the data in the sheets is brought into the new
   application and how the two are compared before the workbook is retired.
 
