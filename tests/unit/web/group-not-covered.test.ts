@@ -5,7 +5,7 @@ import { groupNotCovered, splitUnreadFiles } from '../../../web/src/lib/group-no
 
 const lines = [
   'Z: the run ended before its reader finished.',
-  'Y: no card passed the citation check.',
+  'Y: no card passed the citation check and the judgement.',
   'Strange sentence nobody planned for',
   'X: its reader could not finish (boom).',
   'W: third-party code; nothing about the application was read from it.',
@@ -18,7 +18,7 @@ it('RF-264 puts the groups in the fixed order of the reasons, "Other" last', () 
     'Third-party code',
     'Its reader could not finish',
     'The run ended before its reader finished',
-    'No card passed the citation check',
+    'No card passed the citation check and the judgement',
     'Other',
   ]);
 });

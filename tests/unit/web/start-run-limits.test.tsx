@@ -77,3 +77,25 @@ it('RF-405 DEC-159 the start page warns before the run that the caps cannot hold
   });
   expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.50');
 });
+
+it('RF-405 the first-call warning links the caps of the project settings', async () => {
+  const firstCalls = {
+    calls: 1,
+    promptTokens: 6000,
+    maxOutputTokens: 8192,
+    perCallMicros: '195000',
+    reservedMicros: '195000',
+    reservedTokens: '14192',
+    adminRunCapMicros: null,
+    caps: [{ kind: 'run-cost', unit: 'micros', limit: '100000', spent: '0', fits: false }],
+  };
+  renderStart({
+    [`GET ${estimatePath}`]: json(200, { ...cloudEstimate, firstCalls }),
+    [limitsPath]: limitsAnswer({}),
+  });
+  await ready();
+
+  const link = await screen.findByRole('link', { name: 'Review the caps' });
+  expect(link.getAttribute('href')).toBe('/projects/p-1/settings#caps');
+  expect(screen.getByTestId('cap-warning').textContent).toContain('the 1 first reader call:');
+});

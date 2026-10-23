@@ -39,7 +39,13 @@ it('RF-405 the run cap that cannot hold the first calls is named with the amount
   expect(warning?.text.split(' ').length).toBeLessThan(50);
   expect(warning?.text).toContain('run cap of $0.50');
   expect(warning?.text).toContain('$0.78');
-  expect(warning?.text).toContain('Raise the run cap');
+  expect(warning?.text).toContain("Raise the run cap in the project's caps.");
+});
+
+it('RF-405 one first reader call is named in the singular', () => {
+  const [warning] = textOf(withFirstCalls({ calls: 1 }), 500_000n);
+
+  expect(warning?.text).toContain('the 1 first reader call:');
 });
 
 it('RF-405 a run cap raised on the page to 3.00 USD removes the warning', () => {

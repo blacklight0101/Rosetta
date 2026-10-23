@@ -154,21 +154,21 @@ it('RF-002 each slider marks the template default under it', async () => {
   renderSettings();
   await loaded();
 
-  expect(screen.getByText('Default 4. Allowed 1 to 8.')).not.toBeNull();
+  expect(screen.getByText('Default 1. Allowed 1 to 8.')).not.toBeNull();
   expect(screen.getByText('Default $0.50. Allowed $0 to $100.')).not.toBeNull();
-  expect(described(sliderOf('Parallel readers'))).toContain('Default 4. Allowed 1 to 8.');
+  expect(described(sliderOf('Parallel readers'))).toContain('Default 1. Allowed 1 to 8.');
 });
 
 it('RF-002 a value away from the default shows a warning that suggests the default', async () => {
   renderSettings();
   await loaded();
 
-  type('Parallel readers', '4');
+  type('Parallel readers', '1');
   expect(screen.queryByText(/Differs from the default/u)).toBeNull();
   type('Parallel readers', '6');
 
   const warning = screen.getByText(
-    'Differs from the default of 4. Keep the default unless you have a reason to change it.',
+    'Differs from the default of 1. Keep the default unless you have a reason to change it.',
   );
   expect(described(sliderOf('Parallel readers'))).toContain(warning.textContent);
   await waitFor(() => {
