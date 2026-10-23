@@ -76,6 +76,8 @@ export const callsSchema = z.object({
   total: count,
   calls: z.array(callSchema),
   summary: z.array(summarySchema),
+  /** P5-22: the cursor of the next page; none on the last one. */
+  nextCursor: z.string().optional(),
 });
 
 export type RunCalls = z.output<typeof callsSchema>;

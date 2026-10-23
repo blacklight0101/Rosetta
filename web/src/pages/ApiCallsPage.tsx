@@ -1,6 +1,6 @@
 import type { JSX } from 'preact';
 import type { RunLogs } from '../api/call-schemas.js';
-import { getRunCalls, getRunLogs } from '../api/calls.js';
+import { getRunLogs } from '../api/calls.js';
 import type { ApiFailure } from '../api/client.js';
 import { useRouteParams } from '../app/route-params.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
@@ -8,6 +8,7 @@ import { Link } from '../components/Link.js';
 import { CallSummary } from './CallSummary.js';
 import { CallsPanel } from './CallsPanel.js';
 import { LogsPanel } from './LogsPanel.js';
+import { useRunCalls } from './use-run-calls.js';
 import { usePolled, type Polled } from './use-polled.js';
 
 // RF-1011, RF-408, RF-1105: `/runs/:runId/calls`, the "API calls" and "Logs" panels of a run, named by
@@ -54,7 +55,7 @@ function Failed({
 // RF-1011
 export function ApiCallsPage(): JSX.Element {
   const runId = useRouteParams()['runId'] ?? '';
-  const calls = usePolled((client, signal) => getRunCalls(client, runId, signal), runId);
+  const calls = useRunCalls(runId);
   const logs = usePolled((client, signal) => getRunLogs(client, runId, signal), runId);
   if (calls.status === 'failed') return <Failed runId={runId} error={calls.error} />;
   if (calls.status === 'loading') {
@@ -64,12 +65,17 @@ export function ApiCallsPage(): JSX.Element {
       </p>
     );
   }
-  const { value } = calls;
+  const { head } = calls;
   return (
     <div class="rst-p137-page">
-      <Head runId={runId} runKey={value.runKey} />
-      <CallSummary rows={value.summary} />
-      <CallsPanel runId={runId} calls={value.calls} total={value.total} />
+      <Head runId={runId} runKey={head.runKey} />
+      <CallSummary rows={head.summary} />
+      <CallsPanel
+        runId={runId}
+        calls={calls.calls}
+        total={head.total}
+        more={{ available: calls.hasMore, loading: calls.loadingMore, onLoad: calls.loadMore }}
+      />
       <LogsSection logs={logs} />
     </div>
   );

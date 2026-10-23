@@ -26,7 +26,12 @@ export interface PriorCard {
 
 export interface PriorCards {
   /** The cards of the run with that folder name; none when the run or its cards are gone. */
-  cardsOf(project: ProjectRef, runKey: string): Promise<readonly PriorCard[]>;
+  /** With `types`, only the cards of those types are read (P5-22); the caller needs no others. */
+  cardsOf(
+    project: ProjectRef,
+    runKey: string,
+    types?: readonly CardType[],
+  ): Promise<readonly PriorCard[]>;
   /** Marks these `OQ` cards of the run `Answered`; the ids of those it marked. */
   markAnswered(
     project: ProjectRef,

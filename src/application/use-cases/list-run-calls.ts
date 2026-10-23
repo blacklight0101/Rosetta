@@ -1,6 +1,6 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import { summarizeCalls, type ProviderRoleSummary } from '../../domain/observability/call-stats.js';
+import type { ProviderRoleSummary } from '../../domain/observability/call-stats.js';
 import type { RunQueueState } from '../../domain/runs/run-states.js';
 import type { RunCallReader, StoredCall } from '../ports/run-call-reader.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -56,18 +56,25 @@ export class ListRunCalls {
     if (run === undefined) return err('not-found');
     const scope = scopeOf(run);
     const [stored, manifest] = await Promise.all([
-      this.deps.calls.calls(scope),
+      this.deps.calls.log(scope),
       this.deps.manifests.read(scope),
     ]);
+    const limit = Math.min(Math.max(request.limit ?? DEFAULT_CALLS_PAGE, 1), MAX_CALLS_PAGE);
+    // One more than asked tells whether another page follows.
+    const found = stored.page(request.after ?? 0, limit + 1);
+    const more = found.length > limit;
+    const shown = found.slice(0, limit);
     const areas = new Map(manifest?.agentTasks.map((task) => [task.agentTaskId, task.area]));
     return ok({
       runKey: run.runKey,
       runState: run.queueState,
-      total: stored.length,
-      calls: stored
-        .slice(-MAX_CALLS_PAGE)
-        .map((call) => ({ ...call, agent: areas.get(call.agentTaskId) ?? call.agentTaskId })),
-      summary: summarizeCalls(stored),
+      total: stored.calls.length,
+      calls: shown.map((call) => ({
+        ...call,
+        agent: areas.get(call.agentTaskId) ?? call.agentTaskId,
+      })),
+      summary: stored.summary,
+      ...(more ? { nextCursor: String(shown.at(-1)?.seq ?? 0) } : {}),
     });
   }
 }

@@ -38,7 +38,7 @@ describe('the calls page loads the calls in pages', () => {
 
     fireEvent.click(within(callsPanel()).getByRole('button', { name: /Load more calls/u }));
 
-    await screen.findByText(/5 attempts/u);
+    await screen.findByText(/^5 attempts$/u);
     expect(rowSeqs()).toEqual(['1', '2', '3', '4', '5']);
     expect(asked).toBe(1);
     expect(within(callsPanel()).queryByRole('button', { name: /Load more calls/u })).toBeNull();

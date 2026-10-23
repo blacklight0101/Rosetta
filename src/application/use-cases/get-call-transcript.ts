@@ -29,7 +29,7 @@ export class GetCallTranscript {
     const run = await this.deps.runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
     const scope = scopeOf(run);
-    const call = (await this.deps.calls.calls(scope)).find((each) => each.seq === request.seq);
+    const call = (await this.deps.calls.log(scope)).find(request.seq);
     if (call === undefined) return err('not-found');
     // Every attempt of a logical call shares its call id, and so do the messages it added.
     const entries = await this.deps.calls.transcript(scope, call.agentTaskId);

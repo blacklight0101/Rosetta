@@ -1414,6 +1414,7 @@ As a developer I want the tokens and price spent on the whole project in view at
 As a developer I want to watch the calls to the model providers and Rosetta's log in the page so that I can spot slow, failing or expensive calls while a run works.
 
 - Given a run, when calls are made, then an "API calls" panel lists each call live from the provider call log (RF-408) with provider, model, agent, latency, tokens, cost and status, filterable by provider, role, agent and status, with errors and retries highlighted, the provider's error text beside a failed call (RF-408) and a link to the masked transcript.
+- Given a run with hundreds of calls, when the panel opens, then it shows the first page of calls (100) with the summary and the total of the whole log, a "Load more calls" button loads the next page, the calls the run makes meanwhile appear without a reload, and a call's transcript opens in well under a second once the log has been read (P5-22). The route `GET /api/runs/:runId/calls` takes `limit` (at most 500) and `cursor` and answers `nextCursor` while more calls follow.
 - Given the page, when it is open, then summary figures per provider and role show calls, errors, P50 and P95 latency, P50 and P95 time to first token, and tokens per second for Ollama (DEC-57).
 - Given security events in the log, when the page is open, then a counter shows how many occurred in the run, and clicking it filters the log to them.
 - Given the application log (RF-009), when I open the "Logs" panel, then recent entries stream live with a level filter.

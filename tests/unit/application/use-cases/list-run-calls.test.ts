@@ -39,7 +39,6 @@ function logOf(calls: readonly StoredCall[]): RunCallLog {
 function readerOf(calls: readonly StoredCall[]): RunCallReader {
   return {
     log: () => Promise.resolve(logOf(calls)),
-    calls: () => Promise.resolve(calls),
     transcript: () => Promise.resolve([]),
   };
 }

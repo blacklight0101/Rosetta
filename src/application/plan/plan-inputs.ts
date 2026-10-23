@@ -117,7 +117,8 @@ export async function planInputs(
   const filed = await deps.answers.questionsOf(ref, sourceRun.runKey);
   const questions = consolidatedQuestions(
     filed,
-    await deps.priorCards.cardsOf(ref, sourceRun.runKey),
+    // Only the open questions' cards say what consolidation merged (P5-22).
+    await deps.priorCards.cardsOf(ref, sourceRun.runKey, ['OQ']),
   );
   const upload =
     project.sourceKind === 'github'

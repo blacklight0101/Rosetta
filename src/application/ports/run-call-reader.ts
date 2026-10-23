@@ -40,8 +40,6 @@ export interface RunCallLog {
 export interface RunCallReader {
   /** P5-22: the parsed call log of the run; empty for a run without one. */
   log(scope: RunScope): Promise<RunCallLog>;
-  /** The attempts of the run in `seq` order; empty for a run without a call log. */
-  calls(scope: RunScope): Promise<readonly StoredCall[]>;
   /** The messages of one agent task's transcript; empty when there is none. */
   transcript(scope: RunScope, agentTaskId: string): Promise<readonly StoredTranscriptEntry[]>;
 }

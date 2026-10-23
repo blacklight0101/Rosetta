@@ -65,9 +65,10 @@ describe('EstimatePlan reuses what it reads', () => {
     });
 
     expect(outcome.ok).toBe(true);
-    const bigCardBlocks = rendered.filter(
-      (block) => block.source === 'cards' && block.text.length > 5000,
-    );
-    expect(bigCardBlocks).toHaveLength(1);
+    // The plan and the PRD send the same cards; the longest block is theirs.
+    const cardBlocks = rendered.filter((block) => block.source === 'cards');
+    const longest = Math.max(...cardBlocks.map((block) => block.text.length));
+    expect(longest).toBeGreaterThan(5000);
+    expect(cardBlocks.filter((block) => block.text.length === longest)).toHaveLength(1);
   });
 });
