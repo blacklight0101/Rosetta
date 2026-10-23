@@ -136,17 +136,20 @@ function movesOf(
 }
 
 /**
- * P5-12, EV-42: a card joins at most one merge group. The groups of one answer are taken in order;
- * a group that names a card an earlier group already named is dropped whole, so the group that came
- * first keeps the card. (Merges recorded by earlier sessions are not filtered: a later session may
- * merge a new card into the card that survived an earlier merge.)
+ * P5-12, EV-42, P5-19: a card joins at most one merge group. The groups of one answer are taken in
+ * order; a later group that names a card an earlier group already named loses that card, so the
+ * group that came first keeps it. The later group keeps its remaining cards when two or more are
+ * left, and is dropped otherwise. (Merges recorded by earlier sessions are not filtered: a later
+ * session may merge a new card into the card that survived an earlier merge.)
  */
 export function disjointMerges(merges: readonly CardMerge[]): readonly CardMerge[] {
   const taken = new Set<string>();
-  return merges.filter((merge) => {
-    if (merge.ids.some((id) => taken.has(id))) return false;
-    for (const id of merge.ids) taken.add(id);
-    return true;
+  return merges.flatMap((merge) => {
+    const ids = merge.ids.filter((id) => !taken.has(id));
+    if (ids.length < 2) return [];
+    for (const id of ids) taken.add(id);
+    // A trimmed group keeps the title and summary written for the larger group (P5-19).
+    return [ids.length === merge.ids.length ? merge : { ...merge, ids }];
   });
 }
 
