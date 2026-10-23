@@ -111,6 +111,22 @@ function leftOutLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   ];
 }
 
+// P3-117, EV-34: the sentences that repeat the example of a planner prompt word for word. The
+// sentence is the prompt's own, so it is shown; the reader checks it against the cards.
+function copiedExampleLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  if (handoff.copiedExamples.length === 0) return [];
+  return [
+    '## Copied from a prompt example',
+    '',
+    'These sentences repeat an example sentence of a planner prompt word for word. No card may support them; check each one against the cards before the team builds from it.',
+    '',
+    ...handoff.copiedExamples.map(
+      (each) => `- ${esc.inline(each.where)}: ${esc.inline(each.sentence)}`,
+    ),
+    '',
+  ];
+}
+
 // RF-627
 export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const lines = [
@@ -119,6 +135,7 @@ export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     ...restatedLines(handoff, esc),
     ...requirementLines(handoff.content.requirementNotes ?? []),
     ...keptByNoCardLines(handoff, esc),
+    ...copiedExampleLines(handoff, esc),
     ...leftOutLines(handoff, esc),
   ];
   return ['# Package checks', '', ...lines].join('\n');

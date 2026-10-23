@@ -6,6 +6,7 @@ import { guardKinds, riskClasses } from '../../../src/domain/planning/task-card-
 import { recordingOf } from '../../support/fake-recordings.js';
 import { allText, cardsOf, packageOf, plain } from '../../support/plan-method-harness.js';
 import { invariant, scenario } from '../../support/task-card-fixtures.js';
+import { filledExampleOf } from '../../support/prompt-example.js';
 
 // RF-630, RF-633, RF-635, ADR-018, DEC-135: the task cards of the package state what must hold and
 // how it will be attacked, the build method pins every guard with a test that fails without it,
@@ -260,7 +261,7 @@ describe('RF-635 the risk class and the model tier', () => {
 
 describe('RF-630 RF-635 the planner prompt and the demo package', () => {
   it('RF-630 the planner prompt asks for the invariant, the risk class, the guards and the probes', async () => {
-    const prompt = await readFile('prompts/planner/package.v6.md', 'utf8');
+    const prompt = await readFile('prompts/planner/package.v7.md', 'utf8');
 
     for (const word of ['invariant', 'riskClass', 'adds', 'probes', 'Given, When, Then']) {
       expect(prompt).toContain(word);
@@ -269,8 +270,8 @@ describe('RF-630 RF-635 the planner prompt and the demo package', () => {
   });
 
   it('RF-630 the example answer in the planner prompt keeps every task it shows', async () => {
-    const prompt = await readFile('prompts/planner/package.v6.md', 'utf8');
-    const example = /```json\n([\s\S]*?)\n```/u.exec(prompt)?.[1] ?? '';
+    const prompt = await readFile('prompts/planner/package.v7.md', 'utf8');
+    const example = filledExampleOf(prompt);
 
     const draft = parsePlanAnswer(example);
 

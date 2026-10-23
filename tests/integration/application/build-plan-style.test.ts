@@ -9,6 +9,7 @@ import { createPlanHarness } from '../../support/plan-harness.js';
 import { planCards, planQuestions } from '../../support/plan-cards.js';
 import { packageOf, plain } from '../../support/plan-method-harness.js';
 import { draftTask } from '../../support/task-card-fixtures.js';
+import { filledExampleOf } from '../../support/prompt-example.js';
 
 // RF-608, DEC-76, ADR-018: the package checks the components against the chosen style. Real
 // packages written from planner answers the planner could give, replayed by the fake provider.
@@ -121,15 +122,15 @@ describe('RF-608 a component without a known role is listed', () => {
 });
 
 describe('RF-608 RNF-004 the planner is asked for the role', () => {
-  it('RF-608 RNF-004 the planner prompt the run loads is package.v6.md at version v6', async () => {
+  it('RF-608 RNF-004 the planner prompt the run loads is package.v7.md at version v7', async () => {
     const file = await loadPlannerPrompt('prompts');
 
-    expect(file).toMatchObject({ name: 'planner/package.v6.md', version: 'v6' });
+    expect(file).toMatchObject({ name: 'planner/package.v7.md', version: 'v7' });
   });
 
-  it('RF-608 package.v6.md asks for the role and its example answer carries one', async () => {
-    const prompt = await readFile('prompts/planner/package.v6.md', 'utf8');
-    const example = /```json\n([\s\S]*?)\n```/u.exec(prompt)?.[1] ?? '';
+  it('RF-608 package.v7.md asks for the role and its example answer carries one', async () => {
+    const prompt = await readFile('prompts/planner/package.v7.md', 'utf8');
+    const example = filledExampleOf(prompt);
 
     expect(prompt).toContain('role');
     expect(prompt).toContain('roles of the chosen style');
