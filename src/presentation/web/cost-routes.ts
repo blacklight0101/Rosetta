@@ -80,9 +80,11 @@ function serverView(server: CapsView | undefined): Record<string, unknown> | nul
 export function registerCostRoutes(server: FastifyInstance, services: CostServices): void {
   server.get('/api/account/totals', { config: { access: 'user' } }, async (request, reply) => {
     const answer = await services.getAccountTotals.execute({ actor: signedInOf(request).actor });
-    return reply
-      .status(200)
-      .send({ totals: totalsView(answer.totals), server: serverView(answer.server) });
+    return reply.status(200).send({
+      totals: totalsView(answer.totals),
+      local: answer.local,
+      server: serverView(answer.server),
+    });
   });
 
   server.get<{ Params: IdParams }>(

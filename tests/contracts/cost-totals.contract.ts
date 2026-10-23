@@ -29,6 +29,7 @@ const summedGroup: LedgerGroup = {
   provider: 'openai',
   model: 'gpt-5-nano',
   keySource: 'server',
+  local: false,
   currency: 'USD',
   costKnown: true,
   priceTableVersion: '2026-10-11',

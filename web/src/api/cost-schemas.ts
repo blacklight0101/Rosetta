@@ -20,6 +20,8 @@ export type UsageTotals = z.output<typeof totalsSchema>;
 
 export const accountTotalsSchema = z.object({
   totals: totalsSchema,
+  /** P5-07: every call of the user ran on a local model, so the pill names tokens and no dollars. */
+  local: z.boolean(),
   /** The administrator only: the caps and the server-key spend of this UTC month. */
   server: capsViewSchema.nullable(),
 });

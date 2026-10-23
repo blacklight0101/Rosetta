@@ -147,6 +147,7 @@ describe('totals pill during a run', () => {
 
     answer = {
       totals: usageTotals({ cost: [{ currency: 'USD', costMicros: '4100000' }] }),
+      local: false,
       server: null,
     };
     fireEvent.click(screen.getByRole('button', { name: 'Model call' }));

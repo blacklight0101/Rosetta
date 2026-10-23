@@ -72,6 +72,7 @@ export function ledgerGroupFixture(sums: GroupSums): LedgerGroup {
     provider: 'cloud',
     model: 'model-a',
     keySource: 'server',
+    local: false,
     firstAt: new FixedClock('2026-10-11T10:00:00.000Z').now(),
   };
 }

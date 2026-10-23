@@ -17,6 +17,8 @@ export interface SummaryGroup {
   /** False for calls of an unpriced model (RF-427): their cost is unknown. */
   readonly costKnown: boolean;
   readonly priceTableVersion: string;
+  /** True when every row of the group ran on a local model (key source `none`, P5-07). */
+  readonly local: boolean;
   readonly calls: number;
   readonly inputTokens: number;
   readonly outputTokens: number;

@@ -15,14 +15,26 @@ export interface TotalsPillProps {
   readonly href?: string | undefined;
 }
 
-function Own({ totals }: { readonly totals: AccountTotals['totals'] }): JSX.Element {
+// P5-07: a local-only account has tokens and no dollar amount.
+function Own({
+  totals,
+  local,
+}: {
+  readonly totals: AccountTotals['totals'];
+  readonly local: boolean;
+}): JSX.Element {
   return (
     <>
       <span class="rst-p136-pill__label">Your total</span>{' '}
       <span>
         <strong>{tokensText(totals)}</strong> tokens
-      </span>{' '}
-      <strong class="rst-p136-pill__cost">{totalCostText(totals)}</strong>
+      </span>
+      {local ? null : (
+        <>
+          {' '}
+          <strong class="rst-p136-pill__cost">{totalCostText(totals)}</strong>
+        </>
+      )}
     </>
   );
 }
@@ -45,11 +57,11 @@ export function TotalsPill({ totals, href }: TotalsPillProps): JSX.Element {
     <>
       {href === undefined ? (
         <span class="rst-p136-pill__own">
-          <Own totals={totals.totals} />
+          <Own totals={totals.totals} local={totals.local} />
         </span>
       ) : (
         <Link href={href} class="rst-p136-pill__own rst-p136-pill__link">
-          <Own totals={totals.totals} />
+          <Own totals={totals.totals} local={totals.local} />
         </Link>
       )}
       <span class="rst-p136-pill__split">{tokenSplitText(totals.totals)}</span>
