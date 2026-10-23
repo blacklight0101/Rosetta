@@ -11,3 +11,7 @@ Nothing here comes from the owner's employer (DEC-03).
 ## large-understand-shape.json (P3-113, EV-29)
 
 The shape of a large understand: the 371 supported cards of the Deepen run of a public sample, Microsoft's eShopModernizing (MIT licence), as lengths only: for each card its type, the index of its area in `areas`, the lengths of its title and summary, and for each supported claim the length of its text and its number of citations. No text of the run or of the repository is kept; `tests/support/large-understand.ts` writes filler words of those lengths. It is there so a test can plan from a project whose cards, unpacked, are larger than the 131,072-token window of a local model.
+
+## data-model-sqlserver-orders-wrong.json and data-model-sqlserver-orders-right.json (P3-120)
+
+Hand-written data-model answers for a synthetic project: SQL strings against `tblOrders(id int, status_id int, ...)`, a `tblStatus` table and a rule "status 6 means deleted", planned under SQL Server. The first is the answer of the failing kind (PostgreSQL types, a uuid key, no `status_id`, no status table); the second is a right one. They describe no real application and copy no text from anywhere.

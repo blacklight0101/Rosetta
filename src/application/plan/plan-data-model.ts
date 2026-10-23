@@ -4,7 +4,10 @@ import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { parseDataModelAnswer, type DataModelProblem } from './data-model-answer.js';
-import { dataModelMessage } from './data-model-message.js';
+import { keepLegacyKeys } from './data-model-legacy-keys.js';
+import { typeProblems } from './data-model-database.js';
+import { missingNamed } from './data-model-named.js';
+import { dataModelMessage, packableCards } from './data-model-message.js';
 import { MEASURING_TAG, omittedFor } from './plan-call-packing.js';
 
 // RF-623, RF-262, ADR-018: the target data model of a plan run. When the supported cards hold at
@@ -33,6 +36,8 @@ export interface PlannedDataModel {
   readonly problems: readonly DataModelProblem[];
   /** Whether the planner's answer had a table list at all. */
   readonly answered: boolean;
+  /** P3-120: how many of `problems` are checks of the model (types, keys, missing names), not dropped parts. */
+  readonly flagged: number;
 }
 
 const emptyDraft = { tables: [], dropped: [] } as const;
@@ -50,26 +55,39 @@ export async function planDataModel(
       readable: true,
       problems: [],
       answered: false,
+      flagged: 0,
     };
-  const entities = input.cards.filter((card) => card.type === 'ENT');
-  const omitted = omittedFor(call, entities, (each) =>
+  const omitted = omittedFor(call, packableCards(input.cards), (each) =>
     dataModelMessage({ ...input, omitted: each }, () => MEASURING_TAG),
   );
   const message = dataModelMessage({ ...input, omitted }, call.tags);
   const output = await askPlannerWith(call, message);
   const parsed = parseDataModelAnswer(output);
-  const assembly = assembleDataModel(parsed?.draft ?? emptyDraft, legacy, database);
+  const assembled = assembleDataModel(parsed?.draft ?? emptyDraft, legacy, database);
+  const keys = keepLegacyKeys(assembled.model, input.cards, input.brief);
+  const assembly = { ...assembled, model: keys.model };
+  const readable = assembly.model.tables.length > 0;
+  // P3-120: what the checks flag is listed in checks.md; an unusable answer has nothing to check.
+  const flagged = readable
+    ? [
+        ...typeProblems(assembly.model),
+        ...keys.problems,
+        ...missingNamed(assembly.model, input.cards),
+      ]
+    : [];
   return {
     assembly,
-    readable: assembly.model.tables.length > 0,
-    problems: parsed?.problems ?? [],
+    readable,
+    problems: [...(parsed?.problems ?? []), ...flagged],
+    flagged: flagged.length,
     answered: parsed !== undefined,
   };
 }
 
 /** RF-623: what to log about a planned data model: an unusable answer, and what the checks refused. */
 export function dataModelWarnings(planned: PlannedDataModel): string[] {
-  const { readable, assembly, problems, answered } = planned;
+  const { readable, assembly, answered, flagged } = planned;
+  const problems = planned.problems.slice(0, planned.problems.length - flagged);
   const { tables, columns, keys, sources } = assembly.leftOut;
   const named = problems.map((problem) => `${problem.field} (${problem.item})`).join('; ');
   const unusable = readable
@@ -89,5 +107,11 @@ export function dataModelWarnings(planned: PlannedDataModel): string[] {
       : [
           `The planner data model had items the checks refused; ${String(tables)} table(s), ${String(columns)} column(s), ${String(keys)} key(s) or index(es) and ${String(sources)} legacy source(s) were left out.`,
         ];
-  return [...unusable, ...parts, ...refused];
+  const checked =
+    flagged === 0
+      ? []
+      : [
+          `The planner data model has ${String(flagged)} item(s) the checks list in checks.md: column types of another database, a changed legacy key type, or names a card says that the model lacks.`,
+        ];
+  return [...unusable, ...parts, ...refused, ...checked];
 }

@@ -77,10 +77,10 @@ describe('BuildPlan: what the data model call is sent', () => {
     ]) {
       expect(message).toContain(sent);
     }
-    for (const left of ['keeps the card number', 'Checkout creates', 'Staff export', 'FEAT-001']) {
+    for (const left of ['keeps the card number', 'Checkout creates', 'Staff export']) {
       expect(message).not.toContain(left);
     }
-    expect(request?.system).toBe(await readFile('prompts/planner/data-model.v2.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/data-model.v3.md', 'utf8'));
     expect(request?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-data-model' });
     const callIds = h.providers.requests().map((each) => each.context.callId);
     expect(new Set(callIds).size).toBe(3);

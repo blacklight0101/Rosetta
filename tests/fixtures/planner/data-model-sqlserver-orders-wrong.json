@@ -1,0 +1,27 @@
+{
+  "tables": [
+    {
+      "name": "orders",
+      "purpose": "Keeps one order.",
+      "sources": ["ENT-001"],
+      "columns": [
+        { "name": "id", "type": "uuid", "nullable": false, "legacy": null, "risk": "" },
+        {
+          "name": "total",
+          "type": "numeric(10,2)",
+          "nullable": true,
+          "legacy": { "claim": "ENT-001.c1", "field": "total" },
+          "risk": ""
+        },
+        { "name": "created_at", "type": "timestamp with time zone", "nullable": false, "legacy": null, "risk": "" },
+        { "name": "is_open", "type": "boolean", "nullable": false, "legacy": null, "risk": "" }
+      ],
+      "primaryKey": ["id"],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    }
+  ],
+  "dropped": []
+}
