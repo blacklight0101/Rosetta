@@ -13,7 +13,7 @@ import {
 } from '../../../../src/domain/planning/planning-brief.js';
 import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 
-// RF-633, DEC-80, DEC-135: the stack consistency check. A small versioned rule table compares the
+// RF-609, DEC-80, DEC-135: the stack consistency check. A small versioned rule table compares the
 // owner's choices of the planning brief (and whether an API contract applies) and reports each clash
 // with a question whose default keeps the legacy behaviour; it never changes a choice.
 
@@ -28,7 +28,7 @@ function briefOf(frontEnd: string | null, backEnd: string | null): PlanningBrief
 }
 
 describe('stackClashes: the rule table', () => {
-  it('RF-633 is versioned and every rule has an id, a clash text, a question and a legacy-keeping default', () => {
+  it('RF-609 is versioned and every rule has an id, a clash text, a question and a legacy-keeping default', () => {
     expect(stackRulesVersion).toBe(1);
     expect(new Set(stackRules.map((rule) => rule.id)).size).toBe(stackRules.length);
     for (const rule of stackRules) {
@@ -43,7 +43,7 @@ describe('stackClashes: the rule table', () => {
 describe('stackClashes: the eShop brief', () => {
   const brief = briefOf('Razor Pages', 'ASP.NET Core Minimal APIs');
 
-  it('RF-633 flags a server-rendered front end with an API-only back end once, naming both choices', () => {
+  it('RF-609 flags a server-rendered front end with an API-only back end once, naming both choices', () => {
     const clashes = stackClashes(brief, none);
 
     expect(clashes).toHaveLength(1);
@@ -55,13 +55,13 @@ describe('stackClashes: the eShop brief', () => {
     expect(clashes[0]?.question.answer).toContain(keepLegacyDefault);
   });
 
-  it('RF-633 does not change the choices of the brief', () => {
+  it('RF-609 does not change the choices of the brief', () => {
     const before = JSON.stringify(brief);
     stackClashes(brief, none);
     expect(JSON.stringify(brief)).toBe(before);
   });
 
-  it('RF-633 a rule removed from the table hides its clash', () => {
+  it('RF-609 a rule removed from the table hides its clash', () => {
     const without = stackRules.filter(
       (rule) => rule.id !== 'server-rendered-front-end-with-api-back-end',
     );
@@ -70,29 +70,29 @@ describe('stackClashes: the eShop brief', () => {
 });
 
 describe('stackClashes: other briefs', () => {
-  it('RF-633 flags an API-only back end behind a single-page front end when no contract applies', () => {
+  it('RF-609 flags an API-only back end behind a single-page front end when no contract applies', () => {
     const clashes = stackClashes(briefOf('React', 'ASP.NET Core Web API'), none);
 
     expect(clashes.map((each) => each.rule)).toEqual(['api-back-end-without-contract']);
   });
 
-  it('RF-633 flags an API-only back end with no front end chosen and no contract', () => {
+  it('RF-609 flags an API-only back end with no front end chosen and no contract', () => {
     const clashes = stackClashes(briefOf(null, 'FastAPI'), none);
 
     expect(clashes.map((each) => each.rule)).toEqual(['api-back-end-without-contract']);
   });
 
-  it('RF-633 flags nothing for a consistent brief', () => {
+  it('RF-609 flags nothing for a consistent brief', () => {
     expect(stackClashes(briefOf('React', 'ASP.NET Core Web API'), contract)).toEqual([]);
     expect(stackClashes(briefOf('Razor Pages', 'ASP.NET Core MVC'), none)).toEqual([]);
     expect(stackClashes(briefOf('Razor Pages', null), none)).toEqual([]);
   });
 
-  it('RF-633 flags nothing for a choice the table does not know', () => {
+  it('RF-609 flags nothing for a choice the table does not know', () => {
     expect(stackClashes(briefOf('Our own toolkit', 'In-house engine'), none)).toEqual([]);
   });
 
-  it('RF-633 does not mistake JavaScript for Java', () => {
+  it('RF-609 does not mistake JavaScript for Java', () => {
     expect(stackClashes(briefOf('Razor Pages', 'Express with JavaScript'), none)).toEqual([]);
   });
 });

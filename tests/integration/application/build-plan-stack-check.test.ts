@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { plain, seededApiPlan, withApiAnswer } from '../../support/api-plan-harness.js';
 
-// RF-633, RF-609, RF-624: the stack consistency check in a written package. The owner's choice is
+// RF-609, RF-624: the stack consistency check in a written package. The owner's choice is
 // never changed; a clash is in checks.md, as one open question and as one line of the README.
 
 let dataDir: string;
@@ -33,8 +33,8 @@ const eShop = {
   ],
 } as const;
 
-describe('BuildPlan: the stack check (RF-633)', () => {
-  it('RF-633 the eShop brief gives one clash in checks.md, one open question and one README line', async () => {
+describe('BuildPlan: the stack check (RF-609)', () => {
+  it('RF-609 the eShop brief gives one clash in checks.md, one open question and one README line', async () => {
     const h = await seededApiPlan(dataDir, {
       brief: eShop,
       recording: await withApiAnswer(noContract),
@@ -61,8 +61,8 @@ describe('BuildPlan: the stack check (RF-633)', () => {
   });
 });
 
-describe('BuildPlan: the stack check, no clash and the ADRs (RF-633)', () => {
-  it('RF-633 a consistent brief has no clash anywhere', async () => {
+describe('BuildPlan: the stack check, no clash and the ADRs (RF-609)', () => {
+  it('RF-609 a consistent brief has no clash anywhere', async () => {
     const h = await seededApiPlan(dataDir, {
       brief: {
         ...eShop,
@@ -80,7 +80,7 @@ describe('BuildPlan: the stack check, no clash and the ADRs (RF-633)', () => {
     expect(plain(files['README.md'])).not.toContain('open clash');
   });
 
-  it('RF-633 the stack ADRs list the catalogue options and no longer say source cards none for a layer the cards name', async () => {
+  it('RF-609 the stack ADRs list the catalogue options and no longer say source cards none for a layer the cards name', async () => {
     const h = await seededApiPlan(dataDir, {
       brief: eShop,
       recording: await withApiAnswer(noContract),
@@ -88,8 +88,9 @@ describe('BuildPlan: the stack check, no clash and the ADRs (RF-633)', () => {
 
     const files = await h.handoffOf(await h.plan());
 
-    const adr = Object.values(files)
-      .map(plain)
+    const adr = Object.entries(files)
+      .filter(([path]) => path.startsWith('decisions/'))
+      .map(([, text]) => plain(text))
       .find((text) => text.includes('Technology for the front end layer'));
     expect(adr).toBeDefined();
     expect(adr).toContain('## Options considered');

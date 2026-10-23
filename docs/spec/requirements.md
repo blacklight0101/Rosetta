@@ -1129,6 +1129,8 @@ As a developer I want to choose the target technology layer by layer so that the
 
 - Given the legacy stack found by the scan, when Plan setup opens, then for each layer (language and runtime, back-end framework, front end, database, data access, testing, hosting) two options are pre-filled and I can pick one or type my own.
 - Given a chosen stack, when the package is written, then each layer has an ADR and the task cards use those technologies.
+- Given a chosen stack, when the package is written, then the ADR of each layer states its context from the source cards that describe the legacy layer (or says that no source card describes it), lists the options the catalogue offers for the layer with one line each, names the task cards that touch the layer, and lists those source cards; no model writes any of it.
+- Given a chosen stack whose choices clash, such as a front end rendered by the server with a back end that only serves an API, or an API back end with no API contract, when the package is written, then a rule of a small versioned table in the catalogue finds the clash and `checks.md` has a section for it, `open-questions.md` holds one question whose default keeps the legacy behaviour, and the README says the stack has an open clash; the owner's choice is never changed, and a consistent stack gives no clash.
   Verification: unit test of the brief; structure test of the package.
 
 **RF-610 Migration strategy** - R1 - Should - Source DEC-76 - ADR-018

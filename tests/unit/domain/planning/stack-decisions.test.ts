@@ -4,7 +4,7 @@ import type { SourceCard } from '../../../../src/domain/planning/plan-sources.js
 import { buildBrief, type BriefAnswers } from '../../../../src/domain/planning/planning-brief.js';
 import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 
-// RF-633: a stack record states its context from the source cards that describe the legacy layer,
+// RF-609: a stack record states its context from the source cards that describe the legacy layer,
 // lists the options of the catalogue for the layer, and names the task cards that touch it.
 
 function sourceCard(id: string, type: SourceCard['type'], title: string, text: string): SourceCard {
@@ -48,8 +48,8 @@ const stack: BriefAnswers = {
   ],
 };
 
-describe('briefDecisions: the stack record (RF-633)', () => {
-  it('RF-633 takes the context from the cards that describe the legacy layer and lists them as sources', () => {
+describe('briefDecisions: the stack record (RF-609)', () => {
+  it('RF-609 takes the context from the cards that describe the legacy layer and lists them as sources', () => {
     const [frontEnd, database] = recordsFor(stack);
 
     expect(frontEnd?.sources).toEqual(['FEAT-001']);
@@ -58,7 +58,7 @@ describe('briefDecisions: the stack record (RF-633)', () => {
     expect(database?.sources).toEqual(['ENT-001']);
   });
 
-  it('RF-633 says so when no source card describes the legacy layer', () => {
+  it('RF-609 says so when no source card describes the legacy layer', () => {
     const [hosting] = recordsFor({
       stack: [{ layer: 'hosting', choice: 'Our own servers', custom: true }],
     });
@@ -67,7 +67,7 @@ describe('briefDecisions: the stack record (RF-633)', () => {
     expect(hosting?.sources).toEqual([]);
   });
 
-  it('RF-633 lists the catalogue options for the layer with one line each and marks the choice', () => {
+  it('RF-609 lists the catalogue options for the layer with one line each and marks the choice', () => {
     const [frontEnd, database] = recordsFor(stack);
 
     expect(frontEnd?.options.length).toBeGreaterThanOrEqual(3);
@@ -76,10 +76,10 @@ describe('briefDecisions: the stack record (RF-633)', () => {
     expect(chosen[0]).toMatch(/^Razor Pages \(chosen\): .+/u);
     expect(frontEnd?.options.some((each) => each.startsWith('React:'))).toBe(true);
     expect(database?.options.filter((each) => each.includes('(chosen)'))).toHaveLength(1);
-    expect(database?.options.some((each) => each.startsWith('PostgreSQL 17 (chosen)'))).toBe(true);
+    expect(database?.options.some((each) => each.startsWith('PostgreSQL (chosen)'))).toBe(true);
   });
 
-  it('RF-633 names the task cards that touch the layer', () => {
+  it('RF-609 names the task cards that touch the layer', () => {
     const [frontEnd, database] = recordsFor(stack);
 
     expect(frontEnd?.consequences).toContain('T-001');
@@ -87,7 +87,7 @@ describe('briefDecisions: the stack record (RF-633)', () => {
     expect(database?.consequences).toContain('No task card');
   });
 
-  it('RF-633 is deterministic', () => {
+  it('RF-609 is deterministic', () => {
     expect(recordsFor(stack)).toEqual(recordsFor(stack));
   });
 });

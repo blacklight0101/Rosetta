@@ -3,6 +3,7 @@ import { formatCitation } from '../../domain/cards/citation.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { keepLegacyDefault, legacySafe } from '../../domain/planning/legacy-default.js';
 import { decisionFile, documentSet, handoffFiles, idLink, sourceLinks } from './handoff-links.js';
+import { stackClashQuestionLines, stackClashReadmeLines } from './handoff-stack-markdown.js';
 import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
 import { uploadSentence } from '../../domain/sources/upload-facts.js';
 import { incompleteApiLines, incompleteLines } from './handoff-incomplete-markdown.js';
@@ -95,6 +96,7 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     '',
     ...briefQuestionLines(handoff, esc),
     '',
+    ...stackClashQuestionLines(handoff, esc),
     '## Product requirements document questions',
     '',
     'The cards cannot answer these questions, so the product requirements document holds a marked placeholder where each answer belongs. Answer or confirm the default of each one.',
@@ -260,6 +262,7 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     '',
     ...noStackLines(handoff),
     ...sourceStopLines(handoff),
+    ...stackClashReadmeLines(handoff),
     `Planned from the analysis of ${analysed} (understand run ${esc.inline(handoff.sourceRun)}), with the planning brief saved at ${esc.inline(brief.savedAt)}.`,
     '',
     'Only claims the verifier found supported by the code were used. Every requirement names its source cards, and every source card lists its citations into the legacy code. The files are plain Markdown (the API contract, when there is one, is YAML); the diagrams are Mermaid.',
