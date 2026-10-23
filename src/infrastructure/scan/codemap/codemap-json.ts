@@ -55,6 +55,7 @@ const fileSchema = z.strictObject({
     .max(6),
   mapLevel,
   skipped: z.enum(['binary', 'too-large']).optional(),
+  vendored: z.literal(true).optional(),
 });
 
 const areaSchema = z.strictObject({
@@ -150,6 +151,7 @@ function fileJson(file: FileEntry): Record<string, unknown> {
     artefactKinds: file.artefactKinds,
     mapLevel: file.mapLevel,
     ...(file.skipped === undefined ? {} : { skipped: file.skipped }),
+    ...(file.vendored === true ? { vendored: true } : {}),
   };
 }
 
@@ -239,6 +241,7 @@ function fileOf(row: Parsed['files'][number]): FileEntry {
     artefactKinds: row.artefactKinds,
     mapLevel: row.mapLevel,
     ...(row.skipped === undefined ? {} : { skipped: row.skipped }),
+    ...(row.vendored === true ? { vendored: true as const } : {}),
   };
 }
 
