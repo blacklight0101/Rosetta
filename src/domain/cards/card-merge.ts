@@ -26,7 +26,12 @@ export interface CardMerge {
 }
 
 type MergeProblem =
-  'too-few-cards' | 'unknown-card' | 'repeated-card' | 'type-differs' | 'type-not-mergeable';
+  | 'too-few-cards'
+  | 'unknown-card'
+  | 'repeated-card'
+  | 'type-differs'
+  | 'type-not-mergeable'
+  | 'route-differs';
 
 /** Where the claims of one applied merge went: `from` is the id before, `to` the id in the merged card. */
 export interface MergeMoves {
@@ -47,6 +52,12 @@ function areasOf(card: Card): readonly string[] {
   return card.mergedAreas ?? [card.area];
 }
 
+/** P5-12: the route compared without case, query, fragment or a closing slash. */
+export function normalisedRoute(route: string): string {
+  const path = route.trim().toLowerCase().split(/[?#]/u)[0] ?? '';
+  return path.length > 1 ? path.replace(/\/+$/u, '') : path;
+}
+
 function unique<T>(items: readonly T[]): T[] {
   return [...new Set(items)];
 }
@@ -64,6 +75,11 @@ function membersOf(
   if (first === undefined) return err('too-few-cards');
   if (members.some((card) => card.type !== first.type)) return err('type-differs');
   if (!types.includes(first.type)) return err('type-not-mergeable');
+  // P5-12: two screens at two routes are two screens, whoever proposes the merge.
+  const routes = members.flatMap((card) =>
+    card.screen === undefined ? [] : [normalisedRoute(card.screen.route)],
+  );
+  if (new Set(routes).size > 1) return err('route-differs');
   return ok(members);
 }
 
@@ -117,6 +133,21 @@ function movesOf(
     return to === undefined || to === from ? [] : [{ from, to }];
   });
   return { cardId: merged.card.id, from: members.map((card) => card.id), claims };
+}
+
+/**
+ * P5-12, EV-42: a card joins at most one merge group. The groups of one answer are taken in order;
+ * a group that names a card an earlier group already named is dropped whole, so the group that came
+ * first keeps the card. (Merges recorded by earlier sessions are not filtered: a later session may
+ * merge a new card into the card that survived an earlier merge.)
+ */
+export function disjointMerges(merges: readonly CardMerge[]): readonly CardMerge[] {
+  const taken = new Set<string>();
+  return merges.filter((merge) => {
+    if (merge.ids.some((id) => taken.has(id))) return false;
+    for (const id of merge.ids) taken.add(id);
+    return true;
+  });
 }
 
 function replaced(cards: readonly Card[], members: readonly Card[], merged: Card): Card[] {
