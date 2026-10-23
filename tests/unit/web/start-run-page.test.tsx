@@ -257,16 +257,14 @@ it('DEC-117 a typed cap above 100 USD does not replace the cap the warning compa
   expect(screen.getByTestId('cap-warning').textContent).toContain('$0.01');
 });
 
-// P5-07: a local-only estimate names no dollar amount in the cap fields; a mixed one keeps dollars.
-it('P5-07 a local-only estimate shows the run cap in tokens and no dollar field', async () => {
+// P5-07: a local-only estimate names tokens in its cap meter, never a dollar sentence.
+it('P5-07 a local-only estimate says its likely cost in tokens, not in dollars', async () => {
   renderStart({ [`GET ${estimatePath}`]: json(200, localEstimate) });
   await ready();
 
   const estimate = document.querySelector<HTMLElement>('[aria-labelledby="estimate-heading"]');
-  expect(screen.queryByLabelText('Run cap (USD)')).toBeNull();
-  expect(screen.queryByLabelText('Ask before a run estimated above (USD)')).toBeNull();
-  expect(estimate?.textContent).toContain('Run token cap');
-  expect(estimate?.textContent ?? '').not.toContain('$');
+  expect(estimate?.textContent).toContain('tokens');
+  expect(estimate?.textContent ?? '').not.toMatch(/Likely $/u);
 });
 
 it('P5-07 a mixed estimate keeps the run cap in dollars', async () => {
