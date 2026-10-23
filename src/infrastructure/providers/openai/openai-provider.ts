@@ -35,6 +35,8 @@ export interface OpenAiProviderOptions {
   readonly testMode: boolean;
   /** The size limit of one answer; 8 MiB when not set. */
   readonly maxResponseBytes?: number;
+  /** P3-131: whether a model's calls with tools go to `/v1/responses`; none do when not set. */
+  readonly usesResponses?: (model: string) => boolean;
   readonly sleep?: Sleep;
   /** The `fetch` to use; the global one when not set. A test replays a recorded stream through it. */
   readonly fetch?: FetchLike;

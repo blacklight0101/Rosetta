@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. Hand-written in the documented shape of the provider's server-sent-event stream; no real model was called (ADR-008). OpenAI Responses API: a stream that ends with response.failed.",
+  "exchanges": [
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req_FAKE00000000000000000001"
+      },
+      "frames": [
+        {
+          "event": "response.created",
+          "data": {
+            "type": "response.created",
+            "sequence_number": 1,
+            "response": {
+              "id": "resp_FAKE0000000000000001",
+              "object": "response",
+              "created_at": 1791700000,
+              "status": "in_progress",
+              "error": null,
+              "incomplete_details": null,
+              "model": "contract-model-2026-08-07",
+              "output": [],
+              "store": false,
+              "usage": null
+            }
+          }
+        },
+        {
+          "event": "response.failed",
+          "data": {
+            "type": "response.failed",
+            "sequence_number": 2,
+            "response": {
+              "id": "resp_FAKE0000000000000001",
+              "object": "response",
+              "created_at": 1791700000,
+              "status": "failed",
+              "error": {
+                "code": "server_error",
+                "message": "The model failed."
+              },
+              "incomplete_details": null,
+              "model": "contract-model-2026-08-07",
+              "output": [],
+              "store": false,
+              "usage": null
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

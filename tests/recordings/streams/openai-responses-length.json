@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. Hand-written in the documented shape of the provider's server-sent-event stream; no real model was called (ADR-008). OpenAI Responses API: a streamed answer cut at the output limit: response.incomplete with reason max_output_tokens.",
+  "exchanges": [
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req_FAKE00000000000000000001"
+      },
+      "frames": [
+        {
+          "event": "response.created",
+          "data": {
+            "type": "response.created",
+            "sequence_number": 1,
+            "response": {
+              "id": "resp_FAKE0000000000000001",
+              "object": "response",
+              "created_at": 1791700000,
+              "status": "in_progress",
+              "error": null,
+              "incomplete_details": null,
+              "model": "contract-model-2026-08-07",
+              "output": [],
+              "store": false,
+              "usage": null
+            }
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "sequence_number": 2,
+            "item_id": "msg_FAKE0001",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "The Catalog area lists"
+          }
+        },
+        {
+          "event": "response.incomplete",
+          "data": {
+            "type": "response.incomplete",
+            "sequence_number": 3,
+            "response": {
+              "id": "resp_FAKE0000000000000001",
+              "object": "response",
+              "created_at": 1791700000,
+              "status": "incomplete",
+              "error": null,
+              "incomplete_details": {
+                "reason": "max_output_tokens"
+              },
+              "model": "contract-model-2026-08-07",
+              "output": [
+                {
+                  "type": "message",
+                  "id": "msg_FAKE0001",
+                  "status": "incomplete",
+                  "role": "assistant",
+                  "content": [
+                    {
+                      "type": "output_text",
+                      "text": "The Catalog area lists",
+                      "annotations": [],
+                      "logprobs": []
+                    }
+                  ]
+                }
+              ],
+              "store": false,
+              "usage": {
+                "input_tokens": 1200,
+                "input_tokens_details": {
+                  "cache_write_tokens": 0,
+                  "cached_tokens": 0
+                },
+                "output_tokens": 16000,
+                "output_tokens_details": {
+                  "reasoning_tokens": 15000
+                },
+                "total_tokens": 17200
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. The text scenario. Hand-written in the documented shape of OpenAI's Responses API answer (POST /v1/responses, stream false, store false); no real model was called and no key is held (ADR-008).",
+  "chat": [],
+  "responses": [
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req_FAKE0000000000000000000001"
+      },
+      "body": {
+        "id": "resp_FAKE0000000000000001",
+        "object": "response",
+        "created_at": 1791700000,
+        "status": "completed",
+        "background": false,
+        "error": null,
+        "incomplete_details": null,
+        "model": "contract-model-2026-08-07",
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_FAKE0001",
+            "status": "completed",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "The Catalog area lists products from the database.",
+                "annotations": [],
+                "logprobs": []
+              }
+            ]
+          }
+        ],
+        "parallel_tool_calls": true,
+        "store": false,
+        "tool_choice": "auto",
+        "usage": {
+          "input_tokens": 1200,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 1024
+          },
+          "output_tokens": 80,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 1280
+        }
+      }
+    }
+  ]
+}
