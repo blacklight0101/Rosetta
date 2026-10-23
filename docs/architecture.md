@@ -104,7 +104,9 @@ src/
     cards/              Card, CardType, Claim, Citation, ClaimStatus, Verdict, card ids, the claim transitions (`createCard`, `transitionClaim`, `assignCardIds`)
     budget/             TokenUsage, Price (`costOf`, `worstCaseCost` in integer micro-USD), PriceTable
                         (`lookupPrice`), UsageCap and `checkCaps`, the caps of a call (`capsFor`, DEC-107; a reader
-                        with no token cap of its own also gets 70% of the run token cap as a role cap and the verifier 20%, RF-429),
+                        with no token cap of its own also gets 70% of the run token cap as a role cap and the verifier 20%, RF-429;
+                        a reader on a run bound by the user-day, own-day or server-month cap also gets 70% of the room that cap
+                        has left at run start as a role cost cap, `ScopeSpent`, P5-18; on a resume it adds the run's earlier reader spend),
                         UTC day and month (`utcPeriodsOf`), `isCapStop`
     runs/               Run (start and end transitions), RunManifest (with `recordPromptVersions`, RNF-004), RunEndState, RunQueueState, AgentTaskState, RunEvent types, the queue rules (`runsToStart`, `queuePositions`)
     sources/            GitHubRepoRef, CommitSha, Permalink

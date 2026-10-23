@@ -11,6 +11,9 @@ import type { OutputWriter } from '../../src/application/ports/output-writer.js'
 import type { ProviderSinks } from '../../src/application/ports/provider-set-factory.js';
 import type { RunScope } from '../../src/application/ports/run-events.js';
 import { MemoryCostLedger } from '../../src/infrastructure/db/memory-cost-ledger.js';
+import type { CostLedger } from '../../src/application/ports/cost-ledger.js';
+import { costEntry } from './cost-fixtures.js';
+import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
 import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
 import { runPath } from '../../src/infrastructure/files/workspace-paths.js';
@@ -22,6 +25,7 @@ import type { Recording } from '../../src/infrastructure/providers/fake/recordin
 import { JsonlProviderCallLog } from '../../src/infrastructure/providers/jsonl-provider-call-log.js';
 import { GuardedProviderFactory } from '../../src/infrastructure/providers/provider-factory.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
+import type { ServerCaps } from '../../src/domain/budget/budget.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { budgetTable } from './budget-harness.js';
 import type { FixedClock } from './fixed-clock.js';
@@ -142,6 +146,14 @@ export interface UnderstandProviderParts {
   readonly serverOpenAiKey?: string;
   /** RF-427: an OpenAI key of this user's own (a cloud reader on the user's key). */
   readonly ownOpenAiKey?: { readonly userId: string; readonly key: string };
+  /** P5-18: the administrator's caps; the shipped defaults when left out. */
+  readonly serverCaps?: ServerCaps;
+  /** P5-18: spend of this user earlier in the same UTC day and month, on the given key. */
+  readonly priorSpend?: {
+    readonly userId: string;
+    readonly micros: bigint;
+    readonly keySource: 'server' | 'user';
+  };
   /** P2-24: an Anthropic key of this user's own. */
   readonly ownAnthropicKey?: { readonly userId: string; readonly key: string };
 }
@@ -176,13 +188,39 @@ function seedOwnKeys(
   }
 }
 
+/** P5-18: the administrator's caps and the spend the scope caps start with. */
+function scopeStores(parts: UnderstandProviderParts, ledger: CostLedger) {
+  const usage = new MemoryAccountUsage();
+  const prior = parts.priorSpend;
+  if (prior !== undefined) {
+    const at = parts.clock.now();
+    const { userId, keySource } = prior;
+    usage.addCost({ userId, keySource, costMicros: prior.micros, at, currency: 'USD' });
+    // The ledger holds the same row, so the guard counts it against the day (an earlier run).
+    void ledger.settle(
+      costEntry(userId, {
+        runId: null,
+        role: 'summariser',
+        keySource,
+        costMicros: prior.micros,
+        at,
+      }),
+    );
+  }
+  const serverSettings = new MemoryServerSettings({});
+  if (parts.serverCaps !== undefined) void serverSettings.saveCaps(parts.serverCaps);
+  return { usage, serverSettings };
+}
+
 export function understandProviders(parts: UnderstandProviderParts): UnderstandProviders {
   const { dataDir, writer, masker, clock, logger } = parts;
   const adapter = new HookedProvider(recordingsOf(parts), {
     ...{ before: parts.beforeCall, decorate: parts.decorateAnswer },
     ...{ beforeVerifier: parts.beforeVerifierCall, beforeGap: parts.beforeGapCall },
   });
-  const ledger = new SpyLedger(new MemoryCostLedger());
+  const memory = new MemoryCostLedger();
+  const ledger = new SpyLedger(memory);
+  const { usage, serverSettings } = scopeStores(parts, memory);
   const keys = new MemoryProviderKeyRepository();
   const box = new AesGcmSecretBox({ current: fixtureSecret(3) });
   seedOwnKeys(parts, keys, box);
@@ -192,8 +230,9 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     serverKeys: parts.serverOpenAiKey === undefined ? {} : { openai: parts.serverOpenAiKey },
     // An Ollama provider needs the address (RF-401); the adapter is the fake, so it is never called.
     ollamaUrl: 'http://127.0.0.1:11434',
-    serverSettings: new MemoryServerSettings({}),
+    serverSettings,
     ledger,
+    usage,
     priceTable: parts.priceTable ?? budgetTable,
     models: NO_LISTED_MODELS,
     masker,

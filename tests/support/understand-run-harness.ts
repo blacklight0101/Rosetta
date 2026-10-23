@@ -14,6 +14,7 @@ import type { Run } from '../../src/domain/runs/run.js';
 import type { MemoryLogger } from './memory-logger.js';
 import type { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
 import { projectPath, runPath } from '../../src/infrastructure/files/workspace-paths.js';
+import type { ServerCaps } from '../../src/domain/budget/budget.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { readerRecordingOf, verifierRecordingOf } from './understand-recordings.js';
 import { sampleAccount } from './account-fixtures.js';
@@ -86,6 +87,12 @@ export interface UnderstandHarnessOptions {
   /** RF-427: the server's OpenAI key, or one the run's user owns; a cloud reader needs one. */
   /** A workspace that refuses to remove a card file, for a merge whose files cannot go. */
   readonly refuseRemoval?: boolean;
+  /** P5-18: the administrator's caps (run, user day, server month); the defaults when left out. */
+  readonly serverCaps?: ServerCaps;
+  /** P5-18: micro-dollars the user already spent earlier today and this month, on a key. */
+  readonly priorSpend?: { readonly micros: bigint; readonly keySource: 'server' | 'user' };
+  /** P5-18: the user's own daily cap on their own key. */
+  readonly ownDailyCapMicros?: bigint;
   readonly openAiKey?: { readonly of: 'server' | 'user'; readonly key: string };
   /** P2-24: an Anthropic key the run's user owns. */
   readonly anthropicKey?: string;
@@ -203,6 +210,12 @@ function uploadFieldsOf(snapshotKey: string | undefined): Partial<Project> {
   return { ...uploadProjectFields, upload: { ...heldZip, snapshotKey } };
 }
 
+/** The run's user, with the own daily cap a test gave them (P5-18). */
+function accountOf(options: UnderstandHarnessOptions): typeof account {
+  const own = options.ownDailyCapMicros;
+  return own === undefined ? account : { ...account, ownDailyCapMicros: own };
+}
+
 // RF-200
 export async function createUnderstandHarness(
   options: UnderstandHarnessOptions,
@@ -214,7 +227,7 @@ export async function createUnderstandHarness(
     }),
     ...(options.workbookFolders === undefined ? {} : { workbookFolders: options.workbookFolders }),
   };
-  await s.users.insert(account);
+  await s.users.insert(accountOf(options));
   const project = sampleProject({
     userId: account.id,
     sourceUrl: 'https://github.com/octo/demo',
@@ -238,6 +251,10 @@ export async function createUnderstandHarness(
     ...(await verifierRecordingOf(options.verifierRecording)),
     ...(options.decorateAnswer === undefined ? {} : { decorateAnswer: options.decorateAnswer }),
     ...(options.priceTable === undefined ? {} : { priceTable: options.priceTable }),
+    ...(options.serverCaps === undefined ? {} : { serverCaps: options.serverCaps }),
+    ...(options.priorSpend === undefined
+      ? {}
+      : { priorSpend: { userId: account.id, ...options.priorSpend } }),
     ...keysOf(options.openAiKey),
     ...(options.anthropicKey === undefined
       ? {}
