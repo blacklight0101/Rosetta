@@ -44,7 +44,7 @@ export interface CitedExcerpt {
 }
 
 /** P3-124: the mark in front of a line that is read for context and is not cited. */
-export const CONTEXT_MARK = '[context] ';
+const CONTEXT_MARK = '[context] ';
 
 /** P3-124: the lines as the verifier gets them: the lines outside the cited range carry the mark. */
 export function markedLines(excerpt: CitedExcerpt): readonly string[] {
