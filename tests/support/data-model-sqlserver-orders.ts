@@ -12,7 +12,12 @@ import { shippedCatalogue } from './planning-brief-harness.js';
 
 const citation = { path: 'src/Orders/OrderRepository.cs', startLine: 3, endLine: 9 };
 
-function card(id: string, type: SourceCard['type'], title: string, texts: readonly string[]) {
+export function card(
+  id: string,
+  type: SourceCard['type'],
+  title: string,
+  texts: readonly string[],
+): SourceCard {
   return {
     ...{ id, type, title, area: 'orders', summary: `${title}.` },
     claims: texts.map((text, index) => ({

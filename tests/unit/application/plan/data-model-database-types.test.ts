@@ -38,9 +38,15 @@ describe('typeProblems', () => {
   });
 
   it('RF-623 lists SQL Server types under PostgreSQL', () => {
-    const model = withTypes(['nvarchar(50)', 'bit', 'datetime2', 'uuid', 'text'], 'PostgreSQL 16');
+    const model = withTypes(['nvarchar(50)', 'datetime2', 'text', 'tinyint'], 'PostgreSQL 16');
 
-    expect(itemsOf(model)).toEqual(['c0', 'c1', 'c2']);
+    expect(itemsOf(model)).toEqual(['c0', 'c1', 'c3']);
+  });
+});
+
+describe('typeProblems: vocabularies', () => {
+  it('RF-623 knows float, bit and bit varying as PostgreSQL types', () => {
+    expect(itemsOf(withTypes(['float', 'bit(1)', 'bit varying(8)'], 'PostgreSQL'))).toEqual([]);
   });
 
   it('RF-623 knows MySQL and SQLite as well', () => {

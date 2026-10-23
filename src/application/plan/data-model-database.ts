@@ -21,7 +21,20 @@ const postgres = [
   ...['character varying', 'text', 'bytea', 'date', 'time', 'time without time zone'],
   ...['time with time zone', 'timetz', 'timestamp', 'timestamp without time zone'],
   ...['timestamp with time zone', 'timestamptz', 'interval', 'uuid', 'json', 'jsonb', 'xml'],
-  ...['inet', 'cidr', 'macaddr', 'int2', 'int4', 'int8', 'float4', 'float8'],
+  ...[
+    'inet',
+    'cidr',
+    'macaddr',
+    'float',
+    'bit',
+    'bit varying',
+    'varbit',
+    'int2',
+    'int4',
+    'int8',
+    'float4',
+    'float8',
+  ],
 ];
 
 const mysql = [

@@ -7,7 +7,7 @@ import { parseDataModelAnswer, type DataModelProblem } from './data-model-answer
 import { keepLegacyKeys } from './data-model-legacy-keys.js';
 import { typeProblems } from './data-model-database.js';
 import { missingNamed } from './data-model-named.js';
-import { dataModelMessage } from './data-model-message.js';
+import { dataModelMessage, packableCards } from './data-model-message.js';
 import { MEASURING_TAG, omittedFor } from './plan-call-packing.js';
 
 // RF-623, RF-262, ADR-018: the target data model of a plan run. When the supported cards hold at
@@ -57,8 +57,7 @@ export async function planDataModel(
       answered: false,
       flagged: 0,
     };
-  const entities = input.cards.filter((card) => card.type === 'ENT');
-  const omitted = omittedFor(call, entities, (each) =>
+  const omitted = omittedFor(call, packableCards(input.cards), (each) =>
     dataModelMessage({ ...input, omitted: each }, () => MEASURING_TAG),
   );
   const message = dataModelMessage({ ...input, omitted }, call.tags);

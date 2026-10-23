@@ -1,6 +1,7 @@
 import { formatCitation } from '../../domain/cards/citation.js';
 import { renderDataBlock } from '../../domain/egress/data-block.js';
 import { databaseTypeNames } from './data-model-database.js';
+import { ruleCandidates } from './data-model-named.js';
 import { omittedSummary } from './plan-packing.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
@@ -15,7 +16,7 @@ import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 export interface DataModelMessageInput {
   readonly cards: readonly SourceCard[];
   readonly brief: PlanningBrief;
-  /** P3-113: the ids of the `ENT` cards the prompt names by title only, to fit the planner's window. */
+  /** P3-113: the ids of the `ENT` and rule cards the prompt names by title only, to fit the planner's window. */
   readonly omitted?: ReadonlySet<string>;
 }
 
@@ -33,22 +34,25 @@ function cardsText(input: DataModelMessageInput): string {
           citations: citations.map(formatCitation),
         })),
     }));
-  const ruleCards = input.cards
-    .filter((card) => card.type === 'BR' || card.type === 'FEAT')
+  const rules = ruleCandidates(input.cards);
+  const ruleCards = rules
+    .filter((card) => !omitted.has(card.id))
     .map(({ id, title, claims }) => ({
       ...{ id, title },
-      claims: claims
-        .filter((claim) => claim.status === 'Supported')
-        .map(({ claimId, text }) => ({ claimId, text })),
-    }))
-    .filter((card) => card.claims.length > 0);
+      claims: claims.map(({ claimId, text }) => ({ claimId, text })),
+    }));
   const json = JSON.stringify({ entityCards, ruleCards }, null, 2);
-  const summary = omittedSummary(entities.filter((card) => omitted.has(card.id)));
+  const summary = omittedSummary([...entities, ...rules].filter((card) => omitted.has(card.id)));
   return summary === ''
     ? json
     : `${json}
 
 ${summary}`;
+}
+
+/** P3-113, P3-120: the cards the data-model prompt may name by title only: the entities and the rule cards it sends. */
+export function packableCards(cards: readonly SourceCard[]): SourceCard[] {
+  return [...cards.filter((card) => card.type === 'ENT'), ...ruleCandidates(cards)];
 }
 
 function ownerText(brief: PlanningBrief): string {

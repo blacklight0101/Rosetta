@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { missingNamed } from '../../../../src/application/plan/data-model-named.js';
-import { ordersCards, recordedModel } from '../../../support/data-model-sqlserver-orders.js';
+import { missingNamed, ruleCandidates } from '../../../../src/application/plan/data-model-named.js';
+import { card, ordersCards, recordedModel } from '../../../support/data-model-sqlserver-orders.js';
 
 // P3-120, RF-623: a column or table a requirement or rule card names, and the model lacks, is listed.
 
@@ -40,5 +40,41 @@ describe('missingNamed', () => {
         ordersCards().filter((card) => card.type === 'ENT'),
       ),
     ).toEqual([]);
+  });
+});
+
+describe('missingNamed: noise and cap', () => {
+  it('RF-623 skips code identifiers and names the legacy evidence does not mention', async () => {
+    const noise = card('BR-009', 'BR', 'Noise', [
+      'Uses `ICatalogService`, `btnSave`, `int`, `CatalogMock`, on_click, page_load and get_by_id.',
+      'The to_do list and the web_config are unrelated.',
+    ]);
+
+    expect(missingNamed(await recordedModel('wrong'), [...ordersCards(), noise])).toHaveLength(2);
+  });
+
+  it('RF-623 lists at most 20 names, then says how many more', async () => {
+    const names = Array.from({ length: 30 }, (_unused, at) => `col_${String(at)}x`);
+    const entity = card('ENT-009', 'ENT', 'Columns', [names.join(' ')]);
+    const rule = card('BR-010', 'BR', 'Many', [names.map((name) => `\`${name}\``).join(' ')]);
+
+    const problems = missingNamed(await recordedModel('right'), [entity, rule]);
+
+    expect(problems).toHaveLength(21);
+    expect(problems[20]?.item).toBe('and 10 more');
+  });
+});
+
+describe('ruleCandidates', () => {
+  it('RF-623 keeps only the rule claims that name something the entity cards mention', () => {
+    const kept = ruleCandidates([
+      ...ordersCards(),
+      card('BR-011', 'BR', 'Sorting', [
+        'Orders are sorted by date.',
+        'Unknown rows use tblNothing.',
+      ]),
+    ]);
+
+    expect(kept.map((each) => each.id)).toEqual(['BR-001']);
   });
 });

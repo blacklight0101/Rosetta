@@ -77,8 +77,7 @@ describe('BuildPlan: what the data model call is sent', () => {
     ]) {
       expect(message).toContain(sent);
     }
-    expect(message).toContain('Checkout creates');
-    for (const left of ['keeps the card number', 'Staff export']) {
+    for (const left of ['keeps the card number', 'Checkout creates', 'Staff export']) {
       expect(message).not.toContain(left);
     }
     expect(request?.system).toBe(await readFile('prompts/planner/data-model.v3.md', 'utf8'));

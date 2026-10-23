@@ -41,11 +41,10 @@ describe('dataModelMessage', () => {
     expect(text).toContain('src/Orders/Order.cs:3-9');
   });
 
-  it('RF-623 gives no card type but ENT, FEAT and BR, and no claim the verifier did not support', () => {
+  it('RF-623 gives no card type but ENT and the rule claims that name a legacy column, and no claim the verifier did not support', () => {
     const text = message();
 
-    expect(text).toContain('Checkout makes an order');
-    expect(text).toContain('"ruleCards"');
+    expect(text).not.toContain('Checkout makes an order');
     expect(text).not.toContain('card number');
   });
 
