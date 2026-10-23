@@ -72,27 +72,28 @@ describe('other secret names between escaped quotes (P3-128)', () => {
 
 describe('plain and JSON-quoted values are masked as before (P3-128)', () => {
   it.each([
-    [`Password=${fakePassword} and x`, 'Password=[MASKED:password] and x'],
-    [`Password="${fakePassword}" and "x"`, 'Password="[MASKED:password]" and "x"'],
-    [`{"password":"${fakePassword}"}`, '{"password":"[MASKED:password]"}'],
-    [`"Password": "${fakePassword}"`, '"Password": "[MASKED:password]"'],
-  ])('RF-141 masks %j', (text, masked) => {
+    ['plain', `Password=${fakePassword} and x`, 'Password=[MASKED:password] and x'],
+    ['quoted', `Password="${fakePassword}" and "x"`, 'Password="[MASKED:password]" and "x"'],
+    ['JSON', `{"password":"${fakePassword}"}`, '{"password":"[MASKED:password]"}'],
+    ['spaced JSON', `"Password": "${fakePassword}"`, '"Password": "[MASKED:password]"'],
+  ])('RF-141 masks the %s form', (_name, text, masked) => {
     expect(masker.mask(text).text).toBe(masked);
   });
 });
 
 describe('ordinary settings between escaped quotes are not masked (P3-116 precision, P3-128)', () => {
   it.each([
-    `Password=${eq}${eq} and ${eq}x${eq}`,
-    `token=${eq}string${eq}`,
-    `max_token=${eq}30${eq}`,
-    `max_tokens=${eq}FAKE-tk-0000${eq}`,
-    `api_key=${eq}YOUR_API_KEY${eq}`,
-    `secret=${eq}config.secret${eq}`,
-    `ApiKeyHeaderName=${eq}X-Api-Key${eq}`,
-    `Compass=${eq}FAKE-0000${eq}`,
-    `the ${eq}password${eq} field and ${eq}x${eq}`,
-  ])('RF-141 leaves %j alone', (text) => {
+    ['an empty password value', `Password=${eq}${eq} and ${eq}x${eq}`],
+    ['a token that is a type word', `token=${eq}string${eq}`],
+    ['a token that is a number', `max_token=${eq}30${eq}`],
+    ['a name that only ends in tokens', `max_tokens=${eq}FAKE-tk-0000${eq}`],
+    ['an upper snake constant', `api_key=${eq}YOUR_API_KEY${eq}`],
+    ['a name under a known root', `secret=${eq}config.secret${eq}`],
+    ['a header name setting', `ApiKeyHeaderName=${eq}X-Api-Key${eq}`],
+    ['a name that only contains pass', `Compass=${eq}FAKE-0000${eq}`],
+    ['prose that names a password', `the ${eq}password${eq} field and ${eq}x${eq}`],
+    ['a secret name inside a word', `topsecret=${eq}FAKE-sec-0000${eq}`],
+  ])('RF-141 leaves %s alone', (_name, text) => {
     expect(masker.mask(text).text).toBe(text);
   });
 });

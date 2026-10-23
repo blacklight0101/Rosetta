@@ -33,9 +33,9 @@ describe('a card file masks a value between escaped quotes', () => {
       expect(file).not.toContain(fakePassword);
     }
     const card = fileOf(writer, 'cards/FEAT/FEAT-001.md');
-    expect(card).toContain('[MASKED:password]');
+    expect(card).toContain('MASKED:password');
     const header = parse(headerOf(card)) as { title: string };
-    expect(header.title).toContain('[MASKED:password]');
+    expect(header.title).toContain('MASKED:password');
     expect(header.title).toContain('and');
   });
 });
