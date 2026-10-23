@@ -9,6 +9,7 @@ import {
   stepHeader,
   stepMark,
 } from './card-detail-markdown.js';
+import { maskCard } from './mask-card-text.js';
 import { flowDiagramSection } from './flow-diagram-section.js';
 import { citationLink, FROM_CARD_FILE, type PermalinkSource } from './citation-link.js';
 import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
@@ -128,9 +129,13 @@ function bodyOf(
 }
 
 /**
- * The whole file. The header goes through `maskDeep` (keys and values), the finished text through
- * the masker once more as a last guard (RF-141); a FLOW card also gets its sequence diagram, made
- * from the masked text of `cards` (RF-260); a masker failure is thrown, nothing is written.
+ * The whole file. Every string of the card is masked once, before anything is quoted or escaped
+ * (`maskCard`: header, body and diagram all read the masked card). The finished text is NOT masked
+ * again (P3-127): by then a marker is written as `\u005bMASKED` or `\[MASKED`, which the masker
+ * does not know as a marker, so it read the marker as a value and replaced it together with the
+ * backslash of the closing `\\"`, which ended the YAML string early. A FLOW card also gets its
+ * sequence diagram, made from the masked text of `cards` (RF-260); a masker failure is thrown,
+ * nothing is written.
  */
 export function renderCardFile(
   card: Card,
@@ -138,7 +143,13 @@ export function renderCardFile(
   masker: TextMasker,
   cards: readonly Card[],
 ): string {
-  const header = renderYamlHeader(maskDeep(headerOf(card), masker));
-  const text = `---\n${header}\n---\n\n${bodyOf(card, source, markdownEscaper(masker), flowDiagramSection(card, cards, masker))}`;
-  return `${masker.mask(text).text.trimEnd()}\n`;
+  const safe = maskCard(card, masker);
+  const header = renderYamlHeader(maskDeep(headerOf(safe), masker));
+  const body = bodyOf(
+    safe,
+    source,
+    markdownEscaper(masker),
+    flowDiagramSection(safe, cards, masker),
+  );
+  return `---\n${header}\n---\n\n${body}`.trimEnd() + '\n';
 }
