@@ -9,6 +9,11 @@ import {
   settingInnocentTexts,
   settingSecretCases,
 } from './secret-setting-shapes.js';
+import {
+  variantAdversarialPieces,
+  variantInnocentTexts,
+  variantSecretCases,
+} from './secret-setting-variants.js';
 
 interface ShapeCase {
   readonly name: string;
@@ -107,9 +112,18 @@ const ownAdversarialPieces: readonly string[] = [
 ];
 
 // P3-116: the key/value settings travel with these shapes into the shared fixture.
-export const gapSecretCases: readonly ShapeCase[] = [...ownSecretCases, ...settingSecretCases];
-export const gapInnocentTexts: readonly string[] = [...ownInnocentTexts, ...settingInnocentTexts];
+export const gapSecretCases: readonly ShapeCase[] = [
+  ...ownSecretCases,
+  ...settingSecretCases,
+  ...variantSecretCases,
+];
+export const gapInnocentTexts: readonly string[] = [
+  ...ownInnocentTexts,
+  ...settingInnocentTexts,
+  ...variantInnocentTexts,
+];
 export const gapAdversarialPieces: readonly string[] = [
   ...ownAdversarialPieces,
   ...settingAdversarialPieces,
+  ...variantAdversarialPieces,
 ];

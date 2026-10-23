@@ -20,11 +20,11 @@ interface ExtraRule {
   readonly pattern: RegExp;
 }
 
-// A value of 8 or more characters that is not code: no brackets, `$` or `<>`, not a path or a URL, and
+// A value of 8 or more characters that is not code: no brackets, `$` or `>`, not a number, not a path or a URL, and
 // at least one digit or symbol (a letters-only word such as `introduction` is prose). Placeholders and
-// the names of known configuration roots are left alone.
-const valueChars = String.raw`[^\s"',;&]`;
-const settingValue = String.raw`${notMasked}(?![="'])(?!${placeholderValue}|[/.~]|https?:|[A-Za-z]:\\)(?=${valueChars}{8})(?!${valueChars}{0,256}?[()\[\]{}<>$])(?=${valueChars}{0,256}?[0-9+=!@#%^*~])${valueChars}+`;
+// the names of known configuration roots are left alone. The value ends at a raw `<` (a tag glued to it).
+const valueChars = String.raw`[^\s"',;&<]`;
+const settingValue = String.raw`${notMasked}(?![="'])(?!${placeholderValue}|[/.~]|https?:|[A-Za-z]:\\)(?=${valueChars}{8})(?!\d+(?:\.\d+)?(?!${valueChars}))(?!${valueChars}{0,256}?[()\[\]{}>$])(?=${valueChars}{0,256}?[0-9+=!@#%^*~])${valueChars}+`;
 const settingAssign = String.raw`["']?[ \t]{0,16}(?::=|[:=])[ \t]{0,16}["']?`;
 // The word at the end of a key: in any case after a delimiter (`NPM_TOKEN`, `x-auth-token`), or with a
 // capital after a letter or digit (`accessToken`, `APIToken`). The key must end there, so `max_tokens`,

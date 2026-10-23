@@ -59,6 +59,14 @@ function warningsOf(estimate: PlanEstimate): readonly string[] {
   return [...likely, ...high];
 }
 
+/** P3-113: a prompt of the plan that cannot fit the planner's window even with the cards named by title only. */
+function windowWarning(estimate: PlanEstimate): string | undefined {
+  const { fitsWindow, windowTokens, oversizedCalls } = estimate.assumptions;
+  if (fitsWindow !== false || typeof windowTokens !== 'number') return undefined;
+  const calls = Array.isArray(oversizedCalls) ? oversizedCalls.join(', ') : 'a call';
+  return `The prompt of the planner call (${calls}) cannot fit the ${windowTokens.toLocaleString('en-US')}-token window of the planner model. Choose a model with a larger window, or set a larger context for it in the project settings.`;
+}
+
 function Figures({ estimate }: { readonly estimate: PlanEstimate }): JSX.Element {
   const calls = estimate.assumptions.calls;
   return (
@@ -76,6 +84,11 @@ function Figures({ estimate }: { readonly estimate: PlanEstimate }): JSX.Element
           ))}
         </tbody>
       </table>
+      {windowWarning(estimate) === undefined ? null : (
+        <p class="rst-plan-warning" role="alert">
+          {windowWarning(estimate)}
+        </p>
+      )}
       {warningsOf(estimate).map((text) => (
         <p key={text} class="rst-plan-warning">
           {text} The run stops cleanly when it reaches a cap.

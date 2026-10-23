@@ -1,6 +1,7 @@
 import { formatCitation } from '../../domain/cards/citation.js';
 import { renderDataBlock } from '../../domain/egress/data-block.js';
 import { servableCards } from '../../domain/planning/api-contract.js';
+import { omittedSummary } from './plan-packing.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 
@@ -14,22 +15,33 @@ import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 export interface ApiContractMessageInput {
   readonly cards: readonly SourceCard[];
   readonly brief: PlanningBrief;
+  /** P3-113: the ids of the `FEAT` and `FLOW` cards the prompt names by title only, to fit the planner's window. */
+  readonly omitted?: ReadonlySet<string>;
 }
 
-function cardsText(cards: readonly SourceCard[]): string {
-  const features = servableCards(cards).map(({ id, type, title, summary, claims }) => ({
-    ...{ id, type, title, summary },
-    claims: claims
-      .filter((claim) => claim.status === 'Supported')
-      .map(({ claimId, text, citations }) => ({
-        ...{ claimId, text },
-        citations: citations.map(formatCitation),
-      })),
-  }));
+function cardsText(cards: readonly SourceCard[], omitted: ReadonlySet<string>): string {
+  const servable = servableCards(cards);
+  const features = servable
+    .filter((card) => !omitted.has(card.id))
+    .map(({ id, type, title, summary, claims }) => ({
+      ...{ id, type, title, summary },
+      claims: claims
+        .filter((claim) => claim.status === 'Supported')
+        .map(({ claimId, text, citations }) => ({
+          ...{ claimId, text },
+          citations: citations.map(formatCitation),
+        })),
+    }));
   const entities = cards
     .filter((card) => card.type === 'ENT')
     .map(({ id, title, summary }) => ({ id, title, summary }));
-  return JSON.stringify({ featureAndFlowCards: features, entityCards: entities }, null, 2);
+  const json = JSON.stringify({ featureAndFlowCards: features, entityCards: entities }, null, 2);
+  const summary = omittedSummary(servable.filter((card) => omitted.has(card.id)));
+  return summary === ''
+    ? json
+    : `${json}
+
+${summary}`;
 }
 
 function ownerText(brief: PlanningBrief): string {
@@ -47,7 +59,11 @@ function ownerText(brief: PlanningBrief): string {
 // RF-624, RF-145
 export function apiContractMessage(input: ApiContractMessageInput, tags: () => string): string {
   const cards = renderDataBlock(
-    { source: 'cards', excerpts: [], text: cardsText(input.cards) },
+    {
+      source: 'cards',
+      excerpts: [],
+      text: cardsText(input.cards, input.omitted ?? new Set<string>()),
+    },
     tags(),
   );
   const owner = renderDataBlock(
