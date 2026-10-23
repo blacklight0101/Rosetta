@@ -9,7 +9,7 @@ import type { TopBarMeter } from '../lib/live-run/top-bar-meter.js';
 export function TopbarRunMeter({ meter }: { readonly meter: TopBarMeter }): JSX.Element {
   return (
     <div
-      class={`rst-topbar-runmeter rst-topbar-runmeter--${meter.level}`}
+      class={`rst-topbar-runmeter rst-topbar-runmeter--${meter.level}${meter.unit === 'tokens' ? ' rst-topbar-runmeter--tokens' : ''}`}
       role="group"
       aria-label="Run cost"
       data-testid="topbar-run-meter"

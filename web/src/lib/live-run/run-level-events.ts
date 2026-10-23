@@ -31,13 +31,24 @@ function sourceStateOf(source: StartedSource): SourceState {
   };
 }
 
+/** The kind of each role that names one. */
+function roleKindsOf(
+  roles: NonNullable<z.output<typeof startedData>['roles']>,
+): Readonly<Record<string, string>> {
+  const kinds: Record<string, string> = {};
+  for (const [name, role] of Object.entries(roles)) {
+    if (role.kind !== undefined) kinds[name] = role.kind;
+  }
+  return kinds;
+}
+
 // RF-1003, RF-1004, RF-006: a run that starts after it ended was resumed, so it is not ended any more,
 // and its judgement step will run again (RF-1014: the claims a stop left unjudged wait for it).
 export function onRunStarted(state: RunState, event: RunEvent): RunState {
   const restarted = { startedAt: event.at, ended: undefined, judgement: 'idle' } as const;
   const parsed = startedData.safeParse(event.data);
   if (!parsed.success) return { ...state, ...restarted };
-  const { stage, source, caps } = parsed.data;
+  const { stage, source, caps, roles } = parsed.data;
   const given = source === undefined ? undefined : sourceStateOf(source);
   return {
     ...state,
@@ -45,6 +56,7 @@ export function onRunStarted(state: RunState, event: RunEvent): RunState {
     stage: stage ?? state.stage,
     source: given ?? state.source,
     caps: caps === undefined ? state.caps : caps.run,
+    roleKinds: roles === undefined ? state.roleKinds : roleKindsOf(roles),
   };
 }
 

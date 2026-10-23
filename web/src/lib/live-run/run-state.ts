@@ -187,6 +187,8 @@ export interface RunState {
   readonly stage: string | undefined;
   readonly source: SourceState | undefined;
   readonly caps: CapsState | undefined;
+  /** P5-07: the provider kind of each role, from `run.started`. */
+  readonly roleKinds: Readonly<Record<string, string>>;
   /** The result of the scan, known from `scan.completed`; undefined for any other run. */
   readonly scan: ScanState | undefined;
   readonly agents: readonly AgentPanelState[];

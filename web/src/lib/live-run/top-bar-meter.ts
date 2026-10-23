@@ -17,6 +17,8 @@ export interface TopBarMeter {
   /** The level in words, shown beside the meter from the warning level on. */
   readonly note: string | undefined;
   readonly valueText: string;
+  /** P5-07: tokens for a run on local models, micro-dollars otherwise. */
+  readonly unit: MeterUnit;
 }
 
 const WARN_FROM = 80;
@@ -49,6 +51,7 @@ export function topBarMeterOf(spent: number, cap: number, unit: MeterUnit = 'mic
     spent: spentText,
     cap: capText,
     note,
+    unit,
     valueText: words === undefined ? valueText : `${valueText}, ${words}`,
   };
 }

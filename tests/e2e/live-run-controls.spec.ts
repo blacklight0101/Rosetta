@@ -145,8 +145,6 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   const overview = page.getByRole('region', { name: 'Overview' });
   const log = page.getByRole('log', { name: 'Event log' });
 
-  // P5-07: the top bar meter appears once the run estimate is known; wait for it so the header is at rest.
-  await expect(runMeter(page)).toBeVisible({ timeout: 30_000 });
   const pauseBox = await boxOf(page.getByRole('button', { name: 'Pause updates' }));
   await page.getByRole('button', { name: 'Pause updates' }).click();
 
@@ -196,8 +194,6 @@ test('RF-1002 pressing Pause updates and Resume moves neither the button nor the
   const meter = page.getByRole('region', { name: 'Run meter' });
   await expect(meter).toContainText('Estimate', { timeout: 30_000 });
   await expect(meter.getByRole('row', { name: /reader/u })).toBeVisible();
-  // P5-07: the top bar meter appears once the run estimate is known; wait for it so the header is at rest.
-  await expect(runMeter(page)).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('button', { name: 'Pause updates' })).toBeVisible();
   const before = {
     button: await boxOf(page.getByRole('button', { name: 'Pause updates' })),

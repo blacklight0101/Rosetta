@@ -179,8 +179,13 @@
   inline-size: 8.5rem;
 }
 
-/* Wide enough for "9,999,999 tokens of 9,999,999 tokens", so figures that grow never move the bar. */
 .rst-topbar-runmeter-figures {
+  min-inline-size: 10rem;
+}
+
+/* Tokens grow in width as they count: room for "9,999,999 tokens of 9,999,999 tokens", so the bar
+   stays put. */
+.rst-topbar-runmeter--tokens .rst-topbar-runmeter-figures {
   display: inline-block;
   min-inline-size: 34ch;
 }
