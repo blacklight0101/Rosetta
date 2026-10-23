@@ -18,8 +18,12 @@ const ignoredFolders: ReadonlyMap<string, string> = new Map([
   ['.vscode', 'IDE settings'],
 ]);
 
-/** A folder whose name starts with this word is a backup copy (`Backup`, `Backup 2025`). */
-const backupFolderPrefix = 'backup';
+/**
+ * A backup copy folder, matched in lower case: `backup` or `backups`, `backup` followed by a digit or a date
+ * (`Backup1`, `Backup2024-05-01`), or `backup` followed by a space, `_` or `-` (`Backup 2025`, `backup_old`).
+ * A name such as `BackupService` or `Backupper` is first-party code.
+ */
+const backupFolder = /^backups?$|^backup(?:[\s_-]|\d)/u;
 
 const binaryExtensions: ReadonlySet<string> = new Set([
   ...['png', 'jpg', 'jpeg', 'gif', 'bmp', 'ico', 'webp', 'tif', 'tiff', 'psd'],
@@ -47,7 +51,7 @@ function belowSubpath(path: string, subpath: string): string {
 
 function folderRule(folder: string): string | undefined {
   const lower = folder.toLowerCase();
-  if (lower.startsWith(backupFolderPrefix)) return 'backup copy';
+  if (backupFolder.test(lower)) return 'backup copy';
   return ignoredFolders.get(lower);
 }
 
