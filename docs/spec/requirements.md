@@ -1434,7 +1434,7 @@ As a user I want the verification state to say what was checked and what was not
 As a user who may not know the analysed code I want the run page to show one thing at a time so that I always know what is happening and what to do next.
 
 - Given a queued or running run, when its page opens, then it is in "while running" mode: the run journey (map the code, read, check citations, explain, your questions) with the current step, the living code map (RF-1016), the spend for the run against its cap, and up to three "working now" agents in plain words; cards so far, all agents, and activity (events, provider calls and logs) sit in tabs below, one list at a time.
-- Given a plan run (Q-44), when its page opens, then its stepper shows the plan steps (brief, planner calls, package, checks), never the understand steps.
+- Given a plan run (Q-44), when its page opens, then its stepper shows the plan steps (brief, planner calls, package, checks), never the understand steps; no code map, retry notice or Deepen notice is shown on a plan run.
 - Given a run that has ended, when its page opens, then it is in "after the run" mode: the overview (RF-264) first, a "Your turn" panel with the number of open questions and the next actions, followed by the journey to the package (RF-615), and tabs for Your questions, Evidence (cards, claims, citations, coverage, code map) and Activity (replay, events, calls, logs); the page switches modes by itself when the run ends.
 - Given either mode, when it is used with the keyboard or a screen reader, then tabs follow the tab pattern, every state is carried by text and a glyph as well as colour, and RF-1002..RF-1005, RF-1007, RF-1010 and RF-1011 keep their content in these places.
   Verification: end-to-end tests of both modes and the switch; accessibility checks; the design proposal `docs/design/proposals/run-page-v2.html` is the reference.
@@ -1442,7 +1442,7 @@ As a user who may not know the analysed code I want the run page to show one thi
 **RF-1016 Living code map** - R1 (M1) - Should - Source DEC-137 - ADR-012
 As a user watching a run I want to see the code being read so that the run is easy to follow and pleasant to watch.
 
-- Given the code map of the run, when the run page is in "while running" mode, then each area is a tile sized by its estimated tokens, showing its name, file count and state (waiting, being read with a moving highlight, read with one mark per card written, not covered, or third-party code left out, drawn hatched); a tile opens its agent and cards.
+- Given the code map of the run, when the run page of an understand run is in "while running" mode, then each area is a tile sized by its estimated tokens, showing its name, file count and state (waiting, being read with a moving highlight, read with one mark per card written, not covered, or third-party code left out, drawn hatched); a tile opens its agent and cards.
 - Given the operating system asks for reduced motion, when the map updates, then nothing moves; states change in place.
   Verification: component tests of the tile states; end-to-end test with recorded events; reduced-motion check.
 

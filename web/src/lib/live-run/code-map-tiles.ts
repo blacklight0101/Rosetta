@@ -28,6 +28,8 @@ export interface Tile {
   readonly rows: number;
   /** Whole percent of the area's estimate a reading agent has used, 5 to 95; else undefined. */
   readonly progress: number | undefined;
+  /** EV-16: set on every tile of a Deepen run, whose cards are the ones this run wrote. */
+  readonly deepen?: boolean;
 }
 
 interface Known {
@@ -114,7 +116,17 @@ export function tilesOf(
   const own = known.filter((area) => !area.thirdParty || taken.has(area.name));
   // The largest own area sets the size, so a big library does not shrink the others.
   const largest = Math.max(0, ...own.map((area) => area.tokens));
-  const tiles = known.map((area) => tileOf(area, readers, largest));
+  const deepen = state.deepen === undefined ? {} : { deepen: true };
+  const tiles = known.map((area) => ({ ...tileOf(area, readers, largest), ...deepen }));
   const left = (tile: Tile): boolean => tile.state === 'library';
   return [...tiles.filter((tile) => !left(tile)), ...tiles.filter(left)];
+}
+
+/**
+ * EV-16: the cards a tile says. In a Deepen run they are the new cards its agents wrote, not the
+ * area's whole set (the parent run's cards are not counted per area).
+ */
+export function cardsText(tile: Tile): string {
+  const word = tile.deepen === true ? 'new card' : 'card';
+  return `${String(tile.cards)} ${tile.cards === 1 ? word : `${word}s`}`;
 }

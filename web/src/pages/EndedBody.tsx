@@ -234,7 +234,9 @@ function Header(
   return (
     <>
       <RunStepper steps={stepperOf(built, shown, phase)} />
-      {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
+      {state.ended?.errorCode === undefined ? null : (
+        <RunFailure code={state.ended.errorCode} stage={stage} />
+      )}
       <FailedAreas state={shown} projectId={run.projectId} runId={run.id} />
       {shown.retry === undefined ? null : <RetryNotice retry={shown.retry} />}
       {shown.deepen === undefined ? null : <DeepenProgress progress={shown.deepen} />}
