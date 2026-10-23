@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import type { CardDraft } from '../../domain/cards/card-ids.js';
 import { agentCardSchema, agentClaimSchema } from './card-schema.js';
+import { fillOptionalObjects } from './optional-objects.js';
 import type { OutputProblem } from './output-problem.js';
 
 // RF-208, ADR-005: reads one card of an answer without losing what is valid in it. A card with a
@@ -31,7 +32,9 @@ function withClaims(item: object, claims: readonly unknown[]): object {
 }
 
 // RF-208
-export function readCard(item: unknown, index: number): ReadCard {
+export function readCard(original: unknown, index: number): ReadCard {
+  // P5-14: slips the schema lets be repaired locally are repaired before the card is checked.
+  const item = fillOptionalObjects(original);
   const prefix = `cards.${String(index)}`;
   const whole = agentCardSchema.safeParse(item);
   if (whole.success) return { draft: whole.data, problems: [] };

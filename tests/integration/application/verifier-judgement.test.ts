@@ -70,7 +70,10 @@ describe('verifier judgement: what the verifier sees', () => {
     expect(claim).toBe('Stock goes down by one.');
     const range = { path: 'Services/CatalogService.cs', startLine: 9, endLine: 15 };
     const file = await h.reader.readLines(range);
-    expect(lines).toBe(file.ok ? file.value.lines.join('\n') : 'unread');
+    const marked = file.ok
+      ? file.value.lines.map((line, index) => (index + 9 === 12 ? line : `[context] ${line}`))
+      : [];
+    expect(lines).toBe(marked.join('\n'));
     expect(lines).toContain('UPDATE CatalogItem SET Stock = Stock - 1');
     expect(lines).not.toContain('SELECT Id, Name, Price');
     expect(blockExcerpts(request)).toEqual([range]);

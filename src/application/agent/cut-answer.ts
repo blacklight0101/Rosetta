@@ -26,8 +26,20 @@ export function isCutAnswer(answer: AnswerText, read: CardParse): boolean {
   return read.problems.length > 0 || searchJson(answer.text).unclosed;
 }
 
+const openingFence = /^\s*(?:```|~~~)[A-Za-z0-9_-]*[ \t]*\r?\n/;
+const closingFence = /\r?\n?[ \t]*(?:```|~~~)[ \t]*$/;
+
+/**
+ * P5-14: a fragment the model wrapped in a code fence, without the fence. The fence is not part of
+ * the JSON, and inside the joined text it would break it.
+ */
+// RF-208
+function stripFence(fragment: string): string {
+  return fragment.replace(openingFence, '').replace(closingFence, '');
+}
+
 /** The answer with the fragment the model sent after being asked to continue; joined whole. */
 // RF-208
 export function joinFragment(earlier: string, fragment: string): string {
-  return `${earlier}${fragment}`;
+  return `${earlier}${stripFence(fragment)}`;
 }
