@@ -40,6 +40,8 @@ export interface FlowStep {
   /** The target component; null when the planner mapped the step to none that exists. */
   readonly component: string | null;
   readonly action: string;
+  /** The repository files the legacy step cites, as the card gives them. */
+  readonly files: readonly string[];
 }
 
 export interface MappedFlow {

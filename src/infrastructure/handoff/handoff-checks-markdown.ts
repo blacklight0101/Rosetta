@@ -50,6 +50,25 @@ function coverageLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
   ];
 }
 
+// RF-625: the steps of a target flow no component of the architecture covers, counted per flow.
+function unmappedFlowLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const rows = handoff.flows.flows.flatMap((flow) => {
+    const count = flow.steps.filter((step) => step.component === null).length;
+    return count === 0
+      ? []
+      : [`- ${esc.inline(flow.cardId)}: ${plural(count, 'step')} of ${String(flow.steps.length)}`];
+  });
+  if (rows.length === 0) return [];
+  return [
+    '## Flow steps not mapped',
+    '',
+    'No component of the target architecture covers the code these legacy steps cite, so the flow file shows them as not mapped and draws them on the nearest component. Decide where each one lives.',
+    '',
+    ...rows,
+    '',
+  ];
+}
+
 // RF-608, RF-609, RF-610: the planner decisions the package left out because a record of the brief decides them.
 function restatedLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   if (handoff.restated.length === 0) return [];
@@ -165,6 +184,7 @@ export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
   const lines = [
     ...sourceStopLines(handoff),
     ...coverageLines(handoff, esc),
+    ...unmappedFlowLines(handoff, esc),
     ...styleLines(handoff, esc),
     ...restatedLines(handoff, esc),
     ...requirementLines(handoff.content.requirementNotes ?? []),

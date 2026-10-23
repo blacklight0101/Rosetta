@@ -1,3 +1,4 @@
+import { inferComponent, type ComponentText } from './flow-step-components.js';
 import type { SourceCard } from './plan-sources.js';
 import {
   MAX_FLOWS,
@@ -37,14 +38,23 @@ function stepsOf(
     if (!own || !checks.components.has(step.component) || mapping.has(step.claim)) refused += 1;
     else mapping.set(step.claim, step);
   }
-  const steps = card.claims.map((claim) => {
+  const placed = card.claims.map((claim) => ({
+    files: [...new Set(claim.citations.map((citation) => citation.path))],
+    component: mapping.get(claim.claimId)?.component ?? null,
+  }));
+  const steps = card.claims.map((claim, index) => {
+    const evidence = placed[index];
+    const files = evidence?.files ?? [];
     const mapped = mapping.get(claim.claimId);
     const touches =
       claim.target !== undefined && checks.cards.has(claim.target) ? claim.target : null;
     return {
       ...{ claimId: claim.claimId, text: claim.text, touches },
-      component: mapped?.component ?? null,
+      component:
+        mapped?.component ??
+        (evidence === undefined ? null : inferComponent(evidence, placed, checks.described)),
       action: mapped?.action ?? '',
+      files,
     };
   });
   return { steps, refused };
@@ -56,6 +66,8 @@ function outOf(card: SourceCard, reason: string, byPlanner: boolean): OutOfScope
 
 interface Known {
   readonly components: ReadonlySet<string>;
+  /** The components with their responsibility, for placing a step by the files it cites. */
+  readonly described: readonly ComponentText[];
   readonly cards: ReadonlySet<string>;
 }
 
@@ -106,11 +118,14 @@ export function assembleFlows(
   cards: readonly SourceCard[],
   checks: {
     readonly components: readonly string[];
+    /** The components with their responsibility; a name alone is placed by folder only. */
+    readonly described?: readonly ComponentText[];
     readonly allCards: readonly SourceCard[];
   },
 ): FlowsAssembly {
   const known = {
     components: new Set(checks.components),
+    described: checks.described ?? checks.components.map((name) => ({ name, responsibility: '' })),
     cards: new Set(checks.allCards.map((card) => card.id)),
   };
   const byCard = new Map<string, DraftFlow>();
