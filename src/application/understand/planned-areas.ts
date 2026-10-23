@@ -15,8 +15,7 @@ export interface PlannedFrom {
 
 // RF-231
 export function plannedAreas(scanned: PlannedFrom): readonly Area[] {
-  // P3-112: an area with no readable file (zero tokens) is not offered.
-  const areas = scanned.codeMap.areas.filter((area) => area.estimatedTokens > 0);
+  const { areas } = scanned.codeMap;
   const folders = scanned.workbookFolders ?? [];
   // Two or more workbooks: `dependencies.md` is the map between them and is read.
   if (!isWorkbookSnapshotKey(scanned.source.snapshotKey) || folders.length !== 1) return areas;
