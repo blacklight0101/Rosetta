@@ -15,8 +15,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
 | P3 Report and plan      | 131     | 16        | 111        | 4         | 0                  | 54      | 73      | 4      | 87         | 0         |
-| P5 Polish (G-10)        | 19      | 7         | 12         | 0         | 0                  | 11      | 8       | 0      | 0          | 0         |
-| **Total**               | **374** | **97**    | **248**    | **29**    | **0**              | **185** | **175** | **14** | **228**    | **0**     |
+| P5 Polish (G-10)        | 20      | 7         | 13         | 0         | 0                  | 11      | 9       | 0      | 0          | 0         |
+| **Total**               | **375** | **97**    | **249**    | **29**    | **0**              | **185** | **176** | **14** | **228**    | **0**     |
 
 ## Conventions for every card
 
@@ -5313,5 +5313,22 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: P3-112, P3-116, P5-09, P5-12.
+
+---
+
+### P5-20 - Readers stop while the claims they wrote can still be judged
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the role shares of the run token cap (DEC-166: readers 70%, verifier 20%, summariser 10%; RF-429), the cap-weighted token count (DEC-168), the reader share of a scope cap (P5-18), the parallel verifier (P5-15), the claims written by the readers and the verifier's spend per judged claim. Haiku 5.5 battery of 2026-10-23, eShopModernizing re-run (owner approved): Understand ended CapReached on the 2,000,000 token cap with 958 claims, of which 716 (75%) were never judged; the readers used their full 70% while the verifier's 20% judged about a quarter of what they wrote. A plan from that run excludes every unjudged claim. The dynamic share of Q-61 (run cap minus the readers' use, minus 10%) would not have helped, because the readers used their whole share.
+- **Do**: before a reader task starts (and before a reader takes another turn that may write claims), the run checks that the readers' spend so far plus the estimated cost of judging every claim written and not yet judged stays within the readers' and verifier's part of the run token cap (90% with DEC-166), and within the readers' and verifier's part of the run cost cap. The judging estimate is the run's own average verifier spend per judged claim, or a stated default per claim before the first judgement. When the check fails, no new reader task starts; running reader tasks finish their current turn; the run moves to verification and ends Completed when every written claim is judged, or CapReached as before when a cap still binds. The fixed shares stay as upper limits (a reader never passes 70%). The run page and the event log say once that readers stopped to leave room to judge the claims written. Record the rule as a DEC row that amends DEC-166 and update RF-429.
+- **Review probes**: a recorded claim-heavy run that used to end with most claims Unverified ends with every written claim judged and no reader task started after the check failed; a run with few claims behaves as before (same tasks, same end state); the estimate uses the run's own average after the first judgements and the default before; a resume counts claims written before the stop; mutation: dropping the judging estimate from the check brings the unjudged claims back.
+- **Behaviour to preserve**: RF-420..RF-429, DEC-166 shares as upper limits, DEC-168 counting, P5-15 ordered parallel judgements, P5-18 scope shares, P3-121 plan from a capped run.
+- **Delivers**: the change, tests, the DEC row and RF-429 text.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-429, Q-61, DEC-166, DEC-168; P5-15, P5-18; Haiku battery eShop re-run.
 
 ---
