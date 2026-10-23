@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { waitingOnQuestions } from '../../../../src/domain/planning/question-cards.js';
 
 // RF-637, DEC-135: which task cards wait on which open question. A question of the brief that
-// shapes every card holds them all; one that shapes only the roadmap holds none; a question of
+// shapes every card marks none (it applies to the whole build, P5-08); one that shapes only the roadmap holds none; a question of
 // the analysis holds the cards built from requirements whose source cards are in its area.
 
 const tasks = [
@@ -42,9 +42,9 @@ describe('RF-637 the cards that wait on a question', () => {
   });
 
   it.each(['principles', 'architecture', 'migration', 'buildMethod', 'stack.database'])(
-    'RF-637 the brief question %s holds every card',
+    'RF-637 P5-08 the brief question %s applies to the whole build and marks no card',
     (id) => {
-      expect(waiting([{ id }]).byQuestion.get(id)).toEqual(['T-001', 'T-002', 'T-003', 'T-004']);
+      expect(waiting([{ id }]).byQuestion.get(id)).toEqual([]);
     },
   );
 
@@ -62,8 +62,8 @@ describe('RF-637 the cards that wait on a question', () => {
       { id: 'context.deadline' },
     ]);
 
-    expect(byCard.get('T-002')).toEqual(['stack.database', 'OQ-002']);
-    expect(byCard.get('T-001')).toEqual(['stack.database']);
+    expect(byCard.get('T-002')).toEqual(['OQ-002']);
+    expect(byCard.has('T-001')).toBe(false);
     expect(byCard.has('T-005')).toBe(false);
   });
 });
@@ -77,7 +77,7 @@ describe('RF-637 a question listed twice', () => {
       { id: 'OQ-001', area: 'orders' },
     ]);
 
-    expect(byCard.get('T-001')).toEqual(['stack.database', 'OQ-001']);
-    expect(byCard.get('T-004')).toEqual(['stack.database']);
+    expect(byCard.get('T-001')).toEqual(['OQ-001']);
+    expect(byCard.has('T-004')).toBe(false);
   });
 });

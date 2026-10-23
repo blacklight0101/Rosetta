@@ -6,6 +6,7 @@ import {
   type CoverageItem,
 } from '../../domain/planning/plan-coverage.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { probeStatesOutcome } from '../../domain/planning/task-card-quality.js';
 import { decisionLink } from './handoff-links.js';
 import { requirementLines } from './handoff-requirement-notes-markdown.js';
 import { styleLines } from './handoff-style-markdown.js';
@@ -140,6 +141,25 @@ function sourceStopLines(handoff: HandoffPackage): string[] {
   ];
 }
 
+// P5-08, RF-630: the probes that say what to try but not what must happen. Only the card id and the
+// position of the probe are shown; the probe text stays on its card.
+function probeOutcomeLines(handoff: HandoffPackage): string[] {
+  const missing = handoff.content.tasks.flatMap((task) =>
+    task.probes.flatMap((probe, at) =>
+      probeStatesOutcome(probe) ? [] : [`- ${task.id}, probe ${String(at + 1)}`],
+    ),
+  );
+  if (missing.length === 0) return [];
+  return [
+    '## Probes without an expected outcome',
+    '',
+    'A review probe is an input together with what must happen for it. These probes state only the input; the reviewer cannot tell a pass from a fail, so add the expected outcome before the card is built.',
+    '',
+    ...missing,
+    '',
+  ];
+}
+
 // RF-627
 export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const lines = [
@@ -149,6 +169,7 @@ export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     ...restatedLines(handoff, esc),
     ...requirementLines(handoff.content.requirementNotes ?? []),
     ...keptByNoCardLines(handoff, esc),
+    ...probeOutcomeLines(handoff),
     ...copiedExampleLines(handoff, esc),
     ...leftOutLines(handoff, esc),
   ];

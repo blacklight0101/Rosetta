@@ -192,9 +192,10 @@ describe('RF-633 a failing test for every guard', () => {
   it('RF-633 a card that adds a guard asks for its guard test', async () => {
     const files = await packageOf({});
 
-    for (const card of cardsOf(files)) {
-      expect(card).toMatch(/\nGuard test: .*fails when the guard is removed.*\n/u);
-    }
+    const tasks = plain(files['tasks.md']);
+    const shared = tasks.slice(0, tasks.indexOf('\n## T-'));
+    expect(shared).toMatch(/\nGuard test: .*fails when the guard is removed.*\n/u);
+    for (const card of cardsOf(files)) expect(card).not.toContain('Guard test:');
   });
 });
 

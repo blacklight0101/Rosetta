@@ -39,10 +39,8 @@ describe('renderHandoff: the cards an open question blocks', () => {
   const files = renderHandoff(withTasks([first, second]), masker);
   const questions = plain(files['open-questions.md']);
 
-  it('RF-637 a question of the brief lists its default and the cards waiting on it', () => {
-    expect(questions).toContain(
-      `| How to move? | migration | Step by step. | ${link('T-001')}, ${link('T-002')} |`,
-    );
+  it('RF-637 P5-08 a question of the brief lists its default and marks no single card', () => {
+    expect(questions).toContain('| How to move? | migration | Step by step. | none |');
   });
 
   it('RF-637 a question that shapes no card says none', () => {
@@ -75,10 +73,8 @@ describe('renderHandoff: the roadmap marks the cards that wait on a question', (
   const roadmap = plain(renderHandoff(withTasks([first, second]), masker)['roadmap.md']);
 
   it('RF-637 a card that waits is marked with the questions it waits on', () => {
-    expect(roadmap).toContain(
-      `\nWaiting on open questions:\n\n- ${link('T-001')}: migration, OQ-001\n`,
-    );
-    expect(roadmap).toContain(`\n- ${link('T-002')}: migration\n`);
+    expect(roadmap).toContain(`\nWaiting on open questions:\n\n- ${link('T-001')}: OQ-001\n`);
+    expect(roadmap).not.toContain(`- ${link('T-002')}:`);
   });
 
   it('RF-637 the roadmap says the cards wait until the question is answered or its default accepted', () => {
@@ -129,7 +125,6 @@ describe('renderHandoff: hostile text in the question links', () => {
     const roadmap = hostileFiles()['roadmap.md'] ?? '';
 
     expect(roadmap).toContain('Waiting on open questions:');
-    expect(roadmap).toContain('stack.');
   });
 
   it('RF-637 a pipe in a question id does not add a column to its table row', () => {

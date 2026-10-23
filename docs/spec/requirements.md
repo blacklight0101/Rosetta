@@ -1297,6 +1297,7 @@ As a team building with AI agents I want the operational rules agents need writt
 As a product owner I want each open question to name the cards waiting for it so that I answer in the order the build needs.
 
 - Given the package's open-questions file, when it is written, then each question lists its default and the task cards that depend on it, and the roadmap marks those cards as waiting on the question until it is answered or its default is accepted.
+- Given a question of the brief (principles, architecture style, migration strategy, build method or a stack layer), when the files are written, then it applies to the whole build: `open-questions.md` lists it as such and no single card is marked as waiting on it; the task cards that depend on a question are those linked to it through requirement sources (P5-08).
   Verification: structure test (every question names at least one card or says none).
 
 **RF-638 Build metrics in the plan** - R1 - Should - Source DEC-135 - ADR-018

@@ -146,9 +146,9 @@ function migrationCard(content: PlanContent, tables: readonly ModelTable[]): Pla
     riskClass: 'data loss',
     adds: [],
     probes: [
-      'Run the migrations twice on the same database.',
-      'Run them on a database that already holds one of the tables.',
-      'Compare the tables the migrations create with the target data model, column by column.',
+      'Run the migrations twice on the same database => the second run changes no table, column or row.',
+      'Run them on a database that already holds one of the tables => that table and its rows are left as they were.',
+      'Compare the tables the migrations create with the target data model, column by column => every table and column of the model exists with its key and constraints, and nothing else.',
     ],
     files: [],
     identifiers: [],

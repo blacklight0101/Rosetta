@@ -47,12 +47,19 @@ const shapesFor: Readonly<Record<'limit' | 'parser', readonly (keyof typeof shap
 
 /** The sections of `fixtures.md` a card that adds a limit or a parser must handle. */
 // RF-632
-export function shapeLines(task: PlanTask): string[] {
+export function shapeLines(task: PlanTask, workbook = false): string[] {
   const kinds = task.adds.filter(
     (kind: GuardKind): kind is 'limit' | 'parser' => kind === 'limit' || kind === 'parser',
   );
   const keys = [...new Set(kinds.flatMap((kind) => shapesFor[kind]))];
   if (keys.length === 0) return [];
+  // P5-08: a workbook has no file shapes worth testing; its data is sheets, rows and cells.
+  if (workbook) {
+    return [
+      `Data shapes to handle: the sheets, rows and cells of the workbook, see ${shapeLink(shapeSections.volumes)}`,
+      '',
+    ];
+  }
   const links = keys.map((key) => shapeLink(shapeSections[key]));
   return [`Data shapes to handle: ${links.join(', ')}`, ''];
 }

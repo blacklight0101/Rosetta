@@ -72,11 +72,13 @@ describe('RF-609 the stack and its decision records', () => {
     const database = decisionsOf(files).find(([, text]) =>
       text.includes('Technology for the database layer'),
     )?.[0];
-    for (const card of cardsOf(files)) {
-      expect(card).toMatch(/\nTechnology: .*database: PostgreSQL 17/u);
-      expect(card).toContain('language and runtime: C# on .NET 10');
-      expect(card).toContain(`](${database ?? ''})`);
-    }
+    // P5-08: the technology line is the same for every card, so it is written once before the cards.
+    const tasks = plain(files['tasks.md']);
+    const shared = tasks.slice(0, tasks.indexOf('\n## T-'));
+    expect(shared).toMatch(/\nTechnology: .*database: PostgreSQL 17/u);
+    expect(shared).toContain('language and runtime: C# on .NET 10');
+    expect(shared).toContain(`](${database ?? ''})`);
+    for (const card of cardsOf(files)) expect(card).not.toContain('Technology:');
   });
 
   it('RF-609 with no layer chosen the cards name no technology', async () => {

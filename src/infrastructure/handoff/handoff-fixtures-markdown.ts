@@ -133,9 +133,27 @@ function introLines(shapes: ScanShapes | undefined): string[] {
   return [lead, '', `Measured: ${counted}`, '', ...unread, ...skipped];
 }
 
+/** P5-08: the intro of a workbook project, whose data is in sheets, rows and cells, not in repository files. */
+function workbookIntroLines(): string[] {
+  return [
+    'The legacy system is one or more workbooks, so its data is in sheets, rows and cells, not in repository files. The files of the scan are the text renderings of the workbooks; their size, depth, encoding and line endings say nothing about the data a test must meet, so they are not listed here.',
+    '',
+    'Task cards that add a limit or a parser handle the volumes the cards state below (rows of a sheet, records of a table) and the cells of [workbook-formulas.md](workbook-formulas.md): build the test data from the sheets, rows and cells of the workbook itself.',
+    '',
+  ];
+}
+
 // RF-632
 export function fixturesMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const { shapes } = handoff;
+  if (handoff.workbookFormulas !== undefined) {
+    return [
+      '# Realistic data shapes',
+      '',
+      ...workbookIntroLines(),
+      ...section(shapeSections.volumes, volumeLines(handoff, esc)),
+    ].join('\n');
+  }
   return [
     '# Realistic data shapes',
     '',
