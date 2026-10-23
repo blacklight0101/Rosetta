@@ -5137,7 +5137,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Gate**: G-10
 - **Status**: Done
 - **Reads**: consolidation (P3-80, P3-106, P3-110). Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic), finding EV-42: one card in five merge groups; a start page and a login page merged into one card and one task; FLOW and INT never consolidated.
-- **Do**: a card joins at most one merge group; two SCRN cards with different routes never merge; decide FLOW/INT rules with the owner.
+- **Do**: a card joins at most one merge group; two SCRN cards with different routes never merge; FLOW/INT rules decided by the owner on 2026-10-23 (DEC-167).
 - **Review probes**: recorded merges with overlap resolve to one group; two routes stay apart.
 - **Behaviour to preserve**: P3-106, P3-110.
 - **Delivers**: the change and tests.
