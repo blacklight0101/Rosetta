@@ -15,6 +15,8 @@ import {
   type PlanPromptFiles,
   type PlannedCallKind,
 } from './plan-estimate-prompts.js';
+import { plannerWindowOf } from '../plan/plan-window.js';
+import { windowFacts } from './plan-window-facts.js';
 import { planCaps, type PlanCapDependencies } from './plan-caps.js';
 import type { PlanEstimate } from './plan-estimate-types.js';
 import { estimateRole, type RolePricing } from './role-estimate.js';
@@ -109,13 +111,18 @@ export class EstimatePlan {
     const inputs = await planInputs(this.deps, ref, request.sourceRunId);
     if (!inputs.ok) return err(problemOf(inputs.error.code));
     const { project } = inputs.value;
-    const planned = await plannedPrompts(this.deps, inputs.value);
-    const { calls: prompts } = planned;
     const { maxOutputTokens, contextTokens } = roleLimits(
       project.settings,
       'planner',
       this.deps.models,
     );
+    // P3-113: the prompts are measured packed to the planner's window, as the run sends them.
+    const window = {
+      windowTokens: plannerWindowOf(project.settings, this.deps.models),
+      maxOutputTokens,
+    };
+    const planned = await plannedPrompts(this.deps, inputs.value, window);
+    const { calls: prompts } = planned;
     const calls = await Promise.all(
       prompts.map((each) => this.callOf(project, each.file.text + each.message, maxOutputTokens)),
     );
@@ -130,16 +137,12 @@ export class EstimatePlan {
       assumptions: {
         ...{ calls: calls.length, promptTokens },
         contextTokens,
-        ...{
-          prdPromptTokens: tokensOf(calls, prompts, 'prd'),
-          dataModelPromptTokens: tokensOf(calls, prompts, 'dataModel'),
-          flowsPromptTokens: tokensOf(calls, prompts, 'flows'),
-          apiContractPromptTokens: tokensOf(calls, prompts, 'apiContract'),
-          uxPromptTokens: tokensOf(calls, prompts, 'ux'),
-          coveragePromptTokens: tokensOf(calls, prompts, 'coverage'),
-          gapPromptTokens: tokensOf(calls, prompts, 'gap'),
-          gapRepairPromptTokens: tokensOf(calls, prompts, 'gapRepair'),
-        },
+        ...windowFacts(
+          window,
+          prompts,
+          calls.map((call) => call.promptTokens),
+        ),
+        ...callTokens(calls, prompts),
         ...{ maxOutputTokens, outputPercent: OUTPUT_PERCENT },
         continuationsPerCall: maxPlannerContinuations,
         ...{
@@ -151,6 +154,23 @@ export class EstimatePlan {
       withinCaps,
     });
   }
+}
+
+/** The prompt tokens of each call a plan run may make. */
+function callTokens(
+  calls: readonly { readonly promptTokens: number }[],
+  prompts: readonly { readonly kind: PlannedCallKind }[],
+) {
+  return {
+    prdPromptTokens: tokensOf(calls, prompts, 'prd'),
+    dataModelPromptTokens: tokensOf(calls, prompts, 'dataModel'),
+    flowsPromptTokens: tokensOf(calls, prompts, 'flows'),
+    apiContractPromptTokens: tokensOf(calls, prompts, 'apiContract'),
+    uxPromptTokens: tokensOf(calls, prompts, 'ux'),
+    coveragePromptTokens: tokensOf(calls, prompts, 'coverage'),
+    gapPromptTokens: tokensOf(calls, prompts, 'gap'),
+    gapRepairPromptTokens: tokensOf(calls, prompts, 'gapRepair'),
+  };
 }
 
 /** The prompt tokens of the call that uses this prompt file; 0 when no such call is made. */

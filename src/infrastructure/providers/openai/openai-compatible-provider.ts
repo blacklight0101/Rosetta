@@ -12,6 +12,7 @@ import { refuseRealProviderInTests } from '../real-provider-guard.js';
 import { completeWithRetries, type AttemptResult, type Sleep } from '../retrying-call.js';
 import { meteredIfTimedOut } from '../timeout-usage.js';
 import type { FetchLike } from './agent-fetch.js';
+import { requestWaitMs } from '../prompt-wait.js';
 import { compatibleFailure } from './openai-compatible-errors.js';
 import { chatCompletionBody } from './openai-request.js';
 import { llmResponseOf } from './openai-response.js';
@@ -114,7 +115,7 @@ export class OpenAiCompatibleProvider implements LlmProvider {
   }
 
   private async attempt(request: LlmRequest): Promise<AttemptResult> {
-    const timeout = AbortSignal.timeout(this.options.timeoutSeconds * 1000);
+    const timeout = AbortSignal.timeout(requestWaitMs(this.options.timeoutSeconds * 1000, request));
     const signal = AbortSignal.any([request.signal, timeout]);
     try {
       const response = await this.client.chat.completions

@@ -5,6 +5,7 @@ import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { parseDataModelAnswer, type DataModelProblem } from './data-model-answer.js';
 import { dataModelMessage } from './data-model-message.js';
+import { MEASURING_TAG, omittedFor } from './plan-call-packing.js';
 
 // RF-623, RF-262, ADR-018: the target data model of a plan run. When the supported cards hold at
 // least one `ENT` claim the planner is asked once more, through the same guarded provider, for the
@@ -50,7 +51,11 @@ export async function planDataModel(
       problems: [],
       answered: false,
     };
-  const message = dataModelMessage(input, call.tags);
+  const entities = input.cards.filter((card) => card.type === 'ENT');
+  const omitted = omittedFor(call, entities, (each) =>
+    dataModelMessage({ ...input, omitted: each }, () => MEASURING_TAG),
+  );
+  const message = dataModelMessage({ ...input, omitted }, call.tags);
   const output = await askPlannerWith(call, message);
   const parsed = parseDataModelAnswer(output);
   const assembly = assembleDataModel(parsed?.draft ?? emptyDraft, legacy, database);

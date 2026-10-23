@@ -1,6 +1,6 @@
-import { apiScope } from '../../domain/planning/api-contract.js';
+import { apiScope, servableCards } from '../../domain/planning/api-contract.js';
 import { legacyClaimsOf } from '../../domain/planning/data-model.js';
-import { supportedCards } from '../../domain/planning/plan-sources.js';
+import { supportedCards, type SourceCard } from '../../domain/planning/plan-sources.js';
 import { flowCardsOf } from '../../domain/planning/target-flows.js';
 import { screenCardsOf } from '../../domain/planning/target-ux.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
@@ -17,6 +17,8 @@ import { gapMessage } from '../plan/gap-message.js';
 import { gapRepairMessage } from '../plan/gap-repair-message.js';
 import { assumedCoverageInput, assumedGapInput, assumedGapProblems } from './coverage-estimate.js';
 import { assumedComponents } from './flows-estimate.js';
+import { MEASURING_TAG } from '../plan/plan-call-packing.js';
+import { packCards, type PlanWindow } from '../plan/plan-packing.js';
 
 // RF-613, RF-621, RF-623, RF-624, RF-625, RF-626, ADR-007: the planner calls a plan run would make, each as its
 // versioned system prompt and the user message it would send, so the estimate measures what the
@@ -57,10 +59,11 @@ interface PlannedCall {
   readonly kind: PlannedCallKind;
   readonly file: PromptFile;
   readonly message: string;
+  /** P3-113: the cards the message names by title only, to fit the window. */
+  readonly omitted: number;
 }
 
-/** The tag of a data block is 24 characters; the run draws its own. */
-const TAG = 'a'.repeat(24);
+const TAG = MEASURING_TAG;
 
 export interface PlannedPrompts {
   readonly calls: readonly PlannedCall[];
@@ -75,11 +78,28 @@ interface DocumentFiles {
   readonly ux: PromptFile;
 }
 
+/** A call with no card left out. */
+const whole = (kind: PlannedCallKind, file: PromptFile, message: string): PlannedCall => ({
+  ...{ kind, file, message, omitted: 0 },
+});
+
+/** A call whose cards are packed to the window as the run packs them (P3-113). */
+function packed(
+  window: PlanWindow | undefined,
+  call: { readonly kind: PlannedCallKind; readonly file: PromptFile },
+  cards: readonly SourceCard[],
+  render: (omitted: ReadonlySet<string>) => string,
+): PlannedCall {
+  const { omitted } = packCards({ window, system: call.file.text, cards, render });
+  return { ...call, message: render(omitted), omitted: omitted.size };
+}
+
 /** The calls after the plan and the PRD, each only when the run would make it. */
 function documentCalls(
   supported: ReturnType<typeof supportedCards>,
   brief: PlanInputs['brief'],
   files: DocumentFiles,
+  window: PlanWindow | undefined,
 ): PlannedCall[] {
   const flowCards = flowCardsOf(supported);
   const screenCards = screenCardsOf(supported);
@@ -88,36 +108,71 @@ function documentCalls(
   const calls: (PlannedCall | undefined)[] = [
     legacyClaimsOf(supported).length === 0
       ? undefined
-      : {
-          ...{ kind: 'dataModel', file: files.dataModel },
-          message: dataModelMessage({ cards: supported, brief }, () => TAG),
-        },
+      : packed(
+          window,
+          { kind: 'dataModel', file: files.dataModel },
+          supported.filter((card) => card.type === 'ENT'),
+          (omitted) => dataModelMessage({ cards: supported, brief, omitted }, () => TAG),
+        ),
     flowCards.length === 0
       ? undefined
-      : {
-          ...{ kind: 'flows', file: files.flows },
-          message: flowsMessage({ flowCards, cards: supported, components }, () => TAG),
-        },
+      : whole(
+          'flows',
+          files.flows,
+          flowsMessage({ flowCards, cards: supported, components }, () => TAG),
+        ),
     apiScope(supported, brief).ask
-      ? {
-          ...{ kind: 'apiContract', file: files.apiContract },
-          message: apiContractMessage({ cards: supported, brief }, () => TAG),
-        }
+      ? packed(
+          window,
+          { kind: 'apiContract', file: files.apiContract },
+          servableCards(supported),
+          (omitted) => apiContractMessage({ cards: supported, brief, omitted }, () => TAG),
+        )
       : undefined,
     screenCards.length === 0
       ? undefined
-      : {
-          ...{ kind: 'ux', file: files.ux },
-          message: uxMessage({ screenCards, brief }, () => TAG),
-        },
+      : whole(
+          'ux',
+          files.ux,
+          uxMessage({ screenCards, brief }, () => TAG),
+        ),
   ];
   return calls.flatMap((call) => (call === undefined ? [] : [call]));
 }
 
-// RF-613
+/**
+ * RF-627, Q-45, Q-54: the calls after the documents are always counted, since whether an item is
+ * left without a card is not known yet; the repair is the gap call again, with the repair prompt
+ * and a problem for every card.
+ */
+function closingCalls(files: {
+  readonly coverage: PromptFile;
+  readonly gap: PromptFile;
+  readonly repair: PromptFile;
+}): PlannedCall[] {
+  const { coverage, gap, repair } = files;
+  const problems = assumedGapProblems();
+  const repairing = gapRepairMessage(assumedGapInput(), { prompt: repair, problems }, () => TAG);
+  return [
+    whole(
+      'coverage',
+      coverage,
+      coverageMessage(assumedCoverageInput(), () => TAG),
+    ),
+    whole(
+      'gap',
+      gap,
+      gapMessage(assumedGapInput(), () => TAG),
+    ),
+    whole('gapRepair', gap, repairing),
+  ];
+}
+
+// RF-613, P3-113
 export async function plannedPrompts(
   files: PlanPromptFiles,
   inputs: PlanInputs,
+  window?: PlanWindow,
 ): Promise<PlannedPrompts> {
   const { cards, brief, questions } = inputs;
   const [catalogue, plan, prd, dataModel, flows, apiContract, ux, coverage, gap, repair] =
@@ -136,30 +191,16 @@ export async function plannedPrompts(
   const guidance = await files.workbookGuidance?.(inputs);
   const supported = supportedCards(cards);
   const answered = questions.filter((question) => question.answer.trim() !== '');
-  // The plan and the PRD send the same data blocks; only the system prompt differs.
-  const message = planMessage({ cards: supported, brief, catalogue, answered }, () => TAG);
+  // The plan and the PRD send the same data blocks; each packs to the window with its own system prompt.
+  const planned = (kind: 'plan' | 'prd', file: PromptFile): PlannedCall =>
+    packed(window, { kind, file }, supported, (omitted) =>
+      planMessage({ cards: supported, brief, catalogue, answered, omitted }, () => TAG),
+    );
   const calls: PlannedCall[] = [
-    { kind: 'plan', file: withWorkbookGuidance(plan, guidance), message },
-    { kind: 'prd', file: prd, message },
-    ...documentCalls(supported, brief, { dataModel, flows, apiContract, ux }),
-    // RF-627: the links are asked for whenever a plan is written, so the call is always counted.
-    {
-      kind: 'coverage',
-      file: coverage,
-      message: coverageMessage(assumedCoverageInput(), () => TAG),
-    },
-    // Q-45: whether an item is left without a card is not known yet, so the call is always counted.
-    { kind: 'gap', file: gap, message: gapMessage(assumedGapInput(), () => TAG) },
-    // Q-54: whether a card is left out is not known yet either; the repair is the gap call again,
-    // with the repair prompt and a problem for every card of the answer, and is always counted.
-    {
-      ...{ kind: 'gapRepair', file: gap },
-      message: gapRepairMessage(
-        assumedGapInput(),
-        { prompt: repair, problems: assumedGapProblems() },
-        () => TAG,
-      ),
-    },
+    planned('plan', withWorkbookGuidance(plan, guidance)),
+    planned('prd', prd),
+    ...documentCalls(supported, brief, { dataModel, flows, apiContract, ux }, window),
+    ...closingCalls({ coverage, gap, repair }),
   ];
   return { calls, supportedCards: supported.length, answeredQuestions: answered.length };
 }
