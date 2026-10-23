@@ -521,7 +521,7 @@ sequenceDiagram
       T-->>L: result or error result
     else final answer
       L->>L: refuse it when no file of the area was read (RF-206), or once when less than half of its first-party tokens were (Q-50)
-      L->>L: parse cards (zod), keep the valid ones, then up to two repairs or a continuation for the rest
+      L->>L: parse cards (zod), keep the valid ones, then one continuation for a cut answer and up to two repairs for the rest
     end
   end
   L-->>O: cards, transcript, state, usage
@@ -552,7 +552,8 @@ sequenceDiagram
   through `AgentToolSet.rowSpans`, at most 20 per answer; a row that is not found leaves the citation as written, so
   it is dropped like any bad citation), and the problem of a dropped citation quotes what the model wrote and the
   expected form; problems earn up to two repairs, the second with only the problems that remain, and an answer
-  cut off by the output limit earns up to two continuations (`prompts/cards/continue.v1.md`) instead of a new start;
+  cut off by the output limit (the provider reports `length`, or the JSON never closes; `cut-answer.ts`, P5-03) earns one
+  continuation (`prompts/cards/continue.v1.md`) instead of a new start, and a second cut goes to the repairs;
   every follow-up is a turn like any other, under the same turn limit, context share and stop checks, and a stop
   keeps the cards read so far; RF-206: a final answer given before any file of the area was read is not accepted,
   the agent is sent `prompts/reader/read-first.v1.md` with its unread files as a data block and keeps its turns to read
@@ -730,6 +731,7 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   An error result is a block too, with no excerpts; a call that names no tool gets the source `unknown_tool`, and the
   cards the summariser compares (RF-250) get the source `cards`, with no excerpts.
 - **Bookkeeping claims** (P3-110, RF-230, RF-300, EV-26): when a reader task ends, `withoutBookkeeping` (`application/cards/bookkeeping-claims.ts`, understand and Deepen alike) drops the claims that name a card id and cite no file of the code map, or cite only a token that cannot be a file name (the tag of the existing-card block); a card left with no claim goes too. The count is published as `agent.claims.dropped` under the task. A claim with a wrong file path is kept for the citation check (RF-300).
+- **Restated claims** (P3-125, RF-209, HB-06): `extendCards` (`domain/cards/card-extension.ts`) asks `restate` (`domain/cards/claim-restated.ts`) about each claim a Deepen task adds to a parent card. A claim with the same normalised text (case, punctuation and spacing ignored; or a Jaccard index of 0.8 or more on the words with the same negation, the same numbers, the same identifiers in the same order of first appearance (the first is the subject), and no differing word that is capitalised inside a sentence ("Column Name" and "Column Price"); identifiers are words with an underscore, a digit, an inner capital, a dot or `::` and quoted text, so claims that differ only in a field name stay apart; the exact text is tried first) and a cited range that overlaps a `Proposed`, `Supported` or `Unverified` claim of the card is folded into it: it gets the new citations that pass the file and line-range check of RF-300 and keeps its verdict. A claim that restates a `Rejected` claim with other lines is added with `replaces` set to it; with the same lines it is left out. A rejected claim is never changed or removed (DEC-19). The count is published as `agent.claims.replaced` under the task.
 - **Duplicates without a model** (P3-106, RF-230, EV-05, EV-06): before the summariser is asked, `consolidateRun` merges
   the cards of one area and one type (P3-110, EV-25: the same title in two areas is two subjects, so the area is part of the key), of any type but `FLOW` (two journeys are two journeys), whose titles are the same once case, punctuation and a plural
   `s` are ignored (`titleMerges`, `domain/cards/title-merge.ts`; the first card's title, summary and, for an `OQ`, question
