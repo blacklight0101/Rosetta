@@ -15,7 +15,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // before any run uses it.
 
 const readerPromptNames = {
-  system: 'reader/area.v7.md',
+  system: 'reader/area.v8.md',
   cardFormat: 'cards/card-format.v2.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',

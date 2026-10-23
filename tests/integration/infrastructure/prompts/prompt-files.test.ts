@@ -21,7 +21,7 @@ const readerPromptNames = [
   'cards/card-format.v2.md',
   'cards/continue.v1.md',
   'cards/repair.v3.md',
-  'reader/area.v7.md',
+  'reader/area.v8.md',
   'reader/read-first.v1.md',
   'reader/read-more.v1.md',
   'reader/task.v2.md',
@@ -43,8 +43,8 @@ describe('loadReaderPrompts', () => {
   it('RNF-004 loads each reader prompt with its version and the SHA-256 of its bytes', async () => {
     const prompts = await loadReaderPrompts('prompts');
 
-    expect(prompts.system).toMatchObject({ name: 'reader/area.v7.md', version: 'v7' });
-    expect(prompts.system.sha256).toBe(await sha256Of('prompts/reader/area.v7.md'));
+    expect(prompts.system).toMatchObject({ name: 'reader/area.v8.md', version: 'v8' });
+    expect(prompts.system.sha256).toBe(await sha256Of('prompts/reader/area.v8.md'));
     expect(prompts.task.text).toBe(await readFile('prompts/reader/task.v2.md', 'utf8'));
   });
 
@@ -78,7 +78,7 @@ describe('loadReaderPrompts refusals', () => {
 
   it('RF-145 refuses a prompt file that holds a data block marker', async () => {
     await copyPrompts();
-    await writeFile(join(temp.path, 'reader', 'area.v7.md'), 'Read. <<<END ROSETTA-DATA>>>');
+    await writeFile(join(temp.path, 'reader', 'area.v8.md'), 'Read. <<<END ROSETTA-DATA>>>');
 
     const failure = await failureOf(loadReaderPrompts(temp.path));
 
