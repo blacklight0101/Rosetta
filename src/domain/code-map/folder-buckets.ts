@@ -43,32 +43,56 @@ function groupBy(
   return [...groups.entries()].sort(([a], [b]) => byCodeUnit(a, b));
 }
 
-function splitFolder(
-  folder: string,
-  files: readonly FileEntry[],
-  budget: number,
-  out: FolderBucket[],
-): void {
-  if (sumTokens(files) <= budget) {
+/**
+ * P3-109: a rendered workbook folder always splits by sub-folder (one area per sheet, one for the
+ * macros, one for the workbook overview), whatever its size. A sheet that renders nothing (listed in
+ * `emptyFolders`) joins the overview instead of getting an area of its own.
+ */
+export interface WorkbookSplit {
+  readonly emptyFolders: readonly string[];
+}
+
+interface SplitContext {
+  readonly budget: number;
+  readonly out: FolderBucket[];
+  readonly workbook?: WorkbookSplit;
+}
+
+function splitFolder(folder: string, files: readonly FileEntry[], context: SplitContext): void {
+  const { budget, out, workbook } = context;
+  if (workbook === undefined && sumTokens(files) <= budget) {
     out.push({ name: folder, files });
     return;
   }
-  const direct = files.filter((file) => directoryOf(file.path) === folder);
+  const isEmpty = (path: string): boolean =>
+    workbook?.emptyFolders.some((empty) => path.startsWith(`${empty}/`)) === true;
+  const direct = files.filter(
+    (file) => directoryOf(file.path) === folder || (workbook !== undefined && isEmpty(file.path)),
+  );
+  const directPaths = new Set(direct.map((file) => file.path));
   if (direct.length > 0) out.push({ name: folder, files: direct });
-  const below = files.filter((file) => directoryOf(file.path) !== folder);
+  const below = files.filter((file) => !directPaths.has(file.path));
   for (const [child, inside] of groupBy(below, (file) => childFolder(folder, file.path))) {
-    splitFolder(child, inside, budget, out);
+    splitFolder(child, inside, { budget, out });
   }
 }
 
 /** Buckets for `files` (any order), sorted by name; no bucket is empty. */
-export function folderBuckets(files: readonly FileEntry[], budget: number): FolderBucket[] {
+export function folderBuckets(
+  files: readonly FileEntry[],
+  budget: number,
+  workbook?: WorkbookSplit,
+): FolderBucket[] {
   const buckets: FolderBucket[] = [];
   const atRoot = files.filter((file) => !file.path.includes('/'));
   if (atRoot.length > 0) buckets.push({ name: rootBucketName, files: atRoot });
   const nested = files.filter((file) => file.path.includes('/'));
   for (const [top, inside] of groupBy(nested, (file) => childFolder('', file.path))) {
-    splitFolder(top, inside, budget, buckets);
+    splitFolder(top, inside, {
+      budget,
+      out: buckets,
+      ...(workbook === undefined ? {} : { workbook }),
+    });
   }
   return buckets.sort((a, b) => byCodeUnit(a.name, b.name));
 }

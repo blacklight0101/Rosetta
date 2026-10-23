@@ -8,7 +8,8 @@ import type {
   ScanRequest,
 } from '../../application/ports/scan-pipeline.js';
 import type { RunScope } from '../../application/ports/run-events.js';
-import type { CodeMap } from '../../domain/code-map/code-map.js';
+import type { WorkbookSplit } from '../../domain/code-map/folder-buckets.js';
+import { isWorkbookSource, type CodeMap } from '../../domain/code-map/code-map.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { NodeRepositoryReader } from '../files/node-repository-reader.js';
@@ -63,6 +64,34 @@ async function requireSubpath(root: string, subpath: string): Promise<void> {
       `The subpath ${subpath} is not in the snapshot.`,
     );
   }
+}
+
+/** The `values.md` line that says a rendered sheet holds no cell (render-values.ts). */
+const EMPTY_SHEET_LINE = '- Non-empty cells: 0';
+const VALUES_HEADER_LINES = 12;
+
+/**
+ * P3-109: the sheet folders of a rendered workbook tree whose `values.md` says the sheet holds no
+ * cell; such a sheet gets no area of its own.
+ */
+async function workbookSplit(
+  reader: NodeRepositoryReader,
+  files: readonly { readonly path: string }[],
+): Promise<WorkbookSplit> {
+  const emptyFolders: string[] = [];
+  for (const { path } of files) {
+    const parts = path.split('/');
+    if (parts.length !== 3 || parts[2] !== 'values.md') continue;
+    const read = await reader.readLines({
+      path,
+      startLine: 1,
+      endLine: VALUES_HEADER_LINES,
+    });
+    if (read.ok && read.value.lines.includes(EMPTY_SHEET_LINE)) {
+      emptyFolders.push(parts.slice(0, 2).join('/'));
+    }
+  }
+  return { emptyFolders };
 }
 
 export class SnapshotScanPipeline implements ScanPipeline {
@@ -158,6 +187,7 @@ export class SnapshotScanPipeline implements ScanPipeline {
       areaTokenBudget: settings.areaTokenBudget,
       configuredAreas: settings.areas ?? [],
       masker,
+      ...(isWorkbookSource(source) ? { workbook: await workbookSplit(reader, scan.files) } : {}),
     });
     if (!built.ok) {
       throw new RosettaError(
