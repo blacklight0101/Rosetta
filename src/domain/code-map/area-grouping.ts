@@ -2,7 +2,7 @@ import { err, ok, type Result } from '../errors/result.js';
 import { createArea, type Area, type AreaOrigin, type AreaProblem } from './area.js';
 import { byCodeUnit } from './code-unit-order.js';
 import type { FileEntry } from './file-entry.js';
-import { folderBuckets } from './folder-buckets.js';
+import { folderBuckets, type WorkbookSplit } from './folder-buckets.js';
 import { findLinkedSets, type GroupingLink } from './reference-sets.js';
 
 // RF-104: files are grouped by folder and, where a language pack links files, by those links; a
@@ -22,6 +22,8 @@ export interface GroupingInput {
   readonly areaTokenBudget: number;
   /** In the order of the settings; a file goes to the first area that matches it. */
   readonly configured: readonly ConfiguredArea[];
+  /** P3-109: set for a tree of rendered workbooks, where each top-level folder is one workbook. */
+  readonly workbook?: WorkbookSplit;
 }
 
 export type GroupingProblem = AreaProblem | 'duplicate-configured-area';
@@ -93,8 +95,9 @@ function automaticDrafts(
   files: readonly FileEntry[],
   links: readonly GroupingLink[],
   budget: number,
+  workbook: WorkbookSplit | undefined,
 ): Draft[] {
-  const buckets = folderBuckets(files, budget);
+  const buckets = folderBuckets(files, budget, workbook);
   const bucketOf = new Map<string, number>();
   buckets.forEach((bucket, index) => {
     for (const file of bucket.files) bucketOf.set(file.path, index);
@@ -199,7 +202,11 @@ export function groupIntoAreas(input: GroupingInput): Result<readonly Area[], Gr
   const settings = configuredAreas(fromSettings, budget);
   if (!settings.ok) return settings;
   const taken = new Set(settings.value.map((area) => area.name));
-  const automatic = automaticAreas(automaticDrafts(rest, input.links, budget), budget, taken);
+  const automatic = automaticAreas(
+    automaticDrafts(rest, input.links, budget, input.workbook),
+    budget,
+    taken,
+  );
   if (!automatic.ok) return automatic;
   const areas = [...settings.value, ...automatic.value];
   return ok(areas.sort((a, b) => byCodeUnit(a.name, b.name)));
