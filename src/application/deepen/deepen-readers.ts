@@ -1,3 +1,4 @@
+import { withoutBookkeeping } from '../cards/bookkeeping-claims.js';
 import { areaCoverage } from '../../domain/cards/area-coverage.js';
 import type { Card } from '../../domain/cards/card.js';
 import type { TaskCards } from '../../domain/cards/card-ids.js';
@@ -34,12 +35,15 @@ async function announcePlanned(parts: DeepenParts, task: ReaderTask): Promise<vo
 
 async function runOne(parts: DeepenParts, task: ReaderTask, log: TaskLog): Promise<EndedTask> {
   const reads = new TaskReads();
-  const outcome: TaskOutcome = await runReaderTaskWithRetry(parts, task, reads).catch(
+  const read: TaskOutcome = await runReaderTaskWithRetry(parts, task, reads).catch(
     async (error: unknown) => {
       await log.failure(task, error);
       return failedOutcome(error);
     },
   );
+  // P3-110, EV-26: claims that only restate card ids or cite a non-file never reach the check.
+  const where = { agentTaskId: task.agentTaskId, codeMap: parts.scanned.codeMap };
+  const outcome = await withoutBookkeeping(parts.execution.events, where, read);
   if (outcome.rawOutputs.length > 0) {
     const scope = scopeOf(parts.execution.run);
     await parts.deps.cards.writeInvalidOutput(scope, task.agentTaskId, outcome.rawOutputs);

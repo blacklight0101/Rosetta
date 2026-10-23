@@ -1,0 +1,944 @@
+[
+ {
+  "id": "ENT-001",
+  "type": "ENT",
+  "title": "Invoice Records",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-001",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "Invoice records are stored in a table named \"InvoiceTable\" on the 'Invoice' sheet, containing 27 fields such as Invoice number, Invoice Date, Final Invoiced Amount, and Status.",
+    "citations": [
+     "Invoice_Generator.xlsm/workbook.md:62-68"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "The Invoice table includes fields for customer identification, company name, and VAT information.",
+    "citations": [
+     "Invoice_Generator.xlsm/workbook.md:68-68"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Invoice Records are defined in the system.",
+    "citations": [
+     "Invoice_Generator.xlsm/VBA_Code_Glossary/values.md:1-30"
+    ],
+    "status": "Rejected"
+   }
+  ]
+ },
+ {
+  "id": "ENT-002",
+  "type": "ENT",
+  "title": "Customer Master Data",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-001",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "Customer data is stored in a table named \"CustomerTable\" on the 'Masterdata' sheet, with fields including Customer, Company, UID, and Email.",
+    "citations": [
+     "Invoice_Generator.xlsm/workbook.md:63-69"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Customer Master Data is defined in the system.",
+    "citations": [
+     "Invoice_Generator.xlsm/VBA_Code_Glossary/values.md:1-30"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "ENT-003",
+  "type": "ENT",
+  "title": "VBA Control Glossary",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-001",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "The \"VBAGlossary\" table tracks control details such as Control Type, Location, and Related Events/Sub Procedures.",
+    "citations": [
+     "Invoice_Generator.xlsm/workbook.md:64-70"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "The VBA Control Glossary provides definitions for controls used in the system.",
+    "citations": [
+     "Invoice_Generator.xlsm/VBA_Code_Glossary/values.md:1-30"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "BR-001",
+  "type": "BR",
+  "title": "Calculation of Agreed Amount Total",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-001",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "The value in the 'Agreed Amount Total' column is the sum of the three service amount columns for that row.",
+    "citations": [
+     "Invoice_Generator.xlsm/Invoice/formulas.md:5-5"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "BR-002",
+  "type": "BR",
+  "title": "Calculation of Net Amount",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-001",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "The 'Net Amount' is the result of adding the 'Agreed Amount Total' and 'Additional Expenses' for the row.",
+    "citations": [
+     "Invoice_Generator.xlsm/Invoice/formulas.md:10-10"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "The sheet calculates the Subtotal, VAT, and Total amounts.",
+    "citations": [
+     "Invoice_Generator.xlsm/Template/values.md:25-27"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "BR-003",
+  "type": "BR",
+  "title": "Invoice Status Validation",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-001",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "The status field on the 'Invoice' sheet must be one of 'Paid', 'Created', or 'Sent'.",
+    "citations": [
+     "Invoice_Generator.xlsm/Invoice/validation.md:6-7"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "INT-001",
+  "type": "INT",
+  "title": "External File/Path References",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-001",
+  "confidence": "Medium",
+  "claims": [
+   {
+    "text": "The workbook maintains defined names, \"Excelfolder\" and \"PDFfolder\", pointing to specific cells on the Dashboard sheet.",
+    "citations": [
+     "Invoice_Generator.xlsm/workbook.md:52-53"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "The structure of the values.md suggests a defined relationship between sheet data and potential external context, though no explicit external links are present in the read data.",
+    "citations": [
+     "Invoice_Generator.xlsm/Template/values.md:1-29"
+    ],
+    "status": "Rejected"
+   },
+   {
+    "text": "The system makes external file/path references.",
+    "citations": [
+     "Invoice_Generator.xlsm/VBA_Code_Glossary/values.md:1-30"
+    ],
+    "status": "Rejected"
+   }
+  ]
+ },
+ {
+  "id": "ENT-004",
+  "type": "ENT",
+  "title": "Invoice Records",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-002",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "Invoice data is stored and processed, involving concepts like 'InvoiceTable' which contains fields such as 'Net Amount', 'Invoice Date', and 'Status'.",
+    "citations": [
+     "Invoice_Generator.xlsm/Calculation/formulas.md:5-5"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "ENT-005",
+  "type": "ENT",
+  "title": "Customer Master Data",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-002",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "Customer master data exists, referred to in the context of invoice generation.",
+    "citations": [
+     "Invoice_Generator.xlsm/Instructions/values.md:17-18"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "ENT-006",
+  "type": "ENT",
+  "title": "VBA Control Glossary",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-002",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "There is a dedicated area for a VBA Code Glossary.",
+    "citations": [
+     "Invoice_Generator.xlsm/VBA_Code_Glossary/formulas.md:1-4"
+    ],
+    "status": "Rejected"
+   }
+  ]
+ },
+ {
+  "id": "BR-004",
+  "type": "BR",
+  "title": "Calculation of Agreed Amount Total",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-002",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "The sum of 'Net Amount' from 'InvoiceTable' for a given month where the status is 'paid' is calculated in cell C6:C29.",
+    "citations": [
+     "Invoice_Generator.xlsm/Calculation/formulas.md:5-5"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "BR-005",
+  "type": "BR",
+  "title": "Calculation of Net Amount",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-002",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "The total amount on the template is calculated by summing amounts across multiple line items and adding a VAT component.",
+    "citations": [
+     "Invoice_Generator.xlsm/Template/formulas.md:7-7"
+    ],
+    "status": "Rejected"
+   }
+  ]
+ },
+ {
+  "id": "BR-006",
+  "type": "BR",
+  "title": "Invoice Status Validation",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-002",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "The count of invoices for a given month is calculated by counting records in 'InvoiceTable' that fall within that month.",
+    "citations": [
+     "Invoice_Generator.xlsm/Dashboard/formulas.md:11-11"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "INT-002",
+  "type": "INT",
+  "title": "External File/Path References",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-002",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "The tool relies on folder paths specified on the dashboard page relative to the workbook's directory for PDF and Excel versions of invoices.",
+    "citations": [
+     "Invoice_Generator.xlsm/Instructions/values.md:25-27"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "ENT-007",
+  "type": "ENT",
+  "title": "Invoice Records",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-003",
+  "confidence": "Low",
+  "claims": [
+   {
+    "text": "The system contains an entity for Invoice Records.",
+    "citations": [
+     "ink37onmrxc3jvnnmanqeev2:1-1"
+    ],
+    "status": "CitationInvalid"
+   },
+   {
+    "text": "The entity 'Invoice Records' is also listed with ID ENT-004.",
+    "citations": [
+     "ink37onmrxc3jvnnmanqeev2:8-8"
+    ],
+    "status": "CitationInvalid"
+   }
+  ]
+ },
+ {
+  "id": "ENT-008",
+  "type": "ENT",
+  "title": "Customer Master Data",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-003",
+  "confidence": "Low",
+  "claims": [
+   {
+    "text": "The system contains an entity for Customer Master Data.",
+    "citations": [
+     "ink37onmrxc3jvnnmanqeev2:2-2"
+    ],
+    "status": "CitationInvalid"
+   },
+   {
+    "text": "The entity 'Customer Master Data' is also listed with ID ENT-005.",
+    "citations": [
+     "ink37onmrxc3jvnnmanqeev2:10-10"
+    ],
+    "status": "CitationInvalid"
+   }
+  ]
+ },
+ {
+  "id": "ENT-009",
+  "type": "ENT",
+  "title": "VBA Control Glossary",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-003",
+  "confidence": "Low",
+  "claims": [
+   {
+    "text": "The system contains an entity for VBA Control Glossary.",
+    "citations": [
+     "ink37onmrxc3jvnnmanqeev2:3-3"
+    ],
+    "status": "CitationInvalid"
+   },
+   {
+    "text": "The entity 'VBA Control Glossary' is listed with ID ENT-006.",
+    "citations": [
+     "ink37onmrxc3jvnnmanqeev2:11-11"
+    ],
+    "status": "CitationInvalid"
+   }
+  ]
+ },
+ {
+  "id": "BR-007",
+  "type": "BR",
+  "title": "Calculation of Agreed Amount Total",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-003",
+  "confidence": "Medium",
+  "claims": [
+   {
+    "text": "The total amount (cell D27) is calculated by summing the values in D25 (SUM of D21:D24) and D26 (SUMPRODUCT of D21:D24*E21:E24).",
+    "citations": [
+     "Invoice_Generator.xlsm/Template/formulas.md:7-7"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "The Agreed Amount Total calculation is associated with BR-001 and BR-004.",
+    "citations": [
+     "ink37onmrxc3jvnnmanqeev2:4-5"
+    ],
+    "status": "CitationInvalid"
+   }
+  ]
+ },
+ {
+  "id": "BR-008",
+  "type": "BR",
+  "title": "Calculation of Net Amount",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-003",
+  "confidence": "Low",
+  "claims": [
+   {
+    "text": "The Net Amount calculation is associated with BR-002 and BR-005.",
+    "citations": [
+     "ink37onmrxc3jvnnmanqeev2:6-7"
+    ],
+    "status": "CitationInvalid"
+   }
+  ]
+ },
+ {
+  "id": "BR-009",
+  "type": "BR",
+  "title": "Invoice Status Validation",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-003",
+  "confidence": "Low",
+  "claims": [
+   {
+    "text": "Invoice Status Validation is associated with BR-003 and BR-006.",
+    "citations": [
+     "ink37onmrxc3jvnnmanqeev2:8-9"
+    ],
+    "status": "CitationInvalid"
+   }
+  ]
+ },
+ {
+  "id": "INT-003",
+  "type": "INT",
+  "title": "External File/Path References",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-003",
+  "confidence": "Low",
+  "claims": [
+   {
+    "text": "External File/Path References is associated with INT-001 and INT-002.",
+    "citations": [
+     "ink37onmrxc3jvnnmanqeev2:10-12"
+    ],
+    "status": "CitationInvalid"
+   }
+  ]
+ },
+ {
+  "id": "ENT-010",
+  "type": "ENT",
+  "title": "Invoice Records",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-004",
+  "confidence": "Medium",
+  "claims": [
+   {
+    "text": "The Invoice sheet contains fields for Invoice number, Date, Payment terms, and details of items.",
+    "citations": [
+     "Invoice_Generator.xlsm/Template/values.md:10-13"
+    ],
+    "status": "Rejected"
+   },
+   {
+    "text": "The sheet contains cells for Invoice, Date, and Payment terms.",
+    "citations": [
+     "Invoice_Generator.xlsm/Template/values.md:10-12"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "ENT-011",
+  "type": "ENT",
+  "title": "Customer Master Data",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-004",
+  "confidence": "Medium",
+  "claims": [
+   {
+    "text": "The Masterdata sheet holds customer details, including names and addresses.",
+    "citations": [
+     "Invoice_Generator.xlsm/Template/values.md:6-17"
+    ],
+    "status": "Rejected"
+   },
+   {
+    "text": "The sheet includes contact entries with names and addresses.",
+    "citations": [
+     "Invoice_Generator.xlsm/Template/values.md:6-9"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "The sheet lists different services with their time periods and prices.",
+    "citations": [
+     "Invoice_Generator.xlsm/Template/values.md:19-23"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "ENT-012",
+  "type": "ENT",
+  "title": "VBA Control Glossary",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-004",
+  "confidence": "Medium",
+  "claims": [
+   {
+    "text": "The VBA Code Glossary sheet is present for documenting VBA controls.",
+    "citations": [
+     "Invoice_Generator.xlsm/VBA_Code_Glossary/notes.md:1-4"
+    ],
+    "status": "Rejected"
+   },
+   {
+    "text": "The sheet is present, and it has zero documented comments.",
+    "citations": [
+     "Invoice_Generator.xlsm/VBA_Code_Glossary/notes.md:1-2"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "BR-010",
+  "type": "BR",
+  "title": "Calculation of Agreed Amount Total",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-004",
+  "confidence": "Low",
+  "claims": [
+   {
+    "text": "The Template sheet has a value for the subtotal.",
+    "citations": [
+     "Invoice_Generator.xlsm/Template/values.md:25-27"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "BR-011",
+  "type": "BR",
+  "title": "Calculation of Net Amount",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-004",
+  "confidence": "Low",
+  "claims": [
+   {
+    "text": "The Template sheet displays a 'Net amount' field.",
+    "citations": [
+     "Invoice_Generator.xlsm/Template/values.md:10-12"
+    ],
+    "status": "Rejected"
+   }
+  ]
+ },
+ {
+  "id": "BR-012",
+  "type": "BR",
+  "title": "Invoice Status Validation",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-004",
+  "confidence": "Low",
+  "claims": [
+   {
+    "text": "The Template sheet does not have explicit data validation rules.",
+    "citations": [
+     "Invoice_Generator.xlsm/Template/validation.md:5-9"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "INT-004",
+  "type": "INT",
+  "title": "External File/Path References",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-004",
+  "confidence": "Medium",
+  "claims": [
+   {
+    "text": "The Dashboard sheet instructs users to create 'PDF folder' and 'Excel folder' for storing invoice versions.",
+    "citations": [
+     "Invoice_Generator.xlsm/Dashboard/values.md:17-19"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "FLOW-001",
+  "type": "FLOW",
+  "title": "Invoice Generation Process",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-004",
+  "confidence": "Medium",
+  "claims": [
+   {
+    "text": "The Dashboard provides actions to View / Update Invoice Information, Add / Edit Customer in Master Data, and Save Invoices in Folders.",
+    "citations": [
+     "Invoice_Generator.xlsm/Dashboard/values.md:12-14"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "The process involves saving invoices into specific folders, namely 'PDF Invoices' and 'Excel Invoices'.",
+    "citations": [
+     "Invoice_Generator.xlsm/Dashboard/values.md:17-19"
+    ],
+    "status": "Supported"
+   }
+  ],
+  "flow": {
+   "trigger": "The user interacts with controls on the Dashboard sheet.",
+   "outcome": "Invoices are generated and stored in designated PDF and Excel folders."
+  }
+ },
+ {
+  "id": "FEAT-001",
+  "type": "FEAT",
+  "title": "Invoice Generation via VBA Macros",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-006",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "The system contains macros for form input, opening invoices, searching, and viewing invoices.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:1-100",
+     "Invoice_Generator.xlsm/macros/FormOpenInvoice.cls:1-257",
+     "Invoice_Generator.xlsm/macros/FormSearch.cls:1-185",
+     "Invoice_Generator.xlsm/macros/FormViewMaster.cls:1-99"
+    ],
+    "status": "Unverified"
+   },
+   {
+    "text": "The main invoice generator functionality is implemented in MainInvoiceGenerator.bas.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/MainInvoiceGenerator.bas:1-43"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "SCRN-001",
+  "type": "SCRN",
+  "title": "Customer Data Entry/Update Form",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-006",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "The form has required fields, including Customer Name (tbCustomer), Company Name (tbCompany), Address Lines 1, 2, and 3 (tbAL1, tbAL2, tbAL3), UID (tbUID), Email (tbEmail), and VAT (tbVAT).",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35"
+    ],
+    "status": "Rejected"
+   },
+   {
+    "text": "The form validates that all required fields are filled out before proceeding.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "The form validates that the VAT field contains a valid numeric value if it is not empty.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Clicking the 'ADD' button adds a new row to the CustomerTable ListObject, setting the VAT as a decimal ratio (VAT/100).",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Clicking the 'ADD' button updates an existing record in CustomerTable if the caption is 'UPDATE'.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "The form allows clearing all input fields by clicking the 'btClear' button.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "The form allows exiting by clicking the 'btCancel' button.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Field tbCustomer (text, required) validation: Customer Name (*) is required.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-28"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Field tbCompany (text, required) validation: Company Name (*) is required.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-28"
+    ],
+    "status": "Rejected"
+   },
+   {
+    "text": "Field tbAL1 (text, required) validation: Address Line 1 (*) is required.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-28"
+    ],
+    "status": "Rejected"
+   },
+   {
+    "text": "Field tbAL2 (text, required) validation: Address Line 2 (*) is required.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-28"
+    ],
+    "status": "Rejected"
+   },
+   {
+    "text": "Field tbAL3 (text, required) validation: Address Line 3 (*) is required.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-28"
+    ],
+    "status": "Rejected"
+   },
+   {
+    "text": "Field tbUID (text, required) validation: UID (*) is required.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-28"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Field tbVAT (text, optional) validation: Please input a valid number value for VAT.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:38-41"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Action Add/Update starts the handler btADD_Click.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Action Clear starts the handler btClear_Click.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Action Cancel starts the handler btCancel_Click.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "The screen is at the route FormInputMaster.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Rejected"
+   },
+   {
+    "text": "Field tbCustomer (text, required) is on the screen.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Field tbCompany (text, required) is on the screen.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Field tbAL1 (text, required) is on the screen.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Field tbAL2 (text, required) is on the screen.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Field tbAL3 (text, required) is on the screen.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Field tbUID (text, required) is on the screen.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Field tbEmail (text, optional) is on the screen.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "Field tbVAT (text, optional) is on the screen.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:28-35",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:37-41",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-63",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:76-88",
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:92-95"
+    ],
+    "status": "Supported"
+   }
+  ]
+ },
+ {
+  "id": "FLOW-002",
+  "type": "FLOW",
+  "title": "Customer Data Modification",
+  "area": "Invoice_Generator.xlsm",
+  "agentTaskId": "reader-006",
+  "confidence": "High",
+  "claims": [
+   {
+    "text": "The process requires filling in all fields marked with '*', including Customer Name, Company Name, Address Lines 1, 2, 3, UID, and VAT (if applicable).",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:27-32"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "If the user clicks 'ADD' and the caption is 'ADD', a new row is appended to CustomerTable in the shMaster sheet.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:43-46"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "The system populates fields in the new/updated row of CustomerTable from the form controls, converting VAT input percentage to a decimal ratio.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:51-63"
+    ],
+    "status": "Supported"
+   },
+   {
+    "text": "If the user clicks 'ADD' and the caption is 'UPDATE', the selected record in CustomerTable is updated.",
+    "citations": [
+     "Invoice_Generator.xlsm/macros/FormInputMaster.cls:16-70"
+    ],
+    "status": "Supported"
+   }
+  ],
+  "flow": {
+   "trigger": "A user interacts with the Customer Data Entry/Update Form.",
+   "outcome": "Customer Master Data is either updated or a new record is added to the CustomerTable ListObject."
+  }
+ }
+]
