@@ -251,15 +251,6 @@ export function projectWithCap(capMicros: number): Record<string, unknown> {
   });
 }
 
-/** The fixture project with a run token cap of `maxTokens` and every other setting as it is. */
-export function projectWithTokenCap(maxTokens: number): Record<string, unknown> {
-  const settings = templateSettings();
-  const { run } = settings.budget;
-  return projectOf('p-1', 'octo/demo', {
-    settings: { ...settings, budget: { ...settings.budget, run: { ...run, maxTokens } } },
-  });
-}
-
 /** What `POST /api/projects/:id/runs` answers (runView and the position). */
 export function runAnswer(
   stage: string,

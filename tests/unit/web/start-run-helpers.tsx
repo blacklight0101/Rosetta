@@ -8,6 +8,7 @@ import {
   projectPath,
   roomyLimits,
 } from './start-run-fixtures.js';
+import { cheapPricedEstimate } from './start-run-limit-fixtures.js';
 
 // The start page under test (P1-34): the real page over the fake API of fake-api.tsx, with the
 // answers every test needs (a project, a local estimate, nothing spent) unless it replaces them.
@@ -20,6 +21,11 @@ const baseAnswers: Readonly<Record<string, Answer>> = {
 
 export const renderStart = (answers: Readonly<Record<string, Answer>> = {}): RenderedPage =>
   renderPage(<StartRunPage />, { ...baseAnswers, ...answers }, undefined, { projectId: 'p-1' });
+
+/** P5-07: the dollar fields of the start page show for an estimate with a price; this is one. */
+export const priced: Readonly<Record<string, Answer>> = {
+  [`GET ${estimatePath}`]: json(200, cheapPricedEstimate),
+};
 
 export const consentLabel = 'I understand; send masked excerpts to OpenAI for this run';
 

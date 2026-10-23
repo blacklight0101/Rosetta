@@ -6,6 +6,7 @@ import { problemFor } from '../api/problems.js';
 import { cancelRun, startRun, type RunStageChoice, type StartRequest } from '../api/runs.js';
 import { useApp } from '../app/app-context.js';
 import { navigate } from '../app/router.js';
+import { tokensOf } from '../lib/token-cap.js';
 import { dollarsToMicros, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import type { RunNoticeState } from './RunNotice.js';
 import { useQueuePosition } from './use-queue-position.js';
@@ -24,7 +25,11 @@ const THRESHOLD_PATH = 'budget.confirmAboveCostMicros';
 const NO_CONSENT = 'RST-1515';
 const NO_PRIVATE_CONFIRMATION = 'RST-1521';
 const UNKNOWN_AREA = 'RST-1307';
+const TOKENS_PATH = 'budget.run.maxTokens';
 const notAnAmount: FieldProblem = { message: 'Enter an amount in dollars, for example 2.00.' };
+const notACount: FieldProblem = {
+  message: 'Enter a whole number of tokens, for example 2000000.',
+};
 const aboveCap: FieldProblem = {
   message: 'The threshold must not be above the run cap. Lower it, or raise the run cap.',
 };
@@ -47,6 +52,9 @@ export interface ActionInputs {
   readonly url: string;
   readonly capText: string;
   readonly thresholdText: string;
+  /** P5-07: every role is local, so the run token cap is the one limit on the page; dollars stay as saved. */
+  readonly local: boolean;
+  readonly tokensText: string;
   /** The likely cost of the priced roles, the figure the threshold is compared with (RF-425). */
   readonly likelyMicros: bigint | undefined;
   /** RF-429: the likely tokens of a local estimate, compared with the run token cap. */
@@ -94,25 +102,35 @@ function requestOf(inputs: ActionInputs): StartRequest {
   return inputs.withAnswers ? { ...confirmed, withAnswers: true } : confirmed;
 }
 
-/** The run cap and the confirm threshold the page asks for, in micro-dollars. */
+/** What the page asks to save; a limit left out is not the page's to change (P5-07: a local run has no dollar fields). */
 interface Limits {
-  readonly cap: number;
-  readonly threshold: number;
+  readonly cap?: number;
+  readonly threshold?: number;
+  readonly tokens?: number;
 }
 
 function settingsWithLimits(project: Project, limits: Limits): Project['settings'] {
   const { budget } = project.settings;
-  const run = { ...budget.run, maxCostMicros: limits.cap };
-  return {
-    ...project.settings,
-    budget: { ...budget, run, confirmAboveCostMicros: limits.threshold },
+  const run = {
+    ...budget.run,
+    ...(limits.cap === undefined ? {} : { maxCostMicros: limits.cap }),
+    ...(limits.tokens === undefined ? {} : { maxTokens: limits.tokens }),
   };
+  const confirmAboveCostMicros = limits.threshold ?? budget.confirmAboveCostMicros;
+  return { ...project.settings, budget: { ...budget, run, confirmAboveCostMicros } };
+}
+
+type Typed = { readonly limits: Limits } | { readonly refusal: Refusals };
+
+/** P5-07: the token cap of a local run. */
+function tokenLimitsOf(inputs: ActionInputs): Typed {
+  const tokens = tokensOf(inputs.tokensText);
+  return tokens === undefined ? { refusal: { cap: notACount } } : { limits: { tokens } };
 }
 
 /** The limits typed on the page, or the refusal of the field that is wrong (DEC-117). */
-function limitsOf(
-  inputs: ActionInputs,
-): { readonly limits: Limits } | { readonly refusal: Refusals } {
+function limitsOf(inputs: ActionInputs): Typed {
+  if (inputs.local) return tokenLimitsOf(inputs);
   const cap = dollarsToMicros(inputs.capText, RUN_COST_MAX_MICROS);
   if (cap === undefined) return { refusal: { cap: notAnAmount } };
   const threshold = dollarsToMicros(inputs.thresholdText, RUN_COST_MAX_MICROS);
@@ -124,13 +142,15 @@ function limitsOf(
 function unchanged(project: Project, limits: Limits): boolean {
   const { budget } = project.settings;
   return (
-    limits.cap === budget.run.maxCostMicros && limits.threshold === budget.confirmAboveCostMicros
+    (limits.cap ?? budget.run.maxCostMicros) === budget.run.maxCostMicros &&
+    (limits.threshold ?? budget.confirmAboveCostMicros) === budget.confirmAboveCostMicros &&
+    (limits.tokens ?? budget.run.maxTokens) === budget.run.maxTokens
   );
 }
 
 /** The refusal of a save: next to the cap or the threshold when it names one, else at Start. */
 function saveRefusal(error: ApiFailure): Refusals {
-  const cap = problemFor(error, RUN_CAP_PATH);
+  const cap = problemFor(error, RUN_CAP_PATH) ?? problemFor(error, TOKENS_PATH);
   const threshold = problemFor(error, THRESHOLD_PATH);
   if (cap === undefined && threshold === undefined) return { start: error };
   return {
@@ -213,7 +233,8 @@ async function press(steps: Steps): Promise<void> {
     steps.refuse(typed.refusal);
     return;
   }
-  if (steps.confirmation.ask(typed.limits.threshold)) return;
+  const threshold = typed.limits.threshold ?? inputs.project.settings.budget.confirmAboveCostMicros;
+  if (steps.confirmation.ask(threshold)) return;
   if (!(await saveLimits(steps, typed.limits))) await requestRun(steps);
 }
 
@@ -225,9 +246,10 @@ export function useStartActions(inputs: ActionInputs): StartActions {
   const [refusals, setRefusals] = useState<Refusals>({});
   const [notice, setNotice] = useState<RunNoticeState | undefined>();
   useQueuePosition(notice, setNotice);
+  const savedTokens = inputs.project.settings.budget.run.maxTokens;
   const confirmation = useStartConfirmation(inputs.likelyMicros, {
     likelyTokens: inputs.likelyTokens,
-    capTokens: inputs.project.settings.budget.run.maxTokens,
+    capTokens: inputs.local ? (tokensOf(inputs.tokensText) ?? savedTokens) : savedTokens,
   });
   const steps: Steps = {
     ...{ client, inputs, confirmation, show: setNotice },

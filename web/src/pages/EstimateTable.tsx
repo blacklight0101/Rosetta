@@ -133,7 +133,8 @@ export function EstimateTable({ estimate }: { readonly estimate: RunEstimate }):
       <IncompleteNote estimate={estimate} />
       <p class="rst-settings__note">
         Assumptions: {areasText(estimate.areas.length)}, {assumptions.turnsPerArea.likely} turns per
-        area (likely), price table {estimate.priceTableVersion} ({estimate.currency}).
+        area (likely), price table {estimate.priceTableVersion}
+        {isLocalEstimate(estimate) ? '' : ` (${estimate.currency})`}.
       </p>
       {assumptions.roleLimits === undefined ? null : (
         <p class="rst-settings__note">Limits: {limitsText(assumptions.roleLimits)}.</p>

@@ -1,18 +1,17 @@
 import { fireEvent, screen, within } from '@testing-library/preact';
 import { expect, it } from 'vitest';
 import { json } from './fake-api.js';
-import { projectOf } from './project-fixtures.js';
 import {
   cloudEstimate,
   estimateOf,
   estimatePath,
   localEstimate,
   projectPath,
-  projectWithTokenCap,
   roleOf,
   runAnswer,
   runsPath,
 } from './start-run-fixtures.js';
+import { projectWithTokenCap } from './start-run-limit-fixtures.js';
 import { describedText, input, ready, renderStart, start } from './start-run-helpers.js';
 
 // RF-425 (Q-51, P3-79): the start page estimate for roles on a local model reads in tokens, with the
@@ -120,6 +119,9 @@ it('RF-425 the assumptions read 1 area for one', async () => {
 });
 
 // P5-07: a local run costs nothing, so the start page asks for a token cap and never for dollars.
+const budgetOf = (doc: Record<string, unknown>): Record<string, unknown> =>
+  (doc['settings'] as { budget: Record<string, unknown> }).budget;
+
 const estimateCard = (): HTMLElement => {
   const card = document.querySelector<HTMLElement>('[aria-labelledby="estimate-heading"]');
   if (card === null) throw new Error('No estimate card.');
@@ -150,12 +152,10 @@ it('P5-07 saving the token cap changes only maxTokens and leaves the dollar sett
 
   await screen.findByTestId('run-notice');
   const put = calls.find((call) => call.method === 'PUT');
-  const budget = (put?.body as { budget: Record<string, unknown> }).budget;
-  const before = (projectOf('p-1', 'octo/demo', {}).settings as { budget: Record<string, unknown> })
-    .budget;
-  expect(budget).toEqual({
+  const before = budgetOf(projectWithTokenCap(2_000_000));
+  expect(budgetOf({ settings: put?.body })).toEqual({
     ...before,
-    run: { ...(before.run as object), maxTokens: 500_000 },
+    run: { ...(before['run'] as object), maxTokens: 500_000 },
   });
 });
 

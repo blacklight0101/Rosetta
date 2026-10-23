@@ -3,7 +3,7 @@ import { expect, it } from 'vitest';
 import { failure, json } from './fake-api.js';
 import { projectOf } from './project-fixtures.js';
 import { projectPath, projectWithCap, runAnswer, runsPath } from './start-run-fixtures.js';
-import { input, ready, renderStart, start } from './start-run-helpers.js';
+import { consentLabel, input, priced, ready, renderStart, start } from './start-run-helpers.js';
 
 // RF-002, RF-1001 (P1-106): the start page saves a changed run cap from the settings it has just
 // read, naming their version, so a settings save made in another tab in between is refused instead
@@ -18,6 +18,7 @@ function readsWithVersions(): () => Response {
 
 it('RF-002 saving the run cap names the version of the settings read just before the save', async () => {
   const { calls } = renderStart({
+    ...priced,
     [`GET ${projectPath}`]: readsWithVersions(),
     [`PUT ${settingsPath}`]: json(200, projectWithCap(1_500_000)),
     [`POST ${runsPath}`]: runAnswer('scan', null),
@@ -25,6 +26,7 @@ it('RF-002 saving the run cap names the version of the settings read just before
   await ready();
 
   fireEvent.input(input('Run cap (USD)'), { target: { value: '1.50' } });
+  fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
   await screen.findByTestId('run-notice');
@@ -32,12 +34,11 @@ it('RF-002 saving the run cap names the version of the settings read just before
 });
 
 it('RF-002 a cap save refused as stale shows RST-1007 above Start and starts no run', async () => {
-  const { calls } = renderStart({
-    [`PUT ${settingsPath}`]: failure(409, 'RST-1007'),
-  });
+  const { calls } = renderStart({ ...priced, [`PUT ${settingsPath}`]: failure(409, 'RST-1007') });
   await ready();
 
   fireEvent.input(input('Run cap (USD)'), { target: { value: '1.50' } });
+  fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
   const banner = await screen.findByTestId('error-banner');

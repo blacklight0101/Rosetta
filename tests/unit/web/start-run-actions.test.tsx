@@ -9,7 +9,15 @@ import {
   runAnswer,
   runsPath,
 } from './start-run-fixtures.js';
-import { describedText, input, ready, renderStart, start } from './start-run-helpers.js';
+import {
+  consentLabel,
+  describedText,
+  input,
+  priced,
+  ready,
+  renderStart,
+  start,
+} from './start-run-helpers.js';
 
 // RF-1001, RF-1108, RF-1105, DEC-108: pressing Start on the start page: the request each stage
 // sends, the cap saved with the settings, the refusals next to their fields, the URL that is
@@ -64,12 +72,14 @@ it('RF-1001 a refusal of the run shows its code next to Start', async () => {
 
 it('RF-1001 a changed run cap is saved with the settings before the run starts', async () => {
   const { calls } = renderStart({
+    ...priced,
     [`PUT ${projectPath}/settings`]: json(200, projectWithCap(1_500_000)),
     [`POST ${runsPath}`]: runAnswer('scan', null),
   });
   await ready();
 
   fireEvent.input(input('Run cap (USD)'), { target: { value: '1.50' } });
+  fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
   await screen.findByTestId('run-notice');
@@ -83,6 +93,7 @@ it('RF-1001 a changed run cap is saved with the settings before the run starts',
 
 it('RF-1001 a run cap the server refuses shows next to the cap field and starts nothing', async () => {
   const { calls } = renderStart({
+    ...priced,
     [`PUT ${projectPath}/settings`]: failure(400, 'RST-1003', [
       { field: 'budget.run.maxCostMicros', code: 'RST-1003' },
     ]),
@@ -90,6 +101,7 @@ it('RF-1001 a run cap the server refuses shows next to the cap field and starts 
   await ready();
 
   fireEvent.input(input('Run cap (USD)'), { target: { value: '9' } });
+  fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
   await waitFor(() => {
@@ -100,10 +112,11 @@ it('RF-1001 a run cap the server refuses shows next to the cap field and starts 
 });
 
 it('RF-1001 a run cap that is not an amount is refused next to the field without a request', async () => {
-  const { calls } = renderStart();
+  const { calls } = renderStart(priced);
   await ready();
 
   fireEvent.input(input('Run cap (USD)'), { target: { value: 'lots' } });
+  fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
   await waitFor(() => {
@@ -234,6 +247,7 @@ it('RF-1108 Cancel names the run by its id, not by its folder name', async () =>
 it('RF-1001 saving the run cap keeps what changed in the settings since the page opened', async () => {
   let reads = 0;
   const { calls } = renderStart({
+    ...priced,
     [`GET ${projectPath}`]: () => json(200, reads++ === 0 ? project : changedElsewhere()),
     [`PUT ${projectPath}/settings`]: json(200, projectWithCap(1_500_000)),
     [`POST ${runsPath}`]: runAnswer('understand', null),
@@ -241,6 +255,7 @@ it('RF-1001 saving the run cap keeps what changed in the settings since the page
   await ready();
 
   fireEvent.input(input('Run cap (USD)'), { target: { value: '1.50' } });
+  fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
   await screen.findByTestId('run-notice');
@@ -253,10 +268,11 @@ it('RF-1001 saving the run cap keeps what changed in the settings since the page
 });
 
 it('DEC-117 a run cap above 100 USD is refused next to the field and nothing is sent', async () => {
-  const { calls } = renderStart();
+  const { calls } = renderStart(priced);
   await ready();
 
   fireEvent.input(input('Run cap (USD)'), { target: { value: '150' } });
+  fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
   await waitFor(() => {
