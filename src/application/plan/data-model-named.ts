@@ -47,11 +47,23 @@ function isCode(name: string): boolean {
   );
 }
 
+const shaped = /_(?:id|code|date|status|type)$|^(?:tbl|tb|t|dim|fact|lkp|ref)_/u;
+
+interface Named {
+  readonly name: string;
+  /** True for a name that is clearly a database name whatever the entity cards say. */
+  readonly strong: boolean;
+}
+
 /** The data names a text says. */
-function namesOf(text: string): string[] {
+function namesOf(text: string): Named[] {
   return [...text.matchAll(identifier)]
-    .map((match) => match[1] ?? match[2] ?? '')
-    .filter((name) => name !== '' && !isCode(name));
+    .map((match) => {
+      const name = match[1] ?? match[2] ?? '';
+      const strong = match[1] !== undefined || /^tbl[A-Z]/u.test(name) || shaped.test(name);
+      return { name, strong };
+    })
+    .filter(({ name }) => name !== '' && !isCode(name));
 }
 
 const squeeze = (text: string): string => text.toLowerCase().replace(/[^a-z0-9]/gu, '');
@@ -76,9 +88,9 @@ function isRuleCard(card: SourceCard): boolean {
   return card.type === 'BR' || card.type === 'FEAT';
 }
 
-function evidenced(name: string, evidence: string): boolean {
+function evidenced({ name, strong }: Named, evidence: string): boolean {
   const key = plain(name);
-  return key.length >= 3 && evidence.includes(key);
+  return key.length >= 3 && (strong || evidence.includes(key));
 }
 
 /**
@@ -109,7 +121,8 @@ export function missingNamed(
   const claims = ruleCandidates(cards).flatMap((card) => card.claims);
   const problems: DataModelProblem[] = [];
   for (const claim of claims) {
-    for (const name of namesOf(claim.text).filter((each) => evidenced(each, evidence))) {
+    for (const named of namesOf(claim.text).filter((each) => evidenced(each, evidence))) {
+      const { name } = named;
       if (present.has(plain(name))) continue;
       present.add(plain(name));
       problems.push({ item: name, field: `card claim ${claim.claimId}`, reason });

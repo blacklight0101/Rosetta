@@ -71,10 +71,29 @@ describe('ruleCandidates', () => {
       ...ordersCards(),
       card('BR-011', 'BR', 'Sorting', [
         'Orders are sorted by date.',
-        'Unknown rows use tblNothing.',
+        'Unknown rows use the sort_key.',
       ]),
     ]);
 
     expect(kept.map((each) => each.id)).toEqual(['BR-001']);
+  });
+});
+
+describe('data-shaped names the entity cards never mention', () => {
+  const cards = [
+    card('ENT-001', 'ENT', 'Orders', ['tblOrders(id int, total money) holds the orders.']),
+    card('BR-001', 'BR', 'Deleted', [
+      'Status 6 means deleted in tblStatus; the rule uses status_id.',
+    ]),
+  ];
+
+  it('RF-623 lists tblStatus and status_id, though no entity card mentions them', async () => {
+    const problems = missingNamed(await recordedModel('wrong'), cards);
+
+    expect(problems.map((each) => each.item).sort()).toEqual(['status_id', 'tblStatus']);
+  });
+
+  it('RF-623 sends such a rule claim to the data-model call', () => {
+    expect(ruleCandidates(cards).map((each) => each.id)).toEqual(['BR-001']);
   });
 });
