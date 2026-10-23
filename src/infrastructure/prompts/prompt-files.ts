@@ -15,7 +15,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // before any run uses it.
 
 const readerPromptNames = {
-  system: 'reader/area.v6.md',
+  system: 'reader/area.v7.md',
   cardFormat: 'cards/card-format.v2.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
@@ -98,7 +98,7 @@ export function loadPlannerContinuePrompt(promptsFolder: string): Promise<Prompt
 /** The planner's prompt for the product requirements document (RF-621), checked and hashed. */
 // RNF-004
 export function loadPrdPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/prd.v1.md');
+  return loadPromptFile(promptsFolder, 'planner/prd.v2.md');
 }
 
 /** The planner's prompt for the target data model (RF-623), checked and hashed. */

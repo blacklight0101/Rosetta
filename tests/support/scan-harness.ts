@@ -11,7 +11,12 @@ import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 
 export type FixtureRepository =
-  'webforms-csharp' | 'webforms-ef' | 'webforms-shop' | 'php-shop' | 'cobol-ledger';
+  | 'webforms-csharp'
+  | 'webforms-ef'
+  | 'webforms-shop'
+  | 'php-shop'
+  | 'cobol-ledger'
+  | 'ide-backup-publish';
 
 const defaultMaxFileBytes = 1_000_000;
 

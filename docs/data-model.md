@@ -281,7 +281,9 @@ Readable summary of the code map: source and commit, the scan duration (the only
 of one commit, which is why it is here and not in `codemap.json`), languages with files, lines and tokens, artefact
 counts, areas with file and token counts, map level and origin (RF-105, RF-112). The files line also counts the
 skipped files and the files a language pack claims that stayed `coarse` because the scan-wide parse budget was spent
-(`not analysed: parse budget reached`, P1-75). Generated; never read back.
+(`not analysed: parse budget reached`, P1-75). A final section, `Ignored by default`, lists every entry the default
+ignores left out (the topmost ignored folder or the ignored file), with its rule and file count, or `None.` (P3-118).
+Generated; never read back.
 
 ### 3.6 `runs/<runId>/manifest.json`
 
