@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { Button } from '../components/Button.js';
 import { Link } from '../components/Link.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
+import { capTokensNote } from '../lib/live-run/cap-tokens.js';
 import type { CapsState } from '../lib/live-run/run-state.js';
 import { shareOf } from '../lib/live-run/run-summary.js';
 
@@ -12,7 +13,10 @@ import { shareOf } from '../lib/live-run/run-summary.js';
 export interface SpendPanelProps {
   readonly runId: string;
   readonly costMicros: number;
+  /** The raw tokens of the run: input (cached included) plus output. */
   readonly tokens: number;
+  /** P5-16: the tokens that count toward the cap (cached input counts a tenth); `tokens` when absent. */
+  readonly capTokens?: number;
   readonly caps: CapsState | undefined;
   readonly onOpenRoles: () => void;
 }
@@ -50,6 +54,7 @@ function Bar({ share, name, caption }: BarProps): JSX.Element {
 
 function Figures({ props }: { readonly props: SpendPanelProps }): JSX.Element {
   const { caps, costMicros, tokens } = props;
+  const toward = props.capTokens ?? tokens;
   if (caps === undefined) {
     return <p class="rst-settings__note">The caps of the run are not known yet.</p>;
   }
@@ -60,7 +65,7 @@ function Figures({ props }: { readonly props: SpendPanelProps }): JSX.Element {
     <>
       {freeButUsed ? (
         <Bar
-          share={shareOf(tokens, caps.maxTokens)}
+          share={shareOf(toward, caps.maxTokens)}
           name="Tokens against the cap"
           caption="No cost so far. The bar shows the tokens against their cap."
         />
@@ -72,7 +77,8 @@ function Figures({ props }: { readonly props: SpendPanelProps }): JSX.Element {
         />
       )}
       <p class="rst-spend__tokens">
-        {tokensLabel(tokens)} of {tokensLabel(caps.maxTokens)} tokens
+        {capTokensNote({ raw: tokens, toward }, caps.maxTokens, tokensLabel) ??
+          `${tokensLabel(tokens)} of ${tokensLabel(caps.maxTokens)} tokens`}
       </p>
     </>
   );

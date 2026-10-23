@@ -4,6 +4,7 @@ import type {
   Reservation,
   ReservationKey,
 } from '../../application/ports/cost-ledger.js';
+import { CACHED_TOKEN_SHARE_PERCENT } from '../../domain/budget/token-usage.js';
 import type { CapSpent } from '../../domain/budget/usage-cap.js';
 import { utcPeriodsOf } from '../../domain/budget/utc-periods.js';
 
@@ -15,6 +16,14 @@ export const LOCK_USER =
   "SELECT pg_advisory_xact_lock(hashtext('rosetta.budget.user'), hashtext($1::text))";
 /** Serialises the checks of every call that counts against the server's month (server keys). */
 export const LOCK_SERVER = "SELECT pg_advisory_xact_lock(hashtext('rosetta.budget.server'))";
+
+/**
+ * RF-422, DEC-168: the tokens one ledger row counts toward a token cap: input not read from the cache,
+ * a tenth of the cached input (rounded down, never more than the input) and the output. The same sum
+ * as `capWeightedTokens` in the domain; the percent is `CACHED_TOKEN_SHARE_PERCENT`.
+ */
+const CAP_TOKENS = `(input_tokens - least(cached_input_tokens, input_tokens)
+    + least(cached_input_tokens, input_tokens) * ${String(CACHED_TOKEN_SHARE_PERCENT)} / 100 + output_tokens)`;
 
 /**
  * What is spent and reserved against each kind of cap, in one statement so the sums read one
@@ -29,12 +38,12 @@ export const SPENT = `WITH held AS (
 SELECT
   ((SELECT coalesce(sum(cost_micros), 0) FROM cost_ledger WHERE run_id = $1)
     + (SELECT coalesce(sum(worst_case_micros), 0) FROM held WHERE run_id = $1))::text AS run_cost,
-  ((SELECT coalesce(sum(input_tokens + output_tokens), 0) FROM cost_ledger WHERE run_id = $1)
+  ((SELECT coalesce(sum(${CAP_TOKENS}), 0) FROM cost_ledger WHERE run_id = $1)
     + (SELECT coalesce(sum(worst_case_tokens), 0) FROM held WHERE run_id = $1))::text AS run_tokens,
   ((SELECT coalesce(sum(cost_micros), 0) FROM cost_ledger WHERE run_id = $1 AND role = $8)
     + (SELECT coalesce(sum(worst_case_micros), 0) FROM held
       WHERE run_id = $1 AND role = $8))::text AS role_cost,
-  ((SELECT coalesce(sum(input_tokens + output_tokens), 0) FROM cost_ledger
+  ((SELECT coalesce(sum(${CAP_TOKENS}), 0) FROM cost_ledger
       WHERE run_id = $1 AND role = $8)
     + (SELECT coalesce(sum(worst_case_tokens), 0) FROM held
       WHERE run_id = $1 AND role = $8))::text AS role_tokens,

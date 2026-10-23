@@ -6,6 +6,7 @@ import type {
   ReservationRequest,
 } from '../../application/ports/cost-ledger.js';
 import type { KeySource } from '../../domain/budget/price-table.js';
+import { capWeightedTokens } from '../../domain/budget/token-usage.js';
 import { checkCaps, type CapBreach, type CapSpent } from '../../domain/budget/usage-cap.js';
 import { utcPeriodsOf } from '../../domain/budget/utc-periods.js';
 import type { Result } from '../../domain/errors/result.js';
@@ -22,8 +23,8 @@ function sum(values: readonly bigint[]): bigint {
 const keyOf = ({ userId, runId, callId }: ReservationKey): string =>
   JSON.stringify([userId, runId, callId]);
 
-const tokensOf = (entry: LedgerEntry): bigint =>
-  BigInt(entry.inputTokens) + BigInt(entry.outputTokens);
+// RF-422, DEC-168: cached input counts a tenth toward the token caps.
+const tokensOf = (entry: LedgerEntry): bigint => capWeightedTokens(entry);
 
 export class MemoryCostLedger implements CostLedger {
   private readonly entries: LedgerEntry[] = [];

@@ -79,7 +79,9 @@ const micros = z.union([
 export const usageData = z.looseObject({
   role: text.optional(),
   costMicros: micros.optional(),
-  tokens: z.looseObject({ inputTokens: count, outputTokens: count }).optional(),
+  tokens: z
+    .looseObject({ inputTokens: count, outputTokens: count, cachedInputTokens: count.optional() })
+    .optional(),
 });
 
 export type UsageData = z.output<typeof usageData>;

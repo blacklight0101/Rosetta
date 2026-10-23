@@ -171,7 +171,11 @@ function withRoleUsage(state: RunState, role: string, used: UsageData): RunState
     costMicros === undefined
       ? state.roleCostMicros
       : { ...state.roleCostMicros, [role]: (state.roleCostMicros[role] ?? 0) + costMicros };
-  const before = state.roleTokens[role] ?? { inputTokens: 0, outputTokens: 0 };
+  const before = state.roleTokens[role] ?? {
+    inputTokens: 0,
+    outputTokens: 0,
+    cachedInputTokens: 0,
+  };
   const roleTokens =
     tokens === undefined
       ? state.roleTokens
@@ -180,6 +184,7 @@ function withRoleUsage(state: RunState, role: string, used: UsageData): RunState
           [role]: {
             inputTokens: before.inputTokens + tokens.inputTokens,
             outputTokens: before.outputTokens + tokens.outputTokens,
+            cachedInputTokens: before.cachedInputTokens + (tokens.cachedInputTokens ?? 0),
           },
         };
   return { ...state, roleCostMicros, roleTokens };
