@@ -14,9 +14,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 120     | 16        | 100        | 4         | 0                  | 49      | 67      | 4      | 76         | 0         |
-| P5 Polish (G-10)        | 13      | 6         | 7          | 0         | 0                  | 7       | 6       | 0      | 0          | 0         |
-| **Total**               | **357** | **96**    | **232**    | **29**    | **0**              | **176** | **167** | **14** | **217**    | **0**     |
+| P3 Report and plan      | 125     | 16        | 105        | 4         | 0                  | 50      | 71      | 4      | 81         | 0         |
+| P5 Polish (G-10)        | 19      | 7         | 12         | 0         | 0                  | 11      | 8       | 0      | 0          | 0         |
+| **Total**               | **368** | **97**    | **242**    | **29**    | **0**              | **181** | **173** | **14** | **222**    | **0**     |
 
 ## Conventions for every card
 
@@ -4791,7 +4791,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: data-model prompt and checks (P3-102, P3-115), Plan setup brief (database choice). Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic): under a SQL Server brief the data model used PostgreSQL types (uuid, boolean, timestamp with time zone), replaced integer legacy ids with uuid without a migration note, missed a status column a requirement depends on and a status lookup table present in the code. Synthetic reproduction: a project with SQL strings against `tblOrders(id int, status_id int, ...)`, a rule "status 6 means deleted" and a `tblStatus` table; brief SQL Server.
 - **Do**: (1) the data-model prompt receives the chosen database and its type names; a check flags types that do not belong to it (listed in checks.md); (2) a legacy integer key stays the key type unless the brief asks otherwise, and a change of key type gets a migration note; (3) a column or table named by a requirement or a rule card but missing from the model is listed in checks.md.
 - **Review probes**: the synthetic project under SQL Server gets SQL Server types, keeps int keys, has status_id and tblStatus or lists them as missing; mutation: removing the type check fails a test.
@@ -4799,6 +4799,91 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: RF-630..RF-638; evaluation EV-40.
+
+---
+
+### P3-121 - Follow-up: a run that ends at a cap can be planned from its Supported claims
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: plan source selection (`src/application/plan/plan-inputs.ts`, `plan-source.ts`; today only an understand run that ended Completed), RF-604, RF-614, P3-111 (RF-429). Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing): the Invoice Deepen and the eShop understand ended CapReached after the verifier judged their claims (P3-111 worked: 427 eShop claims judged after the readers stopped), yet both plans were refused with RST-1802 "no finished understand run"; the summariser and consolidation never ran, so the overview is a stub and same-title cards were not merged.
+- **Do**: (1) a plan may be written from an understand or Deepen run that ended CapReached when it has Supported claims; the package and checks.md say the source run stopped at a cap and how much was left unread; (2) the P3-111 reserve also keeps room for the summariser and consolidation, so a capped run still has its overview and merged cards; (3) the spec (RF-604) says which end states can be planned.
+- **Review probes**: a recorded CapReached run with Supported claims plans and checks.md names the cap; a capped run has an overview and consolidated cards; a run with no Supported claim is still refused (RST-1802); mutation: Completed-only selection fails a test.
+- **Behaviour to preserve**: RF-604 refusal of runs without a Supported claim; DEC-112 caps.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-604, RF-614, RF-429, P3-111; Haiku battery HB-03, HB-11, HB-15.
+
+---
+
+### P3-122 - Follow-up: screen field claims are checked without a model call each
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the derived SCRN field claims ("Field X (text, optional) is on the screen") and the verifier (RF-300..RF-306). Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-02: these claims take 85-90% of the verifier tokens of a Deepen run (about half the run) and were the reason the Invoice Deepen reached its cap; 39 of 50 SCRN claims Rejected on Asset Manager and 112 of 251 on the Invoice Deepen.
+- **Do**: (1) a derived screen field claim is checked deterministically against its cited lines (the field label or control id is present in the cited lines -> Supported; absent -> marked with a plain reason) and sent to the model only when the deterministic check cannot decide; or several field claims of one screen are judged in one verifier call; pick the simplest and record it in docs; (2) the run log counts claims judged without a model call.
+- **Review probes**: a recorded Deepen with SCRN cards makes at most one verifier call per screen (or none for decidable fields) and keeps the same verdicts on the fixture; mutation: one call per field fails a test.
+- **Behaviour to preserve**: every claim is still judged or marked (DEC-18, DEC-19); RF-300 citation check.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-300..RF-306; Haiku battery HB-02.
+
+---
+
+### P3-123 - Follow-up: first-party areas are read before library areas
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: reader task order (`planReaderTasks`, `plannedAreas`), the start page's library-area confirmation (start-gate). Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-01: with library areas included, eShop ran its 86 vendored areas (Scripts, Content, .kube schemas) in alphabetical order first; they used 42% of the reader tokens for four small cards and 31 first-party areas, including every eShopModernized* source folder, never ran before the cap.
+- **Do**: (1) reader tasks run first-party areas first (largest first or in code-map order), then library areas, so a cap never starves own code; (2) an understand request without an area list from the API uses the same default the start page offers (state which in docs) and the estimate warns when library areas are included; (3) a library area produces no FEAT/BR card that only says the area holds third-party code.
+- **Review probes**: a recorded eShop-shaped run with library areas schedules every first-party area before any library area; the "Area holds only third-party" card is not produced; mutation: alphabetical order fails a test.
+- **Behaviour to preserve**: RF-100..RF-112 third-party marking (P3-112); the user can still choose library areas.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-200, RF-104; Haiku battery HB-01, HB-10.
+
+---
+
+### P3-124 - Follow-up: the verifier judges what a claim says, not whether its label is in the cited lines
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: verifier prompt and judgement parsing (`prompts/verifier/claim.v2.md`), the citation excerpt sent to the verifier. Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), findings HB-04, HB-05: about 80% of Rejected claims are rejected because a label or header is not in the cited lines, not because the code contradicts them; the same gap gives Supported on one claim and Rejected on another; some verdicts say "matching the claim" yet are Rejected; true claims cited a few lines short are Rejected.
+- **Do**: (1) the excerpt sent to the verifier adds a few context lines around the cited range (marked as context) so a header or label just outside it is visible; (2) a missing label alone gives a separate verdict (for example Partly or a citation note) rather than Rejected, per the existing verdict set (state which); (3) a verdict whose reason agrees with the claim but whose label is Rejected is re-asked once or flagged; (4) new verifier prompt version, old kept.
+- **Review probes**: recorded judgements: a claim whose header is two lines above the range is not Rejected; a contradictory verdict is caught; Supported share on the evaluation fixtures does not fall; mutation: no context lines fails a test.
+- **Behaviour to preserve**: DEC-18, DEC-19 (rejected claims are marked, never deleted); RF-300 citation check stays strict about the file and lines existing.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-300..RF-306; Haiku battery HB-04, HB-05.
+
+---
+
+### P3-125 - Follow-up: Deepen replaces the rejected claims it re-reads instead of adding near-duplicates
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: Deepen rounds and claim merge (P2-41, P3-67, P3-110). Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-06: Asset Manager claims went from 156 to 340 for one new card; 61 near-duplicate claims on Asset Manager and 45 on Invoice after Deepen.
+- **Do**: (1) a Deepen claim on a card that already has a claim with the same normalised text and overlapping citation replaces it (keeping the better verdict and both citations) instead of being added; (2) a rejected claim that the Deepen round re-states with a new citation replaces the rejected one and keeps its history; (3) the run log counts replaced claims.
+- **Review probes**: a recorded Deepen over a recorded understand adds no near-duplicate claim and keeps every distinct Supported claim; mutation: always-add fails a test.
+- **Behaviour to preserve**: rejected claims are never deleted silently (DEC-19: the history keeps them); P3-110 bookkeeping rules.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-209, RF-230; Haiku battery HB-06.
 
 ---
 
@@ -4948,7 +5033,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: card text normaliser. Evaluation pass 2 of 2026-10-23 (local Ollama; workbooks re-run and eShopModernizing), finding EV-33: claim text keeps `\u005b` and `\u005d`.
 - **Do**: decode escape sequences in card and claim text before storing.
 - **Review probes**: a recorded claim with escapes reads with brackets.
@@ -4965,7 +5050,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: coverage (P5-01 is the display side). Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic), finding EV-38: `codemap_query` results count their one-line ranges as read, so a long page that was only queried shows as read.
 - **Do**: count as read only lines returned by read_file (or a full excerpt), not the single lines a query lists.
 - **Review probes**: a recorded run: a page only queried stays unread.
@@ -4999,7 +5084,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: consolidation (P3-80, P3-106, P3-110). Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic), finding EV-42: one card in five merge groups; a start page and a login page merged into one card and one task; FLOW and INT never consolidated.
 - **Do**: a card joins at most one merge group; two SCRN cards with different routes never merge; decide FLOW/INT rules with the owner.
 - **Review probes**: recorded merges with overlap resolve to one group; two routes stay apart.
@@ -5016,7 +5101,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: reader guidance for web-forms pages. Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic), finding EV-43: two data-source controls on a page became INT cards and task cards.
 - **Do**: the reader prompt treats page data-binding controls as part of the screen, not an external integration.
 - **Review probes**: a recorded page with two data-source controls gives no INT card.
@@ -5024,5 +5109,107 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: evaluation EV-43.
+
+---
+
+### P5-14 - Reader answers that miss a required object or come in code fences are repaired before a retry
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: reader answer parsing and repair (P3-105 cards/repair.v3). Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-09: about 20% of reader calls in the Asset Manager Deepen were retries (missing `screen` object, code fences, answers cut at 8,192 tokens).
+- **Do**: strip code fences, fill a missing optional object with an empty one where the schema allows, continue a cut answer (see P5-03) before a full retry.
+- **Review probes**: recorded answers with each fault parse without a retry.
+- **Behaviour to preserve**: RF-206 card schema.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: Haiku battery HB-09.
+
+---
+
+### P5-15 - Verifier calls of one run can run in parallel within the caps
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: agents.parallelism (project setting, default 1), verifier scheduling, budget guard reservations. Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-08: one agent at a time, about 2.4 s per verifier claim; cap-stopped agents spent 14 minutes doing nothing.
+- **Do**: run verifier judgements with the project parallelism (reservations per call), and stop queued agents at once when a cap is reached.
+- **Review probes**: a recorded run with parallelism 4 gives the same verdicts; queued agents end immediately after a cap.
+- **Behaviour to preserve**: DEC-13 budget guard on every call.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: Haiku battery HB-08.
+
+---
+
+### P5-16 - Cached input tokens count toward the token cap at their real weight
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: run token cap and cost meter. Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-03: the token cap counts cached input tokens in full, so eShop stopped at $0.29 of a $0.50 cost cap.
+- **Do**: decide with the owner whether the token cap counts cached tokens in full (default: count them at a fixed share, documented), and show both figures on the run page.
+- **Review probes**: a recorded run with cached tokens reaches the cap later under the new rule.
+- **Behaviour to preserve**: RF-420..RF-429.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: Haiku battery HB-03.
+
+---
+
+### P5-17 - Bootstrap grid and reboot files are third-party
+
+- **Difficulty**: 2 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: third-party library names (P3-112). Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-12: bootstrap-grid.css and bootstrap-reboot.css stayed first-party.
+- **Do**: add the bootstrap-grid, bootstrap-reboot and bootstrap-utilities names (and .min/.map variants).
+- **Review probes**: the three files are third-party; Content/Site.css stays first-party.
+- **Behaviour to preserve**: P3-112 rules.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: Haiku battery HB-12.
+
+---
+
+### P5-18 - A user-day or server cap stop still leaves room to judge written claims
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: budget guard scopes (run, user-day, server-month), P3-111 reader share. Found on the eval stack on 2026-10-23: a run stopped by the administrator user-day cap left its claims unjudged (the reader share covers the run token cap only).
+- **Do**: apply the reader share to the user-day and server caps that bind the run (the smallest remaining cap), or stop the readers early when a scope cap is close.
+- **Review probes**: a recorded run under a near user-day cap judges its claims before stopping.
+- **Behaviour to preserve**: DEC-112 caps never exceeded.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-429, P3-111.
+
+---
+
+### P5-19 - Small fixes from the fix round 2 reviews
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: reviews of P3-112, P3-116, P5-09, P5-12 (2026-10-23).
+- **Do**: (1) escape decoding refuses bidi controls, zero-width and U+2028/2029 and is idempotent (P5-09); (2) short values under api-key names outside XML attributes are masked like token and secret (P3-116); (3) a later merge group that shares a card with an earlier one keeps its remaining cards when two or more are left (P5-12); (4) a vendored banner must start with the library name, and the licence requirement gets a test (P3-112).
+- **Review probes**: one test per item; mutation per item.
+- **Behaviour to preserve**: the rules of each card.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P3-112, P3-116, P5-09, P5-12.
 
 ---
