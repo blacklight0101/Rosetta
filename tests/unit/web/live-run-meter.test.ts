@@ -16,8 +16,20 @@ describe('the tokens and cost per role', () => {
     );
 
     expect(roleTotalsOf(state)).toEqual([
-      { role: 'reader', inputTokens: 1_000, outputTokens: 50, costMicros: undefined },
-      { role: 'verifier', inputTokens: 50, outputTokens: 5, costMicros: undefined },
+      {
+        role: 'reader',
+        inputTokens: 1_000,
+        outputTokens: 50,
+        cachedInputTokens: 0,
+        costMicros: undefined,
+      },
+      {
+        role: 'verifier',
+        inputTokens: 50,
+        outputTokens: 5,
+        cachedInputTokens: 0,
+        costMicros: undefined,
+      },
     ]);
   });
 
@@ -30,7 +42,7 @@ describe('the tokens and cost per role', () => {
 
     expect(state.agents[0]?.costMicros).toBe(2_000);
     expect(roleTotalsOf(state)).toEqual([
-      { role: 'reader', inputTokens: 0, outputTokens: 0, costMicros: 2_000 },
+      { role: 'reader', inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, costMicros: 2_000 },
     ]);
   });
 });

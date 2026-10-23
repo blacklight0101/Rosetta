@@ -44,7 +44,9 @@ function spendContract(name: string, fresh: Fresh): void {
     const { ledger, ids } = await setUp(fresh);
     const first = reservationOf(ids, worst(0n, 300n));
     await reserveAt(ledger, first, []);
-    await ledger.settle(entryOf(first, { inputTokens: 100, outputTokens: 50 }));
+    await ledger.settle(
+      entryOf(first, { inputTokens: 100, outputTokens: 50, cachedInputTokens: 0 }),
+    );
 
     const refused = await reserveAt(ledger, reservationOf(ids, worst(0n, 351n)), roleTokens(500n));
 
@@ -117,8 +119,79 @@ function scopeContract(name: string, fresh: Fresh): void {
   });
 }
 
+/** P5-16, DEC-168: a call of 400 input tokens, 300 of them cached, and 100 output counts 230. */
+async function settleCall(
+  ledger: CostLedger,
+  ids: { readonly userId: string; readonly runId: string },
+  cachedInputTokens: number,
+): Promise<void> {
+  const call = reservationOf(ids, worst(0n, 300n));
+  await reserveAt(ledger, call, []);
+  await ledger.settle(entryOf(call, { inputTokens: 400, outputTokens: 100, cachedInputTokens }));
+}
+
+/** How many calls of worst case 300 tokens fit a run token cap of 1,000 before one is refused. */
+async function callsUntilRefused(
+  ledger: CostLedger,
+  ids: { readonly userId: string; readonly runId: string },
+  cachedInputTokens: number,
+): Promise<number> {
+  let made = 0;
+  for (; made < 20; made += 1) {
+    const next = reservationOf(ids, worst(0n, 300n));
+    const result = await reserveAt(ledger, next, [{ kind: 'run-tokens', limit: 1_000n }]);
+    if (!result.ok) break;
+    await ledger.settle(entryOf(next, { inputTokens: 400, outputTokens: 100, cachedInputTokens }));
+  }
+  return made;
+}
+
+function cachedContract(name: string, fresh: Fresh): void {
+  it(`RF-422 ${name} counts cached input tokens at a tenth toward the run token cap`, async () => {
+    const { ledger, ids } = await setUp(fresh);
+    await settleCall(ledger, ids, 300);
+
+    const refused = await reserveAt(ledger, reservationOf(ids, worst(0n, 771n)), [
+      { kind: 'run-tokens', limit: 1_000n },
+    ]);
+
+    expect(breachOf(refused)).toEqual({
+      kind: 'run-tokens',
+      limit: 1_000n,
+      spent: 230n,
+      needed: 771n,
+    });
+  });
+
+  it(`RF-422 ${name} counts cached input tokens at a tenth toward a role token cap`, async () => {
+    const { ledger, ids } = await setUp(fresh);
+    await settleCall(ledger, ids, 300);
+
+    const refused = await reserveAt(ledger, reservationOf(ids, worst(0n, 271n)), roleTokens(500n));
+
+    expect(breachOf(refused)).toEqual({
+      kind: 'role-tokens',
+      limit: 500n,
+      spent: 230n,
+      needed: 271n,
+    });
+  });
+
+  it(`RF-422 ${name} lets a run with cached tokens reach the cap later than one without`, async () => {
+    const withCache = await setUp(fresh);
+    const without = await setUp(fresh);
+
+    const cached = await callsUntilRefused(withCache.ledger, withCache.ids, 300);
+    const plain = await callsUntilRefused(without.ledger, without.ids, 0);
+
+    expect(plain).toBe(2);
+    expect(cached).toBe(4);
+  });
+}
+
 // RF-423
 export function costLedgerRoleContract(name: string, fresh: Fresh): void {
   spendContract(name, fresh);
   scopeContract(name, fresh);
+  cachedContract(name, fresh);
 }

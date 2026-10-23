@@ -14,3 +14,10 @@ export interface TokenUsage {
 export function totalTokens(usage: TokenUsage): bigint {
   return BigInt(usage.inputTokens) + BigInt(usage.outputTokens);
 }
+
+// P5-16 stub, replaced by the implementation commit.
+export const CACHED_TOKEN_SHARE_PERCENT = 0;
+
+export function capWeightedTokens(usage: TokenUsage): bigint {
+  return totalTokens(usage);
+}
