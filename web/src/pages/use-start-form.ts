@@ -5,7 +5,7 @@ import type { RunStageChoice } from '../api/runs.js';
 import { capWarnings, type CapWarning } from '../lib/cap-warnings.js';
 import { localLikelyTokens } from '../lib/start-confirmation.js';
 import { cloudRoles, pricedTotal } from '../lib/estimate-math.js';
-import { effectiveRunCapMicros, usesServerKeys } from '../lib/run-cap.js';
+import { administratorRunCapBinds, effectiveRunCapMicros, usesServerKeys } from '../lib/run-cap.js';
 import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import { providerNames } from './provider-choices.js';
 import { startGate, type StartGate } from './start-gate.js';
@@ -148,7 +148,7 @@ function runCapsOf(input: {
     estimate,
     capMicros: runCapMicros,
     limits,
-    runCapFromProject: runCapMicros === typed,
+    runCapFromProject: !administratorRunCapBinds({ typed, ...serverRunCap }),
   });
   return { runCapMicros, serverRunCap, warnings };
 }

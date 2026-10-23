@@ -11,12 +11,7 @@ import { dollars, tokensText } from './estimate-math.js';
 type FirstCalls = NonNullable<RunEstimate['firstCalls']>;
 
 /** The caps the project settings page holds; the administrator's run cap is not one of them. */
-const projectCapKinds: ReadonlySet<string> = new Set([
-  'run-cost',
-  'run-tokens',
-  'role-cost',
-  'role-tokens',
-]);
+const projectCapKinds: ReadonlySet<string> = new Set(['run-tokens', 'role-cost', 'role-tokens']);
 
 export interface FirstCallWarning {
   readonly id: `first-calls-${string}`;
@@ -101,15 +96,20 @@ function textOf(first: FirstCalls, cap: Short): string {
 }
 
 // RF-405, DEC-159
+/**
+ * `runCapFromProject`: the run cap the page holds is the project's, not the administrator's binding
+ * one (see administratorRunCapBinds in run-cap.ts); it decides the link on a run-cost reservation.
+ */
 export function firstCallWarnings(
   estimate: RunEstimate,
   runCapMicros: bigint,
+  runCapFromProject = true,
 ): readonly FirstCallWarning[] {
   const first = estimate.firstCalls;
   if (first === undefined || first.calls === 0) return [];
   return shortCaps(estimate, first, runCapMicros).map((cap) => ({
     id: `first-calls-${cap.kind}`,
     text: textOf(first, cap),
-    projectCaps: projectCapKinds.has(cap.kind) && !cap.administrator,
+    projectCaps: cap.kind === 'run-cost' ? runCapFromProject : projectCapKinds.has(cap.kind),
   }));
 }

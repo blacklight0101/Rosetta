@@ -100,6 +100,6 @@ export function capWarnings(inputs: CapInputs): readonly CapWarning[] {
     limits === undefined
       ? []
       : [...serverWarnings(estimate, limits), ...ownWarning(estimate, limits)];
-  const first = firstCallWarnings(estimate, runCapMicros);
+  const first = firstCallWarnings(estimate, runCapMicros, inputs.runCapFromProject ?? true);
   return [...(run === undefined ? [] : [run]), ...limited, ...first];
 }
