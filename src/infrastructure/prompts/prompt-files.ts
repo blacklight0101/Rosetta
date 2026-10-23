@@ -30,7 +30,7 @@ const workbookPromptName = 'reader/workbook.v5.md';
 
 const answersPromptName = 'reader/answers.v1.md';
 const rereadPromptName = 'reader/reread.v3.md';
-const parentCardsPromptName = 'reader/parent-cards.v1.md';
+const parentCardsPromptName = 'reader/parent-cards.v2.md';
 
 /** RF-260, RF-261: fragments of the card format, added only to areas the code map marks (Q-25). */
 const surfacePromptNames = { flows: 'cards/flows.v1.md', screens: 'cards/screens.v2.md' } as const;

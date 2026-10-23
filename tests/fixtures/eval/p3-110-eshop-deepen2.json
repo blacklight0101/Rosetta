@@ -1,0 +1,5344 @@
+[
+{
+"id": "BR-008",
+"type": "BR",
+"title": "Service port mapping",
+"area": "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments",
+"agentTaskId": "reader-007",
+"confidence": "High",
+"claims": [
+{
+"text": "The service maps external port 5115 to the target container port 80.",
+"citations": [
+"Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-deployment.yml:55-57"
+],
+"status": "Supported"
+},
+{
+"text": "The service exposes port 5115, which targets the container port 80.",
+"citations": [
+"Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-deployment.yml:56-57"
+],
+"status": "Supported"
+},
+{
+"text": "The service exposes port 5115, targeting container port 80.",
+"citations": [
+"Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-deployment.yml:56-57"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-072",
+"type": "BR",
+"title": "Service Port Mappings",
+"area": "(root)",
+"agentTaskId": "reader-082",
+"confidence": "High",
+"claims": [
+{
+"text": "eShop.modernized.mvc is mapped from host port 5115 to container port 80.",
+"citations": [
+"docker-compose.override.yml:16-17"
+],
+"status": "Rejected"
+},
+{
+"text": "eShop.modernized.webforms is mapped from host port 5114 to container port 80.",
+"citations": [
+"docker-compose.override.yml:31-32"
+],
+"status": "Supported"
+},
+{
+"text": "eshopwcfservice is mapped from host port 5113 to container port 80.",
+"citations": [
+"docker-compose.override.yml:37-38"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-103",
+"type": "BR",
+"title": "Service Port Mappings",
+"area": "(root)",
+"agentTaskId": "reader-144",
+"confidence": "High",
+"claims": [
+{
+"text": "eShop.modernized.mvc service is mapped from host port 5115 to container port 80.",
+"citations": [
+"docker-compose.override.yml:17-17"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-018",
+"type": "ENT",
+"title": "Assembly Metadata",
+"area": "eShopLegacyMVCSolution/eShopLegacy.Utilities",
+"agentTaskId": "reader-020",
+"confidence": "High",
+"claims": [
+{
+"text": "The AssemblyTitle is set to 'eShopLegacy.Utilities'.",
+"citations": [
+"eShopLegacyMVCSolution/eShopLegacy.Utilities/Properties/AssemblyInfo.cs:8-8"
+],
+"status": "Supported"
+},
+{
+"text": "The AssemblyProduct is set to 'eShopLegacy.Utilities'.",
+"citations": [
+"eShopLegacyMVCSolution/eShopLegacy.Utilities/Properties/AssemblyInfo.cs:12-12"
+],
+"status": "Supported"
+},
+{
+"text": "The AssemblyVersion is set to '1.0.0.0'.",
+"citations": [
+"eShopLegacyMVCSolution/eShopLegacy.Utilities/Properties/AssemblyInfo.cs:35-35"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-052",
+"type": "ENT",
+"title": "Assembly Metadata",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Properties",
+"agentTaskId": "reader-051",
+"confidence": "High",
+"claims": [
+{
+"text": "The assembly is titled \"eShopLegacyWebForms\".",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Properties/AssemblyInfo.cs:8-8"
+],
+"status": "Supported"
+},
+{
+"text": "The assembly product is \"eShopLegacyWebForms\".",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Properties/AssemblyInfo.cs:12-12"
+],
+"status": "Supported"
+},
+{
+"text": "The assembly was copyrighted in 2017.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Properties/AssemblyInfo.cs:13-13"
+],
+"status": "Supported"
+},
+{
+"text": "The assembly version is set to 1.0.0.0.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Properties/AssemblyInfo.cs:34-34"
+],
+"status": "Supported"
+},
+{
+"text": "The assembly file version is set to 1.0.0.0.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Properties/AssemblyInfo.cs:35-35"
+],
+"status": "Supported"
+},
+{
+"text": "The assembly configuration is not specified as default.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Properties/AssemblyInfo.cs:10-10"
+],
+"status": "Supported"
+},
+{
+"text": "The assembly is configured to use log4net for configuration via log4net.xml.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Properties/AssemblyInfo.cs:37-37"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-086",
+"type": "ENT",
+"title": "Assembly Metadata",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Properties",
+"agentTaskId": "reader-078",
+"confidence": "High",
+"claims": [
+{
+"text": "The assembly is titled \"eShopModernizedWebForms\".",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Properties/AssemblyInfo.cs:8-8"
+],
+"status": "Supported"
+},
+{
+"text": "The assembly product name is \"eShopModernizedWebForms\".",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Properties/AssemblyInfo.cs:12-12"
+],
+"status": "Supported"
+},
+{
+"text": "The assembly copyright is \"Copyright \u00a9 2017\".",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Properties/AssemblyInfo.cs:13-13"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-020",
+"type": "BR",
+"title": "Database Connection Configuration",
+"area": "eShopLegacyMVCSolution/eShopPorted",
+"agentTaskId": "reader-021",
+"confidence": "High",
+"claims": [
+{
+"text": "If 'UseMockData' is false, the application uses the connection string 'DefaultConnection' to connect to SQL Server.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Startup.cs:28-35",
+"eShopLegacyMVCSolution/eShopPorted/appsettings.json:3-4"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-084",
+"type": "BR",
+"title": "Database Connection Configuration",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms",
+"agentTaskId": "reader-114",
+"confidence": "High",
+"claims": [
+{
+"text": "The connection string for CatalogDBContext points to a local SQL Server instance using 'sa' as the user ID, but the password is masked.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Web.config:20-21"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-136",
+"type": "BR",
+"title": "Database Connection Configuration",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms",
+"agentTaskId": "reader-198",
+"confidence": "High",
+"claims": [
+{
+"text": "Connection strings are configured in the application configuration files for different environments.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Web.Release.config:13-14",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Web.Debug.config:13-14"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-022",
+"type": "FEAT",
+"title": "View catalog items paginated",
+"area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
+"agentTaskId": "reader-022",
+"confidence": "High",
+"claims": [
+{
+"text": "The Index action fetches catalog items using the provided pageSize and pageIndex parameters.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:23-26"
+],
+"status": "Supported"
+},
+{
+"text": "After fetching, the system calls ChangeUriPlaceholder on the returned data set.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:27-27"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-030",
+"type": "FEAT",
+"title": "View catalog items paginated",
+"area": "eShopLegacyMVCSolution/eShopPorted/Services",
+"agentTaskId": "reader-027",
+"confidence": "High",
+"claims": [
+{
+"text": "The system allows fetching catalog items with specified page size and index, returning a paginated view model.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Services/ICatalogService.cs:12-12",
+"eShopLegacyMVCSolution/eShopPorted/Services/CatalogService.cs:18-32"
+],
+"status": "Supported"
+},
+{
+"text": "When fetching catalog items, the system includes navigation properties for CatalogBrand and CatalogType.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Services/CatalogService.cs:23-24"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-023",
+"type": "FEAT",
+"title": "Create a new catalog item",
+"area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
+"agentTaskId": "reader-022",
+"confidence": "High",
+"claims": [
+{
+"text": "The Create action displays a form pre-populated with dropdowns for available brands and catalog types.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:53-54"
+],
+"status": "Supported"
+},
+{
+"text": "If the submitted CatalogItem model state is valid, the service creates the item, and the user is redirected to the Index page.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:68-70"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-034",
+"type": "FEAT",
+"title": "Create a new catalog item",
+"area": "eShopLegacyMVCSolution/eShopPorted/Services",
+"agentTaskId": "reader-027",
+"confidence": "High",
+"claims": [
+{
+"text": "A new catalog item can be created via the service, persisting the data to the database.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Services/ICatalogService.cs:14-14",
+"eShopLegacyMVCSolution/eShopPorted/Services/CatalogService.cs:51-55"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-038",
+"type": "FEAT",
+"title": "Create a New Catalog Item",
+"area": "eShopLegacyMVCSolution/eShopPorted/Views",
+"agentTaskId": "reader-029",
+"confidence": "High",
+"claims": [
+{
+"text": "The Create page allows input for the item's Name and Description.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:19-20",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:27-28"
+],
+"status": "Supported"
+},
+{
+"text": "Users can select the Catalog Brand and Catalog Type from dropdown lists.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:35-36",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:43-44"
+],
+"status": "Supported"
+},
+{
+"text": "Users can input the Price, Available Stock, Restock Threshold, and Max Stock Threshold.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:51-52",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:68-69",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:76-77",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:84-85"
+],
+"status": "Supported"
+},
+{
+"text": "The form submission uses a Create action linked to the Index page.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:92-93"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "FEAT-051",
+"type": "FEAT",
+"title": "Create a New Catalog Item",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers",
+"agentTaskId": "reader-034",
+"confidence": "High",
+"claims": [
+{
+"text": "The Create action displays a form populated with available brands and types for a new CatalogItem.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:52-54"
+],
+"status": "Supported"
+},
+{
+"text": "Upon submission, if valid, the CatalogItem is created via the service and the user is redirected to the Index.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:67-69"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogController Create action displays a form populated with available Catalog Brands and Types for a new CatalogItem.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:54-54"
+],
+"status": "Supported"
+},
+{
+"text": "Submitting a valid catalog item creates the item via the service layer and redirects to the index.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:67-68"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-062",
+"type": "FEAT",
+"title": "Create a new catalog item",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
+"agentTaskId": "reader-041",
+"confidence": "High",
+"claims": [
+{
+"text": "The index page provides a link to create a new item titled 'Create New'.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml:9-10"
+],
+"status": "Supported"
+},
+{
+"text": "The user can navigate to a create view by clicking the \"Create New\" link on the catalog item list.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml:9-10"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-074",
+"type": "FEAT",
+"title": "Create a new catalog item",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+"agentTaskId": "reader-047",
+"confidence": "High",
+"claims": [
+{
+"text": "The page allows input for Name, Description, Price, Stock, Restock, and Max stock, along with selection from Brand and Type drop-downs.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:10-12, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:19-22, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:26-36, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:40-49, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:52-57, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:69-74, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:77-83, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:87-92"
+],
+"status": "CitationInvalid"
+},
+{
+"text": "Upon clicking 'Create', the system attempts to create a CatalogItem using the provided input values.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.cs:30-47"
+],
+"status": "Supported"
+},
+{
+"text": "The area contains files for creating a catalog item (Create.aspx.designer.cs).",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.designer.cs:1-87"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-089",
+"type": "FEAT",
+"title": "Create a new catalog item",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers",
+"agentTaskId": "reader-059",
+"confidence": "High",
+"claims": [
+{
+"text": "The Create action displays a form for creating a new catalog item, pre-filling the picture URI with a default image.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs:52-64"
+],
+"status": "Supported"
+},
+{
+"text": "Upon successful submission, the item is created using the service, and the associated image is updated if a temporary image name was provided, then redirects to the index.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs:70-88"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-114",
+"type": "FEAT",
+"title": "Create a New Catalog Item",
+"area": "eShopLegacyMVCSolution/eShopPorted/Views",
+"agentTaskId": "reader-089",
+"confidence": "High",
+"claims": [
+{
+"text": "The form on the Create page allows input for Name, Description, CatalogBrandId, CatalogTypeId, Price, AvailableStock, RestockThreshold, and MaxStockThreshold.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:19-19",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:27-27",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:35-35",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:43-43",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:51-51",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:68-68",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:76-76",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:84-84"
+],
+"status": "Supported"
+},
+{
+"text": "The Cancel action link on the Create page links back to the Index page.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:91-91"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-155",
+"type": "FEAT",
+"title": "Create a new catalog item",
+"area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
+"agentTaskId": "reader-145",
+"confidence": "High",
+"claims": [
+{
+"text": "The Create action populates dropdown lists for Catalog Brand and Catalog Type using data from the service methods.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:53-54"
+],
+"status": "Supported"
+},
+{
+"text": "The POST Create action validates the model; if valid, it calls the service to create the item and redirects to the Index.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:66-69"
+],
+"status": "Supported"
+},
+{
+"text": "If validation fails on creation, the Create view is returned with updated dropdown lists matching the submitted data.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:72-74"
+],
+"status": "Rejected"
+},
+{
+"text": "The Create action displays a form pre-populated with available brands and types for a new catalog item.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:50-55"
+],
+"status": "Supported"
+},
+{
+"text": "If the model state is valid upon submission, the catalog item is created via the service and the user is redirected to the Index.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:62-69"
+],
+"status": "Supported"
+},
+{
+"text": "If the model state is invalid upon submission, the Create view is returned with dropdown lists updated to match the submitted data.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:71-74"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "FEAT-181",
+"type": "FEAT",
+"title": "Create a New Catalog Item",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers",
+"agentTaskId": "reader-184",
+"confidence": "High",
+"claims": [
+{
+"text": "The Create action renders a form populated with available Catalog Brands and Catalog Types.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:52-53"
+],
+"status": "Supported"
+},
+{
+"text": "If the submitted catalog item model state is valid, the service creates the item, and the user is redirected to the index.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:65-68"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-024",
+"type": "FEAT",
+"title": "Edit an existing catalog item",
+"area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
+"agentTaskId": "reader-022",
+"confidence": "High",
+"claims": [
+{
+"text": "The Edit action loads a specific CatalogItem based on the ID and populates the edit view with available brands and types.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:91-93"
+],
+"status": "Rejected"
+},
+{
+"text": "If the submitted model state is valid, the service updates the catalog item, and the user is redirected to the Index page.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:106-108"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-052",
+"type": "FEAT",
+"title": "Edit an Existing Catalog Item",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers",
+"agentTaskId": "reader-034",
+"confidence": "High",
+"claims": [
+{
+"text": "The Edit action fetches an existing CatalogItem, pre-populates the form with related brands and types, and displays it.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:77-92"
+],
+"status": "Supported"
+},
+{
+"text": "Upon submission, if valid, the CatalogItem is updated via the service and the user is redirected to the Index.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:105-107"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogController Edit action retrieves a catalog item by ID and populates the edit form with available Catalog Brands and Types.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:84-92"
+],
+"status": "Supported"
+},
+{
+"text": "Submitting a valid catalog item updates the existing item via the service layer and redirects to the index.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:105-106"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-064",
+"type": "FEAT",
+"title": "Edit an existing catalog item",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
+"agentTaskId": "reader-041",
+"confidence": "High",
+"claims": [
+{
+"text": "The edit screen displays the catalog item's picture via an <img> tag using 'PictureUri'.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:15-15"
+],
+"status": "Supported"
+},
+{
+"text": "The user can modify the item's Name, Description, Price, AvailableStock, and RestockThreshold fields.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:23-24",
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:31-32",
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:55-56",
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:71-72",
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:79-80"
+],
+"status": "Supported"
+},
+{
+"text": "The user must select a CatalogBrandId and CatalogTypeId using dropdown menus.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:39-40",
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:47-48"
+],
+"status": "Supported"
+},
+{
+"text": "The PictureFileName field is present but is displayed as read-only.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:63-63"
+],
+"status": "Supported"
+},
+{
+"text": "The user can save the changes to the catalog item by submitting the form, which targets the Index action.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:95-95"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-075",
+"type": "FEAT",
+"title": "Edit an existing catalog item",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+"agentTaskId": "reader-047",
+"confidence": "High",
+"claims": [
+{
+"text": "The Edit page displays all properties of an existing catalog item, such as Name, Description, Price, Stock, etc., pre-filled from the selected item.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx:15-16, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx:24-25, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx:55-57, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx:72-74"
+],
+"status": "CitationInvalid"
+},
+{
+"text": "Upon clicking 'Save', the system updates the existing CatalogItem using the submitted form data.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx.cs:47-67"
+],
+"status": "Supported"
+},
+{
+"text": "The area contains files for editing a catalog item (Edit.aspx.designer.cs).",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx.designer.cs:1-96"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-090",
+"type": "FEAT",
+"title": "Edit an existing catalog item",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers",
+"agentTaskId": "reader-059",
+"confidence": "High",
+"claims": [
+{
+"text": "The Edit action retrieves a catalog item by ID, populates the form, and provides the necessary dropdown lists for brands and types.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs:97-116"
+],
+"status": "Supported"
+},
+{
+"text": "Upon successful submission, the item is updated using the service, and the page redirects to the index.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs:122-138"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-156",
+"type": "FEAT",
+"title": "Edit an existing catalog item",
+"area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
+"agentTaskId": "reader-145",
+"confidence": "High",
+"claims": [
+{
+"text": "The Edit action requires an ID, returning a 400 Bad Request if no ID is provided.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:81-83"
+],
+"status": "Supported"
+},
+{
+"text": "The Edit action returns a 404 Not Found if the catalog item does not exist.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:85-88"
+],
+"status": "Supported"
+},
+{
+"text": "The Edit action populates dropdown lists for Catalog Brand and Catalog Type using the existing item's data upon loading.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:91-92"
+],
+"status": "Supported"
+},
+{
+"text": "The POST Edit action validates the model; if valid, it calls the service to update the item and redirects to the Index.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:104-107"
+],
+"status": "Supported"
+},
+{
+"text": "If validation fails on editing, the Edit view is returned with updated dropdown lists matching the submitted data.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:109-111"
+],
+"status": "Rejected"
+},
+{
+"text": "The Edit action retrieves a catalog item by ID, adds a URI placeholder to it, and displays the edit view with available brands and types.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:78-94"
+],
+"status": "Supported"
+},
+{
+"text": "If the model state is valid upon submission, the catalog item is updated via the service and the user is redirected to the Index.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:101-107"
+],
+"status": "Supported"
+},
+{
+"text": "If the model state is invalid upon submission, the Edit view is returned with dropdown lists updated to match the submitted data.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:109-111"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "FEAT-182",
+"type": "FEAT",
+"title": "Edit an Existing Catalog Item",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers",
+"agentTaskId": "reader-184",
+"confidence": "High",
+"claims": [
+{
+"text": "The Edit action retrieves a CatalogItem by ID, displays it in a form, and calls AddUriPlaceHolder on the retrieved item.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:78-92"
+],
+"status": "Rejected"
+},
+{
+"text": "If the updated model state is valid, the service updates the catalog item, and the user is redirected to the index.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:103-106"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-025",
+"type": "FEAT",
+"title": "Delete a catalog item",
+"area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
+"agentTaskId": "reader-022",
+"confidence": "High",
+"claims": [
+{
+"text": "The Delete action retrieves the CatalogItem based on the ID and presents a confirmation view.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:115-127"
+],
+"status": "Supported"
+},
+{
+"text": "Upon confirmation, the service removes the CatalogItem, and the user is redirected to the Index page.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:133-141"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-041",
+"type": "FEAT",
+"title": "Delete a Catalog Item",
+"area": "eShopLegacyMVCSolution/eShopPorted/Views",
+"agentTaskId": "reader-029",
+"confidence": "High",
+"claims": [
+{
+"text": "The Delete page displays the item's picture, name, description, price, and stock information for confirmation.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:12-12",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:19-19",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:27-27",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:50-50",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:66-66",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:75-75"
+],
+"status": "Supported"
+},
+{
+"text": "Users can confirm the deletion via a submit button within a form.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:93-93"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-053",
+"type": "FEAT",
+"title": "Delete a Catalog Item",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers",
+"agentTaskId": "reader-034",
+"confidence": "High",
+"claims": [
+{
+"text": "The Delete action displays the item for confirmation before deletion.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:128-129"
+],
+"status": "Rejected"
+},
+{
+"text": "The DeleteConfirmed action removes the item from the data source via the service and redirects to the Index.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:137-139"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-077",
+"type": "FEAT",
+"title": "Delete a catalog item",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+"agentTaskId": "reader-047",
+"confidence": "High",
+"claims": [
+{
+"text": "The Delete page displays all details of the item to be deleted, prompting user confirmation.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx:16-17, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx:23-24, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx:43-44, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx:57-58"
+],
+"status": "CitationInvalid"
+},
+{
+"text": "Upon clicking 'Delete', the system removes the specified catalog item.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx.cs:27-29"
+],
+"status": "Supported"
+},
+{
+"text": "The area contains files for deleting a catalog item (Delete.aspx.designer.cs).",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx.designer.cs:1-15"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-091",
+"type": "FEAT",
+"title": "Delete a catalog item",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers",
+"agentTaskId": "reader-059",
+"confidence": "High",
+"claims": [
+{
+"text": "The Delete action retrieves a catalog item by ID and displays a confirmation view.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs:146-161"
+],
+"status": "Supported"
+},
+{
+"text": "The DeleteConfirmed action removes the catalog item using the service and redirects to the index.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs:164-173"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-118",
+"type": "FEAT",
+"title": "Delete a Catalog Item",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers",
+"agentTaskId": "reader-091",
+"confidence": "High",
+"claims": [
+{
+"text": "The Delete action in CatalogController.cs starts by receiving a POST request.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:132-134"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-157",
+"type": "FEAT",
+"title": "Delete a catalog item",
+"area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
+"agentTaskId": "reader-145",
+"confidence": "High",
+"claims": [
+{
+"text": "The Delete action retrieves and displays the item details if a valid ID is provided.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:115-127"
+],
+"status": "Supported"
+},
+{
+"text": "The POST DeleteConfirmed action retrieves the item and calls the service to remove it, redirecting to the Index.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:137-140"
+],
+"status": "Supported"
+},
+{
+"text": "The Delete action retrieves a catalog item by ID and adds a URI placeholder to it before returning the view.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:115-129"
+],
+"status": "Supported"
+},
+{
+"text": "Upon confirmation, the DeleteConfirmed action retrieves the catalog item and removes it via the service, redirecting to the Index.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:132-141"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-183",
+"type": "FEAT",
+"title": "Delete a Catalog Item",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers",
+"agentTaskId": "reader-184",
+"confidence": "High",
+"claims": [
+{
+"text": "The Delete action retrieves a CatalogItem by ID, calls AddUriPlaceHolder on it, and displays the item for confirmation.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:114-129"
+],
+"status": "Supported"
+},
+{
+"text": "The DeleteConfirmed action retrieves the catalog item by ID and calls the service to remove it, redirecting to the index.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:132-139"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-020",
+"type": "ENT",
+"title": "CatalogBrand Entity",
+"area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+"agentTaskId": "reader-023",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogBrand entity has an integer primary key named Id, which is auto-generated.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:14-15",
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:26-27"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogBrand entity requires a brand name as a non-nullable string with a maximum length of 100.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:16-17",
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:28-30"
+],
+"status": "Supported"
+},
+{
+"text": "The system seeds initial CatalogBrand data, including 'Azure' (Id 1), '.NET' (Id 2), 'Visual Studio' (Id 3), 'SQL Server' (Id 4), and 'Other' (Id 5).",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:38-62",
+"eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:36-60"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-023",
+"type": "ENT",
+"title": "CatalogBrand Entity",
+"area": "eShopLegacyMVCSolution/eShopPorted/Models",
+"agentTaskId": "reader-024",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogBrand entity has an Id (int) and a Brand (string).",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Models/CatalogBrand.cs:10-12"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-029",
+"type": "ENT",
+"title": "CatalogBrand Entity",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+"agentTaskId": "reader-035",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogBrand has an Id and a Brand name.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogBrand.cs:10-12"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-081",
+"type": "ENT",
+"title": "CatalogBrand Entity",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models",
+"agentTaskId": "reader-076",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogBrand entity has an Id property.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogBrand.cs:5-5"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogBrand entity has a Brand property representing the brand name.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogBrand.cs:6-6"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-094",
+"type": "ENT",
+"title": "CatalogBrand Entity",
+"area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+"agentTaskId": "reader-087",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogBrand has an Id (int) and Brand (string, max 100).",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:25-31"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogBrand is seeded with 5 different brands.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:37-62"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-099",
+"type": "ENT",
+"title": "CatalogBrand Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-095",
+"confidence": "High",
+"claims": [
+{
+"text": "The service can retrieve all registered CatalogBrand entities",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:51-53"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-138",
+"type": "ENT",
+"title": "CatalogBrand Entity",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+"agentTaskId": "reader-123",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogBrand entity is mapped to the 'CatalogBrand' table.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogDBContext.cs:45-46"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogBrand entity requires an Id and has a Brand property with a maximum length of 100 characters.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogDBContext.cs:47-55"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-181",
+"type": "ENT",
+"title": "CatalogBrand Entity",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models",
+"agentTaskId": "reader-164",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogBrand is represented by the CatalogBrand class.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:16-16"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogBrand entity maps to the 'CatalogBrand' database table.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:45-45"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogBrand entity has an Id which is required.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:47-50"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogBrand entity must have a Brand property which is required and has a maximum length of 100.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:52-55"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-209",
+"type": "ENT",
+"title": "CatalogBrand entity",
+"area": "eShopModernizedNTier",
+"agentTaskId": "reader-195",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogBrand entity has an Id which is not generated by the database and is an integer.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogBrand.cs:15-15"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogBrand entity has a Brand property which is a string with a maximum length of 50.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogBrand.cs:18-19"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-021",
+"type": "ENT",
+"title": "CatalogType Entity",
+"area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+"agentTaskId": "reader-023",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogType entity has an integer primary key named Id, which is auto-generated.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:27-28",
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:275-276"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogType entity requires a type name as a non-nullable string with a maximum length of 100.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:29-30",
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:278-280"
+],
+"status": "Supported"
+},
+{
+"text": "The system seeds initial CatalogType data, including 'Mug' (Id 1), 'T-Shirt' (Id 2), 'Sheet' (Id 3), and 'USB Memory Stick' (Id 4).",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:288-307",
+"eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:286-305"
+],
+"status": "CitationInvalid"
+}
+]
+},
+{
+"id": "ENT-024",
+"type": "ENT",
+"title": "CatalogType Entity",
+"area": "eShopLegacyMVCSolution/eShopPorted/Models",
+"agentTaskId": "reader-024",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogType entity has an Id (int) and a Type (string).",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Models/CatalogType.cs:5-7"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-030",
+"type": "ENT",
+"title": "CatalogType Entity",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+"agentTaskId": "reader-035",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogType has an Id and a Type name.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogType.cs:10-12"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-082",
+"type": "ENT",
+"title": "CatalogType Entity",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models",
+"agentTaskId": "reader-076",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogType entity has an Id property.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogType.cs:5-5"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogType entity has a Type property representing the type name.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogType.cs:6-6"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-095",
+"type": "ENT",
+"title": "CatalogType Entity",
+"area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+"agentTaskId": "reader-087",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogType has an Id (int) and Type (string, max 100).",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:275-281"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogType is seeded with 4 different types.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:287-307"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-100",
+"type": "ENT",
+"title": "CatalogType Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-095",
+"confidence": "High",
+"claims": [
+{
+"text": "The service can retrieve all registered CatalogType entities",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:46-48"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-137",
+"type": "ENT",
+"title": "CatalogType Entity",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+"agentTaskId": "reader-123",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogType entity is mapped to the 'CatalogType' table.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogDBContext.cs:31-32"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogType entity requires an Id and has a Type property with a maximum length of 100 characters.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogDBContext.cs:33-40"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-182",
+"type": "ENT",
+"title": "CatalogType Entity",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models",
+"agentTaskId": "reader-164",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogType is represented by the CatalogType class.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:18-18"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogType entity maps to the 'CatalogType' database table.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:31-31"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogType entity has an Id which is required.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:33-36"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogType entity must have a Type property which is required and has a maximum length of 100.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:38-41"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-210",
+"type": "ENT",
+"title": "CatalogType entity",
+"area": "eShopModernizedNTier",
+"agentTaskId": "reader-195",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogType entity has an Id which is not generated by the database and is an integer.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogType.cs:15-15"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogType entity has a Type property which is a string with a maximum length of 50.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogType.cs:18-19"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-022",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+"agentTaskId": "reader-023",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItem entity has an integer primary key named Id, which is auto-generated.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:40-41",
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:67-68"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity links to CatalogBrand via CatalogBrandId and CatalogType via CatalogTypeId.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:46-47"
+],
+"status": "Rejected"
+},
+{
+"text": "The CatalogItem entity includes inventory fields: AvailableStock, RestockThreshold, and MaxStockThreshold.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:48-50"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity includes an 'OnReorder' flag, indicating a boolean state, and a name (max 50) and description.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:85-90",
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:83-85"
+],
+"status": "Rejected"
+},
+{
+"text": "The entity is initialized with sample data, showing initial stock of 100 for several items, and hardcoded prices and image file names.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:102-270",
+"eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:101-268"
+],
+"status": "CitationInvalid"
+}
+]
+},
+{
+"id": "ENT-025",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopLegacyMVCSolution/eShopPorted/Models",
+"agentTaskId": "reader-024",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItem entity has properties for Id, Name, Description, Price, PictureFileName, AvailableStock, RestockThreshold, and MaxStockThreshold.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:14-57"
+],
+"status": "Supported"
+},
+{
+"text": "A CatalogItem is associated with a CatalogBrand via CatalogBrandId, and with a CatalogType via CatalogTypeId.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:39-42",
+"eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:33-36"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-031",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+"agentTaskId": "reader-035",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem includes Name, Description, Price, PictureFileName, AvailableStock, RestockThreshold, and MaxStockThreshold.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItem.cs:14-57"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem links to CatalogType and CatalogBrand via CatalogTypeId and CatalogBrandId, respectively.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItem.cs:33-42"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-048",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+"agentTaskId": "reader-047",
+"confidence": "High",
+"claims": [
+{
+"text": "A CatalogItem includes fields for Name, Description, Price, AvailableStock, RestockThreshold, and MaxStockThreshold.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:18-36"
+],
+"status": "Rejected"
+},
+{
+"text": "CatalogItem entities are associated with a CatalogBrand (via CatalogBrandId) and a CatalogType (via CatalogTypeId).",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:14-15"
+],
+"status": "Rejected"
+},
+{
+"text": "The CatalogItem entity has fields for storing associated picture file names.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:25-25"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-067",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services",
+"agentTaskId": "reader-065",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem can be retrieved by ID, and its details can include associations with CatalogBrand and CatalogType.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ICatalogService.cs:10-11",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/CatalogService.cs:38-38"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-079",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms",
+"agentTaskId": "reader-071",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItem entity is represented by a model used in the list view binding.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Default.aspx:12-12"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-083",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models",
+"agentTaskId": "reader-076",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItem entity has properties for Id, Name, Description, Price, PictureFileName, and PictureUri.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:13-13"
+],
+"status": "Rejected"
+},
+{
+"text": "The CatalogItem entity has properties for AvailableStock, RestockThreshold, and MaxStockThreshold.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:43-45"
+],
+"status": "Rejected"
+},
+{
+"text": "The CatalogItem entity is linked to CatalogType via CatalogTypeId and CatalogType.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:30-31"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity is linked to CatalogBrand via CatalogBrandId and CatalogBrand.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:36-37"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity has properties for Id, Name, Description, Price, PictureFileName, and PictureUri.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:13-13",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:15-15",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:17-17",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:23-23",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:26-26",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:28-28"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity has properties for AvailableStock, RestockThreshold, and MaxStockThreshold.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:45-45",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:50-50",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:55-55"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity includes properties for OnReorder and TempImageName.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:60-60",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs:62-62"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-096",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+"agentTaskId": "reader-087",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem has an Id, AvailableStock, CatalogBrandId, CatalogTypeId, Description, MaxStockThreshold, Name (string, max 50), OnReorder (bool), PictureFileName, Price (decimal), and RestockThreshold.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:67-93"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem is seeded with 12 initial items, including specific product names, prices, and IDs.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:102-270"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-101",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-095",
+"confidence": "High",
+"claims": [
+{
+"text": "The service can retrieve all CatalogItems, optionally filtering by CatalogBrandId and CatalogTypeId",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:56-63"
+],
+"status": "Supported"
+},
+{
+"text": "When finding a CatalogItem by ID, its associated CatalogBrand and CatalogType are eagerly loaded by resolving foreign keys",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:35-39"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "ENT-104",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+"agentTaskId": "reader-097",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItem has an Id property.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:14-14"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem has Name and Description properties.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:16-18"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem has a Price property that must be a positive number with a maximum of two decimals and must be within the range of 0 to 9,999,999,999,999,999.99.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:21-24"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem has a PictureFileName property, which defaults to 'dummy.png' if not set.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:12-13"
+],
+"status": "Rejected"
+},
+{
+"text": "The CatalogItem has a CatalogTypeId and a navigation property CatalogType, representing its type.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:32-35"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem has a CatalogBrandId and a navigation property CatalogBrand, representing its brand.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:38-41"
+],
+"status": "Rejected"
+},
+{
+"text": "The CatalogItem has an AvailableStock property, which is the current quantity in stock and must be between 0 and 10,000,000.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:44-46"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem has a RestockThreshold property, which indicates the available stock level at which reordering should occur and must be between 0 and 10,000,000.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:49-51"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem has a MaxStockThreshold property, which represents the maximum number of units allowed in stock and must be between 0 and 10,000,000.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:54-56"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem has an OnReorder boolean property, which is true if the item is on reorder.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:60-62"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-139",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+"agentTaskId": "reader-123",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItem entity is mapped to the 'Catalog' table.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogDBContext.cs:59-60"
+],
+"status": "Supported"
+},
+{
+"text": "A CatalogItem must have an Id (which is database generated and required), Name (required, max length 50), Price (required), and PictureFileName (required).",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogDBContext.cs:61-76"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity has relationships to CatalogBrand (via CatalogBrandId) and CatalogType (via CatalogTypeId).",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogDBContext.cs:79-86"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-151",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services",
+"agentTaskId": "reader-136",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem has a property named PictureFileName.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ImageMockStorage.cs:16-16"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-168",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+"agentTaskId": "reader-151",
+"confidence": "High",
+"claims": [
+{
+"text": "The entity has an Id property of type int.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:14-14"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has a Name property of type string.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:16-16"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has a Description property of type string.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:18-18"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has a Price property of type decimal, which must be a positive number with a maximum of two decimals and is ranged between 0 and 9999999999999999.99.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:22-24"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has a PictureFileName property of type string which is initialized to 'dummy.png' when a new CatalogItem is instantiated.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:8-13"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has a PictureUri property of type string.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:29-29"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has a CatalogTypeId property of type int, displayed as 'Type'.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:32-35"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has a CatalogType property of type CatalogType, displayed as 'Type'.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:35-35"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has a CatalogBrandId property of type int, displayed as 'Brand'.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:38-38"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has a CatalogBrand property of type CatalogBrand, displayed as 'Brand'.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:41-41"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has an AvailableStock property of type int, which must be between 0 and 10,000,000.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:45-46"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has a RestockThreshold property of type int, which must be between 0 and 10,000,000.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:50-51"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has a MaxStockThreshold property of type int, which must be between 0 and 10,000,000 and represents the maximum number of units that can be in-stock.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:55-56"
+],
+"status": "Supported"
+},
+{
+"text": "The entity has an OnReorder property of type bool which indicates if the item is on reorder.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:61-61"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-183",
+"type": "ENT",
+"title": "CatalogItem Entity",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models",
+"agentTaskId": "reader-164",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem is represented by the CatalogItem class.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:14-14"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity maps to the 'Catalog' database table.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:59-59"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity has an Id which is required and is not database generated.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:61-65"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity must have a Name property which is required and has a maximum length of 50.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:67-69"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity must have a Price property which is required.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:71-72"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity must have a PictureFileName property which is required.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:74-75"
+],
+"status": "Supported"
+},
+{
+"text": "The properties PictureUri and TempImageName are ignored for mapping.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:77-78"
+],
+"status": "Supported"
+},
+{
+"text": "A CatalogItem is required to reference a CatalogBrand via CatalogBrandId.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:80-82"
+],
+"status": "Supported"
+},
+{
+"text": "A CatalogItem is required to reference a CatalogType via CatalogTypeId.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs:84-86"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-024",
+"type": "BR",
+"title": "Price Validation Rules",
+"area": "eShopLegacyMVCSolution/eShopPorted/Models",
+"agentTaskId": "reader-024",
+"confidence": "High",
+"claims": [
+{
+"text": "The Price property in CatalogItem must be a positive number with maximum two decimals.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:22-23"
+],
+"status": "Supported"
+},
+{
+"text": "The Price property in CatalogItem must be between 0 and 1,000,000.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:23-24"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-033",
+"type": "BR",
+"title": "Price Validation Rule",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+"agentTaskId": "reader-035",
+"confidence": "High",
+"claims": [
+{
+"text": "The price field validation requires a positive number with maximum two decimals.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItem.cs:22-24"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-026",
+"type": "BR",
+"title": "Service registration based on mock data flag",
+"area": "eShopLegacyMVCSolution/eShopPorted/Modules",
+"agentTaskId": "reader-025",
+"confidence": "High",
+"claims": [
+{
+"text": "If 'useMockData' is true, CatalogServiceMock is registered as a single instance of ICatalogService.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:18-23"
+],
+"status": "Supported"
+},
+{
+"text": "If 'useMockData' is false, CatalogService is registered as a scoped instance of ICatalogService.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:24-29"
+],
+"status": "Rejected"
+},
+{
+"text": "If the 'useMockData' flag is false, CatalogService is registered as an InstancePerLifetimeScope() for ICatalogService.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:25-29"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-035",
+"type": "BR",
+"title": "Service registration based on mock data flag",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Modules",
+"agentTaskId": "reader-036",
+"confidence": "High",
+"claims": [
+{
+"text": "If the constructor argument `useMockData` is true, `ICatalogService` is registered as a single instance using `CatalogServiceMock`.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Modules/ApplicationModule.cs:18-22"
+],
+"status": "Supported"
+},
+{
+"text": "If the constructor argument `useMockData` is false, `ICatalogService` is registered as a per-lifetime-scope instance using `CatalogService`.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Modules/ApplicationModule.cs:24-28"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-042",
+"type": "BR",
+"title": "Service registration based on mock data flag",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Modules",
+"agentTaskId": "reader-050",
+"confidence": "High",
+"claims": [
+{
+"text": "If useMockData is true, CatalogServiceMock is registered as ICatalogService as a single instance.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Modules/ApplicationModule.cs:18-22"
+],
+"status": "Supported"
+},
+{
+"text": "If useMockData is false, CatalogService is registered as ICatalogService with a lifetime scope per instance.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Modules/ApplicationModule.cs:24-28"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "BR-076",
+"type": "BR",
+"title": "Service registration based on mock data flag",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Modules",
+"agentTaskId": "reader-098",
+"confidence": "High",
+"claims": [
+{
+"text": "If `useMockData` is true, `CatalogServiceMock` is registered as `ICatalogService` with a single instance.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Modules/ApplicationModule.cs:18-22"
+],
+"status": "Supported"
+},
+{
+"text": "If `useMockData` is false, `CatalogService` is registered as `ICatalogService` with an `InstancePerLifetimeScope` scope.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Modules/ApplicationModule.cs:25-29"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-027",
+"type": "ENT",
+"title": "PaginatedItemsViewModel",
+"area": "eShopLegacyMVCSolution/eShopPorted/ViewModel",
+"agentTaskId": "reader-028",
+"confidence": "High",
+"claims": [
+{
+"text": "The class PaginatedItemsViewModel<TEntity> accepts any class TEntity.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/ViewModel/PaginatedItemsViewModel.cs:6-6"
+],
+"status": "Supported"
+},
+{
+"text": "The view model stores the current page number (ActualPage), the number of items per page (ItemsPerPage), the total count of items (TotalItems), and the total number of pages (TotalPages).",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/ViewModel/PaginatedItemsViewModel.cs:8-14"
+],
+"status": "Supported"
+},
+{
+"text": "The view model holds an enumerable collection of the entities (Data).",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/ViewModel/PaginatedItemsViewModel.cs:16-16"
+],
+"status": "Supported"
+},
+{
+"text": "The view model is constructed using the current page index, page size, total item count, and the data collection itself.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/ViewModel/PaginatedItemsViewModel.cs:18-25"
+],
+"status": "Supported"
+},
+{
+"text": "The TotalPages is calculated by taking the ceiling of the division of TotalItems by ItemsPerPage.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/ViewModel/PaginatedItemsViewModel.cs:23-23"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-041",
+"type": "ENT",
+"title": "PaginatedItemsViewModel",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/ViewModel",
+"agentTaskId": "reader-040",
+"confidence": "High",
+"claims": [
+{
+"text": "It is defined as a generic class PaginatedItemsViewModel<TEntity> where TEntity is a class.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/ViewModel/PaginatedItemsViewModel.cs:6-6"
+],
+"status": "Supported"
+},
+{
+"text": "It contains properties for ActualPage, ItemsPerPage, TotalItems, TotalPages, and Data.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/ViewModel/PaginatedItemsViewModel.cs:8-16"
+],
+"status": "Supported"
+},
+{
+"text": "It calculates TotalPages by taking the ceiling of TotalItems divided by ItemsPerPage.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/ViewModel/PaginatedItemsViewModel.cs:23-23"
+],
+"status": "Supported"
+},
+{
+"text": "It is instantiated with the current page index, the number of items per page, the total count of items, and the collection of data.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/ViewModel/PaginatedItemsViewModel.cs:18-25"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-056",
+"type": "ENT",
+"title": "PaginatedItemsViewModel",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services",
+"agentTaskId": "reader-052",
+"confidence": "High",
+"claims": [
+{
+"text": "The system can retrieve a paginated list of CatalogItems using specified page size and index.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/ICatalogService.cs:12-12"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-060",
+"type": "ENT",
+"title": "PaginatedItemsViewModel",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewModel",
+"agentTaskId": "reader-054",
+"confidence": "High",
+"claims": [
+{
+"text": "The view model stores the current page index as 'ActualPage'.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewModel/PaginatedItemsViewModel.cs:8-8"
+],
+"status": "Supported"
+},
+{
+"text": "The view model stores the number of items displayed per page as 'ItemsPerPage'.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewModel/PaginatedItemsViewModel.cs:10-10"
+],
+"status": "Supported"
+},
+{
+"text": "The view model stores the total number of items available as 'TotalItems'.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewModel/PaginatedItemsViewModel.cs:12-12"
+],
+"status": "Supported"
+},
+{
+"text": "The view model stores the total number of pages as 'TotalPages'.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewModel/PaginatedItemsViewModel.cs:14-14"
+],
+"status": "Supported"
+},
+{
+"text": "The view model exposes an enumerable collection of the data items, typed as TEntity.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewModel/PaginatedItemsViewModel.cs:16-16"
+],
+"status": "Supported"
+},
+{
+"text": "The view model is constructed with a page index, page size, total count, and the data collection.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewModel/PaginatedItemsViewModel.cs:18-18"
+],
+"status": "Supported"
+},
+{
+"text": "The total pages are calculated by taking the ceiling of (total count / page size).",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewModel/PaginatedItemsViewModel.cs:23-23"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-072",
+"type": "ENT",
+"title": "PaginatedItemsViewModel",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/ViewModel",
+"agentTaskId": "reader-067",
+"confidence": "High",
+"claims": [
+{
+"text": "The view model is generic, taking a type parameter TEntity which must be a class.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/ViewModel/PaginatedItemsViewModel.cs:6-6"
+],
+"status": "Supported"
+},
+{
+"text": "It holds the current page index (ActualPage), items per page (ItemsPerPage), the total number of items (TotalItems), and the total number of pages (TotalPages).",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/ViewModel/PaginatedItemsViewModel.cs:8-14"
+],
+"status": "Supported"
+},
+{
+"text": "It stores the actual collection of data (Data) as an IEnumerable<TEntity>.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/ViewModel/PaginatedItemsViewModel.cs:16-16"
+],
+"status": "Supported"
+},
+{
+"text": "The view model is initialized with a page index, page size, total item count, and the data collection.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/ViewModel/PaginatedItemsViewModel.cs:18-25"
+],
+"status": "Supported"
+},
+{
+"text": "TotalPages is calculated by taking the ceiling of the division of TotalItems by ItemsPerPage.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/ViewModel/PaginatedItemsViewModel.cs:23-23"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-091",
+"type": "ENT",
+"title": "PaginatedItemsViewModel",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/ViewModel",
+"agentTaskId": "reader-081",
+"confidence": "High",
+"claims": [
+{
+"text": "The class PaginatedItemsViewModel<TEntity> requires TEntity to be a class type.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/ViewModel/PaginatedItemsViewModel.cs:6-6"
+],
+"status": "Supported"
+},
+{
+"text": "The view model contains properties for the current page number (ActualPage), items per page (ItemsPerPage), total number of items (TotalItems), the total number of pages (TotalPages), and the collection of data (Data).",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/ViewModel/PaginatedItemsViewModel.cs:8-16"
+],
+"status": "Supported"
+},
+{
+"text": "The view model is constructed with the current page index, page size, total item count, and the data collection.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/ViewModel/PaginatedItemsViewModel.cs:18-18"
+],
+"status": "Supported"
+},
+{
+"text": "The TotalPages is calculated by taking the ceiling of the division between TotalItems and ItemsPerPage.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/ViewModel/PaginatedItemsViewModel.cs:23-23"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-040",
+"type": "FEAT",
+"title": "View Catalog Item Details",
+"area": "eShopLegacyMVCSolution/eShopPorted/Views",
+"agentTaskId": "reader-029",
+"confidence": "High",
+"claims": [
+{
+"text": "The Details page displays the item's PictureUri.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:11-11"
+],
+"status": "Supported"
+},
+{
+"text": "The page displays the item's Name, Description, Price, Available Stock, Restock Threshold, and Max Stock Threshold.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:19-19",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:26-26",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:50-50",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:66-66",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:74-74",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:82-82"
+],
+"status": "Supported"
+},
+{
+"text": "The page displays the associated Catalog Brand Name and Catalog Type.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:34-34",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:42-42"
+],
+"status": "Supported"
+},
+{
+"text": "From the Details page, users can link to the Edit or Index pages.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:88-90"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-050",
+"type": "FEAT",
+"title": "View Catalog Item Details",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers",
+"agentTaskId": "reader-034",
+"confidence": "High",
+"claims": [
+{
+"text": "The Details action retrieves a single CatalogItem by its ID and displays it if found.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:31-45"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogController Details action retrieves a catalog item by ID and returns its view if found.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:31-45"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-076",
+"type": "FEAT",
+"title": "View catalog item details",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+"agentTaskId": "reader-047",
+"confidence": "High",
+"claims": [
+{
+"text": "The Details page displays all properties of a catalog item, including Name, Description, Price, Stock, etc.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx:14-15, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx:21-22, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx:41-42, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx:55-56, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx:62-63"
+],
+"status": "CitationInvalid"
+},
+{
+"text": "From the Details page, users can navigate to Edit or back to the list.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx:76-80"
+],
+"status": "Supported"
+},
+{
+"text": "The area contains files for viewing catalog item details (Details.aspx.designer.cs).",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx.designer.cs:1-17"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-116",
+"type": "FEAT",
+"title": "View Catalog Item Details",
+"area": "eShopLegacyMVCSolution/eShopPorted/Views",
+"agentTaskId": "reader-089",
+"confidence": "High",
+"claims": [
+{
+"text": "The Details page displays Name, Description, Catalog Brand, Catalog Type, Price, PictureFileName, AvailableStock, RestockThreshold, and MaxStockThreshold.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:18-18",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:26-26",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:34-34",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:42-42",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:50-50",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:58-58",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:66-66",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:74-74",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:82-82"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-139",
+"type": "FEAT",
+"title": "View Catalog Item Details",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+"agentTaskId": "reader-125",
+"confidence": "High",
+"claims": [
+{
+"text": "The page requires an 'id' in the route data to load the specific catalog item.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.cs:19-19"
+],
+"status": "Supported"
+},
+{
+"text": "The page retrieves the catalog item using the CatalogService based on the ID from the route data.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.cs:21-21"
+],
+"status": "Supported"
+},
+{
+"text": "The page binds the retrieved catalog item data to the view.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.cs:23-23"
+],
+"status": "Rejected"
+},
+{
+"text": "The page loads a catalog item whose ID is provided in the route data.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.cs:19-20"
+],
+"status": "Supported"
+},
+{
+"text": "The system fetches the catalog item using the CatalogService with the provided product ID.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.cs:21-21"
+],
+"status": "Supported"
+},
+{
+"text": "The page calls DataBind() to render the view.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.cs:23-23"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-180",
+"type": "FEAT",
+"title": "View Catalog Item Details",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers",
+"agentTaskId": "reader-184",
+"confidence": "High",
+"claims": [
+{
+"text": "The Details action retrieves a CatalogItem by ID, returns a 400 Bad Request if no ID is provided, and returns 404 Not Found if the item does not exist.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:31-41"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "INT-022",
+"type": "INT",
+"title": "Logging Integration",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers",
+"agentTaskId": "reader-034",
+"confidence": "High",
+"claims": [
+{
+"text": "Controllers utilize a static ILog instance to record information about loading, processing, and disposing.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:12-13",
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/Api/CatalogController.cs:12-12"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "INT-028",
+"type": "INT",
+"title": "Logging Integration",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+"agentTaskId": "reader-045",
+"confidence": "High",
+"claims": [
+{
+"text": "Page load events for About and Contact pages log a message using the ILog instance.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.cs:13-13",
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.cs:13-13"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "INT-068",
+"type": "INT",
+"title": "Logging Integration",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+"agentTaskId": "reader-118",
+"confidence": "High",
+"claims": [
+{
+"text": "Logging is configured to write to a rolling file named myapp.log, capped at 5 rollbacks and 10MB each.",
+"citations": [
+"log4Net.xml:6-12"
+],
+"status": "CitationInvalid"
+},
+{
+"text": "Log entries include the activity ID and request information in the pattern.",
+"citations": [
+"log4Net.xml:14-14"
+],
+"status": "CitationInvalid"
+}
+]
+},
+{
+"id": "FEAT-057",
+"type": "FEAT",
+"title": "Catalog Item ID Generation",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+"agentTaskId": "reader-035",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItemHiLoGenerator provides a method to fetch the next sequence value by interacting with the database.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItemHiLoGenerator.cs:16-31"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-138",
+"type": "FEAT",
+"title": "Catalog Item ID Generation",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-124",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItemHiLoGenerator class provides a method `GetNextSequenceValue(CatalogDBContext db)` to retrieve the next sequence ID.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItemHiLoGenerator.cs:13-13"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "BR-036",
+"type": "BR",
+"title": "Logging Configuration",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Properties",
+"agentTaskId": "reader-037",
+"confidence": "High",
+"claims": [
+{
+"text": "The assembly configuration includes loading 'log4net.xml' via log4net.Config.XmlConfigurator.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Properties/AssemblyInfo.cs:37-37"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-056",
+"type": "BR",
+"title": "Logging Configuration",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Properties",
+"agentTaskId": "reader-064",
+"confidence": "High",
+"claims": [
+{
+"text": "The assembly is configured to use log4net.xml for configuration.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Properties/AssemblyInfo.cs:37-37"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-068",
+"type": "BR",
+"title": "Logging Configuration",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Properties",
+"agentTaskId": "reader-078",
+"confidence": "High",
+"claims": [
+{
+"text": "The assembly has an attribute that configures log4net to use 'log4net.xml' as its configuration file.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Properties/AssemblyInfo.cs:37-37"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "BR-120",
+"type": "BR",
+"title": "Logging Configuration",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms",
+"agentTaskId": "reader-168",
+"confidence": "High",
+"claims": [
+{
+"text": "The root logger is set to capture all log levels ('ALL').",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/log4Net.xml:3-3"
+],
+"status": "Supported"
+},
+{
+"text": "The configuration allows for an appender named 'azureAppendBlobAppender' which is currently commented out and requires a connection string.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/log4Net.xml:10-15"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-059",
+"type": "FEAT",
+"title": "View Paginated Catalog Items",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services",
+"agentTaskId": "reader-038",
+"confidence": "High",
+"claims": [
+{
+"text": "ICatalogService provides a method to get catalog items in paginated view, requiring page size and index.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/ICatalogService.cs:12-12"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogService retrieves a paginated list of catalog items, including related brands and types.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs:21-35"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogServiceMock provides paginated catalog items based on preconfigured data.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogServiceMock.cs:19-31"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-063",
+"type": "FEAT",
+"title": "View paginated catalog items",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
+"agentTaskId": "reader-041",
+"confidence": "High",
+"claims": [
+{
+"text": "The catalog list shows a summary of items, indicating 'Showing [ItemsPerPage] of [TotalItems] products - Page [ActualPage + 1] - [TotalPages]'.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml:29-30"
+],
+"status": "Supported"
+},
+{
+"text": "The interface allows navigating to the previous and next pages of the catalog.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml:21-22",
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml:34-35"
+],
+"status": "Supported"
+},
+{
+"text": "Catalog items are displayed in paginated form, showing 10 items per page.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml:29-30"
+],
+"status": "Supported"
+},
+{
+"text": "The user can navigate to the previous page if available.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml:21-26"
+],
+"status": "Supported"
+},
+{
+"text": "The user can navigate to the next page if available.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml:33-39"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-123",
+"type": "FEAT",
+"title": "View Paginated Catalog Items",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services",
+"agentTaskId": "reader-092",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogService provides a method to get catalog items with pagination, including catalog brand and type.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs:21-35"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-061",
+"type": "FEAT",
+"title": "Manage Catalog Items",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services",
+"agentTaskId": "reader-038",
+"confidence": "High",
+"claims": [
+{
+"text": "ICatalogService defines methods for creating, updating, and removing a catalog item.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/ICatalogService.cs:14-14",
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/ICatalogService.cs:15-15",
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/ICatalogService.cs:16-16"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogService creates a new catalog item, assigning a new ID via a sequence generator, and persisting changes to the database.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs:51-55"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogService updates an existing catalog item by setting its state to Modified and saving changes.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs:58-62"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogService removes a catalog item by instructing the database context to remove it and saving changes.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs:64-67"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogServiceMock simulates item creation by assigning a new ID greater than the current maximum ID in the mock list.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogServiceMock.cs:48-53"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogServiceMock simulates item updates by replacing the original item in the in-memory list if it exists.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogServiceMock.cs:55-61"
+],
+"status": "Supported"
+},
+{
+"text": "A catalog item is created via a method that assigns a generated ID before saving to the database.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs:51-56"
+],
+"status": "Supported"
+},
+{
+"text": "An existing catalog item can be updated by marking its state as modified and saving changes.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs:58-61"
+],
+"status": "Supported"
+},
+{
+"text": "A catalog item can be removed from the database.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs:64-67"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-107",
+"type": "FEAT",
+"title": "Manage Catalog Items",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services",
+"agentTaskId": "reader-079",
+"confidence": "High",
+"claims": [
+{
+"text": "New catalog items are created by passing a CatalogItem object to the service, which assigns a generated ID before saving.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/ICatalogService.cs:14-14",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/CatalogService.cs:50-54"
+],
+"status": "Supported"
+},
+{
+"text": "Existing catalog items can be updated by passing the modified item to the service.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/ICatalogService.cs:15-15",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/CatalogService.cs:57-61"
+],
+"status": "Supported"
+},
+{
+"text": "Catalog items can be removed from the system.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/ICatalogService.cs:16-16",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/CatalogService.cs:63-66"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-148",
+"type": "FEAT",
+"title": "Manage Catalog Items",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services",
+"agentTaskId": "reader-140",
+"confidence": "High",
+"claims": [
+{
+"text": "The service allows creating a new CatalogItem.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/ICatalogService.cs:14-14"
+],
+"status": "Supported"
+},
+{
+"text": "The service allows updating an existing CatalogItem.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/ICatalogService.cs:15-15"
+],
+"status": "Supported"
+},
+{
+"text": "The service allows removing a CatalogItem.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/ICatalogService.cs:16-16"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-162",
+"type": "FEAT",
+"title": "Manage Catalog Item",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-149",
+"confidence": "High",
+"claims": [
+{
+"text": "Catalog items can be created, where the service assigns a new Id by finding the maximum existing Id and incrementing it.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:65-71"
+],
+"status": "Supported"
+},
+{
+"text": "Catalog items can be updated by setting the entity state to Modified and saving changes.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:73-76"
+],
+"status": "Supported"
+},
+{
+"text": "Catalog items can be removed by adding them to the collection and saving changes.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:79-82"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "ENT-037",
+"type": "ENT",
+"title": "CatalogItem Entity Structure",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services",
+"agentTaskId": "reader-038",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem can be retrieved from the database context, and the service methods load its related CatalogBrand and CatalogType.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs:26-27",
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs:39-39"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogServiceMock reconstructs the CatalogItem entities by assigning preconfigured CatalogBrand and CatalogType objects during retrieval.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogServiceMock.cs:77-78"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem can be retrieved with its associated CatalogBrand and CatalogType.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs:26-27"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-200",
+"type": "ENT",
+"title": "CatalogItem entity structure",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers",
+"agentTaskId": "reader-184",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItem entity is bound to include Name, Description, Price, PictureFileName, CatalogTypeId, CatalogBrandId, AvailableStock, RestockThreshold, and MaxStockThreshold during creation and editing.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:62-63",
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:100-101"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity has a PictureUri property which is set to a URL constructed using a specific route for picture retrieval.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:162-162"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-038",
+"type": "ENT",
+"title": "CatalogBrand",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Setup",
+"agentTaskId": "reader-039",
+"confidence": "High",
+"claims": [
+{
+"text": "Catalog brands listed include Azure, .NET, Visual Studio, SQL Server, and Other.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Setup/CatalogBrands.csv:2-7"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-054",
+"type": "ENT",
+"title": "CatalogBrand",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services",
+"agentTaskId": "reader-052",
+"confidence": "High",
+"claims": [
+{
+"text": "The system can retrieve a list of all available CatalogBrands.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/ICatalogService.cs:11-11"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-063",
+"type": "ENT",
+"title": "CatalogBrand",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-062",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogBrand entity has an Id (property) and a Brand (property).",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogBrand.cs:5-5",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogBrand.cs:6-6"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogBrands are managed through the CatalogDBContext.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogDBContext.cs:17-17"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-088",
+"type": "ENT",
+"title": "CatalogBrand",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Setup",
+"agentTaskId": "reader-080",
+"confidence": "High",
+"claims": [
+{
+"text": "The system defines catalog brands, such as 'Azure', '.NET', 'Visual Studio', 'SQL Server', and 'Other'.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Setup/CatalogBrands.csv:2-6"
+],
+"status": "Supported"
+},
+{
+"text": "Each entry in CatalogBrands.csv lists a 'CatalogBrand' type.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Setup/CatalogBrands.csv:1-1"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "ENT-106",
+"type": "ENT",
+"title": "CatalogBrand",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services",
+"agentTaskId": "reader-099",
+"confidence": "High",
+"claims": [
+{
+"text": "The service allows retrieving all CatalogBrands.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/ICatalogService.cs:11-11"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-109",
+"type": "ENT",
+"title": "CatalogBrand",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-103",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogBrand entity can be populated from a CSV file named CatalogBrands.csv located in the Setup directory if customization data is enabled.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs:129-148"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogBrand CSV files must contain a 'catalogbrand' header and the brand name must not be empty.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs:141-158"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-115",
+"type": "ENT",
+"title": "CatalogBrand",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Setup",
+"agentTaskId": "reader-113",
+"confidence": "Medium",
+"claims": [
+{
+"text": "The file CatalogBrands.csv contains a header row defining 'CatalogBrand'.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Setup/CatalogBrands.csv:1-1"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogBrands.csv contains data entries which include 'Azure', '.NET', 'Visual Studio', 'SQL Server', 'Other', 'CatalogBrandTestOne', and 'CatalogBrandTestTwo'.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Setup/CatalogBrands.csv:2-8"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-135",
+"type": "ENT",
+"title": "CatalogBrand",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models",
+"agentTaskId": "reader-122",
+"confidence": "High",
+"claims": [
+{
+"text": "Preconfigured catalog brands include Id and Brand.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/Infrastructure/PreconfiguredData.cs:33-33"
+],
+"status": "Supported"
+},
+{
+"text": "There are at least 5 preconfigured catalog brands available, with specific names like 'Azure', '.NET', 'Visual Studio', 'SQL Server', and 'Other'.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/Infrastructure/PreconfiguredData.cs:31-38"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-140",
+"type": "ENT",
+"title": "CatalogBrand",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-124",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogBrand contains an integer Id and a string Brand.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogBrand.cs:5-6"
+],
+"status": "Supported"
+},
+{
+"text": "Preconfigured data includes 5 catalog brands with predefined IDs and names.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/PreconfiguredData.cs:28-35"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-171",
+"type": "ENT",
+"title": "CatalogBrand",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-154",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogBrand entity is represented by the CatalogBrand class (implied by usage in CatalogItem).",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:35-35"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogBrand entity has a property 'Brand' which stores the brand name.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs:161-162"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-039",
+"type": "ENT",
+"title": "CatalogType",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Setup",
+"agentTaskId": "reader-039",
+"confidence": "High",
+"claims": [
+{
+"text": "Defined catalog types include Mug, T-Shirt, Sheet, and USB Memory Stick.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Setup/CatalogTypes.csv:2-5"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-055",
+"type": "ENT",
+"title": "CatalogType",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services",
+"agentTaskId": "reader-052",
+"confidence": "High",
+"claims": [
+{
+"text": "The system can retrieve a list of all available CatalogTypes.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/ICatalogService.cs:13-13"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-064",
+"type": "ENT",
+"title": "CatalogType",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-062",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogType entity has an Id (property) and a Type (property).",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogType.cs:5-5",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogType.cs:6-6"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogTypes are managed through the CatalogDBContext.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogDBContext.cs:19-19"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-089",
+"type": "ENT",
+"title": "CatalogType",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Setup",
+"agentTaskId": "reader-080",
+"confidence": "High",
+"claims": [
+{
+"text": "The system defines catalog types like 'Mug', 'T-Shirt', 'Sheet', and 'USB Memory Stick'.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Setup/CatalogTypes.csv:2-5"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-107",
+"type": "ENT",
+"title": "CatalogType",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services",
+"agentTaskId": "reader-099",
+"confidence": "High",
+"claims": [
+{
+"text": "The service allows retrieving all CatalogTypes.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/ICatalogService.cs:13-13"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-110",
+"type": "ENT",
+"title": "CatalogType",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-103",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogType entity can be populated from a CSV file named CatalogTypes.csv located in the Setup directory if customization data is enabled.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs:93-112"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogType CSV files must contain a 'catalogtype' header and the type name must not be empty.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs:105-121"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "ENT-136",
+"type": "ENT",
+"title": "CatalogType",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models",
+"agentTaskId": "reader-122",
+"confidence": "High",
+"claims": [
+{
+"text": "Preconfigured catalog types include Id and Type.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/Infrastructure/PreconfiguredData.cs:45-45"
+],
+"status": "Supported"
+},
+{
+"text": "There are at least 4 preconfigured catalog types available, such as 'Mug', 'T-Shirt', and 'Sheet'.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/Infrastructure/PreconfiguredData.cs:43-48"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-141",
+"type": "ENT",
+"title": "CatalogType",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-124",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogType contains an integer Id and a string Type.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogType.cs:5-6"
+],
+"status": "Supported"
+},
+{
+"text": "Preconfigured data includes 4 catalog types with predefined IDs and Type names.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/PreconfiguredData.cs:40-45"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogType entity maps to the table named \"CatalogType\".",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogDBContext.cs:32-32"
+],
+"status": "Supported"
+},
+{
+"text": "The Id field of CatalogType is the primary key and is required.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogDBContext.cs:34-37"
+],
+"status": "Supported"
+},
+{
+"text": "The Type field of CatalogType is required and has a maximum length of 100 characters.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogDBContext.cs:40-41"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-172",
+"type": "ENT",
+"title": "CatalogType",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-154",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogType entity is represented by the CatalogType class (implied by usage in CatalogItem).",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:29-29"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogType entity has a property 'Type' which stores the type name.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs:125-126"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-040",
+"type": "ENT",
+"title": "CatalogItem",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Setup",
+"agentTaskId": "reader-039",
+"confidence": "High",
+"claims": [
+{
+"text": "Each catalog item has attributes for CatalogTypeName, CatalogBrandName, Description, Name, Price, PictureFileName, availablestock, and onreorder status.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Setup/CatalogItems.csv:1-1"
+],
+"status": "Supported"
+},
+{
+"text": "Some catalog items have an available stock of 0.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Setup/CatalogItems.csv:13-13"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-053",
+"type": "ENT",
+"title": "CatalogItem",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services",
+"agentTaskId": "reader-052",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem has properties that reference CatalogBrand and CatalogType.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/ICatalogService.cs:12-12"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "ENT-062",
+"type": "ENT",
+"title": "CatalogItem",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers",
+"agentTaskId": "reader-059",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItem model has properties for Name, Description, Price, AvailableStock, RestockThreshold, MaxStockThreshold, and OnReorder.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs:71-71"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem model links to a Brand via CatalogBrandId and a Type via CatalogTypeId.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs:71-71"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-065",
+"type": "ENT",
+"title": "CatalogItem",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-062",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItem entity has properties for Id, Name, Description, Price, PictureFileName, PictureUri, CatalogTypeId, CatalogType, CatalogBrandId, CatalogBrand, AvailableStock, RestockThreshold, MaxStockThreshold, and OnReorder.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:7-10",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:12-12",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:15-18",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:20-21",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:23-23",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:25-26",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:28-29",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:31-32",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:34-35",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:38-40",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:43-45",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:48-50",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:55-55"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem references CatalogType via CatalogTypeId and CatalogType property.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:25-26",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:28-29"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem references CatalogBrand via CatalogBrandId and CatalogBrand property.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:31-32",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:34-35"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-090",
+"type": "ENT",
+"title": "CatalogItem",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Setup",
+"agentTaskId": "reader-080",
+"confidence": "High",
+"claims": [
+{
+"text": "Each catalog item is defined with its 'CatalogTypeName', 'CatalogBrandName', 'Description', 'Name', 'Price', 'PictureFileName', 'availablestock', and 'onreorder' status.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Setup/CatalogItems.csv:1-1"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-105",
+"type": "ENT",
+"title": "CatalogItem",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services",
+"agentTaskId": "reader-099",
+"confidence": "High",
+"claims": [
+{
+"text": "The service supports finding a CatalogItem by its ID.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/ICatalogService.cs:10-10"
+],
+"status": "Supported"
+},
+{
+"text": "The service supports creating a CatalogItem.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/ICatalogService.cs:14-14"
+],
+"status": "Supported"
+},
+{
+"text": "The service supports updating an existing CatalogItem.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/ICatalogService.cs:15-15"
+],
+"status": "Supported"
+},
+{
+"text": "The service supports removing a CatalogItem.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/ICatalogService.cs:16-16"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-111",
+"type": "ENT",
+"title": "CatalogItem",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-103",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItem entity can be populated from a CSV file named CatalogItems.csv located in the Setup directory if customization data is enabled.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs:165-188"
+],
+"status": "Rejected"
+},
+{
+"text": "CatalogItem creation from CSV requires 'catalogtypename', 'catalogbrandname', 'description', 'name', 'price', and 'pictureFileName' headers.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs:175-177"
+],
+"status": "Supported"
+},
+{
+"text": "The price must be a valid decimal number.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs:210-213"
+],
+"status": "Supported"
+},
+{
+"text": "Optional fields such as 'availablestock', 'restockthreshold', 'maxstockthreshold', and 'onreorder' can be read from the CSV and parsed if present.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs:225-291"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-134",
+"type": "ENT",
+"title": "CatalogItem",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models",
+"agentTaskId": "reader-122",
+"confidence": "High",
+"claims": [
+{
+"text": "Preconfigured catalog items include fields such as Id, CatalogTypeId, CatalogBrandId, AvailableStock, Description, Name, Price, and PictureFileName.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/Infrastructure/PreconfiguredData.cs:14-14"
+],
+"status": "Supported"
+},
+{
+"text": "There are at least 12 preconfigured catalog items available.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/Infrastructure/PreconfiguredData.cs:12-26"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-142",
+"type": "ENT",
+"title": "CatalogItem",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-124",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem requires a Name and has properties for Description, Price, PictureFileName, and PictureUri.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:10-13",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:15-18"
+],
+"status": "Supported"
+},
+{
+"text": "The Price field must be a positive number with a maximum of two decimals and must be between 0 and 1,000,000.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:15-16"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem includes fields for AvailableStock, RestockThreshold, and MaxStockThreshold, all constrained to be between 0 and 10,000,000.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:39-49"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem can be marked as OnReorder, which is a boolean flag.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:55-55"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem is linked to CatalogType via CatalogTypeId and the CatalogType property.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:26-29"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem is linked to CatalogBrand via CatalogBrandId and the CatalogBrand property.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:32-35"
+],
+"status": "Rejected"
+},
+{
+"text": "Preconfigured data contains 12 catalog items.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/PreconfiguredData.cs:9-23"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-149",
+"type": "ENT",
+"title": "CatalogItem",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers",
+"agentTaskId": "reader-133",
+"confidence": "Medium",
+"claims": [
+{
+"text": "The system expects a 'itemId' corresponding to a catalog item when uploading an image.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:31-31"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-162",
+"type": "ENT",
+"title": "CatalogItem",
+"area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers",
+"agentTaskId": "reader-147",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItem entity is passed to CreateUriPlaceholder method to have its PictureUri updated.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:156-156"
+],
+"status": "Rejected"
+},
+{
+"text": "CatalogItem properties like Name, Description, Price, PictureFileName, CatalogTypeId, and CatalogBrandId are used during creation and editing.",
+"citations": [
+"eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:62-64"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-173",
+"type": "ENT",
+"title": "CatalogItem",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+"agentTaskId": "reader-154",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem has an 'Id' property of type int.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:7-7"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem has properties for Name, Description, Price, PictureFileName, and PictureUri.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:10-23"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem stores inventory information, including 'AvailableStock', 'RestockThreshold', and 'MaxStockThreshold'.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:38-50"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem is linked to CatalogBrand via 'CatalogBrandId' and the 'CatalogBrand' property.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:32-35"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem is linked to CatalogType via 'CatalogTypeId' and the 'CatalogType' property.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs:26-29"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-043",
+"type": "ENT",
+"title": "Catalog Brand Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-043",
+"confidence": "High",
+"claims": [
+{
+"text": "A model for a CatalogBrand exists.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs:1-21"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-069",
+"type": "ENT",
+"title": "Catalog Brands Entity",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Setup",
+"agentTaskId": "reader-066",
+"confidence": "High",
+"claims": [
+{
+"text": "The catalog brands include 'Azure', '.NET', 'Visual Studio', and 'SQL Server'.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Setup/CatalogBrands.csv:2-5"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-117",
+"type": "ENT",
+"title": "Catalog Brand Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-116",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogBrand has an Id (int) and a Brand (string) property.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs:15-15"
+],
+"status": "Rejected"
+},
+{
+"text": "Preconfigured data provides a list of catalog brands, including 'Azure', '.NET', 'Visual Studio', 'SQL Server', and 'Other'.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs:33-38"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-128",
+"type": "ENT",
+"title": "Catalog Brands Entity",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+"agentTaskId": "reader-118",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogBrand is a recognized entity within the data context.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:16-16"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-163",
+"type": "ENT",
+"title": "Catalog Brand Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-149",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogBrand has an Id (int) property.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs:15-15"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogBrand has a Brand (string) property which is limited to 50 characters.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs:17-19"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-201",
+"type": "ENT",
+"title": "Catalog Brand Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-186",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogBrand is an entity stored in the database context.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:51-53"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-217",
+"type": "ENT",
+"title": "Catalog Brand Entity",
+"area": "eShopModernizedNTier",
+"agentTaskId": "reader-200",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogBrand entity is defined in src/eShopWCFService/Models/CatalogBrand.cs.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogBrand.cs:1-21"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogBrand entity appears to be represented by an entity defined in src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource.",
+"citations": [
+"eShopModernizedNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource:1-10"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-044",
+"type": "ENT",
+"title": "Catalog Item Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-043",
+"confidence": "High",
+"claims": [
+{
+"text": "A model for CatalogItem exists, including fields for CatalogBrandId and CatalogTypeId.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs:1-37"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-071",
+"type": "ENT",
+"title": "Catalog Items Entity",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Setup",
+"agentTaskId": "reader-066",
+"confidence": "High",
+"claims": [
+{
+"text": "Each catalog item record includes columns for CatalogTypeName, CatalogBrandName, Description, Name, Price, PictureFileName, availablestock, and onreorder.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Setup/CatalogItems.csv:1-1"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-118",
+"type": "ENT",
+"title": "Catalog Item Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-116",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem has Id (int), Description (string), Name (string), Price (decimal/double), and Picturefilename (string) properties.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs:15-18"
+],
+"status": "Rejected"
+},
+{
+"text": "Preconfigured data provides a list of catalog items with specific IDs, descriptions, names, prices, and picture filenames.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs:14-26"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-127",
+"type": "ENT",
+"title": "Catalog Items Entity",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+"agentTaskId": "reader-118",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem is a defined entity.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:14-14"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-130",
+"type": "ENT",
+"title": "Catalog Item Entity",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+"agentTaskId": "reader-118",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem is a recognized entity within the data context.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:14-14"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-164",
+"type": "ENT",
+"title": "Catalog Item Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-149",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItem has an Id (int) property.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs:15-15"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem has a Description (string) property.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs:17-17"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem has a Name (string) property.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs:18-18"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem has a Price (decimal) property, which uses the 'money' type in the database.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs:21-23"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem has a Picturefilename (string) property.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs:24-25"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItem includes foreign keys CatalogBrandId (int) and CatalogTypeId (int).",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs:27-29"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-202",
+"type": "ENT",
+"title": "Catalog Item Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-186",
+"confidence": "High",
+"claims": [
+{
+"text": "A CatalogItem entity has properties including Id, CatalogBrandId, and CatalogTypeId.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:35-36"
+],
+"status": "Rejected"
+},
+{
+"text": "A CatalogItem can be associated with its CatalogBrand and CatalogType upon retrieval.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:38-39"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-045",
+"type": "ENT",
+"title": "Catalog Type Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-043",
+"confidence": "High",
+"claims": [
+{
+"text": "A model for CatalogType exists.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs:1-21"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-070",
+"type": "ENT",
+"title": "Catalog Types Entity",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Setup",
+"agentTaskId": "reader-066",
+"confidence": "High",
+"claims": [
+{
+"text": "The defined catalog types are 'Mug', 'T-Shirt', 'Sheet', and 'USB Memory Stick'.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Setup/CatalogTypes.csv:2-5"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-119",
+"type": "ENT",
+"title": "Catalog Type Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-116",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogType has an Id (int) and a Type (string) property, where Type is restricted to 50 characters.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs:19-19"
+],
+"status": "Rejected"
+},
+{
+"text": "Preconfigured data provides a list of catalog types, including 'Mug', 'T-Shirt', 'Sheet', and 'USB Memory Stick'.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs:58-61"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-129",
+"type": "ENT",
+"title": "Catalog Types Entity",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+"agentTaskId": "reader-118",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogType is a recognized entity within the data context.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:18-18"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-165",
+"type": "ENT",
+"title": "Catalog Type Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-149",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogType has an Id (int) property.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs:15-15"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogType has a Type (string) property which is limited to 50 characters.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs:17-19"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-203",
+"type": "ENT",
+"title": "Catalog Type Entity",
+"area": "eShopLegacyNTier/src",
+"agentTaskId": "reader-186",
+"confidence": "High",
+"claims": [
+{
+"text": "The service can retrieve a list of all CatalogTypes.",
+"citations": [
+"eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:46-48"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-049",
+"type": "ENT",
+"title": "Catalog Brand",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models",
+"agentTaskId": "reader-049",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogBrand has an identifier (Id) and a brand name (Brand).",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogBrand.cs:10-12"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-057",
+"type": "ENT",
+"title": "Catalog Brands",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Setup",
+"agentTaskId": "reader-053",
+"confidence": "High",
+"claims": [
+{
+"text": "Catalog brands include 'Azure', '.NET', 'Visual Studio', 'SQL Server', and 'Other'.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Setup/CatalogBrands.csv:2-6"
+],
+"status": "Supported"
+},
+{
+"text": "Test brands 'CatalogBrandTestOne' and 'CatalogBrandTestTwo' are also present in the catalog brands data.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Setup/CatalogBrands.csv:7-8"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-073",
+"type": "ENT",
+"title": "Catalog Brand",
+"area": "eShopModernizedNTier",
+"agentTaskId": "reader-069",
+"confidence": "High",
+"claims": [
+{
+"text": "The system defines a CatalogBrand entity.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogBrand.cs:1-21"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-122",
+"type": "ENT",
+"title": "Catalog Brand",
+"area": "eShopModernizedNTier",
+"agentTaskId": "reader-117",
+"confidence": "High",
+"claims": [
+{
+"text": "The Catalog Brand entity exists as a Data Contract.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogBrand.cs:10-21"
+],
+"status": "Supported"
+},
+{
+"text": "Preconfigured data includes brands such as 'Azure' (Id=1), '.NET' (Id=2), 'Visual Studio' (Id=3), 'SQL Server' (Id=4), and 'Other' (Id=5).",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs:31-38"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-186",
+"type": "ENT",
+"title": "Catalog Brand",
+"area": "eShopModernizedNTier",
+"agentTaskId": "reader-171",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogBrand is defined in eShopModernizedNTier/src/eShopWCFService/Models/CatalogBrand.cs:2-5",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogBrand.cs:2-5"
+],
+"status": "Rejected"
+},
+{
+"text": "A data source is associated with CatalogBrand in eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource:1-3",
+"citations": [
+"eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource:1-3"
+],
+"status": "CitationInvalid"
+}
+]
+},
+{
+"id": "ENT-050",
+"type": "ENT",
+"title": "Catalog Type",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models",
+"agentTaskId": "reader-049",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogType has an identifier (Id) and a Type string.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogType.cs:10-12"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-059",
+"type": "ENT",
+"title": "Catalog Types",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Setup",
+"agentTaskId": "reader-053",
+"confidence": "High",
+"claims": [
+{
+"text": "Defined catalog types include 'Mug', 'T-Shirt', and 'Sheet'.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Setup/CatalogTypes.csv:2-4"
+],
+"status": "Supported"
+},
+{
+"text": "Other catalog types listed include 'USB Memory Stick' and test entries.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Setup/CatalogTypes.csv:5-7"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-075",
+"type": "ENT",
+"title": "Catalog Type",
+"area": "eShopModernizedNTier",
+"agentTaskId": "reader-069",
+"confidence": "High",
+"claims": [
+{
+"text": "The system defines a CatalogType entity.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogType.cs:1-21"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-124",
+"type": "ENT",
+"title": "Catalog Type",
+"area": "eShopModernizedNTier",
+"agentTaskId": "reader-117",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogType entity exists as a Data Contract.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogType.cs:10-21"
+],
+"status": "Supported"
+},
+{
+"text": "Preconfigured catalog types include 'Mug' (Id=1), 'T-Shirt' (Id=2), 'Sheet' (Id=3), and 'USB Memory Stick' (Id=4).",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs:57-61"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-188",
+"type": "ENT",
+"title": "Catalog Type",
+"area": "eShopModernizedNTier",
+"agentTaskId": "reader-171",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogType is defined in eShopModernizedNTier/src/eShopWCFService/Models/CatalogType.cs:2-21",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogType.cs:2-21"
+],
+"status": "Rejected"
+},
+{
+"text": "A data source is associated with CatalogType in eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogType.datasource:1-3",
+"citations": [
+"eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogType.datasource:1-3"
+],
+"status": "CitationInvalid"
+}
+]
+},
+{
+"id": "FEAT-079",
+"type": "FEAT",
+"title": "Find Catalog Item by ID",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services",
+"agentTaskId": "reader-052",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogService can find a CatalogItem by its ID.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/ICatalogService.cs:10-10"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-106",
+"type": "FEAT",
+"title": "Find Catalog Item by ID",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services",
+"agentTaskId": "reader-079",
+"confidence": "High",
+"claims": [
+{
+"text": "The system provides a method to find a catalog item given an ID, including its associated brand and type.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/ICatalogService.cs:10-10",
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/CatalogService.cs:36-38"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-147",
+"type": "FEAT",
+"title": "Find Catalog Item by ID",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services",
+"agentTaskId": "reader-140",
+"confidence": "High",
+"claims": [
+{
+"text": "The service exposes a method to find a CatalogItem by its ID.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/ICatalogService.cs:10-10"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-058",
+"type": "ENT",
+"title": "Catalog Items",
+"area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Setup",
+"agentTaskId": "reader-053",
+"confidence": "High",
+"claims": [
+{
+"text": "Catalog items have fields for CatalogTypeName, CatalogBrandName, Description, Name, Price, PictureFileName, availablestock, and onreorder.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Setup/CatalogItems.csv:1-1"
+],
+"status": "Supported"
+},
+{
+"text": "Example item 'Prism White T-Shirt' has a price of 12, a picture file named '3.png', is available in stock (56), and is not on reorder.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Setup/CatalogItems.csv:4-4"
+],
+"status": "Supported"
+},
+{
+"text": "Item 'Roslyn Red Sheet' has a price of 8.5, picture file '5.png', 55 units in stock, and is not on reorder.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Setup/CatalogItems.csv:6-6"
+],
+"status": "Supported"
+},
+{
+"text": "Item 'De los Palotes, pepito' is listed with a price of 12, picture file '12.png', and 0 units in stock.",
+"citations": [
+"eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Setup/CatalogItems.csv:14-14"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-074",
+"type": "ENT",
+"title": "Catalog Item",
+"area": "eShopModernizedNTier",
+"agentTaskId": "reader-069",
+"confidence": "High",
+"claims": [
+{
+"text": "The system defines a CatalogItem entity which has properties for Id, CatalogBrandId, and CatalogTypeId.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogItem.cs:1-37"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "ENT-123",
+"type": "ENT",
+"title": "Catalog Item",
+"area": "eShopModernizedNTier",
+"agentTaskId": "reader-117",
+"confidence": "High",
+"claims": [
+{
+"text": "The CatalogItem entity has properties for Id, Description, Name, Price, and Picturefilename.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogItem.cs:14-27"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity references its associated CatalogBrand via CatalogBrandId and CatalogBrand.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogItem.cs:27-36"
+],
+"status": "Supported"
+},
+{
+"text": "The CatalogItem entity references its associated CatalogType via CatalogTypeId and CatalogType.",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogItem.cs:29-32"
+],
+"status": "Supported"
+},
+{
+"text": "Preconfigured items include '.NET Bot Black Hoodie' (Id=1, Price=19.5M, Type=T-Shirt, Brand=.NET) and 'Cup<T> White Mug' (Id=9, Price=12, Type=Mug, Brand=Other).",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs:14-23"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "ENT-187",
+"type": "ENT",
+"title": "Catalog Item",
+"area": "eShopModernizedNTier",
+"agentTaskId": "reader-171",
+"confidence": "High",
+"claims": [
+{
+"text": "CatalogItemHiLoGenerator is defined in eShopModernizedNTier/src/eShopWCFService/Models/CatalogItemHiLoGenerator.cs:2-34",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogItemHiLoGenerator.cs:2-34"
+],
+"status": "Supported"
+},
+{
+"text": "CatalogItemsStock is defined in eShopModernizedNTier/src/eShopWCFService/Models/CatalogItemsStock.cs:2-27",
+"citations": [
+"eShopModernizedNTier/src/eShopWCFService/Models/CatalogItemsStock.cs:2-27"
+],
+"status": "Supported"
+},
+{
+"text": "A data source is associated with CatalogItem in eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogItem.datasource:1-3",
+"citations": [
+"eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogItem.datasource:1-3"
+],
+"status": "CitationInvalid"
+}
+]
+},
+{
+"id": "INT-035",
+"type": "INT",
+"title": "Database Service Definition",
+"area": "eShopModernizedMVCSolution",
+"agentTaskId": "reader-055",
+"confidence": "High",
+"claims": [
+{
+"text": "The 'sql.data' service uses the image 'microsoft/mssql-server-windows-developer' in docker-compose.yml:13.",
+"citations": [
+"eShopModernizedMVCSolution/docker-compose.yml:13-13"
+],
+"status": "Supported"
+},
+{
+"text": "The 'sql.data' service uses the image 'microsoft/mssql-server-windows-developer' in docker-compose.nobuild.yml:10.",
+"citations": [
+"eShopModernizedMVCSolution/docker-compose.nobuild.yml:10-10"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "INT-107",
+"type": "INT",
+"title": "Database Service Definition",
+"area": "VM",
+"agentTaskId": "reader-166",
+"confidence": "High",
+"claims": [
+{
+"text": "MVC configuration defines a `sql.data` service using a specific password and accepting the EULA.",
+"citations": [
+"VM/eShopModernizedMVC/docker-compose.override.yml:19-23"
+],
+"status": "Supported"
+},
+{
+"text": "WebForms configuration defines a `sqlwf.data` service using a specific password and accepting the EULA.",
+"citations": [
+"VM/eShopModernizedWebForms/docker-compose.override.yml:19-23"
+],
+"status": "Supported"
+},
+{
+"text": "Both services connect to the database via the `nat` external network.",
+"citations": [
+"VM/eShopModernizedMVC/docker-compose.override.yml:28-29",
+"VM/eShopModernizedWebForms/docker-compose.override.yml:28-29"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "SCRN-006",
+"type": "SCRN",
+"title": "Catalog Item Listing",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views",
+"agentTaskId": "reader-068",
+"confidence": "High",
+"claims": [
+{
+"text": "The page shows a button labeled 'Create New' to initiate item creation.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:9-10"
+],
+"status": "Supported"
+},
+{
+"text": "The page displays a paginated table of catalog items by including CatalogTable.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:12-13"
+],
+"status": "Rejected"
+},
+{
+"text": "The page displays pagination controls showing the current page, total items, and total pages.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:29-31"
+],
+"status": "Supported"
+},
+{
+"text": "Action Create New starts the handler Create.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:9-10",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:12-13",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:29-31"
+],
+"status": "Supported"
+},
+{
+"text": "The screen is at the route /Catalog/Index.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:9-10",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:12-13",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:29-31"
+],
+"status": "Rejected"
+},
+{
+"text": "The screen leads to /Catalog/Create.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:9-10",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:12-13",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:29-31"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "SCRN-019",
+"type": "SCRN",
+"title": "Catalog Item Listing",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views",
+"agentTaskId": "reader-105",
+"confidence": "High",
+"claims": [
+{
+"text": "The page displays an action link to create a new item.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:9-10"
+],
+"status": "Supported"
+},
+{
+"text": "The page includes a partial view rendering the catalog table data.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:12-13"
+],
+"status": "Supported"
+},
+{
+"text": "The listing view shows pagination controls indicating the current page, total items, and items per page.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:29-31"
+],
+"status": "Supported"
+},
+{
+"text": "Action Create New starts the handler Create.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:9-10",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:12-13",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:29-31"
+],
+"status": "Supported"
+},
+{
+"text": "The screen is at the route /Catalog/Index.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:9-10",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:12-13",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:29-31"
+],
+"status": "Rejected"
+},
+{
+"text": "The screen leads to /Catalog/Create.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:9-10",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:12-13",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:29-31"
+],
+"status": "Rejected"
+}
+]
+},
+{
+"id": "SCRN-023",
+"type": "SCRN",
+"title": "Catalog Item Listing",
+"area": "eShopLegacyMVCSolution/eShopPorted/Views",
+"agentTaskId": "reader-128",
+"confidence": "High",
+"claims": [
+{
+"text": "The page displays the Name of the catalog item, using model binding.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:9-10"
+],
+"status": "Supported"
+},
+{
+"text": "The page displays the Description of the catalog item.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:12-13"
+],
+"status": "Supported"
+},
+{
+"text": "The page displays the Brand of the catalog item.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:15-16"
+],
+"status": "Supported"
+},
+{
+"text": "The page displays the Type of the catalog item.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:18-19"
+],
+"status": "Supported"
+},
+{
+"text": "The page displays the Price of the catalog item.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:21-22"
+],
+"status": "Supported"
+},
+{
+"text": "The page displays the PictureFileName of the catalog item.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:24-25"
+],
+"status": "Supported"
+},
+{
+"text": "The page displays the AvailableStock of the catalog item.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:27-28"
+],
+"status": "Supported"
+},
+{
+"text": "The page displays the RestockThreshold of the catalog item.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:30-31"
+],
+"status": "Supported"
+},
+{
+"text": "The page displays the MaxStockThreshold of the catalog item.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:33-34"
+],
+"status": "Supported"
+},
+{
+"text": "The page displays the item's image using its PictureUri.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:43-44"
+],
+"status": "Supported"
+},
+{
+"text": "The page allows editing an item via a link labeled 'Edit'.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:73-74"
+],
+"status": "Supported"
+},
+{
+"text": "The page allows viewing item details via a link labeled 'Details'.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:73-74"
+],
+"status": "Supported"
+},
+{
+"text": "The page allows deleting an item via a link labeled 'Delete'.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:75-76"
+],
+"status": "Supported"
+},
+{
+"text": "Action Edit starts the handler Edit.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:9-10",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:12-13",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:15-16",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:18-19",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:21-22",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:24-25",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:27-28",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:30-31",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:33-34",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:43-44",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:73-74",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:75-76"
+],
+"status": "Supported"
+},
+{
+"text": "Action Details starts the handler Details.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:9-10",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:12-13",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:15-16",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:18-19",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:21-22",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:24-25",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:27-28",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:30-31",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:33-34",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:43-44",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:73-74",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:75-76"
+],
+"status": "Supported"
+},
+{
+"text": "Action Delete starts the handler Delete.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:9-10",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:12-13",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:15-16",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:18-19",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:21-22",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:24-25",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:27-28",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:30-31",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:33-34",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:43-44",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:73-74",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:75-76"
+],
+"status": "Supported"
+},
+{
+"text": "The screen is at the route /Catalog/CatalogTable.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:9-10",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:12-13",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:15-16",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:18-19",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:21-22",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:24-25",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:27-28",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:30-31",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:33-34",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:43-44",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:73-74",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:75-76"
+],
+"status": "Rejected"
+},
+{
+"text": "Field Name (text, optional) is on the screen.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:9-10",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:12-13",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:15-16",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:18-19",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:21-22",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:24-25",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:27-28",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:30-31",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:33-34",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:43-44",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:73-74",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:75-76"
+],
+"status": "Rejected"
+},
+{
+"text": "Field Description (text, optional) is on the screen.",
+"citations": [
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:9-10",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:12-13",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:15-16",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:18-19",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:21-22",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:24-25",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:27-28",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:30-31",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:33-34",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:43-44",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:73-74",
+"eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:75-76"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "SCRN-030",
+"type": "SCRN",
+"title": "Catalog Item Listing",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views",
+"agentTaskId": "reader-156",
+"confidence": "Low",
+"claims": [
+{
+"text": "The Index view file exists, which is used for catalog listing.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:1-46"
+],
+"status": "Supported"
+},
+{
+"text": "The screen is at the route /Catalog/Index.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:1-46"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-140",
+"type": "FEAT",
+"title": "Upload an image for a catalog item",
+"area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers",
+"agentTaskId": "reader-133",
+"confidence": "High",
+"claims": [
+{
+"text": "The PicController exposes an endpoint at /Pic/UploadImage that accepts an HTTP POST request.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:26-27"
+],
+"status": "Supported"
+},
+{
+"text": "The endpoint requires an image file named 'HelpSectionImages' and a 'itemId' from the request form.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:30-31"
+],
+"status": "Supported"
+},
+{
+"text": "The system checks if the uploaded image is valid based on its format (JPEG, PNG, or GIF).",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:33-36",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:49-64"
+],
+"status": "Supported"
+},
+{
+"text": "If the image is valid, it is uploaded temporarily using the IImageService, and a JSON object containing the image's path and URL is returned.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:38-46"
+],
+"status": "Rejected"
+},
+{
+"text": "The upload endpoint expects an image file via the 'HelpSectionImages' field and a catalog item ID via the 'itemId' field in the form data.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:30-31"
+],
+"status": "Supported"
+},
+{
+"text": "If the image is not valid, the system returns an HTTP 400 Bad Request with the message 'image is not valid'.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:35-35"
+],
+"status": "Supported"
+},
+{
+"text": "If the image is valid, the system calls _imageService.UploadTempImage to upload the image temporarily and obtain a URL.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:39-39"
+],
+"status": "Supported"
+},
+{
+"text": "Upon successful upload, the system returns a JSON object containing the image's path and URL.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:46-46"
+],
+"status": "Rejected"
+},
+{
+"text": "The UploadImage action endpoint expects a file named 'HelpSectionImages' and a form field 'itemId'.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:30-31"
+],
+"status": "Supported"
+},
+{
+"text": "Image files must be in JPEG, PNG, or GIF format to be considered valid.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:17-18",
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:56-56"
+],
+"status": "Supported"
+},
+{
+"text": "If the image is not valid, the system returns an HTTP 400 Bad Request status with the message 'image is not valid'.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:33-35"
+],
+"status": "Supported"
+},
+{
+"text": "The system uploads the image temporarily using the IImageService, passing the image file and the catalog item ID.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:39-39"
+],
+"status": "Supported"
+},
+{
+"text": "Upon successful temporary upload, the system returns a JSON object containing the image's path and URL derived from the temporary URL.",
+"citations": [
+"eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs:42-46"
+],
+"status": "Supported"
+}
+]
+},
+{
+"id": "FEAT-178",
+"type": "FEAT",
+"title": "Upload an image for a Catalog Item",
+"area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+"agentTaskId": "reader-174",
+"confidence": "High",
+"claims": [
+{
+"text": "The system provides a web service endpoint to upload an image, expecting the file to be sent under the field name 'HelpSectionImages'.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs:40-40"
+],
+"status": "Supported"
+},
+{
+"text": "The upload process requires an 'itemId' to associate the image with a catalog item.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs:41-41"
+],
+"status": "Supported"
+},
+{
+"text": "The system validates the uploaded image format to ensure it is one of JPEG, PNG, or GIF.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs:66-72"
+],
+"status": "Supported"
+},
+{
+"text": "If the image validation fails, the service returns an HTTP 400 status code indicating the image is not valid.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs:43-48"
+],
+"status": "Supported"
+},
+{
+"text": "Upon successful validation, the service calls the IImageService to upload the image temporarily, associating it with the catalog item ID, and returns the resulting image URL and name as JSON.",
+"citations": [
+"eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs:52-62"
+],
+"status": "Supported"
+}
+]
+}
+]

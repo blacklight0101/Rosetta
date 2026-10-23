@@ -1,5 +1,6 @@
 import type { TextMasker } from '../../guards/secret-masker.js';
 import type { ConfiguredArea, GroupingProblem } from '../../../domain/code-map/area-grouping.js';
+import type { WorkbookSplit } from '../../../domain/code-map/folder-buckets.js';
 import { groupIntoAreas } from '../../../domain/code-map/area-grouping.js';
 import {
   createCodeMap,
@@ -43,6 +44,8 @@ export interface BuildCodeMapInput {
   /** `scan.areas`. */
   readonly configuredAreas: readonly ConfiguredAreaSettings[];
   readonly masker: TextMasker;
+  /** P3-109: set for a tree of rendered workbooks (one area per sheet, see folder-buckets.ts). */
+  readonly workbook?: WorkbookSplit;
 }
 
 export type BuildCodeMapProblem = CodeMapProblem | FileEntryProblem | GroupingProblem;
@@ -98,6 +101,7 @@ export function buildCodeMap(input: BuildCodeMapInput): Result<CodeMap, BuildCod
     links: input.packs.links,
     areaTokenBudget: input.areaTokenBudget,
     configured: input.configuredAreas.map(configuredAreaOf),
+    ...(input.workbook === undefined ? {} : { workbook: input.workbook }),
   });
   if (!areas.ok) return err(areas.error);
   const raw = createCodeMap({
