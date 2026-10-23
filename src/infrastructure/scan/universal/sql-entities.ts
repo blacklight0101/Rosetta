@@ -34,7 +34,22 @@ const stops = new Set([
   'default',
   'with',
 ]);
-const notTables = new Set([...stops, 'dual', 'only', 'top', 'distinct', 'lateral', 'table']);
+// English words that follow FROM, INTO or JOIN in a sentence, never a table name.
+const prose = [
+  'the a an this that these those your my our their its his her all each any some every no',
+  'it them you we they me us what which who list options option cart menu form page file below above',
+  'here there one other another more less',
+].join(' ');
+const notTables = new Set([
+  ...stops,
+  ...prose.split(' '),
+  'dual',
+  'only',
+  'top',
+  'distinct',
+  'lateral',
+  'table',
+]);
 
 function isIdentifier(text: string): boolean {
   if (text === '' || /\d/u.test(text.charAt(0))) return false;
@@ -93,11 +108,50 @@ function tablesOf(text: string): string[] {
   return found;
 }
 
+/** `SELECT` list: one word, or a list with a comma, `*`, a call, `AS` or `DISTINCT`/`TOP`. */
+function selectShape(words: readonly string[]): boolean {
+  const from = words.indexOf('from');
+  if (from < 2) return false;
+  const list = words.slice(1, from);
+  const joined = list.join(' ');
+  const marked = [',', '*', '('].some((mark) => joined.includes(mark));
+  return list.length === 1 || marked || ['as', 'distinct', 'top'].some((w) => list.includes(w));
+}
+
+/**
+ * Whether a statement has the shape of its verb, so a sentence such as `Select a file from the
+ * list` is not read as SQL: `SELECT cols FROM`, `INSERT INTO`, `UPDATE t SET x =`, `DELETE FROM`.
+ */
+function hasShape(statement: SqlStatement): boolean {
+  const words = statement.text.toLowerCase().split(' ');
+  switch (statement.verb) {
+    case 'SELECT':
+      return selectShape(words);
+    case 'INSERT':
+      return words[1] === 'into';
+    case 'UPDATE': {
+      const set = words.indexOf('set');
+      return (
+        (set === 2 || set === 3) &&
+        words
+          .slice(set + 1)
+          .join(' ')
+          .includes('=')
+      );
+    }
+    case 'DELETE':
+      return words[1] === 'from';
+    case 'CREATE':
+    case 'EXEC':
+      return false;
+  }
+}
+
 /** One candidate per table name and file, at the first statement that names it. */
 export function entitiesFromSql(statements: readonly SqlStatement[]): PackEntity[] {
   const seen = new Set<string>();
   const entities: PackEntity[] = [];
-  for (const statement of statements) {
+  for (const statement of statements.filter(hasShape)) {
     for (const name of tablesOf(statement.text)) {
       const key = `${statement.path}\n${name}`;
       if (seen.has(key)) continue;

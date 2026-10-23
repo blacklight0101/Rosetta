@@ -66,3 +66,29 @@ describe('entity candidates from SQL strings, joins and lists', () => {
     ]);
   });
 });
+
+describe('entity candidates from SQL strings, prose and short statements', () => {
+  it('RF-103 gives nothing for English sentences that start with a SQL verb', () => {
+    expect(
+      names([
+        statement('Select a file from the list', 'SELECT'),
+        statement('Select one from the options below', 'SELECT'),
+        statement('Delete this item from the cart', 'DELETE'),
+        statement('Insert your name into the box', 'INSERT'),
+        statement('Update the page when you set a date', 'UPDATE'),
+      ]),
+    ).toEqual([]);
+  });
+
+  it('RF-103 still takes tables from short real statements', () => {
+    expect(
+      names([
+        statement('SELECT Id, Name FROM tblA', 'SELECT'),
+        statement('SELECT COUNT(*) FROM tblB', 'SELECT'),
+        statement('UPDATE tblC t SET t.x = 1', 'UPDATE'),
+        statement('DELETE FROM tblD', 'DELETE'),
+        statement('INSERT INTO tblE VALUES (1)', 'INSERT'),
+      ]),
+    ).toEqual(['tblA', 'tblB', 'tblC', 'tblD', 'tblE']);
+  });
+});

@@ -93,8 +93,13 @@ class VbReader {
   }
 
   private inBody(top: Frame, code: string, words: Words, lineNumber: number): void {
-    if (words.rest[0] === 'end' && words.rest[1] === top.endWord) {
-      if (top.lambdas > 0) top.lambdas -= 1;
+    const closes = words.rest[0] === 'end' ? words.rest[1] : undefined;
+    if (
+      closes === top.endWord ||
+      (top.lambdas > 0 && (closes === 'sub' || closes === 'function'))
+    ) {
+      // An `End Sub` or `End Function` closes the innermost open lambda before the member itself.
+      if (top.lambdas > 0 && top.block === 'method') top.lambdas -= 1;
       else this.pop(lineNumber);
     } else if (top.block === 'method' && opensMultiLineLambda(code)) {
       top.lambdas += 1;
@@ -146,8 +151,12 @@ class VbReader {
 
   private method(words: Words, name: string, line: number, scope: string | undefined): void {
     const symbol = this.add(scope === undefined ? 'function' : 'method', name, line, scope);
+    const closedOnLine = words.rest.length > 2 && words.rest.at(-2) === 'end';
     const bodiless =
-      this.isInterface() || words.modifiers.has('mustoverride') || words.modifiers.has('partial');
+      this.isInterface() ||
+      closedOnLine ||
+      words.modifiers.has('mustoverride') ||
+      words.modifiers.has('partial');
     if (!bodiless) this.open('method', words.rest[0] ?? 'sub', name, symbol);
   }
 

@@ -143,6 +143,36 @@ describe('VB.NET pack bodies and registration', () => {
       'method:Open:9-10:Worker',
     ]);
   });
+});
+
+describe('VB.NET pack lambdas and one-line members', () => {
+  it('RF-111 closes a lambda of the other kind and a one-line Sub without swallowing the next member', () => {
+    const text = `Class W
+    Sub B()
+        Dim f = Function(x)
+                    Return x
+                End Function
+    End Sub
+    Function C() As Integer
+        Dim g = Sub()
+                    Console.WriteLine()
+                End Sub
+        Return 1
+    End Function
+    Sub D() : End Sub
+    Sub E()
+    End Sub
+End Class`;
+    const { symbols } = pack.analyse({ path: 'W.vb', text });
+
+    expect(shape(symbols)).toEqual([
+      'class:W:1-16:',
+      'method:B:2-6:W',
+      'method:C:7-12:W',
+      'method:D:13-13:W',
+      'method:E:14-15:W',
+    ]);
+  });
 
   it('RF-111 is registered for .vb files and marks them symbols (mutation: without the pack they stay coarse)', async () => {
     const run = async (packs: readonly VbPack[]) =>

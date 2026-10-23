@@ -70,6 +70,6 @@ describe('the scanner version of a code map', () => {
       configuredAreas: [],
       masker: new SecretMasker(),
     });
-    expect(built.ok && built.value.scannerVersion).toBe(1);
+    expect(built.ok && built.value.scannerVersion).toBe(2);
   });
 });

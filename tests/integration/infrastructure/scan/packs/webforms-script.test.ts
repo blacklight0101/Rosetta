@@ -101,4 +101,22 @@ class Row
 
     expect(shape(analyse(text).symbols)).toEqual(['class:Row:3-6:', 'property:Id:5-5:Row']);
   });
+
+  it('RF-111 leaves out a block in an HTML comment', () => {
+    const text = `<%@ Page Language="C#" %>
+<!-- <script runat="server">void Gone() {}</script> -->
+<script runat="server">void Kept() {}</script>
+`;
+
+    expect(shape(analyse(text).symbols)).toEqual(['function:Kept:3-3:']);
+  });
+
+  it('RF-111 finds a block after characters whose lower case is longer', () => {
+    const text = `<%@ Page Language="C#" %>
+<p>İİİİ</p>
+<script runat="server">void Found() {}</script>
+`;
+
+    expect(shape(analyse(text).symbols)).toEqual(['function:Found:3-3:']);
+  });
 });
