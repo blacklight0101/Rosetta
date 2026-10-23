@@ -36,6 +36,11 @@ export function WorkbookSourceSection(props: WorkbookSourceProps): JSX.Element {
       {project.codeChangedSinceLastRun ? (
         <p class="rst-settings__note">The code changed since the last run.</p>
       ) : null}
+      {project.renderedWithOlderRenderer ? (
+        <p class="rst-settings__note">
+          Rendered with an older renderer: upload the workbook again.
+        </p>
+      ) : null}
       <WorkbookUploadForm
         existing={project}
         onStored={(summary) => {
@@ -47,6 +52,7 @@ export function WorkbookSourceSection(props: WorkbookSourceProps): JSX.Element {
             ...project,
             source: { fileName, uploadedAt, workbooks },
             codeChangedSinceLastRun,
+            renderedWithOlderRenderer: false,
           });
         }}
       />

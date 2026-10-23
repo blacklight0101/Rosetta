@@ -13,6 +13,8 @@ import { GetProjectCost } from '../../src/application/use-cases/get-project-cost
 import { ListProjects } from '../../src/application/use-cases/list-projects.js';
 import { OpenWorkspace } from '../../src/application/use-cases/open-workspace.js';
 import { StoreUpload } from '../../src/application/use-cases/store-upload.js';
+import { WorkbookRendererCheck } from '../../src/application/use-cases/workbook-renderer-check.js';
+import { WORKBOOK_RENDERER_VERSION } from '../../src/infrastructure/sources/workbook/workbook-renderer.js';
 import { WorkbookBatches } from '../../src/application/use-cases/workbook-batches.js';
 import { UpdateProjectSettings } from '../../src/application/use-cases/update-project-settings.js';
 import type { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
@@ -81,6 +83,32 @@ const laterPrompts = {
   gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
 };
 
+/** The zip upload, the workbook batches and the renderer check (RF-128, RF-150, P3-108). */
+function uploadServices(
+  parts: ProjectParts,
+  runs: RunIndex,
+  upload: UploadParts,
+): Pick<ServerOptions['projects'], 'storeUpload' | 'workbookBatches' | 'workbookRenderer'> {
+  const { projects, auditLog, logger, clock } = parts;
+  return {
+    storeUpload: new StoreUpload({
+      ...{ projects, runs, auditLog, logger, clock },
+      uploads: upload.store,
+      limitBytes: upload.limitBytes,
+    }),
+    workbookBatches: new WorkbookBatches({
+      ...{ projects, runs, auditLog, logger, clock },
+      uploads: upload.store,
+      staging: upload.staging,
+      limitBytes: upload.limitBytes,
+    }),
+    workbookRenderer: new WorkbookRendererCheck({
+      uploads: upload.store,
+      currentVersion: WORKBOOK_RENDERER_VERSION,
+    }),
+  };
+}
+
 export function projectServices(
   parts: ProjectParts,
   files: PlanFiles,
@@ -94,17 +122,7 @@ export function projectServices(
   const { briefs, answers, answerFiles, keys } = files;
   return {
     createProject: new CreateProject({ projects, serverSettings, template, ids, clock }),
-    storeUpload: new StoreUpload({
-      ...{ projects, runs, auditLog, logger, clock },
-      uploads: upload.store,
-      limitBytes: upload.limitBytes,
-    }),
-    workbookBatches: new WorkbookBatches({
-      ...{ projects, runs, auditLog, logger, clock },
-      uploads: upload.store,
-      staging: upload.staging,
-      limitBytes: upload.limitBytes,
-    }),
+    ...uploadServices(parts, runs, upload),
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
     updateProjectSettings: new UpdateProjectSettings({ projects, clock, models: NO_LISTED_MODELS }),
