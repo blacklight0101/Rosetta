@@ -14,9 +14,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan | 125 | 16 | 105 | 4 | 0 | 50 | 71 | 4 | 81 | 0 |
-| P5 Polish (G-10) | 19 | 7 | 12 | 0 | 0 | 11 | 8 | 0 | 0 | 0 |
-| **Total** | **368** | **97** | **242** | **29** | **0** | **181** | **173** | **14** | **222** | **0** |
+| P3 Report and plan      | 125     | 16        | 105        | 4         | 0                  | 50      | 71      | 4      | 81         | 0         |
+| P5 Polish (G-10)        | 19      | 7         | 12         | 0         | 0                  | 11      | 8       | 0      | 0          | 0         |
+| **Total**               | **368** | **97**    | **242**    | **29**    | **0**              | **181** | **173** | **14** | **222**    | **0**     |
 
 ## Conventions for every card
 
@@ -4838,7 +4838,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 
 ### P3-123 - Follow-up: first-party areas are read before library areas
 
-- **Difficulty**: 5 (sonnet)
+- **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
@@ -5148,7 +5148,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 
 ### P5-16 - Cached input tokens count toward the token cap at their real weight
 
-- **Difficulty**: 4 (sonnet)
+- **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
@@ -5182,7 +5182,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 
 ### P5-18 - A user-day or server cap stop still leaves room to judge written claims
 
-- **Difficulty**: 5 (sonnet)
+- **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
@@ -5199,7 +5199,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 
 ### P5-19 - Small fixes from the fix round 2 reviews
 
-- **Difficulty**: 4 (sonnet)
+- **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
