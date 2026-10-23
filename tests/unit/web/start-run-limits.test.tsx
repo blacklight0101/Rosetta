@@ -84,10 +84,10 @@ it('RF-405 the first-call warning links the caps of the project settings', async
     promptTokens: 6000,
     maxOutputTokens: 8192,
     perCallMicros: '195000',
-    reservedMicros: '195000',
+    reservedMicros: '780000',
     reservedTokens: '14192',
     adminRunCapMicros: null,
-    caps: [{ kind: 'run-cost', unit: 'micros', limit: '100000', spent: '0', fits: false }],
+    caps: [{ kind: 'run-cost', unit: 'micros', limit: '500000', spent: '0', fits: false }],
   };
   renderStart({
     [`GET ${estimatePath}`]: json(200, { ...cloudEstimate, firstCalls }),
