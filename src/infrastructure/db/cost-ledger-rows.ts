@@ -21,6 +21,10 @@ export const LOCK_SERVER = "SELECT pg_advisory_xact_lock(hashtext('rosetta.budge
  * snapshot: $1 run, $2 user, $3 now (unexpired reservations), $4..$5 the UTC day, $6..$7 the month, $8 the
  * call's role (RF-423).
  * A reservation counts until it expires, whatever day it was made.
+ * RF-422, DEC-168: the token sums weigh a ledger row as `capWeightedTokens` does in the domain: input not
+ * read from the cache, 10 percent (`CACHED_TOKEN_SHARE_PERCENT`) of the cached input (never more than the
+ * input) and the output. The expression is written out in each sum because ADR-016 allows no template
+ * substitution in SQL text.
  */
 export const SPENT = `WITH held AS (
   SELECT user_id, run_id, role, key_source, worst_case_micros, worst_case_tokens
@@ -29,12 +33,14 @@ export const SPENT = `WITH held AS (
 SELECT
   ((SELECT coalesce(sum(cost_micros), 0) FROM cost_ledger WHERE run_id = $1)
     + (SELECT coalesce(sum(worst_case_micros), 0) FROM held WHERE run_id = $1))::text AS run_cost,
-  ((SELECT coalesce(sum(input_tokens + output_tokens), 0) FROM cost_ledger WHERE run_id = $1)
+  ((SELECT coalesce(sum((input_tokens - least(cached_input_tokens, input_tokens)
+      + least(cached_input_tokens, input_tokens) * 10 / 100 + output_tokens)), 0) FROM cost_ledger WHERE run_id = $1)
     + (SELECT coalesce(sum(worst_case_tokens), 0) FROM held WHERE run_id = $1))::text AS run_tokens,
   ((SELECT coalesce(sum(cost_micros), 0) FROM cost_ledger WHERE run_id = $1 AND role = $8)
     + (SELECT coalesce(sum(worst_case_micros), 0) FROM held
       WHERE run_id = $1 AND role = $8))::text AS role_cost,
-  ((SELECT coalesce(sum(input_tokens + output_tokens), 0) FROM cost_ledger
+  ((SELECT coalesce(sum((input_tokens - least(cached_input_tokens, input_tokens)
+      + least(cached_input_tokens, input_tokens) * 10 / 100 + output_tokens)), 0) FROM cost_ledger
       WHERE run_id = $1 AND role = $8)
     + (SELECT coalesce(sum(worst_case_tokens), 0) FROM held
       WHERE run_id = $1 AND role = $8))::text AS role_tokens,

@@ -127,6 +127,8 @@ interface EndedState {
 interface RoleTokens {
   readonly inputTokens: number;
   readonly outputTokens: number;
+  /** The part of the input read from the provider's cache (P5-16); it counts a tenth toward the cap. */
+  readonly cachedInputTokens: number;
 }
 
 /** RF-209: the cards a Deepen starts from, as counts. */

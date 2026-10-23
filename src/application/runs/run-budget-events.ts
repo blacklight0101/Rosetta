@@ -1,3 +1,4 @@
+import { capWeightedTokens } from '../../domain/budget/token-usage.js';
 import type { CapBreach, UsageCap } from '../../domain/budget/usage-cap.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -102,7 +103,7 @@ function usageData(entry: LedgerEntry): Record<string, unknown> {
 function runShare(totals: SpendTotals, caps: readonly UsageCap[]): number {
   const used = (cap: UsageCap): bigint =>
     cap.kind === 'run-tokens'
-      ? BigInt(totals.inputTokens + totals.outputTokens)
+      ? capWeightedTokens(totals) // DEC-168: cached input counts a tenth
       : totals.costMicros;
   const shares = caps
     .filter((cap) => (cap.kind === 'run-cost' || cap.kind === 'run-tokens') && cap.limit > 0n)

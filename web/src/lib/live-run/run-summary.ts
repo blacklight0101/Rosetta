@@ -13,6 +13,8 @@ export interface RoleTotals {
   readonly role: string;
   readonly inputTokens: number;
   readonly outputTokens: number;
+  /** P5-16: the part of the input read from the provider's cache; 0 for a role without usage events. */
+  readonly cachedInputTokens: number;
   /** Undefined until a `usage.recorded` event of the role arrived. */
   readonly costMicros: number | undefined;
 }
@@ -67,21 +69,26 @@ export function failedAreasOf(state: RunState): readonly FailedArea[] {
 
 // RF-1003
 export function roleTotalsOf(state: RunState): readonly RoleTotals[] {
-  const totals = new Map<string, { input: number; output: number }>();
+  const totals = new Map<string, { input: number; output: number; cached: number }>();
   for (const agent of state.agents) {
-    const sum = totals.get(agent.role) ?? { input: 0, output: 0 };
+    const sum = totals.get(agent.role) ?? { input: 0, output: 0, cached: 0 };
     totals.set(agent.role, {
       input: sum.input + agent.inputTokens,
       output: sum.output + agent.outputTokens,
+      cached: sum.cached,
     });
   }
   // P1-96: a role with usage events takes its tokens from them (every call of the role, the
   // Ollama check included); the turns of its agents are the same calls, so they are not added.
   for (const [role, used] of Object.entries(state.roleTokens)) {
-    totals.set(role, { input: used.inputTokens, output: used.outputTokens });
+    totals.set(role, {
+      input: used.inputTokens,
+      output: used.outputTokens,
+      cached: used.cachedInputTokens,
+    });
   }
   for (const role of Object.keys(state.roleCostMicros)) {
-    if (!totals.has(role)) totals.set(role, { input: 0, output: 0 });
+    if (!totals.has(role)) totals.set(role, { input: 0, output: 0, cached: 0 });
   }
   return [...totals.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
@@ -89,6 +96,7 @@ export function roleTotalsOf(state: RunState): readonly RoleTotals[] {
       role,
       inputTokens: sum.input,
       outputTokens: sum.output,
+      cachedInputTokens: sum.cached,
       costMicros: state.roleCostMicros[role],
     }));
 }

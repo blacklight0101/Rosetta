@@ -10,7 +10,7 @@ import { logCountOf } from '../lib/live-run/log-count.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState, UploadSourceState } from '../lib/live-run/run-state.js';
 import { stepperOf } from '../lib/live-run/run-stepper.js';
-import { roleTotalsOf } from '../lib/live-run/run-summary.js';
+import { tokenFiguresOf } from '../lib/live-run/cap-tokens.js';
 import { workingNowOf } from '../lib/live-run/working-now.js';
 import { ActivityTab } from './ActivityTab.js';
 import { AgentsTab } from './AgentsTab.js';
@@ -180,7 +180,7 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
     setTab(id);
     setArea(only);
   };
-  const tokens = roleTotalsOf(state).reduce((sum, r) => sum + r.inputTokens + r.outputTokens, 0);
+  const figures = tokenFiguresOf(state);
   return (
     <>
       <Facts state={state} source={props.source} />
@@ -201,7 +201,8 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
           <SpendPanel
             runId={run.id}
             costMicros={props.costMicros}
-            tokens={tokens}
+            tokens={figures.raw}
+            capTokens={figures.toward}
             caps={state.caps}
             onOpenRoles={() => {
               open('agents');

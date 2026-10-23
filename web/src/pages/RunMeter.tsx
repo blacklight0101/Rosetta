@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import type { RunEstimate } from '../api/estimate-schemas.js';
+import { capTokensNote, tokenFiguresOf } from '../lib/live-run/cap-tokens.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import type { CapsState, RunState } from '../lib/live-run/run-state.js';
 import { roleTotalsOf, shareOf, type RoleTotals } from '../lib/live-run/run-summary.js';
@@ -207,14 +208,21 @@ function RoleTable(props: { readonly state: RunState; readonly costMicros: numbe
 
 // RF-1003, RF-424
 export function RunMeter({ state, costMicros, estimate }: RunMeterProps): JSX.Element {
-  const tokens = roleTotalsOf(state).reduce(
-    (sum, role) => sum + role.inputTokens + role.outputTokens,
-    0,
-  );
+  const figures = tokenFiguresOf(state);
+  const tokens = figures.raw;
+  const note =
+    state.caps === undefined
+      ? undefined
+      : capTokensNote(figures, state.caps.maxTokens, tokensLabel);
   return (
     <section class="rst-live-meter rst-card" aria-label="Run meter">
       <h2 class="rst-live-section__title">Run meter</h2>
-      <Bars caps={state.caps} tokens={tokens} costMicros={costMicros} />
+      <Bars caps={state.caps} tokens={figures.toward} costMicros={costMicros} />
+      {note === undefined ? null : (
+        <p class="rst-settings__note" data-testid="cap-tokens-note">
+          {note}
+        </p>
+      )}
       <RoleTable state={state} costMicros={costMicros} />
       {estimate === undefined ? null : <Estimate {...{ estimate, tokens, costMicros }} />}
     </section>

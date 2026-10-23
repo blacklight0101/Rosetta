@@ -161,10 +161,29 @@ describe('RunBudgetEvents warnings on tokens', () => {
     const tokenCaps: readonly UsageCap[] = [{ kind: 'run-tokens', limit: 1_000n }];
 
     await reporter.callRecorded({
-      entry: entry({ inputTokens: 300, outputTokens: 100, costMicros: 0n }),
+      entry: entry({ inputTokens: 300, outputTokens: 100, cachedInputTokens: 0, costMicros: 0n }),
       caps: tokenCaps,
     });
 
+    expect(warnings(events.emitted)).toEqual([{ scope: 'run', sharePercent: 50 }]);
+  });
+
+  it('RF-422 counts cached input tokens at a tenth toward the token warning (DEC-168)', async () => {
+    const events = emitter();
+    const reporter = new RunBudgetEvents({ events, run: zero, project: zero });
+    const tokenCaps: readonly UsageCap[] = [{ kind: 'run-tokens', limit: 1_000n }];
+
+    await reporter.callRecorded({
+      entry: entry({ inputTokens: 900, outputTokens: 100, cachedInputTokens: 800, costMicros: 0n }),
+      caps: tokenCaps,
+    });
+    // 100 + 80 + 100 = 280 of 1,000: no warning yet, where the raw 1,000 would be 100%.
+    expect(warnings(events.emitted)).toEqual([]);
+
+    await reporter.callRecorded({
+      entry: entry({ inputTokens: 900, outputTokens: 100, cachedInputTokens: 800, costMicros: 0n }),
+      caps: tokenCaps,
+    });
     expect(warnings(events.emitted)).toEqual([{ scope: 'run', sharePercent: 50 }]);
   });
 

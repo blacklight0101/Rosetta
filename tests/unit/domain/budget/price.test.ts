@@ -69,7 +69,7 @@ describe('worst case and token pricing', () => {
     );
   });
 
-  it('RF-422 counts input and output tokens for the token cap, cached input inside input', () => {
+  it('RF-1003 totals input and output tokens as reported (the raw total), cached input inside input', () => {
     expect(totalTokens({ inputTokens: 1200, cachedInputTokens: 1024, outputTokens: 80 })).toBe(
       1280n,
     );

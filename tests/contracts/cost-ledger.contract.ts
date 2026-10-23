@@ -98,7 +98,7 @@ function tokenContract(name: string, fresh: Fresh): void {
     const caps: UsageCap[] = [{ kind: 'run-tokens', limit: 2_000n }];
     const first = reservationOf(ids);
     await reserveAt(ledger, first, caps);
-    await ledger.settle(entryOf(first));
+    await ledger.settle(entryOf(first, { cachedInputTokens: 0 }));
 
     const refused = await reserveAt(ledger, reservationOf(ids, worst(0n, 721n)), caps);
 
