@@ -100,4 +100,15 @@ describe('what was not covered with files not read', () => {
     expect(notCoveredOf([{ ...base, name: 'Orders' }], none)).toEqual([]);
     expect(notCoveredOf([{ ...base, name: 'Orders' }])).toEqual([]);
   });
+
+  it('RF-264 shows a partly read file with the tokens and the share of the file left unread', () => {
+    const line = unreadFilesLine({
+      files: [{ path: 'src/Big.cs', tokens: 146_000, unreadShare: 0.933 }, file('Only', 1)],
+      firstPartyTokens: 200_000,
+      firstPartyReadTokens: 10_000,
+    });
+
+    expect(line).toContain('src/Big.cs (146,000 tokens unread, 93.3% of the file)');
+    expect(line).toContain('src/Only.cs (1 token)');
+  });
 });

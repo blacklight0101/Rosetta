@@ -1,4 +1,12 @@
-import { mergedRanges, rounded, tokensRead, type AreaCoverage } from '../cards/area-coverage.js';
+import {
+  linesIn,
+  mergedRanges,
+  rounded,
+  tokensRead,
+  unreadRanges,
+  type AreaCoverage,
+  type LineRange,
+} from '../cards/area-coverage.js';
 import type { Card, Claim } from '../cards/card.js';
 import { readsByPath } from '../cards/coverage-union.js';
 import { byCodeUnit } from '../code-map/code-unit-order.js';
@@ -12,10 +20,15 @@ import { isThirdPartyFile, isThirdPartyPath } from '../code-map/third-party.js';
 // not judged are counted on their own. "Well covered" needs at least 80% of the first-party tokens
 // read and no claim left unjudged; nothing ever says complete.
 
-/** A first-party file no task read, with its estimated tokens. */
+/**
+ * A first-party file no task read, or read only in part (EV-04). `tokens` are the tokens not read;
+ * a partly read file also gives the share of the file not read and the line ranges not read.
+ */
 interface UnreadFile {
   readonly path: string;
   readonly tokens: number;
+  readonly unreadShare?: number;
+  readonly unreadRanges?: readonly LineRange[];
 }
 
 export interface UnderstandingMeasures {
@@ -62,6 +75,9 @@ interface FileRead {
   readonly readTokens: number;
   /** Some line of the file was read. */
   readonly read: boolean;
+  /** The lines of the file no entry read; empty for a file read from its first line to its last. */
+  readonly unread: readonly LineRange[];
+  readonly lines: number;
 }
 
 /** Every file of the run's coverage, once, with the tokens read of it over every entry. */
@@ -74,7 +90,15 @@ function filesOf(input: Omit<MeasureInput, 'cards'>): readonly FileRead[] {
     const readTokens = tokensRead(file, merged);
     const thirdParty = isThirdPartyFile(file);
     return [
-      { path, thirdParty, tokens: file.estimatedTokens, readTokens, read: merged.length > 0 },
+      {
+        path,
+        thirdParty,
+        tokens: file.estimatedTokens,
+        readTokens,
+        read: merged.length > 0,
+        unread: unreadRanges(merged, file.lines),
+        lines: file.lines,
+      },
     ];
   });
 }
@@ -91,6 +115,17 @@ function sum(files: readonly FileRead[], pick: (file: FileRead) => number): numb
   return files.reduce((total, file) => total + pick(file), 0);
 }
 
+/** EV-04: a file read in part is listed with the tokens, share and lines left unread. */
+function unreadFileOf(file: FileRead): UnreadFile {
+  if (!file.read) return { path: file.path, tokens: file.tokens };
+  return {
+    path: file.path,
+    tokens: file.tokens - file.readTokens,
+    unreadShare: rounded(linesIn(file.unread) / file.lines, 4),
+    unreadRanges: file.unread,
+  };
+}
+
 function coverageMeasures(input: Omit<MeasureInput, 'cards'>) {
   const all = filesOf(input);
   const own = all.filter((file) => !file.thirdParty);
@@ -98,8 +133,8 @@ function coverageMeasures(input: Omit<MeasureInput, 'cards'>) {
   const firstPartyTokens = sum(own, (file) => file.tokens);
   const firstPartyReadTokens = sum(own, (file) => file.readTokens);
   const filesNotRead = own
-    .filter((file) => !file.read && file.tokens > 0)
-    .map(({ path, tokens }) => ({ path, tokens }))
+    .filter((file) => file.unread.length > 0 && file.tokens > 0)
+    .map(unreadFileOf)
     .sort((left, right) => right.tokens - left.tokens || byCodeUnit(left.path, right.path));
   return {
     firstPartyCoverage:

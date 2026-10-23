@@ -27,7 +27,9 @@ const measureFields = {
 const measuresSchema = z.object({
   ...measureFields,
   /** The largest first-party files no task read, at most ten; `filesNotReadCount` counts all. */
-  filesNotRead: z.array(z.object({ path: z.string(), tokens: count })),
+  filesNotRead: z.array(
+    z.object({ path: z.string(), tokens: count, unreadShare: z.number().min(0).max(1).optional() }),
+  ),
   filesNotReadCount: count,
 });
 

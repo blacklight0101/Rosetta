@@ -6,7 +6,13 @@
 /** The first-party files no task read, with the token totals the share is worked out from. */
 export interface UnreadFiles {
   /** Largest first. */
-  readonly files: readonly { readonly path: string; readonly tokens: number }[];
+  readonly files: readonly {
+    readonly path: string;
+    /** The tokens not read: all of an unread file, the rest of a partly read one. */
+    readonly tokens: number;
+    /** EV-04: the share 0..1 of a partly read file not read; absent for a file no task read. */
+    readonly unreadShare?: number;
+  }[];
   readonly firstPartyTokens: number;
   readonly firstPartyReadTokens: number;
 }
@@ -39,10 +45,17 @@ function shortened(path: string): string {
   return path.length <= SHORT_PATH ? path : `...${path.slice(path.length - SHORT_PATH + 3)}`;
 }
 
+/** EV-04: a partly read file says how much of it is left, so it is not taken for a file no task read. */
+function sizeText(file: UnreadFiles['files'][number]): string {
+  if (file.unreadShare === undefined) return plural(file.tokens, 'token');
+  const share = (file.unreadShare * 100).toFixed(1);
+  return `${plural(file.tokens, 'token')} unread, ${share}% of the file`;
+}
+
 function largestText(unread: UnreadFiles, pathOf: (path: string) => string): string {
   const shown = unread.files
     .slice(0, LARGEST_SHOWN)
-    .map((file) => `${pathOf(file.path)} (${plural(file.tokens, 'token')})`);
+    .map((file) => `${pathOf(file.path)} (${sizeText(file)})`);
   const more = unread.files.length - shown.length;
   return `Largest: ${shown.join(', ')}${more > 0 ? `, and ${number.format(more)} more` : ''}.`;
 }
