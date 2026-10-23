@@ -1,3 +1,5 @@
+import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
+import { RosettaError } from '../../../src/domain/errors/rosetta-error.js';
 import { describe, expect, it } from 'vitest';
 import { judgeClaim } from '../../../src/application/verifier/judge-claim.js';
 import { loadVerifierPrompts } from '../../../src/infrastructure/prompts/verifier-prompt-files.js';
@@ -135,5 +137,83 @@ describe('P3-124 a verdict that contradicts its reason', () => {
 
     expect(judgement).toMatchObject({ kind: 'judged', status: 'Rejected' });
     expect(h.requests()).toHaveLength(1);
+  });
+});
+
+describe('P3-124 genuine rejections are never re-asked', () => {
+  it.each([
+    'The cited lines fail to support the claim.',
+    'Nothing in the lines supports the claim.',
+    'The lines are insufficient to support the claim.',
+    'The lines are unable to support the claim.',
+    'The reason is too vague to support this claim.',
+    'The lines fall short of supporting the claim.',
+    'The lines match the claim only partly.',
+    'The label is missing, so the lines do not confirm the claim.',
+  ])('DEC-19 %s keeps Rejected with one call', async (reason) => {
+    const { h, parts } = await harnessOf(`Reason: ${reason}\nVerdict: Rejected`);
+
+    const judgement = await judgeClaim(parts, claim, span);
+
+    expect(judgement).toMatchObject({ kind: 'judged', status: 'Rejected' });
+    expect(h.requests()).toHaveLength(1);
+  });
+});
+
+describe('P3-124 the re-ask', () => {
+  it('RF-301 the re-ask wording does not steer the model toward Supported', async () => {
+    const { h, parts } = await harnessOf(
+      'Reason: The cited lines match the claim.\nVerdict: Rejected',
+      'Reason: The lines hold the input.\nVerdict: Supported',
+    );
+
+    await judgeClaim(parts, claim, span);
+
+    const last = JSON.stringify(h.requests()[1]?.messages.at(-1));
+    expect(last).toContain('whichever way');
+    expect(last).not.toMatch(/agree with the claim/u);
+  });
+
+  it('RF-301 a contradiction that only appears after the format retry is also asked again', async () => {
+    const { h, parts } = await harnessOf(
+      'no verdict here',
+      'Reason: The cited lines match the claim.\nVerdict: Rejected',
+      'Reason: The input is on line 5.\nVerdict: Supported',
+    );
+
+    const judgement = await judgeClaim(parts, claim, span);
+
+    expect(judgement).toMatchObject({ kind: 'judged', status: 'Supported' });
+    expect(h.requests()).toHaveLength(3);
+  });
+});
+
+describe('P3-124 the re-ask is metered and capped', () => {
+  it('RF-304 RF-423 the re-ask goes through the guarded provider: it reaches onAnswer and a cap stops it', async () => {
+    const { h, parts } = await harnessOf(
+      'Reason: The cited lines match the claim.\nVerdict: Rejected',
+      'Reason: The input is on line 5.\nVerdict: Supported',
+    );
+    let answers = 0;
+    const metered = { ...parts, onAnswer: () => Promise.resolve(void (answers += 1)) };
+    await judgeClaim(metered, claim, span);
+    expect(answers).toBe(2);
+
+    let calls = 0;
+    const capped = await verifierHarness({
+      recording: recordingOf(answer('Reason: The cited lines match the claim.\nVerdict: Rejected')),
+      provider: (fake) => ({
+        complete: (request) => {
+          calls += 1;
+          return calls === 1
+            ? fake.complete(request)
+            : Promise.reject(new RosettaError(ERROR_CODES.budgetCapReached));
+        },
+      }),
+    });
+    const stopped = await judgeClaim({ ...capped.parts, reader: parts.reader }, claim, span);
+
+    expect(stopped).toEqual({ kind: 'capped' });
+    expect(h.requests()).toHaveLength(2);
   });
 });

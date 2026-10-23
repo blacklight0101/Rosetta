@@ -799,6 +799,8 @@ As a developer I want every citation checked against the repository so that inve
 As a developer I want a model to check that the cited lines support each claim so that unsupported statements are flagged.
 
 - Given a claim that passed step 1, when step 2 runs with the `verifier` role, then the model sees the claim and only the cited lines with a small margin, and returns `Supported` or `Rejected` with a one-line reason.
+- Given a claim that passed step 1, when its excerpt is sent, then the margin lines around the cited range are marked as context (each starts with `[context] `), so a header or label just outside the range is visible; when the cited lines do what the claim says and only a label or header lies outside them, then the verdict is `Supported` and the reason says the label is outside the cited lines (P3-124, HB-04).
+- Given a `Rejected` verdict whose own reason clearly says the cited lines match or support the claim, when it is read, then the verifier is asked again once with a neutral message; if it still contradicts itself the claim is left `Unverified` with the reason kept (P3-124, HB-05).
 - Given a verifier answer that is not one of the allowed values, when it is parsed, then the claim gets one retry and otherwise stays `Unverified`.
 - Given the verifier's answer format, when it is produced, then the reason is written before the verdict (DEC-57).
 - Given a configuration where the `verifier` role uses the same model family as the `reader` role, when a run starts, then a warning names the self-preference risk; the run continues.
@@ -807,7 +809,7 @@ As a developer I want a model to check that the cited lines support each claim s
 **RF-302 Keep rejected claims** - R1 (M1) - Must - Source DEC-19, DEC-144 - ADR-005
 As a developer I want rejected and invalid claims kept and visible so that nothing is silently removed.
 
-- Given any verdict, when results are written, then the card keeps every claim with its status and reason; outputs never delete a claim. A claim that replaces a rejected one (RF-209) records the id it replaces; the rejected claim is kept.
+- Given any verdict, when results are written, then the card keeps every claim with its status and reason; outputs never delete a claim, and a `Rejected` verdict that is asked again and left `Unverified` keeps the claim and its reason. A claim that replaces a rejected one (RF-209) records the id it replaces; the rejected claim is kept.
   Verification: integration test.
 
 **RF-303 Verification summary** - R1 - Must - Source DEC-19 - ADR-005

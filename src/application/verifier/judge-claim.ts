@@ -178,10 +178,10 @@ export async function judgeClaim(
   const first = await ask(parts, requestOf(parts, claim, parentSpanId, asked));
   if (!first.ok) return first.error;
   const verdict = parseVerdictAnswer(first.value);
+  const reask = (messages: readonly LlmMessage[]) =>
+    ask(parts, requestOf(parts, claim, parentSpanId, messages));
   if (verdict.ok) {
     const history: LlmMessage[] = [...asked, { role: 'assistant', content: first.value.text }];
-    const reask = (messages: readonly LlmMessage[]) =>
-      ask(parts, requestOf(parts, claim, parentSpanId, messages));
     return settle(parts, reask, history, verdict.value);
   }
   const retry: LlmMessage[] = [
@@ -192,7 +192,10 @@ export async function judgeClaim(
   const second = await ask(parts, requestOf(parts, claim, parentSpanId, retry));
   if (!second.ok) return second.error;
   const again = parseVerdictAnswer(second.value);
-  if (again.ok) return { kind: 'judged', ...again.value };
+  if (again.ok) {
+    const history: LlmMessage[] = [...retry, { role: 'assistant', content: second.value.text }];
+    return settle(parts, reask, history, again.value);
+  }
   return unverified(`The verifier's answer could not be read after one retry: ${again.error}`);
 }
 
