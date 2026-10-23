@@ -102,7 +102,7 @@ function dataModelOf(text: string): HandoffPackage['dataModel'] {
 function flowsOf(text: string): HandoffPackage['flows'] {
   const step = {
     ...{ claimId: 'FLOW-001.c1', text, touches: 'FEAT-001', component: text },
-    ...{ action: text, files: [] },
+    ...{ action: text, files: [], inferred: false },
   };
   const unmapped = { ...step, claimId: 'FLOW-001.c2', touches: null, component: null, action: '' };
   return {

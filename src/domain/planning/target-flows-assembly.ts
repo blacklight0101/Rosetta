@@ -55,6 +55,7 @@ function stepsOf(
         (evidence === undefined ? null : inferComponent(evidence, placed, checks.described)),
       action: mapped?.action ?? '',
       files,
+      inferred: false,
     };
   });
   return { steps, refused };

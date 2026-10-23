@@ -42,6 +42,8 @@ export interface FlowStep {
   readonly action: string;
   /** The repository files the legacy step cites, as the card gives them. */
   readonly files: readonly string[];
+  /** True when the code, not the planner, placed the step in its component (from the files it cites). */
+  readonly inferred: boolean;
 }
 
 export interface MappedFlow {

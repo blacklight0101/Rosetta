@@ -16,7 +16,7 @@ const keep = (text: string): string => text;
 function stepOf(number: number, component: string | null, action: string) {
   return {
     ...{ claimId: `FLOW-001.c${String(number)}`, text: `Legacy step ${String(number)}.` },
-    ...{ touches: null, component, action, files: [] },
+    ...{ touches: null, component, action, files: [], inferred: false },
   };
 }
 
@@ -78,6 +78,16 @@ describe('targetFlowDiagram: markers and actors', () => {
 
     expect(text).toContain('participant p2 as Legacy step');
     expect(text.match(/not mapped/gu)).toHaveLength(2);
+  });
+});
+
+describe('targetFlowDiagram: inferred steps', () => {
+  it('RF-625 a step placed by the code, not the planner, is marked inferred', () => {
+    const inferred = { ...stepOf(1, 'Web', ''), inferred: true };
+    const text = targetFlowDiagram({ ...flow, steps: [inferred] }, keep);
+
+    expect(text).toContain('1. Legacy step 1. #40;inferred#41;');
+    expect(text).not.toContain('not mapped');
   });
 
   it('RF-625 a flow whose every step is mapped carries no marker', () => {

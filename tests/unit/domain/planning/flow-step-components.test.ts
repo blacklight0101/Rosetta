@@ -10,11 +10,28 @@ const components = [
 ];
 
 describe('inferComponent', () => {
-  it('RF-625 takes the component of a placed step that cites a file in the same folder', () => {
-    const placed = [{ files: ['src/Data/A.cs'], component: 'Order service' }];
+  it('RF-625 takes the component two placed steps agree on in the folder of the cited file', () => {
+    const placed = [
+      { files: ['src/Misc/A.cs'], component: 'Order service' },
+      { files: ['src/Misc/C.cs'], component: 'Order service' },
+    ];
 
-    const step = { files: ['src/Data/B.cs'], component: null };
+    const step = { files: ['src/Misc/B.cs'], component: null };
     expect(inferComponent(step, placed, components)).toBe('Order service');
+  });
+
+  it('RF-625 one placed step in the folder is not enough', () => {
+    const placed = [{ files: ['src/Misc/A.cs'], component: 'Order service' }];
+
+    const step = { files: ['src/Misc/B.cs'], component: null };
+    expect(inferComponent(step, placed, components)).toBeNull();
+  });
+
+  it('RF-625 the extension of a file is not a word, whatever the stack', () => {
+    const named = [{ name: 'Catalog zzq', responsibility: '' }];
+
+    const step = { files: ['src/Web/Catalog.zzq'], component: null };
+    expect(inferComponent(step, [], named)).toBeNull();
   });
 
   it('RF-625 placed steps of two components in one folder decide nothing by folder', () => {

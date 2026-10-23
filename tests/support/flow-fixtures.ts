@@ -83,7 +83,7 @@ export function checkoutDraft(): FlowsDraft {
 export function mappedFlow(text: string): MappedFlow {
   const step = {
     ...{ claimId: 'FLOW-001.c1', text, touches: null, component: text },
-    ...{ action: text, files: [] },
+    ...{ action: text, files: [], inferred: false },
   };
   return {
     ...{ cardId: 'FLOW-001', title: text, trigger: text, outcome: text },

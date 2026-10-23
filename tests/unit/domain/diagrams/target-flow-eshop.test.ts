@@ -35,6 +35,7 @@ const draft: FlowsDraft = {
       ...{ card: 'FLOW-001', inScope: true, reason: '' },
       steps: [
         { claim: 'FLOW-001.c2', component: 'Catalog data access', action: 'Registers it.' },
+        { claim: 'FLOW-001.c3', component: 'Catalog data access', action: 'Builds it.' },
         { claim: 'FLOW-001.c5', component: 'Catalog web front end', action: 'Routes it.' },
       ],
     },
@@ -67,6 +68,10 @@ describe('the eShop FLOW-001 target flow', () => {
     ]);
   });
 
+  it('RF-625 marks only the step the code placed as inferred', () => {
+    expect(eshop().steps.map((step) => step.inferred)).toEqual([false, false, false, true, false]);
+  });
+
   it('RF-625 draws steps 1 to 5 in order, the trigger as an actor, and Mermaid parses it', async () => {
     const text = targetFlowDiagram(eshop(), (each) => each);
 
@@ -84,5 +89,6 @@ describe('the eShop FLOW-001 target flow', () => {
     expect(text).toContain('actor p1 as Client');
     expect(text).toContain('Note over p1: An HTTP request arrives at the web host.');
     expect(text.match(/not mapped/gu)).toHaveLength(1);
+    expect(text.match(/inferred/gu)).toHaveLength(1);
   });
 });
