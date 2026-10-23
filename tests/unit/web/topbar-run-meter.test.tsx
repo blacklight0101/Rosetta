@@ -53,6 +53,7 @@ it('RF-1003 RF-1010 shows what the run spent against its cap in the top bar, bes
 
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
+  connection.event(agentStarted(3, 'reader-001', 'Catalog'));
 
   await waitFor(() => {
     expect(meter().getAttribute('aria-valuenow')).toBe('21');
@@ -72,11 +73,11 @@ it('RF-1003 RF-424 follows the run total that the page reads again at every mode
   const connection = await stream.connection();
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
+  connection.event(agentStarted(3, 'reader-001', 'Catalog'));
   await waitFor(() => {
     expect(meter().getAttribute('aria-valuenow')).toBe('0');
   });
 
-  connection.event(agentStarted(3, 'reader-001', 'Catalog'));
   connection.event(turn(4, 'reader-001', 1, [900, 40]));
 
   await waitFor(() => {
@@ -89,12 +90,13 @@ it('RF-1003 marks the meter as warning from 80% and in danger from 95%, with wor
   const connection = await stream.connection();
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
+  connection.event(agentStarted(3, 'reader-001', 'Catalog'));
 
   await waitFor(() => {
     expect(screen.getByTestId('topbar-run-meter').getAttribute('data-level')).toBe('warn');
   });
   expect(meter().getAttribute('aria-valuetext')).toContain('approaching the cap');
-  connection.event(turn(3, 'reader-001', 1, [900, 40]));
+  connection.event(turn(4, 'reader-001', 1, [900, 40]));
 
   await waitFor(() => {
     expect(screen.getByTestId('topbar-run-meter').getAttribute('data-level')).toBe('danger');
@@ -107,11 +109,12 @@ it('RF-1003 RF-1010 the meter leaves the top bar when the run ends', async () =>
   const connection = await stream.connection();
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
+  connection.event(agentStarted(3, 'reader-001', 'Catalog'));
   await waitFor(() => {
     expect(meter()).toBeTruthy();
   });
 
-  connection.event(runEnded(3, 'Completed'));
+  connection.event(runEnded(4, 'Completed'));
 
   await waitFor(() => {
     expect(screen.queryByTestId('topbar-run-meter')).toBeNull();
@@ -127,6 +130,7 @@ it('RF-1003 a run that has not started has no meter in the top bar', async () =>
   expect(screen.queryByTestId('topbar-run-meter')).toBeNull();
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
+  connection.event(agentStarted(3, 'reader-001', 'Catalog'));
   await screen.findByTestId('topbar-run-meter');
 });
 
@@ -153,6 +157,7 @@ it('P5-07 there is no meter until the run estimate says whether the models are l
   const connection = await stream.connection();
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
+  connection.event(agentStarted(3, 'reader-001', 'Catalog'));
   await screen.findByTestId('run-status');
 
   expect(screen.queryByTestId('topbar-run-meter')).toBeNull();

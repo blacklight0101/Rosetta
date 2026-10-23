@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
 import type { ApiFailure } from '../api/client.js';
+import type { RunEstimate } from '../api/estimate-schemas.js';
 import type { RunRow } from '../api/run-schemas.js';
 import { cancelRun } from '../api/runs.js';
 import { useApp } from '../app/app-context.js';
@@ -56,21 +57,31 @@ function tokensOf(state: RunState): number {
 /**
  * The run's spend against its cap for the top bar, only while the run works and its cap is known:
  * tokens against the token cap when every model is local (P5-07), else the cost against its cap.
+ * An understand run has no meter until its estimate says which, so the unit never flips.
  */
 // RF-1003
 function meterOf(
   state: RunState,
   run: RunRow,
   phase: RunPhase,
-  local: boolean,
+  local: boolean | undefined,
 ): RunMeterReading | undefined {
-  if (phase.kind !== 'running') return undefined;
+  if (phase.kind !== 'running' || local === undefined) return undefined;
   return runMeterReadingOf({
     caps: state.caps,
     costMicros: costOf(state, run),
     tokens: tokensOf(state),
     local,
   });
+}
+
+/** Whether the models are local; unknown (undefined) until an understand run's estimate arrives. */
+function localOf(
+  stage: string | undefined,
+  estimate: RunEstimate | undefined,
+): boolean | undefined {
+  if (estimate !== undefined) return isLocalEstimate(estimate);
+  return stage === 'understand' ? undefined : false;
 }
 
 function useStop(runId: string): {
@@ -118,9 +129,7 @@ export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps)
     stage,
     planned ? state.agents.map((agent) => agent.area) : [],
   );
-  usePublishRunMeter(
-    meterOf(state, run, phase, estimate !== undefined && isLocalEstimate(estimate)),
-  );
+  usePublishRunMeter(meterOf(state, run, phase, localOf(stage, estimate)));
   return (
     <div class="rst-live">
       <RunStatusBar
