@@ -14,9 +14,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 126     | 16        | 106        | 4         | 0                  | 50      | 72      | 4      | 82         | 0         |
+| P3 Report and plan      | 127     | 16        | 107        | 4         | 0                  | 51      | 72      | 4      | 83         | 0         |
 | P5 Polish (G-10)        | 19      | 7         | 12         | 0         | 0                  | 11      | 8       | 0      | 0          | 0         |
-| **Total**               | **369** | **97**    | **243**    | **29**    | **0**              | **181** | **174** | **14** | **223**    | **0**     |
+| **Total**               | **370** | **97**    | **244**    | **29**    | **0**              | **182** | **174** | **14** | **224**    | **0**     |
 
 ## Conventions for every card
 
@@ -4808,7 +4808,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: plan source selection (`src/application/plan/plan-inputs.ts`, `plan-source.ts`; today only an understand run that ended Completed), RF-604, RF-614, P3-111 (RF-429). Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing): the Invoice Deepen and the eShop understand ended CapReached after the verifier judged their claims (P3-111 worked: 427 eShop claims judged after the readers stopped), yet both plans were refused with RST-1802 "no finished understand run"; the summariser and consolidation never ran, so the overview is a stub and same-title cards were not merged.
 - **Do**: (1) a plan may be written from an understand or Deepen run that ended CapReached when it has Supported claims; the package and checks.md say the source run stopped at a cap and how much was left unread; (2) the P3-111 reserve also keeps room for the summariser and consolidation, so a capped run still has its overview and merged cards; (3) the spec (RF-604) says which end states can be planned.
 - **Review probes**: a recorded CapReached run with Supported claims plans and checks.md names the cap; a capped run has an overview and consolidated cards; a run with no Supported claim is still refused (RST-1802); mutation: Completed-only selection fails a test.
@@ -4825,7 +4825,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the derived SCRN field claims ("Field X (text, optional) is on the screen") and the verifier (RF-300..RF-306). Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-02: these claims take 85-90% of the verifier tokens of a Deepen run (about half the run) and were the reason the Invoice Deepen reached its cap; 39 of 50 SCRN claims Rejected on Asset Manager and 112 of 251 on the Invoice Deepen.
 - **Do**: (1) a derived screen field claim is checked deterministically against its cited lines (the field label or control id is present in the cited lines -> Supported; absent -> marked with a plain reason) and sent to the model only when the deterministic check cannot decide; or several field claims of one screen are judged in one verifier call; pick the simplest and record it in docs; (2) the run log counts claims judged without a model call.
 - **Review probes**: a recorded Deepen with SCRN cards makes at most one verifier call per screen (or none for decidable fields) and keeps the same verdicts on the fixture; mutation: one call per field fails a test.
@@ -4842,7 +4842,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: reader task order (`planReaderTasks`, `plannedAreas`), the start page's library-area confirmation (start-gate). Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-01: with library areas included, eShop ran its 86 vendored areas (Scripts, Content, .kube schemas) in alphabetical order first; they used 42% of the reader tokens for four small cards and 31 first-party areas, including every eShopModernized* source folder, never ran before the cap.
 - **Do**: (1) reader tasks run first-party areas first (largest first or in code-map order), then library areas, so a cap never starves own code; (2) an understand request without an area list from the API uses the same default the start page offers (state which in docs) and the estimate warns when library areas are included; (3) a library area produces no FEAT/BR card that only says the area holds third-party code.
 - **Review probes**: a recorded eShop-shaped run with library areas schedules every first-party area before any library area; the "Area holds only third-party" card is not produced; mutation: alphabetical order fails a test.
@@ -4859,7 +4859,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: verifier prompt and judgement parsing (`prompts/verifier/claim.v2.md`), the citation excerpt sent to the verifier. Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), findings HB-04, HB-05: about 80% of Rejected claims are rejected because a label or header is not in the cited lines, not because the code contradicts them; the same gap gives Supported on one claim and Rejected on another; some verdicts say "matching the claim" yet are Rejected; true claims cited a few lines short are Rejected.
 - **Do**: (1) the excerpt sent to the verifier adds a few context lines around the cited range (marked as context) so a header or label just outside it is visible; (2) a missing label alone gives a separate verdict (for example Partly or a citation note) rather than Rejected, per the existing verdict set (state which); (3) a verdict whose reason agrees with the claim but whose label is Rejected is re-asked once or flagged; (4) new verifier prompt version, old kept.
 - **Review probes**: recorded judgements: a claim whose header is two lines above the range is not Rejected; a contradictory verdict is caught; Supported share on the evaluation fixtures does not fall; mutation: no context lines fails a test.
@@ -4876,7 +4876,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: Deepen rounds and claim merge (P2-41, P3-67, P3-110). Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-06: Asset Manager claims went from 156 to 340 for one new card; 61 near-duplicate claims on Asset Manager and 45 on Invoice after Deepen.
 - **Do**: (1) a Deepen claim on a card that already has a claim with the same normalised text and overlapping citation replaces it (keeping the better verdict and both citations) instead of being added; (2) a rejected claim that the Deepen round re-states with a new citation replaces the rejected one and keeps its history; (3) the run log counts replaced claims.
 - **Review probes**: a recorded Deepen over a recorded understand adds no near-duplicate claim and keeps every distinct Supported claim; mutation: always-add fails a test.
@@ -4893,7 +4893,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: plan answer parsing (`src/application/plan/plan-answer.ts`: the answer schema, `technical` lists, `parsePlanAnswer`), P3-82 (gap call repaired once), P3-101 and P3-102 (Left out lists). Haiku 5.5 battery of 2026-10-23 on an uploaded legacy project: the planner answer was valid JSON with every top-level key, but two items of `technical.security` and both items of `technical.environments` did not match the schema, so the whole answer was refused (RST-1803, "no JSON object in it reads as a plan") after one call and the run failed with no package.
 - **Do**: (1) each item of the plan answer lists (requirements, components, decisions, entities, phases, risks and every `technical` list) is read on its own like task cards: an item that does not read is left out and listed in checks.md "Left out" with its list, position and the field that failed; (2) the answer is refused only when no requirement reads; (3) a refused answer gets one repair call that names the failing paths before the run fails (as the gap call does, P3-82).
 - **Review probes**: a recorded answer with two bad security items and two bad environment items writes a package and lists the four items in checks.md; an answer with no readable requirement is still refused; the repair call is made once; mutation: whole-answer parsing fails a test.
@@ -4901,6 +4901,23 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: RF-601, RF-620..RF-627, P3-82, P3-101; Haiku battery 2026-10-23.
+
+---
+
+### P3-127 - Follow-up: a masked secret never breaks the quoting of a card file
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: card writing (`src/infrastructure/cards/yaml-header.ts`, `card-markdown.ts`), the secret masker and where it is applied to rendered card text, the run card reader (`src/infrastructure/cards/file-run-cards.ts`). Haiku 5.5 run of 2026-10-23 on the public eShopModernizing repository: 3 of 285 card files did not read as YAML, so the plan from that run failed with RST-1802 before any model call. A claim reason quoted a connection string inside escaped quotes; the masker, applied to the rendered file text, replaced the password value together with the backslash of the closing `\"`, which ended the YAML string early.
+- **Do**: mask secrets in the values before they are quoted and rendered (or make the masked value stop before a backslash), so a rendered card header always parses; the run card reader keeps refusing a card that does not read.
+- **Review probes**: a synthetic claim and reason containing a quoted connection string with a password (escaped quotes before and after) writes a card whose header parses and whose value is masked; the same for the Markdown body; mutation: masking the rendered text again breaks the test; no secret value appears in any written file.
+- **Behaviour to preserve**: RF-140..RF-149 masking (every written file masked), DEC-18 citations, the card format.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-141, RF-604, RF-201; Haiku battery 2026-10-23 (fix round 3 re-run).
 
 ---
 
@@ -4914,7 +4931,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: coverage report, run overview "not covered", Deepen coverage-pass selection (RF-209). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-04: "every first-party file was read" at 24% of tokens; 146k unread tokens of a partly read file are not offered.
 - **Do**: list unread line ranges of partly read files, count them in "not read", offer them to the coverage pass.
 - **Review probes**: a file read to 6.7% shows in "not read" with its unread share; the coverage pass reads its unread ranges.
@@ -4948,7 +4965,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: reader loop, output limit handling (P3-100). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-20: an answer cut at 4,096 tokens got repair prompts, then the task restarted.
 - **Do**: ask the model to continue the cut answer once before repairing or restarting.
 - **Review probes**: a recorded cut answer is completed by one continuation call.
@@ -5135,7 +5152,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: reader answer parsing and repair (P3-105 cards/repair.v3). Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-09: about 20% of reader calls in the Asset Manager Deepen were retries (missing `screen` object, code fences, answers cut at 8,192 tokens).
 - **Do**: strip code fences, fill a missing optional object with an empty one where the schema allows, continue a cut answer (see P5-03) before a full retry.
 - **Review probes**: recorded answers with each fault parse without a retry.
@@ -5186,7 +5203,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: third-party library names (P3-112). Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-12: bootstrap-grid.css and bootstrap-reboot.css stayed first-party.
 - **Do**: add the bootstrap-grid, bootstrap-reboot and bootstrap-utilities names (and .min/.map variants).
 - **Review probes**: the three files are third-party; Content/Site.css stays first-party.
