@@ -62,3 +62,17 @@ it('RF-422 a role cap names the role and the project settings', () => {
     "The reader role's cost cap of $0.30 in the project settings was reached. The other roles go on.",
   );
 });
+
+it('RF-429 the readers share of the run cap says what is kept for verifying and how to read further', () => {
+  expect(
+    capReachedText({
+      role: 'reader',
+      scope: 'role-tokens',
+      capSource: 'reserve',
+      capTokens: 1_400_000,
+      spentTokens: 1_399_000,
+    }),
+  ).toBe(
+    'The readers stopped at 1400000 tokens, their share of the run cap. The rest is kept to verify the claims they wrote. Raise the run cap in the project settings to read further.',
+  );
+});

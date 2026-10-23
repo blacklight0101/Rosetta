@@ -62,9 +62,29 @@ function roleCaps(role: RoleBudget | undefined): readonly UsageCap[] {
   return caps;
 }
 
-// RF-422, RF-423, RF-1106
+/**
+ * RF-429: a reader with no cap of its own is held to a share of the run caps of its key source, so
+ * the run keeps what the verifier needs for the claims the readers wrote. The share is a role cap,
+ * so it stops the readers only, never the run (RF-423).
+ */
+function readerShareCaps(keys: readonly UsageCap[]): readonly UsageCap[] {
+  const share = (cap: UsageCap): bigint => (cap.limit * BigInt(READER_SHARE_PERCENT)) / 100n;
+  const caps: UsageCap[] = [];
+  for (const cap of keys) {
+    if (cap.kind === 'run-cost')
+      caps.push({ kind: 'role-cost', limit: share(cap), source: 'reserve' });
+    if (cap.kind === 'run-tokens')
+      caps.push({ kind: 'role-tokens', limit: share(cap), source: 'reserve' });
+  }
+  return caps;
+}
+
+// RF-422, RF-423, RF-429, RF-1106
 export function capsFor(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
-  return [...keyCaps(keySource, inputs), ...roleCaps(inputs.role)];
+  const keys = keyCaps(keySource, inputs);
+  const own = roleCaps(inputs.role);
+  if (inputs.reader !== true || own.length > 0) return [...keys, ...own];
+  return [...keys, ...readerShareCaps(keys)];
 }
 
 function keyCaps(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
