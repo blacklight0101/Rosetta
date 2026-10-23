@@ -28,7 +28,8 @@ import { runView } from './run-view.js';
 // RF-1006, RF-1108, RF-1105: the run routes.
 // - POST /api/projects/:id/runs starts a run of one stage of the user's project: 202 with the run
 //   and its queue position (null when it started); a stage that cannot be started yet answers 409
-//   (RST-2305), another user's project 404. An understand run takes `areas` and `cloudConsent`;
+//   (RST-2305), another user's project 404. An understand run takes `areas` and `cloudConsent`; without `areas` it reads the own code only when
+//   the project has third-party (library) areas, as the start page does by default, else every area (P3-123);
 //   one whose roles need the consent and lack it answers 400 (RST-1515, RF-143); on an uploaded
 //   project it also needs `privateCodeConfirmed: true`, else 400 (RST-1521, RF-132).
 // - GET and POST /api/projects/:id/estimate give the estimate of an understand run (estimate-routes.ts).

@@ -28,7 +28,7 @@ export class TaskLog {
 
   /** RF-243: an area of third-party code writes no open question. */
   thirdPartyQuestions(task: ReaderTask): Promise<void> {
-    const text = `The area "${task.area.name}" is third-party code; its open questions were dropped.`;
+    const text = `The area "${task.area.name}" is third-party code; its open questions and cards that only describe library code were dropped.`;
     return this.warn(task, text);
   }
 
