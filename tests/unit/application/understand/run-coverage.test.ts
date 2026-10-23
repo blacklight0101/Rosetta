@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { runAgentTask } from '../../../../src/application/agent/agent-loop.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { TaskReads, toolsWithReads } from '../../../../src/application/understand/run-coverage.js';
+import { areaCoverage } from '../../../../src/domain/cards/area-coverage.js';
+import { agentCodeMap, ordersArea } from '../../../support/agent-fixtures.js';
 import { footerOf, tagOf } from '../../../support/data-block-tags.js';
 import { toolsSetup } from '../../../support/agent-tools-harness.js';
 import { loopSetup, readOrder, toolTurn } from '../../../support/agent-loop-harness.js';
@@ -35,13 +37,29 @@ describe('toolsWithReads', () => {
     expect(reads.all().every((read) => read.startLine === read.endLine)).toBe(true);
   });
 
-  it('RF-230 keeps the statement lines of a code map entry and nothing for a symbol list', async () => {
+  it('RF-209 EV-38 a file that was only queried stays not read, whatever statements the query lists', async () => {
     const { reads, run } = recorded();
 
     await run('codemap_query', { path: 'src/Orders/OrderService.cs' });
     await run('codemap_query', { symbol: 'Order' });
 
-    expect(reads.all()).toEqual([{ path: 'src/Orders/OrderService.cs', startLine: 5, endLine: 5 }]);
+    expect(reads.all()).toEqual([]);
+    const coverage = areaCoverage(ordersArea, agentCodeMap.files, reads.all());
+    const queried = coverage.files.find((file) => file.path === 'src/Orders/OrderService.cs');
+    expect(queried?.read).toEqual([]);
+    expect(coverage.readTokens).toBe(0);
+  });
+
+  it('RF-209 EV-38 lines a read returned still count after a query of the same file', async () => {
+    const { reads, run } = recorded();
+
+    await run('codemap_query', { path: 'src/Orders/OrderService.cs' });
+    await run('read_file', { path: 'src/Orders/OrderService.cs', startLine: 1, endLine: 3 });
+
+    expect(reads.all()).toEqual([{ path: 'src/Orders/OrderService.cs', startLine: 1, endLine: 3 }]);
+    const coverage = areaCoverage(ordersArea, agentCodeMap.files, reads.all());
+    const read = coverage.files.find((file) => file.path === 'src/Orders/OrderService.cs')?.read;
+    expect(read).toEqual([{ startLine: 1, endLine: 3 }]);
   });
 
   it('RF-230 keeps the lines of a read and nothing of a refused call', async () => {
