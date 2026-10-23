@@ -31,6 +31,11 @@ describe('parseDataModelAnswer: placeholder columns (recorded Asset Manager plan
     expect(parsed?.problems.map((each) => each.field)).toEqual(
       expect.arrayContaining(['table inventory_stock_data', 'table stock_in_out_transaction_log']),
     );
+    const tableDrops = parsed?.problems.filter(
+      (each) => each.field.startsWith('table ') && !each.field.endsWith('columns'),
+    );
+    expect(tableDrops).toHaveLength(2);
+    expect(tableDrops?.[0]?.reason).toContain('only placeholder');
   });
 });
 
