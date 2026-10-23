@@ -27,6 +27,8 @@ import {
 import { diagramDocumentPaths, extractDiagrams } from '../report/report-diagrams.js';
 import type { ScannedSource } from '../ports/scan-results.js';
 import { scopeOf } from '../runs/run-scope.js';
+import type { PriorCards } from '../ports/prior-cards.js';
+import { consolidatedQuestions } from '../understand/consolidated-questions.js';
 import { exportFileName } from './export-zip.js';
 
 // RF-504, RF-506, RF-1013, RF-1105: Build report on a run. It gives the owner of a finished run its
@@ -47,6 +49,8 @@ export interface BuildReportDependencies {
   readonly logger: Logger;
   /** RF-500: the open questions of the run and their answers. */
   readonly answers: AnswersFile;
+  /** P5-11: the cards of the run, to list the questions that survived consolidation. */
+  readonly priorCards: Pick<PriorCards, 'cardsOf'>;
   /** RF-1010: the project totals at generation time. */
   readonly costs: CostTotals;
   readonly clock: Clock;
@@ -122,11 +126,11 @@ export class BuildReport {
   ): Promise<
     Pick<ReportInputs, 'generatedAt' | 'coverage' | 'cost' | 'projectTotals' | 'questions'>
   > {
-    const { files, answers, costs, clock } = this.deps;
-    const questions = await answers.questionsOf(
-      { userId: run.userId, projectId: run.projectId },
-      run.runKey,
-    );
+    const { files, answers, priorCards, costs, clock } = this.deps;
+    const project = { userId: run.userId, projectId: run.projectId };
+    const filed = await answers.questionsOf(project, run.runKey);
+    // P5-11: the questions of the consolidated set, as the answers page lists them.
+    const questions = consolidatedQuestions(filed, await priorCards.cardsOf(project, run.runKey));
     return {
       generatedAt: clock.now().toISOString(),
       coverage: parseCoverage(await files.read(scope, 'coverage.json')),

@@ -20,6 +20,8 @@ export interface PriorCard {
   readonly questionState?: OpenQuestionState;
   /** `OQ` cards only: the question asked. */
   readonly question?: string;
+  /** P5-11: the ids consolidation merged into this card, its own first (data-model.md section 3.7). */
+  readonly mergedFrom?: readonly string[];
 }
 
 export interface PriorCards {

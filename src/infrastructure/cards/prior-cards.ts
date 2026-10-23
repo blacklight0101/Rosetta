@@ -25,6 +25,7 @@ const headerSchema = z.object({
   claims: z.array(z.object({ text: z.string(), citations: z.array(z.string()).optional() })),
   questionState: z.enum(['Open', 'Answered']).optional(),
   question: z.string().optional(),
+  mergedFrom: z.array(z.string()).optional(),
 });
 
 const HEADER_END = '\n---\n';
@@ -62,11 +63,19 @@ function headerOf(text: string): PriorCard | undefined {
   }
   const header = headerSchema.safeParse(data);
   if (!header.success) return undefined;
-  const { claims, questionState, question, ...rest } = header.data;
+  const { claims, questionState, question, mergedFrom, ...rest } = header.data;
   const state = questionState === undefined ? {} : { questionState };
   const asked = question === undefined ? {} : { question };
+  const merged = mergedFrom === undefined ? {} : { mergedFrom };
   const cited = citedFiles(claims.flatMap((claim) => claim.citations ?? []));
-  return { ...rest, ...state, ...asked, claims: claims.map((claim) => claim.text), cited };
+  return {
+    ...rest,
+    ...state,
+    ...asked,
+    ...merged,
+    claims: claims.map((claim) => claim.text),
+    cited,
+  };
 }
 
 /** The text with the state of the question card changed, or undefined when it is not in `from`. */

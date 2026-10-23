@@ -22,6 +22,7 @@ import type { ModelList } from '../application/models/model-list.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
 import { FileAnswersFile } from '../infrastructure/cards/answers-file.js';
 import { FileRunCards } from '../infrastructure/cards/file-run-cards.js';
+import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
 import { PgAccountUsage } from '../infrastructure/db/pg-account-usage.js';
 import { PgAuditLog } from '../infrastructure/db/pg-audit-log.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
@@ -201,8 +202,8 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
     estimatePlan: new EstimatePlan({
       ...{ projects, runs, briefs, clock, usage },
       ...{ priceTable: parts.priceTable, models: parts.models },
-      ...{ cards: new FileRunCards(writer), users: new PgUserRepository(pool) },
-      answers: new FileAnswersFile({ writer, masker }),
+      ...{ cards: new FileRunCards(writer), priorCards: new FilePriorCards(writer) },
+      ...{ users: new PgUserRepository(pool), answers: new FileAnswersFile({ writer, masker }) },
       serverSettings: settings,
       ...{ keys: new PgProviderKeyRepository(pool), serverKeys: parts.serverKeys },
       catalogue: () => Promise.resolve(catalogue),

@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import { dirname, join } from 'node:path';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import { BuildReport } from '../../src/application/use-cases/build-report.js';
@@ -88,6 +89,7 @@ function reportBuilder(s: Stores, dataDir: string): BuildReport {
   return new BuildReport({
     ...{ runs, manifests, history: log, scans: scanResultsOf(s), logger, clock },
     answers: new FileAnswersFile({ writer, masker }),
+    priorCards: new FilePriorCards(writer),
     files: new FileRunTextFiles(writer),
     cards: new FileReportCards(new NodeRunFileReader(dataDir)),
     costs: new MemoryCostTotals(),

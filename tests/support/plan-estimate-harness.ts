@@ -1,4 +1,5 @@
 import { EstimatePlan } from '../../src/application/estimate/estimate-plan.js';
+import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import type { ServerKeyPresence } from '../../src/application/ports/server-key-presence.js';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import type { Project } from '../../src/application/projects/project.js';
@@ -127,6 +128,7 @@ export async function createPlanEstimateHarness(
     estimate: new EstimatePlan({
       ...{ projects, runs, briefs, users, serverSettings, usage, keys, clock },
       cards: new FileRunCards(files),
+      priorCards: new FilePriorCards(files),
       answers: new FileAnswersFile({ writer: files, masker }),
       serverKeys: options.serverKeys ?? { has: () => true },
       priceTable: options.priceTable ?? estimatePrices,

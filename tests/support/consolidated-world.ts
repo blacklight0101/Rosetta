@@ -128,6 +128,24 @@ async function filedAnswers(
 
 type Seed = Awaited<ReturnType<typeof seeded>>;
 
+/** What the report of the run lists as its questions. */
+async function reportQuestionsOf(
+  seed: Seed,
+  answers: FileAnswersFile,
+  priorCards: FilePriorCards,
+): Promise<readonly RecordedQuestion[]> {
+  const { runs, logger, run } = seed;
+  const writer = new RecordingReportWriter();
+  const parts = { runs, manifests: new MemoryRunManifestStore(), history: new MemoryEventSink() };
+  const figures = { scans: new FixedScans([]), logger, ...reportFigures(), answers, priorCards };
+  const files = new MapRunTextFiles({});
+  await new BuildReport({ ...parts, ...figures, files, writer }).execute({
+    actor: actorOf(seed.account),
+    runId: run.id,
+  });
+  return writer.written[0]?.model.questions ?? [];
+}
+
 function readersOf(seed: Seed, answers: FileAnswersFile): Omit<World, 'actor' | 'run' | 'ref'> {
   const { project, run, runs, briefs, projects, logger, files } = seed;
   const actor = actorOf(seed.account);
@@ -154,17 +172,11 @@ function readersOf(seed: Seed, answers: FileAnswersFile): Omit<World, 'actor' | 
         cardId,
       }),
     planQuestions: async () => {
-      const deps = { projects, runs, briefs, cards: runCards, answers };
+      const deps = { projects, runs, briefs, cards: runCards, answers, priorCards };
       const inputs = await planInputs(deps, ref);
       return inputs.ok ? inputs.value.questions : [];
     },
-    reportQuestions: async () => {
-      const writer = new RecordingReportWriter();
-      const parts = { runs, manifests, history, files: new MapRunTextFiles({}), writer };
-      const figures = { scans: new FixedScans([]), logger, ...reportFigures(), answers };
-      await new BuildReport({ ...parts, ...figures }).execute(request);
-      return writer.written[0]?.model.questions ?? [];
-    },
+    reportQuestions: () => reportQuestionsOf(seed, answers, priorCards),
     journey: async () => {
       const deps = { projects, runs, manifests, history, briefs, answers, priorCards };
       const result = await new GetJourney({ ...deps, cards: runCards }).execute({
