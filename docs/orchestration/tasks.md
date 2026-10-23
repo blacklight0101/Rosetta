@@ -4910,7 +4910,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: card writing (`src/infrastructure/cards/yaml-header.ts`, `card-markdown.ts`), the secret masker and where it is applied to rendered card text, the run card reader (`src/infrastructure/cards/file-run-cards.ts`). Haiku 5.5 run of 2026-10-23 on the public eShopModernizing repository: 3 of 285 card files did not read as YAML, so the plan from that run failed with RST-1802 before any model call. A claim reason quoted a connection string inside escaped quotes; the masker, applied to the rendered file text, replaced the password value together with the backslash of the closing `\"`, which ended the YAML string early.
 - **Do**: mask secrets in the values before they are quoted and rendered (or make the masked value stop before a backslash), so a rendered card header always parses; the run card reader keeps refusing a card that does not read.
 - **Review probes**: a synthetic claim and reason containing a quoted connection string with a password (escaped quotes before and after) writes a card whose header parses and whose value is masked; the same for the Markdown body; mutation: masking the rendered text again breaks the test; no secret value appears in any written file.
@@ -4927,7 +4927,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the secret masker (`src/infrastructure/guards/secret-masker.ts`, `secret-setting-forms.ts`) and the files it masks (card files, `answers.md`, provider requests). Review of P3-127 (2026-10-23): raw text that quotes a setting with literal backslash-escaped quotes, such as a synthetic `Password=\"FAKE-pw\" and \"x\"`, leaves the value unmasked: the masker takes the backslash as the end of the value. Found with synthetic values on the code before and after P3-127, in card files and in answers.md.
 - **Do**: a setting value that starts with an escaped quote is read up to the matching escaped quote and masked whole; the backslashes stay in place.
 - **Review probes**: the synthetic shape above is masked in a card file, in answers.md and in a provider request; a plain and a JSON-quoted value are masked as before; mutation: the old value pattern lets the value through; the P3-116 precision cases still pass.
@@ -4944,7 +4944,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the OpenAI request body (`src/infrastructure/providers/openai/openai-request.ts`), the reasoning effort wiring (`provider-factory.ts` `withEffort`, `ReasoningEffortProvider`, `project-settings.ts` `REASONING_EFFORTS`). Evaluation of 2026-10-23 (OpenAI, gpt-6-luna on every role): every reader call failed with HTTP 400 and Understand ended Failed (RST-1506) at no cost. OpenAI answers "Function tools with reasoning_effort are not supported for <model> in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'". A probe with synthetic content showed the same 400 for gpt-6-luna, gpt-6-sol, gpt-5.6-luna and gpt-5.5 at effort `low`, and 200 for each at `none`; a call without tools takes `low`.
 - **Do**: a Chat Completions request that carries tools sends `reasoning_effort: "none"` to a model on the reasoning list; a request without tools keeps the effort the role sets (default low, Q-58). The run log notes once per run that the effort was lowered for tool calls. `temperature` stays unsent unless the role sets it.
 - **Review probes**: a recorded reader request with tools for gpt-6-luna has `reasoning_effort: "none"`; a summariser request without tools has `low`; a model off the reasoning list gets no `reasoning_effort`; mutation: sending the role effort with tools fails the first probe; a contract test replays the recorded 400 body and shows it is reported as a request error, not retried.
@@ -4961,7 +4961,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-129
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the shipped model list (`prices/models.yaml`, `src/application/models/model-list.ts`), the provider factory effort wiring (P3-129), the run start checks. Evaluation of 2026-10-23 after P3-129: the OpenAI run with gpt-6-luna on every role still failed (every reader call HTTP 400) because the list does not mark gpt-6-luna as a reasoning model, so no effort is sent, and OpenAI's default effort refuses tools. A probe with Rosetta's own reader tools and synthetic content showed: gpt-6-luna and gpt-6-sol answer 200 with effort none and tools, 400 with tools and no effort; gpt-6-astra and gpt-6.1-sol answer 400 with tools at every effort ("does not support 'none' with this model"; "Function tools with reasoning_effort are not supported"), and 200 without tools at low.
 - **Do**: mark gpt-6-luna and gpt-6-sol `reasoning: true`. Give the list a way to mark a model that cannot call tools on Chat Completions (gpt-6-astra, gpt-6.1-sol); a run that gives such a model to a role that calls tools is refused before any call, with a message that names the model and the role. A role without tools may still use it. The settings page shows the same reason when such a model is picked for a tool role.
 - **Review probes**: gpt-6-luna on a reader sends effort none with tools and low without (P3-129 rule now reached); gpt-6-astra on a reader is refused at start with no provider call and no cost; gpt-6-astra on the summariser runs; a model list without the new mark behaves as before; mutation: removing the mark lets the run start and the first call fail.
@@ -4978,7 +4978,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-130
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the OpenAI adapter (`src/infrastructure/providers/openai/`), the model list mark from P3-130, OpenAI's Responses API docs (developers.openai.com). OpenAI's error for tools on Chat Completions says "use /v1/responses"; gpt-6-astra and gpt-6.1-sol can only call tools there, and the GPT-6 models can keep their reasoning effort with tools there.
 - **Do**: an OpenAI model the list marks for it sends calls with tools to `/v1/responses` (input items, function tools, function call outputs by call id, `reasoning.effort`, `max_output_tokens`, streaming with usage) and reads tool calls, text, finish reason and token counts back into the same `LlmResponse`. Chat Completions stays the route for every other model and for openai-compatible. The P3-130 refusal no longer applies to a model that uses this route. The adapter is recorded in a contract test like the Chat Completions one.
 - **Review probes**: a recorded Responses exchange with one tool call and its output round-trips through the agent loop; usage and cost match the recorded counts; a streamed answer cut at the output limit is reported like the Chat Completions one (P5-03); a model not marked keeps Chat Completions byte for byte; mutation: sending the Chat Completions body to /v1/responses fails the contract test.
@@ -5016,7 +5016,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: P3-73 refusal list. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-09: questions ask what column D means while its header "Qty" is in the cited lines; one asks the role of VBA modules already read.
 - **Do**: refuse a question whose answer (a header, a module's read code) is in the cited lines.
 - **Review probes**: the evaluation's column D question is refused; a real business question passes.
@@ -5050,7 +5050,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: P3-75 context growth (per call). Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-21: the context alternated 65,536 and 32,768; the first planner call after a change timed out at 120 s with no token.
 - **Do**: keep the grown context for the rest of the run (per role).
 - **Review probes**: calls after a growth reuse the grown size; no alternation in a recorded run.
@@ -5067,7 +5067,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: journey strip, run page. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), findings EV-12, EV-13, EV-16, EV-19: while a plan runs the journey still says "Review the estimate"; a failed plan points to a Resume button that does not exist; Deepen tiles count 27 cards against 56 and "16/16 areas read" with two failed; the plan run page shows understand panels.
 - **Do**: fix each of the four.
 - **Review probes**: one e2e or unit test per item.
@@ -5084,7 +5084,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: project settings, run page messages, cap warning. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), findings EV-14, EV-15, EV-17: "Differs from the default of 4" for the Ollama default 1; "No card passed the citation check" when the judgement rejected it; "the 1 first reader calls" and a cap pointer with no link.
 - **Do**: fix each text; link the caps.
 - **Review probes**: a test per text.
@@ -5101,7 +5101,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: header total, run meter, start page cap field. Evaluation of 2026-10-22 (local Ollama, Asset Manager, Loan and Invoice workbooks), finding EV-18 (known since 2026-10-21).
 - **Do**: when every role is local, show tokens in the header, run meter and cap fields.
 - **Review probes**: a local-only setup shows no dollar amount on those three places.
@@ -5118,7 +5118,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the hand-off package templates and planner prompts; notes of 2026-10-21 (build trials): fixtures measure repository files, not workbook rows; the Template layout cells; probes without expected outcomes; a "waiting on OQ" tag on every card; boilerplate repetition in tasks.md.
 - **Do**: fix each item the owner keeps after review.
 - **Review probes**: one test per item kept.
@@ -5169,7 +5169,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: answers API and page. Evaluation pass 3 of 2026-10-23 (local Ollama, a private legacy web-forms project; details stay private, the reproduction below is synthetic), finding EV-41: the page lists question ids merged away and misses the real one.
 - **Do**: list the open questions of the consolidated card set.
 - **Review probes**: a run with merged questions lists the surviving ids.
@@ -5237,7 +5237,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: agents.parallelism (project setting, default 1), verifier scheduling, budget guard reservations. Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-08: one agent at a time, about 2.4 s per verifier claim; cap-stopped agents spent 14 minutes doing nothing.
 - **Do**: run verifier judgements with the project parallelism (reservations per call), and stop queued agents at once when a cap is reached.
 - **Review probes**: a recorded run with parallelism 4 gives the same verdicts; queued agents end immediately after a cap.
@@ -5254,7 +5254,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: run token cap and cost meter. Haiku 5.5 battery of 2026-10-23 (every role claude-haiku-5-5; Asset Manager, Loan, Invoice workbooks and eShopModernizing), finding HB-03: the token cap counts cached input tokens in full, so eShop stopped at $0.29 of a $0.50 cost cap.
 - **Do**: decide with the owner whether the token cap counts cached tokens in full (default: count them at a fixed share, documented), and show both figures on the run page.
 - **Review probes**: a recorded run with cached tokens reaches the cap later under the new rule.
@@ -5288,7 +5288,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: budget guard scopes (run, user-day, server-month), P3-111 reader share. Found on the eval stack on 2026-10-23: a run stopped by the administrator user-day cap left its claims unjudged (the reader share covers the run token cap only).
 - **Do**: apply the reader share to the user-day and server caps that bind the run (the smallest remaining cap), or stop the readers early when a scope cap is close.
 - **Review probes**: a recorded run under a near user-day cap judges its claims before stopping.
@@ -5305,7 +5305,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: reviews of P3-112, P3-116, P5-09, P5-12 (2026-10-23).
 - **Do**: (1) escape decoding refuses bidi controls, zero-width and U+2028/2029 and is idempotent (P5-09); (2) short values under api-key names outside XML attributes are masked like token and secret (P3-116); (3) a later merge group that shares a card with an earlier one keeps its remaining cards when two or more are left (P5-12); (4) a vendored banner must start with the library name, and the licence requirement gets a test (P3-112).
 - **Review probes**: one test per item; mutation per item.
