@@ -1,4 +1,4 @@
-import { inferComponent, type ComponentText } from './flow-step-components.js';
+import { inferComponent, type ComponentText, type StepEvidence } from './flow-step-components.js';
 import type { SourceCard } from './plan-sources.js';
 import {
   MAX_FLOWS,
@@ -25,6 +25,15 @@ const leftOutReason = 'The planner left this journey out of scope without a reas
 
 type DraftStep = DraftFlow['steps'][number];
 
+/** The component the code finds for a step the planner left unplaced; null for none. */
+function foundFor(
+  evidence: StepEvidence | undefined,
+  placed: readonly StepEvidence[],
+  checks: Known,
+): string | null {
+  return evidence === undefined ? null : inferComponent(evidence, placed, checks.described);
+}
+
 /** The steps the card states, each with the planner's component when the architecture has it. */
 function stepsOf(
   card: SourceCard,
@@ -46,16 +55,15 @@ function stepsOf(
     const evidence = placed[index];
     const files = evidence?.files ?? [];
     const mapped = mapping.get(claim.claimId);
+    const found = mapped === undefined ? foundFor(evidence, placed, checks) : null;
     const touches =
       claim.target !== undefined && checks.cards.has(claim.target) ? claim.target : null;
     return {
       ...{ claimId: claim.claimId, text: claim.text, touches },
-      component:
-        mapped?.component ??
-        (evidence === undefined ? null : inferComponent(evidence, placed, checks.described)),
+      component: mapped?.component ?? found,
       action: mapped?.action ?? '',
       files,
-      inferred: false,
+      inferred: found !== null,
     };
   });
   return { steps, refused };

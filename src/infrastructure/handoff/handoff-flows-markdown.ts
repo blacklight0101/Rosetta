@@ -59,7 +59,8 @@ export function flowsIndexMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper
 
 function stepRow(step: FlowStep, index: number, esc: MarkdownEscaper): string {
   const touches = step.touches === null ? 'none' : sourcesLink(step.touches);
-  const component = step.component === null ? 'not mapped' : esc.inline(step.component);
+  const placed = step.component === null ? 'not mapped' : esc.inline(step.component);
+  const component = step.inferred ? `${placed} (inferred)` : placed;
   const action = step.action === '' ? '' : esc.inline(step.action);
   return `| ${String(index + 1)} | ${esc.inline(`${step.claimId}: ${step.text}`)} | ${touches} | ${component} | ${action} |`;
 }

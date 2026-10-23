@@ -50,19 +50,23 @@ function coverageLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
   ];
 }
 
-// RF-625: the steps of a target flow no component of the architecture covers, counted per flow.
+// RF-625: the steps of a target flow no component covers, and those the code placed from the files
+// they cite instead of the planner, counted per flow.
 function unmappedFlowLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const rows = handoff.flows.flows.flatMap((flow) => {
-    const count = flow.steps.filter((step) => step.component === null).length;
-    return count === 0
+    const none = flow.steps.filter((step) => step.component === null).length;
+    const inferred = flow.steps.filter((step) => step.inferred).length;
+    return none + inferred === 0
       ? []
-      : [`- ${esc.inline(flow.cardId)}: ${plural(count, 'step')} of ${String(flow.steps.length)}`];
+      : [
+          `- ${esc.inline(flow.cardId)}: ${String(none)} of ${String(flow.steps.length)} steps not mapped, ${String(inferred)} inferred`,
+        ];
   });
   if (rows.length === 0) return [];
   return [
-    '## Flow steps not mapped',
+    '## Flow steps not mapped or inferred',
     '',
-    'No component of the target architecture covers the code these legacy steps cite, so the flow file shows them as not mapped and draws them on the nearest component. Decide where each one lives.',
+    'No component of the target architecture covers the code a not mapped step cites, so the flow file shows it as not mapped and draws it on the nearest component. An inferred step was placed by Rosetta from the files it cites, not by the planner; check it.',
     '',
     ...rows,
     '',

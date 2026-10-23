@@ -1,7 +1,7 @@
 // RF-625, ADR-013: the component of the target architecture a legacy flow step lives in when the
 // planner did not place it, decided by code from the files the step cites. Two deterministic
 // tests, in this order: (1) the step cites a file in a folder where a step the planner did place
-// cites a file, and all such steps agree on one component; (2) the words of the cited paths name
+// cites a file, at least two such steps, all agreeing on one component; (2) the words of the cited paths name
 // one component more than any other, by its name and its responsibility. A tie or a weak match
 // maps nothing, so a step is never given a component by a guess.
 
@@ -19,7 +19,6 @@ export interface StepEvidence {
 /** The words of a path that carry meaning: no extension, no generic folder, no short word. */
 const generic = new Set([
   ...['src', 'source', 'main', 'app', 'lib', 'libs', 'index', 'core', 'common', 'util', 'utils'],
-  ...['cs', 'ts', 'js', 'java', 'py', 'cshtml', 'razor', 'vb', 'php', 'rb', 'go', 'kt', 'tsx'],
   ...['the', 'and', 'for', 'class', 'file', 'impl', 'base', 'default', 'test', 'tests'],
 ]);
 
@@ -36,6 +35,11 @@ function wordsOf(text: string): string[] {
     .split(/[^a-z0-9]+/u)
     .map(stem)
     .filter((word) => word.length >= 3 && !generic.has(word));
+}
+
+/** The path without the part after the last dot of its file name, whatever that part is. */
+function withoutExtension(path: string): string {
+  return path.replace(/\.[^./]*$/u, '');
 }
 
 function folderOf(path: string): string {
@@ -56,7 +60,8 @@ function byFolder(step: StepEvidence, placed: readonly StepEvidence[]): string |
       ? [other.component]
       : [],
   );
-  return agreed(names);
+  // One agreeing step is a coincidence; two are a pattern.
+  return names.length >= 2 ? agreed(names) : null;
 }
 
 interface Match {
@@ -66,7 +71,7 @@ interface Match {
 }
 
 function match(files: readonly string[], component: ComponentText): Match {
-  const fromPaths = new Set(files.flatMap(wordsOf));
+  const fromPaths = new Set(files.flatMap((file) => wordsOf(withoutExtension(file))));
   const named = new Set(wordsOf(component.name));
   const described = new Set(wordsOf(component.responsibility));
   let score = 0;

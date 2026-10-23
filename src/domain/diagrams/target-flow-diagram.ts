@@ -6,11 +6,12 @@ import { mermaidLabel } from './mermaid-label.js';
 // it (`triggerActor`), with the trigger sentence in a note over it. Every legacy step is drawn, in
 // order and numbered: a step mapped to a component is a message from the previous participant to
 // that component; a step mapped to none is drawn on the nearest mapped component (the previous
-// step's, else the next one's, else a participant "Legacy step") and marked "(not mapped)", so no
+// step's, else the next one's, else a participant "Legacy step") and marked "(not mapped)"; a step the code placed from the files it cites, not the planner, is marked "(inferred)", so no
 // number is skipped. Participant ids are generated (`p1`, `p2`, ...), never taken from names;
 // `mask` hides secrets in every label before `mermaidLabel` codes it.
 
 const unmappedMark = ' (not mapped)';
+const inferredMark = ' (inferred)';
 const noComponent = 'Legacy step';
 
 const actors: readonly (readonly [RegExp, string])[] = [
@@ -58,7 +59,7 @@ export function targetFlowDiagram(flow: MappedFlow, mask: (text: string) => stri
     const name = places[index] ?? noComponent;
     const to = participant(`component ${name}`, name);
     const text = step.component !== null && step.action !== '' ? step.action : step.text;
-    const mark = step.component === null ? unmappedMark : '';
+    const mark = step.component === null ? unmappedMark : step.inferred ? inferredMark : '';
     messages.push(`  ${at}->>${to}: ${label(`${String(index + 1)}. ${text}${mark}`)}`);
     at = to;
   });
