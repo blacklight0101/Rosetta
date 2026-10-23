@@ -26,7 +26,12 @@ export const GENERIC_FAILURE = {
   nextStep: 'Look the code up in the error catalogue, or report it.',
 } as const;
 
-// P5-05 (EV-13): the next step a failed run shows for its stage. Stub until the fix lands.
-export function nextStepFor(_stage: string, nextStep: string): string {
-  return nextStep;
+// EV-13, RF-615: a plan run is never resumed (`plan` refuses it; the journey says Try the plan again),
+// so the next step of a failed plan run names no Resume, whatever the catalogue says for a run.
+const PLAN_NEXT_STEP =
+  'Try the plan again: a failed plan run cannot be continued, so it starts a new run after a new estimate.';
+
+/** The next step a failed run shows: the catalogue text, except that a plan run is never told to resume. */
+export function nextStepFor(stage: string, nextStep: string): string {
+  return stage === 'plan' && /resum/i.test(nextStep) ? PLAN_NEXT_STEP : nextStep;
 }

@@ -143,7 +143,9 @@ export class GetJourney {
 
   private async sourcesOfPlanRuns(list: readonly Run[]): Promise<PlanSources> {
     const plans = list.filter((run) => run.stage === 'plan');
-    const keys = await Promise.all(plans.map((run) => planSourceKey(this.deps.manifests, run)));
+    const keys = await Promise.all(
+      plans.map((run) => planSourceKey(this.deps.manifests, run, list)),
+    );
     return new Map(plans.map((run, index) => [run.id, keys[index] ?? null]));
   }
 

@@ -234,10 +234,17 @@ function Header(
   return (
     <>
       <RunStepper steps={stepperOf(built, shown, phase)} />
-      {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
-      <FailedAreas state={shown} projectId={run.projectId} runId={run.id} />
-      {shown.retry === undefined ? null : <RetryNotice retry={shown.retry} />}
-      {shown.deepen === undefined ? null : <DeepenProgress progress={shown.deepen} />}
+      {state.ended?.errorCode === undefined ? null : (
+        <RunFailure code={state.ended.errorCode} stage={stage} />
+      )}
+      {/* EV-19, RF-1015: the failed areas, retries and Deepen are understand panels. */}
+      {stage === 'plan' ? null : (
+        <FailedAreas state={shown} projectId={run.projectId} runId={run.id} />
+      )}
+      {stage === 'plan' || shown.retry === undefined ? null : <RetryNotice retry={shown.retry} />}
+      {stage === 'plan' || shown.deepen === undefined ? null : (
+        <DeepenProgress progress={shown.deepen} />
+      )}
       <UnderstandJourney
         {...{ run, stage, phase, open: props.open, onResumed: props.onResumed }}
         onAnswer={props.onAnswer}

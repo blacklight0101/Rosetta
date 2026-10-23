@@ -17,9 +17,16 @@ import { scopeOf } from '../runs/run-scope.js';
 export async function planSourceKey(
   manifests: Pick<RunManifestStore, 'read'>,
   run: Run,
+  projectRuns: readonly Run[],
 ): Promise<string | null> {
   try {
-    return (await manifests.read(scopeOf(run)))?.sourceRunId ?? null;
+    const manifest = await manifests.read(scopeOf(run));
+    const key = manifest?.sourceRunId ?? null;
+    if (key !== null) return key;
+    // EV-12, RF-614: a queued plan run names its source by id in its options until the planner
+    // records the folder name in its manifest, so the journey finds the run from the start.
+    const named = manifest?.options['sourceRunId'];
+    return projectRuns.find((each) => each.id === named)?.runKey ?? null;
   } catch (error) {
     if (error instanceof RosettaError) return null;
     throw error;

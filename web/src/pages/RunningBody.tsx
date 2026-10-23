@@ -149,6 +149,16 @@ function Details(props: DetailsProps): JSX.Element {
   );
 }
 
+/** EV-19: the retry and Deepen notices, which only an understand run has. */
+function UnderstandNotices({ state }: { readonly state: RunState }): JSX.Element {
+  return (
+    <>
+      {state.retry === undefined ? null : <RetryNotice retry={state.retry} />}
+      {state.deepen === undefined ? null : <DeepenProgress progress={state.deepen} />}
+    </>
+  );
+}
+
 // RF-1015
 export function RunningBody(props: RunningBodyProps): JSX.Element {
   const { run, state, phase, stage } = props;
@@ -172,16 +182,17 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
       ) : (
         <RunJourney steps={journeyOf({ stage, phase, state, tiles })} />
       )}
-      {state.retry === undefined ? null : <RetryNotice retry={state.retry} />}
-      {state.deepen === undefined ? null : <DeepenProgress progress={state.deepen} />}
+      {stage === 'plan' ? null : <UnderstandNotices state={state} />}
       <div class="rst-running__grid">
-        <CodeMap
-          tiles={tiles}
-          stage={stage}
-          onOpenArea={(name) => {
-            open('agents', name);
-          }}
-        />
+        {stage === 'plan' ? null : (
+          <CodeMap
+            tiles={tiles}
+            stage={stage}
+            onOpenArea={(name) => {
+              open('agents', name);
+            }}
+          />
+        )}
         <div class="rst-running__rail">
           <SpendPanel
             runId={run.id}
