@@ -112,7 +112,9 @@ describe('an understand run whose verifier reaches its role cap', UNDERSTAND_TIM
   it('RF-304 RF-423 the claims not judged are Unverified, the readers keep their cards and the run completes', async () => {
     const settings = understandSettings((s) => ({
       ...s,
-      budget: { ...s.budget, roles: { verifier: { maxTokens: 1 } } },
+      roles: { ...s.roles, verifier: { ...s.roles.verifier, maxOutputTokens: 32_768 } },
+      // P5-20: room for the claims at the estimate, not for the verifier's first call (worst case 32,768).
+      budget: { ...s.budget, roles: { verifier: { maxTokens: 30_000 } } },
     }));
     const h = await createUnderstandHarness({
       ...{ dataDir: temp.path, settings, recording: 'understand-csharp-full.json' },

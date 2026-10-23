@@ -96,13 +96,11 @@ describe('an understand run whose verifier is stopped by its cap', UNDERSTAND_TI
       const folder = h.runFolder(run);
       const coverage = await readJson(join(folder, 'coverage.json'));
       expect(coverage).toMatchObject({
-        areas: [
-          { area: '(root)', surface: { flowCards: 1, incompleteFlows: 0 } },
-          { area: 'Catalog', surface: { incompleteFlows: 0 } },
-          { area: 'Orders', surface: { incompleteFlows: 0 } },
-          { area: 'Services', surface: { incompleteFlows: 0 } },
-        ],
+        // P5-20: a verifier cap of one token leaves no room to judge a second task's claims, so
+        // the readers stop after the first task; the areas not started are not in the coverage.
+        areas: [{ area: '(root)', surface: { flowCards: 1, incompleteFlows: 0 } }],
       });
+      expect((await h.eventsOf(run)).map((event) => event.type)).toContain('budget.readersStopped');
       const flow = await readFile(join(folder, 'cards', 'FLOW', 'FLOW-001.md'), 'utf8');
       expect(flow).toContain('status: "Unverified"');
       expect(flow).toContain('incomplete: false');
