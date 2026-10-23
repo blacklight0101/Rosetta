@@ -7,6 +7,11 @@ import type { Result } from '../../domain/errors/result.js';
 export interface ToolData {
   /** The file lines the text holds, for the block header and the egress log (RF-142). */
   readonly excerpts: readonly Citation[];
+  /**
+   * RF-209: the excerpts are lines the text only lists (the statements of a code map entry), not
+   * lines the model read; they stay in the block header for the egress log but are no coverage.
+   */
+  readonly listed?: boolean;
   readonly text: string;
 }
 

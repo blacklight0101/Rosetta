@@ -57,6 +57,8 @@ export interface ToolOutcome {
   readonly error?: ToolError;
   /** The file lines the content holds (RF-142), for the coverage of the task (RF-230). */
   readonly excerpts?: readonly Citation[];
+  /** RF-209: the excerpts were only listed by the tool, so they are not lines read. */
+  readonly listed?: boolean;
 }
 
 const shownNameChars = 64;
@@ -143,7 +145,9 @@ export class ReadOnlyTools {
       ? await this.answer(request.value, ids)
       : err({ code: ERROR_CODES.toolArgumentsInvalid, message: request.error });
     if (!answer.ok) return this.failed(call.name, answer.error, ids);
-    return { content: this.render(call.name, answer.value), excerpts: answer.value.excerpts };
+    const { excerpts, listed } = answer.value;
+    const content = this.render(call.name, answer.value);
+    return listed === true ? { content, excerpts, listed } : { content, excerpts };
   }
 
   private async answer(request: ToolRequest, ids: ToolCallIds): Promise<ToolAnswer> {
@@ -195,7 +199,11 @@ export class ReadOnlyTools {
       startLine: statement.line,
       endLine: statement.line,
     }));
-    return ok({ excerpts, text: this.bounded(detailLines(details), 'entries').join('\n') });
+    return ok({
+      excerpts,
+      listed: true,
+      text: this.bounded(detailLines(details), 'entries').join('\n'),
+    });
   }
 
   private bounded(lines: readonly string[], what: string): string[] {

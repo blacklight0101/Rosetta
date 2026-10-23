@@ -13,8 +13,7 @@ import type { AgentTaskRequest } from '../agent/agent-loop.js';
 import type { ReaderTask } from './reader-tasks.js';
 
 // RF-230, ADR-005: which files each reader task actually read. The read-only tools of a task are
-// wrapped so the file lines of every answer the model got (a read, the lines of grep matches, the
-// statements of a code map entry) are kept; when a task ends, its area's coverage is the files of
+// wrapped so the file lines of every answer the model got (a read, the lines of grep matches) are kept; when a task ends, its area's coverage is the files of
 // the area with those lines. Lines of files outside the area are not counted.
 
 type AgentTools = AgentTaskRequest['tools'];
@@ -43,7 +42,7 @@ export function toolsWithReads(inner: AgentTools, reads: TaskReads): AgentTools 
     rowSpans: (path) => inner.rowSpans(path),
     async run(call, ids) {
       const outcome = await inner.run(call, ids);
-      if (outcome.error === undefined) reads.add(outcome.excerpts ?? []);
+      if (outcome.error === undefined && outcome.listed !== true) reads.add(outcome.excerpts ?? []);
       return outcome;
     },
   };
