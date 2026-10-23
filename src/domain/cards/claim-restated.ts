@@ -3,12 +3,15 @@ import { formatCitation, type Citation } from './citation.js';
 import type { Card, Claim, ClaimInput } from './card.js';
 
 // P3-125, RF-209, RF-302, DEC-19, HB-06: a Deepen round that writes a claim a card already holds adds
-// no near-duplicate. Two claims state the same thing when their text is the same once case,
-// punctuation and spacing are ignored and one of their cited ranges overlaps (same file, a line
-// in common). A claim the card holds whose verdict stands (`Proposed`, `Supported`, `Unverified`)
-// takes the new claim's other citations and keeps its verdict. A `Rejected` claim is never changed or
-// removed: a restatement with a new citation is added as the claim that replaces it; a restatement
-// of the evidence it was rejected for says nothing new and is left out.
+// no near-duplicate. Two claims state the same thing when one of their cited ranges overlaps (same
+// file, a line in common) and either their text is the same once case, punctuation and spacing are
+// ignored, or their words are nearly the same (Jaccard index of 0.8) and they agree on negation, on
+// every number and on every identifier (a field, column or class name: it has an underscore, a digit,
+// an inner capital, a dot or `::`, or it is quoted), because a claim that differs only in a name says
+// something else. A claim the card holds whose verdict stands (`Proposed`, `Supported`,
+// `Unverified`) takes the new claim's other citations and keeps its verdict. A `Rejected` claim is
+// never changed or removed: a restatement with a new citation is added as the claim that replaces it;
+// a restatement of the evidence it was rejected for says nothing new and is left out.
 
 /** What becomes of one claim a Deepen task wrote for a card. */
 export type Restatement =
@@ -41,16 +44,32 @@ function pick(words: ReadonlySet<string>, keep: (word: string) => boolean): stri
   return [...words].filter(keep).sort().join(' ');
 }
 
-/** Same words ignoring case and punctuation, or nearly (Jaccard >= 0.8) with the same negations and numbers. */
-function sameWords(a: string, b: string): boolean {
-  if (a === '' || b === '') return false;
-  if (a === b) return true;
-  const [one, two] = [wordsOf(a), wordsOf(b)];
+const QUOTED = /`([^`]+)`|"([^"]+)"|(?<![\p{L}\p{N}])'([^']+)'(?![\p{L}\p{N}])/gu;
+const IDENTIFIER = /_|\p{N}|\p{Ll}\p{Lu}|[\p{L}\p{N}]\.[\p{L}\p{N}]|::/u;
+
+/** The identifier-like words of a claim as written: quoted text, and words with _ digit inner capital . or ::. */
+function identifiersOf(text: string): string {
+  const quoted = [...text.matchAll(QUOTED)].map((m) => m[1] ?? m[2] ?? m[3] ?? '');
+  const words = text
+    .split(/\s+/u)
+    .map((word) => word.replace(/^[^\p{L}\p{N}_`"']+|[^\p{L}\p{N}_`"']+$/gu, ''))
+    .filter((word) => IDENTIFIER.test(word));
+  return [...new Set([...quoted, ...words].map((word) => word.toLowerCase()))].sort().join(' ');
+}
+
+/** Nearly the same words (Jaccard >= 0.8) with the same negation, numbers and identifiers. */
+function nearlySame(a: ClaimInput['text'], b: ClaimInput['text']): boolean {
+  const [one, two] = [wordsOf(normalisedText(a)), wordsOf(normalisedText(b))];
   const shared = [...one].filter((word) => two.has(word)).length;
   if (shared / (one.size + two.size - shared) < SIMILARITY) return false;
   const negation = (word: string): boolean => NEGATIONS.has(word);
   const number = (word: string): boolean => /\p{N}/u.test(word);
-  return pick(one, negation) === pick(two, negation) && pick(one, number) === pick(two, number);
+  const negates = (words: ReadonlySet<string>): boolean => [...words].some(negation);
+  return (
+    negates(one) === negates(two) &&
+    pick(one, number) === pick(two, number) &&
+    identifiersOf(a) === identifiersOf(b)
+  );
 }
 
 function overlap(a: Citation, b: Citation): boolean {
@@ -74,7 +93,10 @@ function same(
       sharesLines(claim.citations, input.citations) === where.overlapping,
   );
   const exact = candidates.find((claim) => text !== '' && normalisedText(claim.text) === text);
-  return exact ?? candidates.find((claim) => sameWords(normalisedText(claim.text), text));
+  return (
+    exact ??
+    (text === '' ? undefined : candidates.find((claim) => nearlySame(claim.text, input.text)))
+  );
 }
 
 /**
