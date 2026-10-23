@@ -736,6 +736,7 @@ As a developer who does not know the legacy application I want to be asked only 
 - Given an `OQ` card, when it is parsed, then it must say what the code shows, cite the code that raised the question, and ask about something outside the code: business intent, the reason for a rule, an external system, data volumes or who uses a feature; a question asking what the code, an area or the application does is refused with the repair message telling the agent to read instead.
 - Given an `OQ` card that asks for a value, a formula, a count, a list of columns or headers, or whether two parts of the workbook or code match (Q-46, default applies), when it is parsed, then it is refused with the repair message telling the agent to read the file that holds the answer; the reader prompt gives examples of questions to read instead of asking.
 - Given questions from several areas, when the run ends, then duplicates are merged keeping every citation, and the questions are grouped by the feature or area they concern and ordered by how much of the specification depends on them.
+- Given open questions that consolidation merged into one card (P3-106, P5-11), when the questions of the run are listed, then the surviving card is the question and the merged-away ids are not listed; the surviving card records the merged ids in `mergedFrom`.
 - Given two open questions of one area that ask the same thing (Q-52), when the run ends, then they are merged like the duplicates of several areas.
 - Given a run on third-party or generated code only, when an agent finds no application logic, then it writes no `OQ` card; the coverage notes "no application logic".
 - Given an area of third-party code (P3-123), when its agent answers a `FEAT` or `BR` card that only says the area holds third-party code (the title starts with third-party, vendored, minified, generated or bundled, or the summary says the area holds such code), then the card is dropped and logged; a rule that merely mentions a library is kept.
@@ -1369,6 +1370,7 @@ As a developer I want every run event streamed to the page and stored so that th
 As a developer I want to answer `OQ` cards in the page so that the loop is visual.
 
 - Given open questions, when I answer one in the page, then `answers.md` is updated and the question is marked answered on the next re-run.
+- Given a run whose consolidation merged open questions (P5-11), when the answers page, the plan inputs and package, the report or the journey list or count its questions, then they list the same set: the questions that survived consolidation, matched to the file's sections by the merge record of the cards and never by the words of a question. An answer filed under a merged-away question shows on its survivor unless the survivor has its own, a survivor with no section can be answered, a merged-away question is not listed and cannot be answered or reopened, and no section of `answers.md` is deleted.
   Verification: end-to-end test.
 
 **RF-1008 Browse runs and download** - R1 (M1) - Should - Source DEC-51, DEC-24, DEC-46 - ADR-012
