@@ -26,13 +26,12 @@ const supported = {
 } as const;
 
 const field = (name: string) => ({ name, inputKind: 'text', required: false, validations: [] });
-const { screen } = screenDraftWithMadeUpClaims;
 
 /** One claim by the agent, one route, and the fields below: NameLabel is on the page, the rest not. */
 const draft = {
   ...screenDraftWithMadeUpClaims,
   screen: {
-    ...screen,
+    ...{ route: '/Catalog/Details.aspx', roles: [], leadsTo: [] },
     fields: [field('NameLabel'), field('PriceLabel'), field('StockLabel'), field('***')],
     actions: [],
   },

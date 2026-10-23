@@ -84,7 +84,13 @@ describe('an understand run: the judgement step events', () => {
     const start = types.indexOf('verify.judgement.started');
     const end = types.indexOf('verify.judgement.ended');
     expect(events[start]?.data).toEqual({ claims: 5 });
-    expect(events[end]?.data).toEqual({ supported: 4, rejected: 1, unverified: 0, notJudged: 0 });
+    expect(events[end]?.data).toEqual({
+      supported: 4,
+      rejected: 1,
+      unverified: 0,
+      notJudged: 0,
+      withoutModel: 0,
+    });
     expect(start).toBeGreaterThan(types.lastIndexOf('verify.citation.checked'));
     expect(start).toBeLessThan(types.indexOf('verify.claim.judged'));
     expect(end).toBeGreaterThan(types.lastIndexOf('verify.claim.judged'));
