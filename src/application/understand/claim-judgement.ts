@@ -21,6 +21,7 @@ import {
 } from '../verifier/judge-claim.js';
 import type { VerifierPrompts } from '../verifier/verifier-prompts.js';
 import { readerParallelism } from './reader-settings.js';
+import { CallTurn, OrderedPublisher, turnOf } from './call-turn.js';
 import { runPool } from './task-pool.js';
 
 // RF-301, RF-302, RF-1004, ADR-005: the judgement step of an understand run. Every claim still
@@ -92,52 +93,77 @@ function withVerdicts(card: Card, decided: ReadonlyMap<string, Decided>, model: 
   return judged;
 }
 
+type Decide = (
+  each: Pending,
+  status: Decided['status'],
+  reason: string,
+  withoutModel?: boolean,
+) => Promise<void>;
+
+/** Records a claim's verdict now and publishes its event once the claims before it are settled. */
+function deciderOf(
+  parts: ClaimJudgementParts,
+  publisher: OrderedPublisher,
+  decided: Map<string, Decided>,
+): Decide {
+  return (each, status, reason, withoutModel = false) => {
+    const { card, claim, index } = each;
+    const at = parts.clock.now().toISOString();
+    decided.set(claim.claimId, { status, reason, withoutModel, at });
+    const data = { claimId: claim.claimId, status, reason };
+    return publisher.publish(index, async () => {
+      await parts.events.emit('verify.claim.judged', data, card.agentTaskId);
+    });
+  };
+}
+
 /** The cards with the verdict of every claim the step judged (RF-301, RF-302). */
 // RF-301, RF-1004
 export async function judgeClaims(
   cards: readonly Card[],
   parts: ClaimJudgementParts,
 ): Promise<readonly Card[]> {
-  const { judge, events, clock } = parts;
+  const { judge } = parts;
   const decided = new Map<string, Decided>();
-  const decide = async (
-    { card, claim }: Pending,
-    status: Decided['status'],
-    reason: string,
-    withoutModel = false,
-  ) => {
-    decided.set(claim.claimId, { status, reason, withoutModel, at: clock.now().toISOString() });
-    const data = { claimId: claim.claimId, status, reason };
-    await events.emit('verify.claim.judged', data, card.agentTaskId);
-  };
   const pending = pendingOf(cards, parts.awaits);
+  // P5-15: the events leave in claim order, whichever judgement ends first.
+  const publisher = new OrderedPublisher(pending.length);
+  const decide = deciderOf(parts, publisher, decided);
   const options = { parallelism: parts.parallelism, signal: judge.call.signal };
-  // RF-423: the verifier's own cap refuses its calls without stopping the run; once a call is
-  // refused or cancelled, no further claim is sent.
+  // RF-423: once a call is refused or cancelled, no further call is sent.
   const halt = { stopped: false, capped: false };
-  // P3-106, EV-06: a text with the same citations as a claim already sent has that claim's
-  // judgement, so the two cannot split and the verifier is paid once.
+  const halted = () => (halt.capped ? 'capped' : halt.stopped ? 'stopped' : undefined);
+  const turn = new CallTurn();
+  // P3-106, EV-06: the same text and citations share one judgement.
   const sent = new Map<string, Promise<Judgement>>();
   await runPool(pending, options, async (each) => {
-    if (halt.stopped || halt.capped) return;
-    const key = JSON.stringify([each.claim.text, each.claim.citations]);
-    const asked =
-      sent.get(key) ?? judgeClaim(judge, each.claim, spanIdOf(judge.call.traceId, each.index));
-    sent.set(key, asked);
-    const judgement = await asked;
-    if (judgement.kind === 'judged') {
-      await decide(each, judgement.status, judgement.reason, judgement.withoutModel === true);
-    } else halt[judgement.kind] = true;
+    const mine = turnOf(turn, each.index);
+    try {
+      if (halted() !== undefined) return;
+      const key = JSON.stringify([each.claim.text, each.claim.citations]);
+      const spanId = spanIdOf(judge.call.traceId, each.index);
+      const earlier = sent.get(key);
+      // A repeated claim sends no call, so it gives its turn up before it waits for the first one.
+      if (earlier !== undefined) mine.pass();
+      const asked = earlier ?? judgeClaim({ ...judge, halted, turn: mine }, each.claim, spanId);
+      sent.set(key, asked);
+      const judgement = await asked;
+      if (judgement.kind !== 'judged') halt[judgement.kind] = true;
+      else await decide(each, judgement.status, judgement.reason, judgement.withoutModel === true);
+    } finally {
+      mine.pass();
+    }
   });
   // RF-304: a cap (the verifier's or the run's) leaves every claim not judged `Unverified`; any
   // other stop leaves them `Proposed`.
   if (halt.capped) parts.onCapped?.();
-  if (halt.capped || isCapStop(judge.call.signal.reason)) {
+  const capped = halt.capped || isCapStop(judge.call.signal.reason);
+  for (const each of pending.filter(({ index }) => !publisher.has(index))) {
     // A claim a cap already left `Unverified` keeps that verdict: it has nothing new to say.
-    const left = pending.filter(({ claim }) => claim.status === 'Proposed');
-    for (const each of left.filter(({ claim }) => !decided.has(claim.claimId))) {
-      await decide(each, 'Unverified', CAP_UNVERIFIED_REASON);
-    }
+    const leave = capped && each.claim.status === 'Proposed' && !decided.has(each.claim.claimId);
+    await (leave
+      ? decide(each, 'Unverified', CAP_UNVERIFIED_REASON)
+      : publisher.publish(each.index, null));
   }
   return cards.map((card) => withVerdicts(card, decided, parts.model));
 }

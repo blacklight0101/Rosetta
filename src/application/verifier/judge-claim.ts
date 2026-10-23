@@ -66,6 +66,10 @@ export interface ClaimJudgeParts {
   readonly workbookFolders?: readonly string[] | undefined;
   /** Records the model version of each answer (RNF-004). */
   readonly onAnswer?: (response: LlmResponse) => Promise<void>;
+  /** P5-15: told by the step that a cap or a stop ended it, so a claim still waiting sends no call. */
+  readonly halted?: () => 'stopped' | 'capped' | undefined;
+  /** P5-15: orders the first call of parallel judgements; `pass` is told once that call is sent. */
+  readonly turn?: { readonly wait: () => Promise<void>; readonly pass: () => void };
 }
 
 export type JudgedClaim = Pick<Claim, 'claimId' | 'text' | 'citations'>;
@@ -125,6 +129,13 @@ function stopOf(signal: AbortSignal): Judgement {
   return isCapStop(signal.reason) ? { kind: 'capped' } : { kind: 'stopped' };
 }
 
+/** P5-15: the run was stopped, or the step says a cap or a stop ended it: no call is sent. */
+function endedBefore(parts: ClaimJudgeParts): Judgement | undefined {
+  if (parts.call.signal.aborted) return stopOf(parts.call.signal);
+  const halted = parts.halted?.();
+  return halted === undefined ? undefined : { kind: halted };
+}
+
 /**
  * A failed call: a cap that refuses it (the verifier's own or the run's) gives `capped`, any other
  * stop of the run gives no verdict, and any other failure leaves the claim unverified.
@@ -141,8 +152,12 @@ async function ask(
   parts: ClaimJudgeParts,
   request: LlmRequest,
 ): Promise<Result<LlmResponse, Judgement>> {
+  const halted = parts.halted?.();
+  if (halted !== undefined) return err({ kind: halted });
   try {
-    const response = await parts.role.provider.complete(request);
+    const sending = parts.role.provider.complete(request);
+    parts.turn?.pass();
+    const response = await sending;
     await parts.onAnswer?.(response);
     return ok(response);
   } catch (error) {
@@ -157,7 +172,8 @@ export async function judgeClaim(
   claim: JudgedClaim,
   parentSpanId: string,
 ): Promise<Judgement> {
-  if (parts.call.signal.aborted) return stopOf(parts.call.signal);
+  const ended = endedBefore(parts);
+  if (ended !== undefined) return ended;
   const rendered = renderedFileReason(claim, parts.workbookFolders);
   if (rendered !== undefined) {
     return { kind: 'judged', status: 'Rejected', reason: rendered, withoutModel: true };
@@ -175,6 +191,8 @@ export async function judgeClaim(
   const asked: LlmMessage[] = [
     { role: 'user', content: evidenceMessage(parts, claim, evidence.value) },
   ];
+  // P5-15: the first call of each claim is sent in claim order.
+  await parts.turn?.wait();
   const first = await ask(parts, requestOf(parts, claim, parentSpanId, asked));
   if (!first.ok) return first.error;
   const verdict = parseVerdictAnswer(first.value);
