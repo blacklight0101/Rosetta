@@ -67,3 +67,25 @@ export async function announceMerges(
     await events.emit('cards.merged', { ...move }, task);
   }
 }
+
+/**
+ * P3-125, RF-209: how many claims a Deepen task wrote that the card already held, as
+ * `agent.claims.replaced` under the task: `folded` into a claim that stands, `rejected` for a
+ * restated rejected claim (kept, DEC-19). Published only for a task that has some.
+ */
+export async function announceReplaced(
+  events: RunEventPublisher,
+  extension: CardExtension,
+): Promise<void> {
+  const tasks = [...new Set(extension.replaced.map(({ agentTaskId }) => agentTaskId))];
+  for (const agentTaskId of tasks) {
+    const own = extension.replaced.filter((each) => each.agentTaskId === agentTaskId);
+    const folded = own.filter(({ kind }) => kind === 'folded').length;
+    const count = own.length;
+    await events.emit(
+      'agent.claims.replaced',
+      { count, folded, rejected: count - folded },
+      agentTaskId,
+    );
+  }
+}

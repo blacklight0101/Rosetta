@@ -8,7 +8,11 @@ import type { DeepenStopReason } from '../../domain/deepen/stop-rule.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { scopeOf } from '../runs/run-scope.js';
-import { announceCards, announceExtensions } from '../understand/announce-cards.js';
+import {
+  announceCards,
+  announceExtensions,
+  announceReplaced,
+} from '../understand/announce-cards.js';
 import { judgementPartsOf, runJudgementStep } from '../understand/claim-judgement.js';
 import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import { checkCitations } from '../verifier/citation-check.js';
@@ -78,6 +82,7 @@ async function newCardsOf(
   const { events } = parts.execution;
   await announceCards(events, checked, checked.cards.slice(0, assigned.value.length));
   await announceExtensions(events, checked, extension.value);
+  await announceReplaced(events, extension.value);
   const claimIds = new Set([
     ...assigned.value.flatMap((card) => card.claims.map((claim) => claim.claimId)),
     ...extension.value.claims.map((claim) => claim.claimId),
