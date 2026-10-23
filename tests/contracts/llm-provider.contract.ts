@@ -168,7 +168,8 @@ function attemptTests(create: LlmProviderFactory, capabilities: ContractCapabili
     const response = await provider.complete(contractRequest(), observer);
 
     expect(response).toMatchObject(expectedResponse('retry-then-text', capabilities) ?? {});
-    expect(observer.retried).toEqual(contractScenarios['retry-then-text'].retried);
+    // P5-21: a real adapter adds the provider's error text, which the fake does not.
+    expect(observer.retried).toMatchObject(contractScenarios['retry-then-text'].retried);
     expect(observer.started).toBe(2);
   });
 

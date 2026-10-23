@@ -54,6 +54,8 @@ export interface AgentTaskResult {
   readonly reason: AgentTaskEndReason;
   /** The code of every end but `final-answer`. */
   readonly code?: ErrorCode;
+  /** RF-408: for `provider-failed`, the provider's error text, kept for the log entry. */
+  readonly providerError?: string;
   /** The cards of the final answer; empty unless the task is `Done`. */
   readonly drafts: readonly CardDraft[];
   /** For `InvalidOutput`: the answers that could not be parsed, to be saved for the user. */
@@ -86,6 +88,7 @@ export interface AgentTaskProgress {
 export interface AgentTaskEnd {
   readonly reason: AgentTaskEndReason;
   readonly code?: ErrorCode;
+  readonly providerError?: string;
   readonly drafts?: readonly CardDraft[];
   readonly rawOutputs?: readonly string[];
   readonly problems?: readonly OutputProblem[];
@@ -97,6 +100,7 @@ export function taskResult(end: AgentTaskEnd, progress: AgentTaskProgress): Agen
     state: stateOf[end.reason],
     reason: end.reason,
     ...(end.code === undefined ? {} : { code: end.code }),
+    ...(end.providerError === undefined ? {} : { providerError: end.providerError }),
     drafts: end.drafts ?? [],
     rawOutputs: end.rawOutputs ?? [],
     problems: end.problems ?? [],
@@ -129,5 +133,10 @@ export function failedCallEnd(error: unknown, signal: AbortSignal): AgentTaskEnd
   if (!(error instanceof RosettaError)) throw error;
   if (isCapStop(error)) return capEnd;
   if (error.code === ERROR_CODES.providerCallCancelled) return abortedEnd;
-  return { reason: 'provider-failed', code: error.code };
+  const providerError: unknown = Reflect.get(error, 'providerError');
+  return {
+    reason: 'provider-failed',
+    code: error.code,
+    ...(typeof providerError === 'string' ? { providerError } : {}),
+  };
 }

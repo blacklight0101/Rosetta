@@ -49,6 +49,7 @@ const callSchema = z.object({
   finishReason: z.enum(['stop', 'length', 'tool_use', 'error']),
   status: z.enum(['ok', 'retried', 'failed', 'refused-by-cap']),
   errorCode: z.string().optional(),
+  errorMessage: z.string().optional(),
   httpStatus: count.optional(),
   ollama: ollamaSchema.optional(),
   transcriptRef: z.string().optional(),
@@ -84,8 +85,8 @@ function usageExtras(parts: {
 export function parseCallLine(value: unknown): StoredCall | undefined {
   const parsed = callSchema.safeParse(value);
   if (!parsed.success) return undefined;
-  const { modelVersion, requestId, errorCode, httpStatus, ollama, transcriptRef, ...rest } =
-    parsed.data;
+  const { modelVersion, requestId, errorCode, errorMessage, httpStatus, ...others } = parsed.data;
+  const { ollama, transcriptRef, ...rest } = others;
   const { cacheWriteInputTokens, reasoningTokens, outputUnknown, ...required } = rest;
   return {
     ...required,
@@ -93,6 +94,7 @@ export function parseCallLine(value: unknown): StoredCall | undefined {
     ...(modelVersion === undefined ? {} : { modelVersion }),
     ...(requestId === undefined ? {} : { requestId }),
     ...(errorCode === undefined ? {} : { errorCode }),
+    ...(errorMessage === undefined ? {} : { errorMessage }),
     ...(httpStatus === undefined ? {} : { httpStatus }),
     ...(ollama === undefined ? {} : { ollama: ollamaOf(ollama) }),
     ...(transcriptRef === undefined ? {} : { transcriptRef }),

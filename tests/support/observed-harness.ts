@@ -30,7 +30,8 @@ export interface ObservedHarnessOptions {
 /** Every call costs 1234 micro-USD. */
 export function observedHarness(options: ObservedHarnessOptions = {}): ObservedHarness {
   const clock = new FixedClock(observedInstant);
-  const log = new MemoryProviderCallLog(options.masker ?? new SecretMasker());
+  const masker = options.masker ?? new SecretMasker();
+  const log = new MemoryProviderCallLog(masker);
   const recording = options.recording ?? recordingOf(contractScenarios.text);
   const provider = new ObservedProvider({
     inner: options.inner?.(clock) ?? new FakeProvider({ testMode: true, recording }),
@@ -40,6 +41,7 @@ export function observedHarness(options: ObservedHarnessOptions = {}): ObservedH
     target: { provider: 'local', kind: 'ollama', endpointHost: 'host.docker.internal' },
     priceCall: () => microUsd(1234n),
     transcripts: options.transcripts ?? true,
+    masker,
   });
   return { provider, log };
 }

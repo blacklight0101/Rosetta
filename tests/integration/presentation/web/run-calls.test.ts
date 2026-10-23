@@ -90,6 +90,7 @@ describe('GET /api/runs/:runId/calls agents and retries', () => {
         attempt: 1,
         status: 'retried',
         errorCode: ERROR_CODES.providerRateLimited,
+        errorMessage: 'rate_limit_error: slow down',
         httpStatus: 429,
         finishReason: 'error',
         latencyMs: 300,
@@ -110,8 +111,10 @@ describe('GET /api/runs/:runId/calls agents and retries', () => {
     expect(calls[0]).toMatchObject({
       callId: calls[1]?.callId,
       errorCode: ERROR_CODES.providerRateLimited,
+      errorMessage: 'rate_limit_error: slow down',
       httpStatus: 429,
     });
+    expect(calls[1]).not.toHaveProperty('errorMessage');
   });
 });
 

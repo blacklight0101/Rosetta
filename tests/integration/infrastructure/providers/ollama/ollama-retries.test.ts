@@ -35,7 +35,9 @@ describe('OllamaProvider retries', () => {
     const response = await provider.complete(contractRequest(), attempts);
 
     expect(response.text).toBe('The Catalog area lists products from the database.');
-    expect(attempts.retried).toEqual([{ code: ERROR_CODES.providerCallFailed, httpStatus: 500 }]);
+    expect(attempts.retried).toMatchObject([
+      { code: ERROR_CODES.providerCallFailed, httpStatus: 500 },
+    ]);
     expect(waits).toHaveLength(1);
   });
 

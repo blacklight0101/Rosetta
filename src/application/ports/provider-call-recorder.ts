@@ -47,6 +47,8 @@ export interface ProviderCallRecord {
   readonly finishReason: FinishReason;
   readonly status: ProviderCallStatus;
   readonly errorCode?: ErrorCode;
+  /** P5-21: the provider's error type and message (masked, at most 500 characters), on a failed attempt. */
+  readonly errorMessage?: string;
   readonly httpStatus?: number;
   readonly ollama?: OllamaMetrics;
   readonly transcriptRef?: string;

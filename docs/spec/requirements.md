@@ -847,6 +847,7 @@ As a developer I want every interaction with a model provider recorded so that I
 - Given any provider call (Ollama, OpenAI, Anthropic, OpenAI-compatible), when it ends, then one record is appended to `provider-calls.jsonl` in the run folder with sequence number, run, agent task, role, provider, model, endpoint host, the provider's request id, start time, time to first token, total latency, tokens (input, output, cached), cost, attempt number, finish reason, status and `RST` error code, and a link to its masked transcript entry.
 - Given Ollama, when a call ends, then the record also holds Ollama's own load, prompt-evaluation and generation durations and tokens per second.
 - Given a retried call, when each attempt ends, then each attempt is a record, linked to the first by a call id.
+- Given a provider that answers with an error, when the attempt ends, then its record also holds the provider's error type and message (`errorMessage`), masked by the secret masker (RF-141) and cut to 500 characters with a marker, and the provider's request id when it sent one; the `warn` entry of the run log for the failed task carries the same text; a network error holds its error name only; no request or response body is stored beyond that text, and a call that succeeds has no `errorMessage` (P5-21).
 - Given any record, when it is written, then it contains no API key, header value or unmasked secret (RNF-003).
   Verification: integration tests with the fake provider and a fake Ollama server; output scan test.
 
@@ -1412,7 +1413,7 @@ As a developer I want the tokens and price spent on the whole project in view at
 **RF-1011 Live provider calls and logs view** - R1 (M1) - Should - Source DEC-51, DEC-50 - ADR-012
 As a developer I want to watch the calls to the model providers and Rosetta's log in the page so that I can spot slow, failing or expensive calls while a run works.
 
-- Given a run, when calls are made, then an "API calls" panel lists each call live from the provider call log (RF-408) with provider, model, agent, latency, tokens, cost and status, filterable by provider, role, agent and status, with errors and retries highlighted and a link to the masked transcript.
+- Given a run, when calls are made, then an "API calls" panel lists each call live from the provider call log (RF-408) with provider, model, agent, latency, tokens, cost and status, filterable by provider, role, agent and status, with errors and retries highlighted, the provider's error text beside a failed call (RF-408) and a link to the masked transcript.
 - Given the page, when it is open, then summary figures per provider and role show calls, errors, P50 and P95 latency, P50 and P95 time to first token, and tokens per second for Ollama (DEC-57).
 - Given security events in the log, when the page is open, then a counter shows how many occurred in the run, and clicking it filters the log to them.
 - Given the application log (RF-009), when I open the "Logs" panel, then recent entries stream live with a level filter.

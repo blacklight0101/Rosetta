@@ -15,6 +15,11 @@ export interface ProviderCallErrorOptions extends ErrorOptions {
 export class ProviderCallError extends RosettaError {
   readonly httpStatus: number | undefined;
   readonly requestId: string | undefined;
+  /**
+   * RF-408: the provider's error text. The adapter sets it raw; the observing decorator replaces
+   * it with the masked, cut text before the error leaves it, so everything above sees that one.
+   */
+  declare providerError: string | undefined;
   /** True when nothing was sent: the budget guard frees the reservation, no ledger row (RF-428). */
   readonly notSent: boolean;
   /** The reported usage of a call whose answer was dropped, for the ledger (RF-428). */
@@ -26,6 +31,12 @@ export class ProviderCallError extends RosettaError {
     this.name = 'ProviderCallError';
     this.httpStatus = failure.httpStatus;
     this.requestId = failure.requestId;
+    // Not enumerable: a serialised error never carries the provider's raw text (RNF-003).
+    Object.defineProperty(this, 'providerError', {
+      value: failure.providerError,
+      writable: true,
+      enumerable: false,
+    });
     this.notSent = notSent ?? false;
     this.usage = usage;
   }

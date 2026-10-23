@@ -15,6 +15,11 @@ export async function logTaskEnd(
     message: 'An agent task ended.',
     runId: ids.runId,
     agentTaskId: ids.agentTaskId,
-    data: { state: result.state, reason: result.reason, turns: result.turns },
+    data: {
+      state: result.state,
+      reason: result.reason,
+      turns: result.turns,
+      ...(result.providerError === undefined ? {} : { providerError: result.providerError }),
+    },
   });
 }

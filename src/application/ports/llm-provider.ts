@@ -145,6 +145,11 @@ export interface LlmAttemptFailure {
   readonly code: ErrorCode;
   readonly httpStatus?: number;
   readonly requestId?: string;
+  /**
+   * RF-408: the provider's error type and message, or the name of a network error. The observing
+   * decorator masks and cuts it before anything keeps it.
+   */
+  readonly providerError?: string;
   /** Q-60: what the attempt used, when it is known or estimated (a timed-out attempt). */
   readonly usage?: TokenUsage;
 }

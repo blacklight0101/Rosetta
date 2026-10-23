@@ -58,6 +58,7 @@ function callView(call: RunCall) {
     finishReason: call.finishReason,
     status: call.status,
     ...(call.errorCode === undefined ? {} : { errorCode: call.errorCode }),
+    ...(call.errorMessage === undefined ? {} : { errorMessage: call.errorMessage }),
     ...(call.httpStatus === undefined ? {} : { httpStatus: call.httpStatus }),
     ...(call.ollama === undefined ? {} : { ollama: call.ollama }),
     hasTranscript: call.transcriptRef !== undefined,

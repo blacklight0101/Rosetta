@@ -56,6 +56,7 @@ async function chain(cloudConsent: boolean): Promise<{
       { kind: 'openai', keySource: 'server' },
     ),
     transcripts: false,
+    masker,
   });
   const egress = new EgressGuard({
     inner: observed,
