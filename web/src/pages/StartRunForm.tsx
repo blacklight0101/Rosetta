@@ -10,6 +10,7 @@ import { RepositorySection } from './RepositorySection.js';
 import { UploadSourceSection } from './UploadSourceSection.js';
 import { WorkbookSourceSection } from './WorkbookSourceSection.js';
 import { RunNotice } from './RunNotice.js';
+import { localLikelyTokens } from '../lib/start-confirmation.js';
 import { StartConfirmDialog } from './StartConfirmDialog.js';
 import { StaleCodeMapNotice } from './StaleCodeMapNotice.js';
 import { StageAreasSection } from './StageAreasSection.js';
@@ -71,8 +72,12 @@ function Confirmation({ form }: { readonly form: StartForm }): JSX.Element | nul
   const { actions, choice } = form;
   const { estimate } = choice;
   if (!actions.confirmation.asking || estimate.status !== 'ready') return null;
+  const likelyTokens = localLikelyTokens(estimate.estimate);
+  const capTokens = form.project.settings.budget.run.maxTokens;
+  const over = likelyTokens !== undefined && likelyTokens > capTokens;
   return (
     <StartConfirmDialog
+      overTokenCap={over ? { likelyTokens, capTokens } : undefined}
       estimate={estimate.estimate}
       thresholdMicros={form.thresholdMicros}
       capMicros={form.runCapMicros}

@@ -49,6 +49,8 @@ export interface ActionInputs {
   readonly thresholdText: string;
   /** The likely cost of the priced roles, the figure the threshold is compared with (RF-425). */
   readonly likelyMicros: bigint | undefined;
+  /** RF-429: the likely tokens of a local estimate, compared with the run token cap. */
+  readonly likelyTokens: number | undefined;
   /** Told the project with the settings the page just saved. */
   readonly onSaved: (project: Project) => void;
   readonly onConsentRefused: () => void;
@@ -223,7 +225,10 @@ export function useStartActions(inputs: ActionInputs): StartActions {
   const [refusals, setRefusals] = useState<Refusals>({});
   const [notice, setNotice] = useState<RunNoticeState | undefined>();
   useQueuePosition(notice, setNotice);
-  const confirmation = useStartConfirmation(inputs.likelyMicros);
+  const confirmation = useStartConfirmation(inputs.likelyMicros, {
+    likelyTokens: inputs.likelyTokens,
+    capTokens: inputs.project.settings.budget.run.maxTokens,
+  });
   const steps: Steps = {
     ...{ client, inputs, confirmation, show: setNotice },
     refuse: (next) => {

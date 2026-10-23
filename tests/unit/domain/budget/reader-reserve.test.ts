@@ -17,7 +17,7 @@ const inputs: CapInputs = {
 const share = BigInt(READER_SHARE_PERCENT);
 
 describe('the reader share of the run caps', () => {
-  it('RF-429 a reader without a cap of its own gets a role cap at the share of the run caps', () => {
+  it('RF-429 a reader without a token cap of its own gets a role token cap at the share of the run token cap', () => {
     const caps = capsFor('user', { ...inputs, reader: true });
 
     expect(caps).toContainEqual({
@@ -25,19 +25,15 @@ describe('the reader share of the run caps', () => {
       limit: (2_000_000n * share) / 100n,
       source: 'reserve',
     });
-    expect(caps).toContainEqual({
-      kind: 'role-cost',
-      limit: (2_000_000n * share) / 100n,
-      source: 'reserve',
-    });
+    expect(caps.some((cap) => cap.kind === 'role-cost')).toBe(false);
   });
 
-  it('RF-429 the share is taken of the run cap the key source gives, the lower one on server keys', () => {
+  it('RF-429 the share is a share of tokens on every key source and never of the cost cap', () => {
     const caps = capsFor('server', { ...inputs, reader: true });
 
     expect(caps).toContainEqual({
-      kind: 'role-cost',
-      limit: (500_000n * share) / 100n,
+      kind: 'role-tokens',
+      limit: (2_000_000n * share) / 100n,
       source: 'reserve',
     });
   });
@@ -52,6 +48,17 @@ describe('the reader share and the caps a reader has', () => {
     expect(caps.filter((cap) => cap.kind.startsWith('role'))).toEqual([
       { kind: 'role-tokens', limit: 9_000n },
     ]);
+  });
+
+  it('RF-429 a reader with only a cost cap of its own still gets the token share', () => {
+    const caps = capsFor('user', { ...inputs, reader: true, role: { maxCostMicros: 5n } });
+
+    expect(caps).toContainEqual({ kind: 'role-cost', limit: 5n });
+    expect(caps).toContainEqual({
+      kind: 'role-tokens',
+      limit: (2_000_000n * share) / 100n,
+      source: 'reserve',
+    });
   });
 
   it('RF-429 other roles and calls not marked as a reader get no share', () => {
