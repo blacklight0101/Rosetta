@@ -1,0 +1,458 @@
+{
+  "summary": "Planner answer of evaluation EV-30 (eShopModernizing, 2026-10-23), trimmed to the first 24 requirements, the four phases and the first six task cards, with the lists it does not read left empty. The six cards write their requirement positions as strings.",
+  "requirements": [
+    {
+      "title": "Application configuration via environment variables",
+      "statement": "Deployed services must use environment variables to configure database connections, mock data usage, and other environment-specific settings.",
+      "sources": [
+        "BR-001"
+      ]
+    },
+    {
+      "title": "Port mapping rules for local development",
+      "statement": "Specific ports must be mapped from the host machine to internal container ports for each application component.",
+      "sources": [
+        "BR-002"
+      ]
+    },
+    {
+      "title": "Container resource allocation",
+      "statement": "Each container must be provisioned with 1 CPU and 1.5 GB of memory.",
+      "sources": [
+        "BR-003"
+      ]
+    },
+    {
+      "title": "Application port exposure",
+      "statement": "The container must be configured to listen on TCP port 80.",
+      "sources": [
+        "BR-004"
+      ]
+    },
+    {
+      "title": "Configuration via environment variables",
+      "statement": "The container must receive configuration values through environment variables.",
+      "sources": [
+        "BR-005"
+      ]
+    },
+    {
+      "title": "Default use of mock data",
+      "statement": "By default, the application must be configured to use mock data during operation.",
+      "sources": [
+        "BR-006"
+      ]
+    },
+    {
+      "title": "Default disablement of Azure integration",
+      "statement": "The application must be configured to use local/non-Azure services by default, explicitly disabling Azure Storage and Azure Active Directory features.",
+      "sources": [
+        "BR-007"
+      ]
+    },
+    {
+      "title": "Service port mapping",
+      "statement": "The service must map external port 5115 to the target container port 80.",
+      "sources": [
+        "BR-008"
+      ]
+    },
+    {
+      "title": "SQL server initialization rules",
+      "statement": "The SQL service container must accept the End User License Agreement (EULA) and be configured with a specific administrative password.",
+      "sources": [
+        "BR-009"
+      ]
+    },
+    {
+      "title": "Application configuration via environment variables",
+      "statement": "Application behavior must be determined by environment variables such as 'UseMockData', 'UseAzureActiveDirectory', 'UseAzureStorage', and 'ConnectionString'.",
+      "sources": [
+        "BR-010"
+      ]
+    },
+    {
+      "title": "Deployment execution rules",
+      "statement": "The deployment scripts must ensure that necessary Azure Resource Providers (Storage, Network, Compute, ServiceFabric) are registered before deployment.",
+      "sources": [
+        "BR-011"
+      ]
+    },
+    {
+      "title": "Default connection string",
+      "statement": "The service must default to connecting to a specific SQL database instance using the default connection string.",
+      "sources": [
+        "BR-012"
+      ]
+    },
+    {
+      "title": "Upgrade deployment strategy for cloud profile",
+      "statement": "In the Cloud deployment profile, upgrades must be monitored, but 'Enabled' must be false, with failure handling set to rollback and force.",
+      "sources": [
+        "BR-013"
+      ]
+    },
+    {
+      "title": "Local deployment parameter absence",
+      "statement": "Local node count profiles must be structurally minimal, containing only the Application name tag.",
+      "sources": [
+        "BR-014"
+      ]
+    },
+    {
+      "title": "Service fabric application behavior",
+      "statement": "The WebForms_Container must be defined as a stateless service type, running in ExclusiveProcess mode.",
+      "sources": [
+        "BR-015"
+      ]
+    },
+    {
+      "title": "Setup requires specific environment variables",
+      "statement": "The setup scripts must require 'useralias', 'serveradminpassword', and 'resourcegroupname' to be set before execution.",
+      "sources": [
+        "BR-016"
+      ]
+    },
+    {
+      "title": "Verification of provisioned resources",
+      "statement": "The verification script must confirm the existence of the app service plan, web app, SQL Server, and database.",
+      "sources": [
+        "BR-017"
+      ]
+    },
+    {
+      "title": "Minimum .NET framework version requirement",
+      "statement": "The certificate generation script must enforce that the installed .NET Framework version is at least 4.6+.",
+      "sources": [
+        "BR-018"
+      ]
+    },
+    {
+      "title": "Binary format usage",
+      "statement": "Serialization and deserialization processes must use BinaryFormatter.",
+      "sources": [
+        "BR-019"
+      ]
+    },
+    {
+      "title": "Database connection configuration",
+      "statement": "If 'UseMockData' is false, the application must use the 'DefaultConnection' string to connect to SQL Server.",
+      "sources": [
+        "BR-020"
+      ]
+    },
+    {
+      "title": "Brand deletion requires existence check",
+      "statement": "When deleting a brand, the system must check if a brand with the given ID exists, returning 404 if not found.",
+      "sources": [
+        "BR-021"
+      ]
+    },
+    {
+      "title": "Image mime type determination",
+      "statement": "The application must determine the correct MIME type for an image based on its file extension, defaulting to 'application/octet-stream' if unrecognized.",
+      "sources": [
+        "BR-022"
+      ]
+    },
+    {
+      "title": "Cascading deletes for catalog items",
+      "statement": "If a CatalogBrand or CatalogType is deleted, all associated CatalogItems must also be deleted.",
+      "sources": [
+        "BR-023"
+      ]
+    },
+    {
+      "title": "Catalog item price validation rules",
+      "statement": "The price of a catalog item must be a positive number with a maximum of two decimal places and must fall within the range of 0 to 1,000,000.",
+      "sources": [
+        "BR-024"
+      ]
+    }
+  ],
+  "components": [],
+  "decisions": [],
+  "entities": [],
+  "phases": [
+    {
+      "name": "Phase 1: Core Catalog Service Replacement",
+      "goal": "Implement the new business layer to manage catalog items, brands, and types, ensuring CRUD operations and data integrity are sound.",
+      "exitCriteria": [
+        "All catalog item creation, retrieval, update, and deletion functionalities run successfully on the new system.",
+        "The new catalog service correctly implements the required validations (price, stock limits, required fields)."
+      ]
+    },
+    {
+      "name": "Phase 2: Presentation Layer Migration (Catalog Browsing)",
+      "goal": "Replace the legacy catalog browsing UI with the new Razor Pages implementation, supporting pagination and displaying full catalog item details.",
+      "exitCriteria": [
+        "The paginated catalog listing page fully utilizes the new service layer.",
+        "User interaction for Create, Edit, and Delete actions functions through the new presentation layer."
+      ]
+    },
+    {
+      "name": "Phase 3: Peripheral Feature Migration",
+      "goal": "Migrate auxiliary features such as image handling, user authentication flow, and reporting screens (Contact, About).",
+      "exitCriteria": [
+        "All external dependencies like Image Service and Authentication Middleware are functioning on the new system.",
+        "Legacy pages for auxiliary features are retired or switched over."
+      ]
+    },
+    {
+      "name": "Phase 4: Full Cutover and Decommissioning",
+      "goal": "Switch all traffic from the legacy system to the new system and decommission the old infrastructure.",
+      "exitCriteria": [
+        "Zero traffic is routed to the legacy eShop services.",
+        "The strangler-fig process is complete."
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "title": "Implement CatalogItem CRUD logic",
+      "phase": 1,
+      "requirements": [
+        "1",
+        "12",
+        "13",
+        "14",
+        "23",
+        "35",
+        "80"
+      ],
+      "acceptanceCriteria": [
+        "Given a valid CatalogItem object, when the service calls Create, then the service returns the entity with a unique generated ID.",
+        "Given a CatalogItem with ID 1, when the service calls Update, then the service successfully persists the modified state.",
+        "Given a CatalogItem with ID 99, when the service calls Remove, then the service confirms the deletion.",
+        "Given a request to fetch CatalogItem ID 10, when the service returns the item, then the item includes associated CatalogBrand and CatalogType.",
+        "Given a CatalogItem with Price 0.50, when validation runs, then validation passes.",
+        "Given a CatalogItem with Price 1000001.00, when validation runs, then validation fails because the price exceeds the maximum limit."
+      ],
+      "invariant": "Every catalog item must have a unique ID generated by the sequence generator upon creation.",
+      "riskClass": "data loss",
+      "adds": [
+        "check"
+      ],
+      "probes": [
+        "Attempt to create an item without a required Name or CatalogTypeId.",
+        "Attempt to update an item's price to a negative value."
+      ],
+      "files": [
+        "src/business/catalog/CatalogService.cs",
+        "src/data/catalog/ICatalogService.cs",
+        "src/data/catalog/CatalogDBInitializer.cs"
+      ],
+      "needs": [
+        {
+          "kind": "error code",
+          "purpose": "input validation failure during item creation"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "title": "Implement Catalog Listing and Pagination",
+      "phase": 2,
+      "requirements": [
+        "1",
+        "12",
+        "22",
+        "13",
+        "2",
+        "7",
+        "3"
+      ],
+      "acceptanceCriteria": [
+        "Given a request to list catalog items with page size 20 and index 0, when the service returns data, then the response contains 20 items.",
+        "Given the total count is 100, when requesting page index 1, then the response shows a total of 100 items.",
+        "Given the list page shows data, when the pagination UI renders, then navigation links for next/previous pages are correctly calculated.",
+        "Given a page with items, when the view renders, then the summary shows 'Showing 20 of 100 products - Page 1 - 5'."
+      ],
+      "invariant": "The paginated catalog list must accurately reflect the total number of items available.",
+      "riskClass": "none",
+      "adds": [
+        "parser"
+      ],
+      "probes": [
+        "Request with page size 0 or negative.",
+        "Request for a page index far beyond the total pages."
+      ],
+      "files": [
+        "src/presentation/catalog/CatalogController.cs",
+        "src/business/catalog/ICatalogService.cs"
+      ],
+      "needs": [
+        {
+          "kind": "configuration key",
+          "purpose": "default page size setting"
+        }
+      ],
+      "dependsOn": [
+        1
+      ]
+    },
+    {
+      "title": "Implement Product Detail View",
+      "phase": 2,
+      "requirements": [
+        "1",
+        "12",
+        "21",
+        "3",
+        "2",
+        "7"
+      ],
+      "acceptanceCriteria": [
+        "Given a valid CatalogItemId, when the service retrieves details, then the service returns the item along with its Brand and Type.",
+        "Given a request for CatalogItemId 999, when the service attempts retrieval, then the service returns a 404 Not Found error.",
+        "Given an item is retrieved, when the presentation layer renders, then the item's picture URI is correctly constructed by the ImageService."
+      ],
+      "invariant": "A specific catalog item must be retrievable by its ID, and its relational data must be present.",
+      "riskClass": "none",
+      "adds": [
+        "check"
+      ],
+      "probes": [
+        "Attempt to retrieve an item ID that does not exist."
+      ],
+      "files": [
+        "src/presentation/catalog/CatalogController.cs",
+        "src/business/catalog/CatalogService.cs"
+      ],
+      "needs": [
+        {
+          "kind": "error code",
+          "purpose": "item not found error"
+        }
+      ],
+      "dependsOn": [
+        1
+      ]
+    },
+    {
+      "title": "Implement Image Service Integration",
+      "phase": 3,
+      "requirements": [
+        "1",
+        "12",
+        "22",
+        "3",
+        "5",
+        "7"
+      ],
+      "acceptanceCriteria": [
+        "Given a CatalogItem with a valid PictureFileName, when the service generates the URI, then the URI correctly points to the image path.",
+        "Given a CatalogItem where PictureFileName is null, when the service generates the URI, then the URI points to the configured default image URL.",
+        "Given a request for an image URI, when the service serves the file, then the correct MIME type is applied to the response."
+      ],
+      "invariant": "The ImageService must resolve an image URI correctly, either from a specified file name or a default.",
+      "riskClass": "none",
+      "adds": [
+        "filter"
+      ],
+      "probes": [
+        "Request for an image URI pointing to a non-existent file."
+      ],
+      "files": [
+        "src/service/images/ImageService.cs"
+      ],
+      "needs": [
+        {
+          "kind": "configuration key",
+          "purpose": "default image URL path"
+        }
+      ],
+      "dependsOn": [
+        2
+      ]
+    },
+    {
+      "title": "Implement Catalog Creation UI/API",
+      "phase": 2,
+      "requirements": [
+        "1",
+        "12",
+        "23",
+        "7",
+        "5",
+        "13",
+        "14"
+      ],
+      "acceptanceCriteria": [
+        "Given a user submits a complete catalog creation form, when the service validates and saves, then a new CatalogItem is persisted and redirected to the Index page.",
+        "Given a user inputs all required fields (Name, Price, Brand, Type), when submitting, then the service successfully creates the item.",
+        "Given a user inputs invalid data (e.g., Price out of range), when submitting, then the form displays the correct validation error messages.",
+        "Given the user fills the form, when they click Cancel, then they are navigated to the Index page."
+      ],
+      "invariant": "All mandatory fields for catalog item creation must be present and valid before persistence.",
+      "riskClass": "money",
+      "adds": [
+        "check"
+      ],
+      "probes": [
+        "Submit form missing required Name field.",
+        "Submit form with price exactly at the upper boundary of 1,000,000."
+      ],
+      "files": [
+        "src/presentation/catalog/CatalogCreate.cshtml",
+        "src/presentation/catalog/CatalogController.cs"
+      ],
+      "needs": [
+        {
+          "kind": "error code",
+          "purpose": "validation failure during creation"
+        }
+      ],
+      "dependsOn": [
+        1
+      ]
+    },
+    {
+      "title": "Implement Catalog Editing UI/API",
+      "phase": 2,
+      "requirements": [
+        "1",
+        "12",
+        "24",
+        "7",
+        "13",
+        "5"
+      ],
+      "acceptanceCriteria": [
+        "Given a CatalogItemId, when the service loads the item, then the form is pre-populated with all existing details, including the current PictureUri.",
+        "Given a user modifies Name and Price, when the service processes the update, then the database record is correctly modified and redirected to Index.",
+        "Given a user selects a different CatalogBrand, when the service processes the update, then the CatalogBrandId is correctly updated.",
+        "Given a user attempts to save without providing a Name, when submission occurs, then validation fails on the Name field."
+      ],
+      "invariant": "An existing catalog item's data must be accurately updated based on user input from the presentation layer.",
+      "riskClass": "data loss",
+      "adds": [
+        "check"
+      ],
+      "probes": [
+        "Attempt to save an item with only the Name changed, but all other optional fields cleared.",
+        "Attempt to update an item's stock value outside the 0-10,000,000 range."
+      ],
+      "files": [
+        "src/presentation/catalog/CatalogEdit.cshtml",
+        "src/presentation/catalog/CatalogController.cs"
+      ],
+      "needs": [
+        {
+          "kind": "configuration key",
+          "purpose": "brand and type lookup lists"
+        }
+      ],
+      "dependsOn": [
+        1
+      ]
+    }
+  ],
+  "risks": [],
+  "technical": {
+    "integrations": [],
+    "security": [],
+    "targets": [],
+    "environments": []
+  }
+}

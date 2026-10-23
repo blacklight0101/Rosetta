@@ -24,13 +24,20 @@ const ids = z.array(z.string().max(40)).max(MAX_LIST).default([]);
 const texts = z.array(text).max(MAX_LIST);
 const position = z.number().int().min(1).max(MAX_ITEMS);
 // Q-54: a small model writes a position as an object (`{"position": 3}`, with extra keys at times);
-// the number is read. EV-01: `{"index": 3}` is read the same way. A string, an `id` or any other
-// shape stays refused.
-const listedPosition = z.union([
+// the number is read. EV-01: `{"index": 3}` is read the same way. EV-30: a string of digits (`"12"`)
+// is read as that number. Any other string, an `id` or any other shape stays refused.
+const digits = z
+  .string()
+  .regex(/^[0-9]+$/)
+  .transform((text) => Number(text))
+  .pipe(position);
+// The gap call (Q-45) reads the numbers and objects, and still refuses a string (RF-627 test).
+const numberPosition = z.union([
   position,
   z.object({ position }).transform((each) => each.position),
   z.object({ index: position }).transform((each) => each.index),
 ]);
+const listedPosition = z.union([numberPosition, digits]);
 const path = z.string().trim().min(1).max(PATH);
 // RF-634: a need of a kind that does not exist is left out; it never makes the answer unusable.
 const need = z.object({ kind: z.enum(identifierKinds), purpose: title });
@@ -68,24 +75,29 @@ const technical = z.object({
     .default([]),
 });
 
-/** One task card of the planner's answer (RF-601, RF-630); the call for the gaps reads the same card (Q-45). */
-export const taskSchema = z.object({
-  title,
-  phase: position,
-  requirements: z.array(listedPosition).max(MAX_LIST).default([]),
-  acceptanceCriteria: texts.min(1),
-  invariant: optionalText,
-  riskClass: z.enum(riskClasses).optional().catch(undefined),
-  adds: z.array(z.enum(guardKinds)).max(guardKinds.length).default([]),
-  probes: texts.default([]),
-  files: z.array(path).max(MAX_LIST).default([]),
-  needs: z
-    .array(need.nullable().catch(null))
-    .max(MAX_LIST)
-    .transform((list) => list.flatMap((each) => (each === null ? [] : [each])))
-    .default([]),
-  dependsOn: z.array(listedPosition).max(MAX_LIST).default([]),
-});
+/** One task card (RF-601, RF-630) with the positions it reads: the planner's, or the gap call's (Q-45). */
+function cardWith(positions: z.ZodType<number>) {
+  return z.object({
+    title,
+    phase: position,
+    requirements: z.array(positions).max(MAX_LIST).default([]),
+    acceptanceCriteria: texts.min(1),
+    invariant: optionalText,
+    riskClass: z.enum(riskClasses).optional().catch(undefined),
+    adds: z.array(z.enum(guardKinds)).max(guardKinds.length).default([]),
+    probes: texts.default([]),
+    files: z.array(path).max(MAX_LIST).default([]),
+    needs: z
+      .array(need.nullable().catch(null))
+      .max(MAX_LIST)
+      .transform((list) => list.flatMap((each) => (each === null ? [] : [each])))
+      .default([]),
+    dependsOn: z.array(positions).max(MAX_LIST).default([]),
+  });
+}
+
+const taskSchema = cardWith(listedPosition);
+export const gapTaskSchema = cardWith(numberPosition);
 
 const answer = z.object({
   summary: optionalText,
@@ -128,6 +140,10 @@ const answer = z.object({
 
 const UNREADABLE_REASON =
   'The card is not readable: a field is missing, of the wrong shape or out of its bounds.';
+// EV-30: a position in requirements or dependsOn that is not a number from 1 to 200.
+const POSITION_REASON =
+  'The card is not readable: a position in its requirements or dependsOn is not a number from 1 to 200.';
+const POSITION_FIELDS: readonly string[] = ['requirements', 'dependsOn'];
 
 // P3-82: a card that cannot be read holds its place with phase 0, which no plan has, so the domain
 // leaves it out and the positions of the other cards do not move.
@@ -153,9 +169,13 @@ function readTasks(list: readonly unknown[]): {
   const tasks = list.map((each, index) => {
     const read = taskSchema.safeParse(each);
     if (read.success) return read.data;
-    const first = read.error.issues[0]?.path[0];
+    const issue = read.error.issues[0];
+    const first = issue?.path[0];
     const field = typeof first === 'string' ? first : 'card';
-    unreadableTasks.push({ position: index + 1, field, reason: UNREADABLE_REASON });
+    // EV-30: a bad element of requirements or dependsOn is a position that is not a number.
+    const onPosition = POSITION_FIELDS.includes(field) && (issue?.path.length ?? 0) > 1;
+    const reason = onPosition ? POSITION_REASON : UNREADABLE_REASON;
+    unreadableTasks.push({ position: index + 1, field, reason });
     return unreadablePlaceholder;
   });
   return { tasks, unreadableTasks };
