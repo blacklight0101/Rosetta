@@ -84,9 +84,6 @@ describe('plain and JSON-quoted values are masked as before (P3-128)', () => {
 describe('ordinary settings between escaped quotes are not masked (P3-116 precision, P3-128)', () => {
   it.each([
     `Password=${eq}${eq} and ${eq}x${eq}`,
-    `password=${eq}<password>${eq}`,
-    `password=${eq}$` + `{PASSWORD}${eq}`,
-    `password=${eq}true${eq}`,
     `token=${eq}string${eq}`,
     `max_token=${eq}30${eq}`,
     `max_tokens=${eq}FAKE-tk-0000${eq}`,

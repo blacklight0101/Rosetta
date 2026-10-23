@@ -1,6 +1,7 @@
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { lineBreaksOf, maskOrphanKeyEnds } from './private-key-pieces.js';
+import { escapedQuoteRules } from './secret-escaped-quote-rules.js';
 import { extraRules } from './secret-extra-rules.js';
 import {
   notContinuation,
@@ -151,7 +152,12 @@ const baseRules: readonly MaskRule[] = [
   },
   {
     kind: 'password',
-    pattern: new RegExp(String.raw`(?<keep>${passwordKey})${notMasked}(?![="'])[^\s;,&"']+`, 'gi'),
+    // An escaped quote in front of the value stays visible, and an empty escaped value is no value
+    // (P3-128).
+    pattern: new RegExp(
+      String.raw`(?<keep>${passwordKey}(?:\\{1,4}["'])?)${notMasked}(?![="'])(?!\\{1,4}["'])[^\s;,&"']+`,
+      'gi',
+    ),
   },
   {
     // A CDATA section in such an element: the value runs to `]]>`, or to the end of the line when
@@ -199,7 +205,8 @@ const baseRules: readonly MaskRule[] = [
   },
 ];
 
-const defaultRules: readonly MaskRule[] = [...baseRules, ...extraRules];
+// The escaped-quote rules come first: the rules below would take the backslash for the value (P3-128).
+const defaultRules: readonly MaskRule[] = [...escapedQuoteRules, ...baseRules, ...extraRules];
 
 /** Every kind, in name order. */
 export const SECRET_KINDS: readonly SecretKind[] = [
