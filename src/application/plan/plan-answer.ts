@@ -96,7 +96,7 @@ function cardWith(positions: z.ZodType<number>) {
   });
 }
 
-export const taskSchema = cardWith(listedPosition);
+const taskSchema = cardWith(listedPosition);
 export const gapTaskSchema = cardWith(numberPosition);
 
 const answer = z.object({
