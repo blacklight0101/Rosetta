@@ -12,20 +12,24 @@ import { scopeOf } from '../runs/run-scope.js';
 
 // RF-614, RF-605, RST-1802, RF-1105: Plan setup names the understand run it plans from. Given the id
 // of a run (Plan setup opened from the run page) it describes that run; without one it describes the
-// project's newest understand run that ended `Completed` (Plan setup opened from the project). A
-// run that did not complete, or has no `Supported` claim, is refused (RST-1802); an unknown id,
+// project's newest understand run that ended `Completed`, else its newest that ended `CapReached`
+// (Plan setup opened from the project). A run that ended `CapReached` is described like a completed
+// one, with its end state, so the page can say it stopped at a cap (P3-121). A run that failed or
+// was interrupted, or has no `Supported` claim, is refused (RST-1802); an unknown id,
 // another user's run and a run of another project are not found, like another user's project.
 
 export interface PlanSource {
   readonly runId: string;
   /** The run's folder name. */
   readonly runKey: string;
+  /** `Completed`, or `CapReached` for a run that stopped at a cap but holds Supported claims (P3-121). */
+  readonly endState: 'Completed' | 'CapReached';
   readonly endedAt: EpochMs | null;
   /** The areas of the run's cards, in code-unit order. */
   readonly areas: readonly string[];
   /** The `Supported` claims of the run's cards: what the package can use. */
   readonly supportedClaims: number;
-  /** Whether it is the project's newest completed understand run. */
+  /** Whether it is the project's newest plannable understand run (completed, else capped). */
   readonly newest: boolean;
 }
 
@@ -67,6 +71,7 @@ export class GetPlanSource {
     const newest = await planSourceRun(this.deps.runs, owner);
     return ok({
       ...{ runId: run.id, runKey: run.runKey, endedAt: run.endedAt },
+      endState: run.endState === 'CapReached' ? 'CapReached' : 'Completed',
       areas: [...new Set(supported.map((card) => card.area))].sort(byCodeUnit),
       supportedClaims,
       newest: newest.ok && newest.value.id === run.id,

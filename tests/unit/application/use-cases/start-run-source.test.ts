@@ -10,7 +10,7 @@ import { sampleRun } from '../../../support/run-fixtures.js';
 import { settingsFor } from '../../../support/provider-factory-harness.js';
 
 // RF-614, RST-1802, RF-1105: Plan setup starts `plan` from a chosen understand run. The run must be
-// the user's, of this project, an understand run that ended Completed; the manifest records it.
+// the user's, of this project, an understand run that ended Completed or CapReached; the manifest records it.
 
 const fakePlanner = settingsFor({ planner: { provider: 'fake', model: 'fake-model' } });
 
@@ -47,8 +47,22 @@ describe('StartRun for plan: the source run', () => {
     const manifest = await harness.manifests.read(harness.scopeOf(started.value.run));
     expect(manifest?.options).toEqual({ cloudConsent: false, sourceRunId: source.id });
   });
+});
 
-  it.each(['CapReached', 'Failed', 'Interrupted'] as const)(
+describe('StartRun for plan: a source run that stopped', () => {
+  it('RF-614 P3-121 accepts a source run that ended CapReached', async () => {
+    const { harness, project, startRun, seed } = await setup();
+    const source = await seed({ endState: 'CapReached' });
+
+    const started = await startRun.execute({
+      ...{ actor: userAmy, projectId: project.id, stage: 'plan', sourceRunId: source.id },
+    });
+
+    expect(started.ok).toBe(true);
+    expect(await harness.runs.list(userAmy.userId, project.id)).toHaveLength(2);
+  });
+
+  it.each(['Failed', 'Interrupted'] as const)(
     'RST-1802 refuses a source run that ended %s, creating no plan run',
     async (endState) => {
       const { harness, project, startRun, seed } = await setup();

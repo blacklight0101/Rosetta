@@ -70,10 +70,10 @@ describe(
       expect(overview.state).not.toBe('unavailable');
     });
 
-    it('RF-429 RF-006 the run ends CapReached, so it can be resumed to judge the rest', async () => {
+    it('RF-429 RF-304 the run ends as it does for a verifier cap of its own, its unjudged claims Unverified', async () => {
       const { run } = await tightRun();
 
-      expect(run.endState).toBe('CapReached');
+      expect(run.endState).toBe('Completed');
     });
   },
 );

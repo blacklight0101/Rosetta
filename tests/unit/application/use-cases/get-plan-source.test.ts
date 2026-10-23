@@ -57,6 +57,7 @@ describe('GetPlanSource: the run it names', () => {
         endedAt: 1_760_000_000_000,
         areas: ['orders'],
         supportedClaims: 4,
+        endState: 'Completed',
         newest: false,
       },
     });
@@ -95,10 +96,26 @@ describe('GetPlanSource: a run that cannot be used', () => {
       error: ERROR_CODES.planSourceMissing,
     });
   });
+});
 
-  it('RST-1802 a chosen run that ended CapReached is refused', async () => {
+describe('GetPlanSource: a run that stopped at a cap', () => {
+  it('RF-614 P3-121 a chosen run that ended CapReached is described with its end state', async () => {
     const { project, seed, source } = await setup();
     const stopped = await seed({ run: { endState: 'CapReached' } });
+
+    const result = await source.execute({
+      ...{ actor, projectId: project.id, runId: stopped?.id ?? '' },
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: { runId: stopped?.id, endState: 'CapReached', supportedClaims: 4, newest: true },
+    });
+  });
+
+  it('RST-1802 a chosen run that ended Failed is refused', async () => {
+    const { project, seed, source } = await setup();
+    const stopped = await seed({ run: { endState: 'Failed' } });
 
     const result = await source.execute({
       ...{ actor, projectId: project.id, runId: stopped?.id ?? '' },

@@ -62,10 +62,10 @@ describe('EstimatePlan: the source run', () => {
     expect(supportedOf(named)).toBe(supportedOf(unnamed));
   });
 
-  it('RST-1802 refuses a chosen run that ended CapReached, even when an older run completed', async () => {
+  it('RST-1802 refuses a chosen run that ended Failed, even when an older run completed', async () => {
     const { h } = await twoRuns();
     const stopped = await h.seed({
-      ...{ brief: false, run: { runKey: '20261012-090000-understand', endState: 'CapReached' } },
+      ...{ brief: false, run: { runKey: '20261012-090000-understand', endState: 'Failed' } },
     });
 
     const result = await h.estimate.execute({

@@ -18,7 +18,7 @@ export const PLAN_ERROR_DESCRIPTIONS: Readonly<Record<PlanErrorCode, ErrorDescri
   },
   'RST-1802': {
     message:
-      'The project has no finished understand run with a supported claim, so there is nothing to plan from.',
+      'The project has no understand run that finished or stopped at a cap with a supported claim, so there is nothing to plan from.',
     nextStep: 'Run understand to its end, check the claims, then write the package again.',
   },
   'RST-1803': {

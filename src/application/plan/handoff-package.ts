@@ -10,7 +10,7 @@ import type { TargetUx } from '../../domain/planning/target-ux.js';
 import type { DefaultedQuestion } from '../../domain/planning/brief-questions.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
 import type { PrdContent } from '../../domain/planning/prd-content.js';
-import type { ExcludedClaim, SourceCard } from '../../domain/planning/plan-sources.js';
+import type { ExcludedClaim, SourceCard, SourceStop } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
 import type { UploadFacts } from '../../domain/sources/upload-facts.js';
@@ -87,6 +87,8 @@ export interface HandoffPackage {
   readonly apiContract: ApiContract;
   /** The target screens, how each legacy screen was kept, merged or dropped, and the design brief (RF-626). */
   readonly ux: TargetUx;
+  /** RF-604, P3-121: set when the source run ended at a cap; the README and checks.md say so. */
+  readonly sourceStop?: SourceStop | undefined;
   /** The cards with their `Supported` claims, in card order. */
   readonly sources: readonly SourceCard[];
   readonly excluded: readonly ExcludedClaim[];

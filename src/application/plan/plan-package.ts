@@ -5,7 +5,13 @@ import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
 import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content.js';
 import { addStyleRisks, checkStyle } from '../../domain/planning/style-rules.js';
-import { excludedClaims, supportedCards } from '../../domain/planning/plan-sources.js';
+import {
+  excludedClaims,
+  sourceStopOf,
+  supportedCards,
+  type SourceCard,
+} from '../../domain/planning/plan-sources.js';
+import type { Run } from '../../domain/runs/run.js';
 import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
 import type { UnreadableItem } from '../../domain/planning/plan-draft.js';
 import { placeOf } from './plan-repair.js';
@@ -96,6 +102,17 @@ function copiedIn(
   return copiedExamples({ prd, plan }, exampleSentencesOfAll(promptTexts));
 }
 
+/** The folder of the source run and, RF-604 P3-121, its stop when it ended at a cap. */
+function sourceOf(
+  run: Pick<Run, 'runKey' | 'endState'>,
+  cards: readonly SourceCard[],
+): Pick<HandoffPackage, 'sourceRun' | 'sourceStop'> {
+  const stop = sourceStopOf(run.endState, cards);
+  return stop === undefined
+    ? { sourceRun: run.runKey }
+    : { sourceRun: run.runKey, sourceStop: stop };
+}
+
 // RF-601, RF-604
 export function handoffPackageOf(
   inputs: PlanInputs,
@@ -119,7 +136,7 @@ export function handoffPackageOf(
   return {
     repository: { url: project.sourceUrl, commitSha: sourceRun.commitSha },
     ...(upload === undefined ? {} : { upload }),
-    sourceRun: sourceRun.runKey,
+    ...sourceOf(sourceRun, cards),
     brief,
     style,
     principles: brief.principles.map((id) => principleOf(catalogue, id)),

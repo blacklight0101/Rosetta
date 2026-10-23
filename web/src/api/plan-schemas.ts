@@ -120,6 +120,8 @@ export const planSourceSchema = z.object({
   endedAt: z.string().nullable(),
   areas: z.array(z.string()),
   supportedClaims: z.number().int().min(0),
+  /** P3-121: `CapReached` for a run that stopped at a cap but holds Supported claims. */
+  endState: z.enum(['Completed', 'CapReached']),
   newest: z.boolean(),
 });
 

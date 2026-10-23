@@ -6,8 +6,10 @@ import { isResumable } from '../lib/live-run/resumable.js';
 // RF-614, RF-1017, RF-006, RST-1802: what the "Your turn" panel of an understand run offers about the
 // plan. A run that ended `Completed` with a Supported claim offers "Set up the plan", which opens Plan
 // setup for this run; it is the main action unless questions are still open. A run with no Supported
-// claim says there is nothing to plan from. A run that stopped (`CapReached`, `Failed`,
-// `Interrupted`) points to Resume (the button in the page head, RF-006) instead, because `plan` refuses it.
+// claim says there is nothing to plan from. A run that ended `CapReached` with a Supported claim also
+// offers it, beside Resume (the button in the page head, RF-006), and says the package uses only the
+// claims judged (P3-121). A run that `Failed` or was `Interrupted` points to Resume instead, because
+// `plan` refuses it.
 
 export interface PlanNextProps {
   readonly runId: string;
@@ -24,7 +26,19 @@ const planSetupPath = (projectId: string, runId: string): string =>
 
 // RF-614
 export function PlanNext(props: PlanNextProps): JSX.Element | null {
-  const { runId, projectId, endState } = props;
+  const { endState } = props;
+  if (endState === 'CapReached' && props.supportedClaims > 0) {
+    return (
+      <>
+        <p>
+          This run stopped at a cap before it finished. Resume it with the Resume run button at the
+          top of the page to judge the rest, or set up the plan now: it uses only the Supported
+          claims, and the package says the run stopped at a cap.
+        </p>
+        <SetUp {...props} />
+      </>
+    );
+  }
   if (isResumable('understand', endState)) {
     return (
       <p>
@@ -42,9 +56,13 @@ export function PlanNext(props: PlanNextProps): JSX.Element | null {
       </p>
     );
   }
+  return <SetUp {...props} />;
+}
+
+function SetUp({ runId, projectId, questionsOpen }: PlanNextProps): JSX.Element {
   return (
     <Button
-      variant={props.questionsOpen ? 'secondary' : 'primary'}
+      variant={questionsOpen ? 'secondary' : 'primary'}
       onClick={() => {
         navigate(planSetupPath(projectId, runId));
       }}

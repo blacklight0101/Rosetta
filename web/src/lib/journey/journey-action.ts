@@ -1,8 +1,8 @@
-import { phaseOf, type Context, type StepKey } from './journey-context.js';
+import { phaseOf, plannableAtCap, type Context, type StepKey } from './journey-context.js';
 
 // RF-615, RF-614, RF-006, DEC-143 Q-F: the one next action of the journey and the step that holds it.
 // In order: start a run; wait while a run works; Resume a run that stopped (the plan steps stay
-// locked); a new run when nothing can be planned; answer the open questions; set up the plan;
+// locked, unless it stopped at a cap with Supported claims: then the plan is offered beside Resume); a new run when nothing can be planned; answer the open questions; set up the plan;
 // review the estimate; wait while the plan works; Try the plan again after a failed plan (a failed
 // plan is not resumed: it starts a new run after a new estimate); a new estimate when the package is
 // out of date; open the package.
@@ -31,10 +31,18 @@ function afterTheRun(c: Context, setUp: string): Next | undefined {
   const phase = phaseOf(source);
   if (phase === 'working') return { action: undefined, here: 'understand' };
   if (phase === 'stopped') {
-    return {
-      action: { kind: 'resume', label: 'Resume this run', runId: source.id },
-      here: 'understand',
-    };
+    const resume = { kind: 'resume', label: 'Resume this run', runId: source.id } as const;
+    // P3-121: a run that stopped at a cap with Supported claims can be planned from; Resume stays
+    // the action until the brief is saved, and the plan is offered beside it.
+    if (plannableAtCap(source)) {
+      if (c.facts.briefSaved) return undefined;
+      return {
+        action: resume,
+        secondary: link('Plan from what was judged', setUp),
+        here: 'understand',
+      };
+    }
+    return { action: resume, here: 'understand' };
   }
   if (source.supportedClaims === 0) {
     return {
