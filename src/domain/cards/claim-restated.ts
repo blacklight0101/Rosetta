@@ -5,10 +5,12 @@ import type { Card, Claim, ClaimInput } from './card.js';
 // P3-125, RF-209, RF-302, DEC-19, HB-06: a Deepen round that writes a claim a card already holds adds
 // no near-duplicate. Two claims state the same thing when one of their cited ranges overlaps (same
 // file, a line in common) and either their text is the same once case, punctuation and spacing are
-// ignored, or their words are nearly the same (Jaccard index of 0.8) and they agree on negation, on
-// every number and on every identifier (a field, column or class name: it has an underscore, a digit,
-// an inner capital, a dot or `::`, or it is quoted), because a claim that differs only in a name says
-// something else. A claim the card holds whose verdict stands (`Proposed`, `Supported`,
+// ignored, or their words are nearly the same (Jaccard index of 0.8) and all of these hold, because a
+// claim that differs in a name says something else: they agree on negation and on every number; they
+// name the same identifiers in the same order of first appearance (a field, column or class name: it
+// has an underscore, a digit, an inner capital, a dot or `::`, or it is quoted; the first one is the
+// subject); and no word that differs is a capitalised word inside a sentence ("Column Name" and
+// "Column Price"). A claim the card holds whose verdict stands (`Proposed`, `Supported`,
 // `Unverified`) takes the new claim's other citations and keeps its verdict. A `Rejected` claim is
 // never changed or removed: a restatement with a new citation is added as the claim that replaces it;
 // a restatement of the evidence it was rejected for says nothing new and is left out.
@@ -44,20 +46,36 @@ function pick(words: ReadonlySet<string>, keep: (word: string) => boolean): stri
   return [...words].filter(keep).sort().join(' ');
 }
 
-const QUOTED = /`([^`]+)`|"([^"]+)"|(?<![\p{L}\p{N}])'([^']+)'(?![\p{L}\p{N}])/gu;
+const CHUNK = /`[^`]+`|"[^"]+"|(?<![\p{L}\p{N}])'[^']+'(?![\p{L}\p{N}])|\S+/gu;
 const IDENTIFIER = /_|\p{N}|\p{Ll}\p{Lu}|[\p{L}\p{N}]\.[\p{L}\p{N}]|::/u;
+const EDGES = /^[^\p{L}\p{N}_]+|[^\p{L}\p{N}_]+$/gu;
 
-/** The identifier-like words of a claim as written: quoted text, and words with _ digit inner capital . or ::. */
+/** The identifier-like words of a claim as written, in order of first appearance (quoted text too). */
 function identifiersOf(text: string): string {
-  const quoted = [...text.matchAll(QUOTED)].map((m) => m[1] ?? m[2] ?? m[3] ?? '');
-  const words = text
-    .split(/\s+/u)
-    .map((word) => word.replace(/^[^\p{L}\p{N}_`"']+|[^\p{L}\p{N}_`"']+$/gu, ''))
-    .filter((word) => IDENTIFIER.test(word));
-  return [...new Set([...quoted, ...words].map((word) => word.toLowerCase()))].sort().join(' ');
+  const found = (text.match(CHUNK) ?? []).flatMap((chunk) => {
+    const quoted = /^[`"']/u.test(chunk);
+    const word = chunk.replace(EDGES, '');
+    return quoted || IDENTIFIER.test(word) ? [word.toLowerCase()] : [];
+  });
+  return [...new Set(found)].join(' ');
 }
 
-/** Nearly the same words (Jaccard >= 0.8) with the same negation, numbers and identifiers. */
+/** The words that are capitalised in the text and do not start a sentence, as the claim is normalised. */
+function namesOf(text: string): ReadonlySet<string> {
+  const names = new Set<string>();
+  let starts = true;
+  for (const raw of text.split(/\s+/u)) {
+    const word = raw.replace(EDGES, '');
+    if (!starts && /^\p{Lu}/u.test(word))
+      normalisedText(word)
+        .split(' ')
+        .forEach((n) => names.add(n));
+    starts = /[.!?:]$/u.test(raw);
+  }
+  return names;
+}
+
+/** Nearly the same words (Jaccard >= 0.8) with the same negation, numbers, identifiers and names. */
 function nearlySame(a: ClaimInput['text'], b: ClaimInput['text']): boolean {
   const [one, two] = [wordsOf(normalisedText(a)), wordsOf(normalisedText(b))];
   const shared = [...one].filter((word) => two.has(word)).length;
@@ -65,10 +83,13 @@ function nearlySame(a: ClaimInput['text'], b: ClaimInput['text']): boolean {
   const negation = (word: string): boolean => NEGATIONS.has(word);
   const number = (word: string): boolean => /\p{N}/u.test(word);
   const negates = (words: ReadonlySet<string>): boolean => [...words].some(negation);
+  const names = new Set([...namesOf(a), ...namesOf(b)]);
+  const differs = [...one, ...two].filter((word) => one.has(word) !== two.has(word));
   return (
     negates(one) === negates(two) &&
     pick(one, number) === pick(two, number) &&
-    identifiersOf(a) === identifiersOf(b)
+    identifiersOf(a) === identifiersOf(b) &&
+    !differs.some((word) => names.has(word))
   );
 }
 
