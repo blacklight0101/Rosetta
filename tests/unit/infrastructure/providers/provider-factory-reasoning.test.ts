@@ -62,7 +62,8 @@ async function requestOf(
   );
   const chosen = set.get('reader');
   const extra = options.callerEffort === undefined ? {} : { reasoningEffort: options.callerEffort };
-  await chosen?.provider.complete(callFor('reader', chosen.model, 1, extra));
+  // These cases are calls without tools; the calls that carry tools are in the -tools test file.
+  await chosen?.provider.complete(callFor('reader', chosen.model, 1, { tools: [], ...extra }));
   const [request] = harness.fakeList.flatMap((fake) => fake.requests);
   if (request === undefined) throw new Error('The adapter received no call.');
   return request;
@@ -95,7 +96,9 @@ describe('the reasoning effort of a role', () => {
       await harness.factory.build(harness.request({ settings, cloudConsent: true })),
     );
 
-    await set.get('reader')?.provider.complete(callFor('reader', 'contract-model'));
+    await set
+      .get('reader')
+      ?.provider.complete(callFor('reader', 'contract-model', 1, { tools: [] }));
 
     const [request] = harness.fakeList.flatMap((fake) => fake.requests);
     expect(request).toBeDefined();
