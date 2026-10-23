@@ -109,7 +109,7 @@ describe('the overview and what was not covered', UNDERSTAND_TIMEOUT, () => {
     const { notCovered } = await overviewOf(folder);
 
     expect(notCovered.slice(-1)).toEqual([
-      'Controllers: no card passed the citation check and the judgement.',
+      'Controllers: no card was left after the citation check and the judgement.',
     ]);
   });
 

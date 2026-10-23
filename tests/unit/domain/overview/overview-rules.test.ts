@@ -211,7 +211,7 @@ describe('notCoveredOf', () => {
       'Legacy: not selected for this run.',
       'Reports: the run ended before its reader finished.',
       'Mail: its reader could not finish (the reader failed).',
-      'Empty: no card passed the citation check and the judgement.',
+      'Empty: no card was left after the citation check and the judgement.',
     ]);
   });
 

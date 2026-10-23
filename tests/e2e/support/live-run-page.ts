@@ -137,7 +137,7 @@ export async function openRunTab(
 export async function expectNotCovered(covered: Locator): Promise<void> {
   await expect(covered).toContainText(/Not selected for this run \(1\)\s*Controllers/u);
   await expect(covered).toContainText(
-    /No card passed the citation check and the judgement \(1\)\s*Services/u,
+    /No card was left after the citation check and the judgement \(1\)\s*Services/u,
   );
   const unread = /First-party files not read: \d+ files?, \d+% of first-party tokens not read\./u;
   await expect(covered).toContainText(unread);
