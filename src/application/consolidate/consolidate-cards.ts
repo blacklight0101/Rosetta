@@ -1,6 +1,7 @@
 import type { Card } from '../../domain/cards/card.js';
 import {
   applyMerges,
+  disjointMerges,
   type CardMerge,
   type MergeMoves,
   type MergeResult,
@@ -153,7 +154,7 @@ async function consolidateBatch(
   // The summariser was shown the cards of this batch only; an id it was not shown is not a merge.
   const shown = new Set(batch.cards.map((card) => card.id));
   const usable = merges.filter((merge) => merge.ids.every((id) => shown.has(id)));
-  const result = applyMerges(cards, usable);
+  const result = applyMerges(cards, disjointMerges(usable));
   await logResult(
     parts,
     result,
