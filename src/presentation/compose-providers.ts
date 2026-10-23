@@ -61,16 +61,6 @@ export interface ProviderParts {
   readonly doubles: TestDoubles | undefined;
 }
 
-/** Q-58, P3-130: what the shipped list marks (reasoning, no tools); a bad list stops the start-up. */
-async function loadModelMarks(): Promise<ModelMarks> {
-  const list = await loadModelList(modelsFile);
-  return { reasoningModels: reasoningModelsOf(list), toolLessModels: noToolModelsOf(list) };
-}
-
-type ModelMarks = Required<
-  Pick<GuardedProviderFactoryOptions, 'reasoningModels' | 'toolLessModels'>
->;
-
 /** The adapters of this release, or, in the end-to-end tests, the model double for every kind. */
 async function adaptersFor(parts: ProviderParts): Promise<AdapterBuilder> {
   const double = parts.doubles?.provider;
@@ -96,8 +86,11 @@ export type GuardedFactoryMaker = (parts: GuardedFactoryParts) => ProviderSetFac
 export async function evaluationProviderFactory(logger: Logger): Promise<GuardedFactoryMaker> {
   const textProtocolPrompt = (await loadTextToolProtocol(promptsFolder)).text;
   const adapters = realAdapters({ testMode: false, textProtocolPrompt, logger });
-  const marks = await loadModelMarks();
-  return (parts) => new GuardedProviderFactory({ ...parts, adapters, ...marks });
+  const list = await loadModelList(modelsFile);
+  const reasoningModels = reasoningModelsOf(list);
+  const toolLessModels = noToolModelsOf(list);
+  return (parts) =>
+    new GuardedProviderFactory({ ...parts, adapters, reasoningModels, toolLessModels });
 }
 
 export interface ComposedProviders {
