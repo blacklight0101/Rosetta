@@ -69,15 +69,16 @@ claim: "Day1 to Day30 each call SelectDay with their own number", citing the han
 
 A page may bind its controls to data through a data-source control: `SqlDataSource`, `ObjectDataSource`,
 `EntityDataSource`, `LinqDataSource`, `XmlDataSource`, `AccessDataSource`, or the same kind of control in another
-stack (a data source or data provider that a grid, list, repeater or form reads). Such a control is part of the
-screen and of its data access, not an external integration: data-binding controls are part of the screen. A grid
-that two data-source controls feed is one screen with its data, so describe it as a `FEAT` card (or as an `ENT`
-card for the data it shows) and cite the data-source control lines in its claims: the declaration, the select or
-command text and the connection name. Such a control is not an `INT` card, whatever database or service it names.
+stack (a data source or data provider that a grid, list, repeater or form reads). When such a control binds to the
+application's own data, it is part of the screen and of its data access, not an integration: a grid that two
+data-source controls feed is one screen with its data, so describe it as a `FEAT` card (or as an `ENT` card for the
+data it shows) and cite the data-source control lines in its claims: the declaration, the select or command text and
+the connection name.
 
-Write an `INT` card only for a link that the code makes to another system: a call to an API or a service, a message
-queue, a file exchange or a database that is not the application's own. Cite the lines of the code that make the
-call. When that code is only a data-source control line, there is no `INT` card.
+Write an `INT` card for a link that the code makes to another system, including a data-source control whose
+connection or service points at another system: another application's database, a web service or a remote API. Cite
+the lines of the code that make the call or name the connection. A database that is not the application's own is an
+`INT` card even when a data-source control reaches it.
 
 ## Build and deployment files
 

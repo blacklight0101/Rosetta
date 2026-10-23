@@ -110,12 +110,23 @@ describe('P5-13 data-binding controls are part of the screen', () => {
     }
   });
 
-  it('P5-13 the reader prompt v8 says a data-binding control is part of the screen, not an INT card', async () => {
+  it("P5-13 the reader prompt v8 makes a data-source control bound to the application's own data part of the screen", async () => {
     const text = await readFile('prompts/reader/area.v8.md', 'utf8');
 
-    expect(text).toMatch(/data-binding controls? (are|is) part of the screen/iu);
-    expect(text).toMatch(/not an? `?INT`? card/iu);
+    expect(text).toMatch(/binds to the\s+application's own data,\s+it is part of the screen/iu);
     expect(text).toMatch(/data-source control lines/iu);
+    expect(text).not.toMatch(/whatever database or service it names/iu);
+    expect(text).not.toMatch(/only a data-source control line/iu);
+  });
+
+  it('P5-13 the reader prompt v8 keeps an external database or service reached by a data-source control as an INT card', async () => {
+    const text = await readFile('prompts/reader/area.v8.md', 'utf8');
+
+    expect(text).toMatch(/another application's database, a web service or a remote API/iu);
+    expect(text).toMatch(
+      /data-source control whose\s+connection or service points at another system/iu,
+    );
+    expect(text).toMatch(/`INT` card even when a data-source control reaches it/u);
   });
 
   it('P5-13 the reader prompt v8 keeps the earlier rules: read before answering and the data-block rule', async () => {
