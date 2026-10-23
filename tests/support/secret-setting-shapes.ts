@@ -177,13 +177,13 @@ export const settingSecretCases: readonly ShapeCase[] = [
   one(
     'a Pass setting in an INI file',
     'password',
-    [`[mail]\nsmtp_pass = ${pw}`, '[mail]\nsmtp_pass = [MASKED:password]'],
+    [`[mail]\nsmtp_pass = ${pw}\nport = 25`, '[mail]\nsmtp_pass = [MASKED:password]\nport = 25'],
     pw,
   ),
   one(
     'a Pass variable in a .env file',
     'password',
-    [`MAIL_PASS=${pw}`, 'MAIL_PASS=[MASKED:password]'],
+    [`MAIL_PASS=${pw}\nMAIL_PORT=25`, 'MAIL_PASS=[MASKED:password]\nMAIL_PORT=25'],
     pw,
   ),
   one(
