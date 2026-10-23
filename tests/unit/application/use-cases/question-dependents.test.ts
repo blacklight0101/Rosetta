@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PriorCard, PriorCards } from '../../../../src/application/ports/prior-cards.js';
-import { withStates } from '../../../../src/application/use-cases/question-states.js';
+import { consolidatedStates } from '../../../../src/application/use-cases/question-states.js';
 
 // RF-1017, RF-243: how many cards depend on an open question: the cards that are not open questions
 // and cite a file one of the cards behind the question cites (a question asked by several areas is
@@ -31,7 +31,9 @@ describe('the cards that depend on an open question', () => {
       card('OQ-002', 'OQ', ['Orders/Order.cs'], 'Which tax?'),
     ]);
 
-    const states = await withStates(cards, project, 'run', [asked('OQ-001', 'Who may cancel?')]);
+    const states = await consolidatedStates(cards, project, 'run', [
+      asked('OQ-001', 'Who may cancel?'),
+    ]);
 
     expect(states).toEqual([expect.objectContaining({ cardId: 'OQ-001', dependents: 2 })]);
   });
@@ -44,7 +46,9 @@ describe('the cards that depend on an open question', () => {
       card('BR-002', 'BR', ['B.cs']),
     ]);
 
-    const [first] = await withStates(cards, project, 'run', [asked('OQ-001', 'Who may cancel?')]);
+    const [first] = await consolidatedStates(cards, project, 'run', [
+      asked('OQ-001', 'Who may cancel?'),
+    ]);
 
     expect(first?.dependents).toBe(2);
   });
@@ -52,7 +56,7 @@ describe('the cards that depend on an open question', () => {
   it('RF-1017 is zero for a question whose card is gone or that cites nothing', async () => {
     const cards = cardsOf([card('OQ-001', 'OQ', [], 'Who?'), card('BR-001', 'BR', ['A.cs'])]);
 
-    const states = await withStates(cards, project, 'run', [
+    const states = await consolidatedStates(cards, project, 'run', [
       asked('OQ-001', 'Who?'),
       asked('OQ-009', 'Gone?'),
     ]);

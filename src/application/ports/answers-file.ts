@@ -13,6 +13,11 @@ export interface OpenQuestion {
   readonly question: string;
   /** One line: the first citation and claim of the card. */
   readonly context: string;
+  /**
+   * P5-11: the card survived a merge and the file has no section under its id. It gets a section even
+   * when another section holds the same text, unless the run already has one under this id.
+   */
+  readonly survivor?: boolean;
 }
 
 /** A question of one run as the file holds it; `answer` is empty while it has none. */
@@ -41,7 +46,10 @@ export interface ProjectRef {
 }
 
 export interface AnswersFile {
-  /** Adds the questions not yet in the project's file; rejects with the writer's code. */
+  /**
+   * Adds the questions not yet in the project's file (by their text; a `survivor` by its id in its run);
+   * rejects with the writer's code.
+   */
   addQuestions(project: ProjectRef, questions: readonly OpenQuestion[]): Promise<void>;
   /** RF-1007: the questions the run with that folder name added, in file order. */
   questionsOf(project: ProjectRef, runKey: string): Promise<readonly RecordedQuestion[]>;

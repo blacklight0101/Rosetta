@@ -53,6 +53,11 @@ function questionsIn(text: string): Set<string> {
   );
 }
 
+/** P5-11: whether the run of the question already has a section under the question's card id. */
+function hasId(text: string, question: OpenQuestion): boolean {
+  return questionsOfRun(text, question.runKey).some((each) => each.cardId === question.cardId);
+}
+
 export class FileAnswersFile implements AnswersFile {
   private readonly options: FileAnswersFileOptions;
   private readonly queue = new KeyedQueue();
@@ -71,7 +76,8 @@ export class FileAnswersFile implements AnswersFile {
       const end = lastLineEndOf(body);
       const sections = questions.flatMap((question) => {
         const text = this.line(question.question);
-        if (known.has(text)) return [];
+        const held = question.survivor === true ? hasId(existing, question) : known.has(text);
+        if (held) return [];
         known.add(text);
         return [this.section(question, text, end)];
       });
