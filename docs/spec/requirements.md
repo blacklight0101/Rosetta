@@ -740,6 +740,7 @@ As a developer who does not know the legacy application I want to be asked only 
 - Given two open questions of one area that ask the same thing (Q-52), when the run ends, then they are merged like the duplicates of several areas.
 - Given a run on third-party or generated code only, when an agent finds no application logic, then it writes no `OQ` card; the coverage notes "no application logic".
 - Given an area of third-party code (P3-123), when its agent answers a `FEAT` or `BR` card that only says the area holds third-party code (the title starts with third-party, vendored, minified, generated or bundled, or the summary says the area holds such code), then the card is dropped and logged; a rule that merely mentions a library is kept.
+- Given an `OQ` card that asks what a header, a column, a field or a module means or does (P5-02, EV-09), when the lines it cites hold the name it asks about (a quoted or bracketed header such as "Qty", a column or module name, a code identifier), then the question is dropped after the reader ends, without a model call, and the task log names the question, the name found and the citation; a question that asks why, for a business reason, or about people, volumes or an external system is kept.
   Verification: unit test of the refusal rule with example questions; integration test with recorded responses.
 
 **RF-250 Consolidate cards across areas** - R1 - Should - Source interview 2026-10-09, Q-52 - ADR-005
