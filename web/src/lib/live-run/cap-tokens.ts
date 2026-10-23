@@ -7,7 +7,7 @@ import { roleTotalsOf } from './run-summary.js';
 // totals the events give.
 
 /** The share of a cached input token that counts toward the token cap, in percent (DEC-168). */
-export const CACHED_TOKEN_SHARE_PERCENT = 10;
+const CACHED_TOKEN_SHARE_PERCENT = 10;
 
 /** Input not read from the cache, a tenth of the cached input (rounded down) and the output. */
 export function capTokensOf(parts: {

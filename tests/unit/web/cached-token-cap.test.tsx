@@ -19,6 +19,18 @@ const used = (input: number, cached: number, output: number) =>
     }),
   );
 
+const renderPanel = (costMicros: number, tokens: number, capTokens: number) =>
+  render(
+    <SpendPanel
+      runId="r"
+      costMicros={costMicros}
+      tokens={tokens}
+      capTokens={capTokens}
+      caps={caps}
+      onOpenRoles={() => undefined}
+    />,
+  );
+
 describe('the tokens toward the cap', () => {
   it('RF-422 counts cached input at a tenth, and nothing else differently', () => {
     expect(capTokensOf({ input: 2_000_000, cached: 1_800_000, output: 100_000 })).toBe(480_000);
@@ -38,16 +50,7 @@ describe('the tokens toward the cap', () => {
 
 describe('the run page figures', () => {
   it('RF-1003 labels both totals when cached input makes them differ', () => {
-    render(
-      <SpendPanel
-        runId="r"
-        costMicros={500_000}
-        tokens={2_900_000}
-        capTokens={1_000_000}
-        caps={caps}
-        onOpenRoles={() => undefined}
-      />,
-    );
+    renderPanel(500_000, 2_900_000, 1_000_000);
 
     expect(
       screen.getByText(
@@ -57,36 +60,20 @@ describe('the run page figures', () => {
   });
 
   it('RF-1003 keeps the plain line when nothing was cached', () => {
-    render(
-      <SpendPanel
-        runId="r"
-        costMicros={500_000}
-        tokens={10_000}
-        capTokens={10_000}
-        caps={caps}
-        onOpenRoles={() => undefined}
-      />,
-    );
+    renderPanel(500_000, 10_000, 10_000);
 
     expect(screen.getByText('10,000 of 2,000,000 tokens')).toBeTruthy();
   });
 
   it('RF-1003 measures the spend bar of a free model against the tokens toward the cap', () => {
-    render(
-      <SpendPanel
-        runId="r"
-        costMicros={0}
-        tokens={2_000_000}
-        capTokens={500_000}
-        caps={caps}
-        onOpenRoles={() => undefined}
-      />,
-    );
+    renderPanel(0, 2_000_000, 500_000);
 
     const meter = screen.getByRole('meter', { name: 'Tokens against the cap' });
     expect(meter.getAttribute('aria-valuenow')).toBe('25');
   });
+});
 
+describe('the run meter figures', () => {
   it('RF-1003 shows the meter bar and its note in tokens toward the cap', () => {
     const state = {
       ...used(1_000_000, 900_000, 100_000),
