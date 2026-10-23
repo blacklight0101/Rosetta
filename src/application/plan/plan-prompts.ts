@@ -33,11 +33,16 @@ export interface PlanPromptSources {
   readonly gapPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the one repair attempt of the gap call (Q-54). */
   readonly gapRepairPrompt: () => Promise<PromptFile>;
+  /**
+   * P3-117: the text of every planner prompt file of every version, for the check of copied
+   * examples; the prompts of the run alone when absent.
+   */
+  readonly promptTexts?: () => Promise<readonly string[]>;
   /** The planner's workbook guidance, added to the package prompt of a workbook plan (RF-155). */
   readonly workbookPrompt: () => Promise<PromptFile>;
 }
 
-export type PlanPrompts = Readonly<
+type PlanPrompts = Readonly<
   Record<keyof DocumentPrompts | 'plan' | 'coverage' | 'gap' | 'gapRepair' | 'continue', PromptFile>
 >;
 
@@ -46,6 +51,8 @@ export interface PlanFiles {
   /** `plan` already holds the workbook guidance when `guidance` is set. */
   readonly prompts: PlanPrompts;
   readonly guidance?: PromptFile;
+  /** P3-117: the texts the example sentences of the package check are read from. */
+  readonly examples: readonly string[];
 }
 
 /** The catalogue and the prompts of this run's source, read once. */
@@ -69,11 +76,13 @@ export async function loadPlanFiles(
       sources.continuePrompt(),
     ]);
   const guidance = await workbookGuidanceFor(sources, inputs);
+  const older = (await sources.promptTexts?.()) ?? [];
   const prompts = {
     ...{ plan: withWorkbookGuidance(plan, guidance), prd, dataModel, flows },
     ...{ apiContract, ux, coverage, gap, gapRepair, continue: cont },
   };
-  return { catalogue, prompts, ...(guidance === undefined ? {} : { guidance }) };
+  const examples = [...Object.values(prompts).map((file) => file.text), ...older];
+  return { catalogue, prompts, examples, ...(guidance === undefined ? {} : { guidance }) };
 }
 
 /** RNF-004: the version and hash of every prompt file the run used, by file name. */

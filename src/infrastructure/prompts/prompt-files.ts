@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { PromptFile } from '../../application/agent/prompt-file.js';
 import { STYLES_PLACEHOLDER } from '../../application/planning/plan-options-request.js';
@@ -80,7 +80,18 @@ export async function loadPlanOptionsPrompt(promptsFolder: string): Promise<Prom
 /** The planner's prompt for the hand-off package (RF-604), checked and hashed. */
 // RNF-004
 export function loadPlannerPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/package.v6.md');
+  return loadPromptFile(promptsFolder, 'planner/package.v7.md');
+}
+
+/**
+ * P3-117: the text of every planner prompt file of every version, which models may have learned to
+ * copy from. The package check reads the example sentences out of them; none is sent to a model.
+ */
+// RNF-004
+export async function loadPlannerPromptTexts(promptsFolder: string): Promise<string[]> {
+  const folder = join(promptsFolder, 'planner');
+  const names = (await readdir(folder)).filter((name) => versionPattern.test(name)).sort();
+  return Promise.all(names.map((name) => readFile(join(folder, name), 'utf8')));
 }
 
 /** The planner's guidance for a plan that rebuilds workbooks as an application (RF-155), checked and hashed. */
@@ -98,7 +109,7 @@ export function loadPlannerContinuePrompt(promptsFolder: string): Promise<Prompt
 /** The planner's prompt for the product requirements document (RF-621), checked and hashed. */
 // RNF-004
 export function loadPrdPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/prd.v2.md');
+  return loadPromptFile(promptsFolder, 'planner/prd.v3.md');
 }
 
 /** The planner's prompt for the target data model (RF-623), checked and hashed. */

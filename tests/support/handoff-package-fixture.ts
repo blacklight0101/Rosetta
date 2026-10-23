@@ -144,6 +144,7 @@ export function handoffOf(
     apiContract: noApiContract(text),
     ux: noUx,
     incomplete: [],
+    copiedExamples: [],
     leftOut: [],
     sources: sourcesOf(text),
     excluded: [{ claimId: 'FEAT-001.c2', cardId: 'FEAT-001', status: 'Rejected' }],
