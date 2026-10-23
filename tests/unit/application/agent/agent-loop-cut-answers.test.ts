@@ -136,10 +136,10 @@ describe('P3-83 an answer cut off inside prose or beside a bad card', () => {
 });
 
 describe('P3-83 an answer still cut off when the follow-ups are used up', () => {
-  it('Q-55 two continuations and two repairs that stay cut: the finished cards are kept, nothing is stopped', async () => {
+  it('Q-55 one continuation and two repairs that stay cut: the finished cards are kept, nothing is stopped', async () => {
     const notes: unknown[] = [];
     const { fake, request } = ungatedLoopSetup(
-      [cutTurn(cut), cutTurn(' and'), cutTurn(' more'), cutTurn(cut), cutTurn(cut)],
+      [cutTurn(cut), cutTurn(' and'), cutTurn(cut), cutTurn(cut)],
       { maxTurns: 12 },
     );
 
@@ -151,7 +151,7 @@ describe('P3-83 an answer still cut off when the follow-ups are used up', () => 
       },
     });
 
-    expect(fake.requests).toHaveLength(5);
+    expect(fake.requests).toHaveLength(4);
     expect(result.state).toBe('Done');
     expect(result.drafts.map((draft) => draft.title)).toEqual(['Checkout', 'Tax rounding']);
     expect(notes).toEqual([{ outcome: 'cut', reason: 'unfinished' }]);

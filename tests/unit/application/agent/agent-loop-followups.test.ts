@@ -176,7 +176,7 @@ describe('runAgentTask asks a cut-off answer to continue', () => {
     expect(fake.requests).toHaveLength(2);
   });
 
-  it('RF-208 an answer cut off twice is continued twice and then repaired at most twice: five turns, no loop', async () => {
+  it('RF-208 an answer cut off twice is continued once and then repaired at most twice: four turns, no loop', async () => {
     const { fake, request } = ungatedLoopSetup(
       Array.from({ length: 8 }, (_, turn) =>
         textTurn(`{"cards": [{"type": "FEAT", "title${String(turn)}"`),
@@ -187,9 +187,9 @@ describe('runAgentTask asks a cut-off answer to continue', () => {
     const result = await runAgentTask(request(fake));
 
     expect(result.state).toBe('InvalidOutput');
-    expect(fake.requests).toHaveLength(5);
+    expect(fake.requests).toHaveLength(4);
     const asks = fake.requests.slice(1).map((sent) => sent.messages.at(-1)?.content);
-    expect(asks.filter((ask) => ask === 'Continue where you stopped.')).toHaveLength(2);
+    expect(asks.filter((ask) => ask === 'Continue where you stopped.')).toHaveLength(1);
     expect(asks.filter((ask) => ask?.startsWith('Fix these problems'))).toHaveLength(2);
   });
 });
