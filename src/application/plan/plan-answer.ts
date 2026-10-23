@@ -196,3 +196,17 @@ export function parsePlanAnswer(output: string): PlanDraft | undefined {
   }
   return undefined;
 }
+
+// STUB for the red commit of P3-126
+export interface PlanProblem {
+  readonly list: string;
+  readonly position?: number;
+  readonly field: string;
+}
+export function readPlanAnswer(output: string): {
+  readonly draft?: PlanDraft;
+  readonly problems: readonly PlanProblem[];
+} {
+  const draft = parsePlanAnswer(output);
+  return draft === undefined ? { problems: [] } : { draft, problems: [] };
+}

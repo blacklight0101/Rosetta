@@ -87,6 +87,12 @@ export interface PlanDraft {
    * the domain leaves out, so the positions the other cards name still point at the right cards.
    */
   readonly unreadableTasks?: readonly UnreadableTask[];
+  readonly unreadableItems?: readonly {
+    list: string;
+    position: number;
+    field: string;
+    reason: string;
+  }[];
 }
 
 export interface UnreadableTask {
