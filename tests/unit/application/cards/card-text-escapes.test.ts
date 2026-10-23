@@ -43,11 +43,9 @@ describe('card text decodes literal escape sequences (P5-09)', () => {
   });
 
   it('EV-33 an escape that would add HTML or a control character stays as written', () => {
-    const written = 'Keeps \\u003cb\\u003e, \\u0026 and \\u0007 as written.';
+    const written = 'Keeps \\u003cb\\u003e, \\u0026, \\u0007 and \\ud83d as written.';
 
-    expect(claimTexts(answerWithClaim(written))).toEqual([
-      'Keeps \\u003cb\\u003e, \\u0026 and \\u0007 as written.',
-    ]);
+    expect(claimTexts(answerWithClaim(written))).toEqual([written]);
   });
 });
 
