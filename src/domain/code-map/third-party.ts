@@ -19,6 +19,8 @@ import type { FileEntry } from './file-entry.js';
 //   the Visual Studio `Scripts/_references.js`;
 // - (P3-112) the same library names under a `Content` folder, Font Awesome included, and the
 //   generated JSON of a `.kube/schema` folder;
+// - (P5-17) Bootstrap's `grid`, `reboot` and `utilities` CSS modules, with their variants:
+//   `bootstrap-grid.css`, `bootstrap-reboot.min.css.map`; `bootstrap-grid-custom.css` is not;
 // - a file the scan flagged `vendored` after reading it: a header that names a known library with
 //   a version and a licence, or a large JSON file with a `$schema` (see vendor-content.ts).
 
@@ -52,6 +54,8 @@ const VARIANTS: ReadonlySet<string> = new Set([
   ...['ui', 'theme', 'all'],
 ]);
 const VERSION_PART = /^\d+$/u;
+/** (P5-17) Bootstrap's separate CSS modules, named after the library: `bootstrap-grid.css`. */
+const BOOTSTRAP_MODULES: ReadonlySet<string> = new Set(['grid', 'reboot', 'utilities']);
 
 /** The Microsoft Web Forms scripts directly under `Scripts/WebForms/`; `MSAjax/` holds more. */
 const WEB_FORMS_FILES: ReadonlySet<string> = new Set([
@@ -66,8 +70,10 @@ function isLibraryName(name: string): boolean {
     .toLowerCase()
     .replace('font-awesome', 'fontawesome')
     .split(/[-.]/u);
+  const [module = ''] = rest;
+  const parts = library === 'bootstrap' && BOOTSTRAP_MODULES.has(module) ? rest.slice(1) : rest;
   return (
-    LIBRARIES.has(library) && rest.every((part) => VERSION_PART.test(part) || VARIANTS.has(part))
+    LIBRARIES.has(library) && parts.every((part) => VERSION_PART.test(part) || VARIANTS.has(part))
   );
 }
 
