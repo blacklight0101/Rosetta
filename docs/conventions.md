@@ -193,7 +193,8 @@ too. ESLint never formats (`eslint-config-prettier` last). **(tool)**
 - Pull requests use the template, close their issue, and are merged with squash, by the orchestrator under `docs/orchestration/README.md` section 3.1 or, when labelled `needs-owner`, by the owner (DEC-96); the squash title is the
   pull request title in Conventional Commit form.
 - Packages: a new package version is adopted only when it is at least two weeks old; a newer release waits and the
-  baseline in `docs/environments-and-delivery.md` section 7 keeps the older pin (DEC-125).
+  baseline in `docs/environments-and-delivery.md` section 7 keeps the older pin (DEC-125). A release that fixes a
+  published security advisory is adopted at once (DEC-169).
 
 ## 10. Lint configuration summary
 
