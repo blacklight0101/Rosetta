@@ -31,6 +31,9 @@ interface AccountCaps {
   readonly ownDailyCapMicros: bigint | null;
 }
 
+/** RF-429, EV-27: the share of the run caps the readers may use; the rest verifies their claims. */
+export const READER_SHARE_PERCENT = 70;
+
 /** The caps of the role that makes the call (`budget.roles.<role>`, RF-423); none when unset. */
 export interface RoleBudget {
   readonly maxCostMicros?: bigint;
@@ -40,6 +43,8 @@ export interface RoleBudget {
 export interface CapInputs {
   readonly run: RunBudget;
   readonly role?: RoleBudget;
+  /** RF-429: the call's role is a reader, which stops at a share of the run caps unless it has its own. */
+  readonly reader?: boolean;
   readonly server: ServerCaps;
   readonly account: AccountCaps;
 }
