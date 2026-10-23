@@ -47,6 +47,8 @@ export interface ContextCache {
   readonly trained: Map<string, number | undefined>;
   /** Server, digest and size of the grown sizes already warned about (Q-48). */
   readonly grownWarned: Set<string>;
+  /** The largest grown size sent so far by server, digest and role, kept for the run (P5-04). */
+  readonly kept: Map<string, number>;
 }
 
 export function newContextCache(): ContextCache {
@@ -56,6 +58,7 @@ export function newContextCache(): ContextCache {
     fixedChecked: new Set(),
     trained: new Map(),
     grownWarned: new Set(),
+    kept: new Map(),
   };
 }
 
@@ -113,21 +116,27 @@ export class OllamaContextResolver {
    * Q-48: the choice to send for a prompt of `needed` tokens (prompt estimate plus output reserve).
    * It is `auto` when that holds them; else the smallest size, doubling from `auto` and never
    * above the trained context, that does, with one warning per model and size that part of the
-   * model runs on the CPU. Undefined when even the trained context is too small or not known, and
+   * model runs on the CPU. A size grown to is kept per `scope` (run and role) for the rest of the run (P5-04).
+   * Undefined when even the trained context is too small or not known, and
    * for a fixed size, which is never changed.
    */
   async grow(
     ref: ModelRef,
     auto: ContextChoice,
     needed: number,
+    scope = '',
   ): Promise<ContextChoice | undefined> {
-    if (needed <= auto.tokens) return auto;
+    const keptKey = `${this.keyOf(ref)} ${scope}`;
+    // P5-04: a size already grown to stays for the rest of the run, so the model is not reloaded.
+    const kept = auto.source === 'fixed' ? 0 : (this.deps.cache.kept.get(keptKey) ?? 0);
+    if (needed <= auto.tokens) return kept > auto.tokens ? grownTo(kept) : auto;
     const trained = this.trainedContext(ref);
     if (auto.source === 'fixed' || trained === undefined || needed > trained) return undefined;
-    let tokens = auto.tokens;
-    while (tokens < needed) tokens = Math.min(tokens * 2, trained);
+    const tokens = doubledTo(auto.tokens, needed, trained);
+    if (kept >= tokens) return grownTo(kept);
+    this.deps.cache.kept.set(keptKey, tokens);
     await this.warnGrown(ref, tokens, auto.tokens);
-    return { tokens, source: 'auto-grown' };
+    return grownTo(tokens);
   }
 
   /** After the first call at a fixed size: one warning when part of the model is on the CPU. */
@@ -214,6 +223,16 @@ export class OllamaContextResolver {
   private keyOf(ref: ModelRef): string {
     return `${this.deps.serverUrl} ${ref.digest}`;
   }
+}
+
+function doubledTo(from: number, needed: number, trained: number): number {
+  let tokens = from;
+  while (tokens < needed) tokens = Math.min(tokens * 2, trained);
+  return tokens;
+}
+
+function grownTo(tokens: number): ContextChoice {
+  return { tokens, source: 'auto-grown' };
 }
 
 function bytes(residency: Residency): Record<string, LogValue> {
