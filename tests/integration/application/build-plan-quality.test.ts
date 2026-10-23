@@ -192,7 +192,6 @@ describe('RF-633 a failing test for every guard', () => {
   it('RF-633 a card that adds a guard asks for its guard test', async () => {
     const files = await packageOf({});
 
-    // P5-08: the rule is the same for every card, so it is written once before the cards.
     const tasks = plain(files['tasks.md']);
     const shared = tasks.slice(0, tasks.indexOf('\n## T-'));
     expect(shared).toMatch(/\nGuard test: .*fails when the guard is removed.*\n/u);
