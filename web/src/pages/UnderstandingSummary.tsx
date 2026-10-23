@@ -5,6 +5,7 @@ import {
   countText,
   measureRows,
   standingOf,
+  unreadSizeText,
   type MeasureSet,
 } from '../lib/understanding/measure-text.js';
 import { DeepenOutcome } from './DeepenOutcome.js';
@@ -38,7 +39,7 @@ function NotRead({ measures }: { readonly measures: MeasureFigures }): JSX.Eleme
         {filesNotRead.map((file) => (
           <li key={file.path}>
             <span class="rst-mono">{file.path}</span>
-            {` (${countText(file.tokens)} tokens)`}
+            {` (${unreadSizeText(file)})`}
           </li>
         ))}
       </ul>

@@ -64,4 +64,12 @@ describe('planRound failed areas', () => {
   it('RF-209 offers nothing when no area failed', () => {
     expect(planRound(input({ coverage: [opened] })).failedAreas).toEqual([]);
   });
+
+  it('RF-209 an area already read again keeps its partly read files in the coverage pass, and the round is not empty', () => {
+    const plan = planRound(input({ retriedAreas: new Set(['src']) }));
+
+    expect(plan.failedAreas).toEqual([]);
+    expect(plan.gaps.map((gap) => gap.path)).toEqual(['src/b.cs', 'src/c.cs']);
+    expect(isEmptyRound(plan)).toBe(false);
+  });
 });

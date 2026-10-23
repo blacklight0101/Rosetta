@@ -110,6 +110,13 @@ function rereadOf({ card, claim }: Placed): RereadClaim {
   return { claimId, area: card.area, text, citations, reason: claim.verdict?.reason ?? '' };
 }
 
+/**
+ * EV-04: a tail of a partly read file is offered to the coverage pass only if it is worth a task:
+ * at least this many tokens or this share of the file. A smaller tail is still listed as not read.
+ */
+const MIN_TAIL_TOKENS = 500;
+const MIN_TAIL_SHARE = 0.1;
+
 /** EV-04: what is left to read of a file, whole when no line was read; undefined when nothing is. */
 function gapOf(file: FileEntry, area: string, reads: readonly LineRange[]): GapFile | undefined {
   const read = mergedRanges(reads, file.lines);
@@ -117,12 +124,10 @@ function gapOf(file: FileEntry, area: string, reads: readonly LineRange[]): GapF
   if (unread.length === 0 || file.estimatedTokens <= 0) return undefined;
   const { path } = file;
   if (read.length === 0) return { path, area, tokens: file.estimatedTokens };
-  return {
-    path,
-    area,
-    tokens: file.estimatedTokens - tokensRead(file, read),
-    unreadRanges: unread,
-  };
+  const tokens = file.estimatedTokens - tokensRead(file, read);
+  const share = tokens / file.estimatedTokens;
+  if (tokens <= 0 || (tokens < MIN_TAIL_TOKENS && share < MIN_TAIL_SHARE)) return undefined;
+  return { path, area, tokens, unreadRanges: unread };
 }
 
 /** RF-209, Q-J, EV-04: the first-party files, or parts of them, no entry read, largest first, then by path. */

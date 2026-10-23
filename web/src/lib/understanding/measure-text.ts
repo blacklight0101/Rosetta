@@ -124,6 +124,16 @@ function thirdPartyRow(measures: MeasureSet): readonly MeasureRow[] {
   ];
 }
 
+/** EV-04: a file not read; a partly read one says how much of it is left (same words as the overview). */
+export function unreadSizeText(file: {
+  readonly tokens: number;
+  readonly unreadShare?: number | undefined;
+}): string {
+  const tokens = `${countText(file.tokens)} tokens`;
+  if (file.unreadShare === undefined) return tokens;
+  return `${tokens} unread, ${(file.unreadShare * 100).toFixed(1)}% of the file`;
+}
+
 /** Read after the count: "10 files; the largest are listed below" (Q-44). */
 function filesNotReadDetail(count: number): string {
   if (count === 0) return 'files; every first-party file was read';
