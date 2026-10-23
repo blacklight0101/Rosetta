@@ -10,7 +10,7 @@ import { useApp } from '../app/app-context.js';
 // calls join the list when no page the person has not asked for yet lies between. The repeating
 // stops with the first answer that says the run has ended, and when the page is left.
 
-export type CallsHead = Omit<RunCalls, 'calls' | 'nextCursor'>;
+type CallsHead = Omit<RunCalls, 'calls' | 'nextCursor'>;
 
 export type RunCallsLoad =
   | { readonly status: 'loading' }

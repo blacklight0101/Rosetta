@@ -14,7 +14,7 @@ import {
 const runPath = (runId: string): string => `/api/runs/${encodeURIComponent(runId)}`;
 
 /** P5-22: calls per page. */
-export const CALLS_PAGE = 100;
+const CALLS_PAGE = 100;
 
 /** One page of the calls, the first when no cursor is given. */
 // RF-1011
