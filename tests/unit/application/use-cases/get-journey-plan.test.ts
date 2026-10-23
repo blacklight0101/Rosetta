@@ -134,3 +134,62 @@ describe('GetJourney: a plan run that is queued', () => {
     });
   });
 });
+
+describe('GetJourney: a plan run that is running', () => {
+  it('EV-12 a running plan run with no folder name in its manifest is found through its options', async () => {
+    const { project, parts, seed, journey } = await setup();
+    const understand = await seed();
+    const running = sampleRun({
+      ...{ userId: project.userId, projectId: project.id, stage: 'plan' },
+      ...{ runKey: '20261012-110000-plan', queueState: 'Running', endState: null },
+      startedAt: briefSavedAt + hour,
+    });
+    await parts.runs.insert(running);
+    await parts.manifests.write(
+      scopeOf(running),
+      sampleManifest({
+        runId: running.runKey,
+        stage: 'plan',
+        endState: null,
+        options: { sourceRunId: understand?.id },
+      }),
+    );
+
+    const result = await journey.execute({ actor, projectId: project.id, runId: understand?.id });
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: { plan: { id: running.id, queueState: 'Running' } },
+    });
+  });
+});
+
+describe('GetJourney: a plan run that ended', () => {
+  it('EV-12 an ended plan run whose manifest has a null source is placed through its options', async () => {
+    const { project, parts, seed, journey } = await setup();
+    const understand = await seed();
+    const ended = sampleRun({
+      ...{ userId: project.userId, projectId: project.id, stage: 'plan' },
+      ...{ runKey: '20261012-110000-plan', queueState: 'Ended', endState: 'Failed' },
+      startedAt: briefSavedAt + hour,
+      endedAt: briefSavedAt + hour + 60_000,
+    });
+    await parts.runs.insert(ended);
+    await parts.manifests.write(
+      scopeOf(ended),
+      sampleManifest({
+        runId: ended.runKey,
+        stage: 'plan',
+        endState: 'Failed',
+        options: { sourceRunId: understand?.id },
+      }),
+    );
+
+    const result = await journey.execute({ actor, projectId: project.id, runId: understand?.id });
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: { plan: { id: ended.id, endState: 'Failed' } },
+    });
+  });
+});
