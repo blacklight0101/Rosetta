@@ -17,6 +17,8 @@ interface ListedModel {
   readonly maxOutputTokens?: number | undefined;
   /** Q-58: the model takes a reasoning effort on the provider's API. */
   readonly reasoning?: true;
+  /** P3-130: the model cannot call tools on Chat Completions. */
+  readonly noTools?: true;
 }
 
 export interface ModelList {
@@ -36,6 +38,19 @@ export function reasoningModelsOf(list: ModelList): ReasoningModels {
   const keyOf = (kind: string, model: string): string => `${kind}\n${model}`;
   const marked = new Set(
     list.models.filter((entry) => entry.reasoning === true).map((e) => keyOf(e.provider, e.model)),
+  );
+  return (kind, model) => marked.has(keyOf(kind, model));
+}
+
+/** P3-130: whether the shipped list marks a model as unable to call tools on Chat Completions. */
+export type ToolLessModels = (kind: ProviderKind, model: string) => boolean;
+
+// P3-130
+export function noToolModelsOf(list: ModelList): ToolLessModels {
+  const keyOf = (kind: string, model: string): string => `${kind}
+${model}`;
+  const marked = new Set(
+    list.models.filter((entry) => entry.noTools === true).map((e) => keyOf(e.provider, e.model)),
   );
   return (kind, model) => marked.has(keyOf(kind, model));
 }

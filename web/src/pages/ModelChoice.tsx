@@ -14,6 +14,8 @@ export interface ModelChoiceProps {
   readonly label: string;
   readonly value: string;
   readonly disabled?: boolean;
+  /** P3-130: the role calls tools, so a model that cannot call them is flagged. */
+  readonly needsTools?: boolean;
   /** The list of the role's provider; undefined for a provider with no list. */
   readonly list: ModelListState | undefined;
   readonly error: { readonly code?: string; readonly message: string } | undefined;

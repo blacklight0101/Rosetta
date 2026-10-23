@@ -11,7 +11,7 @@ import type {
   ProviderSetFactory,
   ProviderSetRequest,
 } from '../../application/ports/provider-set-factory.js';
-import type { ReasoningModels } from '../../application/models/model-list.js';
+import type { ReasoningModels, ToolLessModels } from '../../application/models/model-list.js';
 import type { SecretBox } from '../../application/ports/secret-box.js';
 import type { ServerSettings } from '../../application/ports/server-settings.js';
 import {
@@ -68,6 +68,8 @@ export interface GuardedProviderFactoryOptions {
   readonly adapters: AdapterBuilder;
   /** Q-58: the models the shipped list marks as reasoning models; none when left out. */
   readonly reasoningModels?: ReasoningModels;
+  /** P3-130: the models the shipped list marks as unable to call tools; none when left out. */
+  readonly toolLessModels?: ToolLessModels;
   readonly clock: Clock;
   readonly ids: IdGenerator;
   readonly logger: Logger;

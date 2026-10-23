@@ -22,6 +22,7 @@ function Harness(props: {
   readonly list: ModelListState | undefined;
   readonly initial?: string;
   readonly disabled?: boolean;
+  readonly needsTools?: boolean;
   readonly error?: { readonly code?: string; readonly message: string };
   readonly onChange?: (model: string) => void;
 }) {
@@ -33,6 +34,7 @@ function Harness(props: {
       value={value}
       list={props.list}
       disabled={props.disabled === true}
+      needsTools={props.needsTools === true}
       error={props.error}
       onChange={(model) => {
         setValue(model);
@@ -195,4 +197,28 @@ it('RF-405 the select can be driven from the keyboard: it is a native select wit
 
   expect(select.tabIndex).toBe(0);
   expect(select.labels[0]?.textContent).toBe('Reader model');
+});
+
+const astra: ModelListState = {
+  status: 'ready',
+  reason: undefined,
+  models: [
+    { model: 'gpt-6-astra', label: 'GPT-6 astra', priced: true, noTools: true },
+    { model: 'gpt-6-luna', label: 'GPT-6 luna', priced: true },
+  ],
+};
+
+it('P3-130 a model that cannot call tools, picked for a role that calls them, says so naming the model', () => {
+  render(<Harness list={astra} initial="gpt-6-astra" needsTools />);
+
+  expect(screen.getByText(/gpt-6-astra cannot call tools/u)).toBeTruthy();
+});
+
+it('P3-130 the same model for a role without tools, and a model that can call tools, show no such note', () => {
+  const { unmount } = render(<Harness list={astra} initial="gpt-6-astra" />);
+  expect(screen.queryByText(/cannot call tools/u)).toBeNull();
+  unmount();
+
+  render(<Harness list={astra} initial="gpt-6-luna" needsTools />);
+  expect(screen.queryByText(/cannot call tools/u)).toBeNull();
 });

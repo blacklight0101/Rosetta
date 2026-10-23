@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { reasoningModelsOf } from '../../../../src/application/models/model-list.js';
+import {
+  noToolModelsOf,
+  reasoningModelsOf,
+} from '../../../../src/application/models/model-list.js';
 
 // RF-402, RF-405, Q-58, P3-86: a model is a reasoning model when the shipped list marks it for the
 // same provider kind; a model of another kind, a typed model and an unmarked one are not.
@@ -31,5 +34,22 @@ describe('reasoningModelsOf', () => {
     expect(isReasoning('ollama', 'gpt-5-nano')).toBe(false);
     expect(isReasoning('openai-compatible', 'gpt-5-nano')).toBe(false);
     expect(isReasoning('fake', 'gpt-5-nano')).toBe(false);
+  });
+});
+
+describe('noToolModelsOf', () => {
+  const toolless = noToolModelsOf({
+    version: '2026-10-23',
+    models: [
+      { provider: 'openai', model: 'gpt-6-astra', label: 'astra', noTools: true as const },
+      { provider: 'openai', model: 'gpt-6-luna', label: 'luna', reasoning: true as const },
+    ],
+  });
+
+  it('P3-130 is true for a marked model of its kind only', () => {
+    expect(toolless('openai', 'gpt-6-astra')).toBe(true);
+    expect(toolless('openai', 'gpt-6-luna')).toBe(false);
+    expect(toolless('anthropic', 'gpt-6-astra')).toBe(false);
+    expect(toolless('ollama', 'gpt-6-astra')).toBe(false);
   });
 });
