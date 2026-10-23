@@ -48,12 +48,12 @@ describe('the reader workbook guidance v5', () => {
   });
 });
 
-describe('the verifier claim prompt v2', () => {
+describe('the verifier claim prompt v3', () => {
   it('RNF-004 is the default, and v1 stays without the rule', async () => {
     const { system } = await loadVerifierPrompts('prompts');
     const old = await loadPromptFile('prompts', 'verifier/claim.v1.md');
 
-    expect(system).toMatchObject({ name: 'verifier/claim.v2.md', version: 'v2' });
+    expect(system).toMatchObject({ name: 'verifier/claim.v3.md', version: 'v3' });
     expect(old.text).not.toMatch(/Rosetta rendered/u);
   });
 

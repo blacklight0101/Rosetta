@@ -105,7 +105,7 @@ describe('the calibration run and its files', () => {
     ]);
     expect(parsed.value.models[0]?.modelVersion).toBe('fake-model-2026-10-01');
     expect(Object.keys(parsed.value.promptVersions)).toEqual([
-      'verifier/claim.v2.md',
+      'verifier/claim.v3.md',
       'verifier/retry.v1.md',
     ]);
   });

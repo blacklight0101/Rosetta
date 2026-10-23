@@ -625,7 +625,7 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   `src/domain/sources/rendered-workbook-files.ts` and only count a file as rendered when it lies inside a rendered workbook folder of
   the snapshot record (`workbookFolders`, ADR-004), so a code project's own `docs/notes.md` or `docs/values.md` is never touched.
   `judgeClaim` rejects without a model call a claim that names a rendered file and cites one (`renderedFileReason`, with
-  `verifier/claim.v2.md` saying the same to the model). The answer collector (`answer-collector.ts`, `valuesOnlyRuleProblems` in
+  `verifier/claim.v3.md` saying the same to the model). The answer collector (`answer-collector.ts`, `valuesOnlyRuleProblems` in
   `rule-citations.ts`) adds, once per task, a question to the next repair for each `BR` or `FLOW` claim that cites only `values.md`
   lines (`cards/repair.v3.md` explains it). The question is a hint, not a fault, and the repair limit of RF-208 (two) is not
   exceeded. The hinted claim is not removed or marked: if the repair answer holds the card again, that answer replaces the hinted
@@ -647,10 +647,13 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   `src/application/verifier/judge-claim.ts` for one claim); a re-run with answers (RF-241) judges the claims of its
   new cards the same way. The verifier's guarded provider comes from the same provider factory call as the reader's
   and the summariser's (`UNDERSTAND_ROLES` is `reader`, `verifier` and `summariser`, so consent, keys, prices and
-  the Ollama check cover both). The model sees no tools, the system prompt `prompts/verifier/claim.v2.md` and one user
+  the Ollama check cover both). The model sees no tools, the system prompt `prompts/verifier/claim.v3.md` and one user
   message: the claim in a data block of source `claim` (model output is data too) and, per citation, its lines with
   three lines of margin before and after (`cited-lines.ts`, read through the `RepositoryReader`, so ignored and
-  denied files are refused) in a block of source `cited_lines`; nothing else of the file. Evidence above
+  denied files are refused) in a block of source `cited_lines`; nothing else of the file. The margin lines start with
+  `[context] ` (`markedLines`, P3-124, HB-04) and `claim.v3.md` tells the model not to reject a claim only because a
+  label sits outside the cited lines; a `Rejected` whose reason says the lines match the claim is asked again once
+  and left `Unverified` if it still contradicts itself (`verdict-consistency.ts`, HB-05). Evidence above
   `scan.excerptMaxLines` lines or 40 000 characters is not cut: the claim is `Unverified` and no call is made, and
   a cited range that is not `1 <= start <= end` in whole lines is refused before the margin is added. A derived
   screen field claim ("Field X (text, optional) is on the screen", RF-626, P3-122, HB-02) is decided by those

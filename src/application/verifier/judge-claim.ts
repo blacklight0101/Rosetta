@@ -9,6 +9,7 @@ import type { LlmMessage, LlmRequest, LlmResponse } from '../ports/llm-provider.
 import type { RepositoryReader } from '../ports/repository-reader.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import {
+  markedLines,
   readCitedLines,
   type CitedExcerpt,
   type EvidenceLimits,
@@ -16,7 +17,8 @@ import {
 } from './cited-lines.js';
 import { renderedFileReason } from './rendered-file-claim.js';
 import { screenFieldVerdict } from './screen-field-check.js';
-import { parseVerdictAnswer, type JudgedStatus } from './verdict-answer.js';
+import { parseVerdictAnswer, type JudgedStatus, type Verdict } from './verdict-answer.js';
+import { contradictionProblem } from './verdict-consistency.js';
 import { verifierRetryMessage, type VerifierPrompts } from './verifier-prompts.js';
 
 // RF-301, ADR-005, ADR-013, DEC-57: step 2 of the verifier for one claim that passed step 1. The
@@ -85,16 +87,14 @@ function evidenceMessage(
 ): string {
   const tag = (): string => parts.ids.dataBlockTag();
   const claimBlock = renderDataBlock({ source: 'claim', excerpts: [], text: claim.text }, tag());
-  const lineBlocks = excerpts.map(({ path, startLine, endLine, lines, skipped }) =>
-    renderDataBlock(
-      {
-        source: 'cited_lines',
-        excerpts: skipped ? [] : [{ path, startLine, endLine }],
-        text: lines.join('\n'),
-      },
+  const lineBlocks = excerpts.map((excerpt) => {
+    const { path, startLine, endLine, skipped } = excerpt;
+    const excerpts = skipped ? [] : [{ path, startLine, endLine }];
+    return renderDataBlock(
+      { source: 'cited_lines', excerpts, text: markedLines(excerpt).join('\n') },
       tag(),
-    ),
-  );
+    );
+  });
   return [claimBlock, ...lineBlocks].join('\n\n');
 }
 
@@ -178,7 +178,12 @@ export async function judgeClaim(
   const first = await ask(parts, requestOf(parts, claim, parentSpanId, asked));
   if (!first.ok) return first.error;
   const verdict = parseVerdictAnswer(first.value);
-  if (verdict.ok) return { kind: 'judged', ...verdict.value };
+  const reask = (messages: readonly LlmMessage[]) =>
+    ask(parts, requestOf(parts, claim, parentSpanId, messages));
+  if (verdict.ok) {
+    const history: LlmMessage[] = [...asked, { role: 'assistant', content: first.value.text }];
+    return settle(parts, reask, history, verdict.value);
+  }
   const retry: LlmMessage[] = [
     ...asked,
     { role: 'assistant', content: first.value.text },
@@ -187,6 +192,35 @@ export async function judgeClaim(
   const second = await ask(parts, requestOf(parts, claim, parentSpanId, retry));
   if (!second.ok) return second.error;
   const again = parseVerdictAnswer(second.value);
-  if (again.ok) return { kind: 'judged', ...again.value };
+  if (again.ok) {
+    const history: LlmMessage[] = [...retry, { role: 'assistant', content: second.value.text }];
+    return settle(parts, reask, history, again.value);
+  }
   return unverified(`The verifier's answer could not be read after one retry: ${again.error}`);
+}
+
+/**
+ * P3-124, DEC-19, HB-05: a `Rejected` whose own reason says the lines match the claim is asked
+ * again once; a second one that still contradicts itself is left `Unverified`, never `Rejected`.
+ */
+async function settle(
+  parts: ClaimJudgeParts,
+  reask: (messages: readonly LlmMessage[]) => Promise<Result<LlmResponse, Judgement>>,
+  history: readonly LlmMessage[],
+  verdict: Verdict,
+): Promise<Judgement> {
+  const problem = contradictionProblem(verdict);
+  if (problem === undefined) return { kind: 'judged', ...verdict };
+  const message: LlmMessage = {
+    role: 'user',
+    content: verifierRetryMessage(parts.prompts, problem),
+  };
+  const second = await reask([...history, message]);
+  if (!second.ok) return second.error;
+  const reread = parseVerdictAnswer(second.value);
+  if (!reread.ok) return unverified(`The verifier's answer could not be read: ${reread.error}`);
+  if (contradictionProblem(reread.value) === undefined) return { kind: 'judged', ...reread.value };
+  return unverified(
+    `The reason agrees with the claim but the verdict is Rejected: ${reread.value.reason}`,
+  );
 }

@@ -38,6 +38,22 @@ export interface CitedExcerpt {
   readonly lines: readonly string[];
   /** True for a file the scan did not read: `lines` is a note, and it is no excerpt (P2-44). */
   readonly skipped: boolean;
+  /** P3-124: the cited range inside `startLine`..`endLine`; the lines around it are context. */
+  readonly citedStartLine?: number | undefined;
+  readonly citedEndLine?: number | undefined;
+}
+
+/** P3-124: the mark in front of a line that is read for context and is not cited. */
+const CONTEXT_MARK = '[context] ';
+
+/** P3-124: the lines as the verifier gets them: the lines outside the cited range carry the mark. */
+export function markedLines(excerpt: CitedExcerpt): readonly string[] {
+  const { citedStartLine: from, citedEndLine: to } = excerpt;
+  if (excerpt.skipped || from === undefined || to === undefined) return excerpt.lines;
+  return excerpt.lines.map((line, index) => {
+    const number = excerpt.startLine + index;
+    return number < from || number > to ? `${CONTEXT_MARK}${line}` : line;
+  });
 }
 
 /**
@@ -109,7 +125,16 @@ export async function readCitedLines(
     if (!read.ok) return err(`The cited lines could not be read: ${read.error.message}`);
     const { path, startLine, endLine } = read.value;
     const cut = read.value.lines.map((line) => cutLine(line, defaultToolLimits.maxLineChars));
-    excerpts.push({ path, startLine, endLine, lines: cut, skipped: false });
+    const [citedStartLine, citedEndLine] = [cited?.startLine, cited?.endLine];
+    excerpts.push({
+      path,
+      startLine,
+      endLine,
+      lines: cut,
+      skipped: false,
+      citedStartLine,
+      citedEndLine,
+    });
   }
   const chars = charCount(excerpts);
   if (chars > limits.maxChars) return err(tooLarge('characters', chars, limits.maxChars));
