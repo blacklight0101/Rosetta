@@ -3,6 +3,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { LlmMessage, LlmProvider, LlmResponse } from '../ports/llm-provider.js';
 import type { Logger } from '../ports/logger.js';
 import { collectCards } from './answer-collector.js';
+import type { AnswerText } from './cut-answer.js';
 import { recordNote, type AnswerNote } from './answer-note.js';
 import { logTaskEnd } from './agent-task-log.js';
 import { EmptyAnswerRetry } from './empty-answer-retry.js';
@@ -75,7 +76,7 @@ class AgentTask {
   private reportedTokens = 0;
   private charsSince = 0;
   /** Q-55: the latest answer that was refused, read as the final answer if the task ends first. */
-  private refused: string | undefined;
+  private refused: AnswerText | undefined;
 
   constructor(request: AgentTaskRequest) {
     this.request = request;
@@ -113,8 +114,8 @@ ${retryNoteMessage(retryNote, (source, text) => tools.renderBlock(source, text))
       const answer = await this.turn();
       if (!answer.ok) return this.afterStop(answer.error);
       if (answer.value.toolCalls.length === 0) {
-        if (await this.refuseUnread(answer.value.text)) continue;
-        return this.finish(answer.value.text);
+        if (await this.refuseUnread(answer.value)) continue;
+        return this.finish(answer.value);
       }
       const stopped = await this.runTools(answer.value);
       if (stopped !== undefined) return stopped;
@@ -210,17 +211,17 @@ ${retryNoteMessage(retryNote, (source, text) => tools.renderBlock(source, text))
    * after less than half of the area's first-party tokens were read, with the files still unread;
    * Q-55: unless the conversation has no room for another read and answer, when it is taken as is.
    */
-  private async refuseUnread(text: string): Promise<boolean> {
+  private async refuseUnread(answered: AnswerText): Promise<boolean> {
     const { prompts, tools, settings } = this.request;
     const refusal = await refusalFor({
-      ...{ gate: this.gate, prompts, answer: text, freeContext: this.freeContext() },
+      ...{ gate: this.gate, prompts, answer: answered.text, freeContext: this.freeContext() },
       block: (files) => tools.renderBlock('list_area_files', files),
       turnsLeft: settings.maxTurns - this.turns,
       note: (note) => this.note(note),
     });
     if (refusal === undefined) return false;
-    this.refused = text;
-    this.messages.push({ role: 'assistant', content: text });
+    this.refused = answered;
+    this.messages.push({ role: 'assistant', content: answered.text });
     this.add({ role: 'user', content: refusal.message });
     await this.note({ outcome: 'refused', reason: refusal.reason });
     return true;
@@ -241,14 +242,11 @@ ${retryNoteMessage(retryNote, (source, text) => tools.renderBlock(source, text))
     return recordNote(onNote === undefined ? sink : { ...sink, onNote }, note);
   }
 
-  /**
-   * RF-202, RF-208: reads the final answer and asks the follow-ups it earns (two repairs, or a
-   * continuation of a cut-off answer). The valid cards are kept whatever happens to the rest.
-   */
-  private async finish(text: string): Promise<AgentTaskEnd> {
+  /** RF-202, RF-208: reads the final answer and asks its follow-ups; valid cards are always kept. */
+  private async finish(answer: AnswerText): Promise<AgentTaskEnd> {
     const { prompts } = this.request;
     const collected = await collectCards(
-      text,
+      answer,
       (previous, message) => this.followUp(previous, message),
       prompts,
       {
@@ -265,12 +263,14 @@ ${retryNoteMessage(retryNote, (source, text) => tools.renderBlock(source, text))
     return { reason: 'invalid-output', code: ERROR_CODES.cardOutputInvalid, ...left };
   }
 
-  /** One more turn after the model's text: it is a turn like any other (limit, context, stop). */
-  private async followUp(previous: string, content: string): Promise<Result<string, AgentTaskEnd>> {
+  /** One more turn after the model's text, like any other (limit, context, stop). */
+  private async followUp(
+    previous: string,
+    content: string,
+  ): Promise<Result<AnswerText, AgentTaskEnd>> {
     this.messages.push({ role: 'assistant', content: previous });
     this.add({ role: 'user', content });
-    const answer = await this.turn();
-    return answer.ok ? ok(answer.value.text) : err(answer.error);
+    return this.turn();
   }
 
   private add(message: LlmMessage): void {

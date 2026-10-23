@@ -521,7 +521,7 @@ sequenceDiagram
       T-->>L: result or error result
     else final answer
       L->>L: refuse it when no file of the area was read (RF-206), or once when less than half of its first-party tokens were (Q-50)
-      L->>L: parse cards (zod), keep the valid ones, then up to two repairs or a continuation for the rest
+      L->>L: parse cards (zod), keep the valid ones, then one continuation for a cut answer and up to two repairs for the rest
     end
   end
   L-->>O: cards, transcript, state, usage
@@ -552,7 +552,8 @@ sequenceDiagram
   through `AgentToolSet.rowSpans`, at most 20 per answer; a row that is not found leaves the citation as written, so
   it is dropped like any bad citation), and the problem of a dropped citation quotes what the model wrote and the
   expected form; problems earn up to two repairs, the second with only the problems that remain, and an answer
-  cut off by the output limit earns up to two continuations (`prompts/cards/continue.v1.md`) instead of a new start;
+  cut off by the output limit (the provider reports `length`, or the JSON never closes; `cut-answer.ts`, P5-03) earns one
+  continuation (`prompts/cards/continue.v1.md`) instead of a new start, and a second cut goes to the repairs;
   every follow-up is a turn like any other, under the same turn limit, context share and stop checks, and a stop
   keeps the cards read so far; RF-206: a final answer given before any file of the area was read is not accepted,
   the agent is sent `prompts/reader/read-first.v1.md` with its unread files as a data block and keeps its turns to read
