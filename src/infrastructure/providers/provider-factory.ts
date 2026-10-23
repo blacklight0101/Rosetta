@@ -38,7 +38,7 @@ import type { TextMasker } from '../guards/secret-masker.js';
 import type { AdapterBuilder } from './adapter-spec.js';
 import { guardedProvider } from './guarded-provider.js';
 import { resolveAccess, type ProviderAccess, type ServerKeys } from './provider-access.js';
-import { ReasoningEffortProvider } from './reasoning-effort-provider.js';
+import { withRoleEffort, type EffortNote } from './reasoning-effort-provider.js';
 import { reservationLifetimeMs } from './reservation-lifetime.js';
 import { isCeilinged, providerTestCeiling } from './provider-ceiling.js';
 import { scopeStartOf, type ScopeStart } from './scope-spend.js';
@@ -86,6 +86,8 @@ interface WrapParts {
 /** The administrator's caps and what the scope caps have spent when the run starts (P5-18). */
 type ScopeCaps = ScopeStart & { readonly server: ServerCaps };
 
+type RoleScope = ScopeCaps & { readonly effortNote: EffortNote };
+
 export class GuardedProviderFactory implements ProviderSetFactory {
   private readonly options: GuardedProviderFactoryOptions;
 
@@ -105,8 +107,16 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     const start = await scopeStartOf(this.options, request, wanted);
     const set = new Map<AgentRole, RoleProvider>();
     const problems: ProviderProblem[] = [];
+    const effortNote: EffortNote = {
+      noted: false,
+      logger: ownerLogger(this.options.logger, request.run.userId),
+    };
     for (const role of request.roles) {
-      const built = await this.buildRole(request, role, { server: serverCaps, ...start });
+      const built = await this.buildRole(request, role, {
+        server: serverCaps,
+        ...start,
+        effortNote,
+      });
       if (built.ok) set.set(role, built.value);
       else problems.push(built.error);
     }
@@ -116,7 +126,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
   private async buildRole(
     request: ProviderSetRequest,
     role: AgentRole,
-    scope: ScopeCaps,
+    scope: RoleScope,
   ): Promise<Result<RoleProvider, ProviderProblem>> {
     const setting = request.settings.roles[role];
     const { provider: name } = setting;
@@ -148,7 +158,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       adapter: adapter.value,
       caps,
     });
-    const provider = this.withEffort(guarded, config.kind, setting);
+    const provider = this.withEffort(guarded, config.kind, setting, scope.effortNote);
     return ok({
       provider,
       name,
@@ -162,20 +172,19 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     });
   }
 
-  /**
-   * Q-58: a role on a model the shipped list marks as a reasoning model sends its reasoning effort
-   * (low unless the project sets another); any other model is given none.
-   */
+  /** Q-58: a model the shipped list marks as a reasoning model sends the role's effort. */
   private withEffort(
     provider: LlmProvider,
     kind: ProviderConfig['kind'],
     setting: ProjectSettings['roles'][AgentRole],
+    note: EffortNote,
   ): LlmProvider {
-    if (this.options.reasoningModels?.(kind, setting.model) !== true) return provider;
-    return new ReasoningEffortProvider(
-      provider,
-      setting.reasoningEffort ?? DEFAULT_REASONING_EFFORT,
-    );
+    return withRoleEffort(provider, {
+      kind,
+      marked: this.options.reasoningModels?.(kind, setting.model) === true,
+      effort: setting.reasoningEffort ?? DEFAULT_REASONING_EFFORT,
+      note,
+    });
   }
 
   /**
