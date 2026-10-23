@@ -15,8 +15,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
 | P3 Report and plan      | 131     | 16        | 111        | 4         | 0                  | 54      | 73      | 4      | 87         | 0         |
-| P5 Polish (G-10)        | 19      | 7         | 12         | 0         | 0                  | 11      | 8       | 0      | 0          | 0         |
-| **Total**               | **374** | **97**    | **248**    | **29**    | **0**              | **185** | **175** | **14** | **228**    | **0**     |
+| P5 Polish (G-10)        | 27      | 8         | 19         | 0         | 0                  | 14      | 13      | 0      | 0          | 0         |
+| **Total**               | **382** | **98**    | **255**    | **29**    | **0**              | **188** | **180** | **14** | **228**    | **0**     |
 
 ## Conventions for every card
 
@@ -5313,5 +5313,141 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Delivers**: the change and tests.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: P3-112, P3-116, P5-09, P5-12.
+
+---
+
+### P5-20 - Readers stop while the claims they wrote can still be judged
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the role shares of the run token cap (DEC-166: readers 70%, verifier 20%, summariser 10%; RF-429), the cap-weighted token count (DEC-168), the reader share of a scope cap (P5-18), the parallel verifier (P5-15), the claims written by the readers and the verifier's spend per judged claim. Haiku 5.5 battery of 2026-10-23, eShopModernizing re-run (owner approved): Understand ended CapReached on the 2,000,000 token cap with 958 claims, of which 716 (75%) were never judged; the readers used their full 70% while the verifier's 20% judged about a quarter of what they wrote. A plan from that run excludes every unjudged claim. The dynamic share of Q-61 (run cap minus the readers' use, minus 10%) would not have helped, because the readers used their whole share.
+- **Do**: before a reader task starts (and before a reader takes another turn that may write claims), the run checks that the readers' spend so far plus the estimated cost of judging every claim written and not yet judged stays within the readers' and verifier's part of the run token cap (90% with DEC-166), and within the readers' and verifier's part of the run cost cap. The judging estimate is the run's own average verifier spend per judged claim, or a stated default per claim before the first judgement. When the check fails, no new reader task starts; running reader tasks finish their current turn; the run moves to verification and ends Completed when every written claim is judged, or CapReached as before when a cap still binds. The fixed shares stay as upper limits (a reader never passes 70%). The run page and the event log say once that readers stopped to leave room to judge the claims written. Record the rule as a DEC row that amends DEC-166 and update RF-429.
+- **Review probes**: a recorded claim-heavy run that used to end with most claims Unverified ends with every written claim judged and no reader task started after the check failed; a run with few claims behaves as before (same tasks, same end state); the estimate uses the run's own average after the first judgements and the default before; a resume counts claims written before the stop; mutation: dropping the judging estimate from the check brings the unjudged claims back.
+- **Behaviour to preserve**: RF-420..RF-429, DEC-166 shares as upper limits, DEC-168 counting, P5-15 ordered parallel judgements, P5-18 scope shares, P3-121 plan from a capped run.
+- **Delivers**: the change, tests, the DEC row and RF-429 text.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-429, Q-61, DEC-166, DEC-168; P5-15, P5-18; Haiku battery eShop re-run.
+
+---
+
+### P5-21 - A failed provider call keeps the provider's error message
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the provider call record (`provider-calls.jsonl`, RF-408), the run log (RF-009), the API calls and logs page (RF-1011), the provider adapters' error mapping (Anthropic, OpenAI Chat Completions and Responses, Ollama), the secret masker (RF-140..RF-149). Evaluation of 2026-10-23: every reader call of an OpenAI run failed with HTTP 400; the call records held only `httpStatus` 400 and RST-1506, the run log said "provider-failed", and the provider's reason ("Function tools with reasoning_effort are not supported ...") had to be found by repeating the request by hand. App sweep of 2026-10-23: no call record or log entry carries a provider error text.
+- **Do**: when a provider answers with an error, the call record keeps the provider's error type and message, masked by the secret masker and cut to 500 characters with a marker, plus the provider request id when given; the run log `warn` entry of the failed call carries the same text; the API calls and logs page shows it beside the call. A network error keeps its error name. No request or response body is stored beyond the error text.
+- **Review probes**: a recorded OpenAI 400 with an error body yields a call record and log entry with the masked message; an error text holding a secret-shaped value is masked; a 2 kB message is cut with the marker; an Anthropic and an Ollama error are kept the same way; a call that succeeds stores no error field; mutation: removing the masking lets the synthetic secret through.
+- **Behaviour to preserve**: RF-408, RF-009, RF-1011, RF-140..RF-149 (masking), RF-402 retry rules.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-408, RF-009, RF-1011; P3-129; app sweep 2026-10-23.
+
+---
+
+### P5-22 - The calls page, a call transcript and the plan setup load fast on a large run
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: `GET /api/runs/:runId/calls`, `GET /api/runs/:runId/calls/:seq/transcript` (`get-call-transcript.ts`, the run call reader), the API calls and logs page, `POST /api/projects/:id/plan-estimate` and the plan setup page. App sweep of 2026-10-23 on the eval stack: on an understand run with 878 calls, `/calls` takes 4.1 s and returns 464 kB in one answer (a `limit` is ignored); every transcript takes 2.4 to 4.1 s whatever its size (737 bytes took 2.4 s), because the whole call log is read and parsed to find one call; the plan setup page of the same project takes 5.2 s.
+- **Do**: the run call reader parses a run's call log once and keeps it (per run, invalidated when the log grows or the run is deleted, bounded in memory); a transcript is found by its call without parsing every call; `/calls` answers in pages (`limit` and a cursor) with the summary per role computed once, and the calls page loads more on demand; the plan estimate reuses what it already read. Keep scoping to the user (RF-1105).
+- **Review probes**: on a recorded run of 900 calls, a transcript answers in under 300 ms after the first read and `/calls?limit=50` returns 50 calls with a cursor and the full summary; the calls page shows the first page and loads the next; a run that is still writing shows its new calls; another user's run still answers 404; plan setup of the recorded project loads in under 1.5 s; mutation: removing the cache brings back a full parse per transcript (a test counts parses).
+- **Behaviour to preserve**: RF-1011, RF-408, RF-1105, P3-28 plan setup.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-1011, RF-408; app sweep 2026-10-23.
+
+---
+
+### P5-23 - Long paths wrap on a phone and plan costs show cents
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the design system (`docs/design-system.md`), the run page, the plan setup page (journey steps and area lists), the start page model switch button. App sweep of 2026-10-23 at 360 px: the plan setup page scrolls sideways by 22 px on workbook projects and 180 px on a large repository, and a run page by 233 px, because file paths of up to 119 characters do not wrap; the start page button "Switch every role to Ollama (gemma4:e4b)" sticks out by 5 px; the plan setup journey shows a cost as "$0.105619" instead of the cents used elsewhere.
+- **Do**: paths, area names, run ids and model names wrap anywhere on narrow screens (a design-system text utility, not per-page fixes); the button label wraps; journey costs use the shared cost format.
+- **Review probes**: at 360 px the plan setup, run and start pages of the recorded projects do not scroll sideways (e2e at phone size, with a 120-character path); the journey shows "$0.11" for 105,619 micros; axe still passes.
+- **Behaviour to preserve**: RNF-010 accessibility, the design system tokens.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RNF-010, design system; app sweep 2026-10-23.
+
+---
+
+### P5-24 - Security controls of the plan are kept, not left out
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the plan answer schema (`src/application/plan/plan-answer.ts`, the `technical.security` control with `invariant` and `alternative`, `src/domain/planning/technical-content.ts`), the planner prompt (`prompts/planner/package.v7.md`), the unreadable-item rule of P3-126, the TRD security section (`handoff-trd-security.ts`). Owner review of a real package (eShopModernizing, Haiku 5.5, 2026-10-23): both `technical.security` items were left out for the field "alternative", so the package has no security controls although the legacy code hard-codes credentials and exposes the database.
+- **Do**: find from recorded answers why the field is refused (a null, a list, an over-long text or a missing key) and accept every shape the prompt allows with a safe reading: an empty, null or missing `alternative` or `invariant` reads as none; an over-long text is cut at its bound with a marker rather than dropping the control; a list of strings is joined. A security control is left out only when its name or approach is unreadable, and then checks.md says so as today. The prompt states the field shapes once, with an example of a control without an alternative.
+- **Review probes**: a recorded eShop-style answer whose two controls carry the field shapes found => both controls are kept in the TRD and in a task card; a control without `alternative` => kept; a control with an unreadable approach => still left out and listed in checks.md; mutation: restoring the strict field => the controls are dropped again.
+- **Behaviour to preserve**: P3-126 (an unreadable item is left out and listed), RF-601..RF-613, the masked secrets of RF-140..RF-149.
+- **Delivers**: the change, a recorded answer and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P3-126, RF-601; owner package review 2026-10-23.
+
+---
+
+### P5-25 - The chosen stack is checked for contradictions, and ADRs state context, options and sources
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the stack layers of the planning brief and the plan options catalogue (`/api/plan/catalogue`), the ADR writer of the package, the API contract rule ("no contract applies"), checks.md. Owner review of a real package (eShopModernizing, 2026-10-23): ADR-005 chooses ASP.NET Core Minimal APIs for the back end while ADR-006 chooses Razor Pages and the README says no API contract applies because Razor Pages is rendered by the server; nothing points out that a server-rendered front end needs no separate API back end, or that a Minimal API back end needs a contract. Each ADR is about 17 lines of boilerplate, lists no alternatives and says "Source cards: none".
+- **Do**: (1) a stack consistency check: a small, versioned rule table in the catalogue (for example a server-rendered front end with an API-only back end; an API back end without a contract; a data access choice the database does not support) flags each clash in checks.md and as an open question with the legacy-keeping default, and the README says the stack has an open clash; Rosetta never changes the owner's choice. (2) Each stack ADR states its context from the source cards (the legacy technology and the claims behind the layer), the options the catalogue offered with one line each, the choice, its consequences for the task cards, and the source cards it rests on; an ADR with no supporting card says why.
+- **Review probes**: the eShop brief (Razor Pages with Minimal APIs, no contract) => one clash in checks.md and one open question; a consistent brief => no clash; a stack ADR => lists the catalogue options and at least one source card when the cards name the legacy layer; mutation: removing the rule table entry => the clash is hidden.
+- **Behaviour to preserve**: RF-601..RF-613, the owner's stack choice is never changed, P5-08 shared card text.
+- **Delivers**: the change, the rule table, recordings and tests; RF text for the check.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-601..RF-613; owner package review 2026-10-23.
+
+---
+
+### P5-26 - Package files read cleanly as plain text, and open questions stay short
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the Markdown text escaping of the package and the cards (`src/infrastructure/cards/markdown-text.ts` and its callers), the link rendering (`handoff-links.ts`), the open questions writer. Owner review of a real package (eShopModernizing, 2026-10-23): text is escaped everywhere (`20261023\-143644\-understand`, `\(ADRs\)`, `non\-development`, `C\#`) and the source URL reads `https&#58;//github.com/...`; the files are meant to be read raw by people and agents. open-questions.md has 860 lines and 761 table rows, mostly the claims left out, burying the eight questions that need an answer.
+- **Do**: escape only what would change the Markdown meaning in its position (a leading `#`, `-`, `+` or digit-dot at line start, `|` inside a table cell, backticks, `*`/`_` runs that would start emphasis, `<`/`&` that would start HTML or an entity, `[`/`]` that would form a link); hyphens, parentheses, dots and `#` inside words stay plain; the source URL is written as a plain URL (keep RF-145/RF-507: untrusted text cannot inject HTML or links). open-questions.md lists the questions that need an answer first; the claims left out move to a grouped summary (counts per area and kind, with the 20 most important) and a full list in a separate file linked from it.
+- **Review probes**: the rendered package of the recorded eShop plan => no `\-`, `\(`, `\)`, `\.` or `&#58;` outside the positions above; a hostile claim text with `<script>`, `[x](javascript:...)`, a leading `#` and a table pipe => stays inert and renders as text; open-questions.md of that package => under 150 lines and starts with the brief and PRD questions; the full left-out list => holds every claim; mutation: escaping nothing => the hostile text forms a link.
+- **Behaviour to preserve**: RF-145, RF-507, RF-1013 (untrusted text rendered as text), RF-601..RF-613, P3-121 (the cap stop and claims never judged are stated).
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-145, RF-507, RF-601; owner package review 2026-10-23.
+
+---
+
+### P5-27 - Target flow diagrams map their steps and keep their order
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the target flow writer and diagram (`src/domain/diagrams/target-flow-diagram.ts`, `flow-sequence.ts`), the components of the target architecture, the legacy flow cards. Owner review of a real package (eShopModernizing, 2026-10-23): in FLOW-001 the trigger sentence is drawn as the first participant, the arrows jump from step 2 to step 5 because unmapped steps are skipped, and most steps read "not mapped" to a target component.
+- **Do**: the trigger is drawn as a note or an actor named for who or what starts the flow, not as a participant holding the sentence; every legacy step appears in order (an unmapped step is drawn on the nearest component with a marker, so no step number is skipped); each step is mapped to the target component whose responsibility or source cards cover the code it cites, and only a step with no such component reads "not mapped", with checks.md counting them.
+- **Review probes**: the recorded eShop FLOW-001 => an actor for the trigger, steps 1 to 5 in order, the routing and database steps mapped to their components; a flow whose every step maps => no marker; a step whose code no component covers => "not mapped" and counted in checks.md; the Mermaid => parses (existing diagram parse test); mutation: skipping unmapped steps again => the order probe fails.
+- **Behaviour to preserve**: RF-620..RF-627 (documentation set flows), the Mermaid parse guard, P5-08 shared card text.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-620..RF-627; owner package review 2026-10-23.
 
 ---
