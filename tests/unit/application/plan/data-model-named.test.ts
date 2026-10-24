@@ -140,7 +140,7 @@ describe('missingNamed: names stated as a table (P5-33)', () => {
 
 describe('missingNamed: words near a name do not hide it (P5-33)', () => {
   const entity = card('ENT-001', 'ENT', 'Orders', [
-    'tblOrders(id int, total money) holds the orders.',
+    'tblOrders(id int, total money) holds the orders; region_names lists the regions.',
   ]);
 
   it.each([
