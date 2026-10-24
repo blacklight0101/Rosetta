@@ -45,14 +45,15 @@ describe('an understand run whose reader reaches its role cap', UNDERSTAND_TIMEO
     const manifest = await h.manifestOf(run);
     expect(manifest.agentTasks.map((task) => [task.area, task.state, task.cards])).toEqual([
       ['Catalog', 'Done', 1],
-      ['Services', 'StoppedByCap', 0],
+      ['Services', 'Planned', 0],
     ]);
     const events = await h.eventsOf(run);
     expect(events.at(-1)?.data).toMatchObject({ errorCode: ERROR_CODES.budgetCapReached });
     const capEvents = events.filter((event) => event.type === 'budget.capReached');
-    expect(capEvents.map((event) => event.data)).toMatchObject([
-      { scope: 'role-tokens', role: 'reader' },
-    ]);
+    expect(capEvents).toEqual([]);
+    // P5-20: the readers' share has no room for another call, so no task starts to be refused.
+    const stops = events.filter((event) => event.type === 'budget.readersStopped');
+    expect(stops.map((event) => event.data)).toMatchObject([{ reason: 'share' }]);
   });
 
   it('RF-304 the claims not yet judged are left Unverified when a role cap stops the run', async () => {

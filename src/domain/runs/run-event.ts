@@ -26,6 +26,7 @@ export type RunEventType =
   | 'usage.recorded'
   | 'budget.warning'
   | 'budget.capReached'
+  | 'budget.readersStopped'
   | 'cards.merged'
   | 'deepen.started'
   | 'deepen.round.started'

@@ -20,9 +20,12 @@ import {
 const temp = useTempRoot('rosetta-understand-resume-');
 const areas = ['Catalog', 'Services'];
 
+// P5-20: 90% of the cap pays for both reader tasks and the claim written; the verifier's first call
+// (worst case 32,768 tokens) does not fit what is left.
 const capped = understandSettings((settings) => ({
   ...settings,
-  budget: { ...settings.budget, run: { maxCostMicros: 500_000, maxTokens: 205_000 } },
+  roles: { ...settings.roles, verifier: { ...settings.roles.verifier, maxOutputTokens: 32_768 } },
+  budget: { ...settings.budget, run: { maxCostMicros: 500_000, maxTokens: 228_000 } },
 }));
 
 /** The cap the owner raises before pressing Resume. */

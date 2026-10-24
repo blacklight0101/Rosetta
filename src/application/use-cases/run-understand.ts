@@ -38,9 +38,10 @@ import { pinnedSourceOf } from '../understand/pinned-source.js';
 import { resumeSourceProblem } from '../understand/resume-state.js';
 import { announceRetry, scheduleTasks } from '../understand/retry-plan.js';
 import { recordRunTexts } from '../understand/run-texts.js';
-import type { Prepared, UnderstandRoles } from '../understand/run-understand-types.js';
+import type { Prepared, RolesWithBudget } from '../understand/run-understand-types.js';
 import { UnderstandSession } from '../understand/understand-session.js';
 import { runProviderSinks } from '../understand/run-sinks.js';
+import { withRoom } from '../understand/reader-room.js';
 import type { VerifierPrompts } from '../verifier/verifier-prompts.js';
 import { sameFamilyWarning } from '../verifier/family-warning.js';
 import { runDeepen } from '../deepen/deepen-session.js';
@@ -53,11 +54,10 @@ import {
 } from '../understand/run-understand-steps.js';
 
 // RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007: the executor of the
-// `understand` stage. It opens the code map and snapshot of the project's latest completed scan,
-// plans one reader task per area (or per named area; an unknown name stops the run with RST-1307
-// and the valid names in the log), builds the reader's guarded provider through the provider
-// factory only, with the run's stop as the budget guard's stop, and runs the tasks with one abort
-// signal. The cost report is written at every end, the stopped and capped ones included.
+// `understand` stage. It opens the code map and snapshot of the latest completed scan, plans one
+// reader task per area (or per named area; an unknown name stops the run with RST-1307), builds
+// the guarded providers through the provider factory only, with the run's stop as the budget
+// guard's stop, and runs the tasks with one abort signal. The cost report is written at every end.
 
 export interface RunUnderstandDependencies {
   readonly projects: ProjectRepository;
@@ -145,7 +145,7 @@ export class RunUnderstand implements RunExecutor {
     const deepen = readUnderstandOptions(execution.manifest.options).deepen;
     if (deepen !== undefined) return runDeepen({ ...parts, request: deepen });
     if (prepared.value.retry !== undefined) await announceRetry(execution, prepared.value.retry);
-    const session = new UnderstandSession(parts);
+    const session = new UnderstandSession(withRoom(execution, parts, roles.value.budget));
     await session.plan();
     await session.run();
     await session.finish();
@@ -230,17 +230,18 @@ export class RunUnderstand implements RunExecutor {
     project: Project,
     updates: ManifestUpdates,
     nextCallId: () => string,
-  ): Promise<Step<UnderstandRoles>> {
+  ): Promise<Step<RolesWithBudget>> {
     const { run, manifest } = execution;
     const account = await this.deps.users.findById(run.userId);
     if (account === undefined) return stop(failed(ERROR_CODES.notFound));
+    const sinks = await runProviderSinks(this.deps, execution, updates);
     const built = await this.deps.providers.build({
       account,
       run: { id: run.id, userId: run.userId, projectId: run.projectId, stage: 'understand' },
       settings: project.settings,
       roles: UNDERSTAND_ROLES,
       cloudConsent: readUnderstandOptions(manifest.options).cloudConsent,
-      sinks: await runProviderSinks(this.deps, execution, updates),
+      sinks,
     });
     if (!built.ok) {
       for (const problem of built.error) {
@@ -255,8 +256,7 @@ export class RunUnderstand implements RunExecutor {
     }
     const roles = understandRolesOf(built.value);
     if (roles === undefined) return stop(failed(ERROR_CODES.providerUnavailable));
-    const { reader, verifier } = roles;
-    const warning = sameFamilyWarning(reader.model, verifier.model);
+    const warning = sameFamilyWarning(roles.reader.model, roles.verifier.model);
     if (warning !== undefined)
       await this.deps.logger.log({ ...warning, runId: run.runKey, userId: run.userId });
     const ready = await preflightOllama(built.value, {
@@ -266,7 +266,7 @@ export class RunUnderstand implements RunExecutor {
       signal: execution.signal,
     });
     if (!ready.ok) return stop(await this.notReady(execution, ready.error));
-    return { ok: true, value: roles };
+    return { ok: true, value: { ...roles, budget: sinks.budgetEvents } };
   }
 
   /** RF-401: an Ollama that cannot answer ends the run before its first task (a stop interrupts). */

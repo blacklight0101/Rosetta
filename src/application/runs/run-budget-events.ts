@@ -1,4 +1,5 @@
 import { capWeightedTokens } from '../../domain/budget/token-usage.js';
+import type { Spend } from '../../domain/budget/claim-room.js';
 import type { CapBreach, UsageCap } from '../../domain/budget/usage-cap.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -40,7 +41,18 @@ export interface SpendTotals {
   readonly costMicros: bigint;
 }
 
+/** P5-20: what each role has spent in the run, tokens as the caps count them (DEC-168). */
+function addToRole(roles: Map<string, Spend>, entry: LedgerEntry): void {
+  const before = roles.get(entry.role) ?? { tokens: 0n, micros: 0n };
+  roles.set(entry.role, {
+    tokens: before.tokens + capWeightedTokens(entry),
+    micros: before.micros + entry.costMicros,
+  });
+}
+
 export interface RunBudgetEventsParts {
+  /** P5-20: the ledger rows the run had when the reporter was opened, for the spend of each role. */
+  readonly rows?: readonly LedgerEntry[];
   readonly events: BudgetEventEmitter;
   /** What the run had spent when the reporter was opened. */
   readonly run: SpendTotals;
@@ -136,7 +148,11 @@ export class RunBudgetEvents implements BudgetEvents {
   /** The role caps already reported (RF-423): a role's cap refuses its calls without stopping the run. */
   private readonly cappedRoles = new Set<string>();
 
+  /** P5-20: the run's spend by role, kept with the totals so the readers' check reads no ledger. */
+  private readonly roles = new Map<string, Spend>();
+
   constructor(parts: RunBudgetEventsParts) {
+    for (const row of parts.rows ?? []) addToRole(this.roles, row);
     this.events = parts.events;
     this.run = parts.run;
     this.project = parts.project;
@@ -157,6 +173,7 @@ export class RunBudgetEvents implements BudgetEvents {
       return new RunBudgetEvents({
         events,
         run: plus(noSpend, rows),
+        rows,
         project: plus(noSpend, groups),
       });
     } catch (error) {
@@ -169,9 +186,15 @@ export class RunBudgetEvents implements BudgetEvents {
     }
   }
 
+  /** P5-20: what the role has spent in this run, earlier sessions included. */
+  roleSpend(role: string): Spend {
+    return this.roles.get(role) ?? { tokens: 0n, micros: 0n };
+  }
+
   // RF-421, RF-1003
   async callRecorded(call: RecordedCall): Promise<void> {
     const { entry, caps } = call;
+    addToRole(this.roles, entry);
     this.run = plus(this.run, [entry]);
     this.project = plus(this.project, [entry]);
     const data = {

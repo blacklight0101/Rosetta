@@ -3,6 +3,7 @@ import type { ReaderPrompts } from '../agent/reader-prompts.js';
 import type { ScannedSource } from '../ports/scan-results.js';
 import type { Project } from '../projects/project.js';
 import type { RoleProvider } from '../providers/provider-set.js';
+import type { RunBudgetEvents } from '../runs/run-budget-events.js';
 import type { VerifierPrompts } from '../verifier/verifier-prompts.js';
 import type { Rerun } from './answer-rerun.js';
 import type { RetryLink } from './retry-plan.js';
@@ -31,4 +32,9 @@ export interface UnderstandRoles {
   readonly reader: RoleProvider;
   readonly verifier: RoleProvider;
   readonly summariser: RoleProvider;
+}
+
+/** P5-20: the roles with the run's budget events, whose spend by role the readers' room check reads. */
+export interface RolesWithBudget extends UnderstandRoles {
+  readonly budget: Pick<RunBudgetEvents, 'roleSpend'>;
 }

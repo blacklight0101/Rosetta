@@ -19,6 +19,7 @@ import { areaFailureOf } from './area-failure.js';
 import { changesOf, markAnswered, type Rerun } from './answer-rerun.js';
 import { cardNoteOf, coverageNoteOf } from './area-notes.js';
 import { judgementPartsOf, runJudgementStep, type JudgementContext } from './claim-judgement.js';
+import { endsWithoutRoomStops } from './reader-room.js';
 import { openQuestionsOf } from './open-questions.js';
 import { overviewStep } from './overview-step.js';
 import { consolidateStep } from './session-consolidation.js';
@@ -90,6 +91,7 @@ export class UnderstandSession {
     for (const result of kept) this.coverage.restore(result.agentTaskId, result.coverage);
     this.latest = { cards: kept.flatMap((result) => result.cards), checks: [] };
     this.thirdParty = thirdPartyAreaNames(parts.scanned.codeMap);
+    parts.room?.attach(() => this.latest.cards);
   }
 
   /** Lists every task as `Planned` and publishes the plan (RF-200, RF-1002). */
@@ -112,6 +114,7 @@ export class UnderstandSession {
     const { tasks, settings, execution } = this.parts;
     const options = { parallelism: readerParallelism(settings), signal: execution.signal };
     await runPool(tasks, options, async (task) => {
+      if (this.parts.room !== undefined && !(await this.parts.room.admits())) return;
       const reads = new TaskReads();
       const result = await runReaderTaskWithRetry(this.parts, task, reads).catch(
         async (error: unknown) => {
@@ -205,13 +208,13 @@ export class UnderstandSession {
   /** How the run ends, from how its tasks ended (`session-outcome.ts`). */
   outcome(): RunOutcome {
     const { execution, kept } = this.parts;
-    const ends = [...this.ends.values()];
-    const { outputFailure } = this;
+    const ends = endsWithoutRoomStops(this.ends, this.parts.room);
     return sessionOutcome({
       aborted: execution.signal.aborted,
-      outputFailure,
+      outputFailure: this.outputFailure,
       ends,
       resumed: kept.length > 0,
+      readersFull: this.parts.room?.reason === 'share',
     });
   }
 
@@ -244,9 +247,9 @@ export class UnderstandSession {
    * and in the results a resume reads; a stop by the user or a failure leaves them as they are.
    */
   private async leaveUnjudged(): Promise<void> {
-    const { execution, deps } = this.parts;
+    const { execution, deps, room } = this.parts;
     const runCap = execution.signal.aborted && isCapStop(execution.signal.reason);
-    const roleCap = [...this.ends.values()].some((end) => end.state === 'StoppedByCap');
+    const roleCap = endsWithoutRoomStops(this.ends, room).some((e) => e.state === 'StoppedByCap');
     if (!runCap && !roleCap) return;
     const cards = leaveUnverified(this.latest.cards, deps.clock.now().toISOString());
     this.latest = { ...this.latest, cards };

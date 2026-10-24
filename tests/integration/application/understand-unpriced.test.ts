@@ -93,7 +93,7 @@ describe(
       const manifest = await h.manifestOf(run);
       expect(manifest.agentTasks.map((task) => [task.area, task.state])).toEqual([
         ['Catalog', 'Done'],
-        ['Services', 'StoppedByCap'],
+        ['Services', 'Planned'],
       ]);
       expect(
         h.providers.ledger.entries.map((entry) => [entry.costKnown, entry.costMicros]),

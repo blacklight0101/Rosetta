@@ -33,6 +33,8 @@ interface SessionEnd {
   readonly ends: readonly TaskEndFacts[];
   /** RF-006: a resume kept the results of tasks that ended in an earlier run. */
   readonly resumed: boolean;
+  /** P5-20: the readers stopped because their own share of a cap had no room left (RF-429). */
+  readonly readersFull?: boolean;
 }
 
 /**
@@ -40,14 +42,16 @@ interface SessionEnd {
  * with areas that gave no card is `Completed` as before and says how many (`failedAreas`), so it is
  * never shown as a plain success. RF-423: a role that reached its cap stops without stopping the
  * run, so a run with a task stopped by a cap and no run-wide stop still ends `CapReached`: it did
- * not read everything it was asked to.
+ * not read everything it was asked to. P5-20: readers that stopped to leave room to judge the claims
+ * written are no cap stop of the run (the caller leaves their tasks out of `ends`); readers that
+ * stopped at their own share still are.
  */
 // RF-1108, RF-208
 export function sessionOutcome(end: SessionEnd): RunOutcome {
   if (end.aborted) return { endState: 'Interrupted' };
   if (end.outputFailure !== undefined) return { endState: 'Failed', errorCode: end.outputFailure };
   const { ends } = end;
-  if (ends.some((each) => each.state === 'StoppedByCap')) {
+  if (end.readersFull === true || ends.some((each) => each.state === 'StoppedByCap')) {
     return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
   }
   const failed = ends.filter((each) => areaFailureOf(each) !== undefined);

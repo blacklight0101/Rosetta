@@ -83,7 +83,8 @@ describe('an understand run whose verifier is stopped by its cap', UNDERSTAND_TI
     try {
       const settings = understandSettings((s) => ({
         ...s,
-        budget: { ...s.budget, roles: { verifier: { maxTokens: 1 } } },
+        roles: { ...s.roles, verifier: { ...s.roles.verifier, maxOutputTokens: 32_768 } },
+        budget: { ...s.budget, roles: { verifier: { maxTokens: 30_000 } } },
       }));
       const h = await createUnderstandHarness({
         ...{ dataDir: dir, settings, recording: 'understand-flows-screens.json' },

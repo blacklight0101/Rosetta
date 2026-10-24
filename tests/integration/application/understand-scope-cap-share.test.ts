@@ -209,8 +209,9 @@ describe('an understand run whose run cap binds', UNDERSTAND_TIMEOUT, () => {
 
     expect(run.endState).toBe('CapReached');
     const capEvents = (await h.eventsOf(run)).filter((event) => event.type === 'budget.capReached');
-    expect(capEvents.map((event) => event.data)).toMatchObject([
-      { scope: 'role-tokens', role: 'reader', capSource: 'reserve' },
-    ]);
+    expect(capEvents).toEqual([]);
+    // P5-20: the readers' share has no room for another call, so no task starts to be refused.
+    const stops = (await h.eventsOf(run)).filter((event) => event.type === 'budget.readersStopped');
+    expect(stops.map((event) => event.data)).toMatchObject([{ reason: 'share' }]);
   });
 });

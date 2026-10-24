@@ -32,7 +32,7 @@ export async function runProviderSinks(
   deps: RunSinkDependencies,
   execution: RunExecution,
   updates: ManifestUpdates,
-): Promise<ProviderSinks> {
+): Promise<ProviderSinks & { readonly budgetEvents: RunBudgetEvents }> {
   const { run, events } = execution;
   const scope = scopeOf(run);
   const { manifests, runs, ledger, costTotals } = deps;

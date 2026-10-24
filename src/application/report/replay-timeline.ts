@@ -3,6 +3,7 @@ import { formatUsd, microUsd } from '../../domain/budget/money.js';
 import type { RunEvent } from '../../domain/runs/run-event.js';
 import { mergedStep, withMergedClaimIds } from './claim-id-moves.js';
 import { answeredStep, skippedStep } from './question-steps.js';
+import { readersStoppedStep } from './readers-stopped-step.js';
 import type { ReplayAgent, ReplayKind, ReplayModel, ReplayStep } from './replay-model.js';
 
 // RF-506, data-model.md section 3.9: the steps, agents and running cost of a run, built from its
@@ -126,8 +127,6 @@ const agentHandlers: Readonly<Record<string, Handler>> = {
   })),
 };
 
-const budgetScope = z.object({ scope: text });
-
 /** The handlers for the verifier's checks, the cost and the end of the run. */
 const closingHandlers: Readonly<Record<string, Handler>> = {
   'verify.citation.checked': reading(
@@ -164,19 +163,20 @@ const closingHandlers: Readonly<Record<string, Handler>> = {
     label: 'Usage',
     text: `${v.role} ${v.model}: ${dollars(v.costMicros)}`,
   })),
-  'budget.warning': reading(budgetScope.extend({ sharePercent: count }), (v) => ({
+  'budget.warning': reading(z.object({ scope: text, sharePercent: count }), (v) => ({
     kind: 'budget',
     label: 'Budget warning',
     text: `${v.scope} at ${String(v.sharePercent)} percent of its cap`,
   })),
   'budget.capReached': reading(
-    budgetScope.extend({ capMicros: count, spentMicros: count }),
+    z.object({ scope: text, capMicros: count, spentMicros: count }),
     (v) => ({
       kind: 'budget',
       label: 'Budget cap reached',
       text: `${v.scope}: spent ${dollars(v.spentMicros)} of ${dollars(v.capMicros)}`,
     }),
   ),
+  'budget.readersStopped': readersStoppedStep,
   'cards.merged': mergedStep,
   'question.answered': answeredStep,
   'question.skipped': skippedStep,

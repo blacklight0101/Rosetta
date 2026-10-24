@@ -19,6 +19,8 @@ export interface RoleProvider {
   readonly modelMaxOutputTokens?: number | undefined;
   readonly temperature?: number;
   readonly keySource: KeySource;
+  /** P5-20: the run token and cost caps in force for the role (the administrator's included). */
+  readonly runCaps?: { readonly tokens: bigint; readonly micros: bigint };
 }
 
 /** The roles a run asked for, each with its provider. */
