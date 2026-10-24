@@ -34,7 +34,7 @@ const gridLines = [
 export const gridText = `${gridLines.join('\n')}\n`;
 
 /** What the pack returns for the page: the template link has a computed target. */
-export const gridMarkup: PageMarkup = {
+const gridMarkup: PageMarkup = {
   path: gridPath,
   route: 'file',
   page: { startLine: 1, endLine: 1 },

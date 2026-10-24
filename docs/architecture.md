@@ -672,7 +672,10 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   starts <handler>", a field is "required" only with a required attribute or a validator in the markup, and the
   route claim of a page whose route is its file path ("The screen is at the route /Web/Page.aspx") cites the
   page directive and is decided by the code (`screen-route-check.ts`: the route is the path of the one file cited);
-  a page whose route is configured elsewhere gets no route claim from its file path. The answer is exactly `Reason: <one line>` then `Verdict: Supported|Rejected` (`verdict-answer.ts`; the verdict word
+  a page whose route is configured elsewhere gets no route claim from its file path. P5-44: on such a page an
+  action or a link the markup does not match (a link in a grid template, a redirect in code-behind) cites the lines
+  of the claims the agent wrote whose text names its label, handler or target (`screen-named.ts`), else only the
+  first range of the card, and the card's note says which claims had only that. The answer is exactly `Reason: <one line>` then `Verdict: Supported|Rejected` (`verdict-answer.ts`; the verdict word
   is compared in ASCII, so a Unicode case fold such as `ſupported` is no verdict); any other
   answer, a tool call or a cut answer gets one retry that names the problem (`prompts/verifier/retry.v1.md`), and a
   second bad answer leaves the claim `Unverified`. A failed call leaves it `Unverified` with its code. A cap
