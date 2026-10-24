@@ -304,7 +304,9 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
   (never on a pull request or a push to `main`); jobs `image` (tag checks, build, Trivy, push with the job token),
   `sbom` (tags only) and `deploy`, which stays skipped until the repository variable `ROSETTA_DEPLOY_ENABLED` is
   `true` and runs in the GitHub environment `production` (its secrets and variables: `docs/runbooks/deploy.md`). The
-  deploy job is the only place a workflow reads secrets.
+  hosted resources are created by `.github/workflows/azure-provision.yml` (P1-184, ADR-024), run only by hand in
+  `production`. Both log in to Azure with OIDC; the deploy job and the provision job are the only places a workflow
+  reads secrets.
 - The `Dockerfile` has a `test` stage with the fake provider and fake GitHub, used only by `compose.ci.yaml`; the
   runtime image ships no tests and no scripts; the compiled fakes inside `dist` are reachable only with `ROSETTA_TEST=1`, and `kind: fake` is refused without it (DEC-112).
 - After the GitHub Pages deploy, a smoke-test step fetches the published report's index and fails the job (`exit 1`)
@@ -329,7 +331,7 @@ PostgreSQL. A one-off migrate step of the same image (`node dist/presentation/mi
 and ends; the app starts only after it succeeded, with `DATABASE_URL` only, and refuses a pending (RST-2405), changed
 or unknown migration (RF-1302, DEC-140). A migration that fails ends the step with an error, leaves the previous
 schema, and the app is not started. The roles of data-model.md section 6 are created locally by the Compose init
-script `db/init/roles.sh` (passwords from `.env`) and hosted in the host's console (runbook); migrations only grant
+script `db/init/roles.sh` (passwords from `.env`) and hosted by the provisioning workflow (runbook); migrations only grant
 (DEC-112).
 
 ## 10. Deployment procedure

@@ -1,14 +1,15 @@
-# Release (RF-1300, RF-1304, DEC-29, DEC-57, DEC-104, ADR-014, ADR-020, P1-55): builds the runtime
-# image once, scans it, and pushes it to GHCR as `sha-<short>` (and `X.Y.Z` for a `vX.Y.Z` tag);
-# for a tag it also attaches a CycloneDX SBOM to the GitHub release. It runs only on a pushed v* tag
-# or by hand (workflow_dispatch on main, the way the sha-<short> image of main is published before
-# v0.1.0, DEC-104); never on a pull request or a push to main.
+# Release (RF-1300, RF-1304, DEC-29, DEC-57, DEC-104, ADR-014, ADR-024, P1-55, P1-184): builds the
+# runtime image once, scans it, and pushes it to GHCR as `sha-<short>` (and `X.Y.Z` for a `vX.Y.Z`
+# tag); for a tag it also attaches a CycloneDX SBOM to the GitHub release. It runs only on a pushed
+# v* tag or by hand (workflow_dispatch on main, the way the sha-<short> image of main is published
+# before v0.1.0, DEC-104); never on a pull request or a push to main.
 #
-# The deploy job is off until the owner opens gate G-07 (docs/runbooks/deploy.md, "Owner checklist
-# for the day the host is bought"). It runs only when the repository variable
-# ROSETTA_DEPLOY_ENABLED is 'true', in the GitHub environment `production`, which holds:
-#   secrets    RAILWAY_TOKEN (Railway project token), ROSETTA_SMOKE_PASSWORD (teacher password)
-#   variables  ROSETTA_PUBLIC_URL (the https URL), ROSETTA_SMOKE_USER (teacher)
+# The deploy job updates the Azure Container App that azure-provision.yml created (ADR-024). It runs
+# only when the repository variable ROSETTA_DEPLOY_ENABLED is 'true', in the GitHub environment
+# `production`, which holds:
+#   secrets    ROSETTA_SMOKE_PASSWORD (teacher password)
+#   variables  AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID (OIDC login, no Azure secret),
+#              ROSETTA_PUBLIC_URL (the https URL), ROSETTA_SMOKE_USER (teacher)
 # No value is written here. Hardening as in ci.yml: read-only default token, write scopes only in
 # the job that needs them, actions pinned to a commit SHA, values reach shell steps through env:.
 name: Release
@@ -114,14 +115,15 @@ jobs:
           GH_REPO: ${{ github.repository }}
           REF_NAME: ${{ github.ref_name }}
 
-  # Pending G-07: off until the owner sets ROSETTA_DEPLOY_ENABLED; the host steps are written by
-  # P1-55 part 2 once the Railway project exists (ADR-020).
+  # ADR-024: OIDC login, the migrate job with the new image (it must succeed), then the new image on
+  # the Container App, /healthz over HTTPS and the smoke test. Off until the owner sets
+  # ROSETTA_DEPLOY_ENABLED (docs/runbooks/deploy.md).
   deploy:
     name: deploy (production)
     needs: [image]
     if: vars.ROSETTA_DEPLOY_ENABLED == 'true' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     environment:
       name: production
       url: ${{ vars.ROSETTA_PUBLIC_URL }}
@@ -131,6 +133,13 @@ jobs:
     permissions:
       contents: read
       checks: read
+      id-token: write
+    env:
+      AZ_RG: rg-rosetta
+      AZ_APP: ca-rosetta
+      AZ_MIGRATE_JOB: caj-rosetta-migrate
+      IMAGE: ghcr.io/blacklight0101/rosetta
+      SHA_TAG: ${{ needs.image.outputs.sha-tag }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -153,7 +162,7 @@ jobs:
       - name: The deploy settings are stored
         run: |
           missing=''
-          for name in RAILWAY_TOKEN ROSETTA_SMOKE_PASSWORD ROSETTA_SMOKE_USER ROSETTA_PUBLIC_URL; do
+          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID ROSETTA_SMOKE_PASSWORD ROSETTA_SMOKE_USER ROSETTA_PUBLIC_URL; do
             [ -n "${!name}" ] || missing="$missing $name"
           done
           if [ -n "$missing" ]; then
@@ -161,24 +170,63 @@ jobs:
             exit 1
           fi
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           ROSETTA_SMOKE_PASSWORD: ${{ secrets.ROSETTA_SMOKE_PASSWORD }}
           ROSETTA_SMOKE_USER: ${{ vars.ROSETTA_SMOKE_USER }}
           ROSETTA_PUBLIC_URL: ${{ vars.ROSETTA_PUBLIC_URL }}
-      # Pending G-07 (P1-55 part 2): back up the database, run the one-off migrate step of the new
-      # image (DATABASE_MIGRATOR_URL as its only secret, DEC-140), set the app's image to
-      # $IMAGE:$SHA_TAG on Railway, wait for /healthz. Until then this step fails, so a deploy
-      # switched on too early stops here instead of reporting a deploy that did not happen.
-      - name: Back up, migrate and deploy (Pending G-07)
+      - name: Log in to Azure (OIDC)
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      # RF-1306: Burstable servers have no on-demand backup; the point-in-time restore of the
+      # Flexible Server (kept 7 days) is the backup before the deploy, so its time is recorded.
+      - name: Record the restore point
         run: |
-          echo "::error::Pending G-07: the Railway steps for $IMAGE:$SHA_TAG are added by P1-55 part 2."
+          restore_point="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "Restore point before deploying $IMAGE:$SHA_TAG is $restore_point (UTC)." >> "$GITHUB_STEP_SUMMARY"
+      # DEC-140, RF-1302: the migrate job runs the new image with DATABASE_MIGRATOR_URL as its only
+      # secret; any end state but Succeeded stops the deploy and the previous image keeps running.
+      - name: Migrate with the new image and wait for success
+        run: |
+          az containerapp job update --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --image "$IMAGE:$SHA_TAG" --output none
+          execution="$(az containerapp job start --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --query name --output tsv)"
+          for _ in $(seq 1 90); do
+            status="$(az containerapp job execution show --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --job-execution-name "$execution" --query properties.status --output tsv)"
+            case "$status" in
+              Succeeded) echo "Migrate execution $execution: Succeeded."; exit 0 ;;
+              Running | Processing | '') sleep 10 ;;
+              *) echo "::error::Migrate execution $execution ended $status; the app is not changed."; exit 1 ;;
+            esac
+          done
+          echo "::error::Migrate execution $execution did not finish in 15 minutes; the app is not changed."
+          exit 1
+      - name: Set the new image on the Container App
+        run: az containerapp update --name "$AZ_APP" --resource-group "$AZ_RG" --image "$IMAGE:$SHA_TAG" --output none
+      - name: Wait for the new revision and /healthz over HTTPS
+        run: |
+          for _ in $(seq 1 60); do
+            revisions="$(az containerapp show --name "$AZ_APP" --resource-group "$AZ_RG" --query '[properties.latestRevisionName, properties.latestReadyRevisionName]' --output tsv | tr '\n' ' ')"
+            read -r latest ready <<< "$revisions"
+            if [ -n "$latest" ] && [ "$latest" = "$ready" ] && curl -fsS --max-time 10 "$ROSETTA_PUBLIC_URL/healthz" > /dev/null; then
+              echo "Revision $latest is ready and $ROSETTA_PUBLIC_URL/healthz answers."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::$ROSETTA_PUBLIC_URL/healthz did not answer from the new revision in 10 minutes."
           exit 1
         env:
-          IMAGE: ghcr.io/blacklight0101/rosetta
-          SHA_TAG: ${{ needs.image.outputs.sha-tag }}
+          ROSETTA_PUBLIC_URL: ${{ vars.ROSETTA_PUBLIC_URL }}
       - name: Smoke test on the public URL
         run: node scripts/smoke.mjs "$ROSETTA_PUBLIC_URL"
         env:
           ROSETTA_PUBLIC_URL: ${{ vars.ROSETTA_PUBLIC_URL }}
           ROSETTA_SMOKE_USER: ${{ vars.ROSETTA_SMOKE_USER }}
           ROSETTA_SMOKE_PASSWORD: ${{ secrets.ROSETTA_SMOKE_PASSWORD }}
+      - name: Log out of Azure
+        if: always()
+        run: az logout || true

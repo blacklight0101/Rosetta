@@ -264,6 +264,7 @@ jobs:
           npx vitest run
           tests/integration/docs
           tests/integration/tooling/workflows.test.ts
+          tests/integration/tooling/azure-provision-workflow.test.ts
           tests/integration/tooling/workflow-docs-only.test.ts
           tests/integration/infrastructure/db/release-schema.test.ts
           tests/unit/web/status-badge.test.tsx
