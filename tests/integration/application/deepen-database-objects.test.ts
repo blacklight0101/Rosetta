@@ -67,7 +67,14 @@ describe('P5-36 database objects in coverage and in a Deepen', UNDERSTAND_TIMEOU
     expect(md).not.toMatch(/\| (?:no card|named only) \|/u);
     expect(md).toMatch(/\| TopVisits \| view \| Clinic\/clinic\.sql:14-16 \| BR-00\d \|/u);
     expect(md).toMatch(/\| CloseVisit \| procedure \| Clinic\/clinic\.sql:18-23 \| BR-00\d \|/u);
-    const cards = await readFile(join(h.runFolder(deepen.value), 'spec.md'), 'utf8');
-    expect(cards).toContain('Close visit procedure');
+    const folder = join(h.runFolder(deepen.value), 'cards', 'BR');
+    const stated = (
+      await Promise.all(
+        ['BR-002', 'BR-003'].map((id) => readFile(join(folder, `${id}.md`), 'utf8')),
+      )
+    ).join('\n');
+    expect(stated).toMatch(/top 20/iu);
+    expect(stated).toContain('NotifyPatient');
+    expect(stated).toContain('NotifyDoctor');
   });
 });

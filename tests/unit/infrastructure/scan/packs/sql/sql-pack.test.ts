@@ -154,6 +154,16 @@ describe('SQL pack on hostile scripts', () => {
     expect(Date.now() - started).toBeLessThan(3000);
   });
 
+  it('ADR-013 reads only the first 2000 characters of a line', () => {
+    const long = `create view Long as select ${'x'.repeat(5000)}`;
+    const late = `${' '.repeat(2100)}create view Late as select 1`;
+    const text = [long, late, 'create view After as select 1'].join('\n');
+
+    const names = pack.analyse({ path: 'cut.sql', text }).symbols.map((s) => s.name);
+
+    expect(names).toEqual(['Long', 'After']);
+  });
+
   it('ADR-013 refuses a script over the size bound so the scan keeps the file coarse', () => {
     const text = `${'-- x\n'.repeat(500_000)}create table T (a int)\n`;
 
