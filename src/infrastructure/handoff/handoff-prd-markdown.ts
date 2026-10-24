@@ -70,7 +70,9 @@ export function prdMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): stri
   const bullets = (items: readonly Cited[]): string[] =>
     items.map((item) => `- ${statement(item)}`);
   const roles = prd.roles.map((role) => {
-    const head = `**${esc.inline(role.name)}**: ${esc.inline(role.description)}`;
+    const proposed = handoff.meaning?.proposedRoles.includes(role.name) === true;
+    const mark = proposed ? ' (proposed: no claim states this role)' : '';
+    const head = `**${esc.inline(role.name)}**${mark}: ${esc.inline(role.description)}`;
     return `- ${cited(handoff, head, role.sources)}`;
   });
   const single = (item: Cited | undefined): string[] =>

@@ -70,7 +70,7 @@ describe('BuildPlan: what the planner is sent', () => {
     ]) {
       expect(message).not.toContain(left);
     }
-    expect(request?.system).toBe(await readFile('prompts/planner/package.v8.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/package.v9.md', 'utf8'));
     expect(request?.context.role).toBe('planner');
   });
 
@@ -86,7 +86,7 @@ describe('BuildPlan: what the planner is sent', () => {
     for (const left of ['emails the warehouse', 'keeps the card number', 'Staff export']) {
       expect(message).not.toContain(left);
     }
-    expect(request?.system).toBe(await readFile('prompts/planner/prd.v3.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/prd.v4.md', 'utf8'));
     expect(request?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-prd' });
   });
 });
@@ -141,11 +141,11 @@ describe('BuildPlan: the run manifest', () => {
         .update(await readFile(`prompts/planner/${name}`))
         .digest('hex');
     expect(manifest.promptVersions).toEqual({
-      'planner/package.v8.md': { version: 'v8', sha256: await sha('package.v8.md') },
+      'planner/package.v9.md': { version: 'v9', sha256: await sha('package.v9.md') },
       'planner/continue.v1.md': { version: 'v1', sha256: await sha('continue.v1.md') },
-      'planner/prd.v3.md': { version: 'v3', sha256: await sha('prd.v3.md') },
+      'planner/prd.v4.md': { version: 'v4', sha256: await sha('prd.v4.md') },
       'planner/data-model.v3.md': { version: 'v3', sha256: await sha('data-model.v3.md') },
-      'planner/flows.v1.md': { version: 'v1', sha256: await sha('flows.v1.md') },
+      'planner/flows.v2.md': { version: 'v2', sha256: await sha('flows.v2.md') },
       'planner/api-contract.v1.md': { version: 'v1', sha256: await sha('api-contract.v1.md') },
       'planner/ux.v1.md': { version: 'v1', sha256: await sha('ux.v1.md') },
       'planner/coverage.v1.md': { version: 'v1', sha256: await sha('coverage.v1.md') },

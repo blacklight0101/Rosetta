@@ -100,7 +100,9 @@ describe('P3-117 the new planner prompts', () => {
   it('P3-117 are new versions: the older ones stay for replays', async () => {
     const names = await readdir(folder);
 
-    expect(names).toEqual(expect.arrayContaining(['prd.v1.md', 'prd.v2.md', 'prd.v3.md']));
+    expect(names).toEqual(
+      expect.arrayContaining(['prd.v1.md', 'prd.v2.md', 'prd.v3.md', 'prd.v4.md']),
+    );
     expect(names).toEqual(expect.arrayContaining(['package.v6.md', 'package.v7.md']));
   });
 });

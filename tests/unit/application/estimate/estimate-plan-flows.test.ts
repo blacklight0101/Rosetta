@@ -29,7 +29,7 @@ describe('EstimatePlan: the target flows call', () => {
   it('RF-613 RF-625 counts the flows call when a verified FLOW card exists, with its own measured prompt', async () => {
     const { assumptions, planner } = await estimateOf();
 
-    const system = (await readFile('prompts/planner/flows.v1.md', 'utf8')).length;
+    const system = (await readFile('prompts/planner/flows.v2.md', 'utf8')).length;
     expect(assumptions.calls).toBe(7);
     expect(assumptions.flowsPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);

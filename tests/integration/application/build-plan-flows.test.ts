@@ -55,7 +55,7 @@ describe('BuildPlan: what the flows call is sent', () => {
     for (const left of ['warehouse is emailed', 'FLOW-004', 'Print sends', 'INT-009', 'ENT-002']) {
       expect(message).not.toContain(left);
     }
-    expect(request?.system).toBe(await readFile('prompts/planner/flows.v1.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/flows.v2.md', 'utf8'));
     expect(request?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-flows' });
     const callIds = h.providers.requests().map((each) => each.context.callId);
     expect(new Set(callIds).size).toBe(4);

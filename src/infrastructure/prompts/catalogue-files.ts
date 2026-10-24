@@ -10,9 +10,11 @@ import {
   type Catalogue,
   type CatalogueEntry,
 } from '../../domain/planning/catalogue.js';
+import type { ClaimVerbs } from '../../domain/planning/claim-verbs.js';
 import type { StackData } from '../../domain/planning/stack-data.js';
 import { parseCatalogueEntry, parseCatalogueReadme } from './catalogue-entry-file.js';
 import { parseStackProposals, parseStackRules, parseStackTechnologies } from './stack-data-file.js';
+import { parseClaimVerbs } from './claim-verbs-file.js';
 
 // RF-606, DEC-84, RNF-004: the catalogue folder `prompts/catalogue/`. Every file is named
 // `<id>.v<n>.md`; `readme.v<n>.md` declares the catalogue version and credits the master (DEC-85),
@@ -21,6 +23,7 @@ import { parseStackProposals, parseStackRules, parseStackTechnologies } from './
 // without a version, two versions of one entry, an empty group or a missing style is refused with
 // RST-1000. The three stack files (`stack-technologies`, `stack-rules`, `stack-proposals`, YAML) are part of the folder:
 // they are hashed with it and read by `stackOf` (RF-609).
+// P5-43: `claim-verbs` is part of the folder too.
 
 const catalogueFolder = 'catalogue';
 const fileNamePattern = /^([a-z0-9-]+)\.v(\d+)\.(?:md|yaml)$/u;
@@ -28,6 +31,7 @@ const readmeStem = 'readme';
 const technologiesStem = 'stack-technologies';
 const rulesStem = 'stack-rules';
 const proposalsStem = 'stack-proposals';
+const verbsStem = 'claim-verbs';
 
 interface CatalogueFile {
   readonly name: string;
@@ -60,7 +64,7 @@ async function readCatalogueFiles(folder: string): Promise<CatalogueFile[]> {
   );
 }
 
-const dataStems = [technologiesStem, rulesStem, proposalsStem];
+const dataStems = [technologiesStem, rulesStem, proposalsStem, verbsStem];
 
 function oneFile(files: readonly CatalogueFile[], stem: string): CatalogueFile {
   const found = files.filter((file) => file.stem === stem);
@@ -81,6 +85,12 @@ function stackOf(files: readonly CatalogueFile[]): StackData {
     rules: parseStackRules(rules.name, rules.bytes.toString('utf8')),
     proposals: parseStackProposals(proposals.name, proposals.bytes.toString('utf8'), known),
   };
+}
+
+/** P5-43: the verbs that contradict each other, from their file. */
+function claimVerbsOf(files: readonly CatalogueFile[]): ClaimVerbs {
+  const file = oneFile(files, verbsStem);
+  return parseClaimVerbs(file.name, file.version, file.bytes.toString('utf8'));
 }
 
 function sha256Of(files: readonly CatalogueFile[]): string {
@@ -114,5 +124,6 @@ export async function loadCatalogue(promptsFolder: string): Promise<Catalogue> {
     entries: sorted,
     styles: sorted.filter(isArchitectureStyle),
     stack: stackOf(files),
+    claimVerbs: claimVerbsOf(files),
   };
 }

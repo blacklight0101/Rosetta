@@ -80,7 +80,7 @@ export async function loadPlanOptionsPrompt(promptsFolder: string): Promise<Prom
 /** The planner's prompt for the hand-off package (RF-604), checked and hashed. */
 // RNF-004
 export function loadPlannerPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/package.v8.md');
+  return loadPromptFile(promptsFolder, 'planner/package.v9.md');
 }
 
 /**
@@ -109,7 +109,7 @@ export function loadPlannerContinuePrompt(promptsFolder: string): Promise<Prompt
 /** The planner's prompt for the product requirements document (RF-621), checked and hashed. */
 // RNF-004
 export function loadPrdPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/prd.v3.md');
+  return loadPromptFile(promptsFolder, 'planner/prd.v4.md');
 }
 
 /** The planner's prompt for the target data model (RF-623), checked and hashed. */
@@ -121,7 +121,7 @@ export function loadDataModelPrompt(promptsFolder: string): Promise<PromptFile> 
 /** The planner's prompt for the target flows (RF-625), checked and hashed. */
 // RNF-004
 export function loadFlowsPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/flows.v1.md');
+  return loadPromptFile(promptsFolder, 'planner/flows.v2.md');
 }
 
 /** The planner's prompt for the API contract (RF-624), checked and hashed. */

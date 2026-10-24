@@ -1075,7 +1075,11 @@ As a modernisation team I want a complete, standard package so that we can plan 
 As a modernisation team I want every requirement in the package linked to its source cards and citations so that we can check any statement in the legacy code.
 
 - Given a requirement in the package, when it is read, then it lists the card ids it comes from and those cards list their citations.
-  Verification: structure test: no requirement without a source card.
+- Given a requirement, a feature, a business rule or a flow step that names an operation, when the package is written, then `checks.md` lists it under "Meaning of the source claims" when its verb contradicts the verb of a linked Supported claim on the same topic (delete against reject or archive, record against ignore, block against print; the pairs are the versioned catalogue file `claim-verbs.v<n>.yaml`, never code) and when it holds a number or a quoted value that no claim of its source cards states (P5-43).
+- Given a planner prompt, when it asks for operations, roles or flow steps, then it tells the planner to keep the verb and values of the claim and to name only roles a claim states; the wording is in the versioned prompts `planner/package.v9.md`, `planner/prd.v4.md` and `planner/flows.v2.md` (RNF-004) (P5-43).
+- Given a PRD role that no Supported claim states, when the package is written, then `prd.md` marks it as proposed and `checks.md` lists it with each statement that names it (P5-43).
+- Given a claim that cites only documentation files and a claim that cites other files and says the opposite about the same topic, when the package is written, then the code claim is used, the documentation claim is not sent to the planner or written to the package, and `checks.md` lists both (P5-43).
+  Verification: structure test: no requirement without a source card; unit and integration tests of the meaning check with recorded plans (P5-43).
 
 **RF-603 Tool-agnostic output** - R1 - Must - Source DEC-10 - ADR-005
 As a modernisation team I want plain Markdown with no dependency on Rosetta, a build tool or an AI vendor so that we can use it any way we like.
