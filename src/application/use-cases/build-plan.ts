@@ -22,7 +22,6 @@ import type { PlanMessageInput } from '../plan/plan-message.js';
 import { planDocuments } from '../plan/plan-documents.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
 import { planWorkbookFormulas } from '../plan/plan-formulas.js';
-import { planShapes } from '../plan/plan-shapes.js';
 import { planProposal } from '../plan/plan-proposal.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
 import {
@@ -181,10 +180,9 @@ export class BuildPlan implements RunExecutor {
     );
     const covered = links.planned;
     for (const message of links.warnings) await warn(message);
-    const shapes = await planShapes(deps, inputs);
     const workbookFormulas = await planWorkbookFormulas(deps, inputs);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
-      ...{ ...documents, shapes, examples, workbookFormulas, proposal },
+      ...{ ...documents, examples, workbookFormulas, proposal },
       leftOut: leftOutItems({ ...assembly, dataModelProblems: documents.dataModelProblems }),
     });
     await this.deps.handoff.write(scopeOf(run), handoff);

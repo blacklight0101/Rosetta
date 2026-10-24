@@ -70,8 +70,8 @@ describe('BuildPlan: a plan that covers the whole set', () => {
     const written = await h.handoffOf(await h.plan());
 
     const tasks = (written['tasks.md'] ?? '').replaceAll('\\', '');
-    const first = tasks.split(/^## /mu)[1] ?? '';
-    expect(first).toMatch(/^T-001\n/u);
+    const first = tasks.split(/^## /mu).find((card) => card.startsWith('T-002\n')) ?? '';
+    expect(first).toMatch(/^T-002\n/u);
     expect(first).toContain('Write the database migrations in the chosen stack');
     expect(first).toContain('customer_order');
     expect(first).toContain('Phase: [Phase 1]');

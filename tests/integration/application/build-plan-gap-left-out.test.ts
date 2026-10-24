@@ -102,6 +102,6 @@ describe('BuildPlan: the positions of the answer', () => {
     const journey = plain(written['tasks.md'])
       .split(/^## /mu)
       .find((c) => c.includes('**Journey**'));
-    expect(journey).toMatch(/Depends on:.*\[T-004\]/u);
+    expect(journey).toMatch(/Depends on:.*\[T-007\]/u);
   });
 });

@@ -146,8 +146,8 @@ describe('RF-611 the project context', () => {
     expect(roadmap).toContain('Deadline: by 1 March 2027');
     expect(roadmap).toContain('Integrations that stay: SAP export');
     expect(roadmap).toContain('Data migration: A nightly copy');
-    expect(roadmap).toMatch(/\nSize: 3 points in 2 task cards; about 2 points per person\n/u);
-    expect(roadmap).toMatch(/\nSize: 1 point in 1 task card; about 1 point per person\n/u);
+    expect(roadmap).toMatch(/\nSize: 9 points in 5 task cards; about 5 points per person\n/u);
+    expect(roadmap).toMatch(/\nSize: 5 points in 3 task cards; about 3 points per person\n/u);
     expect(
       cardsOf(files).map((card) => /\nSize: (\w) \((\d) points?\)\n/u.exec(card)?.slice(1)),
     ).toEqual([
@@ -160,7 +160,7 @@ describe('RF-611 the project context', () => {
     const files = await packageOf({ context: { ...context, teamSize: 1 } });
 
     expect(plain(files['roadmap.md'])).toContain(
-      'Size: 3 points in 2 task cards; about 3 points per person',
+      'Size: 9 points in 5 task cards; about 9 points per person',
     );
   });
 

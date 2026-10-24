@@ -5,16 +5,14 @@ import { isThirdPartyFile } from '../code-map/third-party.js';
 // encoding, its line endings and whether its name is one some systems refuse. Pure functions of the
 // listed file and its bytes, so the same scan always gives the same facts.
 
-export const fileKinds = [
-  'source',
-  'data and configuration',
-  'documentation',
-  'generated map',
-  'bundled third-party script',
-  'binary',
-  'other',
-] as const;
-export type FileKind = (typeof fileKinds)[number];
+export type FileKind =
+  | 'source'
+  | 'data and configuration'
+  | 'documentation'
+  | 'generated map'
+  | 'bundled third-party script'
+  | 'binary'
+  | 'other';
 
 export type Encoding =
   | 'empty'

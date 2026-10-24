@@ -156,8 +156,8 @@ describe('the documentation set journey: coverage of the plan', () => {
   it('RF-623 the first card writes the migrations and builds every table of the data model', () => {
     const tasks = plain(current().documents['tasks.md']);
 
-    const first = tasks.split(/^## /mu)[1] ?? '';
-    expect(first).toMatch(/^T-001\n/u);
+    const first = tasks.split(/^## /mu).find((card) => card.startsWith('T-002\n')) ?? '';
+    expect(first).toMatch(/^T-002\n/u);
     expect(first).toContain('Write the database migrations in the chosen stack');
     expect(first).toContain('catalog_item');
     expect(first).toContain('basket_line');

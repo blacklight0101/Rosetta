@@ -26,17 +26,17 @@ describe('BuildPlan: the plan answer with object positions', () => {
   it('Q-54 RF-601 reads requirements and dependsOn written as objects', async () => {
     const tasks = [
       card('First card'),
-      card('Second card', { dependsOn: [{ position: 1, builds: ['T-001'] }] }),
+      card('Second card', { dependsOn: [{ position: 1, builds: ['T-005'] }] }),
     ];
     const h = await seededUxPlan(temp.path, { recording: await withTasks(tasks) });
 
     const written = await h.handoffOf(await h.plan());
 
     const cards = plain(written['tasks.md']).split(/^## /mu);
-    // The first card of the package creates the tables, so the answer's cards are T-002 and T-003.
+    // The first card of the package creates the tables, so the answer's cards are T-005 and T-006 (the skeleton, the migrations, the data access and the harness come first).
     const second = cards.find((each) => each.includes('**Second card**')) ?? '';
-    expect(second).toMatch(/^T-003\n/u);
-    expect(second).toMatch(/Depends on:.*\[T-002\]/u);
+    expect(second).toMatch(/^T-006\n/u);
+    expect(second).toMatch(/Depends on:.*\[T-005\]/u);
     expect(second).toContain('REQ-001');
   });
 

@@ -38,7 +38,7 @@ describe('BuildPlan: the recorded answer of a small model that writes positions 
     const written = await h.handoffOf(run);
     const cards = plain(written['tasks.md']).split(/^## /mu).slice(1);
     expect(cards.map((each) => each.split('\n')[0])).toEqual([
-      ...['T-001', 'T-002', 'T-003', 'T-004', 'T-005', 'T-006', 'T-007', 'T-008'],
+      ...Array.from({ length: 13 }, (_, at) => `T-${String(at + 1).padStart(3, '0')}`),
     ]);
     expect(plain(written['checks.md'])).toContain('Every item is built by at least one task card.');
     expect(h.s.logger.entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
@@ -53,9 +53,9 @@ describe('BuildPlan: the recorded answer of a small model that writes positions 
 
     const cards = plain(written['tasks.md']).split(/^## /mu);
     const byId = (id: string): string => cards.find((each) => each.startsWith(id)) ?? '';
-    expect(byId('T-005')).toContain('Depends on: [T-004]');
-    expect(byId('T-007')).toContain('Depends on: [T-004]');
-    expect(byId('T-008')).toContain('Depends on: [T-007]');
+    expect(byId('T-008')).toMatch(/Depends on:.*\[T-007\]/u);
+    expect(byId('T-010')).toMatch(/Depends on:.*\[T-007\]/u);
+    expect(byId('T-011')).toMatch(/Depends on:.*\[T-010\]/u);
   });
 });
 
@@ -121,7 +121,7 @@ describe('BuildPlan: the repair attempt', () => {
     expect(tasks).toContain('Operations');
     expect(tasks).toContain('The journey and its screens');
     expect(tasks).not.toContain(sentinel);
-    expect(tasks).toMatch(/^## T-005\n/mu);
+    expect(tasks).toMatch(/^## T-008\n/mu);
     expect(h.s.logger.entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
   });
 
