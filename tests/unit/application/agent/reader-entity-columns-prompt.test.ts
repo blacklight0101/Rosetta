@@ -31,11 +31,11 @@ describe('prompts/reader/area.v9.md', () => {
 
     expect(text).toMatch(/no primary key/iu);
     expect(text).toMatch(/unique constraint/iu);
-    expect(text).toMatch(/looks? (?:a row )?up by (?:a )?name/iu);
+    expect(text).toMatch(/looks up a row by name/iu);
   });
 
   it('RF-202 asks for the tables a cascade delete reaches', async () => {
-    expect(await v9()).toMatch(/cascade[^.]*tables it reaches/iu);
+    expect(await v9()).toMatch(/cascade[^.]*every table it reaches/iu);
   });
 
   it('RF-202 says a missing constraint of a table is a claim of the ENT card, not an OQ card', async () => {

@@ -4,6 +4,7 @@ import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { parseDataModelAnswer, type DataModelProblem } from './data-model-answer.js';
+import { applyColumnFacts } from './data-model-column-facts.js';
 import { keepLegacyKeys } from './data-model-legacy-keys.js';
 import { typeProblems } from './data-model-database.js';
 import { missingNamed } from './data-model-named.js';
@@ -65,13 +66,15 @@ export async function planDataModel(
   const parsed = parseDataModelAnswer(output);
   const assembled = assembleDataModel(parsed?.draft ?? emptyDraft, legacy, database);
   const keys = keepLegacyKeys(assembled.model, input.cards, input.brief);
-  const assembly = { ...assembled, model: keys.model };
+  const facts = applyColumnFacts(keys.model, input.cards);
+  const assembly = { ...assembled, model: facts.model };
   const readable = assembly.model.tables.length > 0;
   // P3-120: what the checks flag is listed in checks.md; an unusable answer has nothing to check.
   const flagged = readable
     ? [
         ...typeProblems(assembly.model),
         ...keys.problems,
+        ...facts.problems,
         ...missingNamed(assembly.model, input.cards),
       ]
     : [];
@@ -111,7 +114,7 @@ export function dataModelWarnings(planned: PlannedDataModel): string[] {
     flagged === 0
       ? []
       : [
-          `The planner data model has ${String(flagged)} item(s) the checks list in checks.md: column types of another database, a changed legacy key type, or names a card says that the model lacks.`,
+          `The planner data model has ${String(flagged)} item(s) the checks list in checks.md: column types of another database, a changed legacy key type, a column that differs from its legacy type or nullability, or names a card says that the model lacks.`,
         ];
   return [...unusable, ...parts, ...refused, ...checked];
 }

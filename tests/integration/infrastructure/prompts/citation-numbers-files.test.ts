@@ -25,10 +25,10 @@ describe('the reader prompts and the line numbers', () => {
   it('RNF-004 the defaults are the new versions, loaded with the hash of their bytes', async () => {
     const prompts = await loadReaderPrompts('prompts');
 
-    expect(prompts.system).toMatchObject({ name: 'reader/area.v8.md', version: 'v8' });
+    expect(prompts.system).toMatchObject({ name: 'reader/area.v9.md', version: 'v9' });
     expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v5.md', version: 'v5' });
     expect(prompts.repair).toMatchObject({ name: 'cards/repair.v3.md', version: 'v3' });
-    expect(prompts.system.sha256).toBe(await sha256Of('prompts/reader/area.v8.md'));
+    expect(prompts.system.sha256).toBe(await sha256Of('prompts/reader/area.v9.md'));
   });
 
   it('RF-202 the area prompt says read_file numbers its lines and a citation uses these numbers', async () => {

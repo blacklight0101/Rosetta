@@ -83,7 +83,7 @@ export function databaseTypeNames(choice: string | null): readonly string[] | nu
 }
 
 /** The type as a vocabulary names it: lower case, no size, no array mark, single spaces. */
-function baseOf(type: string): string {
+export function baseOf(type: string): string {
   return type
     .toLowerCase()
     .replace(/\(.*?\)/gu, '')
