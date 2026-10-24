@@ -22,8 +22,8 @@ export class FailingCardOutputs implements CardOutputs {
     return this.inner.writeCards(scope, set);
   }
 
-  writeCoverage: CardOutputs['writeCoverage'] = (scope, coverage) =>
-    this.inner.writeCoverage(scope, coverage);
+  writeCoverage: CardOutputs['writeCoverage'] = (scope, coverage, objects) =>
+    this.inner.writeCoverage(scope, coverage, objects);
 
   writeInvalidOutput: CardOutputs['writeInvalidOutput'] = (scope, id, raw) =>
     this.inner.writeInvalidOutput(scope, id, raw);

@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "description": "P5-36, RF-209: a run on the Clinic area (a synthetic SQL script: a table, a view with TOP 20, a procedure that sets two flags, a trigger and a function that casts to two characters) whose reader states only the table; then a Deepen that reads the objects with no card and states each. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Clinic/clinic.sql",
+                  "startLine": 1,
+                  "endLine": 35
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Visit table\",\n      \"area\": \"Clinic\",\n      \"summary\": \"The visit table records payment and two notification flags.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The Visit table holds the paid text and two notification flags.\",\n          \"citations\": [\n            \"Clinic/clinic.sql:4-10\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\"merges\": []}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 100,
+              "outputTokens": 10,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-3",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Clinic/clinic.sql",
+                  "startLine": 12,
+                  "endLine": 35
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Top visits view\",\n      \"area\": \"Clinic\",\n      \"summary\": \"The view lists the 20 latest visits.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"TopVisits selects the top 20 visits by VisitId, newest first.\",\n          \"citations\": [\n            \"Clinic/clinic.sql:14-16\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"BR\",\n      \"title\": \"Close visit procedure\",\n      \"area\": \"Clinic\",\n      \"summary\": \"CloseVisit marks a visit paid and sets both flags.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"CloseVisit sets Paid to the text paid and sets NotifyPatient and NotifyDoctor to 1 for the visit.\",\n          \"citations\": [\n            \"Clinic/clinic.sql:21-21\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"BR\",\n      \"title\": \"Visit audit trigger\",\n      \"area\": \"Clinic\",\n      \"summary\": \"The trigger runs after an update of Visit.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"VisitAudit runs after an update on Visit and only turns row counts off.\",\n          \"citations\": [\n            \"Clinic/clinic.sql:25-29\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"BR\",\n      \"title\": \"Short text function\",\n      \"area\": \"Clinic\",\n      \"summary\": \"fnShort casts its input to two characters.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"fnShort returns its input cast to varchar(2), which cuts it to two characters.\",\n          \"citations\": [\n            \"Clinic/clinic.sql:34-34\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 200,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-5",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\"merges\": []}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 100,
+              "outputTokens": 10,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-6",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\"application\": []}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 100,
+              "outputTokens": 10,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-7",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

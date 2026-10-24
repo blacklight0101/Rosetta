@@ -1,3 +1,4 @@
+import { objectCoverageIn } from '../../domain/cards/database-objects.js';
 import type { Card } from '../../domain/cards/card.js';
 import type { Area } from '../../domain/code-map/area.js';
 import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
@@ -54,7 +55,9 @@ export async function writeOutputs(
     ...{ cards: writtenCards(state, merged), source, areasWithoutCards, mergedAway },
     ...(overview === undefined ? {} : { overview }),
   });
-  await deps.cards.writeCoverage(scope, coverageOf(state, scanned.codeMap));
+  const coverage = coverageOf(state, scanned.codeMap);
+  const objects = objectCoverageIn(scanned.codeMap, coverage, writtenCards(state, merged));
+  await deps.cards.writeCoverage(scope, coverage, objects);
   await deps.taskResults.write(scope, state.results);
 }
 

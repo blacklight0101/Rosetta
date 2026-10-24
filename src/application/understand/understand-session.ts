@@ -257,8 +257,10 @@ export class UnderstandSession {
 
   /** RF-230, RF-260: the coverage of the tasks that ended, with the incomplete flows of the cards. */
   private async writeCoverage(): Promise<void> {
-    const { deps, execution } = this.parts;
-    await deps.cards.writeCoverage(scopeOf(execution.run), this.coverage.areas(this.latest.cards));
+    const { deps, execution, scanned } = this.parts;
+    const areas = this.coverage.areas(this.latest.cards);
+    const objects = this.coverage.objects(scanned.codeMap, this.latest.cards);
+    await deps.cards.writeCoverage(scopeOf(execution.run), areas, objects);
   }
 
   /** RF-006: what the tasks that ended, here or earlier, left; a resume reads it back. */
