@@ -5,6 +5,7 @@ import { assemblePlan } from '../../../src/domain/planning/plan-content.js';
 import { guardKinds, riskClasses } from '../../../src/domain/planning/task-card-quality.js';
 import { recordingOf } from '../../support/fake-recordings.js';
 import { allText, cardsOf, packageOf, plain } from '../../support/plan-method-harness.js';
+import { packageWithoutEntities } from '../../support/plan-method-harness.js';
 import { invariant, scenario } from '../../support/task-card-fixtures.js';
 import { filledExampleOf } from '../../support/prompt-example.js';
 
@@ -84,7 +85,7 @@ describe('RF-630 the invariant and the Done-when scenarios', () => {
       { ...plainTask, title: 'Blank invariant', invariant: '  ' },
     ]);
 
-    const files = await packageOf({}, recording);
+    const files = await packageWithoutEntities({}, recording);
 
     expect(cardsOf(files).map((card) => card.split('\n')[0])).toEqual(['T-001']);
     expect(plain(files['tasks.md'])).not.toContain('No invariant');

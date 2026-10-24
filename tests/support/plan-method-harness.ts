@@ -51,10 +51,16 @@ export function decisionsOf(files: PackageFiles): [string, string][] {
     .map(([path, text]) => [path, plain(text)]);
 }
 
+/** The seeded cards without an `ENT` card: no data model is asked, so the plan has no migration card (P5-38). */
+function cardsWithoutEntities(): ReturnType<typeof planCards> {
+  return planCards().filter((card) => card.type !== 'ENT');
+}
+
 /** Runs `plan` for the brief answers and returns the files of the package. */
 export async function packageOf(
   answers: BriefAnswers,
   recording?: Recording,
+  cards: ReturnType<typeof planCards> = planCards(),
 ): Promise<PackageFiles> {
   const dataDir = await mkdtemp(join(tmpdir(), 'rosetta-plan-method-'));
   try {
@@ -62,10 +68,18 @@ export async function packageOf(
       recording ??
       (await loadRecording(join('tests', 'recordings', 'fake', 'planner-package.json')));
     const h = await createPlanHarness(dataDir, replayed);
-    await h.understandRun({ cards: planCards(), questions: planQuestions });
+    await h.understandRun({ cards, questions: planQuestions });
     await h.saveBrief(answers);
     return await h.handoffOf(await h.plan());
   } finally {
     await rm(dataDir, { recursive: true, force: true });
   }
+}
+
+/** `packageOf` over the seeded cards without an `ENT` card (P5-38): no data model, so no migration card. */
+export function packageWithoutEntities(
+  answers: BriefAnswers,
+  recording?: Recording,
+): Promise<PackageFiles> {
+  return packageOf(answers, recording, cardsWithoutEntities());
 }
