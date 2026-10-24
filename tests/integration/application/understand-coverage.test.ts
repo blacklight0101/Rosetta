@@ -99,7 +99,7 @@ describe('an understand run on the C# fixture: coverage', () => {
     expect(text).toContain('## Run summary');
     expect(text).toContain('| Services | 1 of 1 | 100.0% |');
     expect(text).toContain('| Catalog | 1 of ');
-    expect(text).toContain('| Default.aspx.cs | 1\\-14 |');
+    expect(text).toContain('| Default.aspx.cs | 1-14 |');
   });
 });
 

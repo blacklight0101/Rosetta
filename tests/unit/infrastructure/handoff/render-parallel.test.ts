@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import type { HandoffPackage } from '../../../../src/application/plan/handoff-package.js';
 import type { PlanTask } from '../../../../src/domain/planning/plan-content.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
@@ -49,8 +50,8 @@ describe('renderHandoff: the files, identifiers and order of a card', () => {
     const card = cardOf(files, 'T-002');
 
     expect(card).toContain('\nShared identifiers (allocated by the plan; use only these):\n\n');
-    expect(card).toContain('\n- error code ERR\\-002: payment declined\n');
-    expect(card).not.toContain('ERR\\-001');
+    expect(card).toContain('\n- error code ERR-002: payment declined\n');
+    expect(card).not.toContain('ERR-001');
   });
 
   it('RF-634 a card names the cards it waits for, as links', () => {
@@ -76,7 +77,7 @@ describe('renderHandoff: the files, identifiers and order of a card', () => {
 
     const text = renderHandoff(withTasks([task]), masker)['tasks.md'] ?? '';
 
-    expect(text).not.toMatch(/<img|\]\(javascript/u);
+    expect(dangerousIn(text)).toBeUndefined();
     expect(text).not.toContain(fakeOpenAiKey.slice(8, 30));
   });
 });

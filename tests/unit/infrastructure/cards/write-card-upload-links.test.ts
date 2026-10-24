@@ -48,7 +48,7 @@ describe('the card file of an uploaded project', () => {
 
     const link = text.split('\n').find((line) => line.startsWith('- [My Docs'));
     expect(link).toBe(
-      '- [My Docs/Pedidos (nuevo)/Envío \\[1\\].cs:10-24](../../report/card-BR-001.html#BR-001%2Ec1:My%20Docs%2FPedidos%20%28nuevo%29%2FEnv%C3%ADo%20%5B1%5D%2Ecs%3A10-24)',
+      '- [My Docs/Pedidos (nuevo)/Envío &#91;1&#93;.cs:10-24](../../report/card-BR-001.html#BR-001%2Ec1:My%20Docs%2FPedidos%20%28nuevo%29%2FEnv%C3%ADo%20%5B1%5D%2Ecs%3A10-24)',
     );
   });
 

@@ -73,6 +73,10 @@ export interface ExcludedClaim {
   readonly claimId: string;
   readonly cardId: string;
   readonly status: Exclude<ClaimStatus, 'Supported'>;
+  /** P5-26: what the full list and the ranking of the claims left out are written from. */
+  readonly cardType: CardType;
+  readonly area: string;
+  readonly citations: number;
 }
 
 function isSupported(claim: SourceClaim): boolean {
@@ -151,7 +155,16 @@ export function excludedClaims(cards: readonly SourceCard[]): ExcludedClaim[] {
     card.claims.flatMap((claim) =>
       claim.status === 'Supported'
         ? []
-        : [{ claimId: claim.claimId, cardId: card.id, status: claim.status }],
+        : [
+            {
+              claimId: claim.claimId,
+              cardId: card.id,
+              status: claim.status,
+              cardType: card.type,
+              area: card.area,
+              citations: claim.citations.length,
+            },
+          ],
     ),
   );
 }

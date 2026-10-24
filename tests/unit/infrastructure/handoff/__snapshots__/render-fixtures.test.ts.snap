@@ -11,11 +11,11 @@ Measured: 14 files, 12.2 MiB in all.
 
 | File | Kind | Size |
 | --- | --- | --- |
-| Archive/old\\-export.csv | other | 11.8 MiB |
-| Scripts/jquery\\-3.4.1.min.map | generated map | 150.3 KiB |
+| Archive/old-export.csv | other | 11.8 MiB |
+| Scripts/jquery-3.4.1.min.map | generated map | 150.3 KiB |
 | Scripts/bootstrap.bundle.js | bundled third-party script | 101.6 KiB |
 | Scripts/bootstrap.bundle.js.map | generated map | 83.5 KiB |
-| Scripts/jquery\\-3.4.1.min.js | bundled third-party script | 60.6 KiB |
+| Scripts/jquery-3.4.1.min.js | bundled third-party script | 60.6 KiB |
 | Catalog/Services/CatalogService.cs | source | 3.2 KiB |
 | Content/site.css.map | generated map | 1.1 KiB |
 | Catalog/Default.aspx.cs | source | 960 B |
@@ -40,7 +40,7 @@ Measured: 14 files, 12.2 MiB in all.
 | --- | --- |
 | Orders/Legacy/Archive/2009/Q4/Regional/North/Totals.cs | 8 |
 | Catalog/Services/CatalogService.cs | 3 |
-| Archive/old\\-export.csv | 2 |
+| Archive/old-export.csv | 2 |
 | Catalog/Default.aspx | 2 |
 | Catalog/Default.aspx.cs | 2 |
 

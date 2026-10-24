@@ -49,7 +49,7 @@ describe('P3-127 a masked secret keeps the quoting of a card file', () => {
     const { file } = await cardFile();
     const body = file.split('\n---\n').slice(1).join('\n---\n');
 
-    expect(body).toContain(String.raw`Password\=\[MASKED:connection\-string\]" inline`);
+    expect(body).toContain(String.raw`Password=[MASKED:connection-string]" inline`);
   });
 
   it('RF-141 no fake secret is in any written file', async () => {

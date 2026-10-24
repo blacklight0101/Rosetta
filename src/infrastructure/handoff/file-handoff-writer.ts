@@ -8,6 +8,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { markdownEscaper, type MarkdownEscaper } from '../cards/markdown-text.js';
 import { runPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
+import { claimsLeftOutMarkdown } from './handoff-left-out-markdown.js';
 import { checksMarkdown } from './handoff-checks-markdown.js';
 import { dataModelMarkdown } from './handoff-data-model-markdown.js';
 import { flowFile, flowMarkdown, flowsIndexMarkdown } from './handoff-flows-markdown.js';
@@ -117,6 +118,7 @@ export function renderHandoff(
     [handoffFiles.tasks]: tasksMarkdown(handoff, esc),
     [handoffFiles.risks]: risksMarkdown(handoff, esc),
     [handoffFiles.openQuestions]: openQuestionsMarkdown(handoff, esc),
+    [handoffFiles.claimsLeftOut]: claimsLeftOutMarkdown(handoff, esc),
     [handoffFiles.sources]: sourcesMarkdown(handoff, esc),
     [handoffFiles.checks]: checksMarkdown(handoff, esc),
     [handoffFiles.conventions]: conventionsMarkdown(handoff, esc),

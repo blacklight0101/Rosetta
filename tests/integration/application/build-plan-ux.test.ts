@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { dangerousIn } from '../../support/render-markdown.js';
 import { describe, expect, it } from 'vitest';
 import { htmlProblems } from '../../support/html-check.js';
 import { planCards } from '../../support/plan-cards.js';
@@ -160,7 +161,7 @@ describe('BuildPlan: ux/ wireframes', () => {
     expect(brief).toContain('WCAG 2.1 AA');
     expect(brief).toContain('Front end: React');
     expect(brief).toContain('Roles named by the legacy screens: Shopper, Staff.');
-    expect(written['ux/design-brief.md']).not.toMatch(/<script|\]\(javascript/u);
+    expect(dangerousIn(written['ux/design-brief.md'])).toBeUndefined();
   });
 });
 

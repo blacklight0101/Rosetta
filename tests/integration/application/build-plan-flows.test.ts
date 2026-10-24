@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { dangerousIn } from '../../support/render-markdown.js';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
@@ -160,8 +161,8 @@ describe('BuildPlan: flows/ and the package', () => {
     const written = await files(h);
 
     const file = written['flows/FLOW-001.md'] ?? '';
-    expect(file).not.toMatch(/<img|\]\(javascript/u);
-    expect(file).toContain('&lt;img');
+    expect(dangerousIn(file)).toBeUndefined();
+    expect(file).toContain('\\<img');
     const warned = h.s.logger.entries
       .filter((entry) => entry.level === 'warn')
       .map((entry) => entry.message)

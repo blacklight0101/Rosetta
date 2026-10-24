@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { dangerousIn } from '../../support/render-markdown.js';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -180,7 +181,7 @@ describe('BuildPlan: data-model.md diagram and safety', () => {
     expect(text).toContain('| note | to confirm | yes | new |');
     expect(text).not.toContain('bad name');
     expect(text).not.toContain('ghost');
-    expect(text).not.toMatch(/<script|\]\(javascript/u);
+    expect(dangerousIn(text)).toBeUndefined();
   });
 
   it('RF-601 the entity mapping and the README link the data model', async () => {
@@ -241,7 +242,7 @@ describe('BuildPlan: an unusable data model answer', () => {
     expect(files['tasks.md'] ?? '').toContain('Write the database migrations in the chosen stack');
     const checks = files['checks.md'] ?? '';
     expect(checks).toContain('### Data model');
-    expect(checks).toContain('- range\\_note: the field "table entry columns 3".');
+    expect(checks).toContain('- range_note: the field "table entry columns 3".');
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     const messages = warned.map((entry) => entry.message).join(' ');
     expect(messages).toContain('dropped parts that failed their schema');

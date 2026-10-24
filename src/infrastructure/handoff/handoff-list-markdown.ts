@@ -4,6 +4,7 @@ import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { keepLegacyDefault, legacySafe } from '../../domain/planning/legacy-default.js';
 import { decisionFile, documentSet, handoffFiles, idLink, sourceLinks } from './handoff-links.js';
 import { stackClashQuestionLines, stackClashReadmeLines } from './handoff-stack-markdown.js';
+import { leftOutSummaryLines } from './handoff-left-out-markdown.js';
 import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
 import { uploadSentence } from '../../domain/sources/upload-facts.js';
 import { incompleteApiLines, incompleteLines } from './handoff-incomplete-markdown.js';
@@ -65,17 +66,6 @@ function prdQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string
   ];
 }
 
-function excludedLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  if (handoff.excluded.length === 0) return ['No claim was left out.'];
-  return [
-    '| Claim | Card | Status |',
-    '|---|---|---|',
-    ...handoff.excluded.map(
-      (claim) => `| ${esc.inline(claim.claimId)} | ${esc.inline(claim.cardId)} | ${claim.status} |`,
-    ),
-  ];
-}
-
 // RF-604
 export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const waiting = waitingOf(handoff);
@@ -109,9 +99,7 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     '',
     '## Claims left out of the package',
     '',
-    'Claims the verifier did not find supported by the code (rejected, with an invalid citation, or never judged). The package uses none of them.',
-    '',
-    ...excludedLines(handoff, esc),
+    ...leftOutSummaryLines(handoff, esc),
     '',
   ].join('\n');
 }
@@ -186,6 +174,7 @@ function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     [`[Task cards](${handoffFiles.tasks})`],
     [`[Risks](${handoffFiles.risks})`],
     [`[Open questions](${handoffFiles.openQuestions})`],
+    [`[Claims left out](${handoffFiles.claimsLeftOut})`],
     [`[Package checks](${handoffFiles.checks})`],
     [`[Source cards](${handoffFiles.sources})`],
     [`[Realistic data shapes](${handoffFiles.fixtures})`],
@@ -255,7 +244,7 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
   const commit = repository.commitSha ?? 'not recorded';
   const analysed =
     handoff.upload === undefined
-      ? `${esc.inline(repository.url)} at commit ${esc.inline(commit)}`
+      ? `${esc.url(repository.url)} at commit ${esc.inline(commit)}`
       : esc.inline(uploadSentence(handoff.upload));
   return [
     '# Modernisation hand-off package',
