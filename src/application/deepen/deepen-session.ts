@@ -23,6 +23,7 @@ import {
   announceRoundStart,
   announceStop,
 } from './deepen-events.js';
+import { claimsOfThisRun } from './deepen-room.js';
 import { mergeDuplicates } from './deepen-consolidation.js';
 import { addQuestions, overviewOf, saveRecord, writeOutputs } from './deepen-outputs.js';
 import type { DeepenParts } from './deepen-parts.js';
@@ -67,7 +68,10 @@ async function nextRound(
   const before = snapshotOf(state, codeMap);
   const round = record.rounds.length + 1;
   await announceRoundStart(parts, { round, maxRounds: record.maxRounds, plan });
-  const end = await runRound(parts, state, { plan, round });
+  const end = await runRound(parts, state, {
+    ...{ plan, round },
+    ownClaims: claimsOfThisRun(record, []),
+  });
   await announceRoundEnd(parts, end.round);
   const next = { state: end.state, record: withRound(listed, end.round) };
   await saveRecord(parts, next.record);

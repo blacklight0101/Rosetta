@@ -250,6 +250,8 @@ const stops: Readonly<Record<string, (done: string) => string>> = {
   roundLimit: (done) => `The round limit was reached: ${done} rounds ran.`,
   capReached: (done) => `A cap stopped it after ${done} rounds. The run can be resumed.`,
   stopped: (done) => `You stopped it after ${done} rounds.`,
+  readersStopped: (done) =>
+    `The readers stopped to leave room to judge the claims written, after ${done} rounds.`,
 };
 
 // RF-209

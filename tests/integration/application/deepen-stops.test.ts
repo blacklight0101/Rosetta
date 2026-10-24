@@ -47,10 +47,11 @@ describe('RF-209 a Deepen stopped by a cap', UNDERSTAND_TIMEOUT, () => {
 
     if (!resumed.ok) throw new Error(resumed.error);
     expect(resumed.value.endState).toBe('Completed');
-    // The task the cap stopped keeps its id (reader-003); the resumed round's task is the next one.
+    // RF-429, P5-30: at 500 tokens the readers' share has no room for a call, so the first run
+    // started no task (and made no call to be refused); the resumed round's task is reader-003.
     expect(readerTasksAsked(h).filter((id) => id >= 'reader-003')).toEqual([
-      'reader-004',
-      'reader-004',
+      'reader-003',
+      'reader-003',
     ]);
     expect(await claimOf(h, deep, 'BR-003.c1')).toMatchObject({
       status: 'Supported',

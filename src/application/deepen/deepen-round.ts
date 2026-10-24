@@ -8,6 +8,7 @@ import type { DeepenStopReason } from '../../domain/deepen/stop-rule.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { scopeOf } from '../runs/run-scope.js';
+import { endsWithoutRoomStops } from '../understand/reader-room.js';
 import {
   announceCards,
   announceExtensions,
@@ -16,6 +17,7 @@ import {
 import { judgementPartsOf, runJudgementStep } from '../understand/claim-judgement.js';
 import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import { checkCitations } from '../verifier/citation-check.js';
+import { roomCardsOf, roomStopReason } from './deepen-room.js';
 import { nextTaskNumber, roundTasks } from './deepen-tasks.js';
 import { runRoundTasks, taskCardsOf, taskResultOfRound, type EndedTask } from './deepen-readers.js';
 import type { DeepenParts } from './deepen-parts.js';
@@ -148,19 +150,35 @@ function failedAreasDone(plan: RoundPlan, ended: readonly EndedTask[], aborted: 
   return plan.failedAreas.map(({ area }) => area).filter((area) => areas.has(area));
 }
 
-/** RF-209, RF-422, RF-423: a Stop or a cap during the round ends the Deepen. */
-function stopOf(parts: DeepenParts, ended: readonly EndedTask[], cap: CapWatch) {
+/**
+ * RF-209, RF-422, RF-423, RF-429: a Stop or a cap during the round ends the Deepen, and so does the
+ * room check of the readers (the tasks it ended are no cap stop, P5-30).
+ */
+function stopOf(
+  parts: DeepenParts,
+  ended: readonly EndedTask[],
+  cap: CapWatch,
+): DeepenStopReason | undefined {
   const { signal } = parts.execution;
   if (signal.aborted) return isCapStop(signal.reason) ? 'capReached' : 'stopped';
-  const readerCapped = ended.some(({ outcome }) => outcome.state === 'StoppedByCap');
-  return readerCapped || cap.capped ? 'capReached' : undefined;
+  const byRoom = new Map(ended.map((each) => [each.task.agentTaskId, each.outcome]));
+  const readerCapped = endsWithoutRoomStops(byRoom, parts.room).some(
+    (outcome) => outcome.state === 'StoppedByCap',
+  );
+  if (readerCapped || cap.capped) return 'capReached';
+  return roomStopReason(parts.room?.reason);
 }
 
 // RF-209
 export async function runRound(
   parts: DeepenParts,
   state: DeepenState,
-  input: { readonly plan: RoundPlan; readonly round: number },
+  input: {
+    readonly plan: RoundPlan;
+    readonly round: number;
+    /** RF-429: the claims this Deepen wrote or judged in its earlier rounds. */
+    readonly ownClaims: ReadonlySet<string>;
+  },
 ): Promise<RoundEnd> {
   const { plan } = input;
   const { codeMap } = parts.scanned;
@@ -171,7 +189,16 @@ export async function runRound(
   const awaits = (claim: Card['claims'][number]): boolean => wanted.has(claim.claimId);
   const judged = withCards(state, await judge(parts, cardsOf(state), { awaits, cap }));
   const tasks = roundTasks(plan, codeMap, nextTaskNumber(judged.results), cardsOf(judged));
-  const ended = await runRoundTasks(parts, tasks);
+  // RF-429, P5-30: the claims the tasks that ended have drafted wait for judgement at the round's end.
+  let drafted = 0;
+  const own = new Set([...input.ownClaims, ...plan.judge]);
+  parts.room?.attach(
+    () => roomCardsOf(cardsOf(judged), own),
+    () => drafted,
+  );
+  const ended = await runRoundTasks(parts, tasks, ({ outcome }) => {
+    drafted += outcome.drafts.reduce((sum, draft) => sum + draft.claims.length, 0);
+  });
   const written = await newCardsOf(parts, judged, ended, cap);
   const results = ended.map((each) => taskResultOfRound(parts, each, written.added));
   const next = { results: [...withExtended(judged, written.extended).results, ...results] };
@@ -180,7 +207,7 @@ export async function runRound(
   const stopped = stopOf(parts, ended, cap);
   const round: DeepenRound = {
     round: input.round,
-    complete: stopped === undefined,
+    complete: stopped === undefined || stopped === 'readersStopped',
     judged: plan.judge,
     reread: rereadDone(plan, ended, parts.execution.signal.aborted),
     failedAreas: failedAreasDone(plan, ended, parts.execution.signal.aborted),

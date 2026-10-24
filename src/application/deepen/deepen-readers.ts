@@ -18,7 +18,7 @@ import type { DeepenParts } from './deepen-parts.js';
 
 // RF-209, RF-200, RF-230: the reader tasks of one Deepen round, run like the tasks of any
 // understand run (the same guarded reader, the same retry, at most `agents.parallelism` at once,
-// each listed in the manifest and published as events), and what each leaves: its drafts, with the
+// each listed in the manifest and published as events, and held to the room check of RF-429), and what each leaves: its drafts, with the
 // rejected claims it may name as replaced, and its coverage.
 
 export interface EndedTask {
@@ -59,6 +59,7 @@ async function runOne(parts: DeepenParts, task: ReaderTask, log: TaskLog): Promi
 export async function runRoundTasks(
   parts: DeepenParts,
   tasks: readonly ReaderTask[],
+  onEnded: (ended: EndedTask) => void = () => undefined,
 ): Promise<readonly EndedTask[]> {
   for (const task of tasks) await announcePlanned(parts, task);
   const log = new TaskLog(parts.logger, parts.execution.run.runKey);
@@ -68,7 +69,11 @@ export async function runRoundTasks(
     signal: parts.execution.signal,
   };
   await runPool(tasks, options, async (task) => {
-    ended.set(task.agentTaskId, await runOne(parts, task, log));
+    // RF-429, P5-30: no task starts once the claims written could not all be judged.
+    if (parts.room !== undefined && !(await parts.room.admits())) return;
+    const end = await runOne(parts, task, log);
+    ended.set(task.agentTaskId, end);
+    onEnded(end);
   });
   return tasks.flatMap((task) => ended.get(task.agentTaskId) ?? []);
 }
