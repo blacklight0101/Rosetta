@@ -220,6 +220,14 @@ describe('azure-provision.yml roles and lock (DEC-140, ADR-024)', () => {
     );
     expect(script).toContain("ALTER ROLE rosetta_app LOGIN PASSWORD :'app_password';");
     expect(script).toContain('ALTER DATABASE rosetta OWNER TO rosetta_migrator;');
+    // On Azure the public schema of a new database is owned by azure_pg_admin, so owning the
+    // database is not enough to create tables in it (first migrate run, 2026-10-24).
+    expect(script.indexOf('ALTER SCHEMA public OWNER TO rosetta_migrator;')).toBeGreaterThan(
+      script.indexOf('GRANT rosetta_migrator TO CURRENT_USER;'),
+    );
+    expect(script.indexOf('ALTER SCHEMA public OWNER TO rosetta_migrator;')).toBeLessThan(
+      script.indexOf('SET ROLE rosetta_migrator;'),
+    );
     expect(script).toContain('GRANT USAGE ON SCHEMA public TO rosetta_app;');
     expect(script).toContain('\\getenv app_password ROSETTA_APP_DB_PASSWORD');
     expect(script).toContain('sslmode=require');
