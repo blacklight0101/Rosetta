@@ -1,0 +1,1 @@
+A plain-text secret is written in the legacy code in {{path}} (line numbers: {{lines}}). Anyone who can read the code can read it. In the new system keep it in a secret store or an environment variable, never in a file of the repository; treat the legacy value as exposed and replace it. The package does not hold the value.

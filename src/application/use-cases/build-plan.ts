@@ -21,7 +21,8 @@ import { windowOfRole } from '../plan/plan-window.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
 import { planDocuments } from '../plan/plan-documents.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
-import { planWorkbookFormulas } from '../plan/plan-formulas.js';
+import { planScanFacts } from '../plan/plan-scan-facts.js';
+import type { PlanSecretDependencies } from '../plan/plan-secrets.js';
 import { planProposal } from '../plan/plan-proposal.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
 import {
@@ -54,7 +55,7 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // the planner, packed to its window (P3-113). The cost report is written at every end.
 
 export interface BuildPlanDependencies
-  extends PlanInputDependencies, PlanPromptSources, RunSinkDependencies {
+  extends PlanInputDependencies, PlanPromptSources, PlanSecretDependencies, RunSinkDependencies {
   readonly users: UserRepository;
   /** RF-632: the scan whose files the data shapes are measured from. */
   readonly scans: ScanResults;
@@ -180,9 +181,9 @@ export class BuildPlan implements RunExecutor {
     );
     const covered = links.planned;
     for (const message of links.warnings) await warn(message);
-    const workbookFormulas = await planWorkbookFormulas(deps, inputs);
+    const facts = await planScanFacts(deps, inputs, prompts.secretRisk.text);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
-      ...{ ...documents, examples, workbookFormulas, proposal },
+      ...{ ...documents, ...facts, examples, proposal },
       leftOut: leftOutItems({ ...assembly, dataModelProblems: documents.dataModelProblems }),
     });
     await this.deps.handoff.write(scopeOf(run), handoff);

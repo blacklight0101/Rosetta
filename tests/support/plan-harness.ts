@@ -23,6 +23,7 @@ import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals
 import { FanOutSink } from '../../src/infrastructure/events/fan-out-sink.js';
 import { FilePlanningBriefStore } from '../../src/infrastructure/files/file-planning-brief-store.js';
 import { runPath } from '../../src/infrastructure/files/workspace-paths.js';
+import { MaskedLineFinder } from '../../src/infrastructure/guards/masked-line-finder.js';
 import { FileHandoffWriter } from '../../src/infrastructure/handoff/file-handoff-writer.js';
 import {
   loadApiContractPrompt,
@@ -36,6 +37,7 @@ import {
   loadGapPrompt,
   loadGapRepairPrompt,
   loadPlanRepairPrompt,
+  loadPlannerSecretRiskPrompt,
   loadPrdPrompt,
   loadPlannerPromptTexts,
 } from '../../src/infrastructure/prompts/prompt-files.js';
@@ -139,6 +141,8 @@ export function planExecutor(
     gapPrompt: () => loadGapPrompt('prompts'),
     gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
     planRepairPrompt: () => loadPlanRepairPrompt('prompts'),
+    secretRiskPrompt: () => loadPlannerSecretRiskPrompt('prompts'),
+    secretLines: new MaskedLineFinder(masker),
     ids: new SequenceIdGenerator(),
     scans,
   });

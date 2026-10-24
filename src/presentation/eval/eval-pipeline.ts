@@ -32,6 +32,7 @@ import { FanOutSink } from '../../infrastructure/events/fan-out-sink.js';
 import { JsonlEventLog } from '../../infrastructure/events/jsonl-event-log.js';
 import { FileRunManifestStore } from '../../infrastructure/files/file-run-manifest-store.js';
 import { NodeOutputWriter } from '../../infrastructure/files/node-output-writer.js';
+import { MaskedLineFinder } from '../../infrastructure/guards/masked-line-finder.js';
 import type { SecretMasker } from '../../infrastructure/guards/secret-masker.js';
 import {
   loadAnswersPrompt,
@@ -41,6 +42,7 @@ import {
   loadOverviewPrompt,
   loadReaderPrompts,
 } from '../../infrastructure/prompts/prompt-files.js';
+import { loadMaskedValuePrompt } from '../../infrastructure/prompts/masked-value-prompt.js';
 import { loadVerifierPrompts } from '../../infrastructure/prompts/verifier-prompt-files.js';
 import { loadTextToolProtocol } from '../../infrastructure/providers/ollama/text-tool-protocol-file.js';
 import type { ServerKeys } from '../../infrastructure/providers/provider-access.js';
@@ -156,6 +158,8 @@ function understandOf(parts: PipelineParts, s: Stores): RunUnderstand {
     mergePrompt: () => loadMergePrompt(folder),
     overviewPrompt: () => loadOverviewPrompt(folder),
     verifierPrompts: () => loadVerifierPrompts(folder),
+    maskedValuePrompt: () => loadMaskedValuePrompt(folder),
+    secretLines: new MaskedLineFinder(masker),
     textToolProtocol: () => loadTextToolProtocol(folder),
     answersPrompt: () => loadAnswersPrompt(folder),
     rereadPrompt: () => loadRereadPrompt(folder),

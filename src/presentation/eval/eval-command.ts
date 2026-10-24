@@ -15,7 +15,7 @@ import {
 import { loadProjectTemplate } from '../../infrastructure/files/project-template.js';
 import { GitHubSnapshotFetcher } from '../../infrastructure/github/github-snapshot-fetcher.js';
 import { SnapshotStore } from '../../infrastructure/github/snapshot-store.js';
-import { SecretMasker } from '../../infrastructure/guards/secret-masker.js';
+import { explainedMasker } from '../../infrastructure/prompts/masked-value-prompt.js';
 import { StdoutJsonLogger } from '../../infrastructure/system/stdout-json-logger.js';
 import { SystemClock } from '../../infrastructure/system/system-clock.js';
 import { TimestampIdGenerator } from '../../infrastructure/system/timestamp-id-generator.js';
@@ -46,7 +46,7 @@ async function partsOf(
   env: Environment,
 ): Promise<EvaluationParts> {
   const clock = new SystemClock();
-  const masker = new SecretMasker();
+  const masker = explainedMasker(folder('prompts/'));
   const ids = new TimestampIdGenerator(clock);
   const output = { write: (text: string) => process.stderr.write(text) };
   const logger = new StdoutJsonLogger({ output, clock, masker, minLevel: 'warn' });

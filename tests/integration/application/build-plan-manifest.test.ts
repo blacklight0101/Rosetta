@@ -60,6 +60,10 @@ describe('BuildPlan: the run manifest', () => {
       'planner/gap.v1.md': { version: 'v1', sha256: await sha('gap.v1.md') },
       'planner/gap-repair.v1.md': { version: 'v1', sha256: await sha('gap-repair.v1.md') },
       'planner/plan-repair.v1.md': { version: 'v1', sha256: await sha('plan-repair.v1.md') },
+      'shared/secret-risk.v1.md': {
+        version: 'v1',
+        sha256: await sha('../shared/secret-risk.v1.md'),
+      },
     });
     expect(manifest.roles['planner']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.source.commitSha).toBe('3f786850e387550fdab836ed7e6dc881de23001b');

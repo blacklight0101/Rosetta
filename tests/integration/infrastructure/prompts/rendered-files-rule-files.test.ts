@@ -53,7 +53,7 @@ describe('the verifier claim prompt v3', () => {
     const { system } = await loadVerifierPrompts('prompts');
     const old = await loadPromptFile('prompts', 'verifier/claim.v1.md');
 
-    expect(system).toMatchObject({ name: 'verifier/claim.v4.md', version: 'v4' });
+    expect(system).toMatchObject({ name: 'verifier/claim.v5.md', version: 'v5' });
     expect(old.text).not.toMatch(/Rosetta rendered/u);
   });
 
