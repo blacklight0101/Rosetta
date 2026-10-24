@@ -12,6 +12,11 @@ import { filesNotReadInFull } from '../cards/read-in-full.js';
 import { byCodeUnit } from '../code-map/code-unit-order.js';
 import type { FileEntry } from '../code-map/file-entry.js';
 import { isThirdPartyFile } from '../code-map/third-party.js';
+import {
+  uncoveredObjects,
+  type DatabaseObject,
+  type ObjectCoverage,
+} from '../cards/database-objects.js';
 import { citesOnlyThirdParty } from './understanding-measures.js';
 
 // RF-209, DEC-144, DEC-145, ADR-005: what one round of a Deepen does. It judges every claim left
@@ -71,6 +76,8 @@ export interface RoundPlan {
   readonly gaps: readonly GapFile[];
   /** In the order the areas first appear in the coverage. */
   readonly failedAreas: readonly FailedArea[];
+  /** P5-36: database objects no card states, to be read before other re-reads; absent when none. */
+  readonly objects?: readonly ObjectCoverage[];
 }
 
 export interface RoundInput {
@@ -86,6 +93,8 @@ export interface RoundInput {
   readonly retriedAreas: ReadonlySet<string>;
   /** Q-J: the coverage pass, ticked by default on the estimate. */
   readonly coveragePass: boolean;
+  /** P5-36: the database objects of the areas the run read. */
+  readonly objects?: readonly DatabaseObject[];
 }
 
 /** The reason the summary gives for a rejected claim that cites only third-party or generated code. */
@@ -193,7 +202,9 @@ export function planRound(input: RoundInput): RoundPlan {
       claim.replaces === undefined ? [] : [claim.replaces],
     ),
   );
+  const objects = uncoveredObjects(input.objects ?? [], input.cards);
   return {
+    ...(objects.length === 0 ? {} : { objects }),
     judge: placed
       .filter(({ claim }) => claim.status === 'Unverified' || claim.status === 'Proposed')
       .map(({ claim }) => claim.claimId),
@@ -210,5 +221,11 @@ export function planRound(input: RoundInput): RoundPlan {
 /** A round with nothing to judge, re-read or read makes no progress and is not run. */
 export function isEmptyRound(plan: RoundPlan): boolean {
   const none = (list: readonly unknown[]): boolean => list.length === 0;
-  return none(plan.judge) && none(plan.reread) && none(plan.gaps) && none(plan.failedAreas);
+  return (
+    none(plan.judge) &&
+    none(plan.reread) &&
+    none(plan.gaps) &&
+    none(plan.failedAreas) &&
+    none(plan.objects ?? [])
+  );
 }

@@ -7,6 +7,7 @@ import {
   writtenIn,
   type DeepenRecord,
 } from '../../domain/deepen/deepen-record.js';
+import { objectsInCoverage } from '../../domain/cards/database-objects.js';
 import { isEmptyRound, planRound } from '../../domain/deepen/round-plan.js';
 import {
   roundProgress,
@@ -62,6 +63,7 @@ async function nextRound(
     ...{ reread: rereadIn(record), writtenHere: writtenIn(record) },
     retriedAreas: retriedAreasIn(record),
     coveragePass: record.coveragePass,
+    objects: objectsInCoverage(codeMap, coverageEntriesOf(state)),
   });
   const listed = withOutOfScope(record, plan.outOfScope);
   if (isEmptyRound(plan)) return { progress: { state, record: listed }, stop: 'noProgress' };

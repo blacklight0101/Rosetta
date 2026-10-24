@@ -66,8 +66,8 @@ describe('Deepen reads database objects first', () => {
     const tasks = roundTasks(plan, withSql, 1);
 
     expect(tasks[0]?.area.files).toEqual([sql]);
-    expect(tasks[0]?.databaseObjects).toEqual([
-      { path: sql, ranges: [{ startLine: 14, endLine: 16 }] },
+    expect(tasks[0]?.unreadRanges).toEqual([
+      { path: sql, ranges: [{ startLine: 14, endLine: 16 }], objects: true },
     ]);
     expect(tasks[0]?.agentTaskId).toBe('reader-001');
     expect(tasks[1]?.area.files).toEqual(['src/Orders/Order.cs']);

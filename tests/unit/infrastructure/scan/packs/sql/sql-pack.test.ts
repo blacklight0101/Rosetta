@@ -5,6 +5,8 @@ import { LanguagePackRegistry } from '../../../../../../src/infrastructure/scan/
 import { analyseWithPacks } from '../../../../../../src/infrastructure/scan/packs/pack-scan.js';
 import { entry } from '../../../../../support/code-map-builders.js';
 import { bytesReader } from '../../../../../support/bytes-reader.js';
+import { SecretMasker } from '../../../../../../src/infrastructure/guards/secret-masker.js';
+import { FixedClock } from '../../../../../support/fixed-clock.js';
 import { MemoryLogger } from '../../../../../support/memory-logger.js';
 import { languagePackContract } from '../../../../../contracts/language-pack.contract.js';
 
@@ -165,7 +167,7 @@ describe('SQL pack in the scan', () => {
       files: [entry('db/clinic.sql', 300)].map((file) => ({ ...file, language: 'sql' })),
       reader: bytesReader({ 'db/clinic.sql': clinic }),
       registry: new LanguagePackRegistry([pack]),
-      logger: new MemoryLogger(),
+      logger: new MemoryLogger(new FixedClock('2026-10-11T09:00:00.000Z'), new SecretMasker()),
       maxFileBytes: 1_000_000,
     });
 

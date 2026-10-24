@@ -1,6 +1,7 @@
 import type { CardChanges } from '../../application/understand/card-changes.js';
 import type { Logger } from '../../application/ports/logger.js';
 import type { OutputWriter, WriteRefusal } from '../../application/ports/output-writer.js';
+import type { ObjectCoverage } from '../../domain/cards/database-objects.js';
 import type { AreaCoverage } from '../../domain/cards/area-coverage.js';
 import type { Card } from '../../domain/cards/card.js';
 import type { Overview } from '../../domain/overview/overview.js';
@@ -127,6 +128,8 @@ export async function writeCardOutputs(
 export interface CoverageOutputInput {
   /** The coverage of every ended task, in area order. */
   readonly coverage: readonly AreaCoverage[];
+  /** P5-36: database objects with the card that states each; left out when the run has none. */
+  readonly objects?: readonly ObjectCoverage[] | undefined;
   readonly masker: TextMasker;
   readonly logger: Logger;
 }
@@ -137,10 +140,10 @@ export async function writeCoverageOutputs(
   target: CardOutputTarget,
   input: CoverageOutputInput,
 ): Promise<Result<void, WriteRefusal>> {
-  const { coverage, masker, logger } = input;
+  const { coverage, objects = [], masker, logger } = input;
   const files: PlannedFile[] = [
-    { path: 'coverage.json', text: serialiseCoverage(coverage, masker) },
-    { path: 'coverage.md', text: renderCoverage(coverage, masker) },
+    { path: 'coverage.json', text: serialiseCoverage(coverage, masker, objects) },
+    { path: 'coverage.md', text: renderCoverage(coverage, masker, objects) },
   ];
   return writeAll(writer, target, files, logger);
 }

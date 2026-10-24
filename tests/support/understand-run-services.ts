@@ -34,6 +34,7 @@ import { loadVerifierPrompts } from '../../src/infrastructure/prompts/verifier-p
 import { loadTextToolProtocol } from '../../src/infrastructure/providers/ollama/text-tool-protocol-file.js';
 import { CSharpPack } from '../../src/infrastructure/scan/packs/csharp/csharp-pack.js';
 import { LanguagePackRegistry } from '../../src/infrastructure/scan/packs/pack-registry.js';
+import { SqlPack } from '../../src/infrastructure/scan/packs/sql/sql-pack.js';
 import { SnapshotScanPipeline } from '../../src/infrastructure/scan/scan-pipeline.js';
 import { FileScanResults } from '../../src/infrastructure/scan/scan-results.js';
 import { FailingCardOutputs } from './failing-card-outputs.js';
@@ -176,7 +177,7 @@ export async function queueOf(
   const { runs, manifests, log, clock, logger, projects, writer, masker } = s;
   const pipeline = new SnapshotScanPipeline({
     ...{ writer, masker, logger },
-    packs: new LanguagePackRegistry([await CSharpPack.create()]),
+    packs: new LanguagePackRegistry([await CSharpPack.create(), new SqlPack()]),
   });
   const fetcher = fixtureFetcher(clock, s.repoRoot);
   const lifecycle = new RunLifecycle({
