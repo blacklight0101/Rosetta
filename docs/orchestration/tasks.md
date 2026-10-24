@@ -15,8 +15,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
 | P3 Report and plan      | 131     | 16        | 111        | 4         | 0                  | 54      | 73      | 4      | 87         | 0         |
-| P5 Polish (G-10)        | 29      | 9         | 20         | 0         | 0                  | 15      | 14      | 0      | 0          | 0         |
-| **Total**               | **384** | **99**    | **256**    | **29**    | **0**              | **189** | **181** | **14** | **228**    | **0**     |
+| P5 Polish (G-10)        | 33      | 9         | 24         | 0         | 0                  | 16      | 17      | 0      | 0          | 0         |
+| **Total**               | **388** | **99**    | **260**    | **29**    | **0**              | **190** | **184** | **14** | **228**    | **0**     |
 
 ## Conventions for every card
 
@@ -5483,5 +5483,73 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Delivers**: the tests and fixes.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: P5-21, P5-22, P5-23 verifier notes.
+
+---
+
+### P5-30 - Deepen readers stop while their claims can still be judged
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P5-20
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the reader room of P5-20 (`src/application/understand/reader-room.ts`, `withRoom`, `endsWithoutRoomStops`), the Deepen session and its readers (`src/application/deepen/deepen-session.ts`, `deepen-readers.ts`, `deepen-round.ts`), DEC-170, RF-429. Evaluation on a private project (2026-10-24, one cloud model on every role): Deepen ran to 98% of the run cost cap with no `budget.readersStopped` event and ended at the cap with 25 of 315 claims never judged; only Understand wires the room check.
+- **Do**: wire the same room check into every Deepen round: before a Deepen reader task and before each reader turn, the readers' spend plus the estimated cost of judging the written, unjudged claims of the whole Deepen run (all rounds) must fit the limits of DEC-170; when it does not, no further reader task starts, the round goes on to judgement, and Deepen ends with every written claim judged and the stop reason stated. One `budget.readersStopped` event per Deepen run.
+- **Review probes**: a recorded claim-heavy Deepen that today ends at the cap with unjudged claims => readers stop, every written claim judged, one readersStopped event, the run ends with its stop reason; a light Deepen => unchanged; a resumed Deepen counts the claims of earlier rounds; mutation: removing the room from Deepen => unjudged claims again.
+- **Behaviour to preserve**: P5-20, DEC-170, RF-429, P3-125 (Deepen folds near-duplicates), the budget guard on every call.
+- **Delivers**: the change, a recording and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P5-20, DEC-170, RF-429; evaluation 2026-10-24.
+
+---
+
+### P5-31 - Screen claims built from markup cite the line that shows them
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the screen claims Rosetta writes from page markup without a model call (P3-122: the field, action, link and route claim templates), their citations, the verifier input for them. Evaluation on a private project (2026-10-24): 6 of 10 sampled Supported claims were such screen claims, each citing every range of its card (5 to 8 ranges) where one range shows the fact; a plain link reads "Action <text> starts the handler mailto..."; a calendar field reads "required" with no validator in the markup; on replay of the recorded judgements, the verdicts of these claims flip between runs and models ("The screen is at the route X", "starts the handler").
+- **Do**: each markup claim cites only the line range of the element it states (the field, the button, the link, the page directive); a link (an anchor or hyperlink control with a target) reads "<text> links to <target>", a button with a handler reads "<text> starts <handler>"; "required" is stated only when a validator or a required attribute for that field is in the markup; the route claim of a page whose route is its file path is decided by the code, like the other markup claims, and never sent to the verifier. The language-specific parts stay in the language packs (DEC-11).
+- **Review probes**: a recorded page with a link, a button with a handler, a calendar without a validator and a required text field => four claims, each citing one range, with the wording above; the route claim => decided without a model call; a page whose route is configured elsewhere => no route claim from the file path; mutation: citing the card's ranges again => the one-range probe fails.
+- **Behaviour to preserve**: P3-122, RF-507 (claim text is data), DEC-11, ADR-005 (every claim cites evidence).
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P3-122, ADR-005; evaluation 2026-10-24.
+
+---
+
+### P5-32 - Cards of the same page or the same title are merged
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the consolidation of cards after Understand and after each Deepen round (`consolidation.json`, `src/application/deepen/deepen-consolidation.ts`, the Understand consolidation), P3-125. Evaluation on a private project (2026-10-24): 23 screen cards for about 13 pages (one page had three screen cards, another four), and two pairs of integration and open-question cards with the same title in two areas.
+- **Do**: screen cards that describe the same page (the same file or route) are merged into one card with the claims of both, near-duplicate claims folded as P3-125 does; cards of one kind with the same normalised title are merged across areas when their claims cite overlapping files or the same external system, and kept apart otherwise; consolidation.json records each merge with the ids merged; the package lists merged ids as aliases so links keep working.
+- **Review probes**: three recorded screen cards of one page => one card with every distinct claim; two integration cards named the same for one mail server in two areas => one card; two cards with the same title about different files => kept apart; a link to a merged id => resolves to the kept card; mutation: switching the page merge off => the three cards return.
+- **Behaviour to preserve**: P3-125, RF-601..RF-613 (package links), ADR-005 (verdicts kept, never deleted).
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P3-125; evaluation 2026-10-24.
+
+---
+
+### P5-33 - The data model and the entity mapping use the same target names
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Todo
+- **Reads**: the data model and entity mapping writers of the package (`data-model.md`, `entity-mapping.md`), the planner answers that feed them, the data-model check of checks.md ("Left out"). Evaluation on a private project (2026-10-24): the entity mapping names target entities in one style while the data model of the same package names the tables in another (`Order` against `tbl_orders`, for example); the check lists a form field name as a table the model lacks.
+- **Do**: the entity mapping takes its target names from the data model of the same package (the table each entity maps to), so the two never disagree, and an entity with no table says so; the "Left out" data-model check counts only names a card states as a table (in a query, a join or a sentence that calls it a table), not every identifier in a claim.
+- **Review probes**: a recorded plan whose planner answers name an entity differently from its table => the mapping shows the table name; a claim naming a form field => not listed as a missing table; a card naming a lookup table the model lacks => still listed; mutation: taking the planner's mapping names again => the names disagree.
+- **Behaviour to preserve**: RF-601..RF-613, P3-126 (an unreadable item is left out and listed).
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-601; evaluation 2026-10-24.
 
 ---
