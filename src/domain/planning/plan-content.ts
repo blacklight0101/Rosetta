@@ -15,6 +15,7 @@ import type {
   UnreadableItem,
 } from './plan-draft.js';
 import { unknownPositions, type RequirementNote } from './requirement-notes.js';
+import type { ClaimJudgement } from './claim-judgement.js';
 import { draftFault, leftOutOf, noRequirement, type LeftOutCard } from './left-out-card.js';
 import type { GuardKind, RiskClass } from './task-card-quality.js';
 import { assembleTechnical, type TechnicalContent } from './technical-content.js';
@@ -68,6 +69,13 @@ export interface PlanTask {
   readonly dependsOn: readonly string[];
   /** RF-627: the ids of the package items (features, tables, operations, flows, screens) it builds. */
   readonly builds: readonly string[];
+  /** P5-41: criteria (position, from 1) the planner says contradict a claim the card keeps. */
+  readonly contradicts?: readonly Contradiction[];
+}
+
+export interface Contradiction {
+  readonly criterion: number;
+  readonly claim: string;
 }
 
 interface PlanRisk extends DraftRisk {
@@ -87,6 +95,8 @@ export interface PlanContent {
   readonly technical: TechnicalContent;
   /** RF-627: what code changed in the requirements of the task cards, or found wrong in them. */
   readonly requirementNotes?: readonly RequirementNote[];
+  /** P5-41: the planner's judgements of claims (changed by a decision or an answer, likely defects). */
+  readonly judgements?: readonly ClaimJudgement[];
 }
 
 export interface PlanAssembly {

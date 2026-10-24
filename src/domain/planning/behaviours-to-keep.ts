@@ -1,4 +1,5 @@
 import type { Citation } from '../cards/citation.js';
+import type { ClaimJudgement } from './claim-judgement.js';
 import type { ModelTable } from './data-model.js';
 import { isMigrationCard } from './plan-coverage.js';
 import type { PlanTask } from './plan-content.js';
@@ -104,4 +105,38 @@ export function behavioursKeptByNoCard(
   return keptFrom(migration, requirements, sources, () => true).filter(
     (each) => !kept.has(each.claimId),
   );
+}
+
+export interface BehaviourContext {
+  /** The tables the migrations card creates (RF-623). */
+  readonly tables?: readonly ModelTable[];
+  /** Item id (`flow:FLOW-001`) to the card ids it traces to. */
+  readonly scope?: ReadonlyMap<string, readonly string[]>;
+  readonly judgements?: readonly ClaimJudgement[];
+}
+
+export interface ChangedBehaviour extends KeptBehaviour {
+  readonly decisionId?: string | undefined;
+  readonly answerCard?: string | undefined;
+}
+
+export interface Behaviours {
+  readonly keep: KeptBehaviour[];
+  readonly change: ChangedBehaviour[];
+  readonly fix: KeptBehaviour[];
+}
+
+/** The behaviours of the task sorted into keep, change and keep-or-fix. */
+// RF-631, P5-41
+export function behavioursOf(
+  task: PlanTask,
+  requirements: readonly Requirement[],
+  sources: readonly SourceCard[],
+  context: BehaviourContext = {},
+): Behaviours {
+  return {
+    keep: behavioursToKeep(task, requirements, sources, context.tables),
+    change: [],
+    fix: [],
+  };
 }
