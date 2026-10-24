@@ -77,6 +77,8 @@ export interface ModelColumn {
   readonly legacy: LegacySource | null;
   /** A type change that can lose data, in words; empty for none. */
   readonly migrationRisk: string;
+  /** P5-37: the default the legacy claim states, as written; absent for none. */
+  readonly default?: string;
 }
 
 export interface ModelTable {

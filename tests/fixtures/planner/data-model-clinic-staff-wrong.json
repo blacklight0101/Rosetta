@@ -1,0 +1,52 @@
+{
+  "tables": [
+    {
+      "name": "staff",
+      "purpose": "Keeps one member of staff.",
+      "sources": ["ENT-001"],
+      "columns": [
+        {
+          "name": "name",
+          "type": "varchar(30)",
+          "nullable": true,
+          "legacy": { "claim": "ENT-001.c1", "field": "Name" },
+          "risk": ""
+        },
+        {
+          "name": "rating",
+          "type": "integer",
+          "nullable": false,
+          "legacy": { "claim": "ENT-001.c2", "field": "Rating" },
+          "risk": ""
+        },
+        {
+          "name": "patients_treated",
+          "type": "integer",
+          "nullable": true,
+          "legacy": { "claim": "ENT-001.c3", "field": "Patients_Treated" },
+          "risk": ""
+        },
+        {
+          "name": "salary",
+          "type": "numeric(10,2)",
+          "nullable": false,
+          "legacy": { "claim": "ENT-001.c4", "field": "Salary" },
+          "risk": "The salary is stored with cents, so the old float values are rounded to two decimals."
+        },
+        {
+          "name": "address",
+          "type": "varchar(60)",
+          "nullable": true,
+          "legacy": { "claim": "ENT-001.c5", "field": "Address" },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    }
+  ],
+  "dropped": []
+}
