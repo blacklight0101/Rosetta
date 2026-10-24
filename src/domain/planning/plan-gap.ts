@@ -15,8 +15,10 @@ import type { RiskClass } from './task-card-quality.js';
 // own cards (RF-634) over the whole plan. The cards that were there are not changed.
 
 /** A task card the planner wrote for the gaps: a draft task without needs, and the ids it builds. */
-export interface GapDraft extends Omit<DraftTask, 'needs'> {
+export interface GapDraft extends Omit<DraftTask, 'needs' | 'dependsOn'> {
   readonly builds: readonly string[];
+  /** Positions in the gap answer, or the `T-` ids of cards already in the plan (P5-40). */
+  readonly dependsOn: readonly (number | string)[];
 }
 
 interface KeptDraft {
@@ -108,19 +110,24 @@ function keptDrafts(
   return result;
 }
 
+/** P5-40: the place of a card already in the plan, by its `T-` id; none for an id the plan lacks. */
+function indexOfCard(existing: readonly PlanTask[], id: string): number[] {
+  const at = existing.findIndex((each) => each.id === id);
+  return at < 0 ? [] : [at];
+}
+
 /** What each card waits for, over the plan's cards and the new ones, as indexes into both. */
 function dependenciesOver(existing: readonly PlanTask[], kept: readonly KeptDraft[]): number[][] {
   const old: OrderedCard[] = existing.map((task) => ({
     ...{ phase: task.phase, files: task.files },
-    declared: task.dependsOn.flatMap((id) => {
-      const at = existing.findIndex((each) => each.id === id);
-      return at < 0 ? [] : [at];
-    }),
+    declared: task.dependsOn.flatMap((id) => indexOfCard(existing, id)),
   }));
   const at = new Map(kept.map((each, index) => [each.position, existing.length + index]));
   const added: OrderedCard[] = kept.map(({ draft, files }) => ({
     ...{ phase: draft.phase, files },
-    declared: draft.dependsOn.flatMap((position) => at.get(position) ?? []),
+    declared: draft.dependsOn.flatMap((on) =>
+      typeof on === 'number' ? (at.get(on) ?? []) : indexOfCard(existing, on),
+    ),
   }));
   return dependenciesOf([...old, ...added]);
 }

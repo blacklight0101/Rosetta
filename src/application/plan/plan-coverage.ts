@@ -8,6 +8,7 @@ import {
   type CoverageReport,
 } from '../../domain/planning/plan-coverage.js';
 import { alignRequirements } from '../../domain/planning/requirement-alignment.js';
+import { withRequirementFeatures } from '../../domain/planning/requirement-features.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { parseCoverageAnswer } from './coverage-answer.js';
 import { coverageMessage } from './coverage-message.js';
@@ -36,6 +37,17 @@ export interface PlannedCoverage {
   readonly readable: boolean;
 }
 
+/**
+ * P5-40: the plan checked against the documents: each card that builds an item lists the
+ * requirements behind it, and each card that lists a requirement builds the features it leads to.
+ * It runs after the coverage call and again after every gap round, so a card the gap pass added is
+ * checked like the others and a feature it builds through its requirements is not asked for again.
+ */
+// RF-627
+export function checkedPlan(content: PlanContent, documents: CoverageDocuments): PlanContent {
+  return withRequirementFeatures(alignRequirements(content, documents), documents);
+}
+
 // RF-627, RF-623
 export async function planCoverage(
   call: PlannerCall,
@@ -55,7 +67,7 @@ export async function planCoverage(
   const draft = parseCoverageAnswer(answer);
   const linked = { ...input.content, tasks: linkTasks(tasks, draft, items) };
   const migrated = withMigrationCard(linked, input.documents.dataModel.tables);
-  const content = alignRequirements(migrated, input.documents);
+  const content = checkedPlan(migrated, input.documents);
   const report = coverageOf(items, content.tasks);
   return { content, report, asked: true, readable: draft !== undefined };
 }

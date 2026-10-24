@@ -89,6 +89,8 @@ export interface LegacyScreen {
   readonly reason: string;
   /** The target screen that replaces it; null when dropped. */
   readonly target: string | null;
+  /** P5-40: dropped only because more than the cap of screens were planned. */
+  readonly overCap?: true;
 }
 
 export interface TargetUx {
