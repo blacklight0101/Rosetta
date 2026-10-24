@@ -102,7 +102,9 @@ describe('stack step', () => {
     expect(within(layer).getByLabelText('Your own for Database')).not.toBeNull();
     expect(screen.getAllByRole('radiogroup')).toHaveLength(7);
   });
+});
 
+describe('stack step answers', () => {
   it('RF-609 saves the options picked and the technology typed', async () => {
     const page = renderPlan();
     await ready();
