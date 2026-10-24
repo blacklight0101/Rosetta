@@ -7,7 +7,7 @@ import type { MappedFlow } from './target-flows.js';
 // and not only over the dependencies between components. Two steps in a row that sit in different
 // components are a call from the first to the second; if their roles break the rule of the style
 // (a page that goes straight to data access in a layered style), the flow is listed. A step on the
-// way back to a higher layer is a return, not a call, so it is not judged. A step with no component,
+// way back to a component the flow already went through is a return, not a call, so it is not judged. A step with no component,
 // or a component with no role of the style, is not judged either (style-rules.ts lists those).
 
 /** A call between two steps of one flow that breaks the rule of the style. */
@@ -32,15 +32,33 @@ export function checkFlowStyle(
   }
   const found = new Map<string, FlowBreak>();
   for (const flow of flows) {
-    flow.steps.slice(1).forEach((step, at) => {
-      const from = flow.steps[at]?.component ?? null;
-      const broken = callBreak(style, roles, from, step.component);
-      if (broken === undefined || from === null || step.component === null) return;
-      const entry = { flow: flow.cardId, from, to: step.component, rule: broken };
-      found.set(JSON.stringify([flow.cardId, from, step.component]), entry);
-    });
+    for (const call of callsOf(flow)) {
+      const rule = callBreak(style, roles, call.from, call.to);
+      if (rule === undefined) continue;
+      found.set(JSON.stringify([flow.cardId, call.from, call.to]), {
+        flow: flow.cardId,
+        ...call,
+        rule,
+      });
+    }
   }
   return [...found.values()];
+}
+
+/**
+ * The calls of a flow: two steps in a row in different components, the second not a component the
+ * flow already went through (that is a return, not a call).
+ */
+function callsOf(flow: MappedFlow): { from: string; to: string }[] {
+  const path = new Set<string>();
+  const calls: { from: string; to: string }[] = [];
+  flow.steps.forEach((step, at) => {
+    const from = flow.steps[at - 1]?.component ?? null;
+    const to = step.component;
+    if (from !== null && to !== null && from !== to && !path.has(to)) calls.push({ from, to });
+    if (to !== null) path.add(to);
+  });
+  return calls;
 }
 
 /** The rule a call between two components breaks, when both are known and the call goes down. */

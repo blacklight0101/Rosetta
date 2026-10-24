@@ -30,7 +30,10 @@ function gains(
   );
   const own = new Set(task.builds);
   const added = features
-    .filter(([id, sources]) => !own.has(id) && [...sources].some((card) => cited.has(card)))
+    .filter(
+      ([id, sources]) =>
+        !own.has(id) && sources.size > 0 && [...sources].every((card) => cited.has(card)),
+    )
     .map(([id]) => id);
   if (added.length === 0) return task;
   const all = new Set([...task.builds, ...added]);
