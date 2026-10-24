@@ -27,6 +27,8 @@ for the catalogue and order journeys and none for the service library (P2-19).
 
 `deepen-claim-heavy.json` and `verifier-deepen-claim-heavy.json` are `deepen-coverage.json` and `verifier-deepen-supported.json` with the Deepen's re-read task writing twelve claims, so that at a run cap of 100,000 tokens the readers stop before the second task and every claim is judged (RF-429, P5-30).
 
+`deepen-database-objects.json` and `verifier-deepen-database-objects.json` are a run on a Clinic area (a synthetic SQL script, `tests/fixtures/sql/clinic.sql`, copied into the `webforms-csharp` fixture) whose reader states only the table, then a Deepen whose one task reads the four objects with no card and states each; every claim is Supported (P5-36).
+
 ## Provenance (RNF-009)
 
 Every file was written by hand for this repository by the Rosetta contributors and is covered by the repository's MIT
