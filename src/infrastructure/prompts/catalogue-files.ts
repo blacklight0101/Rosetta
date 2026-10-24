@@ -76,6 +76,7 @@ function stackOf(files: readonly CatalogueFile[]): StackData {
     rulesVersion: rules.version,
     technologies: parseStackTechnologies(technologies.name, technologies.bytes.toString('utf8')),
     rules: parseStackRules(rules.name, rules.bytes.toString('utf8')),
+    proposals: { signals: [], options: [] },
   };
 }
 

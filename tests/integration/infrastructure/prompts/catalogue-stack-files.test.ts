@@ -27,7 +27,7 @@ describe('the stack files of the shipped catalogue', () => {
     const shipped = await loadCatalogue('prompts');
     const names = (await readdir('prompts/catalogue')).sort();
     expect(names).toContain('stack-rules.v1.yaml');
-    expect(names).toContain('stack-technologies.v1.yaml');
+    expect(names).toContain('stack-technologies.v2.yaml');
     const hash = createHash('sha256');
     for (const name of names) {
       hash.update(`${name}\n`).update(await readFile(join('prompts/catalogue', name)));
@@ -90,8 +90,39 @@ describe('loadCatalogue refuses broken stack files', () => {
 
   it('RF-609 refuses a technology of an unknown layer', async () => {
     await copyCatalogue();
-    const path = join(folder(), 'stack-technologies.v1.yaml');
+    const path = join(folder(), 'stack-technologies.v2.yaml');
     await writeFile(path, (await readFile(path, 'utf8')).replace('layer: hosting', 'layer: cloud'));
+
+    expect(await failureOf(loadCatalogue(temp.path))).toMatchObject({
+      code: ERROR_CODES.configurationInvalid,
+    });
+  });
+});
+
+describe('loadCatalogue refuses broken proposals (P5-39)', () => {
+  const temp = useTempRoot('rst-catalogue-proposals-');
+  const folder = (): string => join(temp.path, 'catalogue');
+
+  async function copyCatalogue(): Promise<void> {
+    await cp('prompts/catalogue', folder(), { recursive: true });
+  }
+
+  it('P5-39 RF-609 refuses a proposal for a technology the layer table does not hold', async () => {
+    await copyCatalogue();
+    const path = join(folder(), 'stack-proposals.v1.yaml');
+    await writeFile(
+      path,
+      (await readFile(path, 'utf8')).replace("choice: 'Razor Pages'", "choice: 'Nowhere Pages'"),
+    );
+
+    expect(await failureOf(loadCatalogue(temp.path))).toMatchObject({
+      code: ERROR_CODES.configurationInvalid,
+    });
+  });
+
+  it('P5-39 RF-609 refuses a catalogue without its proposals file', async () => {
+    await copyCatalogue();
+    await rm(join(folder(), 'stack-proposals.v1.yaml'));
 
     expect(await failureOf(loadCatalogue(temp.path))).toMatchObject({
       code: ERROR_CODES.configurationInvalid,
