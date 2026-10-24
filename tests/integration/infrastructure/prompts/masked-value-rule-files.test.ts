@@ -14,7 +14,7 @@ describe('the prompt files for a masked value', () => {
     const { system } = await loadReaderPrompts('prompts');
     const text = system.text.replaceAll(/\s+/gu, ' ');
 
-    expect(system).toMatchObject({ name: 'reader/area.v10.md', version: 'v10' });
+    expect(system).toMatchObject({ name: 'reader/area.v12.md', version: 'v12' });
     expect(text).toContain('## Masked values');
     expect(text).toMatch(/\[MASKED:<kind>\]/u);
     expect(text).toContain('a plain-text password is written in');
