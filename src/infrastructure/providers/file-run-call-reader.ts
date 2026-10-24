@@ -39,6 +39,8 @@ export interface FileRunCallReaderOptions {
 const PLAIN_TASK_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const DEFAULT_RUNS_KEPT = 8;
 const TRANSCRIPTS_PER_RUN = 8;
+/** Characters before the parsed end that must be unchanged for a grown file to be read on from there. */
+const PREFIX_CHECK = 64;
 
 function parsedLines(text: string): unknown[] {
   return text.split('\n').flatMap((line) => {
@@ -50,6 +52,15 @@ function parsedLines(text: string): unknown[] {
       return [];
     }
   });
+}
+
+/** Whether the file is the kept one with lines added: longer, and the characters before the end unchanged. */
+function isOnlyAdded(before: Kept<unknown>, size: number, text: string): boolean {
+  return (
+    size > before.size &&
+    text.length >= before.consumed &&
+    text.slice(before.consumed - before.tail.length, before.consumed) === before.tail
+  );
 }
 
 /** The index right after the last line break of the text; 0 when it holds none. */
@@ -102,6 +113,8 @@ interface Kept<T> {
   readonly modifiedMs: number;
   /** Characters of the text that are parsed (up to the last line break). */
   readonly consumed: number;
+  /** The last characters before `consumed`: a rewritten file that grew no longer matches them. */
+  readonly tail: string;
   readonly value: T;
 }
 
@@ -193,11 +206,17 @@ export class FileRunCallReader implements RunCallReader {
     const { size, modifiedMs } = facts.value;
     if (before?.size === size && before.modifiedMs === modifiedMs) return before.value;
     const text = await this.read(file);
-    const grown = before !== undefined && size > before.size && text.length >= before.consumed;
+    const grown = before !== undefined && isOnlyAdded(before, size, text);
     const from = grown ? before.consumed : 0;
     const end = completeEnd(text.slice(from)) + from;
     const value = parse.extend(grown ? before.value : parse.empty, text.slice(from, end));
-    kept.set(key, { size, modifiedMs, consumed: end, value });
+    kept.set(key, {
+      size,
+      modifiedMs,
+      consumed: end,
+      tail: text.slice(Math.max(0, end - PREFIX_CHECK), end),
+      value,
+    });
     return value;
   }
 
