@@ -126,6 +126,12 @@ describe('azure-provision.yml owner secrets', () => {
       0,
     );
   });
+
+  it('RNF-003 refuses a two-line image tag even when one line is a valid tag', async () => {
+    const env = { ...complete, IMAGE_TAG: 'sha-0123abc\nBASH_ENV=/tmp/evil' };
+
+    expect((await runStep(await settings(), env)).code).not.toBe(0);
+  });
 });
 
 describe('azure-provision.yml secret placement', () => {
@@ -202,5 +208,12 @@ describe('azure-provision.yml restore input (RF-1306)', () => {
 
   it('RF-1306 refuses a db-server that is not a valid server name', async () => {
     expect((await names('Bad_Name; rm')).code).not.toBe(0);
+  });
+
+  it('RNF-003 a two-line db-server stops the step and writes nothing to GITHUB_ENV', async () => {
+    const result = await names('psql-ok\nBASH_ENV=/tmp/evil');
+
+    expect(result.code).not.toBe(0);
+    expect(result.env).toBe('');
   });
 });
