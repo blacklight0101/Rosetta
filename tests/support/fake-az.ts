@@ -28,7 +28,7 @@ export interface FakeAzOptions {
 }
 
 /** The database URLs the fake `secret show` answers (the passwords are `app-old` and `migrator-old`). */
-export const storedUrls = {
+const storedUrls = {
   app: 'postgres://rosetta_app:app-old@old.postgres.database.azure.com:5432/rosetta?sslmode=require',
   migrator:
     'postgres://rosetta_migrator:migrator-old@old.postgres.database.azure.com:5432/rosetta?sslmode=require',
