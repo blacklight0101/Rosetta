@@ -425,7 +425,7 @@ type answered with a usable list (an empty list counts). `merges` are the merges
 summary }` as the summariser asked, with the ids of the cards before the merge. A resume makes the merges again over the
 kept cards (a merge that no longer applies is dropped), so the card that survived keeps its id, and asks only about a type
 that is absent from `types` or that has a card whose id is not in its `cardIds`. The file is masked like every file Rosetta
-writes. It is absent for a run whose summariser step answered nothing. `merges` also holds the merges made by code with no model call: cards of one area, type and title (P3-106), `SCRN` cards of one page (one route in one area, or a routeless card whose own files are the other card's, never through a file shared by pages, P5-32) and cards of one type and title in several areas that cite a file in common or name the same external host in a URL (`INT` cards too, P5-32). The shape is unchanged; a resume makes them again like any other recorded merge.
+writes. It is absent for a run whose summariser step answered nothing. `merges` also holds the merges made by code with no model call: cards of one area, type and title (P3-106), `SCRN` cards of one page (one route in one area, or a routeless card whose own files are the other card's, never through a file shared by pages, P5-32) and cards of one type and title in several areas that cite a specific file in common (not one cited by cards of other titles) or name the same external host in a URL (`INT` cards too, P5-32). The shape is unchanged; a resume makes them again like any other recorded merge.
 
 ### 3.8 `spec.md`, `data-model.md`, `coverage.json`, `coverage.md`
 

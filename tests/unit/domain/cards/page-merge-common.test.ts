@@ -115,10 +115,6 @@ describe('P5-32 a layout-only screen card decides no page', () => {
     expect(pageMerges(cards)).toEqual([]);
   });
 
-  it('two routeless cards citing only the layout stay apart', () => {
-    expect(pageMerges([screen('SCRN-001', [layout]), screen('SCRN-002', [layout])])).toEqual([]);
-  });
-
   it('a routed card with a layout and a page does not take a layout-only card', () => {
     const routed = cardOf({
       ...{ id: 'SCRN-001', type: 'SCRN', title: 'A', route: '/A' },

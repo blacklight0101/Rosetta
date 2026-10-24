@@ -59,9 +59,10 @@ function pageIdentity(card: Card, shared: ReadonlySet<string>) {
       if (!shared.has(path)) counts.set(path, (counts.get(path) ?? 0) + 1);
     }
   }
-  let top: string | undefined;
-  for (const [path, count] of counts)
-    if (top === undefined || count > (counts.get(top) ?? 0)) top = path;
+  // The page file is the one cited most; a tie names none, so nothing is decided by a layout.
+  const ranked = [...counts].toSorted((x, y) => y[1] - x[1]);
+  const top =
+    ranked[0] !== undefined && ranked[0][1] > (ranked[1]?.[1] ?? 0) ? ranked[0][0] : undefined;
   return { files: new Set(counts.keys()), top };
 }
 
@@ -73,13 +74,18 @@ function coversPage(small: Identity, big: Identity): boolean {
   return [...small.files].every((path) => big.files.has(path)) && small.files.has(big.top);
 }
 
+function sameFiles(left: Identity, right: Identity): boolean {
+  return left.files.size === right.files.size && coversPage(left, right) && coversPage(right, left);
+}
+
 function samePage(left: Card, right: Card, shared: ReadonlySet<string>): boolean {
   const [one, other] = [routeOf(left), routeOf(right)];
   // P5-12: two screens at two routes are two screens, whoever proposes the merge.
   if (one !== '' && other !== '' && one !== other) return false;
   if (one !== '' && other !== '') return left.area === right.area;
   const [a, b] = [pageIdentity(left, shared), pageIdentity(right, shared)];
-  if (one === '' && other === '') return coversPage(a, b) || coversPage(b, a);
+  // Two cards with no route are one page only when they cite exactly the same files.
+  if (one === '' && other === '') return sameFiles(a, b);
   return one === '' ? coversPage(a, b) : coversPage(b, a);
 }
 
@@ -129,16 +135,52 @@ function shares(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean 
   return [...left].some((item) => right.has(item));
 }
 
-/** Whether two cards of one type and title cite a file in common or name the same external host. */
-function related(left: Card, right: Card): boolean {
-  return shares(paths(left), paths(right)) || shares(hostsOf(left), hostsOf(right));
+/** What is no evidence: a file or host that cards of two or more different titles cite or name. */
+interface Common {
+  readonly paths: ReadonlySet<string>;
+  readonly hosts: ReadonlySet<string>;
+}
+
+function commonOf(cards: readonly Card[]): Common {
+  const pathTitles = new Map<string, Set<string>>();
+  const hostTitles = new Map<string, Set<string>>();
+  for (const card of cards) {
+    const title = normalisedTitle(card.title);
+    for (const path of paths(card))
+      pathTitles.set(path, (pathTitles.get(path) ?? new Set()).add(title));
+    for (const host of hostsOf(card))
+      hostTitles.set(host, (hostTitles.get(host) ?? new Set()).add(title));
+  }
+  const wide = (map: ReadonlyMap<string, ReadonlySet<string>>): Set<string> =>
+    new Set([...map].filter(([, titles]) => titles.size >= 2).map(([key]) => key));
+  return { paths: wide(pathTitles), hosts: wide(hostTitles) };
+}
+
+function sharedSpecific(
+  left: ReadonlySet<string>,
+  right: ReadonlySet<string>,
+  common: ReadonlySet<string>,
+) {
+  return shares(new Set([...left].filter((item) => !common.has(item))), right);
+}
+
+/**
+ * Whether two cards of one type and title cite a specific file in common or name the same external
+ * host. A file or host that cards of other titles cite too (a settings file, a gateway) is no
+ * evidence: it says where the cards live, not what they are about. No file names are listed.
+ */
+function related(left: Card, right: Card, common: Common): boolean {
+  return (
+    sharedSpecific(paths(left), paths(right), common.paths) ||
+    sharedSpecific(hostsOf(left), hostsOf(right), common.hosts)
+  );
 }
 
 /** The groups of related cards among cards of one type and title, each in card order. */
-function clusters(group: readonly Card[]): Card[][] {
+function clusters(group: readonly Card[], common: Common): Card[][] {
   const found: Card[][] = [];
   for (const card of group) {
-    const linked = found.filter((each) => each.some((member) => related(member, card)));
+    const linked = found.filter((each) => each.some((member) => related(member, card, common)));
     const joined = [...linked.flat(), card];
     for (const each of linked) found.splice(found.indexOf(each), 1);
     found.push(group.filter((member) => joined.includes(member)));
@@ -149,13 +191,14 @@ function clusters(group: readonly Card[]): Card[][] {
 /** Same type and title in two areas or more, with a shared file or external system; card order. */
 // P5-32
 export function crossAreaMerges(cards: readonly Card[]): readonly CardMerge[] {
+  const common = commonOf(cards);
   const groups = new Map<string, Card[]>();
   for (const card of cards.filter((each) => !NOT_ACROSS_AREAS.includes(each.type))) {
     const key = `${card.type} ${normalisedTitle(card.title)}`;
     groups.set(key, [...(groups.get(key) ?? []), card]);
   }
   return [...groups.values()]
-    .flatMap((group) => clusters(group))
+    .flatMap((group) => clusters(group, common))
     .filter((cluster) => new Set(cluster.flatMap(areasOf)).size >= 2)
     .flatMap((cluster) => mergeOf(cluster) ?? []);
 }
