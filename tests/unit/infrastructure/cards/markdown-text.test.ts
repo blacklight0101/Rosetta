@@ -1,36 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { markdownEscaper } from '../../../../src/infrastructure/cards/markdown-text.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
+import { hostile } from '../../../support/hostile-markdown.js';
 import { liveElement, renderMarkdown, visibleText } from '../../../support/render-markdown.js';
 
 // P5-26, RF-507, RF-145, RF-1013: the escaper writes only what changes the Markdown meaning in
 // its position, so a package file reads cleanly raw, and model text stays inert in a real renderer.
 
 const esc = markdownEscaper(new SecretMasker());
-
-const hostile = [
-  ['a script tag', '<script>alert(1)</script>'],
-  ['an event handler tag', '<img src=x onerror=alert(1)>'],
-  ['a javascript link', '[x](javascript:alert(1))'],
-  ['a remote image', '![x](http://evil.example/p.png)'],
-  ['an autolink', '<http://evil.example>'],
-  ['a bare URL', 'see http://evil.example/a and https://evil.example and www.evil.example'],
-  ['an e-mail address', 'mail me@evil.example'],
-  ['a leading heading', '# Heading'],
-  ['a pipe', 'a | b | c'],
-  ['backticks', 'run `rm -rf` now'],
-  ['a code fence', '```\n# breakout\n```'],
-  ['a reference definition', '[ref]: http://evil.example/def\n[ref]'],
-  ['a reference link', '[a][ref] and [ref]'],
-  ['entities', '&lt;b&gt; &#60;i&#62; &amp; &#x3c;'],
-  ['emphasis', '**bold** *it* _under_ __strong__ ~~gone~~'],
-  ['a setext underline', 'Title\n===\nOther\n---'],
-  ['a rule', '* * *\n___\n- - -'],
-  ['a list and a quote', '- item\n+ item\n1. item\n2) item\n> quote'],
-  ['a task item', '[ ] todo'],
-  ['a trailing backslash', 'path\\'],
-  ['a html comment', '<!-- hidden -->'],
-] as const;
 
 const asParagraph = (text: string): string => esc.inline(text);
 const asListItem = (text: string): string => `- ${esc.inline(text)}`;
