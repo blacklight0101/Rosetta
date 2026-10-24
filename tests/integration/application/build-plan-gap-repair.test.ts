@@ -139,9 +139,9 @@ describe('BuildPlan: the repair attempt', () => {
       expect(message).not.toContain(`"id": "${done}"`);
     }
     expect(message).toContain('"title": "Operations"');
-    const repairPrompt = await readFile('prompts/planner/gap-repair.v1.md', 'utf8');
+    const repairPrompt = await readFile('prompts/planner/gap-repair.v2.md', 'utf8');
     expect(message).toContain(repairPrompt.trim().split('\n')[0]);
-    expect(repair?.system).toBe(await readFile('prompts/planner/gap.v1.md', 'utf8'));
+    expect(repair?.system).toBe(await readFile('prompts/planner/gap.v2.md', 'utf8'));
     expect(repair?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-gap' });
     expect(message).not.toContain(sentinel);
   });
@@ -161,7 +161,7 @@ describe('BuildPlan: the repair attempt is a call like the others', () => {
     ];
     expect(new Set(all.map((each) => each.context.callId)).size).toBe(9);
     expect(Object.keys(manifest.promptVersions)).toEqual(
-      expect.arrayContaining(['planner/gap.v1.md', 'planner/gap-repair.v1.md']),
+      expect.arrayContaining(['planner/gap.v2.md', 'planner/gap-repair.v2.md']),
     );
   });
 });

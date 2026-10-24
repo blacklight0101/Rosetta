@@ -167,3 +167,26 @@ describe('addGapTasks: requirements and order', () => {
     expect(addGapTasks(content, [], gaps)).toEqual(content);
   });
 });
+
+describe('addGapTasks: what a gap card waits for', () => {
+  it('RF-627 P5-40 a gap card may wait for any card already written, named by its id', () => {
+    const merged = addGapTasks(
+      planOf(twoTasks()),
+      [gapDraft({ dependsOn: ['T-001', 'T-002', 'T-099', 1] })],
+      gaps,
+    );
+
+    expect(merged.tasks[2]?.dependsOn).toEqual(['T-001', 'T-002']);
+  });
+
+  it('RF-627 P5-40 a card in an earlier phase does not wait for a card of a later phase', () => {
+    const later = planTask({ id: 'T-002', title: 'Later', phase: 2 });
+    const merged = addGapTasks(
+      planOf([planTask({ id: 'T-001', title: 'First' }), later], 2),
+      [gapDraft({ phase: 1, dependsOn: ['T-002'] })],
+      gaps,
+    );
+
+    expect(merged.tasks[2]?.dependsOn).toEqual([]);
+  });
+});

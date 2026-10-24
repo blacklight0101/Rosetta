@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "description": "P5-40: the planner answers the gap call with a card that names the migrations card (T-001) and the first planned card (T-002) in dependsOn by id. Synthetic; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "{\n  \"tasks\": [\n    {\n      \"title\": \"Orders through the API\",\n      \"phase\": 1,\n      \"requirements\": [\n        1\n      ],\n      \"acceptanceCriteria\": [\n        \"Given a basket of 60, when it is posted, then the order is stored.\"\n      ],\n      \"invariant\": \"An order posted is an order stored.\",\n      \"riskClass\": \"none\",\n      \"adds\": [],\n      \"probes\": [],\n      \"files\": [\n        \"src/api/orders/\"\n      ],\n      \"dependsOn\": [\n        \"T-001\",\n        \"T-002\"\n      ],\n      \"builds\": [\n        \"operation:placeOrder\",\n        \"operation:getOrder\",\n        \"flow:FLOW-001\"\n      ]\n    }\n  ]\n}",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 300,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-8",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}
