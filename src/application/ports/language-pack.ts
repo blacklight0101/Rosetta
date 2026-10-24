@@ -1,6 +1,7 @@
 // RF-110, ADR-004: a language pack adds symbols, references and routes for the files of one
 // language. The universal scan never depends on one; a file no pack maps stays at the coarse level.
 
+import type { PageMarkup } from '../../domain/cards/page-markup.js';
 import type { LinkKind, SymbolKind } from '../../domain/code-map/vocabulary.js';
 
 /** One file to analyse: a repository-relative path with forward slashes, and its text. */
@@ -75,4 +76,9 @@ export interface LanguagePack {
    * `RosettaError`): the scan then keeps that file at the coarse level and goes on (RF-110).
    */
   analyse(file: PackFile): PackAnalysis;
+  /**
+   * P5-31: the fields, buttons and links of a page file of this language with the lines that show
+   * each, or undefined for a file that is not a page. Pure and bounded like `analyse`.
+   */
+  pageMarkup?(file: PackFile): PageMarkup | undefined;
 }

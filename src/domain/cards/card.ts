@@ -12,8 +12,10 @@ import {
   type DetailProblem,
   type FlowDetail,
   type ScreenDetail,
+  type ScreenInput,
 } from './flow-screen.js';
 import { screenClaims } from './screen-claims.js';
+import { settledScreen } from './screen-markup.js';
 
 // Architecture section 5, ADR-005: a card holds claims; a claim holds citations and a status that
 // changes only through the transitions; nothing is ever removed (RF-302).
@@ -87,7 +89,7 @@ export interface CardInput {
   readonly question?: string | undefined;
   readonly whyItMatters?: string | undefined;
   readonly flow?: FlowDetail | undefined;
-  readonly screen?: ScreenDetail | undefined;
+  readonly screen?: ScreenInput | undefined;
   readonly note?: string | undefined;
 }
 
@@ -175,7 +177,10 @@ export function createCard(input: CardInput): Result<Card, CardProblem> {
   if (!question.ok) return question;
   const flow = flowFields(input.type, input.flow);
   if (!flow.ok) return flow;
-  const screen = screenFields(input.type, input.screen);
+  const screen = screenFields(
+    input.type,
+    input.screen === undefined ? undefined : settledScreen(input.screen),
+  );
   if (!screen.ok) return screen;
   const claims = claimsOf(input);
   if (!claims.ok) return claims;

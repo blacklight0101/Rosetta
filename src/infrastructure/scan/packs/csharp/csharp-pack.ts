@@ -6,11 +6,13 @@ import type {
   PackFile,
   PackSymbol,
 } from '../../../../application/ports/language-pack.js';
+import type { PageMarkup } from '../../../../domain/cards/page-markup.js';
 import { RosettaError } from '../../../../domain/errors/rosetta-error.js';
 import { readVbSymbols } from '../vb/vb-declarations.js';
 import { collectDeclarations, type Declarations } from './csharp-declarations.js';
 import { createCSharpParser } from './csharp-grammar.js';
 import { codeBehindReference, pageLanguage } from './webforms-directive.js';
+import { webFormsMarkup } from './webforms-markup.js';
 import { serverScriptBlocks, type ScriptBlock } from './webforms-script.js';
 
 // RF-111, ADR-004: the C# pack. C# files are parsed with tree-sitter; WebForms pages have their
@@ -39,7 +41,7 @@ function isWebFormsPage(path: string): boolean {
 export class CSharpPack implements LanguagePack {
   readonly name = 'csharp';
   /** Raise when the output for a file can change. */
-  readonly version = '1.1.0';
+  readonly version = '1.2.0';
   readonly extensions = ['.cs', ...webFormsExtensions];
 
   private readonly parser: Parser;
@@ -66,6 +68,12 @@ export class CSharpPack implements LanguagePack {
       return this.analyseWebForm(file);
     }
     return this.analyseCode(file);
+  }
+
+  /** P5-31: the fields, buttons and links of a WebForms page, with their lines. */
+  pageMarkup(file: PackFile): PageMarkup | undefined {
+    if (file.text.length > maxSourceCharacters) return undefined;
+    return webFormsMarkup(file.path, file.text);
   }
 
   private analyseWebForm(file: PackFile): PackAnalysis {

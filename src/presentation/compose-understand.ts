@@ -33,6 +33,7 @@ import {
 import { loadVerifierPrompts } from '../infrastructure/prompts/verifier-prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
 import { loadTextToolProtocol } from '../infrastructure/providers/ollama/text-tool-protocol-file.js';
+import type { LanguagePackRegistry } from '../infrastructure/scan/packs/pack-registry.js';
 import { FileScanResults } from '../infrastructure/scan/scan-results.js';
 import { RosettaError } from '../domain/errors/rosetta-error.js';
 import { isUploadSnapshotKey } from '../domain/sources/upload-name.js';
@@ -74,11 +75,15 @@ export function ollamaHostOf(url: string | undefined): string | undefined {
 
 /** RF-200, RF-425: the code map and snapshot of a completed scan, read from the run folder. */
 export function composeScanResults(
-  parts: Pick<UnderstandParts, 'dataDir' | 'writer' | 'manifests' | 'logger'>,
+  parts: Pick<UnderstandParts, 'dataDir' | 'writer' | 'manifests' | 'logger'> & {
+    /** P5-31: the language packs, which read the markup of the pages a screen card cites. */
+    readonly packs?: LanguagePackRegistry;
+  },
 ): FileScanResults {
-  const { dataDir, writer, manifests, logger } = parts;
+  const { dataDir, writer, manifests, logger, packs } = parts;
   const snapshots = new SnapshotStore(dataDir);
   return new FileScanResults({
+    ...(packs === undefined ? {} : { packs }),
     writer,
     manifests,
     logger,

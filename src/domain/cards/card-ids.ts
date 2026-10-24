@@ -1,7 +1,7 @@
 import { err, ok, type Result } from '../errors/result.js';
 import { createCard, type Card, type CardProblem, type ClaimInput } from './card.js';
 import { EXTENDABLE_TYPES, type CardType, type Confidence } from './card-vocabulary.js';
-import type { FlowDetail, ScreenDetail } from './flow-screen.js';
+import type { FlowDetail, ScreenInput } from './flow-screen.js';
 
 // RF-203, DEC-43: ids are numbered per run, per type, in order of area and appearance.
 
@@ -17,7 +17,7 @@ export interface CardDraft {
   readonly question?: string | undefined;
   readonly whyItMatters?: string | undefined;
   readonly flow?: FlowDetail | undefined;
-  readonly screen?: ScreenDetail | undefined;
+  readonly screen?: ScreenInput | undefined;
   /** RF-209: the id of the listed card a Deepen task's claims belong to. */
   readonly extends?: string | undefined;
 }
