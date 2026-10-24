@@ -1,3 +1,4 @@
+import { noClaimVerbs } from '../../../../src/domain/planning/claim-verbs.js';
 import { noStackData } from '../../../../src/domain/planning/stack-data.js';
 import { describe, expect, it } from 'vitest';
 import {
@@ -42,7 +43,14 @@ describe('defaultPrinciples', () => {
     ];
 
     expect(
-      defaultPrinciples({ version: 1, sha256: '', entries, styles: [], stack: noStackData }),
+      defaultPrinciples({
+        version: 1,
+        sha256: '',
+        entries,
+        styles: [],
+        stack: noStackData,
+        claimVerbs: noClaimVerbs,
+      }),
     ).toEqual(['adrs', 'tdd']);
   });
 });
