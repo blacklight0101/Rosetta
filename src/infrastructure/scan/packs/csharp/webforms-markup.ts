@@ -178,6 +178,7 @@ export function webFormsMarkup(path: string, text: string): PageMarkup | undefin
     endLine: lineAt(starts, tag.end),
   });
   const tags = tagsOf(source);
+  if (tags === undefined) return undefined;
   const context = contextOf(tags, lines);
   const elements = tags.flatMap((tag) => elementOf(tag, lines(tag), context) ?? []);
   return {

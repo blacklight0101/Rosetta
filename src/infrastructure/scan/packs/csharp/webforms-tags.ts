@@ -6,6 +6,11 @@ const maxTags = 5000;
 const maxTagCharacters = 20_000;
 const maxInnerCharacters = 2000;
 const maxAttributes = 60;
+const maxWordCharacters = 256;
+const maxValueCharacters = 2000;
+/** The most characters the reader may scan in all: a few passes over the page, plus a floor. */
+const budgetPasses = 4;
+const budgetFloor = 100_000;
 
 export interface Tag {
   /** Lower case, with the prefix: `asp:textbox`. */
@@ -47,6 +52,8 @@ interface Opening {
 
 class TagReader {
   private position = 0;
+  /** The characters scanned over all reads; the reader is linear because this is capped. */
+  spent = 0;
   private readonly source: string;
 
   constructor(source: string) {
@@ -55,6 +62,12 @@ class TagReader {
 
   /** Reads the tag whose `<` is at `start`; undefined when it is not an element. */
   read(start: number): Opening | undefined {
+    const opening = this.readOpening(start);
+    this.spent += Math.max(this.position - start, 1);
+    return opening;
+  }
+
+  private readOpening(start: number): Opening | undefined {
     if (!/[A-Za-z]/u.test(this.source[start + 1] ?? '')) return undefined;
     this.position = start + 1;
     const name = this.word();
@@ -96,7 +109,8 @@ class TagReader {
 
   private word(): string {
     const begin = this.position;
-    for (;;) {
+    const limit = Math.min(this.source.length, begin + maxWordCharacters);
+    while (this.position < limit) {
       const char = this.source[this.position];
       if (char === undefined || isSpace(char) || '=>/'.includes(char)) break;
       this.position += 1;
@@ -107,14 +121,16 @@ class TagReader {
   private value(): string {
     const quote = this.source[this.position];
     if (quote === '"' || quote === "'") {
-      const close = this.source.indexOf(quote, this.position + 1);
-      const stop = close < 0 ? this.source.length : close;
-      const value = this.source.slice(this.position + 1, stop);
+      const begin = this.position + 1;
+      const limit = Math.min(this.source.length, begin + maxValueCharacters);
+      let stop = begin;
+      while (stop < limit && this.source[stop] !== quote) stop += 1;
       this.position = Math.min(stop + 1, this.source.length);
-      return value;
+      return this.source.slice(begin, stop);
     }
     const begin = this.position;
-    while (this.position < this.source.length && !isSpace(this.source[this.position])) {
+    const limit = Math.min(this.source.length, begin + maxValueCharacters);
+    while (this.position < limit && !isSpace(this.source[this.position])) {
       if (this.source[this.position] === '>') break;
       this.position += 1;
     }
@@ -122,16 +138,57 @@ class TagReader {
   }
 }
 
+const endsName = (char: string | undefined): boolean =>
+  char === undefined || char === '>' || char === '/' || isSpace(char);
+
+/** The offsets of the closing tags of a page by lower-case name, each list in page order. */
+type Closings = ReadonlyMap<string, readonly number[]>;
+
+function closingsOf(lower: string): Closings {
+  const closings = new Map<string, number[]>();
+  let from = 0;
+  for (;;) {
+    const open = lower.indexOf('</', from);
+    if (open < 0) break;
+    from = open + 2;
+    let end = from;
+    while (end < lower.length && end - from < maxWordCharacters && !endsName(lower[end])) {
+      end += 1;
+    }
+    const name = lower.slice(from, end);
+    const known = closings.get(name);
+    if (known === undefined) closings.set(name, [open]);
+    else known.push(open);
+  }
+  return closings;
+}
+
+/** The first of the sorted offsets that is at or after `from`. */
+function firstFrom(offsets: readonly number[] | undefined, from: number): number | undefined {
+  if (offsets === undefined) return undefined;
+  let low = 0;
+  let high = offsets.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if ((offsets[middle] ?? 0) < from) low = middle + 1;
+    else high = middle;
+  }
+  return offsets[low];
+}
+
 /** The text between a tag and its closing tag without nested tags, and where the closing tag ends. */
 function innerOf(
   source: string,
+  closings: Closings,
   name: string,
   from: number,
 ): { readonly text: string; readonly end: number } | undefined {
-  const close = source.toLowerCase().indexOf(`</${name}`, from);
-  if (close < 0 || close - from > maxInnerCharacters) return undefined;
-  const end = source.indexOf('>', close);
-  if (end < 0) return undefined;
+  const close = firstFrom(closings.get(name), from);
+  if (close === undefined || close - from > maxInnerCharacters) return undefined;
+  const stop = Math.min(source.length, close + maxWordCharacters);
+  let end = close;
+  while (end < stop && source[end] !== '>') end += 1;
+  if (source[end] !== '>') return undefined;
   let text = '';
   let inTag = false;
   for (const char of source.slice(from, close)) {
@@ -142,11 +199,29 @@ function innerOf(
   return { text: text.split(/\s+/u).filter(Boolean).join(' '), end };
 }
 
+/** ASCII lower case, which keeps every offset (a Unicode fold can change the length). */
+function asciiLower(text: string): string {
+  return text.replaceAll(/[A-Z]/gu, (char) => String.fromCharCode(char.charCodeAt(0) + 32));
+}
+
 const holdsText = new Set(['a', 'button', 'label', 'asp:linkbutton', 'asp:label', 'asp:hyperlink']);
 
-/** The elements of the page in document order. */
-export function tagsOf(source: string): readonly Tag[] {
+function tagOf(source: string, closings: Closings, read: Opening, start: number): Tag {
+  const name = asciiLower(read.name);
+  const wanted = !read.selfClosed && holdsText.has(name);
+  const inner = wanted ? innerOf(source, closings, name, read.end + 1) : undefined;
+  const end = inner?.end ?? read.end;
+  return { name, attributes: read.attributes, start, end, text: inner?.text ?? '' };
+}
+
+/**
+ * The elements of the page in document order; undefined when the page costs more to read than the
+ * budget allows (a hostile page), so the cards get no markup claims from it.
+ */
+export function tagsOf(source: string): readonly Tag[] | undefined {
   const reader = new TagReader(source);
+  const closings = closingsOf(asciiLower(source));
+  const budget = budgetPasses * source.length + budgetFloor;
   const tags: Tag[] = [];
   let from = 0;
   while (tags.length < maxTags) {
@@ -154,12 +229,10 @@ export function tagsOf(source: string): readonly Tag[] {
     if (open < 0) break;
     from = open + 1;
     const read = reader.read(open);
+    if (reader.spent > budget) return undefined;
     if (read === undefined) continue;
-    const name = read.name.toLowerCase();
-    const wanted = !read.selfClosed && holdsText.has(name);
-    const inner = wanted ? innerOf(source, name, read.end + 1) : undefined;
-    const end = inner?.end ?? read.end;
-    tags.push({ name, attributes: read.attributes, start: open, end, text: inner?.text ?? '' });
+    from = read.end + 1;
+    tags.push(tagOf(source, closings, read, open));
   }
   return tags;
 }
