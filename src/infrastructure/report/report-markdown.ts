@@ -38,7 +38,7 @@ function sourceRow(model: ReportModel, esc: MarkdownEscaper): string[] {
   if (isSentReportSource(model.source)) return uploadRows(model.source, esc);
   const link = sourceLink(model.source);
   const text =
-    link === undefined ? esc.inline(model.source.url) : `[${esc.label(link.label)}](${link.href})`;
+    link === undefined ? esc.url(model.source.url) : `[${esc.label(link.label)}](${link.href})`;
   return [`| Source | ${text} |`];
 }
 

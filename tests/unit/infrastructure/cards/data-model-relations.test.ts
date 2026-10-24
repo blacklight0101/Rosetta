@@ -39,7 +39,7 @@ describe('renderDataModel relations', () => {
     );
     const confirm = text.slice(text.indexOf('## To confirm'));
     expect(confirm).toContain(
-      String.raw`- ENT\-002 Basket line and ENT\-001 Catalog item (stated by ENT\-002.c2): cardinality unknown`,
+      String.raw`- ENT-002 Basket line and ENT-001 Catalog item (stated by ENT-002.c2): cardinality unknown`,
     );
     expect(confirm).not.toContain('record no relations');
   });

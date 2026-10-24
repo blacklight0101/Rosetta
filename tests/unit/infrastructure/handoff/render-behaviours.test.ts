@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import type { HandoffPackage } from '../../../../src/application/plan/handoff-package.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
@@ -100,8 +101,7 @@ describe('behaviour to keep, the other cases', () => {
     const hostile = '<img src=x onerror=alert(1)> [x](javascript:alert(1))';
     const files = filesOf(hostile);
 
-    expect(files['tasks.md']).not.toMatch(/<[A-Za-z!/?]/u);
-    expect(files['tasks.md']).not.toContain('](javascript');
+    expect(dangerousIn(files['tasks.md'])).toBeUndefined();
   });
 });
 

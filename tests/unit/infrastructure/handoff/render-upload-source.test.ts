@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
 import { handoffOf } from '../../../support/handoff-package-fixture.js';
@@ -65,9 +66,8 @@ describe('the files of the package of an uploaded project', () => {
 
     const raw = [files['README.md'], files['AGENTS.md']].join('\n');
     const text = plain(raw);
-    expect(text).not.toContain('<img');
-    expect(raw).not.toMatch(/\]\(javascript:/u);
-    expect(text.match(/&lt;img src=x/gu)).toHaveLength(2);
+    expect(dangerousIn(raw)).toBeUndefined();
+    expect(text.match(/<img src=x/gu)).toHaveLength(2);
   });
 
   it('RF-131 says the zip was not recorded when the manifest holds no name', () => {

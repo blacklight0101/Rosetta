@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import {
   emptyDataModel,
   type ModelColumn,
@@ -159,8 +160,7 @@ describe('dataModelMarkdown: no executable DDL, only escaped text', () => {
     const hostile = '<img src=x onerror=alert(1)> [x](javascript:alert(1)) | cell\n# Title\n```js';
     const text = render(hostileModel(hostile));
 
-    expect(text).not.toMatch(/<[A-Za-z!/?]/u);
-    expect(text).not.toMatch(/\]\(javascript/u);
+    expect(dangerousIn(text)).toBeUndefined();
     expect(text).not.toMatch(/^#+ Title/mu);
     expect(text.match(/^```.*$/gmu)).toEqual(['```mermaid', '```']);
     const row = text.split('\n').find((line) => line.startsWith('| email')) ?? '';

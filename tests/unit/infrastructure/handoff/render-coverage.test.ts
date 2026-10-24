@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import type { HandoffPackage } from '../../../../src/application/plan/handoff-package.js';
 import type { PlanTask } from '../../../../src/domain/planning/plan-content.js';
 import type { PrdContent } from '../../../../src/domain/planning/prd-content.js';
@@ -101,9 +102,9 @@ describe('tasks.md: text that is not Rosetta', () => {
 
     const tasks = filesOf([built], 'Plain text.', own)['tasks.md'] ?? '';
 
-    expect(tasks).not.toContain('<script>');
+    expect(dangerousIn(tasks)).toBeUndefined();
     expect(tasks).not.toContain('](https://evil.example)');
-    expect(tasks).toContain('&lt;script&gt;');
+    expect(tasks).toContain('\\<script>alert(1)\\</script>');
   });
 });
 
@@ -115,9 +116,9 @@ describe('checks.md: text that is not Rosetta', () => {
 
     const checks = filesOf([], 'Plain text.', own)['checks.md'] ?? '';
 
-    expect(checks).not.toContain('<script>');
+    expect(dangerousIn(checks)).toBeUndefined();
     expect(checks).not.toContain('](https://evil.example)');
-    expect(checks).toContain('&lt;script&gt;');
+    expect(checks).toContain('\\<script>alert(1)\\</script>');
     expect(checks.split('\n').filter((line) => line.startsWith('| feature'))).toHaveLength(1);
   });
 

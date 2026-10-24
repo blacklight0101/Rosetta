@@ -1,4 +1,5 @@
 import { mkdtemp, rm } from 'node:fs/promises';
+import { dangerousIn } from '../../support/render-markdown.js';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -142,12 +143,11 @@ describe('BuildPlan: untrusted and unreadable PRD answers', () => {
     const files = await planned();
 
     const prd = files['prd.md'] ?? '';
-    expect(prd).not.toMatch(/<[A-Za-z!/?]/u);
-    expect(prd).not.toContain('](javascript');
+    expect(dangerousIn(prd)).toBeUndefined();
     expect(prd).not.toMatch(/^# Title/mu);
-    expect(prd).toContain('&lt;script&gt;');
-    expect(prd.match(/&lt;img src/gu)).toHaveLength(4);
-    expect(prd).toContain('&lt;b&gt;x&lt;/b&gt;');
+    expect(prd).toContain('\\<script>');
+    expect(prd.match(/\\<img src/gu)).toHaveLength(4);
+    expect(prd).toContain('\\<b>x\\</b>');
   });
 
   it('RF-621 an unreadable PRD answer still completes the run, with every section a placeholder', async () => {
@@ -202,10 +202,11 @@ describe('BuildPlan: the documentation set', () => {
       'architecture.md',
       'decisions/ADR-001.md',
     ]);
-    expect(links.slice(-7)).toEqual([
+    expect(links.slice(-8)).toEqual([
       'tasks.md',
       'risks.md',
       'open-questions.md',
+      'claims-left-out.md',
       'checks.md',
       'sources.md',
       'fixtures.md',

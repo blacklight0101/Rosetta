@@ -21,7 +21,7 @@ describe('RF-302 the card file of a replacement', () => {
 
     expect(file).toMatch(/^ {4}replaces: "BR-001\.c1"$/mu);
     // The id is model output, escaped like any model text in the body (ADR-013).
-    expect(file).toContain('Replaces the rejected claim BR\\-001.c1.');
+    expect(file).toContain('Replaces the rejected claim BR-001.c1.');
   });
 
   it('RF-302 writes no replaces line for a claim that replaces nothing', () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import { measureScan } from '../../../../src/application/plan/measure-scan.js';
 import type { HandoffPackage } from '../../../../src/application/plan/handoff-package.js';
 import type { SourceCard } from '../../../../src/domain/planning/plan-sources.js';
@@ -122,8 +123,7 @@ describe('fixtures.md in the package', () => {
 
     const text = fixturesOf({ shapes });
 
-    expect(text).not.toMatch(/<[A-Za-z!/?]/u);
-    expect(text).not.toContain('](javascript');
+    expect(dangerousIn(text)).toBeUndefined();
     expect(text).not.toContain(secret);
     const row = text.split('\n').find((line) => line.includes('onerror')) ?? '';
     expect(row.replaceAll('\\|', '').split('|')).toHaveLength(5);

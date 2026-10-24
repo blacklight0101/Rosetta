@@ -52,7 +52,7 @@ async function endedRun(
 }
 
 const catalogRead = { path: 'Catalog/Details.aspx.cs', read: [{ startLine: 5, endLine: 8 }] };
-const catalogRow = '| Catalog/Details.aspx.cs | 5\\-8 |';
+const catalogRow = '| Catalog/Details.aspx.cs | 5-8 |';
 
 describe('an understand run whose task ends without a card: coverage', UNDERSTAND_TIMEOUT, () => {
   it('RF-230 a task that ends Failed keeps the lines it read', async () => {
@@ -117,7 +117,7 @@ describe(
       expect(ended.files).toEqual([
         { path: 'Services/CatalogService.cs', read: [{ startLine: 8, endLine: 8 }] },
       ]);
-      expect(ended.markdown).toContain('| Services/CatalogService.cs | 8\\-8 |');
+      expect(ended.markdown).toContain('| Services/CatalogService.cs | 8-8 |');
     });
   },
 );

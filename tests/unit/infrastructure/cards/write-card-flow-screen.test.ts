@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import { cardsOf, cardTarget, fileOf, writeCards } from '../../../support/card-output-harness.js';
 import { flowDraft, screenDraft, validScreen } from '../../../support/flow-screen-fixtures.js';
 
@@ -86,9 +87,9 @@ describe('writeCardOutputs SCRN card file', () => {
     expect(text).toContain('Route: /Checkout.aspx');
     expect(text).toContain('Roles: Customer');
     expect(text).toContain('- Email (text, required)');
-    expect(text).toContain(String.raw`Validation: Must be an e\-mail address.`);
-    expect(text).toContain(String.raw`- Pay: handler PayButton\_Click`);
-    expect(text).toContain(String.raw`- Back: FLOW FLOW\-001`);
+    expect(text).toContain(String.raw`Validation: Must be an e-mail address.`);
+    expect(text).toContain(String.raw`- Pay: handler PayButton_Click`);
+    expect(text).toContain(String.raw`- Back: FLOW FLOW-001`);
     expect(text).toContain('Leads to: /Confirmation.aspx');
   });
 });
@@ -106,7 +107,7 @@ describe('writeCardOutputs safety of FLOW and SCRN files', () => {
 
     for (const path of ['cards/FLOW/FLOW-001.md', 'cards/SCRN/SCRN-001.md']) {
       const body = fileOf(writer, path).split('.---.').slice(1).join('.---.');
-      expect(body).not.toContain('<script>');
+      expect(dangerousIn(body)).toBeUndefined();
       expect(body).not.toContain('](http');
       expect(body).not.toMatch(/^# heading/m);
     }

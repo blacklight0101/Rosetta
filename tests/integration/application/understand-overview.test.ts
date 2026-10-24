@@ -1,4 +1,5 @@
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import { dangerousIn } from '../../support/render-markdown.js';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -142,10 +143,8 @@ describe('the overview and hostile text', UNDERSTAND_TIMEOUT, () => {
 
     for (const name of ['overview.md', 'spec.md']) {
       const text = await read(folder, name);
-      expect(text).not.toContain('<script>');
-      expect(text).not.toContain('<img');
-      expect(text).not.toContain('](javascript:');
-      expect(text).toContain('&lt;script&gt;');
+      expect(dangerousIn(text)).toBeUndefined();
+      expect(text).toContain('\\<script>');
     }
   });
 

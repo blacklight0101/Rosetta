@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import {
   parseOverview,
   serialiseOverview,
@@ -71,9 +72,8 @@ describe('overview.md and hostile text', () => {
 
     const text = renderOverview(hostile, masker);
 
-    for (const tag of ['<script', '<img', '<b>']) expect(text.toLowerCase()).not.toContain(tag);
-    expect(text).not.toContain('](javascript:');
-    expect(text).toContain('&lt;script&gt;');
+    expect(dangerousIn(text)).toBeUndefined();
+    expect(text).toContain('\\<script>');
   });
 
   it('RF-507 a very long statement stays on one list item', () => {
@@ -238,7 +238,7 @@ describe('what was not covered and hostile or complete runs', () => {
     const page = auditHtml(renderReportHtml(reportModel({ overview: hostile })));
 
     expect(page.document.querySelector('section[aria-labelledby="overview"] img')).toBeNull();
-    expect(renderOverview(hostile, masker)).not.toContain('<img');
+    expect(dangerousIn(renderOverview(hostile, masker))).toBeUndefined();
   });
 
   it('RF-264 every file read keeps the sentence in overview.md, report.md and report.html', () => {

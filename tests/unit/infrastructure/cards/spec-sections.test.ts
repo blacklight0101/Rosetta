@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import { transitionClaim } from '../../../../src/domain/cards/card.js';
 import { cardsOf, cardTarget, fileOf, writeCards } from '../../../support/card-output-harness.js';
 import { draftOf, oqDraft } from '../../../support/card-fixtures.js';
@@ -145,7 +146,7 @@ describe('safety of the new sections', () => {
 
     for (const path of ['spec.md', 'data-model.md']) {
       const text = fileOf(writer, path);
-      expect(text).not.toContain('<script>');
+      expect(dangerousIn(text)).toBeUndefined();
       expect(text).not.toContain('](http://evil');
       expect(fences(text).every((line) => line === '```mermaid' || line === '```')).toBe(true);
       expect(fences(text).length % 2).toBe(0);

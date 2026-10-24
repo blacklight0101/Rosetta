@@ -82,7 +82,7 @@ function bandLines(): string[] {
 /** The system the package replaces: its repository address, or the uploaded zip (RF-131). */
 function replacedSystem(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const { repository, upload } = handoff;
-  return esc.inline(upload === undefined ? repository.url : uploadSentence(upload));
+  return upload === undefined ? esc.url(repository.url) : esc.inline(uploadSentence(upload));
 }
 
 // RF-612

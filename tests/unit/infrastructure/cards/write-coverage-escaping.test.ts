@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import type { AreaCoverage } from '../../../../src/domain/cards/area-coverage.js';
 import { writeCoverageOutputs } from '../../../../src/infrastructure/cards/write-card-outputs.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
@@ -46,9 +47,8 @@ describe('coverage.md with hostile paths and area names', () => {
   it('RF-230 RF-507 shows a path with link syntax, a pipe and HTML as inert text', async () => {
     const { markdown } = await render();
 
-    expect(markdown).toContain('| a/\\[x\\]\\(http&#58;//evil.test\\)\\|&lt;b&gt;.cs | 1\\-2 |');
-    expect(markdown).not.toContain('<');
-    expect(markdown).not.toContain('](');
+    expect(markdown).toContain('| a/[x\\](http\\://evil.test)\\|\\<b>.cs | 1-2 |');
+    expect(dangerousIn(markdown)).toBeUndefined();
   });
 
   it('RF-230 RF-507 keeps a newline and backticks in a path on one row as escaped text', async () => {
@@ -60,8 +60,8 @@ describe('coverage.md with hostile paths and area names', () => {
   it('RF-230 RF-507 shows an area name with HTML and a heading line as one escaped heading', async () => {
     const { markdown } = await render();
 
-    expect(markdown).toContain('## Area: &lt;img src\\=x onerror\\=1&gt; \\# H');
-    expect(markdown).toContain('| &lt;img src\\=x onerror\\=1&gt; \\# H | 1 of 3 | 50.0% |');
+    expect(markdown).toContain('## Area: \\<img src=x onerror=1> # H');
+    expect(markdown).toContain('| \\<img src=x onerror=1> # H | 1 of 3 | 50.0% |');
   });
 });
 

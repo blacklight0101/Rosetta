@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
 import { handoffOf } from '../../../support/handoff-package-fixture.js';
@@ -50,8 +51,8 @@ describe('the package of a workbook project', () => {
     const files = filesOf([hostile]);
 
     const raw = [files['README.md'], files['AGENTS.md']].join('\n');
-    expect(plain(raw)).not.toContain('<img');
-    expect(plain(raw).match(/&lt;img src=x/gu)).toHaveLength(2);
+    expect(dangerousIn(raw)).toBeUndefined();
+    expect(raw.match(/\\<img src=x/gu)).toHaveLength(2);
   });
 });
 

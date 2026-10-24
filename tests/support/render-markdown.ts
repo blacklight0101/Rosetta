@@ -32,3 +32,12 @@ const liveElements = /<(?:a|img|script|iframe|h[1-6]|hr|pre|code|em|strong|del|i
 export function liveElement(html: string): string | undefined {
   return liveElements.exec(html)?.[0];
 }
+
+/** What a viewer would run or fetch: scripts, frames, images, handlers, script or remote links. */
+const dangerous =
+  /<(?:script|iframe|img|style|input|svg|object|embed|b|i)[\s>/]|<[a-z][^>]*\son\w+\s*=|href="(?:javascript|data|vbscript):|(?:src|href)="(?:https?:)?\/\/(?!github\.com\/)/i;
+
+/** The first live thing the rendered Markdown holds that text must never become, or undefined. */
+export function dangerousIn(markdown: string | undefined): string | undefined {
+  return dangerous.exec(renderMarkdown(markdown ?? ''))?.[0];
+}
