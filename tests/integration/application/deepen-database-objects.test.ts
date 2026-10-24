@@ -22,6 +22,7 @@ async function ran() {
   const h = await createUnderstandHarness({
     dataDir: data.path,
     repository: repo.path,
+    sqlPack: true,
     recording: 'deepen-database-objects.json',
     verifierRecording: 'verifier-deepen-database-objects.json',
   });

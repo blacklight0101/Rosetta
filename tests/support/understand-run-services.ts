@@ -70,6 +70,8 @@ function fixtureFetcher(clock: FixedClock, root: string): FakeSourceFetcher {
 export interface Stores {
   /** The fixture repository the scans read (the C# fixture unless a test chose another). */
   readonly fixture: FixtureRepository;
+  /** P5-36: the scan also reads `.sql` scripts for database objects. */
+  readonly sqlPack: boolean;
   /** The folder of the repository the runs scan: a fixture, or a copy a test changed. */
   readonly repoRoot: string;
   readonly clock: FixedClock;
@@ -104,6 +106,7 @@ export function stores(
   source: {
     readonly repository?: string | undefined;
     readonly snapshotKey?: string | undefined;
+    readonly sqlPack?: boolean | undefined;
   } = {},
 ): Stores {
   const { repository, snapshotKey } = source;
@@ -115,6 +118,7 @@ export function stores(
     : new NodeOutputWriter({ dataDir, logger });
   return {
     ...{ clock, masker, logger, writer, fixture },
+    sqlPack: source.sqlPack === true,
     repoRoot: repository ?? fixtureRoot(fixture),
     manifests: new FileRunManifestStore({ writer, masker }),
     log: new JsonlEventLog({ writer, masker }),
@@ -177,7 +181,10 @@ export async function queueOf(
   const { runs, manifests, log, clock, logger, projects, writer, masker } = s;
   const pipeline = new SnapshotScanPipeline({
     ...{ writer, masker, logger },
-    packs: new LanguagePackRegistry([await CSharpPack.create(), new SqlPack()]),
+    packs: new LanguagePackRegistry([
+      await CSharpPack.create(),
+      ...(s.sqlPack ? [new SqlPack()] : []),
+    ]),
   });
   const fetcher = fixtureFetcher(clock, s.repoRoot);
   const lifecycle = new RunLifecycle({
