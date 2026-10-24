@@ -18,7 +18,8 @@ const claimSchema = z.object({
   claimId: z.string(),
   status: z.string(),
   replaces: z.string().optional(),
-  verdict: z.object({ reason: z.string() }).optional(),
+  verdict: z.object({ reason: z.string(), reasonKind: z.string().optional() }).optional(),
+  citations: z.array(z.object({ path: z.string(), startLine: z.number(), endLine: z.number() })),
 });
 const resultsSchema = z.object({
   tasks: z.array(

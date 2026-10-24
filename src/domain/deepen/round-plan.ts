@@ -5,7 +5,7 @@ import {
   type AreaCoverage,
   type LineRange,
 } from '../cards/area-coverage.js';
-import type { Card, Claim } from '../cards/card.js';
+import type { Card, Claim, VerdictReasonKind } from '../cards/card.js';
 import type { Citation } from '../cards/citation.js';
 import { readsByPath } from '../cards/coverage-union.js';
 import { filesNotReadInFull } from '../cards/read-in-full.js';
@@ -32,6 +32,8 @@ export interface RereadClaim {
   readonly text: string;
   readonly citations: readonly Citation[];
   readonly reason: string;
+  /** P5-35: the verifier said a meaning the claim states is defined outside the cited lines. */
+  readonly reasonKind?: VerdictReasonKind;
 }
 
 /** A rejected claim a Deepen does not re-read, and why. */
@@ -107,7 +109,16 @@ function mayReread(claim: Claim, input: RoundInput, answered: ReadonlySet<string
 
 function rereadOf({ card, claim }: Placed): RereadClaim {
   const { claimId, text, citations } = claim;
-  return { claimId, area: card.area, text, citations, reason: claim.verdict?.reason ?? '' };
+  const reasonKind = claim.verdict?.reasonKind;
+  const kind = reasonKind === undefined ? {} : { reasonKind };
+  return {
+    claimId,
+    area: card.area,
+    text,
+    citations,
+    reason: claim.verdict?.reason ?? '',
+    ...kind,
+  };
 }
 
 /**

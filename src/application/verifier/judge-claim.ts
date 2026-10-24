@@ -1,5 +1,5 @@
 import { isCapStop } from '../../domain/budget/cap-stop.js';
-import type { Claim } from '../../domain/cards/card.js';
+import type { Claim, VerdictReasonKind } from '../../domain/cards/card.js';
 import { renderDataBlock } from '../../domain/egress/data-block.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
@@ -35,6 +35,8 @@ export type Judgement =
       readonly kind: 'judged';
       readonly status: JudgedStatus | 'Unverified';
       readonly reason: string;
+      /** P5-35: set when the verifier says a meaning the claim states is defined elsewhere. */
+      readonly reasonKind?: VerdictReasonKind;
       /** P3-122: true when a rule decided it and no model was called; the run log counts them. */
       readonly withoutModel?: true;
     }

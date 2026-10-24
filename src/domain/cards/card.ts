@@ -20,10 +20,17 @@ import { settledScreen } from './screen-markup.js';
 // Architecture section 5, ADR-005: a card holds claims; a claim holds citations and a status that
 // changes only through the transitions; nothing is ever removed (RF-302).
 
+/**
+ * P5-35, RF-301: why a claim was rejected, when the verifier says so: the meaning it states (a code
+ * value, a constant, a name) is not in the cited lines and may be defined elsewhere.
+ */
+export type VerdictReasonKind = 'definedElsewhere';
+
 /** What the verifier decided about a claim (data-model 3.7). */
 export interface ClaimVerdict {
   readonly step: 'citation' | 'judgement';
   readonly reason: string;
+  readonly reasonKind?: VerdictReasonKind;
   readonly model: string;
   /** ISO 8601 instant from the Clock port. */
   readonly at: string;

@@ -650,12 +650,12 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   `src/application/verifier/judge-claim.ts` for one claim); a re-run with answers (RF-241) judges the claims of its
   new cards the same way. The verifier's guarded provider comes from the same provider factory call as the reader's
   and the summariser's (`UNDERSTAND_ROLES` is `reader`, `verifier` and `summariser`, so consent, keys, prices and
-  the Ollama check cover both). The model sees no tools, the system prompt `prompts/verifier/claim.v3.md` and one user
+  the Ollama check cover both). The model sees no tools, the system prompt `prompts/verifier/claim.v4.md` and one user
   message: the claim in a data block of source `claim` (model output is data too) and, per citation, its lines with
   three lines of margin before and after (`cited-lines.ts`, read through the `RepositoryReader`, so ignored and
   denied files are refused) in a block of source `cited_lines`; nothing else of the file. The margin lines start with
-  `[context] ` (`markedLines`, P3-124, HB-04) and `claim.v3.md` tells the model not to reject a claim only because a
-  label sits outside the cited lines; a `Rejected` whose reason says the lines match the claim is asked again once
+  `[context] ` (`markedLines`, P3-124, HB-04) and `claim.v4.md` tells the model not to reject a claim only because a
+  label sits outside the cited lines, and, when it rejects a claim because a code value, constant or name the claim states is not in the lines, to add the third answer line `Kind: defined elsewhere` (`verdict-answer.ts` reads it after `Rejected` only; the verdict stores `reasonKind: definedElsewhere`, P5-35); a `Rejected` whose reason says the lines match the claim is asked again once
   and left `Unverified` if it still contradicts itself (`verdict-consistency.ts`, HB-05). Evidence above
   `scan.excerptMaxLines` lines or 40 000 characters is not cut: the claim is `Unverified` and no call is made, and
   a cited range that is not `1 <= start <= end` in whole lines is refused before the margin is added. A derived
@@ -812,8 +812,11 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   differs (`RST-1308`), and writes nothing to the parent. Each round is planned by `planRound` (domain): the claims still
   `Unverified` or `Proposed` are judged; every `Rejected` claim with at least one first-party citation that was not
   re-read yet, was not written by this Deepen and has no `Supported` replacement yet (an earlier Deepen's, when a Deepen run is deepened in turn) is re-read once (one reader task per area over its cited first-party
-  files, system prompt `prompts/reader/reread.v3.md`, the rejected claims with the verifier's reasons as one data block
-  with the source `cards`); a rejected claim that cites only third-party or generated code is never re-read and is
+  files, system prompt `prompts/reader/reread.v4.md`, the rejected claims with the verifier's reasons as one data block
+  with the source `cards`; a claim whose verdict has `reasonKind: definedElsewhere` carries that field in the block, and
+  the prompt then sends the reader to find the defining lines (a comment, an enum, a lookup table, a constant) with
+  `grep` and `codemap_query` and to write the claim again citing both, P5-35; the task is an ordinary reader task of the
+  round, so the budget guard and the room check of P5-30 apply to it, and the new claim is judged like any other); a rejected claim that cites only third-party or generated code is never re-read and is
   listed out of scope; with the coverage pass, first-party files no task read get a reader task (largest first); an
   area whose every task ended without a usable card is read again whole, once per Deepen, with or without the coverage
   pass (EV-10, `RoundPlan.failedAreas`). New

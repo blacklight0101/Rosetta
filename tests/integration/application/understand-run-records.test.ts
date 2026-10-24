@@ -65,7 +65,7 @@ describe('an understand run: prompts', () => {
       'reader/read-more.v1.md',
       'reader/task.v2.md',
       'reader/turns-left.v2.md',
-      'verifier/claim.v3.md',
+      'verifier/claim.v4.md',
       'verifier/retry.v1.md',
     ]);
     expect(manifest.promptVersions['reader/area.v9.md']?.version).toBe('v9');

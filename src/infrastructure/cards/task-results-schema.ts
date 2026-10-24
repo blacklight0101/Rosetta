@@ -30,6 +30,8 @@ const claimSchema = z.object({
     .object({
       step: z.enum(['citation', 'judgement']),
       reason: text,
+      // P5-35, RF-301: why the verifier rejected the claim, when it said so.
+      reasonKind: z.enum(['definedElsewhere']).optional(),
       model: text,
       at: text,
     })
@@ -91,9 +93,11 @@ function claimOf(claim: z.output<typeof claimSchema>): Claim {
   const { verdict, target, branches, replaces, ...rest } = claim;
   const step = stepOf({ target, branches });
   const replacing = replaces === undefined ? {} : { replaces };
-  return verdict === undefined
-    ? { ...rest, ...step, ...replacing }
-    : { ...rest, ...step, ...replacing, verdict };
+  if (verdict === undefined) return { ...rest, ...step, ...replacing };
+  const { reasonKind, step: verdictStep, reason, model, at } = verdict;
+  const judged = { step: verdictStep, reason, model, at };
+  const stored = reasonKind === undefined ? judged : { ...judged, reasonKind };
+  return { ...rest, ...step, ...replacing, verdict: stored };
 }
 
 function cardOf(card: z.output<typeof cardSchema>): Card {
