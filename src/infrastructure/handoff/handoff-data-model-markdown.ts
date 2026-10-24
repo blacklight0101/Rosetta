@@ -79,6 +79,12 @@ function tableSection(table: ModelTable, esc: MarkdownEscaper, calculated: Calcu
     '',
     built,
     '',
+    ...(table.copiedFromLegacy === true
+      ? [
+          '**Copied from the legacy model.** The planner did not design this table: its names, columns, types and keys are the legacy statements, to confirm.',
+          '',
+        ]
+      : []),
     '| Column | Type | Nullable | Legacy source |',
     '|---|---|---|---|',
     ...table.columns.map((column) => columnRow(column, esc, calculated)),

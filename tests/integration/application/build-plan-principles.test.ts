@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { recordingOf } from '../../support/fake-recordings.js';
-import { allText, cardsOf, entryOf, packageOf, plain } from '../../support/plan-method-harness.js';
+import {
+  allText,
+  cardsOf,
+  entryOf,
+  packageOf,
+  packageWithoutEntities,
+  plain,
+} from '../../support/plan-method-harness.js';
 
 // RF-607, ADR-018, DEC-75: a chosen principle is a rule in the conventions and a check on the
 // task cards it concerns; a principle not chosen appears nowhere. Structure tests over real packages
@@ -93,7 +100,7 @@ describe('RF-607 SDD on the task cards', () => {
       },
     ]);
 
-    const files = await packageOf({ principles: ['sdd'] }, recording);
+    const files = await packageWithoutEntities({ principles: ['sdd'] }, recording);
 
     const cards = cardsOf(files);
     expect(cards.map((card) => card.split('\n')[0])).toEqual(['T-001']);

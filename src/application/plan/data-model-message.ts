@@ -18,11 +18,18 @@ export interface DataModelMessageInput {
   readonly brief: PlanningBrief;
   /** P3-113: the ids of the `ENT` and rule cards the prompt names by title only, to fit the planner's window. */
   readonly omitted?: ReadonlySet<string>;
+  /** P5-38: the `ENT` cards this call writes tables for; the others are named, and another call writes them. */
+  readonly batch?: readonly SourceCard[] | undefined;
 }
 
 function cardsText(input: DataModelMessageInput): string {
   const omitted = input.omitted ?? new Set<string>();
-  const entities = input.cards.filter((card) => card.type === 'ENT');
+  const all = input.cards.filter((card) => card.type === 'ENT');
+  const inBatch = new Set((input.batch ?? all).map((card) => card.id));
+  const entities = all.filter((card) => inBatch.has(card.id));
+  const otherEntities = all
+    .filter((card) => !inBatch.has(card.id))
+    .map(({ id, title }) => ({ id, title }));
   const entityCards = entities
     .filter((card) => !omitted.has(card.id))
     .map(({ id, title, summary, claims }) => ({
@@ -41,7 +48,11 @@ function cardsText(input: DataModelMessageInput): string {
       ...{ id, title },
       claims: claims.map(({ claimId, text }) => ({ claimId, text })),
     }));
-  const json = JSON.stringify({ entityCards, ruleCards }, null, 2);
+  const shown =
+    input.batch === undefined
+      ? { entityCards, ruleCards }
+      : { entityCards, otherEntities, ruleCards };
+  const json = JSON.stringify(shown, null, 2);
   const summary = omittedSummary([...entities, ...rules].filter((card) => omitted.has(card.id)));
   return summary === ''
     ? json
@@ -51,8 +62,11 @@ ${summary}`;
 }
 
 /** P3-113, P3-120: the cards the data-model prompt may name by title only: the entities and the rule cards it sends. */
-export function packableCards(cards: readonly SourceCard[]): SourceCard[] {
-  return [...cards.filter((card) => card.type === 'ENT'), ...ruleCandidates(cards)];
+export function packableCards(
+  cards: readonly SourceCard[],
+  batch?: readonly SourceCard[],
+): SourceCard[] {
+  return [...(batch ?? cards.filter((card) => card.type === 'ENT')), ...ruleCandidates(cards)];
 }
 
 function ownerText(brief: PlanningBrief): string {
