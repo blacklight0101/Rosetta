@@ -63,13 +63,13 @@ interface Batched {
   readonly failed: readonly SourceCard[];
 }
 
-/** One planner call for these entities: its answer when it was whole and held a table, else undefined. */
+/** One planner call for these entities: what its answer read as (undefined when none) and whether it stayed cut off. */
 async function askBatch(
   call: PlannerCall,
   input: DataModelInput,
   batch: readonly SourceCard[],
   single: boolean,
-): Promise<ReturnType<typeof parseDataModelAnswer>> {
+): Promise<{ read: ReturnType<typeof parseDataModelAnswer>; cut: boolean }> {
   const state = { cut: false };
   const own: PlannerCall = {
     ...call,
@@ -84,7 +84,7 @@ async function askBatch(
   );
   const message = dataModelMessage({ ...input, omitted, batch: scope }, call.tags);
   const output = await askPlannerWith(own, message);
-  return state.cut ? undefined : parseDataModelAnswer(output);
+  return { read: state.cut ? undefined : parseDataModelAnswer(output), cut: state.cut };
 }
 
 /** P5-38: a batch that failed is asked again as two smaller ones, once; what still fails is `failed`. */
@@ -94,15 +94,17 @@ async function askRetrying(
   batch: readonly SourceCard[],
   single: boolean,
 ): Promise<Batched> {
-  const first = await askBatch(call, input, batch, single);
+  const { read: first, cut } = await askBatch(call, input, batch, single);
   if (first !== undefined) {
     return { draft: first.draft, problems: first.problems, answered: true, failed: [] };
   }
-  if (batch.length < 2) return { draft: emptyDraft, problems: [], answered: false, failed: batch };
+  // Only an answer that stayed cut off is asked again, smaller; an unreadable whole answer is not.
+  if (!cut || batch.length < 2)
+    return { draft: emptyDraft, problems: [], answered: false, failed: batch };
   const half = Math.ceil(batch.length / 2);
   const parts: Batched[] = [];
   for (const smaller of [batch.slice(0, half), batch.slice(half)]) {
-    const read = await askBatch(call, input, smaller, false);
+    const { read } = await askBatch(call, input, smaller, false);
     parts.push(
       read === undefined
         ? { draft: emptyDraft, problems: [], answered: false, failed: smaller }

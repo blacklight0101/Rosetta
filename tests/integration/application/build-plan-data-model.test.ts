@@ -219,15 +219,18 @@ async function degraded(answer: string): Promise<{ text: string; h: PlanHarness 
 }
 
 describe('BuildPlan: an unusable data model answer', () => {
-  it('RF-623 an answer without a usable table still completes, listing every legacy field as dropped', async () => {
+  it('RF-623 P5-38 an answer without a usable table still completes, with tables named after the ENT cards and marked copied', async () => {
     const { text, h } = await degraded('{"tables": []}');
 
-    expect(text).toContain('The planner wrote no usable table');
-    expect(text).not.toContain('### ');
+    expect(text).not.toContain('The planner wrote no usable table');
+    expect(text.match(/^### /gmu)).toHaveLength(2);
+    expect(text.match(/Copied from the legacy model/gu)).toHaveLength(2);
     expect([...new Set(text.match(/ENT-\d+\.c\d+/gu))].sort()).toHaveLength(5);
     expect(text.match(/\| not named \|/gu)).toHaveLength(5);
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
-    expect(warned.map((entry) => entry.message).join(' ')).toContain('no usable table');
+    expect(warned.map((entry) => entry.message).join(' ')).toContain(
+      'copied from the legacy claims',
+    );
   });
 
   it('RF-623 one over-long legacy field keeps every table, writes the migrations card and logs the drop (EV-02)', async () => {
@@ -249,11 +252,11 @@ describe('BuildPlan: an unusable data model answer', () => {
     expect(messages).not.toContain('no usable table');
   });
 
-  it('RF-623 an answer whose tables the checks all refuse is treated the same way', async () => {
+  it('RF-623 P5-38 an answer whose tables the checks all refuse is treated the same way', async () => {
     const table = { name: 'bad name;', columns: [{ name: 'id', type: 'uuid' }] };
     const { text } = await degraded(JSON.stringify({ tables: [table] }));
 
-    expect(text).toContain('The planner wrote no usable table');
+    expect(text).toContain('Copied from the legacy model');
     expect(text).not.toContain('bad name');
   });
 });
