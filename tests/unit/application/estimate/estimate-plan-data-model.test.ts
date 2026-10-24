@@ -6,7 +6,7 @@ import {
   plannerSettings,
   type PlanEstimateOptions,
 } from '../../../support/plan-estimate-harness.js';
-import { planCards } from '../../../support/plan-cards.js';
+import { entityCardSaying, planCards } from '../../../support/plan-cards.js';
 
 // RF-613, RF-623, ADR-007: the plan estimate counts the data model call (the planner's third) when
 // a supported ENT claim exists, measured the way the budget guard measures it, and not otherwise.
@@ -26,7 +26,7 @@ describe('EstimatePlan: the data model call', () => {
     const estimate = await estimateOf();
 
     const { assumptions, planner } = estimate;
-    const system = (await readFile('prompts/planner/data-model.v3.md', 'utf8')).length;
+    const system = (await readFile('prompts/planner/data-model.v4.md', 'utf8')).length;
     expect(assumptions.calls).toBe(6);
     expect(assumptions.dataModelPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
@@ -65,5 +65,24 @@ describe('EstimatePlan: the data model call', () => {
       reservation(assumptions.gapPromptTokens) +
       reservation(assumptions.gapRepairPromptTokens);
     expect(planner.points.high.inputTokens + planner.points.high.outputTokens).toBe(sum);
+  });
+});
+
+describe('EstimatePlan: the data model in batches (P5-38)', () => {
+  it('RF-613 RF-623 counts one data model call for each batch of entities', async () => {
+    const entities = Array.from({ length: 80 }, (_unused, at) =>
+      entityCardSaying(
+        `ENT-${String(100 + at)}`,
+        `The t${String(at)} table has an identity id and columns name, size (int), due (numeric 10,3) and kind (varchar 20).`,
+      ),
+    );
+    const cards = [...planCards().filter((card) => card.type !== 'ENT'), ...entities];
+    const estimate = await estimateOf({ seed: { cards } });
+
+    const { assumptions, planner } = estimate;
+    expect(assumptions.calls).toBeGreaterThan(6);
+    expect(planner.points.high.outputTokens).toBe(
+      assumptions.calls * 3 * assumptions.maxOutputTokens,
+    );
   });
 });

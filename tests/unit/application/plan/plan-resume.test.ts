@@ -141,3 +141,33 @@ describe('joinContinuation: the fragment is never shortened (P3-31)', () => {
     expect(joined).toBe('{"a": [1, 2, 3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8, 9]}');
   });
 });
+
+describe('joinContinuation: a fragment that starts the next list item (P5-38)', () => {
+  const cut = '{"indexes": [\n  { "columns": ["a"], "unique": false },\n  { "columns": ["b"], ';
+
+  it('RF-604 replaces the unfinished item, so the join is JSON', () => {
+    const joined = joinContinuation(cut, '{ "columns": ["c"], "unique": true }\n]}');
+
+    expect(JSON.parse(joined)).toEqual({
+      indexes: [
+        { columns: ['a'], unique: false },
+        { columns: ['c'], unique: true },
+      ],
+    });
+  });
+
+  it('RF-604 a fragment that continues the item is joined as before', () => {
+    const joined = joinContinuation(cut, '"unique": true }\n]}');
+
+    expect(JSON.parse(joined)).toEqual({
+      indexes: [
+        { columns: ['a'], unique: false },
+        { columns: ['b'], unique: true },
+      ],
+    });
+  });
+
+  it('RF-604 an object that is not a list item is left alone', () => {
+    expect(joinContinuation('{"a": {"b": 1, ', '{"c": 2}}')).toBe('{"a": {"b": 1, {"c": 2}}');
+  });
+});
