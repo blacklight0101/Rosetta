@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SecretMasker, SECRET_KINDS } from '../../../../src/infrastructure/guards/secret-masker.js';
 import {
+  explainedMasker,
   loadMaskedValuePrompt,
   maskedValueReplacement,
 } from '../../../../src/infrastructure/prompts/masked-value-prompt.js';
@@ -69,5 +70,14 @@ describe('the replacement text of a masked value', () => {
     const note = file.text.slice(file.text.indexOf('('));
 
     expect(note).not.toMatch(/[;"'/<=:`]/u);
+  });
+});
+
+describe('the masker of the composition root', () => {
+  it('P5-34 the masker the composition root builds sends the note (catches a bare masker there)', () => {
+    const masked = explainedMasker('prompts').mask(configText).text;
+
+    expect(masked).toMatch(/\[MASKED:[a-z-]+\] \(.*written here in plain text.*Rosetta masked it/u);
+    expect(masked).not.toContain(fakePassword);
   });
 });

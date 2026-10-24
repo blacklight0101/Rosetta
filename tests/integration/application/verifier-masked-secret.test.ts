@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { judgeClaim } from '../../../src/application/verifier/judge-claim.js';
 import { MaskedLineFinder } from '../../../src/infrastructure/guards/masked-line-finder.js';
 import { SecretMasker } from '../../../src/infrastructure/guards/secret-masker.js';
+import { explainedMasker } from '../../../src/infrastructure/prompts/masked-value-prompt.js';
+import { egressHarness } from '../../support/egress-harness.js';
 import { recordingOf } from '../../support/fake-recordings.js';
 import {
   configPath,
@@ -33,19 +35,30 @@ const supported = {
 const reader = new MemoryRepositoryReader({ [configPath]: configText });
 
 async function judged(claim: Parameters<typeof judgeClaim>[1]) {
-  const h = await verifierHarness({ recording: recordingOf(supported) });
+  // The verifier's provider is the real egress guard with the production masker in front of the fake.
+  const egress = await egressHarness({
+    masker: explainedMasker('prompts'),
+    recording: recordingOf(supported),
+  });
+  const h = await verifierHarness({ recording: recordingOf(), provider: () => egress.guard });
   const parts = {
     ...h.parts,
     reader,
     secretLines: new MaskedLineFinder(new SecretMasker()),
   };
   const judgement = await judgeClaim(parts, claim, span);
-  return { judgement, calls: h.requests().length };
+  return {
+    judgement,
+    calls: egress.fake.requests.length,
+    sent: JSON.stringify(egress.fake.requests),
+  };
 }
 
 describe('the verifier and a value Rosetta masked', () => {
   it('P5-34 the claim that a plain-text password is written there is Supported, and the value is in no output', async () => {
-    const { judgement, calls } = await judged(plainTextClaim);
+    const { judgement, calls, sent } = await judged(plainTextClaim);
+    expect(sent).toContain('written here in plain text');
+    expect(sent).not.toContain(fakePassword);
 
     expect(judgement).toMatchObject({ kind: 'judged', status: 'Supported' });
     expect(calls).toBe(1);

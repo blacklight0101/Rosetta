@@ -2,6 +2,9 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { ScanResults } from '../../../src/application/ports/scan-results.js';
+import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
+import { RosettaError } from '../../../src/domain/errors/rosetta-error.js';
 import { loadRecording } from '../../../src/infrastructure/providers/fake/recording.js';
 import { planCards, planQuestions } from '../../support/plan-cards.js';
 import { createPlanHarness } from '../../support/plan-harness.js';
@@ -28,12 +31,13 @@ afterEach(async () => {
   await rm(dataDir, { recursive: true, force: true });
 });
 
-async function planned(files: Parameters<typeof scanOf>[0]) {
+async function planned(files: Parameters<typeof scanOf>[0], scans?: ScanResults) {
   const recording = await loadRecording(
     join('tests', 'recordings', 'fake', 'planner-package.json'),
   );
-  const scans = new FixtureScans(scanOf(files));
-  const harness = await createPlanHarness(dataDir, recording, { scans });
+  const harness = await createPlanHarness(dataDir, recording, {
+    scans: scans ?? new FixtureScans(scanOf(files)),
+  });
   await harness.understandRun({ cards: planCards(), questions: planQuestions });
   await harness.saveBrief({});
   await harness.seedScan();
@@ -67,5 +71,28 @@ describe('the plan risks and the masked secrets', () => {
     const { files } = await planned({ 'src/Orders/Checkout.cs': '// x' });
 
     expect(plain(files['risks.md'] ?? '')).not.toContain('plain-text');
+  });
+
+  it('P5-34 a scan that cannot be read still writes the package, says so in checks.md and logs once', async () => {
+    const gone: ScanResults = {
+      open: () => Promise.reject(new RosettaError(ERROR_CODES.codeMapMissing, 'Gone.')),
+    };
+
+    const { files, harness } = await planned({}, gone);
+
+    expect(plain(files['risks.md'] ?? '')).not.toContain('plain-text');
+    expect(plain(files['checks.md'] ?? '')).toContain(
+      'do not list the files that hold a plain-text secret',
+    );
+    const warned = harness.s.logger.entries.filter(
+      (entry) => entry.code === ERROR_CODES.codeMapMissing,
+    );
+    expect(warned).toHaveLength(1);
+  });
+
+  it('P5-34 a readable scan with no secret says nothing is missing from the risks', async () => {
+    const { files } = await planned({ 'src/Orders/Checkout.cs': '// x' });
+
+    expect(plain(files['checks.md'] ?? '')).not.toContain('plain-text secret');
   });
 });

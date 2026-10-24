@@ -22,6 +22,6 @@ export async function planScanFacts(
 ): Promise<ScanFacts> {
   return {
     workbookFormulas: await planWorkbookFormulas(deps, inputs),
-    secrets: { sites: await planSecretSites(deps, inputs), template: secretRisk },
+    secrets: { ...(await planSecretSites(deps, inputs)), template: secretRisk },
   };
 }

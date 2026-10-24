@@ -15,6 +15,8 @@ export interface SecretSite {
 export interface SecretRisks {
   readonly sites: readonly SecretSite[];
   readonly template: string;
+  /** True when the scan could not be read, so "none listed" does not mean "none found". */
+  readonly unread?: boolean;
 }
 
 /** The two places the prompt file must hold exactly once. */

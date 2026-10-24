@@ -182,9 +182,24 @@ function stackFindings(
 /** The parts of the planned documents the package carries as they are. */
 function carried(
   documents: Pick<HandoffPackage, 'workbookFormulas' | 'incomplete' | 'leftOut'>,
+  secrets: SecretRisks,
 ): Pick<HandoffPackage, 'workbookFormulas' | 'incomplete' | 'leftOut'> {
   const { workbookFormulas, incomplete, leftOut } = documents;
-  return { workbookFormulas, incomplete, leftOut };
+  return { workbookFormulas, incomplete, leftOut: [...leftOut, ...unreadSecretItems(secrets)] };
+}
+
+/** P5-34: a scan that could not be read is not "no plain-text secret"; checks.md says so. */
+function unreadSecretItems(secrets: SecretRisks): HandoffPackage['leftOut'] {
+  if (secrets.unread !== true) return [];
+  return [
+    {
+      area: 'Risks',
+      item: 'Plain-text secrets',
+      field: 'scan',
+      reason:
+        'The scan could not be read, so the risks do not list the files that hold a plain-text secret. None was found and none was ruled out.',
+    },
+  ];
 }
 
 /** P5-42: the plan with its fixed cards, with the brief's choices decided once over it. */
@@ -265,7 +280,7 @@ export function handoffPackageOf(
     apiContract,
     ux,
     prdQuestions: prdQuestions(prd),
-    ...carried(documents),
+    ...carried(documents, documents.secrets),
     copiedExamples: copiedIn(prd, decided.content, documents.examples),
     meaning: meaningOf(decided.content, { ...documents, sources, overruled }, catalogue),
   };

@@ -1,7 +1,7 @@
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
-import type { SecretSite } from '../../domain/planning/secret-risks.js';
+import type { SecretRisks, SecretSite } from '../../domain/planning/secret-risks.js';
 import type { RepositoryReader } from '../ports/repository-reader.js';
 import type { SecretLines } from '../ports/secret-lines.js';
 import type { PlanInputs } from './plan-inputs.js';
@@ -65,11 +65,12 @@ export interface PlanSecretDependencies {
 export async function planSecretSites(
   deps: PlanShapeDependencies & PlanSecretDependencies,
   inputs: Pick<PlanInputs, 'project' | 'sourceRun'>,
-): Promise<readonly SecretSite[]> {
+): Promise<Pick<SecretRisks, 'sites' | 'unread'>> {
   const scan = await scanOfSourceRun(deps, inputs);
-  if (scan === undefined) return [];
+  if (scan === undefined) return { sites: [] };
   try {
-    return await maskedSecretSites(await deps.scans.open(scan), deps.secretLines);
+    const sites = await maskedSecretSites(await deps.scans.open(scan), deps.secretLines);
+    return { sites };
   } catch (error) {
     const { project, sourceRun } = inputs;
     await deps.logger.log({
@@ -77,6 +78,6 @@ export async function planSecretSites(
       code: error instanceof RosettaError ? error.code : ERROR_CODES.codeMapMissing,
       message: 'The scan could not be read, so the risks list no file with a plain-text secret.',
     });
-    return [];
+    return { sites: [], unread: true };
   }
 }
