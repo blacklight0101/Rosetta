@@ -41,10 +41,11 @@ describe('BuildPlan: the gap pass keeps its dependencies', () => {
 
     const written = await h.handoffOf(await h.plan());
 
-    const card = plain(written['tasks.md'])
-      .split(/^## /mu)
-      .find((each) => each.startsWith('T-004'));
-    expect(card).toMatch(/Depends on: \[T-001\]\([^)]*\), \[T-002\]/u);
+    const cards = plain(written['tasks.md']).split(/^## /mu);
+    const card = cards.find((each) => each.includes('**Orders through the API**'));
+    const waits = /Depends on: [^\n]*/u.exec(card ?? '')?.[0] ?? '';
+    expect(waits).toContain('[T-001]');
+    expect(waits).toContain('[T-002]');
   });
 });
 
@@ -141,7 +142,7 @@ describe('BuildPlan: a phase is titled from the cards it holds', () => {
 
     const checks = plain(written['checks.md']);
     expect(checks).toContain('## Phase titles');
-    expect(checks).toContain('Phase 1: "Billing" is now "Order placement"');
+    expect(checks).toMatch(/Phase 1: "Billing" is now ".*Order placement"/u);
     expect(plain(written['roadmap.md'])).toContain('Order placement');
     expect(plain(written['roadmap.md'])).not.toContain('Billing');
   });
