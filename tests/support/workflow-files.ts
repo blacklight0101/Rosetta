@@ -76,18 +76,26 @@ export async function jobIds(name: string): Promise<string[]> {
   return jobs(lines).map((job) => job.id);
 }
 
+/** RNF-003, P1-55, P1-184: the one job of each workflow that may read the secrets context. */
+const secretJobs: Readonly<Record<string, string>> = {
+  'release.yml': 'deploy',
+  'azure-provision.yml': 'provision',
+};
+
 /**
- * RNF-003, P1-55: the problems of one workflow with the trigger and secrets rule: no
- * `pull_request_target`, and no `secrets.` anywhere except in the deploy job of release.yml.
+ * RNF-003, P1-55, P1-184: the problems of one workflow with the trigger and secrets rule: no
+ * `pull_request_target`, and no `secrets.` anywhere except in the deploy job of release.yml and the
+ * provision job of azure-provision.yml, the two jobs that run in the `production` environment.
  */
 export function triggerAndSecretProblems(workflow: Workflow): string[] {
   const code = workflow.lines.filter((line) => !line.trimStart().startsWith('#'));
-  const [start, end] = workflow.name === 'release.yml' ? jobRange(code, 'deploy') : [0, 0];
-  // Every line but the deploy job's own, so a key written after the last job is checked too.
-  const outsideDeploy = [...code.slice(0, start), ...code.slice(end)];
+  const job = secretJobs[workflow.name];
+  const [start, end] = job === undefined ? [0, 0] : jobRange(code, job);
+  // Every line but the allowed job's own, so a key written after the last job is checked too.
+  const outside = [...code.slice(0, start), ...code.slice(end)];
   return [
     ...(code.join('\n').includes('pull_request_target') ? ['pull_request_target'] : []),
-    ...(outsideDeploy.join('\n').includes('secrets.') ? ['secrets context'] : []),
+    ...(outside.join('\n').includes('secrets.') ? ['secrets context'] : []),
   ];
 }
 

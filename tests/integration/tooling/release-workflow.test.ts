@@ -1,34 +1,22 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { describe, expect, it } from 'vitest';
-import { at, keysOf, stepIndex, stepTexts, workflowDocument } from '../../support/workflow-yaml.js';
+import { afterEach, describe, expect, it } from 'vitest';
+import { fakeAz, type FakeAz } from '../../support/fake-az.js';
+import {
+  at,
+  keysOf,
+  runStep,
+  stepIndex,
+  stepScript,
+  stepTexts,
+  workflowDocument,
+} from '../../support/workflow-yaml.js';
 
-// RF-1300, RF-1304, DEC-57, DEC-104, P1-55: .github/workflows/release.yml. It builds the image once,
-// scans it and pushes it to GHCR as `sha-<short>` (and `X.Y.Z` for a tag), attaches a CycloneDX
-// SBOM to the GitHub release of a tag, and holds a deploy job that stays off until the owner opens
-// gate G-07 (the repository variable ROSETTA_DEPLOY_ENABLED and the `production` environment).
+// RF-1300, RF-1304, DEC-57, DEC-104, P1-55, P1-184: .github/workflows/release.yml. It builds the
+// image once, scans it and pushes it to GHCR as `sha-<short>` (and `X.Y.Z` for a tag), attaches a
+// CycloneDX SBOM to the GitHub release of a tag, and holds a deploy job that stays off until the
+// owner sets the repository variable ROSETTA_DEPLOY_ENABLED; it deploys to the Azure Container App
+// of ADR-024 in the `production` environment.
 
 const release = (): Promise<unknown> => workflowDocument('release.yml');
-const run = promisify(execFile);
-
-/** The `run:` script of the deploy step whose name says it is pending G-07; empty when none. */
-function pendingStepScript(document: unknown): string {
-  const steps = at(document, 'jobs', 'deploy', 'steps');
-  const step: unknown = (Array.isArray(steps) ? steps : []).find((each: unknown) =>
-    String(at(each, 'name')).includes('Pending G-07'),
-  );
-  const script = at(step, 'run');
-  return typeof script === 'string' ? script : '';
-}
-
-/** Runs a step script with bash, as the runner does (`bash -e`), and returns its exit code. */
-async function exitCodeOf(script: string): Promise<number> {
-  const env = { PATH: process.env['PATH'] ?? '', IMAGE: 'image', SHA_TAG: 'sha-0000000' };
-  return run('bash', ['--noprofile', '--norc', '-eo', 'pipefail', '-c', script], { env }).then(
-    () => 0,
-    (error: unknown) => Number(at(error, 'code') ?? 1),
-  );
-}
 const image = 'ghcr.io/blacklight0101/rosetta';
 
 describe('release.yml triggers', () => {
@@ -105,7 +93,7 @@ describe('release.yml SBOM job', () => {
   });
 });
 
-describe('release.yml deploy job (pending G-07)', () => {
+describe('release.yml deploy job', () => {
   it('DEC-104 is skipped unless the owner set ROSETTA_DEPLOY_ENABLED and runs in the production environment', async () => {
     const deploy = at(await release(), 'jobs', 'deploy');
 
@@ -122,6 +110,7 @@ describe('release.yml deploy job (pending G-07)', () => {
   it('DEC-104 deploys only main or a v* tag, one deploy at a time, never cancelled half-way', async () => {
     const deploy = at(await release(), 'jobs', 'deploy');
 
+    expect(at(deploy, 'concurrency', 'group')).toBe('deploy-production');
     expect(at(deploy, 'concurrency', 'cancel-in-progress')).toBe(false);
   });
 
@@ -131,23 +120,142 @@ describe('release.yml deploy job (pending G-07)', () => {
     expect(stepIndex(document, 'deploy', 'zap-baseline')).toBeGreaterThan(-1);
     expect(at(document, 'jobs', 'deploy', 'permissions', 'checks')).toBe('read');
   });
+});
 
-  it('RF-1304 checks the owner stored every named secret, then runs the smoke script on the public URL', async () => {
+describe('release.yml deploy job settings', () => {
+  it('RF-1304 checks the owner stored every named setting before the login, and smokes the public URL', async () => {
     const document = await release();
-    const steps = stepTexts(document, 'deploy');
-    const secrets = stepIndex(document, 'deploy', 'secrets.RAILWAY_TOKEN');
+    const steps = stepTexts(document, 'deploy').join('\n');
+    const settings = stepIndex(document, 'deploy', 'The deploy settings are stored');
     const smoke = stepIndex(document, 'deploy', 'node scripts/smoke.mjs');
+    const script = stepScript(document, 'deploy', 'The deploy settings are stored');
 
-    expect(secrets).toBeGreaterThan(-1);
-    expect(smoke).toBeGreaterThan(secrets);
-    expect(steps.join('\n')).toContain('secrets.ROSETTA_SMOKE_PASSWORD');
-    expect(steps.join('\n')).toContain('vars.ROSETTA_PUBLIC_URL');
+    expect(settings).toBeGreaterThan(-1);
+    expect(settings).toBeLessThan(stepIndex(document, 'deploy', 'azure/login@'));
+    expect(smoke).toBeGreaterThan(settings);
+    for (const name of ['AZURE_CLIENT_ID', 'AZURE_TENANT_ID', 'AZURE_SUBSCRIPTION_ID']) {
+      expect(script).toContain(name);
+    }
+    expect(steps).toContain('secrets.ROSETTA_SMOKE_PASSWORD');
+    expect(steps).toContain('vars.ROSETTA_PUBLIC_URL');
   });
 
-  it('RF-1304 the host step is marked pending G-07 and, when run, fails instead of pretending to deploy', async () => {
-    const script = pendingStepScript(await release());
+  it('RF-1304 a missing setting stops the job with its name and no value', async () => {
+    const script = stepScript(await release(), 'deploy', 'The deploy settings are stored');
+    const result = await runStep(script, {
+      AZURE_CLIENT_ID: 'value-client',
+      AZURE_TENANT_ID: 'value-tenant',
+      AZURE_SUBSCRIPTION_ID: 'value-subscription',
+      ROSETTA_SMOKE_USER: 'value-user',
+      ROSETTA_PUBLIC_URL: 'https://example.test',
+    });
 
-    expect(script).toContain('Pending G-07');
-    expect(await exitCodeOf(script)).not.toBe(0);
+    expect(result.code).not.toBe(0);
+    expect(result.output).toContain('ROSETTA_SMOKE_PASSWORD');
+    expect(result.output).not.toContain('value-');
+  });
+});
+
+let az: FakeAz | undefined;
+afterEach(async () => {
+  await az?.dispose();
+  az = undefined;
+});
+
+/** Runs the migrate step of the deploy job against a fake az whose execution reports `statuses`. */
+async function migrate(statuses: string): Promise<{ code: number; calls: string[] }> {
+  az = await fakeAz(statuses);
+  const script = stepScript(await release(), 'deploy', 'Migrate with the new image');
+  const env = {
+    ...az.env,
+    AZ_RG: 'rg-rosetta',
+    AZ_MIGRATE_JOB: 'caj-rosetta-migrate',
+    IMAGE: image,
+    SHA_TAG: 'sha-0000000',
+  };
+  const { code } = await runStep(script, env, az.prelude);
+  return { code, calls: await az.calls() };
+}
+
+describe('release.yml deploy job login (P1-184, ADR-024)', () => {
+  it('ADR-024 logs in with azure/login over OIDC, with the production variables and no creds', async () => {
+    const steps = at(await release(), 'jobs', 'deploy', 'steps');
+    const login: unknown = (Array.isArray(steps) ? steps : []).find((step: unknown) =>
+      String(at(step, 'uses')).startsWith('azure/login@'),
+    );
+
+    expect(at(login, 'with')).toEqual({
+      'client-id': '${{ vars.AZURE_CLIENT_ID }}',
+      'tenant-id': '${{ vars.AZURE_TENANT_ID }}',
+      'subscription-id': '${{ vars.AZURE_SUBSCRIPTION_ID }}',
+    });
+  });
+
+  it('RNF-003 only the deploy job may request an OIDC token', async () => {
+    const document = await release();
+    const jobs = keysOf(at(document, 'jobs'));
+
+    expect(jobs.filter((job) => at(document, 'jobs', job, 'permissions', 'id-token'))).toEqual([
+      'deploy',
+    ]);
+    expect(at(document, 'jobs', 'deploy', 'permissions', 'id-token')).toBe('write');
+    expect(at(document, 'permissions', 'id-token')).toBeUndefined();
+  });
+
+  it('RNF-003 logs out of Azure even when a step failed', async () => {
+    const steps = at(await release(), 'jobs', 'deploy', 'steps');
+    const last: unknown = Array.isArray(steps) ? steps.at(-1) : undefined;
+
+    expect(at(last, 'if')).toBe('always()');
+    expect(at(last, 'run')).toContain('az logout');
+  });
+});
+
+describe('release.yml deploy job migrate and update (P1-184, ADR-024)', () => {
+  it('DEC-140 runs the migrate job before it sets the new image, then waits for /healthz and smokes', async () => {
+    const document = await release();
+    const login = stepIndex(document, 'deploy', 'azure/login@');
+    const start = stepIndex(document, 'deploy', 'az containerapp job start');
+    const update = stepIndex(document, 'deploy', 'az containerapp update');
+    const health = stepIndex(document, 'deploy', '/healthz');
+    const smoke = stepIndex(document, 'deploy', 'node scripts/smoke.mjs');
+
+    expect(login).toBeGreaterThan(stepIndex(document, 'deploy', 'zap-baseline'));
+    expect(start).toBeGreaterThan(login);
+    expect(update).toBeGreaterThan(start);
+    expect(health).toBeGreaterThan(update);
+    expect(smoke).toBeGreaterThan(health);
+    expect(stepScript(document, 'deploy', 'Set the new image')).toContain(
+      'az containerapp update --name "$AZ_APP" --resource-group "$AZ_RG" --image "$IMAGE:$SHA_TAG"',
+    );
+    expect(at(document, 'jobs', 'deploy', 'env', 'IMAGE')).toBe(image);
+    expect(at(document, 'jobs', 'deploy', 'env', 'SHA_TAG')).toBe(
+      '${{ needs.image.outputs.sha-tag }}',
+    );
+  });
+
+  it('DEC-140 the migrate step passes only when the execution Succeeded, after it set the new image', async () => {
+    const { code, calls } = await migrate('Running Running Succeeded');
+
+    expect(code).toBe(0);
+    expect(calls[0]).toContain('containerapp job update --name caj-rosetta-migrate');
+    expect(calls[0]).toContain(`--image ${image}:sha-0000000`);
+    expect(calls[1]).toContain('containerapp job start');
+    expect(calls.filter((call) => call.includes('execution show'))).toHaveLength(3);
+  });
+
+  it.each(['Failed', 'Stopped', 'Degraded', 'Unknown'])(
+    'DEC-140 the migrate step fails when the execution ends %s, so the image is not changed',
+    async (status) => {
+      expect((await migrate(`Running ${status}`)).code).not.toBe(0);
+    },
+  );
+
+  it('RF-1304 waits until the latest revision is ready and /healthz answers over HTTPS', async () => {
+    const script = stepScript(await release(), 'deploy', 'Wait for the new revision');
+
+    expect(script).toContain('latestReadyRevisionName');
+    expect(script).toContain('"$ROSETTA_PUBLIC_URL/healthz"');
+    expect(script).toContain('exit 1');
   });
 });
