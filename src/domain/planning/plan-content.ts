@@ -14,8 +14,7 @@ import type {
   PlanDraft,
   UnreadableItem,
 } from './plan-draft.js';
-import type { PhaseNote } from './phase-titles.js';
-import { unknownPositions, type RequirementNote } from './requirement-notes.js';
+import { unknownPositions, type PhaseNote, type RequirementNote } from './requirement-notes.js';
 import { assembleJudgements, type ClaimJudgement } from './claim-judgement.js';
 import { draftFault, leftOutOf, noRequirement, type LeftOutCard } from './left-out-card.js';
 import type { GuardKind, RiskClass } from './task-card-quality.js';
