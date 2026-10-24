@@ -3,6 +3,7 @@ import type { CopiedExample } from '../../domain/planning/copied-example.js';
 import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
 import type { RestatedDecision } from '../../domain/planning/brief-restated.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
+import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
 import type { StackClash } from '../../domain/planning/stack-rules.js';
 import type { StyleCheck } from '../../domain/planning/style-rules.js';
 import type { TargetDataModel } from '../../domain/planning/data-model.js';
@@ -82,6 +83,8 @@ export interface HandoffPackage {
   readonly styleCheck: StyleCheck;
   /** RF-609: the clashes the stack check found in the brief's stack and the API contract decision. */
   readonly stackClashes?: readonly StackClash[] | undefined;
+  /** P5-39: the kind of application, the stack layers and the strategy Rosetta proposed; absent when it could not. */
+  readonly proposal?: PlanProposal | undefined;
   /** The target tables, with the legacy source of each column and the dropped legacy fields (RF-623). */
   readonly dataModel: TargetDataModel;
   /** The main journeys mapped to target components, and those out of scope (RF-625). */

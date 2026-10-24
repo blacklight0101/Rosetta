@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { architectureStyleIds } from '../../domain/planning/catalogue.js';
 import {
+  applicationKinds,
   migrationStrategies,
   stackLayers,
   type BriefAnswers,
@@ -51,6 +52,7 @@ export const planningBriefSchema = z.strictObject({
   principles: z.array(entryId).max(100),
   architecture,
   migration: z.enum(migrationStrategies),
+  application: z.enum(applicationKinds).optional(),
   stack: z.array(stackChoice).max(stackLayers.length),
   context,
   buildMethod: z.strictObject({ aiAssisted: z.boolean() }),
@@ -74,6 +76,7 @@ const answersSchema = z.strictObject({
     })
     .optional(),
   migration: z.enum(migrationStrategies).optional(),
+  application: z.enum(applicationKinds).optional(),
   stack: z.array(stackChoice).max(stackLayers.length).optional(),
   context: z
     .strictObject({

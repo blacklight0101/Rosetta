@@ -12,14 +12,14 @@ import {
 } from '../../domain/planning/catalogue.js';
 import type { StackData } from '../../domain/planning/stack-data.js';
 import { parseCatalogueEntry, parseCatalogueReadme } from './catalogue-entry-file.js';
-import { parseStackRules, parseStackTechnologies } from './stack-data-file.js';
+import { parseStackProposals, parseStackRules, parseStackTechnologies } from './stack-data-file.js';
 
 // RF-606, DEC-84, RNF-004: the catalogue folder `prompts/catalogue/`. Every file is named
 // `<id>.v<n>.md`; `readme.v<n>.md` declares the catalogue version and credits the master (DEC-85),
 // every other file is one entry. The SHA-256 runs over each file's name and bytes in name order, so
 // a plan run can record exactly which catalogue it used. A missing folder or README, a file
 // without a version, two versions of one entry, an empty group or a missing style is refused with
-// RST-1000. The two stack files (`stack-technologies`, `stack-rules`, YAML) are part of the folder:
+// RST-1000. The three stack files (`stack-technologies`, `stack-rules`, `stack-proposals`, YAML) are part of the folder:
 // they are hashed with it and read by `stackOf` (RF-609).
 
 const catalogueFolder = 'catalogue';
@@ -27,6 +27,7 @@ const fileNamePattern = /^([a-z0-9-]+)\.v(\d+)\.(?:md|yaml)$/u;
 const readmeStem = 'readme';
 const technologiesStem = 'stack-technologies';
 const rulesStem = 'stack-rules';
+const proposalsStem = 'stack-proposals';
 
 interface CatalogueFile {
   readonly name: string;
@@ -59,7 +60,7 @@ async function readCatalogueFiles(folder: string): Promise<CatalogueFile[]> {
   );
 }
 
-const dataStems = [technologiesStem, rulesStem];
+const dataStems = [technologiesStem, rulesStem, proposalsStem];
 
 function oneFile(files: readonly CatalogueFile[], stem: string): CatalogueFile {
   const found = files.filter((file) => file.stem === stem);
@@ -68,15 +69,17 @@ function oneFile(files: readonly CatalogueFile[], stem: string): CatalogueFile {
   return file;
 }
 
-/** RF-609: the technologies and the rules of the stack check, from their two files. */
+/** RF-609, P5-39: the technologies, the rules of the stack check and the proposals, from their files. */
 function stackOf(files: readonly CatalogueFile[]): StackData {
   const technologies = oneFile(files, technologiesStem);
   const rules = oneFile(files, rulesStem);
+  const proposals = oneFile(files, proposalsStem);
+  const known = parseStackTechnologies(technologies.name, technologies.bytes.toString('utf8'));
   return {
     rulesVersion: rules.version,
-    technologies: parseStackTechnologies(technologies.name, technologies.bytes.toString('utf8')),
+    technologies: known,
     rules: parseStackRules(rules.name, rules.bytes.toString('utf8')),
-    proposals: { signals: [], options: [] },
+    proposals: parseStackProposals(proposals.name, proposals.bytes.toString('utf8'), known),
   };
 }
 

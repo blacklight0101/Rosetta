@@ -5,7 +5,7 @@ import { proposeFor } from '../../../../src/domain/planning/stack-proposal.js';
 import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 import { oneStatement, webFormsFiles, winFormsFiles } from '../../../support/proposal-scans.js';
 
-// P5-39, RF-609, RF-610: the kind of application, the proposed layers and the strategy check.
+// P5-39, DEC-172, RF-609, RF-610: the kind of application, the proposed layers and the strategy check.
 
 const stack = shippedCatalogue.stack;
 const signals = stack.proposals.signals;

@@ -12,6 +12,7 @@ import type { StackTechnology } from './stack-data.js';
 import type { SourceCard } from './plan-sources.js';
 import { planId, type PlanDecision } from './plan-content.js';
 import { migrationStrategies, type PlanningBrief, type StackLayer } from './planning-brief.js';
+import type { PlanProposal, StrategyFit } from './stack-proposal.js';
 
 // RF-608, RF-609, RF-610, ADR-018, DEC-76, DEC-78: the choices of the planning brief as decision
 // records of the package: one for the architecture style, one for each stack layer the owner chose
@@ -27,6 +28,8 @@ interface PackageStack {
   readonly choice: string;
   /** The id of the decision record of the layer. */
   readonly decision: string;
+  /** P5-39: Rosetta proposed it; the owner left the layer open. */
+  readonly proposed?: boolean;
 }
 
 /** Where the brief's choices are decided in the package. */
@@ -34,6 +37,8 @@ export interface BriefChoices {
   readonly style: string;
   readonly migration: string;
   readonly stack: readonly PackageStack[];
+  /** P5-39: the record of the seam between the two systems; empty when there is none. */
+  readonly seam?: string;
 }
 
 /** What the records of the brief are written from (RF-609): the supported cards, in card order, and the task cards. */
@@ -46,6 +51,8 @@ export interface BriefEvidence {
     readonly title: string;
     readonly files: readonly string[];
   }[];
+  /** P5-39: what Rosetta proposed, when it could. */
+  readonly proposal?: PlanProposal | undefined;
 }
 
 export interface BriefDecisions {
@@ -97,16 +104,20 @@ function styleDecision(
   };
 }
 
-function migrationDecision(brief: PlanningBrief, id: string): PlanDecision {
+function migrationDecision(brief: PlanningBrief, id: string, fit?: StrategyFit): PlanDecision {
   const info = migrationStrategyInfo[brief.migration];
-  const unchosen = brief.defaulted.includes('migration');
+  const changed = fit?.changedFrom !== undefined && fit.changedFrom !== null;
+  const unchosen = brief.defaulted.includes('migration') || changed;
+  const why = fit?.reason ?? '';
+  const nobody = changed
+    ? ' Nobody chose a strategy, so Rosetta proposes this one; confirm or change it.'
+    : ' Nobody chose a strategy, so this is the default; confirm or change it.';
   return {
     id,
     title: `Migration strategy: ${info.title}`,
     status: unchosen ? 'Proposed' : 'Accepted',
-    context:
-      'The legacy system has to be replaced by the new one. The strategy decides in which order the phases of the roadmap run.',
-    decision: `Follow ${info.title}. ${info.ordering}${unchosen ? ' Nobody chose a strategy, so this is the default; confirm or change it.' : ''}`,
+    context: `The legacy system has to be replaced by the new one. The strategy decides in which order the phases of the roadmap run.${why === '' ? '' : ` ${why}`}`,
+    decision: `Follow ${info.title}. ${info.ordering}${unchosen ? nobody : ''}`,
     consequences: info.tradeOff,
     options: migrationStrategies.map((each) => {
       const option = migrationStrategyInfo[each];
@@ -123,21 +134,49 @@ function stackDecision(
   evidence: BriefEvidence,
   technologies: readonly StackTechnology[],
 ): PlanDecision {
+  const { proposal } = evidence;
   const name = layerName(entry.layer);
-  const origin = entry.custom
-    ? 'The owner typed this choice.'
-    : 'The owner picked it from the options Rosetta offered.';
+  const proposed = entry.proposed === true;
+  const why = proposal?.layers.find((each) => each.layer === entry.layer)?.why ?? '';
+  const kind = proposal?.kind ?? 'web';
+  const origin = proposed
+    ? `Nobody chose this layer, so Rosetta proposes the catalogue's option for a ${kind} application: ${why} Confirm or change it in Plan setup; the owner's choice always wins.`
+    : entry.custom
+      ? 'The owner typed this choice.'
+      : 'The owner picked it from the options Rosetta offered.';
   const touching = touchingTasks(evidence.tasks, technologies, entry);
   return {
     id,
     title: `Technology for the ${name} layer: ${entry.choice}`,
-    status: 'Accepted',
+    status: proposed ? 'Proposed' : 'Accepted',
     context: stackContext(name, entry.layer, evidence.cards),
     decision: `Use ${entry.choice} for the ${name} layer. ${origin}`,
     consequences: stackConsequences(name, entry.choice, touching),
-    options: stackOptions(technologies, entry),
+    options: proposed ? [`${entry.choice} (proposed): ${why}`] : stackOptions(technologies, entry),
     sources: describingCards(evidence.cards, entry.layer).map((card) => card.id),
   };
+}
+
+function seamDecision(fit: StrategyFit, id: string): PlanDecision {
+  return {
+    id,
+    title: 'Seam between the legacy client and the new system: the shared database',
+    status: 'Proposed',
+    context: fit.reason,
+    decision:
+      'Run the new system against the legacy schema until the last phase. Each phase replaces a part of the client and both systems read and write the same tables. Confirm or change it.',
+    consequences:
+      'The new data model must keep the legacy tables and keys until the legacy client is switched off; a change to the schema needs both systems to agree.',
+    options: [
+      'Shared database (proposed): the one place both systems already meet.',
+      'Full rewrite with one cut-over: no seam is needed, but nothing reaches users before the end.',
+    ],
+    sources: [],
+  };
+}
+
+function presentOnly(decisions: readonly (PlanDecision | undefined)[]): PlanDecision[] {
+  return decisions.flatMap((decision) => (decision === undefined ? [] : [decision]));
 }
 
 /** The decision records of the brief's choices, numbered after the `after` planner decisions. */
@@ -148,20 +187,24 @@ export function briefDecisions(
   evidence: BriefEvidence,
   after: number,
 ): BriefDecisions {
+  const { proposal } = evidence;
   let next = after;
   const nextId = (): string => planId('ADR', ++next);
   const style = styleDecision(brief, catalogue, evidence.supported, nextId());
   const layers = brief.stack.map((entry) =>
     stackDecision(entry, nextId(), evidence, catalogue.stack.technologies),
   );
-  const migration = migrationDecision(brief, nextId());
+  const migration = migrationDecision(brief, nextId(), proposal?.fit);
+  const seam = proposal?.fit.seam ? seamDecision(proposal.fit, nextId()) : undefined;
   return {
-    decisions: [...(style === undefined ? [] : [style]), ...layers, migration],
+    decisions: presentOnly([style, ...layers, migration, seam]),
     choices: {
       style: style?.id ?? '',
       migration: migration.id,
+      seam: seam?.id ?? '',
       stack: brief.stack.map((entry, index) => ({
         ...{ layer: entry.layer, name: layerName(entry.layer), choice: entry.choice },
+        ...(entry.proposed === true ? { proposed: true } : {}),
         decision: layers[index]?.id ?? '',
       })),
     },

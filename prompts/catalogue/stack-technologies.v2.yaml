@@ -180,3 +180,23 @@ technologies:
       - asp.net core razor pages
     traits: []
     description: Page-based ASP.NET Core application; serves pages and, when needed, data.
+  - layer: front-end
+    name: Windows Forms on .NET
+    aliases:
+      - windows forms
+      - winforms
+    traits: []
+    description: A desktop forms toolkit that runs on current .NET; the closest match to a legacy WinForms client.
+  - layer: front-end
+    name: WPF
+    aliases:
+      - wpf
+    traits: []
+    description: A desktop toolkit with XAML views and data binding on current .NET.
+  - layer: hosting
+    name: MSIX installer
+    aliases:
+      - msix
+      - installer
+    traits: []
+    description: A signed Windows package that installs and updates a desktop client.

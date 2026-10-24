@@ -199,6 +199,7 @@ export function buildBrief(answers: BriefAnswers, catalogue: Catalogue): Unsaved
     principles: [...(answers.principles ?? defaultPrinciples(catalogue))].sort(),
     architecture: architectureOf(answers.architecture),
     migration: answers.migration ?? migrationStrategies[0],
+    ...(answers.application === undefined ? {} : { application: answers.application }),
     stack: [...(answers.stack ?? [])].sort((a, b) => layerOrder(a.layer) - layerOrder(b.layer)),
     context: contextOf(answers.context),
     buildMethod: answers.buildMethod ?? { aiAssisted: false },
@@ -209,7 +210,7 @@ export function buildBrief(answers: BriefAnswers, catalogue: Catalogue): Unsaved
 function contentOf(brief: UnsavedBrief): string {
   const { catalogueVersion, principles, architecture, migration, stack, context } = brief;
   const fields = [catalogueVersion, principles, architecture, migration, stack, context];
-  return JSON.stringify([...fields, brief.buildMethod, brief.defaulted]);
+  return JSON.stringify([...fields, brief.buildMethod, brief.defaulted, brief.application ?? null]);
 }
 
 /** Whether two briefs hold the same answers, whatever instant they were saved at. */

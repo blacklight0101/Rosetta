@@ -11,7 +11,7 @@ import {
   winFormsFiles,
 } from '../../support/proposal-scans.js';
 
-// P5-39, RF-609, RF-610: a plan run whose brief leaves the stack open proposes the stack for the
+// P5-39, DEC-172, RF-609, RF-610: a plan run whose brief leaves the stack open proposes the stack for the
 // kind of application the code map shows, writes a Proposed record per layer, tells the README and
 // the TRD, and checks the migration strategy against the kind. The owner's choice always wins.
 

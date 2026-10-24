@@ -5,7 +5,11 @@ import { keepLegacyDefault, legacySafe } from '../../domain/planning/legacy-defa
 import { secureDefault, securityCards } from '../../domain/planning/keep-or-fix.js';
 import { keepOrFixQuestionLines, keepOrFixTable } from './handoff-keep-or-fix-markdown.js';
 import { decisionFile, documentSet, handoffFiles, idLink, sourceLinks } from './handoff-links.js';
-import { stackClashQuestionLines, stackClashReadmeLines } from './handoff-stack-markdown.js';
+import {
+  proposalReadmeLines,
+  stackClashQuestionLines,
+  stackClashReadmeLines,
+} from './handoff-stack-markdown.js';
 import { leftOutSummaryLines } from './handoff-left-out-markdown.js';
 import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
 import { uploadSentence } from '../../domain/sources/upload-facts.js';
@@ -237,12 +241,12 @@ function apiContractSection(handoff: HandoffPackage, esc: MarkdownEscaper): stri
 
 // RF-604, Q-59, DEC-80: the first line of the README when no stack layer was chosen; nothing when one was.
 function noStackLines(handoff: HandoffPackage): string[] {
-  return handoff.brief.stack.length > 0
-    ? []
-    : [
-        'No technology was chosen; the cards are written for any stack. Choose a stack in Plan setup and write the package again.',
-        '',
-      ];
+  if (handoff.brief.stack.some((entry) => entry.proposed !== true)) return [];
+  if (handoff.proposal !== undefined && handoff.proposal.layers.length > 0) return [];
+  return [
+    'No technology was chosen; the cards are written for any stack. Choose a stack in Plan setup and write the package again.',
+    '',
+  ];
 }
 
 // RF-604, P3-121: the first lines of the README when the source run stopped at a cap.
@@ -266,6 +270,7 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     '# Modernisation hand-off package',
     '',
     ...noStackLines(handoff),
+    ...proposalReadmeLines(handoff),
     ...sourceStopLines(handoff),
     ...stackClashReadmeLines(handoff),
     `Planned from the analysis of ${analysed} (understand run ${esc.inline(handoff.sourceRun)}), with the planning brief saved at ${esc.inline(brief.savedAt)}.`,

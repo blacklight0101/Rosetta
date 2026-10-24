@@ -2,6 +2,7 @@ import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { componentDiagram } from '../../domain/diagrams/component-diagram.js';
 import { layerNames } from '../../domain/planning/brief-questions.js';
 import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.js';
+import { proposalLines, strategyLines } from './handoff-stack-markdown.js';
 import { stackLayers } from '../../domain/planning/planning-brief.js';
 import type { PlanIntegration } from '../../domain/planning/technical-content.js';
 import { fenced } from '../cards/flow-diagram-section.js';
@@ -68,10 +69,11 @@ function stackSection(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
           '|---|---|---|',
           ...stack.map(
             (entry) =>
-              `| ${esc.inline(entry.name)} | ${esc.inline(entry.choice)} | ${entry.decision === '' ? 'none' : decisionLink(entry.decision)} |`,
+              `| ${esc.inline(entry.name)} | ${esc.inline(entry.choice)}${entry.proposed === true ? ' (proposed by Rosetta)' : ''} | ${entry.decision === '' ? 'none' : decisionLink(entry.decision)} |`,
           ),
           '',
         ]),
+    ...proposalLines(handoff, esc),
     ...(open.length === 0
       ? []
       : [
@@ -212,6 +214,7 @@ function migrationSection(handoff: HandoffPackage, esc: MarkdownEscaper): string
     '',
     `Strategy: ${esc.inline(info.title)}${record}`,
     '',
+    ...strategyLines(handoff, esc),
     esc.inline(info.ordering),
     '',
     `Data migration: ${data === null ? 'not stated' : esc.inline(data)}`,
