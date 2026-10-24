@@ -1142,8 +1142,9 @@ migration.
 | `rosetta_app`      | `SELECT`, `INSERT`, `UPDATE`, `DELETE` on the tables (including `cost_reservations`); `INSERT`, `SELECT` only on `cost_ledger` and `audit_events` (no update or delete); `EXECUTE` on the function `purge_audit_events_before` and on no other function (DEC-132); `SELECT` only on `schema_version` (migration `0010`, DEC-140) | the server (`DATABASE_URL`)                                                                                                                                        |
 
 The roles are created outside the migrations, because a committed file cannot hold their passwords: locally by a
-Compose init script (`db/init/roles.sh`) that reads the passwords from `.env`, hosted by the runbook in the host's
-console; migrations only `GRANT` and `ALTER DEFAULT PRIVILEGES` (DEC-112).
+Compose init script (`db/init/roles.sh`) that reads the passwords from `.env`, hosted by the provisioning workflow
+`azure-provision.yml`, which makes the passwords itself (P1-184, runbook section Database roles); migrations only
+`GRANT` and `ALTER DEFAULT PRIVILEGES` (DEC-112).
 
 When the host provides a single database user, both roles collapse into it and the runbook records that; the server
 then logs a warning at every start, because it runs as the owner of the audit and ledger tables (DEC-140). Each
