@@ -243,6 +243,8 @@ jobs:
           ALTER ROLE rosetta_app LOGIN PASSWORD :'app_password';
           GRANT rosetta_migrator TO CURRENT_USER;
           ALTER DATABASE rosetta OWNER TO rosetta_migrator;
+          -- On Azure the public schema of a new database belongs to azure_pg_admin.
+          ALTER SCHEMA public OWNER TO rosetta_migrator;
           SET ROLE rosetta_migrator;
           GRANT USAGE ON SCHEMA public TO rosetta_app;
           RESET ROLE;
