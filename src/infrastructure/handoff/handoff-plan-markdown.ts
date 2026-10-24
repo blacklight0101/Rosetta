@@ -1,3 +1,4 @@
+import { tablesOfEntity } from './handoff-entity-tables.js';
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { componentDiagram } from '../../domain/diagrams/component-diagram.js';
 import type { PlanDecision } from '../../domain/planning/plan-content.js';
@@ -116,22 +117,25 @@ export function decisionMarkdown(decision: PlanDecision, esc: MarkdownEscaper): 
   ].join('\n');
 }
 
-// RF-601, RF-602
+const noTable = 'No table in the target data model';
+
+// RF-601, RF-602, P5-33
 export function entityMappingMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
-  const rows = handoff.content.entities.map(
-    (entity) =>
-      `| ${esc.inline(entity.legacy)} | ${esc.inline(entity.target)} | ${esc.inline(entity.notes)} | ${sourceLinks(entity.sources)} |`,
-  );
+  const rows = handoff.content.entities.map((entity) => {
+    const tables = tablesOfEntity(entity, handoff.dataModel).map((name) => esc.inline(name));
+    const target = tables.length === 0 ? noTable : tables.join(', ');
+    return `| ${esc.inline(entity.legacy)} | ${target} | ${esc.inline(entity.notes)} | ${sourceLinks(entity.sources)} |`;
+  });
   return [
     '# Entity mapping',
     '',
-    'How each legacy entity maps to an entity of the new system.',
+    'How each legacy entity maps to a table of the new system. The table names are those of the target data model.',
     '',
     `The tables, columns and keys of the target entities are in [the target data model](${handoffFiles.dataModel}).`,
     '',
     ...(rows.length === 0
       ? ['The planner mapped no entity.']
-      : ['| Legacy entity | Target entity | Notes | Source cards |', '|---|---|---|---|', ...rows]),
+      : ['| Legacy entity | Target table | Notes | Source cards |', '|---|---|---|---|', ...rows]),
     '',
   ].join('\n');
 }

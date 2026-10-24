@@ -49,10 +49,35 @@ function isCode(name: string): boolean {
 
 const shaped = /_(?:id|code|date|status|type)$|^(?:tbl|tb|t|dim|fact|lkp|ref)_/u;
 
+// P5-33: a form control name (`txt_order_id`, `ddl_status`) is a field of a page, not data; it counts
+// only when the card calls it a table. A name is stated as a table after FROM, JOIN, INTO, UPDATE
+// or `table`, or before the word `table`.
+const control = /^(?:txt|ddl|btn|chk|lbl|cbo|cmb|rdo|lst|grd|dgv|hdn|pnl|img|lnk|drp|cb|rb)_/u;
+const fieldWords =
+  /\b(?:form field|form control|text ?box|input box|dropdown|drop-down|checkbox|button)\b/iu;
+const tableBefore = /\b(?:from|join|into|update|table)\s+[`[]?$/iu;
+const tableAfter = /^[`\]]?\s+(?:table\b|is an? (?:\w+ )?table\b)/iu;
+
+function statedAsTable(before: string, after: string, name: string): boolean {
+  return (
+    /^tbl[A-Z]/u.test(name) ||
+    tableBefore.test(before.slice(-12)) ||
+    tableAfter.test(after.slice(0, 24))
+  );
+}
+
+function isFormField(before: string, after: string, name: string): boolean {
+  return control.test(name) || fieldWords.test(before.slice(-30) + after.slice(0, 30));
+}
+
 interface Named {
   readonly name: string;
   /** True for a name that is clearly a database name whatever the entity cards say. */
   readonly strong: boolean;
+  /** True when the text calls the name a table. */
+  readonly table: boolean;
+  /** True for the name of a form field that the text does not call a table. */
+  readonly field: boolean;
 }
 
 /** The data names a text says. */
@@ -60,10 +85,15 @@ function namesOf(text: string): Named[] {
   return [...text.matchAll(identifier)]
     .map((match) => {
       const name = match[1] ?? match[2] ?? '';
-      const strong = match[1] !== undefined || /^tbl[A-Z]/u.test(name) || shaped.test(name);
-      return { name, strong };
+      const at = match.index;
+      const before = text.slice(0, at);
+      const after = text.slice(at + match[0].length);
+      const table = statedAsTable(before, after, name);
+      const strong = table || match[1] !== undefined || shaped.test(name);
+      return { name, strong, table, field: !table && isFormField(before, after, name) };
     })
-    .filter(({ name }) => name !== '' && !isCode(name));
+    .filter(({ field }) => !field)
+    .filter(({ name, table }) => name !== '' && (table || !isCode(name)));
 }
 
 const squeeze = (text: string): string => text.toLowerCase().replace(/[^a-z0-9]/gu, '');
@@ -88,7 +118,7 @@ function isRuleCard(card: SourceCard): boolean {
   return card.type === 'BR' || card.type === 'FEAT';
 }
 
-function evidenced({ name, strong }: Named, evidence: string): boolean {
+function evidenced({ name, strong }: Pick<Named, 'name' | 'strong'>, evidence: string): boolean {
   const key = plain(name);
   return key.length >= 3 && (strong || evidence.includes(key));
 }
