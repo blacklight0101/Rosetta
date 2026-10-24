@@ -3,7 +3,9 @@
 # Central): a Log Analytics workspace, the Container Apps environment, a storage account with an
 # Azure Files share mounted at /data, the PostgreSQL 17 Flexible Server with its database, roles and
 # a CanNotDelete lock, the migrate Container Apps job and the Container App. Running it again
-# converges the same resources and rotates the generated database passwords.
+# converges the same resources and keeps the database passwords the app already holds; the input
+# rotate-passwords makes new ones (a short outage, runbook section Database roles). The input
+# db-server points it at a server restored from a backup (runbook section Restore).
 #
 # It runs only by hand (Actions, Azure provision, Run workflow, branch main) and creates billed
 # resources: the owner starts it (docs/runbooks/deploy.md, section Provisioning). It logs in with
@@ -13,7 +15,8 @@
 #   secrets    ROSETTA_SECRET_KEY, ROSETTA_ADMIN_USER, ROSETTA_ADMIN_PASSWORD (required) and
 #              ROSETTA_SECRET_KEY_PREVIOUS, OPENAI_API_KEY, ANTHROPIC_API_KEY, ROSETTA_GITHUB_TOKEN
 # The database passwords are made in the job (openssl rand), masked, and stored only as Container
-# Apps secrets; every app secret reaches the container as a secretref: variable. No value is
+# Apps secrets; every app secret reaches the container as a secretref: variable. Secret values
+# reach az only as @file arguments from a mode-700 folder, never on a command line. No value is
 # written here or printed.
 name: Azure provision
 
@@ -23,6 +26,16 @@ on:
       image-tag:
         description: 'Image tag to start with, sha-<short> from a Release run'
         required: true
+        type: string
+      rotate-passwords:
+        description: 'Make new database passwords (the app cannot connect for about a minute)'
+        required: false
+        default: false
+        type: boolean
+      db-server:
+        description: 'PostgreSQL server name, only to switch to a server restored from a backup'
+        required: false
+        default: ''
         type: string
 
 permissions:
@@ -61,6 +74,8 @@ jobs:
       AZ_DB_LOCK: rosetta-db-no-delete
       IMAGE: ghcr.io/blacklight0101/rosetta
       IMAGE_TAG: ${{ inputs.image-tag }}
+      ROTATE_PASSWORDS: ${{ inputs.rotate-passwords }}
+      DB_SERVER: ${{ inputs.db-server }}
     steps:
       - name: The provisioning settings are stored
         run: |
@@ -90,16 +105,22 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       # Storage account and server names are global; a suffix from the subscription keeps them
-      # unique and the same on every run. Generated values live only in this folder (mode 700).
+      # unique and the same on every run (db-server overrides the server after a restore).
+      # Generated values live only in this folder (mode 700).
       - name: Work out the resource names
         run: |
           suffix="$(printf '%s/%s' "$AZURE_SUBSCRIPTION_ID" "$AZ_RG" | sha256sum | cut -c1-8)"
+          server="${DB_SERVER:-psql-rosetta-$suffix}"
+          if ! printf '%s' "$server" | grep -Eqx '[a-z0-9][a-z0-9-]{1,61}[a-z0-9]'; then
+            echo "::error::The db-server input must be a PostgreSQL server name (lower case, digits, dashes)."
+            exit 1
+          fi
           {
             echo "AZ_STORAGE=strosetta$suffix"
-            echo "AZ_DB_SERVER=psql-rosetta-$suffix"
+            echo "AZ_DB_SERVER=$server"
             echo "SECRETS_DIR=$RUNNER_TEMP/rosetta-secrets"
           } >> "$GITHUB_ENV"
-          install -d -m 700 "$RUNNER_TEMP/rosetta-secrets"
+          (umask 077 && mkdir -p "$RUNNER_TEMP/rosetta-secrets")
         env:
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       - name: Log Analytics workspace and Container Apps environment
@@ -108,11 +129,12 @@ jobs:
             --location "$AZ_LOCATION" --retention-time 30 --output none
           if ! az containerapp env show --name "$AZ_ENVIRONMENT" --resource-group "$AZ_RG" --output none 2> /dev/null; then
             workspace_id="$(az monitor log-analytics workspace show --resource-group "$AZ_RG" --workspace-name "$AZ_LOGS" --query customerId --output tsv)"
-            workspace_key="$(az monitor log-analytics workspace get-shared-keys --resource-group "$AZ_RG" --workspace-name "$AZ_LOGS" --query primarySharedKey --output tsv)"
-            echo "::add-mask::$workspace_key"
+            az monitor log-analytics workspace get-shared-keys --resource-group "$AZ_RG" --workspace-name "$AZ_LOGS" \
+              --query primarySharedKey --output tsv | tr -d '\r\n' > "$SECRETS_DIR/logs-key"
+            echo "::add-mask::$(< "$SECRETS_DIR/logs-key")"
             # Consumption only: no workload profiles, so no Dedicated plan (ADR-024 risks).
             az containerapp env create --name "$AZ_ENVIRONMENT" --resource-group "$AZ_RG" --location "$AZ_LOCATION" \
-              --logs-workspace-id "$workspace_id" --logs-workspace-key "$workspace_key" \
+              --logs-workspace-id "$workspace_id" --logs-workspace-key "@$SECRETS_DIR/logs-key" \
               --enable-workload-profiles false --output none
           fi
       # ADR-024: a classic SMB share (Hot LRS); the mountOptions of the app's volume let the
@@ -126,37 +148,38 @@ jobs:
             az storage share-rm create --storage-account "$AZ_STORAGE" --resource-group "$AZ_RG" --name "$AZ_SHARE" \
               --quota 5 --access-tier Hot --output none
           fi
-          storage_key="$(az storage account keys list --account-name "$AZ_STORAGE" --resource-group "$AZ_RG" --query '[0].value' --output tsv)"
-          echo "::add-mask::$storage_key"
+          az storage account keys list --account-name "$AZ_STORAGE" --resource-group "$AZ_RG" \
+            --query '[0].value' --output tsv | tr -d '\r\n' > "$SECRETS_DIR/storage-key"
+          echo "::add-mask::$(< "$SECRETS_DIR/storage-key")"
           az containerapp env storage set --name "$AZ_ENVIRONMENT" --resource-group "$AZ_RG" --storage-name "$AZ_SHARE" \
-            --azure-file-account-name "$AZ_STORAGE" --azure-file-account-key "$storage_key" \
+            --azure-file-account-name "$AZ_STORAGE" --azure-file-account-key "@$SECRETS_DIR/storage-key" \
             --azure-file-share-name "$AZ_SHARE" --access-mode ReadWrite --output none
       # PostgreSQL 17, Burstable B1MS, 32 GiB, TLS required, reachable only from Azure services,
       # backups kept 7 days (RF-1306). The administrator password is new on every run and is kept
       # nowhere: the owner resets it with az when needed (docs/runbooks/deploy.md, Backup).
+      # Argument shapes of azure-cli 2.87 and later (the runner has 2.91): child resources take
+      # --server-name for the server and --name for themselves; create takes no --database-name.
       - name: PostgreSQL Flexible Server and database
         run: |
-          openssl rand -hex 24 > "$SECRETS_DIR/db-admin-password"
-          admin_password="$(cat "$SECRETS_DIR/db-admin-password")"
-          echo "::add-mask::$admin_password"
+          openssl rand -hex 24 | tr -dc 0-9a-f > "$SECRETS_DIR/db-admin-password"
+          echo "::add-mask::$(< "$SECRETS_DIR/db-admin-password")"
           if az postgres flexible-server show --name "$AZ_DB_SERVER" --resource-group "$AZ_RG" --output none 2> /dev/null; then
             az postgres flexible-server update --name "$AZ_DB_SERVER" --resource-group "$AZ_RG" \
-              --admin-password "$admin_password" --output none
+              --admin-password "@$SECRETS_DIR/db-admin-password" --output none
           else
             az postgres flexible-server create --name "$AZ_DB_SERVER" --resource-group "$AZ_RG" --location "$AZ_LOCATION" \
               --version 17 --tier Burstable --sku-name Standard_B1ms --storage-size 32 --storage-auto-grow Disabled \
               --backup-retention 7 --geo-redundant-backup Disabled --public-access None \
-              --admin-user "$AZ_DB_ADMIN" --admin-password "$admin_password" --database-name "$AZ_DB_NAME" \
-              --yes --output none
+              --admin-user "$AZ_DB_ADMIN" --admin-password "@$SECRETS_DIR/db-admin-password" --yes --output none
           fi
           az postgres flexible-server parameter set --resource-group "$AZ_RG" --server-name "$AZ_DB_SERVER" \
             --name require_secure_transport --value on --output none
-          az postgres flexible-server firewall-rule create --resource-group "$AZ_RG" --name "$AZ_DB_SERVER" \
-            --rule-name AllowAllAzureServicesAndResourcesWithinAzureIps --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0 \
+          az postgres flexible-server firewall-rule create --resource-group "$AZ_RG" --server-name "$AZ_DB_SERVER" \
+            --name AllowAllAzureServicesAndResourcesWithinAzureIps --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0 \
             --output none
-          if ! az postgres flexible-server db show --resource-group "$AZ_RG" --server-name "$AZ_DB_SERVER" --database-name "$AZ_DB_NAME" --output none 2> /dev/null; then
+          if ! az postgres flexible-server db show --resource-group "$AZ_RG" --server-name "$AZ_DB_SERVER" --name "$AZ_DB_NAME" --output none 2> /dev/null; then
             az postgres flexible-server db create --resource-group "$AZ_RG" --server-name "$AZ_DB_SERVER" \
-              --database-name "$AZ_DB_NAME" --output none
+              --name "$AZ_DB_NAME" --output none
           fi
       # ADR-024: the backups are deleted with the server, so the server gets a CanNotDelete lock.
       # Creating a lock needs Owner or User Access Administrator; the deploy identity is Contributor,
@@ -170,18 +193,40 @@ jobs:
             echo "::warning::No CanNotDelete lock on $AZ_DB_SERVER: the owner runs az lock create (docs/runbooks/deploy.md, Provisioning)."
             echo "- Missing: CanNotDelete lock \`$AZ_DB_LOCK\` on \`$AZ_DB_SERVER\` (owner step)." >> "$GITHUB_STEP_SUMMARY"
           fi
+      # RNF-016: a rerun keeps the passwords the running app and the migrate job already hold (read
+      # back from their Container Apps secrets), so the app keeps its connections. New passwords
+      # only on the first provisioning (no app yet) or with rotate-passwords.
+      - name: Database passwords
+        run: |
+          if [ "$ROTATE_PASSWORDS" = true ] || ! az containerapp show --name "$AZ_APP" --resource-group "$AZ_RG" --output none 2> /dev/null; then
+            openssl rand -hex 24 | tr -dc 0-9a-f > "$SECRETS_DIR/app-db-password"
+            openssl rand -hex 24 | tr -dc 0-9a-f > "$SECRETS_DIR/migrator-db-password"
+            echo "New database passwords for rosetta_app and rosetta_migrator."
+          else
+            app_url="$(az containerapp secret show --name "$AZ_APP" --resource-group "$AZ_RG" --secret-name database-url --query value --output tsv)"
+            echo "::add-mask::$app_url"
+            migrator_url="$(az containerapp job secret show --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --secret-name database-migrator-url --query value --output tsv)"
+            echo "::add-mask::$migrator_url"
+            app_pw="${app_url#postgres://rosetta_app:}"
+            migrator_pw="${migrator_url#postgres://rosetta_migrator:}"
+            if [ "$app_pw" = "$app_url" ] || [ "$migrator_pw" = "$migrator_url" ]; then
+              echo "::error::The stored database URLs are not in the expected form; run again with rotate-passwords."
+              exit 1
+            fi
+            printf '%s' "${app_pw%%@*}" > "$SECRETS_DIR/app-db-password"
+            printf '%s' "${migrator_pw%%@*}" > "$SECRETS_DIR/migrator-db-password"
+            echo "Kept the database passwords of the running app."
+          fi
+          echo "::add-mask::$(< "$SECRETS_DIR/app-db-password")"
+          echo "::add-mask::$(< "$SECRETS_DIR/migrator-db-password")"
       # data-model.md section 6, the statements of db/init/roles.sh made idempotent. The runner
       # reaches the server through the Azure services rule; psql reads the passwords from the
       # environment (\getenv), so none is an argument.
       - name: Database roles
         run: |
-          openssl rand -hex 24 > "$SECRETS_DIR/app-db-password"
-          openssl rand -hex 24 > "$SECRETS_DIR/migrator-db-password"
-          echo "::add-mask::$(cat "$SECRETS_DIR/app-db-password")"
-          echo "::add-mask::$(cat "$SECRETS_DIR/migrator-db-password")"
-          PGPASSWORD="$(cat "$SECRETS_DIR/db-admin-password")" \
-          ROSETTA_APP_DB_PASSWORD="$(cat "$SECRETS_DIR/app-db-password")" \
-          ROSETTA_MIGRATOR_DB_PASSWORD="$(cat "$SECRETS_DIR/migrator-db-password")" \
+          PGPASSWORD="$(< "$SECRETS_DIR/db-admin-password")" \
+          ROSETTA_APP_DB_PASSWORD="$(< "$SECRETS_DIR/app-db-password")" \
+          ROSETTA_MIGRATOR_DB_PASSWORD="$(< "$SECRETS_DIR/migrator-db-password")" \
             psql --no-psqlrc -v ON_ERROR_STOP=1 \
               "host=$AZ_DB_SERVER.postgres.database.azure.com port=5432 dbname=$AZ_DB_NAME user=$AZ_DB_ADMIN sslmode=require" <<'SQL'
           \getenv app_password ROSETTA_APP_DB_PASSWORD
@@ -200,17 +245,18 @@ jobs:
       # secret; the app starts only after it succeeded (RF-1302).
       - name: Migrate job, run it and wait for success
         run: |
-          migrator_url="postgres://rosetta_migrator:$(cat "$SECRETS_DIR/migrator-db-password")@$AZ_DB_SERVER.postgres.database.azure.com:5432/$AZ_DB_NAME?sslmode=require"
+          migrator_url="postgres://rosetta_migrator:$(< "$SECRETS_DIR/migrator-db-password")@$AZ_DB_SERVER.postgres.database.azure.com:5432/$AZ_DB_NAME?sslmode=require"
           echo "::add-mask::$migrator_url"
+          printf 'database-migrator-url=%s' "$migrator_url" > "$SECRETS_DIR/migrator-secret"
           if az containerapp job show --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --output none 2> /dev/null; then
             az containerapp job secret set --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" \
-              --secrets "database-migrator-url=$migrator_url" --output none
+              --secrets "@$SECRETS_DIR/migrator-secret" --output none
             az containerapp job update --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --image "$IMAGE:$IMAGE_TAG" --output none
           else
             az containerapp job create --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --environment "$AZ_ENVIRONMENT" \
               --trigger-type Manual --replica-timeout 900 --replica-retry-limit 0 --replica-completion-count 1 --parallelism 1 \
               --image "$IMAGE:$IMAGE_TAG" --cpu 0.5 --memory 1Gi --command node --args dist/presentation/migrate.js \
-              --secrets "database-migrator-url=$migrator_url" \
+              --secrets "@$SECRETS_DIR/migrator-secret" \
               --env-vars DATABASE_MIGRATOR_URL=secretref:database-migrator-url ROSETTA_LOG_LEVEL=info --output none
           fi
           execution="$(az containerapp job start --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --query name --output tsv)"
@@ -227,12 +273,12 @@ jobs:
       # ADR-024: 0.5 vCPU, 1 GiB, one replica, external ingress on 8080 (HTTP redirected to HTTPS),
       # startup, liveness and readiness probes on /healthz, the share at /data. The definition is
       # built with jq from the environment (no value on a command line) into the secrets folder.
-      # A new revision suffix per run makes the app read the rotated database password.
+      # A new revision suffix per run makes the app read any changed secret, such as a rotated password.
       - name: Create or update the Container App
         run: |
           fqdn="$AZ_APP.$(az containerapp env show --name "$AZ_ENVIRONMENT" --resource-group "$AZ_RG" --query properties.defaultDomain --output tsv)"
           environment_id="$(az containerapp env show --name "$AZ_ENVIRONMENT" --resource-group "$AZ_RG" --query id --output tsv)"
-          DATABASE_URL="postgres://rosetta_app:$(cat "$SECRETS_DIR/app-db-password")@$AZ_DB_SERVER.postgres.database.azure.com:5432/$AZ_DB_NAME?sslmode=require"
+          DATABASE_URL="postgres://rosetta_app:$(< "$SECRETS_DIR/app-db-password")@$AZ_DB_SERVER.postgres.database.azure.com:5432/$AZ_DB_NAME?sslmode=require"
           echo "::add-mask::$DATABASE_URL"
           export DATABASE_URL
           # Container Apps secret = the variable holding its value; an optional one left empty is

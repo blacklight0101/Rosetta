@@ -123,7 +123,7 @@ jobs:
     needs: [image]
     if: vars.ROSETTA_DEPLOY_ENABLED == 'true' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     environment:
       name: production
       url: ${{ vars.ROSETTA_PUBLIC_URL }}
