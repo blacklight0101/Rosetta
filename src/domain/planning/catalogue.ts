@@ -1,3 +1,4 @@
+import type { ClaimVerbs } from './claim-verbs.js';
 import type { StackData } from './stack-data.js';
 
 // RF-606, ADR-018, DEC-73, DEC-74, DEC-84: the principle catalogue `plan` chooses from. Each entry
@@ -62,6 +63,8 @@ export interface Catalogue {
   readonly styles: readonly ArchitectureStyle[];
   /** RF-609: the technologies and rules of the stack check; part of the hashed folder. */
   readonly stack: StackData;
+  /** P5-43: the verbs that contradict each other in the claim meaning check; part of the hashed folder. */
+  readonly claimVerbs: ClaimVerbs;
 }
 
 export function isArchitectureStyleId(id: string): id is ArchitectureStyleId {

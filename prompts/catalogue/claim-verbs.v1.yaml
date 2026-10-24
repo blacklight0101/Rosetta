@@ -1,0 +1,72 @@
+# Verbs and values that contradict each other when a plan statement and its source claim use them (P5-43).
+# RF-602, RNF-004: part of the versioned catalogue; its name carries the version and the catalogue SHA-256 covers it.
+# A term is a word stem: it matches every word that starts with it, ignoring case. No term is specific to a
+# language, framework or database: the check reads the words of the claims and of the plan, nothing else.
+families:
+  - id: remove-or-mark
+    sides:
+      - label: removes it
+        terms: [delet, remov, eras, purg, destroy]
+      - label: marks its status or archives it
+        terms: [reject, archiv, deactivat, cancel, suspend]
+  - id: record-or-ignore
+    sides:
+      - label: records or stores it
+        terms: [record, stor, persist, sav]
+      - label: ignores or discards it
+        terms: [ignor, discard, skip, omit]
+  - id: block-or-report
+    sides:
+      - label: blocks or prevents it
+        terms: [block, prevent, forbid, prohibit, abort]
+      - label: only reports it
+        terms: [print, warn, notif, echo]
+  - id: allow-or-deny
+    sides:
+      - label: allows it
+        terms: [allow, permit, enabl, grant]
+      - label: denies it
+        terms: [deny, denie, disabl, revok, refus]
+  - id: required-or-optional
+    sides:
+      - label: is required
+        terms: [requir, mandator, compulsor]
+      - label: is optional
+        terms: [optional, voluntar]
+  - id: period
+    sides:
+      - label: covers a week
+        terms: [week]
+      - label: covers a month
+        terms: [month]
+      - label: covers a day
+        terms: [daily, today]
+# Files whose claims are documentation: a claim that cites only these yields to a claim that cites other files.
+documentation:
+  extensions: [md, markdown, txt, rst, adoc]
+  names: [readme, changelog, license]
+# Words of five letters or more that tell nothing about a topic; two texts share a topic by a word not in this list.
+stopWords:
+  [
+    about,
+    after,
+    again,
+    being,
+    could,
+    every,
+    other,
+    should,
+    their,
+    there,
+    these,
+    those,
+    under,
+    until,
+    where,
+    which,
+    while,
+    would,
+    using,
+    based,
+    when,
+  ]

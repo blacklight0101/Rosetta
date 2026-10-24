@@ -1,9 +1,9 @@
+import { usableCards } from '../../domain/planning/code-over-documentation.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { ok } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { PlanAssembly } from '../../domain/planning/plan-content.js';
 import { methodPrinciples } from '../../domain/planning/task-method.js';
-import { supportedCards } from '../../domain/planning/plan-sources.js';
 import { recordManifestBrief } from '../../domain/runs/manifest-brief.js';
 import { recordManifestSourceRun } from '../../domain/runs/manifest-source-run.js';
 import {
@@ -127,7 +127,7 @@ export class BuildPlan implements RunExecutor {
     if (typeof planner === 'string') return failed(planner);
     if (signal.aborted) return { endState: 'Interrupted' };
     const { cards, brief, questions } = inputs.value;
-    const supported = supportedCards(cards);
+    const supported = usableCards(cards, catalogue.claimVerbs).cards;
     const answered = questions.filter((question) => question.answer.trim() !== '');
     const call = {
       ...{ run, planner, prompt: prompts.plan, agentTaskId: 'planner-package', updates, signal },
