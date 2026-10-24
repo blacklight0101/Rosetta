@@ -61,6 +61,8 @@ export interface SourceCard {
   readonly title: string;
   readonly summary: string;
   readonly area: string;
+  /** P5-32: the ids consolidation merged into this card, its own first. */
+  readonly mergedFrom?: readonly string[] | undefined;
   readonly claims: readonly SourceClaim[];
   /** `FLOW` cards only: what starts the journey and how it ends (RF-260). */
   readonly flow?: { readonly trigger: string; readonly outcome: string } | undefined;
