@@ -33,6 +33,7 @@ const sideSchema = z.strictObject({
 
 const familySchema = z.strictObject({
   id: z.string().regex(/^[a-z0-9-]+$/u),
+  nounLike: z.boolean(),
   sides: z.array(sideSchema).min(2).max(4),
 });
 
@@ -43,6 +44,17 @@ const fileSchema = z.strictObject({
     names: z.array(shortWord).max(20),
   }),
   stopWords: z.array(word).max(300),
+  nounCues: z.array(shortWord).max(60),
+  notVerbPhrases: z
+    .array(
+      z
+        .string()
+        .trim()
+        .toLowerCase()
+        .regex(/^[\p{L}\p{N}]+ [\p{L}\p{N}]+$/u),
+    )
+    .max(300),
+  roleCues: z.array(shortWord).max(60),
 });
 
 function invalid(name: string, problem: string, cause?: unknown): RosettaError {
@@ -65,7 +77,7 @@ export function parseClaimVerbs(name: string, version: number, text: string): Cl
   }
   const parsed = fileSchema.safeParse(document);
   if (!parsed.success) throw invalid(name, 'breaks its shape', parsed.error);
-  const { families, documentation, stopWords } = parsed.data;
+  const { families, documentation, stopWords, nounCues, notVerbPhrases, roleCues } = parsed.data;
   if (new Set(families.map((family) => family.id)).size !== families.length) {
     throw invalid(name, 'repeats a family id');
   }
@@ -74,6 +86,6 @@ export function parseClaimVerbs(name: string, version: number, text: string): Cl
     families,
     documentExtensions: documentation.extensions,
     documentNames: documentation.names,
-    stopWords,
+    ...{ stopWords, nounCues, notVerbPhrases, roleCues },
   };
 }

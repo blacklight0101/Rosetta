@@ -4,36 +4,42 @@
 # language, framework or database: the check reads the words of the claims and of the plan, nothing else.
 families:
   - id: remove-or-mark
+    nounLike: true
     sides:
       - label: removes it
         terms: [delet, remov, eras, purg, destroy]
       - label: marks its status or archives it
         terms: [reject, archiv, deactivat, cancel, suspend]
   - id: record-or-ignore
+    nounLike: true
     sides:
       - label: records or stores it
         terms: [record, stor, persist, sav]
       - label: ignores or discards it
         terms: [ignor, discard, skip, omit]
   - id: block-or-report
+    nounLike: true
     sides:
       - label: blocks or prevents it
         terms: [block, prevent, forbid, prohibit, abort]
       - label: only reports it
         terms: [print, warn, notif, echo]
   - id: allow-or-deny
+    nounLike: true
     sides:
       - label: allows it
         terms: [allow, permit, enabl, grant]
       - label: denies it
         terms: [deny, denie, disabl, revok, refus]
   - id: required-or-optional
+    nounLike: false
     sides:
       - label: is required
         terms: [requir, mandator, compulsor]
       - label: is optional
         terms: [optional, voluntar]
   - id: period
+    nounLike: false
     sides:
       - label: covers a week
         terms: [week]
@@ -69,4 +75,41 @@ stopWords:
     using,
     based,
     when,
+  ]
+# A term right after one of these words is a noun, not a verb ("the record", "a block").
+nounCues: [the, a, an, this, that, these, those, each, every, any, its, their, his, her, of, no]
+# Two-word phrases whose words are never verbs, even when one starts with a term ("patient records").
+notVerbPhrases:
+  - patient records
+  - medical records
+  - audit records
+  - store manager
+  - store owner
+  - store front
+  - warning banner
+  - warning message
+  - warning label
+  - print preview
+  - print layout
+  - skip link
+# A role is stated by a claim when its name stands within three words of one of these, or opens the claim.
+roleCues:
+  [
+    role,
+    roles,
+    user,
+    users,
+    actor,
+    may,
+    can,
+    only,
+    must,
+    allowed,
+    permitted,
+    authorized,
+    authorised,
+    permission,
+    restricted,
+    requires,
+    required,
   ]

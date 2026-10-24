@@ -93,6 +93,16 @@ describe('P5-43 verbs that contradict the claim', () => {
   });
 });
 
+describe('P5-43 nouns are not verbs', () => {
+  it.each([
+    ['Show the patient records.', 'Inactive patients are skipped.'],
+    ['The store manager edits the product price.', 'Discontinued products are ignored.'],
+    ['A warning banner shows the appointment conflict.', 'A conflict blocks the booking.'],
+  ])('RF-602 "%s" against "%s" is not listed', (statement, claim) => {
+    expect(check(statement, [card('FEAT-001', [claim])]).contradictions).toEqual([]);
+  });
+});
+
 describe('P5-43 values and roles no claim states', () => {
   it('RF-602 a number or quoted value no claim states is listed', () => {
     const found = check('Show the top 20 appointments with status "Approved".', [rejects]);
@@ -121,8 +131,18 @@ describe('P5-43 values and roles no claim states', () => {
     ]);
   });
 
+  it('RF-602 a role whose word only appears inside a claim is still proposed', () => {
+    const seeded = card('FEAT-001', ['The script seeds one administrator account.']);
+    const prd: PrdContent = {
+      ...emptyPrd,
+      roles: [{ name: 'Administrator', description: 'Manages.', sources: ['FEAT-001'] }],
+    };
+
+    expect(check('Seed the data.', [seeded], prd).proposedRoles).toEqual(['Administrator']);
+  });
+
   it('RF-602 a role a claim states is not proposed', () => {
-    const doctor = card('FEAT-001', ['A doctor rejects the appointment.']);
+    const doctor = card('FEAT-001', ['Only a doctor may reject the appointment.']);
     const prd: PrdContent = {
       ...emptyPrd,
       roles: [{ name: 'Doctors', description: 'Treat patients.', sources: ['FEAT-001'] }],
@@ -152,6 +172,17 @@ describe('P5-43 code claims win over documentation claims', () => {
         code: 'covers a month',
       },
     ]);
+  });
+
+  it('RF-602 one shared word is not enough to overrule a documentation claim', () => {
+    const install = card(
+      'DOC-002',
+      ['Install the dependencies and run the monthly migration script.'],
+      'README.md',
+    );
+    const dashboard = card('FEAT-005', ['The dashboard shows the dependencies of this week.']);
+
+    expect(codeOverDocumentation([install, dashboard], verbs).overruled).toEqual([]);
   });
 
   it('RF-602 documentation that nothing in the code contradicts stays', () => {

@@ -1,12 +1,4 @@
-import {
-  MAX_TEXT,
-  namesRole,
-  prefixesOf,
-  roleStated,
-  statesValue,
-  valuesOf,
-  wordsOf,
-} from './claim-text.js';
+import { MAX_TEXT, namesRole, roleStated, statesValue, valuesOf, wordsOf } from './claim-text.js';
 import type { ClaimVerbs, VerbFamily } from './claim-verbs.js';
 import type { PlanContent } from './plan-content.js';
 import type { SourceCard } from './plan-sources.js';
@@ -67,6 +59,29 @@ export interface Claim {
   readonly text: string;
 }
 
+/** The words with the noun uses of terms taken out: after a noun cue, or inside a not-verb phrase. */
+function verbWordsOf(words: readonly string[], verbs: ClaimVerbs): string[] {
+  const cues = new Set(verbs.nounCues);
+  const phrases = new Set(verbs.notVerbPhrases);
+  const nounTerms = verbs.families
+    .filter((family) => family.nounLike)
+    .flatMap((family) => family.sides.flatMap((side) => side.terms));
+  return words.filter((word, at) => {
+    const before = words[at - 1];
+    const after = words[at + 1];
+    const nounLike = nounTerms.some((term) => word.startsWith(term));
+    if (before !== undefined && phrases.has(`${before} ${word}`)) return false;
+    if (before !== undefined && nounLike && cues.has(before)) return false;
+    return after === undefined || !phrases.has(`${word} ${after}`);
+  });
+}
+
+/** Two topics are shared when at least half of the shorter one, and one key at least, is common. */
+function sharesTopic(first: ReadonlySet<string>, second: ReadonlySet<string>): boolean {
+  const common = [...first].filter((key) => second.has(key)).length;
+  return common > 0 && common >= Math.ceil(Math.min(first.size, second.size) / 2);
+}
+
 function sidesOf(words: readonly string[], family: VerbFamily): Set<number> {
   const found = new Set<number>();
   family.sides.forEach((side, at) => {
@@ -114,12 +129,12 @@ function clashOf(
   verbs: ClaimVerbs,
 ): (Clash & { readonly claim: Claim }) | undefined {
   const topics = topicsOf(statement, verbs);
-  const near = claims.filter(({ words }) => {
-    const claimTopics = topicsOf(words, verbs);
-    return [...topics].some((key) => claimTopics.has(key));
-  });
+  const near = claims
+    .filter(({ words }) => sharesTopic(topics, topicsOf(words, verbs)))
+    .map((each) => ({ ...each, words: verbWordsOf(each.words, verbs) }));
+  const spoken = verbWordsOf(statement, verbs);
   for (const family of verbs.families) {
-    const own = sidesOf(statement, family);
+    const own = sidesOf(spoken, family);
     if (own.size === 0) continue;
     const taken = near.map((each) => ({ ...each, sides: sidesOf(each.words, family) }));
     if (taken.some(({ sides }) => [...sides].some((side) => own.has(side)))) continue;
@@ -253,8 +268,9 @@ export function claimMeaning(
     ...statements.map((each) => checkStatement(each, claimsOf(each), verbs)),
     ...stepChecks(flows, verbs),
   ];
-  const prefixes = prefixesOf(sources);
-  const proposed = prd.roles.map((role) => role.name).filter((name) => !roleStated(name, prefixes));
+  const proposed = prd.roles
+    .map((role) => role.name)
+    .filter((name) => !roleStated(name, sources, verbs));
   const unstatedRoles = [
     ...proposed.map((role) => ({ where: 'PRD roles', role })),
     ...statements

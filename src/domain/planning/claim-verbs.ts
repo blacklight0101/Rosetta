@@ -13,6 +13,8 @@ interface VerbSide {
 /** Two or more sides that exclude each other: a statement that holds one and not the other. */
 export interface VerbFamily {
   readonly id: string;
+  /** True when its terms are also nouns ("a record", "the block"): after a noun cue they are not read. */
+  readonly nounLike: boolean;
   readonly sides: readonly VerbSide[];
 }
 
@@ -25,6 +27,12 @@ export interface ClaimVerbs {
   /** File base names (lower case, no extension) of documentation files. */
   readonly documentNames: readonly string[];
   readonly stopWords: readonly string[];
+  /** Words after which a following term is a noun, not a verb. */
+  readonly nounCues: readonly string[];
+  /** Two-word phrases (lower case) whose words are never read as verbs. */
+  readonly notVerbPhrases: readonly string[];
+  /** Words near a role name that show a claim states it as a role. */
+  readonly roleCues: readonly string[];
 }
 
 /** No family, no documentation file: a catalogue built by hand for a test that does not use the check. */
@@ -34,4 +42,7 @@ export const noClaimVerbs: ClaimVerbs = {
   documentExtensions: [],
   documentNames: [],
   stopWords: [],
+  nounCues: [],
+  notVerbPhrases: [],
+  roleCues: [],
 };

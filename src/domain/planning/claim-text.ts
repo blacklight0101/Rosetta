@@ -1,3 +1,4 @@
+import type { ClaimVerbs } from './claim-verbs.js';
 import type { SourceCard } from './plan-sources.js';
 
 // P5-43, RF-602, ADR-013: the words, values and roles of the texts the claim meaning check reads.
@@ -37,26 +38,42 @@ function normalWord(word: string): string {
   return word.length > 3 && word.endsWith('s') ? word.slice(0, -1) : word;
 }
 
-/** Every word of the supported cards (titles, summaries, claims and screen roles), by its first five letters. */
-export function prefixesOf(sources: readonly SourceCard[]): Set<string> {
-  const found = new Set<string>();
-  for (const card of sources) {
-    const texts = [
-      card.title,
-      card.summary,
-      ...card.claims.map((claim) => claim.text),
-      ...(card.screen?.roles ?? []),
-    ];
-    for (const text of texts) {
-      for (const word of wordsOf(text)) found.add(normalWord(word).slice(0, 5));
-    }
-  }
-  return found;
+/** The words of `claim` stand a role name: it opens the claim, or stands within three words of a cue. */
+function claimStatesRole(
+  claim: string,
+  role: readonly string[],
+  cues: ReadonlySet<string>,
+): boolean {
+  const words = wordsOf(claim).map(normalWord);
+  const first = role[0];
+  if (first === undefined) return false;
+  return words.some((word, at) => {
+    if (word !== first || !role.every((each, step) => words[at + step] === each)) return false;
+    if (at < 4) return true;
+    const near = words.slice(Math.max(0, at - 3), at + role.length + 3);
+    return near.some((other) => cues.has(other));
+  });
 }
 
-export function roleStated(name: string, prefixes: ReadonlySet<string>): boolean {
-  const words = wordsOf(name).map(normalWord);
-  return words.length === 0 || words.every((word) => prefixes.has(word.slice(0, 5)));
+/**
+ * A role is stated when a screen card lists it, or a Supported claim states it as a role: the name opens
+ * the claim, or stands within three words of a cue of the catalogue ("only a manager may ...", "the role
+ * ..."). A name that only appears somewhere in a card ("seeds one administrator account") states nothing.
+ */
+export function roleStated(
+  name: string,
+  sources: readonly SourceCard[],
+  verbs: ClaimVerbs,
+): boolean {
+  const role = wordsOf(name).map(normalWord);
+  if (role.length === 0) return true;
+  const cues = new Set(verbs.roleCues);
+  return sources.some(
+    (card) =>
+      (card.screen?.roles ?? []).some(
+        (each) => wordsOf(each).map(normalWord).join(' ') === role.join(' '),
+      ) || card.claims.some((claim) => claimStatesRole(claim.text, role, cues)),
+  );
 }
 
 export function namesRole(text: string, role: string): boolean {
