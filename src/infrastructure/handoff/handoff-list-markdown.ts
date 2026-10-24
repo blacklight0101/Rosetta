@@ -112,6 +112,14 @@ function sourcesPlace(handoff: HandoffPackage): string {
     : 'in the uploaded workbooks';
 }
 
+/** P5-32: the ids merged into a card, each an anchor of its own so an old link still lands here. */
+function aliasLines(card: HandoffPackage['sources'][number]): string[] {
+  const merged = (card.mergedFrom ?? []).filter((id) => id !== card.id);
+  if (merged.length === 0) return [];
+  const anchors = merged.map((id) => `<a id="${id.toLowerCase()}"></a>`).join('');
+  return [`Merged ids: ${merged.join(', ')}${anchors}`, ''];
+}
+
 // RF-602
 export function sourcesMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const where = sourcesPlace(handoff);
@@ -127,6 +135,7 @@ export function sourcesMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): 
       '',
       esc.block(card.summary),
       '',
+      ...aliasLines(card),
       ...card.claims.map(
         (claim) =>
           `- ${esc.inline(claim.claimId)}: ${esc.inline(claim.text)} Citations: ${claim.citations.map((citation) => esc.inline(formatCitation(citation))).join(', ')}`,

@@ -44,6 +44,7 @@ const headerSchema = z.object({
   title: z.string(),
   summary: z.string(),
   area: z.string(),
+  mergedFrom: z.array(z.string().regex(/^[A-Z]+-\d+$/u)).optional(),
   flow: z.object({ trigger: z.string(), outcome: z.string() }).optional(),
   screen: screenSchema.optional(),
   claims: z.array(

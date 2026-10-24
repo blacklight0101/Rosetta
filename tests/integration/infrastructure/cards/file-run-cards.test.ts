@@ -116,3 +116,30 @@ describe('FileRunCards: refusals', () => {
     });
   });
 });
+
+describe('FileRunCards: merged ids', () => {
+  it('P5-32 reads the ids a card merged and refuses one that is not a card id', async () => {
+    const writer = await written();
+    const path = `${runFolder}/cards/FEAT/FEAT-001.md`;
+    const read = await writer.readText({ userId, path });
+    const text = read.ok ? read.value : '';
+    const withIds = (ids: string): string =>
+      text.replace(
+        'id: "FEAT-001"',
+        `id: "FEAT-001"
+mergedFrom: ${ids}`,
+      );
+
+    await writer.writeText({ userId, path }, withIds('["FEAT-001", "FEAT-009"]'));
+    const cards = await new FileRunCards(writer).cardsOf(scope);
+    expect(cards.find((card) => card.id === 'FEAT-001')?.mergedFrom).toEqual([
+      'FEAT-001',
+      'FEAT-009',
+    ]);
+
+    await writer.writeText({ userId, path }, withIds('["x\\"><b>"]'));
+    await expect(new FileRunCards(writer).cardsOf(scope)).rejects.toMatchObject({
+      code: ERROR_CODES.planSourceMissing,
+    });
+  });
+});
