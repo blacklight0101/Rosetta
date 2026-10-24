@@ -1,11 +1,12 @@
 import type { PlanContent } from './plan-content.js';
+import { isMigrationCard } from './plan-coverage.js';
 import type { PhaseNote } from './requirement-notes.js';
 
 // RF-601, RF-627, P5-40: a phase is titled from the cards it holds. The planner names the phases
 // before it knows which cards land in them, and the gap pass adds cards later, so a name can
 // describe other work (a phase "Marks" holding the attendance card). A name that shares no word
 // with any card of its phase is replaced by the titles of those cards, and the change is noted
-// for checks.md. A name that fits, and a phase with no card, are left as they are. Words count
+// for checks.md. The card code writes for the migrations is not the planner's work and names no phase. A name that fits, and a phase with no card, are left as they are. Words count
 // when they are two letters or more and not filler; a word matches another when one starts with
 // the other (Pay, Payments; Order, Orders), and two neighbouring words also count joined (Set up,
 // Setup).
@@ -53,7 +54,9 @@ function fits(name: string, titles: readonly string[]): boolean {
 export function titlePhases(content: PlanContent): PlanContent {
   const notes: PhaseNote[] = [];
   const phases = content.phases.map((phase) => {
-    const titles = content.tasks.filter((task) => task.phase === phase.number).map((t) => t.title);
+    const titles = content.tasks
+      .filter((task) => task.phase === phase.number && !isMigrationCard(task))
+      .map((t) => t.title);
     if (titles.length === 0 || fits(phase.name, titles)) return phase;
     const to = titled(titles);
     notes.push({ phase: phase.number, from: phase.name, to });

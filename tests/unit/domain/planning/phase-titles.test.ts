@@ -76,3 +76,28 @@ describe('titlePhases: names that fit', () => {
     expect(titlePhases(content).phases[0]?.name).toBe('Mark data with bands');
   });
 });
+
+describe('titlePhases: the migrations card', () => {
+  it('RF-627 P5-40 the card code writes for the migrations does not name a phase', () => {
+    const migrations = planTask({
+      id: 'T-001',
+      title: 'Write the database migrations in the chosen stack',
+    });
+    const content = plan(
+      ['Orders'],
+      [migrations, planTask({ id: 'T-002', title: 'Checkout flow' })],
+    );
+
+    expect(titlePhases(content).phases[0]?.name).toBe('Checkout flow');
+  });
+
+  it('RF-627 P5-40 a phase that holds only the migrations card keeps its name', () => {
+    const migrations = planTask({
+      id: 'T-001',
+      title: 'Write the database migrations in the chosen stack',
+    });
+    const content = plan(['Orders'], [migrations]);
+
+    expect(titlePhases(content)).toBe(content);
+  });
+});
