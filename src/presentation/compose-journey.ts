@@ -6,9 +6,9 @@ import type { RunIndex } from '../application/ports/run-index.js';
 import type { RunManifestStore } from '../application/ports/run-manifest-store.js';
 import type { OutputWriter } from '../application/ports/output-writer.js';
 import { GetJourney } from '../application/use-cases/get-journey.js';
-import { FileRunCards } from '../infrastructure/cards/file-run-cards.js';
 import { FilePlanningBriefStore } from '../infrastructure/files/file-planning-brief-store.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
+import { keptRunCards } from './kept-card-readers.js';
 
 // RF-615, architecture section 2 (composition root): the facts of the journey strip, over the run
 // index, the manifests, the events, the saved brief and the card and answer files of the runs.
@@ -31,6 +31,6 @@ export function composeJourney(parts: JourneyParts): GetJourney {
   const briefs = new FilePlanningBriefStore({ writer, masker: parts.parts.masker });
   return new GetJourney({
     ...{ projects, runs, manifests, history: log, answers, priorCards, briefs },
-    cards: new FileRunCards(writer),
+    cards: keptRunCards(writer),
   });
 }

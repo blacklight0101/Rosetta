@@ -8,7 +8,6 @@ import type { ProviderSetFactory } from '../application/ports/provider-set-facto
 import type { RunIndex } from '../application/ports/run-index.js';
 import type { ScanResults } from '../application/ports/scan-results.js';
 import { SuggestPlanOptions } from '../application/use-cases/suggest-plan-options.js';
-import { FileRunCards } from '../infrastructure/cards/file-run-cards.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
@@ -16,6 +15,7 @@ import { loadPlanOptionsPrompt } from '../infrastructure/prompts/prompt-files.js
 import { projectCallSinks } from '../infrastructure/providers/project-call-sinks.js';
 import { SystemTimeoutSignals } from '../infrastructure/system/system-timeout-signals.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
+import { keptRunCards } from './kept-card-readers.js';
 
 // Architecture section 2 (composition root), RF-608, RF-609, ADR-003, ADR-007: the options of Plan
 // setup. The planner's provider comes only from the provider factory; the cards of the newest
@@ -46,7 +46,7 @@ export function composePlanOptions(parts: PlanOptionsParts): SuggestPlanOptions 
   return new SuggestPlanOptions({
     ...{ projects, runs, scans, providers, logger },
     users: new PgUserRepository(pool),
-    cards: new FileRunCards(writer),
+    cards: keptRunCards(writer),
     callSinks: projectCallSinks({ writer, masker, clock, dataDir }),
     catalogue: () => loadCatalogue(promptsFolder),
     prompt: () => loadPlanOptionsPrompt(promptsFolder),

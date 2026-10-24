@@ -32,7 +32,10 @@ export function composeObservability(parts: ObservabilityParts): ObservabilitySe
     reader: parts.writer,
     masker: new MemoizedMasker(parts.masker),
   });
-  const logs = new FileApplicationLogReader({ dataDir: parts.dataDir, masker: parts.masker });
+  const logs = new FileApplicationLogReader({
+    dataDir: parts.dataDir,
+    masker: new MemoizedMasker(parts.masker),
+  });
   return {
     listRunCalls: new ListRunCalls({ runs, calls, manifests }),
     getCallTranscript: new GetCallTranscript({ runs, calls }),

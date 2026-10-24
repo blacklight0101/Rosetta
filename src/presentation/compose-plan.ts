@@ -10,8 +10,6 @@ import type { RunIndex } from '../application/ports/run-index.js';
 import type { RunManifestStore } from '../application/ports/run-manifest-store.js';
 import { BuildPlan } from '../application/use-cases/build-plan.js';
 import { FileCostReportWriter } from '../infrastructure/budget/cost-report-files.js';
-import { FileRunCards } from '../infrastructure/cards/file-run-cards.js';
-import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
 import { composeScanResults } from './compose-understand.js';
 import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
@@ -39,6 +37,7 @@ import {
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
+import { keptRunCards, keptPriorCards } from './kept-card-readers.js';
 
 // Architecture section 2 (composition root), RF-604, ADR-003, ADR-018: the executor of the `plan`
 // stage. The planner's provider comes only from the provider factory; the brief, the cards of the
@@ -70,8 +69,8 @@ export function composePlan(parts: PlanParts): BuildPlan {
     users: new PgUserRepository(pool),
     scans: composeScanResults(parts),
     briefs: new FilePlanningBriefStore({ writer, masker }),
-    cards: new FileRunCards(writer),
-    priorCards: new FilePriorCards(writer),
+    cards: keptRunCards(writer),
+    priorCards: keptPriorCards(writer),
     answers: parts.answers,
     providers: parts.providers,
     runSinks: (scope) => ({
