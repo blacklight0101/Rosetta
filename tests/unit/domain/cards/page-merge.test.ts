@@ -129,10 +129,13 @@ describe('P5-32 crossAreaMerges', () => {
 
   it('two integration cards of one title for one mail server in two areas are one merge', () => {
     const cards = [
-      card({ id: 'INT-001', type: 'INT', title: 'Mail server', claims: [['A.', 'web/Mail.cs']] }),
+      card({
+        ...{ id: 'INT-001', type: 'INT', title: 'Mail server' },
+        claims: [['Sends via smtp://mail.example.test:25.', 'web/Mail.cs']],
+      }),
       card({
         ...{ id: 'INT-002', type: 'INT', title: 'mail servers', area: 'jobs' },
-        claims: [['B.', 'jobs/Send.cs']],
+        claims: [['Relays to smtp://mail.example.test:587.', 'jobs/Send.cs']],
       }),
     ];
 
@@ -169,7 +172,7 @@ describe('P5-32 crossAreaMerges, systems and exclusions', () => {
       card({ id: 'BR-001', claims: [['Calls https://rates.example.test/v1.', 'web/R.cs']] }),
       card({
         ...{ id: 'BR-002', area: 'jobs' },
-        claims: [['Reads rates.example.test daily.', 'jobs/R.cs']],
+        claims: [['Reads https://rates.example.test/v2 daily.', 'jobs/R.cs']],
       }),
     ];
 
