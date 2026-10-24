@@ -69,11 +69,31 @@ describe('statedSeeds: a claim that may tell of a secret', () => {
     'Seeded config has the API key sk_live_LEAK7',
     'Seed data: the apikey LEAK8 and the salt LEAK9',
     "Seed data: the password: 'LEAK1'",
+    "INSERT INTO Staff (Name, Pin) VALUES ('sam','LEAK26')",
+    "INSERT INTO Employees (Name, Pass) VALUES ('tom','LEAK27')",
+    "INSERT INTO Operators (name, passcode) VALUES ('op','LEAK29')",
+    "The seed updates Users SET Pass = 'LEAK30'",
+    "INSERT INTO Staff (Name, Pass_Word) VALUES ('tom','LEAK31')",
+    'The seed sets p@ssword LEAK32',
+    "INSERT INTO Personas (nombre, clave) VALUES ('ana','LEAK33')",
+    "INSERT INTO Contactos (nombre, contrasena) VALUES ('ana','LEAK34')",
+    "INSERT INTO Contatos (nome, senha) VALUES ('ana','LEAK35')",
+    "INSERT INTO Usuarios VALUES ('ana','LEAK36')",
+    "INSERT INTO Admins VALUES ('root','LEAK37')",
+    "INSERT INTO Operadores VALUES ('op','LEAK38')",
   ])('P5-42 leaks nothing of a secret claim: %s', (text) => {
     const [seed] = statedSeeds([card([text, 'Supported'])]);
 
     expect(seed?.masked).toBe(true);
     expect(seed?.text).not.toMatch(/LEAK|987654|0x5f|hunter9|5f4dcc|sk_live|dave/u);
+  });
+});
+
+describe('statedSeeds: the text kept', () => {
+  it('P5-42 the mask follows the kept text with one space', () => {
+    const [seed] = statedSeeds([card(["INSERT INTO Users VALUES (1, 'x')", 'Supported'])]);
+
+    expect(seed?.text).toBe('INSERT INTO Users VALUES ***');
   });
 
   it('P5-42 a claim with no secret is listed as written and not marked masked', () => {
