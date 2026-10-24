@@ -15,3 +15,7 @@ The shape of a large understand: the 371 supported cards of the Deepen run of a 
 ## data-model-sqlserver-orders-wrong.json and data-model-sqlserver-orders-right.json (P3-120)
 
 Hand-written data-model answers for a synthetic project: SQL strings against `tblOrders(id int, status_id int, ...)`, a `tblStatus` table and a rule "status 6 means deleted", planned under SQL Server. The first is the answer of the failing kind (PostgreSQL types, a uuid key, no `status_id`, no status table); the second is a right one. They describe no real application and copy no text from anywhere.
+
+## data-model-clinic-staff-wrong.json (P5-37)
+
+A hand-written data-model answer of the failing kind for a synthetic `Staff` table (see `tests/support/data-model-column-facts.ts`): a float kept as an integer, NOT NULL dropped, a default lost, a float changed to numeric with a stated reason, and a type of another database. It describes no real application and copies no text from anywhere.

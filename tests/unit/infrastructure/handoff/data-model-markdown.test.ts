@@ -173,3 +173,19 @@ describe('dataModelMarkdown: no executable DDL, only escaped text', () => {
     expect(text).not.toContain(fakeOpenAiKey.slice(8, 30));
   });
 });
+
+describe('dataModelMarkdown: defaults', () => {
+  it('P5-37 shows the default a legacy claim states next to the nullability', () => {
+    const model = targetModel();
+    const tables = model.tables.map((table) => ({
+      ...table,
+      columns: table.columns.map((each) =>
+        each.name === 'customer_id' ? { ...each, default: '0' } : each,
+      ),
+    }));
+
+    const text = plain(render({ ...model, tables }));
+
+    expect(text).toContain('| customer_id | uuid | no, default 0 | new |');
+  });
+});

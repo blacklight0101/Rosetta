@@ -587,7 +587,7 @@ sequenceDiagram
   conversation. A task whose call the budget guard refuses (`RST-1600`), or whose signal another task aborted for a
   cap, ends `StoppedByCap` with reason `cap-reached` and keeps what it learned; any other stop stays `Failed`
   with `RST-1501`.
-- **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v8.md` followed by
+- **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v9.md` followed by
   `prompts/cards/card-format.v2.md`; `loadReaderPrompts` reads the eight files it uses (the two above, the task, the
   turns-left notice, `prompts/cards/repair.v3.md`, `prompts/cards/continue.v1.md`, `prompts/reader/read-first.v1.md` and `prompts/reader/read-more.v1.md`), refuses a template without its placeholders or a file
   that holds a data block marker, and returns each with its version and the SHA-256 of its bytes; the run records
