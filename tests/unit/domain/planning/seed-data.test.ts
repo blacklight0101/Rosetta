@@ -105,3 +105,38 @@ describe('statedSeeds: the text kept', () => {
     expect(seed?.text).toContain('987654');
   });
 });
+
+describe('statedSeeds: identifiers are read as words', () => {
+  it.each([
+    "INSERT INTO Staff (Name, Pin_Code) VALUES ('sam','LEAK40')",
+    "INSERT INTO Staff (Name, PinCode) VALUES ('sam','LEAK41')",
+    "INSERT INTO Staff (Name, StaffPin) VALUES ('sam','LEAK42')",
+    "INSERT INTO Staff (Name, EmployeePin) VALUES ('sam','LEAK43')",
+    "INSERT INTO Staff (Name, pin_no) VALUES ('sam','LEAK44')",
+    "INSERT INTO Staff (Name, PIN_NUMBER) VALUES ('sam','LEAK45')",
+    "INSERT INTO Staff (Name, userpassword) VALUES ('sam','LEAK46')",
+    "INSERT INTO Staff (Name, APIKey) VALUES ('sam','LEAK47')",
+    "INSERT INTO Staff (Name, otp_secret) VALUES ('sam','LEAK48')",
+    "INSERT INTO Staff (Name, passwordhash) VALUES ('sam','LEAK49')",
+    "INSERT INTO Staff (Name, Otp) VALUES ('sam','LEAK50')",
+    "INSERT INTO Cards (Name, Cvv2) VALUES ('sam','LEAK51')",
+    "INSERT INTO Staff (Name, StaffSalt) VALUES ('sam','LEAK52')",
+  ])('P5-42 leaks nothing of a secret identifier: %s', (text) => {
+    const [seed] = statedSeeds([card([text, 'Supported'])]);
+
+    expect(seed?.masked).toBe(true);
+    expect(seed?.text).not.toContain('LEAK');
+  });
+
+  it.each([
+    "INSERT INTO Dept (Name) VALUES ('spinner')",
+    "INSERT INTO Dept (Name) VALUES ('compass')",
+    "INSERT INTO Dept (Name) VALUES ('passenger')",
+    "INSERT INTO Dept (Name) VALUES ('keyboard')",
+    "INSERT INTO Dept (Name, Spinning, Bypass) VALUES ('a', 1, 2)",
+  ])('P5-42 an ordinary word that holds a short secret word is not cut: %s', (text) => {
+    const [seed] = statedSeeds([card([text, 'Supported'])]);
+
+    expect(seed).toMatchObject({ masked: false, text });
+  });
+});
