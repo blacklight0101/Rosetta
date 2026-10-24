@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { withCoverageAnswer, withoutTasks } from '../../support/coverage-plan-harness.js';
-import { gapRecordingOf } from '../../support/gap-plan-harness.js';
+import {
+  withCoverageAnswer,
+  withPhaseNames,
+  withoutTasks,
+} from '../../support/coverage-plan-harness.js';
+import { dependenciesGapRecording, gapRecordingOf } from '../../support/gap-plan-harness.js';
 import { seededUxPlan } from '../../support/ux-plan-harness.js';
 import { useTempRoot } from '../../support/temp-root.js';
 
@@ -27,26 +31,19 @@ const oneLink = JSON.stringify({ links: [{ task: 1, builds: ['screen:SCRN-003'] 
 const noLinks = JSON.stringify({ links: [] });
 
 describe('BuildPlan: the gap pass keeps its dependencies', () => {
-  it('RF-627 P5-40 a gap card that names the migrations card waits for it', async () => {
-    const answer = JSON.stringify({
-      tasks: [
-        gapCard({
-          ...{ title: 'Orders through the API', dependsOn: ['T-001', 'T-002'] },
-          builds: ['operation:placeOrder', 'operation:getOrder', 'flow:FLOW-001'],
-        }),
-      ],
-    });
+  it('RF-627 P5-40 a recorded gap card that names the migrations card waits for it', async () => {
     const h = await seededUxPlan(temp.path, {
       harness: {
         coverageRecording: await withCoverageAnswer(oneLink),
-        gapRecording: gapRecordingOf(answer),
+        gapRecording: await dependenciesGapRecording(),
       },
     });
 
     const written = await h.handoffOf(await h.plan());
 
-    const card = plain(written['tasks.md']).split(/^## /mu)[4] ?? '';
-    expect(card).toMatch(/^T-004\n/u);
+    const card = plain(written['tasks.md'])
+      .split(/^## /mu)
+      .find((each) => each.startsWith('T-004'));
     expect(card).toMatch(/Depends on: \[T-001\]\([^)]*\), \[T-002\]/u);
   });
 });
@@ -132,5 +129,20 @@ describe('BuildPlan: checks.md counts requirements and keeps phases true', () =>
 
     expect(checks).not.toContain('## Requirements built by no card');
     expect(checks).not.toContain('## Phase titles');
+  });
+});
+
+describe('BuildPlan: a phase is titled from the cards it holds', () => {
+  it('RF-627 P5-40 a phase named for other work is renamed in the roadmap and listed in checks.md', async () => {
+    const recording = await withPhaseNames(['Billing', 'Cancellation']);
+    const h = await seededUxPlan(temp.path, { recording });
+
+    const written = await h.handoffOf(await h.plan());
+
+    const checks = plain(written['checks.md']);
+    expect(checks).toContain('## Phase titles');
+    expect(checks).toContain('Phase 1: "Billing" is now "Order placement"');
+    expect(plain(written['roadmap.md'])).toContain('Order placement');
+    expect(plain(written['roadmap.md'])).not.toContain('Billing');
   });
 });

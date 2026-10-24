@@ -54,3 +54,8 @@ export function closingGapRecording(): Promise<Recording> {
 export function objectPositionsGapRecording(): Promise<Recording> {
   return loadRecording(join('tests', 'recordings', 'fake', 'planner-gap-positions.json'));
 }
+
+/** P5-40: the recorded answer whose gap card names T-001 and T-002 in `dependsOn` by id. */
+export function dependenciesGapRecording(): Promise<Recording> {
+  return loadRecording(join('tests', 'recordings', 'fake', 'planner-gap-dependencies.json'));
+}

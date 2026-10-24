@@ -84,3 +84,35 @@ describe('withRequirementFeatures: what is left alone', () => {
     expect(withRequirementFeatures(plan, coverageDocuments())).toEqual(plan);
   });
 });
+
+function twoSourceFeature() {
+  const documents = coverageDocuments();
+  const feature = {
+    ...{ title: 'Both', description: 'd', priority: 'Must' as const },
+    sources: ['FEAT-002', 'FEAT-007'],
+  };
+  return { ...documents, prd: { ...documents.prd, features: [feature] } };
+}
+
+describe('withRequirementFeatures: only the features a requirement cites', () => {
+  const card = planTask({ id: 'T-001', requirements: ['REQ-001'], builds: ['screen:SCRN-001'] });
+
+  it('RF-627 P5-40 a feature that merely shares one source card with the requirement stays a gap', () => {
+    const plan = content([card]);
+
+    expect(withRequirementFeatures(plan, twoSourceFeature())).toEqual(plan);
+  });
+
+  it('RF-627 P5-40 a feature whose every source card the requirement cites is built', () => {
+    const plan = {
+      ...content([card]),
+      requirements: [
+        { id: 'REQ-001', title: 'P', statement: 's', sources: ['FEAT-002', 'FEAT-007'] },
+      ],
+    };
+
+    const gained = withRequirementFeatures(plan, twoSourceFeature());
+
+    expect(gained.tasks[0]?.builds).toContain('feature:F-001');
+  });
+});

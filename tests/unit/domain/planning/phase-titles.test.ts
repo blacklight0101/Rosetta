@@ -56,3 +56,23 @@ describe('titlePhases', () => {
     expect(titled.phases[0]?.name).toBe('Alpha, Beta, Gamma and 2 more');
   });
 });
+
+describe('titlePhases: names that fit', () => {
+  it.each([
+    ['API', 'Add API routes for orders'],
+    ['Payments', 'Pay an invoice'],
+    ['Setup', 'Set up the project'],
+    ['Phase 1: Set up', 'Project setup'],
+    ['Students', 'Student roster'],
+  ])('RF-627 P5-40 keeps the name %s for the card %s', (name, title) => {
+    const content = plan([name], [planTask({ title })]);
+
+    expect(titlePhases(content)).toBe(content);
+  });
+
+  it('RF-627 P5-40 filler words do not make a name fit', () => {
+    const content = plan(['Data from the start'], [planTask({ title: 'Mark data with bands' })]);
+
+    expect(titlePhases(content).phases[0]?.name).toBe('Mark data with bands');
+  });
+});

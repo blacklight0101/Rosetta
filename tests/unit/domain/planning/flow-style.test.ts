@@ -50,3 +50,42 @@ describe('checkFlowStyle', () => {
     expect(checkFlowStyle('layered', components, [steps])).toHaveLength(1);
   });
 });
+
+describe('checkFlowStyle: steps that are not calls', () => {
+  const modules = [
+    { name: 'Orders', responsibility: '', role: 'module', dependsOn: [] },
+    { name: 'Billing', responsibility: '', role: 'module', dependsOn: [] },
+  ];
+  const hexagon = [
+    { name: 'Web adapter', responsibility: '', role: 'adapter', dependsOn: [] },
+    { name: 'Core', responsibility: '', role: 'core', dependsOn: [] },
+    { name: 'Db port', responsibility: '', role: 'port', dependsOn: [] },
+    { name: 'Db adapter', responsibility: '', role: 'adapter', dependsOn: [] },
+  ];
+
+  it('RF-608 P5-40 two steps in the same component are not a call, in any style', () => {
+    const steps = flow('FLOW-010', 'Orders', 'Orders');
+
+    expect(checkFlowStyle('modular-monolith', modules, [steps])).toEqual([]);
+  });
+
+  it('RF-608 P5-40 a call from one module to another is listed', () => {
+    const steps = flow('FLOW-011', 'Orders', 'Billing');
+
+    expect(checkFlowStyle('modular-monolith', modules, [steps])).toHaveLength(1);
+  });
+
+  it('RF-608 P5-40 the way back to a component already on the path is a return in a hexagonal style', () => {
+    const path = ['Web adapter', 'Core', 'Db port', 'Db adapter', 'Db port', 'Core', 'Web adapter'];
+
+    expect(checkFlowStyle('hexagonal', hexagon, [flow('FLOW-012', ...path)])).toEqual([]);
+  });
+
+  it('RF-608 P5-40 a core that calls an adapter it has not been called through is still listed', () => {
+    const steps = flow('FLOW-013', 'Core', 'Db adapter');
+
+    expect(checkFlowStyle('hexagonal', hexagon, [steps])).toEqual([
+      { flow: 'FLOW-013', from: 'Core', to: 'Db adapter', rule: 'core-on-adapter' },
+    ]);
+  });
+});
