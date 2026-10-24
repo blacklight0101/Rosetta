@@ -74,7 +74,13 @@ export function ApiCallsPage(): JSX.Element {
         runId={runId}
         calls={calls.calls}
         total={head.total}
-        more={{ available: calls.hasMore, loading: calls.loadingMore, onLoad: calls.loadMore }}
+        more={{
+          available: calls.hasMore,
+          loading: calls.loadingMore,
+          error: calls.moreError,
+          announcement: calls.announcement,
+          onLoad: calls.loadMore,
+        }}
       />
       <LogsSection logs={logs} />
     </div>

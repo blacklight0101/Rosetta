@@ -2,9 +2,11 @@ import type { Page } from '@playwright/test';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { expect, test } from './support/fixtures.js';
 import { openStartPage, runStatus, startAndOpenLiveRun } from './support/live-run-page.js';
+import { runScan } from './support/journey-pages.js';
 import { openPlanSetup } from './support/plan-setup-page.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
+import { fixtureZip, giveReaderToOpenAi, uploadFromNewProject } from './support/zip-journey.js';
 
 // RNF-010, design-system.md (long text wraps): at 360 px a file path or an area name of 120
 // characters without a space wraps inside the content column, so the page never scrolls sideways.
@@ -82,6 +84,30 @@ test(
     await addLongPath(page);
 
     await expect(page.getByText(longPath)).toBeVisible();
+    await expectNoSidewaysScroll(page);
+    await expectNoSeriousViolations(page);
+  },
+);
+
+test(
+  'RNF-010 the "Switch every role to Ollama" button wraps on the start page at 360 px',
+  { tag: '@phone' },
+  async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize(phone);
+    await uploadFromNewProject(page, 'PhoneWrap.zip', await fixtureZip());
+    await runScan(page);
+    await giveReaderToOpenAi(page);
+
+    const button = page.getByRole('button', { name: /^Switch every role to Ollama/u });
+    await expect(button).toBeVisible();
+    const box = await button.boundingBox();
+    expect(box).not.toBeNull();
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(phone.width);
+    const overflow: unknown = await button.evaluate(
+      (element) => element.scrollWidth - element.clientWidth,
+    );
+    expect(Number(overflow)).toBeLessThanOrEqual(0);
     await expectNoSidewaysScroll(page);
     await expectNoSeriousViolations(page);
   },
