@@ -46,9 +46,12 @@ describe('prompt files', () => {
     expect(holdsDataMarker(text)).toBe(false);
   });
 
-  it.each(allPrompts)('RNF-004 %s is named <folder>/<name>.v<n>.md', (name) => {
-    expect(name).toMatch(/^[a-z]+\/[a-z0-9-]+\.v\d+\.md$/);
-  });
+  it.each(allPrompts)(
+    'RNF-004 %s is named <folder>/<name>.v<n>.md (the stack data of the catalogue is .yaml)',
+    (name) => {
+      expect(name).toMatch(/^[a-z]+\/[a-z0-9-]+\.v\d+\.(?:md|yaml)$/);
+    },
+  );
 
   it('RF-201 the reader prompt names every tool and no other', async () => {
     const text = await readFile('prompts/reader/area.v8.md', 'utf8');

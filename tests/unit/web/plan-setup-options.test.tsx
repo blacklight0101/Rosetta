@@ -120,8 +120,18 @@ describe('stack step', () => {
     expect(saves(page)).toEqual([
       {
         stack: [
-          { layer: 'database', choice: 'database B', custom: false },
-          { layer: 'hosting', choice: 'On-premises Kubernetes', custom: true },
+          {
+            layer: 'database',
+            choice: 'database B',
+            custom: false,
+            offered: ['database A', 'database B'],
+          },
+          {
+            layer: 'hosting',
+            choice: 'On-premises Kubernetes',
+            custom: true,
+            offered: ['hosting A', 'hosting B'],
+          },
         ],
       },
     ]);
