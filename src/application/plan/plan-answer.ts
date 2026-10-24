@@ -5,6 +5,7 @@ import type {
   UnreadableItem,
   UnreadableTask,
 } from '../../domain/planning/plan-draft.js';
+import { contradictionsOf, judgementDrafts, judgementItem } from './plan-answer-judgements.js';
 import { identifierKinds } from '../../domain/planning/parallel-cards.js';
 import { guardKinds, riskClasses } from '../../domain/planning/task-card-quality.js';
 import { cardLimits } from '../cards/card-limits.js';
@@ -98,7 +99,10 @@ function cardWith(positions: z.ZodType<number>) {
   });
 }
 
-const taskSchema = cardWith(listedPosition);
+// P5-41: criteria the planner says contradict a claim the card keeps; each is read on its own in readTasks.
+const taskSchema = cardWith(listedPosition).extend({
+  contradicts: z.array(z.unknown()).max(MAX_LIST).optional(),
+});
 export const gapTaskSchema = cardWith(numberPosition);
 
 const requirementItem = z.object({ title, statement: text, sources: ids });
@@ -128,6 +132,7 @@ const answer = z.object({
   phases: itemsOf(MAX_LIST),
   tasks: itemsOf(MAX_ITEMS),
   risks: itemsOf(MAX_LIST),
+  claimJudgements: itemsOf(MAX_ITEMS),
   technical: z
     .object({
       integrations: itemsOf(MAX_LIST),
@@ -164,6 +169,7 @@ const unreadablePlaceholder: DraftTask = {
 function readTasks(
   list: readonly unknown[],
   moved: Pick<Moves, 'requirement' | 'phase'>,
+  lost: UnreadableItem[],
 ): {
   readonly tasks: DraftTask[];
   readonly unreadableTasks: UnreadableTask[];
@@ -172,10 +178,11 @@ function readTasks(
   const tasks = list.map((each, index) => {
     const read = taskSchema.safeParse(each);
     if (read.success) {
-      const { requirements, phase } = read.data;
+      const { requirements, phase, contradicts: raw, ...rest } = read.data;
+      const contradicts = contradictionsOf(raw, index + 1, lost);
       // P3-126: the positions name the lists as the planner wrote them; items left out shift them.
       const kept = requirements.flatMap((at) => moved.requirement(at) ?? []);
-      return { ...read.data, requirements: kept, phase: moved.phase(phase) };
+      return { ...rest, requirements: kept, phase: moved.phase(phase), contradicts };
     }
     const issue = read.error.issues[0];
     const first = issue?.path[0];
@@ -230,12 +237,13 @@ function draftOf(lists: z.infer<typeof answer>): PlanReading {
   const entities = readItems('entities', entityItem, lists.entities, lost);
   const phases = readItems('phases', phaseItem, lists.phases, lost);
   const risks = readItems('risks', riskItem, lists.risks, lost);
+  const judgements = readItems('claimJudgements', judgementItem, lists.claimJudgements, lost);
   const technical = technicalOf(lists.technical, decisions, lost);
   const moves = {
     requirement: requirements.at,
     phase: (position: number) => phases.at(position) ?? 0,
   };
-  const { tasks, unreadableTasks } = readTasks(lists.tasks, moves);
+  const { tasks, unreadableTasks } = readTasks(lists.tasks, moves, lost);
   return {
     problems: [],
     draft: {
@@ -248,6 +256,7 @@ function draftOf(lists: z.infer<typeof answer>): PlanReading {
       tasks,
       risks: risks.items,
       technical,
+      ...judgementDrafts(judgements.items, decisions.at),
       ...(unreadableTasks.length > 0 ? { unreadableTasks } : {}),
       ...(lost.length > 0 ? { unreadableItems: lost } : {}),
     },

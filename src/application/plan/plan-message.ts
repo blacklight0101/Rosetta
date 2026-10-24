@@ -30,6 +30,7 @@ function cardsText(input: PlanMessageInput): string {
   const listed = shown.map(({ id, type, title, summary, claims }) => ({
     ...{ id, type, title, summary },
     claims: claims.map((claim) => ({
+      claimId: claim.claimId,
       text: claim.text,
       citations: claim.citations.map(formatCitation),
     })),

@@ -74,7 +74,7 @@ async function guidance(): Promise<string> {
   return (await readFile('prompts/planner/workbook.v1.md', 'utf8')).trim();
 }
 
-const base = () => readFile('prompts/planner/package.v7.md', 'utf8');
+const base = () => readFile('prompts/planner/package.v8.md', 'utf8');
 
 describe('a plan run over a workbook project', () => {
   it('RF-155 the planner prompt holds the planner workbook guidance after the package prompt', async () => {
@@ -103,7 +103,7 @@ describe('a plan run over a workbook project', () => {
       version: 'v1',
       sha256: createHash('sha256').update(bytes).digest('hex'),
     });
-    expect(manifest.promptVersions['planner/package.v7.md']?.version).toBe('v7');
+    expect(manifest.promptVersions['planner/package.v8.md']?.version).toBe('v8');
   });
 });
 
