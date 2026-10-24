@@ -12,10 +12,11 @@ import { normalisedTitle } from './title-merge.js';
 /** Types the cross-area merge leaves alone: journeys, and screens (the page merge handles them). */
 const NOT_ACROSS_AREAS = ['FLOW', 'SCRN'];
 
-/** Host names of the systems an organisation runs for itself, which a claim may name without a scheme. */
-const HOST_SUFFIXES = ['com', 'net', 'org', 'io', 'test', 'local', 'lan', 'corp', 'internal'];
-const SCHEME_HOST = /\bhttps?:\/\/([a-z0-9.-]+)/giu;
-const DOTTED_HOST = /\b((?:[a-z0-9-]+\.){2,}[a-z]+)\b/giu;
+/** A URL with a scheme, as far as the next space or quote; the only place a host is read from. */
+const URL_IN_TEXT = /(?<![a-z0-9+.-])[a-z][a-z0-9+.-]*:\/\/[^\s"'<>]+/giu;
+const TRAILING_PUNCTUATION = /[.,;:!?)\]]+$/u;
+const PRIVATE_V4 = [/^127\./u, /^10\./u, /^192\.168\./u, /^172\.(?:1[6-9]|2\d|3[01])\./u];
+const LOCAL_V4 = [...PRIVATE_V4, /^0\./u, /^169\.254\./u];
 
 function mergeOf(cards: readonly Card[]): CardMerge | undefined {
   const [first] = cards;
@@ -27,19 +28,6 @@ function paths(card: Card): ReadonlySet<string> {
   return new Set(card.claims.flatMap((claim) => claim.citations.map((each) => each.path)));
 }
 
-/** The file most of the card's citations are in; the first cited one when it is a tie. */
-function pageFile(card: Card): string | undefined {
-  const counts = new Map<string, number>();
-  for (const claim of card.claims) {
-    for (const { path } of claim.citations) counts.set(path, (counts.get(path) ?? 0) + 1);
-  }
-  let best: string | undefined;
-  for (const [path, count] of counts) {
-    if (best === undefined || count > (counts.get(best) ?? 0)) best = path;
-  }
-  return best;
-}
-
 function routeOf(card: Card): string {
   return card.screen === undefined ? '' : normalisedRoute(card.screen.route);
 }
@@ -48,53 +36,92 @@ function areasOf(card: Card): readonly string[] {
   return card.mergedAreas ?? [card.area];
 }
 
-interface Page {
-  route: string;
-  readonly members: Card[];
+/**
+ * The files cited by screen cards of two or more routes: a layout, a master page, a partial. Such a
+ * file says nothing about which page a card is about, so it is never page identity (P5-32). The
+ * kinds of file are not guessed; the evidence is who cites the file.
+ */
+function sharedFiles(screens: readonly Card[]): ReadonlySet<string> {
+  const routes = new Map<string, Set<string>>();
+  for (const card of screens) {
+    const route = routeOf(card);
+    if (route === '') continue;
+    for (const path of paths(card)) routes.set(path, (routes.get(path) ?? new Set()).add(route));
+  }
+  return new Set([...routes].filter(([, each]) => each.size >= 2).map(([path]) => path));
 }
 
-function joins(page: Page, card: Card): boolean {
-  const route = routeOf(card);
+/** The files a card cites without the shared ones, and the one it cites most (first on a tie). */
+function pageIdentity(card: Card, shared: ReadonlySet<string>) {
+  const counts = new Map<string, number>();
+  for (const claim of card.claims) {
+    for (const { path } of claim.citations) {
+      if (!shared.has(path)) counts.set(path, (counts.get(path) ?? 0) + 1);
+    }
+  }
+  let top: string | undefined;
+  for (const [path, count] of counts)
+    if (top === undefined || count > (counts.get(top) ?? 0)) top = path;
+  return { files: new Set(counts.keys()), top };
+}
+
+type Identity = ReturnType<typeof pageIdentity>;
+
+/** A card with no route is the same page when its files are all the other's and the other's page file is among them. */
+function coversPage(small: Identity, big: Identity): boolean {
+  if (small.files.size === 0 || big.top === undefined) return false;
+  return [...small.files].every((path) => big.files.has(path)) && small.files.has(big.top);
+}
+
+function samePage(left: Card, right: Card, shared: ReadonlySet<string>): boolean {
+  const [one, other] = [routeOf(left), routeOf(right)];
   // P5-12: two screens at two routes are two screens, whoever proposes the merge.
-  if (route !== '' && page.route !== '' && route !== page.route) return false;
-  const file = pageFile(card);
-  const sameFile = page.members.some((member) => {
-    const memberFile = pageFile(member);
-    return file !== undefined && memberFile === file;
-  });
-  const sameRoute =
-    route !== '' &&
-    route === page.route &&
-    page.members.some((member) => member.area === card.area);
-  return sameFile || sameRoute;
+  if (one !== '' && other !== '' && one !== other) return false;
+  if (one !== '' && other !== '') return left.area === right.area;
+  const [a, b] = [pageIdentity(left, shared), pageIdentity(right, shared)];
+  if (one === '' && other === '') return coversPage(a, b) || coversPage(b, a);
+  return one === '' ? coversPage(a, b) : coversPage(b, a);
 }
 
-/** Screen cards of one page: one route within an area, or one page file; in card order. */
+/** Screen cards of one page: one route within an area, or the same own files; in card order. */
 // P5-32
 export function pageMerges(cards: readonly Card[]): readonly CardMerge[] {
-  const pages: Page[] = [];
-  for (const card of cards.filter((each) => each.type === 'SCRN')) {
-    const page = pages.find((each) => joins(each, card));
-    if (page === undefined) {
-      pages.push({ route: routeOf(card), members: [card] });
-      continue;
-    }
-    page.members.push(card);
-    if (page.route === '') page.route = routeOf(card);
+  const screens = cards.filter((each) => each.type === 'SCRN');
+  const shared = sharedFiles(screens);
+  const pages: Card[][] = [];
+  for (const card of screens) {
+    const linked = pages.filter((page) => page.some((member) => samePage(member, card, shared)));
+    // A card that fits two pages is not placed in either: a false merge is worse than a leftover.
+    const [page] = linked;
+    if (linked.length === 1 && page !== undefined) page.push(card);
+    else pages.push([card]);
   }
-  return pages.flatMap((page) => mergeOf(page.members) ?? []);
+  return pages.flatMap((page) => mergeOf(page) ?? []);
 }
 
+/** A host that names a system of the outside world: not local, loopback, private or a bare name. */
+function isExternalHost(host: string): boolean {
+  if (host === '' || host.startsWith('[') || !host.includes('.')) return false;
+  if (host === 'localhost' || host.endsWith('.localhost')) return false;
+  return !LOCAL_V4.some((each) => each.test(host));
+}
+
+/**
+ * The external hosts the claims of a card name in URLs. The host comes from the URL parser, so user
+ * info is never read; a URL that holds a mask marker or a star is skipped (masked text says nothing);
+ * a bare dotted name is not a host (it may be a namespace).
+ */
 function hostsOf(card: Card): ReadonlySet<string> {
   const hosts = new Set<string>();
   for (const { text } of card.claims) {
-    for (const match of text.matchAll(SCHEME_HOST)) hosts.add((match[1] ?? '').toLowerCase());
-    for (const match of text.matchAll(DOTTED_HOST)) {
-      const host = (match[1] ?? '').toLowerCase();
-      if (HOST_SUFFIXES.includes(host.split('.').at(-1) ?? '')) hosts.add(host);
+    for (const [candidate] of text.matchAll(URL_IN_TEXT)) {
+      if (candidate.includes('*') || /masked/iu.test(candidate)) continue;
+      const url = URL.parse(candidate.replace(TRAILING_PUNCTUATION, ''));
+      if (url === null || url.protocol === 'file:') continue;
+      const host = url.hostname.toLowerCase();
+      if (isExternalHost(host)) hosts.add(host);
     }
   }
-  hosts.delete('');
   return hosts;
 }
 
@@ -102,13 +129,8 @@ function shares(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean 
   return [...left].some((item) => right.has(item));
 }
 
-/**
- * Whether two cards of one type and title are about the same thing: they cite a file in common, they
- * name the same external host, or they are integrations (the title of an integration names its
- * system, so the title match is the system match).
- */
+/** Whether two cards of one type and title cite a file in common or name the same external host. */
 function related(left: Card, right: Card): boolean {
-  if (left.type === 'INT') return true;
   return shares(paths(left), paths(right)) || shares(hostsOf(left), hostsOf(right));
 }
 
