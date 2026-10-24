@@ -252,7 +252,9 @@ describe('behavioursKeptByNoCard', () => {
   it('RF-631 lists the claims the migrations card dropped that no card keeps any more', () => {
     const tasks = [migrationTask, planTask({ id: 'T-002', requirements: ['REQ-011'] })];
 
-    const lost = behavioursKeptByNoCard(tasks, namedRequirements, namedSources, modelTables);
+    const lost = behavioursKeptByNoCard(tasks, namedRequirements, namedSources, {
+      tables: modelTables,
+    });
 
     expect(lost.map((each) => each.claimId)).toEqual(['BR-010.c2', 'FEAT-010.c1']);
     expect(lost[0]).toEqual({
@@ -266,12 +268,16 @@ describe('behavioursKeptByNoCard', () => {
   it('RF-631 lists nothing when another card keeps every claim the migrations card dropped', () => {
     const tasks = [migrationTask, planTask({ id: 'T-002', requirements: ['REQ-010', 'REQ-011'] })];
 
-    expect(behavioursKeptByNoCard(tasks, namedRequirements, namedSources, modelTables)).toEqual([]);
+    expect(
+      behavioursKeptByNoCard(tasks, namedRequirements, namedSources, { tables: modelTables }),
+    ).toEqual([]);
   });
 
   it('RF-631 lists nothing when the package has no migrations card', () => {
     const tasks = [planTask({ id: 'T-001', requirements: ['REQ-010'] })];
 
-    expect(behavioursKeptByNoCard(tasks, namedRequirements, namedSources, modelTables)).toEqual([]);
+    expect(
+      behavioursKeptByNoCard(tasks, namedRequirements, namedSources, { tables: modelTables }),
+    ).toEqual([]);
   });
 });

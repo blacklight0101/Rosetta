@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { judgementKinds } from '../../domain/planning/claim-judgement.js';
-import type { PlanDraft } from '../../domain/planning/plan-draft.js';
+import type { PlanDraft, UnreadableItem } from '../../domain/planning/plan-draft.js';
 
 // P5-41, RF-631, ADR-013: the items of the planner's answer that judge a claim (`claimJudgements`) or say
 // that an acceptance criterion contradicts a claim a card keeps (`contradicts`). Both are untrusted
@@ -11,7 +11,7 @@ const position = z.number().int().min(1).max(200);
 const claimId = z.string().trim().min(1).max(60);
 
 /** A criterion (position in the card's Done-when items) that contradicts a claim. */
-export const contradictionItem = z.object({ criterion: position, claim: claimId });
+const contradictionItem = z.object({ criterion: position, claim: claimId });
 
 export const judgementItem = z.object({
   claim: claimId,
@@ -34,4 +34,22 @@ export function judgementDrafts(
       decision: each.decision === null ? null : (decisionAt(each.decision) ?? null),
     })),
   };
+}
+
+/** P5-41: the contradicting criteria that read; one that does not is listed by its task and field. */
+export function contradictionsOf(
+  raw: readonly unknown[] | undefined,
+  position: number,
+  lost: UnreadableItem[],
+): PlanDraft['tasks'][number]['contradicts'] {
+  const kept = (raw ?? []).flatMap((each) => {
+    const read = contradictionItem.safeParse(each);
+    if (!read.success) {
+      const reason =
+        'The item is not readable: a field is missing, of the wrong shape or out of its bounds.';
+      lost.push({ list: 'tasks.contradicts', position, field: 'contradicts', reason });
+    }
+    return read.success ? [read.data] : [];
+  });
+  return kept.length === 0 ? undefined : kept;
 }

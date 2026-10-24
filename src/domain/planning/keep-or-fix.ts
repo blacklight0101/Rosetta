@@ -42,10 +42,14 @@ export function defaultOf(row: Pick<KeepOrFixRow, 'security'>): string {
 }
 
 /** The cards that hold a claim the planner marked as a security matter. */
-export function securityCards(judgements: readonly ClaimJudgement[]): ReadonlySet<string> {
+export function securityCards(
+  judgements: readonly ClaimJudgement[],
+  sources: readonly SourceCard[],
+): ReadonlySet<string> {
+  const real = new Set(sources.flatMap((card) => card.claims.map((claim) => claim.claimId)));
   return new Set(
     judgements
-      .filter((each) => each.security)
+      .filter((each) => each.security && real.has(each.claimId))
       .map((each) => each.claimId.slice(0, each.claimId.lastIndexOf('.c'))),
   );
 }

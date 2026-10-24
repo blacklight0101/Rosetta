@@ -96,13 +96,13 @@ function keptByNoCardLines(handoff: HandoffPackage, esc: MarkdownEscaper): strin
     handoff.content.tasks,
     handoff.content.requirements,
     handoff.sources,
-    handoff.dataModel.tables,
+    keepOrFixOf(handoff).context,
   );
   if (lost.length === 0) return [];
   return [
     '## Behaviour kept by no card',
     '',
-    'The migrations card keeps only the business rules that name a table or a column it creates. Each behaviour below was kept by it before and no task card keeps it now; the owner decides whether a card must build it.',
+    'A card keeps only the claims of the items it builds, and the migrations card only the business rules that name a table or a column it creates. Each behaviour below would be kept under the plain rule (every claim of the cards a requirement cites) and no task card keeps, changes or lists it now; the owner decides whether a card must build it.',
     '',
     ...lost.map(
       (each) =>

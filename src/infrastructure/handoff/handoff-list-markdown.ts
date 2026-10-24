@@ -72,7 +72,7 @@ function prdQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string
 // RF-604
 export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const waiting = waitingOf(handoff);
-  const secure = securityCards(handoff.content.judgements ?? []);
+  const secure = securityCards(handoff.content.judgements ?? [], handoff.sources);
   const unanswered = handoff.openQuestions.map(
     (question) =>
       `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)} Default: ${secure.has(question.cardId) ? secureDefault : keepLegacyDefault} Cards waiting: ${waitingCards(waiting, question.cardId)}`,

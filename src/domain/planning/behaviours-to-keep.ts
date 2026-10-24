@@ -121,26 +121,31 @@ export function behavioursToKeep(
 }
 
 /**
- * The behaviours the migrations card kept under the plain rule (every covered claim) that no task
- * keeps now. Empty when the package has no migrations card.
+ * The behaviours the plain rule gives some task (every covered claim of the cards its requirements
+ * cite) that no task keeps, changes or lists as keep-or-fix now: those the migrations card's rule or
+ * the narrowing to the built items removed from every card (P5-41).
  */
 // RF-631
 export function behavioursKeptByNoCard(
   tasks: readonly PlanTask[],
   requirements: readonly Requirement[],
   sources: readonly SourceCard[],
-  tables: readonly ModelTable[],
+  context: BehaviourContext = {},
 ): KeptBehaviour[] {
-  const migration = tasks.find((task) => isMigrationCard(task));
-  if (migration === undefined) return [];
-  const kept = new Set(
-    tasks
-      .flatMap((task) => behavioursToKeep(task, requirements, sources, tables))
-      .map((each) => each.claimId),
+  const present = new Set(
+    tasks.flatMap((task) => {
+      const { keep, change, fix } = behavioursOf(task, requirements, sources, context);
+      return [...keep, ...change, ...fix].map((each) => each.claimId);
+    }),
   );
-  return keptFrom({ task: migration, requirements, sources }, () => true).filter(
-    (each) => !kept.has(each.claimId),
-  );
+  const seen = new Set<string>();
+  return tasks
+    .flatMap((task) => keptFrom({ task, requirements, sources }, () => true))
+    .filter((each) => {
+      if (present.has(each.claimId) || seen.has(each.claimId)) return false;
+      seen.add(each.claimId);
+      return true;
+    });
 }
 
 export interface BehaviourContext {
