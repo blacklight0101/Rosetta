@@ -102,7 +102,9 @@ describe('stack step', () => {
     expect(within(layer).getByLabelText('Your own for Database')).not.toBeNull();
     expect(screen.getAllByRole('radiogroup')).toHaveLength(7);
   });
+});
 
+describe('stack step answers', () => {
   it('RF-609 saves the options picked and the technology typed', async () => {
     const page = renderPlan();
     await ready();
@@ -120,8 +122,18 @@ describe('stack step', () => {
     expect(saves(page)).toEqual([
       {
         stack: [
-          { layer: 'database', choice: 'database B', custom: false },
-          { layer: 'hosting', choice: 'On-premises Kubernetes', custom: true },
+          {
+            layer: 'database',
+            choice: 'database B',
+            custom: false,
+            offered: ['database A', 'database B'],
+          },
+          {
+            layer: 'hosting',
+            choice: 'On-premises Kubernetes',
+            custom: true,
+            offered: ['hosting A', 'hosting B'],
+          },
         ],
       },
     ]);

@@ -1,5 +1,5 @@
 import type { Catalogue } from './catalogue.js';
-import { briefDecisions, type BriefChoices } from './brief-decisions.js';
+import { briefDecisions, type BriefChoices, type BriefEvidence } from './brief-decisions.js';
 import { layerNames } from './brief-questions.js';
 import { migrationStrategyInfo } from './migration-strategy.js';
 import { planId, type PlanContent, type PlanDecision } from './plan-content.js';
@@ -162,12 +162,17 @@ export function decideOnce(
   content: PlanContent,
   brief: PlanningBrief,
   catalogue: Catalogue,
-  supported: ReadonlySet<string>,
+  evidence: Omit<BriefEvidence, 'tasks'>,
 ): DecidedOnce {
   const names = choiceNames(brief, catalogue);
   const found = content.decisions.map((decision) => restates(decision, names));
   const kept = content.decisions.filter((_, at) => found[at] === undefined);
-  const fromBrief = briefDecisions(brief, catalogue, supported, kept.length);
+  const fromBrief = briefDecisions(
+    brief,
+    catalogue,
+    { ...evidence, tasks: content.tasks },
+    kept.length,
+  );
   const ids = new Map<string, string>();
   const restated: RestatedDecision[] = [];
   let next = 0;

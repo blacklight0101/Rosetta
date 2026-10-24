@@ -1,3 +1,4 @@
+import { stackClashes } from '../../domain/planning/stack-rules.js';
 import { decideOnce } from '../../domain/planning/brief-restated.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
 import { copiedExamples, exampleSentencesOfAll } from '../../domain/planning/copied-example.js';
@@ -113,6 +114,14 @@ function sourceOf(
     : { sourceRun: run.runKey, sourceStop: stop };
 }
 
+/** RF-609: the supported cards the stack records are written from, with their ids. */
+function evidenceOf(sources: readonly SourceCard[]): {
+  supported: ReadonlySet<string>;
+  cards: readonly SourceCard[];
+} {
+  return { supported: new Set(sources.map((card) => card.id)), cards: sources };
+}
+
 // RF-601, RF-604
 export function handoffPackageOf(
   inputs: PlanInputs,
@@ -129,8 +138,7 @@ export function handoffPackageOf(
   const { prd, dataModel, flows, apiContract, ux, incomplete } = documents;
   const { brief, sourceRun, project, cards, questions, upload } = inputs;
   const sources = supportedCards(cards);
-  const supported = new Set(sources.map((card) => card.id));
-  const decided = decideOnce(content, brief, catalogue, supported);
+  const decided = decideOnce(content, brief, catalogue, evidenceOf(sources));
   const style = principleOf(catalogue, brief.architecture.style);
   const styleCheck = checkStyle(brief.architecture.style, decided.content.components);
   return {
@@ -147,6 +155,7 @@ export function handoffPackageOf(
     choices: decided.choices,
     restated: decided.restated,
     styleCheck,
+    stackClashes: stackClashes(brief, apiContract, catalogue.stack),
     sources,
     excluded: excludedClaims(cards),
     briefQuestions: defaultedQuestions(brief, catalogue),

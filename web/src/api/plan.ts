@@ -34,7 +34,12 @@ export interface BriefAnswers {
     readonly evidence: readonly string[];
   };
   readonly migration?: string;
-  readonly stack?: readonly { layer: string; choice: string; custom: boolean }[];
+  readonly stack?: readonly {
+    layer: string;
+    choice: string;
+    custom: boolean;
+    offered?: readonly string[] | undefined;
+  }[];
   readonly context?: Readonly<Record<string, unknown>>;
   readonly buildMethod?: { readonly aiAssisted: boolean };
 }

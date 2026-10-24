@@ -71,3 +71,26 @@ describe('parsePlanningBrief', () => {
     expect(parsePlanningBrief({ ...saved, apiKey: 'x' })).toBeUndefined();
   });
 });
+
+describe('the options offered with a stack choice', () => {
+  const stack = [
+    {
+      layer: 'database',
+      choice: 'PostgreSQL 17',
+      custom: false,
+      offered: ['SQL Server', 'PostgreSQL 17'],
+    },
+  ];
+
+  it('RF-609 a save and a stored brief keep the options offered', () => {
+    expect(parseBriefAnswers({ stack })?.stack).toEqual(stack);
+    expect(parsePlanningBrief({ ...saved, stack })?.stack).toEqual(stack);
+  });
+
+  it('RF-609 a brief saved without them is still valid, and too many are refused', () => {
+    const plain = [{ layer: 'database', choice: 'PostgreSQL', custom: true }];
+    expect(parsePlanningBrief({ ...saved, stack: plain })).toBeDefined();
+    const many = [{ ...plain[0], offered: ['a', 'b', 'c', 'd', 'e', 'f'] }];
+    expect(parseBriefAnswers({ stack: many })).toBeUndefined();
+  });
+});

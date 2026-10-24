@@ -1,0 +1,31 @@
+# Rules of the stack consistency check (RF-609).
+# RF-609, RNF-004: part of the versioned catalogue; its name carries the version and the catalogue SHA-256 covers it.
+rules:
+  - id: server-rendered-front-end-with-api-back-end
+    matches:
+      - on: trait
+        layer: front-end
+        trait: server-rendered
+        present: true
+      - on: trait
+        layer: backend-framework
+        trait: api-only
+        present: true
+    clash: The front end {front-end} is rendered by the server, so it needs no separate API, yet the back end {backend-framework} only serves an API.
+    question: Should the front end be rendered by the server, with no separate API back end, or should the back end serve an API to a front end that runs in the browser?
+    answer: Keep the legacy behaviour exactly as the source cards describe it. The choices stay recorded as the owner made them until the owner answers.
+  - id: api-back-end-without-contract
+    matches:
+      - on: trait
+        layer: backend-framework
+        trait: api-only
+        present: true
+      - on: trait
+        layer: front-end
+        trait: server-rendered
+        present: false
+      - on: contract
+        present: false
+    clash: The back end {backend-framework} only serves an API, yet the package has no API contract, so no operation is described for it.
+    question: Which operations does the API of the back end serve, so that the package can hold a contract for them?
+    answer: Keep the legacy behaviour exactly as the source cards describe it. The choices stay recorded as the owner made them until the owner answers.

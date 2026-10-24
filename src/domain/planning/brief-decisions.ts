@@ -1,6 +1,15 @@
 import type { ArchitectureStyle, Catalogue } from './catalogue.js';
 import { layerNames } from './brief-questions.js';
 import { migrationStrategyInfo } from './migration-strategy.js';
+import {
+  describingCards,
+  stackConsequences,
+  stackContext,
+  stackOptions,
+  touchingTasks,
+} from './stack-adr.js';
+import type { StackTechnology } from './stack-data.js';
+import type { SourceCard } from './plan-sources.js';
 import { planId, type PlanDecision } from './plan-content.js';
 import { migrationStrategies, type PlanningBrief, type StackLayer } from './planning-brief.js';
 
@@ -25,6 +34,18 @@ export interface BriefChoices {
   readonly style: string;
   readonly migration: string;
   readonly stack: readonly PackageStack[];
+}
+
+/** What the records of the brief are written from (RF-609): the supported cards, in card order, and the task cards. */
+export interface BriefEvidence {
+  /** The ids of the cards with a supported claim. */
+  readonly supported: ReadonlySet<string>;
+  readonly cards: readonly SourceCard[];
+  readonly tasks: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly files: readonly string[];
+  }[];
 }
 
 export interface BriefDecisions {
@@ -96,20 +117,26 @@ function migrationDecision(brief: PlanningBrief, id: string): PlanDecision {
   };
 }
 
-function stackDecision(entry: PlanningBrief['stack'][number], id: string): PlanDecision {
+function stackDecision(
+  entry: PlanningBrief['stack'][number],
+  id: string,
+  evidence: BriefEvidence,
+  technologies: readonly StackTechnology[],
+): PlanDecision {
   const name = layerName(entry.layer);
   const origin = entry.custom
     ? 'The owner typed this choice.'
     : 'The owner picked it from the options Rosetta offered.';
+  const touching = touchingTasks(evidence.tasks, technologies, entry);
   return {
     id,
     title: `Technology for the ${name} layer: ${entry.choice}`,
     status: 'Accepted',
-    context: `The new system needs a technology for the ${name} layer. The package names a technology only where the owner chose one.`,
+    context: stackContext(name, entry.layer, evidence.cards),
     decision: `Use ${entry.choice} for the ${name} layer. ${origin}`,
-    consequences: `Every task card that touches the ${name} layer uses ${entry.choice}; changing the choice means changing this record first.`,
-    options: [],
-    sources: [],
+    consequences: stackConsequences(name, entry.choice, touching),
+    options: stackOptions(technologies, entry),
+    sources: describingCards(evidence.cards, entry.layer).map((card) => card.id),
   };
 }
 
@@ -118,13 +145,15 @@ function stackDecision(entry: PlanningBrief['stack'][number], id: string): PlanD
 export function briefDecisions(
   brief: PlanningBrief,
   catalogue: Catalogue,
-  supported: ReadonlySet<string>,
+  evidence: BriefEvidence,
   after: number,
 ): BriefDecisions {
   let next = after;
   const nextId = (): string => planId('ADR', ++next);
-  const style = styleDecision(brief, catalogue, supported, nextId());
-  const layers = brief.stack.map((entry) => stackDecision(entry, nextId()));
+  const style = styleDecision(brief, catalogue, evidence.supported, nextId());
+  const layers = brief.stack.map((entry) =>
+    stackDecision(entry, nextId(), evidence, catalogue.stack.technologies),
+  );
   const migration = migrationDecision(brief, nextId());
   return {
     decisions: [...(style === undefined ? [] : [style]), ...layers, migration],

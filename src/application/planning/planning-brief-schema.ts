@@ -15,6 +15,7 @@ const MAX_ID = 80;
 const MAX_TEXT = 500;
 const MAX_CHOICE = 200;
 const MAX_LIST = 20;
+const MAX_OFFERED = 5;
 
 const style = z.enum(architectureStyleIds);
 const entryId = z.string().min(1).max(MAX_ID);
@@ -26,6 +27,7 @@ const stackChoice = z.strictObject({
   layer,
   choice: z.string().trim().min(1).max(MAX_CHOICE),
   custom: z.boolean(),
+  offered: z.array(z.string().trim().min(1).max(MAX_CHOICE)).max(MAX_OFFERED).optional(),
 });
 
 const architecture = z.strictObject({

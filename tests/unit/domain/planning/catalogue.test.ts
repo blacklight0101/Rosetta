@@ -1,3 +1,4 @@
+import { noStackData } from '../../../../src/domain/planning/stack-data.js';
 import { describe, expect, it } from 'vitest';
 import {
   catalogueProblems,
@@ -40,10 +41,9 @@ describe('defaultPrinciples', () => {
       sampleEntry('adrs', 'documentation', true),
     ];
 
-    expect(defaultPrinciples({ version: 1, sha256: '', entries, styles: [] })).toEqual([
-      'adrs',
-      'tdd',
-    ]);
+    expect(
+      defaultPrinciples({ version: 1, sha256: '', entries, styles: [], stack: noStackData }),
+    ).toEqual(['adrs', 'tdd']);
   });
 });
 

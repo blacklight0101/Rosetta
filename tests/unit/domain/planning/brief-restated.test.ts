@@ -33,7 +33,7 @@ function contentOf(decisions: DraftDecision[], links: (number | null)[]) {
 
 function decided(answers: BriefAnswers, decisions: DraftDecision[], links: (number | null)[] = []) {
   const brief = { ...buildBrief(answers, shippedCatalogue), savedAt: '2026-10-12T09:30:00.000Z' };
-  return decideOnce(contentOf(decisions, links), brief, shippedCatalogue, supported);
+  return decideOnce(contentOf(decisions, links), brief, shippedCatalogue, { supported, cards: [] });
 }
 
 const layered: BriefAnswers = { architecture: { style: 'layered' } };
@@ -267,7 +267,10 @@ describe('decideOnce: the other technical items', () => {
       new Set(['FEAT-001', 'BR-001', 'INT-001']),
     ).content;
 
-    const { technical } = decideOnce(content, brief, shippedCatalogue, supported).content;
+    const { technical } = decideOnce(content, brief, shippedCatalogue, {
+      supported,
+      cards: [],
+    }).content;
 
     expect(technical.integrations.map((each) => each.decision)).toEqual(['ADR-001']);
     expect(technical.security.map((each) => each.decision)).toEqual(['ADR-001']);
