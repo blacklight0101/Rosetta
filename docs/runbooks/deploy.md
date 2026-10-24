@@ -54,9 +54,10 @@ In order, by the owner; each needs rights or settings that the deploy identity a
    than Azure Container Registry without a user name and password).
 3. Run Release by hand on `main` and read the `sha-<short>` tag in the summary of the image job.
 4. Add the `production` secrets of the next section.
-5. In GitHub, Settings, Environments, production, set Deployment branches and tags to `main` and `v*` only, and add a
-   tag ruleset for `v*` so only the owner can create, move or delete release tags. The federated credential names only
-   the environment, so this is what keeps every other ref away from Azure and from the secrets.
+5. The `production` environment's deployment branch policy: done on 2026-10-24, set to only the branch `main` (no
+   tags). The federated credential names only the environment, so this is what keeps every other ref away from Azure
+   and from the secrets. A Release run started by a pushed `v*` tag still builds and pushes the image, but its deploy
+   job is refused by the environment; deploys therefore run Release by hand on `main` (section Deploy).
 6. Run Azure provision (section Provisioning). Afterwards, put the `CanNotDelete` lock on the server, which the
    Contributor identity cannot do; the server name is in the summary of the run:
    `az lock create --name rosetta-db-no-delete --lock-type CanNotDelete --resource-group rg-rosetta --resource <server> --resource-type Microsoft.DBforPostgreSQL/flexibleServers`.
@@ -131,14 +132,18 @@ request or a push to `main`.
   `ghcr.io/blacklight0101/rosetta:sha-<short>` and, for a tag, `:X.Y.Z`. Never `latest` (RF-1300).
 - **sbom** (tags only): writes the CycloneDX SBOM of the runtime dependencies and attaches it to the GitHub release of
   the tag (DEC-57), creating the release if the owner has not yet.
-- **deploy** (only with `ROSETTA_DEPLOY_ENABLED`): see Deploy.
+- **deploy** (only with `ROSETTA_DEPLOY_ENABLED`): see Deploy. Its condition still names `main` or a `v*` tag, but
+  the deployment branch policy allows only `main`: a tag run's deploy job is refused by the `production` environment
+  (the image and the SBOM of the tag are still published). Deploys come from `main` only: run Release by hand
+  (`workflow_dispatch`) on `main`.
 
 Before v0.1.0 the deployment runs the `sha-<short>` image of `main` (DEC-104): run the workflow by hand on `main` and
 read the tag in the summary of the image job.
 
 ## Deploy
 
-**Pending G-07.** The order of `docs/environments-and-delivery.md` section 10 step 4, as the deploy job of
+**Pending G-07.** Start it from Actions, Release, Run workflow, branch `main` (deploys come from `main` only; a tag run
+is refused by the environment). The order of `docs/environments-and-delivery.md` section 10 step 4, as the deploy job of
 `release.yml` runs it, one deploy at a time and never cancelled half-way:
 
 1. The `zap-baseline` check of `ci.yml` passed on the commit (the job refuses otherwise; threat model section 5).
