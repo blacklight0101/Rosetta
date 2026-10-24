@@ -1,12 +1,18 @@
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import { coverageOf, type CoverageItem } from '../../domain/planning/plan-coverage.js';
+import {
+  coverageOf,
+  type CoverageDocuments,
+  type CoverageItem,
+} from '../../domain/planning/plan-coverage.js';
 import { addGapTasks } from '../../domain/planning/plan-gap.js';
+import { titlePhases } from '../../domain/planning/phase-titles.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { gapMessage } from './gap-message.js';
 import { parseGapAnswer, type GapAnswer, type GapProblem } from './gap-answer.js';
 import { gapRepairMessage, type GapRepair } from './gap-repair-message.js';
 import {
+  checkedPlan,
   coverageWarnings,
   planCoverage,
   type CoverageInput,
@@ -59,6 +65,8 @@ interface Round {
 
 interface RoundOptions {
   readonly specificationDriven: boolean;
+  /** P5-40: the documents the plan is checked against after the cards join it. */
+  readonly documents: CoverageDocuments;
   /** Set for the repair attempt: the prompt and the problems that go after the data. */
   readonly repair?: GapRepair;
 }
@@ -71,7 +79,7 @@ async function gapRound(
 ): Promise<Round> {
   const { content, report } = planned;
   const input = { items: report.uncovered, content };
-  const { repair, specificationDriven } = options;
+  const { repair, specificationDriven, documents } = options;
   const message =
     repair === undefined
       ? gapMessage(input, call.tags)
@@ -82,7 +90,7 @@ async function gapRound(
   const taken = addGapTasks(content, answer?.drafts ?? [], report.uncovered, {
     ...{ specificationDriven, ...(positions === undefined ? {} : { positions }) },
   });
-  const grown = taken.content;
+  const grown = checkedPlan(taken.content, documents);
   const closed = { ...planned, content: grown, report: coverageOf(report.items, grown.tasks) };
   const problems = [...(answer?.problems ?? []), ...taken.leftOut].sort(
     (left, right) => left.position - right.position,
@@ -125,12 +133,16 @@ function repairable(
 }
 
 /** The call for the items still uncovered and, when cards were left out that named one, the repair. */
-async function planGap(calls: LinkCalls, covered: PlannedCoverage): Promise<PlannedLinks> {
+async function planGap(
+  calls: LinkCalls,
+  covered: PlannedCoverage,
+  documents: CoverageDocuments,
+): Promise<PlannedLinks> {
   const { specificationDriven } = calls;
   if (covered.report.uncovered.length === 0 || covered.content.phases.length === 0) {
     return { planned: covered, warnings: [] };
   }
-  const first = await gapRound(calls.gap, covered, { specificationDriven });
+  const first = await gapRound(calls.gap, covered, { specificationDriven, documents });
   const warnings = roundWarnings(first, 'gap answer', UNREADABLE_GAP);
   // RF-627: once the first round covered every item there is nothing for a repair to build.
   const open = first.planned.report.uncovered;
@@ -138,7 +150,11 @@ async function planGap(calls: LinkCalls, covered: PlannedCoverage): Promise<Plan
   if (problems.length === 0) return { planned: first.planned, warnings };
   const repair = { prompt: calls.repairPrompt, problems };
   try {
-    const second = await gapRound(calls.gap, first.planned, { specificationDriven, repair });
+    const second = await gapRound(calls.gap, first.planned, {
+      specificationDriven,
+      documents,
+      repair,
+    });
     const again = roundWarnings(second, 'gap repair answer', UNREADABLE_REPAIR);
     return { planned: second.planned, warnings: [...warnings, ...again] };
   } catch (error) {
@@ -147,15 +163,21 @@ async function planGap(calls: LinkCalls, covered: PlannedCoverage): Promise<Plan
   }
 }
 
+/** P5-40: the phases named after the cards they hold, once the last card has joined the plan. */
+function titled(planned: PlannedCoverage): PlannedCoverage {
+  return { ...planned, content: titlePhases(planned.content) };
+}
+
 // Q-45, Q-54, RF-627
 export async function planLinks(calls: LinkCalls, input: CoverageInput): Promise<PlannedLinks> {
   const covered = await planCoverage(calls.coverage, input);
   try {
-    const gap = await planGap(calls, covered);
-    const warnings = [...gap.warnings, ...coverageWarnings(gap.planned)];
-    return { ...gap, warnings };
+    const gap = await planGap(calls, covered, input.documents);
+    const planned = titled(gap.planned);
+    return { ...gap, planned, warnings: [...gap.warnings, ...coverageWarnings(planned)] };
   } catch (error) {
     if (calls.gap.signal.aborted || !(error instanceof RosettaError)) throw error;
-    return { planned: covered, warnings: coverageWarnings(covered), refusal: error };
+    const planned = titled(covered);
+    return { planned, warnings: coverageWarnings(planned), refusal: error };
   }
 }

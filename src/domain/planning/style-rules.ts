@@ -86,8 +86,17 @@ const pairRules: Partial<Record<ArchitectureStyleId, PairRule>> = {
   'event-driven': eventRule,
 };
 
+/** P5-40: the rule a call from one role to another breaks in this style, if any. */
+export function brokenPair(
+  style: ArchitectureStyleId,
+  from: string,
+  to: string,
+): BrokenRuleKind | undefined {
+  return pairRules[style]?.(from, to);
+}
+
 /** A role as the style names it: case, hyphens, underscores and spaces around it do not count. */
-function roleIn(style: ArchitectureStyleId, raw: string): string | undefined {
+export function roleIn(style: ArchitectureStyleId, raw: string): string | undefined {
   const key = raw
     .toLowerCase()
     .replace(/[\s_-]+/gu, ' ')
