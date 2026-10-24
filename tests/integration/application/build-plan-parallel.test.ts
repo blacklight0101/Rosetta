@@ -177,7 +177,7 @@ describe('RF-634 the parallel groups of each phase', () => {
     const off = { buildMethod: { aiAssisted: false } } as const;
     const unassisted = await packageOf(off, plannerAnswering(overlappingCards));
     for (const each of [files, unassisted]) {
-      expect(groupsOf(plain(each['roadmap.md']), 1)).toHaveLength(5);
+      expect(groupsOf(plain(each['roadmap.md']), 1)).toHaveLength(6);
     }
   });
 });
