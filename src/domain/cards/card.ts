@@ -12,6 +12,7 @@ import {
   type DetailProblem,
   type FlowDetail,
   type ScreenDetail,
+  type ScreenInput,
 } from './flow-screen.js';
 import { screenClaims } from './screen-claims.js';
 
@@ -87,7 +88,7 @@ export interface CardInput {
   readonly question?: string | undefined;
   readonly whyItMatters?: string | undefined;
   readonly flow?: FlowDetail | undefined;
-  readonly screen?: ScreenDetail | undefined;
+  readonly screen?: ScreenInput | undefined;
   readonly note?: string | undefined;
 }
 
