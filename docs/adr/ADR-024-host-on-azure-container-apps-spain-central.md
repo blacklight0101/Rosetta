@@ -1,7 +1,7 @@
 # ADR-024: Host the hosted deployment on Azure Container Apps in Spain Central
 
 **Date**: 2026-10-24
-**Status**: Accepted
+**Status**: Amended
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -96,6 +96,21 @@ ghcr.io` [A11].
 - More setup than Railway: resource group, environment, storage account, firewall rule, role assignments and a
   federated credential. The Railway-specific parts of the deploy runbook, the backup runbook, the release workflow and
   their tests (cards P1-55 and P2-12) must be redone for this host; they are not changed by this ADR.
+
+## Notes
+
+- 2026-10-24 (P1-184, verifier round 1): no registry is set for the image. The GHCR package is public and a Container
+  App pulls a public image without a registry entry, while `az containerapp registry set` refuses a registry other
+  than Azure Container Registry without a user name and password (azure-cli `containerapp` `set_registry`). Read "no
+  registry, public GHCR package" where the Decision (App) says the registry is set with `az containerapp registry set
+--server ghcr.io` [A11].
+- 2026-10-24 (P1-184, verifier round 1): the database's "access limited by firewall rule" is, for release 1, the one
+  rule that allows Azure services (`0.0.0.0`), which also admits other Azure tenants' resources to port 5432. TLS is
+  required, the role passwords are 192-bit random and the administrator password is rotated on every provisioning and
+  kept nowhere, but the risk stays open pending the owner. A private-access follow-up (a virtual network in
+  `rg-rosetta`, the environment on a subnet, PostgreSQL private access with a private DNS zone, the roles created by a
+  Container Apps job) is to be carded by the orchestrator. Firewall rules for the environment's outbound addresses are
+  not an option, because those addresses are not stable on the Consumption plan.
 
 ## References
 

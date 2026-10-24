@@ -42,9 +42,28 @@ Done by the owner in the Azure portal and GitHub; nothing here holds a value.
 5. In GitHub, Settings, Environments, `production`, the variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
    `AZURE_SUBSCRIPTION_ID` of that identity.
 
-Still to check once, as the owner, before the first provisioning: the resource providers `Microsoft.App`,
-`Microsoft.OperationalInsights`, `Microsoft.DBforPostgreSQL` and `Microsoft.Storage` are registered on the subscription
-(`az provider register --namespace <name>`); a Contributor on one resource group cannot register them.
+## Owner steps before the first run
+
+In order, by the owner; each needs rights or settings that the deploy identity and the workflows do not have.
+
+1. Register the resource providers `Microsoft.App`, `Microsoft.OperationalInsights`, `Microsoft.DBforPostgreSQL` and
+   `Microsoft.Storage` on the subscription (`az provider register --namespace <name>`); a Contributor on one resource
+   group cannot register them.
+2. Check that the GHCR package `ghcr.io/blacklight0101/rosetta` is public (GitHub, Packages, Package settings): the
+   Container App pulls it anonymously and no registry is set (azure-cli refuses to add a registry other
+   than Azure Container Registry without a user name and password).
+3. Run Release by hand on `main` and read the `sha-<short>` tag in the summary of the image job.
+4. Add the `production` secrets of the next section.
+5. In GitHub, Settings, Environments, production, set Deployment branches and tags to `main` and `v*` only, and add a
+   tag ruleset for `v*` so only the owner can create, move or delete release tags. The federated credential names only
+   the environment, so this is what keeps every other ref away from Azure and from the secrets.
+6. Run Azure provision (section Provisioning). Afterwards, put the `CanNotDelete` lock on the server, which the
+   Contributor identity cannot do; the server name is in the summary of the run:
+   `az lock create --name rosetta-db-no-delete --lock-type CanNotDelete --resource-group rg-rosetta --resource <server> --resource-type Microsoft.DBforPostgreSQL/flexibleServers`.
+7. Set the `production` variables `ROSETTA_PUBLIC_URL` (from the summary) and `ROSETTA_SMOKE_USER`, and the secret
+   `ROSETTA_SMOKE_PASSWORD`, once the teacher account exists (section Teacher account); then, last, the repository
+   variable `ROSETTA_DEPLOY_ENABLED` = `true`.
+8. One day later, the cost check (section Cost check after day one).
 
 ## Environment secrets the owner adds
 
@@ -67,16 +86,17 @@ job with its name and no value.
 | `ROSETTA_DEPLOY_ENABLED`      | variable | repository, `true` | `release.yml`               | switches the deploy job on; set it last                                                      |
 
 The job makes the rest itself: the database passwords (`openssl rand`), `DATABASE_URL` and `DATABASE_MIGRATOR_URL`,
-which exist only as Container Apps secrets. Defence in depth, because `release.yml` runs on any pushed `v*` tag and by
-hand: a tag ruleset for `v*` so only the owner can create, move or delete release tags, and in the `production`
-environment Deployment branches and tags limited to `main` and `v*`, so no other ref reaches its secrets.
+which exist only as Container Apps secrets.
 
 ## Provisioning
 
 **Pending G-07.** Starts billed resources; the owner says when in chat. Actions, Azure provision, Run workflow, branch
 `main`, input `image-tag` = the `sha-<short>` tag from the summary of a Release run on `main`. The workflow
 `azure-provision.yml` runs only by hand (`workflow_dispatch`), only from `main`, in the `production` environment, and
-never at the same time as a deploy. Running it again converges the same resources and makes new database passwords.
+never at the same time as a deploy. Running it again converges the same resources and keeps the database passwords the
+app already holds; the input `rotate-passwords` makes new ones (section Database roles). The input `db-server` is only
+for a restore (section Restore). Secret values reach `az` only as `@file` arguments from a mode-700 folder of the
+runner, never on a command line.
 
 It creates, in `rg-rosetta`:
 
@@ -88,15 +108,15 @@ It creates, in `rg-rosetta`:
 3. the Flexible Server: PostgreSQL 17, Burstable B1MS, 32 GiB, backups kept 7 days, `require_secure_transport` on,
    one firewall rule for Azure services only (`0.0.0.0`), the database `rosetta`;
 4. a `CanNotDelete` lock on the server. Creating a lock needs Owner or User Access Administrator, which the deploy
-   identity (Contributor) does not have; the job then warns, and the owner runs once:
-   `az lock create --name rosetta-db-no-delete --lock-type CanNotDelete --resource-group rg-rosetta --resource <server> --resource-type Microsoft.DBforPostgreSQL/flexibleServers`;
+   identity (Contributor) does not have; the job then warns, and the owner runs the `az lock create` of Owner steps
+   before the first run, step 6;
 5. the roles `rosetta_migrator` and `rosetta_app` (section Database roles);
 6. the migrate job `caj-rosetta-migrate` (manual trigger, no retry), which runs once with the image and must succeed;
 7. the Container App `ca-rosetta`: 0.5 vCPU, 1 GiB, one replica, external ingress on 8080 (HTTP redirected to HTTPS),
    startup, liveness and readiness probes on `/healthz`, the share at `/data`, every secret as a `secretref:` variable,
    plain `ROSETTA_TRUST_PROXY=1`, `ROSETTA_DATA_DIR=/data`, `ROSETTA_PUBLIC_URL` (the https FQDN),
-   `ROSETTA_UPLOAD_MAX_MB=100` (DEC-149) and `ROSETTA_LOG_LEVEL=info`. The GHCR package is public, so no registry
-   credential is set.
+   `ROSETTA_UPLOAD_MAX_MB=100` (DEC-149) and `ROSETTA_LOG_LEVEL=info`. The GHCR package is public, so no registry is
+   set (ADR-024 note of 2026-10-24).
 
 It waits until the new revision is ready and `/healthz` answers over HTTPS, then prints the URL, the image and the
 resource names in the job summary. Afterwards, copy the URL into the `production` variable `ROSETTA_PUBLIC_URL`.
@@ -186,7 +206,14 @@ RF-1306. The plan of [backup.md](backup.md), on this host:
 - the scheduled `npm run backup` (a `pg_dump` kept 7 days and a weekly copy of the data folder) stays, for
   portability; its hosted schedule is set up with [backup.md](backup.md) section 5. It connects as an administrative
   role: reset the server administrator's password first with `az postgres flexible-server update --admin-password`
-  (the provisioning keeps none), and allow the machine's IP with a firewall rule for the duration;
+  (the provisioning keeps none). The server accepts only Azure services, so a run from the owner's machine needs a
+  firewall rule for that machine's IP. The lock also blocks deleting a firewall rule, so the rule is removed with the
+  lock lifted for a moment, in this order:
+  `az postgres flexible-server firewall-rule create --resource-group rg-rosetta --server-name <server> --name owner-backup --start-ip-address <ip> --end-ip-address <ip>`;
+  `npm run backup`;
+  `az lock delete --name rosetta-db-no-delete --resource-group rg-rosetta --resource <server> --resource-type Microsoft.DBforPostgreSQL/flexibleServers`;
+  `az postgres flexible-server firewall-rule delete --resource-group rg-rosetta --server-name <server> --name owner-backup --yes`;
+  and the `az lock create` of Owner steps before the first run, step 6, to put the lock back;
 - `ROSETTA_SECRET_KEY` is kept by the owner in the password manager; without it the stored provider keys cannot be
   decrypted.
 
@@ -198,16 +225,25 @@ RF-1306. The plan of [backup.md](backup.md), on this host:
 az postgres flexible-server restore --resource-group rg-rosetta --name <new server> --source-server <server> --restore-time <UTC time>
 ```
 
-Then run Azure provision again with the new server's name in place of the old one (or point `DATABASE_URL` and
-`DATABASE_MIGRATOR_URL` at it), check `/healthz` and run the smoke test. A dump is restored with `npm run restore` into
+The restored server keeps the roles and their passwords of the restore time, and the Container Apps secrets hold the
+same passwords. Run Azure provision with the input `db-server` = `<new server>` and `rotate-passwords` left off: the job
+reads the passwords back from the secrets, points `DATABASE_URL` and `DATABASE_MIGRATOR_URL` at the new server, sets a
+new administrator password, re-applies the firewall rule and the roles, runs the migrate job and makes a new revision.
+Every later run of Azure provision needs the same `db-server` input. Put the lock on the new server (Owner steps before
+the first run, step 6), check `/healthz` and run the smoke test. The old server stays, locked, until the owner lifts its
+lock and deletes it. A dump is restored with `npm run restore` into
 an empty database ([backup.md](backup.md) section 3); the data folder is restored into the share. The restore drill of
 2026-10-18 on the local Compose stack is in backup.md section 4; one restore drill on the hosted stack is recorded in
 Deployment record with its date.
 
 ## Database roles
 
-The provisioning job creates the two roles of `docs/data-model.md` section 6, not by hand. In the step "Database
-roles" of `azure-provision.yml` it makes the passwords with `openssl rand -hex 24`, masks them, connects as the server
+The provisioning job creates the two roles of `docs/data-model.md` section 6, not by hand. On the first provisioning
+(no app yet) or with the input `rotate-passwords`, the step "Database passwords" of `azure-provision.yml` makes the
+passwords with `openssl rand -hex 24`; on any other run it reads back the passwords the app and the migrate job already
+hold, so a rerun does not break the running app. A rotation sets the new passwords on the roles before the new revision
+starts, so the app cannot open new database connections for about a minute; run it when nobody is using the app. The
+step "Database roles" masks the passwords, connects as the server
 administrator with TLS through the Azure services rule, and runs the statements of the local `db/init/roles.sh` made
 idempotent: create `rosetta_migrator` and `rosetta_app` when missing, set their passwords, make `rosetta_migrator` the
 owner of the database `rosetta`, and grant `rosetta_app` the use of schema `public`. psql reads the passwords from its
