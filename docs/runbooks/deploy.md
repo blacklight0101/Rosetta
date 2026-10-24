@@ -8,10 +8,10 @@ DEC-171). The procedure follows `docs/environments-and-delivery.md` sections 10 
 
 > History: the first host choice, Railway (ADR-020), was dropped on 2026-10-24 because its sign-ups were paused (DEC-171).
 
-**State on 2026-10-24: the Azure account, the budget, the resource group and the deploy identity exist; no Azure
-resource has been provisioned yet.** Running the two workflows creates billed resources and waits on gates G-07 and
-G-08 (DEC-133): every step that runs them is marked **Pending G-07**. The workflows, the smoke script, the HTTPS
-redirect of the app, the ZAP baseline in CI and the RNF-017 script are in the repository and tested:
+**State on 2026-10-24: provisioned and deployed.** Gates G-07 and G-08 are open; Azure provision and Release ran on
+`main`, the smoke test passed and the teacher account signs in, which opened G-06 (first row of Deployment record).
+Running either workflow again changes billed resources; the owner says when in chat. The workflows, the smoke script,
+the HTTPS redirect of the app, the ZAP baseline in CI and the RNF-017 script are in the repository and tested:
 
 | Piece                      | Where                                                        | Checked by                                                                |
 | -------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
@@ -38,7 +38,10 @@ Done by the owner in the Azure portal and GitHub; nothing here holds a value.
 3. The resource group `rg-rosetta` in Spain Central (`spaincentral`).
 4. The deploy identity: an Entra application with a federated credential for the subject
    `repo:blacklight0101/Rosetta:environment:production` and the role Contributor on `rg-rosetta` only. GitHub logs in
-   with OIDC (`azure/login`); no long-lived Azure secret is stored in GitHub.
+   with OIDC (`azure/login`); no long-lived Azure secret is stored in GitHub. The repository uses immutable OIDC
+   subjects (`use_immutable_subject`), so the credential that matches is a second one, `github-production-immutable`,
+   for `repo:blacklight0101@<owner id>/Rosetta@<repository id>:environment:production`; without it the login fails
+   with AADSTS700213 (first provisioning run, 2026-10-24).
 5. In GitHub, Settings, Environments, `production`, the variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
    `AZURE_SUBSCRIPTION_ID` of that identity.
 
@@ -91,7 +94,7 @@ which exist only as Container Apps secrets.
 
 ## Provisioning
 
-**Pending G-07.** Starts billed resources; the owner says when in chat. Actions, Azure provision, Run workflow, branch
+Starts or changes billed resources; the owner says when in chat. Actions, Azure provision, Run workflow, branch
 `main`, input `image-tag` = the `sha-<short>` tag from the summary of a Release run on `main`. The workflow
 `azure-provision.yml` runs only by hand (`workflow_dispatch`), only from `main`, in the `production` environment, and
 never at the same time as a deploy. Running it again converges the same resources and keeps the database passwords the
@@ -142,7 +145,7 @@ read the tag in the summary of the image job.
 
 ## Deploy
 
-**Pending G-07.** Start it from Actions, Release, Run workflow, branch `main` (deploys come from `main` only; a tag run
+Start it from Actions, Release, Run workflow, branch `main` (deploys come from `main` only; a tag run
 is refused by the environment). The order of `docs/environments-and-delivery.md` section 10 step 4, as the deploy job of
 `release.yml` runs it, one deploy at a time and never cancelled half-way:
 
@@ -190,7 +193,7 @@ the app (`ROSETTA_TRUST_PROXY=1` and an https `ROSETTA_PUBLIC_URL`) stays as the
 
 ## Rollback
 
-**Pending G-07.** Set the previous tag (the one in Deployment record) and wait for `/healthz`, then run the smoke test:
+Set the previous tag (the one in Deployment record) and wait for `/healthz`, then run the smoke test:
 
 ```
 az containerapp update --name ca-rosetta --resource-group rg-rosetta --image ghcr.io/blacklight0101/rosetta:<previous tag>
@@ -224,7 +227,7 @@ RF-1306. The plan of [backup.md](backup.md), on this host:
 
 ## Restore
 
-**Pending G-07.** Point-in-time restore creates a new server from the backups of the last 7 days:
+Point-in-time restore creates a new server from the backups of the last 7 days:
 
 ```
 az postgres flexible-server restore --resource-group rg-rosetta --name <new server> --source-server <server> --restore-time <UTC time>
@@ -275,7 +278,7 @@ RF-1107, DEC-106. After the first provisioning:
 
 ## Cost check after day one
 
-**Pending G-07.** One day after the first provisioning, open Cost Management, Cost analysis for `rg-rosetta`, grouped by
+Owner step, due 2026-10-25 (the first provisioning ran on 2026-10-24). One day after the first provisioning, open Cost Management, Cost analysis for `rg-rosetta`, grouped by
 meter. Expected: Container Apps idle vCPU and memory, the B1MS compute and storage (free in the first 12 months), and
 under 1 USD of Azure Files. ADR-024 risk: the retail prices list an `Environment Management Hour` meter of 0.13 USD an
 hour since 2026-09-01; if it appears on the Consumption-only environment (about 95 USD a month), stop the app
@@ -284,7 +287,7 @@ check that the app is billed at the idle rate, not the active one.
 
 ## RNF-017 measurement
 
-**Pending G-07.** Once, on the hosted URL, before the hand-in (RNF-017: with two runs in progress, pages answer in under
+Owner step, before the hand-in (it needs two accounts with a run each). Once, on the hosted URL (RNF-017: with two runs in progress, pages answer in under
 1 second and the live view receives events within 2 seconds of their creation):
 
 1. Synchronise this machine's clock (Windows: `w32tm /resync`), because the event delay compares the server's clock
@@ -303,9 +306,23 @@ It prints P50 and P95 of each page (`/`, `/healthz`, `/api/session`, `/api/proje
 
 ## Deployment record
 
-| Date    | Image tag              | By    | Smoke test | Notes                                |
-| ------- | ---------------------- | ----- | ---------- | ------------------------------------ |
-| pending | pending (Pending G-07) | owner | pending    | resources not provisioned yet (G-07) |
+| Date       | Image tag     | By                       | Smoke test | Notes                                                                                                   |
+| ---------- | ------------- | ------------------------ | ---------- | ------------------------------------------------------------------------------------------------------- |
+| 2026-10-24 | `sha-6baab02` | orchestrator, owner's OK | passed     | first provisioning (Azure provision, four runs: OIDC subject, public access, schema owner, a CLI crash) |
 
-The RNF-017 result, the hosted restore drill, the cost check of day one and the ZAP baseline summary of the deployed
-commit are recorded here when they run.
+Checks of 2026-10-24 on `https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io`:
+
+- smoke test passed (Release run 40127134540, deploy job): health, redirect, landing, sign-in as the teacher account,
+  a scan that completed, sign-out.
+- `curl` over HTTPS: `/healthz` answers 200 with `{"status":"ok","version":"0.1.0"}`; over HTTP it answers 301 to the
+  same path on HTTPS; the responses carry `Strict-Transport-Security`, the content security policy,
+  `X-Frame-Options: DENY` and `X-Content-Type-Options: nosniff`.
+- ZAP baseline of the deployed commit (`6baab028`, CI run 40124952823, job `zap-baseline`): High: 0, Medium: 0, Low: 0,
+  Informational: 1 (Modern Web Application, 10109); 60 rules passed.
+- Teacher account: the owner created it without a forced password change, signed in on the hosted URL and saw an empty
+  workspace; the demo scan, an understand on 11 areas and a plan ran as that account with the server keys under the
+  caps (understand 0.091862 USD, plan 0.022443 USD).
+- `CanNotDelete` lock `rosetta-db-no-delete` on the server, set by the owner.
+
+Still to record here when they run: the RNF-017 result (section RNF-017 measurement), the hosted restore drill (section
+Restore) and the cost check of day one (section Cost check after day one).

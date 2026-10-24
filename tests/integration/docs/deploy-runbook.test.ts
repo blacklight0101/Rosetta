@@ -40,18 +40,19 @@ describe('docs/runbooks/deploy.md', () => {
     for (const heading of sections) expect(section(text, heading)).not.toBe('');
   });
 
-  it('RF-1304 marks every section that runs a workflow or needs the resources Pending G-07', async () => {
-    const text = await read();
+  it('RF-1304 no section waits on G-07 once the first deployment has run (G-06, G-07)', async () => {
+    expect(await read()).not.toContain('Pending G-07');
+  });
 
-    for (const heading of [
-      'Provisioning',
-      'Deploy',
-      'Rollback',
-      'Restore',
-      'Cost check after day one',
-    ]) {
-      expect(section(text, heading)).toContain('Pending G-07');
-    }
+  it('RF-1304 the deployment record holds the first deploy with its tag, smoke test and ZAP baseline', async () => {
+    const text = section(await read(), 'Deployment record');
+
+    expect(text).toContain('2026-10-24');
+    expect(text).toMatch(/sha-[0-9a-f]{7}/u);
+    expect(text).toMatch(/smoke[^\n]*passed/iu);
+    expect(text).toMatch(/ZAP baseline[^\n]*High: 0/u);
+    expect(text).toMatch(/\/healthz[^\n]*200/u);
+    expect(text).toMatch(/301/u);
   });
 
   it('DEC-171 names the dropped host only in its one-line history note', async () => {
@@ -200,7 +201,7 @@ describe('docs/runbooks/deploy.md: backup, accounts and measurement', () => {
 
     expect(text).toContain('node scripts/measure-rnf017.mjs');
     expect(text).toContain('two runs');
-    expect(text).toContain('Pending G-07');
+    expect(text).toMatch(/Owner step|RNF-017 (pass|FAIL)/u);
   });
 });
 

@@ -2,7 +2,7 @@
 
 Backups for RF-1306 (ADR-016, `docs/environments-and-delivery.md` section 12): a daily `pg_dump` of the database kept
 7 days, and a weekly copy of the data folder (`ROSETTA_DATA_DIR`). The scripts work on any machine that can reach the
-database; the hosted schedule is not set up yet (section 5).
+database; the hosted part is in section 5.
 
 ## 1. What is backed up
 
@@ -77,16 +77,30 @@ For the local Compose stack (the order matters, because the `migrate` service cr
 7. `npm run restore -- --force` over the running database also finished, with identical counts.
 8. `docker compose -p rosetta-p212 down -v` removed the drill stack.
 
-Result: the drill passed. It tried the scripts against the local stack only; the hosted restore is Pending G-07 (below).
+Result: the drill passed. It tried the scripts against the local stack only; the hosted restore drill is in section 5.
 
 ## 5. Hosted schedule (Azure Container Apps)
 
-The host is now Azure Container Apps with Azure Database for PostgreSQL Flexible Server (ADR-024, DEC-171). Its own backups are automatic with point-in-time restore over 7 to 35 days, which meets RF-1306; the Railway wording below is kept until the follow-up backup card rewrites this section.
+The host is Azure Container Apps with Azure Database for PostgreSQL Flexible Server (ADR-024, DEC-171), provisioned on
+2026-10-24 ([deploy.md](deploy.md), Deployment record). State of each part of RF-1306 on the hosted stack:
 
-Pending G-07. The hosted deployment does not exist yet (P1-55 waits on G-07 and G-08), so none of this has run there:
+| Part                                     | How on Azure                                                                                                                                        | State on 2026-10-24                                     |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Daily database backup kept 7 days        | the server's automatic backups with point-in-time restore, `--backup-retention 7` in `azure-provision.yml`; the `CanNotDelete` lock keeps them safe | in place since the first provisioning                   |
+| Restore point before every deployment    | point-in-time restore to the time the deploy job started (Deploy step 4 of deploy.md)                                                               | in place: any minute of the last 7 days can be restored |
+| Weekly copy of the data folder           | the Azure Files share `rosetta-data`; `npm run backup` with the share mounted, or a share snapshot                                                  | not scheduled yet; a follow-up card                     |
+| Portable `pg_dump` with `npm run backup` | from the owner's machine with a firewall rule for its IP, as in deploy.md section Backup                                                            | by hand when wanted                                     |
+| One restore drill on the hosted stack    | point-in-time restore into a new server, checked, then removed (below)                                                                              | owner step, before the hand-in                          |
 
-- the daily run of `npm run backup` on Railway (a cron service or the host's scheduler), with the backup folder on a
-  volume that is not the data volume, or a copy of it off the host;
-- the host's own daily database backups, if the plan offers them (ADR-020 notes Railway keeps 6 days, RF-1306 asks 7);
-- the snapshot before every deployment (`docs/environments-and-delivery.md` section 12);
-- one restore drill on the hosted stack, recorded here with its date.
+### Hosted restore drill (owner, Cloud Shell)
+
+It creates a second B1MS server for a few minutes (billed by the hour) and removes it; the running app is not touched.
+
+1. `az postgres flexible-server restore --resource-group rg-rosetta --name psql-rosetta-drill --source-server <server> --restore-time <UTC time a few minutes ago>`
+   (about 10 minutes).
+2. `az postgres flexible-server show --resource-group rg-rosetta --name psql-rosetta-drill --query state` answers
+   `"Ready"`, and `az postgres flexible-server db list --resource-group rg-rosetta --server-name psql-rosetta-drill --query "[].name"`
+   lists `rosetta`.
+3. `az postgres flexible-server delete --resource-group rg-rosetta --name psql-rosetta-drill --yes` (the drill server
+   has no lock).
+4. Write the date, the restore time and the result in deploy.md, Deployment record.
