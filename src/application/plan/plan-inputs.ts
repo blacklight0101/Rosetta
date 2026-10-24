@@ -1,5 +1,6 @@
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { resolveCardAliases } from '../../domain/planning/card-aliases.js';
 import { supportedCards, type SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { Run } from '../../domain/runs/run.js';
@@ -112,7 +113,8 @@ export async function planInputs(
     return err(found.error === ERROR_CODES.notFound ? problems.missing : problems.run);
   }
   const sourceRun = found.value;
-  const cards = await deps.cards.cardsOf(scopeOf(sourceRun));
+  // P5-32: a reference to a merged-away card id points at the card that was kept.
+  const cards = resolveCardAliases(await deps.cards.cardsOf(scopeOf(sourceRun)));
   if (supportedCards(cards).length === 0) return err(problems.claims);
   const filed = await deps.answers.questionsOf(ref, sourceRun.runKey);
   const questions = consolidatedQuestions(
