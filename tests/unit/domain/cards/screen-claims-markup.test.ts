@@ -125,7 +125,7 @@ describe('P5-31 links and leftovers of a page with markup', () => {
     );
   });
 
-  it('P5-31 an item the markup does not show keeps its claim and the lines of the card', () => {
+  it('P5-31 an item the markup does not show keeps its claim and cites the first range of the card', () => {
     const screen = {
       ...contactScreen,
       actions: [{ label: 'Print', handler: 'Print_Click' }],
@@ -133,9 +133,9 @@ describe('P5-31 links and leftovers of a page with markup', () => {
     };
 
     const claims = claimsOf(screen);
-    const wide = derived().claims[0]?.citations;
+    const first = derived().claims[0]?.citations.slice(0, 1);
 
-    expect(claims.find((claim) => claim.text.startsWith('Action Print'))?.citations).toEqual(wide);
+    expect(claims.find((claim) => claim.text.startsWith('Action Print'))?.citations).toEqual(first);
     expect(claims.find((claim) => claim.text.startsWith('Field Phone'))?.text).toBe(
       'Field Phone (text, required) is on the screen.',
     );

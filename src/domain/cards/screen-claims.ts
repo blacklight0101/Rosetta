@@ -1,5 +1,6 @@
 import type { Citation } from './citation.js';
 import type { ScreenAction, ScreenField, ScreenInput } from './flow-screen.js';
+import { actionNames, citationsNaming, linkNames } from './screen-named.js';
 import { actionShown, fieldShown, linkShown, routeShown, settledScreen } from './screen-markup.js';
 
 // RF-261, RF-300, RF-301, RF-626, ADR-005, DEC-134: the validations, actions, route, roles, fields
@@ -162,8 +163,36 @@ export function detailKindOf(text: string): DetailKind | undefined {
   return undefined;
 }
 
+/**
+ * P5-44: where an item the markup does not show takes its lines. A page with markup narrows to the
+ * lines of the claims that name the item, else to the first range of the card, and remembers the
+ * claims that had only that; a page with no markup (a stack with no reader) keeps every range.
+ */
+interface Narrowing {
+  readonly fellBack: string[];
+  cite(text: string, names: readonly string[], evidence: readonly Citation[]): readonly Citation[];
+}
+
+function narrowing(written: readonly DerivedClaim[], active: boolean): Narrowing {
+  const fellBack: string[] = [];
+  return {
+    fellBack,
+    cite(text, names, evidence) {
+      if (!active) return evidence;
+      const named = citationsNaming(written, names);
+      if (named.length > 0) return named;
+      fellBack.push(text);
+      return evidence.slice(0, 1);
+    },
+  };
+}
+
 /** The claims that state the route, roles, fields and links of a screen, with the lines they cite. */
-function detailClaims(screen: ScreenInput, evidence: readonly Citation[]): readonly DerivedClaim[] {
+function detailClaims(
+  screen: ScreenInput,
+  evidence: readonly Citation[],
+  narrow: Narrowing,
+): readonly DerivedClaim[] {
   const markup = screen.markup ?? [];
   const settled = settledScreen(screen);
   const route: DerivedClaim[] = [];
@@ -180,7 +209,10 @@ function detailClaims(screen: ScreenInput, evidence: readonly Citation[]): reado
   }));
   const links = screen.leadsTo.map((target) => {
     const shown = linkShown(markup, target);
-    if (shown === undefined) return { text: leadsToClaimText(target), citations: evidence };
+    if (shown === undefined) {
+      const text = leadsToClaimText(target);
+      return { text, citations: narrow.cite(text, linkNames(target), evidence) };
+    }
     return { text: linkClaimText(shown.text, target), citations: shown.citations };
   });
   const roles = screen.roles.map((role) => ({ text: roleClaimText(role), citations: evidence }));
@@ -195,6 +227,26 @@ export function screenClaims(
   screen: ScreenInput,
   written: readonly DerivedClaim[],
 ): readonly DerivedClaim[] {
+  return derive(screen, written).claims;
+}
+
+/**
+ * P5-44: the note of a card whose claims could cite only the first range of the card because no
+ * line the agent wrote names them; undefined when there is none.
+ */
+export function screenNote(
+  screen: ScreenInput,
+  written: readonly DerivedClaim[],
+): string | undefined {
+  const { fellBack } = derive(screen, written);
+  if (fellBack.length === 0) return undefined;
+  return `No line the agent wrote names these, so each cites only the first range of the card: ${fellBack.join(' ')}`;
+}
+
+function derive(
+  screen: ScreenInput,
+  written: readonly DerivedClaim[],
+): { readonly claims: readonly DerivedClaim[]; readonly fellBack: readonly string[] } {
   const settled = settledScreen(screen);
   const markup = screen.markup ?? [];
   const validations = settled.fields.flatMap((field) =>
@@ -212,9 +264,14 @@ export function screenClaims(
     return [{ text, citations: found.citations }];
   });
   const rest = shown.filter(({ found }) => found === undefined).map(({ action }) => action);
-  const grouped = actionGroups(rest).map((group) => ({
-    text: groupClaimText(group),
-    citations: evidence,
-  }));
-  return [...validations, ...own, ...grouped, ...detailClaims(screen, evidence)];
+  const narrow = narrowing(written, markup.length > 0);
+  const grouped = actionGroups(rest).map((group) => {
+    const text = groupClaimText(group);
+    return { text, citations: narrow.cite(text, group.flatMap(actionNames), evidence) };
+  });
+  const details = detailClaims(screen, evidence, narrow);
+  return {
+    claims: [...validations, ...own, ...grouped, ...details],
+    fellBack: narrow.fellBack,
+  };
 }
