@@ -9,7 +9,7 @@ import type { SourceCard } from './plan-sources.js';
 // A claim that may tell of a secret fails safe: it is cut where the secret could start, and what
 // follows is replaced by `***`, whatever the form of the value (quoted, number, hex, a word) and
 // whatever joins it to the word before it. A claim is cut at the first of: the end of a secret
-// word (an identifier is split at `_`, `-`, digits and camelCase: short words such as pin, pass, key, salt, hash count as whole tokens, long ones such as password count inside a token too), and, for an insert into a table
+// word (an identifier is split at `_`, `-`, digits and camelCase: short words such as pin, pass, key, salt, hash count as whole tokens, or inside an ALLCAPS token of 4 letters or more; long ones such as password and pwd count inside any token), and, for an insert into a table
 // whose last name part holds user, login, account, credential or member, the `values` keyword (or
 // the table name when there is none). Quoted values before the cut are masked too. Every pattern is
 // linear in the text.
@@ -35,11 +35,11 @@ const TEST = /\b(?:test|sample|demo)\s+(?:data|users?|accounts?|records?|rows?)\
 const WORD = /[\p{L}\p{N}_@-]+/gu;
 /** Short secret words count only as a whole token of an identifier. */
 const SHORT_SECRETS: ReadonlySet<string> = new Set([
-  ...['pin', 'pass', 'pwd', 'key', 'salt', 'hash', 'otp', 'cvv'],
+  ...['pin', 'pass', 'key', 'salt', 'hash', 'otp', 'cvv'],
 ]);
 /** Long secret words count inside a token too (`userpassword`, `passwordhash`). */
 const LONG_SECRETS = [
-  ...['password', 'passwd', 'passcode', 'passphrase', 'secret', 'token', 'credential'],
+  ...['password', 'passwd', 'passcode', 'passphrase', 'pwd', 'secret', 'token', 'credential'],
   ...['apikey', 'clave', 'senha', 'contrase'],
 ];
 const INSERT_TARGET = /\binsert\s+(?:into\s+)?([^(\n;]{1,160})/iu;
@@ -57,19 +57,27 @@ function lastNamePart(target: string): string {
   return parts.at(-1) ?? named;
 }
 
-/** The tokens of an identifier: split at `_`, `-`, digits and camelCase; lower case; `@` as `a`. */
-function tokensOf(word: string): string[] {
+interface Token {
+  readonly text: string;
+  /** The token has no lower case letter: an ALLCAPS name (legacy Oracle or DB2 style). */
+  readonly upper: boolean;
+}
+
+/** The tokens of an identifier: split at `_`, `-`, digits and camelCase; `@` as `a`. Linear. */
+function tokensOf(word: string): Token[] {
   return word
     .replaceAll('@', 'a')
     .replaceAll(/([a-z])([A-Z])/gu, '$1 $2')
-    .replaceAll(/([A-Z]+)([A-Z][a-z])/gu, '$1 $2')
+    .replaceAll(/([A-Z])(?=[A-Z][a-z])/gu, '$1 ')
     .split(/[^\p{L}]+/u)
-    .map((token) => token.toLowerCase())
-    .filter((token) => token !== '');
+    .filter((token) => token !== '')
+    .map((token) => ({ text: token.toLowerCase(), upper: token === token.toUpperCase() }));
 }
 
-function isSecretToken(token: string): boolean {
-  return SHORT_SECRETS.has(token) || LONG_SECRETS.some((long) => token.includes(long));
+/** Short words count as a whole token, or inside an ALLCAPS token of 4 letters or more. */
+function isSecretToken({ text, upper }: Token): boolean {
+  const inUpper = upper && text.length >= 4 && [...SHORT_SECRETS].some((w) => text.includes(w));
+  return SHORT_SECRETS.has(text) || inUpper || LONG_SECRETS.some((long) => text.includes(long));
 }
 
 /** The end of the first identifier that holds a secret word, if any. */
