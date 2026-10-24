@@ -2,6 +2,7 @@ import type { Catalogue } from './catalogue.js';
 import { briefDecisions, type BriefChoices, type BriefEvidence } from './brief-decisions.js';
 import { layerNames } from './brief-questions.js';
 import { migrationStrategyInfo } from './migration-strategy.js';
+import type { ClaimJudgement } from './claim-judgement.js';
 import { planId, type PlanContent, type PlanDecision } from './plan-content.js';
 import type { PlanningBrief } from './planning-brief.js';
 import type { TechnicalContent } from './technical-content.js';
@@ -157,6 +158,15 @@ function relinked(technical: TechnicalContent, ids: ReadonlyMap<string, string>)
   };
 }
 
+/** P5-41: a judgement that names a decision follows the decision to its new id (or to the brief's record). */
+function relinkedJudgement(
+  judgement: ClaimJudgement,
+  ids: ReadonlyMap<string, string>,
+): ClaimJudgement {
+  if (judgement.decisionId === undefined) return judgement;
+  return { ...judgement, decisionId: ids.get(judgement.decisionId) ?? judgement.decisionId };
+}
+
 // RF-608, RF-609, RF-610
 export function decideOnce(
   content: PlanContent,
@@ -194,6 +204,9 @@ export function decideOnce(
         ...fromBrief.decisions,
       ],
       technical: relinked(content.technical, ids),
+      ...(content.judgements === undefined
+        ? {}
+        : { judgements: content.judgements.map((each) => relinkedJudgement(each, ids)) }),
     },
     choices: fromBrief.choices,
     restated,

@@ -15,7 +15,7 @@ import type {
   UnreadableItem,
 } from './plan-draft.js';
 import { unknownPositions, type RequirementNote } from './requirement-notes.js';
-import type { ClaimJudgement } from './claim-judgement.js';
+import { assembleJudgements, type ClaimJudgement } from './claim-judgement.js';
 import { draftFault, leftOutOf, noRequirement, type LeftOutCard } from './left-out-card.js';
 import type { GuardKind, RiskClass } from './task-card-quality.js';
 import { assembleTechnical, type TechnicalContent } from './technical-content.js';
@@ -73,7 +73,7 @@ export interface PlanTask {
   readonly contradicts?: readonly Contradiction[];
 }
 
-export interface Contradiction {
+interface Contradiction {
   readonly criterion: number;
   readonly claim: string;
 }
@@ -204,6 +204,9 @@ function tasksOf(
       identifiers: identifiers[index] ?? [],
       dependsOn: (dependencies[index] ?? []).map((on) => planId('T', on + 1)),
       builds: [],
+      ...(task.contradicts === undefined || task.contradicts.length === 0
+        ? {}
+        : { contradicts: task.contradicts }),
     };
   });
   return { tasks, leftOut };
@@ -225,6 +228,19 @@ function entitiesOf(drafts: readonly DraftEntity[], supported: ReadonlySet<strin
     const sources = knownSources(entity.sources, supported);
     return sources.length === 0 ? [] : [{ ...entity, sources }];
   });
+}
+
+/** P5-41: the checked judgements of the draft, or nothing when it has none. */
+function judgementsOf(
+  draft: PlanDraft,
+  supported: ReadonlySet<string>,
+): Pick<PlanContent, 'judgements'> {
+  const judgements = assembleJudgements(
+    draft.claimJudgements ?? [],
+    supported,
+    draft.decisions.length,
+  );
+  return judgements.length === 0 ? {} : { judgements };
 }
 
 export interface AssemblyOptions {
@@ -272,6 +288,7 @@ export function assemblePlan(
       })),
       technical: technical.content,
       ...(notes.length === 0 ? {} : { requirementNotes: notes }),
+      ...judgementsOf(draft, supported),
     },
     dropped: {
       requirements: draft.requirements.length - requirements.kept.length,

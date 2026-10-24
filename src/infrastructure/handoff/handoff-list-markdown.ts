@@ -2,6 +2,8 @@ import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { keepLegacyDefault, legacySafe } from '../../domain/planning/legacy-default.js';
+import { secureDefault, securityCards } from '../../domain/planning/keep-or-fix.js';
+import { keepOrFixQuestionLines, keepOrFixTable } from './handoff-keep-or-fix-markdown.js';
 import { decisionFile, documentSet, handoffFiles, idLink, sourceLinks } from './handoff-links.js';
 import { stackClashQuestionLines, stackClashReadmeLines } from './handoff-stack-markdown.js';
 import { leftOutSummaryLines } from './handoff-left-out-markdown.js';
@@ -31,6 +33,7 @@ export function risksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): st
           '',
         ])),
     '',
+    ...keepOrFixTable(handoff, esc),
   ].join('\n');
 }
 
@@ -69,9 +72,10 @@ function prdQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string
 // RF-604
 export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const waiting = waitingOf(handoff);
+  const secure = securityCards(handoff.content.judgements ?? []);
   const unanswered = handoff.openQuestions.map(
     (question) =>
-      `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)} Default: ${keepLegacyDefault} Cards waiting: ${waitingCards(waiting, question.cardId)}`,
+      `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)} Default: ${secure.has(question.cardId) ? secureDefault : keepLegacyDefault} Cards waiting: ${waitingCards(waiting, question.cardId)}`,
   );
   return [
     '# Open questions',
@@ -79,6 +83,8 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     '## The rule for a default',
     '',
     'A default keeps the legacy behaviour: a default that would change what users see today is not allowed, and a question that proposed one says so and takes the legacy behaviour instead.',
+    '',
+    'A security question is the exception: its default is the secure option, never the legacy behaviour. The planner marks a claim as a security matter, and a question of the card that holds such a claim, and a keep-or-fix row about it, default to the secure option.',
     '',
     '## Planning brief questions that took their default',
     '',
@@ -93,6 +99,7 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     '',
     ...prdQuestionLines(handoff, esc),
     '',
+    ...keepOrFixQuestionLines(handoff, esc),
     '## Questions from the analysis without an answer',
     '',
     ...(unanswered.length === 0 ? ['Every question of the analysis was answered.'] : unanswered),

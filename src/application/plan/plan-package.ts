@@ -2,6 +2,7 @@ import { stackClashes } from '../../domain/planning/stack-rules.js';
 import { decideOnce } from '../../domain/planning/brief-restated.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
 import { copiedExamples, exampleSentencesOfAll } from '../../domain/planning/copied-example.js';
+import { settleJudgements } from '../../domain/planning/claim-judgement.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
 import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content.js';
@@ -47,6 +48,35 @@ function openQuestionsOf(
       ...{ cardId, question },
       area: cards.find((card) => card.id === cardId)?.area ?? '',
     }));
+}
+
+/** The checked content with the style risks added and the judgements settled. */
+function contentOf(
+  content: PlanContent,
+  checked: {
+    readonly styleCheck: HandoffPackage['styleCheck'];
+    readonly style: PackagePrinciple;
+    readonly questions: PlanInputs['questions'];
+  },
+): PlanContent {
+  const { styleCheck, style, questions } = checked;
+  return {
+    ...content,
+    risks: addStyleRisks(content.risks, styleCheck, style.title),
+    ...settledJudgements(content, questions),
+  };
+}
+
+/** P5-41: the judgements, a change by an answer nobody gave being a defect to decide. */
+function settledJudgements(
+  content: PlanContent,
+  questions: PlanInputs['questions'],
+): Pick<PlanContent, 'judgements'> {
+  if (content.judgements === undefined) return {};
+  const answered = new Set(
+    questions.filter((each) => each.answer.trim() !== '').map((each) => each.cardId),
+  );
+  return { judgements: settleJudgements(content.judgements, answered) };
 }
 
 /** P3-101: the task cards the answer left out, by position, for checks.md. */
@@ -148,10 +178,7 @@ export function handoffPackageOf(
     brief,
     style,
     principles: brief.principles.map((id) => principleOf(catalogue, id)),
-    content: {
-      ...decided.content,
-      risks: addStyleRisks(decided.content.risks, styleCheck, style.title),
-    },
+    content: contentOf(decided.content, { styleCheck, style, questions }),
     choices: decided.choices,
     restated: decided.restated,
     styleCheck,

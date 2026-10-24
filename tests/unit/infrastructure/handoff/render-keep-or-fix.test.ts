@@ -118,7 +118,7 @@ describe('keep or fix', () => {
   it('P5-41 the task card lists it as keep or fix and asks for no approval test', () => {
     const card = firstCard(filesOf([defect]));
 
-    expect(card).toContain('Keep or fix:');
+    expect(card).toContain('Keep or fix (the default is fix');
     expect(card).toContain('KF-001');
     expect(card).not.toContain('pin FEAT-001.c3 against');
     expect(card).toContain('risks.md#keep-or-fix');

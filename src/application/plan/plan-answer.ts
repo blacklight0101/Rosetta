@@ -5,6 +5,7 @@ import type {
   UnreadableItem,
   UnreadableTask,
 } from '../../domain/planning/plan-draft.js';
+import { contradictionItem, judgementDrafts, judgementItem } from './plan-answer-judgements.js';
 import { identifierKinds } from '../../domain/planning/parallel-cards.js';
 import { guardKinds, riskClasses } from '../../domain/planning/task-card-quality.js';
 import { cardLimits } from '../cards/card-limits.js';
@@ -95,6 +96,15 @@ function cardWith(positions: z.ZodType<number>) {
       .transform((list) => list.flatMap((each) => (each === null ? [] : [each])))
       .default([]),
     dependsOn: z.array(positions).max(MAX_LIST).default([]),
+    // P5-41: a criterion the planner says contradicts a claim the card keeps; one that does not read is dropped.
+    contradicts: z
+      .array(contradictionItem.nullable().catch(null))
+      .max(MAX_LIST)
+      .optional()
+      .transform((list) => {
+        const kept = (list ?? []).flatMap((each) => (each === null ? [] : [each]));
+        return kept.length === 0 ? undefined : kept;
+      }),
   });
 }
 
@@ -128,6 +138,7 @@ const answer = z.object({
   phases: itemsOf(MAX_LIST),
   tasks: itemsOf(MAX_ITEMS),
   risks: itemsOf(MAX_LIST),
+  claimJudgements: itemsOf(MAX_ITEMS),
   technical: z
     .object({
       integrations: itemsOf(MAX_LIST),
@@ -230,6 +241,7 @@ function draftOf(lists: z.infer<typeof answer>): PlanReading {
   const entities = readItems('entities', entityItem, lists.entities, lost);
   const phases = readItems('phases', phaseItem, lists.phases, lost);
   const risks = readItems('risks', riskItem, lists.risks, lost);
+  const judgements = readItems('claimJudgements', judgementItem, lists.claimJudgements, lost);
   const technical = technicalOf(lists.technical, decisions, lost);
   const moves = {
     requirement: requirements.at,
@@ -248,6 +260,7 @@ function draftOf(lists: z.infer<typeof answer>): PlanReading {
       tasks,
       risks: risks.items,
       technical,
+      ...judgementDrafts(judgements.items, decisions.at),
       ...(unreadableTasks.length > 0 ? { unreadableTasks } : {}),
       ...(lost.length > 0 ? { unreadableItems: lost } : {}),
     },

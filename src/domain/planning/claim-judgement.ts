@@ -5,7 +5,7 @@
 // and a decision it names must exist; a change that names nothing real is a defect to decide.
 
 export const judgementKinds = ['change', 'defect'] as const;
-export type JudgementKind = (typeof judgementKinds)[number];
+type JudgementKind = (typeof judgementKinds)[number];
 
 /** A judgement as the planner wrote it. */
 export interface DraftClaimJudgement {
@@ -33,6 +33,28 @@ export interface ClaimJudgement {
   readonly security: boolean;
 }
 
+/** The card id of a claim id (`FEAT-001.c3` is `FEAT-001`); undefined when the id has no `.c<n>`. */
+function cardOf(claimId: string): string | undefined {
+  const at = claimId.lastIndexOf('.c');
+  return at > 0 && /^[0-9]{1,6}$/u.test(claimId.slice(at + 2)) ? claimId.slice(0, at) : undefined;
+}
+
+function judgementOf(draft: DraftClaimJudgement, decisionCount: number): ClaimJudgement {
+  const { claim: claimId, reason, security } = draft;
+  const base = { claimId, reason, security };
+  if (draft.judgement === 'defect') return { ...base, kind: 'defect' };
+  const { decision } = draft;
+  if (decision !== null && decision >= 1 && decision <= decisionCount) {
+    return {
+      ...base,
+      kind: 'change',
+      decisionId: `ADR-${String(decision).padStart(3, '0')}`,
+    };
+  }
+  if (draft.answer !== null) return { ...base, kind: 'change', answerCard: draft.answer };
+  return { ...base, kind: 'defect' };
+}
+
 /** The judgements whose card is supported, once per claim; a change naming nothing real is a defect. */
 // RF-631
 export function assembleJudgements(
@@ -40,7 +62,13 @@ export function assembleJudgements(
   supported: ReadonlySet<string>,
   decisionCount: number,
 ): ClaimJudgement[] {
-  return drafts.length < 0 || supported.size < 0 || decisionCount < 0 ? [] : [];
+  const seen = new Set<string>();
+  return drafts.flatMap((draft) => {
+    const card = cardOf(draft.claim);
+    if (card === undefined || !supported.has(card) || seen.has(draft.claim)) return [];
+    seen.add(draft.claim);
+    return [judgementOf(draft, decisionCount)];
+  });
 }
 
 /** A change by an answer nobody gave is a defect to decide. */
@@ -49,5 +77,10 @@ export function settleJudgements(
   judgements: readonly ClaimJudgement[],
   answered: ReadonlySet<string>,
 ): ClaimJudgement[] {
-  return answered.size < 0 ? [] : [...judgements];
+  return judgements.map((each) => {
+    if (each.kind !== 'change' || each.decisionId !== undefined) return each;
+    if (each.answerCard !== undefined && answered.has(each.answerCard)) return each;
+    const { claimId, reason, security } = each;
+    return { claimId, reason, security, kind: 'defect' };
+  });
 }

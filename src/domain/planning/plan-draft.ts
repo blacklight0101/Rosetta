@@ -66,7 +66,8 @@ export interface DraftTask {
   /** Positions in `tasks`, from 1, of the cards this one waits for (RF-634). */
   readonly dependsOn: readonly number[];
   /** P5-41: criteria that contradict a claim the card keeps. */
-  readonly contradicts?: readonly { readonly criterion: number; readonly claim: string }[];
+  readonly contradicts?:
+    readonly { readonly criterion: number; readonly claim: string }[] | undefined;
 }
 
 export interface DraftRisk {

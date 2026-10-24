@@ -13,6 +13,8 @@ const task = {
   phase: 1,
   requirements: [1],
   acceptanceCriteria: ['Given a user, when signing in, then the home page opens.'],
+  invariant: 'A user signs in only with the right password.',
+  riskClass: 'none',
 };
 
 function answerWith(extra: Record<string, unknown>): string {

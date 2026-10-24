@@ -149,7 +149,7 @@ describe('keepOrFixRows', () => {
 
     expect(rows.map((row) => [row.id, row.claimId, row.security, row.cards])).toEqual([
       ['KF-001', 'FEAT-001.c1', false, ['T-001']],
-      ['KF-002', 'OQ-003.c1', true, ['T-001']],
+      ['KF-002', 'OQ-003.c1', true, []],
     ]);
   });
 
