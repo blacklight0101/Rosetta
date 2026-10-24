@@ -107,7 +107,7 @@ declares the column (the table script, the model class or the mapping):
 
 Copy the type as the code writes it, with its size (`float` stays `float`). Write the default only when the code
 gives one. For a table with no primary key, write one claim, for example `Staff has no primary key`, and one for a
-unique constraint the code relies on but the table lacks, for example `no unique constraint on Name; the code looks
-up a row by name`. A missing key or constraint is a claim of the `ENT` card, not an `OQ` card. When a foreign key
+unique constraint the code relies on but the table lacks, for example `no unique constraint on Name; the code
+looks up a row by name`. A missing key or constraint is a claim of the `ENT` card, not an `OQ` card. When a foreign key
 deletes by cascade, write a claim `Cascade: deleting from <Table> also deletes rows of <Table>, <Table>` that names
 every table it reaches.
