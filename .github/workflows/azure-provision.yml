@@ -79,7 +79,8 @@ jobs:
     steps:
       - name: The provisioning settings are stored
         run: |
-          if ! printf '%s' "$IMAGE_TAG" | grep -Eqx 'sha-[0-9a-f]{7,40}'; then
+          tag_pattern='^sha-[0-9a-f]{7,40}$'
+          if ! [[ $IMAGE_TAG =~ $tag_pattern ]]; then
             echo "::error::The image-tag input must be sha-<short>, the tag of a Release run."
             exit 1
           fi
@@ -111,7 +112,8 @@ jobs:
         run: |
           suffix="$(printf '%s/%s' "$AZURE_SUBSCRIPTION_ID" "$AZ_RG" | sha256sum | cut -c1-8)"
           server="${DB_SERVER:-psql-rosetta-$suffix}"
-          if ! printf '%s' "$server" | grep -Eqx '[a-z0-9][a-z0-9-]{1,61}[a-z0-9]'; then
+          server_pattern='^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$'
+          if ! [[ $server =~ $server_pattern ]]; then
             echo "::error::The db-server input must be a PostgreSQL server name (lower case, digits, dashes)."
             exit 1
           fi

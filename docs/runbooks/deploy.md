@@ -234,7 +234,7 @@ The restored server keeps the roles and their passwords of the restore time, and
 same passwords. Run Azure provision with the input `db-server` = `<new server>` and `rotate-passwords` left off: the job
 reads the passwords back from the secrets, points `DATABASE_URL` and `DATABASE_MIGRATOR_URL` at the new server, sets a
 new administrator password, re-applies the firewall rule and the roles, runs the migrate job and makes a new revision.
-Every later run of Azure provision needs the same `db-server` input. Put the lock on the new server (Owner steps before
+**Warning:** every later run of Azure provision needs the same `db-server` input, or `DATABASE_URL` points back at the old server; record the new server name in Deployment record (or keep it as a `production` variable for reference). Put the lock on the new server (Owner steps before
 the first run, step 6), check `/healthz` and run the smoke test. The old server stays, locked, until the owner lifts its
 lock and deletes it. A dump is restored with `npm run restore` into
 an empty database ([backup.md](backup.md) section 3); the data folder is restored into the share. The restore drill of
