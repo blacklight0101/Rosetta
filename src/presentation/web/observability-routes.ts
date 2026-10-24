@@ -6,13 +6,15 @@ import type { ListRunCalls, RunCall } from '../../application/use-cases/list-run
 import type { ListRunLogs } from '../../application/use-cases/list-run-logs.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { z } from 'zod';
 import { signedInOf } from './request-actor.js';
 
 // RF-1011, RF-408, RF-009, RF-1105: the routes behind the "API calls" and "Logs" panels of a run.
-// - GET /api/runs/:runId/calls gives `{ runKey, runState, total, calls, summary }`: the attempts of
-//   the run's provider call log (the newest 2000, each with its agent's area and whether it has a
-//   transcript) and the summary per provider and role with P50 and P95 latency and time to first
-//   token over all of them.
+// - GET /api/runs/:runId/calls gives `{ runKey, runState, total, calls, summary, nextCursor? }`: a page
+//   of the attempts of the run's provider call log in order (each with its agent's area and whether it
+//   has a transcript) and the summary per provider and role with P50 and P95 latency and time to first
+//   token over all of them. `?limit=` is the page size (100 when absent, at most 500) and `?cursor=`
+//   the `nextCursor` of the page before; the last page has no `nextCursor` (P5-22).
 // - GET /api/runs/:runId/calls/:seq/transcript gives `{ entries }`: the masked messages that call
 //   added to its agent task's transcript; a call number the log does not hold answers 404.
 // - GET /api/runs/:runId/logs gives `{ runKey, runState, total, entries, counts, securityEvents }`:
@@ -27,6 +29,13 @@ export interface ObservabilityServices {
   readonly getCallTranscript: GetCallTranscript;
   readonly listRunLogs: ListRunLogs;
 }
+
+/** A page size or cursor as the page writes it: a plain decimal from 1, at most 9 digits. */
+const plainNumber = z
+  .string()
+  .regex(/^[1-9]\d{0,8}$/u)
+  .transform(Number);
+const callsQuery = z.object({ limit: plainNumber.optional(), cursor: plainNumber.optional() });
 
 /** A call number as the page writes it: a plain decimal from 1, no leading zero, at most 9 digits. */
 const CALL_NUMBER = /^[1-9]\d{0,8}$/;
@@ -92,13 +101,17 @@ function logView(entry: StoredLogEntry) {
 const options = { exposeHeadRoute: false, config: { access: 'user' } } as const;
 
 function registerCalls(server: FastifyInstance, services: ObservabilityServices): void {
-  server.get<{ Params: { runId: string } }>(
+  server.get<{ Params: { runId: string }; Querystring: unknown }>(
     '/api/runs/:runId/calls',
     options,
     async (request, reply) => {
+      const query = callsQuery.safeParse(request.query);
+      if (!query.success) throw new RosettaError(ERROR_CODES.requestInvalid);
       const outcome = await services.listRunCalls.execute({
         actor: signedInOf(request).actor,
         runId: request.params.runId,
+        ...(query.data.limit === undefined ? {} : { limit: query.data.limit }),
+        ...(query.data.cursor === undefined ? {} : { after: query.data.cursor }),
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
       const { calls, ...rest } = outcome.value;

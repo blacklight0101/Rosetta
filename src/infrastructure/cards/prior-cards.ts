@@ -7,7 +7,11 @@ import type {
   PriorCards,
   QuestionReopener,
 } from '../../application/ports/prior-cards.js';
-import { CARD_TYPES, type OpenQuestionState } from '../../domain/cards/card-vocabulary.js';
+import {
+  CARD_TYPES,
+  type CardType,
+  type OpenQuestionState,
+} from '../../domain/cards/card-vocabulary.js';
 import { isRunKey, runPath } from '../files/workspace-paths.js';
 
 // RF-241, data-model.md sections 3.7 and 3.16: the cards of an earlier run read back from their files
@@ -103,13 +107,22 @@ export class FilePriorCards implements PriorCards, QuestionReopener {
   }
 
   // RF-241
-  async cardsOf(project: ProjectRef, runKey: string): Promise<readonly PriorCard[]> {
+  async cardsOf(
+    project: ProjectRef,
+    runKey: string,
+    types?: readonly CardType[],
+  ): Promise<readonly PriorCard[]> {
     if (!isRunKey(runKey)) return [];
     const index = indexSchema.safeParse(
       parsedJson((await this.read(project, runKey, 'cards/index.json')) ?? ''),
     );
     if (!index.success) return [];
-    const paths = index.data.cards.map((card) => card.path).filter((path) => cardFile.test(path));
+    const paths = index.data.cards
+      .map((card) => card.path)
+      .filter((path) => cardFile.test(path))
+      .filter(
+        (path) => types === undefined || types.some((type) => path.startsWith(`cards/${type}/`)),
+      );
     const texts = await Promise.all(paths.map((path) => this.read(project, runKey, path)));
     return texts.flatMap((text) => {
       const card = text === undefined ? undefined : headerOf(text);

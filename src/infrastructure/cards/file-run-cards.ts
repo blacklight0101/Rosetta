@@ -54,6 +54,8 @@ const headerSchema = z.object({
 
 const cardFile = new RegExp(`^cards/(?:${CARD_TYPES.join('|')})/[A-Z]+-[0-9]+\\.md$`, 'u');
 const HEADER_END = '\n---\n';
+/** Card files read at once (P5-22). */
+const READ_BATCH = 24;
 
 function unreadable(what: string, cause?: unknown): RosettaError {
   return new RosettaError(ERROR_CODES.planSourceMissing, `The cards cannot be read: ${what}.`, {
@@ -107,12 +109,21 @@ export class FileRunCards implements RunCards {
     if (index === undefined) return [];
     const parsed = indexSchema.safeParse(jsonOf(index));
     if (!parsed.success) throw unreadable('cards/index.json has another shape');
-    const cards: SourceCard[] = [];
-    for (const { path } of parsed.data.cards) {
+    const paths = parsed.data.cards.map((card) => card.path);
+    for (const path of paths) {
       if (!cardFile.test(path)) throw unreadable(`${path} is not a card file of the run`);
-      const text = await this.read(scope, path);
-      if (text === undefined) throw unreadable(`${path} is missing`);
-      cards.push(cardOf(text, path));
+    }
+    // P5-22: the files are read a batch at a time, so a run of hundreds of cards does not wait on
+    // each file in turn; the cards keep the order of the index.
+    const cards: SourceCard[] = [];
+    for (let start = 0; start < paths.length; start += READ_BATCH) {
+      const batch = paths.slice(start, start + READ_BATCH);
+      const texts = await Promise.all(batch.map((path) => this.read(scope, path)));
+      for (const [index, text] of texts.entries()) {
+        const path = batch[index] ?? '';
+        if (text === undefined) throw unreadable(`${path} is missing`);
+        cards.push(cardOf(text, path));
+      }
     }
     return cards;
   }

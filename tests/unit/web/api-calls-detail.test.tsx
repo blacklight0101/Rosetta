@@ -112,7 +112,8 @@ describe('following the run live', () => {
   it('RF-1011 reads the calls and the logs again every few seconds while the run goes on, and stops after it ends', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
     const page = renderCalls(sequence(2));
-    const reads = (path: string): number => page.calls.filter((call) => call.path === path).length;
+    const reads = (path: string): number =>
+      page.calls.filter((call) => call.path.split('?')[0] === path).length;
     await vi.advanceTimersByTimeAsync(0);
     expect(reads(callsPath)).toBe(1);
 
@@ -135,7 +136,7 @@ describe('following the run live', () => {
 
     await vi.advanceTimersByTimeAsync(10_000);
 
-    expect(page.calls.filter((call) => call.path === callsPath)).toHaveLength(1);
+    expect(page.calls.filter((call) => call.path.split('?')[0] === callsPath)).toHaveLength(1);
     expect(page.calls.filter((call) => call.path === logsPath)).toHaveLength(1);
   });
 });

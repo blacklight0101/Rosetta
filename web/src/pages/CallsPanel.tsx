@@ -22,6 +22,12 @@ export interface CallsPanelProps {
   readonly runId: string;
   readonly calls: readonly CallRow[];
   readonly total: number;
+  /** P5-22: calls of the log that are not loaded yet, and how to load the next page. */
+  readonly more: {
+    readonly available: boolean;
+    readonly loading: boolean;
+    readonly onLoad: () => void;
+  };
 }
 
 const STATUS_OPTIONS = [
@@ -123,8 +129,24 @@ function Body(props: {
   );
 }
 
+function LoadMore(props: CallsPanelProps['more']): JSX.Element | null {
+  if (!props.available) return null;
+  return (
+    <div class="rst-p137-more">
+      <p class="rst-settings__note">The filters and Next error work on the calls loaded so far.</p>
+      <Button
+        variant="secondary"
+        {...(props.loading ? { disabledReason: 'Loading the next calls.' } : {})}
+        onClick={props.onLoad}
+      >
+        Load more calls
+      </Button>
+    </div>
+  );
+}
+
 // RF-1011
-export function CallsPanel({ runId, calls, total }: CallsPanelProps): JSX.Element {
+export function CallsPanel({ runId, calls, total, more }: CallsPanelProps): JSX.Element {
   const [filters, setFilters] = useState<CallFilters>(anyFilter);
   const [selected, setSelected] = useState<number | undefined>();
   const visible = filterCalls(calls, filters);
@@ -142,9 +164,9 @@ export function CallsPanel({ runId, calls, total }: CallsPanelProps): JSX.Elemen
         <div class="rst-p137-head">
           <h2 class="rst-live-section__title">Calls</h2>
           <span class="rst-settings__note">
-            {visible.length === calls.length
+            {visible.length === calls.length && calls.length === total
               ? `${String(total)} attempts`
-              : `${String(visible.length)} of ${String(total)} attempts`}
+              : `${String(visible.length)} of ${String(total)} attempts${calls.length < total ? ' loaded' : ''}`}
           </span>
           <Button
             variant="secondary"
@@ -158,6 +180,7 @@ export function CallsPanel({ runId, calls, total }: CallsPanelProps): JSX.Elemen
         </div>
         <Filters calls={calls} filters={filters} onChange={setFilters} />
         <Body {...{ runId, calls, visible, selected }} onSelect={setSelected} />
+        <LoadMore {...more} />
       </section>
       {selectedCall === undefined ? null : <CallDetail runId={runId} call={selectedCall} />}
     </>

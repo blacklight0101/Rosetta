@@ -1,6 +1,6 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import { summarizeCalls, type ProviderRoleSummary } from '../../domain/observability/call-stats.js';
+import type { ProviderRoleSummary } from '../../domain/observability/call-stats.js';
 import type { RunQueueState } from '../../domain/runs/run-states.js';
 import type { RunCallReader, StoredCall } from '../ports/run-call-reader.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -17,8 +17,9 @@ export interface ListRunCallsDependencies {
   readonly manifests: RunManifestStore;
 }
 
-/** The most attempts one answer lists, newest last; the summary always counts them all. */
-export const MAX_LISTED_CALLS = 2000;
+/** P5-22: attempts in one answer when the request names no limit, and the most it may name. */
+export const DEFAULT_CALLS_PAGE = 100;
+export const MAX_CALLS_PAGE = 500;
 
 export interface RunCall extends StoredCall {
   /** The area of the agent task when the manifest knows it, else the agent task id. */
@@ -33,6 +34,8 @@ export interface RunCallsView {
   readonly total: number;
   readonly calls: readonly RunCall[];
   readonly summary: readonly ProviderRoleSummary[];
+  /** The `seq` to continue after; none on the last page. */
+  readonly nextCursor?: string;
 }
 
 export class ListRunCalls {
@@ -46,23 +49,32 @@ export class ListRunCalls {
   async execute(request: {
     readonly actor: Actor;
     readonly runId: string;
+    readonly limit?: number;
+    readonly after?: number;
   }): Promise<Result<RunCallsView, 'not-found'>> {
     const run = await this.deps.runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
     const scope = scopeOf(run);
     const [stored, manifest] = await Promise.all([
-      this.deps.calls.calls(scope),
+      this.deps.calls.log(scope),
       this.deps.manifests.read(scope),
     ]);
+    const limit = Math.min(Math.max(request.limit ?? DEFAULT_CALLS_PAGE, 1), MAX_CALLS_PAGE);
+    // One more than asked tells whether another page follows.
+    const found = stored.page(request.after ?? 0, limit + 1);
+    const more = found.length > limit;
+    const shown = found.slice(0, limit);
     const areas = new Map(manifest?.agentTasks.map((task) => [task.agentTaskId, task.area]));
     return ok({
       runKey: run.runKey,
       runState: run.queueState,
-      total: stored.length,
-      calls: stored
-        .slice(-MAX_LISTED_CALLS)
-        .map((call) => ({ ...call, agent: areas.get(call.agentTaskId) ?? call.agentTaskId })),
-      summary: summarizeCalls(stored),
+      total: stored.calls.length,
+      calls: shown.map((call) => ({
+        ...call,
+        agent: areas.get(call.agentTaskId) ?? call.agentTaskId,
+      })),
+      summary: stored.summary,
+      ...(more ? { nextCursor: String(shown.at(-1)?.seq ?? 0) } : {}),
     });
   }
 }

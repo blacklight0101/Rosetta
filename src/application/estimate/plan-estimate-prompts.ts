@@ -83,6 +83,26 @@ const whole = (kind: PlannedCallKind, file: PromptFile, message: string): Planne
   ...{ kind, file, message, omitted: 0 },
 });
 
+/**
+ * P5-22: a render that remembers its answers by the set of omitted cards. Packing renders the message
+ * with no card omitted, with all omitted and with the chosen ones, and the call renders the chosen
+ * ones again; the plan and the PRD render the same message. Turning a large message into a block is
+ * the costly step, so each distinct message is rendered once.
+ */
+function remembered(
+  render: (omitted: ReadonlySet<string>) => string,
+): (omitted: ReadonlySet<string>) => string {
+  const answers = new Map<string, string>();
+  return (omitted) => {
+    const key = [...omitted].join(',');
+    const known = answers.get(key);
+    if (known !== undefined) return known;
+    const message = render(omitted);
+    answers.set(key, message);
+    return message;
+  };
+}
+
 /** A call whose cards are packed to the window as the run packs them (P3-113). */
 function packed(
   window: PlanWindow | undefined,
@@ -90,8 +110,9 @@ function packed(
   cards: readonly SourceCard[],
   render: (omitted: ReadonlySet<string>) => string,
 ): PlannedCall {
-  const { omitted } = packCards({ window, system: call.file.text, cards, render });
-  return { ...call, message: render(omitted), omitted: omitted.size };
+  const once = remembered(render);
+  const { omitted } = packCards({ window, system: call.file.text, cards, render: once });
+  return { ...call, message: once(omitted), omitted: omitted.size };
 }
 
 /** The calls after the plan and the PRD, each only when the run would make it. */
@@ -192,10 +213,11 @@ export async function plannedPrompts(
   const supported = supportedCards(cards);
   const answered = questions.filter((question) => question.answer.trim() !== '');
   // The plan and the PRD send the same data blocks; each packs to the window with its own system prompt.
+  const planRender = remembered((omitted: ReadonlySet<string>) =>
+    planMessage({ cards: supported, brief, catalogue, answered, omitted }, () => TAG),
+  );
   const planned = (kind: 'plan' | 'prd', file: PromptFile): PlannedCall =>
-    packed(window, { kind, file }, supported, (omitted) =>
-      planMessage({ cards: supported, brief, catalogue, answered, omitted }, () => TAG),
-    );
+    packed(window, { kind, file }, supported, planRender);
   const calls: PlannedCall[] = [
     planned('plan', withWorkbookGuidance(plan, guidance)),
     planned('prd', prd),

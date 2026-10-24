@@ -13,15 +13,21 @@ import {
 
 const runPath = (runId: string): string => `/api/runs/${encodeURIComponent(runId)}`;
 
+/** P5-22: calls per page. */
+const CALLS_PAGE = 100;
+
+/** One page of the calls, the first when no cursor is given. */
 // RF-1011
 export function getRunCalls(
   client: ApiClient,
   runId: string,
+  cursor: string | undefined,
   signal: AbortSignal,
 ): Promise<ApiResult<RunCalls>> {
+  const after = cursor === undefined ? '' : `&cursor=${encodeURIComponent(cursor)}`;
   return client.request({
     method: 'GET',
-    path: `${runPath(runId)}/calls`,
+    path: `${runPath(runId)}/calls?limit=${String(CALLS_PAGE)}${after}`,
     schema: callsSchema,
     signal,
   });

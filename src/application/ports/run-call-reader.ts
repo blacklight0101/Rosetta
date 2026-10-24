@@ -1,3 +1,4 @@
+import type { ProviderRoleSummary } from '../../domain/observability/call-stats.js';
 import type { ToolCall } from './llm-provider.js';
 import type { ProviderCallRecord } from './provider-call-recorder.js';
 import type { RunScope } from './run-events.js';
@@ -25,9 +26,20 @@ export interface StoredTranscriptEntry {
   readonly toolCalls?: readonly ToolCall[];
 }
 
+/** P5-22: a run's call log as parsed once; the same object answers every read of one version. */
+export interface RunCallLog {
+  /** The attempts in `seq` order. */
+  readonly calls: readonly StoredCall[];
+  /** The summary per provider and role over every attempt, computed once. */
+  readonly summary: readonly ProviderRoleSummary[];
+  find(seq: number): StoredCall | undefined;
+  /** At most `limit` attempts with a `seq` after `after` (0 for the start), in order. */
+  page(after: number, limit: number): readonly StoredCall[];
+}
+
 export interface RunCallReader {
-  /** The attempts of the run in `seq` order; empty for a run without a call log. */
-  calls(scope: RunScope): Promise<readonly StoredCall[]>;
+  /** P5-22: the parsed call log of the run; empty for a run without one. */
+  log(scope: RunScope): Promise<RunCallLog>;
   /** The messages of one agent task's transcript; empty when there is none. */
   transcript(scope: RunScope, agentTaskId: string): Promise<readonly StoredTranscriptEntry[]>;
 }

@@ -44,3 +44,15 @@ export interface TextLineReader {
    */
   readLastLine(file: WorkspaceFile): Promise<Result<string | undefined, WriteRefusal>>;
 }
+
+/** What the file system says of a file without reading it: its size and last modification. */
+export interface FileFacts {
+  readonly size: number;
+  readonly modifiedMs: number;
+}
+
+/** P5-22: lets a reader see that a file it keeps has grown or gone without reading it again. */
+export interface FileStatReader {
+  /** A file that does not exist is refused with reason `not-found`. */
+  statFile(file: WorkspaceFile): Promise<Result<FileFacts, WriteRefusal>>;
+}
