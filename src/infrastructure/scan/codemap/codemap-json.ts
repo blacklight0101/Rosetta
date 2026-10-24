@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DATABASE_OBJECT_KINDS } from '../../../domain/code-map/vocabulary.js';
 import { MAX_AREA_NAME_LENGTH, type AreaProblem } from '../../../domain/code-map/area.js';
 import {
   createCodeMap,
@@ -68,7 +69,10 @@ const areaSchema = z.strictObject({
 
 const symbolSchema = z.strictObject({
   path,
-  kind: z.enum(['class', 'enum', 'function', 'interface', 'method', 'property', 'struct']),
+  kind: z.enum([
+    ...['class', 'enum', 'function', 'interface', 'method', 'property', 'struct'],
+    ...DATABASE_OBJECT_KINDS,
+  ] as const),
   name: z.string().max(maxName),
   startLine: z.number().int().min(1),
   endLine: z.number().int().min(1),

@@ -3,7 +3,24 @@
 
 /** RF-110: what a language pack may report as a symbol. */
 export type SymbolKind =
-  'class' | 'enum' | 'function' | 'interface' | 'method' | 'property' | 'struct';
+  | 'class'
+  | 'enum'
+  | 'function'
+  | 'interface'
+  | 'method'
+  | 'property'
+  | 'struct'
+  | DatabaseObjectKind;
+
+/** P5-36: what a SQL pack reports for a script: the objects it creates (`stored-function` is a SQL function). */
+export const DATABASE_OBJECT_KINDS = [
+  'procedure',
+  'stored-function',
+  'table',
+  'trigger',
+  'view',
+] as const;
+export type DatabaseObjectKind = (typeof DATABASE_OBJECT_KINDS)[number];
 
 /** RF-103: the verb a recorded SQL statement starts with. */
 export type SqlVerb = 'CREATE' | 'DELETE' | 'EXEC' | 'INSERT' | 'SELECT' | 'UPDATE';

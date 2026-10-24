@@ -179,3 +179,26 @@ describe('the composition root', () => {
     expect(result.languagePacks).toEqual([{ name: 'vb', version: '1.0.0' }]);
   });
 });
+
+describe('SQL pack in the production registry', () => {
+  it('P5-36 the composition root maps .sql files with the SQL pack', async () => {
+    const registry = await composeLanguagePacks();
+    const text = ['create table T (a int)', 'GO', 'create view V as select a from T', ''].join(
+      '\n',
+    );
+
+    const result = await analyseWithPacks({
+      files: [
+        { path: 'db/x.sql', language: 'sql', lines: 3, estimatedTokens: 10, artefactKinds: [] },
+      ],
+      reader: bytesReader({ 'db/x.sql': text }),
+      registry,
+      logger: newLogger(),
+      maxFileBytes,
+    });
+
+    expect(registry.packFor('db/x.sql')?.name).toBe('sql');
+    expect(result.fileLevels).toEqual([{ path: 'db/x.sql', mapLevel: 'symbols' }]);
+    expect(result.symbols.map((s) => `${s.kind}:${s.name}`)).toEqual(['table:T', 'view:V']);
+  });
+});
