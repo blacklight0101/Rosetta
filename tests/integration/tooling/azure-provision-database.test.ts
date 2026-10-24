@@ -94,6 +94,30 @@ describe('azure-provision.yml PostgreSQL server (azure-cli 2.87+)', () => {
   });
 });
 
+describe('azure-provision.yml PostgreSQL public access (azure-cli 2.91)', () => {
+  it('ADR-024 turns public access on before the firewall rule, also on a server made without it', async () => {
+    // azure-cli 2.91 creates the server with public access disabled for --public-access None, and
+    // refuses a firewall rule on such a server; the update converges a server that already exists.
+    for (const missing of [true, false]) {
+      const { code, calls } = await step('PostgreSQL Flexible Server', missing);
+      const update = calls.findIndex(
+        (line) =>
+          line.startsWith('postgres flexible-server update') &&
+          line.includes(
+            '--resource-group rg-rosetta --name psql-rosetta-test --public-access Enabled',
+          ),
+      );
+      const rule = calls.findIndex((line) =>
+        line.startsWith('postgres flexible-server firewall-rule create'),
+      );
+
+      expect(code).toBe(0);
+      expect(update).toBeGreaterThanOrEqual(0);
+      expect(update).toBeLessThan(rule);
+    }
+  });
+});
+
 describe('azure-provision.yml administrator password (RNF-003)', () => {
   it('RNF-003 the administrator password is new, masked, and reaches az only as an @file', async () => {
     const created = await step('PostgreSQL Flexible Server', true);
