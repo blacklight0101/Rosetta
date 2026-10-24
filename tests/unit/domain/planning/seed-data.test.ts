@@ -140,3 +140,27 @@ describe('statedSeeds: identifiers are read as words', () => {
     expect(seed).toMatchObject({ masked: false, text });
   });
 });
+
+describe('statedSeeds: upper case names and hostile input', () => {
+  it.each([
+    "INSERT INTO STAFF (NAME, USERPWD) VALUES ('sam','LEAK60')",
+    "INSERT INTO STAFF (NAME, PINCODE) VALUES ('sam','LEAK61')",
+    "INSERT INTO STAFF (NAME, USERPASS) VALUES ('sam','LEAK62')",
+    "INSERT INTO STAFF (NAME, HASHEDPWD) VALUES ('sam','LEAK63')",
+    "INSERT INTO STAFF (NAME, userpwd) VALUES ('sam','LEAK64')",
+  ])('P5-42 leaks nothing of an upper case secret name: %s', (text) => {
+    const [seed] = statedSeeds([card([text, 'Supported'])]);
+
+    expect(seed?.masked).toBe(true);
+    expect(seed?.text).not.toContain('LEAK');
+  });
+
+  it('P5-42 a hostile claim of 100 000 capitals is read in linear time', () => {
+    const started = performance.now();
+
+    statedSeeds([card([`INSERT INTO Dept VALUES ('${'A'.repeat(100_000)}')`, 'Supported'])]);
+    statedSeeds([card([`seed ${'AB'.repeat(50_000)}`, 'Supported'])]);
+
+    expect(performance.now() - started).toBeLessThan(500);
+  });
+});
