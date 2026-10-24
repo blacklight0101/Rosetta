@@ -178,12 +178,12 @@ describe('README status and links', () => {
     expect(line).toMatch(/owner creates the tag/u);
   });
 
-  it('RF-801 the README holds the hosted URL placeholder without an address', async () => {
+  it('RF-801 the README holds the hosted URL of the deployment that opened G-06', async () => {
     const readme = await read('README.md');
     const line = readme.split('\n').find((text) => text.startsWith('- Hosted application URL:'));
 
-    expect(line).toContain('[PENDIENTE');
-    expect(linksIn(line ?? '')).toEqual([]);
+    expect(line).not.toContain('[PENDIENTE');
+    expect(line).toMatch(/https:\/\/ca-rosetta\.[a-z0-9-]+\.spaincentral\.azurecontainerapps\.io/u);
   });
 
   it('RF-801 the docs index lists docs/releases.md and no longer plans it', async () => {
