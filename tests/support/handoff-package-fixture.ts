@@ -2,6 +2,7 @@ import type {
   HandoffPackage,
   PackagePrinciple,
 } from '../../src/application/plan/handoff-package.js';
+import type { ExcludedClaim } from '../../src/domain/planning/plan-sources.js';
 import { noApiContract } from '../../src/domain/planning/api-contract.js';
 import { noUx } from '../../src/domain/planning/target-ux.js';
 import { emptyPrd, prdQuestions, type PrdContent } from '../../src/domain/planning/prd-content.js';
@@ -113,6 +114,18 @@ function flowsOf(text: string): HandoffPackage['flows'] {
   };
 }
 
+/** A claim of FEAT-001 the verifier rejected, with this text in every field. */
+function excludedOf(text: string): ExcludedClaim {
+  return {
+    claimId: 'FEAT-001.c2',
+    cardId: 'FEAT-001',
+    status: 'Rejected',
+    cardType: 'FEAT',
+    area: text,
+    citations: 1,
+  };
+}
+
 /** The package with this text in every model and repository field. */
 export function handoffOf(
   text: string,
@@ -150,7 +163,7 @@ export function handoffOf(
     copiedExamples: [],
     leftOut: [],
     sources: sourcesOf(text),
-    excluded: [{ claimId: 'FEAT-001.c2', cardId: 'FEAT-001', status: 'Rejected' }],
+    excluded: [excludedOf(text)],
     briefQuestions: [{ id: 'migration', question: text, answer: text }],
     openQuestions: [{ cardId: 'OQ-001', question: text, area: text }],
     prd,

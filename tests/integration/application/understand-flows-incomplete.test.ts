@@ -72,7 +72,7 @@ describe('an understand run with a rejected flow step', UNDERSTAND_TIMEOUT, () =
       ],
     });
     expect(await text('coverage.md')).toContain(
-      String.raw`- \(root\): 1 flow card (1 incomplete); 1 screen card`,
+      '- (root): 1 flow card (1 incomplete); 1 screen card',
     );
   });
 });

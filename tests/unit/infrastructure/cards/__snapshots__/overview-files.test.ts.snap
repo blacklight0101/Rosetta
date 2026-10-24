@@ -15,6 +15,6 @@ Open questions about this section: [OQ-001](cards/OQ/OQ-001.md)
 
 ## What was not covered
 
-- Vendor: third\\-party code; nothing about the application was read from it.
+- Vendor: third-party code; nothing about the application was read from it.
 "
 `;

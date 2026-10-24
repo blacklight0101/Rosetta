@@ -45,10 +45,38 @@ describe('supportedCards', () => {
 describe('excludedClaims', () => {
   it('RF-604 lists every rejected, invalid and unverified claim with its id and card', () => {
     expect(excludedClaims(cards)).toEqual([
-      { claimId: 'FEAT-001.c2', cardId: 'FEAT-001', status: 'Rejected' },
-      { claimId: 'FEAT-002.c1', cardId: 'FEAT-002', status: 'Unverified' },
-      { claimId: 'FEAT-002.c2', cardId: 'FEAT-002', status: 'CitationInvalid' },
-      { claimId: 'FEAT-002.c3', cardId: 'FEAT-002', status: 'Proposed' },
+      {
+        claimId: 'FEAT-001.c2',
+        cardId: 'FEAT-001',
+        status: 'Rejected',
+        cardType: 'FEAT',
+        area: 'orders',
+        citations: 1,
+      },
+      {
+        claimId: 'FEAT-002.c1',
+        cardId: 'FEAT-002',
+        status: 'Unverified',
+        cardType: 'FEAT',
+        area: 'orders',
+        citations: 1,
+      },
+      {
+        claimId: 'FEAT-002.c2',
+        cardId: 'FEAT-002',
+        status: 'CitationInvalid',
+        cardType: 'FEAT',
+        area: 'orders',
+        citations: 1,
+      },
+      {
+        claimId: 'FEAT-002.c3',
+        cardId: 'FEAT-002',
+        status: 'Proposed',
+        cardType: 'FEAT',
+        area: 'orders',
+        citations: 1,
+      },
     ]);
   });
 });

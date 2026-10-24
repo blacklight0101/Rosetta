@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { transitionClaim } from '../../../../src/domain/cards/card.js';
 import { draftOf, oqDraft } from '../../../support/card-fixtures.js';
+import { dangerousIn, renderMarkdown } from '../../../support/render-markdown.js';
 import { cardsOf, fileOf, writeCards } from '../../../support/card-output-harness.js';
 
 // ADR-013, RF-507, RF-125: model text is text. After the links Rosetta builds itself are taken
@@ -21,30 +22,20 @@ const hostile = [
   ['setext underlines', 'Title\n===\nOther\n  ---\nThird\n=  '],
 ] as const;
 
-const generatedLinks = /\]\((?:https:\/\/github\.com\/octo\/demo\/blob\/[^)]*|cards\/[^)]*)\)/g;
+const generatedHref = /^(?:\.\.?\/|cards\/|https:\/\/github\.com\/octo\/demo\/blob\/)/;
 
-const rules: readonly (readonly [string, RegExp])[] = [
-  ['raw HTML or entity', /[<>]|&(?!(?:amp|lt|gt|#\d+);)/],
-  ['bare URL', /https?:\/\//i],
-  ['www autolink', /www\./i],
-  ['image', /!\[/],
-  ['link target', /\]\(/],
-  ['backtick', /(^|[^\\])`/],
-  ['tilde fence', /~~~/],
-  ['e-mail autolink', /@/],
-  ['live heading or list', /(^|[^\\])(# Heading|\* item)/],
-  ['line start syntax', /^(?:\d+\. |---|\[)/m],
-  ['setext underline', /^ {0,3}(?:=+|-+)[ \t]*$/m],
-];
-
-/** The rules a text breaks once the links Rosetta builds are taken out; empty when inert. */
+/** The rules a text breaks once rendered as Markdown; empty when it stayed inert text. */
 function breaks(text: string): string[] {
-  const plain = text
-    .replace(generatedLinks, ']')
-    .split('\n')
-    .map((line) => line.replace(/^> /, ''))
-    .join('\n');
-  return rules.filter(([, rule]) => rule.test(plain)).map(([name]) => name);
+  const html = renderMarkdown(text);
+  const hrefs = [...html.matchAll(/(?:href|src)="([^"]*)"/g)].map((match) => match[1] ?? '');
+  const found = [
+    dangerousIn(text) === undefined ? '' : 'dangerous HTML or link',
+    hrefs.some((href) => !generatedHref.test(href)) ? 'foreign link or image' : '',
+    /<(?:hr|pre|code|em|strong|del)[\s>/]/.test(html) ? 'rule, code or emphasis' : '',
+    /<h[1-6][^>]*>(?:Heading|breakout|Title|Other|Third)/.test(html) ? 'heading' : '',
+    /<(?:ul|ol)>\s*<li>item/.test(html) ? 'list' : '',
+  ];
+  return found.filter((name) => name !== '');
 }
 
 function bodyOf(file: string): string {

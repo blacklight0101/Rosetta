@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import type { ReportCardDetail } from '../../../../src/application/report/card-detail.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { buildSiteFiles } from '../../../../src/infrastructure/report/published-site.js';
@@ -44,10 +45,9 @@ describe('report.md of a workbook project', () => {
     const text = renderReportMarkdown(workbookModel([hostileName]), masker);
 
     const row = text.split('\n').find((line) => line.startsWith('| Source |')) ?? '';
-    expect(row).not.toContain('<img');
-    expect(row.replaceAll('\\', '')).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(dangerousIn(row)).toBeUndefined();
+    expect(row).toContain('\\<img src=x onerror=alert(1)>');
     expect(row.replaceAll('\\|', '').split('|')).toHaveLength(4);
-    expect(text).not.toMatch(/\]\(javascript:/u);
   });
 
   it('RF-156 says the names were not recorded when the manifest holds none', () => {

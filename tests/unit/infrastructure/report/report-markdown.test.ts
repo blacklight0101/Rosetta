@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import { renderReportMarkdown } from '../../../../src/infrastructure/report/report-markdown.js';
 import { fakeOpenAiKey } from '../../../support/secret-fixture.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
@@ -114,16 +115,17 @@ describe('renderReportMarkdown and untrusted text', () => {
     const markdown = renderReportMarkdown(reportModel({ cards: [hostileCard] }), masker);
     const row = markdown.split('\n').find((line) => line.startsWith('| [BR-002]')) ?? '';
 
-    expect(row).not.toContain('<script');
-    expect(row).not.toContain('<img');
-    expect(row).toContain('&lt;script&gt;');
-    expect(row).not.toMatch(/(?<!\\)\]\(javascript:/u);
-    expect(row.match(/\]\(/gu)).toHaveLength(1);
+    expect(dangerousIn(row)).toBeUndefined();
+    expect(dangerousIn(row)).toBeUndefined();
+    expect(row).toContain('\\<script>');
+    expect(row.match(/(?<!\\)\]\(/gu)).toHaveLength(1);
   });
 
   it('RF-507 keeps the only live links the ones Rosetta builds', () => {
     const markdown = renderReportMarkdown(reportModel({ cards: [hostileCard] }), masker);
-    const links = [...markdown.matchAll(/(?<!\\)\[[^\]]*\]\(([^)]*)\)/gu)].map((match) => match[1]);
+    const links = [...markdown.matchAll(/(?<!\\)\[(?:[^\]]|\\\])*(?<!\\)\]\(([^)]*)\)/gu)].map(
+      (match) => match[1],
+    );
 
     expect(links).toEqual([
       'https://github.com/octo/demo/tree/3f786850e387550fdab836ed7e6dc881de23001b',
@@ -161,7 +163,7 @@ describe('renderReportMarkdown and the map level', () => {
       ['## Areas', '', '| Area | Map level |', '|---|---|', '| LEDGER | coarse |'].join('\n'),
     );
     expect(markdown).toContain('| symbols |');
-    expect(markdown).not.toContain('<b>');
+    expect(dangerousIn(markdown)).toBeUndefined();
   });
 
   it('RF-112 leaves out the areas section when the report has no code map', () => {

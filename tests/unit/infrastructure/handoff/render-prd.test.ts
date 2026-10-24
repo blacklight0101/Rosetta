@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import type { PrdContent } from '../../../../src/domain/planning/prd-content.js';
 import { emptyPrd } from '../../../../src/domain/planning/prd-content.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
@@ -124,11 +125,10 @@ describe('prd.md: untrusted text', () => {
       text,
     );
 
-    expect(prd).not.toMatch(/<[A-Za-z!/?]/u);
-    expect(prd).not.toContain('](javascript');
+    expect(dangerousIn(prd)).toBeUndefined();
     expect(prd).not.toMatch(/^# Title/mu);
     expect(prd).not.toMatch(/^```/mu);
-    expect(prd.match(/&lt;img src/gu)).toHaveLength(8);
+    expect(prd.match(/\\<img src/gu)).toHaveLength(8);
   });
 
   it('RNF-003 masks a secret in PRD text', () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../support/render-markdown.js';
 import { withCoverageAnswer } from '../../support/coverage-plan-harness.js';
 import { gapRecordingOf } from '../../support/gap-plan-harness.js';
 import { seededUxPlan } from '../../support/ux-plan-harness.js';
@@ -32,18 +33,18 @@ async function planWith(tasks: readonly unknown[]) {
     },
   });
   const run = await h.plan();
-  return { h, run, tasks: ((await h.handoffOf(run))['tasks.md'] ?? '').replaceAll('\\', '') };
+  const raw = (await h.handoffOf(run))['tasks.md'] ?? '';
+  return { h, run, raw, tasks: raw.replaceAll('\\', '') };
 }
 
 describe('BuildPlan: a hostile gap card', () => {
   it('RF-507 the text of a card is written as text, never as markup', async () => {
     const hostile = '<script>alert(1)</script> <img src=x onerror=alert(1)>';
 
-    const { tasks } = await planWith([{ ...card, title: hostile, invariant: hostile }]);
+    const { tasks, raw } = await planWith([{ ...card, title: hostile, invariant: hostile }]);
 
     expect(tasks).toContain('## T-004');
-    expect(tasks).not.toContain('<script>');
-    expect(tasks).not.toContain('<img');
+    expect(dangerousIn(raw)).toBeUndefined();
   });
 
   it('RF-145 an id that looks like a data block marker builds nothing and breaks nothing', async () => {

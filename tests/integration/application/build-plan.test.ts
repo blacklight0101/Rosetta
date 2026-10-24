@@ -94,15 +94,15 @@ describe('BuildPlan: what the planner is sent', () => {
 describe('BuildPlan: the open questions of the package', () => {
   it('RF-604 lists the rejected, invalid and unverified claims as excluded with their ids', async () => {
     await seeded();
-
     const files = await h.handoffOf(await h.plan());
 
-    const questions = plain(files['open-questions.md'] ?? '');
-    expect(questions).toContain('| FEAT-001.c2 | FEAT-001 | Rejected |');
-    expect(questions).toContain('| ENT-001.c2 | ENT-001 | CitationInvalid |');
-    expect(questions).toContain('| FEAT-002.c1 | FEAT-002 | Unverified |');
-    expect(questions).toContain('| OQ-002.c1 | OQ-002 | Proposed |');
-    expect(questions).not.toContain('FEAT-001.c1');
+    const left = files['claims-left-out.md'] ?? '';
+    expect(left).toMatch(/^\| FEAT-001\.c2 .*\| Rejected \|$/mu);
+    expect(left).toMatch(/^\| ENT-001\.c2 .*\| CitationInvalid \|$/mu);
+    expect(left).toMatch(/^\| FEAT-002\.c1 .*\| Unverified \|$/mu);
+    expect(left).toMatch(/^\| OQ-002\.c1 .*\| Proposed \|$/mu);
+    expect(left).not.toContain('FEAT-001.c1');
+    expect(files['open-questions.md']).toContain('4 claims were left out');
   });
 
   it('RF-604 lists each brief question that took its default, with that default', async () => {
@@ -169,6 +169,7 @@ describe('BuildPlan: the parts of the package', () => {
       'README.md',
       'architecture.md',
       'checks.md',
+      'claims-left-out.md',
       'conventions.md',
       'data-model.md',
       ...[1, 2, 3, 4].map((n) => `decisions/ADR-00${String(n)}.md`),
@@ -240,12 +241,12 @@ describe('BuildPlan: traced and tool-agnostic', () => {
     const files = await h.handoffOf(await h.plan());
 
     expect(Object.keys(files).filter((path) => !path.endsWith('.md'))).toEqual([]);
-    expect(holding(files, /<[A-Za-z!/?]/u)).toEqual([]);
-    expect(holding(files, /\]\((?!https:\/\/)[a-z]+:/u)).toEqual([]);
+    expect(holding(files, /(?<!\\)<[A-Za-z!/?]/u)).toEqual([]);
+    expect(holding(files, /(?<!\\)\]\((?!https:\/\/)[a-z]+:/u)).toEqual([]);
     expect(holding(files, /ROSETTA-DATA|\{\{|\[\[|^---$/mu)).toEqual([]);
     expect(holding(files, /^```(?!(mermaid)?$)/mu)).toEqual([]);
     expect(files['architecture.md']).toContain('```mermaid\nflowchart LR\n');
-    expect(files['requirements.md']).toContain('&lt;script&gt;');
+    expect(files['requirements.md']).toContain('\\<script>');
   });
 });
 

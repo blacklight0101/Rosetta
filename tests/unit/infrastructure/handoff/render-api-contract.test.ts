@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import type { ApiContract } from '../../../../src/domain/planning/api-contract.js';
 import { emptyPrd } from '../../../../src/domain/planning/prd-content.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
@@ -104,8 +105,7 @@ describe('renderHandoff: hostile text in the API contract', () => {
   it('RF-603 the reason adds no HTML, link, heading or fence to the README', () => {
     const readme = files({ kind: 'none', reason: hostile })['README.md'] ?? '';
 
-    expect(readme).not.toMatch(/<[A-Za-z!/?]/u);
-    expect(readme).not.toMatch(/\]\(javascript/u);
+    expect(dangerousIn(readme)).toBeUndefined();
     expect(readme).not.toMatch(/^#+ Title/mu);
     expect(readme).not.toMatch(/^```/mu);
   });
@@ -119,7 +119,7 @@ describe('renderHandoff: hostile text in the API contract', () => {
 
     const readme = files(contract)['README.md'] ?? '';
 
-    expect(readme).not.toMatch(/<[A-Za-z!/?]/u);
+    expect(dangerousIn(readme)).toBeUndefined();
     expect(readme).not.toMatch(/^#+ Title/mu);
     expect(readme).not.toMatch(/^```/mu);
   });

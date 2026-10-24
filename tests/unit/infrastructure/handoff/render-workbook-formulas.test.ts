@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import type { HandoffPackage } from '../../../../src/application/plan/handoff-package.js';
 import type { ModelTable } from '../../../../src/domain/planning/data-model.js';
 import type { SourceCard } from '../../../../src/domain/planning/plan-sources.js';
@@ -34,7 +35,7 @@ const headings = (text: string): string[] => text.split('\n').filter((line) => /
 it('P3-94 writes workbook-formulas.md per workbook and sheet, one heading for each formula', () => {
   expect(headings(formulaFile())).toEqual([
     '# Workbook formulas',
-    '## Invoice\\_Sample.xlsm',
+    '## Invoice_Sample.xlsm',
     '### Sheet Calculation',
     '#### F-001',
     '#### F-002',
@@ -61,7 +62,7 @@ it('RF-623 writes a table column formula with its column, its formula once and t
     '- Table column: InvoiceTable, "Agreed Amount Total"',
     '- Formula: `[Amount Line 1]+[Amount Line 2]+[Amount Line 3]`',
     '- Cached results: G8 = 175; G9 = 186; G10 = 197',
-    `- Lines: ${SHEET.replaceAll('_', '\\_')}/formulas.md:4\\-7`,
+    `- Lines: ${SHEET}/formulas.md:4-7`,
   ]);
 });
 
@@ -109,9 +110,9 @@ it('ADR-013 shows a formula with backticks inside a longer code span and escapes
   const text = formulaFile(hostile({ formula: 'A``B|C', table: '<b>T</b>', column: '*c*' }));
 
   expect(text).toContain('- Formula: ``` A``B|C ```');
-  expect(text).toContain('### Sheet &lt;script&gt;alert\\(1\\)&lt;/script&gt;');
-  expect(text).toContain('- Table column: &lt;b&gt;T&lt;/b&gt;, "\\*c\\*"');
-  expect(text).not.toContain('<script>');
+  expect(text).toContain('### Sheet \\<script>alert(1)\\</script>');
+  expect(text).toContain('- Table column: \\<b>T\\</b>, "\\*c\\*"');
+  expect(dangerousIn(text)).toBeUndefined();
 });
 
 it('ADR-013 masks a secret in a formula before it is written', () => {

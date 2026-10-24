@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import { keepLegacyDefault } from '../../../../src/domain/planning/legacy-default.js';
 import type { HandoffPackage } from '../../../../src/application/plan/handoff-package.js';
 import type { PlanTask } from '../../../../src/domain/planning/plan-content.js';
@@ -115,8 +116,7 @@ describe('renderHandoff: hostile text in the question links', () => {
     (name) => {
       const text = hostileFiles()[name] ?? '';
 
-      expect(text).not.toContain('<script');
-      expect(text).not.toMatch(/\]\(javascript:/u);
+      expect(dangerousIn(text)).toBeUndefined();
       expect(text).not.toContain(token.slice(4, 30));
     },
   );

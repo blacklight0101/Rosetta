@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import { noUx } from '../../../../src/domain/planning/target-ux.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
@@ -167,8 +168,8 @@ describe('ux/ model text', () => {
     const files = filesOf(hostile);
 
     const text = `${files['ux/README.md'] ?? ''}\n${files['ux/design-brief.md'] ?? ''}`;
-    expect(text).not.toMatch(/<img|\]\(javascript/u);
-    expect(text.match(/&lt;img/gu)?.length).toBeGreaterThan(4);
+    expect(dangerousIn(text)).toBeUndefined();
+    expect(text.match(/\\<img/gu)?.length).toBeGreaterThan(4);
     expect(files['ux/README.md']?.match(/^```.*$/gmu)).toEqual(['```mermaid', '```']);
   });
 

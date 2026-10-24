@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import type { Card } from '../../../../src/domain/cards/card.js';
 import type { EntityModel } from '../../../../src/domain/diagrams/entity-diagram.js';
 import { renderDataModel } from '../../../../src/infrastructure/cards/data-model-markdown.js';
@@ -120,7 +121,7 @@ describe('renderDataModel part 2', () => {
     const text = render([merged]);
 
     expect(headings(text)).toHaveLength(1);
-    expect(text).toContain(String.raw`Merged from: ENT\-004, ENT\-007`);
+    expect(text).toContain(String.raw`Merged from: ENT-004, ENT-007`);
     expect(text).toContain(link('10-24', 'L10-L24'));
     expect(text).toContain(link('30-31', 'L30-L31'));
     expect(text).not.toContain('### ENT-004');
@@ -169,7 +170,7 @@ describe('renderDataModel part 3', () => {
     expect(text).toContain('  e1 ||..o{ e2 : "places #40;cardinality unknown#41;"');
     expect(text).toContain('  e2 }o--|| e1 : "belongs to"');
     const toConfirm = text.split('## To confirm')[1] ?? '';
-    expect(toConfirm).toContain(String.raw`ENT\-001 Customer and ENT\-002 Order (places)`);
+    expect(toConfirm).toContain(String.raw`ENT-001 Customer and ENT-002 Order (places)`);
     expect(toConfirm).not.toContain('belongs to');
   });
 });
@@ -208,7 +209,7 @@ describe('renderDataModel part 4', () => {
       '```mermaid',
       '```',
     ]);
-    expect(text).not.toContain('<script>');
+    expect(dangerousIn(text)).toBeUndefined();
     expect(text).not.toContain('](http://evil');
     const diagram = text.split('```mermaid\n')[1]?.split('\n```')[0] ?? '';
     expect(diagram.split('\n')).toHaveLength(2);

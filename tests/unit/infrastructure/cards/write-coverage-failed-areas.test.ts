@@ -55,7 +55,7 @@ describe('coverage of failed areas', () => {
     const markdown = fileOf(writer, 'coverage.md');
 
     expect(markdown).toContain('## Failed areas');
-    expect(markdown).toContain('- billing \\(old\\): invalid output \\(RST\\-1300\\)');
+    expect(markdown).toContain('- billing (old): invalid output (RST-1300)');
     expect(markdown.indexOf('## Failed areas')).toBeGreaterThan(markdown.indexOf('## Run summary'));
     expect(markdown.indexOf('## Failed areas')).toBeLessThan(markdown.indexOf('## Area: orders'));
   });

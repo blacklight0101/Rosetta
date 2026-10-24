@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import type { HandoffPackage } from '../../../../src/application/plan/handoff-package.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
@@ -47,11 +48,10 @@ describe('trdMarkdown', () => {
   it('RF-622 RF-603 model text adds no HTML, link, heading or fence to trd.md', () => {
     const trd = trdOf(handoffOf(hostile));
 
-    expect(trd).not.toMatch(/<[A-Za-z!/?]/u);
-    expect(trd).not.toMatch(/\]\(javascript/u);
+    expect(dangerousIn(trd)).toBeUndefined();
     expect(trd).not.toMatch(/^#+ Title/mu);
     expect(trd).not.toMatch(/^```(?!(mermaid)?$)/mu);
-    expect(trd).toContain('&lt;img');
+    expect(trd).toContain('\\<img');
   });
 
   it('RF-622 RF-603 a table cell of trd.md keeps its pipes as text', () => {

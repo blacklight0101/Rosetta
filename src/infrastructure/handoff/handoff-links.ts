@@ -21,6 +21,7 @@ export const handoffFiles = {
   tasks: 'tasks.md',
   risks: 'risks.md',
   openQuestions: 'open-questions.md',
+  claimsLeftOut: 'claims-left-out.md',
   sources: 'sources.md',
   conventions: 'conventions.md',
   agents: 'AGENTS.md',

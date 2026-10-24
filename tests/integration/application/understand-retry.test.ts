@@ -109,7 +109,7 @@ describe('an area that still fails', UNDERSTAND_TIMEOUT, () => {
     ]);
     const markdown = await readFile(join(folder, 'coverage.md'), 'utf8');
     expect(markdown).toContain('## Failed areas');
-    expect(markdown).toContain('- Catalog: invalid output \\(RST\\-1300\\)');
+    expect(markdown).toContain('- Catalog: invalid output (RST-1300)');
   });
 
   it('RF-208 fails the same way three times and the run still ends: 4 calls, a retry of 4, then the next area', async () => {

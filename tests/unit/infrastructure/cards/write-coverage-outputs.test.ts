@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import type { AreaCoverage } from '../../../../src/domain/cards/area-coverage.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import {
@@ -105,7 +106,7 @@ describe('writeCoverageOutputs coverage.md', () => {
 
     expect(text).toContain('## Run summary');
     expect(text).toContain('| orders | 1 of 2 | 25.0% |');
-    expect(text).toContain('| billing \\(old\\) | 1 of 1 | 100.0% |');
+    expect(text).toContain('| billing (old) | 1 of 1 | 100.0% |');
     expect(text).toContain('| All areas | 2 of 3 | 57.1% |');
   });
 
@@ -113,7 +114,7 @@ describe('writeCoverageOutputs coverage.md', () => {
     const text = fileOf(await written([orders]), 'coverage.md');
 
     expect(text).toContain('## Area: orders');
-    expect(text).toContain('| src/Orders/Checkout.cs | 1\\-14, 20\\-24 |');
+    expect(text).toContain('| src/Orders/Checkout.cs | 1-14, 20-24 |');
     expect(text).toContain('| src/Orders/Basket.cs | not read |');
   });
 
@@ -153,8 +154,7 @@ describe('writeCoverageOutputs untrusted text', () => {
     const writer = await written([hostile]);
 
     const text = fileOf(writer, 'coverage.md');
-    expect(text).not.toContain('<');
-    expect(text).not.toContain('](');
+    expect(dangerousIn(text)).toBeUndefined();
     expect(text).not.toMatch(/^# H/mu);
     const rows = text.split('\n').filter((line) => line.includes('evil'));
     expect(rows).toHaveLength(1);

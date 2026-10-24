@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
 import { handoffOf } from '../../../support/handoff-package-fixture.js';
@@ -38,12 +39,17 @@ describe('renderHandoff', () => {
     expect(files['README.md']).toContain('](data-model.md)');
     expect(files['entity-mapping.md']).toContain('](data-model.md)');
   });
+});
 
+describe('renderHandoff: hostile model text', () => {
   it('RF-603 model text adds no HTML, link, heading or fence to any file', () => {
     const files = renderHandoff(handoffOf(hostile), masker);
 
-    expect(holding(files, /<[A-Za-z!/?]/u)).toEqual([]);
-    expect(holding(files, /\]\(javascript/u)).toEqual([]);
+    expect(
+      Object.entries(files)
+        .filter(([, text]) => dangerousIn(text) !== undefined)
+        .map(([path]) => path),
+    ).toEqual([]);
     expect(holding(files, /^#+ Title/mu)).toEqual([]);
     expect(holding(files, /^```(?!(mermaid)?$)/mu)).toEqual([]);
   });
@@ -95,8 +101,7 @@ describe('renderHandoff: the method files', () => {
 
     for (const name of ['AGENTS.md', 'conventions.md', 'roadmap.md', 'tasks.md']) {
       expect(files[name]).toBeDefined();
-      expect(files[name]).not.toMatch(/<[A-Za-z!/?]/u);
-      expect(files[name]).not.toMatch(/\]\(javascript/u);
+      expect(dangerousIn(files[name])).toBeUndefined();
       expect(files[name]).not.toMatch(/^# Title/mu);
     }
   });
@@ -133,7 +138,8 @@ describe('renderHandoff: the invariant and the review probes', () => {
       const line = lines.find((each) => each.includes('Line one')) ?? '';
 
       expect(line).not.toBe('');
-      expect(line).not.toMatch(/<script|\]\(http|sk-/u);
+      expect(dangerousIn(line)).toBeUndefined();
+      expect(line).not.toContain('sk-');
       expect(tasksOf(attack)).not.toMatch(/^#+ Injected/mu);
       expect(tasksOf(attack)).not.toContain(fakeOpenAiKey.slice(8, 30));
     },

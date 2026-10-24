@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dangerousIn } from '../../../support/render-markdown.js';
 import type { ReportCard } from '../../../../src/application/report/report-model.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderReportHtml } from '../../../../src/infrastructure/report/report-html.js';
@@ -62,9 +63,8 @@ describe('report.md verification summary', () => {
     const text = markdown([card('BR-010', hostileText, { Supported: 1 })]);
     const row = text.split('\n').find((line) => line.endsWith('| 1 | 100.0% |')) ?? '';
 
-    expect(row).not.toContain('<script');
-    expect(row).not.toContain('<img');
-    expect(row).not.toContain('](javascript:');
+    expect(dangerousIn(row)).toBeUndefined();
+    expect(dangerousIn(row)).toBeUndefined();
   });
 });
 
