@@ -12,6 +12,7 @@ import { decisionLink } from './handoff-links.js';
 import { requirementLines } from './handoff-requirement-notes-markdown.js';
 import { stackClashCheckLines } from './handoff-stack-markdown.js';
 import { styleLines } from './handoff-style-markdown.js';
+import { truthfulCheckLines } from './handoff-truthful-checks-markdown.js';
 
 // RF-627, RF-507, RNF-003: checks.md, what the package checks say about itself. The plan coverage
 // lists every item (feature, table, operation, journey or screen) that no task card builds, kind by
@@ -216,6 +217,7 @@ export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
   const lines = [
     ...sourceStopLines(handoff),
     ...coverageLines(handoff, esc),
+    ...truthfulCheckLines(handoff, esc),
     ...unmappedFlowLines(handoff, esc),
     ...styleLines(handoff, esc),
     ...stackClashCheckLines(handoff, esc),

@@ -82,6 +82,12 @@ interface PlanRisk extends DraftRisk {
   readonly id: string;
 }
 
+export interface PhaseNote {
+  readonly phase: number;
+  readonly from: string;
+  readonly to: string;
+}
+
 export interface PlanContent {
   readonly summary: string;
   readonly requirements: readonly PlanRequirement[];
@@ -97,6 +103,8 @@ export interface PlanContent {
   readonly requirementNotes?: readonly RequirementNote[];
   /** P5-41: the planner's judgements of claims (changed by a decision or an answer, likely defects). */
   readonly judgements?: readonly ClaimJudgement[];
+  /** P5-40: the phases whose name code replaced with the titles of the cards they hold. */
+  readonly phaseNotes?: readonly PhaseNote[];
 }
 
 export interface PlanAssembly {

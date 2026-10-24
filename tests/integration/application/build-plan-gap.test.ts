@@ -18,14 +18,13 @@ import { useTempRoot } from '../../support/temp-root.js';
 // call for the items no task card builds. It lists only those items, asks for task cards that build
 // them, and the cards join the plan after the last; the gaps left after it are reported. The call
 // replays tests/recordings/fake/planner-gap.json. The coverage call links only the first feature,
-// so nine items are left without a card.
+// so eight items are left without a card.
 
 const temp = useTempRoot('rosetta-gap-');
 
 const linksOne = JSON.stringify({ links: [{ task: 1, builds: ['feature:F-001'] }] });
 
-const nineGaps = [
-  'feature:F-002',
+const eightGaps = [
   'operation:getOrder',
   'operation:listCustomers',
   'operation:listOrders',
@@ -56,12 +55,12 @@ describe('BuildPlan: the call for the items no card builds is sent', () => {
     expect(h.providers.gapRequests()).toHaveLength(1);
     const request = h.providers.gapRequests()[0];
     const message = request?.messages.map((each) => each.content).join('\n') ?? '';
-    for (const id of nineGaps) expect(message).toContain(`"id": "${id}"`);
+    for (const id of eightGaps) expect(message).toContain(`"id": "${id}"`);
     for (const built of ['feature:F-001', 'table:customer', 'table:customer_order']) {
       expect(message).not.toContain(`"id": "${built}"`);
     }
     expect(message).toContain('"title": "Order placement"');
-    expect(request?.system).toBe(await readFile('prompts/planner/gap.v1.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/gap.v2.md', 'utf8'));
     expect(request?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-gap' });
     const all = [
       ...h.providers.requests(),
@@ -77,7 +76,7 @@ describe('BuildPlan: the call for the items no card builds is sent', () => {
     const manifest = await h.manifestOf(await h.plan());
 
     expect(Object.keys(manifest.promptVersions)).toEqual(
-      expect.arrayContaining(['planner/gap.v1.md', 'planner/coverage.v1.md']),
+      expect.arrayContaining(['planner/gap.v2.md', 'planner/coverage.v1.md']),
     );
   });
 
@@ -122,7 +121,8 @@ describe('BuildPlan: gaps closed by the call', () => {
     expect(added).not.toContain('A card in a phase that does not exist');
     const first = cards[3] ?? '';
     expect(first).not.toContain('[Table]');
-    expect(first).not.toContain('[Feature]');
+    // P5-40: it lists REQ-001 and REQ-002, so it builds the features behind them.
+    expect(first).toContain('[Feature](prd.md) F-002');
     expect(first).not.toContain('ghost');
   });
 
@@ -197,7 +197,7 @@ describe('BuildPlan: answers that close nothing', () => {
 
     expect(run.endState).toBe('Failed');
     const checks = plain((await h.handoffOf(run))['checks.md']);
-    for (const left of nineGaps) expect(checks).toContain(left);
+    for (const left of eightGaps) expect(checks).toContain(left);
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     expect(warned.map((entry) => entry.message).join(' ')).toContain('task cards for the');
   });

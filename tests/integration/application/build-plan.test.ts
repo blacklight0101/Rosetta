@@ -149,8 +149,8 @@ describe('BuildPlan: the run manifest', () => {
       'planner/api-contract.v1.md': { version: 'v1', sha256: await sha('api-contract.v1.md') },
       'planner/ux.v1.md': { version: 'v1', sha256: await sha('ux.v1.md') },
       'planner/coverage.v1.md': { version: 'v1', sha256: await sha('coverage.v1.md') },
-      'planner/gap.v1.md': { version: 'v1', sha256: await sha('gap.v1.md') },
-      'planner/gap-repair.v1.md': { version: 'v1', sha256: await sha('gap-repair.v1.md') },
+      'planner/gap.v2.md': { version: 'v2', sha256: await sha('gap.v2.md') },
+      'planner/gap-repair.v2.md': { version: 'v2', sha256: await sha('gap-repair.v2.md') },
       'planner/plan-repair.v1.md': { version: 'v1', sha256: await sha('plan-repair.v1.md') },
     });
     expect(manifest.roles['planner']?.modelVersion).toBe('fake-model-2026-10-01');
