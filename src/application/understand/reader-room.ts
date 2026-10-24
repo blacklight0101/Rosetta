@@ -65,6 +65,7 @@ export class ReaderRoom {
   private readonly limits: RoomFacts['limits'];
   private stopped: ReadersStop | undefined;
   private cards: () => readonly Card[] = () => [];
+  private pending: () => number = () => 0;
   private readonly refusedTasks = new Set<string>();
 
   constructor(sources: ReaderRoomSources, limits: RoomFacts['limits']) {
@@ -72,9 +73,13 @@ export class ReaderRoom {
     this.limits = limits;
   }
 
-  /** The session tells the check where the cards written so far are. */
-  attach(cards: () => readonly Card[]): void {
+  /**
+   * The session tells the check where the cards written so far are, and how many claims were
+   * drafted by ended tasks and are not in those cards yet (a Deepen round writes them at its end).
+   */
+  attach(cards: () => readonly Card[], pending: () => number = () => 0): void {
     this.cards = cards;
+    this.pending = pending;
   }
 
   /** Why the readers stopped, or undefined while they may go on. */
@@ -92,7 +97,8 @@ export class ReaderRoom {
   async admits(): Promise<boolean> {
     if (this.stopped !== undefined) return false;
     const { sources } = this;
-    const claims = claimCountsOf(this.cards());
+    const counted = claimCountsOf(this.cards());
+    const claims = { ...counted, unjudged: counted.unjudged + this.pending() };
     const facts = {
       ...{ limits: this.limits, claims },
       readers: sources.spend('reader'),

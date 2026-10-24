@@ -51,7 +51,7 @@ describe('RF-429 P5-30 a Deepen whose readers wrote more claims than can be judg
       expect(deep.endState).toBe('Completed');
       expect(deepenReaders(h)).toEqual(['reader-003']);
       expect(await waiting(h, deep)).toBe(0);
-      expect((await claimsOf(h, deep)).filter((c) => c.status === 'Supported')).toHaveLength(14);
+      expect((await claimsOf(h, deep)).filter((c) => c.status === 'Supported')).toHaveLength(13);
       const record = await deepenOf(h, deep);
       expect(record.stopReason).toBe('readersStopped');
       expect(record.rounds.map((round) => [round.complete, round.newClaims.length])).toEqual([

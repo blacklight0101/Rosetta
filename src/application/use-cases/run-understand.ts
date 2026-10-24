@@ -141,11 +141,11 @@ export class RunUnderstand implements RunExecutor {
       traceId: traceIdOf(execution.run),
       ids: this.deps.ids,
     };
-    // RF-209: a Deepen run goes back over a completed run instead of reading the areas anew.
-    const deepen = readUnderstandOptions(execution.manifest.options).deepen;
-    if (deepen !== undefined) return runDeepen({ ...parts, request: deepen });
+    const { deepen } = readUnderstandOptions(execution.manifest.options); // RF-209, RF-429
+    const withTheRoom = withRoom(execution, parts, roles.value.budget);
+    if (deepen !== undefined) return runDeepen({ ...withTheRoom, request: deepen });
     if (prepared.value.retry !== undefined) await announceRetry(execution, prepared.value.retry);
-    const session = new UnderstandSession(withRoom(execution, parts, roles.value.budget));
+    const session = new UnderstandSession(withTheRoom);
     await session.plan();
     await session.run();
     await session.finish();

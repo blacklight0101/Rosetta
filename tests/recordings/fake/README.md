@@ -23,6 +23,8 @@ for the catalogue and order journeys and none for the service library (P2-19).
 
 `verifier-heavy-supported.json` is `verifier-all-supported.json` with 6,000 input tokens reported for each verdict, so a run cap can be set at which the verdicts would use everything the readers left; the share of the run token cap the verifier may use keeps the rest for the summariser (RF-429, P3-121).
 
+`deepen-claim-heavy.json` and `verifier-deepen-claim-heavy.json` are `deepen-coverage.json` and `verifier-deepen-supported.json` with the Deepen's re-read task writing twelve claims, so that at a run cap of 100,000 tokens the readers stop before the second task and every claim is judged (RF-429, P5-30).
+
 ## Provenance (RNF-009)
 
 Every file was written by hand for this repository by the Rosetta contributors and is covered by the repository's MIT

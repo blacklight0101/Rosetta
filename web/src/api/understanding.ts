@@ -57,7 +57,9 @@ const deepenSchema = z.looseObject({
   maxRounds: count,
   coveragePass: z.boolean(),
   roundsDone: count,
-  stopReason: z.enum(['noProgress', 'roundLimit', 'capReached', 'stopped']).nullable(),
+  stopReason: z
+    .enum(['noProgress', 'roundLimit', 'capReached', 'stopped', 'readersStopped'])
+    .nullable(),
   outOfScope: z.array(z.looseObject({ claimId: z.string(), reason: z.string() })),
   rounds: z.array(roundSchema),
   before: summarySchema.nullable(),
