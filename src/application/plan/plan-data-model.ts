@@ -16,6 +16,7 @@ import { typeProblems } from './data-model-database.js';
 import { missingNamed } from './data-model-named.js';
 import { dataModelMessage, packableCards } from './data-model-message.js';
 import { MEASURING_TAG, omittedFor } from './plan-call-packing.js';
+import { cutOffMessage } from './plan-continuation.js';
 import { dataModelBatches } from './data-model-batches.js';
 
 // RF-623, RF-262, ADR-018: the target data model of a plan run. When the supported cards hold at
@@ -48,6 +49,8 @@ export interface PlannedDataModel {
   readonly flagged: number;
   /** P5-38: the tables copied from the legacy claims because the planner's answer for them failed. */
   readonly copied: readonly string[];
+  /** RST-1805: the cause and the setting when a batch that fell back stayed cut off; empty for none. */
+  readonly cutOffNote: string;
 }
 
 const copiedReason =
@@ -61,6 +64,8 @@ interface Batched {
   readonly problems: readonly DataModelProblem[];
   readonly answered: boolean;
   readonly failed: readonly SourceCard[];
+  /** Whether a failed batch stayed cut off at the output limit. */
+  readonly cut: boolean;
 }
 
 /** One planner call for these entities: what its answer read as (undefined when none) and whether it stayed cut off. */
@@ -96,19 +101,19 @@ async function askRetrying(
 ): Promise<Batched> {
   const { read: first, cut } = await askBatch(call, input, batch, single);
   if (first !== undefined) {
-    return { draft: first.draft, problems: first.problems, answered: true, failed: [] };
+    return { draft: first.draft, problems: first.problems, answered: true, failed: [], cut: false };
   }
-  // Only an answer that stayed cut off is asked again, smaller; an unreadable whole answer is not.
-  if (!cut || batch.length < 2)
-    return { draft: emptyDraft, problems: [], answered: false, failed: batch };
+  if (batch.length < 2) {
+    return { draft: emptyDraft, problems: [], answered: false, failed: batch, cut };
+  }
   const half = Math.ceil(batch.length / 2);
   const parts: Batched[] = [];
   for (const smaller of [batch.slice(0, half), batch.slice(half)]) {
-    const { read } = await askBatch(call, input, smaller, false);
+    const { read, cut: stillCut } = await askBatch(call, input, smaller, false);
     parts.push(
       read === undefined
-        ? { draft: emptyDraft, problems: [], answered: false, failed: smaller }
-        : { draft: read.draft, problems: read.problems, answered: true, failed: [] },
+        ? { draft: emptyDraft, problems: [], answered: false, failed: smaller, cut: stillCut }
+        : { draft: read.draft, problems: read.problems, answered: true, failed: [], cut: false },
     );
   }
   return joined(parts);
@@ -123,6 +128,7 @@ function joined(parts: readonly Batched[]): Batched {
     problems: parts.flatMap((part) => part.problems),
     answered: parts.some((part) => part.answered),
     failed: parts.flatMap((part) => part.failed),
+    cut: parts.some((part) => part.cut),
   };
 }
 
@@ -166,24 +172,28 @@ export async function planDataModel(
       answered: false,
       flagged: 0,
       copied: [],
+      cutOffNote: '',
     };
   const entities = input.cards.filter((card) => card.type === 'ENT');
+  const limit = call.planner.maxOutputTokens;
   const batches = dataModelBatches(entities, call.planner.maxOutputTokens);
   const single = batches.length === 1;
   const parts: Batched[] = [];
   for (const batch of batches) parts.push(await askRetrying(call, input, batch, single));
   const all = joined(parts);
+  const cutOffNote = all.cut ? cutOffMessage(limit) : '';
   const copied = copiedTables(all.failed, all.draft.tables);
   const draft = { ...all.draft, tables: [...all.draft.tables, ...copied] };
   let assembled = assembleDataModel(draft, legacy, database);
   if (assembled.model.tables.length === 0) {
+    const fromClaims = legacyTablesOf(entities);
     assembled = assembleDataModel(
-      { ...draft, tables: namedAfterCards(entities) },
+      { ...draft, tables: fromClaims.length > 0 ? fromClaims : namedAfterCards(entities) },
       legacy,
       database,
     );
   }
-  return checked(assembled, input, all);
+  return checked(assembled, input, all, cutOffNote);
 }
 
 /** The model once the legacy keys are kept, with what the checks flag and the tables copied (P3-120, P5-38). */
@@ -191,6 +201,7 @@ function checked(
   assembled: DataModelAssembly,
   input: DataModelInput,
   all: Batched,
+  cutOffNote: string,
 ): PlannedDataModel {
   const keys = keepLegacyKeys(assembled.model, input.cards, input.brief);
   const facts = applyColumnFacts(keys.model, input.cards);
@@ -216,6 +227,7 @@ function checked(
     flagged: flagged.length,
     answered: all.answered,
     copied: copiedNames,
+    cutOffNote,
   };
 }
 
@@ -252,7 +264,7 @@ export function dataModelWarnings(planned: PlannedDataModel): string[] {
     planned.copied.length === 0
       ? []
       : [
-          `The planner answer for ${String(planned.copied.length)} table(s) failed after a retry; they are copied from the legacy claims and marked: ${planned.copied.join(', ')}.`,
+          `The planner answer for ${String(planned.copied.length)} table(s) failed after a retry; they are copied from the legacy claims and marked: ${planned.copied.join(', ')}.${planned.cutOffNote === '' ? '' : ` ${planned.cutOffNote}`}`,
         ];
   return [...unusable, ...parts, ...refused, ...copiedFrom, ...checked];
 }

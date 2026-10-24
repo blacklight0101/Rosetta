@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { planDataModel } from '../../../../src/application/plan/plan-data-model.js';
+import {
+  dataModelWarnings,
+  planDataModel,
+} from '../../../../src/application/plan/plan-data-model.js';
 import {
   answerTokensOf,
   batchBudget,
@@ -114,5 +117,36 @@ describe('planDataModel: a model never empty (P5-38)', () => {
     expect(requests).toHaveLength(1);
     const message = requests[0]?.messages.map((each) => each.content).join('') ?? '';
     expect(message).not.toContain('otherEntities');
+  });
+});
+
+describe('planDataModel: unreadable answers and the cut-off cause (P5-38)', () => {
+  it('RF-623 a whole answer that cannot be read is asked again once as two smaller batches', async () => {
+    const { call, requests } = scriptedPlanner({ maxEntities: 6, garbage: true });
+
+    const planned = await planDataModel(call, { cards: schoolEntities(3), brief });
+
+    expect(requests).toHaveLength(3);
+    expect(planned.copied).toHaveLength(3);
+    expect(planned.assembly.model.tables.every((table) => table.copiedFromLegacy === true)).toBe(
+      true,
+    );
+  });
+
+  it('RST-1805 a batch that fell back after a cut says the cause and the setting', async () => {
+    const { call } = scriptedPlanner({ maxEntities: 0 });
+
+    const planned = await planDataModel(call, { cards: schoolEntities(3), brief });
+
+    const warned = dataModelWarnings(planned).join(' ');
+    expect(warned).toContain('copied from the legacy claims');
+    expect(warned).toContain('cut off at 4096 output tokens');
+    expect(warned).toContain('Planner max output tokens');
+  });
+
+  it('RF-623 the batches are exact for 18 entities at 4096 output tokens', () => {
+    expect(dataModelBatches(schoolEntities(18), 4_096).map((batch) => batch.length)).toEqual([
+      3, 3, 3, 3, 3, 3,
+    ]);
   });
 });

@@ -1,3 +1,4 @@
+import { columnClaimsOf } from './column-claims.js';
 import type { DraftColumn, DraftTable, ForeignKey } from './data-model.js';
 import type { SourceCard } from './plan-sources.js';
 
@@ -16,7 +17,7 @@ const MAX_COLUMNS = 200;
 const NAME = '[A-Za-z_][A-Za-z0-9_]{0,62}';
 const statesTable = new RegExp(`\\b(${NAME}) table (?:has|holds|contains|links)\\b`, 'u');
 const referencing = new RegExp(
-  `\\b(${NAME}) is (?:a|the declared) foreign key (?:of ${NAME} )?\\(?to (?:the )?(${NAME})(?:\\.(${NAME}))?`,
+  `\\b(${NAME}) is (?:an? |the )?(?:declared )?foreign key (?:of ${NAME} )?\\(?to (?:the )?(${NAME})(?:\\.(${NAME}))?`,
   'gu',
 );
 const nameOnly = new RegExp(`^${NAME}$`, 'u');
@@ -70,7 +71,7 @@ function itemsOf(body: string): string[] {
 
 function stripFiller(item: string): string {
   return item
-    .replace(/^(?:the |a |an )?(?:columns? )/u, '')
+    .replace(/^(?:the |a |an )?(?:columns? )(?:for |are |of )?/u, '')
     .replace(/^(?:the )?(?:columns? )?/u, '')
     .replace(/\s+columns?$/u, '')
     .trim();
@@ -163,11 +164,45 @@ function addReferences(draft: Draft, text: string): void {
   }
 }
 
+const nameKeys = new WeakMap<Draft, string>();
+
+function draftFor(drafts: Map<string, Draft>, card: SourceCard, name: string): Draft {
+  const key = name.toLowerCase();
+  const draft = drafts.get(key) ?? {
+    ...{ columns: [], primaryKey: [], foreignKeys: [], title: card.title },
+    sources: new Set<string>(),
+  };
+  drafts.set(key, draft);
+  nameKeys.set(draft, nameKeys.get(draft) ?? name);
+  draft.sources.add(card.id);
+  return draft;
+}
+
+/** The reader's own column statements (`Column T.c: type, NOT NULL, ...`), the form current runs write. */
+function readColumnClaims(
+  drafts: Map<string, Draft>,
+  card: SourceCard,
+  claim: SourceCard['claims'][number],
+): boolean {
+  const claims = columnClaimsOf(claim.text).filter((each) => nameOnly.test(each.table));
+  for (const each of claims) {
+    const draft = draftFor(drafts, card, each.table);
+    const reference = each.references;
+    addReading(draft, {
+      column: columnOf(each.name, each.type, each.nullable, claim.claimId),
+      primary: each.primaryKey,
+      reference: reference === null ? null : { table: reference.table, column: reference.column },
+    });
+  }
+  return claims.length > 0;
+}
+
 function readClaim(
   drafts: Map<string, Draft>,
   card: SourceCard,
   claim: SourceCard['claims'][number],
 ) {
+  if (readColumnClaims(drafts, card, claim)) return;
   const text = claim.text.slice(0, MAX_CLAIM_CHARS);
   const stated = statesTable.exec(text);
   const name = stated?.[1];
@@ -176,23 +211,14 @@ function readClaim(
     for (const draft of drafts.values()) if (draft.sources.has(card.id)) addReferences(draft, text);
     return;
   }
-  const key = name.toLowerCase();
-  const draft = drafts.get(key) ?? {
-    ...{ columns: [], primaryKey: [], foreignKeys: [], title: card.title },
-    sources: new Set<string>(),
-  };
-  drafts.set(key, draft);
-  draft.sources.add(card.id);
+  const draft = draftFor(drafts, card, name);
   const body = sentenceAfter(text, stated.index + stated[0].length);
   for (const item of itemsOf(body)) {
     const reading = readItem(item, claim.claimId);
     if (reading !== undefined) addReading(draft, reading);
   }
   addReferences(draft, text);
-  nameKeys.set(draft, name);
 }
-
-const nameKeys = new WeakMap<Draft, string>();
 
 function tableOf(draft: Draft): DraftTable {
   return {

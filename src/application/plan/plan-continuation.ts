@@ -61,14 +61,26 @@ const valueStart = /^\s*(?:["{}[\],:]|-?\d|(?:true|false|null)\b)/u;
  */
 // RF-604
 export function joinContinuation(earlier: string, fragment: string): string {
+  return joinNoting(earlier, fragment).text;
+}
+
+/** The join, and whether an unfinished list item was replaced by the next one (P3-126: it is listed). */
+// RF-604, P5-38
+export function joinNoting(
+  earlier: string,
+  fragment: string,
+): { readonly text: string; readonly replaced: boolean } {
   const base = resumePoint(earlier);
   const head = base.trimStart().slice(0, RESTART_PREFIX);
-  if (head.length >= MIN_RESTART && fragment.trimStart().startsWith(head)) return fragment;
-  if (!valueStart.test(fragment)) return base;
+  if (head.length >= MIN_RESTART && fragment.trimStart().startsWith(head)) {
+    return { text: fragment, replaced: false };
+  }
+  if (!valueStart.test(fragment)) return { text: base, replaced: false };
   // P5-38: a fragment that opens a new element where the base wants a key (the model began the next
   // list item instead of finishing the cut one) replaces the unfinished item, so the join is JSON.
   const unfinished = /^\s*[{[]/u.test(fragment) ? openElementStart(base) : null;
-  return unfinished === null ? base + fragment : base.slice(0, unfinished) + fragment;
+  if (unfinished === null) return { text: base + fragment, replaced: false };
+  return { text: base.slice(0, unfinished) + fragment, replaced: true };
 }
 
 /** RST-1805: the cause and the setting that fixes it. */
@@ -76,3 +88,8 @@ export function joinContinuation(earlier: string, fragment: string): string {
 export function cutOffMessage(limit: number): string {
   return `The planner answer was cut off at ${String(limit)} output tokens; raise Planner max output tokens in Project settings.`;
 }
+
+/** P3-126: the item a continuation replaced is named so it is not lost silently. */
+// RF-604
+export const replacedMessage =
+  'The planner continuation began the next list item instead of finishing the cut one; the unfinished item was left out.';

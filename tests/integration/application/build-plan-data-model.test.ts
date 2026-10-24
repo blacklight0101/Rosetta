@@ -195,7 +195,7 @@ describe('BuildPlan: data-model.md diagram and safety', () => {
   });
 });
 
-async function withSecondAnswer(text: string): Promise<Recording> {
+async function withSecondAnswer(text: string, times = 1): Promise<Recording> {
   const base = await loadRecording(recordingPath);
   const [first, second, third] = base.calls;
   const attempt = third?.attempts[0];
@@ -207,14 +207,13 @@ async function withSecondAnswer(text: string): Promise<Recording> {
   ) {
     throw new Error('The recording has three calls');
   }
-  return {
-    ...base,
-    calls: [first, second, { attempts: [{ response: { ...attempt.response, text } }] }],
-  };
+  const answer = { attempts: [{ response: { ...attempt.response, text } }] };
+  return { ...base, calls: [first, second, ...Array.from({ length: times }, () => answer)] };
 }
 
 async function degraded(answer: string): Promise<{ text: string; h: PlanHarness }> {
-  const h = await seeded(await withSecondAnswer(answer));
+  // An unusable answer is asked again as two smaller batches, so the answer is recorded three times.
+  const h = await seeded(await withSecondAnswer(answer, 3));
   return { text: await modelFile(h), h };
 }
 

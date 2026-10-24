@@ -6,6 +6,8 @@ import {
   plannerSettings,
   type PlanEstimateOptions,
 } from '../../../support/plan-estimate-harness.js';
+import { dataModelBatches } from '../../../../src/application/plan/data-model-batches.js';
+import { card } from '../../../support/data-model-sqlserver-orders.js';
 import { entityCardSaying, planCards } from '../../../support/plan-cards.js';
 
 // RF-613, RF-623, ADR-007: the plan estimate counts the data model call (the planner's third) when
@@ -70,17 +72,21 @@ describe('EstimatePlan: the data model call', () => {
 
 describe('EstimatePlan: the data model in batches (P5-38)', () => {
   it('RF-613 RF-623 counts one data model call for each batch of entities', async () => {
+    const text = (at: number): string =>
+      `The t${String(at)} table has an identity id and columns name, size (int), due (numeric 10,3) and kind (varchar 20).`;
     const entities = Array.from({ length: 80 }, (_unused, at) =>
-      entityCardSaying(
-        `ENT-${String(100 + at)}`,
-        `The t${String(at)} table has an identity id and columns name, size (int), due (numeric 10,3) and kind (varchar 20).`,
-      ),
+      entityCardSaying(`ENT-${String(100 + at)}`, text(at)),
     );
     const cards = [...planCards().filter((card) => card.type !== 'ENT'), ...entities];
     const estimate = await estimateOf({ seed: { cards } });
 
     const { assumptions, planner } = estimate;
-    expect(assumptions.calls).toBeGreaterThan(6);
+    const sources = entities.map((_each, at) =>
+      card(`ENT-${String(100 + at)}`, 'ENT', 'Entity', [text(at)]),
+    );
+    const batches = dataModelBatches(sources, assumptions.maxOutputTokens).length;
+    expect(batches).toBeGreaterThan(1);
+    expect(assumptions.calls).toBe(5 + batches);
     expect(planner.points.high.outputTokens).toBe(
       assumptions.calls * 3 * assumptions.maxOutputTokens,
     );

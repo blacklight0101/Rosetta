@@ -1,5 +1,6 @@
 import type { ModelColumn, ModelTable, TargetDataModel } from '../../domain/planning/data-model.js';
 import { unconfirmedType } from '../../domain/planning/data-model-names.js';
+import { columnClaimsOf } from '../../domain/planning/column-claims.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import { baseOf, databaseTypeNames } from './data-model-database.js';
 import type { DataModelProblem } from './data-model-answer.js';
@@ -9,14 +10,7 @@ import type { DataModelProblem } from './data-model-answer.js';
 // (reader prompt area.v9). A column that differs from its claim goes back to the claim unless the
 // planner wrote a reason for the change in the column's `risk`; a change that stays is listed in
 // the model and in checks.md. A claim that is not in the form, and a column without a claim, are
-// left as they are. The claim is untrusted text: it is cut to a bound and read by one flat pattern.
-
-const MAX_CLAIM = 2000;
-const MAX_FACTS = 50;
-
-// One column fact. No part of the pattern can match what the next part matches, so reading is linear.
-const factPattern =
-  /Column\s+(?:[A-Za-z0-9_[\]]{1,64}\.)?([A-Za-z_][A-Za-z0-9_]{0,62}):\s*([A-Za-z][A-Za-z ]{0,38}(?:\(\d{1,5}(?:,\s?\d{1,3})?\))?),\s*(NOT NULL|NULL)(?:,\s*default\s+('[^']{0,40}'|[^\s,;]{1,40}))?/gu;
+// left as they are. The claim is untrusted text, read by `columnClaimsOf` (bounded, linear).
 
 export interface ColumnFact {
   readonly name: string;
@@ -29,16 +23,10 @@ export interface ColumnFact {
 /** The column facts a claim states; none for a claim not in the form. */
 // RF-623
 export function columnFactsOf(text: string): ColumnFact[] {
-  const facts: ColumnFact[] = [];
-  for (const match of text.slice(0, MAX_CLAIM).matchAll(factPattern)) {
-    if (facts.length >= MAX_FACTS) break;
-    const [, name = '', type = '', nulls = '', given = ''] = match;
-    facts.push({
-      ...{ name, type: type.trim(), nullable: nulls === 'NULL' },
-      default: given.replace(/\.$/u, ''),
-    });
-  }
-  return facts;
+  return columnClaimsOf(text).map(({ name, type, nullable, default: given }) => ({
+    ...{ name, type, nullable },
+    default: given,
+  }));
 }
 
 const plain = (name: string): string => name.toLowerCase().replace(/_/gu, '');

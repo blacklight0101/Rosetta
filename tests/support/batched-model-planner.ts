@@ -28,6 +28,8 @@ export interface Script {
   readonly maxEntities: number;
   /** An entity id whose presence in a message always gets a cut answer. */
   readonly poison?: string | undefined;
+  /** Every answer is whole but not JSON. */
+  readonly garbage?: boolean | undefined;
 }
 
 function idsIn(message: string): string[] {
@@ -47,17 +49,20 @@ function tableFor(id: string): unknown {
   };
 }
 
+function answerFor(script: Script, ids: readonly string[]): { text: string; cut: boolean } {
+  if (script.garbage === true) return { text: 'not json at all', cut: false };
+  const cut = ids.length > script.maxEntities || ids.includes(script.poison ?? '-');
+  const whole = JSON.stringify({ tables: ids.map(tableFor), dropped: [] });
+  return { text: cut ? '{"tables": [{"name": "t001", "purpose": "Keeps' : whole, cut };
+}
+
 export function scriptedPlanner(script: Script): { call: PlannerCall; requests: LlmRequest[] } {
   const requests: LlmRequest[] = [];
   const provider: LlmProvider = {
     complete(request) {
       requests.push(request);
       const message = request.messages.map((each) => each.content).join('\n');
-      const ids = idsIn(message);
-      const cut = ids.length > script.maxEntities || ids.includes(script.poison ?? '-');
-      const text = cut
-        ? '{"tables": [{"name": "t001", "purpose": "Keeps'
-        : JSON.stringify({ tables: ids.map(tableFor), dropped: [] });
+      const { text, cut } = answerFor(script, idsIn(message));
       const usage = { inputTokens: 1, outputTokens: cut ? 4096 : 100 } as const;
       return Promise.resolve(
         fakeResponse({
