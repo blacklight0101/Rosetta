@@ -90,7 +90,7 @@ describe('P3-124 the verifier prompt v3', () => {
     const { loadPromptFile } = await import('../../../src/infrastructure/prompts/prompt-files.js');
     const old = await loadPromptFile('prompts', 'verifier/claim.v2.md');
 
-    expect(system).toMatchObject({ name: 'verifier/claim.v3.md', version: 'v3' });
+    expect(system).toMatchObject({ name: 'verifier/claim.v4.md', version: 'v4' });
     expect(old.text).not.toContain('[context]');
   });
 

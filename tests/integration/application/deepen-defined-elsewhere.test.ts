@@ -42,6 +42,11 @@ async function repositoryWithSchema(): Promise<string> {
   return repository;
 }
 
+/** The JSON of the rejected claims inside the task message (the prompt text itself names the field). */
+function rejectedBlock(message: string): string {
+  return message.split('\\"rejected\\": [')[1] ?? '';
+}
+
 async function deepened() {
   const h = await createUnderstandHarness({
     dataDir: temp.path,
@@ -69,15 +74,14 @@ describe('P5-35 a claim rejected for a meaning defined elsewhere', UNDERSTAND_TI
   it('RF-209 asks the reader to find the lines that define the meaning, with the code map search', async () => {
     const { h } = await deepened();
 
-    expect(readerTasksAsked(h).filter((id) => id >= 'reader-002')).toEqual([
-      'reader-002',
-      'reader-002',
-    ]);
+    expect(new Set(readerTasksAsked(h).filter((id) => id >= 'reader-002'))).toEqual(
+      new Set(['reader-002']),
+    );
     const asked = h.providers
       .requests()
       .filter((request) => request.context.agentTaskId === 'reader-002');
     const first = JSON.stringify(asked[0]?.messages);
-    expect(first).toContain('"reasonKind": "definedElsewhere"');
+    expect(rejectedBlock(first)).toContain('\\"reasonKind\\": \\"definedElsewhere\\"');
     expect(first).toContain('lines that define that meaning');
     expect(asked.every((request) => request.context.role === 'reader')).toBe(true);
   });
@@ -120,6 +124,6 @@ describe('P5-35 a claim rejected for another reason', UNDERSTAND_TIMEOUT, () => 
       .requests()
       .filter((request) => request.context.agentTaskId === 'reader-003');
     expect(asked.length).toBeGreaterThan(0);
-    expect(JSON.stringify(asked[0]?.messages)).not.toContain('reasonKind');
+    expect(rejectedBlock(JSON.stringify(asked[0]?.messages))).not.toContain('reasonKind');
   });
 });

@@ -1,9 +1,11 @@
+import type { VerdictReasonKind } from '../../domain/cards/card.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { LlmResponse } from '../ports/llm-provider.js';
 
 // RF-301, DEC-57, ADR-013: reads the verifier's answer. The answer is model output, so it is
 // parsed strictly and never trusted: exactly two lines, the reason first and the verdict second
-// (`Reason: ...` then `Verdict: Supported` or `Verdict: Rejected`), nothing else. Anything else (a
+// (`Reason: ...` then `Verdict: Supported` or `Verdict: Rejected`), and after a `Rejected` verdict
+// only the optional line `Kind: defined elsewhere` (P5-35), nothing else. Anything else (a
 // verdict before its reason, a third line, a verdict that is not one of the two words, a tool call,
 // a cut answer) is invalid and says why, for the one retry; it is never read as `Supported`.
 
@@ -13,12 +15,15 @@ export interface Verdict {
   readonly status: JudgedStatus;
   /** One line, at most `MAX_REASON_CHARS` characters. */
   readonly reason: string;
+  /** P5-35: the optional third line of a `Rejected` answer. */
+  readonly reasonKind?: VerdictReasonKind;
 }
 
 export const MAX_REASON_CHARS = 300;
 
 const reasonLine = /^reason:[ \t]*(\S.*)$/iu;
 const verdictLine = /^verdict:[ \t]*(supported|rejected)$/iu;
+const kindLine = /^kind:[ \t]*defined[ \t]+elsewhere$/iu;
 const verdictLike = /^verdict:/iu;
 const lineBreak = /\r\n|[\n\r\u0085\u2028\u2029]/u;
 // eslint-disable-next-line no-control-regex -- the reason is shown and stored as one plain line
@@ -32,6 +37,7 @@ const problems = {
   reason: 'the first line must start with "Reason:" followed by one sentence.',
   long: `the reason must be at most ${String(MAX_REASON_CHARS)} characters.`,
   verdict: 'the second line must be "Verdict: Supported" or "Verdict: Rejected".',
+  kind: 'a third line may only be "Kind: defined elsewhere", and only after "Verdict: Rejected".',
 } as const;
 
 /**
@@ -44,16 +50,33 @@ function statusOf(word: string): JudgedStatus | undefined {
   return lower === 'rejected' ? 'Rejected' : undefined;
 }
 
-/** The two lines as a verdict, or what is wrong with them. */
-function verdictOf(first: string, second: string): Result<Verdict, string> {
-  if (verdictLike.test(first)) return err(problems.order);
-  const reason = reasonLine.exec(first)?.[1]?.trim();
+/** The reason of the first line, or what is wrong with it. */
+function reasonOf(line: string): Result<string, string> {
+  const reason = reasonLine.exec(line)?.[1]?.trim();
   if (reason === undefined || controlCharacter.test(reason)) return err(problems.reason);
-  if (reason.length > MAX_REASON_CHARS) return err(problems.long);
+  return reason.length > MAX_REASON_CHARS ? err(problems.long) : ok(reason);
+}
+
+/** The two lines as a verdict, or what is wrong with them. */
+function verdictOf(first: string, second: string, third?: string): Result<Verdict, string> {
+  if (verdictLike.test(first)) return err(problems.order);
+  const reason = reasonOf(first);
+  if (!reason.ok) return reason;
   const word = verdictLine.exec(second)?.[1];
   const status = word === undefined ? undefined : statusOf(word);
   if (status === undefined) return err(problems.verdict);
-  return ok({ status, reason });
+  const kind = kindOf(status, third);
+  return kind.ok ? ok({ status, reason: reason.value, ...kind.value }) : kind;
+}
+
+/** P5-35: the third line, if any, is the kind line of a `Rejected` verdict, or the answer is refused. */
+function kindOf(
+  status: JudgedStatus,
+  line: string | undefined,
+): Result<Pick<Verdict, 'reasonKind'>, string> {
+  if (line === undefined) return ok({});
+  if (status !== 'Rejected' || !kindLine.test(line)) return err(problems.kind);
+  return ok({ reasonKind: 'definedElsewhere' });
 }
 
 /** The verdict of an answer, or the problem the retry names (RF-301). */
@@ -67,10 +90,10 @@ export function parseVerdictAnswer(
     .split(lineBreak)
     .map((line) => line.trim())
     .filter((line) => line !== '');
-  const [first, second] = lines;
-  if (lines.length !== 2 || first === undefined || second === undefined) {
+  const [first, second, third] = lines;
+  if (lines.length > 3 || lines.length < 2 || first === undefined || second === undefined) {
     const verdictFirst = first !== undefined && verdictLike.test(first);
     return err(verdictFirst ? problems.order : problems.lines);
   }
-  return verdictOf(first, second);
+  return verdictOf(first, second, third);
 }
