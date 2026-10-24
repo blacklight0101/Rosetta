@@ -66,8 +66,8 @@ function escapeChars(text: string, label: boolean): string {
  */
 function breakAutolinks(text: string): string {
   return text
-    .replace(/\b(https?|ftp|mailto):/gi, `$1${BS}:`)
-    .replace(/\bwww\./gi, (match) => `${match.slice(0, 3)}${BS}.`)
+    .replace(/(https?|ftp|mailto):/gi, `$1${BS}:`)
+    .replace(/www\./gi, (match) => `${match.slice(0, 3)}${BS}.`)
     .replaceAll('@', `${BS}@`);
 }
 
