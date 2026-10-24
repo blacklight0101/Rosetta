@@ -33,11 +33,17 @@ export function allText(files: PackageFiles): string {
 
 /** The cards of a task-card file, each from its `## T-nnn` heading. */
 export function cardsOf(files: PackageFiles): string[] {
-  return allCardsOf(files).filter((card) => !card.includes(migrationTitle));
+  return allCardsOf(files).filter(
+    (card) => !card.includes(migrationTitle) && !foundationTitle.test(card),
+  );
 }
 
 /** RF-623: the card the plan always starts with when there is a data model; code writes it. */
 const migrationTitle = 'Write the database migrations in the chosen stack';
+
+/** P5-42: the titles of the fixed cards the plan adds around the planner's cards; code writes them. */
+const foundationTitle =
+  /solution skeleton and continuous|data-access layer on the chosen|approval-test harness that runs|Migrate the legacy data into|Cut over from the legacy/u;
 
 /** Every task card, the migration card first when the package has one. */
 function allCardsOf(files: PackageFiles): string[] {

@@ -15,7 +15,6 @@ import type { PlanContent } from '../../domain/planning/plan-content.js';
 import type { PrdContent } from '../../domain/planning/prd-content.js';
 import type { ExcludedClaim, SourceCard, SourceStop } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
-import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
 import type { UploadFacts } from '../../domain/sources/upload-facts.js';
 import type { WorkbookFormulas } from '../../domain/planning/workbook-formulas.js';
 
@@ -105,8 +104,6 @@ export interface HandoffPackage {
   readonly prd: PrdContent;
   /** The PRD sections the cards could not fill, each with its default (RF-621, DEC-80). */
   readonly prdQuestions: readonly DefaultedQuestion[];
-  /** RF-632: the shapes measured from the scan; undefined when the scan could not be read. */
-  readonly shapes: ScanShapes | undefined;
   /** P3-94: the formulas of the rendered workbooks; undefined for a project with none (no file is written). */
   readonly workbookFormulas?: WorkbookFormulas | undefined;
   /** RF-604: the documents that stayed cut off, in the order they were written; empty when none did. */

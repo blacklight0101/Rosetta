@@ -19,11 +19,11 @@ import {
 import type { Run } from '../../domain/runs/run.js';
 import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
 import type { UnreadableItem } from '../../domain/planning/plan-draft.js';
+import { withFoundationCards } from '../../domain/planning/foundation-cards.js';
 import { placeOf } from './plan-repair.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
 import type { PlannedDocuments } from './plan-documents.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
-import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
 import type { WorkbookFormulas } from '../../domain/planning/workbook-formulas.js';
 import type { PlanInputs } from './plan-inputs.js';
 
@@ -175,10 +175,27 @@ function stackFindings(
 
 /** The parts of the planned documents the package carries as they are. */
 function carried(
-  documents: Pick<HandoffPackage, 'shapes' | 'workbookFormulas' | 'incomplete' | 'leftOut'>,
-): Pick<HandoffPackage, 'shapes' | 'workbookFormulas' | 'incomplete' | 'leftOut'> {
-  const { shapes, workbookFormulas, incomplete, leftOut } = documents;
-  return { shapes, workbookFormulas, incomplete, leftOut };
+  documents: Pick<HandoffPackage, 'workbookFormulas' | 'incomplete' | 'leftOut'>,
+): Pick<HandoffPackage, 'workbookFormulas' | 'incomplete' | 'leftOut'> {
+  const { workbookFormulas, incomplete, leftOut } = documents;
+  return { workbookFormulas, incomplete, leftOut };
+}
+
+/** P5-42: the plan with its fixed cards, with the brief's choices decided once over it. */
+function decidedOf(
+  content: PlanContent,
+  parts: {
+    readonly brief: PlanningBrief;
+    readonly sources: readonly SourceCard[];
+    readonly documents: Pick<PlannedDocuments, 'dataModel'> & {
+      readonly proposal: PlanProposal | undefined;
+    };
+  },
+  catalogue: Catalogue,
+): ReturnType<typeof decideOnce> {
+  const { brief, sources, documents } = parts;
+  const withFixed = withFoundationCards(content, brief.migration, documents.dataModel.tables);
+  return decideOnce(withFixed, brief, catalogue, evidenceOf(sources, documents.proposal));
 }
 
 /** P5-43, RF-602: where the plan changed the meaning of its claims. */
@@ -199,7 +216,6 @@ export function handoffPackageOf(
   content: PlanContent,
   catalogue: Catalogue,
   documents: PlannedDocuments & {
-    readonly shapes: ScanShapes | undefined;
     readonly workbookFormulas: WorkbookFormulas | undefined;
     readonly leftOut: HandoffPackage['leftOut'];
     /** P3-117: the texts of the planner prompts the example sentences are read from. */
@@ -211,7 +227,7 @@ export function handoffPackageOf(
   const { prd, dataModel, flows, apiContract, ux } = documents;
   const { brief, sourceRun, project, cards, questions, upload } = inputs;
   const { cards: sources, overruled } = usableCards(cards, catalogue.claimVerbs);
-  const decided = decideOnce(content, brief, catalogue, evidenceOf(sources, documents.proposal));
+  const decided = decidedOf(content, { brief, sources, documents }, catalogue);
   const style = principleOf(catalogue, brief.architecture.style);
   const styleCheck = checkStyle(brief.architecture.style, decided.content.components);
   return {

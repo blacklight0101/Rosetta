@@ -23,7 +23,7 @@ async function plannedCase() {
   return await h.handoffOf(await h.plan());
 }
 
-/** The task card of tasks.md with this id; T-001 is the migration card, so draft task n is T-(n+1). */
+/** The task card of tasks.md with this id; T-001 to T-004 are the skeleton, the migrations, the data access and the harness, so draft task n is T-(n+3). */
 function cardOf(tasks: string, id: string): string {
   return tasks.split(/^## /mu).find((card) => card.startsWith(`${id}\n`)) ?? '';
 }
@@ -32,9 +32,9 @@ describe('RF-627 the recorded case: screen cards counted one requirement too hig
   it('RF-627 the three screen cards get requirements 11, 12 and 13 and their behaviours', async () => {
     const tasks = plain((await plannedCase())['tasks.md']);
 
-    const invoice = cardOf(tasks, 'T-008');
-    const masterdata = cardOf(tasks, 'T-009');
-    const dashboard = cardOf(tasks, 'T-010');
+    const invoice = cardOf(tasks, 'T-011');
+    const masterdata = cardOf(tasks, 'T-012');
+    const dashboard = cardOf(tasks, 'T-013');
 
     expect(invoice).toContain('REQ-011');
     expect(invoice).not.toContain('REQ-012');
@@ -53,10 +53,10 @@ describe('RF-627 the recorded case: screen cards counted one requirement too hig
     expect(checks).toContain(
       'The task card at position 9 of the plan answer lists requirement position 14, but the plan has 13 requirements; that position was ignored.',
     );
-    expect(checks).toContain('T-008 gained REQ-011');
-    expect(checks).toContain('T-008 lost REQ-012');
-    expect(checks).toContain('T-009 gained REQ-012');
-    expect(checks).toContain('T-009 lost REQ-013');
-    expect(checks).toContain('T-010 gained REQ-013');
+    expect(checks).toContain('T-011 gained REQ-011');
+    expect(checks).toContain('T-011 lost REQ-012');
+    expect(checks).toContain('T-012 gained REQ-012');
+    expect(checks).toContain('T-012 lost REQ-013');
+    expect(checks).toContain('T-013 gained REQ-013');
   });
 });

@@ -96,8 +96,8 @@ export function behaviourLines(
 }
 
 const shapesFor: Readonly<Record<'limit' | 'parser', readonly (keyof typeof shapeSections)[]>> = {
-  limit: ['largest', 'byKind', 'deepest', 'volumes'],
-  parser: ['encodings', 'lineEndings', 'unusual', 'largest'],
+  limit: ['volumes', 'seeds'],
+  parser: ['seeds', 'tests'],
 };
 
 /** The sections of `fixtures.md` a card that adds a limit or a parser must handle. */

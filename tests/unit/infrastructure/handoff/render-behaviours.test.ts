@@ -110,31 +110,27 @@ const sections = (card: string): string[] =>
   [...card.matchAll(/\]\(fixtures\.md#([a-z-]+)\)/gu)].map((match) => match[1] ?? '');
 
 describe('data shapes on a task card', () => {
-  it('RF-632 a card that adds a limit links the sizes, the depth and the volumes it must handle', () => {
+  it('RF-632 a card that adds a limit links the volumes and the seed data it must handle', () => {
     const files = filesOf(
       'Plain text.',
       withTask({ adds: ['limit'], probes: ['A file of 1 MB.'] }),
     );
 
     expect(sections(firstCard(files))).toEqual([
-      'largest-files',
-      'size-by-kind',
-      'deepest-paths',
       'data-volumes-stated-by-the-cards',
+      'seed-data-stated-by-the-cards',
     ]);
   });
 
-  it('RF-632 a card that adds a parser links the encodings, line endings and names it must handle', () => {
+  it('RF-632 a card that adds a parser links the seed data and the test data it must handle', () => {
     const files = filesOf(
       'Plain text.',
       withTask({ adds: ['parser'], probes: ['A UTF-16 file.'] }),
     );
 
     expect(sections(firstCard(files))).toEqual([
-      'encodings',
-      'line-endings',
-      'unusual-file-names',
-      'largest-files',
+      'seed-data-stated-by-the-cards',
+      'test-data-stated-by-the-cards',
     ]);
   });
 
@@ -144,7 +140,7 @@ describe('data shapes on a task card', () => {
     const linked = sections(firstCard(files));
 
     expect(new Set(linked).size).toBe(linked.length);
-    expect(linked).toHaveLength(7);
+    expect(linked).toHaveLength(3);
   });
 });
 

@@ -111,16 +111,16 @@ describe('BuildPlan: gaps closed by the call', () => {
 
     const cards = plain(written['tasks.md']).split(/^## /mu).slice(1);
     expect(cards.map((card) => card.split('\n')[0])).toEqual([
-      ...['T-001', 'T-002', 'T-003', 'T-004', 'T-005', 'T-006'],
+      ...Array.from({ length: 11 }, (_, at) => `T-${String(at + 1).padStart(3, '0')}`),
     ]);
-    const added = cards.slice(3).join('\n');
+    const added = cards.slice(6, 9).join('\n');
     expect(added).toContain('Place and read orders through the API');
     expect(added).toContain('[Operation](api/openapi.yaml) placeOrder');
     expect(added).toContain('[Flow](flows/FLOW-001.md) FLOW-001: Checkout journey');
     expect(added).toContain('Invariant: Only a signed-in customer reads the customer list');
     expect(added).toContain('Review probes:');
     expect(added).not.toContain('A card in a phase that does not exist');
-    const first = cards[3] ?? '';
+    const first = cards[6] ?? '';
     expect(first).not.toContain('[Table]');
     expect(first).not.toContain('[Feature]');
     expect(first).not.toContain('ghost');
@@ -131,9 +131,9 @@ describe('BuildPlan: gaps closed by the call', () => {
 
     const written = await h.handoffOf(await h.plan());
 
-    const second = plain(written['tasks.md']).split(/^## /mu)[5] ?? '';
-    expect(second).toMatch(/^T-005\n/u);
-    expect(second).toContain('Depends on: [T-004]');
+    const second = plain(written['tasks.md']).split(/^## /mu)[8] ?? '';
+    expect(second).toMatch(/^T-008\n/u);
+    expect(second).toMatch(/Depends on:.*\[T-007\]/u);
   });
 });
 
@@ -183,7 +183,7 @@ describe('BuildPlan: gaps left after the call', () => {
     for (const closed of ['operation:placeOrder', 'feature:F-002', 'operation:signIn']) {
       expect(checks).not.toContain(closed);
     }
-    expect(plain(written['tasks.md'])).toContain('## T-004');
+    expect(plain(written['tasks.md'])).toContain('## T-007');
   });
 });
 
@@ -262,7 +262,7 @@ describe('BuildPlan: the gap cards under SDD', () => {
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
-    expect(plain((await h.handoffOf(run))['tasks.md'])).not.toContain('## T-004');
+    expect((plain((await h.handoffOf(run))['tasks.md']).match(/^## T-/gmu) ?? []).length).toBe(8);
   });
 
   it('RF-607 without SDD the same card is added', async () => {
@@ -274,6 +274,6 @@ describe('BuildPlan: the gap cards under SDD', () => {
 
     const run = await h.plan();
 
-    expect(plain((await h.handoffOf(run))['tasks.md'])).toContain('## T-004');
+    expect(plain((await h.handoffOf(run))['tasks.md'])).toContain('## T-007');
   });
 });
