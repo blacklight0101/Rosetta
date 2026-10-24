@@ -1,7 +1,11 @@
 import { parse } from 'yaml';
 import { z } from 'zod';
 import type { ProjectRef } from '../../application/ports/answers-file.js';
-import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
+import type {
+  FileStatReader,
+  OutputWriter,
+  WorkspaceFile,
+} from '../../application/ports/output-writer.js';
 import type {
   PriorCard,
   PriorCards,
@@ -12,6 +16,7 @@ import {
   type CardType,
   type OpenQuestionState,
 } from '../../domain/cards/card-vocabulary.js';
+import { KeptFileParse } from '../files/kept-file-parse.js';
 import { isRunKey, runPath } from '../files/workspace-paths.js';
 
 // RF-241, data-model.md sections 3.7 and 3.16: the cards of an earlier run read back from their files
@@ -101,9 +106,14 @@ function withState(
 
 export class FilePriorCards implements PriorCards, QuestionReopener {
   private readonly writer: OutputWriter;
+  private readonly indexes: KeptFileParse<z.infer<typeof indexSchema> | undefined>;
+  private readonly files: KeptFileParse<PriorCard | undefined>;
 
-  constructor(writer: OutputWriter) {
+  /** With a `stats` reader (P5-28) each card file is parsed once per version and kept. */
+  constructor(writer: OutputWriter, stats?: FileStatReader) {
     this.writer = writer;
+    this.indexes = new KeptFileParse(writer, stats, 64);
+    this.files = new KeptFileParse(writer, stats);
   }
 
   // RF-241
@@ -113,21 +123,24 @@ export class FilePriorCards implements PriorCards, QuestionReopener {
     types?: readonly CardType[],
   ): Promise<readonly PriorCard[]> {
     if (!isRunKey(runKey)) return [];
-    const index = indexSchema.safeParse(
-      parsedJson((await this.read(project, runKey, 'cards/index.json')) ?? ''),
+    const read = await this.indexes.read(
+      this.fileOf(project, runKey, 'cards/index.json'),
+      (text) => {
+        const index = indexSchema.safeParse(parsedJson(text));
+        return index.success ? index.data : undefined;
+      },
     );
-    if (!index.success) return [];
-    const paths = index.data.cards
+    if (!read.ok || read.value === undefined) return [];
+    const paths = read.value.cards
       .map((card) => card.path)
       .filter((path) => cardFile.test(path))
       .filter(
         (path) => types === undefined || types.some((type) => path.startsWith(`cards/${type}/`)),
       );
-    const texts = await Promise.all(paths.map((path) => this.read(project, runKey, path)));
-    return texts.flatMap((text) => {
-      const card = text === undefined ? undefined : headerOf(text);
-      return card === undefined ? [] : [card];
-    });
+    const found = await Promise.all(
+      paths.map((path) => this.files.read(this.fileOf(project, runKey, path), headerOf)),
+    );
+    return found.flatMap((card) => (card.ok && card.value !== undefined ? [card.value] : []));
   }
 
   // RF-241

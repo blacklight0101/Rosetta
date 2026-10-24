@@ -39,7 +39,8 @@ describe('EstimatePlan over kept card parses', () => {
 
     await ask();
 
-    expect(first).toBe(450);
+    // The 450 card files, and the 90 open question cards once more for the merged-question read.
+    expect(first).toBe(540);
     expect(harness.files.reads.filter(isCardFile)).toEqual([]);
   });
 });

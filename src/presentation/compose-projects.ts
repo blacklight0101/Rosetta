@@ -21,8 +21,6 @@ import { UpdateProjectSettings } from '../application/use-cases/update-project-s
 import type { ModelList } from '../application/models/model-list.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
 import { FileAnswersFile } from '../infrastructure/cards/answers-file.js';
-import { FileRunCards } from '../infrastructure/cards/file-run-cards.js';
-import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
 import { PgAccountUsage } from '../infrastructure/db/pg-account-usage.js';
 import { PgAuditLog } from '../infrastructure/db/pg-audit-log.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
@@ -61,6 +59,7 @@ import { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-
 import { composeScanResults } from './compose-understand.js';
 import { createUploadStore, uploadLimitBytes } from './compose-uploads.js';
 import type { ProjectServices } from './web/project-routes.js';
+import { keptRunCards, keptPriorCards } from './kept-card-readers.js';
 
 // Architecture section 2 (composition root), RF-010, RF-002, RF-1105: the project adapters and the
 // use cases behind the projects API. The default settings come from `templates/` and are checked
@@ -202,7 +201,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
     estimatePlan: new EstimatePlan({
       ...{ projects, runs, briefs, clock, usage },
       ...{ priceTable: parts.priceTable, models: parts.models },
-      ...{ cards: new FileRunCards(writer), priorCards: new FilePriorCards(writer) },
+      ...{ cards: keptRunCards(writer), priorCards: keptPriorCards(writer) },
       ...{ users: new PgUserRepository(pool), answers: new FileAnswersFile({ writer, masker }) },
       serverSettings: settings,
       ...{ keys: new PgProviderKeyRepository(pool), serverKeys: parts.serverKeys },
@@ -211,7 +210,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       workbookGuidance: workbookGuidanceOf(parts, runs, writer),
     }),
     catalogue,
-    getPlanSource: new GetPlanSource({ projects, runs, cards: new FileRunCards(writer) }),
+    getPlanSource: new GetPlanSource({ projects, runs, cards: keptRunCards(writer) }),
     // RF-428, RF-1010: the cost page and the totals pill.
     getProjectCost: new GetProjectCost({ projects, costs }),
     getAccountTotals: new GetAccountTotals({ costs, caps }),

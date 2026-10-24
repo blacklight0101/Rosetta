@@ -1,6 +1,10 @@
 import { parse } from 'yaml';
 import { z } from 'zod';
-import type { OutputWriter } from '../../application/ports/output-writer.js';
+import type {
+  FileStatReader,
+  OutputWriter,
+  WorkspaceFile,
+} from '../../application/ports/output-writer.js';
 import type { RunCards } from '../../application/ports/run-cards.js';
 import type { RunScope } from '../../application/ports/run-events.js';
 import { CARD_TYPES, CLAIM_STATUSES } from '../../domain/cards/card-vocabulary.js';
@@ -8,6 +12,7 @@ import { parseCitation, type Citation } from '../../domain/cards/citation.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
+import { KeptFileParse } from '../files/kept-file-parse.js';
 import { runPath } from '../files/workspace-paths.js';
 
 // RF-604, data-model.md section 3.7: the cards of an ended understand run read back for `plan`: the
@@ -96,43 +101,64 @@ function jsonOf(text: string): unknown {
   }
 }
 
-export class FileRunCards implements RunCards {
-  private readonly writer: OutputWriter;
+export interface FileRunCardsOptions {
+  /** How many card files are kept parsed (P5-28). */
+  readonly filesKept?: number;
+}
 
-  constructor(writer: OutputWriter) {
-    this.writer = writer;
+/** The paths the index lists, checked to be card files of the run. */
+function pathsOf(index: string): readonly string[] {
+  const parsed = indexSchema.safeParse(jsonOf(index));
+  if (!parsed.success) throw unreadable('cards/index.json has another shape');
+  const paths = parsed.data.cards.map((card) => card.path);
+  for (const path of paths) {
+    if (!cardFile.test(path)) throw unreadable(`${path} is not a card file of the run`);
+  }
+  return paths;
+}
+
+export class FileRunCards implements RunCards {
+  private readonly indexes: KeptFileParse<readonly string[]>;
+  private readonly files: KeptFileParse<SourceCard>;
+
+  /**
+   * With a `stats` reader (P5-28) each card file is parsed once per version (size and modification
+   * time) and the parse is kept for the next read, shared by every caller of this instance.
+   */
+  constructor(writer: OutputWriter, stats?: FileStatReader, options: FileRunCardsOptions = {}) {
+    this.indexes = new KeptFileParse(writer, stats, 64);
+    this.files = new KeptFileParse(writer, stats, options.filesKept);
   }
 
   // RF-604
   async cardsOf(scope: RunScope): Promise<readonly SourceCard[]> {
-    const index = await this.read(scope, 'cards/index.json');
-    if (index === undefined) return [];
-    const parsed = indexSchema.safeParse(jsonOf(index));
-    if (!parsed.success) throw unreadable('cards/index.json has another shape');
-    const paths = parsed.data.cards.map((card) => card.path);
-    for (const path of paths) {
-      if (!cardFile.test(path)) throw unreadable(`${path} is not a card file of the run`);
+    const index = await this.indexes.read(this.fileOf(scope, 'cards/index.json'), pathsOf);
+    if (!index.ok) {
+      if (index.error.reason === 'not-found') return [];
+      throw unreadable(`cards/index.json could not be read (${index.error.code})`);
     }
+    const paths = index.value;
     // P5-22: the files are read a batch at a time, so a run of hundreds of cards does not wait on
     // each file in turn; the cards keep the order of the index.
     const cards: SourceCard[] = [];
     for (let start = 0; start < paths.length; start += READ_BATCH) {
       const batch = paths.slice(start, start + READ_BATCH);
-      const texts = await Promise.all(batch.map((path) => this.read(scope, path)));
-      for (const [index, text] of texts.entries()) {
-        const path = batch[index] ?? '';
-        if (text === undefined) throw unreadable(`${path} is missing`);
-        cards.push(cardOf(text, path));
+      const found = await Promise.all(
+        batch.map((path) =>
+          this.files.read(this.fileOf(scope, path), (text) => cardOf(text, path)),
+        ),
+      );
+      for (const [at, card] of found.entries()) {
+        const path = batch[at] ?? '';
+        if (card.ok) cards.push(card.value);
+        else if (card.error.reason === 'not-found') throw unreadable(`${path} is missing`);
+        else throw unreadable(`${path} could not be read (${card.error.code})`);
       }
     }
     return cards;
   }
 
-  private async read(scope: RunScope, name: string): Promise<string | undefined> {
-    const path = `${runPath(scope.projectId, scope.runKey)}/${name}`;
-    const read = await this.writer.readText({ userId: scope.userId, path });
-    if (read.ok) return read.value;
-    if (read.error.reason === 'not-found') return undefined;
-    throw unreadable(`${name} could not be read (${read.error.code})`);
+  private fileOf(scope: RunScope, name: string): WorkspaceFile {
+    return { userId: scope.userId, path: `${runPath(scope.projectId, scope.runKey)}/${name}` };
   }
 }

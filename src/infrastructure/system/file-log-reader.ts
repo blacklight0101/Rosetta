@@ -6,6 +6,7 @@ import type {
   LogQuery,
   StoredLogEntry,
 } from '../../application/ports/application-log-reader.js';
+import { Recent } from '../files/recent.js';
 import { maskDeep } from '../guards/mask-deep.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 
@@ -66,8 +67,24 @@ function hasCode(error: unknown, code: string): boolean {
   return error instanceof Error && 'code' in error && error.code === code;
 }
 
+/** What is kept of one day's file for one run: its version, how far it is parsed, and the entries. */
+interface KeptDay {
+  readonly size: number;
+  readonly modifiedMs: number;
+  /** Bytes parsed: up to and including the last line break read. */
+  readonly consumed: number;
+  /** The entries of the complete lines. */
+  readonly entries: readonly StoredLogEntry[];
+  /** The same with the entry of a last line that has no line break yet, when it parses. */
+  readonly listed: readonly StoredLogEntry[];
+}
+
+const DAYS_KEPT = 64;
+const LINE_BREAK = 0x0a;
+
 export class FileApplicationLogReader implements ApplicationLogReader {
   private readonly options: FileApplicationLogReaderOptions;
+  private readonly kept = new Recent<KeptDay>(DAYS_KEPT);
 
   constructor(options: FileApplicationLogReaderOptions) {
     this.options = options;
@@ -82,23 +99,55 @@ export class FileApplicationLogReader implements ApplicationLogReader {
     return entries;
   }
 
-  private async readFile(name: string, mentioning: readonly string[]): Promise<StoredLogEntry[]> {
+  // P5-28: a file is parsed once for a run and kept; the size and modification time are asked on
+  // every read. A file that grew is read from where the parse stopped, a file that shrank or was
+  // rewritten is parsed again, and a file that is gone is forgotten.
+  private async readFile(
+    name: string,
+    mentioning: readonly string[],
+  ): Promise<readonly StoredLogEntry[]> {
+    const key = [name, ...mentioning].join('|');
     let handle;
     try {
       handle = await open(join(this.options.dataDir, 'logs', name), 'r');
     } catch (error) {
-      if (hasCode(error, 'ENOENT')) return [];
+      if (hasCode(error, 'ENOENT')) {
+        this.kept.delete(key);
+        return [];
+      }
       throw error;
     }
-    const entries: StoredLogEntry[] = [];
     try {
-      for await (const line of handle.readLines()) {
-        if (!mentioning.some((text) => line.includes(text))) continue;
-        const entry = this.parse(line);
-        if (entry !== undefined) entries.push(entry);
-      }
+      const facts = await handle.stat();
+      const before = this.kept.get(key);
+      const { size, mtimeMs: modifiedMs } = facts;
+      if (before?.size === size && before.modifiedMs === modifiedMs) return before.listed;
+      const grown = before !== undefined && size > before.size;
+      const from = grown ? before.consumed : 0;
+      const buffer = Buffer.alloc(Math.max(0, size - from));
+      const { bytesRead } = await handle.read(buffer, 0, buffer.length, from);
+      const bytes = buffer.subarray(0, bytesRead);
+      const complete = bytes.lastIndexOf(LINE_BREAK) + 1;
+      const earlier = grown ? before.entries : [];
+      const entries = [
+        ...earlier,
+        ...this.parseLines(bytes.subarray(0, complete).toString('utf8'), mentioning),
+      ];
+      const tail = this.parseLines(bytes.subarray(complete).toString('utf8'), mentioning);
+      const listed = tail.length === 0 ? entries : [...entries, ...tail];
+      this.kept.set(key, { size, modifiedMs, consumed: from + complete, entries, listed });
+      return listed;
     } finally {
       await handle.close();
+    }
+  }
+
+  private parseLines(text: string, mentioning: readonly string[]): StoredLogEntry[] {
+    const entries: StoredLogEntry[] = [];
+    for (const line of text.split('\n')) {
+      if (line === '' || !mentioning.some((each) => line.includes(each))) continue;
+      const entry = this.parse(line);
+      if (entry !== undefined) entries.push(entry);
     }
     return entries;
   }

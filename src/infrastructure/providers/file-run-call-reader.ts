@@ -12,6 +12,7 @@ import type {
 } from '../../application/ports/run-call-reader.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { summarizeCalls, type ProviderRoleSummary } from '../../domain/observability/call-stats.js';
+import { Recent } from '../files/recent.js';
 import { runPath } from '../files/workspace-paths.js';
 import { maskDeep } from '../guards/mask-deep.js';
 import type { TextMasker } from '../guards/secret-masker.js';
@@ -102,37 +103,6 @@ interface Kept<T> {
   /** Characters of the text that are parsed (up to the last line break). */
   readonly consumed: number;
   readonly value: T;
-}
-
-/** The least recently used entries first; reading an entry moves it to the end. */
-class Recent<T> {
-  readonly #entries = new Map<string, T>();
-  readonly #most: number;
-
-  constructor(most: number) {
-    this.#most = Math.max(1, most);
-  }
-
-  get(key: string): T | undefined {
-    const found = this.#entries.get(key);
-    if (found === undefined) return undefined;
-    this.#entries.delete(key);
-    this.#entries.set(key, found);
-    return found;
-  }
-
-  set(key: string, value: T): void {
-    this.#entries.delete(key);
-    this.#entries.set(key, value);
-    for (const oldest of this.#entries.keys()) {
-      if (this.#entries.size <= this.#most) break;
-      this.#entries.delete(oldest);
-    }
-  }
-
-  delete(key: string): void {
-    this.#entries.delete(key);
-  }
 }
 
 export class FileRunCallReader implements RunCallReader {
