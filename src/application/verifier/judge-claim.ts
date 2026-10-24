@@ -16,7 +16,7 @@ import {
   type SkipLookup,
 } from './cited-lines.js';
 import { renderedFileReason } from './rendered-file-claim.js';
-import { screenFieldVerdict } from './screen-field-check.js';
+import { screenRuleVerdict } from './screen-rule-check.js';
 import { parseVerdictAnswer, type JudgedStatus, type Verdict } from './verdict-answer.js';
 import { contradictionProblem } from './verdict-consistency.js';
 import { verifierRetryMessage, type VerifierPrompts } from './verifier-prompts.js';
@@ -185,9 +185,9 @@ export async function judgeClaim(
     parts.skipReason,
   );
   if (!evidence.ok) return unverified(evidence.error);
-  // P3-122: a derived field claim the cited lines decide costs no call.
-  const field = screenFieldVerdict(claim, evidence.value);
-  if (field !== undefined) return { kind: 'judged', ...field, withoutModel: true };
+  // P3-122, P5-31: a derived field or route claim the cited lines decide costs no call.
+  const rule = screenRuleVerdict(claim, evidence.value);
+  if (rule !== undefined) return { kind: 'judged', ...rule, withoutModel: true };
   const asked: LlmMessage[] = [
     { role: 'user', content: evidenceMessage(parts, claim, evidence.value) },
   ];

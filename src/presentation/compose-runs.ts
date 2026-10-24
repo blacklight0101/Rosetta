@@ -258,7 +258,7 @@ export function composeRuns(parts: RunParts): RunComposition {
     services: runServices({
       ...{ parts, writer, manifests, runs, log, broadcaster, projects, submitRun, queue, answers },
       observability: composeObservability({ runs, manifests, writer, masker, clock, dataDir }),
-      scans: composeScanResults({ dataDir, writer, manifests, logger }),
+      scans: composeScanResults({ dataDir, writer, manifests, logger, packs: parts.packs }),
     }),
     submitRun,
     discardPartialSnapshots: () => discardPartialSnapshots(scan.fetcher, logger),

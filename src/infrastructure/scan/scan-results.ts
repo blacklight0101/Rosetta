@@ -13,6 +13,7 @@ import type { RunManifest } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
 import { NodeRepositoryReader } from '../files/node-repository-reader.js';
 import { runPath } from '../files/workspace-paths.js';
+import type { LanguagePackRegistry } from './packs/pack-registry.js';
 import { parseCodeMap } from './codemap/codemap-json.js';
 
 // RF-200, RF-005, RF-126, data-model.md sections 3.3, 3.4 and 3.6: the code map and the snapshot of
@@ -29,6 +30,8 @@ export interface FileScanResultsOptions {
   readonly logger: Logger;
   /** RF-155: the folders of the rendered workbooks a snapshot lists (none when unset). */
   readonly workbookFolders?: (snapshotKey: string) => Promise<readonly string[]>;
+  /** P5-31: the language packs, which read the markup of the pages a screen card cites. */
+  readonly packs?: LanguagePackRegistry;
 }
 
 function missing(detail: string): RosettaError {
@@ -82,7 +85,15 @@ export class FileScanResults implements ScanResults {
     const workbookFolders = await this.options.workbookFolders?.(snapshotKey);
     const listed =
       workbookFolders === undefined || workbookFolders.length === 0 ? {} : { workbookFolders };
-    return { codeMap, codeMapHash, reader, source, ...listed };
+    return { codeMap, codeMapHash, reader, source, ...listed, ...this.markupReader() };
+  }
+
+  private markupReader(): Pick<ScannedSource, 'pageMarkup'> {
+    const { packs } = this.options;
+    if (packs === undefined) return {};
+    return {
+      pageMarkup: (path, text) => packs.packFor(path)?.pageMarkup?.({ path, text }),
+    };
   }
 
   private async codeMapOf(

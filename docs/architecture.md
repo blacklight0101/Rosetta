@@ -666,7 +666,13 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   the reason "The cited lines do not contain the field name X."; a name with no letter or digit, lines the scan
   did not read and every other claim are undecided and go to the model. Such a verdict names the model `rule`
   (it is a verdict, not a gap: DEC-18, DEC-19), and `verify.judgement.ended` counts them in `withoutModel`
-  (the claims of the rendered-file rule above are in it too). The answer is exactly `Reason: <one line>` then `Verdict: Supported|Rejected` (`verdict-answer.ts`; the verdict word
+  (the claims of the rendered-file rule above are in it too). P5-31: the screen claims of a page whose markup a
+  language pack read (`with-page-markup.ts`, `PageMarkup`, `webforms-markup.ts` in the C# pack) cite only the
+  lines of the element they state: a link reads "<text> links to <target>", a button with a handler "<text>
+  starts <handler>", a field is "required" only with a required attribute or a validator in the markup, and the
+  route claim of a page whose route is its file path ("The screen is at the route /Web/Page.aspx") cites the
+  page directive and is decided by the code (`screen-route-check.ts`: the route is the path of the one file cited);
+  a page whose route is configured elsewhere gets no route claim from its file path. The answer is exactly `Reason: <one line>` then `Verdict: Supported|Rejected` (`verdict-answer.ts`; the verdict word
   is compared in ASCII, so a Unicode case fold such as `ſupported` is no verdict); any other
   answer, a tool call or a cut answer gets one retry that names the problem (`prompts/verifier/retry.v1.md`), and a
   second bad answer leaves the claim `Unverified`. A failed call leaves it `Unverified` with its code. A cap

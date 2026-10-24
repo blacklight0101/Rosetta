@@ -1,4 +1,4 @@
-import { withoutBookkeeping } from '../cards/bookkeeping-claims.js';
+import { finishedDrafts } from '../cards/finished-drafts.js';
 import { areaCoverage } from '../../domain/cards/area-coverage.js';
 import type { Card } from '../../domain/cards/card.js';
 import type { TaskCards } from '../../domain/cards/card-ids.js';
@@ -41,9 +41,7 @@ async function runOne(parts: DeepenParts, task: ReaderTask, log: TaskLog): Promi
       return failedOutcome(error);
     },
   );
-  // P3-110, EV-26: claims that only restate card ids or cite a non-file never reach the check.
-  const where = { agentTaskId: task.agentTaskId, codeMap: parts.scanned.codeMap };
-  const outcome = await withoutBookkeeping(parts.execution.events, where, read);
+  const outcome = await finishedDrafts(parts, task.agentTaskId, read);
   if (outcome.rawOutputs.length > 0) {
     const scope = scopeOf(parts.execution.run);
     await parts.deps.cards.writeInvalidOutput(scope, task.agentTaskId, outcome.rawOutputs);

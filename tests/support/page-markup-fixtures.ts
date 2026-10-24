@@ -10,7 +10,7 @@ import { draftOf } from './card-fixtures.js';
 export const contactPath = 'Web/Contact.aspx';
 
 /** The lines of the page; the line numbers of the tests count from 1. */
-export const contactLines = [
+const contactLines = [
   '<%@ Page Language="C#" CodeBehind="Contact.aspx.cs" Inherits="Demo.Contact" %>',
   '<html>',
   '<body>',

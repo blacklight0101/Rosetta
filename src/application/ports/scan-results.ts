@@ -1,4 +1,5 @@
 import type { CodeMap } from '../../domain/code-map/code-map.js';
+import type { PageMarkup } from '../../domain/cards/page-markup.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { RepositoryReader } from './repository-reader.js';
 import type { ResolvedSource } from './run-executor.js';
@@ -20,6 +21,11 @@ export interface ScannedSource {
    * or empty for a GitHub snapshot and for a zip without workbooks.
    */
   readonly workbookFolders?: readonly string[];
+  /**
+   * P5-31: the markup of a page file as the language pack of its extension reads it; absent when
+   * the run has no packs. Undefined for a file no pack reads as a page.
+   */
+  readonly pageMarkup?: (path: string, text: string) => PageMarkup | undefined;
 }
 
 export interface ScanResults {

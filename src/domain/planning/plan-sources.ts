@@ -2,12 +2,14 @@ import type { CardType, ClaimStatus } from '../cards/card-vocabulary.js';
 import type { Citation } from '../cards/citation.js';
 import {
   actionClaimTexts,
+  actionMarkupTexts,
   detailKindOf,
   type DetailKind,
   fieldClaimText,
   leadsToClaimText,
   roleClaimText,
   routeClaimText,
+  routeFileClaimText,
 } from '../cards/screen-claims.js';
 
 // RF-604, ADR-005: what `plan` takes from the cards of an understand run. Only claims the verifier
@@ -116,19 +118,29 @@ function supportedScreen(card: SourceCard, all: readonly SourceClaim[]): { scree
   if (screen === undefined) return {};
   const judge = judgementOf(all);
   const kept = (kind: DetailKind, text: string): boolean => judge(kind, text) !== 'unsupported';
+  // P5-31: the route of a page whose route is its file path has a claim of its own.
+  const keptRoute = (route: string): boolean =>
+    kept('route', routeClaimText(route)) || kept('route', routeFileClaimText(route));
+  // P5-31: a link of the markup states the target as "<text> links to <target>".
+  const linked = (target: string): boolean =>
+    all.some((claim) => isSupported(claim) && claim.text.endsWith(` links to ${target}.`));
   const fields = screen.fields.map((field) => ({
     field,
     judged: judge('field', fieldClaimText(field)),
   }));
   const actions = screen.actions.filter((action) =>
-    actionClaimTexts(screen.actions, action).some((text) => judge('action', text) === 'supported'),
+    [...actionClaimTexts(screen.actions, action), ...actionMarkupTexts(action)].some(
+      (text) => judge('action', text) === 'supported',
+    ),
   );
   return {
     screen: {
       ...screen,
-      route: kept('route', routeClaimText(screen.route)) ? screen.route : '',
+      route: keptRoute(screen.route) ? screen.route : '',
       roles: screen.roles.filter((role) => kept('role', roleClaimText(role))),
-      leadsTo: screen.leadsTo.filter((target) => kept('leadsTo', leadsToClaimText(target))),
+      leadsTo: screen.leadsTo.filter(
+        (target) => kept('leadsTo', leadsToClaimText(target)) || linked(target),
+      ),
       fields: fields.filter(({ judged }) => judged === 'supported').map(({ field }) => field),
       uncheckedFields: fields
         .filter(({ judged }) => judged === 'unstated')

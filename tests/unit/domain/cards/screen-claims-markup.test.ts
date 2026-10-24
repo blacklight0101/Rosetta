@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createCard } from '../../../../src/domain/cards/card.js';
-import { leadsToClaimText, routeClaimText } from '../../../../src/domain/cards/screen-claims.js';
+import {
+  leadsToClaimText,
+  routeFileClaimText,
+} from '../../../../src/domain/cards/screen-claims.js';
 import {
   contactDraft,
   contactMarkup,
@@ -88,7 +91,7 @@ describe('P5-31 the evidence of a field with markup', () => {
 
 describe('P5-31 the route, links and leftovers of a page with markup', () => {
   it('P5-31 the route of a page whose route is its file path cites the page directive only', () => {
-    const route = claimsOf().find((claim) => claim.text === routeClaimText(`/${contactPath}`));
+    const route = claimsOf().find((claim) => claim.text === routeFileClaimText(`/${contactPath}`));
 
     expect(route?.citations).toEqual(cite(1));
   });
