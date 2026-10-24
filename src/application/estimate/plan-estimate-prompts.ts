@@ -6,7 +6,8 @@ import { screenCardsOf } from '../../domain/planning/target-ux.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { apiContractMessage } from '../plan/api-contract-message.js';
-import { dataModelMessage } from '../plan/data-model-message.js';
+import { dataModelBatches } from '../plan/data-model-batches.js';
+import { dataModelMessage, packableCards } from '../plan/data-model-message.js';
 import { flowsMessage } from '../plan/flows-message.js';
 import type { PlanInputs } from '../plan/plan-inputs.js';
 import { withWorkbookGuidance } from '../plan/plan-workbook.js';
@@ -115,6 +116,30 @@ function packed(
   return { ...call, message: once(omitted), omitted: omitted.size };
 }
 
+/**
+ * P5-38, RF-623: one data-model call for each batch of entities, as the run asks them, so the
+ * estimate counts every call the guard will check. A batch that is retried smaller is not counted:
+ * the high figure already reserves the continuations of each call.
+ */
+function dataModelCalls(
+  supported: ReturnType<typeof supportedCards>,
+  brief: PlanInputs['brief'],
+  file: PromptFile,
+  window: PlanWindow | undefined,
+): PlannedCall[] {
+  if (legacyClaimsOf(supported).length === 0) return [];
+  const entities = supported.filter((card) => card.type === 'ENT');
+  const batches = dataModelBatches(entities, window?.maxOutputTokens ?? Number.MAX_SAFE_INTEGER);
+  return batches.map((batch) =>
+    packed(window, { kind: 'dataModel', file }, packableCards(supported, batch), (omitted) =>
+      dataModelMessage(
+        { cards: supported, brief, omitted, batch: batches.length === 1 ? undefined : batch },
+        () => TAG,
+      ),
+    ),
+  );
+}
+
 /** The calls after the plan and the PRD, each only when the run would make it. */
 function documentCalls(
   supported: ReturnType<typeof supportedCards>,
@@ -127,14 +152,7 @@ function documentCalls(
   // RF-625: the plan's components are not known yet; the block is sized at the plan answer's limits.
   const components = assumedComponents();
   const calls: (PlannedCall | undefined)[] = [
-    legacyClaimsOf(supported).length === 0
-      ? undefined
-      : packed(
-          window,
-          { kind: 'dataModel', file: files.dataModel },
-          supported.filter((card) => card.type === 'ENT'),
-          (omitted) => dataModelMessage({ cards: supported, brief, omitted }, () => TAG),
-        ),
+    ...dataModelCalls(supported, brief, files.dataModel, window),
     flowCards.length === 0
       ? undefined
       : whole(

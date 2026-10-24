@@ -1,5 +1,5 @@
 import { searchJson } from '../cards/extract-json.js';
-import { resumePoint } from './json-tail.js';
+import { openElementStart, resumePoint } from './json-tail.js';
 import type { FinishReason } from '../ports/llm-provider.js';
 
 // RF-604, RF-208, RF-007: a planner answer that stops inside its JSON because the model hit the
@@ -56,14 +56,19 @@ const valueStart = /^\s*(?:["{}[\],:]|-?\d|(?:true|false|null)\b)/u;
  * ever cut out of it, since a repeat of the tail cannot be told from identical items or repeated
  * text, and cutting would silently change the JSON. A fragment that does not start like JSON is
  * not joined: the answer stays cut off (RST-1805). A fragment that starts the answer again
- * replaces it.
+ * replaces it. A fragment that begins the next list item where the cut item wants its next key
+ * replaces the unfinished item (P5-38).
  */
 // RF-604
 export function joinContinuation(earlier: string, fragment: string): string {
   const base = resumePoint(earlier);
   const head = base.trimStart().slice(0, RESTART_PREFIX);
   if (head.length >= MIN_RESTART && fragment.trimStart().startsWith(head)) return fragment;
-  return valueStart.test(fragment) ? base + fragment : base;
+  if (!valueStart.test(fragment)) return base;
+  // P5-38: a fragment that opens a new element where the base wants a key (the model began the next
+  // list item instead of finishing the cut one) replaces the unfinished item, so the join is JSON.
+  const unfinished = /^\s*[{[]/u.test(fragment) ? openElementStart(base) : null;
+  return unfinished === null ? base + fragment : base.slice(0, unfinished) + fragment;
 }
 
 /** RST-1805: the cause and the setting that fixes it. */

@@ -95,6 +95,7 @@ function tableOf(draft: DraftTable, claims: ClaimIndex, tally: Tally): ModelTabl
     uniqueKeys: keepWhere(draft.uniqueKeys, (key) => allIn(names, key), tally),
     checks: draft.checks,
     indexes: keepWhere(draft.indexes, (index) => allIn(names, index.columns), tally),
+    ...(draft.copiedFromLegacy === true ? { copiedFromLegacy: true } : {}),
   };
 }
 

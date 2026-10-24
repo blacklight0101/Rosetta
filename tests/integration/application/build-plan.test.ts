@@ -144,7 +144,7 @@ describe('BuildPlan: the run manifest', () => {
       'planner/package.v9.md': { version: 'v9', sha256: await sha('package.v9.md') },
       'planner/continue.v1.md': { version: 'v1', sha256: await sha('continue.v1.md') },
       'planner/prd.v4.md': { version: 'v4', sha256: await sha('prd.v4.md') },
-      'planner/data-model.v3.md': { version: 'v3', sha256: await sha('data-model.v3.md') },
+      'planner/data-model.v4.md': { version: 'v4', sha256: await sha('data-model.v4.md') },
       'planner/flows.v2.md': { version: 'v2', sha256: await sha('flows.v2.md') },
       'planner/api-contract.v1.md': { version: 'v1', sha256: await sha('api-contract.v1.md') },
       'planner/ux.v1.md': { version: 'v1', sha256: await sha('ux.v1.md') },
