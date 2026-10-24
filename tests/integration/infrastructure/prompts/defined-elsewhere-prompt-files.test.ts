@@ -25,11 +25,11 @@ describe('the prompts of the defined-elsewhere retry', () => {
     );
   });
 
-  it('RF-301 the verifier prompt v4 tells how to name the reason kind, and v3 does not', async () => {
+  it('RF-301 the verifier prompt v5 (built on v4) tells how to name the reason kind, and v3 does not', async () => {
     const { system } = await loadVerifierPrompts('prompts');
     const old = await loadPromptFile('prompts', 'verifier/claim.v3.md');
 
-    expect(system.sha256).toBe(await sha256Of('prompts/verifier/claim.v4.md'));
+    expect(system.sha256).toBe(await sha256Of('prompts/verifier/claim.v5.md'));
     expect(system.text).toMatch(/Kind: defined elsewhere/u);
     expect(old.text).not.toMatch(/Kind: defined elsewhere/u);
   });

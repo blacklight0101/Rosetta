@@ -228,9 +228,16 @@ export function emptyCounts(): Record<SecretKind, number> {
   };
 }
 
+/** The text a masked secret of a kind is replaced with; it starts with `[MASKED:<kind>]`. */
+export type ReplacementOf = (kind: SecretKind) => string;
+
+/** RF-141: the bare marker, the replacement unless the masker is given the text of a prompt file. */
+const bareMarker: ReplacementOf = (kind) => `[MASKED:${kind}]`;
+
 function applyRule(
   text: string,
   rule: MaskRule,
+  replacement: ReplacementOf,
 ): { readonly text: string; readonly count: number } {
   let masked = '';
   let position = 0;
@@ -239,7 +246,7 @@ function applyRule(
     const keep = match.groups?.['keep'] ?? '';
     const secret = match[0].slice(keep.length);
     masked += text.slice(position, match.index) + keep;
-    masked += `[MASKED:${rule.kind}]${lineBreaksOf(secret)}`;
+    masked += `${replacement(rule.kind)}${lineBreaksOf(secret)}`;
     position = match.index + match[0].length;
     count += 1;
   }
@@ -250,9 +257,15 @@ function applyRule(
 // citations stay valid. Any internal failure is thrown as RST-2101 and callers fail closed (DEC-57).
 export class SecretMasker implements TextMasker {
   private readonly rules: readonly MaskRule[];
+  private readonly replacement: ReplacementOf;
 
-  constructor(rules: readonly MaskRule[] = defaultRules) {
+  /**
+   * P5-34: `replacement` is the text a masked value gets; the egress masker gets the note of the
+   * prompt file (it tells the model a plain-text value is written there), the rest the bare marker.
+   */
+  constructor(rules: readonly MaskRule[] = defaultRules, replacement: ReplacementOf = bareMarker) {
     this.rules = rules;
+    this.replacement = replacement;
   }
 
   mask(text: string): MaskResult {
@@ -260,7 +273,7 @@ export class SecretMasker implements TextMasker {
       const counts = emptyCounts();
       let masked = text;
       for (const rule of this.rules) {
-        const result = applyRule(masked, rule);
+        const result = applyRule(masked, rule, this.replacement);
         masked = result.text;
         counts[rule.kind] += result.count;
       }

@@ -18,6 +18,7 @@ import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { FilePlanningBriefStore } from '../infrastructure/files/file-planning-brief-store.js';
 import { runPath } from '../infrastructure/files/workspace-paths.js';
 import { JsonlEgressLog } from '../infrastructure/guards/jsonl-egress-log.js';
+import { MaskedLineFinder } from '../infrastructure/guards/masked-line-finder.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { FileHandoffWriter } from '../infrastructure/handoff/file-handoff-writer.js';
 import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
@@ -33,6 +34,7 @@ import {
   loadGapPrompt,
   loadGapRepairPrompt,
   loadPlanRepairPrompt,
+  loadPlannerSecretRiskPrompt,
   loadPlannerPromptTexts,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
@@ -98,6 +100,8 @@ export function composePlan(parts: PlanParts): BuildPlan {
     gapPrompt: () => loadGapPrompt(promptsFolder),
     gapRepairPrompt: () => loadGapRepairPrompt(promptsFolder),
     planRepairPrompt: () => loadPlanRepairPrompt(promptsFolder),
+    secretRiskPrompt: () => loadPlannerSecretRiskPrompt(promptsFolder),
+    secretLines: new MaskedLineFinder(masker),
     ids: parts.ids,
   });
 }

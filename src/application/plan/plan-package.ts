@@ -10,6 +10,8 @@ import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
 import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content.js';
+import { addSecretRisks, type SecretRisks } from '../../domain/planning/secret-risks.js';
+import type { ScanFacts } from './plan-scan-facts.js';
 import { addStyleRisks, checkStyle } from '../../domain/planning/style-rules.js';
 import {
   excludedClaims,
@@ -24,7 +26,6 @@ import { placeOf } from './plan-repair.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
 import type { PlannedDocuments } from './plan-documents.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
-import type { WorkbookFormulas } from '../../domain/planning/workbook-formulas.js';
 import type { PlanInputs } from './plan-inputs.js';
 
 // RF-601..RF-604, RF-621, DEC-80: the hand-off package of a plan run from its inputs, the planner's checked
@@ -61,12 +62,17 @@ function contentOf(
     readonly styleCheck: HandoffPackage['styleCheck'];
     readonly style: PackagePrinciple;
     readonly questions: PlanInputs['questions'];
+    readonly secrets: SecretRisks;
   },
 ): PlanContent {
-  const { styleCheck, style, questions } = checked;
+  const { styleCheck, style, questions, secrets } = checked;
   return {
     ...content,
-    risks: addStyleRisks(content.risks, styleCheck, style.title),
+    risks: addSecretRisks(
+      addStyleRisks(content.risks, styleCheck, style.title),
+      secrets.sites,
+      secrets.template,
+    ),
     ...settledJudgements(content, questions),
   };
 }
@@ -176,9 +182,24 @@ function stackFindings(
 /** The parts of the planned documents the package carries as they are. */
 function carried(
   documents: Pick<HandoffPackage, 'workbookFormulas' | 'incomplete' | 'leftOut'>,
+  secrets: SecretRisks,
 ): Pick<HandoffPackage, 'workbookFormulas' | 'incomplete' | 'leftOut'> {
   const { workbookFormulas, incomplete, leftOut } = documents;
-  return { workbookFormulas, incomplete, leftOut };
+  return { workbookFormulas, incomplete, leftOut: [...leftOut, ...unreadSecretItems(secrets)] };
+}
+
+/** P5-34: a scan that could not be read is not "no plain-text secret"; checks.md says so. */
+function unreadSecretItems(secrets: SecretRisks): HandoffPackage['leftOut'] {
+  if (secrets.unread !== true) return [];
+  return [
+    {
+      area: 'Risks',
+      item: 'Plain-text secrets',
+      field: 'scan',
+      reason:
+        'The scan could not be read, so the risks do not list the files that hold a plain-text secret. None was found and none was ruled out.',
+    },
+  ];
 }
 
 /** P5-42: the plan with its fixed cards, with the brief's choices decided once over it. */
@@ -210,19 +231,22 @@ function meaningOf(
   return claimMeaning({ plan, prd, flows, sources, overruled }, catalogue.claimVerbs);
 }
 
-// RF-601, RF-604
-export function handoffPackageOf(
-  inputs: PlanInputs,
-  content: PlanContent,
-  catalogue: Catalogue,
-  documents: PlannedDocuments & {
-    readonly workbookFormulas: WorkbookFormulas | undefined;
+/** The documents of the planner and what the scan gave, besides the plan itself. */
+type PackageDocuments = PlannedDocuments &
+  ScanFacts & {
     readonly leftOut: HandoffPackage['leftOut'];
     /** P3-117: the texts of the planner prompts the example sentences are read from. */
     readonly examples: readonly string[];
     /** P5-39: what Rosetta proposed for the kind, the open stack layers and the strategy. */
     readonly proposal: PlanProposal | undefined;
-  },
+  };
+
+// RF-601, RF-604
+export function handoffPackageOf(
+  inputs: PlanInputs,
+  content: PlanContent,
+  catalogue: Catalogue,
+  documents: PackageDocuments,
 ): HandoffPackage {
   const { prd, dataModel, flows, apiContract, ux } = documents;
   const { brief, sourceRun, project, cards, questions, upload } = inputs;
@@ -237,7 +261,12 @@ export function handoffPackageOf(
     brief,
     style,
     principles: brief.principles.map((id) => principleOf(catalogue, id)),
-    content: contentOf(decided.content, { styleCheck, style, questions }),
+    content: contentOf(decided.content, {
+      styleCheck,
+      style,
+      questions,
+      secrets: documents.secrets,
+    }),
     ...{ choices: decided.choices, restated: decided.restated },
     styleCheck,
     ...stackFindings(brief, apiContract, catalogue, documents.proposal),
@@ -251,7 +280,7 @@ export function handoffPackageOf(
     apiContract,
     ux,
     prdQuestions: prdQuestions(prd),
-    ...carried(documents),
+    ...carried(documents, documents.secrets),
     copiedExamples: copiedIn(prd, decided.content, documents.examples),
     meaning: meaningOf(decided.content, { ...documents, sources, overruled }, catalogue),
   };

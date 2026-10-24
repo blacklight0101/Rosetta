@@ -35,6 +35,8 @@ export interface PlanPromptSources {
   readonly gapRepairPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the one repair attempt of the plan answer (P3-126). */
   readonly planRepairPrompt: () => Promise<PromptFile>;
+  /** The wording of the plan risk for a file that holds a masked secret (P5-34, RF-608). */
+  readonly secretRiskPrompt: () => Promise<PromptFile>;
   /**
    * P3-117: the text of every planner prompt file of every version, for the check of copied
    * examples; the prompts of the run alone when absent.
@@ -46,7 +48,14 @@ export interface PlanPromptSources {
 
 type PlanPrompts = Readonly<
   Record<
-    keyof DocumentPrompts | 'plan' | 'coverage' | 'gap' | 'gapRepair' | 'planRepair' | 'continue',
+    | keyof DocumentPrompts
+    | 'plan'
+    | 'coverage'
+    | 'gap'
+    | 'gapRepair'
+    | 'planRepair'
+    | 'continue'
+    | 'secretRisk',
     PromptFile
   >
 >;
@@ -79,6 +88,7 @@ export async function loadPlanFiles(
     gapRepair,
     cont,
     planRepair,
+    secretRisk,
   ] = await Promise.all([
     sources.catalogue(),
     sources.prompt(),
@@ -92,12 +102,13 @@ export async function loadPlanFiles(
     sources.gapRepairPrompt(),
     sources.continuePrompt(),
     sources.planRepairPrompt(),
+    sources.secretRiskPrompt(),
   ]);
   const guidance = await workbookGuidanceFor(sources, inputs);
   const older = (await sources.promptTexts?.()) ?? [];
   const prompts = {
     ...{ plan: withWorkbookGuidance(plan, guidance), prd, dataModel, flows },
-    ...{ apiContract, ux, coverage, gap, gapRepair, planRepair, continue: cont },
+    ...{ apiContract, ux, coverage, gap, gapRepair, planRepair, secretRisk, continue: cont },
   };
   const examples = [...Object.values(prompts).map((file) => file.text), ...older];
   return { catalogue, prompts, examples, ...(guidance === undefined ? {} : { guidance }) };

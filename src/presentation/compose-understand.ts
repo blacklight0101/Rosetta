@@ -21,6 +21,7 @@ import type { OutputWriter } from '../application/ports/output-writer.js';
 import { runPath } from '../infrastructure/files/workspace-paths.js';
 import { SnapshotStore } from '../infrastructure/github/snapshot-store.js';
 import { JsonlEgressLog } from '../infrastructure/guards/jsonl-egress-log.js';
+import { MaskedLineFinder } from '../infrastructure/guards/masked-line-finder.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import {
   loadAnswersPrompt,
@@ -30,6 +31,7 @@ import {
   loadOverviewPrompt,
   loadReaderPrompts,
 } from '../infrastructure/prompts/prompt-files.js';
+import { loadMaskedValuePrompt } from '../infrastructure/prompts/masked-value-prompt.js';
 import { loadVerifierPrompts } from '../infrastructure/prompts/verifier-prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
 import { loadTextToolProtocol } from '../infrastructure/providers/ollama/text-tool-protocol-file.js';
@@ -134,6 +136,8 @@ export function composeUnderstand(parts: UnderstandParts): RunUnderstand {
     mergePrompt: () => loadMergePrompt(promptsFolder),
     overviewPrompt: () => loadOverviewPrompt(promptsFolder),
     verifierPrompts: () => loadVerifierPrompts(promptsFolder),
+    maskedValuePrompt: () => loadMaskedValuePrompt(promptsFolder),
+    secretLines: new MaskedLineFinder(masker),
     textToolProtocol: () => loadTextToolProtocol(promptsFolder),
     answersPrompt: () => loadAnswersPrompt(promptsFolder),
     rereadPrompt: () => loadRereadPrompt(promptsFolder),
