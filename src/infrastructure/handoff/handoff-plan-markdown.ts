@@ -1,6 +1,7 @@
 import { tablesOfEntity } from './handoff-entity-tables.js';
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { componentDiagram } from '../../domain/diagrams/component-diagram.js';
+import type { DraftEntity } from '../../domain/planning/plan-draft.js';
 import type { PlanDecision } from '../../domain/planning/plan-content.js';
 import { fenced } from '../cards/flow-diagram-section.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
@@ -117,14 +118,24 @@ export function decisionMarkdown(decision: PlanDecision, esc: MarkdownEscaper): 
   ].join('\n');
 }
 
+/** The notes of the planner, then its own name for the target when that is not one of the tables. */
+function notesOf(entity: DraftEntity, tables: readonly string[]): string {
+  const named = entity.target.trim();
+  const same = tables.some((name) => name.toLowerCase() === named.toLowerCase());
+  return [entity.notes, named === '' || same ? '' : `The planner named it ${named}.`]
+    .filter((part) => part !== '')
+    .join(' ');
+}
+
 const noTable = 'No table in the target data model';
 
 // RF-601, RF-602, P5-33
 export function entityMappingMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const rows = handoff.content.entities.map((entity) => {
-    const tables = tablesOfEntity(entity, handoff.dataModel).map((name) => esc.inline(name));
-    const target = tables.length === 0 ? noTable : tables.join(', ');
-    return `| ${esc.inline(entity.legacy)} | ${target} | ${esc.inline(entity.notes)} | ${sourceLinks(entity.sources)} |`;
+    const tables = tablesOfEntity(entity, handoff.dataModel);
+    const target =
+      tables.length === 0 ? noTable : tables.map((name) => esc.inline(name)).join(', ');
+    return `| ${esc.inline(entity.legacy)} | ${target} | ${esc.inline(notesOf(entity, tables))} | ${sourceLinks(entity.sources)} |`;
   });
   return [
     '# Entity mapping',

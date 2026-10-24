@@ -49,12 +49,12 @@ function isCode(name: string): boolean {
 
 const shaped = /_(?:id|code|date|status|type)$|^(?:tbl|tb|t|dim|fact|lkp|ref)_/u;
 
-// P5-33: a form control name (`txt_order_id`, `ddl_status`) is a field of a page, not data; it counts
-// only when the card calls it a table. A name is stated as a table after FROM, JOIN, INTO, UPDATE
-// or `table`, or before the word `table`.
-const control = /^(?:txt|ddl|btn|chk|lbl|cbo|cmb|rdo|lst|grd|dgv|hdn|pnl|img|lnk|drp|cb|rb)_/u;
-const fieldWords =
-  /\b(?:form field|form control|text ?box|input box|dropdown|drop-down|checkbox|button)\b/iu;
+// P5-33: a name the claim itself calls a field, control, input or element (`the field X`, `X field`) is
+// part of a page, not data; it counts only when the card also calls it a table. A name is stated as
+// a table after FROM, JOIN, INTO, UPDATE or `table`, or before the word `table`. Nothing is guessed
+// from the shape of the name, so no language or naming style is assumed (DEC-11).
+const fieldBefore = /\b(?:field|control|input|element)\s+[`[]?$/iu;
+const fieldAfter = /^[`\]]?\s+(?:field|control|input|element)\b/iu;
 const tableBefore = /\b(?:from|join|into|update|table)\s+[`[]?$/iu;
 const tableAfter = /^[`\]]?\s+(?:table\b|is an? (?:\w+ )?table\b)/iu;
 
@@ -66,8 +66,8 @@ function statedAsTable(before: string, after: string, name: string): boolean {
   );
 }
 
-function isFormField(before: string, after: string, name: string): boolean {
-  return control.test(name) || fieldWords.test(before.slice(-30) + after.slice(0, 30));
+function isFormField(before: string, after: string): boolean {
+  return fieldBefore.test(before.slice(-14)) || fieldAfter.test(after.slice(0, 16));
 }
 
 interface Named {
@@ -90,7 +90,7 @@ function namesOf(text: string): Named[] {
       const after = text.slice(at + match[0].length);
       const table = statedAsTable(before, after, name);
       const strong = table || match[1] !== undefined || shaped.test(name);
-      return { name, strong, table, field: !table && isFormField(before, after, name) };
+      return { name, strong, table, field: !table && isFormField(before, after) };
     })
     .filter(({ field }) => !field)
     .filter(({ name, table }) => name !== '' && (table || !isCode(name)));
