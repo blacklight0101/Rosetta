@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { planMessage } from '../../../../src/application/plan/plan-message.js';
 import { scanDataBlocks } from '../../../../src/domain/egress/data-block-scan.js';
 import { buildBrief } from '../../../../src/domain/planning/planning-brief.js';
-import type { SourceCard } from '../../../../src/domain/planning/plan-sources.js';
+import { supportedCards, type SourceCard } from '../../../../src/domain/planning/plan-sources.js';
 import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 import { SequenceIdGenerator } from '../../../support/sequence-id-generator.js';
 
@@ -78,5 +78,32 @@ describe('planMessage: the choices the planner follows', () => {
 
     expect(text).toContain('"strategy": "strangler-fig"');
     expect(text).toContain('one part at a time');
+  });
+});
+
+describe('planMessage claim ids', () => {
+  const claim = (number: number, text: string, status: 'Supported' | 'Rejected') => ({
+    ...{ claimId: `FEAT-001.c${String(number)}`, text, status },
+    citations: [{ path: 'src/A.cs', startLine: number, endLine: number + 1 }],
+  });
+  const withRejected: SourceCard = {
+    ...{ id: 'FEAT-001', type: 'FEAT', title: 'Orders', summary: 'S.', area: 'orders' },
+    claims: [
+      claim(1, 'Checkout is rejected text.', 'Rejected'),
+      claim(2, 'Orders over 50 ship free.', 'Supported'),
+      claim(3, 'The receipt date is fixed.', 'Supported'),
+    ],
+  };
+
+  it('P5-41 RF-631 each claim carries its own id, which counts the claims the verifier rejected', () => {
+    const ids = new SequenceIdGenerator();
+    const text = planMessage(
+      { cards: supportedCards([withRejected]), brief, catalogue: shippedCatalogue, answered },
+      () => ids.dataBlockTag(),
+    );
+
+    expect(text).not.toContain('Checkout is rejected text.');
+    expect(text).toMatch(/"claimId": "FEAT-001\.c2",\s+"text": "Orders over 50 ship free\."/u);
+    expect(text).toMatch(/"claimId": "FEAT-001\.c3",\s+"text": "The receipt date is fixed\."/u);
   });
 });

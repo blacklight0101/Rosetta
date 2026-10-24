@@ -147,3 +147,26 @@ describe('the planner prompt', () => {
     expect(section).not.toMatch(/\b(c#|\.net|asp|java|php|python|sql server|bcrypt)\b/iu);
   });
 });
+
+describe('a contradicts item that does not read', () => {
+  it('P5-41 RF-631 is left out and listed by task position and field, the others stay', () => {
+    const draft = parsePlanAnswer(
+      answerWith({
+        tasks: [
+          {
+            ...task,
+            contradicts: [
+              { criterion: 0, claim: 'FEAT-001.c2' },
+              { criterion: 1, claim: 'FEAT-001.c2' },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(draft?.tasks[0]?.contradicts).toEqual([{ criterion: 1, claim: 'FEAT-001.c2' }]);
+    expect(draft?.unreadableItems).toEqual([
+      expect.objectContaining({ list: 'tasks.contradicts', position: 1, field: 'contradicts' }),
+    ]);
+  });
+});
