@@ -203,3 +203,46 @@ describe('docs/runbooks/deploy.md: backup, accounts and measurement', () => {
     expect(text).toContain('Pending G-07');
   });
 });
+
+describe('docs/runbooks/deploy.md: owner steps before the first run and recovery', () => {
+  it('ADR-024 lists the owner steps before the first provisioning, with the environment branch rule and the lock', async () => {
+    const text = section(await read(), 'Owner steps before the first run');
+    const steps = text.split('\n').filter((line) => /^\d+\. /u.test(line));
+
+    expect(steps.length).toBeGreaterThanOrEqual(7);
+    for (const fact of [
+      'az provider register',
+      'public',
+      'Deployment branches and tags',
+      '`main` and `v*`',
+      'tag ruleset',
+      'az lock create',
+      'ROSETTA_DEPLOY_ENABLED',
+    ]) {
+      expect(text).toContain(fact);
+    }
+  });
+
+  it('ADR-024 sets no registry for the public GHCR image', async () => {
+    const text = await read();
+
+    expect(text).toContain('no registry');
+    expect(text).not.toContain('az containerapp registry set');
+  });
+
+  it('RF-1306 restores into a new server through the db-server input, and keeps the passwords', async () => {
+    const text = section(await read(), 'Restore');
+
+    expect(text).toContain('az postgres flexible-server restore');
+    expect(text).toContain('db-server');
+    expect(text).toContain('rotate-passwords');
+  });
+
+  it('RF-1306 a backup from the owner machine lifts the lock to remove its firewall rule and puts it back', async () => {
+    const text = section(await read(), 'Backup');
+
+    expect(text).toContain('az lock delete');
+    expect(text).toContain('firewall-rule delete');
+    expect(text.indexOf('az lock delete')).toBeLessThan(text.lastIndexOf('az lock create'));
+  });
+});

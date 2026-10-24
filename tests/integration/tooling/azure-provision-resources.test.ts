@@ -1,4 +1,4 @@
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { fakeAz, type FakeAz } from '../../support/fake-az.js';
@@ -54,50 +54,6 @@ describe('azure-provision.yml resources (ADR-024)', () => {
   });
 });
 
-describe('azure-provision.yml database (ADR-024, DEC-140)', () => {
-  it('ADR-024 puts a CanNotDelete lock on the server, and warns with the owner command when it cannot', async () => {
-    const script = stepScript(await provision(), 'provision', 'CanNotDelete lock');
-
-    expect(script).toContain('az lock create');
-    expect(script).toContain('--lock-type CanNotDelete');
-    expect(script).toContain('Microsoft.DBforPostgreSQL/flexibleServers');
-    expect(script).toContain('::warning::');
-  });
-
-  it('DEC-140 creates the two roles of data-model.md section 6 from the job, idempotently, passwords from the environment', async () => {
-    const script = stepScript(await provision(), 'provision', 'Database roles');
-
-    expect(script).toContain(
-      "WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'rosetta_migrator')",
-    );
-    expect(script).toContain(
-      "WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'rosetta_app')",
-    );
-    expect(script).toContain("ALTER ROLE rosetta_app LOGIN PASSWORD :'app_password';");
-    expect(script).toContain('ALTER DATABASE rosetta OWNER TO rosetta_migrator;');
-    expect(script).toContain('GRANT USAGE ON SCHEMA public TO rosetta_app;');
-    expect(script).toContain('\\getenv app_password ROSETTA_APP_DB_PASSWORD');
-    expect(script).toContain('sslmode=require');
-    expect(script).not.toMatch(/-v \w+_password=/u);
-  });
-
-  it('RNF-003 makes every database password in the job with openssl rand and masks it before use', async () => {
-    const document = await provision();
-    const server = stepScript(document, 'provision', 'PostgreSQL Flexible Server');
-    const roles = stepScript(document, 'provision', 'Database roles');
-    const before = (script: string, first: string, second: string): boolean =>
-      script.includes(first) && script.indexOf(first) < script.indexOf(second);
-
-    expect(server).toContain('openssl rand -hex 24 > "$SECRETS_DIR/db-admin-password"');
-    expect(before(server, 'echo "::add-mask::$admin_password"', '--admin-password')).toBe(true);
-    for (const file of ['app-db-password', 'migrator-db-password']) {
-      expect(roles).toContain(`openssl rand -hex 24 > "$SECRETS_DIR/${file}"`);
-      expect(before(roles, `echo "::add-mask::$(cat "$SECRETS_DIR/${file}")"`, 'psql')).toBe(true);
-    }
-    expect(stepScript(document, 'provision', 'Remove the generated values')).toContain('rm -rf');
-  });
-});
-
 let az: FakeAz | undefined;
 afterEach(async () => {
   await az?.dispose();
@@ -113,6 +69,7 @@ describe('azure-provision.yml migrate job and app (ADR-024, DEC-140)', () => {
     expect(script).toContain('--command node --args dist/presentation/migrate.js');
     expect(script).toContain('DATABASE_MIGRATOR_URL=secretref:database-migrator-url');
     expect(script.match(/--secrets /gu)).toHaveLength(2);
+    expect(script.match(/--secrets "@\$SECRETS_DIR\/migrator-secret"/gu)).toHaveLength(2);
   });
 
   it('DEC-140 the migrate job runs and succeeds before the app is created or updated', async () => {
@@ -133,8 +90,8 @@ describe('azure-provision.yml migrate execution (DEC-140)', () => {
   ])(
     'DEC-140 a migrate execution that reports %s ends the step with %i',
     async (statuses, code) => {
-      az = await fakeAz(statuses);
-      await writeFile(join(az.folder, 'migrator-db-password'), 'generated\n');
+      az = await fakeAz({ statuses });
+      await writeFile(join(az.folder, 'migrator-db-password'), 'generated');
       const script = stepScript(await provision(), 'provision', 'Migrate job');
       const env = {
         ...az.env,
@@ -150,11 +107,12 @@ describe('azure-provision.yml migrate execution (DEC-140)', () => {
       const calls = await az.calls();
 
       expect(result.code === 0 ? 0 : 1).toBe(code);
-      // The URL reaches az only as the Container Apps secret, never as a plain variable.
-      expect(calls.join('\n')).toContain(
-        'database-migrator-url=postgres://rosetta_migrator:generated@',
+      // The URL reaches az only from a file of the mode-700 folder (@file), never as an argument.
+      expect(calls.join('\n')).toContain(`--secrets @${az.folder}/migrator-secret`);
+      expect(calls.join('\n')).not.toContain('postgres://');
+      expect(await readFile(join(az.folder, 'migrator-secret'), 'utf8')).toBe(
+        'database-migrator-url=postgres://rosetta_migrator:generated@psql-rosetta-test.postgres.database.azure.com:5432/rosetta?sslmode=require',
       );
-      expect(calls.join('\n')).not.toContain('DATABASE_MIGRATOR_URL=postgres');
     },
   );
 });

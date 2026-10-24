@@ -118,29 +118,58 @@ describe('GitHub Actions workflows: Azure login (P1-184, ADR-024)', () => {
   });
 });
 
-// A line that echoes or prints a secret-looking variable is allowed only to mask it, or to pipe it
-// to a --password-stdin login.
-const sensitive = /\$\{?\w*(?:password|secret|token|_key|database_url|migrator_url)\w*/iu;
+// What may put a secret on the log: a secret-looking variable or the generated-values folder
+// ($SECRETS_DIR) in an echo, printf, cat or tee, and any shell trace or environment dump. An echo
+// or printf is allowed only to mask the value, to pipe it to a --password-stdin login, or to write
+// it into the generated-values folder; cat and tee are never allowed on them (read with $(< file)).
+const sensitive =
+  /\$\{?(?:\w*(?:password|secret|token|_key|database_url|migrator_url)\w*|SECRETS_DIR)\b/iu;
+const dump = /\bset\s+(?:-\w*x|-o\s+xtrace)\b|(?:^|[;&|(]\s*)(?:env|printenv)\s*(?:$|[;&|>)])/u;
+const kept = (line: string): boolean =>
+  line.includes('::add-mask::') ||
+  line.includes('--password-stdin') ||
+  line.includes('> "$SECRETS_DIR/');
 const printed = (lines: string[]): string[] =>
   runLines(lines)
-    .filter((line) => /\b(?:echo|printf)\b/u.test(line) && sensitive.test(line))
-    .filter((line) => !line.includes('::add-mask::') && !line.includes('--password-stdin'))
+    .filter(
+      (line) =>
+        dump.test(line.trim()) ||
+        (/\b(?:cat|tee)\b/u.test(line) && sensitive.test(line)) ||
+        (/\b(?:echo|printf)\b/u.test(line) && sensitive.test(line) && !kept(line)),
+    )
     .map((line) => line.trim());
 
 describe('GitHub Actions workflows: no secret on the log (P1-184)', () => {
-  it('RNF-003 no run: step echoes a secrets. value or a generated password', async () => {
+  it('RNF-003 no run: step prints a secrets. value or a generated password', async () => {
     expect(await violations(({ lines }) => printed(lines))).toEqual([]);
   });
 
-  it('RNF-003 the check itself catches an echo of a password and lets a mask through', () => {
+  it('RNF-003 the check itself catches every way of printing a secret and lets a mask or a file write through', () => {
+    const leaks = [
+      'echo "$ROSETTA_ADMIN_PASSWORD"',
+      'cat "$SECRETS_DIR/db-admin-password"',
+      'printf \'%s\' "$(< "$SECRETS_DIR/app-db-password")"',
+      'tee -a "$GITHUB_STEP_SUMMARY" < "$SECRETS_DIR/app-db-password"',
+      'echo "$storage_key" >> "$GITHUB_STEP_SUMMARY"',
+      'set -x',
+      'set -eux',
+      'printenv',
+      'env | sort',
+    ];
+    const allowed = [
+      'echo "::add-mask::$admin_password"',
+      'echo "::add-mask::$(< "$SECRETS_DIR/app-db-password")"',
+      'printf \'%s\' "$pw" > "$SECRETS_DIR/app-db-password"',
+      'printf \'%s\' "$TOKEN" | docker login ghcr.io --password-stdin',
+      'openssl rand -hex 24 | tr -dc 0-9a-f > "$SECRETS_DIR/app-db-password"',
+    ];
     const lines = [
       '    steps:',
       '      - run: |',
-      '          echo "$ROSETTA_ADMIN_PASSWORD"',
-      '          echo "::add-mask::$admin_password"',
+      ...[...leaks, ...allowed].map((l) => `          ${l}`),
     ];
 
-    expect(printed(lines)).toEqual(['echo "$ROSETTA_ADMIN_PASSWORD"']);
+    expect(printed(lines)).toEqual(leaks);
   });
 
   it('DEC-171 no workflow names the dropped host', async () => {

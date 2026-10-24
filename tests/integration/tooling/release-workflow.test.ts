@@ -111,6 +111,8 @@ describe('release.yml deploy job', () => {
     const deploy = at(await release(), 'jobs', 'deploy');
 
     expect(at(deploy, 'concurrency', 'group')).toBe('deploy-production');
+    // The migrate wait (15 min), the /healthz wait (10 min) and the smoke scan fit with room.
+    expect(at(deploy, 'timeout-minutes')).toBe(40);
     expect(at(deploy, 'concurrency', 'cancel-in-progress')).toBe(false);
   });
 
@@ -164,7 +166,7 @@ afterEach(async () => {
 
 /** Runs the migrate step of the deploy job against a fake az whose execution reports `statuses`. */
 async function migrate(statuses: string): Promise<{ code: number; calls: string[] }> {
-  az = await fakeAz(statuses);
+  az = await fakeAz({ statuses });
   const script = stepScript(await release(), 'deploy', 'Migrate with the new image');
   const env = {
     ...az.env,

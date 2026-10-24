@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { fakeAz, type FakeAz } from '../../support/fake-az.js';
 import {
   at,
   keysOf,
@@ -157,5 +158,49 @@ describe('azure-provision.yml secret placement', () => {
     ]) {
       expect(workflow).toContain(`"${name}":"\${{ secrets.${name} }}"`);
     }
+  });
+});
+
+describe('azure-provision.yml restore input (RF-1306)', () => {
+  let az: FakeAz | undefined;
+  afterEach(async () => {
+    await az?.dispose();
+    az = undefined;
+  });
+
+  /** Runs the names step with the given db-server input; returns its exit code and GITHUB_ENV. */
+  const names = async (server: string): Promise<{ code: number; env: string }> => {
+    az = await fakeAz();
+    const script = stepScript(await provision(), 'provision', 'Work out the resource names');
+    const githubEnv = `${az.folder}/github-env`;
+    const { code } = await runStep(script, {
+      AZURE_SUBSCRIPTION_ID: '00000000-0000-0000-0000-000000000000',
+      AZ_RG: 'rg-rosetta',
+      DB_SERVER: server,
+      RUNNER_TEMP: az.folder,
+      GITHUB_ENV: githubEnv,
+    });
+    return { code, env: await readFile(githubEnv, 'utf8').catch(() => '') };
+  };
+
+  it('RF-1306 an optional db-server input points the provisioning at a restored server', async () => {
+    const input = at(await provision(), 'on', 'workflow_dispatch', 'inputs', 'db-server');
+
+    expect(at(input, 'required')).toBe(false);
+    expect((await names('psql-rosetta-restored')).env).toContain(
+      'AZ_DB_SERVER=psql-rosetta-restored',
+    );
+  });
+
+  it('RF-1306 without the input the server name is the stable one made from the subscription', async () => {
+    const { code, env } = await names('');
+
+    expect(code).toBe(0);
+    expect(env).toMatch(/^AZ_DB_SERVER=psql-rosetta-[0-9a-f]{8}$/mu);
+    expect(env).toMatch(/^AZ_STORAGE=strosetta[0-9a-f]{8}$/mu);
+  });
+
+  it('RF-1306 refuses a db-server that is not a valid server name', async () => {
+    expect((await names('Bad_Name; rm')).code).not.toBe(0);
   });
 });
