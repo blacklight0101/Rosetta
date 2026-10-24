@@ -1,5 +1,7 @@
 # Runbook: hosted deployment
 
+> **Host changed 2026-10-24 (DEC-171, [ADR-024](../adr/ADR-024-host-on-azure-container-apps-spain-central.md)).** The hosted deployment moves from Railway to Azure Container Apps in Spain Central, because Railway paused new sign-ups; ADR-020 is superseded. The Railway steps below (account, sealed variables, `RAILWAY_TOKEN`, `*.railway.app`, `railway connect`) are kept until the follow-up deploy card rewrites this runbook for Azure (resource group, environment, Azure Files at `/data`, Flexible Server PostgreSQL 17, Container Apps secrets, `azure/login` OIDC, a budget alert of 25 USD). Do not run them.
+
 How Rosetta runs for the teachers: one container image from GHCR on Railway, Hobby plan, region EU West (Amsterdam),
 with a Railway PostgreSQL 17 service, a volume at `/data` and every secret as a sealed Railway variable
 ([ADR-020](../adr/ADR-020-host-on-railway-eu-west.md), RF-1304, DEC-104). The procedure follows

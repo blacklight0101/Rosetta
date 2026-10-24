@@ -79,7 +79,9 @@ For the local Compose stack (the order matters, because the `migrate` service cr
 
 Result: the drill passed. It tried the scripts against the local stack only; the hosted restore is Pending G-07 (below).
 
-## 5. Hosted schedule (Railway)
+## 5. Hosted schedule (Azure Container Apps)
+
+The host is now Azure Container Apps with Azure Database for PostgreSQL Flexible Server (ADR-024, DEC-171). Its own backups are automatic with point-in-time restore over 7 to 35 days, which meets RF-1306; the Railway wording below is kept until the follow-up backup card rewrites this section.
 
 Pending G-07. The hosted deployment does not exist yet (P1-55 waits on G-07 and G-08), so none of this has run there:
 

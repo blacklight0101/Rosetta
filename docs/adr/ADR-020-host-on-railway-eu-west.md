@@ -1,7 +1,7 @@
 # ADR-020: Host the hosted deployment on Railway in EU West (Amsterdam)
 
 **Date**: 2026-10-11
-**Status**: Proposed
+**Status**: Superseded by ADR-024 (2026-10-24)
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -181,3 +181,7 @@ Container Apps in Spain Central.
   role's URL when one role is used) as its only sealed variable and runs before each new `app` image is deployed; the
   exact Railway mechanism (a separate service with restart policy Never, or a job of the deploy workflow) is chosen by
   P1-55 and written in `docs/runbooks/deploy.md`.
+- 2026-10-24 (DEC-171): superseded by ADR-024. Railway paused new sign-ups (its status page has said since
+  2026-10-23 22:03 UTC that new signups remain temporarily paused, with no date to reopen), so the owner moved the hosted
+  deployment to the runner-up of this ADR, Azure Container Apps in Spain Central. The text above is left as written;
+  the Railway appendix and the Note of 2026-10-16 no longer apply.

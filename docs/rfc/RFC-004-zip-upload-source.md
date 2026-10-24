@@ -155,8 +155,8 @@ The text of RF-128..RF-134 is in `docs/spec/requirements.md` section 5.2.
 
 ## 9. Open questions (answered 2026-10-19, DEC-149)
 
-| Id   | Question                                                                | Answer                                                                                                               |
-| ---- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Q-29 | Archive size limit for an upload on the host, where storage costs money | 100 MB hosted (Railway Hobby volumes stop at 5 GB), 500 MB locally; refused when free space is under twice the limit |
-| Q-30 | Keep the uploaded zip itself after extraction                           | no: the zip is deleted once extracted                                                                                |
-| Q-31 | Offer the folder picker (option A) later                                | not in release 1; the source model allows it                                                                         |
+| Id   | Question                                                                | Answer                                                                                                                                            |
+| ---- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q-29 | Archive size limit for an upload on the host, where storage costs money | 100 MB hosted (the hosted share is sized by ADR-024, not a 5 GB Railway volume), 500 MB locally; refused when free space is under twice the limit |
+| Q-30 | Keep the uploaded zip itself after extraction                           | no: the zip is deleted once extracted                                                                                                             |
+| Q-31 | Offer the folder picker (option A) later                                | not in release 1; the source model allows it                                                                                                      |

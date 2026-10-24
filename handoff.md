@@ -8,7 +8,7 @@ _Last updated 2026-10-24. Release 1 is built: **380 of 388 cards are Done** (see
 - `docs/rfc/RFC-001-rosetta.md` - design proposal, **Status: Accepted** (DEC-113).
 - `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Accepted** (DEC-113);
   open questions in its section 4.
-- `docs/adr/` - ADR-001..ADR-019; counts by status in the [index](docs/adr/README.md).
+- `docs/adr/` - ADR-001..ADR-024; counts by status in the [index](docs/adr/README.md).
 - `docs/decision-log.md` - decisions DEC-01..DEC-133.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
@@ -214,6 +214,7 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Session log
 
+- **2026-10-24 (host change)** - docs-only pull request `docs/host-azure-container-apps`: Railway paused new sign-ups (status page, since 2026-10-23 22:03 UTC), so the owner moved the hosted deployment to Azure Container Apps in Spain Central (DEC-171, ADR-024 Accepted, ADR-020 Superseded, Q-18 answered). Gate G-07 now means an Azure account, resource group, storage account, Flexible Server PostgreSQL 17, secrets, a federated credential for GitHub Actions and a 25 USD budget alert. Railway-specific work still to redo: the release workflow deploy job and its tests, `docs/runbooks/deploy.md`, the hosted part of `docs/runbooks/backup.md`, and the cards listed in the pull request.
 - **2026-10-17 (evening, status)** - docs-only status PR (`task/status-2026-10-17-eve`): merged since the afternoon P2-31, P2-37, P1-162, P2-11, P2-32, P2-36, P2-38, P1-152, P2-39, P1-47, P2-23, P1-168 and P2-40 (#505); P2-40 had no card block, so it was added after P2-39 from issue #502 as Done and the totals recounted (P2 40 cards, total 238, 203 Done). In review: P2-35 (#501) and P2-03 (#507); in progress: P1-170. The owner set at most three builders and three verifiers, and a pause at 95 % of the 5-hour window.
 
 - **2026-10-17 (afternoon, status)** - docs-only status PR (`task/status-2026-10-17-pm`): merged since mid-morning P2-21, P2-28, P2-27, P2-29, P2-30, P2-25, P2-22, P2-20, P2-33 and P2-17 (Anthropic SDK 0.133 adopted early at the owner's request), plus mermaid 12.2.0 and vite 8.3.2. New follow-up cards P2-31 to P2-39 (P2-34 waits for the owner); statuses set on the cards and the totals recounted (P2 39 cards, total 237, 190 Done). P2-31 is in review and P2-32 and P2-35 to P2-39 are in progress.
