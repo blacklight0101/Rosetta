@@ -1,7 +1,9 @@
 import type { JSX } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import type { CallRow } from '../api/call-schemas.js';
+import type { ApiFailure } from '../api/client.js';
 import { Button } from '../components/Button.js';
+import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import {
   anyFilter,
@@ -26,6 +28,10 @@ export interface CallsPanelProps {
   readonly more: {
     readonly available: boolean;
     readonly loading: boolean;
+    /** The failure of the last load of the next calls; the button then reads Retry. */
+    readonly error: ApiFailure | undefined;
+    /** Read by a polite live region: "N of M attempts loaded" after each page asked for. */
+    readonly announcement: string;
     readonly onLoad: () => void;
   };
 }
@@ -131,14 +137,23 @@ function Body(props: {
 
 function LoadMore(props: CallsPanelProps['more']): JSX.Element | null {
   if (!props.available) return null;
+  const busy = props.loading ? { disabledReason: 'Loading the next calls.' } : {};
+  if (props.error !== undefined) {
+    return (
+      <>
+        <ErrorBanner error={props.error} />
+        <div class="rst-p137-more">
+          <Button variant="secondary" {...busy} onClick={props.onLoad}>
+            Retry
+          </Button>
+        </div>
+      </>
+    );
+  }
   return (
     <div class="rst-p137-more">
       <p class="rst-settings__note">The filters and Next error work on the calls loaded so far.</p>
-      <Button
-        variant="secondary"
-        {...(props.loading ? { disabledReason: 'Loading the next calls.' } : {})}
-        onClick={props.onLoad}
-      >
+      <Button variant="secondary" {...busy} onClick={props.onLoad}>
         Load more calls
       </Button>
     </div>
@@ -180,6 +195,9 @@ export function CallsPanel({ runId, calls, total, more }: CallsPanelProps): JSX.
         </div>
         <Filters calls={calls} filters={filters} onChange={setFilters} />
         <Body {...{ runId, calls, visible, selected }} onSelect={setSelected} />
+        <p class="rst-visually-hidden" aria-live="polite">
+          {more.announcement}
+        </p>
         <LoadMore {...more} />
       </section>
       {selectedCall === undefined ? null : <CallDetail runId={runId} call={selectedCall} />}
