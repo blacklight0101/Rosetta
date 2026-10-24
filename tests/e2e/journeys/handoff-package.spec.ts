@@ -76,7 +76,8 @@ test('RF-601 RF-605 RF-612 a brief saved with every default gives a package that
   expect(packageFile(files, 'README.md')).toContain('](prd.md)');
   const decisions = decisionsOf(files);
   expect(decisions).toContain('Migration strategy: Strangler Fig');
-  expect(decisions).not.toContain('Technology for the hosting layer');
+  expect(decisions).toContain('Technology for the hosting layer');
+  expect(decisions).toContain('Rosetta proposes');
   expect(defaultedBriefIds(files)).toContain('migration');
   expect(defaultedBriefIds(files)).toEqual(expect.arrayContaining([...projectContextIds]));
   expect(untracedRequirements(files)).toEqual([]);

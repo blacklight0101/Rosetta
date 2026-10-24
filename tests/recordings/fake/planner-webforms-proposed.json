@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "description": "P5-39, RF-609: the planner's answers of planner-package.json for a WebForms order site whose brief names no stack. The first answer is the plan with the file paths of its two task cards written for the stack Rosetta proposed (Razor Pages pages and C# files), so that the stack records of the package name the task cards that touch the front end. Written by hand for the fake provider; no real provider was called. RF-601..RF-604, RF-621: the planner's two answers for the hand-off package of the planning integration test. First the plan: requirements that cite supported cards, one that cites a card with no supported claim and an unknown id, one holding hostile Markdown and HTML, an entity mapping without a supported card, and a task in a phase that does not exist. The two tasks that are kept state an invariant, a risk class, the guards they add and review probes (RF-630, RF-635). Second the product requirements document: features that cite FEAT cards (one a card with no supported claim, one holding hostile Markdown and HTML), rules that cite BR cards (one citing a FEAT card), an out-of-scope item, and a role and a non-functional item holding hostile Markdown and HTML. Written by hand for the fake provider; no real provider was called. The third call is the data model (RF-623, P3-17): tables that map supported ENT claims, a column whose legacy claim is not supported, a type that is not a type name, a name that is not an identifier, a foreign key to a missing table and a dropped field. The fourth call is the target flows (RF-625, P3-19): FLOW-001 mapped with a step to a component the architecture lacks, a rejected step, a step of another card and a repeated step; FLOW-002 out of scope with a reason; FLOW-077, which no card has; FLOW-003 left unmentioned. Used only by runs whose cards include FLOW cards. The fifth call is the API contract (RF-624, P3-18), made only when the brief names a front end and a FEAT or FLOW card is verified: operations that serve FEAT and FLOW cards (one also naming an ENT card and an unknown card, one marked public although it carries customers), a name that is not an identifier, a path that climbs, an operation that serves a card nobody verified and a summary holding hostile Markdown and HTML. The sixth call is the user-interface material (RF-626, P3-20), made only when a SCRN card is verified: Orders merging SCRN-001 and SCRN-002 (its purpose holding hostile HTML), Checkout keeping SCRN-003 with a card nobody has (its name holding a script), a screen of a card nobody has, a screen of a card already placed, SCRN-004 dropped with a reason, a drop of a card already kept and of a card nobody has, SCRN-005 left unmentioned, and a design brief holding hostile HTML.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"summary\": \"A web shop that replaces the legacy order site, moved one part at a time beside it.\",\n  \"requirements\": [\n    {\n      \"title\": \"Place an order\",\n      \"statement\": \"A customer turns the basket into an order.\",\n      \"sources\": [\n        \"FEAT-001\"\n      ]\n    },\n    {\n      \"title\": \"Free shipping\",\n      \"statement\": \"Orders over 50 ship free. <script>alert(1)</script> [click](javascript:alert(1)) ```mermaid\",\n      \"sources\": [\n        \"BR-001\",\n        \"FEAT-002\",\n        \"XYZ-999\"\n      ]\n    },\n    {\n      \"title\": \"Export orders\",\n      \"statement\": \"Staff export the orders of a day.\",\n      \"sources\": [\n        \"FEAT-002\"\n      ]\n    },\n    {\n      \"title\": \"Cancel a paid order\",\n      \"statement\": \"Only a manager cancels a paid order.\",\n      \"sources\": [\n        \"OQ-001\"\n      ]\n    }\n  ],\n  \"components\": [\n    {\n      \"name\": \"Web front end\",\n      \"responsibility\": \"Shows the shop pages.\",\n      \"dependsOn\": [\n        \"Order service\"\n      ]\n    },\n    {\n      \"name\": \"Order service\",\n      \"responsibility\": \"Creates and stores orders.\",\n      \"dependsOn\": [\n        \"Database\",\n        \"Payment gateway\"\n      ]\n    },\n    {\n      \"name\": \"Database\",\n      \"responsibility\": \"Keeps orders.\",\n      \"dependsOn\": []\n    }\n  ],\n  \"decisions\": [\n    {\n      \"title\": \"Keep the order rules in one service\",\n      \"context\": \"The shipping rule sits in the checkout page.\",\n      \"decision\": \"The order service owns every order rule.\",\n      \"consequences\": \"Pages call the service.\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ],\n  \"entities\": [\n    {\n      \"legacy\": \"Order\",\n      \"target\": \"Order\",\n      \"notes\": \"The status becomes a closed list.\",\n      \"sources\": [\n        \"ENT-001\"\n      ]\n    },\n    {\n      \"legacy\": \"ExportJob\",\n      \"target\": \"Export\",\n      \"notes\": \"Not shown by a supported claim.\",\n      \"sources\": [\n        \"FEAT-002\"\n      ]\n    }\n  ],\n  \"phases\": [\n    {\n      \"name\": \"Orders first\",\n      \"goal\": \"Orders run on the new system.\",\n      \"exitCriteria\": [\n        \"Every order is placed on the new system.\"\n      ]\n    },\n    {\n      \"name\": \"Cancellation\",\n      \"goal\": \"Cancellations run on the new system.\",\n      \"exitCriteria\": [\n        \"A paid order is cancelled only by a manager.\"\n      ]\n    }\n  ],\n  \"tasks\": [\n    {\n      \"title\": \"Order placement\",\n      \"phase\": 1,\n      \"requirements\": [\n        1,\n        2\n      ],\n      \"acceptanceCriteria\": [\n        \"Given a basket of 60, when the customer confirms, then the order is stored with free shipping.\"\n      ],\n      \"invariant\": \"Shipping is free exactly when the order total is over 50, however the total is written.\",\n      \"riskClass\": \"money\",\n      \"adds\": [\n        \"limit\"\n      ],\n      \"probes\": [\n        \"A basket of exactly 50, of 49.99 and of 50.01.\",\n        \"A basket of 60 that also holds a free item priced 0.\",\n        \"A total written as 50.00, 50,00 and 5e1.\"\n      ],\n      \"files\": [\n        \"src/Web/Orders.cshtml\",\n        \"tests/Web/OrdersTests.cs\"\n      ],\n      \"needs\": [\n        {\n          \"kind\": \"error code\",\n          \"purpose\": \"order total below the free shipping threshold\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Order cancellation\",\n      \"phase\": 2,\n      \"requirements\": [\n        3,\n        4\n      ],\n      \"acceptanceCriteria\": [\n        \"Given a paid order, when a clerk cancels it, then it is refused.\"\n      ],\n      \"invariant\": \"Only a manager cancels a paid order, however the role is written.\",\n      \"riskClass\": \"security boundary\",\n      \"adds\": [\n        \"check\"\n      ],\n      \"probes\": [\n        \"A clerk, a manager and a customer whose role is written MANAGER or with a trailing space.\",\n        \"A cancel request sent twice for the same paid order.\",\n        \"A cancel request for an order that belongs to another customer.\"\n      ],\n      \"files\": [\n        \"src/Web/Cancellation.cshtml\",\n        \"tests/Web/CancellationTests.cs\"\n      ],\n      \"needs\": [\n        {\n          \"kind\": \"error code\",\n          \"purpose\": \"cancel refused for a clerk\"\n        },\n        {\n          \"kind\": \"migration number\",\n          \"purpose\": \"cancellation audit table\"\n        }\n      ],\n      \"dependsOn\": [\n        1\n      ]\n    },\n    {\n      \"title\": \"Reporting\",\n      \"phase\": 7,\n      \"requirements\": [\n        3\n      ],\n      \"acceptanceCriteria\": [\n        \"Given a day, when staff export, then a file is made.\"\n      ]\n    }\n  ],\n  \"risks\": [\n    {\n      \"text\": \"The shipping threshold is read in two places.\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 3000,
+              "outputTokens": 900,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"problem\": {\n    \"text\": \"The order rules sit in several pages of the legacy shop.\",\n    \"sources\": [\n      \"BR-001\"\n    ]\n  },\n  \"goal\": {\n    \"text\": \"Move the order flow to the new system, one part at a time beside the old one.\",\n    \"sources\": [\n      \"FEAT-001\"\n    ]\n  },\n  \"features\": [\n    {\n      \"title\": \"Place an order\",\n      \"description\": \"A customer turns the basket into an order.\",\n      \"priority\": \"Must\",\n      \"sources\": [\n        \"FEAT-001\",\n        \"BR-001\"\n      ]\n    },\n    {\n      \"title\": \"Export orders\",\n      \"description\": \"Staff export the orders of a day.\",\n      \"priority\": \"Could\",\n      \"sources\": [\n        \"FEAT-002\"\n      ]\n    },\n    {\n      \"title\": \"Free shipping <script>alert(1)</script>\",\n      \"description\": \"Orders over 50 ship free. [click](javascript:alert(1))\\n# Title\",\n      \"priority\": \"Should\",\n      \"sources\": [\n        \"FEAT-001\"\n      ]\n    }\n  ],\n  \"rules\": [\n    {\n      \"text\": \"Orders over 50 ship free. <img src=x onerror=alert(1)> [x](javascript:alert(1))\\n# Title\\n```js\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    },\n    {\n      \"text\": \"Every order is audited.\",\n      \"sources\": [\n        \"FEAT-001\"\n      ]\n    }\n  ],\n  \"outOfScope\": [\n    {\n      \"text\": \"Automatic refunds are not planned. <img src=x onerror=alert(1)> [x](javascript:alert(1))\\n# Title\\n```js\",\n      \"sources\": [\n        \"OQ-001\"\n      ]\n    }\n  ],\n  \"roles\": [\n    {\n      \"name\": \"Clerk <b>x</b>\",\n      \"description\": \"<img src=x onerror=alert(1)> [x](javascript:alert(1))\\n# Title\\n```js\",\n      \"sources\": [\n        \"OQ-001\"\n      ]\n    }\n  ],\n  \"nonFunctional\": [\n    {\n      \"text\": \"Orders save fast. <img src=x onerror=alert(1)> [x](javascript:alert(1))\\n# Title\\n```js\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 2500,
+              "outputTokens": 600,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"tables\": [\n    {\n      \"name\": \"customer\",\n      \"purpose\": \"Keeps the people who place orders.\",\n      \"sources\": [\n        \"ENT-002\"\n      ],\n      \"columns\": [\n        {\n          \"name\": \"id\",\n          \"type\": \"uuid\",\n          \"nullable\": false,\n          \"legacy\": null,\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"email\",\n          \"type\": \"varchar(200)\",\n          \"nullable\": false,\n          \"legacy\": {\n            \"claim\": \"ENT-002.c1\",\n            \"field\": \"Email\"\n          },\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"loyalty_tier\",\n          \"type\": \"smallint\",\n          \"nullable\": true,\n          \"legacy\": {\n            \"claim\": \"ENT-002.c2\",\n            \"field\": \"LoyaltyTier\"\n          },\n          \"risk\": \"The legacy tier is free text; a value that is not a number is lost.\"\n        }\n      ],\n      \"primaryKey\": [\n        \"id\"\n      ],\n      \"uniqueKeys\": [\n        [\n          \"email\"\n        ]\n      ],\n      \"foreignKeys\": [],\n      \"checks\": [],\n      \"indexes\": []\n    },\n    {\n      \"name\": \"customer_order\",\n      \"purpose\": \"Keeps one order a customer placed. <script>alert(1)</script> [click](javascript:alert(1)) ```mermaid\",\n      \"sources\": [\n        \"ENT-001\",\n        \"XYZ-999\"\n      ],\n      \"columns\": [\n        {\n          \"name\": \"id\",\n          \"type\": \"uuid\",\n          \"nullable\": false,\n          \"legacy\": null,\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"customer_id\",\n          \"type\": \"uuid\",\n          \"nullable\": false,\n          \"legacy\": null,\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"status\",\n          \"type\": \"varchar(20)\",\n          \"nullable\": false,\n          \"legacy\": {\n            \"claim\": \"ENT-001.c1\",\n            \"field\": \"Status\"\n          },\n          \"risk\": \"The legacy status is free text; a value outside the new list is refused.\"\n        },\n        {\n          \"name\": \"card_number\",\n          \"type\": \"varchar(19)\",\n          \"nullable\": true,\n          \"legacy\": {\n            \"claim\": \"ENT-001.c2\",\n            \"field\": \"CardNumber\"\n          },\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"total\",\n          \"type\": \"numeric(10,2)\",\n          \"nullable\": false,\n          \"legacy\": null,\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"note\",\n          \"type\": \"integer); DROP TABLE customer;--\",\n          \"nullable\": true,\n          \"legacy\": null,\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"bad name; drop\",\n          \"type\": \"text\",\n          \"nullable\": false,\n          \"legacy\": null,\n          \"risk\": \"\"\n        }\n      ],\n      \"primaryKey\": [\n        \"id\"\n      ],\n      \"uniqueKeys\": [],\n      \"foreignKeys\": [\n        {\n          \"columns\": [\n            \"customer_id\"\n          ],\n          \"references\": \"customer\",\n          \"referencedColumns\": [\n            \"id\"\n          ]\n        },\n        {\n          \"columns\": [\n            \"ghost_id\"\n          ],\n          \"references\": \"ghost\",\n          \"referencedColumns\": [\n            \"id\"\n          ]\n        }\n      ],\n      \"checks\": [\n        \"total is zero or more\"\n      ],\n      \"indexes\": [\n        {\n          \"columns\": [\n            \"customer_id\"\n          ],\n          \"unique\": false,\n          \"reason\": \"Orders are listed by customer.\"\n        }\n      ]\n    }\n  ],\n  \"dropped\": [\n    {\n      \"claim\": \"ENT-002.c3\",\n      \"field\": \"Fax\",\n      \"reason\": \"The new system contacts customers by email only.\"\n    },\n    {\n      \"claim\": \"ENT-009.c1\",\n      \"field\": \"Ghost\",\n      \"reason\": \"Names a claim no card has.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 2000,
+              "outputTokens": 700,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-3",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"flows\": [\n    {\n      \"card\": \"FLOW-001\",\n      \"inScope\": true,\n      \"reason\": \"\",\n      \"steps\": [\n        {\n          \"claim\": \"FLOW-001.c1\",\n          \"component\": \"Web front end\",\n          \"action\": \"Shows the basket and sends it. <img src=x onerror=alert(1)> [x](javascript:alert(1))\"\n        },\n        {\n          \"claim\": \"FLOW-001.c2\",\n          \"component\": \"Order service\",\n          \"action\": \"Creates the order and totals the lines.\"\n        },\n        {\n          \"claim\": \"FLOW-001.c3\",\n          \"component\": \"Payment gateway\",\n          \"action\": \"Takes the payment.\"\n        },\n        {\n          \"claim\": \"FLOW-001.c4\",\n          \"component\": \"Order service\",\n          \"action\": \"Emails the warehouse.\"\n        },\n        {\n          \"claim\": \"FLOW-002.c1\",\n          \"component\": \"Order service\",\n          \"action\": \"Belongs to another card.\"\n        },\n        {\n          \"claim\": \"FLOW-001.c2\",\n          \"component\": \"Database\",\n          \"action\": \"Repeats a step.\"\n        }\n      ]\n    },\n    {\n      \"card\": \"FLOW-002\",\n      \"inScope\": false,\n      \"reason\": \"The staff export is not part of the new shop.\",\n      \"steps\": []\n    },\n    {\n      \"card\": \"FLOW-077\",\n      \"inScope\": true,\n      \"reason\": \"\",\n      \"steps\": [\n        {\n          \"claim\": \"FLOW-077.c1\",\n          \"component\": \"Order service\",\n          \"action\": \"Names a card nobody wrote.\"\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1800,
+              "outputTokens": 500,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"applies\": true,\n  \"reason\": \"\",\n  \"operations\": [\n    {\n      \"public\": false,\n      \"errors\": [],\n      \"list\": true,\n      \"entity\": \"ENT-001\",\n      \"operationId\": \"listOrders\",\n      \"method\": \"get\",\n      \"path\": \"/orders\",\n      \"summary\": \"Lists the orders of the signed-in shopper.\",\n      \"serves\": [\n        \"FEAT-001\"\n      ]\n    },\n    {\n      \"public\": false,\n      \"errors\": [\n        422,\n        409,\n        500,\n        401,\n        404,\n        404\n      ],\n      \"list\": false,\n      \"entity\": \"ENT-001\",\n      \"operationId\": \"placeOrder\",\n      \"method\": \"POST\",\n      \"path\": \"/orders\",\n      \"summary\": \"Places an order from the basket.\",\n      \"serves\": [\n        \"FLOW-001\",\n        \"FEAT-001\",\n        \"ENT-001\",\n        \"FEAT-404\"\n      ]\n    },\n    {\n      \"public\": false,\n      \"errors\": [\n        404\n      ],\n      \"list\": false,\n      \"entity\": \"ENT-001\",\n      \"operationId\": \"getOrder\",\n      \"method\": \"get\",\n      \"path\": \"/orders/{orderId}\",\n      \"summary\": \"Reads one order. <script>alert(1)</script> [click](javascript:alert(1))\",\n      \"serves\": [\n        \"FEAT-001\"\n      ]\n    },\n    {\n      \"public\": true,\n      \"errors\": [],\n      \"list\": true,\n      \"entity\": \"ENT-002\",\n      \"operationId\": \"listCustomers\",\n      \"method\": \"get\",\n      \"path\": \"/customers\",\n      \"summary\": \"Lists the customers.\",\n      \"serves\": [\n        \"FEAT-001\"\n      ]\n    },\n    {\n      \"public\": true,\n      \"errors\": [],\n      \"list\": false,\n      \"entity\": null,\n      \"operationId\": \"signIn\",\n      \"method\": \"post\",\n      \"path\": \"/sessions\",\n      \"summary\": \"Signs a shopper in.\",\n      \"serves\": [\n        \"FLOW-001\"\n      ]\n    },\n    {\n      \"public\": false,\n      \"errors\": [],\n      \"list\": false,\n      \"entity\": null,\n      \"operationId\": \"bad id; drop table\",\n      \"method\": \"get\",\n      \"path\": \"/bad\",\n      \"summary\": \"Has a name that is not an identifier.\",\n      \"serves\": [\n        \"FEAT-001\"\n      ]\n    },\n    {\n      \"public\": false,\n      \"errors\": [],\n      \"list\": false,\n      \"entity\": null,\n      \"operationId\": \"traversal\",\n      \"method\": \"get\",\n      \"path\": \"/a/../b\",\n      \"summary\": \"Has a path that climbs.\",\n      \"serves\": [\n        \"FEAT-001\"\n      ]\n    },\n    {\n      \"public\": false,\n      \"errors\": [],\n      \"list\": false,\n      \"entity\": null,\n      \"operationId\": \"ghost\",\n      \"method\": \"get\",\n      \"path\": \"/ghost\",\n      \"summary\": \"Serves a card nobody verified.\",\n      \"serves\": [\n        \"FEAT-404\"\n      ]\n    }\n  ],\n  \"notServed\": [\n    {\n      \"card\": \"FEAT-404\",\n      \"reason\": \"Names a card no run has.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1500,
+              "outputTokens": 600,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"screens\": [\n    {\n      \"name\": \"Orders\",\n      \"purpose\": \"Lists the orders and shows one in full. <img src=x onerror=alert(1)>\",\n      \"reason\": \"The list and the detail show the same data to the same people.\",\n      \"cards\": [\n        \"SCRN-001\",\n        \"SCRN-002\"\n      ]\n    },\n    {\n      \"name\": \"Checkout </title><script>alert(1)</script>\",\n      \"purpose\": \"Takes the payment and places the order. [pay](javascript:alert(1))\",\n      \"reason\": \"It is the main journey of a shopper.\",\n      \"cards\": [\n        \"SCRN-003\",\n        \"SCRN-404\"\n      ]\n    },\n    {\n      \"name\": \"Ghost\",\n      \"purpose\": \"A screen nobody has.\",\n      \"reason\": \"Made up.\",\n      \"cards\": [\n        \"SCRN-404\"\n      ]\n    },\n    {\n      \"name\": \"Again\",\n      \"purpose\": \"The checkout a second time.\",\n      \"reason\": \"Twice.\",\n      \"cards\": [\n        \"SCRN-003\"\n      ]\n    }\n  ],\n  \"dropped\": [\n    {\n      \"card\": \"SCRN-004\",\n      \"reason\": \"The fax page is not part of the new shop.\"\n    },\n    {\n      \"card\": \"SCRN-001\",\n      \"reason\": \"Already kept above.\"\n    },\n    {\n      \"card\": \"SCRN-405\",\n      \"reason\": \"Names a card no run has.\"\n    }\n  ],\n  \"designBrief\": {\n    \"audience\": \"Shoppers who order and staff who handle the orders. <script>alert(1)</script>\",\n    \"tone\": \"Calm and plain.\",\n    \"components\": [\n      \"Data table\",\n      \"Form field with an error message\",\n      \"Confirmation dialog\"\n    ]\n  }\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1500,
+              "outputTokens": 600,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-5",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

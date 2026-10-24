@@ -3,6 +3,8 @@ import { decideOnce } from '../../domain/planning/brief-restated.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
 import { copiedExamples, exampleSentencesOfAll } from '../../domain/planning/copied-example.js';
 import { settleJudgements } from '../../domain/planning/claim-judgement.js';
+import type { ApiContract } from '../../domain/planning/api-contract.js';
+import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
 import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content.js';
@@ -19,6 +21,7 @@ import type { UnreadableItem } from '../../domain/planning/plan-draft.js';
 import { placeOf } from './plan-repair.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
 import type { PlannedDocuments } from './plan-documents.js';
+import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
 import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
 import type { WorkbookFormulas } from '../../domain/planning/workbook-formulas.js';
 import type { PlanInputs } from './plan-inputs.js';
@@ -145,11 +148,36 @@ function sourceOf(
 }
 
 /** RF-609: the supported cards the stack records are written from, with their ids. */
-function evidenceOf(sources: readonly SourceCard[]): {
+function evidenceOf(
+  sources: readonly SourceCard[],
+  proposal: PlanProposal | undefined,
+): {
   supported: ReadonlySet<string>;
   cards: readonly SourceCard[];
+  proposal: PlanProposal | undefined;
 } {
-  return { supported: new Set(sources.map((card) => card.id)), cards: sources };
+  return { supported: new Set(sources.map((card) => card.id)), cards: sources, proposal };
+}
+
+/** RF-609, P5-39: the clashes of the stack and, when Rosetta made any, its proposals. */
+function stackFindings(
+  brief: PlanningBrief,
+  contract: ApiContract,
+  catalogue: Catalogue,
+  proposal: PlanProposal | undefined,
+): Pick<HandoffPackage, 'stackClashes' | 'proposal'> {
+  const stackClashList = stackClashes(brief, contract, catalogue.stack);
+  return proposal === undefined
+    ? { stackClashes: stackClashList }
+    : { stackClashes: stackClashList, proposal };
+}
+
+/** The parts of the planned documents the package carries as they are. */
+function carried(
+  documents: Pick<HandoffPackage, 'shapes' | 'workbookFormulas' | 'incomplete' | 'leftOut'>,
+): Pick<HandoffPackage, 'shapes' | 'workbookFormulas' | 'incomplete' | 'leftOut'> {
+  const { shapes, workbookFormulas, incomplete, leftOut } = documents;
+  return { shapes, workbookFormulas, incomplete, leftOut };
 }
 
 // RF-601, RF-604
@@ -163,12 +191,14 @@ export function handoffPackageOf(
     readonly leftOut: HandoffPackage['leftOut'];
     /** P3-117: the texts of the planner prompts the example sentences are read from. */
     readonly examples: readonly string[];
+    /** P5-39: what Rosetta proposed for the kind, the open stack layers and the strategy. */
+    readonly proposal: PlanProposal | undefined;
   },
 ): HandoffPackage {
-  const { prd, dataModel, flows, apiContract, ux, incomplete } = documents;
+  const { prd, dataModel, flows, apiContract, ux } = documents;
   const { brief, sourceRun, project, cards, questions, upload } = inputs;
   const sources = supportedCards(cards);
-  const decided = decideOnce(content, brief, catalogue, evidenceOf(sources));
+  const decided = decideOnce(content, brief, catalogue, evidenceOf(sources, documents.proposal));
   const style = principleOf(catalogue, brief.architecture.style);
   const styleCheck = checkStyle(brief.architecture.style, decided.content.components);
   return {
@@ -182,7 +212,7 @@ export function handoffPackageOf(
     choices: decided.choices,
     restated: decided.restated,
     styleCheck,
-    stackClashes: stackClashes(brief, apiContract, catalogue.stack),
+    ...stackFindings(brief, apiContract, catalogue, documents.proposal),
     sources,
     excluded: excludedClaims(cards),
     briefQuestions: defaultedQuestions(brief, catalogue),
@@ -193,10 +223,7 @@ export function handoffPackageOf(
     apiContract,
     ux,
     prdQuestions: prdQuestions(prd),
-    shapes: documents.shapes,
-    workbookFormulas: documents.workbookFormulas,
-    incomplete,
+    ...carried(documents),
     copiedExamples: copiedIn(prd, decided.content, documents.examples),
-    leftOut: documents.leftOut,
   };
 }

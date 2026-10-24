@@ -94,3 +94,19 @@ describe('the options offered with a stack choice', () => {
     expect(parseBriefAnswers({ stack: many })).toBeUndefined();
   });
 });
+
+describe('the kind of application (P5-39)', () => {
+  it('RF-609 a save and a stored brief may hold the kind of application', () => {
+    expect(parseBriefAnswers({ application: 'desktop' })).toEqual({ application: 'desktop' });
+    expect(parsePlanningBrief({ ...saved, application: 'service' })?.application).toBe('service');
+  });
+
+  it('RF-609 an unknown kind is refused', () => {
+    expect(parseBriefAnswers({ application: 'mainframe' })).toBeUndefined();
+  });
+
+  it('RF-609 an owner can never save a choice as proposed by Rosetta', () => {
+    const stack = [{ layer: 'testing', choice: 'xUnit', custom: false, proposed: true }];
+    expect(parseBriefAnswers({ stack })).toBeUndefined();
+  });
+});
