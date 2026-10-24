@@ -9,7 +9,7 @@ import { useTempRoot } from '../../support/temp-root.js';
 // RF-604, RF-621, RF-623, RF-624, RF-625, RF-626: each plan document whose planner call stays cut off
 // is recorded under its own kind. The notice lands in that document's files, the README lists that
 // one document, and the run warning names it. The recording has one answer per planner call, in
-// this order: plan (0), PRD (1), data model (2), flows (3), API contract (4), user interface (5).
+// this order: plan (0), PRD (1), data model (2, never incomplete since P5-38), flows (3), API contract (4), user interface (5).
 
 const temp = useTempRoot('rosetta-incomplete-');
 
@@ -24,14 +24,8 @@ const documents = [
     file: 'prd.md',
     prefix: 'prd.md',
   },
-  {
-    kind: 'dataModel',
-    at: 2,
-    title: 'Target data model',
-    phrase: 'target data model',
-    file: 'data-model.md',
-    prefix: 'data-model.md',
-  },
+  // The data model is not here: a cut answer is asked again in smaller batches and then copied from
+  // the legacy claims (P5-38), so it is never an incomplete document; see build-plan-data-model.test.ts.
   {
     kind: 'flows',
     at: 3,

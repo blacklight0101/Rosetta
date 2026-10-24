@@ -1,3 +1,4 @@
+import type { ObjectCoverage } from '../../domain/cards/database-objects.js';
 import type { AreaCoverage } from '../../domain/cards/area-coverage.js';
 import type { CardChanges } from '../understand/card-changes.js';
 import type { Card } from '../../domain/cards/card.js';
@@ -53,7 +54,12 @@ export interface CardOutputs {
   /** Writes `cards/<TYPE>/<ID>.md`, `cards/index.json` and `spec.md` for the whole set. */
   writeCards(scope: RunScope, set: CardSet): Promise<void>;
   /** Writes `coverage.json` and `coverage.md` for the ended tasks, in area order (RF-230). */
-  writeCoverage(scope: RunScope, coverage: readonly AreaCoverage[]): Promise<void>;
+  writeCoverage(
+    scope: RunScope,
+    coverage: readonly AreaCoverage[],
+    /** P5-36: the database objects of the areas read, with the card that states each. */
+    objects?: readonly ObjectCoverage[],
+  ): Promise<void>;
   /** Keeps the raw answers of a task that ended `InvalidOutput`, masked (RF-202). */
   writeInvalidOutput(
     scope: RunScope,

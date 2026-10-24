@@ -189,3 +189,18 @@ describe('dataModelMarkdown: defaults', () => {
     expect(text).toContain('| customer_id | uuid | no, default 0 | new |');
   });
 });
+
+describe('dataModelMarkdown: a table copied from the legacy model (P5-38)', () => {
+  it('RF-623 marks a table built from the legacy claims and no other', () => {
+    const model = targetModel();
+    const [first, ...rest] = model.tables;
+    if (first === undefined) throw new Error('The fixture has tables');
+
+    const text = plain(
+      render({ ...model, tables: [{ ...first, copiedFromLegacy: true }, ...rest] }),
+    );
+
+    expect(text.match(/Copied from the legacy model/gu)).toHaveLength(1);
+    expect(plain(render(model))).not.toContain('Copied from the legacy model');
+  });
+});

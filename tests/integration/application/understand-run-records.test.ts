@@ -60,7 +60,7 @@ describe('an understand run: prompts', () => {
       'cards/flows.v1.md',
       'cards/repair.v3.md',
       'cards/screens.v2.md',
-      'reader/area.v9.md',
+      'reader/area.v11.md',
       'reader/read-first.v1.md',
       'reader/read-more.v1.md',
       'reader/task.v2.md',
@@ -68,8 +68,8 @@ describe('an understand run: prompts', () => {
       'verifier/claim.v4.md',
       'verifier/retry.v1.md',
     ]);
-    expect(manifest.promptVersions['reader/area.v9.md']?.version).toBe('v9');
-    expect(manifest.promptVersions['reader/area.v9.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(manifest.promptVersions['reader/area.v11.md']?.version).toBe('v11');
+    expect(manifest.promptVersions['reader/area.v11.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
     expect(manifest.roles['reader']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.roles['verifier']?.modelVersion).toBe('fake-judge-2026-10-01');
   });

@@ -1,3 +1,5 @@
+import { claimMeaning } from '../../domain/planning/claim-meaning.js';
+import { usableCards } from '../../domain/planning/code-over-documentation.js';
 import { stackClashes } from '../../domain/planning/stack-rules.js';
 import { decideOnce } from '../../domain/planning/brief-restated.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
@@ -12,7 +14,6 @@ import { addStyleRisks, checkStyle } from '../../domain/planning/style-rules.js'
 import {
   excludedClaims,
   sourceStopOf,
-  supportedCards,
   type SourceCard,
 } from '../../domain/planning/plan-sources.js';
 import type { Run } from '../../domain/runs/run.js';
@@ -180,6 +181,18 @@ function carried(
   return { shapes, workbookFormulas, incomplete, leftOut };
 }
 
+/** P5-43, RF-602: where the plan changed the meaning of its claims. */
+function meaningOf(
+  plan: PlanContent,
+  parts: Pick<HandoffPackage, 'prd' | 'flows' | 'sources'> & {
+    readonly overruled: Parameters<typeof claimMeaning>[0]['overruled'];
+  },
+  catalogue: Catalogue,
+): HandoffPackage['meaning'] {
+  const { prd, flows, sources, overruled } = parts;
+  return claimMeaning({ plan, prd, flows, sources, overruled }, catalogue.claimVerbs);
+}
+
 // RF-601, RF-604
 export function handoffPackageOf(
   inputs: PlanInputs,
@@ -197,7 +210,7 @@ export function handoffPackageOf(
 ): HandoffPackage {
   const { prd, dataModel, flows, apiContract, ux } = documents;
   const { brief, sourceRun, project, cards, questions, upload } = inputs;
-  const sources = supportedCards(cards);
+  const { cards: sources, overruled } = usableCards(cards, catalogue.claimVerbs);
   const decided = decideOnce(content, brief, catalogue, evidenceOf(sources, documents.proposal));
   const style = principleOf(catalogue, brief.architecture.style);
   const styleCheck = checkStyle(brief.architecture.style, decided.content.components);
@@ -209,8 +222,7 @@ export function handoffPackageOf(
     style,
     principles: brief.principles.map((id) => principleOf(catalogue, id)),
     content: contentOf(decided.content, { styleCheck, style, questions }),
-    choices: decided.choices,
-    restated: decided.restated,
+    ...{ choices: decided.choices, restated: decided.restated },
     styleCheck,
     ...stackFindings(brief, apiContract, catalogue, documents.proposal),
     sources,
@@ -225,5 +237,6 @@ export function handoffPackageOf(
     prdQuestions: prdQuestions(prd),
     ...carried(documents),
     copiedExamples: copiedIn(prd, decided.content, documents.examples),
+    meaning: meaningOf(decided.content, { ...documents, sources, overruled }, catalogue),
   };
 }

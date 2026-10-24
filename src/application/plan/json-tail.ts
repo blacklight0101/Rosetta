@@ -5,8 +5,15 @@
 const jsonOpening = /[{[]\s*(?:["{[\]}]|$)/;
 const partialToken = /[\w.+-]+$/u;
 
+interface Open {
+  readonly char: string;
+  readonly at: number;
+}
+
 interface Scan {
   containers: number;
+  /** The containers still open, outermost first. */
+  open: Open[];
   inString: boolean;
   escaped: boolean;
   stringAt: number;
@@ -20,8 +27,13 @@ function step(scan: Scan, char: string, index: number): void {
   } else if (char === '"') {
     scan.inString = true;
     scan.stringAt = index;
-  } else if (char === '{' || char === '[') scan.containers += 1;
-  else if (char === '}' || char === ']') scan.containers -= 1;
+  } else if (char === '{' || char === '[') {
+    scan.containers += 1;
+    scan.open.push({ char, at: index });
+  } else if (char === '}' || char === ']') {
+    scan.containers -= 1;
+    scan.open.pop();
+  }
 }
 
 /**
@@ -33,11 +45,28 @@ function step(scan: Scan, char: string, index: number): void {
 export function resumePoint(text: string): string {
   const start = text.search(jsonOpening);
   if (start < 0) return text;
-  const scan: Scan = { containers: 0, inString: false, escaped: false, stringAt: -1 };
+  const scan: Scan = { containers: 0, open: [], inString: false, escaped: false, stringAt: -1 };
   for (let index = start; index < text.length; index += 1) {
     step(scan, text[index] ?? '', index);
   }
   if (scan.inString) return text.slice(0, scan.stringAt);
   if (scan.containers <= 0) return text;
   return text.replace(partialToken, '');
+}
+
+/**
+ * P5-38: where an object that is an element of a list starts, when `text` ends inside it at a place
+ * that wants a key (after `{` or a comma). A fragment that starts a new `{` or `[` cannot go there:
+ * the model has begun the next element instead of finishing this one. Null for any other end.
+ */
+// RF-604
+export function openElementStart(text: string): number | null {
+  const start = text.search(jsonOpening);
+  const scan: Scan = { containers: 0, open: [], inString: false, escaped: false, stringAt: -1 };
+  for (let index = Math.max(start, 0); start >= 0 && index < text.length; index += 1) {
+    step(scan, text[index] ?? '', index);
+  }
+  const [outer, inner] = scan.open.slice(-2);
+  const wantsKey = [',', '{'].includes(text.trimEnd().slice(-1));
+  return !scan.inString && wantsKey && outer?.char === '[' && inner?.char === '{' ? inner.at : null;
 }

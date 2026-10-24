@@ -15,7 +15,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // before any run uses it.
 
 const readerPromptNames = {
-  system: 'reader/area.v9.md',
+  system: 'reader/area.v11.md',
   cardFormat: 'cards/card-format.v2.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
@@ -80,7 +80,7 @@ export async function loadPlanOptionsPrompt(promptsFolder: string): Promise<Prom
 /** The planner's prompt for the hand-off package (RF-604), checked and hashed. */
 // RNF-004
 export function loadPlannerPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/package.v8.md');
+  return loadPromptFile(promptsFolder, 'planner/package.v9.md');
 }
 
 /**
@@ -109,19 +109,19 @@ export function loadPlannerContinuePrompt(promptsFolder: string): Promise<Prompt
 /** The planner's prompt for the product requirements document (RF-621), checked and hashed. */
 // RNF-004
 export function loadPrdPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/prd.v3.md');
+  return loadPromptFile(promptsFolder, 'planner/prd.v4.md');
 }
 
 /** The planner's prompt for the target data model (RF-623), checked and hashed. */
 // RNF-004
 export function loadDataModelPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/data-model.v3.md');
+  return loadPromptFile(promptsFolder, 'planner/data-model.v4.md');
 }
 
 /** The planner's prompt for the target flows (RF-625), checked and hashed. */
 // RNF-004
 export function loadFlowsPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/flows.v1.md');
+  return loadPromptFile(promptsFolder, 'planner/flows.v2.md');
 }
 
 /** The planner's prompt for the API contract (RF-624), checked and hashed. */

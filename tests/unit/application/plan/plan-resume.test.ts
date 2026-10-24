@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { joinContinuation } from '../../../../src/application/plan/plan-continuation.js';
+import {
+  joinContinuation,
+  joinNoting,
+} from '../../../../src/application/plan/plan-continuation.js';
 import { resumePoint } from '../../../../src/application/plan/json-tail.js';
 
 // RF-604, RF-007 (P3-31): a cut-off answer is backed up to the last complete JSON value boundary
@@ -139,5 +142,47 @@ describe('joinContinuation: the fragment is never shortened (P3-31)', () => {
     const joined = joinContinuation('{"a": [1, 2, 3, 4, 5, 6, 7, 8,', ' 3, 4, 5, 6, 7, 8, 9]}');
 
     expect(joined).toBe('{"a": [1, 2, 3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8, 9]}');
+  });
+});
+
+describe('joinContinuation: a fragment that starts the next list item (P5-38)', () => {
+  const cut = '{"indexes": [\n  { "columns": ["a"], "unique": false },\n  { "columns": ["b"], ';
+
+  it('RF-604 replaces the unfinished item, so the join is JSON', () => {
+    const joined = joinContinuation(cut, '{ "columns": ["c"], "unique": true }\n]}');
+
+    expect(JSON.parse(joined)).toEqual({
+      indexes: [
+        { columns: ['a'], unique: false },
+        { columns: ['c'], unique: true },
+      ],
+    });
+  });
+
+  it('RF-604 a fragment that continues the item is joined as before', () => {
+    const joined = joinContinuation(cut, '"unique": true }\n]}');
+
+    expect(JSON.parse(joined)).toEqual({
+      indexes: [
+        { columns: ['a'], unique: false },
+        { columns: ['b'], unique: true },
+      ],
+    });
+  });
+
+  it('RF-604 an object that is not a list item is left alone', () => {
+    expect(joinContinuation('{"a": {"b": 1, ', '{"c": 2}}')).toBe('{"a": {"b": 1, {"c": 2}}');
+  });
+});
+
+describe('joinNoting: the replaced item is told (P5-38, P3-126)', () => {
+  it('RF-604 says when the unfinished item was replaced and not otherwise', () => {
+    const cut = '{"t": [{"n": "a", "pu';
+
+    expect(joinNoting(cut, '{"n": "b"}]}')).toEqual({
+      text: '{"t": [{"n": "b"}]}',
+      replaced: true,
+    });
+    expect(joinNoting(cut, '"pu": 1}]}').replaced).toBe(false);
   });
 });

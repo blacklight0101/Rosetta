@@ -4,6 +4,7 @@ import {
   type AreaCoverage,
 } from '../../domain/cards/area-coverage.js';
 import type { Card } from '../../domain/cards/card.js';
+import { objectCoverageIn, type ObjectCoverage } from '../../domain/cards/database-objects.js';
 import type { CardType } from '../../domain/cards/card-vocabulary.js';
 import type { Citation } from '../../domain/cards/citation.js';
 import { isIncompleteFlow } from '../../domain/cards/flow-completeness.js';
@@ -104,5 +105,13 @@ export class RunCoverage {
       const incompleteFlows = own.filter(isIncompleteFlow).length;
       return [{ ...coverage, surface: { ...coverage.surface, incompleteFlows } }];
     });
+  }
+
+  /** P5-36, RF-230: the database objects of the ended tasks' areas, with the card that states each. */
+  objects(
+    codeMap: Pick<CodeMap, 'files' | 'symbols'>,
+    cards: readonly Card[],
+  ): readonly ObjectCoverage[] {
+    return objectCoverageIn(codeMap, this.areas(cards), cards);
   }
 }

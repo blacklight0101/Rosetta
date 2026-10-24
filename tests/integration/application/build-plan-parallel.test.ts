@@ -1,6 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
-import { cardsOf, packageOf, plain } from '../../support/plan-method-harness.js';
+import {
+  cardsOf,
+  packageOf,
+  packageWithoutEntities,
+  plain,
+} from '../../support/plan-method-harness.js';
 import { plannerAnswering } from '../../support/planner-answering.js';
 import { invariant, scenario } from '../../support/task-card-fixtures.js';
 
@@ -115,7 +120,7 @@ const overlappingCards = [
 
 describe('RF-634 overlapping cards are ordered, never in one parallel group', () => {
   it('RF-634 the later card of two that overlap depends on the earlier, as a link', async () => {
-    const cards = cardsOf(await packageOf({}, plannerAnswering(overlappingCards)));
+    const cards = cardsOf(await packageWithoutEntities({}, plannerAnswering(overlappingCards)));
 
     expect(cards[0]).toContain('\nDepends on: none\n');
     expect(cards[1]).toContain('\nDepends on: [T-001](tasks.md#t-001)\n');
@@ -127,7 +132,7 @@ describe('RF-634 overlapping cards are ordered, never in one parallel group', ()
 
 describe('RF-634 the parallel groups of the roadmap', () => {
   it('RF-634 the roadmap lists the groups, and no group holds two cards with overlapping files', async () => {
-    const files = await packageOf({}, plannerAnswering(overlappingCards));
+    const files = await packageWithoutEntities({}, plannerAnswering(overlappingCards));
 
     const listed = new Map(cardsOf(files).map((card) => [card.slice(0, 5), filesOf(card)]));
     const groups = groupsOf(plain(files['roadmap.md']), 1);
@@ -148,7 +153,7 @@ describe('RF-634 the parallel groups of the roadmap', () => {
       task('Report totals', { phase: 2, files: ['src/orders/total.ts'] }),
     ]);
 
-    const files = await packageOf({}, recording);
+    const files = await packageWithoutEntities({}, recording);
 
     const roadmap = plain(files['roadmap.md']);
     expect(groupsOf(roadmap, 1)).toEqual([['T-001']]);
@@ -184,7 +189,7 @@ describe('RF-636 agent operations', () => {
 
 describe('RF-634 the planner prompt asks for it', () => {
   it('RF-634 the prompt asks for the files, the needed identifiers and the cards a card waits for', async () => {
-    const prompt = await readFile('prompts/planner/package.v8.md', 'utf8');
+    const prompt = await readFile('prompts/planner/package.v9.md', 'utf8');
 
     expect(prompt).toContain('`files`');
     expect(prompt).toContain('`needs`');
