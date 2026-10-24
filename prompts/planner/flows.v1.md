@@ -22,7 +22,7 @@ For every flow card, give one entry in `flows`:
 
 Rules:
 
-1. Keep the verb and the values of the step's claim in `action`: do not turn rejecting into deleting. Say only what the cards and the components say. Do not add steps, journeys or components, and do not change the order of the steps.
+1. Say only what the cards and the components say. Do not add steps, journeys or components, and do not change the order of the steps.
 2. Write plain English. Do not write code, links, HTML, Markdown or diagrams. Keep every text to one sentence.
 
 ## Answer

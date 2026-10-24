@@ -35,7 +35,7 @@ part out and Rosetta marks it as a question for the owner.
 
 1. `problem`: one or two sentences on what is wrong or limited in the legacy system, as the cards show it.
 2. `goal`: one or two sentences on what the modernisation is to achieve, from the planning brief and the cards.
-3. `roles`: the users and roles the code shows (who may do what), each with a name and a short description. Name a role only when a claim states it; an application with no roles has none.
+3. `roles`: the users and roles the code shows (who may do what), each with a name and a short description.
 4. `features`: what the new system offers, one feature per behaviour a `FEAT` card shows. Each has a `title`, a
    `description` and a `priority` by MoSCoW: `Must` (the system is unusable without it), `Should` (important, but a
    workaround exists), `Could` (wanted, little harm if left out) or `Wont` (agreed to leave out of this build). Give

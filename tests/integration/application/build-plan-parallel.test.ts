@@ -184,7 +184,7 @@ describe('RF-636 agent operations', () => {
 
 describe('RF-634 the planner prompt asks for it', () => {
   it('RF-634 the prompt asks for the files, the needed identifiers and the cards a card waits for', async () => {
-    const prompt = await readFile('prompts/planner/package.v8.md', 'utf8');
+    const prompt = await readFile('prompts/planner/package.v9.md', 'utf8');
 
     expect(prompt).toContain('`files`');
     expect(prompt).toContain('`needs`');

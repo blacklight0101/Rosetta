@@ -34,9 +34,7 @@ Plan the target system from that input and nothing else:
 1. `summary`: two or three sentences on what the new system is and how the move from the legacy system happens.
 2. `requirements`: what the new system must do, one requirement per behaviour the cards show. Every requirement lists
    in `sources` the ids of the cards it comes from. Use only card ids listed in the cards block. A requirement that no
-   card supports is not written. An owner answer may refine a requirement; it never replaces the card it answers. A requirement that names an
-   operation keeps the verb and the values of its claim: a claim that rejects, archives or records is never written as
-   delete, drop or ignore. When a claim from documentation and a claim from code disagree, write the code claim.
+   card supports is not written. An owner answer may refine a requirement; it never replaces the card it answers.
 3. `components`: the parts of the target architecture, following the chosen architecture style, each with its
    responsibility, its `role` and the names of the other components it depends on. `role` is exactly one of the
    roles of the chosen style, listed with the style in the planning brief (`roles`); a component that fits none
