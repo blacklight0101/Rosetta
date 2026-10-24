@@ -213,16 +213,31 @@ describe('docs/runbooks/deploy.md: owner steps before the first run and recovery
     for (const fact of [
       'az provider register',
       'public',
-      'Deployment branches and tags',
-      '`main` and `v*`',
-      'tag ruleset',
+      'deployment branch policy',
+      'done on 2026-10-24',
+      'only the branch `main`',
       'az lock create',
       'ROSETTA_DEPLOY_ENABLED',
     ]) {
       expect(text).toContain(fact);
     }
+    expect(text).not.toContain('tag ruleset');
   });
 
+  it('DEC-104 deploys come from main only: a tag-triggered deploy is refused by the environment, so Release runs by hand on main', async () => {
+    const text = await read();
+    const release = section(text, 'Release and image');
+
+    expect(section(text, 'Owner steps before the first run')).toContain(
+      'refused by the environment',
+    );
+    expect(release).toContain('refused by the `production` environment');
+    expect(release).toContain('workflow_dispatch');
+    expect(section(text, 'Deploy')).toContain('Run workflow, branch `main`');
+  });
+});
+
+describe('docs/runbooks/deploy.md: registry, restore and backup', () => {
   it('ADR-024 sets no registry for the public GHCR image', async () => {
     const text = await read();
 
