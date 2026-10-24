@@ -97,3 +97,43 @@ describe('data-shaped names the entity cards never mention', () => {
     expect(ruleCandidates(cards).map((each) => each.id)).toEqual(['BR-001']);
   });
 });
+
+describe('missingNamed: names stated as a table (P5-33)', () => {
+  const entity = card('ENT-001', 'ENT', 'Orders', [
+    'tblOrders(id int, total money) holds the orders.',
+  ]);
+
+  it('P5-33 does not list a form field name as a missing table', async () => {
+    const form = card('BR-020', 'BR', 'Search', [
+      'The search page reads the order number from the form field txt_order_id and tblOrders.',
+      'The dropdown ddl_status_id picks the status; `btn_order_save` saves.',
+    ]);
+
+    const problems = missingNamed(await recordedModel('right'), [entity, form]);
+
+    expect(problems.map((each) => each.item)).toEqual([]);
+  });
+
+  it('P5-33 still lists a lookup table a card calls a table, whatever its shape', async () => {
+    const rule = card('BR-021', 'BR', 'Lookup', [
+      'Prices come from the status_lookup table.',
+      'The query is SELECT name FROM region_names JOIN price_bands ON 1 = 1.',
+    ]);
+
+    const problems = missingNamed(await recordedModel('right'), [entity, rule]);
+
+    expect(problems.map((each) => each.item).sort()).toEqual([
+      'price_bands',
+      'region_names',
+      'status_lookup',
+    ]);
+  });
+
+  it('P5-33 a form control name that is also stated as a table is still listed', async () => {
+    const rule = card('BR-022', 'BR', 'Odd', ['Rows come from the txt_order_log table.']);
+
+    const problems = missingNamed(await recordedModel('right'), [entity, rule]);
+
+    expect(problems.map((each) => each.item)).toEqual(['txt_order_log']);
+  });
+});
