@@ -12,11 +12,11 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
-| P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
+| P1 Milestone slice (M1) | 184     | 67        | 98         | 19        | 0                  | 107     | 69      | 8      | 122        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
 | P3 Report and plan      | 131     | 16        | 111        | 4         | 0                  | 54      | 73      | 4      | 87         | 0         |
 | P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
-| **Total**               | **399** | **99**    | **271**    | **29**    | **0**              | **193** | **192** | **14** | **228**    | **0**     |
+| **Total**               | **400** | **99**    | **271**    | **30**    | **0**              | **193** | **193** | **14** | **229**    | **0**     |
 
 ## Conventions for every card
 
@@ -2490,6 +2490,21 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the workflow change, the test updates and a line in docs/environments-and-delivery.md section 6.
 - **Done when**: each probe holds; CI green on Windows and Linux.
 - **Refs**: RNF-005; issue #804.
+
+---
+
+### P1-184 - Follow-up: deploy to Azure Container Apps instead of Railway
+
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P1-55
+- **Gate**: G-07, G-08 (DEC-133); only running the workflows waits on the gates, writing them does not
+- **Status**: Todo
+- **Reads**: ADR-024; `docs/environments-and-delivery.md` sections 2, 4, 8 and 10-12; `.github/workflows/release.yml`; `docs/runbooks/deploy.md`; `docs/runbooks/backup.md` if present; `scripts/smoke.mjs`; `scripts/backup.mjs`; `tests/integration/tooling/release-workflow.test.ts`, `tests/integration/tooling/workflows.test.ts`, `tests/integration/docs/deploy-runbook.test.ts`.
+- **Do**: replace the Railway parts of P1-55 with the Azure design of ADR-024. (1) A new workflow `.github/workflows/azure-provision.yml`, run only by hand (`workflow_dispatch`) in the `production` environment, that logs in with `azure/login@v2` over OIDC (`permissions: id-token: write` on that job only; `client-id`, `tenant-id` and `subscription-id` from the `production` environment variables `vars.AZURE_CLIENT_ID`, `vars.AZURE_TENANT_ID`, `vars.AZURE_SUBSCRIPTION_ID`, which already exist; no `creds:` and no long-lived Azure secret) and creates, idempotently, in the existing resource group `rg-rosetta` (Spain Central): a Log Analytics workspace, the Container Apps environment, a storage account with an Azure Files share mounted at `/data` with the `mountOptions` of ADR-024, the Flexible Server (PostgreSQL 17, B1MS, 32 GiB, TLS required, a firewall rule for Azure services only) with a `CanNotDelete` lock, the database and its roles (the roles section of the runbook, done from the job, not by hand), the migrate Container Apps job and the Container App (0.5 vCPU, 1 GiB, one replica, external ingress on 8080, startup, liveness and readiness probes on `/healthz`, `az containerapp registry set --server ghcr.io`). Database passwords are made in the job (`openssl rand`), masked with `::add-mask::` and written only as Container Apps secrets; the secrets the owner holds (`ROSETTA_SECRET_KEY`, `ROSETTA_ADMIN_PASSWORD`, the provider keys of section 4) are read from `production` environment secrets that the owner sets in the GitHub settings page; a missing one stops the job with its name and no value. Every app secret is a `secretref:` variable; plain variables are `ROSETTA_TRUST_PROXY=1`, `ROSETTA_DATA_DIR=/data` and `ROSETTA_PUBLIC_URL` (the https FQDN). (2) The `deploy` job of `release.yml`: the same OIDC login, start the migrate job with the new `sha-<short>` image and wait for its execution to succeed (fail on any other end state), then `az containerapp update --image ghcr.io/blacklight0101/rosetta:sha-<short>`, wait for `/healthz` over HTTPS, run `scripts/smoke.mjs`; remove `RAILWAY_TOKEN` and every Railway step; keep the `ROSETTA_DEPLOY_ENABLED` switch, the ZAP precondition, the concurrency rule and the main-or-tag rule. (3) Rewrite `docs/runbooks/deploy.md` for Azure: the owner steps already done on 2026-10-24 (subscription, 25 USD budget, resource group, deploy identity with a federated credential for `repo:blacklight0101/Rosetta:environment:production` and Contributor on `rg-rosetta` only, the three environment variables); the environment secrets the owner adds in the GitHub settings page; provisioning; deploy; smoke (`curl` lines with `<app>.<region>.azurecontainerapps.io`); rollback (`az containerapp update --image` with the previous tag); backup (point-in-time restore kept 7 days, the lock, the scheduled `npm run backup`); restore; teacher account; the cost-analysis check after day one for the `Environment Management Hour` meter (ADR-024 risks); keep a one-line history note that Railway was dropped (DEC-171). (4) Update the three test files so they assert the new design. Do not run either workflow: running them creates billed resources and is the orchestrator's step after the owner says so in chat.
+- **Delivers**: `.github/workflows/azure-provision.yml`, the changed `release.yml`, the rewritten deploy runbook, the updated tests.
+- **Done when**: the tests assert: OIDC login with the three `vars.` values and no `creds:`; `id-token: write` only on the jobs that log in to Azure; the provision workflow runs only on `workflow_dispatch` and in `production`; no step echoes a secret (no `echo` of a `secrets.` or generated password value); the migrate job runs and succeeds before the image update; no `RAILWAY` or `railway` remains in the workflows, the runbook or their tests outside the history note; every secret name of section 4 is either a `secretref:` in the provision workflow or listed as owner-set; actionlint passes; CI is green.
+- **Refs**: RF-1304, RF-1306, RNF-003, RNF-016, ADR-014, ADR-016, ADR-024, DEC-104, DEC-133, DEC-140, DEC-171, Q-18; P1-55, P2-12.
 
 ---
 
