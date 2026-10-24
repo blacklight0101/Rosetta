@@ -187,6 +187,8 @@ describe('dataModelMarkdown: defaults', () => {
     const text = plain(render({ ...model, tables }));
 
     expect(text).toContain('| customer_id | uuid | no, default 0 | new |');
+  });
+});
 
 describe('dataModelMarkdown: a table copied from the legacy model (P5-38)', () => {
   it('RF-623 marks a table built from the legacy claims and no other', () => {
