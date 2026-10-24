@@ -10,6 +10,11 @@ import {
   requestWith,
   toolResult,
 } from '../../../support/egress-harness.js';
+import {
+  loadMaskedValuePrompt,
+  maskedValueReplacement,
+} from '../../../../src/infrastructure/prompts/masked-value-prompt.js';
+import { configText, fakePassword } from '../../../support/masked-secret-fixtures.js';
 import { FailingMasker } from '../../../support/failing-masker.js';
 import { failureOf } from '../../../support/failure-of.js';
 import { keyedSecretCases, secretCases } from '../../../support/secret-fixture.js';
@@ -178,5 +183,21 @@ describe('EgressGuard with a failing masker', () => {
 
     expect((await manifest())?.security.blockedCalls).toBe(1);
     expect(await egressLines()).toEqual([]);
+  });
+});
+
+describe('EgressGuard sends the note of a masked value (P5-34)', () => {
+  it('P5-34 RF-141 the model reads that a plain-text value is written there, and never the value', async () => {
+    const file = await loadMaskedValuePrompt('prompts');
+    const masker = new SecretMasker(undefined, maskedValueReplacement(file));
+    const { guard, fake } = await egressHarness({ masker });
+
+    await guard.complete(requestWith(readConversation(toolResult({ text: configText }))));
+
+    const sent = fake.requests[0]?.messages[2]?.content ?? '';
+    expect(sent).toMatch(
+      /Password=\[MASKED:[a-z-]+\] \(.*written here in plain text.*Rosetta masked it/u,
+    );
+    expect(sent).not.toContain(fakePassword);
   });
 });

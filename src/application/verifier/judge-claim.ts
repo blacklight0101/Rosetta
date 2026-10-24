@@ -7,6 +7,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { LlmMessage, LlmRequest, LlmResponse } from '../ports/llm-provider.js';
 import type { RepositoryReader } from '../ports/repository-reader.js';
+import type { SecretLines } from '../ports/secret-lines.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import {
   markedLines,
@@ -15,6 +16,7 @@ import {
   type EvidenceLimits,
   type SkipLookup,
 } from './cited-lines.js';
+import { maskedSourceReason } from './masked-source-claim.js';
 import { renderedFileReason } from './rendered-file-claim.js';
 import { screenRuleVerdict } from './screen-rule-check.js';
 import { parseVerdictAnswer, type JudgedStatus, type Verdict } from './verdict-answer.js';
@@ -66,6 +68,8 @@ export interface ClaimJudgeParts {
   readonly call: JudgementCall;
   /** P3-105: the rendered workbook folders of the snapshot; a claim about their files is rejected. */
   readonly workbookFolders?: readonly string[] | undefined;
+  /** P5-34: which cited lines hold a value Rosetta masks; a claim that it is masked in the source is rejected. */
+  readonly secretLines?: SecretLines | undefined;
   /** Records the model version of each answer (RNF-004). */
   readonly onAnswer?: (response: LlmResponse) => Promise<void>;
   /** P5-15: told by the step that a cap or a stop ended it, so a claim still waiting sends no call. */
@@ -167,6 +171,25 @@ async function ask(
   }
 }
 
+/** P5-34, P3-122, P5-31: the claims the cited lines settle by a rule cost no call. */
+function ruleJudgement(
+  parts: ClaimJudgeParts,
+  claim: JudgedClaim,
+  excerpts: readonly CitedExcerpt[],
+): Judgement | undefined {
+  // P5-34: the value is written in plain text; Rosetta, not the code, masked it.
+  const masked =
+    parts.secretLines === undefined
+      ? undefined
+      : maskedSourceReason(claim, excerpts, parts.secretLines);
+  if (masked !== undefined) {
+    return { kind: 'judged', status: 'Rejected', reason: masked, withoutModel: true };
+  }
+  // P3-122, P5-31: a derived field or route claim the cited lines decide.
+  const rule = screenRuleVerdict(claim, excerpts);
+  return rule === undefined ? undefined : { kind: 'judged', ...rule, withoutModel: true };
+}
+
 /** The claim's verdict, `Unverified` with the reason, or `stopped` (RF-301). */
 // RF-301
 export async function judgeClaim(
@@ -187,9 +210,8 @@ export async function judgeClaim(
     parts.skipReason,
   );
   if (!evidence.ok) return unverified(evidence.error);
-  // P3-122, P5-31: a derived field or route claim the cited lines decide costs no call.
-  const rule = screenRuleVerdict(claim, evidence.value);
-  if (rule !== undefined) return { kind: 'judged', ...rule, withoutModel: true };
+  const rule = ruleJudgement(parts, claim, evidence.value);
+  if (rule !== undefined) return rule;
   const asked: LlmMessage[] = [
     { role: 'user', content: evidenceMessage(parts, claim, evidence.value) },
   ];

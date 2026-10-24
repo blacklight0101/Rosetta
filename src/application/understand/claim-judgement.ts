@@ -11,6 +11,7 @@ import { CodeMapIndex } from '../agent/code-map-index.js';
 import type { Clock } from '../ports/clock.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { LlmResponse } from '../ports/llm-provider.js';
+import type { SecretLines } from '../ports/secret-lines.js';
 import type { RunExecution } from '../ports/run-executor.js';
 import type { ScannedSource } from '../ports/scan-results.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
@@ -231,7 +232,12 @@ export interface JudgementContext {
   readonly nextCallId: () => string;
   readonly traceId: string;
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
-  readonly verifier: { readonly role: ClaimJudgeParts['role']; readonly prompts: VerifierPrompts };
+  readonly verifier: {
+    readonly role: ClaimJudgeParts['role'];
+    readonly prompts: VerifierPrompts;
+    /** P5-34: which cited lines hold a masked value. */
+    readonly secretLines?: SecretLines | undefined;
+  };
 }
 
 /** RNF-004: the exact model version of each answer of the `verifier` role. */
@@ -249,6 +255,7 @@ export function judgementPartsOf(context: JudgementContext, clock: Clock): Claim
     judge: {
       ...{ role: verifier.role, prompts: verifier.prompts, reader: context.scanned.reader },
       ids: context.ids,
+      ...(verifier.secretLines === undefined ? {} : { secretLines: verifier.secretLines }),
       workbookFolders: context.scanned.workbookFolders,
       skipReason: (path) => index.skipReasonOf(path),
       limits: { ...defaultEvidenceLimits, maxLines: settings.scan.excerptMaxLines },

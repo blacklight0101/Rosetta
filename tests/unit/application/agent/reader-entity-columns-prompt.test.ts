@@ -6,13 +6,13 @@ import { loadReaderPrompts } from '../../../../src/infrastructure/prompts/prompt
 // nullability, default, key and foreign key, what is missing (a primary key, a unique constraint the
 // code relies on) and the cascades; v8 stays unchanged and lacks the rules.
 
-const current = () => readFile('prompts/reader/area.v11.md', 'utf8');
+const current = () => readFile('prompts/reader/area.v12.md', 'utf8');
 
-describe('prompts/reader/area.v11.md', () => {
+describe('prompts/reader/area.v12.md', () => {
   it('RF-202 is the reader system prompt the loader gives', async () => {
     const prompts = await loadReaderPrompts('prompts');
 
-    expect(prompts.system).toMatchObject({ name: 'reader/area.v11.md', version: 'v11' });
+    expect(prompts.system).toMatchObject({ name: 'reader/area.v12.md', version: 'v12' });
     expect(prompts.system.text).toBe(await current());
   });
 

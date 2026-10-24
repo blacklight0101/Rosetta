@@ -20,6 +20,8 @@ export interface RunTextSources extends PromptSources {
   readonly mergePrompt: () => Promise<PromptFile>;
   readonly overviewPrompt: () => Promise<PromptFile>;
   readonly verifierPrompts: () => Promise<VerifierPrompts>;
+  /** P5-34, RNF-004: the note a masked value is replaced with, recorded with the other prompts. */
+  readonly maskedValuePrompt: () => Promise<PromptFile>;
 }
 
 /** The prompt files the run reads. */
@@ -47,12 +49,17 @@ export async function recordRunTexts(
   const use = { withAnswers, deepen: !!options.deepen, workbook };
   const marks = runMarks(tasks, scanned.codeMap);
   const { prompts, versions } = await runPrompts(sources, project.settings, use, marks);
-  const [mergePrompt, overviewPrompt, verifierPrompts] = await Promise.all([
+  const [mergePrompt, overviewPrompt, verifierPrompts, masked] = await Promise.all([
     sources.mergePrompt(),
     sources.overviewPrompt(),
     sources.verifierPrompts(),
+    sources.maskedValuePrompt(),
   ]);
-  const all = { ...versions, ...verifierPromptVersions(verifierPrompts) };
+  const all = {
+    ...versions,
+    ...verifierPromptVersions(verifierPrompts),
+    [masked.name]: { version: masked.version, sha256: masked.sha256 },
+  };
   await updates.update((stored) => ok(recordPromptVersions(stored, all)));
   return { prompts, mergePrompt, overviewPrompt, verifierPrompts };
 }

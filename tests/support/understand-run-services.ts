@@ -21,6 +21,7 @@ import { ERROR_CODES } from '../../src/domain/errors/codes.js';
 import { err, type Result } from '../../src/domain/errors/result.js';
 import { NodeOutputWriter } from '../../src/infrastructure/files/node-output-writer.js';
 import { FakeSourceFetcher } from '../../src/infrastructure/github/fake-source-fetcher.js';
+import { MaskedLineFinder } from '../../src/infrastructure/guards/masked-line-finder.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import {
   loadMergePrompt,
@@ -30,6 +31,7 @@ import {
   loadRereadPrompt,
   loadReaderPrompts,
 } from '../../src/infrastructure/prompts/prompt-files.js';
+import { loadMaskedValuePrompt } from '../../src/infrastructure/prompts/masked-value-prompt.js';
 import { loadVerifierPrompts } from '../../src/infrastructure/prompts/verifier-prompt-files.js';
 import { loadTextToolProtocol } from '../../src/infrastructure/providers/ollama/text-tool-protocol-file.js';
 import { CSharpPack } from '../../src/infrastructure/scan/packs/csharp/csharp-pack.js';
@@ -162,6 +164,8 @@ function understandExecutor(
     mergePrompt: () => loadMergePrompt('prompts'),
     overviewPrompt: () => loadOverviewPrompt('prompts'),
     verifierPrompts: () => loadVerifierPrompts('prompts'),
+    maskedValuePrompt: () => loadMaskedValuePrompt('prompts'),
+    secretLines: new MaskedLineFinder(masker),
     textToolProtocol: () => loadTextToolProtocol('prompts'),
     answersPrompt: () => loadAnswersPrompt('prompts'),
     rereadPrompt: () => loadRereadPrompt('prompts'),
