@@ -105,8 +105,8 @@ describe('missingNamed: names stated as a table (P5-33)', () => {
 
   it('P5-33 does not list a form field name as a missing table', async () => {
     const form = card('BR-020', 'BR', 'Search', [
-      'The search page reads the order number from the form field txt_order_id and tblOrders.',
-      'The dropdown ddl_status_id picks the status; `btn_order_save` saves.',
+      'The search page reads the order number from the field txt_order_id and tblOrders.',
+      'The input ddl_status_id picks the status; the control `btn_order_save` saves, and order_ref field is read.',
     ]);
 
     const problems = missingNamed(await recordedModel('right'), [entity, form]);
@@ -135,5 +135,24 @@ describe('missingNamed: names stated as a table (P5-33)', () => {
     const problems = missingNamed(await recordedModel('right'), [entity, rule]);
 
     expect(problems.map((each) => each.item)).toEqual(['txt_order_log']);
+  });
+});
+
+describe('missingNamed: words near a name do not hide it (P5-33)', () => {
+  const entity = card('ENT-001', 'ENT', 'Orders', [
+    'tblOrders(id int, total money) holds the orders.',
+  ]);
+
+  it.each([
+    ['The dropdown is filled by lkp_status and the button saves.', 'lkp_status'],
+    ['Each button press reads lkp_region for the list.', 'lkp_region'],
+    ['Look up the region_names in the checkbox list.', 'region_names'],
+  ])('P5-33 lists the name in: %s', async (text, name) => {
+    const problems = missingNamed(await recordedModel('right'), [
+      entity,
+      card('BR-030', 'BR', 'Words', [text]),
+    ]);
+
+    expect(problems.map((each) => each.item)).toEqual([name]);
   });
 });

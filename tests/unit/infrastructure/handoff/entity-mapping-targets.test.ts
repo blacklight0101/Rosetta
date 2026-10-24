@@ -54,7 +54,7 @@ describe('entity-mapping.md target names', () => {
     const row = rowOf(text, 'Fax');
 
     expect(row).toContain('No table in the target data model');
-    expect(row).not.toContain('FaxLog');
+    expect(row).toContain('The planner named it FaxLog.');
   });
 
   it('P5-33 lists every table when two tables are built from the entity cards', () => {
@@ -72,11 +72,30 @@ describe('entity-mapping.md target names', () => {
     expect(rowOf(text, 'Orders')).toContain('tbl_orders');
   });
 
-  it('P5-33 mutation: the planner name is not the one written', () => {
+  it('P5-33 mutation: the target cell is not the planner name', () => {
     const text = mappingOf([
       { legacy: 'Orders', target: 'PlannerName', notes: '', sources: ['ENT-001'] },
     ]);
 
-    expect(text).not.toContain('PlannerName');
+    expect(rowOf(text, 'Orders').split('|')[2]).not.toContain('PlannerName');
+  });
+});
+
+describe('entity-mapping.md planner name', () => {
+  it('P5-33 keeps the planner name as a note when it differs from the table', () => {
+    const text = mappingOf([
+      { legacy: 'Orders', target: 'Order', notes: 'Kept.', sources: ['ENT-001'] },
+    ]);
+
+    expect(rowOf(text, 'Orders')).toContain('The planner named it Order.');
+    expect(rowOf(text, 'Orders')).toContain('Kept.');
+  });
+
+  it('P5-33 adds no note when the planner name is the table', () => {
+    const text = mappingOf([
+      { legacy: 'Orders', target: 'tbl_orders', notes: '', sources: ['ENT-001'] },
+    ]);
+
+    expect(rowOf(text, 'Orders')).not.toContain('planner named');
   });
 });
