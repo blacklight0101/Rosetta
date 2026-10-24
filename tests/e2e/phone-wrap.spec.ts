@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { expect, test } from './support/fixtures.js';
 import { openStartPage, runStatus, startAndOpenLiveRun } from './support/live-run-page.js';
+import { runScan } from './support/journey-pages.js';
 import { openPlanSetup } from './support/plan-setup-page.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
@@ -92,8 +93,10 @@ test(
   'RNF-010 the "Switch every role to Ollama" button wraps on the start page at 360 px',
   { tag: '@phone' },
   async ({ page }) => {
+    test.setTimeout(120_000);
     await page.setViewportSize(phone);
     await uploadFromNewProject(page, 'PhoneWrap.zip', await fixtureZip());
+    await runScan(page);
     await giveReaderToOpenAi(page);
 
     const button = page.getByRole('button', { name: /^Switch every role to Ollama/u });
