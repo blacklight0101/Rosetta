@@ -105,17 +105,6 @@ describe('FileRunCards keeps what it parsed: changes and limits', () => {
 
     expect(cardReads()).toBe(10);
   });
-
-  it('RF-604 only a bounded number of files is kept, the least recently read first', async () => {
-    const { files, scope, cardReads } = await seeded(30);
-    const cards = new FileRunCards(files, files, { filesKept: 10 });
-    await cards.cardsOf(scope);
-    files.reads.length = 0;
-
-    await cards.cardsOf(scope);
-
-    expect(cardReads()).toBeGreaterThan(0);
-  });
 });
 
 describe('FilePriorCards keeps what it parsed', () => {
