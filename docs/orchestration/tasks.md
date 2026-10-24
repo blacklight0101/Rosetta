@@ -5458,7 +5458,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: P5-22
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the plan setup page and its three reads (`GET /api/projects/:id/journey`, `/plan-estimate`, `/plan-source`), the card readers they share, the run log route (`GET /api/runs/:runId/logs`) and its reader, the kept-parse pattern of P5-22 (`FileRunCallReader.log`, `FileStatReader`). Second sweep on the evaluation stack (2026-10-24, a public project with 878 calls and about 450 cards): plan setup takes about 2.8 s on every load (journey 1.8 s, plan-estimate 1.4 s, plan-source 0.45 s), against the 1.5 s of P5-22; the run log answers in 0.55 to 0.95 s on every request, with no kept result.
 - **Do**: read and parse a run's cards once per version of its card files (size and modification time, as P5-22 does for the call log) and share that parse between journey, plan-estimate and plan-source; keep the parsed run log the same way (bounded, keyed by user and run, dropped when the file is gone); a request for another user's run still answers 404 (RF-1105). Measure before and after with a recorded large fixture.
 - **Review probes**: a 450-card fixture => plan setup's three reads parse each card file once per version (read-count test) and the second load re-reads none; a changed card file => the next read sees it; the run log of a 900-entry run => one parse, the second request reads no file; another user's run => 404 and no kept entry served; mutation: removing the version check => a changed file is not seen.
@@ -5475,7 +5475,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the verifier comments of P5-21, P5-22 and P5-23 (pull requests 885, 886, 891), the calls panel (`CallsPanel`, `use-run-calls.ts`), the start page ghost button, `tests/e2e/phone-wrap.spec.ts`.
 - **Do**: add the tests the verifiers asked for, and the small fixes they need: an error message holding `<script>` and an image tag on the calls page renders as text (P5-21); a failed "Load more calls" shows an error line with a retry, and newly loaded calls are announced in a polite live region (P5-22); the start page button "Switch every role to Ollama" wraps at 360 px with no sideways scroll (P5-23).
 - **Review probes**: hostile error text => shown as typed, no element formed; load more answering 500 => an error line and a retry that works; load more => the live region reads "N of M attempts loaded"; 360 px start page => no sideways scroll and the button label wraps; mutation: removing the live region => the probe fails.
@@ -5492,7 +5492,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: P5-20
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the reader room of P5-20 (`src/application/understand/reader-room.ts`, `withRoom`, `endsWithoutRoomStops`), the Deepen session and its readers (`src/application/deepen/deepen-session.ts`, `deepen-readers.ts`, `deepen-round.ts`), DEC-170, RF-429. Evaluation on a private project (2026-10-24, one cloud model on every role): Deepen ran to 98% of the run cost cap with no `budget.readersStopped` event and ended at the cap with 25 of 315 claims never judged; only Understand wires the room check.
 - **Do**: wire the same room check into every Deepen round: before a Deepen reader task and before each reader turn, the readers' spend plus the estimated cost of judging the written, unjudged claims of the whole Deepen run (all rounds) must fit the limits of DEC-170; when it does not, no further reader task starts, the round goes on to judgement, and Deepen ends with every written claim judged and the stop reason stated. One `budget.readersStopped` event per Deepen run.
 - **Review probes**: a recorded claim-heavy Deepen that today ends at the cap with unjudged claims => readers stop, every written claim judged, one readersStopped event, the run ends with its stop reason; a light Deepen => unchanged; a resumed Deepen counts the claims of earlier rounds; mutation: removing the room from Deepen => unjudged claims again.
@@ -5509,7 +5509,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the screen claims Rosetta writes from page markup without a model call (P3-122: the field, action, link and route claim templates), their citations, the verifier input for them. Evaluation on a private project (2026-10-24): 6 of 10 sampled Supported claims were such screen claims, each citing every range of its card (5 to 8 ranges) where one range shows the fact; a plain link reads "Action <text> starts the handler mailto..."; a calendar field reads "required" with no validator in the markup; on replay of the recorded judgements, the verdicts of these claims flip between runs and models ("The screen is at the route X", "starts the handler").
 - **Do**: each markup claim cites only the line range of the element it states (the field, the button, the link, the page directive); a link (an anchor or hyperlink control with a target) reads "<text> links to <target>", a button with a handler reads "<text> starts <handler>"; "required" is stated only when a validator or a required attribute for that field is in the markup; the route claim of a page whose route is its file path is decided by the code, like the other markup claims, and never sent to the verifier. The language-specific parts stay in the language packs (DEC-11).
 - **Review probes**: a recorded page with a link, a button with a handler, a calendar without a validator and a required text field => four claims, each citing one range, with the wording above; the route claim => decided without a model call; a page whose route is configured elsewhere => no route claim from the file path; mutation: citing the card's ranges again => the one-range probe fails.
@@ -5526,7 +5526,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the consolidation of cards after Understand and after each Deepen round (`consolidation.json`, `src/application/deepen/deepen-consolidation.ts`, the Understand consolidation), P3-125. Evaluation on a private project (2026-10-24): 23 screen cards for about 13 pages (one page had three screen cards, another four), and two pairs of integration and open-question cards with the same title in two areas.
 - **Do**: screen cards that describe the same page (the same file or route) are merged into one card with the claims of both, near-duplicate claims folded as P3-125 does; cards of one kind with the same normalised title are merged across areas when their claims cite overlapping files or the same external system, and kept apart otherwise; consolidation.json records each merge with the ids merged; the package lists merged ids as aliases so links keep working.
 - **Review probes**: three recorded screen cards of one page => one card with every distinct claim; two integration cards named the same for one mail server in two areas => one card; two cards with the same title about different files => kept apart; a link to a merged id => resolves to the kept card; mutation: switching the page merge off => the three cards return.
@@ -5543,7 +5543,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the data model and entity mapping writers of the package (`data-model.md`, `entity-mapping.md`), the planner answers that feed them, the data-model check of checks.md ("Left out"). Evaluation on a private project (2026-10-24): the entity mapping names target entities in one style while the data model of the same package names the tables in another (`Order` against `tbl_orders`, for example); the check lists a form field name as a table the model lacks.
 - **Do**: the entity mapping takes its target names from the data model of the same package (the table each entity maps to), so the two never disagree, and an entity with no table says so; the "Left out" data-model check counts only names a card states as a table (in a query, a join or a sentence that calls it a table), not every identifier in a claim.
 - **Review probes**: a recorded plan whose planner answers name an entity differently from its table => the mapping shows the table name; a claim naming a form field => not listed as a missing table; a card naming a lookup table the model lacks => still listed; mutation: taking the planner's mapping names again => the names disagree.
