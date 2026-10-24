@@ -1,10 +1,17 @@
-import type { PhaseNote, PlanContent } from './plan-content.js';
+import type { PlanContent } from './plan-content.js';
 
 // RF-601, RF-627, P5-40: a phase is titled from the cards it holds. The planner names the phases
 // before it knows which cards land in them, and the gap pass adds cards later, so a name can
 // describe other work (a phase "Marks" holding the attendance card). A name that shares no word
 // with any card of its phase is replaced by the titles of those cards, and the change is noted
 // for checks.md. A name that fits, and a phase with no card, are left as they are.
+
+/** A phase whose name code replaced with the titles of its cards. */
+export interface PhaseNote {
+  readonly phase: number;
+  readonly from: string;
+  readonly to: string;
+}
 
 const MIN_WORD = 4;
 const STEM = 4;
