@@ -886,6 +886,7 @@ As a developer I want to use OpenAI models for any role so that I can use strong
 
 - Given an OpenAI key in the environment and a configured model, when a role uses provider `openai`, then calls succeed with tool calling and usage is reported, including cached tokens when the API reports them.
 - Given a role on a reasoning model (Q-58, default applies), when the adapter calls it, then it sends the role's reasoning effort (default `low`) where the model accepts one, records the reasoning tokens the provider reports, and an answer that comes back empty at the output limit is retried once with the limit doubled, up to the model's listed maximum output (32 768 when the list gives none, DEC-163) and under the budget guard, which reserves the worst case of the retried call, instead of being asked to continue.
+- Given the original GPT-5 models on the shipped list (`gpt-5-mini`, `gpt-5-nano`, `gpt-5-nano-2025-08-07`), which refuse reasoning effort `none`, when a role that carries tools calls one, then the call goes through the Responses API with the role's effort (default `low`) and is never sent `none` (P3-132, P3-131).
   Verification: contract test with recorded responses; one manual live call.
 
 **RF-403 OpenAI-compatible adapter** - R1 - Should - Source DEC-09 - ADR-003

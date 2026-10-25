@@ -266,7 +266,10 @@ cloud providers off, a scan and an understand run must complete with Ollama only
   calling with them only with effort `none` (P3-129 sends `none` with tools; without the mark the default effort
   made every reader call HTTP 400, P3-130). GPT-6 Astra and GPT-6.1 Sol take no function tools on Chat Completions at any effort, so
   the list marks them `responsesApi: true` and `reasoning: true` (P3-131, section 3.7): their calls with tools go to
-  the Responses API and keep the role effort. `noTools: true` stays in the list format for a model that cannot call
+  the Responses API and keep the role effort. The original GPT-5 models (`gpt-5-mini`, `gpt-5-nano`,
+  `gpt-5-nano-2025-08-07`) refuse effort `none` (HTTP 400, supported values `minimal`, `low`, `medium`, `high`;
+  seen 2026-10-25, every reader call on `gpt-5-nano` failed with RST-1506), so the list marks them the same way
+  (P3-132). `noTools: true` stays in the list format for a model that cannot call
   tools on any route Rosetta uses: a run that gives one to the reader, the only role that calls tools, is refused
   before any call with `RST-1523` naming the model and the role, and the settings pages say the same under the
   model; the verifier, planner and summariser may use it. No listed model carries it now. Sources,
@@ -374,7 +377,7 @@ not used.
 
 ### 3.7 The Responses API route (P3-131)
 
-An OpenAI model that the shipped list marks `responsesApi: true` (today `gpt-6-astra` and `gpt-6.1-sol`) sends its
+An OpenAI model that the shipped list marks `responsesApi: true` (today `gpt-6-astra`, `gpt-6.1-sol` and, since P3-132, `gpt-5-mini`, `gpt-5-nano` and `gpt-5-nano-2025-08-07`) sends its
 **calls with tools** to `POST /v1/responses`; its calls without tools, every other model and every
 `openai-compatible` service stay on Chat Completions, byte for byte as in sections 3.2 to 3.4. The adapter decides
 per call (`usesResponses(model)` option, filled from the list by `realAdapters`); the reader is the only role whose
@@ -394,7 +397,8 @@ calls carry tools.
   `reasoning.encrypted_content`. The cost is that the model re-thinks each turn; if a model later needs them, the
   encrypted items would be kept next to the tool calls in the conversation (a follow-up).
 - **Effort.** On this route the role's effort (default low, Q-58) is sent with tools too; the P3-129 rule (effort
-  `none` for tool calls, with its run log note) applies only to Chat Completions models.
+  `none` for tool calls, with its run log note) applies only to Chat Completions models. P3-132: the original GPT-5
+  models are on this route because they refuse `none` (HTTP 400 on the Chat Completions rule of P3-129).
 - **Reading the answer** (`openai-responses-response.ts`): text from `message` items (`output_text`, or a `refusal`),
   tool calls from `function_call` items (arguments that are not a JSON object stay visible as text), other items
   (`reasoning`) are ignored. Finish reason: `tool_use` with tool calls; `length` when `status` is `incomplete` with
