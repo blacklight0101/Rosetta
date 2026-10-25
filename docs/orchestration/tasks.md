@@ -14,9 +14,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 184     | 67        | 98         | 19        | 0                  | 107     | 69      | 8      | 122        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 131     | 16        | 111        | 4         | 0                  | 54      | 73      | 4      | 87         | 0         |
+| P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
-| **Total**               | **400** | **99**    | **271**    | **30**    | **0**              | **193** | **193** | **14** | **229**    | **0**     |
+| **Total**               | **401** | **99**    | **272**    | **30**    | **0**              | **194** | **193** | **14** | **230**    | **0**     |
 
 ## Conventions for every card
 
@@ -2947,7 +2947,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-11
 - **Gate**: owner
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `eval/config.json` (the spend caps); RFC-001 section 7; the golden set of P2-11 (#476).
 - **Do**: Run the first live evaluation with the owner's provider keys and approval. Steps: the owner approves the download of dotnet-architecture/eShopModernizing at 63bc9ec4414d7e281dc9f9d7bdcf70030950457d (MIT) and the spend (eval/config.json caps: run 0.5 USD, total 1.5 USD); run `npm run eval -- --yes` (or with `--reader ollama:...` for a local model); keep eval-out/<id>/ and summarise precision, strict precision, recall, citation validity, estimate accuracy and the spread in the PR or handoff.
 - **Delivers**: the eval-out/<id>/ folder kept, and the results summary in the PR or handoff.
@@ -5001,6 +5001,21 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the change, contract tests, and docs/providers.md updated.
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: RF-402, Q-58, Q-60; P3-129, P3-130.
+
+### P3-132 - Follow-up: GPT-5 models refuse reasoning effort none on tool calls
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-131
+- **Gate**: none
+- **Status**: Done
+- **Reads**: the model list (`prices/models.yaml`), the reasoning-effort wrapper of P3-129 and the Responses route of P3-131. The P2-34 evaluation (2026-10-25) with gpt-5-nano as reader failed on every reader call: HTTP 400 "'reasoning_effort' does not support 'none' with this model".
+- **Do**: gpt-5-mini, gpt-5-nano and gpt-5-nano-2025-08-07 send calls with tools through the Responses route with the role effort, never `none`; the model list comment and docs/providers.md say why.
+- **Review probes**: each of the three models routes tool calls to Responses with the role effort; gpt-6-sol and gpt-6-luna still send `none` with tools on Chat Completions; mutation: removing the mark from gpt-5-nano fails a test.
+- **Behaviour to preserve**: RF-402, Q-58, P3-129, P3-131.
+- **Delivers**: the model list change, tests, docs/providers.md and an RF-402 scenario (#924, issue #923).
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-402, Q-58; P3-129, P3-131, P2-34.
 
 ---
 
