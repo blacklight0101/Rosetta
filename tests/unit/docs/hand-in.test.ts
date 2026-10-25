@@ -46,12 +46,14 @@ const segmentSplit = (section: string): { narration: number; clip: number } => {
 const slideSection = (slides: string, title: string): string =>
   slides.split(/^# /mu).find((section) => section.startsWith(title)) ?? '';
 
-it('RF-802 the README links the slides and the video script with their URL placeholders', async () => {
+it('RF-802 the README links the published slides and the video script with its URL placeholder', async () => {
   const readme = await readRepoFile('README.md');
 
   expect(readme).toContain('docs/hand-in/slides/');
   expect(readme).toContain('docs/hand-in/video-script.md');
-  expect(readme).toContain('Slides URL: [PENDIENTE');
+  expect(readme).toMatch(
+    /Slides URL: <https:\/\/github\.com\/blacklight0101\/Rosetta\/blob\/main\/docs\/hand-in\/slides\/Rosetta-Hito1\.pdf>/u,
+  );
   expect(readme).toContain('Video URL: [PENDIENTE');
 });
 
