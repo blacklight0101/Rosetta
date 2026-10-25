@@ -27,6 +27,11 @@
 # with this model" and "Function tools with reasoning_effort are not supported"); on Responses they answer
 # 200 with tools at effort low (probed 2026-10-23, store false). They are marked `reasoning` too, so the
 # role's effort (default low) is sent with tools. A call without tools stays on Chat Completions.
+# P3-132 (2026-10-25): the original GPT-5 models (gpt-5-mini, gpt-5-nano, gpt-5-nano-2025-08-07) are
+# marked too. They refuse effort `none` (HTTP 400 "Unsupported value: 'reasoning_effort' does not
+# support 'none' with this model. Supported values are: 'minimal', 'low', 'medium', and 'high'."), which
+# the P3-129 rule sent with every Chat Completions call that carries tools, so every reader call on
+# gpt-5-nano failed (RST-1506). On Responses their tool calls keep the role effort, never `none`.
 #
 # `noTools: true` (P3-130) marks a model that cannot call tools on any route Rosetta uses: a run that gives
 # such a model to a role that calls tools (the reader) is refused before any call (RST-1523); a role without
@@ -134,15 +139,18 @@ models:
     contextTokens: 400000
     maxOutputTokens: 128000
     reasoning: true
+    responsesApi: true
   - provider: openai
     model: gpt-5-nano
     label: GPT-5 nano
     contextTokens: 400000
     maxOutputTokens: 128000
     reasoning: true
+    responsesApi: true
   - provider: openai
     model: gpt-5-nano-2025-08-07
     label: GPT-5 nano (2025-08-07)
     contextTokens: 400000
     maxOutputTokens: 128000
     reasoning: true
+    responsesApi: true
