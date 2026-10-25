@@ -152,12 +152,13 @@ it('RF-802 each video segment has narration and clip seconds that sum to its len
   expect(total).toBe(TOTAL_SECONDS);
 });
 
-it('RF-802 the video script placeholders for the hosted URL, sample report and teacher account are marked', async () => {
+it('RF-802 the video script names the hosted URL and the sample report, records with the teacher account and never shows a password', async () => {
   const script = await readRepoFile('docs/hand-in/video-script.md');
 
-  expect(script).toMatch(/\[PENDIENTE: URL definitiva de la aplicación alojada/u);
-  expect(script).toMatch(/\[PENDIENTE: URL definitiva del informe de ejemplo/u);
+  expect(script).toMatch(/https:\/\/ca-rosetta\.[a-z0-9-]+\.spaincentral\.azurecontainerapps\.io/u);
+  expect(script).toContain('https://blacklight0101.github.io/Rosetta/');
   expect(script).toMatch(/cuenta de evaluación/iu);
+  expect(script).toMatch(/no se ve la contraseña/u);
 });
 
 it('RF-802 the results slide quotes the CI verify run on the current head, dated and with its run id', async () => {
