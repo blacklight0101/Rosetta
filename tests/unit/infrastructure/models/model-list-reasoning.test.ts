@@ -70,7 +70,7 @@ describe('the shipped model list: reasoning models', () => {
     ]);
   });
 
-  it('P3-131 routes gpt-6-astra and gpt-6.1-sol through the Responses API, marks no model noTools, and moves no other', async () => {
+  it('P3-131 / P3-132 routes gpt-6-astra, gpt-6.1-sol and the original gpt-5 models through the Responses API, marks no model noTools, and moves no other', async () => {
     const list = await loadModelList(shipped);
 
     const routed = list.models.filter((entry) => entry.responsesApi === true);
@@ -78,6 +78,9 @@ describe('the shipped model list: reasoning models', () => {
     expect(routed.map((entry) => `${entry.provider}/${entry.model}`)).toEqual([
       'openai/gpt-6-astra',
       'openai/gpt-6.1-sol',
+      'openai/gpt-5-mini',
+      'openai/gpt-5-nano',
+      'openai/gpt-5-nano-2025-08-07',
     ]);
     expect(routed.every((entry) => entry.reasoning === true)).toBe(true);
     expect(list.models.filter((entry) => entry.noTools === true)).toEqual([]);

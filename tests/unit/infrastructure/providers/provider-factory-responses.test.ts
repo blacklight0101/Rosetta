@@ -21,7 +21,8 @@ import {
 // tools (the P3-129 "none for tools" rule is for Chat Completions only). gpt-6-luna is unchanged.
 
 const shipped = fileURLToPath(new URL('../../../../prices/models.yaml', import.meta.url));
-const names = ['gpt-6-luna', 'gpt-6-astra', 'gpt-6.1-sol'];
+const original = ['gpt-5-mini', 'gpt-5-nano', 'gpt-5-nano-2025-08-07'];
+const names = ['gpt-6-luna', 'gpt-6-sol', 'gpt-6-astra', 'gpt-6.1-sol', ...original];
 const priceTable: PriceTable = {
   ...budgetTable,
   prices: [
@@ -90,10 +91,29 @@ describe('a model on the Responses route, given to the reader', () => {
     expect(noted).toBe(0);
   });
 
-  it('P3-129 gpt-6-luna, not on the route, still sends effort none with tools', async () => {
-    const { withTools, without } = await readerRequests('gpt-6-luna');
+  it.each(original)(
+    'P3-132 / RF-402 %s tool calls go to Responses with the role effort, never none',
+    async (model) => {
+      const list = await loadModelList(shipped);
+      const { withTools, without } = await readerRequests(model);
+      const { withTools: high } = await readerRequests(model, 'high');
 
-    expect(withTools?.reasoningEffort).toBe('none');
-    expect(without?.reasoningEffort).toBe('low');
-  });
+      expect(responsesModelsOf(list)('openai', model)).toBe(true);
+      expect(withTools?.reasoningEffort).toBe('low');
+      expect(without?.reasoningEffort).toBe('low');
+      expect(high?.reasoningEffort).toBe('high');
+    },
+  );
+
+  it.each(['gpt-6-luna', 'gpt-6-sol'])(
+    'P3-129 %s, not on the route, still sends effort none with tools',
+    async (model) => {
+      const list = await loadModelList(shipped);
+      const { withTools, without } = await readerRequests(model);
+
+      expect(responsesModelsOf(list)('openai', model)).toBe(false);
+      expect(withTools?.reasoningEffort).toBe('none');
+      expect(without?.reasoningEffort).toBe('low');
+    },
+  );
 });
