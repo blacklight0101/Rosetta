@@ -16,7 +16,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
-| **Total**               | **401** | **99**    | **272**    | **30**    | **0**              | **194** | **193** | **14** | **230**    | **0**     |
+| P6 Agent build method   | 1       | 0         | 1          | 0         | 0                  | 0       | 1       | 0      | 0          | 0         |
+| **Total**               | **402** | **99**    | **273**    | **30**    | **0**              | **194** | **194** | **14** | **230**    | **0**     |
 
 ## Conventions for every card
 
@@ -5834,3 +5835,27 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Refs**: P5-31, RF-626; evaluation 2026-10-24.
 
 ---
+
+## Phase 6 - Agent build method (held by the owner)
+
+No card of this phase starts until the owner opens the phase (DEC-173).
+
+### P6-01 - Review: the build method the package gives an AI agent team
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-173)
+- **Status**: Todo
+- **Reads**: the package writer (`src/infrastructure/handoff/`, `handoff-method-markdown.ts` for `AGENTS.md`), the planning brief's build method question (`src/domain/planning/brief-questions.ts`), RF-612, RF-635 and RF-636, and this repository's own method as the reference: the project-blueprint skill it was planned with (docs-first repository, `CLAUDE.md`, `handoff.md`, RFC, ADRs, decision log, task cards with builder tiers, an independent verifier and human gates) and `docs/orchestration/README.md` with `.claude/agents/`. Owner test of 2026-10-25: a Sonnet full run of a single-file app gave a package with 18 task cards and no agent method, because AI-assisted build stayed on its default (off).
+- **Do**: a written review, then the cards it calls for (no code in this card). The goal: a team that takes the package builds the new system with the same method this repository was built with, as the project-blueprint skill sets it up.
+  - What an agent sees first in the package, and whether it can tell how to proceed without a person explaining it.
+  - What `AGENTS.md` holds today with AI-assisted build on, against this repository's method: orchestrator, builder tiers, independent verifier, gates, card status flow, merge rules, verdict format, the red test first.
+  - Whether Plan setup should ask the build method question plainly (or default it on when the brief names an agent tool), and say what the package leaves out when it is off.
+  - Plan setup asks which agent tool the team builds with (Claude Code, Codex or another) and the models it has; the difficulty bands map to those models (for example haiku, sonnet and opus for Claude Code, and the matching tiers for Codex), and every task card names the model of its band.
+  - A package check that each card's model belongs to the chosen tool and matches its difficulty band and risk class (RF-635), so a card is never given a model the team does not have.
+  - Whether the package should ship agent definitions for the chosen tool (for example `.claude/agents/` for Claude Code, `AGENTS.md` for Codex) and a start-here section (DEC-60: no Claude Code plugin; the package stays usable without the tool).
+  - Proposed new requirement ids or changes to RF-612, RF-635 and RF-636, with their open questions and defaults.
+- **Delivers**: `docs/reviews/2026-xx-agent-build-method.md` with the findings and the proposed cards; the cards appended to this phase.
+- **Done when**: the owner has read the review and chosen which proposed cards to build.
+- **Refs**: RF-612, RF-635, RF-636, DEC-60, DEC-76, DEC-173.
