@@ -761,7 +761,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-46
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `docs/rfc/RFC-001-rosetta.md` sections 1-4; `docs/process-flows.md`; Q-02 and Q-03.
 - **Do**: slides in Spanish (Q-03) presenting the problem, the pipeline, the live agents, evidence and the verifier, cost control, security, the build method and the results; a video script of about 5 minutes (Q-02) with the explainer and a clip of a real run; the owner records the video; both URLs added to the README.
 - **Delivers**: `docs/hand-in/slides/` source, `docs/hand-in/video-script.md`, README links.
@@ -774,7 +774,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-52, P1-53
 - **Gate**: G-06
-- **Status**: In review
+- **Status**: Done
 - **Reads**: RF-803; `docs/runbooks/deploy.md`.
 - **Do**: `docs/hand-in/m1.md`: the hosted URL, the teacher account's user name (the password is given only in the hand-in form), the sample report URL as a fallback, the slides and video URLs, the repository URL; a checklist the owner ticks the day before the hand-in; the owner submits (G-05).
 - **Delivers**: `docs/hand-in/m1.md`.
@@ -787,7 +787,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-45, P1-48
 - **Gate**: G-07, G-08 (DEC-133)
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` sections 2, 3, 8, 10-12 and 14; the host ADR of P1-48; `docs/security/threat-model.md` section 5.
 - **Do**: the release workflow `.github/workflows/release.yml` (image to GHCR as `X.Y.Z` and `sha-<short>`, CycloneDX SBOM on releases); deploy the `sha-<short>` image of `main` to the chosen host (DEC-104) with managed PostgreSQL, the persistent disk at `ROSETTA_DATA_DIR`, every secret in the host's store, `ROSETTA_TRUST_PROXY=1`, HTTPS with HTTP redirected; the OWASP ZAP baseline scan against the Compose stack before the deploy; the smoke script (health, landing, sign-in, a cheap scan); measure RNF-017 once; `docs/runbooks/deploy.md` (deploy, rollback, backup, restore, roles in the host's console, teacher account); the owner creates the `teacher` account without a forced password change (RF-1107) and sets `defaultRoles` (DEC-106); redeploy as later P1 cards merge.
 - **Delivers**: the release workflow, the smoke script, the runbook, the ZAP report summary, the hosted URL recorded in `handoff.md`.
@@ -2662,7 +2662,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-55
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` section 12; `docs/runbooks/deploy.md`.
 - **Do**: daily database backups kept 7 days (host or scheduled `pg_dump`), weekly data-folder copy, a restore drill into the local Compose stack recorded in the runbook.
 - **Delivers**: the backup configuration or script and the runbook section.
