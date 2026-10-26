@@ -13,11 +13,11 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 184     | 67        | 98         | 19        | 0                  | 107     | 69      | 8      | 122        | 0         |
-| P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
+| P2 Full understand      | 43      | 7         | 29         | 7         | 0                  | 13      | 28      | 2      | 22         | 0         |
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
 | P6 Agent build method   | 1       | 0         | 1          | 0         | 0                  | 0       | 1       | 0      | 0          | 0         |
-| **Total**               | **402** | **99**    | **273**    | **30**    | **0**              | **194** | **194** | **14** | **230**    | **0**     |
+| **Total**               | **404** | **99**    | **275**    | **30**    | **0**              | **194** | **196** | **14** | **232**    | **0**     |
 
 ## Conventions for every card
 
@@ -2688,7 +2688,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-09, P2-10, P2-11, P2-12, P2-13
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/roadmap.md` (P2 exit criteria).
 - **Do**: `docs/verification/p2-matrix.md` for every P2 requirement with its evidence; the golden-set result against the RFC success criteria; the owner's hands-on review agenda; gaps and the review's changes listed for the orchestrator to file as follow-up cards; the pyramid line.
 - **Delivers**: the matrix and the list of gaps.
@@ -3045,6 +3045,36 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: per RFC-003.
 - **Done when**: per RFC-003's acceptance scenarios.
 - **Refs**: owner request 2026-10-18, RF-006, RF-304, RFC-003.
+
+---
+
+### P2-46 - Follow-up: the estimate within 30 % of the actual cost
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P2-34
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/verification/p2-matrix.md` section 3; the `handoff.md` resume entry of 2026-10-25; `src/application/` estimate use case (RF-425); `prices/models.yaml`; `eval/config.json`.
+- **Do**: the live evaluation of 2026-10-25 (eShopModernizing, Claude Haiku 5.5, three runs) found the likely estimate 64 % above the actual cost, with 0 of 3 runs within 30 % (RNF-012), and the caps of `eval/config.json` refused every configuration on that estimate (RST-1600). Find where the estimate overcounts (input tokens per file read, reader turns, verifier and summariser calls, cached input of DEC-168) from the recorded provider calls of that run, correct the estimate, and add a test with a recorded run whose actual cost is within 30 % of the new estimate. Behaviour the specification does not describe stops the card as a new question.
+- **Delivers**: the corrected estimate, its tests, the RNF-012 row of `docs/verification/p2-matrix.md` updated.
+- **Done when**: a recorded evaluation run of the demo app has its actual cost within 30 % of its likely estimate; the RNF-012 row names it.
+- **Refs**: RNF-012, RF-425, RFC-001 section 7, P2-34, P2-14.
+
+---
+
+### P2-47 - Follow-up: entity relations in ENT cards
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P2-34
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/verification/p2-matrix.md` section 3; the golden set (`eval/golden/`, entities with relations); the ENT card format and reader prompt under `prompts/`; RF-262.
+- **Do**: the live evaluation of 2026-10-25 measured the relation precision of entity cards at 0.000 over two runs. Find whether the readers write no relations, write them in a shape the scorer does not read, or write wrong ones, and fix the cause in the prompt, the card format or the scorer (a new prompt or card format version, RNF-004). Add a recorded-response test that a relation of the demo's golden set is written and scored.
+- **Delivers**: the fix, its tests, the RNF-006 row of `docs/verification/p2-matrix.md` updated.
+- **Done when**: the scorer reads the relations the readers write, and a recorded run scores at least one golden relation as correct.
+- **Refs**: RNF-006, RF-262, P2-34, P2-14.
 
 ---
 
