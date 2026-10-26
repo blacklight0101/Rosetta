@@ -9,7 +9,7 @@
 | **Aplicación alojada** | <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>                                                           |
 | **Informe de ejemplo** | <https://blacklight0101.github.io/Rosetta/>                                                                                          |
 | **Diapositivas**       | [Rosetta-Hito1.pdf](slides/Rosetta-Hito1.pdf); cada cifra cita su fuente en las notas de la diapositiva                              |
-| **URL del vídeo**      | [PENDIENTE: URL del vídeo publicado]                                                                                                 |
+| **URL del vídeo**      | <https://youtu.be/Zu1SmxuRm6Y>                                                                                                       |
 
 Los tiempos entre corchetes marcan cada segmento. Los segmentos son continuos y suman exactamente 5:00 (300 segundos).
 

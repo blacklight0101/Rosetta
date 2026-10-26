@@ -46,7 +46,7 @@ const segmentSplit = (section: string): { narration: number; clip: number } => {
 const slideSection = (slides: string, title: string): string =>
   slides.split(/^# /mu).find((section) => section.startsWith(title)) ?? '';
 
-it('RF-802 the README links the published slides and the video script with its URL placeholder', async () => {
+it('RF-802 the README links the published slides, the video script and the published video', async () => {
   const readme = await readRepoFile('README.md');
 
   expect(readme).toContain('docs/hand-in/slides/');
@@ -54,7 +54,7 @@ it('RF-802 the README links the published slides and the video script with its U
   expect(readme).toMatch(
     /Slides URL: <https:\/\/github\.com\/blacklight0101\/Rosetta\/blob\/main\/docs\/hand-in\/slides\/Rosetta-Hito1\.pdf>/u,
   );
-  expect(readme).toContain('Video URL: [PENDIENTE');
+  expect(readme).toContain('Video URL: <https://youtu.be/Zu1SmxuRm6Y>');
 });
 
 it('RF-802 the slides in Spanish cover the problem, the pipeline, the agents, the evidence, the verifier, the cost, the security, the build method and the results', async () => {
