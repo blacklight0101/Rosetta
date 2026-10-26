@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-25. Release 1 is built and hosted: **394 of 401 cards are Done** (see the [tasks.md totals](docs/orchestration/tasks.md)); the hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io> (G-06 open). Left, each waiting only for an owner step: P1-50, P1-53, P1-54 and P1-55 (In review), P2-12 (the hosted restore drill), P2-14 and P3-22. Milestone hand-in: 2026-10-26. The latest state is the first entry of the resume point below._
+_Last updated 2026-10-26. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Left: P1-50 and P3-22 (In review, owner checks), the follow-up cards P2-46 and P2-47, and phase 6 (P6-01). The latest state is the first entry of the resume point below._
 
 ## Current state
 
