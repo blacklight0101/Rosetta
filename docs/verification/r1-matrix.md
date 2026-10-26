@@ -309,19 +309,19 @@ the requirement passed in the local run; **Gap** means no test names it yet.
 Every requirement without passing tests, and every Must whose tests check only a document, has a card. Cards marked
 _proposed_ are not in [tasks.md](../orchestration/tasks.md) yet; the orchestrator files them.
 
-| Id      | Priority | What is missing                                                                                                                         | Card         | Card state      |
-| ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------- |
-| RF-615  | Should   | the journey from code to package as one guided path                                                                                     | P3-30        | Todo            |
-| RNF-011 | NFR      | a scan and an understand run with Ollama only and the network off (P1-47 is Done, its owner run is not recorded in `docs/providers.md`) | A (proposed) | -               |
-| RNF-016 | NFR      | hosted availability with a health check and the monthly cap                                                                             | P1-55        | In progress     |
-| RNF-017 | NFR      | the hosted timing with two runs in progress (only the runbook is tested)                                                                | P1-55        | In progress     |
-| RF-1304 | Must     | the hosted deploy itself (only the runbook is tested)                                                                                   | P1-55        | In progress     |
-| RF-802  | Must     | the slides and the video (only their checklist is tested)                                                                               | P1-54        | Blocked (G-06)  |
-| RF-803  | Must     | the teacher's sign-in on the hosted URL (only the hand-in document is tested)                                                           | P1-54        | Blocked (G-06)  |
-| RF-800  | Must     | the published sample report read by the owner                                                                                           | P1-50, P3-22 | In review, Todo |
-| RNF-006 | NFR      | the golden-set result of a live evaluation against the RFC success criteria                                                             | P2-34        | Todo            |
-| RNF-012 | NFR      | the measured estimate accuracy of a live evaluation                                                                                     | P2-34        | Todo            |
-| -       | -        | the roadmap backlog does not list RF-209, RF-231, RF-614 and RF-615 (open question 1)                                                   | B (proposed) | -               |
+| Id      | Priority | What is missing                                                                                                                         | Card         | Card state                              |
+| ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------------------------------- |
+| RF-615  | Should   | the journey from code to package as one guided path                                                                                     | P3-30        | Todo                                    |
+| RNF-011 | NFR      | a scan and an understand run with Ollama only and the network off (P1-47 is Done, its owner run is not recorded in `docs/providers.md`) | A (proposed) | -                                       |
+| RNF-016 | NFR      | hosted availability with a health check and the monthly cap                                                                             | P1-55        | In progress                             |
+| RNF-017 | NFR      | the hosted timing with two runs in progress (only the runbook is tested)                                                                | P1-55        | In progress                             |
+| RF-1304 | Must     | the hosted deploy itself (only the runbook is tested)                                                                                   | P1-55        | In progress                             |
+| RF-802  | Must     | the slides and the video (only their checklist is tested)                                                                               | P1-54        | Blocked (G-06)                          |
+| RF-803  | Must     | the teacher's sign-in on the hosted URL (only the hand-in document is tested)                                                           | P1-54        | Blocked (G-06)                          |
+| RF-800  | Must     | the published sample report read by the owner                                                                                           | P1-50, P3-22 | Done, Done (owner checks of 2026-10-26) |
+| RNF-006 | NFR      | the golden-set result of a live evaluation against the RFC success criteria                                                             | P2-34        | Todo                                    |
+| RNF-012 | NFR      | the measured estimate accuracy of a live evaluation                                                                                     | P2-34        | Todo                                    |
+| -       | -        | the roadmap backlog does not list RF-209, RF-231, RF-614 and RF-615 (open question 1)                                                   | B (proposed) | -                                       |
 
 Proposed cards:
 
