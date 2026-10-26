@@ -4,7 +4,7 @@
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Card**            | P2-14 (RNF-005, RNF-006)                                                                                                                                                                         |
 | **Date**            | 2026-10-26                                                                                                                                                                                       |
-| **Commit reviewed** | `main` at `ff3ddd06` (after #930)                                                                                                                                                                |
+| **Commit reviewed** | `main` at `89c91e79` (after #930 and #894; the tests as at `ff3ddd06`, #894 changes only the packages)                                                                                           |
 | **Reviewer**        | builder-opus (Claude), for the owner BlackLigth (blacklight0101)                                                                                                                                 |
 | **Inputs**          | the [requirements](../spec/requirements.md), the [roadmap](../roadmap.md) P2 backlog row and exit criteria, RFC-001 section 7, [tasks](../orchestration/tasks.md), the [R1 matrix](r1-matrix.md) |
 
@@ -16,15 +16,15 @@ review.
 
 ## 1. Summary
 
-| Item                                 | Result                                                                                                                       |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| Phase 2 requirements in scope        | 22: 9 Must, 10 Should, 3 non-functional (the P2 row of the roadmap backlog; RF-425 counts for its second scenario only)      |
-| With tests that name them            | 22 of 22                                                                                                                     |
-| Must without evidence                | none                                                                                                                         |
-| Phase 2 cards                        | P2-01..P2-41 Done (P2-12 since #930, P2-14 with this matrix); follow-up cards P2-46 and P2-47 added by this card (section 5) |
-| Golden set against RFC-001 section 7 | precision, recall, citation validity, coverage, cost, scan time and repeatable tests met; estimate accuracy **not met**      |
-| Owner hands-on review                | held as the owner's evaluations and package reviews of 2026-10-22 to 2026-10-26, each with its changes recorded (section 4)  |
-| Pyramid                              | Unit 12990 / Integration 5404 / E2E 268 (70% / 29% / 1%) in the CI run of #930 (section 6)                                   |
+| Item                                 | Result                                                                                                                                                                 |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 2 requirements in scope        | 22: 9 Must, 10 Should, 3 non-functional (the P2 row of the roadmap backlog; RF-425 is in scope for its second scenario, and its count includes the tests of the first) |
+| With tests that name them            | 22 of 22                                                                                                                                                               |
+| Must without evidence                | none                                                                                                                                                                   |
+| Phase 2 cards                        | P2-01..P2-41 Done (P2-12 since #930, P2-14 with this matrix); follow-up cards P2-46 and P2-47 added by this card (section 5)                                           |
+| Golden set against RFC-001 section 7 | precision, recall, citation validity, coverage, cost, scan time and repeatable tests met; estimate accuracy **not met**                                                |
+| Owner hands-on review                | held as the owner's evaluations and package reviews of 2026-10-22 to 2026-10-26, each with its changes recorded (section 4)                                            |
+| Pyramid                              | Unit 12990 / Integration 5404 / E2E 268 (70% / 29% / 1%) in the CI run of #930 (section 6)                                                                             |
 
 ## 2. Requirement matrix
 
@@ -93,8 +93,8 @@ changes:
 | Date       | Review                                                                                    | Changes recorded                                        |
 | ---------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | 2026-10-22 | evaluation on local Ollama (three Excel workbooks)                                        | DEC-165; cards P3-101..P3-107 and P1-182                |
-| 2026-10-23 | evaluation passes 2 and 3, and the Haiku 5.5 battery                                      | DEC-166..DEC-168; cards P3-108..P3-128                  |
-| 2026-10-24 | review of a sample hand-off package and a log check                                       | DEC-169, DEC-170 and DEC-172; cards P5-20..P5-33        |
+| 2026-10-23 | evaluation passes 2 and 3, and the Haiku 5.5 battery                                      | DEC-166..DEC-170; cards P3-108..P3-128                  |
+| 2026-10-24 | review of a sample hand-off package and a log check                                       | DEC-172; cards P5-20..P5-33                             |
 | 2026-10-25 | the owner's own package test (campaign-manager zip, Sonnet) and the first live evaluation | DEC-173 (phase 6, P6-01); cards P3-132, P2-46 and P2-47 |
 | 2026-10-26 | answer on the open item of the 2026-10-17 security audit (#513)                           | DEC-174 (the `host.docker.internal` risk is accepted)   |
 
@@ -114,5 +114,5 @@ inside a container) is not a gap: the owner accepted the risk (DEC-174), and RF-
 `tests (ubuntu-latest)`: **Unit 12990 / Integration 5404 / E2E 268**, shares 70% / 29% / 1% against the target
 60% / 30% / 10% with 10 points of tolerance (DEC-30). Every share is inside the tolerance; the unit share (69.6%)
 is at its edge. The end-to-end share is low by count, as in the R1 matrix, because each Playwright journey covers
-many requirements at once. Since the R1 matrix (Unit 8897 / Integration 3943 / E2E 232) the suite grew by 4093 unit, 1461 integration
-and 36 end-to-end tests.
+many requirements at once. Since the R1 matrix (Unit 8897 / Integration 3943 / E2E 232) the suite grew by 4093
+unit, 1461 integration and 36 end-to-end tests.

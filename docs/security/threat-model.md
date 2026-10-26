@@ -146,3 +146,6 @@ deployment procedure (environments-and-delivery.md section 10).
   offers no atomic "open beneath this folder" call in
   Node.js, so a short check-then-use window remains. Exploiting it needs a local process that can already write to
   the data folder, which is outside this threat model (see the previous point).
+- An Ollama server at `host.docker.internal` counts as local even when Rosetta runs outside a container
+  (DEC-174, DEC-118): in a developer run outside Docker that name could resolve to another machine, and private
+  code would reach it without the cloud consent of RF-143. Both supported deployments run Rosetta in a container.
