@@ -47,12 +47,16 @@ function principlesAnswer(brief: PlanningBrief, catalogue: Catalogue): string {
   return titles.length === 0 ? 'None.' : `The catalogue defaults: ${titles.join(', ')}.`;
 }
 
-function stackQuestion(layer: string): DefaultedQuestion {
+function stackQuestion(layer: string, brief: PlanningBrief): DefaultedQuestion {
   const name = layerNames[layer] ?? layer;
+  const proposed = brief.stack.find((entry) => entry.layer === layer && entry.proposed === true);
   return {
     id: `stack.${layer}`,
     question: `Which technology should the ${name} layer use?`,
-    answer: 'None chosen; the package names no technology for this layer.',
+    answer:
+      proposed === undefined
+        ? 'None chosen; the package names no technology for this layer.'
+        : `Proposed by Rosetta, not chosen by the owner: ${proposed.choice}. The cards use it until the owner answers.`,
   };
 }
 
@@ -61,7 +65,7 @@ function contextQuestion(id: string, field: string): DefaultedQuestion {
 }
 
 function questionOf(id: string, brief: PlanningBrief, catalogue: Catalogue): DefaultedQuestion {
-  if (id.startsWith('stack.')) return stackQuestion(id.slice('stack.'.length));
+  if (id.startsWith('stack.')) return stackQuestion(id.slice('stack.'.length), brief);
   if (id.startsWith('context.')) return contextQuestion(id, id.slice('context.'.length));
   switch (id) {
     case 'principles':

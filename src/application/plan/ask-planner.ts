@@ -9,9 +9,10 @@ import type { ManifestUpdates } from '../runs/manifest-updates.js';
 import { traceIdOf } from '../runs/run-ids.js';
 import {
   cutOffMessage,
+  replacedMessage,
   endsCutOff,
   isCutOff,
-  joinContinuation,
+  joinNoting,
   maxPlannerContinuations,
 } from './plan-continuation.js';
 import { resumePoint } from './json-tail.js';
@@ -35,6 +36,8 @@ export interface PlannerCall {
   readonly continuePrompt: PromptFile;
   /** RF-604: told when the answer is still cut off; without it the call fails with RST-1805. */
   readonly onCutOff?: (message: string) => Promise<void>;
+  /** P5-38, P3-126: told when a continuation began the next list item and the unfinished one was left out. */
+  readonly onReplaced?: (message: string) => Promise<void>;
   /** The agent task the call is logged under: one per document the planner writes. */
   readonly agentTaskId: string;
   readonly updates: ManifestUpdates;
@@ -71,7 +74,9 @@ export async function askPlannerWith(call: PlannerCall, message: string): Promis
       { role: 'user', content: call.continuePrompt.text.trimEnd() },
     );
     response = await send(call, messages);
-    text = joinContinuation(text, response.text);
+    const joined = joinNoting(text, response.text);
+    text = joined.text;
+    if (joined.replaced) await call.onReplaced?.(replacedMessage);
   }
   const end = { ...response.usage, finishReason: response.finishReason };
   if (!endsCutOff(text, end, limit, continued)) return text;

@@ -36,12 +36,48 @@ export interface StackRule {
   readonly answer: string;
 }
 
+/** P5-39: how the plan tells the kind of a legacy application from its files; the first group with a match wins. */
+export interface KindSignal {
+  readonly kind: 'web' | 'desktop' | 'service';
+  /** Artefact kinds of the scan (RF-102). */
+  readonly artefacts: readonly string[];
+  /** Lower case, without the dot. */
+  readonly extensions: readonly string[];
+  /** Lower case ends of a file name, with the dot. */
+  readonly suffixes: readonly string[];
+}
+
+/** P5-39: the technology Rosetta proposes for a layer of a kind of application. */
+export interface StackOption {
+  readonly kind: 'web' | 'desktop' | 'service';
+  readonly layer: string;
+  /** Language ids of the scan; the option applies when one is among the legacy languages. Empty: any. */
+  readonly legacy: readonly string[];
+  /** The `name` of a technology of the layer. */
+  readonly choice: string;
+  /** One line. */
+  readonly why: string;
+}
+
+export interface StackProposals {
+  readonly signals: readonly KindSignal[];
+  readonly options: readonly StackOption[];
+}
+
+const noStackProposals: StackProposals = { signals: [], options: [] };
+
 export interface StackData {
   /** The `v<n>` of `stack-rules.v<n>.yaml`; bump it when a rule is added, removed or changed. */
   readonly rulesVersion: number;
   readonly technologies: readonly StackTechnology[];
   readonly rules: readonly StackRule[];
+  readonly proposals: StackProposals;
 }
 
 /** No technology and no rule: a catalogue built by hand for a test that does not use the stack check. */
-export const noStackData: StackData = { rulesVersion: 0, technologies: [], rules: [] };
+export const noStackData: StackData = {
+  rulesVersion: 0,
+  technologies: [],
+  rules: [],
+  proposals: noStackProposals,
+};

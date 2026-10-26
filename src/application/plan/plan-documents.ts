@@ -70,7 +70,9 @@ function documentCall(
     incomplete.push({ document, outputTokens: base.planner.maxOutputTokens });
     await warn(`The ${titles[document]} is incomplete: ${problem}`);
   };
-  return { ...base, prompt, agentTaskId, onCutOff };
+  const onReplaced = (problem: string): Promise<void> =>
+    warn(`The ${titles[document]}: ${problem}`);
+  return { ...base, prompt, agentTaskId, onCutOff, onReplaced };
 }
 
 // RF-621

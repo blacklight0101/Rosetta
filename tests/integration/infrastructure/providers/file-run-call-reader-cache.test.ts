@@ -1,4 +1,4 @@
-import { appendFile, mkdir, rm } from 'node:fs/promises';
+import { appendFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { RunScope } from '../../../../src/application/ports/run-events.js';
@@ -165,7 +165,20 @@ describe('FileRunCallReader keeps a growing call log', () => {
   });
 });
 
-describe('FileRunCallReader forgets runs', () => {
+describe('FileRunCallReader keeps the call log: rewrites', () => {
+  it('RF-1011 does not serve a stale log when the file was rewritten and is now larger', async () => {
+    await appendCalls(1, 1, 2);
+    const { reader } = setup();
+    expect((await reader.log(scopeOf(1))).calls.map((call) => call.seq)).toEqual([1, 2]);
+
+    const rewritten = [11, 12, 13, 14, 15].map((seq) => callLine(seq)).join('');
+    await writeFile(join(runDirOf(1), 'provider-calls.jsonl'), rewritten, 'utf8');
+
+    expect((await reader.log(scopeOf(1))).calls.map((call) => call.seq)).toEqual([
+      11, 12, 13, 14, 15,
+    ]);
+  });
+
   it('RF-1011 forgets a run whose call log is gone and reads it again when it comes back', async () => {
     await appendCalls(1, 1, 5);
     const { reader, masker } = setup();
@@ -179,7 +192,9 @@ describe('FileRunCallReader forgets runs', () => {
     expect((await reader.log(scopeOf(1))).calls).toHaveLength(5);
     expect(masker.count).toBeGreaterThan(before);
   });
+});
 
+describe('FileRunCallReader keeps a few runs', () => {
   it('RF-1011 keeps only a few runs, the ones read last', async () => {
     await appendCalls(1, 1, 3);
     await appendCalls(2, 1, 3);

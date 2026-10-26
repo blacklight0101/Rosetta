@@ -37,3 +37,10 @@ export function unknownPositions(tasks: readonly DraftTask[], count: number): Re
       .map((position): RequirementNote => ({ kind: 'position', card: index + 1, position, count })),
   );
 }
+
+/** A phase whose name code replaced with the titles of its cards. */
+export interface PhaseNote {
+  readonly phase: number;
+  readonly from: string;
+  readonly to: string;
+}

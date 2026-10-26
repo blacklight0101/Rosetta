@@ -32,7 +32,7 @@ import { failedOutcome, sessionOutcome, type TaskOutcome } from './session-outco
 import { TaskLog } from './task-log.js';
 import { runPool } from './task-pool.js';
 import { taskResultOf } from './task-result-of.js';
-import { withoutBookkeeping } from '../cards/bookkeeping-claims.js';
+import { finishedDrafts } from '../cards/finished-drafts.js';
 import { withoutAnsweredQuestions } from './answered-questions.js';
 import { withoutThirdPartyQuestions } from './third-party-questions.js';
 import { runReaderTaskWithRetry } from './task-retry.js';
@@ -130,9 +130,7 @@ export class UnderstandSession {
         task,
         asked,
       );
-      // P3-110, EV-26: claims that only restate card ids or cite a non-file never reach the check.
-      const where = { agentTaskId: task.agentTaskId, codeMap: this.parts.scanned.codeMap };
-      const outcome = await withoutBookkeeping(execution.events, where, quiet);
+      const outcome = await finishedDrafts(this.parts, task.agentTaskId, quiet);
       const failure = areaFailureOf(outcome);
       const cards = outcome.drafts;
       const note = coverageNoteOf(outcome.areaRead, this.thirdParty.has(task.area.name));
@@ -259,8 +257,10 @@ export class UnderstandSession {
 
   /** RF-230, RF-260: the coverage of the tasks that ended, with the incomplete flows of the cards. */
   private async writeCoverage(): Promise<void> {
-    const { deps, execution } = this.parts;
-    await deps.cards.writeCoverage(scopeOf(execution.run), this.coverage.areas(this.latest.cards));
+    const { deps, execution, scanned } = this.parts;
+    const areas = this.coverage.areas(this.latest.cards);
+    const objects = this.coverage.objects(scanned.codeMap, this.latest.cards);
+    await deps.cards.writeCoverage(scopeOf(execution.run), areas, objects);
   }
 
   /** RF-006: what the tasks that ended, here or earlier, left; a resume reads it back. */

@@ -5,7 +5,13 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { keepLegacyDefault } from '../../domain/planning/legacy-default.js';
 import { stackLayers } from '../../domain/planning/planning-brief.js';
-import type { StackRule, StackTechnology } from '../../domain/planning/stack-data.js';
+import type {
+  KindSignal,
+  StackOption,
+  StackProposals,
+  StackRule,
+  StackTechnology,
+} from '../../domain/planning/stack-data.js';
 
 // RF-609, RNF-004: the two stack files of the catalogue, `stack-technologies.v<n>.yaml` and
 // `stack-rules.v<n>.yaml`. Anything that does not fit the shapes below is refused with RST-1000
@@ -45,6 +51,29 @@ const ruleSchema = z.strictObject({
     .refine((text) => text.startsWith(keepLegacyDefault), 'must keep the legacy behaviour'),
 });
 
+const kind = z.enum(['web', 'desktop', 'service']);
+const word = z.string().trim().toLowerCase().min(1).max(60);
+
+const signalSchema = z.strictObject({
+  kind,
+  artefacts: z.array(word).max(10),
+  extensions: z.array(word).max(20),
+  suffixes: z.array(word).max(10),
+});
+
+const optionSchema = z.strictObject({
+  kind,
+  layer,
+  legacy: z.array(word).max(10),
+  choice: z.string().trim().min(1).max(80),
+  why: z
+    .string()
+    .trim()
+    .min(1)
+    .max(300)
+    .refine((text) => !text.includes('\n'), 'must be one line'),
+});
+
 function invalid(name: string, problem: string, cause?: unknown): RosettaError {
   return new RosettaError(
     ERROR_CODES.configurationInvalid,
@@ -53,14 +82,17 @@ function invalid(name: string, problem: string, cause?: unknown): RosettaError {
   );
 }
 
-function listOf(name: string, text: string, key: string): unknown[] {
+function documentOf(name: string, text: string): unknown {
   if (holdsDataMarker(text)) throw invalid(name, 'holds a data block marker');
-  let document: unknown;
   try {
-    document = parse(text);
+    return parse(text);
   } catch (error) {
     throw invalid(name, 'is not valid YAML', error);
   }
+}
+
+function listOf(name: string, text: string, key: string): unknown[] {
+  const document = documentOf(name, text);
   const shape = z.strictObject({ [key]: z.array(z.unknown()).min(1).max(200) });
   const parsed = shape.safeParse(document);
   if (!parsed.success) throw invalid(name, `must hold a list ${key}`);
@@ -89,4 +121,32 @@ export function parseStackRules(name: string, text: string): StackRule[] {
     throw invalid(name, 'repeats a rule id');
   }
   return rules;
+}
+
+/**
+ * P5-39: the kind signals and the proposed options of `stack-proposals.v<n>.yaml`. An option whose
+ * choice is not a technology of its layer in `technologies` is refused, so a proposal always names
+ * something the stack records can describe.
+ */
+// RF-609
+export function parseStackProposals(
+  name: string,
+  text: string,
+  technologies: readonly StackTechnology[],
+): StackProposals {
+  const shape = z.strictObject({
+    signals: z.array(z.unknown()).min(1).max(20),
+    options: z.array(z.unknown()).min(1).max(200),
+  });
+  const document = shape.safeParse(documentOf(name, text));
+  if (!document.success) throw invalid(name, 'must hold the lists signals and options');
+  const signals: KindSignal[] = itemsOf(name, document.data.signals, signalSchema);
+  const options: StackOption[] = itemsOf(name, document.data.options, optionSchema);
+  for (const option of options) {
+    const known = technologies.some(
+      (tech) => tech.layer === option.layer && tech.name === option.choice,
+    );
+    if (!known) throw invalid(name, 'proposes a technology the table of its layer does not hold');
+  }
+  return { signals, options };
 }

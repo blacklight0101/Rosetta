@@ -31,13 +31,16 @@ export async function withCoverageAnswer(text: string): Promise<Recording> {
   return { ...recording, calls: [{ attempts: [{ response }] }] };
 }
 
-async function withPlan(patch: Record<string, unknown>): Promise<Recording> {
+async function withPlan(
+  patch: Record<string, unknown> | ((plan: Record<string, unknown>) => Record<string, unknown>),
+): Promise<Recording> {
   const recording = await base();
   const first = responseOf(recording, 0);
   const body = first.text.replace(/^```json\n/u, '').replace(/\n```\s*$/u, '');
   const plan: unknown = JSON.parse(body);
   if (typeof plan !== 'object' || plan === null) throw new Error('The plan is an object');
-  const text = JSON.stringify({ ...plan, ...patch });
+  const changes = typeof patch === 'function' ? patch({ ...plan }) : patch;
+  const text = JSON.stringify({ ...plan, ...changes });
   const calls = [{ attempts: [{ response: { ...first, text } }] }, ...recording.calls.slice(1)];
   return { ...recording, calls };
 }
@@ -55,4 +58,14 @@ export function withoutPhases(): Promise<Recording> {
 /** The recording whose plan has these task cards (the other parts of the plan stay). */
 export function withTasks(tasks: readonly unknown[]): Promise<Recording> {
   return withPlan({ tasks });
+}
+
+/** P5-40: the recording whose phases are named like this, in order (the cards stay where they are). */
+export function withPhaseNames(names: readonly string[]): Promise<Recording> {
+  return withPlan((plan) => {
+    const phases = Array.isArray(plan['phases']) ? (plan['phases'] as unknown[]) : [];
+    return {
+      phases: phases.map((phase, at) => ({ ...(phase as object), name: names[at] ?? 'Phase' })),
+    };
+  });
 }

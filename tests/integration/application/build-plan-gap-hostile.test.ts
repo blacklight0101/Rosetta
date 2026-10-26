@@ -43,7 +43,7 @@ describe('BuildPlan: a hostile gap card', () => {
 
     const { tasks, raw } = await planWith([{ ...card, title: hostile, invariant: hostile }]);
 
-    expect(tasks).toContain('## T-004');
+    expect(tasks).toContain('## T-007');
     expect(dangerousIn(raw)).toBeUndefined();
   });
 
@@ -53,7 +53,7 @@ describe('BuildPlan: a hostile gap card', () => {
     const { run, tasks } = await planWith([{ ...card, builds: [marker] }]);
 
     expect(run.endState).toBe('Failed');
-    expect(tasks).not.toContain('## T-004');
+    expect((tasks.match(/^## T-/gmu) ?? []).length).toBe(8);
   });
 
   it('Q-45 a card with a title over 200 characters is left out and the others stay', async () => {
@@ -71,6 +71,6 @@ describe('BuildPlan: a hostile gap card', () => {
 
     const { tasks } = await planWith([vague]);
 
-    expect(tasks).not.toContain('## T-004');
+    expect((tasks.match(/^## T-/gmu) ?? []).length).toBe(8);
   });
 });

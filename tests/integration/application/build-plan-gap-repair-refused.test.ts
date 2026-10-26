@@ -58,7 +58,7 @@ describe('BuildPlan: the repair refused by the Ollama context guard', () => {
     );
     expect(entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
     const written = await h.handoffOf(run);
-    expect(plain(written['tasks.md'])).toContain('## T-004');
+    expect(plain(written['tasks.md'])).toContain('## T-007');
     expect(plain(written['tasks.md'])).toContain('Operations');
     expect(plain(written['checks.md'])).toContain('flow:FLOW-001');
     expect(plain(written['checks.md'])).not.toContain('operation:placeOrder');

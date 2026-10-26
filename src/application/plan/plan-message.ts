@@ -30,6 +30,7 @@ function cardsText(input: PlanMessageInput): string {
   const listed = shown.map(({ id, type, title, summary, claims }) => ({
     ...{ id, type, title, summary },
     claims: claims.map((claim) => ({
+      claimId: claim.claimId,
       text: claim.text,
       citations: claim.citations.map(formatCitation),
     })),
@@ -67,7 +68,11 @@ function ownerText(input: PlanMessageInput): string {
           strategy: brief.migration,
           order: migrationStrategyInfo[brief.migration].ordering,
         },
-        stack: brief.stack.map(({ layer, choice }) => ({ layer, choice })),
+        applicationKind: brief.application,
+        stack: brief.stack.map(({ layer, choice, proposed }) => ({
+          ...{ layer, choice },
+          ...(proposed === true ? { proposedByRosetta: true } : {}),
+        })),
         context: brief.context,
         aiAssistedBuild: brief.buildMethod.aiAssisted,
         principles: principlesOf(brief, catalogue),

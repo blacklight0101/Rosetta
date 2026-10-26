@@ -1,8 +1,10 @@
 import type { ApiContract } from '../../domain/planning/api-contract.js';
+import type { MeaningCheck } from '../../domain/planning/claim-meaning.js';
 import type { CopiedExample } from '../../domain/planning/copied-example.js';
 import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
 import type { RestatedDecision } from '../../domain/planning/brief-restated.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
+import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
 import type { StackClash } from '../../domain/planning/stack-rules.js';
 import type { StyleCheck } from '../../domain/planning/style-rules.js';
 import type { TargetDataModel } from '../../domain/planning/data-model.js';
@@ -13,7 +15,6 @@ import type { PlanContent } from '../../domain/planning/plan-content.js';
 import type { PrdContent } from '../../domain/planning/prd-content.js';
 import type { ExcludedClaim, SourceCard, SourceStop } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
-import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
 import type { UploadFacts } from '../../domain/sources/upload-facts.js';
 import type { WorkbookFormulas } from '../../domain/planning/workbook-formulas.js';
 
@@ -82,6 +83,8 @@ export interface HandoffPackage {
   readonly styleCheck: StyleCheck;
   /** RF-609: the clashes the stack check found in the brief's stack and the API contract decision. */
   readonly stackClashes?: readonly StackClash[] | undefined;
+  /** P5-39: the kind of application, the stack layers and the strategy Rosetta proposed; absent when it could not. */
+  readonly proposal?: PlanProposal | undefined;
   /** The target tables, with the legacy source of each column and the dropped legacy fields (RF-623). */
   readonly dataModel: TargetDataModel;
   /** The main journeys mapped to target components, and those out of scope (RF-625). */
@@ -101,8 +104,6 @@ export interface HandoffPackage {
   readonly prd: PrdContent;
   /** The PRD sections the cards could not fill, each with its default (RF-621, DEC-80). */
   readonly prdQuestions: readonly DefaultedQuestion[];
-  /** RF-632: the shapes measured from the scan; undefined when the scan could not be read. */
-  readonly shapes: ScanShapes | undefined;
   /** P3-94: the formulas of the rendered workbooks; undefined for a project with none (no file is written). */
   readonly workbookFormulas?: WorkbookFormulas | undefined;
   /** RF-604: the documents that stayed cut off, in the order they were written; empty when none did. */
@@ -111,4 +112,6 @@ export interface HandoffPackage {
   readonly copiedExamples: readonly CopiedExample[];
   /** P3-101: the parts of the plan the package leaves out, listed in checks.md by area. */
   readonly leftOut: readonly LeftOutItem[];
+  /** P5-43, RF-602: where the plan changed the meaning of its claims; checks.md lists it, the PRD marks proposed roles. */
+  readonly meaning?: MeaningCheck | undefined;
 }

@@ -43,6 +43,8 @@ export interface DraftTable {
   /** Rules in words (for example "total is zero or more"), never an expression to run. */
   readonly checks: readonly string[];
   readonly indexes: readonly TableIndex[];
+  /** P5-38: true for a table built by code from the legacy claims because the planner's answer failed. */
+  readonly copiedFromLegacy?: boolean | undefined;
 }
 
 interface DraftDroppedField {
@@ -77,6 +79,8 @@ export interface ModelColumn {
   readonly legacy: LegacySource | null;
   /** A type change that can lose data, in words; empty for none. */
   readonly migrationRisk: string;
+  /** P5-37: the default the legacy claim states, as written; absent for none. */
+  readonly default?: string;
 }
 
 export interface ModelTable {
@@ -90,6 +94,8 @@ export interface ModelTable {
   readonly foreignKeys: readonly ForeignKey[];
   readonly checks: readonly string[];
   readonly indexes: readonly TableIndex[];
+  /** P5-38: true when the table is copied from the legacy claims, not designed by the planner. */
+  readonly copiedFromLegacy?: boolean | undefined;
 }
 
 /** A legacy statement with no target column. */

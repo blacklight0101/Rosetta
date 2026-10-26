@@ -18,6 +18,7 @@ import { workbookCards } from '../../support/workbook-plan-cards.js';
 const briefAnswers = {
   architecture: { style: 'hexagonal' },
   migration: 'parallel-change',
+  application: 'keep',
   stack: [{ layer: 'database', choice: 'PostgreSQL', custom: false }],
 } as const;
 
@@ -74,7 +75,7 @@ async function guidance(): Promise<string> {
   return (await readFile('prompts/planner/workbook.v1.md', 'utf8')).trim();
 }
 
-const base = () => readFile('prompts/planner/package.v7.md', 'utf8');
+const base = () => readFile('prompts/planner/package.v9.md', 'utf8');
 
 describe('a plan run over a workbook project', () => {
   it('RF-155 the planner prompt holds the planner workbook guidance after the package prompt', async () => {
@@ -92,7 +93,7 @@ describe('a plan run over a workbook project', () => {
 
     const prd = h.providers.requests()[1];
 
-    expect(prd?.system).toBe(await readFile('prompts/planner/prd.v3.md', 'utf8'));
+    expect(prd?.system).toBe(await readFile('prompts/planner/prd.v4.md', 'utf8'));
   });
 
   it('RNF-004 the manifest records the guidance file with its version and hash', async () => {
@@ -103,7 +104,7 @@ describe('a plan run over a workbook project', () => {
       version: 'v1',
       sha256: createHash('sha256').update(bytes).digest('hex'),
     });
-    expect(manifest.promptVersions['planner/package.v7.md']?.version).toBe('v7');
+    expect(manifest.promptVersions['planner/package.v9.md']?.version).toBe('v9');
   });
 });
 

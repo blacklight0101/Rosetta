@@ -13,9 +13,10 @@ import type {
   RoundPlan,
 } from '../../domain/deepen/round-plan.js';
 import type { TaskResult } from '../ports/task-results.js';
+import { readObjectsFirst } from './deepen-object-order.js';
 import type { ReaderTask } from '../understand/reader-tasks.js';
 
-// RF-209, ADR-013: the reader tasks of one Deepen round. Each area with rejected first-party claims
+// RF-209, P5-35, ADR-013: the reader tasks of one Deepen round. Each area with rejected first-party claims
 // gets a re-read task over the first-party files those claims cite, with the claims and the
 // verifier's reasons as JSON for a data block; each area with first-party files no task read gets
 // a task over those files, the area holding the largest first. Task ids go on after every task the
@@ -67,11 +68,13 @@ function citedFiles(claims: readonly RereadClaim[], codeMap: TaskMap): readonly 
 
 /** RF-209: the rejected claims as the re-read's data block holds them. */
 function rejectedText(claims: readonly RereadClaim[]): string {
-  const rejected = claims.map(({ claimId, text, citations, reason }) => ({
+  const rejected = claims.map(({ claimId, text, citations, reason, reasonKind }) => ({
     claimId,
     text,
     citations: citations.map(formatCitation),
     reason,
+    // P5-35: the verifier said the meaning the claim states is defined outside the cited lines.
+    ...(reasonKind === undefined ? {} : { reasonKind }),
   }));
   return JSON.stringify({ rejected }, null, 2);
 }
@@ -156,14 +159,18 @@ export function roundTasks(
 ): readonly ReaderTask[] {
   // A failed area is read whole, so its unread files need no task of their own.
   const failed = new Set(plan.failedAreas.map((each) => each.area));
-  const tasks = [
-    ...rereadTasks(plan, codeMap),
-    ...gapTasks(
-      plan.gaps.filter((gap) => !failed.has(gap.area)),
-      codeMap,
-    ),
-    ...failedTasks(plan.failedAreas, codeMap),
-  ];
+  const tasks = readObjectsFirst(
+    [
+      ...rereadTasks(plan, codeMap),
+      ...gapTasks(
+        plan.gaps.filter((gap) => !failed.has(gap.area)),
+        codeMap,
+      ),
+      ...failedTasks(plan.failedAreas, codeMap),
+    ],
+    plan.objects ?? [],
+    codeMap,
+  );
   return tasks
     .filter((task) => task.area.files.length > 0)
     .map((task) => withParentCards(task, cards))

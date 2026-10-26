@@ -31,6 +31,8 @@ const MAX_COMPONENTS = 20;
 interface Placement {
   readonly reason: string;
   readonly target: string | null;
+  /** P5-40: dropped only because of the cap on screens. */
+  readonly overCap?: true;
 }
 
 /** A target screen the draft asked for, its cards checked and in id order. */
@@ -74,7 +76,9 @@ function placeScreens(
     if (ids.length === 0) into.refused.screens += 1;
     else if (into.groups.length < MAX_SCREENS) {
       into.groups.push({ ...entry, reason: entry.reason.trim() || noReason, cards: ids });
-    } else for (const id of ids) into.dropped.set(id, { reason: overCapReason, target: null });
+    } else
+      for (const id of ids)
+        into.dropped.set(id, { reason: overCapReason, target: null, overCap: true });
   }
 }
 
@@ -234,11 +238,13 @@ function legacyOf(
   sizes: ReadonlyMap<string, number>,
 ): LegacyScreen[] {
   return cards.map((card) => {
-    const { reason, target } = placements.get(card.id) ?? { reason: unlistedReason, target: null };
+    const placed = placements.get(card.id) ?? { reason: unlistedReason, target: null };
+    const { reason, target } = placed;
     const disposition = dispositionOf(target, sizes.get(target ?? '') ?? 0);
     return {
       ...{ cardId: card.id, title: card.title, route: card.screen?.route ?? '' },
       ...{ disposition, reason, target },
+      ...(placed.overCap === true ? { overCap: true as const } : {}),
     };
   });
 }

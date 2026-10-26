@@ -1,32 +1,28 @@
+import { within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { callsBody, callsPath, cloud } from './api-calls-fixtures.js';
-import { loaded, renderCalls, rowOf, standard } from './api-calls-helpers.js';
+import { callsPanel, loaded, renderCalls } from './api-calls-helpers.js';
 import { json } from './fake-api.js';
 
-// RF-1011, RF-408: the API calls panel shows the provider's error text beside the call that failed.
+// RF-507, RF-1011 (P5-21): a call's error text comes from the provider and is shown as text. Markup in
+// it is typed out, and no element is formed from it on the calls page.
 
-describe('the API calls panel: provider error text', () => {
-  it('RF-1011 shows the error text in the row of a failed call and none in an answered one', async () => {
-    renderCalls({
-      ...standard,
-      [`GET ${callsPath}`]: json(
-        200,
-        callsBody({}, [
-          cloud(1, {
-            status: 'failed',
-            httpStatus: 400,
-            errorCode: 'RST-1506',
-            errorMessage: 'invalid_request_error: tools not supported with reasoning_effort',
-          }),
-          cloud(2),
-        ]),
-      ),
+const hostile = ['<script>alert(1)</script>', '<img src=x onerror=alert(1)>'];
+
+describe('the error message of a call is shown as text', () => {
+  it.each(hostile)('RF-507 RF-1011 shows %s as typed, with no element formed', async (message) => {
+    const failed = cloud(1, {
+      status: 'failed',
+      errorCode: 'RST-1505',
+      errorMessage: message,
+      hasTranscript: false,
     });
+    renderCalls({ [`GET ${callsPath}`]: json(200, callsBody({}, [failed])) });
     await loaded();
 
-    expect(rowOf(1).textContent).toContain(
-      'invalid_request_error: tools not supported with reasoning_effort',
-    );
-    expect(rowOf(2).textContent).not.toContain('invalid_request_error');
+    const shown = within(callsPanel()).getByTestId('call-error-message');
+    expect(shown.textContent).toBe(message);
+    expect(shown.children).toHaveLength(0);
+    expect(callsPanel().querySelector('script, img')).toBeNull();
   });
 });

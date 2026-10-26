@@ -168,7 +168,6 @@ export function handoffOf(
     openQuestions: [{ cardId: 'OQ-001', question: text, area: text }],
     prd,
     prdQuestions: prdQuestions(prd),
-    shapes: undefined,
     ...extra,
   };
 }

@@ -2,8 +2,14 @@ import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { keepLegacyDefault, legacySafe } from '../../domain/planning/legacy-default.js';
+import { secureDefault, securityCards } from '../../domain/planning/keep-or-fix.js';
+import { keepOrFixQuestionLines, keepOrFixTable } from './handoff-keep-or-fix-markdown.js';
 import { decisionFile, documentSet, handoffFiles, idLink, sourceLinks } from './handoff-links.js';
-import { stackClashQuestionLines, stackClashReadmeLines } from './handoff-stack-markdown.js';
+import {
+  proposalReadmeLines,
+  stackClashQuestionLines,
+  stackClashReadmeLines,
+} from './handoff-stack-markdown.js';
 import { leftOutSummaryLines } from './handoff-left-out-markdown.js';
 import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
 import { uploadSentence } from '../../domain/sources/upload-facts.js';
@@ -31,6 +37,7 @@ export function risksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): st
           '',
         ])),
     '',
+    ...keepOrFixTable(handoff, esc),
   ].join('\n');
 }
 
@@ -69,9 +76,10 @@ function prdQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string
 // RF-604
 export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const waiting = waitingOf(handoff);
+  const secure = securityCards(handoff.content.judgements ?? [], handoff.sources);
   const unanswered = handoff.openQuestions.map(
     (question) =>
-      `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)} Default: ${keepLegacyDefault} Cards waiting: ${waitingCards(waiting, question.cardId)}`,
+      `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)} Default: ${secure.has(question.cardId) ? secureDefault : keepLegacyDefault} Cards waiting: ${waitingCards(waiting, question.cardId)}`,
   );
   return [
     '# Open questions',
@@ -79,6 +87,8 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     '## The rule for a default',
     '',
     'A default keeps the legacy behaviour: a default that would change what users see today is not allowed, and a question that proposed one says so and takes the legacy behaviour instead.',
+    '',
+    'A security question is the exception: its default is the secure option, never the legacy behaviour. The planner marks a claim as a security matter, and a question of the card that holds such a claim, and a keep-or-fix row about it, default to the secure option.',
     '',
     '## Planning brief questions that took their default',
     '',
@@ -93,6 +103,7 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     '',
     ...prdQuestionLines(handoff, esc),
     '',
+    ...keepOrFixQuestionLines(handoff, esc),
     '## Questions from the analysis without an answer',
     '',
     ...(unanswered.length === 0 ? ['Every question of the analysis was answered.'] : unanswered),
@@ -112,6 +123,14 @@ function sourcesPlace(handoff: HandoffPackage): string {
     : 'in the uploaded workbooks';
 }
 
+/** P5-32: the ids merged into a card, each an anchor of its own so an old link still lands here. */
+function aliasLines(card: HandoffPackage['sources'][number]): string[] {
+  const merged = (card.mergedFrom ?? []).filter((id) => id !== card.id);
+  if (merged.length === 0) return [];
+  const anchors = merged.map((id) => `<a id="${id.toLowerCase()}"></a>`).join('');
+  return [`Merged ids: ${merged.join(', ')}${anchors}`, ''];
+}
+
 // RF-602
 export function sourcesMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const where = sourcesPlace(handoff);
@@ -127,6 +146,7 @@ export function sourcesMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): 
       '',
       esc.block(card.summary),
       '',
+      ...aliasLines(card),
       ...card.claims.map(
         (claim) =>
           `- ${esc.inline(claim.claimId)}: ${esc.inline(claim.text)} Citations: ${claim.citations.map((citation) => esc.inline(formatCitation(citation))).join(', ')}`,
@@ -221,12 +241,12 @@ function apiContractSection(handoff: HandoffPackage, esc: MarkdownEscaper): stri
 
 // RF-604, Q-59, DEC-80: the first line of the README when no stack layer was chosen; nothing when one was.
 function noStackLines(handoff: HandoffPackage): string[] {
-  return handoff.brief.stack.length > 0
-    ? []
-    : [
-        'No technology was chosen; the cards are written for any stack. Choose a stack in Plan setup and write the package again.',
-        '',
-      ];
+  if (handoff.brief.stack.some((entry) => entry.proposed !== true)) return [];
+  if (handoff.proposal !== undefined && handoff.proposal.layers.length > 0) return [];
+  return [
+    'No technology was chosen; the cards are written for any stack. Choose a stack in Plan setup and write the package again.',
+    '',
+  ];
 }
 
 // RF-604, P3-121: the first lines of the README when the source run stopped at a cap.
@@ -250,6 +270,7 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     '# Modernisation hand-off package',
     '',
     ...noStackLines(handoff),
+    ...proposalReadmeLines(handoff),
     ...sourceStopLines(handoff),
     ...stackClashReadmeLines(handoff),
     `Planned from the analysis of ${analysed} (understand run ${esc.inline(handoff.sourceRun)}), with the planning brief saved at ${esc.inline(brief.savedAt)}.`,

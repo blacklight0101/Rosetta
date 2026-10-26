@@ -7,10 +7,12 @@ import { readAppVersion } from '../infrastructure/config/app-version.js';
 import type { Environment } from '../infrastructure/config/environment.js';
 import { PgDatabaseHealth } from '../infrastructure/db/pg-database-health.js';
 import { createAppPool, type DatabasePool } from '../infrastructure/db/pool.js';
+import { SqlPack } from '../infrastructure/scan/packs/sql/sql-pack.js';
 import { VbPack } from '../infrastructure/scan/packs/vb/vb-pack.js';
 import { CSharpPack } from '../infrastructure/scan/packs/csharp/csharp-pack.js';
 import { LanguagePackRegistry } from '../infrastructure/scan/packs/pack-registry.js';
-import { SecretMasker, type TextMasker } from '../infrastructure/guards/secret-masker.js';
+import type { SecretMasker, TextMasker } from '../infrastructure/guards/secret-masker.js';
+import { explainedMasker } from '../infrastructure/prompts/masked-value-prompt.js';
 import { FanOutLogger } from '../infrastructure/system/fan-out-logger.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { JsonlFileLogger } from '../infrastructure/system/jsonl-file-logger.js';
@@ -84,7 +86,8 @@ interface Loggers {
 // RF-009: masked JSON lines to standard output and to the daily file.
 function createLoggers(options: ApplicationOptions, clock: Clock): Loggers {
   const { environment, output } = options;
-  const masker = new SecretMasker();
+  // P5-34: the egress and every record carry the note of the prompt file at a masked value.
+  const masker = explainedMasker(promptsFolder);
   const file = new JsonlFileLogger({
     dataDir: environment.dataDir,
     clock,
@@ -194,7 +197,7 @@ function closer(created: CreatedServer): () => Promise<void> {
 // RF-110, ADR-004: the language packs of this release. Adding a language is one line here and a pack
 // under src/infrastructure/scan/packs/; the scan itself never names a stack.
 export async function composeLanguagePacks(): Promise<LanguagePackRegistry> {
-  return new LanguagePackRegistry([await CSharpPack.create(), new VbPack()]);
+  return new LanguagePackRegistry([await CSharpPack.create(), new SqlPack(), new VbPack()]);
 }
 
 function createScheduler(logger: Logger): IntervalScheduler {

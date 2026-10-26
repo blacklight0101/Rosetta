@@ -1,5 +1,5 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
-import { behavioursKeptByNoCard } from '../../domain/planning/behaviours-to-keep.js';
+import { behavioursKeptByNoCard, behavioursOf } from '../../domain/planning/behaviours-to-keep.js';
 import {
   coverageItems,
   coverageOf,
@@ -7,10 +7,13 @@ import {
 } from '../../domain/planning/plan-coverage.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { probeStatesOutcome } from '../../domain/planning/task-card-quality.js';
+import { keepOrFixOf } from './handoff-keep-or-fix.js';
 import { decisionLink } from './handoff-links.js';
 import { requirementLines } from './handoff-requirement-notes-markdown.js';
-import { stackClashCheckLines } from './handoff-stack-markdown.js';
+import { stackClashCheckLines, strategyFitCheckLines } from './handoff-stack-markdown.js';
+import { meaningLines } from './handoff-meaning-markdown.js';
 import { styleLines } from './handoff-style-markdown.js';
+import { truthfulCheckLines } from './handoff-truthful-checks-markdown.js';
 
 // RF-627, RF-507, RNF-003: checks.md, what the package checks say about itself. The plan coverage
 // lists every item (feature, table, operation, journey or screen) that no task card builds, kind by
@@ -95,18 +98,44 @@ function keptByNoCardLines(handoff: HandoffPackage, esc: MarkdownEscaper): strin
     handoff.content.tasks,
     handoff.content.requirements,
     handoff.sources,
-    handoff.dataModel.tables,
+    keepOrFixOf(handoff).context,
   );
   if (lost.length === 0) return [];
   return [
     '## Behaviour kept by no card',
     '',
-    'The migrations card keeps only the business rules that name a table or a column it creates. Each behaviour below was kept by it before and no task card keeps it now; the owner decides whether a card must build it.',
+    'A card keeps only the claims of the items it builds, and the migrations card only the business rules that name a table or a column it creates. Each behaviour below would be kept under the plain rule (every claim of the cards a requirement cites) and no task card keeps, changes or lists it now; the owner decides whether a card must build it.',
     '',
     ...lost.map(
       (each) =>
         `- ${esc.inline(each.claimId)} (${esc.inline(each.cardId)}): ${esc.inline(each.text)}`,
     ),
+    '',
+  ];
+}
+
+// P5-41: an acceptance criterion the planner says contradicts a claim its card keeps. The claim must be
+// one the card keeps and the criterion must exist; anything else the planner wrote is not listed.
+function contradictionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const { context } = keepOrFixOf(handoff);
+  const rows = handoff.content.tasks.flatMap((task) => {
+    const { keep } = behavioursOf(task, handoff.content.requirements, handoff.sources, context);
+    return (task.contradicts ?? []).flatMap((each) => {
+      const kept = keep.find((candidate) => candidate.claimId === each.claim);
+      const criterion = task.acceptanceCriteria[each.criterion - 1];
+      if (kept === undefined || criterion === undefined) return [];
+      return [
+        `- ${task.id}, criterion ${String(each.criterion)}: ${esc.inline(criterion)} Contradicts ${esc.inline(kept.claimId)}: ${esc.inline(kept.text)}`,
+      ];
+    });
+  });
+  if (rows.length === 0) return [];
+  return [
+    '## Acceptance criteria against kept claims',
+    '',
+    'The planner says each criterion below needs behaviour that a claim its card keeps says the legacy system does not have. Change the criterion, or decide that the claim is not to be kept (a decision or an answer, or a keep-or-fix row).',
+    '',
+    ...rows,
     '',
   ];
 }
@@ -189,15 +218,19 @@ export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
   const lines = [
     ...sourceStopLines(handoff),
     ...coverageLines(handoff, esc),
+    ...truthfulCheckLines(handoff, esc),
     ...unmappedFlowLines(handoff, esc),
     ...styleLines(handoff, esc),
     ...stackClashCheckLines(handoff, esc),
+    ...strategyFitCheckLines(handoff, esc),
     ...restatedLines(handoff, esc),
     ...requirementLines(handoff.content.requirementNotes ?? []),
     ...keptByNoCardLines(handoff, esc),
+    ...contradictionLines(handoff, esc),
     ...probeOutcomeLines(handoff),
     ...copiedExampleLines(handoff, esc),
     ...leftOutLines(handoff, esc),
+    ...meaningLines(handoff, esc),
   ];
   return ['# Package checks', '', ...lines].join('\n');
 }

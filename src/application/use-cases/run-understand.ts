@@ -2,8 +2,6 @@ import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { recordManifestCodeMap } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
-import type { PromptFile } from '../agent/prompt-file.js';
-import type { ReaderPrompts } from '../agent/reader-prompts.js';
 import type { AnswersFile } from '../ports/answers-file.js';
 import type { CardOutputs } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
@@ -37,12 +35,12 @@ import { readUnderstandOptions, UNDERSTAND_ROLES } from '../understand/understan
 import { pinnedSourceOf } from '../understand/pinned-source.js';
 import { resumeSourceProblem } from '../understand/resume-state.js';
 import { announceRetry, scheduleTasks } from '../understand/retry-plan.js';
-import { recordRunTexts } from '../understand/run-texts.js';
+import { recordRunTexts, type RunTextSources } from '../understand/run-texts.js';
 import type { Prepared, RolesWithBudget } from '../understand/run-understand-types.js';
 import { UnderstandSession } from '../understand/understand-session.js';
 import { runProviderSinks } from '../understand/run-sinks.js';
 import { withRoom } from '../understand/reader-room.js';
-import type { VerifierPrompts } from '../verifier/verifier-prompts.js';
+import type { SecretLines } from '../ports/secret-lines.js';
 import { sameFamilyWarning } from '../verifier/family-warning.js';
 import { runDeepen } from '../deepen/deepen-session.js';
 import {
@@ -59,7 +57,8 @@ import {
 // the guarded providers through the provider factory only, with the run's stop as the budget
 // guard's stop, and runs the tasks with one abort signal. The cost report is written at every end.
 
-export interface RunUnderstandDependencies {
+/** The prompt files are those of `RunTextSources`: each is read with its version and hash (RNF-004). */
+export interface RunUnderstandDependencies extends RunTextSources {
   readonly projects: ProjectRepository;
   readonly runs: RunIndex;
   readonly users: UserRepository;
@@ -75,22 +74,8 @@ export interface RunUnderstandDependencies {
   /** RF-1010: the project totals the run's usage events start from. */
   readonly costTotals: Pick<CostTotals, 'projectGroups'>;
   readonly costReports: CostReportWriter;
-  /** Reads the reader's prompt files with their versions and hashes (RNF-004). */
-  readonly prompts: () => Promise<ReaderPrompts>;
-  /** Reads the verifier's prompt files with their versions and hashes (RF-301, RNF-004). */
-  readonly verifierPrompts: () => Promise<VerifierPrompts>;
-  /** Reads the text tool protocol prompt, recorded when a role uses it (RF-205, RNF-004). */
-  readonly textToolProtocol: () => Promise<PromptFile>;
-  /** Reads the summariser's merge prompt, recorded when a merge call is made (RF-250, RNF-004). */
-  readonly mergePrompt: () => Promise<PromptFile>;
-  /** Reads the summariser's overview prompt, recorded when the overview call is made (RF-264, RNF-004). */
-  readonly overviewPrompt: () => Promise<PromptFile>;
-  /** Reads the answers prompt, used by a re-run with answers (RF-241, RNF-004). */
-  readonly answersPrompt: () => Promise<PromptFile>;
-  /** Reads the re-read prompt, used by a Deepen run (RF-209, RNF-004). */
-  readonly rereadPrompt: () => Promise<PromptFile>;
-  /** Reads the parent cards prompt, used by a Deepen run (RF-209, DEC-158, RNF-004). */
-  readonly parentCardsPrompt: () => Promise<PromptFile>;
+  /** P5-34: which cited lines hold a value Rosetta masks (a claim that it is masked is rejected). */
+  readonly secretLines: SecretLines;
   /** RF-241: the cards of earlier runs, read for a re-run and marked `Answered` by it. */
   readonly priorCards: PriorCards;
   readonly clock: Clock;
@@ -132,7 +117,11 @@ export class RunUnderstand implements RunExecutor {
       tasks: prepared.value.plan.tasks,
       kept: prepared.value.plan.kept,
       ...{ execution, updates, role: roles.value.reader, summariser: roles.value.summariser },
-      verifier: { role: roles.value.verifier, prompts: prepared.value.verifierPrompts },
+      verifier: {
+        role: roles.value.verifier,
+        prompts: prepared.value.verifierPrompts,
+        secretLines: this.deps.secretLines,
+      },
       logger: ownerLogger(this.deps.logger, execution.run.userId),
       settings: prepared.value.project.settings,
       deps: this.deps,
@@ -141,11 +130,11 @@ export class RunUnderstand implements RunExecutor {
       traceId: traceIdOf(execution.run),
       ids: this.deps.ids,
     };
-    // RF-209: a Deepen run goes back over a completed run instead of reading the areas anew.
-    const deepen = readUnderstandOptions(execution.manifest.options).deepen;
-    if (deepen !== undefined) return runDeepen({ ...parts, request: deepen });
+    const { deepen } = readUnderstandOptions(execution.manifest.options); // RF-209, RF-429
+    const withTheRoom = withRoom(execution, parts, roles.value.budget);
+    if (deepen !== undefined) return runDeepen({ ...withTheRoom, request: deepen });
     if (prepared.value.retry !== undefined) await announceRetry(execution, prepared.value.retry);
-    const session = new UnderstandSession(withRoom(execution, parts, roles.value.budget));
+    const session = new UnderstandSession(withTheRoom);
     await session.plan();
     await session.run();
     await session.finish();

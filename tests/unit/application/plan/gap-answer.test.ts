@@ -108,6 +108,18 @@ describe('parseGapAnswer: positions written as objects (Q-54)', () => {
 });
 
 describe('parseGapAnswer: what a card that is left out reports (Q-54)', () => {
+  it('RF-627 P5-40 reads the id of a card already written in dependsOn', () => {
+    const answer = read({ tasks: [{ ...card, dependsOn: ['T-001', 2, 'T-012'] }] });
+
+    expect(answer?.drafts[0]?.dependsOn).toEqual(['T-001', 2, 'T-012']);
+  });
+
+  it('RF-627 P5-40 a text that is no card id stays refused in dependsOn', () => {
+    const answer = read({ tasks: [{ ...card, dependsOn: ['the login card'] }] });
+
+    expect(answer?.problems).toMatchObject([{ position: 1, field: 'dependsOn' }]);
+  });
+
   it('RF-627 Q-54 names dependsOn when that list is the wrong one', () => {
     const answer = read({ tasks: [{ ...card, dependsOn: [{ id: 1 }] }] });
 

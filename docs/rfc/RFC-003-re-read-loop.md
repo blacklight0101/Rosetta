@@ -82,7 +82,7 @@ flowchart TD
 **Deepen run (an understand run with a mode)**, fields added to its manifest:
 
 - `mode`: `deepen`; `parentRunId`: the completed run it improves;
-- `maxRounds`, `roundsDone`, `stopReason` (`noProgress`, `roundLimit`, `capReached`, `stopped`);
+- `maxRounds`, `roundsDone`, `stopReason` (`noProgress`, `roundLimit`, `capReached`, `stopped`, `readersStopped`: the readers stopped so that the claims written could be judged, RF-429, P5-30);
 - per round: claim ids judged, claim ids re-read with their rejection reason, files read, new claim ids and their
   statuses, tokens and cost.
 

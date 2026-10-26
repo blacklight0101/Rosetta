@@ -1,10 +1,17 @@
 // RF-209, DEC-145 (Q-H): when a Deepen ends. A round that adds no new `Supported` claim and reads
 // no new first-party file ends it ("no progress"); so does the round limit (default 3, allowed 1 to
-// 5), a cap (`CapReached`, resumable with RF-006) and the owner's Stop.
+// 5), a cap (`CapReached`, resumable with RF-006), the owner's Stop and the readers' room check
+// (`readersStopped`, RF-429, P5-30: no reader task started so the claims written could be judged).
 
 export const DEEPEN_ROUNDS = { min: 1, max: 5, default: 3 } as const;
 
-export const DEEPEN_STOP_REASONS = ['noProgress', 'roundLimit', 'capReached', 'stopped'] as const;
+export const DEEPEN_STOP_REASONS = [
+  'noProgress',
+  'roundLimit',
+  'capReached',
+  'stopped',
+  'readersStopped',
+] as const;
 export type DeepenStopReason = (typeof DEEPEN_STOP_REASONS)[number];
 
 /** What a round added. */

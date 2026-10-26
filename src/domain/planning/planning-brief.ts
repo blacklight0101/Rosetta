@@ -20,9 +20,16 @@ export const stackLayers = [
 ] as const;
 export type StackLayer = (typeof stackLayers)[number];
 
+/**
+ * P5-39, RF-609: what the new system is. The owner may answer it; when nobody did, the plan takes it
+ * from the legacy code map (`application-kind.ts`). `keep` is a system that stays the kind it is.
+ */
+export const applicationKinds = ['web', 'desktop', 'service', 'keep'] as const;
+export type ApplicationKind = (typeof applicationKinds)[number];
+
 /** RF-610; the first is the default. */
 export const migrationStrategies = ['strangler-fig', 'parallel-change', 'rewrite'] as const;
-type MigrationStrategy = (typeof migrationStrategies)[number];
+export type MigrationStrategy = (typeof migrationStrategies)[number];
 
 /** The style a brief takes when nothing was chosen and nothing is recommended (first in RF-608). */
 const defaultArchitectureStyle: ArchitectureStyleId = 'layered';
@@ -38,6 +45,11 @@ interface StackChoice {
    * lists them. Absent in a brief saved before they were recorded.
    */
   readonly offered?: readonly string[] | undefined;
+  /**
+   * P5-39: set only by the plan run, on a layer the owner left open and Rosetta proposed; a saved
+   * brief never holds it (the schema refuses it), so an owner's choice is never one.
+   */
+  readonly proposed?: true | undefined;
 }
 
 interface ProjectContext {
@@ -63,6 +75,8 @@ export interface PlanningBrief {
     readonly evidence: readonly string[];
   };
   readonly migration: MigrationStrategy;
+  /** P5-39: the owner's answer to the kind of application; absent when nobody answered. */
+  readonly application?: ApplicationKind | undefined;
   /** One entry per answered layer, in layer order. */
   readonly stack: readonly StackChoice[];
   readonly context: ProjectContext;
@@ -85,6 +99,7 @@ export interface BriefAnswers {
       }
     | undefined;
   readonly migration?: MigrationStrategy | undefined;
+  readonly application?: ApplicationKind | undefined;
   readonly stack?: readonly StackChoice[] | undefined;
   readonly context?:
     | {
@@ -184,6 +199,7 @@ export function buildBrief(answers: BriefAnswers, catalogue: Catalogue): Unsaved
     principles: [...(answers.principles ?? defaultPrinciples(catalogue))].sort(),
     architecture: architectureOf(answers.architecture),
     migration: answers.migration ?? migrationStrategies[0],
+    ...(answers.application === undefined ? {} : { application: answers.application }),
     stack: [...(answers.stack ?? [])].sort((a, b) => layerOrder(a.layer) - layerOrder(b.layer)),
     context: contextOf(answers.context),
     buildMethod: answers.buildMethod ?? { aiAssisted: false },
@@ -194,7 +210,7 @@ export function buildBrief(answers: BriefAnswers, catalogue: Catalogue): Unsaved
 function contentOf(brief: UnsavedBrief): string {
   const { catalogueVersion, principles, architecture, migration, stack, context } = brief;
   const fields = [catalogueVersion, principles, architecture, migration, stack, context];
-  return JSON.stringify([...fields, brief.buildMethod, brief.defaulted]);
+  return JSON.stringify([...fields, brief.buildMethod, brief.defaulted, brief.application ?? null]);
 }
 
 /** Whether two briefs hold the same answers, whatever instant they were saved at. */

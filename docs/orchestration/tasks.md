@@ -12,11 +12,12 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
-| P1 Milestone slice (M1) | 183     | 67        | 98         | 18        | 0                  | 107     | 68      | 8      | 121        | 0         |
+| P1 Milestone slice (M1) | 184     | 67        | 98         | 19        | 0                  | 107     | 69      | 8      | 122        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 131     | 16        | 111        | 4         | 0                  | 54      | 73      | 4      | 87         | 0         |
-| P5 Polish (G-10)        | 27      | 8         | 19         | 0         | 0                  | 14      | 13      | 0      | 0          | 0         |
-| **Total**               | **382** | **98**    | **255**    | **29**    | **0**              | **188** | **180** | **14** | **228**    | **0**     |
+| P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
+| P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
+| P6 Agent build method   | 1       | 0         | 1          | 0         | 0                  | 0       | 1       | 0      | 0          | 0         |
+| **Total**               | **402** | **99**    | **273**    | **30**    | **0**              | **194** | **194** | **14** | **230**    | **0**     |
 
 ## Conventions for every card
 
@@ -773,7 +774,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-52, P1-53
 - **Gate**: G-06
-- **Status**: Blocked (G-06)
+- **Status**: In review
 - **Reads**: RF-803; `docs/runbooks/deploy.md`.
 - **Do**: `docs/hand-in/m1.md`: the hosted URL, the teacher account's user name (the password is given only in the hand-in form), the sample report URL as a fallback, the slides and video URLs, the repository URL; a checklist the owner ticks the day before the hand-in; the owner submits (G-05).
 - **Delivers**: `docs/hand-in/m1.md`.
@@ -786,7 +787,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-45, P1-48
 - **Gate**: G-07, G-08 (DEC-133)
-- **Status**: In progress
+- **Status**: In review
 - **Reads**: `docs/environments-and-delivery.md` sections 2, 3, 8, 10-12 and 14; the host ADR of P1-48; `docs/security/threat-model.md` section 5.
 - **Do**: the release workflow `.github/workflows/release.yml` (image to GHCR as `X.Y.Z` and `sha-<short>`, CycloneDX SBOM on releases); deploy the `sha-<short>` image of `main` to the chosen host (DEC-104) with managed PostgreSQL, the persistent disk at `ROSETTA_DATA_DIR`, every secret in the host's store, `ROSETTA_TRUST_PROXY=1`, HTTPS with HTTP redirected; the OWASP ZAP baseline scan against the Compose stack before the deploy; the smoke script (health, landing, sign-in, a cheap scan); measure RNF-017 once; `docs/runbooks/deploy.md` (deploy, rollback, backup, restore, roles in the host's console, teacher account); the owner creates the `teacher` account without a forced password change (RF-1107) and sets `defaultRoles` (DEC-106); redeploy as later P1 cards merge.
 - **Delivers**: the release workflow, the smoke script, the runbook, the ZAP report summary, the hosted URL recorded in `handoff.md`.
@@ -2493,6 +2494,21 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 
 ---
 
+### P1-184 - Follow-up: deploy to Azure Container Apps instead of Railway
+
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P1-55
+- **Gate**: G-07, G-08 (DEC-133); only running the workflows waits on the gates, writing them does not
+- **Status**: Done
+- **Reads**: ADR-024; `docs/environments-and-delivery.md` sections 2, 4, 8 and 10-12; `.github/workflows/release.yml`; `docs/runbooks/deploy.md`; `docs/runbooks/backup.md` if present; `scripts/smoke.mjs`; `scripts/backup.mjs`; `tests/integration/tooling/release-workflow.test.ts`, `tests/integration/tooling/workflows.test.ts`, `tests/integration/docs/deploy-runbook.test.ts`.
+- **Do**: replace the Railway parts of P1-55 with the Azure design of ADR-024. (1) A new workflow `.github/workflows/azure-provision.yml`, run only by hand (`workflow_dispatch`) in the `production` environment, that logs in with `azure/login@v2` over OIDC (`permissions: id-token: write` on that job only; `client-id`, `tenant-id` and `subscription-id` from the `production` environment variables `vars.AZURE_CLIENT_ID`, `vars.AZURE_TENANT_ID`, `vars.AZURE_SUBSCRIPTION_ID`, which already exist; no `creds:` and no long-lived Azure secret) and creates, idempotently, in the existing resource group `rg-rosetta` (Spain Central): a Log Analytics workspace, the Container Apps environment, a storage account with an Azure Files share mounted at `/data` with the `mountOptions` of ADR-024, the Flexible Server (PostgreSQL 17, B1MS, 32 GiB, TLS required, a firewall rule for Azure services only) with a `CanNotDelete` lock, the database and its roles (the roles section of the runbook, done from the job, not by hand), the migrate Container Apps job and the Container App (0.5 vCPU, 1 GiB, one replica, external ingress on 8080, startup, liveness and readiness probes on `/healthz`, `az containerapp registry set --server ghcr.io`). Database passwords are made in the job (`openssl rand`), masked with `::add-mask::` and written only as Container Apps secrets; the secrets the owner holds (`ROSETTA_SECRET_KEY`, `ROSETTA_ADMIN_PASSWORD`, the provider keys of section 4) are read from `production` environment secrets that the owner sets in the GitHub settings page; a missing one stops the job with its name and no value. Every app secret is a `secretref:` variable; plain variables are `ROSETTA_TRUST_PROXY=1`, `ROSETTA_DATA_DIR=/data` and `ROSETTA_PUBLIC_URL` (the https FQDN). (2) The `deploy` job of `release.yml`: the same OIDC login, start the migrate job with the new `sha-<short>` image and wait for its execution to succeed (fail on any other end state), then `az containerapp update --image ghcr.io/blacklight0101/rosetta:sha-<short>`, wait for `/healthz` over HTTPS, run `scripts/smoke.mjs`; remove `RAILWAY_TOKEN` and every Railway step; keep the `ROSETTA_DEPLOY_ENABLED` switch, the ZAP precondition, the concurrency rule and the main-or-tag rule. (3) Rewrite `docs/runbooks/deploy.md` for Azure: the owner steps already done on 2026-10-24 (subscription, 25 USD budget, resource group, deploy identity with a federated credential for `repo:blacklight0101/Rosetta:environment:production` and Contributor on `rg-rosetta` only, the three environment variables); the environment secrets the owner adds in the GitHub settings page; provisioning; deploy; smoke (`curl` lines with `<app>.<region>.azurecontainerapps.io`); rollback (`az containerapp update --image` with the previous tag); backup (point-in-time restore kept 7 days, the lock, the scheduled `npm run backup`); restore; teacher account; the cost-analysis check after day one for the `Environment Management Hour` meter (ADR-024 risks); keep a one-line history note that Railway was dropped (DEC-171). (4) Update the three test files so they assert the new design. Do not run either workflow: running them creates billed resources and is the orchestrator's step after the owner says so in chat.
+- **Delivers**: `.github/workflows/azure-provision.yml`, the changed `release.yml`, the rewritten deploy runbook, the updated tests.
+- **Done when**: the tests assert: OIDC login with the three `vars.` values and no `creds:`; `id-token: write` only on the jobs that log in to Azure; the provision workflow runs only on `workflow_dispatch` and in `production`; no step echoes a secret (no `echo` of a `secrets.` or generated password value); the migrate job runs and succeeds before the image update; no `RAILWAY` or `railway` remains in the workflows, the runbook or their tests outside the history note; every secret name of section 4 is either a `secretref:` in the provision workflow or listed as owner-set; actionlint passes; CI is green.
+- **Refs**: RF-1304, RF-1306, RNF-003, RNF-016, ADR-014, ADR-016, ADR-024, DEC-104, DEC-133, DEC-140, DEC-171, Q-18; P1-55, P2-12.
+
+---
+
 ## Phase 2 - Full understand
 
 Sized, not dated, until Q-01 is answered (roadmap.md).
@@ -2932,7 +2948,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-11
 - **Gate**: owner
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `eval/config.json` (the spend caps); RFC-001 section 7; the golden set of P2-11 (#476).
 - **Do**: Run the first live evaluation with the owner's provider keys and approval. Steps: the owner approves the download of dotnet-architecture/eShopModernizing at 63bc9ec4414d7e281dc9f9d7bdcf70030950457d (MIT) and the spend (eval/config.json caps: run 0.5 USD, total 1.5 USD); run `npm run eval -- --yes` (or with `--reader ollama:...` for a local model); keep eval-out/<id>/ and summarise precision, strict precision, recall, citation validity, estimate accuracy and the spread in the PR or handoff.
 - **Delivers**: the eval-out/<id>/ folder kept, and the results summary in the PR or handoff.
@@ -4987,6 +5003,21 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Done when**: each probe has a passing test; CI green on Windows and Linux.
 - **Refs**: RF-402, Q-58, Q-60; P3-129, P3-130.
 
+### P3-132 - Follow-up: GPT-5 models refuse reasoning effort none on tool calls
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-131
+- **Gate**: none
+- **Status**: Done
+- **Reads**: the model list (`prices/models.yaml`), the reasoning-effort wrapper of P3-129 and the Responses route of P3-131. The P2-34 evaluation (2026-10-25) with gpt-5-nano as reader failed on every reader call: HTTP 400 "'reasoning_effort' does not support 'none' with this model".
+- **Do**: gpt-5-mini, gpt-5-nano and gpt-5-nano-2025-08-07 send calls with tools through the Responses route with the role effort, never `none`; the model list comment and docs/providers.md say why.
+- **Review probes**: each of the three models routes tool calls to Responses with the role effort; gpt-6-sol and gpt-6-luna still send `none` with tools on Chat Completions; mutation: removing the mark from gpt-5-nano fails a test.
+- **Behaviour to preserve**: RF-402, Q-58, P3-129, P3-131.
+- **Delivers**: the model list change, tests, docs/providers.md and an RF-402 scenario (#924, issue #923).
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-402, Q-58; P3-129, P3-131, P2-34.
+
 ---
 
 ## Phase 5 - Polish (held by gate G-10)
@@ -5322,7 +5353,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the role shares of the run token cap (DEC-166: readers 70%, verifier 20%, summariser 10%; RF-429), the cap-weighted token count (DEC-168), the reader share of a scope cap (P5-18), the parallel verifier (P5-15), the claims written by the readers and the verifier's spend per judged claim. Haiku 5.5 battery of 2026-10-23, eShopModernizing re-run (owner approved): Understand ended CapReached on the 2,000,000 token cap with 958 claims, of which 716 (75%) were never judged; the readers used their full 70% while the verifier's 20% judged about a quarter of what they wrote. A plan from that run excludes every unjudged claim. The dynamic share of Q-61 (run cap minus the readers' use, minus 10%) would not have helped, because the readers used their whole share.
 - **Do**: before a reader task starts (and before a reader takes another turn that may write claims), the run checks that the readers' spend so far plus the estimated cost of judging every claim written and not yet judged stays within the readers' and verifier's part of the run token cap (90% with DEC-166), and within the readers' and verifier's part of the run cost cap. The judging estimate is the run's own average verifier spend per judged claim, or a stated default per claim before the first judgement. When the check fails, no new reader task starts; running reader tasks finish their current turn; the run moves to verification and ends Completed when every written claim is judged, or CapReached as before when a cap still binds. The fixed shares stay as upper limits (a reader never passes 70%). The run page and the event log say once that readers stopped to leave room to judge the claims written. Record the rule as a DEC row that amends DEC-166 and update RF-429.
 - **Review probes**: a recorded claim-heavy run that used to end with most claims Unverified ends with every written claim judged and no reader task started after the check failed; a run with few claims behaves as before (same tasks, same end state); the estimate uses the run's own average after the first judgements and the default before; a resume counts claims written before the stop; mutation: dropping the judging estimate from the check brings the unjudged claims back.
@@ -5339,7 +5370,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the provider call record (`provider-calls.jsonl`, RF-408), the run log (RF-009), the API calls and logs page (RF-1011), the provider adapters' error mapping (Anthropic, OpenAI Chat Completions and Responses, Ollama), the secret masker (RF-140..RF-149). Evaluation of 2026-10-23: every reader call of an OpenAI run failed with HTTP 400; the call records held only `httpStatus` 400 and RST-1506, the run log said "provider-failed", and the provider's reason ("Function tools with reasoning_effort are not supported ...") had to be found by repeating the request by hand. App sweep of 2026-10-23: no call record or log entry carries a provider error text.
 - **Do**: when a provider answers with an error, the call record keeps the provider's error type and message, masked by the secret masker and cut to 500 characters with a marker, plus the provider request id when given; the run log `warn` entry of the failed call carries the same text; the API calls and logs page shows it beside the call. A network error keeps its error name. No request or response body is stored beyond the error text.
 - **Review probes**: a recorded OpenAI 400 with an error body yields a call record and log entry with the masked message; an error text holding a secret-shaped value is masked; a 2 kB message is cut with the marker; an Anthropic and an Ollama error are kept the same way; a call that succeeds stores no error field; mutation: removing the masking lets the synthetic secret through.
@@ -5356,7 +5387,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `GET /api/runs/:runId/calls`, `GET /api/runs/:runId/calls/:seq/transcript` (`get-call-transcript.ts`, the run call reader), the API calls and logs page, `POST /api/projects/:id/plan-estimate` and the plan setup page. App sweep of 2026-10-23 on the eval stack: on an understand run with 878 calls, `/calls` takes 4.1 s and returns 464 kB in one answer (a `limit` is ignored); every transcript takes 2.4 to 4.1 s whatever its size (737 bytes took 2.4 s), because the whole call log is read and parsed to find one call; the plan setup page of the same project takes 5.2 s.
 - **Do**: the run call reader parses a run's call log once and keeps it (per run, invalidated when the log grows or the run is deleted, bounded in memory); a transcript is found by its call without parsing every call; `/calls` answers in pages (`limit` and a cursor) with the summary per role computed once, and the calls page loads more on demand; the plan estimate reuses what it already read. Keep scoping to the user (RF-1105).
 - **Review probes**: on a recorded run of 900 calls, a transcript answers in under 300 ms after the first read and `/calls?limit=50` returns 50 calls with a cursor and the full summary; the calls page shows the first page and loads the next; a run that is still writing shows its new calls; another user's run still answers 404; plan setup of the recorded project loads in under 1.5 s; mutation: removing the cache brings back a full parse per transcript (a test counts parses).
@@ -5373,7 +5404,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the design system (`docs/design-system.md`), the run page, the plan setup page (journey steps and area lists), the start page model switch button. App sweep of 2026-10-23 at 360 px: the plan setup page scrolls sideways by 22 px on workbook projects and 180 px on a large repository, and a run page by 233 px, because file paths of up to 119 characters do not wrap; the start page button "Switch every role to Ollama (gemma4:e4b)" sticks out by 5 px; the plan setup journey shows a cost as "$0.105619" instead of the cents used elsewhere.
 - **Do**: paths, area names, run ids and model names wrap anywhere on narrow screens (a design-system text utility, not per-page fixes); the button label wraps; journey costs use the shared cost format.
 - **Review probes**: at 360 px the plan setup, run and start pages of the recorded projects do not scroll sideways (e2e at phone size, with a 120-character path); the journey shows "$0.11" for 105,619 micros; axe still passes.
@@ -5390,7 +5421,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the plan answer schema (`src/application/plan/plan-answer.ts`, the `technical.security` control with `invariant` and `alternative`, `src/domain/planning/technical-content.ts`), the planner prompt (`prompts/planner/package.v7.md`), the unreadable-item rule of P3-126, the TRD security section (`handoff-trd-security.ts`). Owner review of a real package (eShopModernizing, Haiku 5.5, 2026-10-23): both `technical.security` items were left out for the field "alternative", so the package has no security controls although the legacy code hard-codes credentials and exposes the database.
 - **Do**: find from recorded answers why the field is refused (a null, a list, an over-long text or a missing key) and accept every shape the prompt allows with a safe reading: an empty, null or missing `alternative` or `invariant` reads as none; an over-long text is cut at its bound with a marker rather than dropping the control; a list of strings is joined. A security control is left out only when its name or approach is unreadable, and then checks.md says so as today. The prompt states the field shapes once, with an example of a control without an alternative.
 - **Review probes**: a recorded eShop-style answer whose two controls carry the field shapes found => both controls are kept in the TRD and in a task card; a control without `alternative` => kept; a control with an unreadable approach => still left out and listed in checks.md; mutation: restoring the strict field => the controls are dropped again.
@@ -5407,7 +5438,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the stack layers of the planning brief and the plan options catalogue (`/api/plan/catalogue`), the ADR writer of the package, the API contract rule ("no contract applies"), checks.md. Owner review of a real package (eShopModernizing, 2026-10-23): ADR-005 chooses ASP.NET Core Minimal APIs for the back end while ADR-006 chooses Razor Pages and the README says no API contract applies because Razor Pages is rendered by the server; nothing points out that a server-rendered front end needs no separate API back end, or that a Minimal API back end needs a contract. Each ADR is about 17 lines of boilerplate, lists no alternatives and says "Source cards: none".
 - **Do**: (1) a stack consistency check: a small, versioned rule table in the catalogue (for example a server-rendered front end with an API-only back end; an API back end without a contract; a data access choice the database does not support) flags each clash in checks.md and as an open question with the legacy-keeping default, and the README says the stack has an open clash; Rosetta never changes the owner's choice. (2) Each stack ADR states its context from the source cards (the legacy technology and the claims behind the layer), the options the catalogue offered with one line each, the choice, its consequences for the task cards, and the source cards it rests on; an ADR with no supporting card says why.
 - **Review probes**: the eShop brief (Razor Pages with Minimal APIs, no contract) => one clash in checks.md and one open question; a consistent brief => no clash; a stack ADR => lists the catalogue options and at least one source card when the cards name the legacy layer; mutation: removing the rule table entry => the clash is hidden.
@@ -5424,7 +5455,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the Markdown text escaping of the package and the cards (`src/infrastructure/cards/markdown-text.ts` and its callers), the link rendering (`handoff-links.ts`), the open questions writer. Owner review of a real package (eShopModernizing, 2026-10-23): text is escaped everywhere (`20261023\-143644\-understand`, `\(ADRs\)`, `non\-development`, `C\#`) and the source URL reads `https&#58;//github.com/...`; the files are meant to be read raw by people and agents. open-questions.md has 860 lines and 761 table rows, mostly the claims left out, burying the eight questions that need an answer.
 - **Do**: escape only what would change the Markdown meaning in its position (a leading `#`, `-`, `+` or digit-dot at line start, `|` inside a table cell, backticks, `*`/`_` runs that would start emphasis, `<`/`&` that would start HTML or an entity, `[`/`]` that would form a link); hyphens, parentheses, dots and `#` inside words stay plain; the source URL is written as a plain URL (keep RF-145/RF-507: untrusted text cannot inject HTML or links). open-questions.md lists the questions that need an answer first; the claims left out move to a grouped summary (counts per area and kind, with the 20 most important) and a full list in a separate file linked from it.
 - **Review probes**: the rendered package of the recorded eShop plan => no `\-`, `\(`, `\)`, `\.` or `&#58;` outside the positions above; a hostile claim text with `<script>`, `[x](javascript:...)`, a leading `#` and a table pipe => stays inert and renders as text; open-questions.md of that package => under 150 lines and starts with the brief and PRD questions; the full left-out list => holds every claim; mutation: escaping nothing => the hostile text forms a link.
@@ -5441,7 +5472,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-10
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the target flow writer and diagram (`src/domain/diagrams/target-flow-diagram.ts`, `flow-sequence.ts`), the components of the target architecture, the legacy flow cards. Owner review of a real package (eShopModernizing, 2026-10-23): in FLOW-001 the trigger sentence is drawn as the first participant, the arrows jump from step 2 to step 5 because unmapped steps are skipped, and most steps read "not mapped" to a target component.
 - **Do**: the trigger is drawn as a note or an actor named for who or what starts the flow, not as a participant holding the sentence; every legacy step appears in order (an unmapped step is drawn on the nearest component with a marker, so no step number is skipped); each step is mapped to the target component whose responsibility or source cards cover the code it cites, and only a step with no such component reads "not mapped", with checks.md counting them.
 - **Review probes**: the recorded eShop FLOW-001 => an actor for the trigger, steps 1 to 5 in order, the routing and database steps mapped to their components; a flow whose every step maps => no marker; a step whose code no component covers => "not mapped" and counted in checks.md; the Mermaid => parses (existing diagram parse test); mutation: skipping unmapped steps again => the order probe fails.
@@ -5451,3 +5482,380 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Refs**: RF-620..RF-627; owner package review 2026-10-23.
 
 ---
+
+### P5-28 - Plan setup and the run log load fast on a large project
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P5-22
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the plan setup page and its three reads (`GET /api/projects/:id/journey`, `/plan-estimate`, `/plan-source`), the card readers they share, the run log route (`GET /api/runs/:runId/logs`) and its reader, the kept-parse pattern of P5-22 (`FileRunCallReader.log`, `FileStatReader`). Second sweep on the evaluation stack (2026-10-24, a public project with 878 calls and about 450 cards): plan setup takes about 2.8 s on every load (journey 1.8 s, plan-estimate 1.4 s, plan-source 0.45 s), against the 1.5 s of P5-22; the run log answers in 0.55 to 0.95 s on every request, with no kept result.
+- **Do**: read and parse a run's cards once per version of its card files (size and modification time, as P5-22 does for the call log) and share that parse between journey, plan-estimate and plan-source; keep the parsed run log the same way (bounded, keyed by user and run, dropped when the file is gone); a request for another user's run still answers 404 (RF-1105). Measure before and after with a recorded large fixture.
+- **Review probes**: a 450-card fixture => plan setup's three reads parse each card file once per version (read-count test) and the second load re-reads none; a changed card file => the next read sees it; the run log of a 900-entry run => one parse, the second request reads no file; another user's run => 404 and no kept entry served; mutation: removing the version check => a changed file is not seen.
+- **Behaviour to preserve**: RF-1011, RF-1105, P5-22 paging and kept parse, RF-613 estimate output (byte-equal before and after).
+- **Delivers**: the change, a timing note on the evaluation stack in the pull request and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P5-22, RF-1011, RF-613; second sweep 2026-10-24.
+
+---
+
+### P5-29 - Test gaps the phase 5 verifiers noted
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the verifier comments of P5-21, P5-22 and P5-23 (pull requests 885, 886, 891), the calls panel (`CallsPanel`, `use-run-calls.ts`), the start page ghost button, `tests/e2e/phone-wrap.spec.ts`.
+- **Do**: add the tests the verifiers asked for, and the small fixes they need: an error message holding `<script>` and an image tag on the calls page renders as text (P5-21); a failed "Load more calls" shows an error line with a retry, and newly loaded calls are announced in a polite live region (P5-22); the start page button "Switch every role to Ollama" wraps at 360 px with no sideways scroll (P5-23).
+- **Review probes**: hostile error text => shown as typed, no element formed; load more answering 500 => an error line and a retry that works; load more => the live region reads "N of M attempts loaded"; 360 px start page => no sideways scroll and the button label wraps; mutation: removing the live region => the probe fails.
+- **Behaviour to preserve**: RF-1011, RF-507, P5-22 paging, P5-23 wrapping.
+- **Delivers**: the tests and fixes.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P5-21, P5-22, P5-23 verifier notes.
+
+---
+
+### P5-30 - Deepen readers stop while their claims can still be judged
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P5-20
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the reader room of P5-20 (`src/application/understand/reader-room.ts`, `withRoom`, `endsWithoutRoomStops`), the Deepen session and its readers (`src/application/deepen/deepen-session.ts`, `deepen-readers.ts`, `deepen-round.ts`), DEC-170, RF-429. Evaluation on a private project (2026-10-24, one cloud model on every role): Deepen ran to 98% of the run cost cap with no `budget.readersStopped` event and ended at the cap with 25 of 315 claims never judged; only Understand wires the room check.
+- **Do**: wire the same room check into every Deepen round: before a Deepen reader task and before each reader turn, the readers' spend plus the estimated cost of judging the written, unjudged claims of the whole Deepen run (all rounds) must fit the limits of DEC-170; when it does not, no further reader task starts, the round goes on to judgement, and Deepen ends with every written claim judged and the stop reason stated. One `budget.readersStopped` event per Deepen run.
+- **Review probes**: a recorded claim-heavy Deepen that today ends at the cap with unjudged claims => readers stop, every written claim judged, one readersStopped event, the run ends with its stop reason; a light Deepen => unchanged; a resumed Deepen counts the claims of earlier rounds; mutation: removing the room from Deepen => unjudged claims again.
+- **Behaviour to preserve**: P5-20, DEC-170, RF-429, P3-125 (Deepen folds near-duplicates), the budget guard on every call.
+- **Delivers**: the change, a recording and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P5-20, DEC-170, RF-429; evaluation 2026-10-24.
+
+---
+
+### P5-31 - Screen claims built from markup cite the line that shows them
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the screen claims Rosetta writes from page markup without a model call (P3-122: the field, action, link and route claim templates), their citations, the verifier input for them. Evaluation on a private project (2026-10-24): 6 of 10 sampled Supported claims were such screen claims, each citing every range of its card (5 to 8 ranges) where one range shows the fact; a plain link reads "Action <text> starts the handler mailto..."; a calendar field reads "required" with no validator in the markup; on replay of the recorded judgements, the verdicts of these claims flip between runs and models ("The screen is at the route X", "starts the handler").
+- **Do**: each markup claim cites only the line range of the element it states (the field, the button, the link, the page directive); a link (an anchor or hyperlink control with a target) reads "<text> links to <target>", a button with a handler reads "<text> starts <handler>"; "required" is stated only when a validator or a required attribute for that field is in the markup; the route claim of a page whose route is its file path is decided by the code, like the other markup claims, and never sent to the verifier. The language-specific parts stay in the language packs (DEC-11).
+- **Review probes**: a recorded page with a link, a button with a handler, a calendar without a validator and a required text field => four claims, each citing one range, with the wording above; the route claim => decided without a model call; a page whose route is configured elsewhere => no route claim from the file path; mutation: citing the card's ranges again => the one-range probe fails.
+- **Behaviour to preserve**: P3-122, RF-507 (claim text is data), DEC-11, ADR-005 (every claim cites evidence).
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P3-122, ADR-005; evaluation 2026-10-24.
+
+---
+
+### P5-32 - Cards of the same page or the same title are merged
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the consolidation of cards after Understand and after each Deepen round (`consolidation.json`, `src/application/deepen/deepen-consolidation.ts`, the Understand consolidation), P3-125. Evaluation on a private project (2026-10-24): 23 screen cards for about 13 pages (one page had three screen cards, another four), and two pairs of integration and open-question cards with the same title in two areas.
+- **Do**: screen cards that describe the same page (the same file or route) are merged into one card with the claims of both, near-duplicate claims folded as P3-125 does; cards of one kind with the same normalised title are merged across areas when their claims cite overlapping files or the same external system, and kept apart otherwise; consolidation.json records each merge with the ids merged; the package lists merged ids as aliases so links keep working.
+- **Review probes**: three recorded screen cards of one page => one card with every distinct claim; two integration cards named the same for one mail server in two areas => one card; two cards with the same title about different files => kept apart; a link to a merged id => resolves to the kept card; mutation: switching the page merge off => the three cards return.
+- **Behaviour to preserve**: P3-125, RF-601..RF-613 (package links), ADR-005 (verdicts kept, never deleted).
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P3-125; evaluation 2026-10-24.
+
+---
+
+### P5-33 - The data model and the entity mapping use the same target names
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the data model and entity mapping writers of the package (`data-model.md`, `entity-mapping.md`), the planner answers that feed them, the data-model check of checks.md ("Left out"). Evaluation on a private project (2026-10-24): the entity mapping names target entities in one style while the data model of the same package names the tables in another (`Order` against `tbl_orders`, for example); the check lists a form field name as a table the model lacks.
+- **Do**: the entity mapping takes its target names from the data model of the same package (the table each entity maps to), so the two never disagree, and an entity with no table says so; the "Left out" data-model check counts only names a card states as a table (in a query, a join or a sentence that calls it a table), not every identifier in a claim.
+- **Review probes**: a recorded plan whose planner answers name an entity differently from its table => the mapping shows the table name; a claim naming a form field => not listed as a missing table; a card naming a lookup table the model lacks => still listed; mutation: taking the planner's mapping names again => the names disagree.
+- **Behaviour to preserve**: RF-601..RF-613, P3-126 (an unreadable item is left out and listed).
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-601; evaluation 2026-10-24.
+
+---
+
+### P5-34 - A masked secret is stated as a secret written in the code
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the egress masker and the text a masked value is replaced with (`src/infrastructure/cards/mask-card-text.ts`, the egress guard, RF-140..RF-149), the reader and verifier prompts, the plan's security and risk sections. Recall benchmark (2026-10-24, public WinForms school app, `App.config` holds a plain-text database password): a Supported card says the password "is masked in the source", and the plan lists no plain-text secret as a risk.
+- **Do**: the replacement text of a masked value tells the model that a secret value is written there in the code in plain text and was masked by Rosetta before sending (wording in the prompt files, not in code); the reader prompt asks for a claim that a plain-text secret is present where one is masked; a claim that a value "is masked in the source" for a value Rosetta masked is never Supported; the plan's risks list each file that holds a masked secret (path and line, never the value).
+- **Review probes**: a recorded config with a password => one claim "a plain-text password is written in <file>:<line>", Supported, the value never in any output; a claim "the password is masked in the source" on a Rosetta-masked line => Rejected; the plan risks list the file; mutation: the old replacement text => the risk is missing.
+- **Behaviour to preserve**: RF-140..RF-149 (no unmasked secret reaches a provider or an output), ADR-006, ADR-013.
+- **Delivers**: the change, a recording and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-140, RF-145, ADR-006; recall benchmark 2026-10-24.
+
+---
+
+### P5-35 - A claim rejected for a meaning defined elsewhere is retried with the lines that define it
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the verifier's judgement and its reasons (`src/application/verifier/`), the Deepen re-read plan (`src/application/deepen/deepen-round.ts`, which claims a round judges or re-reads), the reader prompt on citations. Recall benchmark (2026-10-24, public WebForms hospital app whose status codes are explained in comments of the schema file): every claim that translates a status code into its meaning (2 = unseen, 4 = rejected) was Rejected in Understand and again in Deepen, because the cited procedure lines do not hold the meaning; five procedures lost what they write. Deepen re-read the data-access wrappers instead of the schema comments.
+- **Do**: the verifier gives a reason kind when a claim is Rejected because a meaning it states (a code value, a constant, a name) is not in the cited lines; the next Deepen round asks a reader to find the lines that define that meaning (a comment, an enum, a lookup table, a constant) through the code map's search and to re-propose the claim citing both; the re-proposed claim is judged like any other; the first verdict is kept (ADR-005).
+- **Review probes**: a recorded procedure that sets status 4 and a schema comment "4 = rejected" => the claim "sets the appointment to rejected" is re-proposed citing both ranges and Supported, the first Rejected verdict kept; a claim rejected because it is wrong => not retried; a Deepen with no such rejection => unchanged; mutation: dropping the reason kind => no retry.
+- **Behaviour to preserve**: ADR-005 (verdicts are never deleted), P3-124 (verifier context), P5-30 (room to judge), the budget guard.
+- **Delivers**: the change, a recording and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: ADR-005, RF-429; recall benchmark 2026-10-24.
+
+---
+
+### P5-36 - Every database object gets a card that states what it does
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the scan's code map of SQL files and the database objects it lists, the Understand task planner and coverage (`coverage.json`, `coverage.md`), the reader prompt for SQL. Recall benchmark (2026-10-24, two public apps with schema scripts): procedures were named but the columns they write were dropped (notification and feedback flags), view filters were missed (top 20, current month, departments without an active doctor), and quirks inside SQL went unnoticed (a two-character cast, a parameter never used, a 'paid' against 'Paid' compare), while page code quirks were found.
+- **Do**: each table, view, procedure, trigger and function the scan finds is an item of Understand coverage; coverage.md lists each with the card that states its behaviour (what it reads, writes, filters and returns, with its conditions) or "named only" or "no card"; Deepen re-reads the objects that are "named only" or have no card before other re-reads; the reader prompt for SQL asks for the columns written, the filters and the casts. The SQL object listing stays in the universal scan or a SQL pack (DEC-11).
+- **Review probes**: a recorded schema script with a view that filters TOP 20 and a procedure that sets two flags => coverage lists both, and after Deepen each has a card stating the filter and both flags; an object only named in a data-access call => "named only" in coverage.md and re-read first; mutation: removing the objects from coverage => they are not re-read.
+- **Behaviour to preserve**: RF-104, P3-112 (vendored libraries skipped), P5-10 (listed lines not read), DEC-11.
+- **Delivers**: the change, a recording and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-104; recall benchmark 2026-10-24.
+
+---
+
+### P5-37 - Entity cards state column types, nullability, keys and missing constraints
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the ENT card format and the reader prompt for tables, the plan's target data model (`src/application/plan/plan-data-model.ts`, `data-model-legacy-keys.ts`). Recall benchmark (2026-10-24): entity cards never stated column types or NOT NULL, so the target model guessed them (a float became an integer, NOT NULL and defaults were dropped, a 20-character password column was kept); facts about what is absent were missed on both apps (no primary key, no unique constraint, no roles), and so were the consequences (a name is the de-facto key, cascades delete payment history).
+- **Do**: an ENT card states each column with its type, nullability, default, key and foreign key, each citing its line; it states a missing primary key or unique constraint the code relies on (a lookup by name, an upsert by date) as a claim; the target data model takes types, nullability and defaults from these claims and lists every change from the legacy type with a reason; a cascade delete is stated with the tables it reaches.
+- **Review probes**: a recorded table with a float, a NOT NULL column with a default and no primary key => the card states all three, and the target model keeps the float and the default, or lists the change; a table found by name in the code with no unique constraint => a claim saying so; mutation: the old ENT prompt => types missing and the probe fails.
+- **Behaviour to preserve**: P3-120 (database types), P3-115 (placeholder columns), P5-33 (target names), RF-601.
+- **Delivers**: the change, a recording and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P3-120, RF-601; recall benchmark 2026-10-24.
+
+---
+
+### P5-38 - The target data model is never lost to a cut answer
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the data model call and its continuation (`plan-data-model.ts`, `data-model-answer.ts`, `plan-continuation.ts`, the planner output limit in `src/application/models/role-limits.ts`), the fallback when no table is written (`data-model-named.ts`). Recall benchmark (2026-10-24, public WinForms school app with 18 tables): the planner was cut at its output limit, the package had no target table, the data model listed 39 claims as "not named" and every entity-mapping row read "No table"; a second plan from the same cards wrote 23 sections.
+- **Do**: the data model is asked in batches of entities sized to fit the planner's output limit, so no single answer has to hold the whole model; a batch that stays cut after its continuations is retried smaller once; when a batch still fails, its tables are built from the ENT cards and the legacy schema claims (names, columns, types, keys) and marked as copied from the legacy model; the package never ends with an empty target data model while ENT cards exist.
+- **Review probes**: a recorded plan with 18 entities whose one-call answer is cut => the batched answers give 18 tables; a batch that keeps failing => its tables come from the legacy claims, marked; mutation: one call for all entities => the cut answer and the probe fails.
+- **Behaviour to preserve**: RF-604 (continuation), P3-113 (plan fits the window), P5-33, P3-126 (an unreadable item is left out and listed).
+- **Delivers**: the change, a recording and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-604, RF-601; recall benchmark 2026-10-24.
+
+---
+
+### P5-39 - The plan proposes a stack and the kind of application when the brief leaves them open
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the planning brief and its defaults (`src/domain/planning/planning-brief.ts`, `src/application/planning/planning-brief-schema.ts`), the stack catalogue and plan options, the migration strategies, the TRD stack section and the tasks writer. Recall benchmark (2026-10-24): with the default brief no layer has a technology, yet the package sizes cards and writes code paths and test paths; no stack is proposed although the legacy stack makes one obvious; a single-process desktop app gets a strangler-fig plan with a routing layer it cannot have; nothing asks whether the target is web or desktop.
+- **Do**: the brief has an application kind (web, desktop, service, keep as is) with a default taken from the legacy code map; when a stack layer is left open, the plan writes a Proposed ADR choosing the catalogue's recommended option for that layer and kind, lists it in open questions, and uses it in the cards; the migration strategy is checked against the kind and the code map (strangler fig needs a request seam; a desktop app gets the shared-database seam or a big-bang strategy with a reason ADR); README and TRD say which choices were proposed by Rosetta.
+- **Review probes**: a recorded brief with no stack for a WebForms app => a Proposed ADR per open layer and cards that use it; a desktop app with the default strangler fig => the strategy check writes the seam ADR or changes the strategy, with its reason; a brief with a stack => unchanged; mutation: skipping the proposal => cards without a stack and the probe fails.
+- **Behaviour to preserve**: P5-25 (stack clash check), RF-600..RF-613, the owner's choice always wins over a proposal.
+- **Delivers**: the change, the requirement edit, a recording and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-600, P5-25; recall benchmark 2026-10-24.
+
+---
+
+### P5-40 - Coverage checks count what they claim, and gap repair keeps dependencies
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: plan coverage and the gap repair (`plan-coverage.ts`, `gap-message.ts`, `gap-repair-message.ts`, `gap-answer.ts`), checks.md, the style check over components, the roadmap phases. Recall benchmark (2026-10-24, two public apps):
+  - The gap pass wrote 15 of 18 cards and could only depend on cards in its own list, so 13 to 15 cards read "Depends on: none" with no schema or login dependency.
+  - Nothing was checked after the gap pass.
+  - A feature built by a card that lists its requirement was still counted as built by no card, so the run ended Failed (RST-1806).
+  - Requirements built by no card were not counted.
+  - A Must screen dropped by the screen cap passed.
+  - Flows where screens call data access directly passed the layer rule.
+  - Phase titles did not match their cards.
+- **Do**:
+  - The gap pass may depend on every card already written.
+  - A card gains the features of the requirements it lists, the way it gains requirements today.
+  - Coverage is checked again after the gap pass.
+  - Coverage counts requirements, Must screens over the cap, and source cards that reach no requirement.
+  - The style rule is checked over the steps of the target flows.
+  - A phase is titled from the cards it holds.
+  - checks.md lists each result.
+- **Review probes**:
+  - A recorded plan whose gap cards need the schema card => their Depends on lists it.
+  - A card listing REQ-011, whose feature is F-006 => F-006 is built, and the run is not Failed for it.
+  - A requirement no card builds => listed.
+  - A flow from a screen straight to data access in a layered style => listed.
+  - Mutation: no check after the gap pass => the probe fails.
+- **Behaviour to preserve**: RST-1806 for a real gap, P5-27 (flow mapping), RF-606.
+- **Delivers**: the change, a recording and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-606, P5-27; recall benchmark 2026-10-24.
+
+---
+
+### P5-41 - Behaviour to keep agrees with the decisions, and legacy bugs get a keep-or-fix entry
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the "Behaviour to keep" section and its source (`src/infrastructure/handoff/handoff-behaviour-markdown.ts`), open-question defaults, the ADR writer, the task acceptance tests. Recall benchmark (2026-10-24, two public apps):
+  - Every card pins every claim of its source cards as an approval test. That locks in a plain-text password check that an ADR replaces, a hard-coded receipt date and swapped dashboard labels.
+  - The open-question default "keep the legacy behaviour" keeps plain-text passwords and leaves out role checks.
+  - Acceptance tests contradict the kept behaviour (a rating that legacy ignores).
+  - The migration card carries unrelated validations.
+- **Do**:
+  - A card keeps only the claims of what it builds.
+  - A kept claim that an ADR or an answered question changes becomes "behaviour to change", with the decision named.
+  - Claims that state a likely defect (a hard-coded date, a value written to the wrong column, a case mismatch, an ignored input) go into a keep-or-fix table in risks.md, with a default of fix and an open question.
+  - A security question defaults to the secure option, not to the legacy behaviour.
+  - An acceptance test that contradicts a kept claim is listed in checks.md.
+- **Review probes**:
+  - A recorded plan with an ADR to hash passwords and a claim that passwords are compared in plain text => the claim is under "behaviour to change", not "keep".
+  - A hard-coded date claim => a keep-or-fix row.
+  - A security open question => default secure.
+  - A test against a kept claim => listed.
+  - Mutation: keeping every claim => the probe fails.
+- **Behaviour to preserve**: P5-24 (security controls kept), RF-608, ADR-005.
+- **Delivers**: the change, the requirement edit and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-608, P5-24; recall benchmark 2026-10-24.
+
+---
+
+### P5-42 - The plan has foundation, test-harness, data-migration and cut-over cards
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the fixed template cards of the tasks writer (`plan-package.ts`, `handoff-task-markdown.ts`), the migration strategies, fixtures.md (`handoff-fixtures-markdown.ts`). Recall benchmark (2026-10-24):
+  - Neither plan had cards for scaffolding, data access, CI, the harness that runs the approval tests, data migration or cut-over.
+  - fixtures.md held repository file statistics (stylesheet sizes, line endings) and no seed data, and two cards were told to handle them.
+- **Do**:
+  - The tasks writer adds fixed cards for the solution skeleton and CI, data access, the approval-test harness against the legacy behaviour, data migration (each legacy table to its target, with a row-count check) and cut-over. Their contents follow the migration strategy.
+  - Every built card depends on the skeleton and data-access cards.
+  - fixtures.md is built from seed data and test data claims (inserts in schema scripts, seed code), never from file statistics.
+- **Review probes**:
+  - A recorded plan => the five fixed cards exist, and every other card depends on the skeleton.
+  - A schema script with inserts => fixtures.md lists those rows (masked where secret).
+  - A strangler-fig plan => the cut-over card names the routing step.
+  - Mutation: the old fixtures source => file statistics again.
+- **Behaviour to preserve**: RF-606, P3-117, P5-08 (workbook fixtures).
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-606, P5-08; recall benchmark 2026-10-24.
+
+---
+
+### P5-43 - Plan documents keep the meaning of their source claims
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the PRD, requirements and flows writers and the planner prompts (`prompts/` plan files, `prd-answer.ts`, `flows-answer.ts`), the requirement-to-claim links. Recall benchmark (2026-10-24, public WebForms hospital app):
+  - The plan reworded Supported claims beyond their meaning: "rejects the appointment" became "delete it", a rating "recorded" that legacy ignores, and triggers that "block drops" where they only print.
+  - The README's "weekly" view won over the code's current month.
+  - The PRD invented two roles in an app with none.
+- **Do**:
+  - Each requirement, flow step and PRD statement that names an operation keeps the verb and the values of its linked claim.
+  - A planner statement with no linked Supported claim is marked as proposed.
+  - A plan check compares each requirement with its claims for contradicting verbs (delete against reject or archive, record against ignore) and for roles or values no claim states, and lists each in checks.md.
+  - Code claims win over README claims when they disagree.
+- **Review probes**:
+  - A recorded plan where a claim says "sets status rejected" and the requirement says "deletes" => listed in checks.md.
+  - A PRD role no claim states => marked proposed.
+  - A README claim against a code claim => the code claim is used.
+  - Mutation: no check => the probe fails.
+- **Behaviour to preserve**: RF-602, P5-26 (plain text), ADR-005.
+- **Delivers**: the change and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: RF-602; recall benchmark 2026-10-24.
+
+---
+
+### P5-44 - Actions and links the markup reader cannot match keep narrow citations
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P5-31
+- **Gate**: G-10
+- **Status**: Done
+- **Reads**: the screen claims and the markup reader of P5-31 (`src/domain/cards/screen-claims.ts`, `screen-markup.ts`, the WebForms markup reader in the C# pack). Evaluation on a private project (2026-10-24, after P5-31, Haiku on every role):
+  - Routes and fields now cite one range.
+  - 26 actions the agent wrote that the markup reader did not match still read "Action X starts the handler Y" and cite every range of their card; 13 of them were Rejected.
+  - All 28 "The screen leads to" claims still cite the whole card (9 Rejected).
+- **Do**:
+  - A "leads to" claim cites the line of the link or redirect that leads there: from the markup when the pack read it, else from the agent's own citation that names the target.
+  - An action the markup does not match cites the agent's lines that name its label or handler, not the whole card.
+  - When no line names it, it cites only the card's first range and says so in the claim's note.
+  - The language-specific parts stay in the language packs (DEC-11).
+- **Review probes**:
+  - A recorded page with a link in a grid template the reader does not match => its "leads to" claim cites the template line.
+  - A redirect in code-behind => it cites the redirect line.
+  - An unmatched button with a handler named in the agent's lines => it cites those lines.
+  - Mutation: card-wide citations => the probe fails.
+- **Behaviour to preserve**: P5-31, RF-626, ADR-005.
+- **Delivers**: the change, a recording and tests.
+- **Done when**: each probe has a passing test; CI green on Windows and Linux.
+- **Refs**: P5-31, RF-626; evaluation 2026-10-24.
+
+---
+
+## Phase 6 - Agent build method (held by the owner)
+
+No card of this phase starts until the owner opens the phase (DEC-173).
+
+### P6-01 - Review: the build method the package gives an AI agent team
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-173)
+- **Status**: Todo
+- **Reads**: the package writer (`src/infrastructure/handoff/`, `handoff-method-markdown.ts` for `AGENTS.md`), the planning brief's build method question (`src/domain/planning/brief-questions.ts`), RF-612, RF-635 and RF-636, and this repository's own method as the reference: the project-blueprint skill it was planned with (docs-first repository, `CLAUDE.md`, `handoff.md`, RFC, ADRs, decision log, task cards with builder tiers, an independent verifier and human gates) and `docs/orchestration/README.md` with `.claude/agents/`. Owner test of 2026-10-25: a Sonnet full run of a single-file app gave a package with 18 task cards and no agent method, because AI-assisted build stayed on its default (off).
+- **Do**: a written review, then the cards it calls for (no code in this card). The goal: a team that takes the package builds the new system with the same method this repository was built with, as the project-blueprint skill sets it up.
+  - What an agent sees first in the package, and whether it can tell how to proceed without a person explaining it.
+  - What `AGENTS.md` holds today with AI-assisted build on, against this repository's method: orchestrator, builder tiers, independent verifier, gates, card status flow, merge rules, verdict format, the red test first.
+  - Whether Plan setup should ask the build method question plainly (or default it on when the brief names an agent tool), and say what the package leaves out when it is off.
+  - Plan setup asks which agent tool the team builds with (Claude Code, Codex or another) and the models it has; the difficulty bands map to those models (for example haiku, sonnet and opus for Claude Code, and the matching tiers for Codex), and every task card names the model of its band.
+  - A package check that each card's model belongs to the chosen tool and matches its difficulty band and risk class (RF-635), so a card is never given a model the team does not have.
+  - Whether the package should ship agent definitions for the chosen tool (for example `.claude/agents/` for Claude Code, `AGENTS.md` for Codex) and a start-here section (DEC-60: no Claude Code plugin; the package stays usable without the tool).
+  - Proposed new requirement ids or changes to RF-612, RF-635 and RF-636, with their open questions and defaults.
+- **Delivers**: `docs/reviews/2026-xx-agent-build-method.md` with the findings and the proposed cards; the cards appended to this phase.
+- **Done when**: the owner has read the review and chosen which proposed cards to build.
+- **Refs**: RF-612, RF-635, RF-636, DEC-60, DEC-76, DEC-173.

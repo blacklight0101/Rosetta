@@ -1,9 +1,9 @@
+import { usableCards } from '../../domain/planning/code-over-documentation.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { ok } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import { assemblePlan, type PlanAssembly } from '../../domain/planning/plan-content.js';
+import type { PlanAssembly } from '../../domain/planning/plan-content.js';
 import { methodPrinciples } from '../../domain/planning/task-method.js';
-import { supportedCards } from '../../domain/planning/plan-sources.js';
 import { recordManifestBrief } from '../../domain/runs/manifest-brief.js';
 import { recordManifestSourceRun } from '../../domain/runs/manifest-source-run.js';
 import {
@@ -14,15 +14,17 @@ import {
 import type { Run } from '../../domain/runs/run.js';
 import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
 import { readPlanAnswer } from '../plan/plan-answer.js';
-import { draftAfterRepair, unreadableMessages } from '../plan/plan-repair.js';
-import type { PlanDraft } from '../../domain/planning/plan-draft.js';
+import { draftAfterRepair } from '../plan/plan-repair.js';
+import { checkedAssembly } from '../plan/plan-assembly.js';
 import { planLinks } from '../plan/plan-links.js';
 import { windowOfRole } from '../plan/plan-window.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
 import { planDocuments } from '../plan/plan-documents.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
-import { planWorkbookFormulas } from '../plan/plan-formulas.js';
-import { planShapes } from '../plan/plan-shapes.js';
+import { planScanFacts } from '../plan/plan-scan-facts.js';
+import type { PlanSecretDependencies } from '../plan/plan-secrets.js';
+import { planProposal } from '../plan/plan-proposal.js';
+import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
 import {
   loadPlanFiles,
   planPromptVersions,
@@ -53,7 +55,7 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // the planner, packed to its window (P3-113). The cost report is written at every end.
 
 export interface BuildPlanDependencies
-  extends PlanInputDependencies, PlanPromptSources, RunSinkDependencies {
+  extends PlanInputDependencies, PlanPromptSources, PlanSecretDependencies, RunSinkDependencies {
   readonly users: UserRepository;
   /** RF-632: the scan whose files the data shapes are measured from. */
   readonly scans: ScanResults;
@@ -71,6 +73,10 @@ interface Finish {
   readonly assembly: PlanAssembly;
   readonly inputs: PlanInputs;
   readonly files: PlanFiles;
+  /** P5-39: what Rosetta proposed; undefined when the scan could not be read. */
+  readonly proposal: PlanProposal | undefined;
+  /** The scan results the rest of the run reads; the proposal's read is handed on, not repeated. */
+  readonly scans: ScanResults;
 }
 
 /** The codes whose own message is logged: the cut-off answer (RST-1805) and the prompt size (RST-1522). */
@@ -107,17 +113,21 @@ export class BuildPlan implements RunExecutor {
   private async plan(execution: RunExecution): Promise<RunOutcome> {
     const { run, signal } = execution;
     const named = execution.manifest.options['sourceRunId'];
-    const inputs = await planInputs(this.deps, run, named, this.deps.manifests);
-    if (!inputs.ok) return this.fail(run, inputs.error.code, inputs.error.message);
+    const saved = await planInputs(this.deps, run, named, this.deps.manifests);
+    if (!saved.ok) return this.fail(run, saved.error.code, saved.error.message);
     const updates = new ManifestUpdates(this.deps.manifests, scopeOf(run));
-    const files = await loadPlanFiles(this.deps, inputs.value);
+    const files = await loadPlanFiles(this.deps, saved.value);
     const { catalogue, prompts } = files;
-    await this.record(execution, updates, { inputs: inputs.value, files });
+    await this.record(execution, updates, { inputs: saved.value, files });
+    // P5-39: the plan is written from the saved brief with Rosetta's proposals for what it left open.
+    const proposed = await planProposal(this.deps, saved.value, catalogue.stack);
+    const inputs = { value: proposed.inputs };
+    const { proposal } = proposed;
     const planner = await this.plannerOf(execution, inputs.value, updates);
     if (typeof planner === 'string') return failed(planner);
     if (signal.aborted) return { endState: 'Interrupted' };
     const { cards, brief, questions } = inputs.value;
-    const supported = supportedCards(cards);
+    const supported = usableCards(cards, catalogue.claimVerbs).cards;
     const answered = questions.filter((question) => question.answer.trim() !== '');
     const call = {
       ...{ run, planner, prompt: prompts.plan, agentTaskId: 'planner-package', updates, signal },
@@ -132,7 +142,7 @@ export class BuildPlan implements RunExecutor {
       const message = 'The planner answer could not be read: no JSON object in it reads as a plan.';
       return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
     }
-    const assembly = await this.assemble(run, draft, {
+    const assembly = await checkedAssembly(this.deps.logger, run, draft, {
       supported: supported.map((card) => card.id),
       specificationDriven: brief.principles.includes(methodPrinciples.sdd),
     });
@@ -140,12 +150,17 @@ export class BuildPlan implements RunExecutor {
       const message = 'The planner answer named no requirement with a supported card.';
       return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
     }
-    return this.finish({ ...{ run, call, input, assembly, files }, inputs: inputs.value });
+    return this.finish({
+      ...{ run, call, input, assembly, files, proposal },
+      scans: proposed.scans,
+      inputs: inputs.value,
+    });
   }
 
   /** RF-621..RF-627: the documents, the task card links and the package; an unbuilt item: RST-1806. */
   private async finish(parts: Finish): Promise<RunOutcome> {
-    const { run, call, input, assembly, inputs, files } = parts;
+    const { run, call, input, assembly, inputs, files, proposal } = parts;
+    const deps = { ...this.deps, scans: parts.scans };
     const { prompts, examples } = files;
     const warn = (message: string): Promise<void> => this.warn(run, message);
     const documents = await planDocuments(
@@ -166,10 +181,9 @@ export class BuildPlan implements RunExecutor {
     );
     const covered = links.planned;
     for (const message of links.warnings) await warn(message);
-    const shapes = await planShapes(this.deps, inputs);
-    const workbookFormulas = await planWorkbookFormulas(this.deps, inputs);
+    const facts = await planScanFacts(deps, inputs, prompts.secretRisk.text);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
-      ...{ ...documents, shapes, examples, workbookFormulas },
+      ...{ ...documents, ...facts, examples, proposal },
       leftOut: leftOutItems({ ...assembly, dataModelProblems: documents.dataModelProblems }),
     });
     await this.deps.handoff.write(scopeOf(run), handoff);
@@ -229,32 +243,6 @@ export class BuildPlan implements RunExecutor {
     const codemapHash = source?.codemapHash ?? null;
     if (codemapHash !== null)
       await updates.update((manifest) => recordManifestCodeMap(manifest, codemapHash));
-  }
-
-  /** The planner's answer checked against the supported cards; undefined when nothing is left. */
-  private async assemble(
-    run: Run,
-    draft: PlanDraft,
-    checks: { readonly supported: readonly string[]; readonly specificationDriven: boolean },
-  ): Promise<PlanAssembly | undefined> {
-    const { specificationDriven } = checks;
-    const assembly = assemblePlan(draft, new Set(checks.supported), { specificationDriven });
-    for (const message of unreadableMessages(assembly.unreadable)) await this.warn(run, message);
-    for (const left of assembly.leftOut) {
-      const { position, field, reason } = left;
-      await this.warn(
-        run,
-        `Task card at position ${String(position)} of the plan answer was left out (the field "${field}"). ${reason}`,
-      );
-    }
-    const { requirements, entities, tasks, technical } = assembly.dropped;
-    if (requirements + entities + tasks + technical > 0) {
-      await this.deps.logger.log({
-        ...{ level: 'warn', logger: 'plan', runId: run.runKey, userId: run.userId },
-        message: `The planner answer had items without a supported card, a phase or (given SDD) a requirement; ${String(requirements)} requirement(s), ${String(entities)} entity mapping(s), ${String(tasks)} task card(s) and ${String(technical)} technical item(s) were left out.`,
-      });
-    }
-    return assembly.content.requirements.length === 0 ? undefined : assembly;
   }
 
   /**

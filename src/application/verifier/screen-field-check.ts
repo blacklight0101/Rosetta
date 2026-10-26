@@ -1,3 +1,4 @@
+import { containsRun, wordsOf } from '../../domain/cards/name-words.js';
 import { detailKindOf } from '../../domain/cards/screen-claims.js';
 import type { CitedExcerpt } from './cited-lines.js';
 
@@ -20,23 +21,6 @@ function fieldNameOf(text: string): string | undefined {
   if (detailKindOf(text) !== 'field') return undefined;
   const match = /^Field (.*) \([^()]*\) is on the screen\.$/su.exec(text);
   return match?.[1];
-}
-
-/** The lower-case words of a text: split at camelCase humps and at every non-alphanumeric run. */
-function wordsOf(text: string): readonly string[] {
-  return text
-    .replace(/([a-z0-9])([A-Z])/gu, '$1 $2')
-    .replace(/([A-Z]+)([A-Z][a-z])/gu, '$1 $2')
-    .toLowerCase()
-    .split(/[^\p{L}\p{N}]+/u)
-    .filter((word) => word !== '');
-}
-
-function containsRun(haystack: readonly string[], needle: readonly string[]): boolean {
-  for (let start = 0; start + needle.length <= haystack.length; start += 1) {
-    if (needle.every((word, offset) => haystack[start + offset] === word)) return true;
-  }
-  return false;
 }
 
 // RF-626

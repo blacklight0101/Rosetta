@@ -5,6 +5,7 @@ import { assemblePlan } from '../../../src/domain/planning/plan-content.js';
 import { guardKinds, riskClasses } from '../../../src/domain/planning/task-card-quality.js';
 import { recordingOf } from '../../support/fake-recordings.js';
 import { allText, cardsOf, packageOf, plain } from '../../support/plan-method-harness.js';
+import { packageWithoutEntities } from '../../support/plan-method-harness.js';
 import { invariant, scenario } from '../../support/task-card-fixtures.js';
 import { filledExampleOf } from '../../support/prompt-example.js';
 
@@ -84,9 +85,9 @@ describe('RF-630 the invariant and the Done-when scenarios', () => {
       { ...plainTask, title: 'Blank invariant', invariant: '  ' },
     ]);
 
-    const files = await packageOf({}, recording);
+    const files = await packageWithoutEntities({}, recording);
 
-    expect(cardsOf(files).map((card) => card.split('\n')[0])).toEqual(['T-001']);
+    expect(cardsOf(files).map((card) => card.split('\n')[0])).toEqual(['T-004']);
     expect(plain(files['tasks.md'])).not.toContain('No invariant');
   });
 
@@ -262,7 +263,7 @@ describe('RF-635 the risk class and the model tier', () => {
 
 describe('RF-630 RF-635 the planner prompt and the demo package', () => {
   it('RF-630 the planner prompt asks for the invariant, the risk class, the guards and the probes', async () => {
-    const prompt = await readFile('prompts/planner/package.v7.md', 'utf8');
+    const prompt = await readFile('prompts/planner/package.v9.md', 'utf8');
 
     for (const word of ['invariant', 'riskClass', 'adds', 'probes', 'Given, When, Then']) {
       expect(prompt).toContain(word);
@@ -271,7 +272,7 @@ describe('RF-630 RF-635 the planner prompt and the demo package', () => {
   });
 
   it('RF-630 the example answer in the planner prompt keeps every task it shows', async () => {
-    const prompt = await readFile('prompts/planner/package.v7.md', 'utf8');
+    const prompt = await readFile('prompts/planner/package.v9.md', 'utf8');
     const example = filledExampleOf(prompt);
 
     const draft = parsePlanAnswer(example);

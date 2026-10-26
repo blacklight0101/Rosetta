@@ -1,12 +1,17 @@
 import type { Citation } from './citation.js';
-import type { ScreenAction, ScreenDetail, ScreenField } from './flow-screen.js';
+import type { ScreenAction, ScreenField, ScreenInput } from './flow-screen.js';
+import { actionNames, citationsNaming, linkNames } from './screen-named.js';
+import { actionShown, fieldShown, linkShown, routeShown, settledScreen } from './screen-markup.js';
 
 // RF-261, RF-300, RF-301, RF-626, ADR-005, DEC-134: the validations, actions, route, roles, fields
 // and links of a screen are claims of its card, so both verifier steps check them like any other
 // claim. A validation cites the lines the agent gave it. The rest carry no citation of its own, so
 // each cites the lines of the claims the agent wrote for the screen: the verifier judges whether
 // those lines show it. `plan` keeps one only when its claim is `Supported` (the texts are in one
-// place, here, so the card and the plan agree on them).
+// place, here, so the card and the plan agree on them). P5-31: when a language pack read the markup
+// of the page, a field, an action, a link and the route cite only the lines of the element that
+// shows them (`screen-markup.ts`), a link reads "<text> links to <target>", a button "<text> starts
+// <handler>", and a field is required only when the markup says so.
 
 /** A claim before the card numbers it. */
 interface DerivedClaim {
@@ -84,6 +89,25 @@ export function actionClaimTexts(
   return [...new Set([actionClaimText(action), groupClaimText(group ?? [action])])];
 }
 
+/** P5-31: the texts of an action read from markup: a button that starts a handler, or a link. */
+export function actionMarkupTexts(action: ScreenAction): readonly string[] {
+  if (action.handler === undefined || action.flow !== undefined) return [];
+  return [
+    buttonClaimText(action.label, action.handler),
+    linkClaimText(action.label, action.handler),
+  ];
+}
+
+/** P5-31: the claim that states a button of the markup that starts a handler. */
+function buttonClaimText(text: string, handler: string): string {
+  return `${text} starts ${handler}.`;
+}
+
+/** P5-31: the claim that states a link of the markup. */
+function linkClaimText(text: string, target: string): string {
+  return `${text} links to ${target}.`;
+}
+
 /** The text of the claim that states an action, so a reader of the card can find it again (RF-626). */
 export function actionClaimText(action: ScreenAction): string {
   return `Action ${action.label} starts ${startsOf(action)}.`;
@@ -93,6 +117,18 @@ export function actionClaimText(action: ScreenAction): string {
 export function routeClaimText(route: string): string {
   return `The screen is at the route ${route}.`;
 }
+
+/**
+ * P5-31: the claim that states the route of a page whose route is its file path. The words after
+ * the route say what the code can check, so a verifier never mistakes it for a route the agent
+ * saw somewhere else.
+ */
+export function routeFileClaimText(route: string): string {
+  return `The screen is at the route ${route}${ROUTE_FILE_END}`;
+}
+
+/** The end of the claim of a route that is the path of its page file. */
+export const ROUTE_FILE_END = ', the path of its page file.';
 
 /** The claim that states a role that can open a screen (RF-626). */
 export function roleClaimText(role: string): string {
@@ -122,17 +158,65 @@ export function detailKindOf(text: string): DetailKind | undefined {
   if (text.startsWith('The role ')) return 'role';
   if (text.startsWith('The screen leads to ')) return 'leadsTo';
   if (text.startsWith('Field ') && text.includes(') is on the screen')) return 'field';
+  const other = text.startsWith('Field ') || text.startsWith('Action');
+  if (!other && text.endsWith('.') && text.includes(' links to ')) return 'leadsTo';
   return undefined;
 }
 
-/** The texts of the claims that state the route, roles, fields and links of a screen. */
-function detailTexts(screen: ScreenDetail): readonly string[] {
-  return [
-    routeClaimText(screen.route),
-    ...screen.roles.map(roleClaimText),
-    ...screen.fields.map(fieldClaimText),
-    ...screen.leadsTo.map(leadsToClaimText),
-  ];
+/**
+ * P5-44: where an item the markup does not show takes its lines. A page with markup narrows to the
+ * lines of the claims that name the item, else to the first range of the card, and remembers the
+ * claims that had only that; a page with no markup (a stack with no reader) keeps every range.
+ */
+interface Narrowing {
+  readonly fellBack: string[];
+  cite(text: string, names: readonly string[], evidence: readonly Citation[]): readonly Citation[];
+}
+
+function narrowing(written: readonly DerivedClaim[], active: boolean): Narrowing {
+  const fellBack: string[] = [];
+  return {
+    fellBack,
+    cite(text, names, evidence) {
+      if (!active) return evidence;
+      const named = citationsNaming(written, names);
+      if (named.length > 0) return named;
+      fellBack.push(text);
+      return evidence.slice(0, 1);
+    },
+  };
+}
+
+/** The claims that state the route, roles, fields and links of a screen, with the lines they cite. */
+function detailClaims(
+  screen: ScreenInput,
+  evidence: readonly Citation[],
+  narrow: Narrowing,
+): readonly DerivedClaim[] {
+  const markup = screen.markup ?? [];
+  const settled = settledScreen(screen);
+  const route: DerivedClaim[] = [];
+  if (markup.length === 0) route.push({ text: routeClaimText(screen.route), citations: evidence });
+  else {
+    const shown = routeShown(markup, screen.route);
+    if (shown !== undefined) {
+      route.push({ text: routeFileClaimText(`/${shown.path}`), citations: shown.citations });
+    }
+  }
+  const fields = settled.fields.map((field) => ({
+    text: fieldClaimText(field),
+    citations: fieldShown(markup, field)?.citations ?? evidence,
+  }));
+  const links = screen.leadsTo.map((target) => {
+    const shown = linkShown(markup, target);
+    if (shown === undefined) {
+      const text = leadsToClaimText(target);
+      return { text, citations: narrow.cite(text, linkNames(target), evidence) };
+    }
+    return { text: linkClaimText(shown.text, target), citations: shown.citations };
+  });
+  const roles = screen.roles.map((role) => ({ text: roleClaimText(role), citations: evidence }));
+  return [...route, ...roles, ...fields, ...links];
 }
 
 /**
@@ -140,18 +224,54 @@ function detailTexts(screen: ScreenDetail): readonly string[] {
  * route, roles, fields and links.
  */
 export function screenClaims(
-  screen: ScreenDetail,
+  screen: ScreenInput,
   written: readonly DerivedClaim[],
 ): readonly DerivedClaim[] {
-  const validations = screen.fields.flatMap((field) =>
+  return derive(screen, written).claims;
+}
+
+/**
+ * P5-44: the note of a card whose claims could cite only the first range of the card because no
+ * line the agent wrote names them; undefined when there is none.
+ */
+export function screenNote(
+  screen: ScreenInput,
+  written: readonly DerivedClaim[],
+): string | undefined {
+  const { fellBack } = derive(screen, written);
+  if (fellBack.length === 0) return undefined;
+  return `No line the agent wrote names these, so each cites only the first range of the card: ${fellBack.join(' ')}`;
+}
+
+function derive(
+  screen: ScreenInput,
+  written: readonly DerivedClaim[],
+): { readonly claims: readonly DerivedClaim[]; readonly fellBack: readonly string[] } {
+  const settled = settledScreen(screen);
+  const markup = screen.markup ?? [];
+  const validations = settled.fields.flatMap((field) =>
     field.validations.map((validation) => validationClaim(field, validation)),
   );
   // A screen the agent wrote no claim for cites the lines of its validations (P3-104).
   const evidence = screenEvidence(written.length > 0 ? written : validations);
-  const actions = actionGroups(screen.actions).map((group) => ({
-    text: groupClaimText(group),
-    citations: evidence,
-  }));
-  const detail = detailTexts(screen).map((text) => ({ text, citations: evidence }));
-  return [...validations, ...actions, ...detail];
+  const shown = screen.actions.map((action) => ({ action, found: actionShown(markup, action) }));
+  const own = shown.flatMap(({ action, found }): DerivedClaim[] => {
+    if (found === undefined || action.handler === undefined) return [];
+    const text =
+      found.kind === 'link'
+        ? linkClaimText(action.label, action.handler)
+        : buttonClaimText(action.label, action.handler);
+    return [{ text, citations: found.citations }];
+  });
+  const rest = shown.filter(({ found }) => found === undefined).map(({ action }) => action);
+  const narrow = narrowing(written, markup.length > 0);
+  const grouped = actionGroups(rest).map((group) => {
+    const text = groupClaimText(group);
+    return { text, citations: narrow.cite(text, group.flatMap(actionNames), evidence) };
+  });
+  const details = detailClaims(screen, evidence, narrow);
+  return {
+    claims: [...validations, ...own, ...grouped, ...details],
+    fellBack: narrow.fellBack,
+  };
 }

@@ -122,14 +122,14 @@ describe('RF-608 a component without a known role is listed', () => {
 });
 
 describe('RF-608 RNF-004 the planner is asked for the role', () => {
-  it('RF-608 RNF-004 the planner prompt the run loads is package.v7.md at version v7', async () => {
+  it('RF-608 RNF-004 the planner prompt the run loads is package.v9.md at version v9', async () => {
     const file = await loadPlannerPrompt('prompts');
 
-    expect(file).toMatchObject({ name: 'planner/package.v7.md', version: 'v7' });
+    expect(file).toMatchObject({ name: 'planner/package.v9.md', version: 'v9' });
   });
 
-  it('RF-608 package.v7.md asks for the role and its example answer carries one', async () => {
-    const prompt = await readFile('prompts/planner/package.v7.md', 'utf8');
+  it('RF-608 package.v9.md asks for the role and its example answer carries one', async () => {
+    const prompt = await readFile('prompts/planner/package.v9.md', 'utf8');
     const example = filledExampleOf(prompt);
 
     expect(prompt).toContain('role');

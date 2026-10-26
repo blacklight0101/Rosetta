@@ -22,6 +22,7 @@ const cite = (startLine: number, endLine: number) => ({ path: 'src/a.cs', startL
 const verdict: DeepRequired<ClaimVerdict> = {
   step: 'judgement',
   reason: 'The cited lines do not say it.',
+  reasonKind: 'definedElsewhere',
   model: 'judge-model',
   at: '2026-10-12T10:00:00.000Z',
 };

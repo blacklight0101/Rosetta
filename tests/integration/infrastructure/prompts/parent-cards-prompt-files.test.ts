@@ -21,9 +21,9 @@ describe('the versions of the Deepen prompts', () => {
     const reread = await loadRereadPrompt('prompts');
     const parentCards = await loadParentCardsPrompt('prompts');
 
-    expect(reread).toMatchObject({ name: 'reader/reread.v3.md', version: 'v3' });
+    expect(reread).toMatchObject({ name: 'reader/reread.v4.md', version: 'v4' });
     expect(parentCards).toMatchObject({ name: 'reader/parent-cards.v2.md', version: 'v2' });
-    expect(reread.sha256).toBe(await sha256Of('prompts/reader/reread.v3.md'));
+    expect(reread.sha256).toBe(await sha256Of('prompts/reader/reread.v4.md'));
     expect(parentCards.sha256).toBe(await sha256Of('prompts/reader/parent-cards.v2.md'));
   });
 
@@ -38,9 +38,9 @@ describe('the versions of the Deepen prompts', () => {
     expect((await loadPromptFile('prompts', name)).sha256).toBe(sha256);
   });
 
-  it('RNF-004 the re-read v3 is not a copy of v2', async () => {
-    expect(await sha256Of('prompts/reader/reread.v3.md')).not.toBe(
-      await sha256Of('prompts/reader/reread.v2.md'),
+  it('RNF-004 the re-read v4 is not a copy of v3', async () => {
+    expect(await sha256Of('prompts/reader/reread.v4.md')).not.toBe(
+      await sha256Of('prompts/reader/reread.v3.md'),
     );
   });
 });

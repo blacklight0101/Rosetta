@@ -1,4 +1,5 @@
 import type { CardOutputs, CardSet } from '../../application/ports/card-outputs.js';
+import type { ObjectCoverage } from '../../domain/cards/database-objects.js';
 import type { AreaCoverage } from '../../domain/cards/area-coverage.js';
 import type { Logger } from '../../application/ports/logger.js';
 import type { OutputWriter, WriteRefusal } from '../../application/ports/output-writer.js';
@@ -53,11 +54,15 @@ export class FileCardOutputs implements CardOutputs {
   }
 
   // RF-230
-  writeCoverage(scope: RunScope, coverage: readonly AreaCoverage[]): Promise<void> {
+  writeCoverage(
+    scope: RunScope,
+    coverage: readonly AreaCoverage[],
+    objects?: readonly ObjectCoverage[],
+  ): Promise<void> {
     const { writer, masker, logger } = this.options;
     const target = targetOf(scope);
     return this.serial(target, async () => {
-      thrown(await writeCoverageOutputs(writer, target, { coverage, masker, logger }));
+      thrown(await writeCoverageOutputs(writer, target, { coverage, objects, masker, logger }));
     });
   }
 

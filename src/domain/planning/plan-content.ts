@@ -14,18 +14,17 @@ import type {
   PlanDraft,
   UnreadableItem,
 } from './plan-draft.js';
-import { unknownPositions, type RequirementNote } from './requirement-notes.js';
+import { unknownPositions, type PhaseNote, type RequirementNote } from './requirement-notes.js';
+import { assembleJudgements, type ClaimJudgement } from './claim-judgement.js';
 import { draftFault, leftOutOf, noRequirement, type LeftOutCard } from './left-out-card.js';
 import type { GuardKind, RiskClass } from './task-card-quality.js';
 import { assembleTechnical, type TechnicalContent } from './technical-content.js';
 
 // RF-601, RF-602, ADR-005, ADR-013: the planner's draft made into the content of the package.
-// Every card id the model names is kept only when it is one of the supported cards, so a
-// requirement cites only cards that list their citations; a requirement or an entity mapping left
-// with no such card is dropped (no requirement without a source card), and so is a task in a phase
-// that does not exist. The kept items are numbered in their order (`REQ-001`, `ADR-001`, `T-001`,
-// `RISK-001`), and a task's requirement positions become the ids of the kept requirements. What
-// was dropped is counted so the run can log it.
+// A card id the model names is kept only when it is a supported card; a requirement or an entity
+// mapping left with no such card is dropped, and so is a task in a phase that does not exist. Kept
+// items are numbered in order (`REQ-001`, `T-001`), a task's requirement positions become the ids
+// of the kept requirements, and what was dropped is counted so the run can log it.
 
 interface PlanRequirement extends DraftRequirement {
   readonly id: string;
@@ -68,6 +67,13 @@ export interface PlanTask {
   readonly dependsOn: readonly string[];
   /** RF-627: the ids of the package items (features, tables, operations, flows, screens) it builds. */
   readonly builds: readonly string[];
+  /** P5-41: criteria (position, from 1) the planner says contradict a claim the card keeps. */
+  readonly contradicts?: readonly Contradiction[];
+}
+
+interface Contradiction {
+  readonly criterion: number;
+  readonly claim: string;
 }
 
 interface PlanRisk extends DraftRisk {
@@ -87,6 +93,9 @@ export interface PlanContent {
   readonly technical: TechnicalContent;
   /** RF-627: what code changed in the requirements of the task cards, or found wrong in them. */
   readonly requirementNotes?: readonly RequirementNote[];
+  /** P5-41: the planner's judgements of claims (changed by a decision or an answer, likely defects). */
+  readonly judgements?: readonly ClaimJudgement[];
+  readonly phaseNotes?: readonly PhaseNote[];
 }
 
 export interface PlanAssembly {
@@ -194,6 +203,9 @@ function tasksOf(
       identifiers: identifiers[index] ?? [],
       dependsOn: (dependencies[index] ?? []).map((on) => planId('T', on + 1)),
       builds: [],
+      ...(task.contradicts === undefined || task.contradicts.length === 0
+        ? {}
+        : { contradicts: task.contradicts }),
     };
   });
   return { tasks, leftOut };
@@ -215,6 +227,19 @@ function entitiesOf(drafts: readonly DraftEntity[], supported: ReadonlySet<strin
     const sources = knownSources(entity.sources, supported);
     return sources.length === 0 ? [] : [{ ...entity, sources }];
   });
+}
+
+/** P5-41: the checked judgements of the draft, or nothing when it has none. */
+function judgementsOf(
+  draft: PlanDraft,
+  supported: ReadonlySet<string>,
+): Pick<PlanContent, 'judgements'> {
+  const judgements = assembleJudgements(
+    draft.claimJudgements ?? [],
+    supported,
+    draft.decisions.length,
+  );
+  return judgements.length === 0 ? {} : { judgements };
 }
 
 export interface AssemblyOptions {
@@ -262,6 +287,7 @@ export function assemblePlan(
       })),
       technical: technical.content,
       ...(notes.length === 0 ? {} : { requirementNotes: notes }),
+      ...judgementsOf(draft, supported),
     },
     dropped: {
       requirements: draft.requirements.length - requirements.kept.length,

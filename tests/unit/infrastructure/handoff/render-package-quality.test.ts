@@ -25,32 +25,13 @@ function withTasks(tasks: ReturnType<typeof planTask>[]): Partial<HandoffPackage
   return { content: { ...base.content, tasks } };
 }
 
-const shapes = {
-  ...{ files: 3, totalBytes: 3000, unreadable: 0, beyondTotal: 0 },
-  largest: [
-    {
-      path: 'Invoice.xlsm/Invoice/sheet.md',
-      kind: 'documentation' as const,
-      bytes: 2000,
-      encoding: undefined,
-      lineEnding: undefined,
-    },
-  ],
-  byKind: [{ kind: 'documentation' as const, files: 3, bytes: 3000 }],
-  deepest: [{ path: 'Invoice.xlsm/Invoice/sheet.md', depth: 3 }],
-  unusualNames: [],
-  encodings: [{ name: 'UTF-8' as const, files: 3 }],
-  lineEndings: [{ name: 'LF' as const, files: 3 }],
-};
-
 describe('P5-08 item 1: fixtures of a workbook point at workbook data', () => {
-  const workbook = { workbookFormulas: workbookFormulasOf([], { unread: 0 }), shapes };
+  const workbook = { workbookFormulas: workbookFormulasOf([], { unread: 0 }) };
 
   it('RF-632 fixtures.md of a workbook project lists no repository file and names sheets, rows and cells', () => {
     const text = plain(filesOf(workbook)['fixtures.md']);
 
     expect(text).not.toContain('Largest files');
-    expect(text).not.toContain('Invoice.xlsm/Invoice/sheet.md');
     expect(text).toMatch(/sheets, rows and cells/u);
   });
 
@@ -58,12 +39,15 @@ describe('P5-08 item 1: fixtures of a workbook point at workbook data', () => {
     const card = plain(filesOf(workbook)['tasks.md']).split(/^## /mu)[1] ?? '';
 
     expect(card).toContain('Data shapes to handle:');
-    expect(card).not.toMatch(/fixtures\.md#(largest-files|encodings|deepest-paths)/u);
+    expect(card).not.toMatch(/fixtures\.md#(seed-data|test-data)/u);
     expect(card).toContain('fixtures.md#data-volumes-stated-by-the-cards');
   });
 
-  it('RF-632 a project that is not a workbook keeps the measured file shapes', () => {
-    expect(plain(filesOf({ shapes })['fixtures.md'])).toContain('Largest files');
+  it('P5-42 a project that is not a workbook lists no file statistic either', () => {
+    const text = plain(filesOf({})['fixtures.md']);
+
+    expect(text).not.toContain('Largest files');
+    expect(text).toContain('## Seed data stated by the cards');
   });
 });
 
@@ -100,7 +84,7 @@ describe('P5-08 item 3: a probe states its expected outcome', () => {
     expect(plain(files['checks.md'])).not.toContain('Probes without an expected outcome');
   });
 
-  it.each(['planner/package.v7.md', 'planner/gap.v1.md'])(
+  it.each(['planner/package.v9.md', 'planner/gap.v2.md'])(
     'RF-630 %s asks for the expected outcome of every probe',
     async (name) => {
       const text = await readFile(`prompts/${name}`, 'utf8');

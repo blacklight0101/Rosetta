@@ -7,6 +7,7 @@ import {
   writtenIn,
   type DeepenRecord,
 } from '../../domain/deepen/deepen-record.js';
+import { objectsInCoverage } from '../../domain/cards/database-objects.js';
 import { isEmptyRound, planRound } from '../../domain/deepen/round-plan.js';
 import {
   roundProgress,
@@ -23,6 +24,7 @@ import {
   announceRoundStart,
   announceStop,
 } from './deepen-events.js';
+import { claimsOfThisRun } from './deepen-room.js';
 import { mergeDuplicates } from './deepen-consolidation.js';
 import { addQuestions, overviewOf, saveRecord, writeOutputs } from './deepen-outputs.js';
 import type { DeepenParts } from './deepen-parts.js';
@@ -61,13 +63,17 @@ async function nextRound(
     ...{ reread: rereadIn(record), writtenHere: writtenIn(record) },
     retriedAreas: retriedAreasIn(record),
     coveragePass: record.coveragePass,
+    objects: objectsInCoverage(codeMap, coverageEntriesOf(state)),
   });
   const listed = withOutOfScope(record, plan.outOfScope);
   if (isEmptyRound(plan)) return { progress: { state, record: listed }, stop: 'noProgress' };
   const before = snapshotOf(state, codeMap);
   const round = record.rounds.length + 1;
   await announceRoundStart(parts, { round, maxRounds: record.maxRounds, plan });
-  const end = await runRound(parts, state, { plan, round });
+  const end = await runRound(parts, state, {
+    ...{ plan, round },
+    ownClaims: claimsOfThisRun(record, []),
+  });
   await announceRoundEnd(parts, end.round);
   const next = { state: end.state, record: withRound(listed, end.round) };
   await saveRecord(parts, next.record);

@@ -77,6 +77,8 @@ export interface PlanEstimateOptions {
   readonly priceTable?: PriceTable;
   /** The shipped model list (Q-57); one without limits by default. */
   readonly models?: ModelList;
+  /** P5-28: the card readers keep what they parsed, as in the composed server. */
+  readonly keepParsed?: boolean;
 }
 
 /** The project settings with the planner on this provider and model; the other roles stay local. */
@@ -129,8 +131,8 @@ export async function createPlanEstimateHarness(
     actor: actorOf(account),
     estimate: new EstimatePlan({
       ...{ projects, runs, briefs, users, serverSettings, usage, keys, clock },
-      cards: new FileRunCards(files),
-      priorCards: new FilePriorCards(files),
+      cards: new FileRunCards(files, options.keepParsed === true ? files : undefined),
+      priorCards: new FilePriorCards(files, options.keepParsed === true ? files : undefined),
       answers: new FileAnswersFile({ writer: files, masker }),
       serverKeys: options.serverKeys ?? { has: () => true },
       priceTable: options.priceTable ?? estimatePrices,

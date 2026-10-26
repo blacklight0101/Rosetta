@@ -22,6 +22,10 @@ export type RunCallsLoad =
       /** Calls of the log that are not in the list yet. */
       readonly hasMore: boolean;
       readonly loadingMore: boolean;
+      /** The failure of the last "Load more calls", until the next one starts. */
+      readonly moreError: ApiFailure | undefined;
+      /** What the live region says after a page the person asked for: "N of M attempts loaded". */
+      readonly announcement: string;
       readonly loadMore: () => void;
     };
 
@@ -34,8 +38,10 @@ interface Held {
 }
 
 interface Feed {
-  readonly onHeld: (held: Held) => void;
+  /** `appended` is true when the page was one the person asked for. */
+  readonly onHeld: (held: Held, appended: boolean) => void;
   readonly onFailed: (error: ApiFailure) => void;
+  readonly onMoreFailed: (error: ApiFailure) => void;
 }
 
 /** The pages read so far and the reads that add to them, one after the other. */
@@ -80,6 +86,8 @@ class CallsFeed {
       if (this.calls.length === 0) {
         this.over = true;
         this.feed.onFailed(result.error);
+      } else if (append) {
+        this.feed.onMoreFailed(result.error);
       }
       return;
     }
@@ -93,7 +101,7 @@ class CallsFeed {
       this.calls = [...this.calls, ...page];
     }
     this.over = head.runState === 'Ended';
-    this.feed.onHeld({ head, calls: this.calls, hasMore: this.calls.length < head.total });
+    this.feed.onHeld({ head, calls: this.calls, hasMore: this.calls.length < head.total }, append);
   }
 }
 
@@ -103,13 +111,23 @@ export function useRunCalls(runId: string): RunCallsLoad {
   const [failure, setFailure] = useState<ApiFailure | undefined>();
   const [held, setHeld] = useState<Held | undefined>();
   const [loadingMore, setLoadingMore] = useState(false);
+  const [moreError, setMoreError] = useState<ApiFailure | undefined>();
+  const [announcement, setAnnouncement] = useState('');
   const reading = useRef<(append: boolean) => Promise<void>>(() => Promise.resolve());
   useEffect(() => {
     const abort = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const feed = new CallsFeed(client, runId, abort.signal, {
-      onHeld: setHeld,
+      onHeld: (next, appended) => {
+        setHeld(next);
+        if (appended) {
+          setAnnouncement(
+            `${String(next.calls.length)} of ${String(next.head.total)} attempts loaded`,
+          );
+        }
+      },
       onFailed: setFailure,
+      onMoreFailed: setMoreError,
     });
     reading.current = (append) => feed.read(append);
     const tick = async (): Promise<void> => {
@@ -125,10 +143,13 @@ export function useRunCalls(runId: string): RunCallsLoad {
   }, [client, runId]);
   const loadMore = useCallback(() => {
     setLoadingMore(true);
+    setMoreError(undefined);
     void reading.current(true).finally(() => {
       setLoadingMore(false);
     });
   }, []);
-  if (held !== undefined) return { status: 'ready', ...held, loadingMore, loadMore };
+  if (held !== undefined) {
+    return { status: 'ready', ...held, loadingMore, moreError, announcement, loadMore };
+  }
   return failure === undefined ? { status: 'loading' } : { status: 'failed', error: failure };
 }

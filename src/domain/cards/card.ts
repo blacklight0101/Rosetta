@@ -12,16 +12,25 @@ import {
   type DetailProblem,
   type FlowDetail,
   type ScreenDetail,
+  type ScreenInput,
 } from './flow-screen.js';
-import { screenClaims } from './screen-claims.js';
+import { screenClaims, screenNote } from './screen-claims.js';
+import { settledScreen } from './screen-markup.js';
 
 // Architecture section 5, ADR-005: a card holds claims; a claim holds citations and a status that
 // changes only through the transitions; nothing is ever removed (RF-302).
+
+/**
+ * P5-35, RF-301: why a claim was rejected, when the verifier says so: the meaning it states (a code
+ * value, a constant, a name) is not in the cited lines and may be defined elsewhere.
+ */
+export type VerdictReasonKind = 'definedElsewhere';
 
 /** What the verifier decided about a claim (data-model 3.7). */
 export interface ClaimVerdict {
   readonly step: 'citation' | 'judgement';
   readonly reason: string;
+  readonly reasonKind?: VerdictReasonKind;
   readonly model: string;
   /** ISO 8601 instant from the Clock port. */
   readonly at: string;
@@ -87,7 +96,7 @@ export interface CardInput {
   readonly question?: string | undefined;
   readonly whyItMatters?: string | undefined;
   readonly flow?: FlowDetail | undefined;
-  readonly screen?: ScreenDetail | undefined;
+  readonly screen?: ScreenInput | undefined;
   readonly note?: string | undefined;
 }
 
@@ -164,6 +173,14 @@ function hasScreenClaims(input: CardInput): boolean {
   );
 }
 
+/** RF-206, P5-44: the note the agent gave, then the note of the screen claims with a first range. */
+function noteOf(input: CardInput): { note?: string } {
+  const screen =
+    input.type === 'SCRN' && input.screen ? screenNote(input.screen, input.claims) : undefined;
+  const note = [input.note, screen].filter((part): part is string => part !== undefined);
+  return note.length === 0 ? {} : { note: note.join(' ') };
+}
+
 // RF-202: at least one claim, each with at least one citation; an OQ also has its question; a FLOW
 // its trigger and outcome and cited branches (RF-260); a SCRN its cited validations (RF-261).
 export function createCard(input: CardInput): Result<Card, CardProblem> {
@@ -175,7 +192,10 @@ export function createCard(input: CardInput): Result<Card, CardProblem> {
   if (!question.ok) return question;
   const flow = flowFields(input.type, input.flow);
   if (!flow.ok) return flow;
-  const screen = screenFields(input.type, input.screen);
+  const screen = screenFields(
+    input.type,
+    input.screen === undefined ? undefined : settledScreen(input.screen),
+  );
   if (!screen.ok) return screen;
   const claims = claimsOf(input);
   if (!claims.ok) return claims;
@@ -191,7 +211,7 @@ export function createCard(input: CardInput): Result<Card, CardProblem> {
     ...question.value,
     ...flow.value,
     ...screen.value,
-    ...(input.note === undefined ? {} : { note: input.note }),
+    ...noteOf(input),
   });
 }
 

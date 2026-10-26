@@ -1,9 +1,11 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { PromptFile } from '../../application/agent/prompt-file.js';
 import { STYLES_PLACEHOLDER } from '../../application/planning/plan-options-request.js';
 import { readerPlaceholders, type ReaderPrompts } from '../../application/agent/reader-prompts.js';
+import { secretRiskPlaceholders } from '../../domain/planning/secret-risks.js';
 import { holdsDataMarker } from '../../domain/egress/data-block.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -15,7 +17,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // before any run uses it.
 
 const readerPromptNames = {
-  system: 'reader/area.v8.md',
+  system: 'reader/area.v12.md',
   cardFormat: 'cards/card-format.v2.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
@@ -29,7 +31,7 @@ const readerPromptNames = {
 const workbookPromptName = 'reader/workbook.v5.md';
 
 const answersPromptName = 'reader/answers.v1.md';
-const rereadPromptName = 'reader/reread.v3.md';
+const rereadPromptName = 'reader/reread.v4.md';
 const parentCardsPromptName = 'reader/parent-cards.v2.md';
 
 /** RF-260, RF-261: fragments of the card format, added only to areas the code map marks (Q-25). */
@@ -41,14 +43,24 @@ function invalid(name: string, problem: string): RosettaError {
   return new RosettaError(ERROR_CODES.configurationInvalid, `The prompt ${name} ${problem}.`);
 }
 
-/** Reads one prompt file; `name` is its path under the prompts folder (`reader/area.v2.md`). */
-export async function loadPromptFile(promptsFolder: string, name: string): Promise<PromptFile> {
+/** The checked and hashed file made of the bytes read from `name`. */
+function promptFileOf(name: string, bytes: Buffer): PromptFile {
   const version = versionPattern.exec(name)?.[1];
   if (version === undefined) throw invalid(name, 'has no version in its file name');
-  const bytes = await readFile(join(promptsFolder, ...name.split('/')));
   const text = bytes.toString('utf8');
   if (holdsDataMarker(text)) throw invalid(name, 'holds a data block marker');
   return { name, version, sha256: createHash('sha256').update(bytes).digest('hex'), text };
+}
+
+/** Reads one prompt file; `name` is its path under the prompts folder (`reader/area.v2.md`). */
+export async function loadPromptFile(promptsFolder: string, name: string): Promise<PromptFile> {
+  return promptFileOf(name, await readFile(join(promptsFolder, ...name.split('/'))));
+}
+
+/** P5-34: the same, read at once, for the one file the composition root needs before it starts. */
+export function loadPromptFileSync(promptsFolder: string, name: string): PromptFile {
+  // eslint-disable-next-line n/no-sync -- one small file read before the server starts; the masker is built with it.
+  return promptFileOf(name, readFileSync(join(promptsFolder, ...name.split('/'))));
 }
 
 export function requirePlaceholder(file: PromptFile, placeholder: string): PromptFile {
@@ -80,7 +92,7 @@ export async function loadPlanOptionsPrompt(promptsFolder: string): Promise<Prom
 /** The planner's prompt for the hand-off package (RF-604), checked and hashed. */
 // RNF-004
 export function loadPlannerPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/package.v7.md');
+  return loadPromptFile(promptsFolder, 'planner/package.v9.md');
 }
 
 /**
@@ -109,19 +121,19 @@ export function loadPlannerContinuePrompt(promptsFolder: string): Promise<Prompt
 /** The planner's prompt for the product requirements document (RF-621), checked and hashed. */
 // RNF-004
 export function loadPrdPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/prd.v3.md');
+  return loadPromptFile(promptsFolder, 'planner/prd.v4.md');
 }
 
 /** The planner's prompt for the target data model (RF-623), checked and hashed. */
 // RNF-004
 export function loadDataModelPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/data-model.v3.md');
+  return loadPromptFile(promptsFolder, 'planner/data-model.v4.md');
 }
 
 /** The planner's prompt for the target flows (RF-625), checked and hashed. */
 // RNF-004
 export function loadFlowsPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/flows.v1.md');
+  return loadPromptFile(promptsFolder, 'planner/flows.v2.md');
 }
 
 /** The planner's prompt for the API contract (RF-624), checked and hashed. */
@@ -145,13 +157,23 @@ export function loadCoveragePrompt(promptsFolder: string): Promise<PromptFile> {
 /** The planner's prompt for the task cards of the items no card builds (Q-45), checked and hashed. */
 // RNF-004
 export function loadGapPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/gap.v1.md');
+  return loadPromptFile(promptsFolder, 'planner/gap.v2.md');
 }
 
 /** The planner's prompt for the one repair attempt of the gap call (Q-54), checked and hashed. */
 // RNF-004
 export function loadGapRepairPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/gap-repair.v1.md');
+  return loadPromptFile(promptsFolder, 'planner/gap-repair.v2.md');
+}
+
+/**
+ * P5-34, RF-608: the wording of the plan risk for a file that holds a masked secret, with the path
+ * and the lines as placeholders. The domain fills it; no model is asked.
+ */
+// RNF-004
+export async function loadPlannerSecretRiskPrompt(promptsFolder: string): Promise<PromptFile> {
+  const file = await loadPromptFile(promptsFolder, 'shared/secret-risk.v1.md');
+  return requirePlaceholders(file, [secretRiskPlaceholders.path, secretRiskPlaceholders.lines]);
 }
 
 /** The planner's prompt for the one repair attempt of the plan answer (P3-126), checked and hashed. */

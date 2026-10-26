@@ -35,8 +35,9 @@ function legacyText(
 }
 
 function columnRow(column: ModelColumn, esc: MarkdownEscaper, calculated: CalculatedBy): string {
-  const nullable = column.nullable ? 'yes' : 'no';
-  return `| ${esc.inline(column.name)} | ${esc.inline(column.type)} | ${nullable} | ${legacyText(column.legacy, esc, calculated)} |`;
+  const base = column.nullable ? 'yes' : 'no';
+  const nullable = column.default === undefined ? base : `${base}, default ${column.default}`;
+  return `| ${esc.inline(column.name)} | ${esc.inline(column.type)} | ${esc.inline(nullable)} | ${legacyText(column.legacy, esc, calculated)} |`;
 }
 
 function list(columns: readonly string[], esc: MarkdownEscaper): string {
@@ -78,6 +79,12 @@ function tableSection(table: ModelTable, esc: MarkdownEscaper, calculated: Calcu
     '',
     built,
     '',
+    ...(table.copiedFromLegacy === true
+      ? [
+          '**Copied from the legacy model.** The planner did not design this table: its names, columns, types and keys are the legacy statements, to confirm.',
+          '',
+        ]
+      : []),
     '| Column | Type | Nullable | Legacy source |',
     '|---|---|---|---|',
     ...table.columns.map((column) => columnRow(column, esc, calculated)),

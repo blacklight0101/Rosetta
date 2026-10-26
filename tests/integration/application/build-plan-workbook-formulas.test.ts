@@ -17,6 +17,7 @@ import { workbookCards } from '../../support/workbook-plan-cards.js';
 const briefAnswers = {
   architecture: { style: 'hexagonal' },
   migration: 'parallel-change',
+  application: 'keep',
   stack: [{ layer: 'database', choice: 'PostgreSQL', custom: false }],
 } as const;
 

@@ -6,6 +6,7 @@ import {
   type MergeMoves,
 } from '../../domain/cards/card-merge.js';
 import { CARD_TYPES, type CardType } from '../../domain/cards/card-vocabulary.js';
+import { crossAreaMerges, pageMerges } from '../../domain/cards/page-merge.js';
 import { titleMerges } from '../../domain/cards/title-merge.js';
 import type { RunScope } from '../ports/run-events.js';
 import type { ConsolidationRecord, TaskResults } from '../ports/task-results.js';
@@ -25,6 +26,12 @@ import {
 /** What the step came to, and where the claims of the merges it made again went (Q-52, Deepen). */
 export interface RunConsolidation extends Consolidation {
   readonly replayedMoves: readonly MergeMoves[];
+}
+
+/** P5-32: the merges made without a model call; each is on unless switched off. */
+export interface MergeRules {
+  readonly pages?: boolean;
+  readonly acrossAreas?: boolean;
 }
 
 export interface ConsolidationStore {
@@ -71,6 +78,7 @@ export async function consolidateRun(
   parts: ConsolidationParts,
   where: ConsolidationStore,
   cards: readonly Card[],
+  rules: MergeRules = {},
 ): Promise<RunConsolidation> {
   const { store, scope } = where;
   const earlier = await store.readConsolidation(scope);
@@ -78,15 +86,32 @@ export async function consolidateRun(
   const replayed = applyMerges(cards, earlier.merges, CARD_TYPES);
   // P3-106, RF-230: cards of one type with one title are one card, with no model call.
   const titled = applyMerges(replayed.cards, titleMerges(replayed.cards), CARD_TYPES);
+  // P5-32: screens of one page, then same-title cards of two areas that share a file or a system.
+  const paged = applyMerges(
+    titled.cards,
+    rules.pages === false ? [] : pageMerges(titled.cards),
+    CARD_TYPES,
+  );
+  const across = applyMerges(
+    paged.cards,
+    rules.acrossAreas === false ? [] : crossAreaMerges(paged.cards),
+    CARD_TYPES,
+  );
   // P3-106, RF-230: a card that states a claim twice keeps it once; the claims are renumbered.
-  const folded = foldRepeatedClaims(titled.cards);
+  const folded = foldRepeatedClaims(across.cards);
   const skip = answeredBefore(earlier, cards);
   const asked = await consolidateCards(parts, folded.cards, { skip });
-  const merges = [...replayed.applied, ...titled.applied, ...asked.merges];
+  const merges = [
+    ...replayed.applied,
+    ...titled.applied,
+    ...paged.applied,
+    ...across.applied,
+    ...asked.merges,
+  ];
   const record = recordAfter(earlier, cards, { answered: asked.answered, merges });
   if (JSON.stringify(record) !== JSON.stringify(earlier)) {
     await store.writeConsolidation(scope, record);
   }
-  const moves = [...titled.moves, ...folded.moves, ...asked.moves];
+  const moves = [...titled.moves, ...paged.moves, ...across.moves, ...folded.moves, ...asked.moves];
   return { ...asked, merges, moves, replayedMoves: replayed.moves };
 }

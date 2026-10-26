@@ -46,13 +46,15 @@ const segmentSplit = (section: string): { narration: number; clip: number } => {
 const slideSection = (slides: string, title: string): string =>
   slides.split(/^# /mu).find((section) => section.startsWith(title)) ?? '';
 
-it('RF-802 the README links the slides and the video script with their URL placeholders', async () => {
+it('RF-802 the README links the published slides, the video script and the published video', async () => {
   const readme = await readRepoFile('README.md');
 
   expect(readme).toContain('docs/hand-in/slides/');
   expect(readme).toContain('docs/hand-in/video-script.md');
-  expect(readme).toContain('Slides URL: [PENDIENTE');
-  expect(readme).toContain('Video URL: [PENDIENTE');
+  expect(readme).toMatch(
+    /Slides URL: <https:\/\/github\.com\/blacklight0101\/Rosetta\/blob\/main\/docs\/hand-in\/slides\/Rosetta-Hito1\.pdf>/u,
+  );
+  expect(readme).toContain('Video URL: <https://youtu.be/Zu1SmxuRm6Y>');
 });
 
 it('RF-802 the slides in Spanish cover the problem, the pipeline, the agents, the evidence, the verifier, the cost, the security, the build method and the results', async () => {
@@ -150,12 +152,13 @@ it('RF-802 each video segment has narration and clip seconds that sum to its len
   expect(total).toBe(TOTAL_SECONDS);
 });
 
-it('RF-802 the video script placeholders for the hosted URL, sample report and teacher account are marked', async () => {
+it('RF-802 the video script names the hosted URL and the sample report, records with the teacher account and never shows a password', async () => {
   const script = await readRepoFile('docs/hand-in/video-script.md');
 
-  expect(script).toMatch(/\[PENDIENTE: URL definitiva de la aplicación alojada/u);
-  expect(script).toMatch(/\[PENDIENTE: URL definitiva del informe de ejemplo/u);
+  expect(script).toMatch(/https:\/\/ca-rosetta\.[a-z0-9-]+\.spaincentral\.azurecontainerapps\.io/u);
+  expect(script).toContain('https://blacklight0101.github.io/Rosetta/');
   expect(script).toMatch(/cuenta de evaluación/iu);
+  expect(script).toMatch(/no se ve la contraseña/u);
 });
 
 it('RF-802 the results slide quotes the CI verify run on the current head, dated and with its run id', async () => {
@@ -193,17 +196,19 @@ const SECRET_PATTERNS: readonly RegExp[] = [
   /https?:\/\/[^\s/@]+:[^\s/@]+@/u,
 ];
 
-it('RF-803 the hand-in file lists the repository, the teacher user name, the sample report fallback, the slides and video script, with PENDING G-06 for the hosted URL and the sign-in check', async () => {
+it('RF-803 the hand-in file lists the repository, the teacher user name, the sample report fallback, the slides and video script, the hosted URL of G-06, and leaves the sign-in check to the owner', async () => {
   const m1 = await readRepoFile('docs/hand-in/m1.md');
 
   expect(m1).toContain('https://github.com/blacklight0101/Rosetta');
-  expect(m1).toMatch(/user name:?\**\s*`teacher`/iu);
+  expect(m1).toMatch(/user name:?\**\s*`braismoure`/iu);
   expect(m1).toContain('https://blacklight0101.github.io/Rosetta/');
   expect(m1).toContain('docs/hand-in/slides/slides.md');
   expect(m1).toContain('docs/hand-in/video-script.md');
-  expect(m1).toContain('PENDING G-06');
-  expect(m1).toMatch(/Hosted application[^\n]*PENDING G-06/u);
-  expect(m1).toMatch(/Sign-in check[^\n]*PENDING G-06/u);
+  expect(m1).not.toContain('PENDING G-06');
+  expect(m1).toMatch(
+    /Hosted application[^\n]*https:\/\/ca-rosetta\.[a-z0-9-]+\.spaincentral\.azurecontainerapps\.io/u,
+  );
+  expect(m1).toMatch(/Sign-in check[^\n]*PENDING owner/u);
 });
 
 it('RF-803 the hand-in file holds no password, key, token or secret pattern', async () => {

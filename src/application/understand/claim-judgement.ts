@@ -1,11 +1,17 @@
 import { isCapStop } from '../../domain/budget/cap-stop.js';
-import { transitionClaim, type Card, type Claim } from '../../domain/cards/card.js';
+import {
+  transitionClaim,
+  type Card,
+  type Claim,
+  type VerdictReasonKind,
+} from '../../domain/cards/card.js';
 import type { ClaimStatus } from '../../domain/cards/card-vocabulary.js';
 import { recordManifestModelVersion } from '../../domain/runs/run-manifest.js';
 import { CodeMapIndex } from '../agent/code-map-index.js';
 import type { Clock } from '../ports/clock.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { LlmResponse } from '../ports/llm-provider.js';
+import type { SecretLines } from '../ports/secret-lines.js';
 import type { RunExecution } from '../ports/run-executor.js';
 import type { ScannedSource } from '../ports/scan-results.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
@@ -53,6 +59,7 @@ interface Pending {
 interface Decided {
   readonly status: Exclude<ClaimStatus, 'Proposed' | 'CitationInvalid'>;
   readonly reason: string;
+  readonly reasonKind?: VerdictReasonKind;
   readonly at: string;
   /** P3-122: a rule decided it and no model was called. */
   readonly withoutModel: boolean;
@@ -81,10 +88,11 @@ function withVerdicts(card: Card, decided: ReadonlyMap<string, Decided>, model: 
   for (const claim of card.claims) {
     const verdict = decided.get(claim.claimId);
     if (verdict === undefined) continue;
-    const { status, reason, at } = verdict;
+    const { status, reason, at, reasonKind } = verdict;
     const moved = transitionClaim(judged, claim.claimId, status, {
       step: 'judgement',
       reason,
+      ...(reasonKind === undefined ? {} : { reasonKind }),
       model: verdict.withoutModel ? RULE_VERDICT_MODEL : model,
       at,
     });
@@ -97,7 +105,7 @@ type Decide = (
   each: Pending,
   status: Decided['status'],
   reason: string,
-  withoutModel?: boolean,
+  options?: { readonly withoutModel?: boolean; readonly reasonKind?: VerdictReasonKind },
 ) => Promise<void>;
 
 /** Records a claim's verdict now and publishes its event once the claims before it are settled. */
@@ -106,14 +114,26 @@ function deciderOf(
   publisher: OrderedPublisher,
   decided: Map<string, Decided>,
 ): Decide {
-  return (each, status, reason, withoutModel = false) => {
+  return (each, status, reason, { withoutModel = false, reasonKind } = {}) => {
     const { card, claim, index } = each;
     const at = parts.clock.now().toISOString();
-    decided.set(claim.claimId, { status, reason, withoutModel, at });
+    decided.set(claim.claimId, {
+      ...{ status, reason, withoutModel, at },
+      ...(reasonKind === undefined ? {} : { reasonKind }),
+    });
     const data = { claimId: claim.claimId, status, reason };
     return publisher.publish(index, async () => {
       await parts.events.emit('verify.claim.judged', data, card.agentTaskId);
     });
+  };
+}
+
+/** P3-122, P5-35: whether a rule decided the claim, and the reason kind the verifier gave. */
+function decidedWith(judgement: Extract<Judgement, { kind: 'judged' }>) {
+  const { reasonKind, withoutModel } = judgement;
+  return {
+    withoutModel: withoutModel === true,
+    ...(reasonKind === undefined ? {} : { reasonKind }),
   };
 }
 
@@ -149,7 +169,7 @@ export async function judgeClaims(
       sent.set(key, asked);
       const judgement = await asked;
       if (judgement.kind !== 'judged') halt[judgement.kind] = true;
-      else await decide(each, judgement.status, judgement.reason, judgement.withoutModel === true);
+      else await decide(each, judgement.status, judgement.reason, decidedWith(judgement));
     } finally {
       mine.pass();
     }
@@ -212,7 +232,12 @@ export interface JudgementContext {
   readonly nextCallId: () => string;
   readonly traceId: string;
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
-  readonly verifier: { readonly role: ClaimJudgeParts['role']; readonly prompts: VerifierPrompts };
+  readonly verifier: {
+    readonly role: ClaimJudgeParts['role'];
+    readonly prompts: VerifierPrompts;
+    /** P5-34: which cited lines hold a masked value. */
+    readonly secretLines?: SecretLines | undefined;
+  };
 }
 
 /** RNF-004: the exact model version of each answer of the `verifier` role. */
@@ -230,6 +255,7 @@ export function judgementPartsOf(context: JudgementContext, clock: Clock): Claim
     judge: {
       ...{ role: verifier.role, prompts: verifier.prompts, reader: context.scanned.reader },
       ids: context.ids,
+      ...(verifier.secretLines === undefined ? {} : { secretLines: verifier.secretLines }),
       workbookFolders: context.scanned.workbookFolders,
       skipReason: (path) => index.skipReasonOf(path),
       limits: { ...defaultEvidenceLimits, maxLines: settings.scan.excerptMaxLines },

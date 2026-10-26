@@ -45,8 +45,8 @@ describe('BuildPlan: the gap call refused by the Ollama context guard', () => {
     expect(Object.keys(written)).toEqual(
       expect.arrayContaining(['README.md', 'tasks.md', 'roadmap.md', 'checks.md']),
     );
-    expect(plain(written['checks.md'])).toContain('9 items of 12 are built by no task card');
-    expect(plain(written['tasks.md'])).not.toContain('## T-004');
+    expect(plain(written['checks.md'])).toContain('8 items of 12 are built by no task card');
+    expect((plain(written['tasks.md']).match(/^## T-/gmu) ?? []).length).toBe(8);
   });
 });
 

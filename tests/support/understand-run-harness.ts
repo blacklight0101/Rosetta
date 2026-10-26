@@ -75,6 +75,8 @@ export interface UnderstandHarnessOptions {
   readonly settings?: ProjectSettings;
   /** RF-130: the project is an uploaded zip whose tree is the repository, not a GitHub address. */
   readonly upload?: boolean;
+  /** P5-36: the scan lists the database objects of `.sql` scripts. */
+  readonly sqlPack?: boolean;
   /** Q-49: the folder name of the upload's snapshot (a `workbook__` key plans like a workbook project). */
   readonly snapshotKey?: string;
   /** RF-155: the folders of the rendered workbooks the snapshot of the project lists. */
@@ -224,6 +226,7 @@ export async function createUnderstandHarness(
     ...stores(options.dataDir, options.refuseRemoval === true, options.fixture, {
       repository: options.repository,
       snapshotKey: options.snapshotKey,
+      sqlPack: options.sqlPack,
     }),
     ...(options.workbookFolders === undefined ? {} : { workbookFolders: options.workbookFolders }),
   };

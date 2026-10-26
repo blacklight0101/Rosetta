@@ -1,6 +1,7 @@
 import { err, ok, type Result } from '../errors/result.js';
 import type { CardType } from './card-vocabulary.js';
 import type { Citation } from './citation.js';
+import type { PageMarkup } from './page-markup.js';
 
 // RF-260, RF-261, ADR-005 (DEC-134): the extra shape of the two card types that describe behaviour
 // and surface. A `FLOW` card's steps are its claims, in order, so each step is cited and checked by
@@ -53,6 +54,14 @@ export interface ScreenDetail {
   readonly actions: readonly ScreenAction[];
   /** The screens it leads to: `SCRN` card ids or routes. */
   readonly leadsTo: readonly string[];
+}
+
+/**
+ * P5-31: a screen as a draft carries it: with the markup of the page files it cites, read by a
+ * language pack. The markup is only input to the claims of the card and is not kept in it.
+ */
+export interface ScreenInput extends ScreenDetail {
+  readonly markup?: readonly PageMarkup[] | undefined;
 }
 
 type Detail<T> = Result<T, DetailProblem>;

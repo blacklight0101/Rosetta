@@ -85,6 +85,10 @@ describe('RF-209 why a Deepen stopped', () => {
     ['roundLimit', 'The round limit was reached: 2 of 3 rounds ran.'],
     ['capReached', 'A cap stopped it after 2 of 3 rounds. The run can be resumed.'],
     ['stopped', 'You stopped it after 2 of 3 rounds.'],
+    [
+      'readersStopped',
+      'The readers stopped to leave room to judge the claims written, after 2 of 3 rounds.',
+    ],
   ])('RF-209 words the reason %s', (reason, text) => {
     expect(stopText(reason, 2, 3)).toBe(text);
   });

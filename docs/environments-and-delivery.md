@@ -17,7 +17,7 @@ with Docker Compose and hosted on a container host (DEC-59, DEC-61, DEC-65; ADR-
 | **Dev**       | the owner's machine (Windows 11, Node.js 24 LTS, Docker 29 with Compose v5, Ollama) and the builders' worktrees | the fake provider in tests; Ollama, OpenAI and Anthropic for manual and evaluation runs | build and test every card; `npm run dev` runs the server from source against a Compose PostgreSQL        |
 | **CI**        | GitHub Actions, `ubuntu-latest` and `windows-latest`                                                            | fake provider only; no keys, no network calls to providers                              | the gates of section 6 on every push and pull request; image build, scan and Compose smoke test on Linux |
 | **Local**     | the owner's machine, `docker compose up`                                                                        | Ollama on the host, plus the owner's keys                                               | the simulation of the hosted deployment (RF-1301)                                                        |
-| **Hosted**    | a container host chosen in Q-18                                                                                 | OpenAI, Anthropic, OpenAI-compatible with server keys under caps, or the user's keys    | the teachers' evaluation URL (RF-1304, DEC-67)                                                           |
+| **Hosted**    | Azure Container Apps, Spain Central (ADR-024)                                                                   | OpenAI, Anthropic, OpenAI-compatible with server keys under caps, or the user's keys    | the teachers' evaluation URL (RF-1304, DEC-67)                                                           |
 | **Published** | GitHub Pages of the public repository                                                                           | none                                                                                    | the sample report of the demo run (RF-800), the fallback of the hand-in                                  |
 
 ## 2. Hosting
@@ -26,13 +26,10 @@ with Docker Compose and hosted on a container host (DEC-59, DEC-61, DEC-65; ADR-
 | --------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Rosetta image         | GitHub Container Registry `ghcr.io/blacklight0101/rosetta`, tags `X.Y.Z` and `sha-<short>` | built once per release by CI; never `latest` in a deployment (RF-1300)                                                                                                                                        |
 | App container, local  | Docker Compose on the owner's machine                                                      | `compose.yaml`: services `app` and `db` (PostgreSQL 17, pinned by digest), volumes `pgdata` and `rosetta-data`, app published on `127.0.0.1:8080`, `extra_hosts: host.docker.internal:host-gateway` (RF-1301) |
-| App container, hosted | the host chosen in Q-18                                                                    | HTTPS by the host, managed PostgreSQL 17, persistent disk at `/data`, health check on `/healthz`, restart on failure, one instance (RF-1304)                                                                  |
+| App container, hosted | Azure Container Apps, Spain Central (ADR-024)                                              | HTTPS by the host, managed PostgreSQL 17, persistent disk at `/data`, health check on `/healthz`, restart on failure, one instance (RF-1304)                                                                  |
 | Sample report         | GitHub Pages, from the `site/` folder of `main`                                            | static files only (RF-501)                                                                                                                                                                                    |
 
-Hosting candidates for Q-18 (to compare when the deploy card starts): Render, Railway, Fly.io, Azure Container
-Apps and a small VPS with Docker. Requirements of ADR-014: runs a container image from GHCR, persistent disk,
-managed PostgreSQL or a PostgreSQL container with a volume, secret store, HTTPS with a custom or provided domain,
-health checks, a monthly cost under 25 USD.
+The hosted host is Azure Container Apps in Spain Central with Azure Database for PostgreSQL Flexible Server (Q-18, DEC-171, [ADR-024](adr/ADR-024-host-on-azure-container-apps-spain-central.md)); it replaces Railway ([ADR-020](adr/ADR-020-host-on-railway-eu-west.md), superseded). Requirements of ADR-014: runs a container image from GHCR, persistent disk, managed PostgreSQL or a PostgreSQL container with a volume, secret store, HTTPS with a custom or provided domain, health checks, a monthly cost under 25 USD (ADR-024 estimates about 33 USD at list price and states the budget alert).
 
 ## 3. Identities and service accounts
 
@@ -307,7 +304,9 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
   (never on a pull request or a push to `main`); jobs `image` (tag checks, build, Trivy, push with the job token),
   `sbom` (tags only) and `deploy`, which stays skipped until the repository variable `ROSETTA_DEPLOY_ENABLED` is
   `true` and runs in the GitHub environment `production` (its secrets and variables: `docs/runbooks/deploy.md`). The
-  deploy job is the only place a workflow reads secrets.
+  hosted resources are created by `.github/workflows/azure-provision.yml` (P1-184, ADR-024), run only by hand in
+  `production`. Both log in to Azure with OIDC; the deploy job and the provision job are the only places a workflow
+  reads secrets.
 - The `Dockerfile` has a `test` stage with the fake provider and fake GitHub, used only by `compose.ci.yaml`; the
   runtime image ships no tests and no scripts; the compiled fakes inside `dist` are reachable only with `ROSETTA_TEST=1`, and `kind: fake` is refused without it (DEC-112).
 - After the GitHub Pages deploy, a smoke-test step fetches the published report's index and fails the job (`exit 1`)
@@ -332,7 +331,7 @@ PostgreSQL. A one-off migrate step of the same image (`node dist/presentation/mi
 and ends; the app starts only after it succeeded, with `DATABASE_URL` only, and refuses a pending (RST-2405), changed
 or unknown migration (RF-1302, DEC-140). A migration that fails ends the step with an error, leaves the previous
 schema, and the app is not started. The roles of data-model.md section 6 are created locally by the Compose init
-script `db/init/roles.sh` (passwords from `.env`) and hosted in the host's console (runbook); migrations only grant
+script `db/init/roles.sh` (passwords from `.env`) and hosted by the provisioning workflow (runbook); migrations only grant
 (DEC-112).
 
 ## 10. Deployment procedure

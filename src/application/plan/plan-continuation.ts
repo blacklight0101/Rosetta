@@ -1,5 +1,5 @@
 import { searchJson } from '../cards/extract-json.js';
-import { resumePoint } from './json-tail.js';
+import { openElementStart, resumePoint } from './json-tail.js';
 import type { FinishReason } from '../ports/llm-provider.js';
 
 // RF-604, RF-208, RF-007: a planner answer that stops inside its JSON because the model hit the
@@ -56,14 +56,31 @@ const valueStart = /^\s*(?:["{}[\],:]|-?\d|(?:true|false|null)\b)/u;
  * ever cut out of it, since a repeat of the tail cannot be told from identical items or repeated
  * text, and cutting would silently change the JSON. A fragment that does not start like JSON is
  * not joined: the answer stays cut off (RST-1805). A fragment that starts the answer again
- * replaces it.
+ * replaces it. A fragment that begins the next list item where the cut item wants its next key
+ * replaces the unfinished item (P5-38).
  */
 // RF-604
 export function joinContinuation(earlier: string, fragment: string): string {
+  return joinNoting(earlier, fragment).text;
+}
+
+/** The join, and whether an unfinished list item was replaced by the next one (P3-126: it is listed). */
+// RF-604, P5-38
+export function joinNoting(
+  earlier: string,
+  fragment: string,
+): { readonly text: string; readonly replaced: boolean } {
   const base = resumePoint(earlier);
   const head = base.trimStart().slice(0, RESTART_PREFIX);
-  if (head.length >= MIN_RESTART && fragment.trimStart().startsWith(head)) return fragment;
-  return valueStart.test(fragment) ? base + fragment : base;
+  if (head.length >= MIN_RESTART && fragment.trimStart().startsWith(head)) {
+    return { text: fragment, replaced: false };
+  }
+  if (!valueStart.test(fragment)) return { text: base, replaced: false };
+  // P5-38: a fragment that opens a new element where the base wants a key (the model began the next
+  // list item instead of finishing the cut one) replaces the unfinished item, so the join is JSON.
+  const unfinished = /^\s*[{[]/u.test(fragment) ? openElementStart(base) : null;
+  if (unfinished === null) return { text: base + fragment, replaced: false };
+  return { text: base.slice(0, unfinished) + fragment, replaced: true };
 }
 
 /** RST-1805: the cause and the setting that fixes it. */
@@ -71,3 +88,8 @@ export function joinContinuation(earlier: string, fragment: string): string {
 export function cutOffMessage(limit: number): string {
   return `The planner answer was cut off at ${String(limit)} output tokens; raise Planner max output tokens in Project settings.`;
 }
+
+/** P3-126: the item a continuation replaced is named so it is not lost silently. */
+// RF-604
+export const replacedMessage =
+  'The planner continuation began the next list item instead of finishing the cut one; the unfinished item was left out.';

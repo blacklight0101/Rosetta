@@ -1,3 +1,4 @@
+import type { DraftClaimJudgement } from './claim-judgement.js';
 import type { IdentifierNeed } from './parallel-cards.js';
 import type { GuardKind, RiskClass } from './task-card-quality.js';
 import type { TechnicalDraft } from './technical-content.js';
@@ -64,6 +65,9 @@ export interface DraftTask {
   readonly needs: readonly IdentifierNeed[];
   /** Positions in `tasks`, from 1, of the cards this one waits for (RF-634). */
   readonly dependsOn: readonly number[];
+  /** P5-41: criteria that contradict a claim the card keeps. */
+  readonly contradicts?:
+    readonly { readonly criterion: number; readonly claim: string }[] | undefined;
 }
 
 export interface DraftRisk {
@@ -89,6 +93,8 @@ export interface PlanDraft {
   readonly unreadableTasks?: readonly UnreadableTask[];
   /** P3-126: the items of the other lists left out because they could not be read. */
   readonly unreadableItems?: readonly UnreadableItem[];
+  /** P5-41: the planner's judgements of claims. */
+  readonly claimJudgements?: readonly DraftClaimJudgement[];
 }
 
 export interface UnreadableTask {

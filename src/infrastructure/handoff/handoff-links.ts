@@ -76,12 +76,8 @@ export function bullets(items: readonly string[], esc: MarkdownEscaper, empty: s
 
 /** RF-632: the sections of `fixtures.md`; a task card links them by the anchor of the heading. */
 export const shapeSections = {
-  largest: 'Largest files',
-  byKind: 'Size by kind',
-  deepest: 'Deepest paths',
-  unusual: 'Unusual file names',
-  encodings: 'Encodings',
-  lineEndings: 'Line endings',
+  seeds: 'Seed data stated by the cards',
+  tests: 'Test data stated by the cards',
   volumes: 'Data volumes stated by the cards',
 } as const;
 

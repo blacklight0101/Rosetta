@@ -7,7 +7,6 @@ import { DEFAULT_MAX_RUNNING_RUNS, RunQueue } from '../application/runs/run-queu
 import { ExportZip } from '../application/use-cases/export-zip.js';
 import { GetRun } from '../application/use-cases/get-run.js';
 import { CountAnsweredQuestions } from '../application/use-cases/count-answered-questions.js';
-import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
 import { ListAnswers } from '../application/use-cases/list-answers.js';
 import { RecordAnswers } from '../application/use-cases/record-answers.js';
 import { ReopenQuestion } from '../application/use-cases/reopen-question.js';
@@ -56,6 +55,7 @@ import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-u
 import type { ObservabilityServices } from './web/observability-routes.js';
 import type { RunServices } from './web/run-routes.js';
 import type { StartUpSteps } from './start-up.js';
+import { keptPriorCards } from './kept-card-readers.js';
 
 // Architecture section 2 (composition root), RF-1006, RF-1108, RF-003: the run index, the event log
 // with the live broadcaster, the manifest store, the run queue and the use cases behind the run
@@ -141,7 +141,7 @@ interface ServiceParts {
 function runServices(service: ServiceParts): RunServices {
   const { parts, runs, log, broadcaster, projects, submitRun, queue, scans, answers } = service;
   const { writer, manifests, observability } = service;
-  const cards = new FilePriorCards(writer);
+  const cards = keptPriorCards(writer);
   const ollamaHost = ollamaHostOf(parts.ollamaUrl);
   return {
     startRun: new StartRun({
@@ -258,7 +258,7 @@ export function composeRuns(parts: RunParts): RunComposition {
     services: runServices({
       ...{ parts, writer, manifests, runs, log, broadcaster, projects, submitRun, queue, answers },
       observability: composeObservability({ runs, manifests, writer, masker, clock, dataDir }),
-      scans: composeScanResults({ dataDir, writer, manifests, logger }),
+      scans: composeScanResults({ dataDir, writer, manifests, logger, packs: parts.packs }),
     }),
     submitRun,
     discardPartialSnapshots: () => discardPartialSnapshots(scan.fetcher, logger),
