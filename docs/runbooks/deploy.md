@@ -324,5 +324,8 @@ Checks of 2026-10-24 on `https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azur
   caps (understand 0.091862 USD, plan 0.022443 USD).
 - `CanNotDelete` lock `rosetta-db-no-delete` on the server, set by the owner.
 
-Still to record here when they run: the RNF-017 result (section RNF-017 measurement), the hosted restore drill (section
-Restore) and the cost check of day one (section Cost check after day one).
+Reported by the owner on 2026-10-26: the RNF-017 measurement (section RNF-017 measurement) was run on the hosted URL
+on 2026-10-24, and the hosted restore drill (section Restore, RF-1306) was done. The script output and the drill's
+restore time were not pasted here.
+
+Still to record here when it runs: the cost check of day one (section Cost check after day one).

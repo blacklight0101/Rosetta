@@ -196,7 +196,7 @@ const SECRET_PATTERNS: readonly RegExp[] = [
   /https?:\/\/[^\s/@]+:[^\s/@]+@/u,
 ];
 
-it('RF-803 the hand-in file lists the repository, the teacher user name, the sample report fallback, the slides and video script, the hosted URL of G-06, and leaves the sign-in check to the owner', async () => {
+it('RF-803 the hand-in file lists the repository, the teacher user name, the sample report fallback, the slides and video script, the hosted URL of G-06, and records the sign-in check of the owner', async () => {
   const m1 = await readRepoFile('docs/hand-in/m1.md');
 
   expect(m1).toContain('https://github.com/blacklight0101/Rosetta');
@@ -208,7 +208,7 @@ it('RF-803 the hand-in file lists the repository, the teacher user name, the sam
   expect(m1).toMatch(
     /Hosted application[^\n]*https:\/\/ca-rosetta\.[a-z0-9-]+\.spaincentral\.azurecontainerapps\.io/u,
   );
-  expect(m1).toMatch(/Sign-in check[^\n]*PENDING owner/u);
+  expect(m1).toMatch(/Sign-in check[^\n]*done by the owner/u);
 });
 
 it('RF-803 the hand-in file holds no password, key, token or secret pattern', async () => {
