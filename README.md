@@ -170,7 +170,7 @@ Snapshot of the kick-off decisions; the canonical record is [docs/decision-log.m
 - Hosted application URL: <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io> (Azure Container Apps, Spain Central; deployed 2026-10-24, card P1-55).
 - Hand-in values and the owner's day-before checklist: [docs/hand-in/m1.md](docs/hand-in/m1.md).
 - Slides URL: <https://github.com/blacklight0101/Rosetta/blob/main/docs/hand-in/slides/Rosetta-Hito1.pdf> (PDF, always the latest version on `main`; PowerPoint file: <https://github.com/blacklight0101/Rosetta/raw/main/docs/hand-in/slides/Rosetta-Hito1.pptx>). Spanish. The earlier Marp draft is [docs/hand-in/slides/slides.md](docs/hand-in/slides/slides.md).
-- Video URL: [PENDIENTE: URL del vídeo]. Script: [docs/hand-in/video-script.md](docs/hand-in/video-script.md) (Spanish, about 5 minutes).
+- Video URL: <https://youtu.be/Zu1SmxuRm6Y> (YouTube, Spanish, about 57 minutes: the full walkthrough of the app). Script: [docs/hand-in/video-script.md](docs/hand-in/video-script.md) (Spanish, the 5-minute outline).
 
 ## Read the documents in this order
 
