@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-25. Release 1 is built and hosted: **394 of 401 cards are Done** (see the [tasks.md totals](docs/orchestration/tasks.md)); the hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io> (G-06 open). Left, each waiting only for an owner step: P1-50, P1-53, P1-54 and P1-55 (In review), P2-12 (the hosted restore drill), P2-14 and P3-22. Milestone hand-in: 2026-10-26. The latest state is the first entry of the resume point below._
+_Last updated 2026-10-26. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Left: P1-50 and P3-22 (In review, owner checks), the follow-up cards P2-46 and P2-47, and phase 6 (P6-01). The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -29,6 +29,8 @@ _Last updated 2026-10-25. Release 1 is built and hosted: **394 of 401 cards are 
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Resume (2026-10-26, phase 2 closed).** P2-14 is Done: `docs/verification/p2-matrix.md` holds every P2 requirement with its tests (22 of 22; no Must without evidence), the golden-set result against RFC-001 section 7 (met except estimate accuracy), the owner review and the pyramid line. The owner accepted the risk of item 4 of #513 (DEC-174, threat model section 6). Dependabot #894 merged. Follow-up cards from the matrix: P2-46 (#931, estimate within 30 %, RNF-012) and P2-47 (#932, entity relations, RNF-006), both Todo. Phase 2 exits with those two open, as P2-14 allows. Left after the hand-in: P2-46, P2-47, P3-22 (owner review), the cost check of day one, phase 6 (P6-01).
 
 **Resume (2026-10-26, hand-in day).** The video is published (<https://youtu.be/Zu1SmxuRm6Y>, #929) and the owner submitted the hand-in form (G-05). The owner reported the remaining checks done: the `braismoure` sign-in, the P1-55 checks of 2026-10-24, the RNF-017 measurement and the hosted restore drill (recorded in `docs/runbooks/deploy.md`, Deployment record). P1-53, P1-54, P1-55 and P2-12 are set to Done in this status pull request. Tidy-up: every stale worktree, local branch and merged remote branch was removed; issues #55, #418 and #485 were closed as done. Left: P2-14 (phase 2 verification matrix), the open item 4 of #513 (owner question on `host.docker.internal`), the cost check of day one, Dependabot #894, and phase 6 (P6-01) after the hand-in.
 
