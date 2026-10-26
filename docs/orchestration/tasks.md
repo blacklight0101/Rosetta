@@ -722,7 +722,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-02, P1-43
 - **Gate**: G-08 (DEC-133)
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` sections 2 and 8.
 - **Do**: a Pages workflow publishing `site/` from `main` with the smoke step that fetches the index and fails when the run id is missing; `site/` holding the escaped HTML report and the replay of the owner's demo run on the hosted URL (DEC-105), with a `.nojekyll` file, copied by the orchestrator after an output scan for secrets into a `needs-owner` pull request; the README link.
 - **Delivers**: `.github/workflows/pages.yml`, `site/`, the README link.
@@ -3359,7 +3359,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-14, P3-21, P2-23
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: P3-12; the demo planning brief.
 - **Do**: an end-to-end journey that runs understand and plan on the demo with recorded responses and checks the whole documentation set (spec with flows, screens and data model; PRD, TRD, data model, API contract, flows, UX, implementation plan) and the report diagrams; publish the demo package with the sample report (RF-800) for the owner to read; record the owner's review changes as follow-up cards.
 - **Delivers**: the journey, the published sample, the review notes.

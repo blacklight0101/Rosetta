@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-26. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Left: P1-50 and P3-22 (In review, owner checks), the follow-up cards P2-46 and P2-47, and phase 6 (P6-01). The latest state is the first entry of the resume point below._
+_Last updated 2026-10-26. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Left: the follow-up cards P2-46 and P2-47, and phase 6 (P6-01). The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -29,6 +29,8 @@ _Last updated 2026-10-26. Release 1 is built and hosted, and the milestone hand-
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Resume (2026-10-26, owner checks).** The owner opened the published sample report (P1-50, RF-800) and read the sample hand-off package with no changes to file so far (P3-22); both are set to Done in this status pull request. Every card of phases 1, 2, 3 and 5 is Done; open: P2-46, P2-47 and P6-01.
 
 **Resume (2026-10-26, phase 2 closed).** P2-14 is Done: `docs/verification/p2-matrix.md` holds every P2 requirement with its tests (22 of 22; no Must without evidence), the golden-set result against RFC-001 section 7 (met except estimate accuracy), the owner review and the pyramid line. The owner accepted the risk of item 4 of #513 (DEC-174, threat model section 6). Dependabot #894 merged. Follow-up cards from the matrix: P2-46 (#931, estimate within 30 %, RNF-012) and P2-47 (#932, entity relations, RNF-006), both Todo. Phase 2 exits with those two open, as P2-14 allows. Left after the hand-in: P2-46, P2-47, P3-22 (owner review), the cost check of day one, phase 6 (P6-01).
 
