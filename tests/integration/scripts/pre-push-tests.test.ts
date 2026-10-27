@@ -45,10 +45,8 @@ async function write(path: string, content: string): Promise<void> {
   await writeFile(path, content);
 }
 
-// A work repository whose origin/main holds one commit; the task branch is one commit ahead with
-// the given files. `upstream` tracks origin/main; `no-upstream` has no upstream; `no-origin` also
-// has no origin/main, so no base can be read.
-async function repository(root: string, files: readonly string[], tracking: Tracking = 'upstream') {
+// A work repository and a bare remote whose origin/main holds one commit.
+async function mainRepository(root: string): Promise<string> {
   const work = join(root, 'work');
   await mkdir(work);
   await git(work, ['init', '--quiet', '-b', 'main']);
@@ -58,6 +56,14 @@ async function repository(root: string, files: readonly string[], tracking: Trac
   await git(work, ['init', '--quiet', '--bare', join(root, 'remote.git')]);
   await git(work, ['remote', 'add', 'origin', join(root, 'remote.git')]);
   await git(work, ['push', '--quiet', 'origin', 'main']);
+  return work;
+}
+
+// A work repository whose origin/main holds one commit; the task branch is one commit ahead with
+// the given files. `upstream` tracks origin/main; `no-upstream` has no upstream; `no-origin` also
+// has no origin/main, so no base can be read.
+async function repository(root: string, files: readonly string[], tracking: Tracking = 'upstream') {
+  const work = await mainRepository(root);
   await git(work, [
     'checkout',
     '--quiet',
@@ -67,6 +73,29 @@ async function repository(root: string, files: readonly string[], tracking: Trac
     'origin/main',
   ]);
   if (tracking === 'no-origin') await git(work, ['update-ref', '-d', 'refs/remotes/origin/main']);
+  for (const file of files) await write(join(work, file), 'export const value = 1;\n');
+  await git(work, ['add', '-A']);
+  await git(work, ['commit', '--quiet', '-m', 'change']);
+  return work;
+}
+
+// A work repository whose origin/develop is one commit ahead of origin/main (a change released to develop
+// since main). The task branch is cut from origin/develop with no upstream, as a new task branch is.
+async function developRepository(root: string, files: readonly string[]): Promise<string> {
+  const work = await mainRepository(root);
+  await git(work, ['checkout', '--quiet', '-b', 'develop']);
+  await write(join(work, 'src/application/released.ts'), 'export const released = 1;\n');
+  await git(work, ['add', '-A']);
+  await git(work, ['commit', '--quiet', '-m', 'released change']);
+  await git(work, ['push', '--quiet', 'origin', 'develop']);
+  await git(work, [
+    'checkout',
+    '--quiet',
+    '--no-track',
+    '-b',
+    'task/p2-54-probe',
+    'origin/develop',
+  ]);
   for (const file of files) await write(join(work, file), 'export const value = 1;\n');
   await git(work, ['add', '-A']);
   await git(work, ['commit', '--quiet', '-m', 'change']);
@@ -154,6 +183,29 @@ describe('pre-push test base', () => {
     );
 
     expect((await planFor(await repository(tmp.path, files))).mode).toBe('full');
+  });
+});
+
+describe('pre-push base from develop', () => {
+  const tmp = useTempRoot('rosetta-prepush-develop-');
+
+  it('RNF-005 a new branch cut from develop takes origin/develop as its base, not the work released since main', async () => {
+    const work = await developRepository(tmp.path, ['docs/handoff-note.md']);
+    const plan = await planFor(work);
+    const { stdout } = await run('git', ['rev-parse', 'origin/develop'], { cwd: work });
+
+    expect(plan.base).toBe(stdout.trim());
+    expect(plan.steps).toEqual([
+      [
+        'run',
+        '--project',
+        'unit',
+        '--project',
+        'integration',
+        'tests/unit/docs',
+        'tests/integration/docs',
+      ],
+    ]);
   });
 });
 
