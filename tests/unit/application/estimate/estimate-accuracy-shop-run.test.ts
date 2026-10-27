@@ -10,9 +10,10 @@ import { createEstimateHarness, projectWithScan } from '../../../support/estimat
 import { settingsFor } from '../../../support/provider-factory-harness.js';
 import { userAmy } from '../../../support/run-harness.js';
 
-// RNF-012, RF-425, P2-46: the likely estimate of an understand run, against the cost of the three
-// recorded runs of the demo shop on Claude Haiku 5.5 (a synthetic recording shaped like the live
-// evaluation of 2026-10-25, whose likely estimate was 2.8 times the actual cost).
+// RNF-012, RF-425, P2-46, P2-48: the likely estimate of an understand run, against the cost of the
+// recorded runs on Claude Haiku 5.5: the demo shop (a synthetic recording shaped like the live
+// evaluation of 2026-10-25, whose likely estimate was 2.8 times the actual cost) and a larger run
+// shaped on the full eShop of the golden set (derived from the first, not live).
 
 const roleCosts = z.strictObject({ reader: z.int(), verifier: z.int(), summariser: z.int() });
 const longPrompt = z.strictObject({
@@ -44,13 +45,23 @@ const recording = z.strictObject({
   runs: z.array(z.strictObject({ runId: z.string(), costMicros: roleCosts })),
 });
 
-const fixture = fileURLToPath(
-  new URL('../../../fixtures/eval/p2-46-shop-haiku-run.json', import.meta.url),
-);
-const shop = recording.parse(JSON.parse(await readFile(fixture, 'utf8')));
+const load = async (name: string): Promise<z.infer<typeof recording>> =>
+  recording.parse(
+    JSON.parse(
+      await readFile(
+        fileURLToPath(new URL(`../../../fixtures/eval/${name}`, import.meta.url)),
+        'utf8',
+      ),
+    ),
+  );
+const cases = [
+  { label: 'the demo shop (P2-46)', recorded: await load('p2-46-shop-haiku-run.json') },
+  { label: 'the full eShop (P2-48)', recorded: await load('p2-48-eshop-full-haiku-run.json') },
+] as const;
+type Recording = z.infer<typeof recording>;
 const big = (n: number): bigint => BigInt(n);
 
-function priceTable(): PriceTable {
+function priceTable(shop: Recording): PriceTable {
   const { price } = shop;
   const { longPrompt: long, ...flat } = price;
   return {
@@ -76,9 +87,10 @@ function priceTable(): PriceTable {
   };
 }
 
-async function likelyOf(): Promise<{
+async function likelyOf(shop: Recording): Promise<{
   readonly total: number;
   readonly byRole: Record<string, number>;
+  readonly ordered: boolean;
 }> {
   const areas: Area[] = shop.areas.map((area) => ({
     name: area.name,
@@ -92,42 +104,56 @@ async function likelyOf(): Promise<{
   );
   const model = { provider: 'anthropic', model: shop.price.model };
   const settings = settingsFor({ reader: model, verifier: model, summariser: model });
-  const harness = createEstimateHarness(areas, files, priceTable());
+  const harness = createEstimateHarness(areas, files, priceTable(shop));
   const project = await projectWithScan(harness, userAmy.userId, settings);
   const outcome = await harness.estimate.execute({ actor: userAmy, projectId: project.id });
   if (!outcome.ok) throw new Error(`The estimate was refused: ${outcome.error}`);
   const byRole = Object.fromEntries(
     outcome.value.roles.map((role) => [role.role, Number(role.points.likely.costMicros)]),
   );
-  return { total: Number(outcome.value.total.likely.costMicros), byRole };
+  const ordered = outcome.value.roles.every(
+    ({ points }) =>
+      points.low.costMicros <= points.likely.costMicros &&
+      points.likely.costMicros <= points.high.costMicros,
+  );
+  return { total: Number(outcome.value.total.likely.costMicros), byRole, ordered };
 }
 
-describe('the estimate against the recorded runs of the demo shop on Haiku 5.5', () => {
-  it('RNF-012 the likely estimate is within 30 % of the actual cost of every recorded run', async () => {
-    const { total } = await likelyOf();
+describe.each(cases)(
+  'the estimate against the recorded runs of $label on Haiku 5.5',
+  ({ recorded }) => {
+    it('RNF-012 the likely estimate is within 30 % of the actual cost of every recorded run', async () => {
+      const { total } = await likelyOf(recorded);
 
-    for (const run of shop.runs) {
-      const actual = run.costMicros.reader + run.costMicros.verifier + run.costMicros.summariser;
-      const accuracy = estimateAccuracy({
-        likelyMicros: total,
-        priced: true,
-        actualMicros: actual,
-      });
+      for (const run of recorded.runs) {
+        const actual = run.costMicros.reader + run.costMicros.verifier + run.costMicros.summariser;
+        const accuracy = estimateAccuracy({
+          likelyMicros: total,
+          priced: true,
+          actualMicros: actual,
+        });
 
-      expect(accuracy.status).toBe('measured');
-      expect(accuracy.status === 'measured' && accuracy.withinTarget).toBe(true);
-    }
-  });
+        expect(accuracy.status).toBe('measured');
+        expect(accuracy.status === 'measured' && accuracy.withinTarget).toBe(true);
+      }
+    });
 
-  it('RF-425 no role of the likely estimate is more than twice or under half its recorded cost', async () => {
-    const { byRole } = await likelyOf();
+    it('RF-425 no role of the likely estimate is more than twice or under half its recorded cost', async () => {
+      const { byRole } = await likelyOf(recorded);
 
-    for (const role of ['reader', 'verifier', 'summariser'] as const) {
-      const recorded = shop.runs.map((run) => run.costMicros[role]);
-      const mean = recorded.reduce((sum, each) => sum + each, 0) / recorded.length;
+      for (const role of ['reader', 'verifier', 'summariser'] as const) {
+        const costs = recorded.runs.map((run) => run.costMicros[role]);
+        const mean = costs.reduce((sum, each) => sum + each, 0) / costs.length;
 
-      expect(byRole[role]).toBeLessThanOrEqual(mean * 2);
-      expect(byRole[role]).toBeGreaterThanOrEqual(mean / 2);
-    }
-  });
-});
+        expect(byRole[role]).toBeLessThanOrEqual(mean * 2);
+        expect(byRole[role]).toBeGreaterThanOrEqual(mean / 2);
+      }
+    });
+
+    it('RNF-012 low <= likely <= high holds for every role', async () => {
+      const { ordered } = await likelyOf(recorded);
+
+      expect(ordered).toBe(true);
+    });
+  },
+);
