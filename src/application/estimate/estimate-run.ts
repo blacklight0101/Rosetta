@@ -81,19 +81,28 @@ export type EstimateRunProblem =
 export function shareTokens(
   reader: ByScenario<TokenFigures>,
   percentOf: ByScenario<number>,
+  /** The share of the input (and of the cache writes) when it differs from the output's (P2-46). */
+  inputPercentOf: ByScenario<number> = percentOf,
 ): ByScenario<TokenFigures> {
   const share = (scenario: Scenario): TokenFigures => {
     const percent = percentOf[scenario];
+    const inputPercent = inputPercentOf[scenario];
     return {
-      inputTokens: ceilPercent(reader[scenario].inputTokens, percent),
+      inputTokens: ceilPercent(reader[scenario].inputTokens, inputPercent),
       outputTokens: ceilPercent(reader[scenario].outputTokens, percent),
-      cacheWriteTokens: ceilPercent(reader[scenario].cacheWriteTokens, percent),
+      cacheWriteTokens: ceilPercent(reader[scenario].cacheWriteTokens, inputPercent),
       // A share has fewer calls, not smaller ones: each still sends the reader's prompt (Q-56).
       promptTokens: reader[scenario].promptTokens,
     };
   };
   return { low: share('low'), likely: share('likely'), high: share('high') };
 }
+
+/** P2-46: the verifier's share of the readers' tokens, its input and its output apart. */
+const verifierShare = (
+  reader: ByScenario<TokenFigures>,
+  { verifierSharePercent, verifierInputSharePercent }: ReaderAssumptions,
+): ByScenario<TokenFigures> => shareTokens(reader, verifierSharePercent, verifierInputSharePercent);
 
 /**
  * RF-626, DEC-147: the tokens of `calls` more judgements of claims already written. Each one costs what
@@ -235,10 +244,7 @@ export class EstimateRun {
       estimateRole(this.deps, project, { role: 'reader', tokens: reader }),
       estimateRole(this.deps, project, {
         role: 'verifier',
-        tokens: withJudgements(
-          shareTokens(reader, assumptions.verifierSharePercent),
-          screenClaimCalls,
-        ),
+        tokens: withJudgements(verifierShare(reader, assumptions), screenClaimCalls),
       }),
       estimateRole(this.deps, project, {
         role: 'summariser',

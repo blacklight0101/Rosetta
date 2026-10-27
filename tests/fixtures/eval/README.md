@@ -31,3 +31,8 @@ GitHub. The eShop file keeps only the cards whose type and title repeat in more 
 characters). They are the cards as the readers wrote them, before consolidation (P3-110, EV-25, EV-26).
 
 Nothing here comes from the owner's employer (DEC-03).
+
+`p2-46-shop-haiku-run.json` (P2-46, RNF-012) is a hand-trimmed, synthetic recording shaped like the Haiku 5.5 evaluation
+of 2026-10-25 on the public WebForms demo shop: seven areas with rounded token sizes and generic names, the page files
+that mark two of them, the shipped Haiku 5.5 prices, and the cost of each role in the three runs. It holds no source
+text, key or personal data and is under the repository's MIT licence.

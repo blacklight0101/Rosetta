@@ -19,8 +19,8 @@ const priced = settingsFor({
   summariser: { provider: 'openai', model: 'priced-model' },
 });
 
-function withReader(maxOutputTokens: number): ProjectSettings {
-  const reader = { ...priced.roles.reader, maxTurns: 10, maxOutputTokens };
+function withReader(maxOutputTokens: number, maxTurns = 10): ProjectSettings {
+  const reader = { ...priced.roles.reader, maxTurns, maxOutputTokens };
   return { ...priced, roles: { ...priced.roles, reader } };
 }
 
@@ -39,16 +39,16 @@ describe('the summariser batches in the estimate', () => {
     expect(estimate.assumptions.summariserBatchTokens).toBe(MERGE_BATCH_TOKENS);
     expect(estimate.assumptions.summariserBatches).toEqual({ low: 1, likely: 2, high: 4 });
     const summariser = estimate.roles.find((role) => role.role === 'summariser');
-    // The merge (6,100 in, 360 out), its second call (800 in, 500 out) and the overview call.
+    // The merge (2,500 in, 180 out), its second call (800 in, 500 out) and the overview call.
     const overview = estimate.assumptions.overviewOutputTokens.likely;
     expect(summariser?.points.likely).toMatchObject({
-      inputTokens: 13_000,
-      outputTokens: 360 + 500 + overview,
+      inputTokens: 5800,
+      outputTokens: 180 + 500 + overview,
     });
   });
 
   it('RF-425 P2-35 counts the batches of a run whose cards are larger than the bound', async () => {
-    const estimate = await estimateOf(withReader(60_000));
+    const estimate = await estimateOf(withReader(60_000, 20));
 
     const reader = estimate.roles.find((role) => role.role === 'reader');
     const summariser = estimate.roles.find((role) => role.role === 'summariser');
@@ -70,7 +70,7 @@ describe('the summariser batches in the estimate', () => {
   });
 
   it('RF-425 P2-35 the high figure has at least as many batches as the likely one, and that one as the low', async () => {
-    const { summariserBatches } = (await estimateOf(withReader(60_000))).assumptions;
+    const { summariserBatches } = (await estimateOf(withReader(60_000, 20))).assumptions;
 
     expect(summariserBatches.high).toBeGreaterThanOrEqual(summariserBatches.likely);
     expect(summariserBatches.likely).toBeGreaterThanOrEqual(summariserBatches.low);

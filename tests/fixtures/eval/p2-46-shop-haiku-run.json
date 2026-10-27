@@ -1,0 +1,32 @@
+{
+  "note": "P2-46: a hand-trimmed, synthetic recording shaped like the Haiku 5.5 evaluation of the public WebForms demo shop (2026-10-25, three runs). Area names are generic; the token sizes, the page files, the role costs and the Haiku 5.5 prices (shipped price table 2026-10-21) are rounded from the measured run. No source text, no key and no personal data.",
+  "areas": [
+    { "name": "Shop", "estimatedTokens": 20200, "files": 28, "pages": ["Shop/Default.aspx"] },
+    { "name": "Shop/Startup", "estimatedTokens": 860, "files": 2, "pages": [] },
+    { "name": "Shop/Catalog", "estimatedTokens": 7500, "files": 12, "pages": ["Shop/Catalog/Create.aspx", "Shop/Catalog/Edit.aspx"] },
+    { "name": "Shop/Models", "estimatedTokens": 6350, "files": 10, "pages": [] },
+    { "name": "Shop/Modules", "estimatedTokens": 290, "files": 1, "pages": [] },
+    { "name": "Shop/Services", "estimatedTokens": 1390, "files": 3, "pages": [] },
+    { "name": "Shop/ViewModel", "estimatedTokens": 200, "files": 1, "pages": [] }
+  ],
+  "price": {
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "inputPerMillionMicros": 100000,
+    "cachedInputPerMillionMicros": 10000,
+    "cacheWriteInputPerMillionMicros": 125000,
+    "outputPerMillionMicros": 500000,
+    "longPrompt": {
+      "overInputTokens": 100000,
+      "inputPerMillionMicros": 500000,
+      "cachedInputPerMillionMicros": 50000,
+      "cacheWriteInputPerMillionMicros": 625000,
+      "outputPerMillionMicros": 2500000
+    }
+  },
+  "runs": [
+    { "runId": "run-1", "costMicros": { "reader": 34741, "verifier": 39906, "summariser": 5311 } },
+    { "runId": "run-2", "costMicros": { "reader": 35607, "verifier": 45804, "summariser": 4534 } },
+    { "runId": "run-3", "costMicros": { "reader": 32373, "verifier": 41331, "summariser": 3878 } }
+  ]
+}
