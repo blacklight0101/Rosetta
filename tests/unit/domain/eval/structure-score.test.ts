@@ -266,19 +266,26 @@ describe('the verb reference is a relation word', () => {
     'Service methods operate on CatalogItem and reference CatalogBrand and CatalogType.',
     'The item references CatalogBrand.',
     'A basket line is referenced by an order.',
+    'The item references type CatalogType.',
+    'Items reference types of brand.',
+    'The item references a type of catalog.',
   ])('RF-262 counts "%s" as a relation stated', (text) => {
     const claims = [entity('ENT-001.c1', text, 'Services/OrderService.cs:9-10')];
 
     expect(scoreClaims(claims, relations, [])).toMatchObject({ relationsStated: 1 });
   });
 
-  it.each(['reference type', 'reference types', 'reference-type'])(
-    'RF-262 does not read "%s" as a relation',
-    (words) => {
-      const text = `The class is generic over TEntity, which must be a ${words}.`;
-      const claims = [entity('ENT-001.c1', text, 'Services/OrderService.cs:9-10')];
+  it.each([
+    'must be a reference type',
+    'must be a reference types',
+    'must be a reference-type',
+    'is a reference type',
+    'the reference type',
+    'must be reference-typed',
+  ])('RF-262 does not read "%s" as a relation', (phrase) => {
+    const text = `The class is generic over TEntity, which ${phrase}.`;
+    const claims = [entity('ENT-001.c1', text, 'Services/OrderService.cs:9-10')];
 
-      expect(scoreClaims(claims, relations, [])).toMatchObject({ relationsStated: 0 });
-    },
-  );
+    expect(scoreClaims(claims, relations, [])).toMatchObject({ relationsStated: 0 });
+  });
 });
