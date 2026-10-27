@@ -13,11 +13,11 @@ const scheduled = (): Promise<unknown> => workflowDocument('scheduled-release.ym
 const sha = '0123456789abcdef0123456789abcdef01234567';
 
 describe('scheduled-release.yml trigger and permissions', () => {
-  it('DEC-175 runs at 04:00 and 05:00 UTC and by hand', async () => {
+  it('DEC-175 runs at 04:07 and 05:07 UTC (off the busy full hour) and by hand', async () => {
     const document = await scheduled();
 
     expect(keysOf(at(document, 'on')).sort()).toEqual(['schedule', 'workflow_dispatch']);
-    expect(at(document, 'on', 'schedule')).toEqual([{ cron: '0 4 * * *' }, { cron: '0 5 * * *' }]);
+    expect(at(document, 'on', 'schedule')).toEqual([{ cron: '7 4 * * *' }, { cron: '7 5 * * *' }]);
   });
 
   it('RNF-003 has one job with contents: read and actions: write only, and reads no secret', async () => {

@@ -205,13 +205,16 @@ describe('GitHub Actions workflows: limits', () => {
 
   // release.yml (P1-55), azure-provision.yml (P1-184) and staging.yml (DEC-175) queue instead:
   // cancelling a release, a staging deploy or a provisioning half-way could leave a pushed tag
-  // without its image, a deploy half done or a resource half made.
-  it('RNF-001 every workflow has a concurrency group per branch; all but the release, staging and provision workflows cancel superseded runs', async () => {
+  // without its image, a deploy half done or a resource half made. azure-provision.yml has one
+  // group for every branch (DEC-175): its production run (main) and its staging run (develop) both
+  // converge the one shared PostgreSQL server, so they must never overlap.
+  it('RNF-001 every workflow has a concurrency group per branch (provision: one for all); all but the release, staging and provision workflows cancel superseded runs', async () => {
     const queued = ['release.yml', 'azure-provision.yml', 'staging.yml'];
     const found = await violations(({ name, lines }) => {
       const cancel = queued.includes(name) ? 'false' : 'true';
+      const group = name === 'azure-provision.yml' ? 'azure-provision' : '.*github\\.ref.*';
       const pattern = new RegExp(
-        `^concurrency:\n {2}group: .*github\\.ref.*\n {2}cancel-in-progress: ${cancel}$`,
+        `^concurrency:\n {2}group: ${group}\n {2}cancel-in-progress: ${cancel}$`,
         'mu',
       );
       return pattern.test(lines.join('\n')) ? [] : ['concurrency'];
