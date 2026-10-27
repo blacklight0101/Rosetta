@@ -42,3 +42,16 @@ RF-262) over the public eShopModernizing sample at `63bc9ec4`, copied from the c
 claim id, card type, card title, claim text, status and citations. They are text a model wrote about that public
 sample, with citations into it, and nothing else: no key, no personal data, nothing from the owner's employer. The
 relation-scoring test reads it against the shipped golden set.
+
+`p2-48-eshop-full-haiku-run.json` (P2-48, RNF-012) is the second recorded run of the estimate test, shaped on the whole
+eShopLegacyWebForms application of the golden set (`eval/golden/eshop-webforms.json`: six cases, five item pages):
+eleven own-code areas of 72,600 estimated tokens in all, 2.8 times the demo shop of the first run. **It is not a live
+run, and no provider was called to make it.** The area names are generic and the sizes are rounded guesses, not a
+scan. Its role costs are derived by arithmetic from the three measured runs of `p2-46-shop-haiku-run.json`: the reader
+cost is the mean of those runs times (0.6 x the ratio of area tokens + 0.4 x the ratio of reader calls), with 35 calls
+(3.2 turns on each of eleven tasks) against 18 (2.6 on seven); the verifier cost scales with the reader calls (one
+call per claim); the summariser cost scales with the number of areas (11 against 7); each of the three runs keeps the
+spread of the matching measured run. Those weights are assumptions, so the second run checks that the estimate scales
+with size and with longer reader tasks the way the measured cost is assumed to; it is not independent proof of the
+accuracy on a large repository. A live run of the full eShop on Haiku 5.5 would replace it. The prices are the shipped
+price table 2026-10-21. It holds no source text, key or personal data and is under the repository's MIT licence.
