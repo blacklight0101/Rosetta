@@ -4,8 +4,9 @@
 # v* tag or by hand (workflow_dispatch on main, the way the sha-<short> image of main is published
 # before v0.1.0, DEC-104); never on a pull request or a push to main. Since DEC-175 (ADR-025)
 # scheduled-release.yml starts it on main at 06:00 Europe/Madrid the morning after main changed,
-# and the deploy job refuses a main whose tree did not pass staging (staging.yml); the input
-# skip-staging-check skips that check, for emergencies only.
+# and the deploy job refuses a main whose tree did not pass staging (staging.yml), once the
+# repository variable ROSETTA_STAGING_ENABLED is 'true' (until then the check is skipped with a
+# warning); the input skip-staging-check skips that check, for emergencies only.
 #
 # The deploy job updates the Azure Container App that azure-provision.yml created (ADR-024). It runs
 # only when the repository variable ROSETTA_DEPLOY_ENABLED is 'true', in the GitHub environment
@@ -173,9 +174,16 @@ jobs:
       # DEC-175, ADR-025: a release is a merge commit of develop into main (merge commit, not
       # squash), so its second parent is the develop commit staging deployed. Production gets this
       # commit only when its tree is that commit's tree and the job `deploy (staging)` passed on it.
-      # A tag run checks the tagged commit the same way. skip-staging-check skips it (emergencies).
+      # A tag run checks the tagged commit the same way. While the repository variable
+      # ROSETTA_STAGING_ENABLED is not 'true' there is no staging app, so the check is skipped with a
+      # warning; once it is, skip-staging-check is the only override (emergencies).
       - name: This tree passed staging
         run: |
+          if [ "$STAGING_ENABLED" != true ]; then
+            echo "::warning::staging is not enabled; the staging check is skipped (DEC-175)."
+            echo "- staging is not enabled; the staging check is skipped (DEC-175)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           if [ "$SKIP_STAGING_CHECK" = true ]; then
             echo "::warning::The staging check was skipped (input skip-staging-check)."
             echo "- **Staging check skipped** (input skip-staging-check, emergencies only): $(git rev-parse HEAD) was deployed without it." >> "$GITHUB_STEP_SUMMARY"
@@ -196,6 +204,7 @@ jobs:
             exit 1
           fi
         env:
+          STAGING_ENABLED: ${{ vars.ROSETTA_STAGING_ENABLED }}
           SKIP_STAGING_CHECK: ${{ inputs.skip-staging-check }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
