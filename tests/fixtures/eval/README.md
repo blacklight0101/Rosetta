@@ -31,3 +31,9 @@ GitHub. The eShop file keeps only the cards whose type and title repeat in more 
 characters). They are the cards as the readers wrote them, before consolidation (P3-110, EV-25, EV-26).
 
 Nothing here comes from the owner's employer (DEC-03).
+
+`p2-47-ent-claims.json` holds five real `ENT` claims of the live evaluation of 2026-10-25 (card P2-47, RNF-006,
+RF-262) over the public eShopModernizing sample at `63bc9ec4`, copied from the cards the readers wrote and trimmed to
+claim id, card type, card title, claim text, status and citations. They are text a model wrote about that public
+sample, with citations into it, and nothing else: no key, no personal data, nothing from the owner's employer. The
+relation-scoring test reads it against the shipped golden set.
