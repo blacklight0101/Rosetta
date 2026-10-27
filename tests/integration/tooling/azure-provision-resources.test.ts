@@ -118,11 +118,12 @@ describe('azure-provision.yml migrate execution (DEC-140)', () => {
 });
 
 describe('azure-provision.yml Container App (ADR-024)', () => {
-  it('ADR-024 the app has 0.5 vCPU, 1 GiB, one replica, external ingress on 8080 and three /healthz probes', async () => {
+  it('ADR-024 the app has 0.5 vCPU, 1 GiB, at most one replica, external ingress on 8080 and three /healthz probes', async () => {
     const script = stepScript(await provision(), 'provision', 'Create or update the Container App');
 
     expect(script).toContain('resources: {cpu: 0.5, memory: "1Gi"}');
-    expect(script).toContain('scale: {minReplicas: 1, maxReplicas: 1}');
+    // The minimum is 1 for production and 0 for staging (azure-provision-staging.test.ts).
+    expect(script).toContain('scale: {minReplicas: $min_replicas, maxReplicas: 1}');
     expect(script).toContain(
       'ingress: {external: true, targetPort: 8080, transport: "auto", allowInsecure: false}',
     );

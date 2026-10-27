@@ -12,9 +12,10 @@ import {
 // to Azure, and that no step prints a secret. Workflows are checked as text.
 
 describe('GitHub Actions workflows: secrets', () => {
-  // The exceptions are the deploy job of release.yml (P1-55, DEC-104) and the provision job of
-  // azure-provision.yml (P1-184): they read the secrets of the `production` environment.
-  it('RNF-003 uses no pull_request_target trigger and no secrets outside the two production jobs', async () => {
+  // The exceptions are the deploy job of release.yml (P1-55, DEC-104), the deploy job of staging.yml
+  // (DEC-175) and the provision job of azure-provision.yml (P1-184): they read the secrets of their
+  // deployment environment.
+  it('RNF-003 uses no pull_request_target trigger and no secrets outside the deployment jobs', async () => {
     expect(await violations(triggerAndSecretProblems)).toEqual([]);
   });
 
@@ -81,16 +82,20 @@ function loginProblems({ lines }: Workflow): string[] {
   ];
 }
 
+/** The environments an Azure login may run in: production, staging, or the provisioning target. */
+const deployEnvironment = /^ {6}name: (?:production|staging|\$\{\{ inputs\.target \}\})$/u;
+
 /**
- * An OIDC token outside a job that logs in to Azure (in production) or deploys GitHub Pages
- * (actions/deploy-pages needs one), or an Azure login without a token or outside production.
+ * An OIDC token outside a job that logs in to Azure (in a deployment environment) or deploys GitHub
+ * Pages (actions/deploy-pages needs one), or an Azure login without a token or outside those
+ * environments.
  */
 function tokenProblems({ lines }: Workflow): string[] {
   const azure = loginJobs(lines);
   const top = lines.slice(0, lines.indexOf('jobs:')).join('\n');
   const perJob = jobs(lines).flatMap(({ id, body }) => {
     const writes = body.some((line) => /^ {6}id-token: write$/u.test(line));
-    const production = body.some((line) => /^ {6}name: production$/u.test(line));
+    const production = body.some((line) => deployEnvironment.test(line));
     const pages = body.some((line) => line.includes('uses: actions/deploy-pages@'));
     if (azure.includes(id)) return writes && production ? [] : [`${id}: Azure login settings`];
     return writes && !pages ? [`${id}: id-token`] : [];
@@ -99,15 +104,16 @@ function tokenProblems({ lines }: Workflow): string[] {
 }
 
 describe('GitHub Actions workflows: Azure login (P1-184, ADR-024)', () => {
-  it('RNF-003 every Azure login uses OIDC with the three production variables and no creds', async () => {
+  it('RNF-003 every Azure login uses OIDC with the three environment variables and no creds', async () => {
     expect(await violations(loginProblems)).toEqual([]);
     expect((await load()).flatMap((workflow) => loginJobs(workflow.lines)).sort()).toEqual([
+      'deploy',
       'deploy',
       'provision',
     ]);
   });
 
-  it('RNF-003 id-token: write only on the jobs that log in to Azure, each in production, and the Pages deploy', async () => {
+  it('RNF-003 id-token: write only on the jobs that log in to Azure, each in a deployment environment, and the Pages deploy', async () => {
     expect(await violations(tokenProblems)).toEqual([]);
   });
 

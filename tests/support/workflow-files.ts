@@ -76,16 +76,18 @@ export async function jobIds(name: string): Promise<string[]> {
   return jobs(lines).map((job) => job.id);
 }
 
-/** RNF-003, P1-55, P1-184: the one job of each workflow that may read the secrets context. */
+/** RNF-003, P1-55, P1-184, DEC-175: the one job of each workflow that may read secrets. */
 const secretJobs: Readonly<Record<string, string>> = {
   'release.yml': 'deploy',
   'azure-provision.yml': 'provision',
+  'staging.yml': 'deploy',
 };
 
 /**
- * RNF-003, P1-55, P1-184: the problems of one workflow with the trigger and secrets rule: no
- * `pull_request_target`, and no `secrets.` anywhere except in the deploy job of release.yml and the
- * provision job of azure-provision.yml, the two jobs that run in the `production` environment.
+ * RNF-003, P1-55, P1-184, DEC-175: the problems of one workflow with the trigger and secrets rule:
+ * no `pull_request_target`, and no `secrets.` anywhere except in the deploy jobs of release.yml and
+ * staging.yml and the provision job of azure-provision.yml, the jobs that run in a deployment
+ * environment (`production`, `staging`, or the target of the provisioning).
  */
 export function triggerAndSecretProblems(workflow: Workflow): string[] {
   const code = workflow.lines.filter((line) => !line.trimStart().startsWith('#'));

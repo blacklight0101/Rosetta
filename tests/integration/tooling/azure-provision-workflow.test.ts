@@ -45,15 +45,17 @@ async function hostedSecrets(): Promise<string[]> {
 }
 
 describe('azure-provision.yml trigger and job', () => {
-  it('ADR-024 runs only by hand, from main, in the production environment, never cancelled half-way', async () => {
+  // DEC-175: the target input picks production (from main) or staging (from develop); the
+  // target's environment and deploy group are in azure-provision-staging.test.ts.
+  it('ADR-024 runs only by hand, from main for production, never cancelled half-way', async () => {
     const document = await provision();
 
     expect(keysOf(at(document, 'on'))).toEqual(['workflow_dispatch']);
     expect(at(document, 'on', 'workflow_dispatch', 'inputs', 'image-tag', 'required')).toBe(true);
     expect(keysOf(at(document, 'jobs'))).toEqual(['provision']);
-    expect(at(document, 'jobs', 'provision', 'if')).toBe("github.ref == 'refs/heads/main'");
-    expect(at(document, 'jobs', 'provision', 'environment', 'name')).toBe('production');
-    expect(at(document, 'jobs', 'provision', 'concurrency', 'group')).toBe('deploy-production');
+    expect(at(document, 'jobs', 'provision', 'if')).toContain(
+      "(inputs.target == 'production' && github.ref == 'refs/heads/main')",
+    );
     expect(at(document, 'jobs', 'provision', 'concurrency', 'cancel-in-progress')).toBe(false);
   });
 
@@ -181,8 +183,7 @@ describe('azure-provision.yml restore input (RF-1306)', () => {
     const githubEnv = `${az.folder}/github-env`;
     const { code } = await runStep(script, {
       AZURE_SUBSCRIPTION_ID: '00000000-0000-0000-0000-000000000000',
-      AZ_RG: 'rg-rosetta',
-      DB_SERVER: server,
+      ...{ TARGET: 'production', AZ_RG: 'rg-rosetta', DB_SERVER: server },
       RUNNER_TEMP: az.folder,
       GITHUB_ENV: githubEnv,
     });
