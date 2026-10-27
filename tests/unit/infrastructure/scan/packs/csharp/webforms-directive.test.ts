@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { codeBehindReference } from '../../../../../../src/infrastructure/scan/packs/csharp/webforms-directive.js';
+import { growthOf } from '../../../../../support/stopwatch.js';
 
 const page = (directive: string): string => `${directive}\n<html></html>\n`;
 
@@ -73,16 +74,20 @@ describe('WebForms code-behind link (part 2)', () => {
     expect(codeBehindReference('A.aspx', text)).toMatchObject({ to: 'A.aspx.cs' });
   });
 
-  it('RNF-001 answers quickly on hostile input without backtracking', () => {
-    const hostile = `<%@ Page ${'a='.repeat(200_000)} %>`;
-    const unterminated = `<%@ Page CodeBehind="${'x'.repeat(2_000_000)}`;
-    const manyDirectives = '<%@ Import Namespace="N" %>\n'.repeat(100_000);
-    const start = performance.now();
+  it.each([
+    ['a long run of attributes', (length: number) => `<%@ Page ${'a='.repeat(length / 2)} %>`],
+    ['an unterminated value', (length: number) => `<%@ Page CodeBehind="${'x'.repeat(length)}`],
+    ['many directives', (length: number) => '<%@ Import Namespace="N" %>\n'.repeat(length / 25)],
+  ])('RNF-001 %s is read in linear time without backtracking', (_name, build) => {
+    const { largeMs, ratio } = growthOf(
+      (text) => codeBehindReference('A.aspx', text),
+      build(125_000),
+      build(500_000),
+    );
 
-    expect(codeBehindReference('A.aspx', hostile)).toBeUndefined();
-    expect(codeBehindReference('A.aspx', unterminated)).toBeUndefined();
-    expect(codeBehindReference('A.aspx', manyDirectives)).toBeUndefined();
-    expect(performance.now() - start).toBeLessThan(1000);
+    expect(codeBehindReference('A.aspx', build(500_000))).toBeUndefined();
+    expect(ratio).toBeLessThan(8);
+    expect(largeMs).toBeLessThan(10_000);
   });
 });
 
