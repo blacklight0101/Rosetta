@@ -99,7 +99,18 @@ async function git(args) {
   return stdout.trim();
 }
 
-// The base of the push: the upstream branch when there is one; otherwise the merge-base with origin/main (a new
+// The integration branch a new branch is measured from: origin/develop (DEC-175), or origin/main when develop
+// does not exist.
+async function trunkRef() {
+  try {
+    await git(['rev-parse', '--verify', '--quiet', 'origin/develop']);
+    return 'origin/develop';
+  } catch {
+    return 'origin/main';
+  }
+}
+
+// The base of the push: the upstream branch when there is one; otherwise the merge-base with the trunk (a new
 // branch); otherwise null.
 async function baseOf() {
   try {
@@ -108,7 +119,7 @@ async function baseOf() {
     // no upstream: a new branch
   }
   try {
-    return await git(['merge-base', 'origin/main', 'HEAD']);
+    return await git(['merge-base', await trunkRef(), 'HEAD']);
   } catch {
     return null;
   }

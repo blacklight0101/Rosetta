@@ -117,7 +117,7 @@ before commit (ADR-008).
 - Commits follow Conventional Commits, checked by commitlint ([conventions](conventions.md) section 9).
 - Git hooks (lefthook): `pre-commit` formats and lints staged files; `commit-msg` runs commitlint; `pre-push` runs
   `typecheck`, then `scripts/pre-push-tests.mjs`. Against the upstream branch (or, for a new branch, the merge-base with
-  `origin/main`), it runs the unit and web tests related to the changed files (Vitest `--changed`), and the
+  `origin/develop`, falling back to `origin/main` when `develop` does not exist), it runs the unit and web tests related to the changed files (Vitest `--changed`), and the
   documentation consistency tests when a document changed. It runs the whole unit project when the base cannot be read,
   when configuration, test support or scripts changed, or when more than 25 files changed. It never runs the integration
   or end-to-end tests, which are slow and run in CI. The hook is a fast check, not the full gate: CI runs every test on the same commit (section 6). Hooks help; CI is the gate. Humans install them with `npm run hooks:install`
