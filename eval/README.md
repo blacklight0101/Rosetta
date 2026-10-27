@@ -8,7 +8,8 @@ and starts the paid runs only with `--yes` (RF-143). Results go to the git-ignor
 The golden set also holds the steps of the expected flows (`kind` `step`), the fields and actions of the expected
 screens (`field`, `action`) and the relations of the entities (`relation`), each with `of` naming its flow, screen or
 entity (RF-260..RF-263, P2-23). `npm run eval` prints the step recall, the screen field recall and the relation
-precision beside the existing measures; they have no target yet.
+precision beside the existing measures; they have no target yet. The relation precision is not comparable across golden set
+versions 2026-10-17.2 and 2026-10-27.1: the older set had no relation findings.
 
 ## Provenance (RNF-009)
 
