@@ -136,6 +136,13 @@ deployment procedure (environments-and-delivery.md section 10).
 - Losing `ROSETTA_SECRET_KEY` makes stored user keys unreadable; leaking it together with a database dump exposes
   them. It lives only in the host's secret store and the owner's git-ignored `.env`.
 - The host provider and its staff are trusted with the database and the disk.
+- The staging app (DEC-175, ADR-025) runs code from `develop` before the owner releases it, and it shares the
+  PostgreSQL server with production. One server has one set of roles, so staging connects as `rosetta_app` and its
+  migrate job as `rosetta_migrator`, the production roles: code on staging could technically reach the production
+  database `rosetta`. Accepted for cost: separate roles would need a second server. Mitigations:
+  only reviewed and verified cards reach `develop`; staging never creates or changes a role password and gets no
+  server provider keys; its own `ROSETTA_SECRET_KEY` and administrator; the staging environment's credential is
+  limited to the branch `develop`.
 - On a host that offers a single database role, the server runs as the owner of `audit_events` and `cost_ledger`, so
   code in the server process could change or delete audit and ledger rows. The server logs a warning at every start
   in that case (DEC-140); the mitigation is to create `rosetta_app` (data-model.md section 6). The migrate step holds

@@ -13,7 +13,7 @@ subagent, stop and report that the build must be started from the main session. 
 Rules:
 
 - **Ready cards.** A card is ready when its Status is `Todo`, every id in _Depends on_ is `Done` (merged into
-  `main`) and every gate it names is `Open` in the Gates table of `handoff.md`. Never open a gate yourself; gates are
+  `develop`, DEC-175) and every gate it names is `Open` in the Gates table of `handoff.md`. Never open a gate yourself; gates are
   opened by BlackLigth (blacklight0101). When a gate opens, set the cards it held from `Blocked (G-nn)` back to `Todo`.
 - **Usage first (DEC-115).** Run one agent at a time. Read the plan usage before every launch and after every
   finish (the session's usage tool, else a scheduled check, else ask the owner, DEC-111) and apply protocol section
@@ -23,7 +23,7 @@ Rules:
   weekly window start at most one agent per hour. Never let the window run out.
 - **One card, one issue, one branch, one builder.** Open the card's issue (title `<id> <title>`, milestone of the
   phase, labels `difficulty:<n>`, `builder:<model>`, `status:in-progress`), create `task/<id>-<kebab-title>` from
-  the current `main` in its own worktree, and spawn the builder of the card's difficulty: 1-5 `builder-haiku`, 6-8
+  the current `develop` in its own worktree, and spawn the builder of the card's difficulty: 1-5 `builder-haiku`, 6-8
   `builder-sonnet`, 9-10 `builder-opus` (never `builder-fable` for a first attempt). Brief it with the card verbatim plus protocol sections 1,
   4 and 6. Run two cards at once only when their _Delivers_ paths are disjoint and they share no serialized resource
   (protocol sections 1 and 8).
@@ -33,12 +33,15 @@ Rules:
   the card, the report and the branch. Do not judge the report yourself. Post the verdict block on the pull request,
   unchanged.
 - **Merge (DEC-96).** On PASS merge only when every rule of protocol section 3.1 holds: CI green,
-  PASS with no BLOCKING or MAJOR finding posted, branch up to date with `main` (rebase the task branch and push it with
-  `--force-with-lease` when needed, never `main`), no change to `docs/spec/`, `docs/adr/`, `docs/decision-log.md`,
+  PASS with no BLOCKING or MAJOR finding posted, branch up to date with `develop` (rebase the task branch and push it with
+  `--force-with-lease` when needed, never `develop` or `main`), no change to `docs/spec/`, `docs/adr/`, `docs/decision-log.md`,
   `docs/rfc/` or `CLAUDE.md` (those pull requests get `needs-owner` and wait for the owner), and
   `gh pr merge <pr> --squash --delete-branch` exits 0. Never use an admin override, never bypass the ruleset, never
-  push to `main`. Then `git pull --ff-only` on your `main` and confirm the issue closed. P1-01 follows the exception
+  push to `develop` or `main`. Then `git pull --ff-only` on your `develop` and confirm the issue closed. P1-01 follows the exception
   of protocol section 3.1.
+- **Release (DEC-175).** When the owner says a batch is ready, open one pull request `develop` -> `main` (protocol
+  section 3.2): it lists the cards in it, carries `needs-owner`, and only the owner merges it, with a merge commit.
+  Never merge it, never squash it, never push to `main`. Production deploys at 06:00 Madrid the next morning.
 - **Status after merge.** Task branches never touch `tasks.md` or `handoff.md`. After merges, open one
   `docs/build-status` pull request with the `Done` lines, the `handoff.md` lines, follow-up cards for MINOR findings
   with the updated totals, and gate releases; merge it once CI is green; always before the session ends.
@@ -55,11 +58,11 @@ Rules:
 - **Edits.** Edit only the Status line of existing cards and append follow-up cards (protocol section 9); never
   rewrite a card. Status values are `Todo`, `In progress`, `In review`, `Done`, `Blocked (<reason>)`.
 - **Stop** and write to `handoff.md` when a gate is needed, a card is escalated, a builder reports a contradiction
-  between documents, the verifier finds a hard-rule violation the builder claims is required, CI fails on `main`, or
+  between documents, the verifier finds a hard-rule violation the builder claims is required, CI fails on `develop` or `main`, or
   an environment, credential or person you cannot reach is needed.
 - Use Agent-tool subagents for builders and verifiers. Run a Workflow script only when the user has opted in for
   this session (said "ultracode", asked for a workflow or multi-agent orchestration, or ultracode is on); otherwise
   offer the workflow with a rough cost and wait for a yes.
-- End every session with your `main` equal to `origin/main` and clean, `handoff.md` current (state, next ready
+- End every session with your `develop` equal to `origin/develop` and clean, `handoff.md` current (state, next ready
   cards, pull requests waiting for the owner, holds and escalations), and the project notes named in `CLAUDE.md`
   updated.

@@ -15,7 +15,7 @@ Inputs: the task card (id, difficulty, Reads, Do, Delivers, Done when, Refs), th
 
 1. Read `CLAUDE.md`, the card, every requirement id in Refs (`docs/spec/requirements.md`), every ADR in Refs,
    `docs/architecture.md` and `docs/conventions.md`.
-2. **Scope:** `git diff --stat main...HEAD`; every Delivers item exists at its path; nothing outside the card changed;
+2. **Scope:** `git diff --stat develop...HEAD` (task branches are cut from `develop`, DEC-175); every Delivers item exists at its path; nothing outside the card changed;
    `docs/spec`, `docs/rfc`, `docs/adr` change only when the card or a behaviour change requires it (ADR-010).
 3. **Gates:** run `npm ci --ignore-scripts` (never plain `npm ci`: lefthook would write hooks into the shared `.git`) and `npm run verify` yourself. Every gate green: typecheck, lint with zero warnings, format,
    dependency-cruiser, knip, tests with coverage thresholds. A skipped, `.only` or early-returning test counts as not
@@ -24,7 +24,7 @@ Inputs: the task card (id, difficulty, Reads, Do, Delivers, Done when, Refs), th
 4. **Spec-driven (ADR-010):** for every Given/When/Then scenario of every requirement in Refs, find the test named
    with its id that proves it; a Must scenario without a test is BLOCKING. Behaviour in the diff that no requirement
    describes is MAJOR (spec first).
-5. **Test-driven (ADR-010):** `git log --reverse --format='%h %s' main..HEAD` shows a `test:` commit before the
+5. **Test-driven (ADR-010):** `git log --reverse --format='%h %s' develop..HEAD` shows a `test:` commit before the
    `feat:`/`fix:` commit for each behaviour; check out the `test:` commit in a detached worktree and confirm its new
    tests fail. Mutation check: in a detached worktree (`git worktree add --detach ../verify-<id> HEAD`), replace the
    body of one implementing function with a wrong but compiling result, run the card's tests, confirm at least one
