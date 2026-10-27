@@ -25,7 +25,7 @@ hour. The hosting budget of ADR-024 (25 USD a month) leaves no room for a second
 We choose option 1. Task cards merge into `develop` (squash, linear); `staging.yml` deploys each push of `develop` to
 `ca-rosetta-staging` with its own database `rosetta_staging` and share; the owner merges the release pull request
 into `main` with a merge commit; `scheduled-release.yml` starts Release on `main` at 06:00 Madrid; the deploy refuses a
-`main` whose tree differs from its develop parent or whose develop parent did not pass `deploy (staging)`.
+`main` whose tree differs from its develop parent or whose develop parent did not pass `deploy (staging)`. While the repository variable `ROSETTA_STAGING_ENABLED` is not `true` (no staging app yet), the check is skipped with a warning in the job summary (the owner's word of 2026-10-27: the first release goes out before the staging app exists); once it is `true` the check is enforced and the input `skip-staging-check` is the only override.
 
 ## Rationale
 

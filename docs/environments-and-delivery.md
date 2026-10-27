@@ -332,7 +332,8 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
   queued, running or succeeded, or while `ROSETTA_DEPLOY_ENABLED` is not `true`). Release rebuilds the image from the
   merge commit, and its deploy job refuses a commit whose tree differs from its second parent (the `develop` side) or
   whose second parent did not pass `deploy (staging)`; the `workflow_dispatch` input `skip-staging-check` skips that
-  check for an emergency and records it in the job summary.
+  check for an emergency and records it in the job summary. While the repository variable `ROSETTA_STAGING_ENABLED` is not `true` (no staging app yet), the check is skipped with a warning in the job summary; once it is `true` the check is enforced
+  and `skip-staging-check` is the only override.
 - The `Dockerfile` has a `test` stage with the fake provider and fake GitHub, used only by `compose.ci.yaml`; the
   runtime image ships no tests and no scripts; the compiled fakes inside `dist` are reachable only with `ROSETTA_TEST=1`, and `kind: fake` is refused without it (DEC-112).
 - After the GitHub Pages deploy, a smoke-test step fetches the published report's index and fails the job (`exit 1`)

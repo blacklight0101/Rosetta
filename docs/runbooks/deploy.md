@@ -198,7 +198,7 @@ DEC-175, ADR-025. Teachers may sign in at any time, so nothing reaches productio
 4. At 06:00 Europe/Madrid the next morning, `scheduled-release.yml` starts Release on `main` (once per head commit
    of `main`; only while `ROSETTA_DEPLOY_ENABLED` is `true`). Release rebuilds the image from `main` and deploys it
    (section Deploy) only when the ZAP baseline passed on the commit, its tree equals the tree of its `develop`
-   parent, and `deploy (staging)` passed on that parent.
+   parent, and `deploy (staging)` passed on that parent. While the repository variable `ROSETTA_STAGING_ENABLED` is not `true` (no staging app yet), the check is skipped with a warning in the job summary (`staging is not enabled; the staging check is skipped (DEC-175)`), so a squash commit on `main` deploys too; once it is `true` the check is enforced and only `skip-staging-check` overrides it.
 5. To deploy at once instead of at 06:00, once CI on `main` has passed the `zap-baseline` check:
    Actions, Release, Run workflow, branch `main`. The 06:00 run then sees a successful run of that commit and does
    nothing.
@@ -216,7 +216,8 @@ environment). The order of `docs/environments-and-delivery.md` section 10 step 4
 
 1. The `zap-baseline` check of `ci.yml` passed on the commit (the job refuses otherwise; threat model section 5).
    Then the tree passed staging: the commit has a second parent, both trees are equal and `deploy (staging)` passed
-   on that parent (skipped only with `skip-staging-check`; DEC-175).
+   on that parent (skipped with a warning while `ROSETTA_STAGING_ENABLED` is not `true`, otherwise only with
+   `skip-staging-check`; DEC-175).
 2. The settings of the previous sections are stored (the job names any that is missing, never a value).
 3. Log in to Azure with `azure/login` over OIDC (`client-id`, `tenant-id`, `subscription-id` from the `production`
    variables; `id-token: write` on this job only).
