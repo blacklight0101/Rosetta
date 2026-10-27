@@ -145,7 +145,7 @@ Owner steps, once, in order (none holds a value; the values come from the passwo
 
 1. GitHub, Settings, Environments, New environment `staging`; deployment branch policy: only the branch `develop`.
 2. In `staging`, the variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` (the same deploy
-   identity as production) and the secrets `ROSETTA_SECRET_KEY` (a new value, `openssl rand -base64 32`, never the
+   identity as production, so staging runs carry its Azure rights over production too: threat model section 6) and the secrets `ROSETTA_SECRET_KEY` (a new value, `openssl rand -base64 32`, never the
    production key), `ROSETTA_ADMIN_USER`, `ROSETTA_ADMIN_PASSWORD` and, optionally, `ROSETTA_GITHUB_TOKEN`. No
    `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`: the staging app never gets them.
 3. Two federated credentials on the same Entra application, for the subject

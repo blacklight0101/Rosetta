@@ -141,8 +141,13 @@ deployment procedure (environments-and-delivery.md section 10).
   migrate job as `rosetta_migrator`, the production roles: code on staging could technically reach the production
   database `rosetta`. Accepted for cost: separate roles would need a second server. Mitigations:
   only reviewed and verified cards reach `develop`; staging never creates or changes a role password and gets no
-  server provider keys; its own `ROSETTA_SECRET_KEY` and administrator; the staging environment's credential is
-  limited to the branch `develop`.
+  server provider keys; its own `ROSETTA_SECRET_KEY` and administrator.
+- The staging workflow runs code from `develop` with the production deploy identity (the same Entra application,
+  Contributor on `rg-rosetta`), through a federated credential for the environment `staging`. That credential is
+  issued only to runs on `develop`, but it does not narrow what the identity can do: a staging run can change the
+  production app, its migrate job, the PostgreSQL server and the storage account. Accepted (DEC-175): only reviewed
+  and verified cards reach `develop`, and the workflow file itself is reviewed like code. A separate identity scoped to
+  the staging app and job is the stronger option if staging ever runs code that was not verified.
 - On a host that offers a single database role, the server runs as the owner of `audit_events` and `cost_ledger`, so
   code in the server process could change or delete audit and ledger rows. The server logs a warning at every start
   in that case (DEC-140); the mitigation is to create `rosetta_app` (data-model.md section 6). The migrate step holds

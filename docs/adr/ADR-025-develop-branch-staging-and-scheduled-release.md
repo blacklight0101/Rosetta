@@ -47,6 +47,9 @@ into `main` with a merge commit; `scheduled-release.yml` starts Release on `main
 - The staging app holds the production roles (`rosetta_app`, `rosetta_migrator`; one server, so one set of roles), so
   staging code could reach the production database. Accepted for cost; listed in the threat model. Staging never
   sets a role password and gets no server provider keys.
+- The staging workflow uses the production deploy identity (Contributor on `rg-rosetta`), so code on `develop` runs
+  with Azure rights over production too; the branch limit of its credential decides who gets the token, not what it
+  can do. Accepted, listed in the threat model; a separate identity scoped to the staging app is the upgrade path.
 - Production rebuilds the image from the `main` merge commit instead of promoting the staging digest; the tree check
   guarantees the same source, not the same bytes (base image updates between the two builds are possible).
 - A hotfix goes through `develop` too; a commit made only on `main` fails the tree check.

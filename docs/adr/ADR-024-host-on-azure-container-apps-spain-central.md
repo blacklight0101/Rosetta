@@ -117,6 +117,7 @@ ghcr.io` [A11].
 - Q-18; RF-1304, RF-1306, RNF-016; ADR-014, ADR-015, ADR-016, ADR-020 (superseded by this ADR); DEC-61, DEC-89,
   DEC-104, DEC-112, DEC-140, DEC-171; environments-and-delivery.md sections 2, 4, 10-12; cards P1-48, P1-55, P2-12;
   gate G-07.
+- Extended by ADR-025 (2026-10-27, DEC-175): a staging app in the same environment and on the same server.
 - Sources, all accessed 2026-10-24 (the page's own date in brackets where it gives one):
   - A1 https://learn.microsoft.com/en-us/azure/container-apps/billing [updated 2026-03-25]
   - A2 https://azure.microsoft.com/en-us/pricing/purchase-options/azure-account
