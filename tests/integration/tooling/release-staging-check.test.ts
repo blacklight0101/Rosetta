@@ -95,6 +95,7 @@ interface Check {
   readonly head?: Head;
   readonly conclusion?: string;
   readonly skip?: string;
+  readonly enabled?: string;
 }
 
 /** Runs the staging check; returns its code, output, gh calls, summary and the develop SHA. */
@@ -111,6 +112,7 @@ async function check(options: Check = {}): Promise<{
   const env = {
     ...gh.env,
     SKIP_STAGING_CHECK: options.skip ?? '',
+    STAGING_ENABLED: options.enabled ?? 'true',
     GH_REPO: 'blacklight0101/Rosetta',
     GITHUB_STEP_SUMMARY: summaryFile,
   };
@@ -163,5 +165,31 @@ describe('release.yml staging check: the release merge commit', () => {
     expect(result.calls).toEqual([]);
     expect(result.output).toContain('::warning::');
     expect(result.summary).toMatch(/skip-staging-check/u);
+  });
+});
+
+describe('release.yml staging check: while staging is off', () => {
+  it('DEC-175 while ROSETTA_STAGING_ENABLED is not true the check is skipped with a warning in the summary', async () => {
+    const result = await check({ head: 'single parent', enabled: '' });
+
+    expect(result.code).toBe(0);
+    expect(result.calls).toEqual([]);
+    expect(result.output).toContain('::warning::');
+    expect(result.summary).toContain(
+      'staging is not enabled; the staging check is skipped (DEC-175)',
+    );
+  });
+
+  it('DEC-175 once ROSETTA_STAGING_ENABLED is true the check is enforced', async () => {
+    expect((await check({ head: 'single parent', enabled: 'true' })).code).not.toBe(0);
+  });
+
+  it('DEC-175 the step reads ROSETTA_STAGING_ENABLED from the repository variables', async () => {
+    const steps = at(await release(), 'jobs', 'deploy', 'steps');
+    const step: unknown = (Array.isArray(steps) ? steps : []).find(
+      (each: unknown) => at(each, 'name') === 'This tree passed staging',
+    );
+
+    expect(at(step, 'env', 'STAGING_ENABLED')).toBe('${{ vars.ROSETTA_STAGING_ENABLED }}');
   });
 });
