@@ -12,22 +12,24 @@ with Docker Compose and hosted on a container host (DEC-59, DEC-61, DEC-65; ADR-
 
 ## 1. Environments
 
-| Environment   | Where                                                                                                           | AI providers                                                                            | Purpose                                                                                                  |
-| ------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| **Dev**       | the owner's machine (Windows 11, Node.js 24 LTS, Docker 29 with Compose v5, Ollama) and the builders' worktrees | the fake provider in tests; Ollama, OpenAI and Anthropic for manual and evaluation runs | build and test every card; `npm run dev` runs the server from source against a Compose PostgreSQL        |
-| **CI**        | GitHub Actions, `ubuntu-latest` and `windows-latest`                                                            | fake provider only; no keys, no network calls to providers                              | the gates of section 6 on every push and pull request; image build, scan and Compose smoke test on Linux |
-| **Local**     | the owner's machine, `docker compose up`                                                                        | Ollama on the host, plus the owner's keys                                               | the simulation of the hosted deployment (RF-1301)                                                        |
-| **Hosted**    | Azure Container Apps, Spain Central (ADR-024)                                                                   | OpenAI, Anthropic, OpenAI-compatible with server keys under caps, or the user's keys    | the teachers' evaluation URL (RF-1304, DEC-67)                                                           |
-| **Published** | GitHub Pages of the public repository                                                                           | none                                                                                    | the sample report of the demo run (RF-800), the fallback of the hand-in                                  |
+| Environment   | Where                                                                                                                                                                                                          | AI providers                                                                            | Purpose                                                                                                  |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Dev**       | the owner's machine (Windows 11, Node.js 24 LTS, Docker 29 with Compose v5, Ollama) and the builders' worktrees                                                                                                | the fake provider in tests; Ollama, OpenAI and Anthropic for manual and evaluation runs | build and test every card; `npm run dev` runs the server from source against a Compose PostgreSQL        |
+| **CI**        | GitHub Actions, `ubuntu-latest` and `windows-latest`                                                                                                                                                           | fake provider only; no keys, no network calls to providers                              | the gates of section 6 on every push and pull request; image build, scan and Compose smoke test on Linux |
+| **Local**     | the owner's machine, `docker compose up`                                                                                                                                                                       | Ollama on the host, plus the owner's keys                                               | the simulation of the hosted deployment (RF-1301)                                                        |
+| **Hosted**    | Azure Container Apps, Spain Central (ADR-024), app `ca-rosetta`, deployed from `main` at 06:00 Europe/Madrid (DEC-175)                                                                                         | OpenAI, Anthropic, OpenAI-compatible with server keys under caps, or the user's keys    | the teachers' evaluation URL (RF-1304, DEC-67)                                                           |
+| **Staging**   | Azure Container Apps, Spain Central: app `ca-rosetta-staging` in the environment, storage account and PostgreSQL server of Hosted, with its own database `rosetta_staging` and share; scales to zero (ADR-025) | no server keys (no AI spend); a signed-in user's own keys only                          | every push to `develop` deployed and smoke-tested before it can be released (DEC-175)                    |
+| **Published** | GitHub Pages of the public repository                                                                                                                                                                          | none                                                                                    | the sample report of the demo run (RF-800), the fallback of the hand-in                                  |
 
 ## 2. Hosting
 
-| Deployable            | Host                                                                                       | Notes                                                                                                                                                                                                         |
-| --------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rosetta image         | GitHub Container Registry `ghcr.io/blacklight0101/rosetta`, tags `X.Y.Z` and `sha-<short>` | built once per release by CI; never `latest` in a deployment (RF-1300)                                                                                                                                        |
-| App container, local  | Docker Compose on the owner's machine                                                      | `compose.yaml`: services `app` and `db` (PostgreSQL 17, pinned by digest), volumes `pgdata` and `rosetta-data`, app published on `127.0.0.1:8080`, `extra_hosts: host.docker.internal:host-gateway` (RF-1301) |
-| App container, hosted | Azure Container Apps, Spain Central (ADR-024)                                              | HTTPS by the host, managed PostgreSQL 17, persistent disk at `/data`, health check on `/healthz`, restart on failure, one instance (RF-1304)                                                                  |
-| Sample report         | GitHub Pages, from the `site/` folder of `main`                                            | static files only (RF-501)                                                                                                                                                                                    |
+| Deployable             | Host                                                                                       | Notes                                                                                                                                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Rosetta image          | GitHub Container Registry `ghcr.io/blacklight0101/rosetta`, tags `X.Y.Z` and `sha-<short>` | built once per release by CI; never `latest` in a deployment (RF-1300)                                                                                                                                                                     |
+| App container, local   | Docker Compose on the owner's machine                                                      | `compose.yaml`: services `app` and `db` (PostgreSQL 17, pinned by digest), volumes `pgdata` and `rosetta-data`, app published on `127.0.0.1:8080`, `extra_hosts: host.docker.internal:host-gateway` (RF-1301)                              |
+| App container, hosted  | Azure Container Apps, Spain Central (ADR-024)                                              | HTTPS by the host, managed PostgreSQL 17, persistent disk at `/data`, health check on `/healthz`, restart on failure, one instance (RF-1304)                                                                                               |
+| App container, staging | Azure Container Apps, Spain Central (ADR-025)                                              | `ca-rosetta-staging`, migrate job `caj-rosetta-stg-migrate`, database `rosetta_staging` on the same server, share `rosetta-data-staging`, 0 to 1 replica, deployed by `.github/workflows/staging.yml` on every push to `develop` (DEC-175) |
+| Sample report          | GitHub Pages, from the `site/` folder of `main`                                            | static files only (RF-501)                                                                                                                                                                                                                 |
 
 The hosted host is Azure Container Apps in Spain Central with Azure Database for PostgreSQL Flexible Server (Q-18, DEC-171, [ADR-024](adr/ADR-024-host-on-azure-container-apps-spain-central.md)); it replaces Railway ([ADR-020](adr/ADR-020-host-on-railway-eu-west.md), superseded). Requirements of ADR-014: runs a container image from GHCR, persistent disk, managed PostgreSQL or a PostgreSQL container with a volume, secret store, HTTPS with a custom or provided domain, health checks, a monthly cost under 25 USD (ADR-024 estimates about 33 USD at list price and states the budget alert).
 
@@ -88,15 +90,23 @@ before commit (ADR-008).
 
 ## 5. Source control and branching
 
-- Repository: public GitHub `blacklight0101/Rosetta`, default branch `main` (DEC-06).
-- Flow (DEC-35): issue per card -> branch `task/<card-id>-<slug>` or `docs/<topic>` -> pull request from the template
-  -> CI green -> verifier verdict posted -> squash merge by the orchestrator under the merge rules of the orchestration protocol section 3.1, or by the owner for `needs-owner` pull requests (DEC-96) -> branch deleted.
-- `main` is protected by a repository ruleset: changes only through pull requests, squash merge only, linear history,
-  no force-push, no deletion, review threads resolved before merge, no required approving review (the orchestrator
-  and the owner use the same GitHub account, which cannot approve its own pull request; DEC-96). The owner adds the CI
-  jobs as required status checks to the ruleset once P1-02 has merged the workflow; from then on no pull request can
-  be merged with a red check.
-- **Required checks.** The owner adds these job names to the `main` ruleset as required status checks:
+- Repository: public GitHub `blacklight0101/Rosetta`, default branch `develop` (DEC-06, DEC-175). `develop` is the
+  integration branch; `main` is what is deployed or about to be ([ADR-025](adr/ADR-025-develop-branch-staging-and-scheduled-release.md)).
+- Flow (DEC-35): issue per card -> branch `task/<card-id>-<slug>` or `docs/<topic>`, cut from `develop` -> pull
+  request into `develop` from the template -> CI green -> verifier verdict posted -> squash merge by the orchestrator
+  under the merge rules of the orchestration protocol section 3.1, or by the owner for `needs-owner` pull requests
+  (DEC-96) -> branch deleted -> the push to `develop` deploys to staging (section 8).
+- Release (DEC-175): when the owner says a batch is ready, the orchestrator opens one pull request `develop` -> `main`
+  that lists the cards in it, labelled `needs-owner`; only the owner merges it, with a merge commit, so `develop`
+  stays an ancestor of `main`. Production deploys it the next morning at 06:00 Europe/Madrid (section 10).
+- Rulesets (the owner sets them; no required approving review, because the orchestrator and the owner use the same
+  GitHub account, which cannot approve its own pull request; DEC-96):
+  - `main`: changes only through pull requests, merge commits only (no squash, no rebase, so no linear-history rule),
+    the required checks below, without "up to date before merging" (develop never contains the merge commits of
+    `main`), review threads resolved, no force-push, no deletion.
+  - `develop`: changes only through pull requests, squash only, linear history, the same required checks, review
+    threads resolved, no force-push, no deletion.
+- **Required checks.** The owner adds these job names to both rulesets as required status checks:
   `verify (ubuntu-latest)`, `verify (windows-latest)`, `e2e`, `audit`, `gitleaks`, `dependency-review` (all in
   `.github/workflows/ci.yml`), `pr-title` (`.github/workflows/pr-title.yml`) and `codeql`
   (`.github/workflows/codeql.yml`). Jobs that later cards add to the table of
@@ -117,7 +127,7 @@ before commit (ADR-008).
 
 ## 6. Continuous integration
 
-Workflow `.github/workflows/ci.yml`, on `push` and `pull_request`, matrix `ubuntu-latest` and `windows-latest`,
+Workflow `.github/workflows/ci.yml`, on `push` to `main` and `develop` and on `pull_request`, matrix `ubuntu-latest` and `windows-latest`,
 Node.js from `.nvmrc`, `npm ci`, concurrency group per branch with cancel-in-progress. Integration tests start a
 disposable PostgreSQL service container on Linux; on Windows the database tests are skipped and reported as such.
 
@@ -225,6 +235,11 @@ run (the `ci-<ref>` concurrency group). An edit does not create a check run for 
 required checks, so the results of the run on the head commit stay the ones GitHub reads. `codeql.yml` does not
 list `edited` either, so GitHub's default types (`opened`, `synchronize`, `reopened`) apply to it.
 
+**Deployment workflows** (DEC-175, ADR-025). Besides `ci.yml`, `codeql.yml` (also on pushes to `main` and
+`develop`) and `pages.yml`: `staging.yml` deploys every push to `develop` to staging (job `deploy (staging)`), and
+`scheduled-release.yml` starts `release.yml` on `main` at 06:00 Europe/Madrid (section 8). Both follow the hardening
+below; `scheduled-release.yml` uses no action and only `contents: read` and `actions: write`.
+
 Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
 exceptions only in `audit-exceptions.json`, each with a reason and an expiry date; top-level `permissions: contents: read`; third-party actions pinned to a full commit SHA with the
 version in a comment; no `pull_request_target`; no secrets in CI (tests never call providers). Dependabot updates npm
@@ -293,8 +308,9 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
 ## 8. Versioning and releases
 
 - Semantic Versioning in 0.x (DEC-29); `v0.1.0` is the 2026-10-26 milestone.
-- A release is a pull request that bumps `package.json`, adds a section to `docs/releases.md`, merges, then a tag
-  `vX.Y.Z` and a GitHub release with the same notes; the owner creates the tag.
+- A version is a pull request into `develop` that bumps `package.json` and adds a section to `docs/releases.md`; it
+  reaches `main` in a release pull request (section 5), then the owner tags the merge commit on `main` `vX.Y.Z` and
+  creates a GitHub release with the same notes.
 - Cadence: one release per phase exit; patch releases as needed.
 - Build once: the release job builds the image once, pushes it to GHCR as `X.Y.Z` and `sha-<short>`, and attaches a
   CycloneDX SBOM (`npm sbom --sbom-format cyclonedx`) to the GitHub release (DEC-57). Every deployment uses that
@@ -304,9 +320,20 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
   (never on a pull request or a push to `main`); jobs `image` (tag checks, build, Trivy, push with the job token),
   `sbom` (tags only) and `deploy`, which stays skipped until the repository variable `ROSETTA_DEPLOY_ENABLED` is
   `true` and runs in the GitHub environment `production` (its secrets and variables: `docs/runbooks/deploy.md`). The
-  hosted resources are created by `.github/workflows/azure-provision.yml` (P1-184, ADR-024), run only by hand in
-  `production`. Both log in to Azure with OIDC; the deploy job and the provision job are the only places a workflow
+  hosted resources are created by `.github/workflows/azure-provision.yml` (P1-184, ADR-024), run only by hand, with
+  the input `target` `production` (from `main`) or `staging` (from `develop`, DEC-175). The deploy jobs of
+  `release.yml` and `staging.yml` and the provision job log in to Azure with OIDC and are the only places a workflow
   reads secrets.
+- Staging and the scheduled release (DEC-175, ADR-025): `staging.yml` builds and scans the image of every push to
+  `develop`, pushes `sha-<short>`, and deploys it to `ca-rosetta-staging` in the environment `staging` (migrate job,
+  new image, `/healthz` after a cold start, smoke test), off until the repository variable `ROSETTA_STAGING_ENABLED`
+  is `true`. `scheduled-release.yml` runs at 04:07 and 05:07 UTC, goes on only in the 06 hour of Europe/Madrid, and
+  starts Release on `main` by `workflow_dispatch` once per head commit of `main` (nothing when a Release run of it is
+  queued, running or succeeded, or while `ROSETTA_DEPLOY_ENABLED` is not `true`). Release rebuilds the image from the
+  merge commit, and its deploy job refuses a commit whose tree differs from its second parent (the `develop` side) or
+  whose second parent did not pass `deploy (staging)`; the `workflow_dispatch` input `skip-staging-check` skips that
+  check for an emergency and records it in the job summary. While the repository variable `ROSETTA_STAGING_ENABLED` is not `true` (no staging app yet), the check is skipped with a warning in the job summary; once it is `true` the check is enforced
+  and `skip-staging-check` is the only override.
 - The `Dockerfile` has a `test` stage with the fake provider and fake GitHub, used only by `compose.ci.yaml`; the
   runtime image ships no tests and no scripts; the compiled fakes inside `dist` are reachable only with `ROSETTA_TEST=1`, and `kind: fake` is refused without it (DEC-112).
 - After the GitHub Pages deploy, a smoke-test step fetches the published report's index and fails the job (`exit 1`)
@@ -336,14 +363,18 @@ script `db/init/roles.sh` (passwords from `.env`) and hosted by the provisioning
 
 ## 10. Deployment procedure
 
-1. All cards of the phase merged, CI green on `main` (including the image scan, the Compose smoke test and the ZAP baseline).
+1. The cards of the batch merged into `develop`, CI green on `develop` (including the image scan, the Compose smoke
+   test and the ZAP baseline), and `deploy (staging)` green on the head of `develop` (DEC-175).
 2. Local: `docker compose pull` (or `build`), `docker compose up -d`, sign in, run the demo `scan` and `understand`
-   (RF-801, RF-1301).
-3. Release pull request, merge, tag; the release job pushes the image to GHCR.
-4. Hosted: run the OWASP ZAP baseline scan against the local Compose stack (threat model section 5); back up the
-   database (host snapshot), run the migrate step of the new image as a one-off job that holds `DATABASE_MIGRATOR_URL`
-   as its only secret (DEC-140), set the new image tag on the host, wait for `/healthz`, run the smoke test (landing,
-   sign-in with the teacher account, a cheap scan, which needs no provider) (RF-1304).
+   (RF-801, RF-1301); the owner may also try the batch on the staging URL.
+3. The owner says the batch is ready; the orchestrator opens the release pull request `develop` -> `main`; the owner
+   merges it with a merge commit (and tags it for a version). Nothing deploys on the merge.
+4. Hosted, at 06:00 Europe/Madrid the next morning (`scheduled-release.yml`, or at once by running Release on `main`
+   by hand): the release job builds and pushes the image; the deploy job checks that the ZAP baseline passed on the
+   commit (threat model section 5) and that the tree passed staging, records the restore point (the host's
+   point-in-time backup), runs the migrate step of the new image as a one-off job that holds `DATABASE_MIGRATOR_URL`
+   as its only secret (DEC-140), sets the new image tag on the host, waits for `/healthz`, runs the smoke test
+   (landing, sign-in with the teacher account, a cheap scan, which needs no provider) (RF-1304).
 5. Regenerate the sample report into `site/` in a pull request; merge; GitHub Pages publishes it (RF-800).
 6. Record the deployed tag and date in `docs/runbooks/deploy.md` and `handoff.md`.
 
@@ -351,7 +382,8 @@ script `db/init/roles.sh` (passwords from `.env`) and hosted by the provisioning
 
 Hosted: set the previous image tag. Migrations are additive within release 1, so the previous image runs on the newer
 schema; a migration that is not additive is announced in the release notes with its restore point (the backup of
-step 4). Local: `docker compose up -d` with the previous tag. The sample report is restored by reverting the pull
+step 4). A fix goes through `develop`, staging and a release pull request like any change; in an emergency the owner
+runs Release on `main` with `skip-staging-check` (DEC-175). Local: `docker compose up -d` with the previous tag. The sample report is restored by reverting the pull
 request that changed `site/`.
 
 ## 12. Backup and restore

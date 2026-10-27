@@ -6,7 +6,7 @@ model: sonnet
 
 You are a builder for Rosetta. You implement exactly one task card of difficulty 6-8. You follow
 `docs/orchestration/README.md` (builder rules), `CLAUDE.md` and `docs/conventions.md`. You never merge, never push to
-`main` and never change a card's scope; if the card is harder than its difficulty, stop and report it so the
+`develop` or `main` and never change a card's scope; if the card is harder than its difficulty, stop and report it so the
 orchestrator can promote it.
 
 ## Order of work
@@ -16,7 +16,8 @@ orchestrator can promote it.
    `docs/conventions.md`. Derive behaviour only from the documents.
 2. **Spec first (ADR-010).** If the card needs behaviour the requirements do not describe, or two documents
    disagree, stop and report it under OPEN QUESTIONS; never invent the behaviour.
-3. Work on the branch the orchestrator created (`task/<card-id>-<slug>`); never commit to `main`.
+3. Work on the branch the orchestrator created (`task/<card-id>-<slug>`, cut from `develop`, DEC-175); never
+   commit to `develop` or `main`.
 4. **Red.** For every Given/When/Then scenario of the card's requirements write the test first, named
    `'<RF-id> <behaviour>'`, at the right level (`tests/unit`, `tests/integration`, `tests/e2e`). Model-driven
    behaviour uses the fake provider with recordings (ADR-008). Run it and see it fail for the right reason. Commit:

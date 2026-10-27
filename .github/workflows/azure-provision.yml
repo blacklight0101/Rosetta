@@ -7,13 +7,21 @@
 # rotate-passwords makes new ones (a short outage, runbook section Database roles). The input
 # db-server points it at a server restored from a backup (runbook section Restore).
 #
-# It runs only by hand (Actions, Azure provision, Run workflow, branch main) and creates billed
-# resources: the owner starts it (docs/runbooks/deploy.md, section Provisioning). It logs in with
-# OIDC (azure/login, a federated credential for environment production); no Azure secret is stored
-# in GitHub. The production environment holds:
+# The input target (DEC-175, ADR-025) picks production (from main, today's names) or staging (from
+# develop): the app ca-rosetta-staging, the migrate job caj-rosetta-stg-migrate, the database
+# rosetta_staging and the share rosetta-data-staging, in the same environment, storage account and
+# server as production. Staging never creates a role or sets a role password (rotate-passwords is
+# refused): it reads the passwords back from the production app and migrate job, and fails when they
+# are missing. The staging app gets no server provider keys and scales to zero.
+#
+# It runs only by hand (Actions, Azure provision, Run workflow, branch main for production or
+# develop for staging) and creates billed resources: the owner starts it (docs/runbooks/deploy.md,
+# sections Provisioning and Staging). It logs in with OIDC (azure/login, a federated credential for
+# the environment of the target); no Azure secret is stored in GitHub. Each environment holds:
 #   variables  AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
 #   secrets    ROSETTA_SECRET_KEY, ROSETTA_ADMIN_USER, ROSETTA_ADMIN_PASSWORD (required) and
 #              ROSETTA_SECRET_KEY_PREVIOUS, OPENAI_API_KEY, ANTHROPIC_API_KEY, ROSETTA_GITHUB_TOKEN
+#              (the provider keys are never given to the staging app)
 # The database passwords are made in the job (openssl rand), masked, and stored only as Container
 # Apps secrets; every app secret reaches the container as a secretref: variable. Secret values
 # reach az only as @file arguments from a mode-700 folder, never on a command line. No value is
@@ -23,12 +31,20 @@ name: Azure provision
 on:
   workflow_dispatch:
     inputs:
+      target:
+        description: 'Deployment to provision: production (branch main) or staging (branch develop)'
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+          - staging
       image-tag:
         description: 'Image tag to start with, sha-<short> from a Release run'
         required: true
         type: string
       rotate-passwords:
-        description: 'Make new database passwords (the app cannot connect for about a minute)'
+        description: 'Make new database passwords (production only; the app cannot connect for about a minute)'
         required: false
         default: false
         type: boolean
@@ -41,22 +57,24 @@ on:
 permissions:
   contents: read
 
-# A provisioning run is never cancelled half-way through creating a resource.
+# A provisioning run is never cancelled half-way through creating a resource. One group for every
+# branch (DEC-175): the production run (main) and the staging run (develop) converge the one shared
+# PostgreSQL server (both reset its administrator password), so they never overlap.
 concurrency:
-  group: azure-provision-${{ github.ref }}
+  group: azure-provision
   cancel-in-progress: false
 
 jobs:
   provision:
-    name: provision (production)
-    if: github.ref == 'refs/heads/main'
+    name: provision (${{ inputs.target }})
+    if: (inputs.target == 'production' && github.ref == 'refs/heads/main') || (inputs.target == 'staging' && github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment:
-      name: production
-    # Never at the same time as a deploy of release.yml.
+      name: ${{ inputs.target }}
+    # Never at the same time as a deploy of the same target (release.yml or staging.yml).
     concurrency:
-      group: deploy-production
+      group: deploy-${{ inputs.target }}
       cancel-in-progress: false
     permissions:
       contents: read
@@ -66,14 +84,15 @@ jobs:
       AZ_LOCATION: spaincentral
       AZ_LOGS: log-rosetta
       AZ_ENVIRONMENT: cae-rosetta
-      AZ_SHARE: rosetta-data
-      AZ_APP: ca-rosetta
-      AZ_MIGRATE_JOB: caj-rosetta-migrate
-      AZ_DB_NAME: rosetta
+      # The app, migrate job, database, share and minimum replicas of the target are set by the step
+      # "Work out the resource names"; staging reads the role passwords from these production ones.
+      AZ_PRODUCTION_APP: ca-rosetta
+      AZ_PRODUCTION_MIGRATE_JOB: caj-rosetta-migrate
       AZ_DB_ADMIN: rosettaadmin
       AZ_DB_LOCK: rosetta-db-no-delete
       IMAGE: ghcr.io/blacklight0101/rosetta
       IMAGE_TAG: ${{ inputs.image-tag }}
+      TARGET: ${{ inputs.target }}
       ROTATE_PASSWORDS: ${{ inputs.rotate-passwords }}
       DB_SERVER: ${{ inputs.db-server }}
     steps:
@@ -84,12 +103,16 @@ jobs:
             echo "::error::The image-tag input must be sha-<short>, the tag of a Release run."
             exit 1
           fi
+          if [ "$TARGET" = staging ] && [ "$ROTATE_PASSWORDS" = true ]; then
+            echo "::error::rotate-passwords is refused for staging: staging uses the database roles of production (docs/runbooks/deploy.md, Staging)."
+            exit 1
+          fi
           missing=''
           for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID ROSETTA_SECRET_KEY ROSETTA_ADMIN_USER ROSETTA_ADMIN_PASSWORD; do
             [ -n "${!name}" ] || missing="$missing $name"
           done
           if [ -n "$missing" ]; then
-            echo "::error::Missing in the production environment:$missing (docs/runbooks/deploy.md)."
+            echo "::error::Missing in the $TARGET environment:$missing (docs/runbooks/deploy.md)."
             exit 1
           fi
         env:
@@ -106,10 +129,19 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       # Storage account and server names are global; a suffix from the subscription keeps them
-      # unique and the same on every run (db-server overrides the server after a restore).
+      # unique and the same on every run (db-server overrides the server after a restore). Both
+      # targets use the same storage account and server (DEC-175); the rest is per target.
       # Generated values live only in this folder (mode 700).
       - name: Work out the resource names
         run: |
+          case "$TARGET" in
+            production) app=ca-rosetta job=caj-rosetta-migrate database=rosetta share=rosetta-data replicas=1 ;;
+            staging) app=ca-rosetta-staging job=caj-rosetta-stg-migrate database=rosetta_staging share=rosetta-data-staging replicas=0 ;;
+            *)
+              echo "::error::The target input must be production or staging."
+              exit 1
+              ;;
+          esac
           suffix="$(printf '%s/%s' "$AZURE_SUBSCRIPTION_ID" "$AZ_RG" | sha256sum | cut -c1-8)"
           server="${DB_SERVER:-psql-rosetta-$suffix}"
           server_pattern='^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$'
@@ -120,6 +152,11 @@ jobs:
           {
             echo "AZ_STORAGE=strosetta$suffix"
             echo "AZ_DB_SERVER=$server"
+            echo "AZ_APP=$app"
+            echo "AZ_MIGRATE_JOB=$job"
+            echo "AZ_DB_NAME=$database"
+            echo "AZ_SHARE=$share"
+            echo "AZ_MIN_REPLICAS=$replicas"
             echo "SECRETS_DIR=$RUNNER_TEMP/rosetta-secrets"
           } >> "$GITHUB_ENV"
           (umask 077 && mkdir -p "$RUNNER_TEMP/rosetta-secrets")
@@ -201,48 +238,67 @@ jobs:
           fi
       # RNF-016: a rerun keeps the passwords the running app and the migrate job already hold (read
       # back from their Container Apps secrets), so the app keeps its connections. New passwords
-      # only on the first provisioning (no app yet) or with rotate-passwords.
+      # only on the first provisioning (no app yet) or with rotate-passwords. DEC-175: staging
+      # shares the roles of production, so it always reads production's and never makes one.
       - name: Database passwords
         run: |
-          if [ "$ROTATE_PASSWORDS" = true ] || ! az containerapp show --name "$AZ_APP" --resource-group "$AZ_RG" --output none 2> /dev/null; then
+          fresh=false
+          source_app="$AZ_APP"
+          source_job="$AZ_MIGRATE_JOB"
+          if [ "$TARGET" = staging ]; then
+            source_app="$AZ_PRODUCTION_APP"
+            source_job="$AZ_PRODUCTION_MIGRATE_JOB"
+          elif [ "$ROTATE_PASSWORDS" = true ] || ! az containerapp show --name "$AZ_APP" --resource-group "$AZ_RG" --output none 2> /dev/null; then
+            fresh=true
+          fi
+          if [ "$fresh" = true ]; then
             openssl rand -hex 24 | tr -dc 0-9a-f > "$SECRETS_DIR/app-db-password"
             openssl rand -hex 24 | tr -dc 0-9a-f > "$SECRETS_DIR/migrator-db-password"
             echo "New database passwords for rosetta_app and rosetta_migrator."
           else
-            app_url="$(az containerapp secret show --name "$AZ_APP" --resource-group "$AZ_RG" --secret-name database-url --query value --output tsv)"
+            if ! app_url="$(az containerapp secret show --name "$source_app" --resource-group "$AZ_RG" --secret-name database-url --query value --output tsv)" ||
+              ! migrator_url="$(az containerapp job secret show --name "$source_job" --resource-group "$AZ_RG" --secret-name database-migrator-url --query value --output tsv)"; then
+              echo "::error::The database URLs of $source_app and $source_job cannot be read (staging needs production provisioned first)."
+              exit 1
+            fi
             echo "::add-mask::$app_url"
-            migrator_url="$(az containerapp job secret show --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --secret-name database-migrator-url --query value --output tsv)"
             echo "::add-mask::$migrator_url"
             app_pw="${app_url#postgres://rosetta_app:}"
             migrator_pw="${migrator_url#postgres://rosetta_migrator:}"
             if [ "$app_pw" = "$app_url" ] || [ "$migrator_pw" = "$migrator_url" ]; then
-              echo "::error::The stored database URLs are not in the expected form; run again with rotate-passwords."
+              echo "::error::The stored database URLs of $source_app are not in the expected form (production: run again with rotate-passwords)."
               exit 1
             fi
             printf '%s' "${app_pw%%@*}" > "$SECRETS_DIR/app-db-password"
             printf '%s' "${migrator_pw%%@*}" > "$SECRETS_DIR/migrator-db-password"
-            echo "Kept the database passwords of the running app."
+            echo "Kept the database passwords of $source_app."
           fi
           echo "::add-mask::$(< "$SECRETS_DIR/app-db-password")"
           echo "::add-mask::$(< "$SECRETS_DIR/migrator-db-password")"
       # data-model.md section 6, the statements of db/init/roles.sh made idempotent. The runner
       # reaches the server through the Azure services rule; psql reads the passwords from the
-      # environment (\getenv), so none is an argument.
+      # environment (\getenv), so none is an argument. The database of the target is the psql
+      # variable db_name. DEC-175: only production creates the roles and sets their passwords;
+      # staging (manage_roles false) only gives its own database to the existing roles.
       - name: Database roles
         run: |
+          manage_roles=true
+          [ "$TARGET" != staging ] || manage_roles=false
           PGPASSWORD="$(< "$SECRETS_DIR/db-admin-password")" \
           ROSETTA_APP_DB_PASSWORD="$(< "$SECRETS_DIR/app-db-password")" \
           ROSETTA_MIGRATOR_DB_PASSWORD="$(< "$SECRETS_DIR/migrator-db-password")" \
-            psql --no-psqlrc -v ON_ERROR_STOP=1 \
+            psql --no-psqlrc -v ON_ERROR_STOP=1 -v manage_roles="$manage_roles" -v db_name="$AZ_DB_NAME" \
               "host=$AZ_DB_SERVER.postgres.database.azure.com port=5432 dbname=$AZ_DB_NAME user=$AZ_DB_ADMIN sslmode=require" <<'SQL'
+          \if :manage_roles
           \getenv app_password ROSETTA_APP_DB_PASSWORD
           \getenv migrator_password ROSETTA_MIGRATOR_DB_PASSWORD
           SELECT 'CREATE ROLE rosetta_migrator' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'rosetta_migrator')\gexec
           SELECT 'CREATE ROLE rosetta_app' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'rosetta_app')\gexec
           ALTER ROLE rosetta_migrator LOGIN PASSWORD :'migrator_password';
           ALTER ROLE rosetta_app LOGIN PASSWORD :'app_password';
+          \endif
           GRANT rosetta_migrator TO CURRENT_USER;
-          ALTER DATABASE rosetta OWNER TO rosetta_migrator;
+          ALTER DATABASE :"db_name" OWNER TO rosetta_migrator;
           -- On Azure the public schema of a new database belongs to azure_pg_admin.
           ALTER SCHEMA public OWNER TO rosetta_migrator;
           SET ROLE rosetta_migrator;
@@ -282,8 +338,13 @@ jobs:
       # startup, liveness and readiness probes on /healthz, the share at /data. The definition is
       # built with jq from the environment (no value on a command line) into the secrets folder.
       # A new revision suffix per run makes the app read any changed secret, such as a rotated password.
+      # DEC-175: the staging app gets no server provider keys and may scale to zero (AZ_MIN_REPLICAS).
       - name: Create or update the Container App
         run: |
+          if [ "$TARGET" = staging ]; then
+            # No server AI spend on staging: the provider keys never reach its secrets.
+            unset OPENAI_API_KEY ANTHROPIC_API_KEY
+          fi
           fqdn="$AZ_APP.$(az containerapp env show --name "$AZ_ENVIRONMENT" --resource-group "$AZ_RG" --query properties.defaultDomain --output tsv)"
           environment_id="$(az containerapp env show --name "$AZ_ENVIRONMENT" --resource-group "$AZ_RG" --query id --output tsv)"
           DATABASE_URL="postgres://rosetta_app:$(< "$SECRETS_DIR/app-db-password")@$AZ_DB_SERVER.postgres.database.azure.com:5432/$AZ_DB_NAME?sslmode=require"
@@ -317,7 +378,8 @@ jobs:
           jq -n \
             --arg location "$AZ_LOCATION" --arg environment "$environment_id" --arg image "$IMAGE:$IMAGE_TAG" \
             --arg share "$AZ_SHARE" --arg suffix "p$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
-            --arg secrets "$app_secrets" --arg variables "$app_env" --argjson probe "$probe" '
+            --arg secrets "$app_secrets" --arg variables "$app_env" --argjson probe "$probe" \
+            --argjson min_replicas "$AZ_MIN_REPLICAS" '
             def lines: split("\n") | map(gsub("^\\s+|\\s+$"; "")) | map(select(. != ""));
             ($secrets | lines | map(split("=") | {name: .[0], value: ($ENV[.[1]] // "")}) | map(select(.value != ""))) as $stored
             | ($stored | map(.name)) as $names
@@ -348,7 +410,7 @@ jobs:
                       ],
                       volumeMounts: [{volumeName: "data", mountPath: "/data"}]
                     }],
-                    scale: {minReplicas: 1, maxReplicas: 1},
+                    scale: {minReplicas: $min_replicas, maxReplicas: 1},
                     volumes: [{
                       name: "data",
                       storageType: "AzureFile",
@@ -388,8 +450,9 @@ jobs:
       - name: Summary
         run: |
           {
-            echo "### Azure provision"
-            echo "- Public URL: $PUBLIC_URL (set it as the production variable ROSETTA_PUBLIC_URL)"
+            echo "### Azure provision ($TARGET)"
+            echo "- Target: $TARGET"
+            echo "- Public URL: $PUBLIC_URL (set it as the $TARGET variable ROSETTA_PUBLIC_URL)"
             echo "- Image: $IMAGE:$IMAGE_TAG"
             echo "- Resource group: $AZ_RG; environment $AZ_ENVIRONMENT; app $AZ_APP; migrate job $AZ_MIGRATE_JOB"
             echo "- PostgreSQL server: $AZ_DB_SERVER; storage account: $AZ_STORAGE, share $AZ_SHARE at /data"

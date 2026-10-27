@@ -1,0 +1,71 @@
+# Scheduled release (DEC-175, ADR-025): production deploys at 06:00 Europe/Madrid the morning after
+# main changed, never on merge. The two daily schedules are in UTC, and one of them is 06:00 in
+# Madrid (04:07 UTC in summer time, 05:07 UTC in winter time; minute 7 keeps off the busy full
+# hour, when GitHub delays schedules most); the job goes on only when it is the
+# 06 hour in Madrid, or at any hour when started by hand. It starts Release (release.yml) on main by
+# workflow_dispatch, once per head commit of main: it does nothing when a Release run of that commit
+# is queued, running or succeeded, or while the repository variable ROSETTA_DEPLOY_ENABLED is not
+# 'true'. Release itself refuses a main whose tree did not pass staging.
+#
+# Scheduled workflows run from the default branch (develop), so this file exists on develop and on
+# main. It only dispatches: it reads no secret and uses no environment; the production environment
+# stays restricted to main. Hardening as in ci.yml: read-only default token, actions: write only to
+# start the run, values reach the shell step through env:.
+name: Scheduled release
+
+on:
+  schedule:
+    - cron: '7 4 * * *'
+    - cron: '7 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dispatch:
+    name: dispatch (Release of main at 06:00 Madrid)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Start Release on main once per head commit
+        run: |
+          note() {
+            echo "$1"
+            echo "- $1" >> "$GITHUB_STEP_SUMMARY"
+          }
+          hour="$(TZ=Europe/Madrid date +%H)"
+          if [ "$EVENT" != workflow_dispatch ] && [ "$hour" != 06 ]; then
+            note "It is the $hour hour in Madrid, not 06; nothing to do (the other daily schedule is 06:00 in Madrid)."
+            exit 0
+          fi
+          if [ "$DEPLOY_ENABLED" != true ]; then
+            note "The repository variable ROSETTA_DEPLOY_ENABLED is not true; no Release is started."
+            exit 0
+          fi
+          sha="$(gh api "repos/$GH_REPO/commits/main" --jq .sha)"
+          sha_pattern='^[0-9a-f]{40}$'
+          if ! [[ $sha =~ $sha_pattern ]]; then
+            echo "::error::The head of main could not be read."
+            exit 1
+          fi
+          filter="[.[] | select(.headSha == \"$sha\" and (.status != \"completed\" or .conclusion == \"success\"))] | length"
+          active="$(gh run list --workflow release.yml --branch main --limit 100 --json headSha,status,conclusion --jq "$filter")"
+          if [ "$active" != 0 ]; then
+            note "main is at $sha and a Release run of it is queued, running or succeeded; no Release is started."
+            exit 0
+          fi
+          gh workflow run release.yml --ref main
+          note "Started Release on main at $sha (it deploys to production once its checks pass)."
+        env:
+          EVENT: ${{ github.event_name }}
+          DEPLOY_ENABLED: ${{ vars.ROSETTA_DEPLOY_ENABLED }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}

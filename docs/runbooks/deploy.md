@@ -13,20 +13,25 @@ DEC-171). The procedure follows `docs/environments-and-delivery.md` sections 10 
 Running either workflow again changes billed resources; the owner says when in chat. The workflows, the smoke script,
 the HTTPS redirect of the app, the ZAP baseline in CI and the RNF-017 script are in the repository and tested:
 
-| Piece                      | Where                                                        | Checked by                                                                |
-| -------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| Provisioning workflow      | `.github/workflows/azure-provision.yml`                      | `tests/integration/tooling/azure-provision-workflow.test.ts`              |
-| Release and deploy         | `.github/workflows/release.yml`                              | `tests/integration/tooling/release-workflow.test.ts`                      |
-| Smoke script               | `scripts/smoke.mjs`                                          | `tests/integration/scripts/smoke.test.ts`; the `compose-smoke` job of CI  |
-| HTTP to HTTPS redirect     | `src/presentation/web/https-redirect.ts`                     | `tests/integration/presentation/web/https-redirect.test.ts`               |
-| OWASP ZAP baseline         | job `zap-baseline` of `.github/workflows/ci.yml`             | runs on every pull request and push to `main`; summary in the job summary |
-| RNF-017 measurement        | `scripts/measure-rnf017.mjs`                                 | `tests/integration/scripts/measure-rnf017.test.ts`                        |
-| Backup and restore scripts | `npm run backup`, `npm run restore` ([backup.md](backup.md)) | the local restore drill of backup.md section 4                            |
+| Piece                      | Where                                                        | Checked by                                                                            |
+| -------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| Provisioning workflow      | `.github/workflows/azure-provision.yml`                      | `tests/integration/tooling/azure-provision-workflow.test.ts`                          |
+| Release and deploy         | `.github/workflows/release.yml`                              | `tests/integration/tooling/release-workflow.test.ts`, `release-staging-check.test.ts` |
+| Staging deploy             | `.github/workflows/staging.yml`                              | `tests/integration/tooling/staging-workflow.test.ts`                                  |
+| Release at 06:00 Madrid    | `.github/workflows/scheduled-release.yml`                    | `tests/integration/tooling/scheduled-release-workflow.test.ts`                        |
+| Smoke script               | `scripts/smoke.mjs`                                          | `tests/integration/scripts/smoke.test.ts`; the `compose-smoke` job of CI              |
+| HTTP to HTTPS redirect     | `src/presentation/web/https-redirect.ts`                     | `tests/integration/presentation/web/https-redirect.test.ts`                           |
+| OWASP ZAP baseline         | job `zap-baseline` of `.github/workflows/ci.yml`             | runs on every pull request and push to `main`; summary in the job summary             |
+| RNF-017 measurement        | `scripts/measure-rnf017.mjs`                                 | `tests/integration/scripts/measure-rnf017.test.ts`                                    |
+| Backup and restore scripts | `npm run backup`, `npm run restore` ([backup.md](backup.md)) | the local restore drill of backup.md section 4                                        |
 
 Names used below: resource group `rg-rosetta`, environment `cae-rosetta`, app `ca-rosetta`, migrate job
 `caj-rosetta-migrate`, Log Analytics workspace `log-rosetta`, share `rosetta-data`. The storage account
 (`strosetta<suffix>`) and the server (`psql-rosetta-<suffix>`) carry a suffix made from
-the subscription, because their names are global; the summary of the provisioning run prints them.
+the subscription, because their names are global; the summary of the provisioning run prints them. Staging
+(DEC-175, ADR-025) uses the same group, environment, workspace, storage account and server, with the app
+`ca-rosetta-staging`, the migrate job `caj-rosetta-stg-migrate`, the database `rosetta_staging` and the share
+`rosetta-data-staging` (section Staging).
 
 ## Owner steps done on 2026-10-24
 
@@ -95,9 +100,10 @@ which exist only as Container Apps secrets.
 ## Provisioning
 
 Starts or changes billed resources; the owner says when in chat. Actions, Azure provision, Run workflow, branch
-`main`, input `image-tag` = the `sha-<short>` tag from the summary of a Release run on `main`. The workflow
-`azure-provision.yml` runs only by hand (`workflow_dispatch`), only from `main`, in the `production` environment, and
-never at the same time as a deploy. Running it again converges the same resources and keeps the database passwords the
+`main`, input `target` = `production` (the default), input `image-tag` = the `sha-<short>` tag from the summary of a
+Release run on `main`. The workflow `azure-provision.yml` runs only by hand (`workflow_dispatch`); with target
+`production` only from `main`, in the `production` environment, and never at the same time as a deploy (target
+`staging`: section Staging). Running it again converges the same resources and keeps the database passwords the
 app already holds; the input `rotate-passwords` makes new ones (section Database roles). The input `db-server` is only
 for a restore (section Restore). Secret values reach `az` only as `@file` arguments from a mode-700 folder of the
 runner, never on a command line.
@@ -125,10 +131,46 @@ It creates, in `rg-rosetta`:
 It waits until the new revision is ready and `/healthz` answers over HTTPS, then prints the URL, the image and the
 resource names in the job summary. Afterwards, copy the URL into the `production` variable `ROSETTA_PUBLIC_URL`.
 
+## Staging
+
+Every push to `develop` deploys to the staging app and runs the smoke test there (`staging.yml`, job
+`deploy (staging)`, DEC-175, ADR-025); Release refuses to deploy a `main` whose tree did not pass it. Staging shares
+the environment `cae-rosetta`, the workspace, the storage account and the PostgreSQL server with production, with its
+own app, migrate job, database and share. It scales to zero (one replica at most) and holds no server provider keys,
+so it spends nothing on AI. It holds the production database roles (one server, one set of roles; threat model
+section 6), and the provisioning never creates or changes a role password for it: it reads them from the production
+app and migrate job (`rotate-passwords` is refused for staging).
+
+Owner steps, once, in order (none holds a value; the values come from the password manager):
+
+1. GitHub, Settings, Environments, New environment `staging`; deployment branch policy: only the branch `develop`.
+2. In `staging`, the variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` (the same deploy
+   identity as production, so staging runs carry its Azure rights over production too: threat model section 6) and the secrets `ROSETTA_SECRET_KEY` (a new value, `openssl rand -base64 32`, never the
+   production key), `ROSETTA_ADMIN_USER`, `ROSETTA_ADMIN_PASSWORD` and, optionally, `ROSETTA_GITHUB_TOKEN`. No
+   `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`: the staging app never gets them.
+3. Two federated credentials on the same Entra application, for the subject
+   `repo:blacklight0101/Rosetta:environment:staging` and, because the repository uses immutable subjects (section
+   Owner steps done on 2026-10-24, step 4), for `repo:blacklight0101@<owner id>/Rosetta@<repository id>:environment:staging`.
+   Write each as a file, for example `staging.json` with
+   `{"name": "github-staging", "issuer": "https://token.actions.githubusercontent.com", "subject": "repo:blacklight0101/Rosetta:environment:staging", "audiences": ["api://AzureADTokenExchange"]}`
+   (and `github-staging-immutable` with the immutable subject), then
+   `az ad app federated-credential create --id <application (client) id> --parameters @staging.json`.
+4. Once `develop` exists: Actions, Azure provision, Run workflow, branch `develop`, input target `staging`, input
+   `image-tag` = a `sha-<short>` tag already in GHCR (the last one in Deployment record). Production must be
+   provisioned first: the run reads the database passwords of `ca-rosetta` and `caj-rosetta-migrate` and stops when
+   they are missing. It creates the database `rosetta_staging`, the share, the migrate job and the app, and prints
+   the staging URL in its summary.
+5. Sign in on the staging URL as the administrator (change the first password), and create a smoke account as in
+   section Teacher account (role user, no forced password change). In `staging`, store the variables
+   `ROSETTA_PUBLIC_URL` (the staging URL) and `ROSETTA_SMOKE_USER`, and the secret `ROSETTA_SMOKE_PASSWORD`.
+6. Last, the repository variable `ROSETTA_STAGING_ENABLED` = `true`; then run Staging by hand on `develop` (or push to
+   it) and check that `deploy (staging)` is green.
+
 ## Release and image
 
-`release.yml` runs on a pushed `v*` tag or by hand (Actions, Release, Run workflow, branch `main`); never on a pull
-request or a push to `main`.
+`release.yml` runs on a pushed `v*` tag, by hand (Actions, Release, Run workflow, branch `main`) or when
+`scheduled-release.yml` starts it at 06:00 Madrid (section Release to production); never on a pull request or a push
+to `main`.
 
 - **image**: checks that a tag is `v` plus the version of `package.json` and that the commit is on `main`, builds the
   runtime image, scans it with Trivy (a fixable High or Critical finding stops the release), and pushes
@@ -143,13 +185,39 @@ request or a push to `main`.
 Before v0.1.0 the deployment runs the `sha-<short>` image of `main` (DEC-104): run the workflow by hand on `main` and
 read the tag in the summary of the image job.
 
+## Release to production
+
+DEC-175, ADR-025. Teachers may sign in at any time, so nothing reaches production on a merge.
+
+1. Cards merge into `develop`; each push deploys to staging (section Staging).
+2. When the owner says a batch is ready, the orchestrator opens one pull request `develop` -> `main` that lists the
+   cards in it, labelled `needs-owner`.
+3. The owner checks the batch on the staging URL and merges the pull request with **Create a merge commit**, never
+   squash or rebase: the deploy needs the merge commit, whose second parent is the `develop` commit staging deployed.
+   For a version, the owner then tags that merge commit `vX.Y.Z` (section Release and image).
+4. At 06:00 Europe/Madrid the next morning, `scheduled-release.yml` starts Release on `main` (once per head commit
+   of `main`; only while `ROSETTA_DEPLOY_ENABLED` is `true`). Release rebuilds the image from `main` and deploys it
+   (section Deploy) only when the ZAP baseline passed on the commit, its tree equals the tree of its `develop`
+   parent, and `deploy (staging)` passed on that parent. While the repository variable `ROSETTA_STAGING_ENABLED` is not `true` (no staging app yet), the check is skipped with a warning in the job summary (`staging is not enabled; the staging check is skipped (DEC-175)`), so a squash commit on `main` deploys too; once it is `true` the check is enforced and only `skip-staging-check` overrides it.
+5. To deploy at once instead of at 06:00, once CI on `main` has passed the `zap-baseline` check:
+   Actions, Release, Run workflow, branch `main`. The 06:00 run then sees a successful run of that commit and does
+   nothing.
+6. Emergency only: the same with the input `skip-staging-check` ticked, which deploys without the staging check and
+   writes a warning in the job summary. A fix still goes through `develop` and a release pull request afterwards, so
+   `main` and `develop` hold the same tree again; a commit made only on `main` fails the check of every later release.
+7. Rollback is unchanged (section Rollback).
+
 ## Deploy
 
-Start it from Actions, Release, Run workflow, branch `main` (deploys come from `main` only; a tag run
-is refused by the environment). The order of `docs/environments-and-delivery.md` section 10 step 4, as the deploy job of
+`scheduled-release.yml` starts it at 06:00 Madrid (section Release to production); to deploy at once, start it from
+Actions, Release, Run workflow, branch `main` (deploys come from `main` only; a tag run is refused by the
+environment). The order of `docs/environments-and-delivery.md` section 10 step 4, as the deploy job of
 `release.yml` runs it, one deploy at a time and never cancelled half-way:
 
 1. The `zap-baseline` check of `ci.yml` passed on the commit (the job refuses otherwise; threat model section 5).
+   Then the tree passed staging: the commit has a second parent, both trees are equal and `deploy (staging)` passed
+   on that parent (skipped with a warning while `ROSETTA_STAGING_ENABLED` is not `true`, otherwise only with
+   `skip-staging-check`; DEC-175).
 2. The settings of the previous sections are stored (the job names any that is missing, never a value).
 3. Log in to Azure with `azure/login` over OIDC (`client-id`, `tenant-id`, `subscription-id` from the `production`
    variables; `id-token: write` on this job only).

@@ -27,4 +27,4 @@ Closes #<!-- issue number -->
 
 ---
 
-Merged with squash: task-card pull requests by the orchestrator under the merge rules of `docs/orchestration/README.md` section 3.1 (DEC-96); pull requests labelled `needs-owner` only by the product owner (DEC-33, DEC-35).
+Merged into `develop` with squash: task-card pull requests by the orchestrator under the merge rules of `docs/orchestration/README.md` section 3.1 (DEC-96); pull requests labelled `needs-owner` only by the product owner (DEC-33, DEC-35). A release pull request `develop` -> `main` is merged only by the product owner, with a merge commit (DEC-175).

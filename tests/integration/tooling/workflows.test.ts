@@ -17,7 +17,7 @@ import {
 // package baseline.
 
 describe('GitHub Actions workflows: files', () => {
-  it('RNF-001 ships the Azure provision, CI, CodeQL, Pages, pull request title and release workflows and Dependabot configuration', async () => {
+  it('RNF-001 ships the Azure provision, CI, CodeQL, Pages, pull request title, release, scheduled release and staging workflows and Dependabot configuration', async () => {
     const names = (await load()).map((workflow) => workflow.name);
     const dependabot = await readFile(join(process.cwd(), '.github', 'dependabot.yml'), 'utf8');
 
@@ -28,6 +28,8 @@ describe('GitHub Actions workflows: files', () => {
       'pages.yml',
       'pr-title.yml',
       'release.yml',
+      'scheduled-release.yml',
+      'staging.yml',
     ]);
     expect(dependabot).toContain('package-ecosystem: npm');
     expect(dependabot).toContain('package-ecosystem: github-actions');
@@ -100,8 +102,15 @@ describe('GitHub Actions workflows: e2e shards', () => {
 });
 
 describe('GitHub Actions workflows: triggers', () => {
-  it('RNF-001 push runs only on main so a pull request commit is not built twice', async () => {
-    expect(await ci()).toMatch(/^ {2}push:\n {4}branches: \[main\]$/mu);
+  // DEC-175: develop is the integration branch, main is what is deployed; both are checked on push.
+  it('RNF-001 push runs only on main and develop so a pull request commit is not built twice', async () => {
+    expect(await ci()).toMatch(/^ {2}push:\n {4}branches: \[main, develop\]$/mu);
+  });
+
+  it('DEC-175 CodeQL also runs on a push to main and to develop', async () => {
+    expect(await workflowText('codeql.yml')).toMatch(
+      /^ {2}push:\n {4}branches: \[main, develop\]$/mu,
+    );
   });
 });
 
@@ -136,10 +145,13 @@ describe('GitHub Actions workflows: hardening', () => {
   it('RNF-003 every uses: line pins a full 40-character commit SHA with a version comment', async () => {
     const pinned = /uses:\s*[\w.-]+\/[\w./-]+@[0-9a-f]{40}\s+# v\d+\.\d+\.\d+\s*$/u;
 
-    const found = await violations(({ lines }) => {
+    // scheduled-release.yml (DEC-175) only calls gh with the job token: it needs no action.
+    const withoutActions = ['scheduled-release.yml'];
+
+    const found = await violations(({ name, lines }) => {
       const uses = lines.filter((line) => /^\s*(?:- )?uses:/u.test(line));
       return [
-        ...(uses.length === 0 ? ['no uses: line'] : []),
+        ...(uses.length === 0 && !withoutActions.includes(name) ? ['no uses: line'] : []),
         ...uses.filter((line) => !pinned.test(line)).map((line) => line.trim()),
       ];
     });
@@ -191,14 +203,18 @@ describe('GitHub Actions workflows: limits', () => {
     expect(found).toEqual([]);
   });
 
-  // release.yml (P1-55) and azure-provision.yml (P1-184) queue instead: cancelling a release or a
-  // provisioning half-way could leave a pushed tag without its image, a deploy half done or a
-  // resource half made.
-  it('RNF-001 every workflow has a concurrency group per branch; all but release.yml and azure-provision.yml cancel superseded runs', async () => {
+  // release.yml (P1-55), azure-provision.yml (P1-184) and staging.yml (DEC-175) queue instead:
+  // cancelling a release, a staging deploy or a provisioning half-way could leave a pushed tag
+  // without its image, a deploy half done or a resource half made. azure-provision.yml has one
+  // group for every branch (DEC-175): its production run (main) and its staging run (develop) both
+  // converge the one shared PostgreSQL server, so they must never overlap.
+  it('RNF-001 every workflow has a concurrency group per branch (provision: one for all); all but the release, staging and provision workflows cancel superseded runs', async () => {
+    const queued = ['release.yml', 'azure-provision.yml', 'staging.yml'];
     const found = await violations(({ name, lines }) => {
-      const cancel = ['release.yml', 'azure-provision.yml'].includes(name) ? 'false' : 'true';
+      const cancel = queued.includes(name) ? 'false' : 'true';
+      const group = name === 'azure-provision.yml' ? 'azure-provision' : '.*github\\.ref.*';
       const pattern = new RegExp(
-        `^concurrency:\n {2}group: .*github\\.ref.*\n {2}cancel-in-progress: ${cancel}$`,
+        `^concurrency:\n {2}group: ${group}\n {2}cancel-in-progress: ${cancel}$`,
         'mu',
       );
       return pattern.test(lines.join('\n')) ? [] : ['concurrency'];

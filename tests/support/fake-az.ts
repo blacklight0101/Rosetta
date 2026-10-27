@@ -5,8 +5,8 @@ import { join } from 'node:path';
 // P1-184: a stand-in for the az CLI in workflow step tests, as shell functions put before the step
 // script. Every call is logged; `job start` answers an execution name; each `job execution show`
 // answers the next of the given end states; `secret show` answers a database URL of the role the
-// secret belongs to; a plain `show` fails when the fake is told every resource is missing; sleep
-// returns at once. Nothing reaches Azure.
+// secret belongs to (or fails when the fake is told the secrets are missing); a plain `show` fails
+// when the fake is told every resource is missing; sleep returns at once. Nothing reaches Azure.
 
 export interface FakeAz {
   /** The shell functions to put before the step script. */
@@ -25,6 +25,8 @@ export interface FakeAzOptions {
   readonly statuses?: string;
   /** When true, every `show` of a resource fails, as before the first provisioning. */
   readonly missing?: boolean;
+  /** When true, every `secret show` fails, as for an app that holds no database URL. */
+  readonly noSecrets?: boolean;
 }
 
 /** The database URLs the fake `secret show` answers (the passwords are `app-old` and `migrator-old`). */
@@ -43,8 +45,8 @@ const prelude = [
   '      n=$(( $(< "$FAKE_AZ_COUNT") + 1 ))',
   '      echo "$n" > "$FAKE_AZ_COUNT"',
   `      printf '%s\\n' "$FAKE_AZ_STATUSES" | cut -d ' ' -f "$n" ;;`,
-  `    *"--secret-name database-url"*) printf '%s\\n' "$FAKE_AZ_APP_URL" ;;`,
-  `    *"--secret-name database-migrator-url"*) printf '%s\\n' "$FAKE_AZ_MIGRATOR_URL" ;;`,
+  `    *"--secret-name database-url"*) [ "$FAKE_AZ_NO_SECRETS" != true ] && printf '%s\\n' "$FAKE_AZ_APP_URL" ;;`,
+  `    *"--secret-name database-migrator-url"*) [ "$FAKE_AZ_NO_SECRETS" != true ] && printf '%s\\n' "$FAKE_AZ_MIGRATOR_URL" ;;`,
   '    *" show "*) [ "$FAKE_AZ_MISSING" != true ] ;;',
   '  esac',
   '}',
@@ -65,6 +67,7 @@ export async function fakeAz(options: FakeAzOptions = {}): Promise<FakeAz> {
       FAKE_AZ_COUNT: count,
       FAKE_AZ_STATUSES: options.statuses ?? 'Succeeded',
       FAKE_AZ_MISSING: options.missing === true ? 'true' : 'false',
+      FAKE_AZ_NO_SECRETS: options.noSecrets === true ? 'true' : 'false',
       FAKE_AZ_APP_URL: storedUrls.app,
       FAKE_AZ_MIGRATOR_URL: storedUrls.migrator,
     },

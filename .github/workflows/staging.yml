@@ -1,0 +1,182 @@
+# Staging (DEC-175, ADR-025, ADR-024, RF-1304): every push to develop builds the runtime image as the
+# image job of release.yml does (one build, Trivy scan, push of `sha-<short>` to GHCR) and deploys it
+# to the staging Container App ca-rosetta-staging: the migrate job caj-rosetta-stg-migrate with the
+# new image, the new image on the app, /healthz (the app scales to zero, so the first answer waits
+# for a cold start) and the smoke test. Staging shares the Container Apps environment, the storage
+# account and the PostgreSQL server of production, with its own database, share and app, and holds
+# no server provider keys (azure-provision.yml, target staging). release.yml deploys to production
+# only a tree whose develop commit passed the job `deploy (staging)` of this workflow. No ZAP gate
+# here: ci.yml runs it on every pull request and push, and release.yml requires it for production.
+#
+# Off unless the repository variable ROSETTA_STAGING_ENABLED is 'true'. The deploy job runs in the
+# GitHub environment `staging` (deployment branch: develop), which holds:
+#   secrets    ROSETTA_SMOKE_PASSWORD (smoke account password)
+#   variables  AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID (OIDC login, no Azure secret),
+#              ROSETTA_PUBLIC_URL (the https URL of the staging app), ROSETTA_SMOKE_USER
+# No value is written here. Hardening as in ci.yml: read-only default token, write scopes only in
+# the job that needs them, actions pinned to a commit SHA, values reach shell steps through env:.
+name: Staging
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A staging deploy is never cancelled half-way through a push or a deploy.
+concurrency:
+  group: staging-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image:
+    name: image (build, scan, push to GHCR)
+    if: vars.ROSETTA_STAGING_ENABLED == 'true' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      sha-tag: ${{ steps.tags.outputs.sha-tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # For a branch the script writes sha-<short> only (DEC-29).
+      - name: Work out the image tags
+        id: tags
+        run: bash scripts/release-tags.sh
+        env:
+          IMAGE: ghcr.io/blacklight0101/rosetta
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+      - name: Build the runtime image
+        run: docker build --label "org.opencontainers.image.source=https://github.com/$REPOSITORY" --tag rosetta:release .
+        env:
+          REPOSITORY: ${{ github.repository }}
+      # The same gate as the image job of ci.yml and release.yml.
+      - name: Scan the image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: rosetta:release
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          vuln-type: os,library
+          exit-code: '1'
+      - name: Log in to GHCR
+        run: printf '%s' "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+        env:
+          TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+      - name: Push the tags
+        run: |
+          for tag in $TAGS; do
+            docker tag rosetta:release "$tag"
+            docker push "$tag"
+          done
+        env:
+          TAGS: ${{ steps.tags.outputs.tags }}
+      - name: Log out of GHCR
+        if: always()
+        run: docker logout ghcr.io
+
+  # The steps of the deploy job of release.yml, against the staging app, without the ZAP gate and
+  # the restore point (staging data is disposable).
+  deploy:
+    name: deploy (staging)
+    needs: [image]
+    if: vars.ROSETTA_STAGING_ENABLED == 'true' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment:
+      name: staging
+      url: ${{ vars.ROSETTA_PUBLIC_URL }}
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AZ_RG: rg-rosetta
+      AZ_APP: ca-rosetta-staging
+      AZ_MIGRATE_JOB: caj-rosetta-stg-migrate
+      IMAGE: ghcr.io/blacklight0101/rosetta
+      SHA_TAG: ${{ needs.image.outputs.sha-tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: The deploy settings are stored
+        run: |
+          missing=''
+          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID ROSETTA_SMOKE_PASSWORD ROSETTA_SMOKE_USER ROSETTA_PUBLIC_URL; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing in the staging environment:$missing (docs/runbooks/deploy.md, Staging)."
+            exit 1
+          fi
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          ROSETTA_SMOKE_PASSWORD: ${{ secrets.ROSETTA_SMOKE_PASSWORD }}
+          ROSETTA_SMOKE_USER: ${{ vars.ROSETTA_SMOKE_USER }}
+          ROSETTA_PUBLIC_URL: ${{ vars.ROSETTA_PUBLIC_URL }}
+      - name: Log in to Azure (OIDC)
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      # DEC-140, RF-1302: as in release.yml; any end state but Succeeded stops the deploy.
+      - name: Migrate with the new image and wait for success
+        run: |
+          az containerapp job update --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --image "$IMAGE:$SHA_TAG" --output none
+          execution="$(az containerapp job start --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --query name --output tsv)"
+          for _ in $(seq 1 90); do
+            status="$(az containerapp job execution show --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --job-execution-name "$execution" --query properties.status --output tsv)"
+            case "$status" in
+              Succeeded) echo "Migrate execution $execution: Succeeded."; exit 0 ;;
+              Running | Processing | '') sleep 10 ;;
+              *) echo "::error::Migrate execution $execution ended $status; the app is not changed."; exit 1 ;;
+            esac
+          done
+          echo "::error::Migrate execution $execution did not finish in 15 minutes; the app is not changed."
+          exit 1
+      - name: Set the new image on the Container App
+        run: az containerapp update --name "$AZ_APP" --resource-group "$AZ_RG" --image "$IMAGE:$SHA_TAG" --output none
+      # The staging app scales to zero (minReplicas 0), so a request may wait for a replica to start:
+      # each try allows 60 seconds.
+      - name: Wait for the new revision and /healthz over HTTPS
+        run: |
+          for _ in $(seq 1 60); do
+            revisions="$(az containerapp show --name "$AZ_APP" --resource-group "$AZ_RG" --query '[properties.latestRevisionName, properties.latestReadyRevisionName]' --output tsv | tr '\n' ' ')"
+            read -r latest ready <<< "$revisions"
+            if [ -n "$latest" ] && [ "$latest" = "$ready" ] && curl -fsS --max-time 60 "$ROSETTA_PUBLIC_URL/healthz" > /dev/null; then
+              echo "Revision $latest is ready and $ROSETTA_PUBLIC_URL/healthz answers."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::$ROSETTA_PUBLIC_URL/healthz did not answer from the new revision in time."
+          exit 1
+        env:
+          ROSETTA_PUBLIC_URL: ${{ vars.ROSETTA_PUBLIC_URL }}
+      - name: Smoke test on the staging URL
+        run: node scripts/smoke.mjs "$ROSETTA_PUBLIC_URL"
+        env:
+          ROSETTA_PUBLIC_URL: ${{ vars.ROSETTA_PUBLIC_URL }}
+          ROSETTA_SMOKE_USER: ${{ vars.ROSETTA_SMOKE_USER }}
+          ROSETTA_SMOKE_PASSWORD: ${{ secrets.ROSETTA_SMOKE_PASSWORD }}
+      - name: Log out of Azure
+        if: always()
+        run: az logout || true

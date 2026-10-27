@@ -219,7 +219,7 @@ describe('azure-provision.yml roles and lock (DEC-140, ADR-024)', () => {
       "WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'rosetta_app')",
     );
     expect(script).toContain("ALTER ROLE rosetta_app LOGIN PASSWORD :'app_password';");
-    expect(script).toContain('ALTER DATABASE rosetta OWNER TO rosetta_migrator;');
+    expect(script).toContain('ALTER DATABASE :"db_name" OWNER TO rosetta_migrator;');
     // On Azure the public schema of a new database is owned by azure_pg_admin, so owning the
     // database is not enough to create tables in it (first migrate run, 2026-10-24).
     expect(script.indexOf('ALTER SCHEMA public OWNER TO rosetta_migrator;')).toBeGreaterThan(
