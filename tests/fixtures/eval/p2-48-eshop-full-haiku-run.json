@@ -1,0 +1,36 @@
+{
+  "note": "P2-48: a synthetic recording shaped like a full run over the eShopLegacyWebForms application of the golden set (eval/golden/eshop-webforms.json: six cases, eleven own-code areas, five item pages). It is NOT a live run: no provider was called. Area names are generic and the sizes are rounded guesses (72,600 tokens, 2.8 times the demo shop of p2-46). The role costs are derived from the three measured runs of p2-46 (see the fixtures README): the reader cost scales 60 % with area tokens and 40 % with reader calls (3.2 turns a task, 35 calls, against 2.6 and 18), the verifier cost with reader calls, the summariser cost with the number of areas, and each run keeps the spread of the matching p2-46 run. The Haiku 5.5 prices are the shipped price table 2026-10-21. No source text, no key and no personal data.",
+  "areas": [
+    { "name": "App", "estimatedTokens": 24000, "files": 30, "pages": ["App/Default.aspx", "App/About.aspx"] },
+    { "name": "App/Start", "estimatedTokens": 1600, "files": 3, "pages": [] },
+    { "name": "App/Catalog", "estimatedTokens": 16000, "files": 20, "pages": ["App/Catalog/Index.aspx", "App/Catalog/Create.aspx", "App/Catalog/Edit.aspx", "App/Catalog/Details.aspx", "App/Catalog/Delete.aspx"] },
+    { "name": "App/Models", "estimatedTokens": 9500, "files": 14, "pages": [] },
+    { "name": "App/Services", "estimatedTokens": 5200, "files": 6, "pages": [] },
+    { "name": "App/Modules", "estimatedTokens": 900, "files": 2, "pages": [] },
+    { "name": "App/Startup", "estimatedTokens": 1900, "files": 3, "pages": [] },
+    { "name": "App/ViewModel", "estimatedTokens": 700, "files": 2, "pages": [] },
+    { "name": "App/Logging", "estimatedTokens": 2600, "files": 4, "pages": [] },
+    { "name": "App/Layout", "estimatedTokens": 3800, "files": 5, "pages": [] },
+    { "name": "App/Seed", "estimatedTokens": 6400, "files": 8, "pages": [] }
+  ],
+  "price": {
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "inputPerMillionMicros": 100000,
+    "cachedInputPerMillionMicros": 10000,
+    "cacheWriteInputPerMillionMicros": 125000,
+    "outputPerMillionMicros": 500000,
+    "longPrompt": {
+      "overInputTokens": 100000,
+      "inputPerMillionMicros": 500000,
+      "cachedInputPerMillionMicros": 50000,
+      "cacheWriteInputPerMillionMicros": 625000,
+      "outputPerMillionMicros": 2500000
+    }
+  },
+  "runs": [
+    { "runId": "run-1", "costMicros": { "reader": 68155, "verifier": 77595, "summariser": 8346 } },
+    { "runId": "run-2", "costMicros": { "reader": 69854, "verifier": 89063, "summariser": 7125 } },
+    { "runId": "run-3", "costMicros": { "reader": 63509, "verifier": 80366, "summariser": 6094 } }
+  ]
+}
