@@ -13,11 +13,11 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 184     | 67        | 98         | 19        | 0                  | 107     | 69      | 8      | 122        | 0         |
-| P2 Full understand      | 43      | 7         | 29         | 7         | 0                  | 13      | 28      | 2      | 22         | 0         |
+| P2 Full understand      | 46      | 8         | 31         | 7         | 0                  | 16      | 28      | 2      | 25         | 0         |
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
 | P6 Agent build method   | 1       | 0         | 1          | 0         | 0                  | 0       | 1       | 0      | 0          | 0         |
-| **Total**               | **404** | **99**    | **275**    | **30**    | **0**              | **194** | **196** | **14** | **232**    | **0**     |
+| **Total**               | **407** | **100**   | **277**    | **30**    | **0**              | **197** | **196** | **14** | **235**    | **0**     |
 
 ## Conventions for every card
 
@@ -3054,7 +3054,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-34
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/verification/p2-matrix.md` section 3; the `handoff.md` resume entry of 2026-10-25; `src/application/` estimate use case (RF-425); `prices/models.yaml`; `eval/config.json`.
 - **Do**: the live evaluation of 2026-10-25 (eShopModernizing, Claude Haiku 5.5, three runs) found the likely estimate 64 % above the actual cost, with 0 of 3 runs within 30 % (RNF-012), and the caps of `eval/config.json` refused every configuration on that estimate (RST-1600). Find where the estimate overcounts (input tokens per file read, reader turns, verifier and summariser calls, cached input of DEC-168) from the recorded provider calls of that run, correct the estimate, and add a test with a recorded run whose actual cost is within 30 % of the new estimate. Behaviour the specification does not describe stops the card as a new question.
 - **Delivers**: the corrected estimate, its tests, the RNF-012 row of `docs/verification/p2-matrix.md` updated.
@@ -3069,12 +3069,58 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-34
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/verification/p2-matrix.md` section 3; the golden set (`eval/golden/`, entities with relations); the ENT card format and reader prompt under `prompts/`; RF-262.
 - **Do**: the live evaluation of 2026-10-25 measured the relation precision of entity cards at 0.000 over two runs. Find whether the readers write no relations, write them in a shape the scorer does not read, or write wrong ones, and fix the cause in the prompt, the card format or the scorer (a new prompt or card format version, RNF-004). Add a recorded-response test that a relation of the demo's golden set is written and scored.
 - **Delivers**: the fix, its tests, the RNF-006 row of `docs/verification/p2-matrix.md` updated.
 - **Done when**: the scorer reads the relations the readers write, and a recorded run scores at least one golden relation as correct.
 - **Refs**: RNF-006, RF-262, P2-34, P2-14.
+
+---
+
+### P2-48 - Follow-up: the likely estimate on a second, larger recorded run
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P2-46
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/estimate/estimate-assumptions.ts`; `tests/unit/application/estimate/estimate-accuracy-shop-run.test.ts` and its fixture; `docs/verification/p2-matrix.md` RNF-012 row; the P2-46 verdict on #935.
+- **Do**: P2-46 calibrated the likely reader turns (25 % of `maxTurns`) and the verifier input share on one small app (7 reader tasks, 2.6 turns on average). Add a second recorded run, shaped on a larger evaluation case of the golden set, and check that the likely estimate stays within 30 % of its actual cost; if it does not, adjust the assumptions so both recorded runs pass. The high estimate stays every turn used.
+- **Delivers**: the second fixture and its test; the assumptions adjusted if needed; the RNF-012 row naming both runs.
+- **Done when**: both recorded runs have their actual cost within 30 % of the likely estimate, and low <= likely <= high holds for every role on both.
+- **Refs**: RNF-012, RF-425, P2-46.
+
+---
+
+### P2-49 - Follow-up: "references type X" counts as a relation
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P2-47
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/domain/eval/structure-score.ts` (the reference-type exclusion); `tests/unit/domain/eval/structure-score.test.ts`; the P2-47 round 2 verdict on #936.
+- **Do**: the exclusion of the noun "reference type" also drops a verb followed directly by the word "type": "The item references type CatalogType." and "Items reference types of brand." count as 0 relations stated. Exclude "reference type" only as a noun (after a determiner or "be", "is", "a", "the"), so the verb still counts.
+- **Delivers**: the narrower exclusion; unit tests for both sentences above (stated) and "must be a reference type" (not stated); the relation-word line of `docs/data-model.md` if it changes.
+- **Done when**: the three sentences score as stated above, and every existing structure-score test passes.
+- **Review probes**: "is a reference type", "the reference type", "references a type of catalog", "reference-typed".
+- **Refs**: RNF-006, RF-262, P2-47.
+
+---
+
+### P2-50 - Follow-up: the consolidation journey fails locally on Windows
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/e2e/journeys/consolidation.spec.ts`; `scripts/run-e2e.mjs`; P1-43 (run replay page).
+- **Do**: on Windows with a local PostgreSQL, `tests/e2e/journeys/consolidation.spec.ts:43` fails at line 48: the link "Open the run replay" is not found within 5 s. It fails the same way on `main` at 42e7a78d, before P2-46 and P2-47, and on its own (one worker); CI on Linux passes. Find whether the link is missing, slow, or named differently on Windows, and fix the cause in the app or the test (no longer timeout unless the cause is timing).
+- **Delivers**: the fix and the spec passing on Windows and Linux.
+- **Done when**: `node scripts/run-e2e.mjs tests/e2e/journeys/consolidation.spec.ts --project=desktop-light --workers=1` passes on Windows with a local database, and CI stays green.
+- **Refs**: RF-250, RF-262, RNF-005, P1-43.
 
 ---
 
