@@ -245,3 +245,17 @@ describe('the measures that were there before', () => {
     expect(score).toMatchObject({ correct: 1, unmatched: 0 });
   });
 });
+
+describe('a reference type is not a relation', () => {
+  it('RF-262 does not read "reference type" as a relation between entities', () => {
+    const claims = [
+      entity(
+        'ENT-001.c1',
+        'The class is generic over TEntity, which must be a reference type.',
+        'Services/OrderService.cs:9-10',
+      ),
+    ];
+
+    expect(scoreClaims(claims, relations, [])).toMatchObject({ relationsStated: 0 });
+  });
+});
