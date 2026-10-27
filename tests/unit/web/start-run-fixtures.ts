@@ -79,6 +79,7 @@ export function estimateOf(roles: readonly RoleBody[]): Record<string, unknown> 
       outputTokensPerTurn: { low: 100, likely: 200, high: 400 },
       readSharePercent: { low: 30, likely: 50, high: 80 },
       verifierSharePercent: { low: 20, likely: 30, high: 50 },
+      verifierInputSharePercent: { low: 100, likely: 200, high: 50 },
       promptOverheadTokens: 1500,
       surfacePromptTokens: 900,
       surfaceOutputTokens: { low: 300, likely: 800, high: 2000 },

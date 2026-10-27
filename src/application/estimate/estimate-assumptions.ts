@@ -11,17 +11,23 @@ import type { ByScenario, ReaderAssumptions, RoleLimitsView, Scenario } from './
 // RF-425, ADR-007, DEC-117: the assumptions of the estimate. The reader limits (turns, output,
 // context, parallelism) are the ones the understand run uses, so the estimate and the run cannot
 // disagree about them. The shares are the guesses RNF-012 calibrates over real runs: a low case
-// that reads half of each area in a third of the turns, a likely case, and a high case that uses
-// every turn. All of them are shown with the estimate.
+// that reads half of each area in a few turns, a likely case, and a high case that uses every
+// turn. All of them are shown with the estimate. P2-46 calibrated the likely figures over the live
+// evaluation of 2026-10-25 (Haiku 5.5 on the demo shop, three runs): a reader task took 2 to 4
+// turns (2.6 on average, 22 % of 12), not 8, and the verifier judged each claim in its own call, so
+// its input is a multiple of the readers' while its output is a share. The estimate still assumes
+// no cache reads, so its likely figure stays about a fifth above the measured cost (DEC-168).
 
 /** Of the reader's `maxTurns`, in percent. */
-const TURNS_PERCENT: ByScenario<number> = { low: 30, likely: 60, high: 100 };
+const TURNS_PERCENT: ByScenario<number> = { low: 15, likely: 25, high: 100 };
 /** Of the reader's `maxOutputTokens` answered on a turn, in percent. */
 const OUTPUT_PERCENT: ByScenario<number> = { low: 15, likely: 30, high: 60 };
 /** Of an area's estimated tokens the reader reads, in percent. */
 const READ_PERCENT: ByScenario<number> = { low: 50, likely: 80, high: 100 };
-/** The verifier's tokens as a share of the readers', in percent (ADR-005). */
-const VERIFIER_PERCENT: ByScenario<number> = { low: 15, likely: 30, high: 50 };
+/** The verifier's output as a share of the readers', in percent (ADR-005). */
+const VERIFIER_PERCENT: ByScenario<number> = { low: 30, likely: 60, high: 50 };
+/** The verifier's input as a share of the readers' input, in percent: one call per claim (P2-46). */
+const VERIFIER_INPUT_PERCENT: ByScenario<number> = { low: 100, likely: 200, high: 50 };
 /** The summariser's tokens as a share of the readers': it reads cards, not code (RF-250). */
 const SUMMARISER_PERCENT: ByScenario<number> = { low: 5, likely: 10, high: 20 };
 /** The overview the summariser writes after the run (RF-264), in output tokens. */
@@ -100,6 +106,7 @@ export function assumptionsOf(settings: ProjectSettings, models: ModelList): Rea
     ),
     readSharePercent: READ_PERCENT,
     verifierSharePercent: VERIFIER_PERCENT,
+    verifierInputSharePercent: VERIFIER_INPUT_PERCENT,
     verifierCallsPerScreen: VERIFIER_CALLS_PER_SCREEN,
     summariserSharePercent: SUMMARISER_PERCENT,
     overviewOutputTokens: OVERVIEW_OUTPUT_TOKENS,

@@ -45,14 +45,17 @@ async function estimateWith(screens: number) {
   };
 }
 
-/** Verifier tokens of the 30 percent share of the readers (ADR-005), rounded up. */
-const readerShare = (tokens: number): number => Math.floor((tokens * 30 + 99) / 100);
+/** The verifier's share of the readers' input (200 percent, P2-46), rounded up. */
+const inputShare = (tokens: number): number => Math.floor((tokens * 200 + 99) / 100);
+
+/** The verifier's share of the readers' output (60 percent, ADR-005), rounded up. */
+const outputShare = (tokens: number): number => Math.floor((tokens * 60 + 99) / 100);
 
 /** The verifier tokens beyond the readers' share: the screen claims, and nothing on a project without screens. */
 function claimTokensOf(estimate: Awaited<ReturnType<typeof estimateWith>>) {
   return {
-    input: estimate.verifier.inputTokens - readerShare(estimate.reader.inputTokens),
-    output: estimate.verifier.outputTokens - readerShare(estimate.reader.outputTokens),
+    input: estimate.verifier.inputTokens - inputShare(estimate.reader.inputTokens),
+    output: estimate.verifier.outputTokens - outputShare(estimate.reader.outputTokens),
   };
 }
 
@@ -71,9 +74,9 @@ describe('the understand estimate with screen claims', () => {
   it('RF-626 a project with no screen has the verifier share of the readers, as before', async () => {
     const { reader, verifier } = await estimateWith(0);
 
-    // Verifier tokens are 30 percent of the readers' (ADR-005), rounded up.
-    expect(verifier.inputTokens).toBe(Math.floor((reader.inputTokens * 30 + 99) / 100));
-    expect(verifier.outputTokens).toBe(Math.floor((reader.outputTokens * 30 + 99) / 100));
+    // Verifier input is 200 percent and its output 60 percent of the readers' (ADR-005, P2-46), rounded up.
+    expect(verifier.inputTokens).toBe(inputShare(reader.inputTokens));
+    expect(verifier.outputTokens).toBe(outputShare(reader.outputTokens));
   });
 
   it('RF-626 each screen adds its claims per screen, named and shown with the estimate', async () => {
@@ -85,11 +88,11 @@ describe('the understand estimate with screen claims', () => {
     expect(two.assumptions.verifierCallsPerScreen).toBe(9);
     const extraInput = two.verifier.inputTokens - none.verifier.inputTokens;
     expect(extraInput).toBe(
-      readerShare(two.reader.inputTokens) - readerShare(none.reader.inputTokens) + 2 * 9 * 1000,
+      inputShare(two.reader.inputTokens) - inputShare(none.reader.inputTokens) + 2 * 9 * 1000,
     );
     const extraOutput = two.verifier.outputTokens - none.verifier.outputTokens;
     expect(extraOutput).toBe(
-      readerShare(two.reader.outputTokens) - readerShare(none.reader.outputTokens) + 2 * 9 * 100,
+      outputShare(two.reader.outputTokens) - outputShare(none.reader.outputTokens) + 2 * 9 * 100,
     );
   });
 });
