@@ -30,7 +30,7 @@ describe('the shipped golden set', () => {
     });
     const findings = set.cases.flatMap((entry) => entry.findings);
     const kinds = new Set(findings.map((finding) => finding.kind));
-    expect([...kinds].sort()).toEqual(['entity', 'feature', 'rule']);
+    expect([...kinds].sort()).toEqual(['entity', 'feature', 'relation', 'rule']);
     expect(findings.filter((finding) => finding.kind === 'rule').length).toBeGreaterThanOrEqual(10);
     expect(set.cases.flatMap((entry) => entry.absences).length).toBeGreaterThanOrEqual(5);
   });

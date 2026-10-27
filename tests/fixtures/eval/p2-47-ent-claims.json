@@ -1,0 +1,48 @@
+{
+  "description": "Real ENT claims of the live evaluation of 2026-10-25 over dotnet-architecture/eShopModernizing at 63bc9ec4, trimmed to id, card type, card title, claim text, status and citations.",
+  "claims": [
+    {
+      "claimId": "ENT-001.c1",
+      "cardType": "ENT",
+      "cardTitle": "Catalog items table (CatalogItem model)",
+      "text": "Table Catalog maps to entity CatalogItem with primary key Id; Id is required and the database generation is turned off (values come from the hi-lo generator).",
+      "status": "Rejected",
+      "citations": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:57-65"]
+    },
+    {
+      "claimId": "ENT-001.c6",
+      "cardType": "ENT",
+      "cardTitle": "Catalog items table (CatalogItem model)",
+      "text": "Column Catalog.CatalogBrandId: int, NOT NULL, foreign key to CatalogBrand.Id (required relationship).",
+      "status": "Supported",
+      "citations": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:79-81"]
+    },
+    {
+      "claimId": "ENT-001.c7",
+      "cardType": "ENT",
+      "cardTitle": "Catalog items table (CatalogItem model)",
+      "text": "Column Catalog.CatalogTypeId: int, NOT NULL, foreign key to CatalogType.Id (required relationship).",
+      "status": "Supported",
+      "citations": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:83-85"]
+    },
+    {
+      "claimId": "ENT-001.c18",
+      "cardType": "ENT",
+      "cardTitle": "CatalogItem data entity and mappings",
+      "text": "Service methods operate on CatalogItem and reference CatalogBrand and CatalogType (e.g., Include in queries, GetCatalogBrands/Types).",
+      "status": "Supported",
+      "citations": [
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/CatalogService.cs:27-33",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/CatalogService.cs:42-50"
+      ]
+    },
+    {
+      "claimId": "ENT-005.c1",
+      "cardType": "ENT",
+      "cardTitle": "PaginatedItemsViewModel<TEntity> paging state",
+      "text": "The class is generic over TEntity, which must be a reference type, and exposes ActualPage, ItemsPerPage, TotalItems and Data with private setters, so they are set only through the constructor.",
+      "status": "Supported",
+      "citations": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewModel/PaginatedItemsViewModel.cs:6-16"]
+    }
+  ]
+}
