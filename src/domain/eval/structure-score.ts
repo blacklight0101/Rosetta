@@ -31,7 +31,8 @@ export interface StructureScore {
 
 /** Words that say an entity is tied to another; a word ending in `*` is any word that starts so. */
 const RELATION_WORDS = [
-  ...['refer*', 'foreign key*', 'belong*', 'relat*', 'link*', 'join*', 'associat*'],
+  ...['refers to', 'refer to', 'reference to', 'referenced by'],
+  ...['foreign key*', 'belong*', 'relat*', 'link*', 'join*', 'associat*'],
   ...['has many', 'has one', 'one-to-many', 'many-to-one', 'one-to-one', 'many-to-many'],
 ] as const;
 

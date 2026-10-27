@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "version": "2026-10-17.2",
+  "version": "2026-10-27.1",
   "description": "Hand-checked findings of the eShopLegacyWebForms application of dotnet-architecture/eShopModernizing (MIT licence, copyright .NET Foundation and Contributors) at commit 63bc9ec, written for this repository by reading the code at that commit. Each finding cites the lines that show it; each absence is a statement whose correct answer is \"not in the code\" (DEC-57). No text of the application is copied.",
   "source": {
     "url": "https://github.com/dotnet-architecture/eShopModernizing",
@@ -50,6 +50,28 @@
             "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:29-41"
           ],
           "keywords": ["type"]
+        },
+        {
+          "id": "relation-item-brand",
+          "kind": "relation",
+          "of": "Catalog item",
+          "statement": "Every catalog item refers to one catalog brand through its brand id, a required foreign key to the brand table.",
+          "cardTypes": ["ENT"],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:79-81"
+          ],
+          "keywords": ["catalogbrandid", "catalogbrand"]
+        },
+        {
+          "id": "relation-item-type",
+          "kind": "relation",
+          "of": "Catalog item",
+          "statement": "Every catalog item refers to one catalog type through its type id, a required foreign key to the type table.",
+          "cardTypes": ["ENT"],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:83-85"
+          ],
+          "keywords": ["catalogtypeid", "catalogtype"]
         },
         {
           "id": "rule-price-two-decimals",
