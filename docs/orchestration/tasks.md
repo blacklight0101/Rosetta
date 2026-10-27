@@ -13,11 +13,11 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 184     | 67        | 98         | 19        | 0                  | 107     | 69      | 8      | 122        | 0         |
-| P2 Full understand      | 46      | 8         | 31         | 7         | 0                  | 16      | 28      | 2      | 25         | 0         |
+| P2 Full understand      | 50      | 11        | 32         | 7         | 0                  | 20      | 28      | 2      | 29         | 0         |
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
 | P6 Agent build method   | 1       | 0         | 1          | 0         | 0                  | 0       | 1       | 0      | 0          | 0         |
-| **Total**               | **407** | **100**   | **277**    | **30**    | **0**              | **197** | **196** | **14** | **235**    | **0**     |
+| **Total**               | **411** | **103**   | **278**    | **30**    | **0**              | **201** | **196** | **14** | **239**    | **0**     |
 
 ## Conventions for every card
 
@@ -3084,7 +3084,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-46
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/estimate/estimate-assumptions.ts`; `tests/unit/application/estimate/estimate-accuracy-shop-run.test.ts` and its fixture; `docs/verification/p2-matrix.md` RNF-012 row; the P2-46 verdict on #935.
 - **Do**: P2-46 calibrated the likely reader turns (25 % of `maxTurns`) and the verifier input share on one small app (7 reader tasks, 2.6 turns on average). Add a second recorded run, shaped on a larger evaluation case of the golden set, and check that the likely estimate stays within 30 % of its actual cost; if it does not, adjust the assumptions so both recorded runs pass. The high estimate stays every turn used.
 - **Delivers**: the second fixture and its test; the assumptions adjusted if needed; the RNF-012 row naming both runs.
@@ -3099,7 +3099,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-47
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/eval/structure-score.ts` (the reference-type exclusion); `tests/unit/domain/eval/structure-score.test.ts`; the P2-47 round 2 verdict on #936.
 - **Do**: the exclusion of the noun "reference type" also drops a verb followed directly by the word "type": "The item references type CatalogType." and "Items reference types of brand." count as 0 relations stated. Exclude "reference type" only as a noun (after a determiner or "be", "is", "a", "the"), so the verb still counts.
 - **Delivers**: the narrower exclusion; unit tests for both sentences above (stated) and "must be a reference type" (not stated); the relation-word line of `docs/data-model.md` if it changes.
@@ -3115,12 +3115,72 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/e2e/journeys/consolidation.spec.ts`; `scripts/run-e2e.mjs`; P1-43 (run replay page).
 - **Do**: on Windows with a local PostgreSQL, `tests/e2e/journeys/consolidation.spec.ts:43` fails at line 48: the link "Open the run replay" is not found within 5 s. It fails the same way on `main` at 42e7a78d, before P2-46 and P2-47, and on its own (one worker); CI on Linux passes. Find whether the link is missing, slow, or named differently on Windows, and fix the cause in the app or the test (no longer timeout unless the cause is timing).
 - **Delivers**: the fix and the spec passing on Windows and Linux.
 - **Done when**: `node scripts/run-e2e.mjs tests/e2e/journeys/consolidation.spec.ts --project=desktop-light --workers=1` passes on Windows with a local database, and CI stays green.
 - **Refs**: RF-250, RF-262, RNF-005, P1-43.
+
+---
+
+### P2-51 - Follow-up: the reference-type exclusion after other determiners
+
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P2-49
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/domain/eval/structure-score.ts` (REFERENCE_TYPE); `tests/unit/domain/eval/structure-score.test.ts`; the P2-49 verdict on #939.
+- **Do**: the exclusion of the noun "reference type" matches only after "a", "an", "the", "is" or "be", so "this reference type", "its reference type", "each reference type", "Reference types are ..." and "value types and reference types" now count as relations stated. Extend the exclusion to the other determiners and possessives and to the plural noun with no determiner, keeping the verb ("references type X", "reference types of brand") counted. Pin "is" with its own test (for example "which is reference type"), since today removing it leaves every test green.
+- **Delivers**: the wider exclusion; unit tests for each sentence above; the relation-word line of `docs/data-model.md` if it changes.
+- **Done when**: the noun forms score as not stated, the verb forms as stated, and removing any one word of the exclusion makes a test fail.
+- **Refs**: RNF-006, RF-262, P2-49.
+
+---
+
+### P2-52 - Follow-up: the wall-clock test of the WebForms markup reader flakes on Windows CI
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/unit/infrastructure/scan/packs/csharp/webforms-markup-hostile.test.ts`; `docs/conventions.md` (tests, determinism); the failed run on #940 (shard 2/3 of tests on windows-latest).
+- **Do**: "P5-31 anchors with no closing bracket is read in well under a second" took 1103 ms against its 1000 ms limit on a loaded Windows runner and turned `verify (windows-latest)` red on a pull request that does not touch it. Make the test prove the linear-time property without a tight wall-clock limit (for example compare the time of input n and 4n, or count steps), so it no longer depends on runner load.
+- **Delivers**: the reworked test; the same protection against a quadratic or catastrophic regex.
+- **Done when**: the test fails when the reader is made quadratic (shown in the pull request) and passes on Windows and Linux CI.
+- **Refs**: RNF-005, P5-31.
+
+---
+
+### P2-53 - Follow-up: report build time with diagrams on the hosted share
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P2-50
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/report/` (BuildReport), the run zip writer (`ReportZipWriter`), `tests/e2e/support/journey-pages.ts`; the P2-50 verdict on #940.
+- **Do**: P2-50 found that writing the run zip deflates the 5.5 MB `mermaid.min.js` (RF-508) and took 5 to 7 s on a Windows system drive, while the request waits for it. Measure Build report on a run with diagrams on the hosted Azure Files share (owner check, no provider spend). If it takes more than 2 s, store already-compressed assets such as `mermaid.min.js` without deflate (or write the zip after the response). Then give the 30 s wait of `buildReport` in the journey helper only to the journey with diagrams, back to the 5 s default for the others.
+- **Delivers**: the measurement in the pull request; the zip change if needed; the narrower wait.
+- **Done when**: Build report with diagrams answers within 2 s on the hosted share (or the measurement shows it already does), and only the consolidation journey waits longer than 5 s.
+- **Refs**: RF-508, RF-250, RNF-005, P2-50.
+
+---
+
+### P2-54 - Follow-up: the pre-push hook takes its base from develop
+
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `scripts/pre-push-tests.mjs`; ADR-025; `docs/orchestration/README.md` section 3.
+- **Do**: since DEC-175 task branches start from `develop`, but the pre-push hook still takes the merge base with `origin/main`, so it runs the tests of every change released since. Use the branch's upstream base (`origin/develop`, falling back to `origin/main` when `develop` does not exist).
+- **Delivers**: the hook change and its test.
+- **Done when**: on a branch cut from `develop`, the hook runs only the tests of the branch's own changes.
+- **Refs**: DEC-175, ADR-025, ADR-011.
 
 ---
 
