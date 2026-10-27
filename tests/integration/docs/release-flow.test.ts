@@ -70,6 +70,22 @@ describe('docs/runbooks/deploy.md: staging and release (DEC-175)', () => {
   });
 });
 
+describe('the staging check while staging is off (DEC-175)', () => {
+  it('DEC-175 the runbook, the delivery document and ADR-025 say the check waits for ROSETTA_STAGING_ENABLED', async () => {
+    const files = [
+      'docs/runbooks/deploy.md',
+      'docs/environments-and-delivery.md',
+      'docs/adr/ADR-025-develop-branch-staging-and-scheduled-release.md',
+    ];
+
+    for (const file of files) {
+      expect(await read(file)).toMatch(
+        /`ROSETTA_STAGING_ENABLED`[^.]*(?:not `true`|is not true)[^.]*skipped/u,
+      );
+    }
+  });
+});
+
 describe('docs/environments-and-delivery.md and the threat model (DEC-175)', () => {
   it('DEC-175 names the staging environment, develop as default branch and both rulesets', async () => {
     const text = await read('docs/environments-and-delivery.md');
