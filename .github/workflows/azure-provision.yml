@@ -57,9 +57,11 @@ on:
 permissions:
   contents: read
 
-# A provisioning run is never cancelled half-way through creating a resource.
+# A provisioning run is never cancelled half-way through creating a resource. One group for every
+# branch (DEC-175): the production run (main) and the staging run (develop) converge the one shared
+# PostgreSQL server (both reset its administrator password), so they never overlap.
 concurrency:
-  group: azure-provision-${{ github.ref }}
+  group: azure-provision
   cancel-in-progress: false
 
 jobs:
