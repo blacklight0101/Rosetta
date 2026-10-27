@@ -56,7 +56,7 @@ end-to-end shards.
 | RF-425  | Estimate before running (second scenario)          | Must     | 83 / 8 / 2      | `tests/e2e/start-run-confirm.spec.ts:55`                                                  | Tests pass; the accuracy of the estimate is the target of RNF-012, card P2-46                                                                  |
 | RF-427  | Unpriced models                                    | Should   | 52 / 6 / 0      | `tests/integration/application/understand-summariser-role.test.ts:48`                     | Tests pass                                                                                                                                     |
 | RF-1306 | Backups                                            | Should   | 19 / 27 / 0     | `tests/integration/docs/deploy-runbook.test.ts:160`                                       | Tests pass; the hosted restore drill was reported done by the owner on 2026-10-26 (P2-12)                                                      |
-| RNF-006 | Measured quality                                   | NFR      | 33 / 13 / 0     | `tests/integration/infrastructure/eval/evaluation-files.test.ts:98`                       | Tests pass; the live evaluation of 2026-10-25 meets the precision, recall and citation targets (section 3); entity relations now scored, P2-47 |
+| RNF-006 | Measured quality                                   | NFR      | 33 / 13 / 0     | `tests/integration/infrastructure/eval/evaluation-files.test.ts:98`                       | Tests pass; the live evaluation of 2026-10-25 meets the precision, recall and citation targets (section 3); entity relations: P2-47, in review |
 | RNF-012 | Estimate accuracy                                  | NFR      | 8 / 2 / 0       | `tests/integration/infrastructure/eval/run-claims.test.ts:95`                             | Tests pass; **not met** in the live evaluation (the estimate was 64 % above the actual cost), card P2-46                                       |
 | RNF-015 | Evaluations are experiments                        | NFR      | 26 / 8 / 0      | `tests/integration/infrastructure/eval/evaluation-files.test.ts:54`                       | Tests pass; the live evaluation ran each case 3 times and reports the spread (section 3)                                                       |
 
@@ -105,7 +105,7 @@ changes:
 | Id      | Priority | What is missing                                                                             | Card  | Card state |
 | ------- | -------- | ------------------------------------------------------------------------------------------- | ----- | ---------- |
 | RNF-012 | NFR      | the estimate within 30 % of the actual cost on the demo app (live: 64 % above, 0 of 3 runs) | P2-46 | Todo       |
-| RNF-006 | NFR      | entity relations right in ENT cards (live relation precision 0.000)                         | P2-47 | Done       |
+| RNF-006 | NFR      | entity relations right in ENT cards (live relation precision 0.000)                         | P2-47 | In review  |
 
 No Must lacks evidence. Item 4 of the 2026-10-17 security audit (#513: count `host.docker.internal` as local only
 inside a container) is not a gap: the owner accepted the risk (DEC-174), and RF-143 and DEC-118 stand.

@@ -877,7 +877,7 @@ modelVersion, modelDigest, toolMode, maxOutputTokens, temperature, maxTurns }`, 
   found by a correct `FLOW` claim), `screenFieldRecall` = golden screen fields found / golden fields (by a correct
   `SCRN` claim; the golden actions are found or missed but not in this ratio), and `relationPrecision` =
   `relationsCorrect` / `relationsStated`, where a relation is stated by a `Supported` `ENT` claim that holds a relation
-  word (`refers to`, `refer to`, `reference to`, `referenced by`, `foreign key*`, `belong*`, `relat*`, `link*`, `join*`, `associat*`, `has many`, `has one`,
+  word (`refer*` (the noun "reference type" excluded), `foreign key*`, `belong*`, `relat*`, `link*`, `join*`, `associat*`, `has many`, `has one`,
   `one-to-many`, `many-to-one`, `one-to-one`, `many-to-many`; `ENT` cards hold claims, not structured relations) and is
   correct when it matches a golden relation; `relationClaims` lists the claims that stated one. A ratio with nothing to
   divide by is `null`; every measure is rounded to six

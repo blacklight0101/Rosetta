@@ -31,10 +31,20 @@ export interface StructureScore {
 
 /** Words that say an entity is tied to another; a word ending in `*` is any word that starts so. */
 const RELATION_WORDS = [
-  ...['refers to', 'refer to', 'reference to', 'referenced by'],
-  ...['foreign key*', 'belong*', 'relat*', 'link*', 'join*', 'associat*'],
+  ...['refer*', 'foreign key*', 'belong*', 'relat*', 'link*', 'join*', 'associat*'],
   ...['has many', 'has one', 'one-to-many', 'many-to-one', 'one-to-one', 'many-to-many'],
 ] as const;
+
+/** The noun "reference type" is not a relation between two entities; the verb is. */
+const REFERENCE_TYPE = /\breferences?[- ]typ\w*/giu;
+
+function withoutReferenceTypes(claim: EvaluatedClaim): EvaluatedClaim {
+  return {
+    ...claim,
+    cardTitle: claim.cardTitle.replace(REFERENCE_TYPE, ' '),
+    text: claim.text.replace(REFERENCE_TYPE, ' '),
+  };
+}
 
 function ofKind(findings: readonly GoldenFinding[], kind: FindingKind): GoldenFinding[] {
   return findings.filter((finding) => finding.kind === kind);
@@ -56,7 +66,8 @@ export function structureScore(
   const [steps, fields] = [ofKind(findings, 'step'), ofKind(findings, 'field')];
   const relations = ofKind(findings, 'relation');
   const stated = supported.filter(
-    (claim) => claim.cardType === 'ENT' && mentionsAny(claim, RELATION_WORDS),
+    (claim) =>
+      claim.cardType === 'ENT' && mentionsAny(withoutReferenceTypes(claim), RELATION_WORDS),
   );
   const right = stated.filter(
     (claim) => correct.includes(claim) && relations.some((r) => matchesFinding(claim, r)),
