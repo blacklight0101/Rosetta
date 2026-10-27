@@ -22,8 +22,9 @@ const HANDOFF_FOLDER = 'handoff';
 
 /**
  * RF-508, P2-53: a file that is already minified (`*.min.js`, such as the 5.5 MB vendored
- * `mermaid.min.js`) gains little from deflate and costs seconds of CPU while the request waits
- * for the zip (5 to 7 s on Windows, P2-50), so it is stored. Every other file is deflated.
+ * `mermaid.min.js`) gains little from deflate, which costs about 100 ms of CPU for that file
+ * while the request waits for the zip, so it is stored. Every other file is deflated. (The 5 to
+ * 7 s P2-50 saw on Windows is the first read of the freshly copied file, not deflate.)
  */
 const MINIFIED_SUFFIX = '.min.js';
 
