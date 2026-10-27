@@ -42,8 +42,15 @@ export async function chooseAreas(page: Page, names: readonly string[] | 'all'):
   }
 }
 
-/** Presses Build report on the page of an ended run. */
+/**
+ * Presses Build report on the page of an ended run and waits for the links the answer shows. The
+ * answer comes after the report pages and the run zip are written, and a run with diagrams carries
+ * the 5.5 MB vendored Mermaid build (RF-508): on Windows the zip of that file takes 5 to 7 s
+ * (P2-50), so the wait is longer than the 5 s of an ordinary expectation.
+ */
 export async function buildReport(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Build report' }).click();
-  await expect(page.getByRole('link', { name: 'Open the run replay' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open the run replay' })).toBeVisible({
+    timeout: 30_000,
+  });
 }
