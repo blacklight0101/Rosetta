@@ -73,8 +73,8 @@ describe('the reader estimate per turn', () => {
 
     const tokens = readerTokens([area], assumptions, marks(false, true));
 
-    // Six likely turns, each with 900 tokens more in front of it.
-    expect(tokens.likely.inputTokens - plain.likely.inputTokens).toBe(6 * 900);
+    // Three likely turns, each with 900 tokens more in front of it.
+    expect(tokens.likely.inputTokens - plain.likely.inputTokens).toBe(3 * 900);
   });
 
   it('RF-263 only the marked areas are charged, by name', () => {

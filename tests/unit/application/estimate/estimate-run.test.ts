@@ -62,8 +62,13 @@ describe('RF-425 estimate before running', () => {
     for (const role of estimate.roles) {
       expect(Object.keys(role.points)).toEqual(['low', 'likely', 'high']);
     }
-    expect(estimate.assumptions.turnsPerArea).toEqual({ low: 3, likely: 6, high: 10 });
-    expect(estimate.assumptions.verifierSharePercent).toEqual({ low: 15, likely: 30, high: 50 });
+    expect(estimate.assumptions.turnsPerArea).toEqual({ low: 2, likely: 3, high: 10 });
+    expect(estimate.assumptions.verifierSharePercent).toEqual({ low: 30, likely: 60, high: 50 });
+    expect(estimate.assumptions.verifierInputSharePercent).toEqual({
+      low: 100,
+      likely: 200,
+      high: 50,
+    });
     expect(estimate.assumptions.summariserSharePercent).toEqual({ low: 5, likely: 10, high: 20 });
     expect(estimate.areas).toEqual([
       { name: 'Catalog', estimatedTokens: 10_000, files: 1, thirdParty: false },
@@ -77,23 +82,23 @@ describe('RF-425 estimate before running', () => {
     const estimate = await estimateOf(createEstimateHarness(), cloud);
     const [reader, verifier] = estimate.roles;
 
-    // Reader: 60,996 in at 250,000 and 3,600 out at 2,000,000 per million = 22,449 micros.
+    // Reader: 24,998 in at 250,000 and 1,800 out at 2,000,000 per million = 9,850 micros (three turns).
     expect(reader?.points.likely).toEqual({
-      inputTokens: 60_996,
-      outputTokens: 3600,
-      costMicros: 22_449n,
+      inputTokens: 24_998,
+      outputTokens: 1800,
+      costMicros: 9850n,
     });
-    // Verifier: 30% of the reader's tokens (18,299 in, 1,080 out) = 6,734.75, rounded up.
+    // Verifier: 200% of the reader's input (49,996) and 60% of its output (1,080) = 14,658.75, rounded up.
     expect(verifier?.points.likely).toEqual({
-      inputTokens: 18_299,
+      inputTokens: 49_996,
       outputTokens: 1080,
-      costMicros: 6735n,
+      costMicros: 14_659n,
     });
     expect(estimate.total.likely).toEqual({
       // The summariser reads the cards twice (merge, overview) and writes the overview (RF-264).
-      inputTokens: 92_295,
-      outputTokens: 7040,
-      costMicros: 29_184n,
+      inputTokens: 80_794,
+      outputTokens: 5060,
+      costMicros: 24_509n,
     });
   });
 });
@@ -133,7 +138,7 @@ describe('RF-425 the range and the roles', () => {
     expect(orders.areas).toEqual([
       { name: 'Orders', estimatedTokens: 4000, files: 1, thirdParty: false },
     ]);
-    expect(orders.total.likely.inputTokens).toBe(24_498 + 7350 + 2450 * 2 + 800);
+    expect(orders.total.likely.inputTokens).toBe(33_117);
     expect(orders.total.likely.inputTokens).toBeLessThan(all.total.likely.inputTokens);
   });
 
@@ -178,7 +183,7 @@ describe('RF-427 and DEC-107 prices', () => {
     const [reader, verifier] = estimate.roles;
     expect(reader).toMatchObject({ priced: false });
     expect(reader?.points.likely.costMicros).toBe(0n);
-    expect(reader?.points.likely.inputTokens).toBe(60_996);
+    expect(reader?.points.likely.inputTokens).toBe(24_998);
     expect(verifier).toMatchObject({ priced: true });
   });
 
@@ -204,8 +209,8 @@ describe('RF-427 and DEC-107 prices', () => {
     const own = await estimateOf(withOwnKey, overridden);
     const server = await estimateOf(createEstimateHarness(), overridden);
 
-    expect(own.roles[0]?.points.likely.costMicros).toBe(44_898n);
-    expect(server.roles[0]?.points.likely.costMicros).toBe(22_449n);
+    expect(own.roles[0]?.points.likely.costMicros).toBe(19_699n);
+    expect(server.roles[0]?.points.likely.costMicros).toBe(9850n);
     expect(server.roles[0]?.keySource).toBe('server');
   });
 });

@@ -32,10 +32,11 @@ describe('assumptions of the estimate', () => {
   it('RF-425 states the turns, output per turn and shares the figures rest on', () => {
     const assumptions = assumptionsFor(readerSettings({ maxTurns: 10, maxOutputTokens: 1000 }));
 
-    expect(assumptions.turnsPerArea).toEqual({ low: 3, likely: 6, high: 10 });
+    expect(assumptions.turnsPerArea).toEqual({ low: 2, likely: 3, high: 10 });
     expect(assumptions.outputTokensPerTurn).toEqual({ low: 150, likely: 300, high: 600 });
     expect(assumptions.readSharePercent).toEqual({ low: 50, likely: 80, high: 100 });
-    expect(assumptions.verifierSharePercent).toEqual({ low: 15, likely: 30, high: 50 });
+    expect(assumptions.verifierSharePercent).toEqual({ low: 30, likely: 60, high: 50 });
+    expect(assumptions.verifierInputSharePercent).toEqual({ low: 100, likely: 200, high: 50 });
     expect(assumptions.promptOverheadTokens).toBe(2000);
     expect(assumptions.contextLimitTokens).toBe(102_400);
     expect(assumptions.cachedInputPercent).toBe(0);
@@ -74,14 +75,14 @@ describe('reader tokens of the estimate', () => {
 
     const tokens = readerTokens(catalogAreas, assumptions);
 
-    // Catalog: 6 turns of 2,000 overhead + 80% of 10,000 read, spread over the turns, + 300 out.
+    // Catalog: 3 turns of 2,000 overhead + 80% of 10,000 read, spread over the turns, + 300 out.
     // Orders: the same with 80% of 4,000.
-    // The tokens written to the cache are the conversation at the last turn: Catalog 2,000 + 6,666 +
-    // 5 x 300 = 10,166 and Orders 2,000 + 2,666 + 1,500 = 6,166 (P2-37).
+    // The tokens written to the cache are the conversation at the last turn: Catalog 2,000 + 5,333 +
+    // 2 x 300 = 7,933 and Orders 2,000 + 2,133 + 600 = 4,733 (P2-37).
     expect(tokens.likely).toMatchObject({
-      inputTokens: 60_996,
-      outputTokens: 3600,
-      cacheWriteTokens: 16_332,
+      inputTokens: 24_998,
+      outputTokens: 1800,
+      cacheWriteTokens: 12_666,
     });
   });
 

@@ -26,14 +26,14 @@ describe('the summariser in the estimate', () => {
     const outcome = await harness.estimate.execute({ actor: userAmy, projectId: project.id });
 
     const summariser = outcome.ok ? outcome.value.roles.find((r) => r.role === 'summariser') : null;
-    // 10% of the reader's 60,996 in and 3,600 out for the merge, the same input again and 1,500
+    // 10% of the reader's 24,998 in and 1,800 out for the merge, the same input again and 1,500
     // output tokens for the overview (RF-264), and the second merge call a typical run makes (Q-52: the merge
-    // prompt again, 800 in, and an answer, 500 out): 13,000 in at 250,000 and 2,360 out at 2,000,000.
+    // prompt again, 800 in, and an answer, 500 out): 5,800 in at 250,000 and 2,180 out at 2,000,000.
     expect(summariser).toMatchObject({ provider: 'openai', model: 'priced-model', priced: true });
     expect(summariser?.points.likely).toEqual({
-      inputTokens: 13_000,
-      outputTokens: 2360,
-      costMicros: 7970n,
+      inputTokens: 5800,
+      outputTokens: 2180,
+      costMicros: 5810n,
     });
   });
 
