@@ -2,7 +2,10 @@
 # runtime image once, scans it, and pushes it to GHCR as `sha-<short>` (and `X.Y.Z` for a `vX.Y.Z`
 # tag); for a tag it also attaches a CycloneDX SBOM to the GitHub release. It runs only on a pushed
 # v* tag or by hand (workflow_dispatch on main, the way the sha-<short> image of main is published
-# before v0.1.0, DEC-104); never on a pull request or a push to main.
+# before v0.1.0, DEC-104); never on a pull request or a push to main. Since DEC-175 (ADR-025)
+# scheduled-release.yml starts it on main at 06:00 Europe/Madrid the morning after main changed,
+# and the deploy job refuses a main whose tree did not pass staging (staging.yml); the input
+# skip-staging-check skips that check, for emergencies only.
 #
 # The deploy job updates the Azure Container App that azure-provision.yml created (ADR-024). It runs
 # only when the repository variable ROSETTA_DEPLOY_ENABLED is 'true', in the GitHub environment
@@ -18,6 +21,12 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      skip-staging-check:
+        description: 'Deploy without checking that this tree passed staging (emergencies only; the summary records it)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -141,8 +150,10 @@ jobs:
       IMAGE: ghcr.io/blacklight0101/rosetta
       SHA_TAG: ${{ needs.image.outputs.sha-tag }}
     steps:
+      # Full history: the staging check reads the parents of the release merge commit.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -157,6 +168,35 @@ jobs:
             exit 1
           fi
         env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+      # DEC-175, ADR-025: a release is a merge commit of develop into main (merge commit, not
+      # squash), so its second parent is the develop commit staging deployed. Production gets this
+      # commit only when its tree is that commit's tree and the job `deploy (staging)` passed on it.
+      # A tag run checks the tagged commit the same way. skip-staging-check skips it (emergencies).
+      - name: This tree passed staging
+        run: |
+          if [ "$SKIP_STAGING_CHECK" = true ]; then
+            echo "::warning::The staging check was skipped (input skip-staging-check)."
+            echo "- **Staging check skipped** (input skip-staging-check, emergencies only): $(git rev-parse HEAD) was deployed without it." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if ! develop="$(git rev-parse --verify --quiet 'HEAD^2^{commit}')"; then
+            echo "::error::This commit has no second parent, so it is not a release merge of develop; nothing is deployed (docs/runbooks/deploy.md, Release)."
+            exit 1
+          fi
+          if [ "$(git rev-parse 'HEAD^{tree}')" != "$(git rev-parse "$develop^{tree}")" ]; then
+            echo "::error::The tree of this commit differs from the tree of develop at $develop, which staging deployed; nothing is deployed."
+            exit 1
+          fi
+          conclusion="$(gh api "repos/$GH_REPO/commits/$develop/check-runs?check_name=deploy%20(staging)" --jq '.check_runs[0].conclusion // "missing"')"
+          echo "deploy (staging) on $develop: $conclusion"
+          if [ "$conclusion" != success ]; then
+            echo "::error::deploy (staging) did not pass on $develop; nothing is deployed."
+            exit 1
+          fi
+        env:
+          SKIP_STAGING_CHECK: ${{ inputs.skip-staging-check }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
       - name: The deploy settings are stored
