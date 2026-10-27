@@ -35,8 +35,11 @@ const RELATION_WORDS = [
   ...['has many', 'has one', 'one-to-many', 'many-to-one', 'one-to-one', 'many-to-many'],
 ] as const;
 
-/** The noun "reference type" is not a relation between two entities; the verb is. */
-const REFERENCE_TYPE = /\breferences?[- ]typ\w*/giu;
+/**
+ * The noun "reference type" (after "a", "an", "the", "is" or "be") is not a relation between two
+ * entities; the verb "references type X" is one.
+ */
+const REFERENCE_TYPE = /(?<=\b(?:a|an|the|is|be)\s+)references?[- ]typ\w*/giu;
 
 function withoutReferenceTypes(claim: EvaluatedClaim): EvaluatedClaim {
   return {
