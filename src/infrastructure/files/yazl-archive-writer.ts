@@ -21,6 +21,13 @@ import { isOwnFile, isRealFolder, runFolderOf } from './run-folder.js';
 const HANDOFF_FOLDER = 'handoff';
 
 /**
+ * RF-508, P2-53: a file that is already minified (`*.min.js`, such as the 5.5 MB vendored
+ * `mermaid.min.js`) gains little from deflate and costs seconds of CPU while the request waits
+ * for the zip (5 to 7 s on Windows, P2-50), so it is stored. Every other file is deflated.
+ */
+const MINIFIED_SUFFIX = '.min.js';
+
+/**
  * RF-505: the zips the report writes into its own folder (`report/<name>.zip`, and the file a zip
  * is written to until it is whole). They are left out of the archive of the run, so a zip never
  * holds an earlier one.
@@ -63,7 +70,9 @@ async function addFolder(zip: ZipFile, folder: string, place: Place): Promise<vo
       !REPORT_ZIP.test(`${place.inRun}${entry.name}`) &&
       (await isOwnFile(path))
     ) {
-      zip.addFile(path, `${place.prefix}${entry.name}`);
+      zip.addFile(path, `${place.prefix}${entry.name}`, {
+        compress: !entry.name.endsWith(MINIFIED_SUFFIX),
+      });
     }
   }
 }
