@@ -17,8 +17,10 @@ Inputs: the task card (id, difficulty, Reads, Do, Delivers, Done when, Refs), th
    `docs/architecture.md` and `docs/conventions.md`.
 2. **Scope:** `git diff --stat develop...HEAD` (task branches are cut from `develop`, DEC-175); every Delivers item exists at its path; nothing outside the card changed;
    `docs/spec`, `docs/rfc`, `docs/adr` change only when the card or a behaviour change requires it (ADR-010).
-3. **Gates:** run `npm ci --ignore-scripts` (never plain `npm ci`: lefthook would write hooks into the shared `.git`) and `npm run verify` yourself. Every gate green: typecheck, lint with zero warnings, format,
-   dependency-cruiser, knip, tests with coverage thresholds. A skipped, `.only` or early-returning test counts as not
+3. **Gates:** link `node_modules` to the main checkout's (never `npm install`, `npm ci` or `npm uninstall` through the
+   link: it rewrites the folder every agent uses) and run `npm run verify:local` yourself (DEC-182). Every gate green:
+   typecheck, lint with zero warnings, format, dependency-cruiser, knip, the tests related to the branch's changes;
+   the full suite with coverage thresholds is CI's, and its result on the pull request is part of the verdict. A skipped, `.only` or early-returning test counts as not
    run. Any weakened gate (new `eslint-disable` without a reason, lowered threshold, `@ts-expect-error`, removed test)
    is BLOCKING.
 4. **Spec-driven (ADR-010):** for every Given/When/Then scenario of every requirement in Refs, find the test named

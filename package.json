@@ -26,6 +26,7 @@
     "test:levels": "vitest run --reporter=json --outputFile.json=test-results/vitest.json && node scripts/test-levels.mjs --report test-results/vitest.json",
     "test:e2e": "node scripts/run-e2e.mjs",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run arch && npm run deadcode && npm run test:ci",
+    "verify:local": "npm run typecheck && npm run lint && npm run format:check && npm run arch && npm run deadcode && vitest run --changed origin/develop",
     "live:openai": "npm run build && node scripts/openai-live-check.mjs",
     "live:ollama": "npm run build && node scripts/ollama-live-check.mjs",
     "spike:reader": "node --import ./scripts/register-ts.mjs eval/spike/score-reader.ts",

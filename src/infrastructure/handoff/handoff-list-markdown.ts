@@ -182,6 +182,7 @@ function documentLine(
 /** RF-620, RF-601: the documentation set first, then the parts of RF-601, each linking its file. */
 function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const entries = [
+    ...(handoff.brief.buildMethod.aiAssisted ? [[`[AGENTS.md](${handoffFiles.agents})`]] : []),
     ...documentSet.map((document) => [documentLine(document, handoff, esc)]),
     [`[Requirements specification](${handoffFiles.requirements})`],
     [`[Target architecture](${handoffFiles.architecture})`],
@@ -199,7 +200,6 @@ function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     [`[Source cards](${handoffFiles.sources})`],
     [`[Realistic data shapes](${handoffFiles.fixtures})`],
     [`[Conventions](${handoffFiles.conventions})`],
-    ...(handoff.brief.buildMethod.aiAssisted ? [[`[AGENTS.md](${handoffFiles.agents})`]] : []),
   ];
   return entries.flatMap((lines, index) =>
     lines.map((line, at) => (at === 0 ? `${String(index + 1)}. ${line}` : line)),

@@ -85,36 +85,79 @@ function replacedSystem(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   return upload === undefined ? esc.url(repository.url) : esc.inline(uploadSentence(upload));
 }
 
-// RF-612
-export function agentsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
+const longRulesHeading = '## Long rules (they move to orchestration.md)';
+const unknownCommand = 'Unknown: decide it when the stack is set up';
+
+const commandRows: readonly (readonly [string, string])[] = [
+  ['install', 'Fetch the dependencies'],
+  ['run', 'Start the application locally'],
+  ['test', 'Run the tests'],
+  ['check', 'Run every gate before asking for review'],
+];
+
+/** RF-640: the command table; the package knows no command, so each value is marked unknown. */
+function commandLines(): string[] {
+  return [
+    '| Command | What it does | Value |',
+    '| ------- | ------------ | ----- |',
+    ...commandRows.map(([name, what]) => `| ${name} | ${what} | ${unknownCommand} |`),
+  ];
+}
+
+function principleBullets(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  if (handoff.principles.length === 0) return ['No principle was chosen.'];
+  return handoff.principles.map(
+    (each) =>
+      `- ${esc.inline(each.title)}: ${esc.inline(each.rule)} Check: ${esc.inline(each.check)}`,
+  );
+}
+
+function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const strategy = migrationStrategyInfo[handoff.brief.migration];
   return [
     '# AGENTS.md',
     '',
-    `Instructions for the AI agents (and the people) who build the new system that replaces ${replacedSystem(handoff, esc)}. The requirements, the architecture and the task cards are in the [README](${handoffFiles.readme}) reading order; the rules below come from the planning brief.`,
+    `Instructions for the AI agents (and the people) who build the new system that replaces ${replacedSystem(handoff, esc)}. Start here.`,
     '',
-    '## Rules from the chosen principles',
+    '## Start here',
     '',
-    ...(handoff.principles.length === 0
-      ? ['No principle was chosen.']
-      : handoff.principles.map(
-          (each) =>
-            `- ${esc.inline(each.title)}: ${esc.inline(each.rule)} Check: ${esc.inline(each.check)}`,
-        )),
+    `1. Read the [README](${handoffFiles.readme}) reading order: the requirements, the architecture and the decisions.`,
+    `2. Take one card from [the task cards](${handoffFiles.tasks}) and give it to the model tier of its band (see Task cards and difficulty below).`,
+    '3. Read [Operations](#operations) before you work next to other agents, and [Risk class](#risk-class) before you take a risky card.',
     '',
-    '## Architecture and migration',
+    '## Commands',
+    '',
+    ...commandLines(),
+    '',
+    '## Rules broken most often',
+    '',
+    ...principleBullets(handoff, esc),
+    '- Use only the technologies listed under Layout; when a task needs another one, stop and ask instead of choosing.',
+    '- Write the failing test first and keep every card to its own files.',
+    '',
+    '## Layout',
     '',
     ...styleLines(handoff, esc),
     `Migration: ${esc.inline(strategy.title)} (${decisionLink(handoff.choices.migration)}). ${esc.inline(strategy.ordering)}`,
     '',
-    '## Technology',
-    '',
     ...technologyLines(handoff, esc),
-    'Use only the technologies above. When a task needs another one, stop and ask instead of choosing.',
-    '',
     '## Plan before building',
     '',
-    `Before writing code for a task card, read the card and the requirements it names, then write a short plan: the files to change, the tests to write and what could go wrong. Build only after the plan matches the card. If the card and the requirements disagree, stop and ask. The cards are in [the task cards](${handoffFiles.tasks}).`,
+    'Before writing code for a task card, read the card and the requirements it names, then write a short plan: the files to change, the tests to write and what could go wrong. Build only after the plan matches the card. If the card and the requirements disagree, stop and ask.',
+    '',
+    '## Human review',
+    '',
+    'A person reviews every pull request before it is merged. The reviewer checks the card, the acceptance criteria and the review checklist on the card, and no agent merges its own work.',
+    '',
+  ];
+}
+
+/** The rules that wait here until `orchestration.md` takes them (P6-07). */
+function longRuleLines(): string[] {
+  return [
+    longRulesHeading,
+    '',
+    'The sections below are the long rules of the build. They stay in this file until the build protocol has its own file; the start-here index above does not depend on them.',
     '',
     '## Task cards and difficulty',
     '',
@@ -126,9 +169,10 @@ export function agentsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     ...behaviourRuleLines(),
     ...operationsLines(),
     ...metricsRuleLines(),
-    '## Human review',
-    '',
-    'A person reviews every pull request before it is merged. The reviewer checks the card, the acceptance criteria and the review checklist on the card, and no agent merges its own work.',
-    '',
-  ].join('\n');
+  ];
+}
+
+// RF-612, RF-640
+export function agentsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
+  return [...indexLines(handoff, esc), ...longRuleLines()].join('\n');
 }

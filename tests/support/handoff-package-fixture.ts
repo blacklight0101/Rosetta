@@ -171,3 +171,8 @@ export function handoffOf(
     ...extra,
   };
 }
+
+/** The same package for a build by people: no AGENTS.md, so the reading order starts with the documents. */
+export function builtByPeople(handoff: HandoffPackage): HandoffPackage {
+  return { ...handoff, brief: { ...handoff.brief, buildMethod: { aiAssisted: false } } };
+}
