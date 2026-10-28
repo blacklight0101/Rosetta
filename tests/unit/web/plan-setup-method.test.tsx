@@ -19,7 +19,13 @@ const agents = (): HTMLElement => screen.getByRole('radio', { name: /^Agents wil
 const people = (): HTMLElement => screen.getByRole('radio', { name: /^People will build/u });
 const tool = (name: RegExp): HTMLElement => screen.getByRole('radio', { name });
 
-const briefWith = (patch: Record<string, unknown>, from = unsavedBrief) => ({
+interface BriefView {
+  readonly saved: boolean;
+  readonly outOfDate: boolean;
+  readonly brief: object;
+}
+
+const briefWith = (patch: Record<string, unknown>, from: BriefView = unsavedBrief): BriefView => ({
   ...from,
   brief: { ...from.brief, ...patch },
 });

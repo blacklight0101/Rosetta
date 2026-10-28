@@ -43,7 +43,7 @@ export interface BriefAnswers {
   readonly context?: Readonly<Record<string, unknown>>;
   readonly buildMethod?: {
     readonly aiAssisted: boolean;
-    readonly agentTool?: { readonly kind: string; readonly name?: string };
+    readonly agentTool?: { readonly kind: string; readonly name?: string | undefined };
     readonly models?: Readonly<Record<string, string>>;
   };
 }

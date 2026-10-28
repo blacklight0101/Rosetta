@@ -67,7 +67,7 @@ function modelOf(draft: MethodDraft, tier: Tier): string | undefined {
 
 export interface NamedTool {
   readonly kind: ToolKind;
-  readonly name?: string;
+  readonly name?: string | undefined;
 }
 
 const NAMES: readonly { readonly pattern: RegExp; readonly tool: NamedTool }[] = [
@@ -113,7 +113,7 @@ export function methodLineOf(draft: MethodDraft): string {
 /** The build method a save sends: the tool only once chosen, the models only once a tool is. */
 export function buildMethodOf(draft: MethodDraft): {
   readonly aiAssisted: boolean;
-  readonly agentTool?: { readonly kind: ToolKind; readonly name?: string };
+  readonly agentTool?: { readonly kind: ToolKind; readonly name?: string | undefined };
   readonly models?: Partial<Record<ModelSlot, string>>;
 } {
   if (!draft.aiAssisted) return { aiAssisted: false };
@@ -135,7 +135,7 @@ export function buildMethodOf(draft: MethodDraft): {
 
 interface SavedMethod {
   readonly aiAssisted: boolean;
-  readonly agentTool?: { readonly kind: ToolKind; readonly name?: string } | undefined;
+  readonly agentTool?: { readonly kind: ToolKind; readonly name?: string | undefined } | undefined;
   readonly models?: Partial<Record<ModelSlot, string | undefined>> | undefined;
 }
 
