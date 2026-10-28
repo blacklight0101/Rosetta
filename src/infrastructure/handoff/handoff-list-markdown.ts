@@ -11,6 +11,7 @@ import {
   stackClashReadmeLines,
 } from './handoff-stack-markdown.js';
 import { leftOutSummaryLines } from './handoff-left-out-markdown.js';
+import { buildMethodQuestionLines, leftOutReadmeLines } from './handoff-build-method-markdown.js';
 import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
 import { uploadSentence } from '../../domain/sources/upload-facts.js';
 import { incompleteApiLines, incompleteLines } from './handoff-incomplete-markdown.js';
@@ -90,6 +91,7 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     '',
     'A security question is the exception: its default is the secure option, never the legacy behaviour. The planner marks a claim as a security matter, and a question of the card that holds such a claim, and a keep-or-fix row about it, default to the secure option.',
     '',
+    ...buildMethodQuestionLines(handoff),
     '## Planning brief questions that took their default',
     '',
     'Nobody answered these questions when the brief was saved; the package was written with the default shown. Confirm or change each one. A question of the brief applies to the whole build, so it marks no single card as waiting.',
@@ -275,6 +277,7 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     ...stackClashReadmeLines(handoff),
     `Planned from the analysis of ${analysed} (understand run ${esc.inline(handoff.sourceRun)}), with the planning brief saved at ${esc.inline(brief.savedAt)}.`,
     '',
+    ...leftOutReadmeLines(handoff),
     'Only claims the verifier found supported by the code were used. Every requirement names its source cards, and every source card lists its citations into the legacy code. The files are plain Markdown (the API contract, when there is one, is YAML); the diagrams are Mermaid.',
     '',
     ...incompleteLines(handoff),
