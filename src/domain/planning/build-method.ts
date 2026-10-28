@@ -3,16 +3,16 @@
 // name per tier. Claude Code has default aliases; Codex and another tool have none (names change
 // too fast to ship), so a tier without a name stays unnamed and the package lists it (RF-641).
 
-export type AgentTool =
+type AgentTool =
   | { readonly kind: 'claude-code' }
   | { readonly kind: 'codex' }
   | { readonly kind: 'other'; readonly name: string };
 
 /** The tiers of the difficulty bands, smallest first (RF-639). */
 export const modelTiers = ['smallest', 'middle', 'largest'] as const;
-export type ModelTier = (typeof modelTiers)[number];
+type ModelTier = (typeof modelTiers)[number];
 
-export interface BuildModels {
+interface BuildModels {
   readonly smallest?: string | undefined;
   readonly middle?: string | undefined;
   readonly largest?: string | undefined;
@@ -28,7 +28,7 @@ export interface BuildMethod {
 }
 
 /** The model aliases Claude Code gets when the team names none (RF-639). */
-export const claudeCodeModels: Readonly<Record<ModelTier, string>> = {
+const claudeCodeModels: Readonly<Record<ModelTier, string>> = {
   smallest: 'haiku',
   middle: 'sonnet',
   largest: 'opus',
