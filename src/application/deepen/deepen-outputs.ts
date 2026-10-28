@@ -7,6 +7,7 @@ import { err, ok } from '../../domain/errors/result.js';
 import type { Overview } from '../../domain/overview/overview.js';
 import type { RunConsolidation } from '../consolidate/consolidate-run.js';
 import { scopeOf } from '../runs/run-scope.js';
+import { mergedIntoAnswered } from './deepen-answers.js';
 import { openQuestionsOf } from '../understand/open-questions.js';
 import { overviewStep } from '../understand/overview-step.js';
 import type { ReaderTask } from '../understand/reader-tasks.js';
@@ -69,6 +70,26 @@ export async function addQuestions(parts: DeepenParts, cards: readonly Card[]): 
   await parts.deps.answers.addQuestions(
     { userId: run.userId, projectId: run.projectId },
     questions,
+  );
+}
+
+/**
+ * RF-646, RF-243: an open question of the written cards that asks the same as an answered one is that
+ * question (answers.md keeps it once, with its answer, and a new card that asked it again was merged
+ * into it): its card is marked Answered, so the Deepen asks nothing again.
+ */
+export async function markMergedQuestions(
+  parts: DeepenParts,
+  cards: readonly Card[],
+): Promise<void> {
+  const { run } = parts.execution;
+  const project = { userId: run.userId, projectId: run.projectId };
+  const merged = mergedIntoAnswered(cards, await parts.deps.answers.answeredQuestions(project));
+  if (merged.length === 0) return;
+  await parts.deps.priorCards.markAnswered(
+    project,
+    run.runKey,
+    merged.map((card) => card.id),
   );
 }
 

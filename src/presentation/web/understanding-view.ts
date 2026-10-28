@@ -1,4 +1,5 @@
 import type { UnderstandingMeasures } from '../../domain/deepen/understanding-measures.js';
+import { answersUsedIn } from '../../domain/deepen/deepen-record.js';
 import type { Understanding } from '../../application/use-cases/read-understanding.js';
 
 // RF-231: what the API shows of the understanding of a run. The files not read come largest first and
@@ -17,7 +18,8 @@ export interface UnderstandingView {
         readonly filesNotReadCount: number;
       })
     | null;
-  readonly deepen: Understanding['deepen'];
+  /** DEC-179: the record of a Deepen run, with how many answers of the project it used. */
+  readonly deepen: (NonNullable<Understanding['deepen']> & { readonly answersUsed: number }) | null;
 }
 
 function listed(file: UnderstandingMeasures['filesNotRead'][number]): ListedFile {
@@ -25,9 +27,14 @@ function listed(file: UnderstandingMeasures['filesNotRead'][number]): ListedFile
   return unreadShare === undefined ? { path, tokens } : { path, tokens, unreadShare };
 }
 
+function deepenView(deepen: Understanding['deepen']): UnderstandingView['deepen'] {
+  return deepen === null ? null : { ...deepen, answersUsed: answersUsedIn(deepen) };
+}
+
 // RF-231
 export function understandingView(understanding: Understanding): UnderstandingView {
-  const { measures, deepen } = understanding;
+  const { measures } = understanding;
+  const deepen = deepenView(understanding.deepen);
   if (measures === null) return { measures: null, deepen };
   return {
     measures: {

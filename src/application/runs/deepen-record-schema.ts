@@ -34,6 +34,7 @@ const roundSchema = z.object({
   newClaims: z.array(
     z.object({ claimId: text, status: z.enum(CLAIM_STATUSES), replaces: text.optional() }),
   ),
+  answersUsed: z.array(text).default([]),
   tokens: count,
   costMicros: count,
 });

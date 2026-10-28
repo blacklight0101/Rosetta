@@ -7,6 +7,7 @@ import type {
   RecordedQuestion,
 } from '../../application/ports/answers-file.js';
 import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
+import { questionWords } from '../../application/understand/open-questions.js';
 import { KeyedQueue } from '../../application/support/keyed-queue.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -43,12 +44,18 @@ function fileOf(project: ProjectRef): WorkspaceFile {
   return { userId: project.userId, path: `${projectPath(project.projectId)}/answers.md` };
 }
 
-/** The questions the file already holds, as written in their headings. */
+/** RF-646, Q-52: two questions that ask the same have the same words, whatever the case and marks. */
+function askedBy(text: string): string {
+  const words = questionWords(text);
+  return words === '' ? text : words;
+}
+
+/** The questions the file already holds: as written, and by the words they ask. */
 function questionsIn(text: string): Set<string> {
   return new Set(
     linesOf(text).flatMap((line) => {
       const found = heading.exec(line);
-      return found === null ? [] : [found[1] ?? ''];
+      return found === null ? [] : [found[1] ?? '', askedBy(found[1] ?? '')];
     }),
   );
 }
@@ -72,13 +79,17 @@ export class FileAnswersFile implements AnswersFile {
     return this.queue.run(`${file.userId}/${file.path}`, async () => {
       const existing = await this.read(file);
       const known = questionsIn(existing);
+      const added = new Set<string>();
       const { mark, body } = markOf(existing);
       const end = lastLineEndOf(body);
       const sections = questions.flatMap((question) => {
         const text = this.line(question.question);
-        const held = question.survivor === true ? hasId(existing, question) : known.has(text);
+        const held =
+          question.survivor === true
+            ? hasId(existing, question)
+            : added.has(text) || known.has(text) || known.has(askedBy(text));
         if (held) return [];
-        known.add(text);
+        added.add(text);
         return [this.section(question, text, end)];
       });
       if (sections.length === 0) return;
