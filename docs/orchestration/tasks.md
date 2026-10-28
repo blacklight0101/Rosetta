@@ -6077,7 +6077,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (DEC-173)
-- **Status**: Done
+- **Status**: Done (#948; the owner took every default and opened the phase, DEC-176..DEC-179)
 - **Reads**: the package writer (`src/infrastructure/handoff/`, `handoff-method-markdown.ts` for `AGENTS.md`), the planning brief's build method question (`src/domain/planning/brief-questions.ts`), RF-612, RF-635 and RF-636, and this repository's own method as the reference: the project-blueprint skill it was planned with (docs-first repository, `CLAUDE.md`, `handoff.md`, RFC, ADRs, decision log, task cards with builder tiers, an independent verifier and human gates) and `docs/orchestration/README.md` with `.claude/agents/`. Owner test of 2026-10-25: a Sonnet full run of a single-file app gave a package with 18 task cards and no agent method, because AI-assisted build stayed on its default (off).
 - **Do**: a written review, then the cards it calls for (no code in this card). The goal: a team that takes the package builds the new system with the same method this repository was built with, as the project-blueprint skill sets it up.
   - What an agent sees first in the package, and whether it can tell how to proceed without a person explaining it.
