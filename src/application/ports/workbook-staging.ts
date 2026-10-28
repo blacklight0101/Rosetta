@@ -28,7 +28,7 @@ export interface ReceiveRequest {
 }
 
 /** RF-159: the step the server is in while a batch is processed. */
-export type WorkbookStep = 'reading' | 'rendering' | 'dependencies' | 'saving';
+type WorkbookStep = 'reading' | 'rendering' | 'dependencies' | 'saving';
 
 /**
  * RF-159, DEC-183: where processing has got to. `workbook` and `sheet` count from 1 (0 before the

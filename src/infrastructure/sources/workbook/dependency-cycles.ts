@@ -2,7 +2,6 @@ import { at, POSITION } from './dependency-grid.js';
 import type { Project } from './dependency-project.js';
 import type { RefBox } from './reference-box.js';
 import type { RefStore } from './dependency-store.js';
-import { drive } from './render-steps.js';
 
 const ROOTS_PER_TURN = 4096;
 
@@ -186,16 +185,7 @@ class Search {
 }
 
 /** The circular references among `nodes` formula cells, within the step limit. */
-export function findCycles(
-  project: Project,
-  store: RefStore,
-  nodes: number,
-  limits: CycleLimits,
-): CycleSearch {
-  return drive(findCyclesSteps(project, store, nodes, limits));
-}
-
-/** The same search, handing the server back while it runs (RF-159). */
+/** The search, handing the server back while it runs (RF-159). */
 export function* findCyclesSteps(
   project: Project,
   store: RefStore,

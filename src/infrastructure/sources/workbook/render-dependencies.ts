@@ -8,7 +8,7 @@ import { buildProject, type Project, type RenderedNames } from './dependency-pro
 import { MAX_REFERENCES_PER_FORMULA } from './formula-references.js';
 import { addDefinedNames, addUnresolvedAndDynamic } from './render-dependency-names.js';
 import { TextFile, type ByteBudget } from './render-output.js';
-import { cellsOf, drive, relay, type Steps } from './render-steps.js';
+import { cellsOf, relay, type Steps } from './render-steps.js';
 import type { WorkbookModel } from './workbook-model.js';
 
 // RF-153, RFC-005 section 4.5: `dependencies.md`, the formula dependency map of the whole project.
@@ -157,17 +157,10 @@ function addLimits(file: TextFile, parts: Parts): void {
   if (file.lineCount === before) file.add('None.');
 }
 
-/** The text of `dependencies.md` for the models and the folder names they were rendered with. */
-export function renderDependencies(
-  models: readonly WorkbookModel[],
-  rendered: readonly RenderedNames[],
-  limits: DependencyLimits,
-  budget: ByteBudget,
-): string {
-  return drive(renderDependenciesSteps(models, rendered, limits, budget));
-}
-
-/** The same text, handing the server back between the workbooks and the passes (RF-159). */
+/**
+ * The text of `dependencies.md` for the models and the folder names they were rendered with,
+ * handing the server back between the passes (RF-159).
+ */
 export function* renderDependenciesSteps(
   models: readonly WorkbookModel[],
   rendered: readonly RenderedNames[],

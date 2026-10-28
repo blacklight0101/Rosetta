@@ -2,7 +2,6 @@ import { at } from './dependency-grid.js';
 import type { Project } from './dependency-project.js';
 import type { RefStore } from './dependency-store.js';
 import { MAX_COLUMNS } from './cell-address.js';
-import { drive } from './render-steps.js';
 
 // RF-153: which cells of each sheet some formula reads. A formula reads boxes, never cells, and a box
 // can cover millions of them, so the answer is a sweep: the boxes of a sheet enter and leave in row
@@ -112,11 +111,7 @@ function coverSheet(
 }
 
 /** For each sheet (by id), 1 for the cells some formula reads, in the reading order of its grid. */
-export function coverage(project: Project, store: RefStore): Uint8Array[] {
-  return drive(coverageSteps(project, store));
-}
-
-/** The same pass, handing the server back after each sheet (RF-159). */
+/** The covering pass, handing the server back after each sheet (RF-159). */
 export function* coverageSteps(
   project: Project,
   store: RefStore,
