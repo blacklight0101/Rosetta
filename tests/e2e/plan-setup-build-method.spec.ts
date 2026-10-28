@@ -60,3 +60,37 @@ test('RF-612 RF-639 the build method step asks agents or people, then the tool, 
   await expect(recorded(page)).toContainText('People will build');
   await expectNoSeriousViolations(page);
 });
+
+// RF-612, RF-605: the page shows an answer the moment it is chosen; a save that lands later must not
+// put the answer it carried over the one chosen while it was on its way.
+test('RF-612 an answer changed while a save is on its way is kept when the save lands', async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  await understandCatalog(page);
+  await openStartPage(page);
+  await openPlanSetup(page);
+  await openStep(page, 'Build method');
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/projects/*/planning-brief', async (route) => {
+    if (route.request().method() !== 'PUT') return route.fallback();
+    await held;
+    return route.fallback();
+  });
+  const people = page.getByRole('radio', { name: /^People will build/u });
+  await page.getByRole('radio', { name: /^Agents will build/u }).check();
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
+  );
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await people.check();
+  release();
+  await saved;
+  await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
+  await expect(people).toBeChecked();
+  await expect(recorded(page)).toContainText('People will build');
+});
