@@ -46,6 +46,11 @@ function bounded(problems: readonly OutputProblem[]): readonly OutputProblem[] {
   }));
 }
 
+/** RF-645: `required` for the card format that asks for suggested answers (v3 on). */
+export interface ParseOptions {
+  readonly suggestedAnswers?: 'required' | 'optional';
+}
+
 /** What one answer gave: the cards that are valid and why the rest was dropped. */
 export interface CardParse {
   readonly drafts: readonly CardDraft[];
@@ -108,7 +113,12 @@ function nothingFound(search: JsonSearch, found: readonly OutputProblem[]): Card
  * Q-47); a citation like `values.md:R8` is read as the lines of that row.
  */
 // RF-208
-export function parseCardsLenient(raw: string, rows: RowIndex = new Map()): CardParse {
+export function parseCardsLenient(
+  raw: string,
+  rows: RowIndex = new Map(),
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- read by the next commit
+  _options: ParseOptions = {},
+): CardParse {
   if (raw.length > cardLimits.maxOutputChars) {
     return { drafts: [], problems: [tooLong], cutOff: false };
   }
