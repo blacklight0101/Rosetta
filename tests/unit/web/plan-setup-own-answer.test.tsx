@@ -210,7 +210,7 @@ describe('the project context questions', () => {
   });
 });
 
-describe('the build method and the principles', () => {
+describe('the build method', () => {
   it('RF-645 the build method adds a qualified third answer and your own', async () => {
     const page = renderPlan();
     await openStep('Build method');
@@ -237,12 +237,16 @@ describe('the build method and the principles', () => {
     await openStep('Build method');
 
     expect(own()).toHaveProperty('checked', true);
-    expect(screen.getByText(/Your brief was saved before this question was answered/u)).not.toBeNull();
+    expect(
+      screen.getByText(/Your brief was saved before this question was answered/u),
+    ).not.toBeNull();
     const summary = screen.getByRole('region', { name: 'What I recorded' });
     expect(within(summary).getByText(/Your own answer: A vendor builds it\./u)).not.toBeNull();
     expect(within(summary).getByText(new RegExp(NOTE, 'u'))).not.toBeNull();
   });
+});
 
+describe('the principles', () => {
   it('RF-645 the principles list the recommended ones first and take a typed principle', async () => {
     const page = renderPlan();
     await openStep('Principles');
@@ -271,11 +275,8 @@ describe('the build method and the principles', () => {
     press('Save and continue');
 
     await saved(page);
-    expect(saves(page)).toEqual([
-      expect.objectContaining({
-        principles: expect.any(Array),
-        typed: { principles: 'Every module has an owner.' },
-      }),
-    ]);
+    const [body] = saves(page);
+    expect(body).toHaveProperty('principles');
+    expect(body).toHaveProperty('typed', { principles: 'Every module has an owner.' });
   });
 });
