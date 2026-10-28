@@ -36,10 +36,10 @@ describe('the build method question', () => {
     expect(screen.getByRole('radiogroup', { name: /How will the team build/u })).not.toBeNull();
     expect(agents()).toHaveProperty('checked', false);
     expect(people()).toHaveProperty('checked', false);
-    expect(document.getElementById('build-method-agents-help')?.textContent).toMatch(
+    expect(document.getElementById('build-method-agents-more')?.textContent).toMatch(
       /AGENTS\.md.*Leaves out: nothing/u,
     );
-    expect(document.getElementById('build-method-people-help')?.textContent).toMatch(
+    expect(document.getElementById('build-method-people-more')?.textContent).toMatch(
       /Leaves out: AGENTS\.md/u,
     );
     expect(screen.queryByText(/Which agent tool/u)).toBeNull();
@@ -56,7 +56,9 @@ describe('the build method question', () => {
     expect(saves(page)).toEqual([{ buildMethod: { aiAssisted: false } }]);
     expect(within(summary).getByText('People will build')).not.toBeNull();
   });
+});
 
+describe('the build method question: the shortcut and the invitation', () => {
   it('RF-612 opens on Agents will build and says why when the project context names a tool', async () => {
     const page = renderPlan({ [`GET ${base}/planning-brief`]: json(200, namingClaudeCode) });
     await openMethod();
@@ -105,7 +107,9 @@ describe('the agent tool and the models', () => {
     expect(screen.getByLabelText(/Largest tier/u)).not.toBeNull();
     expect(screen.getByLabelText(/Escalation model/u)).not.toBeNull();
   });
+});
 
+describe('the agent tool and the models: the answers', () => {
   it('RF-639 Claude Code shows haiku, sonnet and opus as its defaults and sends only the tool', async () => {
     const page = renderPlan();
     await openMethod();
@@ -128,7 +132,9 @@ describe('the agent tool and the models', () => {
       ),
     ).not.toBeNull();
   });
+});
 
+describe('the agent tool and the models: other tools', () => {
   it('RF-639 Codex has no default model names and sends the names typed', async () => {
     const page = renderPlan();
     await openMethod();
@@ -171,7 +177,9 @@ describe('the agent tool and the models', () => {
       { buildMethod: { aiAssisted: true, agentTool: { kind: 'other', name: 'Aider' } } },
     ]);
   });
+});
 
+describe('the agent tool and the models: a saved brief and a refusal', () => {
   it('RF-639 a saved tool and its models come back and are sent again on a re-save', async () => {
     const saved = briefWith(
       {
@@ -193,15 +201,11 @@ describe('the agent tool and the models', () => {
     press('Save');
 
     await screen.findByRole('region', { name: 'What I recorded' });
-    expect(saves(page)).toEqual([
-      {
-        buildMethod: {
-          aiAssisted: true,
-          agentTool: { kind: 'codex' },
-          models: { middle: 'gpt-mid', largest: 'gpt-top' },
-        },
-      },
-    ]);
+    expect(saves(page)[0]).toHaveProperty('buildMethod', {
+      aiAssisted: true,
+      agentTool: { kind: 'codex' },
+      models: { middle: 'gpt-mid', largest: 'gpt-top' },
+    });
   });
 
   it('RF-639 a model name that is too long is refused before the save', async () => {

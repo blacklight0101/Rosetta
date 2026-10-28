@@ -44,7 +44,7 @@ describe('project context step', () => {
     });
     press('Save and continue');
 
-    await screen.findByRole('heading', { name: /Will the team build/u, level: 2 });
+    await screen.findByRole('heading', { name: /Will agents or people build/u, level: 2 });
     expect(saves(page)).toEqual([
       {
         context: {

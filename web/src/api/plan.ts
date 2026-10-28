@@ -41,7 +41,11 @@ export interface BriefAnswers {
     offered?: readonly string[] | undefined;
   }[];
   readonly context?: Readonly<Record<string, unknown>>;
-  readonly buildMethod?: { readonly aiAssisted: boolean };
+  readonly buildMethod?: {
+    readonly aiAssisted: boolean;
+    readonly agentTool?: { readonly kind: string; readonly name?: string };
+    readonly models?: Readonly<Record<string, string>>;
+  };
 }
 
 // RF-606

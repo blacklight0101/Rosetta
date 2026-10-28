@@ -50,7 +50,20 @@ const briefSchema = z.object({
     keepIntegrations: z.array(z.string()),
     dataMigration: z.string().nullable(),
   }),
-  buildMethod: z.object({ aiAssisted: z.boolean() }),
+  buildMethod: z.object({
+    aiAssisted: z.boolean(),
+    agentTool: z
+      .object({ kind: z.enum(['claude-code', 'codex', 'other']), name: z.string().optional() })
+      .optional(),
+    models: z
+      .object({
+        smallest: z.string().optional(),
+        middle: z.string().optional(),
+        largest: z.string().optional(),
+        escalation: z.string().optional(),
+      })
+      .optional(),
+  }),
   defaulted: z.array(z.string()),
 });
 
