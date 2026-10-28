@@ -8,7 +8,7 @@ import type {
 } from '../../application/ports/answers-file.js';
 import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
 import { KeyedQueue } from '../../application/support/keyed-queue.js';
-import { err, ok, type Result } from '../../domain/errors/result.js';
+import { ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { projectPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
@@ -17,6 +17,7 @@ import {
   lastLineEndOf,
   linesOf,
   markOf,
+  optionsLineOf,
   questionsOfRun,
   withAnswers,
 } from './answers-sections.js';
@@ -102,27 +103,41 @@ export class FileAnswersFile implements AnswersFile {
     project: ProjectRef,
     runKey: string,
     answers: readonly AnswerEntry[],
-  ): Promise<Result<readonly RecordedQuestion[], 'unknown-question'>> {
+  ): Promise<Result<readonly RecordedQuestion[], 'unknown-question' | 'invalid-choice'>> {
     const file = fileOf(project);
     return this.queue.run(`${file.userId}/${file.path}`, async () => {
       const existing = await this.read(file);
       const lines = answers.map((entry) => ({ ...entry, answer: this.line(entry.answer) }));
       const text = withAnswers(existing, runKey, lines);
-      if (text === undefined) return err('unknown-question');
-      if (text !== existing) await this.write(file, text);
-      return ok(questionsOfRun(text, runKey));
+      if (!text.ok) return text;
+      if (text.value !== existing) await this.write(file, text.value);
+      return ok(questionsOfRun(text.value, runKey));
     });
   }
 
   /** One section, its lines joined with the line end of the file's last line. */
   private section(question: OpenQuestion, text: string, end: string): string {
+    const options = this.optionsLine(question);
     return [
       `## ${question.cardId} - ${text}`,
       '',
       `- Card: runs/${question.runKey}/cards/OQ/${question.cardId}.md`,
       `- Context: ${this.line(question.context)}`,
+      ...(options === '' ? [] : [`- Options: ${options}`, '- Chosen:']),
       '- Answer:',
     ].join(end);
+  }
+
+  /** RF-645: the suggested answers of the question on one line, masked; '' when it has none. */
+  private optionsLine(question: OpenQuestion): string {
+    const options = (question.options ?? [])
+      .map((option) => ({
+        ...option,
+        answer: this.line(option.answer),
+        description: this.line(option.description),
+      }))
+      .filter((option) => option.answer !== '');
+    return optionsLineOf(options);
   }
 
   /** Masked text on one line: masked as written, then its whitespace collapsed (P2-42). */

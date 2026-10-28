@@ -8,8 +8,13 @@ import { useApp } from '../app/app-context.js';
 
 type Questions = readonly OpenQuestionRow[];
 
+/** RF-645: the option chosen (from 1), `typed` for the user's own answer, `''` for none yet. */
+export type Choice = '' | 'typed' | number;
+
 export interface AnswerSave {
   readonly text: string;
+  readonly choice: Choice;
+  readonly choose: (choice: Choice) => void;
   readonly busy: boolean;
   readonly failure: ApiFailure | undefined;
   readonly message: string;
@@ -54,6 +59,25 @@ function useQuestionRequest(): QuestionRequest {
   return { busy, failure, message, setMessage, run };
 }
 
+/** RF-645: the choice a saved question shows; an answer saved with no choice on record is typed. */
+function choiceOf(question: OpenQuestionRow): Choice {
+  const number = Number(question.chosen);
+  if (Number.isInteger(number) && number >= 1) return number;
+  return question.chosen === 'typed' || question.answer !== '' ? 'typed' : '';
+}
+
+/** RF-645: what a save sends: a chosen option writes its own answer, a typed one the text. */
+function entryOf(question: OpenQuestionRow, choice: Choice, text: string) {
+  const { cardId } = question;
+  if (question.options === undefined) return { cardId, answer: text };
+  if (typeof choice === 'number') {
+    return { cardId, answer: question.options[choice - 1]?.answer ?? '', chosen: choice };
+  }
+  return choice === 'typed'
+    ? { cardId, answer: text, chosen: 'typed' as const }
+    : { cardId, answer: '' };
+}
+
 export function useAnswerSave(
   runId: string,
   question: OpenQuestionRow,
@@ -61,17 +85,20 @@ export function useAnswerSave(
 ): AnswerSave {
   const { client } = useApp();
   const [text, setText] = useState(question.answer);
+  const [choice, setChoice] = useState<Choice>(() => choiceOf(question));
   const request = useQuestionRequest();
   const { cardId } = question;
   const savedOf = (questions: Questions): string =>
     questions.find((each) => each.cardId === cardId)?.answer ?? '';
   const submit = async (): Promise<void> => {
-    const send = () => saveAnswer(client, runId, { cardId, answer: text });
+    const send = () => saveAnswer(client, runId, entryOf(question, choice, text));
     const saved = await request.run(send, (questions) =>
       savedOf(questions) === '' ? 'Answer cleared in answers.md.' : 'Answer saved in answers.md.',
     );
     if (saved === undefined) return;
     setText(savedOf(saved));
+    const row = saved.find((each) => each.cardId === cardId);
+    if (row !== undefined) setChoice(choiceOf(row));
     apply(saved);
   };
   const reopen = async (): Promise<void> => {
@@ -87,5 +114,9 @@ export function useAnswerSave(
     request.setMessage('');
   };
   const { busy, failure, message } = request;
-  return { text, busy, failure, message, type, submit, reopen };
+  const choose = (value: Choice): void => {
+    setChoice(value);
+    request.setMessage('');
+  };
+  return { text, choice, choose, busy, failure, message, type, submit, reopen };
 }
