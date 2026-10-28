@@ -1,10 +1,12 @@
 import type { HandoffPackage, PackagePrinciple } from '../../application/plan/handoff-package.js';
+import { modelForTier, type BuildMethod } from '../../domain/planning/build-method.js';
 import type { PlanPhase, PlanTask } from '../../domain/planning/plan-content.js';
 import {
   difficultyOfTask,
   methodPrinciples,
   reviewGroup,
   sizeOfTask,
+  type TaskDifficulty,
 } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { behaviourLines, shapeLines } from './handoff-behaviour-markdown.js';
@@ -43,12 +45,25 @@ function plural(count: number, word: string): string {
   return `${String(count)} ${word}${count === 1 ? '' : 's'}`;
 }
 
-function sizeLines(task: PlanTask, handoff: HandoffPackage): string[] {
+/** RF-639: the tier with the model the brief names for it; the tier alone when it names none. */
+function tierText(method: BuildMethod, tier: TaskDifficulty['tier'], esc: MarkdownEscaper): string {
+  const model = modelForTier(method, tier);
+  return model === undefined ? `${tier} model tier` : `${tier} tier, model: ${esc.inline(model)}`;
+}
+
+function sizeLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const { size, points } = sizeOfTask(task);
   const lines = [`Size: ${size} (${plural(points, 'point')})`, ''];
-  if (!handoff.brief.buildMethod.aiAssisted) return lines;
-  const { rating, tier } = difficultyOfTask(task);
-  return [...lines, `Difficulty: ${String(rating)} (${tier} model tier)`, ''];
+  const method = handoff.brief.buildMethod;
+  if (!method.aiAssisted) return lines;
+  const { rating, tier, verifier } = difficultyOfTask(task);
+  return [
+    ...lines,
+    `Difficulty: ${String(rating)} (${tierText(method, tier, esc)})`,
+    '',
+    `Verifier: ${tierText(method, verifier, esc)}`,
+    '',
+  ];
 }
 
 function technologyLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
@@ -96,7 +111,7 @@ function cardLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper
     '',
     `Phase: ${phaseLink(handoff.content.phases[task.phase - 1], task.phase, esc)}`,
     '',
-    ...sizeLines(task, handoff),
+    ...sizeLines(task, handoff, esc),
     ...riskLines(task),
     `Requirements: ${requirements.length === 0 ? 'none' : requirements.join(', ')}`,
     '',

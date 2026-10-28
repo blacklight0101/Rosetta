@@ -59,17 +59,29 @@ const difficultyOfSize: Readonly<Record<TaskSize, number>> = { S: 4, M: 6, L: 8 
 export interface TaskDifficulty {
   readonly rating: number;
   readonly tier: (typeof difficultyBands)[number]['tier'];
+  /** The tier that verifies the card: the middle one for difficulty 1-8, the largest for 9-10 (RF-639). */
+  readonly verifier: (typeof difficultyBands)[number]['tier'];
+}
+
+/** RF-635, DEC-176 Q-C: the rating an M or L card at a risk class gets, the lowest of the largest band. */
+const riskRating = 9;
+
+function tierOfRating(rating: number): TaskDifficulty['tier'] {
+  return difficultyBands.find((each) => rating >= each.from && rating <= each.to)?.tier ?? 'middle';
 }
 
 /**
  * RF-612, RF-635: the builder difficulty of a card, from 1 to 10, and the model tier that builds
- * it: the tier of its band, and at least the middle one when its risk class is not `none`.
+ * it. A card rates by its size; a risk class other than `none` rates a medium or large card 9 (the
+ * largest tier) and raises a small card to the middle tier without changing its rating.
  */
-// RF-612, RF-635
+// RF-612, RF-635, RF-639
 export function difficultyOfTask(task: PlanTask): TaskDifficulty {
-  const rating = difficultyOfSize[sizeOfTask(task).size];
-  const tier = difficultyBands.find((each) => rating >= each.from && rating <= each.to)?.tier;
-  return { rating, tier: tierForRisk(tier ?? 'middle', task.riskClass) };
+  const { size } = sizeOfTask(task);
+  const atRisk = task.riskClass !== 'none';
+  const rating = atRisk && size !== 'S' ? riskRating : difficultyOfSize[size];
+  const verifier = rating >= riskRating ? 'largest' : 'middle';
+  return { rating, tier: tierForRisk(tierOfRating(rating), task.riskClass), verifier };
 }
 
 type ModelTier = TaskDifficulty['tier'];
