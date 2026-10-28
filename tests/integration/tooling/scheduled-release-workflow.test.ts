@@ -13,11 +13,16 @@ const scheduled = (): Promise<unknown> => workflowDocument('scheduled-release.ym
 const sha = '0123456789abcdef0123456789abcdef01234567';
 
 describe('scheduled-release.yml trigger and permissions', () => {
-  it('DEC-175 runs at 04:07 and 05:07 UTC (off the busy full hour) and by hand', async () => {
+  it('DEC-175 runs at 04:07, 05:07, 05:37 and 06:07 UTC (off the busy full hour) and by hand', async () => {
     const document = await scheduled();
 
     expect(keysOf(at(document, 'on')).sort()).toEqual(['schedule', 'workflow_dispatch']);
-    expect(at(document, 'on', 'schedule')).toEqual([{ cron: '7 4 * * *' }, { cron: '7 5 * * *' }]);
+    expect(at(document, 'on', 'schedule')).toEqual([
+      { cron: '7 4 * * *' },
+      { cron: '7 5 * * *' },
+      { cron: '37 5 * * *' },
+      { cron: '7 6 * * *' },
+    ]);
   });
 
   it('RNF-003 has one job with contents: read and actions: write only, and reads no secret', async () => {
@@ -46,6 +51,7 @@ interface Run {
   readonly hour?: string;
   readonly enabled?: string;
   readonly activeRuns?: string;
+  readonly slot?: string;
 }
 
 /** Runs the one step of the job against a fake gh; returns its code, the gh calls and the summary. */
@@ -62,6 +68,7 @@ async function run(options: Run = {}): Promise<{ code: number; calls: string[]; 
     ...gh.env,
     EVENT: options.event ?? 'schedule',
     DEPLOY_ENABLED: options.enabled ?? 'true',
+    SLOT: options.slot ?? '7 5 * * *',
     GH_REPO: 'blacklight0101/Rosetta',
     GITHUB_STEP_SUMMARY: summaryFile,
   };
@@ -83,12 +90,35 @@ describe('scheduled-release.yml Madrid hour', () => {
     expect(result.summary).toContain(sha);
   });
 
-  it.each(['05', '07'])('DEC-175 a scheduled run at %s in Madrid starts nothing', async (hour) => {
-    const result = await run({ hour });
+  // The fake date answers the Madrid hour; summer (CEST) slots 04:07 and 05:37 UTC and winter (CET)
+  // slots 05:07 and 06:07 UTC both reach the 06 and 07 Madrid hours, so the gate is the same in both.
+  it.each(['06', '07'])(
+    'DEC-175 a scheduled run at %s in Madrid starts Release in summer and winter time',
+    async (hour) => {
+      const summer = await run({ hour, slot: '7 4 * * *' });
+      const winter = await run({ hour, slot: '7 5 * * *' });
+
+      expect(dispatched(summer.calls)).toBe(true);
+      expect(dispatched(winter.calls)).toBe(true);
+    },
+  );
+});
+
+describe('scheduled-release.yml backup slots', () => {
+  it.each(['05', '08'])('DEC-175 a scheduled run at %s in Madrid starts nothing', async (hour) => {
+    const result = await run({ hour, slot: '7 6 * * *' });
 
     expect(result.code).toBe(0);
     expect(result.calls).toEqual([]);
     expect(result.summary).not.toBe('');
+  });
+
+  it('DEC-175 the step summary names the slot that started Release and its Madrid hour', async () => {
+    const result = await run({ hour: '07', slot: '37 5 * * *' });
+
+    expect(result.summary).toContain('37 5 * * *');
+    expect(result.summary).toContain('Madrid');
+    expect(result.summary).toContain('07');
   });
 
   it('DEC-175 a run by hand starts Release at any hour', async () => {
@@ -119,6 +149,14 @@ describe('scheduled-release.yml once per head commit of main', () => {
 
   it('DEC-175 starts nothing when a Release run of that commit is queued, running or succeeded', async () => {
     const result = await run({ activeRuns: '1' });
+
+    expect(result.code).toBe(0);
+    expect(dispatched(result.calls)).toBe(false);
+    expect(result.summary).toContain(sha);
+  });
+
+  it('DEC-175 a later backup slot starts nothing when a Release run of that commit already exists', async () => {
+    const result = await run({ hour: '07', slot: '37 5 * * *', activeRuns: '1' });
 
     expect(result.code).toBe(0);
     expect(dispatched(result.calls)).toBe(false);
