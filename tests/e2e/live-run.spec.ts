@@ -2,7 +2,9 @@ import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import {
   agentPanel,
+  chooseSecondSuggestedAnswer,
   expectNotCovered,
+  openQuestion,
   openRunTab,
   openStartPage,
   runStatus,
@@ -158,19 +160,17 @@ test('RF-264 the overview of the application comes first on the page of a finish
   await expect(overview).toBeVisible();
 });
 
-test('RF-1007 an answer typed on the page is saved in answers.md and is there after a reload', async ({
+test('RF-645 RF-1007 a suggested answer, then an answer of your own, are saved in answers.md and there after a reload', async ({
   page,
 }) => {
   const answer = 'Yes, a sold-out item stays in the list, greyed out.';
-  const questionOf = () =>
-    page
-      .getByRole('region', { name: 'Open questions' })
-      .getByTestId('open-question')
-      .filter({ hasText: 'OQ-001' });
+  const questionOf = () => openQuestion(page, 'OQ-001');
   await page.goto(finishedRun);
   await openRunTab(page, 'Your questions');
   await expect(questionOf()).toContainText('Open');
-
+  await chooseSecondSuggestedAnswer(questionOf());
+  await expectNoSeriousViolations(page);
+  await questionOf().getByRole('radio', { name: 'Type your own answer' }).check();
   await questionOf().getByLabel('Answer to OQ-001').fill(answer);
   await questionOf().getByRole('button', { name: 'Save answer' }).click();
 

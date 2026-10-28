@@ -10,6 +10,7 @@ import {
 import { answerToOq001, fullRunModel } from '../support/journey-models.js';
 import {
   agentPanel,
+  openQuestion,
   openRunTab,
   runStatus,
   startAndOpenLiveRun,
@@ -108,14 +109,13 @@ test('RF-240 RF-241 RF-1007 the owner answers the open question and the area run
     .getByRole('link', { name: /^View run /u })
     .click();
   await goOnWithTheDefaultsAndBack(page);
-  const question = page
-    .getByRole('region', { name: 'Open questions' })
-    .getByTestId('open-question')
-    .filter({ hasText: 'OQ-001' });
+  const question = openQuestion(page, 'OQ-001');
   await journeyOf(page).getByRole('button', { name: 'Answer 1 question' }).click();
-  await expect(question.getByLabel('Answer to OQ-001')).toBeFocused();
+  // RF-645: the question offers its suggested answers; the first option takes the focus.
+  await expect(question.getByRole('radio').first()).toBeFocused();
   await expectActionsFit(page, info);
   await expect(question).toContainText('Open');
+  await question.getByRole('radio', { name: 'Type your own answer' }).check();
   await question.getByLabel('Answer to OQ-001').fill(answerToOq001);
   await question.getByRole('button', { name: 'Save answer' }).click();
   await expect(question).toContainText('Answer saved in answers.md.');

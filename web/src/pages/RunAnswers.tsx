@@ -3,9 +3,9 @@ import { sectionTitles } from '../api/overview.js';
 import { waitsForAnswer, type OpenQuestionRow } from '../api/answers.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
-import { Field } from '../components/Field.js';
 import { RenderedText } from '../components/RenderedText.js';
 import { StatusBadge } from '../components/StatusBadge.js';
+import { AnswerInput } from './AnswerChoices.js';
 import { sectionAnchor } from './AppOverview.js';
 import { useAnswerSave, type AnswerSave } from './use-answer-save.js';
 import { useFocusFirst, type FocusRequest } from './use-focus-first-question.js';
@@ -13,7 +13,8 @@ import type { RunAnswersState } from './use-run-answers.js';
 import type { OverviewLoad } from './use-run-overview.js';
 
 // RF-1007, RF-240, RF-507: the open questions of an understand run on its live page, each with a
-// field for the answer. Saving writes the answer into the project's answers.md (the other answers
+// field for the answer, or its suggested answers as choices plus "Type your own answer" (RF-645,
+// DEC-178; a question saved before that keeps the field). Saving writes the answer into the project's answers.md (the other answers
 // stay); a question is marked answered only when its area is analysed again with the answers
 // (RF-241), so a saved answer reads "Answer saved" (not open, DEC-154) until a re-run used it, then Answered. A re-run skips
 // an Answered question, so one whose answer was edited is reopened first (RF-241). Question and
@@ -38,11 +39,6 @@ export interface RunAnswersProps {
 }
 
 type Questions = readonly OpenQuestionRow[];
-
-const SAVE_HELP =
-  "Saved on one line in the project's answers.md. Leave it empty to clear the answer.";
-const REOPEN_HELP =
-  ' This question is Answered: reopen it for the next re-run to use an edited answer.';
 
 function ReopenButton(props: { readonly save: AnswerSave }): JSX.Element {
   const { save } = props;
@@ -76,15 +72,7 @@ function AnswerForm(props: {
       }}
     >
       {save.failure === undefined ? null : <ErrorBanner error={save.failure} />}
-      <Field
-        kind="textarea"
-        id={`answer-${question.cardId}`}
-        label={`Answer to ${question.cardId}`}
-        rows={3}
-        value={save.text}
-        help={answered ? `${SAVE_HELP}${REOPEN_HELP}` : SAVE_HELP}
-        onInput={save.type}
-      />
+      <AnswerInput question={question} save={save} />
       <div class="rst-p139-question__actions">
         <Button type="submit" variant="secondary" busy={save.busy}>
           Save answer
