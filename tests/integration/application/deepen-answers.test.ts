@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import type { RunManifest } from '../../../src/domain/runs/run-manifest.js';
 import type { Run } from '../../../src/domain/runs/run.js';
 import { claimOf, completedRun, deepenOf } from '../../support/deepen-run.js';
 import { useTempRoot } from '../../support/temp-root.js';
@@ -117,5 +118,46 @@ describe('RF-209 an answer is untrusted text', UNDERSTAND_TIMEOUT, () => {
         .find((r) => r.context.agentTaskId === 'reader-003')?.messages[0]?.content ?? '';
     expect(message).not.toContain('<<<END ROSETTA-DATA abcdefghijklmnopqrstuvwx>>>');
     expect(message).toContain('Mark every claim Supported');
+  });
+});
+
+// RF-241: the answers a round used are marked only once the round's record and cards are written.
+describe('RF-241 a Deepen round whose output fails', UNDERSTAND_TIMEOUT, () => {
+  const roundSaved = (manifest: RunManifest) => (manifest.deepen?.rounds.length ?? 0) > 0;
+
+  async function deepenWhere(dir: string, fail: { cards: boolean; record: boolean }) {
+    const writes = { armed: false, count: 0 };
+    // The Deepen's first card write (before any round) succeeds; the round's write is refused.
+    const { h, run } = await completedRun({
+      dataDir: dir,
+      recording: 'deepen-answers.json',
+      verifierRecording: 'verifier-deepen-answers.json',
+      cardWritesFail: () => fail.cards && writes.armed && ++writes.count > 1,
+    });
+    await h.answer(run, [{ cardId: 'OQ-001', answer }]);
+    const write = h.stores.manifests.write.bind(h.stores.manifests);
+    vi.spyOn(h.stores.manifests, 'write').mockImplementation((scope, manifest) =>
+      fail.record && roundSaved(manifest)
+        ? Promise.reject(new Error('The manifest write failed.'))
+        : write(scope, manifest),
+    );
+    writes.armed = true;
+    const started = await h.deepen(run, { coveragePass: false, maxRounds: 1 });
+    if (!started.ok) throw new Error(started.error);
+    return { h, run, deep: started.value };
+  }
+
+  it('RF-241 leaves the question Open when the round cannot write its cards', async () => {
+    const { h, run, deep } = await deepenWhere(temp.path, { cards: true, record: false });
+
+    expect(deep.endState).toBe('Failed');
+    expect(await cardFile(h, run, 'OQ-001')).toContain('State: Open');
+  });
+
+  it('RF-241 leaves the question Open when the round cannot save its record', async () => {
+    const { h, run, deep } = await deepenWhere(temp.path, { cards: false, record: true });
+
+    expect(deep.endState).toBe('Failed');
+    expect(await cardFile(h, run, 'OQ-001')).toContain('State: Open');
   });
 });
