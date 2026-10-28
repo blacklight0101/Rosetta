@@ -693,7 +693,7 @@ As a developer I want an agent's good cards kept and its failed work retried so 
 - Given "Retry failed areas" (Q-43, default applies), when the retry run starts, then it starts from the cards, claim statuses and coverage of the run it retries, reads only the failed areas, and is linked to that run; when it ends, its Supported claims include every Supported claim of that run, and its stepper and coverage count only the retried areas as this run's work.
   Verification: unit tests of the parser on answers recorded in the owner's 2026-10-14 runs; integration tests of the second repair, the continuation and the task retry with recorded responses.
 
-**RF-209 Deepen a completed run** - R1 - Should - Source RFC-003, DEC-144, DEC-145, DEC-158 - ADR-005, ADR-007
+**RF-209 Deepen a completed run** - R1 - Should - Source RFC-003, DEC-144, DEC-145, DEC-158, DEC-179 - ADR-005, ADR-007
 As a developer I want to send Rosetta back over what it did not confirm so that more of my application is understood, with evidence, at a cost I approved.
 
 - Given an understand run that ended `Completed`, when I press Deepen, then the page shows the estimate for one round and the maximum for all rounds against my caps, and starts nothing until I confirm; the coverage pass is ticked by default and can be unticked.
@@ -705,7 +705,9 @@ As a developer I want to send Rosetta back over what it did not confirm so that 
 - Given a claim the verifier rejected because a meaning it states (a code value, a constant, a name) is not in the cited lines (the verdict carries the reason kind "defined elsewhere", RF-301), when the next Deepen round is planned, then its re-read tells the reader to find, with the code map's search and read tools, the lines that define that meaning (a comment, an enum, a lookup table, a constant) and to write the claim again citing both the lines that act and the lines that define; the new claim records the id it replaces, is judged like any other claim, and the first `Rejected` verdict is kept (ADR-005). The re-read is a reader task of the round: it goes through the budget guard and the room check that leaves the verifier room to judge (RF-429, P5-30). A claim rejected for any other reason gets the plain re-read, and a Deepen with no such rejection plans its rounds as before (P5-35).
 - Given database objects (tables, views, procedures, triggers, functions) of the areas the run read that no card states, or that a card only names, when a round is planned, then a task per script is added before every other re-read, told the lines of each object, and a round with only such objects is not empty; an object is stated when a claim that is not `Rejected` cites lines of it (P5-36).
 - Given a Deepen run that ended, when I open it, then it can be deepened again as a new linked run; Deepen never starts by itself at the end of a run.
-  Verification: integration tests with recorded responses for each stop reason; unit tests of the round planner and the stop rule.
+- Given answered questions of the project (DEC-179), when a Deepen plans a reader task for an area, then the task gets the answered questions of that area as user context, labelled as such (RF-241); an answer is never evidence, so a claim written with its help still needs a code citation to be `Supported`, and the questions used are marked `Answered`.
+- Given a Deepen that raises an open question asking the same as an answered question of the project, when its results are written, then the new question is merged into the answered one and keeps the answer, and the answered question is not asked again (RF-646).
+  Verification: integration tests with recorded responses for each stop reason, and for a Deepen that uses answers and does not ask again; unit tests of the round planner and the stop rule.
 
 **RF-230 Coverage per area** - R1 - Must - Source RFC-001 risks, DEC-144, DEC-158 - ADR-005
 As a developer I want to know which files each agent actually read so that silent gaps are visible.
@@ -724,21 +726,24 @@ As a developer I want to know how much of my own code was read and confirmed so 
 - Given any measure, when it is worded, then the page never says "complete" or "fully understood"; it may say "well covered" only at 80% first-party coverage or more with no `Unverified` claim.
   Verification: unit tests of the measures; snapshot test of the summary.
 
-**RF-240 Collect open questions** - R1 (M1, DEC-98) - Must - Source DEC-15 - ADR-005
+**RF-240 Collect open questions** - R1 (M1, DEC-98) - Must - Source DEC-15, DEC-178, DEC-179 - ADR-005
 As a developer I want all `OQ` cards gathered into one answers file so that I can answer them in one place.
 
 - Given a run with `OQ` cards, when it ends, then the project's `answers.md` (data-model.md section 3.16) lists each open question with its card id, context and an empty answer field; existing answers are kept.
+- Given an `OQ` card with suggested answers (RF-645), when its section is written, then the section lists the suggested answers with the recommended one first and has a field for the chosen option next to the answer field; a section written before DEC-178 keeps its free answer field and shows no suggested answers.
+- Given a Deepen linked to an understand run, when it ends, then its new questions are added to the same `answers.md` under the one-list rule (RF-646), and each section records the runs its question came from.
   Verification: integration test.
 
-**RF-241 Re-run with answers** - R1 - Must - Source DEC-15 - ADR-003
+**RF-241 Re-run with answers** - R1 - Must - Source DEC-15, DEC-179 - ADR-003
 As a developer I want my answers used when areas are analysed again so that the specification improves.
 
 - Given answered questions, when I start an understand run with the answers option, then the affected areas run again with the answers as context, the answered `OQ` cards are marked `Answered`, and new or changed cards are listed in the run summary.
+- Given a Deepen (RF-209, DEC-179), when its reader tasks are planned, then the answered questions of the task's area are given to the reader as user context in the same labelled block as for a re-run; an answer may explain intent and guide reading but is never evidence, so a claim still needs a code citation to be `Supported`, and the questions the Deepen used are marked `Answered`.
   Verification: integration test with recorded responses.
 
 **RF-242 Answer interactively** - Withdrawn 2026-10-11 - see RF-1007 (DEC-59)
 
-**RF-243 Questions only the code cannot answer** - R1 (M1) - Must - Source DEC-136, Q-46, Q-52 - ADR-005
+**RF-243 Questions only the code cannot answer** - R1 (M1) - Must - Source DEC-136, Q-46, Q-52, DEC-178, DEC-179 - ADR-005
 As a developer who does not know the legacy application I want to be asked only what the code cannot tell so that my answers add knowledge instead of doing the agents' reading.
 
 - Given an `OQ` card, when it is parsed, then it must say what the code shows, cite the code that raised the question, and ask about something outside the code: business intent, the reason for a rule, an external system, data volumes or who uses a feature; a question asking what the code, an area or the application does is refused with the repair message telling the agent to read instead.
@@ -749,7 +754,9 @@ As a developer who does not know the legacy application I want to be asked only 
 - Given a run on third-party or generated code only, when an agent finds no application logic, then it writes no `OQ` card; the coverage notes "no application logic".
 - Given an area of third-party code (P3-123), when its agent answers a `FEAT` or `BR` card that only says the area holds third-party code (the title starts with third-party, vendored, minified, generated or bundled, or the summary says the area holds such code), then the card is dropped and logged; a rule that merely mentions a library is kept.
 - Given an `OQ` card that asks what a header, a column, a field or a module means or does (P5-02, EV-09), when a line it cites defines the name it asks about (a header cell in the first line of the cited range, a `col: Name` label, `Attribute VB_Name`, a `Sub`, `Function`, `Class` or `Module` declaration, an assignment of a literal to the name alone, or a defining comment), then the question is dropped after the reader ends, without a model call, and the task log names the question, the name found and the citation where it was found; a data row or a value of a column, an assignment that reads the name or another field or call, a bare mention, a string literal, and a line with `?` or TODO or FIXME never count, and a question that asks why, for a business reason, about people, volumes or an external system, or that adds a condition after the name (when, if, for, ...) is kept.
-  Verification: unit test of the refusal rule with example questions; integration test with recorded responses.
+- Given an `OQ` card written after DEC-178, when it is parsed, then it carries three suggested answers, one marked recommended, each with a short description and, when the code supports it, a citation (RF-645); a card without them is refused with the repair message telling the agent to add them, and a card saved before the change is exempt.
+- Given a new `OQ` card of a Deepen that asks the same as an answered question of the project, when the run ends, then it is merged into the answered question and keeps its answer, and an unanswered question raised again is merged, not duplicated (RF-646, DEC-179).
+  Verification: unit test of the refusal rule with example questions and of the suggested answers; integration test with recorded responses.
 
 **RF-250 Consolidate cards across areas** - R1 - Should - Source interview 2026-10-09, Q-52 - ADR-005
 As a developer I want duplicate entities and rules found by several agents merged so that the specification has no repeats.
@@ -1106,10 +1113,12 @@ As a developer I want to start `plan` from the web UI once the planning brief is
 - Given a finished package, when its run manifest is read, then it records the planning brief, the catalogue version and the prompt versions used (RNF-004).
   Verification: integration test with recorded responses.
 
-**RF-605 Plan setup page** - R1 - Must - Source DEC-72, DEC-80, DEC-142 - ADR-012, ADR-018
+**RF-605 Plan setup page** - R1 - Must - Source DEC-72, DEC-80, DEC-142, DEC-178, DEC-179 - ADR-012, ADR-018
 As a developer I want Rosetta to interview me before it plans, the way a senior architect would, so that the package follows my choices instead of guesses.
 
 - Given a finished `understand` run, when I open Plan setup from it or from the project, then the page names the source run (RF-614) and the questions appear in small groups (principles, architecture, migration, stack, project context, build method), each with a default, the reason it matters and the option Rosetta recommends marked "(Recommended)".
+- Given any Plan setup question (DEC-178, RF-645), when it is shown, then it offers at least three options, the recommended one first and marked "(Recommended)", each with a one-line description of what it means and its consequence, plus "Type your own answer"; the recommended option is the default that applies when the question is skipped, and a typed answer is saved in the brief.
+- Given the questions of the source run and of its Deepens (RF-646, DEC-179), when Plan setup opens, then it uses the one question list and lists only the questions still open, with the answered ones in a collapsed "Answered" list.
 - Given no stack layer is answered, when I look at "Use the defaults for the rest", then the page says beside it that the package will name no technology and the suggested stack options stay unused, with a link to the Stack step; once one layer is answered the line is not shown (Q-59, DEC-80).
 - Given I accept the defaults or change some answers, when I save, then the planning brief is stored with the project (data-model.md section 3.20) and shown as a "What I recorded" summary that I can edit and save again.
 - Given a saved brief, when I change an answer after a package exists, then the page says the package is out of date and offers to run `plan` again.
@@ -1184,7 +1193,7 @@ As a developer I want to see what `plan` will cost before it starts so that it s
 - Given a saved brief, when I start `plan`, then the page shows the estimate for the `planner` role against my caps, and every call goes through the budget guard like any other run (RF-420..RF-429).
   Verification: integration test with the fake provider.
 
-**RF-614 Plan as the next step of a run** - R1 - Must - Source RFC-002, DEC-142, DEC-143, DEC-166 - ADR-007, ADR-018
+**RF-614 Plan as the next step of a run** - R1 - Must - Source RFC-002, DEC-142, DEC-143, DEC-166, DEC-179 - ADR-007, ADR-018
 As a developer I want the plan to follow the understand run I just read so that I reach the hand-off package without looking for another page.
 
 - Given an understand run that ended `Completed` with at least one `Supported` claim, when its page is in "after the run" mode, then the "Your turn" panel offers "Set up the plan" as its main action, after "Answer questions" when questions are open; a run that ended `Failed` or `Interrupted` offers Resume (RF-006) instead and `plan` keeps refusing it (RST-1802). A run that ended `CapReached` with at least one `Supported` claim offers Resume and "Set up the plan" together, and says that the package will use only the claims judged (DEC-166, RF-604).
@@ -1192,10 +1201,10 @@ As a developer I want the plan to follow the understand run I just read so that 
 - Given I press "Set up the plan", when Plan setup opens, then it names the source run (date, areas, Supported claims) and prefills the brief from that run's evidence (RF-608, RF-609) or shows my saved brief; the brief stays one per project.
 - Given I open Plan setup from the project instead of from a run, when it loads, then it uses the newest understand run that ended `Completed` and names it on the page; when the project has none, it uses the newest that ended `CapReached` with a `Supported` claim and says that it stopped at a cap (DEC-166).
 - Given a saved brief, when I continue, then the page shows the plan estimate against my caps (RF-613) and starts `plan` only when I press "Write the package"; the start page shows no plan cost before the brief exists.
-- Given a plan run, when its manifest is read, then it records the source understand run, and the estimate and the package use that run's cards and answers only.
+- Given a plan run, when its manifest is read, then it records the source understand run, and the estimate and the package use that run's cards and the project's one question list only (RF-646, DEC-179).
   Verification: end-to-end test with the fake provider from a completed run to a package; integration test that the source run, not the newest run, feeds `plan`.
 
-**RF-615 Journey from code to package** - R1 - Should - Source RFC-002, DEC-142, DEC-143, DEC-154, DEC-166, Q-44, Q-49 - ADR-012
+**RF-615 Journey from code to package** - R1 - Should - Source RFC-002, DEC-142, DEC-143, DEC-154, DEC-166, DEC-179, Q-44, Q-49 - ADR-012
 As a developer I want to see every step from scan to package with its state and cost so that I always know where I am and what to do next.
 
 - Given an understand run, when its page, its Plan setup or its plan run page opens, then a journey strip shows scan, understand, questions, brief, estimate, plan and package, each with its state (done, current, locked with a reason, failed with its code, out of date) and its cost, and one next action.
@@ -1208,7 +1217,8 @@ As a developer I want to see every step from scan to package with its state and 
 - Given a saved brief (Q-44, default applies), when the journey is shown, then the questions step is done ("N questions left on their defaults") and the journey moves on to the estimate, the plan and the package; "Answer N questions" stays available on the run page but is no longer the next action.
 - Given an understand run that ended with no Supported claim (Q-49, default applies), when the journey is shown, then the questions step is Locked with "Nothing to plan from" like the steps after it, and an area that failed with a code shows that code's next step from the error catalogue.
 - Given a plan run that wrote the package but ended `Failed` with RST-1806 (Q-44), when the journey is shown, then the package step reads "Written with gaps", links the package and its `checks.md`, and the plan step names the code; the download stays available.
-  Verification: component tests of each step state; end-to-end test of the failure paths with the fake provider; end-to-end test of saving every answer and going on to the brief, and of going on with the defaults.
+- Given an understand run that can be deepened (DEC-179), when the journey is shown, then the questions step comes after the last Deepen: the next action recommends Deepen first and says that answers given now will be used by it, and when the user chooses not to Deepen the questions step is offered right away; answering earlier stays possible from the Your questions tab (RF-646).
+  Verification: component tests of each step state; end-to-end test of the order of the journey with and without a Deepen; end-to-end test of the failure paths with the fake provider; end-to-end test of saving every answer and going on to the brief, and of going on with the defaults.
 
 **RF-620 Documentation set of the package** - R1 - Must - Source DEC-134 - ADR-018
 As a modernisation team I want the package to read like a complete project documentation set so that we can start building from it alone.
@@ -1349,12 +1359,13 @@ As a team building with AI agents I want the operational rules agents need writt
 - Given AI-assisted build is chosen (RF-612), when the operations section is written, then it also says that a card whose pull request changes the specification, the ADRs, the decision log or the agent files is labelled `needs-owner` and merged only by a person, and that a builder never edits the task list on a task branch because the orchestrator records status in one batched pull request. Both rules are stated as the default and may be replaced by a decision the team records, for a team that has no status pull request.
   Verification: structure test of `AGENTS.md` and `orchestration.md`.
 
-**RF-637 Open questions linked to the cards they block** - R1 - Should - Source DEC-135 - ADR-018
+**RF-637 Open questions linked to the cards they block** - R1 - Should - Source DEC-135, DEC-178 - ADR-018
 As a product owner I want each open question to name the cards waiting for it so that I answer in the order the build needs.
 
 - Given the package's open-questions file, when it is written, then each question lists its default and the task cards that depend on it, and the roadmap marks those cards as waiting on the question until it is answered or its default is accepted.
 - Given a question of the brief (principles, architecture style, migration strategy, build method or a stack layer), when the files are written, then it applies to the whole build: `open-questions.md` lists it as such and no single card is marked as waiting on it; the task cards that depend on a question are those linked to it through requirement sources (P5-08).
-  Verification: structure test (every question names at least one card or says none).
+- Given the package's open-questions file (DEC-178, RF-645), when it is written, then each question lists three suggested answers with the recommended one marked and says that a team may answer otherwise.
+  Verification: structure test (every question names at least one card or says none, and lists its three suggested answers).
 
 **RF-638 Build metrics in the plan** - R1 - Should - Source DEC-135 - ADR-018
 As a lead I want the plan to say how the build process is measured so that changes to it are judged by results.
@@ -1408,6 +1419,24 @@ As a team building with AI agents I want the package to carry the lessons earlie
 - Given the brief's platform is Windows, when the section is written, then it adds Windows hygiene (reserved TCP port ranges, the command-line length limit of `npx`, a running app locks build output, the container engine stops with its Linux subsystem, overnight system restarts); given the brief's stack is .NET, then it adds that a build locked by a running preview is built in another configuration or after stopping the preview; for any other platform or stack these items are absent.
 - Given the section, then it names no employer and no other project (DEC-03). The Workflow-script rules of the project-blueprint skill are left out because they concern the skill's own tooling, not a build team's, and "disjoint file groups" is already covered by RF-634.
   Verification: structure test of the generated `orchestration.md` (the always-items present; the tool- and platform-specific items present only when the brief matches; no employer or project names).
+
+**RF-645 Suggested answers for every question** - R1 - Should - Source DEC-178 - ADR-005, ADR-012, ADR-018
+As a user I want every question Rosetta asks to offer suggested answers, the way Claude Code asks, so that I can answer with one choice and see what each choice means.
+
+- Given an `OQ` card, when it is written, then it carries at least three suggested answers, one marked recommended and listed first, each with a short description of what it means and its consequence and, when the code supports it, a citation; a card without them is refused with a repair message like the one of RF-243, a card saved before DEC-178 is exempt, and the recommended answer is the default that applies when the question is skipped. A question with only two natural answers adds a third qualified answer (for example "yes, with a condition"), never filler.
+- Given the Your questions tab and the answers page, when an `OQ` card with suggested answers is shown, then the suggested answers are choices with the recommended one first, plus "Type your own answer"; choosing one writes it to `answers.md` with which option was chosen (data-model.md section 3.16); open questions saved before DEC-178 keep their free answer field and show no suggested answers.
+- Given any Plan setup question, when it is shown, then it offers at least three options, the recommended one first, plus "Type your own answer", and a typed answer is saved in the brief (data-model.md section 3.20).
+- Given the package's open questions (RF-637), when they are written, then each lists three suggested answers with the recommended one marked and says a team may answer otherwise.
+  Verification: unit test of the card schema and parser, end-to-end test of both pages, structure test of the package.
+
+**RF-646 One question list, asked once before planning** - R1 - Must - Source DEC-179 - ADR-005, ADR-012, ADR-018
+As a user I want each question asked once, after the last Deepen, so that my answers are used and never requested again.
+
+- Given an understand run and the Deepens linked to it, when their questions are listed, then they form one list for the project, consolidated by the merge record of the cards (RF-1007) and by asking-the-same (Q-52); a new open question that asks the same as an answered one is merged into it and keeps the answer, so an answered question is never asked again, and an unanswered one raised again is merged, not duplicated.
+- Given an understand run that can be deepened, when the journey (RF-615) or the "Your turn" panel (RF-1017) shows the next actions, then they recommend Deepen first and say that answers given now will be used by it; the user is asked to answer the questions after the last Deepen, or right away when the user chooses not to Deepen; answering earlier stays possible from the Your questions tab.
+- Given Plan setup (RF-605) or the plan inputs (RF-614), when they list questions, then they show only the questions still open, with the answered ones in a collapsed "Answered" list that can be edited, and the plan uses the one list.
+- Given questions saved before DEC-179, when they are read, then duplicates across a run and its Deepens are merged on read by the same rule, keeping every answer; when two answers conflict the newer one wins and the older is kept in the history of `answers.md`, and no section is deleted (RF-1007).
+  Verification: integration test with recorded responses for a Deepen that uses answers and does not ask again; end-to-end test of the order of the journey.
 
 ### 5.8 Milestone hand-in artefacts (RF-800..RF-899)
 
@@ -1480,11 +1509,13 @@ As a developer I want every run event streamed to the page and stored so that th
 - Given a page that connects late or reconnects, when it subscribes, then it receives the events it missed from the stored log before live ones.
   Verification: integration tests of the event sink adapters.
 
-**RF-1007 Answer open questions in the page** - R1 (M1) - Should - Source DEC-51, DEC-15, DEC-46 - ADR-012
+**RF-1007 Answer open questions in the page** - R1 (M1) - Should - Source DEC-51, DEC-15, DEC-46, DEC-178, DEC-179 - ADR-012
 As a developer I want to answer `OQ` cards in the page so that the loop is visual.
 
 - Given open questions, when I answer one in the page, then `answers.md` is updated and the question is marked answered on the next re-run.
 - Given a run whose consolidation merged open questions (P5-11), when the answers page, the plan inputs and package, the report or the journey list or count its questions, then they list the same set: the questions that survived consolidation, matched to the file's sections by the merge record of the cards and never by the words of a question. An answer filed under a merged-away question shows on its survivor unless the survivor has its own, a survivor with no section can be answered, a merged-away question is not listed and cannot be answered or reopened, and no section of `answers.md` is deleted.
+- Given an `OQ` card with suggested answers (RF-645), when the answers page shows it, then the suggested answers are choices with the recommended one first, plus "Type your own answer"; choosing one writes it to `answers.md` with which option was chosen, and a question saved before DEC-178 keeps its free answer field.
+- Given the questions of an understand run and of the Deepens linked to it (RF-646, DEC-179), when the page lists them, then it shows one list merged by the same merge record, the open questions first and the answered ones in a collapsed "Answered" list that can be edited.
   Verification: end-to-end test.
 
 **RF-1008 Browse runs and download** - R1 (M1) - Should - Source DEC-51, DEC-24, DEC-46 - ADR-012
@@ -1561,12 +1592,13 @@ As a user watching a run I want to see the code being read so that the run is ea
 - Given the operating system asks for reduced motion, when the map updates, then nothing moves; states change in place.
   Verification: component tests of the tile states; end-to-end test with recorded events; reduced-motion check.
 
-**RF-1017 Overview and questions after the run** - R1 (M1) - Must - Source DEC-137, DEC-142, DEC-144 - ADR-012
+**RF-1017 Overview and questions after the run** - R1 (M1) - Must - Source DEC-137, DEC-142, DEC-144, DEC-178, DEC-179 - ADR-012
 As a user I want the end of a run to read like an explanation followed by a short request for help so that I understand the application before I answer anything.
 
 - Given an ended run, when its page opens, then the Overview tab shows the overview of RF-264 with its sections (features, screens, data, integrations), each item linking its cards, the honest verification note of RF-1014 and what was not covered.
-- Given open questions (RF-243), when the Your questions tab opens, then each shows the question, why the code cannot answer it with its citation, how many items depend on it, an answer field and the default that applies if it is skipped.
+- Given open questions (RF-243), when the Your questions tab opens, then each shows the question, why the code cannot answer it with its citation, how many items depend on it, an answer field and the default that applies if it is skipped, which is the recommended suggested answer (RF-645, DEC-178): the suggested answers are shown as choices with the recommended one first, plus "Type your own answer".
 - Given a run that ended `Completed`, when the "Your turn" panel lists the next actions, then they include "Set up the plan" (RF-614) and Deepen with its estimate (RF-209).
+- Given a run that can be deepened, when the "Your turn" panel lists the next actions, then it recommends Deepen before answering and says that answers given now will be used by it; once the last Deepen has ended, or when the user chose not to Deepen, it asks the user to answer the questions still open (RF-646, DEC-179).
   Verification: end-to-end test with a recorded run.
 
 **RF-1018 Choose areas quickly** - R1 (M1) - Must - Source DEC-138 - ADR-012
