@@ -1,3 +1,4 @@
+import { modelTiers } from './build-method.js';
 import type { Catalogue } from './catalogue.js';
 import { migrationStrategyInfo } from './migration-strategy.js';
 import type { PlanningBrief } from './planning-brief.js';
@@ -64,8 +65,31 @@ function contextQuestion(id: string, field: string): DefaultedQuestion {
   return { id, question: contextQuestions[field] ?? id, answer: notStated };
 }
 
+const unnamedTier =
+  'None named; the card shows the tier alone, with no model name, and checks.md lists it.';
+
+function buildMethodQuestion(id: string, brief: PlanningBrief): DefaultedQuestion | undefined {
+  if (id === 'buildMethod.agentTool') {
+    return {
+      id,
+      question: 'Which agent tool will the team build with?',
+      answer: 'Not stated; the cards show the tier alone, with no model name.',
+    };
+  }
+  const tier = modelTiers.find((candidate) => id === `buildMethod.models.${candidate}`);
+  if (tier === undefined) return undefined;
+  const model = brief.buildMethod.models?.[tier];
+  return {
+    id,
+    question: `Which model fills the ${tier} tier?`,
+    answer: model === undefined ? unnamedTier : `The Claude Code default: ${model}.`,
+  };
+}
+
 function questionOf(id: string, brief: PlanningBrief, catalogue: Catalogue): DefaultedQuestion {
   if (id.startsWith('stack.')) return stackQuestion(id.slice('stack.'.length), brief);
+  const method = buildMethodQuestion(id, brief);
+  if (method !== undefined) return method;
   if (id.startsWith('context.')) return contextQuestion(id, id.slice('context.'.length));
   switch (id) {
     case 'principles':

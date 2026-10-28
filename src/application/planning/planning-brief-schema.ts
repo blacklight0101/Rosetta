@@ -17,6 +17,7 @@ const MAX_TEXT = 500;
 const MAX_CHOICE = 200;
 const MAX_LIST = 20;
 const MAX_OFFERED = 5;
+const MAX_MODEL = 80;
 
 const style = z.enum(architectureStyleIds);
 const entryId = z.string().min(1).max(MAX_ID);
@@ -29,6 +30,24 @@ const stackChoice = z.strictObject({
   choice: z.string().trim().min(1).max(MAX_CHOICE),
   custom: z.boolean(),
   offered: z.array(z.string().trim().min(1).max(MAX_CHOICE)).max(MAX_OFFERED).optional(),
+});
+
+const model = z.string().trim().min(1).max(MAX_MODEL);
+const agentTool = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('claude-code') }),
+  z.strictObject({ kind: z.literal('codex') }),
+  z.strictObject({ kind: z.literal('other'), name: z.string().trim().min(1).max(MAX_MODEL) }),
+]);
+const models = z.strictObject({
+  smallest: model.optional(),
+  middle: model.optional(),
+  largest: model.optional(),
+  escalation: model.optional(),
+});
+const buildMethod = z.strictObject({
+  aiAssisted: z.boolean(),
+  agentTool: agentTool.optional(),
+  models: models.optional(),
 });
 
 const architecture = z.strictObject({
@@ -55,7 +74,7 @@ export const planningBriefSchema = z.strictObject({
   application: z.enum(applicationKinds).optional(),
   stack: z.array(stackChoice).max(stackLayers.length),
   context,
-  buildMethod: z.strictObject({ aiAssisted: z.boolean() }),
+  buildMethod,
   defaulted: z.array(z.string().max(MAX_ID)).max(40),
 });
 
@@ -87,7 +106,7 @@ const answersSchema = z.strictObject({
       dataMigration: context.shape.dataMigration.optional(),
     })
     .optional(),
-  buildMethod: z.strictObject({ aiAssisted: z.boolean() }).optional(),
+  buildMethod: buildMethod.optional(),
 });
 
 /** The body of a save; undefined when it breaks the shape or a limit. */
