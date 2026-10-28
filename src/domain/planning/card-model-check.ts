@@ -28,12 +28,13 @@ export type ModelFindingKind =
   | 'risk-verifier-below-largest'
   | 'verifier-below-builder'
   | 'risk-not-shown'
-  | 'local-model';
+  | 'local-model'
+  | 'escalation-owner-approval';
 
 export interface ModelFinding {
   readonly cardId: string;
   readonly kind: ModelFindingKind;
-  readonly severity: 'finding' | 'warning';
+  readonly severity: 'finding' | 'warning' | 'note';
 }
 
 /** A local model builds only scripted cards of difficulty 1 and 2 (Q-F). */
@@ -61,6 +62,11 @@ function kindsOf(method: BuildMethod, card: CardModelFacts): ModelFindingKind[] 
   return kinds;
 }
 
+/** DEC-185: the card builds on the escalation model, which is used only with the owner's approval. */
+export function usesEscalationModel(method: BuildMethod, model: string | undefined): boolean {
+  return model !== undefined && method.models?.escalation === model;
+}
+
 /** The findings for one card, in a fixed order; a clean card gives none. */
 // RF-641
 export function checkCardModel(method: BuildMethod, card: CardModelFacts): ModelFinding[] {
@@ -70,10 +76,9 @@ export function checkCardModel(method: BuildMethod, card: CardModelFacts): Model
     severity: 'finding' as const,
   }));
   const warning = card.local && card.rating > localModelCeiling;
-  return warning
-    ? [
-        ...found,
-        { cardId: card.cardId, kind: 'local-model' as const, severity: 'warning' as const },
-      ]
-    : found;
+  const extra: ModelFinding[] = [];
+  if (warning) extra.push({ cardId: card.cardId, kind: 'local-model', severity: 'warning' });
+  if (usesEscalationModel(method, card.builderModel))
+    extra.push({ cardId: card.cardId, kind: 'escalation-owner-approval', severity: 'note' });
+  return [...found, ...extra];
 }

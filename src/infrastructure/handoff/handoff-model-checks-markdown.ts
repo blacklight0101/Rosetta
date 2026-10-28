@@ -22,12 +22,14 @@ const reasons: Readonly<Record<ModelFindingKind, string>> = {
   'risk-verifier-below-largest': 'its risk class needs the largest tier as verifier',
   'verifier-below-builder': 'its verifier is of a lower tier than its builder',
   'risk-not-shown': 'its risk class is not shown next to its difficulty',
+  'escalation-owner-approval': 'uses the escalation model, which needs the owner approval',
   'local-model': 'a local model builds only cards of difficulty 1 and 2 (scripted work)',
 };
 
 // RF-641, DEC-185
 export function modelCheckLine(each: ModelFinding): string {
-  return `- ${each.cardId}${each.severity === 'warning' ? ' (warning)' : ''}: ${reasons[each.kind]}`;
+  const label = each.severity === 'finding' ? '' : ` (${each.severity})`;
+  return `- ${each.cardId}${label}: ${reasons[each.kind]}`;
 }
 
 function findingsOf(task: PlanTask, handoff: HandoffPackage): ModelFinding[] {
@@ -50,7 +52,7 @@ export function modelCheckLines(handoff: HandoffPackage): string[] {
   return [
     '## Model of each card',
     '',
-    'The check lists each task card below by its id and corrects nothing; the package is written either way. A warning is not a fault of the package, but the card should be read again.',
+    'The check lists each task card below by its id and corrects nothing; the package is written either way. A warning is not a fault of the package, but the card should be read again; a note asks for the approval of the owner.',
     '',
     ...found.map(modelCheckLine),
     '',
