@@ -6,8 +6,9 @@ import { errorBodySchema, sessionSchema } from './schemas.js';
 // RF-150, RF-158, RFC-005 section 4.2: the calls of the Excel workbooks tab. The project is created
 // first (`POST /api/projects` with `sourceKind: 'workbook'` and a name); a batch is opened
 // (`POST /api/projects/:id/source/batches`); each workbook goes in its own request (`PUT .../files`,
-// raw body, `X-File-Name`); the batch is finished (`POST .../finish`), which reads, renders and
-// publishes every workbook or none.
+// raw body, `X-File-Name`); the batch is finished (`POST .../finish`), which the server accepts
+// at once (202) and then reads, renders and publishes every workbook or none; the state is asked for
+// with `GET .../batches/:batchId` (or `.../current` after a reload) until the summary or the refusal (RF-159).
 
 /** Q-32: the most workbooks in one project until the server reports its own (`GET /api/session`). */
 export const defaultWorkbookMaxFiles = 20;
