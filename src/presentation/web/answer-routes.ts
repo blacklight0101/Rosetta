@@ -20,7 +20,7 @@ import { signedInOf } from './request-actor.js';
 //   The list is the one list of the project (RF-646, DEC-179): the questions of the run and of the
 //   Deepens linked to it, merged; a question raised in several runs also has `runs`, and one whose
 //   answer replaced an older one has `history` (runKey and answer). The answer also carries
-//   `deepens`, how many Deepens the run's first understand run has, and `isDeepen`.
+//   `deepens`, how many Deepens of the run's first understand run have ended, and `isDeepen`.
 // - PUT /api/runs/:runId/answers with `{ answers: [{ cardId, answer }] }` writes those answers into
 //   answers.md, keeps every other answer, and answers the run's questions as they are now. An
 //   answer is one line in the file (line breaks become spaces) and an empty one clears it. A card

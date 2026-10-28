@@ -15,7 +15,7 @@ export type AnswersLoad =
   | {
       readonly status: 'ready';
       readonly questions: readonly OpenQuestionRow[];
-      /** RF-646: how many Deepens the run's first understand run has. */
+      /** RF-646: how many Deepens of the run's first understand run have ended. */
       readonly deepens: number;
       /** RF-646: the run is itself a Deepen. */
       readonly isDeepen: boolean;

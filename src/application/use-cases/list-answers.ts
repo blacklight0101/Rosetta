@@ -28,7 +28,7 @@ export interface ListAnswersDependencies {
 /** The questions of the one list and what the page needs to know about the run's family. */
 export interface ListedAnswers {
   readonly questions: readonly ProjectQuestion[];
-  /** How many Deepens are linked to the run's first understand run. */
+  /** How many Deepens linked to the run's first understand run have ended. */
   readonly deepens: number;
   /** The run is itself a Deepen. */
   readonly isDeepen: boolean;

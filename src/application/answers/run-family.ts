@@ -6,7 +6,8 @@ import { scopeOf } from '../runs/run-scope.js';
 
 // RF-646, DEC-179: an understand run and the Deepens linked to it are one family: the Deepens are the
 // understand runs whose manifest names the run they improve (a Deepen of a Deepen belongs to the
-// family of the first run). The questions of the family form the one list of the project.
+// family of the first run). The questions of the family form the one list of the project. The
+// questions are asked after the last Deepen has ended, so only ended Deepens are counted.
 
 export interface FamilyDependencies {
   readonly runs: Pick<RunIndex, 'list'>;
@@ -21,7 +22,7 @@ export const noManifests: Pick<RunManifestStore, 'read'> = {
 export interface RunFamily {
   /** The family's runs, the first understand run first, then the Deepens in the order they were queued. */
   readonly runs: readonly Run[];
-  /** How many of them are Deepens. */
+  /** How many of them are Deepens that have ended; one still queued or running is not counted yet. */
   readonly deepens: number;
   /** The run asked about is a Deepen. */
   readonly isDeepen: boolean;
@@ -77,7 +78,7 @@ export async function familyOf(deps: FamilyDependencies, run: Run): Promise<RunF
   const runs = first === undefined ? members : [first, ...members.filter((each) => each !== first)];
   return {
     runs: runs.length === 0 ? [run] : runs,
-    deepens: Math.max(runs.length - 1, 0),
+    deepens: runs.filter((each) => each.id !== root && each.queueState === 'Ended').length,
     isDeepen: root !== run.id,
   };
 }
