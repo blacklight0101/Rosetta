@@ -55,10 +55,10 @@ describe('an understand run: prompts', () => {
 
     const manifest = await h.manifestOf(run);
     expect(Object.keys(manifest.promptVersions)).toEqual([
-      'cards/card-format.v2.md',
+      'cards/card-format.v3.md',
       'cards/continue.v1.md',
       'cards/flows.v1.md',
-      'cards/repair.v3.md',
+      'cards/repair.v4.md',
       'cards/screens.v2.md',
       'reader/area.v12.md',
       'reader/read-first.v1.md',

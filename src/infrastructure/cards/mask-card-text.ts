@@ -73,6 +73,15 @@ function cardOf(card: Card, mask: Mask): Card {
     claims: card.claims.map((claim) => claimOf(claim, mask)),
     ...(card.question === undefined ? {} : { question: mask(card.question) }),
     ...(card.whyItMatters === undefined ? {} : { whyItMatters: mask(card.whyItMatters) }),
+    ...(card.suggestedAnswers === undefined
+      ? {}
+      : {
+          suggestedAnswers: card.suggestedAnswers.map((each) => ({
+            ...each,
+            answer: mask(each.answer),
+            description: mask(each.description),
+          })),
+        }),
     ...(card.note === undefined ? {} : { note: mask(card.note) }),
     ...(card.mergedFrom === undefined ? {} : { mergedFrom: card.mergedFrom.map(mask) }),
     ...(card.mergedAreas === undefined ? {} : { mergedAreas: card.mergedAreas.map(mask) }),

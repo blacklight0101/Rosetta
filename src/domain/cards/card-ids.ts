@@ -2,6 +2,7 @@ import { err, ok, type Result } from '../errors/result.js';
 import { createCard, type Card, type CardProblem, type ClaimInput } from './card.js';
 import { EXTENDABLE_TYPES, type CardType, type Confidence } from './card-vocabulary.js';
 import type { FlowDetail, ScreenInput } from './flow-screen.js';
+import type { SuggestedAnswer } from './suggested-answer.js';
 
 // RF-203, DEC-43: ids are numbered per run, per type, in order of area and appearance.
 
@@ -16,6 +17,8 @@ export interface CardDraft {
   readonly claims: readonly ClaimInput[];
   readonly question?: string | undefined;
   readonly whyItMatters?: string | undefined;
+  /** RF-645: `OQ` cards written after DEC-178; absent on an earlier card. */
+  readonly suggestedAnswers?: readonly SuggestedAnswer[] | undefined;
   readonly flow?: FlowDetail | undefined;
   readonly screen?: ScreenInput | undefined;
   /** RF-209: the id of the listed card a Deepen task's claims belong to. */
