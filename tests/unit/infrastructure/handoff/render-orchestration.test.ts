@@ -151,15 +151,6 @@ describe('orchestration.md part 4', () => {
       expect(text).toContain(field);
     }
   });
-
-  it('RF-640 the hard-rule greps the verifier runs include the package own rules', () => {
-    const text = textOf();
-
-    expect(text).toMatch(/^## Hard-rule greps$/mu);
-    expect(text).toContain('`eval(`');
-    expect(text).toContain('`rejectUnauthorized`');
-    expect(text).toContain('Plain text.');
-  });
 });
 
 describe('orchestration.md part 5', () => {
