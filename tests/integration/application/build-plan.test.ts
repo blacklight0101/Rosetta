@@ -168,7 +168,7 @@ describe('BuildPlan: the parts of the package', () => {
     const tasks = plain(files['tasks.md'] ?? '');
     const cards = tasks.split(/^## /mu).slice(1);
     expect(cards.map((card) => card.split('\n')[0])).toEqual(
-      Array.from({ length: 8 }, (_, at) => `T-${String(at + 1).padStart(3, '0')}`),
+      Array.from({ length: 11 }, (_, at) => `T-${String(at + 1).padStart(3, '0')}`),
     );
     for (const card of cards) expect(card).toMatch(/Acceptance criteria:\n\n- Given /u);
     expect(tasks).toContain('Requirements: [REQ-001](requirements.md#req-001), [REQ-002]');

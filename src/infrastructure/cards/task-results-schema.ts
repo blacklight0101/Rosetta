@@ -41,6 +41,14 @@ const claimSchema = z.object({
   replaces: text.optional(),
 });
 
+// RF-645: absent on a card saved before DEC-178.
+const suggestedAnswerSchema = z.object({
+  answer: text,
+  description: text,
+  recommended: z.boolean(),
+  citations: z.array(citationSchema),
+});
+
 const cardSchema = z.object({
   id: text,
   type: z.enum(CARD_TYPES),
@@ -52,6 +60,7 @@ const cardSchema = z.object({
   claims: z.array(claimSchema),
   question: text.optional(),
   whyItMatters: text.optional(),
+  suggestedAnswers: z.array(suggestedAnswerSchema).optional(),
   questionState: z.enum(['Open', 'Answered']).optional(),
   mergedFrom: z.array(text).optional(),
   mergedAreas: z.array(text).optional(),
@@ -101,14 +110,24 @@ function claimOf(claim: z.output<typeof claimSchema>): Claim {
 }
 
 function cardOf(card: z.output<typeof cardSchema>): Card {
-  const { claims, question, whyItMatters, questionState, mergedFrom, mergedAreas, note, ...rest } =
-    card;
+  const {
+    claims,
+    question,
+    whyItMatters,
+    suggestedAnswers,
+    questionState,
+    mergedFrom,
+    mergedAreas,
+    note,
+    ...rest
+  } = card;
   const { flow, screen, ...base } = rest;
   return {
     ...base,
     claims: claims.map(claimOf),
     ...(question === undefined ? {} : { question }),
     ...(whyItMatters === undefined ? {} : { whyItMatters }),
+    ...(suggestedAnswers === undefined ? {} : { suggestedAnswers }),
     ...(questionState === undefined ? {} : { questionState }),
     ...(mergedFrom === undefined ? {} : { mergedFrom }),
     ...(mergedAreas === undefined ? {} : { mergedAreas }),

@@ -110,7 +110,7 @@ describe('BuildPlan: gaps closed by the call', () => {
 
     const cards = plain(written['tasks.md']).split(/^## /mu).slice(1);
     expect(cards.map((card) => card.split('\n')[0])).toEqual([
-      ...Array.from({ length: 11 }, (_, at) => `T-${String(at + 1).padStart(3, '0')}`),
+      ...Array.from({ length: 14 }, (_, at) => `T-${String(at + 1).padStart(3, '0')}`),
     ]);
     const added = cards.slice(6, 9).join('\n');
     expect(added).toContain('Place and read orders through the API');
@@ -262,7 +262,7 @@ describe('BuildPlan: the gap cards under SDD', () => {
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
-    expect((plain((await h.handoffOf(run))['tasks.md']).match(/^## T-/gmu) ?? []).length).toBe(8);
+    expect((plain((await h.handoffOf(run))['tasks.md']).match(/^## T-/gmu) ?? []).length).toBe(11);
   });
 
   it('RF-607 without SDD the same card is added', async () => {

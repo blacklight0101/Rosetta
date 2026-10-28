@@ -3,12 +3,12 @@ import type { Result } from '../../domain/errors/result.js';
 import { isCutAnswer, joinFragment, type AnswerText } from './cut-answer.js';
 import type { AgentTaskEnd } from './agent-task-result.js';
 import { readCutCards } from '../cards/cut-cards.js';
-import { parseCardsLenient, type CardParse } from '../cards/parse-cards.js';
+import { parseCardsLenient, type CardParse, type ParseOptions } from '../cards/parse-cards.js';
 import type { OutputProblem } from '../cards/output-problem.js';
 import { valuesOnlyRuleProblems } from '../cards/rule-citations.js';
 import { renderRepairRequest } from '../cards/repair-request.js';
 import { loadRowIndex, type RowLookup } from '../cards/row-citations.js';
-import type { ReaderPrompts } from './reader-prompts.js';
+import { asksSuggestedAnswers, type ReaderPrompts } from './reader-prompts.js';
 
 // RF-202, RF-208: what an agent's final answer is worth, with the follow-ups it earns. The first
 // answer is read leniently (valid cards and claims are kept, the rest is listed). Problems earn up
@@ -130,10 +130,17 @@ class Collector {
   /** RF-202: row citations are read as the lines of their rows before the cards are checked. */
   private async readText(answer: AnswerText): Promise<void> {
     const rows = await loadRowIndex(this.text, this.rows);
-    this.read = parseCardsLenient(this.text, rows);
+    this.read = parseCardsLenient(this.text, rows, this.parseOptions());
     this.cut = isCutAnswer({ text: this.text, finishReason: answer.finishReason }, this.read);
     this.drafts = mergeDrafts(this.drafts, this.read.drafts, this.asked);
     this.asked = new Set();
+  }
+
+  /** RF-645: the card format from v3 requires suggested answers on OQ cards, whole or cut off. */
+  private parseOptions(): ParseOptions {
+    return {
+      suggestedAnswers: asksSuggestedAnswers(this.prompts.cardFormat) ? 'required' : 'optional',
+    };
   }
 
   /** The next follow-up, or undefined when the answer is clean or the follow-ups are used up. */
@@ -174,7 +181,7 @@ class Collector {
   private async keepFinishedCards(): Promise<void> {
     if (!this.cut) return;
     const rows = await loadRowIndex(this.text, this.rows);
-    const kept = readCutCards(this.text, rows);
+    const kept = readCutCards(this.text, rows, this.parseOptions());
     if (kept === undefined) return;
     this.read = kept;
     this.drafts = mergeDrafts(this.drafts, kept.drafts);

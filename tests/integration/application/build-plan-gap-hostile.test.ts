@@ -53,7 +53,7 @@ describe('BuildPlan: a hostile gap card', () => {
     const { run, tasks } = await planWith([{ ...card, builds: [marker] }]);
 
     expect(run.endState).toBe('Failed');
-    expect((tasks.match(/^## T-/gmu) ?? []).length).toBe(8);
+    expect((tasks.match(/^## T-/gmu) ?? []).length).toBe(11);
   });
 
   it('Q-45 a card with a title over 200 characters is left out and the others stay', async () => {
@@ -71,6 +71,6 @@ describe('BuildPlan: a hostile gap card', () => {
 
     const { tasks } = await planWith([vague]);
 
-    expect((tasks.match(/^## T-/gmu) ?? []).length).toBe(8);
+    expect((tasks.match(/^## T-/gmu) ?? []).length).toBe(11);
   });
 });

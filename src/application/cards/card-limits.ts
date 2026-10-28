@@ -12,6 +12,9 @@ export const cardLimits = {
   maxSummaryChars: 2000,
   maxClaimChars: 2000,
   maxQuestionChars: 1000,
+  /** RF-645: the suggested answers of an OQ card. */
+  maxSuggestedAnswers: 6,
+  maxAnswerChars: 300,
   maxPathChars: 1024,
   /** FLOW and SCRN (RF-260, RF-261). */
   maxBranches: 20,
