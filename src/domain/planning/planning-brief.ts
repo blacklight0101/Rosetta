@@ -1,4 +1,5 @@
 import type { Run } from '../runs/run.js';
+import { buildMethodDefaulted, resolveBuildMethod, type BuildMethod } from './build-method.js';
 import { defaultPrinciples, type ArchitectureStyleId, type Catalogue } from './catalogue.js';
 
 // RF-605, ADR-018, DEC-72, DEC-80, data-model.md section 3.20: the planning brief, the answers Plan
@@ -80,7 +81,7 @@ export interface PlanningBrief {
   /** One entry per answered layer, in layer order. */
   readonly stack: readonly StackChoice[];
   readonly context: ProjectContext;
-  readonly buildMethod: { readonly aiAssisted: boolean };
+  readonly buildMethod: BuildMethod;
   /** The questions that took their default, in question order. */
   readonly defaulted: readonly string[];
 }
@@ -110,7 +111,7 @@ export interface BriefAnswers {
         readonly dataMigration?: string | null | undefined;
       }
     | undefined;
-  readonly buildMethod?: { readonly aiAssisted: boolean } | undefined;
+  readonly buildMethod?: BuildMethod | undefined;
 }
 
 export interface BriefProblem {
@@ -186,7 +187,7 @@ function defaultedQuestions(answers: BriefAnswers): string[] {
     ...contextQuestions
       .filter((question) => given?.[question] === undefined || given[question] === null)
       .map((question) => `context.${question}`),
-    ...(answers.buildMethod === undefined ? ['buildMethod'] : []),
+    ...buildMethodDefaulted(answers.buildMethod),
   ];
 }
 
@@ -202,7 +203,7 @@ export function buildBrief(answers: BriefAnswers, catalogue: Catalogue): Unsaved
     ...(answers.application === undefined ? {} : { application: answers.application }),
     stack: [...(answers.stack ?? [])].sort((a, b) => layerOrder(a.layer) - layerOrder(b.layer)),
     context: contextOf(answers.context),
-    buildMethod: answers.buildMethod ?? { aiAssisted: false },
+    buildMethod: resolveBuildMethod(answers.buildMethod),
     defaulted: defaultedQuestions(answers),
   };
 }
