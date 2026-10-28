@@ -15,9 +15,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P1 Milestone slice (M1) | 184     | 67        | 98         | 19        | 0                  | 107     | 69      | 8      | 122        | 0         |
 | P2 Full understand      | 53      | 14        | 32         | 7         | 0                  | 23      | 28      | 2      | 32         | 0         |
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
-| P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
+| P5 Polish (G-10)        | 47      | 9         | 38         | 0         | 0                  | 20      | 27      | 0      | 0          | 0         |
 | P6 Agent build method   | 19      | 1         | 18         | 0         | 0                  | 5       | 14      | 0      | 0          | 0         |
-| **Total**               | **432** | **107**   | **295**    | **30**    | **0**              | **209** | **209** | **14** | **242**    | **0**     |
+| **Total**               | **435** | **107**   | **298**    | **30**    | **0**              | **210** | **211** | **14** | **242**    | **0**     |
 
 ## Conventions for every card
 
@@ -87,7 +87,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: G-01, G-03
 - **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` sections 5-7; `docs/conventions.md` sections 1, 2, 7, 8 and 10; `docs/architecture.md` section 4.
-- **Do**: create `package.json` (`"type": "module"`, engines from `.nvmrc`, scripts `build`, `dev`, `typecheck`, `lint`, `format`, `format:check`, `arch`, `deadcode`, `test`, `test:ci`, `test:levels`, `verify`), `.nvmrc`, `tsconfig.json` with every flag of conventions section 1, `eslint.config.ts` exactly as conventions section 10, `.prettierrc`, `.dependency-cruiser.cjs` with the layer rules of architecture section 3, `knip.json`, `vitest.config.ts` with projects `unit`, `integration`, `e2e` by folder and the coverage thresholds of conventions section 7, `commitlint.config.ts`, `lefthook.yml` (pre-commit, commit-msg, pre-push as environments section 5), `.editorconfig`, `.gitignore` additions; the folders of architecture section 4 with one module in `src/domain/` and one test per level that runs; `scripts/test-levels.mjs` printing `Unit n / Integration n / E2E n` with the shares and a warning outside 60/30/10 ±10, failing when the count is zero. Only devDependencies from the baseline of environments section 7.
+- **Do**: create `package.json` (`"type": "module"`, engines from `.nvmrc`, scripts `build`, `dev`, `typecheck`, `lint`, `format`, `format:check`, `arch`, `deadcode`, `test`, `test:ci`, `test:levels`, `verify`), `.nvmrc`, `tsconfig.json` with every flag of conventions section 1, `eslint.config.ts` exactly as conventions section 10, `.prettierrc`, `.dependency-cruiser.cjs` with the layer rules of architecture section 3, `knip.json`, `vitest.config.ts` with projects `unit`, `integration`, `e2e` by folder and the coverage thresholds of conventions section 7, `commitlint.config.ts`, `lefthook.yml` (pre-commit, commit-msg, pre-push as environments section 5), `.editorconfig`, `.gitignore` additions; the folders of architecture section 4 with one module in `src/domain/` and one test per level that runs; `scripts/test-levels.mjs` printing `Unit n / Integration n / E2E n` with the shares and a warning outside 60/30/10 Â±10, failing when the count is zero. Only devDependencies from the baseline of environments section 7.
 - **Delivers**: the files above; `npm run verify` green; `package-lock.json`.
 - **Done when**: the verifier runs `npm ci` and `npm run verify` (exit 0); a test file importing `src/infrastructure/` from `src/domain/` makes `npm run arch` fail (verifier tries it in a disposable worktree); an `any` in `src/` makes `npm run lint` fail; `npm run test:levels` prints three counts; `npm ls --depth=0` shows only baseline packages.
 - **Refs**: RNF-001, RNF-005, RNF-013, ADR-009, ADR-010, ADR-011, DEC-27, DEC-30, DEC-39, DEC-40.
@@ -2374,9 +2374,9 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Done
 - **Reads**: `web/src/lib/live-run/card-checks.ts`, `web/src/pages/CardsTab.tsx`, `web/src/components/badge-specs.ts`; the owner's report of 2026-10-18. On the run page Evidence tab, FEAT-001 had 2 Supported claims, 1 Rejected and 1 Citation invalid, yet its card showed only "citation invalid". ENT-001 had no invalid citation, only one Rejected claim, and it showed the same tag.
-- **Do**: replace the single per-card check (checked / invalid / waiting) with counts per claim status: "N supported · M rejected · K citation invalid · J waiting", showing only the non-zero parts in that order. Each part carries its glyph and text as well as colour, using the same badge vocabulary as the claim rows. A card whose claims are all Supported keeps a single "all supported" mark. While claims are still being checked, the waiting count updates live. A Rejected claim is never called "citation invalid".
+- **Do**: replace the single per-card check (checked / invalid / waiting) with counts per claim status: "N supported Â· M rejected Â· K citation invalid Â· J waiting", showing only the non-zero parts in that order. Each part carries its glyph and text as well as colour, using the same badge vocabulary as the claim rows. A card whose claims are all Supported keeps a single "all supported" mark. While claims are still being checked, the waiting count updates live. A Rejected claim is never called "citation invalid".
 - **Delivers**: the change, with unit tests of the counting and a component test of the row.
-- **Done when**: the FEAT-001 case shows "2 supported · 1 rejected · 1 citation invalid"; the ENT-001 case shows no "citation invalid"; it is accessible (axe, keyboard, 360 px); `npm run verify` is green.
+- **Done when**: the FEAT-001 case shows "2 supported Â· 1 rejected Â· 1 citation invalid"; the ENT-001 case shows no "citation invalid"; it is accessible (axe, keyboard, 360 px); `npm run verify` is green.
 - **Refs**: RF-1004, RF-1014, RF-1015, RF-301, owner report 2026-10-18, PR #577
 
 ---
@@ -4082,7 +4082,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Gate**: none
 - **Status**: Done
 - **Reads**: the run page (header, stepper, Deepen panel, area map, spend panel, All agents tab, Activity tab and event log); `docs/design-system.md`; RNF-010; RF-507 (model text as text); the owner's test of a Deepen run on an Excel project (2026-10-20, notes below).
-- **Do**: within the design system, fix: (1) plurals in the Deepen round lines ("1 files read"); (2) round 3 wording ("re-reading 60" names what, "0 unread files to read" reads plainly); (3) the stepper sub-lines are cut off ("127 of 127 citations check..."): fit or wrap; (4) area tiles all cut to "Asset_Mana...": show the part after the last "/" with the full name on hover and focus, and do not cut the sub-lines ("read · 1 fil...", "being rea..."); explain or drop the "#1" suffix in tile names; (5) the Activity tab count shows "1000" when the log holds more: show "1000+" or the real count; (6) the side "Spend for this run" bar stays empty with a local model while tokens are used: label it as cost, or show the token bar when the cost is zero; (7) the two links in the spend panel use one link style; (8) the "Start page" link sits with the title or the buttons, not floating between them; (9) the estimate line says "Range $0.00 to $0.00" with a local model and does not say when the run has passed the likely estimate: give the token range, and say "over the estimate" when it is; (10) agent cards with the same area title (Deepen rounds) show the round or what they re-read; (11) agent card headers line up when the title is long (role and badge on one line, or a fixed place); (12) a one-line range reads `file:27`, not `file:27-27`; (13) long paths wrap at "/" and before ":", not mid-word; (14) the coverage map's "6% of the reads" says "of all files read"; (15) event-log times read as time since the start ("+16:27.5"); (16) the "usage.recorded · verifier 0 micro-dollars" lines are folded into the line they belong to or grouped, and "micro-dollars" never appears; (17) Supported and Rejected verdict lines use the cards list's badge and colour; (18) a cut verdict reason can be opened in full; (19) inline code in model text (backticks) is shown as code styling, still as text, never HTML.
+- **Do**: within the design system, fix: (1) plurals in the Deepen round lines ("1 files read"); (2) round 3 wording ("re-reading 60" names what, "0 unread files to read" reads plainly); (3) the stepper sub-lines are cut off ("127 of 127 citations check..."): fit or wrap; (4) area tiles all cut to "Asset_Mana...": show the part after the last "/" with the full name on hover and focus, and do not cut the sub-lines ("read Â· 1 fil...", "being rea..."); explain or drop the "#1" suffix in tile names; (5) the Activity tab count shows "1000" when the log holds more: show "1000+" or the real count; (6) the side "Spend for this run" bar stays empty with a local model while tokens are used: label it as cost, or show the token bar when the cost is zero; (7) the two links in the spend panel use one link style; (8) the "Start page" link sits with the title or the buttons, not floating between them; (9) the estimate line says "Range $0.00 to $0.00" with a local model and does not say when the run has passed the likely estimate: give the token range, and say "over the estimate" when it is; (10) agent cards with the same area title (Deepen rounds) show the round or what they re-read; (11) agent card headers line up when the title is long (role and badge on one line, or a fixed place); (12) a one-line range reads `file:27`, not `file:27-27`; (13) long paths wrap at "/" and before ":", not mid-word; (14) the coverage map's "6% of the reads" says "of all files read"; (15) event-log times read as time since the start ("+16:27.5"); (16) the "usage.recorded Â· verifier 0 micro-dollars" lines are folded into the line they belong to or grouped, and "micro-dollars" never appears; (17) Supported and Rejected verdict lines use the cards list's badge and colour; (18) a cut verdict reason can be opened in full; (19) inline code in model text (backticks) is shown as code styling, still as text, never HTML.
 - **Review probes**: the run page at 360 px and desktop, light and dark, with a Deepen run of three rounds and a local model; axe in both schemes; a log of more than 1,000 events; a verdict reason of 2,000 characters; model text with backticks and with `<b>` (shown as text).
 - **Behaviour to preserve**: every RF-231 wording rule; RF-507 (no model text as HTML); the live updates and Pause updates.
 - **Delivers**: the fixes and tests.
@@ -6016,6 +6016,56 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Refs**: P5-31, RF-626; evaluation 2026-10-24.
 
 ---
+
+### P5-45 - Rendering a workbook project hands the server back between sheets
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-183)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/sources/workbook/workbook-publish.ts`, `workbook-renderer.ts` (`renderProject`), `render-dependencies.ts`, `package-reader.ts`, `src/infrastructure/sources/workbook-staging.ts` (the publish bound), RF-159, RNF-017, ADR-023. Today `renderProject` is one synchronous call: a large project blocks every request of the server, and cancel and the 5-minute bound are checked only before and after it.
+- **Do**:
+  - Make rendering asynchronous: it yields to the event loop between sheets, and in the dependency map between workbooks and between its passes.
+  - Check the abort signal and the publish bound at every yield.
+  - Report progress through a callback from reading and rendering: the step, workbook n of N, sheet n of M, non-empty cells so far. P5-46 shows it.
+  - The rendered tree stays byte-identical to before.
+- **Delivers**: the asynchronous renderer, unit tests, and integration tests of cancel and of the bound during rendering.
+- **Done when**: the existing workbook fixtures give the same `snapshotHash` as before; a test shows another request answered while a built large workbook renders; cancel and the bound stop during rendering and nothing is published.
+- **Refs**: RF-159, RNF-017, DEC-183, ADR-023.
+
+### P5-46 - Finishing a workbook batch returns at once and the page shows its progress
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P5-45
+- **Gate**: owner (DEC-183)
+- **Status**: Todo
+- **Reads**: `src/presentation/web/workbook-batch-routes.ts`, `src/application/use-cases/workbook-batches.ts`, `src/infrastructure/sources/workbook-staging.ts`, `zip-upload-store.ts` and `workbook/zip-workbooks.ts` (zips holding workbooks), `web/src/pages/WorkbookUploadForm.tsx`, `workbook-batch.ts`, `use-workbook-flow.ts`, `use-polled.ts`, `docs/design-system.md` (upload progress, long operations), RF-150, RF-158, RF-159.
+- **Do**:
+  - `finish` accepts the batch at once and the processing continues on the server; a state endpoint returns the step, the counts of P5-45, the elapsed time and the outcome (summary or refusal with its code); the existing `DELETE` cancels it.
+  - The endpoints keep the session, CSRF and owner checks; another user's batch answers 404.
+  - The page asks for the state every second and shows the steps, the workbook and sheet, the cells read, the elapsed time and Cancel; the summary and the refusals show as before; a reload or a later visit finds the project's batch and shows its progress; closing the tab does not cancel it.
+  - A zip holding workbooks shows the same progress.
+  - Document the progress pattern in `docs/design-system.md` and the endpoint in `docs/architecture.md`.
+- **Delivers**: the endpoints, the page, the documentation, integration and end-to-end tests.
+- **Done when**: an end-to-end test sees the steps and survives a reload during processing; integration tests cover the state, cancel, a refusal after the batch was accepted and another user's batch; the existing RF-150 tests pass.
+- **Refs**: RF-150, RF-158, RF-159, RNF-017, DEC-183.
+
+### P5-47 - Upload and snapshot hashes are computed while the files are written
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P5-45
+- **Gate**: owner (DEC-183)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/sources/upload-intake.ts`, `workbook-staging.ts`, `workbook/workbook-publish.ts`, `workbook/workbook-tree.ts`, `src/infrastructure/snapshots/snapshot-store.ts` (`inspect`), RF-152, RF-159. Today every uploaded workbook is read again for its SHA-256, and every rendered file is written, then read again and hashed.
+- **Do**:
+  - Hash each uploaded file while it is received and each rendered file while it is written, and record the snapshot from those hashes.
+  - `snapshotHash`, `snapshot.json` and the read-only tree stay identical; snapshots of other kinds keep their current path.
+- **Delivers**: the hashing change and tests.
+- **Done when**: the workbook fixtures give the same `snapshotHash` and `snapshot.json` as before; a test shows no uploaded or rendered file is read again after it is written.
+- **Refs**: RF-152, RF-159, DEC-183.
 
 ## Phase 6 - Agent build method (held by the owner)
 
