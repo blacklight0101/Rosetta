@@ -9,7 +9,7 @@ import { useApp } from '../app/app-context.js';
 type Questions = readonly OpenQuestionRow[];
 
 /** RF-645: the option chosen (from 1), `typed` for the user's own answer, `''` for none yet. */
-export type Choice = '' | 'typed' | number;
+type Choice = '' | 'typed' | number;
 
 export interface AnswerSave {
   readonly text: string;

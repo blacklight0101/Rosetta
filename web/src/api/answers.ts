@@ -30,7 +30,6 @@ const questionsSchema = z
   .transform((body) => body.questions);
 
 export type OpenQuestionRow = z.output<typeof questionSchema>;
-export type SuggestedOptionRow = NonNullable<OpenQuestionRow['options']>[number];
 
 const countSchema = z
   .looseObject({ count: z.number().int().min(0) })
