@@ -278,6 +278,10 @@ test('RF-646 RF-1007 the question answered before the Deepen is listed once afte
   await expect(region.getByTestId('open-question').filter({ hasText: 'OQ-001' })).toHaveCount(1);
   const answered = region.getByTestId('answered-questions');
   await expect(answered.getByTestId('open-question').filter({ hasText: 'OQ-001' })).toHaveCount(1);
+  // Only new questions are asked before Plan setup. The recorded runs raise one question (OQ-001) and
+  // the Deepen's readers raise no other, so nothing is left to ask: no question outside the Answered list.
+  await expect(region.getByTestId('no-open-questions')).toBeVisible();
+  await expect(region.getByTestId('open-question')).toHaveCount(1);
   // The list is collapsed and opens from the keyboard.
   await expect(answered).not.toHaveAttribute('open', '');
   await answered.locator('summary').focus();
