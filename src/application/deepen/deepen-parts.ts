@@ -1,5 +1,6 @@
 import type { PromptFile } from '../agent/prompt-file.js';
 import type { AnswersFile } from '../ports/answers-file.js';
+import type { PriorCards } from '../ports/prior-cards.js';
 import type { CardOutputs, CardSource } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -8,6 +9,7 @@ import type { TaskResults } from '../ports/task-results.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import type { JudgementContext } from '../understand/claim-judgement.js';
 import type { ReaderTaskContext } from '../understand/reader-task.js';
+import type { Rerun } from '../understand/answer-rerun.js';
 import type { DeepenOptions } from '../understand/understand-options.js';
 
 // RF-209: what a Deepen run needs: what every reader task of an understand run shares, the verifier
@@ -19,7 +21,9 @@ interface DeepenDependencies {
   readonly manifests: Pick<RunManifestStore, 'read'>;
   readonly cards: CardOutputs;
   readonly taskResults: TaskResults;
-  readonly answers: Pick<AnswersFile, 'addQuestions'>;
+  readonly answers: Pick<AnswersFile, 'addQuestions' | 'answeredQuestions'>;
+  /** RF-241, RF-646: the cards of the runs that raised the answered questions, marked `Answered`. */
+  readonly priorCards: Pick<PriorCards, 'markAnswered'>;
   readonly clock: Clock;
 }
 
@@ -31,5 +35,7 @@ export interface DeepenParts extends ReaderTaskContext {
   readonly overviewPrompt: PromptFile;
   readonly source: CardSource;
   readonly request: DeepenOptions;
+  /** RF-209, DEC-179: the answers of the project, given to the readers of the areas they concern. */
+  readonly rerun?: Rerun;
   readonly deps: DeepenDependencies;
 }

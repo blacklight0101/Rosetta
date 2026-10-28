@@ -96,10 +96,13 @@ describe('RF-646 DEC-179 the answered question is not asked again', () => {
     expect(text).toContain(`- Answer: ${answer}`);
   });
 
-  it('RF-646 marks the card of the question raised again Answered in the Deepen, so it asks nothing', async () => {
+  it('RF-646 merges the card of the question raised again into the answered one, which is Answered', async () => {
     const { h, deep } = shared.current();
 
-    expect(await cardFile(h, deep, 'OQ-002')).toContain('State: Answered');
+    const card = await cardFile(h, deep, 'OQ-001');
+    expect(card).toContain('State: Answered');
+    expect(card).toContain('OQ-002');
+    await expect(cardFile(h, deep, 'OQ-002')).rejects.toThrow();
   });
 });
 

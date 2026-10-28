@@ -15,8 +15,8 @@ import { sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy } from '../../../support/run-harness.js';
 
 // RF-209, DEC-179: the estimate before a Deepen says how many answers of the project the first
-// round would use: the answered questions of the areas its tasks read. A question that is already
-// `Answered` or belongs to an area the round does not read is not counted.
+// round would use: the answered questions of the areas its tasks read. A question of an area the round
+// does not read is not counted; one already `Answered` is, because an answer stays context.
 
 const areas: readonly Area[] = [
   {
@@ -103,7 +103,7 @@ describe('RF-209 the answers the estimate of a Deepen says it uses', () => {
     );
   });
 
-  it('RF-209 leaves out a question of an area no task reads and one already Answered', async () => {
+  it('RF-209 leaves out a question of an area no task reads, and counts one already Answered', async () => {
     const asked = [answered('OQ-001'), answered('OQ-002'), answered('OQ-003')];
     const cards = [
       oq('OQ-001', 'src', 'Open'),
@@ -111,7 +111,7 @@ describe('RF-209 the answers the estimate of a Deepen says it uses', () => {
       oq('OQ-003', 'src', 'Answered'),
     ];
 
-    expect(await answersOf(asked, cards)).toBe(1);
+    expect(await answersOf(asked, cards)).toBe(2);
   });
 
   it('RF-209 counts none when the project has no answered question', async () => {

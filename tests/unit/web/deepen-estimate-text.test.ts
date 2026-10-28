@@ -36,7 +36,6 @@ function estimate(change: Partial<DeepenEstimate> = {}): DeepenEstimate {
       outOfScope: 6,
       failedAreas: 0,
       answers: 0,
-      answers: 0,
       unreadFiles: 12,
       unreadTokens: 3000,
     },
