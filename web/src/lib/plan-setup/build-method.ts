@@ -25,7 +25,7 @@ export interface MethodDraft {
   readonly models: Readonly<Record<ModelSlot, string>>;
 }
 
-export const NO_MODELS: Readonly<Record<ModelSlot, string>> = {
+const NO_MODELS: Readonly<Record<ModelSlot, string>> = {
   smallest: '',
   middle: '',
   largest: '',
