@@ -4,6 +4,7 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { Link } from '../components/Link.js';
 import { bytesText } from '../lib/bytes.js';
+import { ProcessingProgress } from './ProcessingProgress.js';
 import { useZipUpload, type ZipUpload, type ZipUploadOptions } from './use-zip-upload.js';
 
 // RF-128, RF-134, RFC-004 section 4.5, design-system.md section 14 (Projects): the Upload a zip
@@ -68,7 +69,15 @@ function Summary(props: {
 }
 
 function Outcome({ upload }: { readonly upload: ZipUpload }): JSX.Element | null {
-  const { failure, project, summary, phase, percent } = upload;
+  const { failure, project, summary, phase, percent, processing } = upload;
+  if (phase === 'sending' && processing !== undefined) {
+    return (
+      <ProcessingProgress
+        progress={processing.progress ?? undefined}
+        elapsedMs={processing.elapsedMs}
+      />
+    );
+  }
   if (phase === 'sending') return <Progress percent={percent} />;
   if (summary !== undefined) return <Summary upload={upload} summary={summary} />;
   if (failure === undefined) return null;

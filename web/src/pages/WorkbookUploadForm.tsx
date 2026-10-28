@@ -6,11 +6,12 @@ import { Field } from '../components/Field.js';
 import { useWorkbookUpload, type WorkbookUpload } from './use-workbook-upload.js';
 import type { WorkbookFlowOptions } from './use-workbook-flow.js';
 import { useRefusalFocus } from '../lib/use-refusal-focus.js';
+import { ProcessingProgress } from './ProcessingProgress.js';
 import { Announcement, ChosenFiles, Problems, Progress, Summary } from './WorkbookParts.js';
 
 // RF-150, RF-158, RFC-005 section 4.9, design-system.md section 14 (Projects): the Excel workbooks
 // form. It states the accepted types and the limits in one line, checks the files before sending,
-// follows each file, then shows what was read and what was left out. A failed upload says the
+// follows each file, then the server reading them (RF-159), then shows what was read and what was left out. A failed upload says the
 // project has no source and offers Upload again. File and project names are drawn as text.
 
 function reasonToWait(upload: WorkbookUpload): string | undefined {
@@ -27,15 +28,24 @@ function fieldError(problems: readonly string[]): { readonly message: string } |
   return { message: `${String(problems.length)} problems with the chosen files. See the list.` };
 }
 
-function Outcome({ upload }: { readonly upload: WorkbookUpload }): JSX.Element | null {
-  const { failure, project, summary, phase, current, items } = upload;
+function Working({ upload }: { readonly upload: WorkbookUpload }): JSX.Element {
+  const { phase, current, items, processing } = upload;
   if (phase === 'sending') {
     const percent = items[Math.max(current, 1) - 1]?.percent ?? 0;
     return <Progress current={Math.max(current, 1)} total={items.length} percent={percent} />;
   }
-  if (phase === 'finishing') {
-    return <p role="status">Reading the workbooks. This can take a minute.</p>;
-  }
+  return (
+    <ProcessingProgress
+      progress={processing?.progress}
+      elapsedMs={processing?.elapsedMs ?? 0}
+      onCancel={processing === undefined ? undefined : upload.cancel}
+    />
+  );
+}
+
+function Outcome({ upload }: { readonly upload: WorkbookUpload }): JSX.Element | null {
+  const { failure, project, summary, phase } = upload;
+  if (phase === 'sending' || phase === 'finishing') return <Working upload={upload} />;
   if (summary !== undefined) return <Summary summary={summary} projectId={project?.id} />;
   if (failure === undefined) return null;
   return (
