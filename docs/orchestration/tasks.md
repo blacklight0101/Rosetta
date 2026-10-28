@@ -16,8 +16,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P2 Full understand      | 53      | 14        | 32         | 7         | 0                  | 23      | 28      | 2      | 32         | 0         |
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 47      | 9         | 38         | 0         | 0                  | 20      | 27      | 0      | 0          | 0         |
-| P6 Agent build method   | 19      | 1         | 18         | 0         | 0                  | 5       | 14      | 0      | 0          | 0         |
-| **Total**               | **435** | **107**   | **298**    | **30**    | **0**              | **210** | **211** | **14** | **242**    | **0**     |
+| P6 Agent build method   | 25      | 2         | 23         | 0         | 0                  | 9       | 16      | 0      | 6          | 0         |
+| **Total**               | **441** | **108**   | **303**    | **30**    | **0**              | **214** | **213** | **14** | **248**    | **0**     |
 
 ## Conventions for every card
 
@@ -6097,7 +6097,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (DEC-173; the proposed requirements accepted)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the planning brief (`src/domain/planning/planning-brief.ts`, `src/application/planning/planning-brief-schema.ts`, `brief-questions.ts`), the review sections 4 and 5, RF-612, RF-639 (proposed).
 - **Do**:
   - Extend `buildMethod` with the agent tool (`claude-code`, `codex`, `other` with a name) and one model name per tier plus an optional escalation model; the schema stays additive and a brief saved earlier still parses as people building (Q-B).
@@ -6113,7 +6113,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: P6-02
 - **Gate**: owner (DEC-173; the proposed requirements accepted)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web/src/pages/PlanMethodStep.tsx`, `web/src/lib/plan-setup/steps.ts` and `draft.ts`, the review section 4, `docs/design-system.md` section 14, `tests/e2e/plan-setup.spec.ts`.
 - **Do**:
   - Replace the checkbox with a required two-way choice (agents or people build) with the plain sentence of what each answer gives and leaves out; when the context names an agent tool, open on agents (Q-A).
@@ -6129,7 +6129,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: P6-02
 - **Gate**: owner (DEC-173; the proposed requirements accepted)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/planning/task-method.ts`, `handoff-task-markdown.ts`, `handoff-quality-markdown.ts`, RF-635, the review sections 5 and 6, `tests/integration/application/build-plan-quality.test.ts`.
 - **Do**:
   - Rate a card by size and risk class as the review proposes (Q-C): a `security boundary`, `data loss` or `money` card of size M or L is rated 9; the middle-tier floor for any other class stays.
@@ -6145,7 +6145,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: S
 - **Depends on**: P6-04
 - **Gate**: owner (DEC-173; the proposed requirements accepted)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/handoff/handoff-checks-markdown.ts`, `handoff-truthful-checks-markdown.ts`, the review section 6, RF-641 (proposed).
 - **Do**:
   - When AI-assisted build is on, write in `checks.md` a finding for a card whose model is not the chosen tool's, whose tier is below its band, whose risk class other than `none` has a tier below the middle, or whose verifier is below its builder (Q-D: list, never block); the card line shows its risk class next to the difficulty (RF-641 item 5).
@@ -6160,7 +6160,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: S
 - **Depends on**: P6-02
 - **Gate**: owner (DEC-173; the proposed requirements accepted)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `handoff-method-markdown.ts`, `handoff-list-markdown.ts` (reading order), `AGENTS.md` of this repository as the shape, the review sections 2 and 3, RF-640 (proposed).
 - **Do**:
   - Rewrite `agentsMarkdown` as an index of at most about 60 lines: start-here order, command table (from the stack answers or marked unknown), the rules broken most often, the layout; the long rules move to `orchestration.md` (P6-07).
@@ -6220,7 +6220,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (DEC-173; the proposed requirements accepted)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the planner prompts (`prompts/`), `src/domain/planning/foundation-cards.ts`, RF-630, `docs/verification/` as the shape, the review section 10.
 - **Do**:
   - For a plan of two or more phases add to each phase a closing card that maps its requirements to tests, lists measured targets and turns gaps into follow-up cards; add a security review card when a card has a risk class other than `none`.
@@ -6280,7 +6280,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (DEC-178)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `prompts/cards/card-format.v2.md`, `prompts/cards/repair.v3.md`, `src/application/cards/card-schema.ts`, `parse-cards.ts`, `src/application/understand/open-questions.ts`, RF-243, RF-645, ADR-005, ADR-008.
 - **Do**:
   - A new card-format and repair prompt version (RNF-004): an `OQ` card carries three suggested answers, one marked recommended and listed first, each with a short description and, when the code supports it, a citation.
@@ -6296,7 +6296,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: P6-14
 - **Gate**: owner (DEC-178)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web/src/pages/RunAnswers.tsx`, `YourTurn.tsx`, `src/application/use-cases/record-answers.ts`, `list-answers.ts`, `src/infrastructure/cards/answers-file.ts`, `docs/data-model.md` section 3.16, `docs/design-system.md`, RF-240, RF-645, RF-1007, RF-1017.
 - **Do**:
   - Show each question's suggested answers as choices, the recommended one first, plus "Type your own answer"; a question saved before the change keeps its free answer field.
@@ -6341,7 +6341,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (DEC-179)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/use-cases/start-deepen.ts`, `src/application/deepen/`, `src/application/understand/answer-rerun.ts` (`withAnswersOf`, `askingTheSame`), `reader-tasks.ts`, `src/application/ports/answers-file.ts`, RF-209, RF-241, RF-646, ADR-013.
 - **Do**:
   - Give every Deepen reader task the answered questions of its area as user context in a labelled data block, as the re-run with answers does; an answer is never evidence, so a claim still needs a code citation.
@@ -6366,3 +6366,96 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Delivers**: the use-case, journey and page changes, and integration and end-to-end tests.
 - **Done when**: the end-to-end test answers before a Deepen, runs it, and sees no question asked twice and only new ones before Plan setup.
 - **Refs**: RF-614, RF-615, RF-646, RF-1007, RF-1017, DEC-179.
+
+### P6-20 - Follow-up: the build method e2e waits for the save before a reload
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-03
+- **Gate**: owner (DEC-176)
+- **Status**: Todo
+- **Reads**: `tests/e2e/plan-setup-build-method.spec.ts` (the test at line 16), `tests/e2e/support/plan-setup-page.ts`, the Save handler of the build method step in `web/src/pages/`, RF-612, RF-639. The test failed 2 of 3 local runs, both right after `page.reload()` (lines 45 and 60), and fails on develop CI (run 40759431011, commit d7ee1e72, e2e shard 2), which blocks every pull request (issue #991). It asserts the saved choice before the save has landed.
+- **Do**:
+  - Wait for the save to finish (the save response or the "What I recorded" line) before every reload and every assertion on saved state in the spec.
+  - Find out whether a real defect hides behind the flakiness, such as a page that reloads before the save request ends, and fix it in a separate commit if so.
+- **Delivers**: the spec change and any defect fix with its test.
+- **Done when**: the spec passes `--repeat-each=10` locally and CI e2e is green.
+- **Refs**: RF-612, RF-639, P6-03; issue #991.
+
+### P6-21 - Follow-up: typed Plan setup answers reach the planner
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P6-16
+- **Gate**: owner (DEC-184)
+- **Status**: Todo
+- **Reads**: `src/application/plan/plan-inputs.ts`, the planner prompts in `prompts/`, the brief schema and the Plan setup pages in `web/src/pages/` (P6-16), `docs/data-model.md` section 3.20, RF-605, RF-645, ADR-013, DEC-184. Today a typed answer to principles, architecture, migration or build method is stored in the brief and shown in "What I recorded", but the planner does not see it, so the question stays in the defaulted list.
+- **Do**:
+  - Pass the typed text of those four questions to the planner inside a labelled data block (ADR-013); it is user context, never evidence or an instruction.
+  - Remove the question from the defaulted list once its typed answer reaches the planner; the ADR and the package then state the user's own answer instead of the default.
+  - Keep the previous behaviour for a question with no typed answer.
+- **Delivers**: the change, unit tests and an integration test with recorded responses.
+- **Done when**: an integration test shows a typed answer in the planner's data block, the question out of the defaulted list and the answer stated in the ADR and the package; `npm run verify` green.
+- **Refs**: RF-605, RF-645, ADR-013, DEC-184.
+
+### P6-22 - Follow-up: a tier model can be marked as running locally
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-05, P6-16
+- **Gate**: owner (DEC-185)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/handoff/handoff-model-checks-markdown.ts` (passes `local: false` today), `src/domain/planning/card-model-check.ts`, the brief schema, `docs/data-model.md` section 3.20, the build method step of Plan setup in `web/src/pages/`, RF-639, RF-641, DEC-185.
+- **Do**:
+  - Add an optional "runs locally" flag per tier model to the brief; it is additive, so a brief saved before the change still reads.
+  - Add a control for it to the build method step of Plan setup.
+  - Pass the flag to the model check, so the local-model warning of RF-641 (a local builder on a card above difficulty 2) fires from a real package.
+- **Delivers**: the schema and page change, the check wiring and tests.
+- **Done when**: a package whose brief marks the middle tier model as local lists the RF-641 warning in `checks.md` for a card above difficulty 2; a brief without the flag is unchanged; CI green.
+- **Refs**: RF-639, RF-641, DEC-185.
+
+### P6-23 - Follow-up: a card on the escalation model shows the owner's approval
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-04, P6-05
+- **Gate**: owner (DEC-185)
+- **Status**: Todo
+- **Reads**: `src/domain/planning/card-model-check.ts` (accepts the escalation model silently today), the card line writer of P6-04, the `checks.md` writer, RF-641, DEC-185.
+- **Do**:
+  - A card that uses the escalation model shows "escalation, owner approved" on its card line.
+  - `checks.md` lists such a card as a note that needs the owner's approval, without correcting anything.
+- **Delivers**: the card line and check change and tests.
+- **Done when**: a card on the escalation model shows the approval text on its line and in `checks.md`; a card on a tier model shows neither; CI green.
+- **Refs**: RF-641, DEC-185.
+
+### P6-24 - Follow-up: small gaps from the P6-10 review
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P6-10
+- **Gate**: owner (DEC-176)
+- **Status**: Todo
+- **Reads**: the verifier's PASS comment on the P6-10 pull request (#958), `tests/unit/domain/planning/phase-closing-cards.test.ts`, `src/domain/planning/foundation-cards.ts`, RF-630.
+- **Do**:
+  - Add a test that a phase with no cards gets no matrix card (the `own.length === 0` branch).
+  - Handle an empty last phase: the review card then has nothing waiting on it, so make it wait on the last phase that has cards, or state the rule and test it.
+- **Delivers**: the change and tests.
+- **Done when**: each gap has a passing test and a mutation of the branch fails one; recordings still replay.
+- **Refs**: RF-630, RF-635, P6-10.
+
+### P6-25 - Follow-up: small fixes from the P6-15 review
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-15
+- **Gate**: owner (DEC-178)
+- **Status**: Todo
+- **Reads**: the verifier's comment on the P6-15 pull request (#962), `src/infrastructure/cards/answers-sections.ts` (`optionsIn`, about line 85), `tests/unit/infrastructure/cards/answers-file-options.test.ts` (about line 146), `tests/unit/web/run-answers-options.test.tsx`, RF-645, RF-1007.
+- **Do**:
+  - Strip a leading "(Recommended) " from an answer that is not recommended when writing, so model text cannot fake the recommended mark and the write-parse round trip is exact.
+  - Make the hostile-text test assert the parsed answers and descriptions and the write-parse-write idempotence.
+  - Add a test that drives the choices by keyboard.
+- **Delivers**: the fix and tests.
+- **Done when**: the input `(Recommended) evil` with recommended=false parses back as not recommended; the hostile-text test would fail on the old code; a keyboard test passes.
+- **Refs**: RF-645, RF-1007, P6-15.

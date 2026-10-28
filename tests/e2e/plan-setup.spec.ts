@@ -106,7 +106,13 @@ test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in
   await page.getByRole('radio', { name: /^Agents will build/u }).check();
   await page.getByRole('radio', { name: /^Claude Code/u }).check();
 
+  // The recorded lines follow the draft, so wait for the save itself before reloading.
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
+  );
   await page.getByRole('button', { name: 'Save', exact: true }).click();
+  expect((await saved).ok()).toBe(true);
 
   await expect(recorded(page)).toContainText('Parallel Change');
   await expect(recorded(page)).toContainText('1 of 7 layers: On-premises Kubernetes');
