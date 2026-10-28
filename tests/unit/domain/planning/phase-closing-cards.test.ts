@@ -151,3 +151,14 @@ describe('withPhaseClosingCards phases with no cards', () => {
     expect(matrixCards(tasks).map((task) => task.phase)).toEqual([1, 2]);
   });
 });
+
+describe('withPhaseClosingCards cards outside the phases', () => {
+  it('RF-630 a risky card that names no phase of the plan keeps the review in the last phase', () => {
+    const plan = planOf([planTask({ id: 'T-001', title: 'Pay', phase: 9, ...money })], 2);
+    const review = withPhaseClosingCards(plan).tasks.find((task) =>
+      task.title.startsWith('Review the security'),
+    );
+
+    expect(review?.phase).toBe(2);
+  });
+});
