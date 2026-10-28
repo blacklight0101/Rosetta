@@ -16,8 +16,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P2 Full understand      | 52      | 13        | 32         | 7         | 0                  | 22      | 28      | 2      | 31         | 0         |
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
-| P6 Agent build method   | 1       | 0         | 1          | 0         | 0                  | 0       | 1       | 0      | 0          | 0         |
-| **Total**               | **413** | **105**   | **278**    | **30**    | **0**              | **203** | **196** | **14** | **241**    | **0**     |
+| P6 Agent build method   | 12      | 1         | 11         | 0         | 0                  | 3       | 9       | 0      | 0          | 0         |
+| **Total**               | **424** | **106**   | **288**    | **30**    | **0**              | **206** | **204** | **14** | **241**    | **0**     |
 
 ## Conventions for every card
 
@@ -6025,3 +6025,170 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Delivers**: `docs/reviews/2026-xx-agent-build-method.md` with the findings and the proposed cards; the cards appended to this phase.
 - **Done when**: the owner has read the review and chosen which proposed cards to build.
 - **Refs**: RF-612, RF-635, RF-636, DEC-60, DEC-76, DEC-173.
+
+### P6-02 - The brief records the agent tool and a model per tier
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Todo
+- **Reads**: the planning brief (`src/domain/planning/planning-brief.ts`, `src/application/planning/planning-brief-schema.ts`, `brief-questions.ts`), the review sections 4 and 5, RF-612, RF-639 (proposed).
+- **Do**:
+  - Extend `buildMethod` with the agent tool (`claude-code`, `codex`, `other` with a name) and one model name per tier plus an optional escalation model; the schema stays additive and a brief saved earlier still parses as people building (Q-B).
+  - Defaults: Claude Code gets `haiku`, `sonnet`, `opus`; Codex and another tool have none, so the question is required for them.
+  - The defaulted-question text says plainly what the default leaves out.
+- **Delivers**: the domain type, the zod schema, the defaults and unit tests; the brief hash covers the new fields.
+- **Done when**: unit tests for each tool, an old brief and a missing model; `npm run verify` green.
+- **Refs**: RF-612, RF-639; review F-7. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-03 - Plan setup asks the build method plainly and says what it leaves out
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-02
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Todo
+- **Reads**: `web/src/pages/PlanMethodStep.tsx`, `web/src/lib/plan-setup/steps.ts` and `draft.ts`, the review section 4, `docs/design-system.md` section 14, `tests/e2e/plan-setup.spec.ts`.
+- **Do**:
+  - Replace the checkbox with a required two-way choice (agents or people build) with the plain sentence of what each answer gives and leaves out; when the context names an agent tool, open on agents (Q-A).
+  - After the agents answer, ask the tool and a model per tier with their defaults from P6-02.
+  - The step is keyboard-operable and passes the accessibility check like the other steps.
+- **Delivers**: the step, the recorded summary line and e2e tests for both answers and for each tool.
+- **Done when**: the e2e test walks both answers; no serious accessibility violation; the recorded line names tool and models.
+- **Refs**: RF-612, RF-639; review F-4. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-04 - Task cards name the model of their tier and the largest tier is reachable
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P6-02
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Todo
+- **Reads**: `src/domain/planning/task-method.ts`, `handoff-task-markdown.ts`, `handoff-quality-markdown.ts`, RF-635, the review sections 5 and 6, `tests/integration/application/build-plan-quality.test.ts`.
+- **Do**:
+  - Rate a card by size and risk class as the review proposes (Q-C): a `security boundary`, `data loss` or `money` card of size M or L is rated 9; the middle-tier floor for any other class stays.
+  - Each card line reads `Difficulty: n (tier, model: <name>)` with the model from the brief; with no model for the tier it reads the tier alone and the check of P6-05 lists it.
+  - Name the verifier tier of the band on the card.
+- **Delivers**: the changed derivation, the card line and unit tests for every size and risk class.
+- **Done when**: a table test of all size and class pairs; the largest tier appears in a package with a `money` card; `npm run verify` green.
+- **Refs**: RF-635, RF-639; review F-5, F-6. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-05 - A package check for the model of every card
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P6-04
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/handoff/handoff-checks-markdown.ts`, `handoff-truthful-checks-markdown.ts`, the review section 6, RF-641 (proposed).
+- **Do**:
+  - When AI-assisted build is on, write in `checks.md` a finding for a card whose model is not the chosen tool's, whose tier is below its band, whose risk class other than `none` has a tier below the middle, or whose verifier is below its builder (Q-D: list, never block).
+  - A clean package lists none; a local model on a card above difficulty 2 is a warning (Q-F).
+- **Delivers**: the check section and unit tests of each failure and of a clean package.
+- **Done when**: each failure has a passing test; a clean package has no finding.
+- **Refs**: RF-635, RF-641; review F-8. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-06 - AGENTS.md becomes the start-here index and comes first
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-02
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Todo
+- **Reads**: `handoff-method-markdown.ts`, `handoff-list-markdown.ts` (reading order), `AGENTS.md` of this repository as the shape, the review sections 2 and 3, RF-640 (proposed).
+- **Do**:
+  - Rewrite `agentsMarkdown` as an index of at most about 60 lines: start-here order, command table (from the stack answers or marked unknown), the rules broken most often, the layout; the long rules move to `orchestration.md` (P6-07).
+  - Put `AGENTS.md` first in the README reading order when the method is on; keep operations (RF-636) and the risk class rule reachable by link.
+- **Delivers**: the writer change and a structure test with a line budget.
+- **Done when**: the file is within the budget and first in the reading order; the existing operations and risk tests still pass.
+- **Refs**: RF-612, RF-636, RF-640; review F-1, F-3. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-07 - orchestration.md: roles, bands, retry ladder, status flow, merge rules
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P6-04, P6-06
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Todo
+- **Reads**: the package writer, `docs/orchestration/README.md` sections 2, 3, 3.1 and 6, `.claude/agents/`, the review sections 3 and 7, RF-640 (proposed).
+- **Do**:
+  - Write `orchestration.md` (new file, linked second in the reading order): roles (orchestrator as the main session, builder per tier, independent verifier per band), the band table with the models, the retry ladder, the card status flow, the merge rules with `needs-owner`, the red test first, and the report and verdict formats.
+  - Use the team's words and tool; name nothing from the owner's employer (DEC-03).
+- **Delivers**: the writer, the file registration in `handoff-links.ts` and structure tests.
+- **Done when**: each element has a test; the file is absent when people build; no employer term in the output.
+- **Refs**: RF-612, RF-640; review F-2. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-08 - orchestration.md: gates, usage throttle, escalation, delivery flow
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-07
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Todo
+- **Reads**: the `orchestration.md` writer from P6-07, `docs/orchestration/README.md` sections 7, 8.1 and 10, ADR-025, the review sections 8 and 9, RF-643 (proposed).
+- **Do**:
+  - Add sections: human gates (from the plan's own gates), usage throttle with default bands marked as the team's choice, escalation and stop conditions, size budgets of living files.
+  - Add the recommended delivery flow only when the brief says the app is hosted (Q-H), as a recommendation the team may replace by a recorded decision.
+- **Delivers**: the new sections and tests, including the hosted and not hosted cases.
+- **Done when**: the section is absent for a non-hosted brief; every section has a structure test.
+- **Refs**: RF-640, RF-643; review F-10. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-09 - Agent definitions per tool in the package
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-04, P6-07
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Todo
+- **Reads**: `.claude/agents/` of this repository (shape only), the review section 7, DEC-60, RF-642 (proposed), `file-handoff-writer.ts`.
+- **Do**:
+  - Write an `agents/` folder for Claude Code (orchestrator, a builder per tier, a verifier per band, each with the `model:` of its tier) and for Codex (plain role prompts); prose only for another tool (Q-E); the escalation file only with a named escalation model and the owner-approval note (Q-I).
+  - Nothing installs or runs: no hook, command or plugin file (DEC-60).
+- **Delivers**: the writer, the notes on where to copy and structure tests per tool.
+- **Done when**: a test finds no hook, command or plugin file; each definition carries its tier's model.
+- **Refs**: RF-612, RF-642, DEC-60; review F-9. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-10 - Phase-closing verification-matrix and security review cards in the plan
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Todo
+- **Reads**: the planner prompts (`prompts/`), `src/domain/planning/foundation-cards.ts`, RF-630, `docs/verification/` as the shape, the review section 10.
+- **Do**:
+  - For a plan of two or more phases add to each phase a closing card that maps its requirements to tests, lists measured targets and turns gaps into follow-up cards; add a security review card when a card has a risk class other than `none`.
+  - Derive the cards without a model call where possible, so the same plan always gets the same cards.
+- **Delivers**: the card derivation, the prompt change if any, and tests.
+- **Done when**: a two-phase plan has a matrix card per phase; a plan with a `money` card has a security review card; recordings still replay.
+- **Refs**: RF-630, RF-635; review section 8. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-11 - The package says what it leaves out when people build
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P6-03
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Todo
+- **Reads**: `handoff-list-markdown.ts`, `handoff-left-out-markdown.ts`, the open-questions writer, the review section 4.
+- **Do**:
+  - When people build, the README says in one sentence that the package has no agent files, no model per card and no protocol, and `open-questions.md` lists the build method as a whole-build question with its default (RF-637).
+- **Delivers**: two sentences in the writer and a structure test for both answers.
+- **Done when**: the sentence is present for people building and absent for agents.
+- **Refs**: RF-612, RF-637; review F-4. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-12 - Method end to end: a single-file app run with the method on
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P6-05, P6-08, P6-09, P6-11
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Todo
+- **Reads**: `tests/e2e/journeys/handoff-package.spec.ts`, `tests/integration/application/build-plan-method.test.ts`, the fake-provider recordings for a single-file app (ADR-008), the review section 1.
+- **Do**:
+  - Run a recorded plan of a single-file app with agents building (Claude Code and Codex) and read the package as a new agent would: `AGENTS.md` first, `orchestration.md`, a model on every card, a clean model check, the agent files.
+  - Update `docs/architecture.md` and `docs/conventions.md` for the new files.
+- **Delivers**: the journey test, the recordings and the documentation updates.
+- **Done when**: the journey passes on Windows and Linux; no real provider call.
+- **Refs**: RF-612, RF-635, RF-636, RF-639..RF-643. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
