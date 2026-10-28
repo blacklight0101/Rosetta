@@ -9,6 +9,7 @@ import {
   plannerOfProject,
   type Blocker,
 } from '../lib/plan-setup/estimate.js';
+import { TYPED } from '../lib/plan-setup/own-answers.js';
 import { usePlanEstimate, type EstimateLoad } from './use-plan-estimate.js';
 import { usePlanOptions, type OptionsLoad } from './use-plan-options.js';
 import { usePrivateCode, type PrivateCode } from './use-private-code.js';
@@ -54,7 +55,8 @@ function shownChoice(setup: PlanSetupState, load: OptionsLoad): Draft | undefine
   }
   const options = load.status === 'ready' ? load.options : undefined;
   if (setup.step !== 'architecture' || options === undefined) return undefined;
-  if (isAnswered(draft, 'architecture')) return undefined;
+  // A typed answer is kept as it is, not replaced by the recommended style (RF-645).
+  if (isAnswered(draft, 'architecture') || draft.chosen['architecture'] === TYPED) return undefined;
   return chooseStyle(draft, options, options.architecture.recommended);
 }
 

@@ -28,7 +28,9 @@ describe('migration step', () => {
     press('Save and continue');
 
     await screen.findByRole('heading', { name: /Which technology/u, level: 2 });
-    expect(saves(page)).toEqual([{ migration: 'parallel-change' }]);
+    expect(saves(page)).toEqual([
+      { migration: 'parallel-change', chosen: { migration: 'parallel-change' } },
+    ]);
   });
 });
 
@@ -51,6 +53,7 @@ describe('project context step', () => {
           teamSize: 6,
           keepIntegrations: ['SAP', 'Active Directory'],
         },
+        chosen: { 'context.teamSize': 'typed', 'context.keepIntegrations': 'typed' },
       },
     ]);
   });

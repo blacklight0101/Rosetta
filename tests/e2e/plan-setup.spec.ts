@@ -84,7 +84,7 @@ test('RF-609 the stack step has two options for each of the seven layers and a f
 
   const layers = page.getByRole('radiogroup');
   await expect(layers).toHaveCount(7);
-  await expect(layers.first().getByRole('radio')).toHaveCount(2, { timeout: 20_000 });
+  await expect(layers.first().getByRole('radio')).toHaveCount(4, { timeout: 20_000 });
   await expect(page.getByLabel('Your own for Hosting')).toBeVisible();
   await layers.nth(3).getByRole('radio').last().check();
   await expectNoSeriousViolations(page);
@@ -101,7 +101,7 @@ test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in
   await expect(stepPill(page, 'Stack')).toHaveAttribute('aria-current', 'step');
   await page.getByLabel('Your own for Hosting').fill('On-premises Kubernetes');
   await page.getByRole('button', { name: 'Save and continue' }).click();
-  await page.getByLabel('Team size').fill('6');
+  await page.getByLabel('Team size', { exact: true }).fill('6');
   await page.getByRole('button', { name: 'Save and continue' }).click();
   await page.getByRole('radio', { name: /^Agents will build/u }).check();
   await page.getByRole('radio', { name: /^Claude Code/u }).check();
