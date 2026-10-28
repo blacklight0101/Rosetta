@@ -11,9 +11,23 @@ const masker = new SecretMasker();
 const leftOutSentence =
   'This package has no agent files, no model per card and no build protocol, because people build the system.';
 
-function filesOf(aiAssisted: boolean): Readonly<Record<string, string>> {
+function filesOf(aiAssisted: boolean, defaulted = false): Readonly<Record<string, string>> {
   const base = handoffOf('Plain text.');
-  return renderHandoff({ ...base, brief: { ...base.brief, buildMethod: { aiAssisted } } }, masker);
+  const briefQuestions = defaulted ? [buildMethodDefault] : [];
+  return renderHandoff(
+    { ...base, briefQuestions, brief: { ...base.brief, buildMethod: { aiAssisted } } },
+    masker,
+  );
+}
+
+const buildMethodDefault = {
+  id: 'buildMethod',
+  question: 'Will the team build the new system with AI agents?',
+  answer: 'No; the package has no AI-assisted build method.',
+};
+
+function occurrences(text: string, part: string): number {
+  return text.split(part).length - 1;
 }
 
 describe('the package says what it leaves out when people build', () => {
@@ -44,5 +58,23 @@ describe('the package says what it leaves out when people build', () => {
 
     expect(questions).not.toMatch(/^## Build method$/mu);
     expect(questions).not.toContain('Default: people build');
+  });
+
+  it('RF-637 people building by default: open-questions.md lists the build method once, in the defaulted table', () => {
+    const questions = filesOf(false, true)['open-questions.md'] ?? '';
+
+    expect(questions).not.toMatch(/^## Build method$/mu);
+    expect(occurrences(questions, buildMethodDefault.question)).toBe(1);
+    expect(questions).toContain(
+      `| ${buildMethodDefault.question} | buildMethod | ${buildMethodDefault.answer} | none |`,
+    );
+  });
+
+  it('RF-637 people building by answer: open-questions.md lists the build method once, as its own section', () => {
+    const questions = filesOf(false)['open-questions.md'] ?? '';
+
+    expect(questions.match(/^## Build method$/gmu)).toHaveLength(1);
+    expect(questions).not.toContain(buildMethodDefault.question);
+    expect(questions).toContain('Every question of the brief was answered.');
   });
 });
