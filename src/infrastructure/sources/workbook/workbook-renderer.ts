@@ -1,15 +1,15 @@
-import type { ProgressListener } from '../../../application/ports/workbook-staging.js';
 import { placeCells } from './cell-order.js';
 import { DEFAULT_DEPENDENCY_LIMITS, type DependencyLimits } from './dependency-limits.js';
 import { plainModel } from './external-names.js';
-import { renderDependencies } from './render-dependencies.js';
+import { renderDependenciesSteps } from './render-dependencies.js';
 import { renderFormulas } from './render-formulas.js';
 import { renderIndex, type SheetEntry } from './render-index.js';
 import { macroNoticeOf, renderMacros } from './render-macros.js';
 import { ByteBudget } from './render-output.js';
 import { renderNotes, renderValidation } from './render-rules.js';
+import { cellsOf, drive, driveAsync, type Pacing, type Steps } from './render-steps.js';
 import { renderValues } from './render-values.js';
-import type { WorkbookModel, WorkbookSheet } from './workbook-model.js';
+import type { WorkbookModel } from './workbook-model.js';
 import { allocateSegments } from './workbook-segments.js';
 import { capName } from './workbook-text.js';
 
@@ -91,21 +91,34 @@ function renderSheet(
   };
 }
 
-function renderOne(model: WorkbookModel, folder: string, budget: ByteBudget): RenderedWorkbook {
+/** Where a workbook stands among the others of its render, for the progress reports. */
+interface Place {
+  readonly workbook: number;
+  readonly workbooks: number;
+  readonly cells: number;
+}
+
+function* renderOne(
+  model: WorkbookModel,
+  folder: string,
+  budget: ByteBudget,
+  place: Place,
+): Steps<RenderedWorkbook> {
   const segments = allocateSegments(
     model.sheets.map((sheet) => sheet.name),
     { reserved: ['workbook.md', 'macros'] },
   );
   const files: RenderedFile[] = [];
   const entries: SheetEntry[] = [];
-  model.sheets.forEach((sheet: WorkbookSheet, index) => {
+  for (const [index, sheet] of model.sheets.entries()) {
+    yield { step: 'rendering', ...place, sheet: index + 1, sheets: model.sheets.length };
     const segment = segments[index] ?? '_';
     const rendered = renderSheet(model, { sheet, segment, formulas: 0 }, budget);
     entries.push(rendered.entry);
     for (const [name, content] of Object.entries(rendered.files)) {
       files.push({ path: `${folder}/${segment}/${name}`, content });
     }
-  });
+  }
   const macros = renderMacros(model.macros, budget);
   for (const file of macros.files)
     files.push({ path: `${folder}/${file.path}`, content: file.content });
@@ -143,21 +156,34 @@ export function renderWorkbooks(
   models: readonly WorkbookModel[],
   limits: RenderLimits = DEFAULT_LIMITS,
 ): RenderedWorkbook[] {
-  return renderAll(models.map(plainModel), new ByteBudget(limits.maxTotalBytes));
+  return drive(renderWorkbooksSteps(models, limits));
 }
 
-function renderAll(
+export function* renderWorkbooksSteps(
+  models: readonly WorkbookModel[],
+  limits: RenderLimits = DEFAULT_LIMITS,
+): Steps<RenderedWorkbook[]> {
+  return yield* renderAll(models.map(plainModel), new ByteBudget(limits.maxTotalBytes));
+}
+
+function* renderAll(
   models: readonly WorkbookModel[],
   budget: ByteBudget,
   given?: readonly string[],
-): RenderedWorkbook[] {
+): Steps<RenderedWorkbook[]> {
   const folders =
     given ??
     allocateSegments(
       models.map((model) => model.fileName),
       { keepExtension: true },
     );
-  return models.map((model, index) => renderOne(model, folders[index] ?? '_', budget));
+  const cells = cellsOf(models);
+  const rendered: RenderedWorkbook[] = [];
+  for (const [index, model] of models.entries()) {
+    const place = { workbook: index + 1, workbooks: models.length, cells };
+    rendered.push(yield* renderOne(model, folders[index] ?? '_', budget, place));
+  }
+  return rendered;
 }
 
 export function renderWorkbook(
@@ -183,20 +209,26 @@ export function renderProject(
   models: readonly WorkbookModel[],
   limits: RenderLimits = DEFAULT_LIMITS,
 ): RenderedProject {
-  const budget = new ByteBudget(limits.maxTotalBytes);
-  const plain = models.map(plainModel);
-  const workbooks = renderAll(plain, budget, limits.folders);
-  const bounds = { ...DEFAULT_DEPENDENCY_LIMITS, ...limits.dependencies };
-  const content = renderDependencies(models, workbooks, bounds, budget);
-  return { workbooks, dependencies: { path: 'dependencies.md', content } };
+  return drive(renderProjectSteps(models, limits));
 }
 
-/** Placeholder until the render yields: the synchronous render behind the asynchronous signature. */
+/** The same render, handing the server back between sheets and passes (RF-159, RNF-017). */
 export function renderProjectAsync(
   models: readonly WorkbookModel[],
   limits: RenderLimits,
-  pacing: { check: () => void; onProgress?: ProgressListener },
+  pacing: Pacing,
 ): Promise<RenderedProject> {
-  pacing.check();
-  return Promise.resolve(renderProject(models, limits));
+  return driveAsync(renderProjectSteps(models, limits), pacing);
+}
+
+export function* renderProjectSteps(
+  models: readonly WorkbookModel[],
+  limits: RenderLimits = DEFAULT_LIMITS,
+): Steps<RenderedProject> {
+  const budget = new ByteBudget(limits.maxTotalBytes);
+  const plain = models.map(plainModel);
+  const workbooks = yield* renderAll(plain, budget, limits.folders);
+  const bounds = { ...DEFAULT_DEPENDENCY_LIMITS, ...limits.dependencies };
+  const content = yield* renderDependenciesSteps(models, workbooks, bounds, budget);
+  return { workbooks, dependencies: { path: 'dependencies.md', content } };
 }

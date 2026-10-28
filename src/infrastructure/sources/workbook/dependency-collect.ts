@@ -4,6 +4,7 @@ import type { Project, SheetNode, WorkbookNode } from './dependency-project.js';
 import { Resolver, type Shift } from './dependency-resolve.js';
 import { Findings, RefStore } from './dependency-store.js';
 import { extractReferences, type ExtractedReferences } from './formula-references.js';
+import { drive } from './render-steps.js';
 import type { CellFormula } from './workbook-model.js';
 
 // RF-153: reads every formula of the project once, in a fixed order (sheet by sheet, row by row), and
@@ -70,6 +71,14 @@ function sourceOf(
 }
 
 export function collect(project: Project, limits: DependencyLimits): Collected {
+  return drive(collectSteps(project, limits));
+}
+
+/** The same pass, handing the server back after each sheet (RF-159). */
+export function* collectSteps(
+  project: Project,
+  limits: DependencyLimits,
+): Generator<void, Collected, undefined> {
   const store = new RefStore(limits.maxReferences);
   const findings = new Findings(limits, project.sheets.length);
   const resolver = new Resolver(project, store, findings);
@@ -91,6 +100,7 @@ export function collect(project: Project, limits: DependencyLimits): Collected {
       store.begin();
       readOne(resolver, { sheet, ...where }, formula, { book, masters, findings, store });
     }
+    yield;
   }
   store.begin();
   return { store, findings, nodeSheet, nodePosition };

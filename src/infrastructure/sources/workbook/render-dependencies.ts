@@ -1,13 +1,14 @@
 import { rangesOf } from './cell-runs.js';
-import { collect, type Collected } from './dependency-collect.js';
-import { coverage } from './dependency-cover.js';
-import { findCycles, type CycleSearch } from './dependency-cycles.js';
+import { collectSteps, type Collected } from './dependency-collect.js';
+import { coverageSteps } from './dependency-cover.js';
+import { findCyclesSteps, type CycleSearch } from './dependency-cycles.js';
 import { at, POSITION } from './dependency-grid.js';
 import type { DependencyLimits } from './dependency-limits.js';
 import { buildProject, type Project, type RenderedNames } from './dependency-project.js';
 import { MAX_REFERENCES_PER_FORMULA } from './formula-references.js';
 import { addDefinedNames, addUnresolvedAndDynamic } from './render-dependency-names.js';
 import { TextFile, type ByteBudget } from './render-output.js';
+import { cellsOf, drive, relay, type Steps } from './render-steps.js';
 import type { WorkbookModel } from './workbook-model.js';
 
 // RF-153, RFC-005 section 4.5: `dependencies.md`, the formula dependency map of the whole project.
@@ -163,15 +164,32 @@ export function renderDependencies(
   limits: DependencyLimits,
   budget: ByteBudget,
 ): string {
+  return drive(renderDependenciesSteps(models, rendered, limits, budget));
+}
+
+/** The same text, handing the server back between the workbooks and the passes (RF-159). */
+export function* renderDependenciesSteps(
+  models: readonly WorkbookModel[],
+  rendered: readonly RenderedNames[],
+  limits: DependencyLimits,
+  budget: ByteBudget,
+): Steps<string> {
   const project = buildProject(models, rendered);
-  const collected = collect(project, limits);
-  const parts: Parts = {
-    project,
-    collected,
-    covered: coverage(project, collected.store),
-    cycles: findCycles(project, collected.store, collected.nodeSheet.length, limits),
-    limits,
-  };
+  const books = project.workbooks.length;
+  const tick = {
+    step: 'dependencies',
+    workbook: books,
+    workbooks: books,
+    sheet: project.sheets.length,
+    sheets: project.sheets.length,
+    cells: cellsOf(models),
+  } as const;
+  yield tick;
+  const collected = yield* relay(collectSteps(project, limits), tick);
+  const covered = yield* relay(coverageSteps(project, collected.store), tick);
+  const nodes = collected.nodeSheet.length;
+  const cycles = yield* relay(findCyclesSteps(project, collected.store, nodes, limits), tick);
+  const parts: Parts = { project, collected, covered, cycles, limits };
   const file = new TextFile(budget);
   addHeader(file, parts);
   addWorkbookEdges(file, parts);

@@ -1,5 +1,5 @@
 import type { SentSnapshot, UploadSnapshotInfo } from './source-fetcher.js';
-import type { LeftOut, WorkbookSummaryLine } from './workbook-staging.js';
+import type { LeftOut, ProgressListener, WorkbookSummaryLine } from './workbook-staging.js';
 
 // RF-128, RF-129, RF-130, RFC-004 section 4.2: where an uploaded zip becomes a snapshot. The store
 // streams the body to a temporary file under a size limit, unpacks it (the ZipExtractor port),
@@ -21,6 +21,8 @@ export interface UploadRequest {
   readonly limitBytes: number;
   /** Aborted when the request is aborted or the server shuts down. */
   readonly signal: AbortSignal;
+  /** Told where the workbooks of the zip have got to (RF-159); it must not throw. */
+  readonly onProgress?: ProgressListener;
 }
 
 export interface StoredUpload {
