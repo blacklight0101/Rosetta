@@ -3,7 +3,8 @@ import { modelForTier, resolveBuildMethod } from '../../domain/planning/build-me
 import type { BuildMethod } from '../../domain/planning/build-method.js';
 import { difficultyBands } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
-import { grepRows, stackLanguages } from './handoff-grep-rules.js';
+import { grepRows, stackLanguages, unlistedLanguages } from './handoff-grep-rules.js';
+import type { GrepSource } from './handoff-grep-rules.js';
 import { handoffFiles } from './handoff-links.js';
 
 // RF-612, RF-640: the build protocol of an AI-assisted build, written in the package's own words:
@@ -143,21 +144,36 @@ function grepTableLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[]
     ];
   }
   return [
-    'The verifier searches the branch for these patterns and reports each hit that sits outside the place the rule allows. Each row comes from a principle, the style or the risk class of a card in this package.',
+    'The verifier searches the branch for these patterns and reports each hit that sits outside the place the rule allows. Each row comes from a principle, the style or the risk class of a card in this package. A row marked "stated by" is a rule the package states. A row marked only "suggested by" is a suggestion: the principle names the area but not the rule, or the risk class asks for care without stating a rule, and the team may drop it.',
     '',
-    '| Pattern | Rule | Stated by |',
-    '| ------- | ---- | --------- |',
+    '| Pattern | Rule | Source |',
+    '| ------- | ---- | ------ |',
     ...rows.map(
       (row) =>
-        `| ${row.patterns.map((each) => `\`${each}\``).join(', ')} | ${row.rule} | ${row.statedBy.map((each) => esc.inline(each)).join(', ')} |`,
+        `| ${row.patterns.map((each) => `\`${each}\``).join(', ')} | ${row.rule} | ${sourceText(row.sources, esc)} |`,
     ),
     '',
-    ...(stackLanguages(handoff).length === 0
-      ? [
-          'No language is chosen in the stack, so only the patterns that hold in any language are listed; add those of the language when it is chosen.',
-          '',
-        ]
-      : []),
+    ...languageLines(handoff, esc),
+  ];
+}
+
+function sourceText(sources: readonly GrepSource[], esc: MarkdownEscaper): string {
+  return sources.map((each) => `${each.kind} by ${esc.inline(each.name)}`).join('; ');
+}
+
+/** P6-07: why some languages get no pattern; nothing when every language of the stack has its patterns. */
+function languageLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const unlisted = unlistedLanguages(handoff);
+  if (unlisted.length > 0) {
+    return [
+      `No search pattern is listed for ${unlisted.map((each) => esc.inline(each)).join(', ')}; only the patterns that hold in any language apply to its code, so add the patterns of that language to this table.`,
+      '',
+    ];
+  }
+  if (stackLanguages(handoff).length > 0) return [];
+  return [
+    'No language is chosen in the stack, so only the patterns that hold in any language are listed; add those of the language when it is chosen.',
+    '',
   ];
 }
 
