@@ -84,6 +84,10 @@ export interface PlanningBrief {
   readonly buildMethod: BuildMethod;
   /** The questions that took their default, in question order. */
   readonly defaulted: readonly string[];
+  /** RF-645: the option answering each question, or "typed"; absent in a brief saved before DEC-178. */
+  readonly chosen?: Readonly<Record<string, string>> | undefined;
+  /** RF-645: the text of a typed answer, by question id; absent when none was typed. */
+  readonly typed?: Readonly<Record<string, string>> | undefined;
 }
 
 /** A brief that has not been saved yet. */
@@ -112,6 +116,8 @@ export interface BriefAnswers {
       }
     | undefined;
   readonly buildMethod?: BuildMethod | undefined;
+  readonly chosen?: Readonly<Record<string, string>> | undefined;
+  readonly typed?: Readonly<Record<string, string>> | undefined;
 }
 
 export interface BriefProblem {
