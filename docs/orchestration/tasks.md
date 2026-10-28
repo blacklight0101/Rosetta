@@ -16,8 +16,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P2 Full understand      | 53      | 14        | 32         | 7         | 0                  | 23      | 28      | 2      | 32         | 0         |
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
-| P6 Agent build method   | 12      | 1         | 11         | 0         | 0                  | 3       | 9       | 0      | 0          | 0         |
-| **Total**               | **425** | **107**   | **288**    | **30**    | **0**              | **207** | **204** | **14** | **242**    | **0**     |
+| P6 Agent build method   | 19      | 1         | 18         | 0         | 0                  | 5       | 14      | 0      | 0          | 0         |
+| **Total**               | **432** | **107**   | **295**    | **30**    | **0**              | **209** | **209** | **14** | **242**    | **0**     |
 
 ## Conventions for every card
 
@@ -3190,7 +3190,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-52
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#949)
 - **Reads**: `tests/support/stopwatch.ts` (`growthOf`, P2-52); the P2-52 builder report on #946; `docs/conventions.md` (tests, determinism).
 - **Do**: P2-52 replaced the 1000 ms limits of the WebForms readers with a growth check, because a loaded Windows runner failed them. The same pattern remains in `sql-pack.test.ts` (3000 ms), `marker-skeleton-long-runs.test.ts`, `link-file-name.test.ts` (3000 ms), `external-paths-bounds.test.ts`, `parse-cards-untrusted.test.ts` (1000 ms), `code-map-scan.test.ts` (10 000 ms), the Ollama tag and context-probe tests and the secret-masker performance tests. For each, keep the protection it gives (linear time, a bounded loop) with `growthOf` and inputs below any internal cap, or a bound with at least 100x headroom over the measured time; leave a limit that only guards a timeout as it is and say so.
 - **Delivers**: the reworked tests; for each, a temporary mutation that makes it fail, described in the pull request.
@@ -3220,7 +3220,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#952)
 - **Reads**: `.github/workflows/scheduled-release.yml`; `tests/integration/tooling/scheduled-release-workflow.test.ts`; ADR-025; `docs/environments-and-delivery.md` section 8; `docs/runbooks/deploy.md` (Release to production).
 - **Do**: on 2026-10-28 GitHub started no run of Scheduled release at either cron (04:07 and 05:07 UTC), so the first release (DEC-175) did not deploy; GitHub runs schedules on a best-effort basis and may delay or drop them. Add backup schedules and widen the gate so a dropped run is caught the same morning: crons at 04:07, 05:07, 05:37 and 06:07 UTC, and the job goes on in the 06 and 07 hours of Europe/Madrid. The existing check (no Release of main's head queued, running or succeeded) keeps it to one deploy a morning. Say in the step summary which slot started it.
 - **Delivers**: the workflow change and its tests (crons, the 06/07 gate in summer and winter time, a second slot doing nothing after a first one started Release); ADR-025, environments-and-delivery section 8 and the runbook updated to "06:07 Madrid, with backups until 07:59".
@@ -6027,7 +6027,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (DEC-173)
-- **Status**: Blocked (owner: read the review, choose the cards and answer Q-A..Q-I in docs/reviews/2026-10-28-agent-build-method.md; review merged in #948)
+- **Status**: Done (#948; the owner took every default and opened the phase, DEC-176..DEC-179)
 - **Reads**: the package writer (`src/infrastructure/handoff/`, `handoff-method-markdown.ts` for `AGENTS.md`), the planning brief's build method question (`src/domain/planning/brief-questions.ts`), RF-612, RF-635 and RF-636, and this repository's own method as the reference: the project-blueprint skill it was planned with (docs-first repository, `CLAUDE.md`, `handoff.md`, RFC, ADRs, decision log, task cards with builder tiers, an independent verifier and human gates) and `docs/orchestration/README.md` with `.claude/agents/`. Owner test of 2026-10-25: a Sonnet full run of a single-file app gave a package with 18 task cards and no agent method, because AI-assisted build stayed on its default (off).
 - **Do**: a written review, then the cards it calls for (no code in this card). The goal: a team that takes the package builds the new system with the same method this repository was built with, as the project-blueprint skill sets it up.
   - What an agent sees first in the package, and whether it can tell how to proceed without a person explaining it.
@@ -6207,3 +6207,112 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Delivers**: the journey test, the recordings and the documentation updates.
 - **Done when**: the journey passes on Windows and Linux; no real provider call.
 - **Refs**: RF-612, RF-635, RF-636, RF-639..RF-643. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-13 - orchestration.md: lessons from running a build
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-08
+- **Gate**: owner (DEC-177)
+- **Status**: Todo
+- **Reads**: the `orchestration.md` writer from P6-07 and P6-08, RF-644, DEC-177, the brief's tool, platform and stack answers (`src/domain/planning/`).
+- **Do**:
+  - Add the section "Lessons from running a build" to `orchestration.md` with the items RF-644 lists as always present, one or two sentences each, tool-neutral.
+  - Add the tool-specific item only when the brief names that tool, and the platform or stack items only when the brief's platform or stack matches.
+  - Name no employer and no other project (DEC-03).
+- **Delivers**: the section in the writer and structure tests.
+- **Done when**: a test finds every always-present item; the tool and platform items appear only for a matching brief; the section is absent when people build; no employer or project name in the output.
+- **Refs**: RF-640, RF-644, DEC-177.
+
+### P6-14 - Open questions carry three suggested answers
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-178)
+- **Status**: Todo
+- **Reads**: `prompts/cards/card-format.v2.md`, `prompts/cards/repair.v3.md`, `src/application/cards/card-schema.ts`, `parse-cards.ts`, `src/application/understand/open-questions.ts`, RF-243, RF-645, ADR-005, ADR-008.
+- **Do**:
+  - A new card-format and repair prompt version (RNF-004): an `OQ` card carries three suggested answers, one marked recommended and listed first, each with a short description and, when the code supports it, a citation.
+  - The parser refuses an `OQ` card without them with a repair message, as RF-243 does; cards saved before the change parse with no suggested answers.
+  - The recommended answer is the default that applies when the question is skipped; a yes/no question gets a qualified third answer, never filler.
+- **Delivers**: the prompt versions, the schema and parser change, unit tests and re-recorded responses where the format changed.
+- **Done when**: unit tests for a valid card, each missing part and an old card; recordings replay; `npm run verify` green.
+- **Refs**: RF-243, RF-645, DEC-178.
+
+### P6-15 - Your questions: choose a suggested answer or type your own
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-14
+- **Gate**: owner (DEC-178)
+- **Status**: Todo
+- **Reads**: `web/src/pages/RunAnswers.tsx`, `YourTurn.tsx`, `src/application/use-cases/record-answers.ts`, `list-answers.ts`, `src/infrastructure/cards/answers-file.ts`, `docs/data-model.md` section 3.16, `docs/design-system.md`, RF-240, RF-645, RF-1007, RF-1017.
+- **Do**:
+  - Show each question's suggested answers as choices, the recommended one first, plus "Type your own answer"; a question saved before the change keeps its free answer field.
+  - Record in `answers.md` the answer and which option was chosen (or that it was typed); keyboard-operable like the other forms.
+- **Delivers**: the page, the use-case and file changes, and integration and end-to-end tests.
+- **Done when**: the end-to-end test picks a suggested answer and types one; the old-question case passes; no serious accessibility violation.
+- **Refs**: RF-240, RF-645, RF-1007, RF-1017, DEC-178.
+
+### P6-16 - Plan setup: at least three options and your own answer on every question
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-03
+- **Gate**: owner (DEC-178)
+- **Status**: Todo
+- **Reads**: `src/domain/planning/brief-questions.ts`, `src/application/planning/planning-brief-schema.ts`, `web/src/pages/Plan*Step.tsx`, `PlanStepCard.tsx`, `tests/e2e/plan-setup.spec.ts`, RF-605, RF-645.
+- **Do**:
+  - Give every Plan setup question at least three options, one recommended and first, each with a one-line description, plus "Type your own answer"; a question with two natural answers adds a qualified third.
+  - Save a typed answer in the brief (additive schema; an older brief still parses).
+- **Delivers**: the question data, the step components, the schema change and tests.
+- **Done when**: a unit test finds three options and one recommended on every question; the end-to-end test saves a typed answer and shows it in "What I recorded".
+- **Refs**: RF-605, RF-645, DEC-178.
+
+### P6-17 - The package's open questions list suggested answers
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-11, P6-14
+- **Gate**: owner (DEC-178)
+- **Status**: Todo
+- **Reads**: the `open-questions.md` writers in `src/infrastructure/handoff/` (`handoff-left-out-markdown.ts`, `handoff-keep-or-fix-markdown.ts`), RF-637, RF-645.
+- **Do**:
+  - Each open question of the package lists its three suggested answers with the recommended one first and says the team may answer otherwise.
+  - A question with no suggested answers (from an older run) is listed as before.
+- **Delivers**: the writer change and structure tests.
+- **Done when**: tests for a question with suggested answers and one without.
+- **Refs**: RF-637, RF-645, DEC-178.
+
+### P6-18 - Deepen uses the project's answers and does not ask again
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-179)
+- **Status**: Todo
+- **Reads**: `src/application/use-cases/start-deepen.ts`, `src/application/deepen/`, `src/application/understand/answer-rerun.ts` (`withAnswersOf`, `askingTheSame`), `reader-tasks.ts`, `src/application/ports/answers-file.ts`, RF-209, RF-241, RF-646, ADR-013.
+- **Do**:
+  - Give every Deepen reader task the answered questions of its area as user context in a labelled data block, as the re-run with answers does; an answer is never evidence, so a claim still needs a code citation.
+  - Mark the questions it used `Answered`; a new open question that asks the same as an answered one is merged into it and keeps the answer; an unanswered one raised again is merged, not duplicated.
+  - The Deepen estimate and its summary say how many answers it used.
+- **Delivers**: the change, unit tests and an integration test with recorded responses.
+- **Done when**: the integration test shows a Deepen that uses an answer and does not ask its question again; `npm run verify` green.
+- **Refs**: RF-209, RF-241, RF-646, DEC-179.
+
+### P6-19 - One question list, asked once before planning
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P6-15, P6-18
+- **Gate**: owner (DEC-179)
+- **Status**: Todo
+- **Reads**: `src/application/use-cases/get-journey.ts`, `list-answers.ts`, `question-states.ts`, `src/application/understand/consolidated-questions.ts`, `src/application/plan/plan-inputs.ts`, `web/src/pages/RunJourney.tsx`, `JourneyPanel.tsx`, `YourTurn.tsx`, `RunAnswers.tsx`, RF-614, RF-615, RF-646, RF-1007, RF-1017.
+- **Do**:
+  - Treat the questions of an understand run and its Deepens as one list, merged by the cards' merge record and asking-the-same; existing duplicates merge on read keeping every answer, the newer answer winning and the older kept in the history.
+  - After a run that can be deepened, the journey and "Your turn" recommend Deepen first and say answers given now will be used; the request to answer comes after the last Deepen, or at once when the user chooses not to Deepen.
+  - Before Plan setup list only the questions still open, with answered ones in a collapsed, editable "Answered" list; plan inputs use the one list.
+- **Delivers**: the use-case, journey and page changes, and integration and end-to-end tests.
+- **Done when**: the end-to-end test answers before a Deepen, runs it, and sees no question asked twice and only new ones before Plan setup.
+- **Refs**: RF-614, RF-615, RF-646, RF-1007, RF-1017, DEC-179.
