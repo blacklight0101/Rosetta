@@ -17,7 +17,7 @@ with Docker Compose and hosted on a container host (DEC-59, DEC-61, DEC-65; ADR-
 | **Dev**       | the owner's machine (Windows 11, Node.js 24 LTS, Docker 29 with Compose v5, Ollama) and the builders' worktrees                                                                                                | the fake provider in tests; Ollama, OpenAI and Anthropic for manual and evaluation runs | build and test every card; `npm run dev` runs the server from source against a Compose PostgreSQL        |
 | **CI**        | GitHub Actions, `ubuntu-latest` and `windows-latest`                                                                                                                                                           | fake provider only; no keys, no network calls to providers                              | the gates of section 6 on every push and pull request; image build, scan and Compose smoke test on Linux |
 | **Local**     | the owner's machine, `docker compose up`                                                                                                                                                                       | Ollama on the host, plus the owner's keys                                               | the simulation of the hosted deployment (RF-1301)                                                        |
-| **Hosted**    | Azure Container Apps, Spain Central (ADR-024), app `ca-rosetta`, deployed from `main` at 06:00 Europe/Madrid (DEC-175)                                                                                         | OpenAI, Anthropic, OpenAI-compatible with server keys under caps, or the user's keys    | the teachers' evaluation URL (RF-1304, DEC-67)                                                           |
+| **Hosted**    | Azure Container Apps, Spain Central (ADR-024), app `ca-rosetta`, deployed from `main` at 06:07 Europe/Madrid (DEC-175)                                                                                         | OpenAI, Anthropic, OpenAI-compatible with server keys under caps, or the user's keys    | the teachers' evaluation URL (RF-1304, DEC-67)                                                           |
 | **Staging**   | Azure Container Apps, Spain Central: app `ca-rosetta-staging` in the environment, storage account and PostgreSQL server of Hosted, with its own database `rosetta_staging` and share; scales to zero (ADR-025) | no server keys (no AI spend); a signed-in user's own keys only                          | every push to `develop` deployed and smoke-tested before it can be released (DEC-175)                    |
 | **Published** | GitHub Pages of the public repository                                                                                                                                                                          | none                                                                                    | the sample report of the demo run (RF-800), the fallback of the hand-in                                  |
 
@@ -98,7 +98,7 @@ before commit (ADR-008).
   (DEC-96) -> branch deleted -> the push to `develop` deploys to staging (section 8).
 - Release (DEC-175): when the owner says a batch is ready, the orchestrator opens one pull request `develop` -> `main`
   that lists the cards in it, labelled `needs-owner`; only the owner merges it, with a merge commit, so `develop`
-  stays an ancestor of `main`. Production deploys it the next morning at 06:00 Europe/Madrid (section 10).
+  stays an ancestor of `main`. Production deploys it the next morning at 06:07 Europe/Madrid, with backups until 07:59 (section 10).
 - Rulesets (the owner sets them; no required approving review, because the orchestrator and the owner use the same
   GitHub account, which cannot approve its own pull request; DEC-96):
   - `main`: changes only through pull requests, merge commits only (no squash, no rebase, so no linear-history rule),
@@ -237,7 +237,7 @@ list `edited` either, so GitHub's default types (`opened`, `synchronize`, `reope
 
 **Deployment workflows** (DEC-175, ADR-025). Besides `ci.yml`, `codeql.yml` (also on pushes to `main` and
 `develop`) and `pages.yml`: `staging.yml` deploys every push to `develop` to staging (job `deploy (staging)`), and
-`scheduled-release.yml` starts `release.yml` on `main` at 06:00 Europe/Madrid (section 8). Both follow the hardening
+`scheduled-release.yml` starts `release.yml` on `main` at 06:07 Europe/Madrid, with backups until 07:59 (section 8). Both follow the hardening
 below; `scheduled-release.yml` uses no action and only `contents: read` and `actions: write`.
 
 Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
@@ -327,9 +327,9 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
 - Staging and the scheduled release (DEC-175, ADR-025): `staging.yml` builds and scans the image of every push to
   `develop`, pushes `sha-<short>`, and deploys it to `ca-rosetta-staging` in the environment `staging` (migrate job,
   new image, `/healthz` after a cold start, smoke test), off until the repository variable `ROSETTA_STAGING_ENABLED`
-  is `true`. `scheduled-release.yml` runs at 04:07 and 05:07 UTC, goes on only in the 06 hour of Europe/Madrid, and
+  is `true`. `scheduled-release.yml` runs at 04:07, 05:07, 05:37 and 06:07 UTC (the first slot is 06:07 Madrid, backups until 07:59), goes on only in the 06 and 07 hours of Europe/Madrid, and
   starts Release on `main` by `workflow_dispatch` once per head commit of `main` (nothing when a Release run of it is
-  queued, running or succeeded, or while `ROSETTA_DEPLOY_ENABLED` is not `true`). Release rebuilds the image from the
+  queued, running or succeeded, or while `ROSETTA_DEPLOY_ENABLED` is not `true`; the step summary names the slot that started it). Release rebuilds the image from the
   merge commit, and its deploy job refuses a commit whose tree differs from its second parent (the `develop` side) or
   whose second parent did not pass `deploy (staging)`; the `workflow_dispatch` input `skip-staging-check` skips that
   check for an emergency and records it in the job summary. While the repository variable `ROSETTA_STAGING_ENABLED` is not `true` (no staging app yet), the check is skipped with a warning in the job summary; once it is `true` the check is enforced
@@ -369,7 +369,7 @@ script `db/init/roles.sh` (passwords from `.env`) and hosted by the provisioning
    (RF-801, RF-1301); the owner may also try the batch on the staging URL.
 3. The owner says the batch is ready; the orchestrator opens the release pull request `develop` -> `main`; the owner
    merges it with a merge commit (and tags it for a version). Nothing deploys on the merge.
-4. Hosted, at 06:00 Europe/Madrid the next morning (`scheduled-release.yml`, or at once by running Release on `main`
+4. Hosted, at 06:07 Europe/Madrid the next morning (backups until 07:59) (`scheduled-release.yml`, or at once by running Release on `main`
    by hand): the release job builds and pushes the image; the deploy job checks that the ZAP baseline passed on the
    commit (threat model section 5) and that the tree passed staging, records the restore point (the host's
    point-in-time backup), runs the migrate step of the new image as a one-off job that holds `DATABASE_MIGRATOR_URL`
