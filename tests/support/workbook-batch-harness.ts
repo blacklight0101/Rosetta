@@ -2,7 +2,11 @@ import type { Project } from '../../src/application/projects/project.js';
 import {
   WorkbookBatches,
   type BatchFileRequest,
+  type BatchProblem,
+  type FinishBatchRequest,
+  type WorkbookBatchSummary,
 } from '../../src/application/use-cases/workbook-batches.js';
+import type { Result } from '../../src/domain/errors/result.js';
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
@@ -39,6 +43,7 @@ export interface BatchCase {
   readonly runs: MemoryRunIndex;
   readonly auditLog: MemoryAuditLog;
   readonly clock: FixedClock;
+  readonly logger: MemoryLogger;
 }
 
 export async function batchCase(project: Project = workbookProject()): Promise<BatchCase> {
@@ -50,11 +55,11 @@ export async function batchCase(project: Project = workbookProject()): Promise<B
   const uploads = new FakeUploadStore();
   const runs = new MemoryRunIndex();
   const auditLog = new MemoryAuditLog(masker);
+  const logger = new MemoryLogger(clock, masker);
   const useCase = new WorkbookBatches({
-    ...{ projects, runs, uploads, staging, auditLog, clock, limitBytes },
-    logger: new MemoryLogger(clock, masker),
+    ...{ projects, runs, uploads, staging, auditLog, clock, limitBytes, logger },
   });
-  return { useCase, project, projects, staging, uploads, runs, auditLog, clock };
+  return { useCase, project, projects, staging, uploads, runs, auditLog, clock, logger };
 }
 
 export function bodyOf(bytes: number): AsyncIterable<Uint8Array> {
@@ -79,4 +84,29 @@ export function fileRequest(
     signal: new AbortController().signal,
     ...overrides,
   };
+}
+
+/**
+ * Finishes a batch and waits for the work after the request (RF-159): the summary when it was
+ * stored, the refusal thrown as the finish used to throw it, or the problem that stopped the finish.
+ */
+export async function finishAndWait(
+  test: BatchCase,
+  request: FinishBatchRequest,
+): Promise<Result<WorkbookBatchSummary, BatchProblem>> {
+  const accepted = await test.useCase.finish(request);
+  if (!accepted.ok) return accepted;
+  for (let turn = 0; turn < 1000; turn += 1) {
+    const state = await test.useCase.state(request);
+    if (!state.ok) return state;
+    if (state.value.phase === 'stored' && state.value.summary !== undefined) {
+      return { ok: true, value: state.value.summary };
+    }
+    if (state.value.phase === 'refused') {
+      const { refusal } = state.value;
+      throw refusal instanceof Error ? refusal : new Error('refused');
+    }
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  throw new Error('the batch did not end');
 }

@@ -17,10 +17,7 @@ async function opened(test: Awaited<ReturnType<typeof batchCase>>): Promise<stri
 }
 
 const finishOf = (test: Awaited<ReturnType<typeof batchCase>>, batchId: string) =>
-  test.useCase.finish({
-    ...{ actor: amy, projectId: test.project.id, batchId, ip: '203.0.113.7' },
-    signal: new AbortController().signal,
-  });
+  test.useCase.finish({ actor: amy, projectId: test.project.id, batchId, ip: '203.0.113.7' });
 
 describe('WorkbookBatches a finish that ends after its batch was cancelled', () => {
   it('RF-150 leaves the batch opened since in place: its files are taken and its staging kept', async () => {

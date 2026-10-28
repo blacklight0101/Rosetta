@@ -1,6 +1,6 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import type { ERROR_CODES } from '../../domain/errors/codes.js';
-import type { LeftOut, WorkbookSummaryLine } from '../ports/workbook-staging.js';
+import type { LeftOut, WorkbookProgress, WorkbookSummaryLine } from '../ports/workbook-staging.js';
 
 // RF-150: the requests and answers of the workbook batch use case.
 
@@ -27,7 +27,7 @@ export interface BatchFileRequest extends BatchRef {
 
 export interface FinishBatchRequest extends BatchRef {
   readonly ip: string;
-  readonly signal: AbortSignal;
+  readonly signal?: AbortSignal;
 }
 
 /** What the page shows after a batch is finished (RF-150). */
@@ -38,4 +38,22 @@ export interface WorkbookBatchSummary {
   readonly uploadedAt: string;
   /** The newest run read another snapshot than the one just stored (false while no run has one). */
   readonly codeChangedSinceLastRun: boolean;
+}
+/** RF-159: where a batch is. The last two are its outcomes, kept for a while for the page to read. */
+export type BatchPhase = 'open' | 'processing' | 'stored' | 'refused';
+
+/** RF-159, DEC-183: what the page asks for every second while a batch is processed. */
+export interface BatchState {
+  readonly batchId: string;
+  readonly phase: BatchPhase;
+  /** The workbooks the batch holds. */
+  readonly files: number;
+  /** Since the finish was accepted, until the work ended; 0 while the batch is open. */
+  readonly elapsedMs: number;
+  /** While processing: the step and the counts. */
+  readonly progress?: WorkbookProgress;
+  /** When stored: what the page shows (RF-150). */
+  readonly summary?: WorkbookBatchSummary;
+  /** When refused: the error, which the presentation turns into code, message and next step (RF-158). */
+  readonly refusal?: unknown;
 }

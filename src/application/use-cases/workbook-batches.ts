@@ -15,13 +15,14 @@ import type {
   BatchFileRequest,
   BatchProblem,
   BatchRef,
+  BatchState,
   FinishBatchRequest,
   WorkbookBatchSummary,
 } from './workbook-batch-types.js';
 import { pruneEarlier } from '../projects/prune-snapshot.js';
 import { recordWorkbooks } from '../projects/record-workbooks.js';
 
-// RF-150, RF-152, RF-157, RFC-005 section 4.2: Workbook batches turn the files a user sends into the
+// RF-150, RF-152, RFC-005 section 4.2: Workbook batches turn the files a user sends into the
 // source of a workbook project. A batch is opened (one per project), takes one workbook per request,
 // and is finished: every workbook is read, rendered and published, or none is. A batch not finished
 // within 30 minutes is deleted. Refusals of a file are thrown by the staging area, naming the file.
@@ -42,6 +43,7 @@ export type {
   BatchFileRequest,
   BatchProblem,
   BatchRef,
+  BatchState,
   FinishBatchRequest,
   WorkbookBatchSummary,
 } from './workbook-batch-types.js';
@@ -153,7 +155,10 @@ export class WorkbookBatches {
       const published = await this.deps.staging.publish(batch.id, {
         projectId: project.id,
         uploadedAt: uploadedAt.toISOString(),
-        signal: AbortSignal.any([request.signal, own.signal]),
+        signal: AbortSignal.any([
+          ...(request.signal === undefined ? [] : [request.signal]),
+          own.signal,
+        ]),
       });
       return await this.attach({ request, project, published, uploadedAt });
     } catch (error) {
@@ -164,6 +169,18 @@ export class WorkbookBatches {
       // A cancel and a new batch may have come meanwhile: only this batch's own entry goes.
       if (this.batches.get(project.id) === batch) this.batches.delete(project.id);
     }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- red stub, built in the next commit
+  state(_request: BatchRef): Promise<Result<BatchState, BatchProblem>> {
+    return Promise.resolve(err(ERROR_CODES.notFound));
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- red stub, built in the next commit
+  current(_request: {
+    readonly actor: Actor;
+    readonly projectId: string;
+  }): Promise<Result<BatchState, BatchProblem>> {
+    return Promise.resolve(err(ERROR_CODES.notFound));
   }
 
   // RF-150

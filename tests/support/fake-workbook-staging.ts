@@ -4,6 +4,7 @@ import type {
   PublishRequest,
   ReceiveRequest,
   StagedFile,
+  WorkbookProgress,
   WorkbookStaging,
 } from '../../src/application/ports/workbook-staging.js';
 import { workbookSnapshotKey } from '../../src/domain/sources/workbook-key.js';
@@ -22,6 +23,8 @@ export class FakeWorkbookStaging implements WorkbookStaging {
   publishFails: Error | undefined;
   /** Runs while a batch is being published, for a change that happens meanwhile. */
   duringPublish: (() => Promise<void>) | undefined;
+  /** The reports `publish` makes to the request's `onProgress`, before `duringPublish` (RF-159). */
+  reports: WorkbookProgress[] = [];
   /** When set, `receive` waits for it. */
   gate: Promise<void> | undefined;
   private counter = 0;
@@ -47,7 +50,12 @@ export class FakeWorkbookStaging implements WorkbookStaging {
 
   async publish(id: string, request: PublishRequest): Promise<PublishedWorkbooks> {
     this.published.push(id);
+    for (const report of this.reports) request.onProgress?.(report);
     await this.duringPublish?.();
+    if (request.signal.aborted) {
+      this.held.delete(id);
+      throw request.signal.reason instanceof Error ? request.signal.reason : new Error('stopped');
+    }
     if (this.publishFails !== undefined) {
       this.held.delete(id);
       throw this.publishFails;
