@@ -1,7 +1,10 @@
 import type { JSX } from 'preact';
 import { TOOL_CHOICES } from '../lib/plan-setup/build-method.js';
-import { shownMethod, withAnswered, type Draft } from '../lib/plan-setup/draft.js';
+import { chooseOption } from '../lib/plan-setup/choices.js';
+import { shownMethod, type Draft } from '../lib/plan-setup/draft.js';
+import { TYPED } from '../lib/plan-setup/own-answers.js';
 import { PlanChoice } from './PlanChoice.js';
+import { PlanOwnChoice } from './PlanOwnChoice.js';
 import { PlanMethodModels } from './PlanMethodModels.js';
 import { PlanStepCard } from './PlanStepCard.js';
 import type { StepProps } from './PlanPrinciplesStep.js';
@@ -40,10 +43,13 @@ function Why({ draft }: { readonly draft: Draft }): JSX.Element | null {
 // RF-612
 export function PlanMethodStep({ draft, change, problems }: StepProps): JSX.Element {
   const shown = shownMethod(draft);
-  const choose = (next: Draft): void => {
-    change(withAnswered(next, ['buildMethod']));
+  const kept = draft.chosen.buildMethod;
+  const choose = (next: Draft, option = kept ?? ''): void => {
+    change(chooseOption(next, 'buildMethod', option));
   };
+  const typedAnswer = kept === TYPED;
   const answered = shown.answered.includes('buildMethod') || shown !== draft;
+  const agentsOn = answered && shown.aiAssisted && !typedAnswer;
   return (
     <PlanStepCard
       step="method"
@@ -58,9 +64,9 @@ export function PlanMethodStep({ draft, change, problems }: StepProps): JSX.Elem
           id="build-method-agents"
           group="build-method"
           title="Agents will build"
-          checked={answered && shown.aiAssisted}
+          checked={agentsOn && kept !== 'both'}
           onChoose={() => {
-            choose({ ...shown, aiAssisted: true });
+            choose({ ...shown, aiAssisted: true }, 'agents');
           }}
         >
           <p class="rst-plan-note">{AGENTS_GIVES} Leaves out: nothing.</p>
@@ -69,19 +75,37 @@ export function PlanMethodStep({ draft, change, problems }: StepProps): JSX.Elem
           id="build-method-people"
           group="build-method"
           title="People will build"
-          checked={answered && !shown.aiAssisted}
+          checked={answered && !shown.aiAssisted && !typedAnswer}
           onChoose={() => {
-            choose({ ...shown, aiAssisted: false });
+            choose({ ...shown, aiAssisted: false }, 'people');
           }}
         >
           <p class="rst-plan-note">
             The package is the plan and the specification, as for any team. {PEOPLE_LEAVES}
           </p>
         </PlanChoice>
+        <PlanChoice
+          id="build-method-both"
+          group="build-method"
+          title="Agents and people together"
+          checked={agentsOn && kept === 'both'}
+          onChoose={() => {
+            choose({ ...shown, aiAssisted: true }, 'both');
+          }}
+        >
+          <p class="rst-plan-note">
+            {AGENTS_GIVES} People lead and review every change; agents build the routine cards.
+          </p>
+        </PlanChoice>
+        <PlanOwnChoice
+          question="buildMethod"
+          group="build-method"
+          draft={draft}
+          change={change}
+          problem={problems['typed.buildMethod']}
+        />
       </div>
-      {answered && shown.aiAssisted ? (
-        <PlanMethodModels draft={shown} change={choose} problems={problems} />
-      ) : null}
+      {agentsOn ? <PlanMethodModels draft={shown} change={choose} problems={problems} /> : null}
     </PlanStepCard>
   );
 }

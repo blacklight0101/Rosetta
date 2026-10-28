@@ -1,6 +1,7 @@
 import type { Catalogue } from '../../api/plan-schemas.js';
 import { methodLineOf } from './build-method.js';
 import { isAnswered, type Draft } from './draft.js';
+import { ownText } from './own-answers.js';
 import { CONTEXT_FIELDS, STACK_LAYERS } from './steps.js';
 
 // RF-605, design-system.md section 14 (Plan setup): the "What I recorded" summary. One line for
@@ -13,6 +14,12 @@ export interface RecordedLine {
   readonly isDefault: boolean;
 }
 
+/** RF-645: the words of a question answered by typing, or undefined. */
+function ownWords(draft: Draft, id: string): string | undefined {
+  const text = ownText(draft.chosen, draft.typed, id);
+  return text === '' ? undefined : `Your own answer: ${text}`;
+}
+
 function titleOf(catalogue: Catalogue, id: string): string {
   return catalogue.entries.find((entry) => entry.id === id)?.title ?? id;
 }
@@ -20,13 +27,15 @@ function titleOf(catalogue: Catalogue, id: string): string {
 function principlesLine(draft: Draft, catalogue: Catalogue): RecordedLine {
   const names = draft.principles.map((id) => titleOf(catalogue, id));
   const value = names.length === 0 ? 'none' : `${String(names.length)} on: ${names.join(', ')}`;
-  return { key: 'Principles', value, isDefault: !isAnswered(draft, 'principles') };
+  const own = ownWords(draft, 'principles');
+  const shown = own === undefined ? value : `${value}. ${own}`;
+  return { key: 'Principles', value: shown, isDefault: !isAnswered(draft, 'principles') };
 }
 
 function architectureLine(draft: Draft, catalogue: Catalogue): RecordedLine {
   const chosen = isAnswered(draft, 'architecture');
   const value = chosen
-    ? titleOf(catalogue, draft.style)
+    ? (ownWords(draft, 'architecture') ?? titleOf(catalogue, draft.style))
     : `not chosen yet (the package proposes ${titleOf(catalogue, draft.style)})`;
   return { key: 'Architecture', value, isDefault: false };
 }
@@ -35,7 +44,7 @@ function migrationLine(draft: Draft, catalogue: Catalogue): RecordedLine {
   const strategy = catalogue.migrations.find((each) => each.id === draft.migration);
   return {
     key: 'Migration',
-    value: strategy?.title ?? draft.migration,
+    value: ownWords(draft, 'migration') ?? strategy?.title ?? draft.migration,
     isDefault: !isAnswered(draft, 'migration'),
   };
 }
@@ -68,7 +77,8 @@ function methodLine(draft: Draft): RecordedLine {
     const value = 'not answered yet: the package assumes people will build';
     return { key: 'Build method', value, isDefault: true };
   }
-  return { key: 'Build method', value: methodLineOf(draft), isDefault: false };
+  const value = ownWords(draft, 'buildMethod') ?? methodLineOf(draft);
+  return { key: 'Build method', value, isDefault: false };
 }
 
 /** The six lines of "What I recorded", in step order. */

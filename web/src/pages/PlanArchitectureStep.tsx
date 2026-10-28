@@ -2,7 +2,9 @@ import type { JSX } from 'preact';
 import type { Catalogue, PlanOptions, StyleOption } from '../api/plan-schemas.js';
 import { chooseStyle, proposedOf, shownStyle, stylesOf } from '../lib/plan-setup/choices.js';
 import { isAnswered } from '../lib/plan-setup/draft.js';
+import { TYPED } from '../lib/plan-setup/own-answers.js';
 import { PlanChoice } from './PlanChoice.js';
+import { PlanOwnChoice } from './PlanOwnChoice.js';
 import { PlanOptionsNotice } from './PlanOptionsNotice.js';
 import { PlanStepCard } from './PlanStepCard.js';
 import type { StepProps } from './PlanPrinciplesStep.js';
@@ -47,18 +49,24 @@ function Evidence({ cards }: { readonly cards: readonly string[] }): JSX.Element
   );
 }
 
+/** RF-645: the style the planner recommends is listed first. */
+const recommendedFirst = (options: PlanOptions): readonly StyleOption[] => [
+  ...options.architecture.options.filter((o) => o.style === options.architecture.recommended),
+  ...options.architecture.options.filter((o) => o.style !== options.architecture.recommended),
+];
+
 function Proposed(props: ArchitectureProps & { readonly options: PlanOptions }): JSX.Element {
   const { draft, catalogue, change, options } = props;
   const shown = shownStyle(draft, options, isAnswered(draft, 'architecture'));
   return (
     <div class="rst-plan-options">
-      {options.architecture.options.map((option: StyleOption) => (
+      {recommendedFirst(options).map((option: StyleOption) => (
         <PlanChoice
           key={option.style}
           id={`style-${option.style}`}
           group="architecture"
           title={`${titleOf(catalogue, option.style)}${option.style === options.architecture.recommended ? ' (Recommended)' : ''}`}
-          checked={shown === option.style}
+          checked={shown === option.style && draft.chosen.architecture !== TYPED}
           onChoose={() => {
             change(chooseStyle(draft, options, option.style));
           }}
@@ -86,7 +94,7 @@ function Others(props: ArchitectureProps & { readonly options: PlanOptions | und
           id={`style-${entry.id}`}
           group="architecture"
           title={entry.title}
-          checked={shown === entry.id}
+          checked={shown === entry.id && draft.chosen.architecture !== TYPED}
           onChoose={() => {
             change(chooseStyle(draft, options, entry.id));
           }}
@@ -110,6 +118,13 @@ export function PlanArchitectureStep(props: ArchitectureProps): JSX.Element {
       />
       {options === undefined ? null : <Proposed {...props} options={options} />}
       {props.load.status === 'loading' ? null : <Others {...props} options={options} />}
+      <PlanOwnChoice
+        question="architecture"
+        group="architecture"
+        draft={props.draft}
+        change={props.change}
+        problem={props.problems['typed.architecture']}
+      />
     </PlanStepCard>
   );
 }

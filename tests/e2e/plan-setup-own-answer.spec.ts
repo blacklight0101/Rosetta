@@ -24,7 +24,7 @@ test('RF-645 RF-605 a typed answer to the migration question is saved and shown 
   await page.getByRole('radio', { name: /^Type your own answer/u }).check();
   await page.getByLabel('Your own answer').fill('Move one module a week.');
   await expectNoSeriousViolations(page);
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: 'Save and continue' }).click();
   await expect(recorded(page)).toContainText('Your own answer: Move one module a week.');
 
   await page.reload();

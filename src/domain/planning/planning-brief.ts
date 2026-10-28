@@ -133,6 +133,9 @@ const contextQuestions = [
   'dataMigration',
 ] as const;
 
+/** RF-645: the questions whose typed answer is kept as text of its own (the others use their field). */
+const typedQuestions = ['principles', 'architecture', 'migration', 'buildMethod'];
+
 function layerOrder(layer: StackLayer): number {
   return stackLayers.indexOf(layer);
 }
@@ -160,6 +163,11 @@ export function briefProblems(answers: BriefAnswers, catalogue: Catalogue): Brie
   if (new Set(layers).size !== layers.length) {
     problems.push({ field: 'stack', reason: 'A layer is listed twice.' });
   }
+  for (const id of Object.keys(answers.typed ?? {})) {
+    if (!typedQuestions.includes(id)) {
+      problems.push({ field: `typed.${id}`, reason: 'This question takes no typed text.' });
+    }
+  }
   return problems;
 }
 
@@ -183,6 +191,7 @@ function architectureOf(given: BriefAnswers['architecture']): UnsavedBrief['arch
 }
 
 function defaultedQuestions(answers: BriefAnswers): string[] {
+  const typedIds = Object.keys(answers.typed ?? {});
   const given = answers.context;
   const answeredLayers = new Set((answers.stack ?? []).map((entry) => entry.layer));
   return [
@@ -194,7 +203,25 @@ function defaultedQuestions(answers: BriefAnswers): string[] {
       .filter((question) => given?.[question] === undefined || given[question] === null)
       .map((question) => `context.${question}`),
     ...buildMethodDefaulted(answers.buildMethod),
-  ];
+  ].filter((id) => !typedIds.includes(id));
+}
+
+function sortedRecord(
+  given: Readonly<Record<string, string>> | undefined,
+): Readonly<Record<string, string>> | undefined {
+  const keys = Object.keys(given ?? {}).sort();
+  if (given === undefined || keys.length === 0) return undefined;
+  return Object.fromEntries(keys.map((key) => [key, given[key] ?? '']));
+}
+
+/** RF-645: the chosen options and typed texts, each key order fixed; absent when there are none. */
+function ownAnswersOf(answers: BriefAnswers): Pick<UnsavedBrief, 'chosen' | 'typed'> {
+  const chosen = sortedRecord(answers.chosen);
+  const typed = sortedRecord(answers.typed);
+  return {
+    ...(chosen === undefined ? {} : { chosen }),
+    ...(typed === undefined ? {} : { typed }),
+  };
 }
 
 /** The brief for these answers with every unanswered question at its default (DEC-80). */
@@ -211,13 +238,21 @@ export function buildBrief(answers: BriefAnswers, catalogue: Catalogue): Unsaved
     context: contextOf(answers.context),
     buildMethod: resolveBuildMethod(answers.buildMethod),
     defaulted: defaultedQuestions(answers),
+    ...ownAnswersOf(answers),
   };
 }
 
 function contentOf(brief: UnsavedBrief): string {
   const { catalogueVersion, principles, architecture, migration, stack, context } = brief;
   const fields = [catalogueVersion, principles, architecture, migration, stack, context];
-  return JSON.stringify([...fields, brief.buildMethod, brief.defaulted, brief.application ?? null]);
+  return JSON.stringify([
+    ...fields,
+    brief.buildMethod,
+    brief.defaulted,
+    brief.application ?? null,
+    brief.chosen ?? null,
+    brief.typed ?? null,
+  ]);
 }
 
 /** Whether two briefs hold the same answers, whatever instant they were saved at. */

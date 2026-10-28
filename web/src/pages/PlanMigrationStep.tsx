@@ -1,5 +1,7 @@
 import type { JSX } from 'preact';
-import { withAnswered } from '../lib/plan-setup/draft.js';
+import { chooseOption } from '../lib/plan-setup/choices.js';
+import { TYPED } from '../lib/plan-setup/own-answers.js';
+import { PlanOwnChoice } from './PlanOwnChoice.js';
 import { PlanChoice } from './PlanChoice.js';
 import { PlanStepCard } from './PlanStepCard.js';
 import type { StepProps } from './PlanPrinciplesStep.js';
@@ -8,7 +10,7 @@ import type { StepProps } from './PlanPrinciplesStep.js';
 // recommendation), Parallel Change or a full rewrite, each with its trade-off.
 
 // RF-610
-export function PlanMigrationStep({ draft, catalogue, change }: StepProps): JSX.Element {
+export function PlanMigrationStep({ draft, catalogue, change, problems }: StepProps): JSX.Element {
   const first = catalogue.migrations[0]?.id;
   return (
     <PlanStepCard
@@ -22,14 +24,21 @@ export function PlanMigrationStep({ draft, catalogue, change }: StepProps): JSX.
             id={`migration-${strategy.id}`}
             group="migration"
             title={strategy.id === first ? `${strategy.title} (Recommended)` : strategy.title}
-            checked={draft.migration === strategy.id}
+            checked={draft.migration === strategy.id && draft.chosen.migration !== TYPED}
             onChoose={() => {
-              change(withAnswered({ ...draft, migration: strategy.id }, ['migration']));
+              change(chooseOption({ ...draft, migration: strategy.id }, 'migration', strategy.id));
             }}
           >
             <p class="rst-plan-note">{strategy.tradeOff}</p>
           </PlanChoice>
         ))}
+        <PlanOwnChoice
+          question="migration"
+          group="migration"
+          draft={draft}
+          change={change}
+          problem={problems['typed.migration']}
+        />
       </div>
     </PlanStepCard>
   );

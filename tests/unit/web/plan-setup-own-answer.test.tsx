@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { json } from './fake-api.js';
 import { unsavedBrief } from './plan-setup-fixtures.js';
+import type { RenderedPage } from './fake-api.js';
 import { base, press, ready, renderPlan, saves, stepName } from './plan-setup-helpers.js';
 
 // RF-645, RF-605, DEC-178: Plan setup offers the options of every question with the recommended one
@@ -12,6 +13,12 @@ async function openStep(name: string): Promise<void> {
   fireEvent.click(screen.getByRole('button', { name }));
   await waitFor(() => {
     expect(stepName()).toBe(name);
+  });
+}
+
+async function saved(page: RenderedPage): Promise<void> {
+  await waitFor(() => {
+    expect(saves(page)).toHaveLength(1);
   });
 }
 
@@ -37,9 +44,10 @@ describe('the migration question', () => {
     fireEvent.input(screen.getByLabelText('Your own answer'), {
       target: { value: 'Move one module a week.' },
     });
-    press('Save');
+    press('Save and continue');
 
-    const summary = await screen.findByRole('region', { name: 'What I recorded' });
+    await saved(page);
+    const summary = screen.getByRole('region', { name: 'What I recorded' });
     expect(saves(page)).toEqual([
       { chosen: { migration: 'typed' }, typed: { migration: 'Move one module a week.' } },
     ]);
@@ -51,9 +59,9 @@ describe('the migration question', () => {
     await openStep('Migration');
 
     fireEvent.click(screen.getByRole('radio', { name: /Parallel Change/u }));
-    press('Save');
+    press('Save and continue');
 
-    await screen.findByRole('region', { name: 'What I recorded' });
+    await saved(page);
     expect(saves(page)).toEqual([
       { migration: 'parallel-change', chosen: { migration: 'parallel-change' } },
     ]);
@@ -64,9 +72,9 @@ describe('the migration question', () => {
     await openStep('Migration');
 
     fireEvent.click(own());
-    press('Save');
+    press('Save and continue');
 
-    await screen.findByRole('region', { name: 'What I recorded' });
+    await saved(page);
     expect(saves(page)).toEqual([{}]);
   });
 
@@ -99,6 +107,7 @@ describe('the stack question', () => {
   it('RF-645 offers the two proposals, a qualified third and your own answer', async () => {
     renderPlan();
     await openStep('Stack');
+    await screen.findByRole('radio', { name: /^database A/u });
 
     const titles = within(layer()).getAllByRole('radio').map(labelOf);
     expect(titles).toEqual([
@@ -112,12 +121,13 @@ describe('the stack question', () => {
   it('RF-645 saves the layer option chosen, and a typed one as custom', async () => {
     const page = renderPlan();
     await openStep('Stack');
+    await screen.findByRole('radio', { name: /^database A/u });
 
     fireEvent.click(within(layer()).getByRole('radio', { name: /^database B/u }));
     fireEvent.input(screen.getByLabelText('Your own for Hosting'), { target: { value: 'Azure' } });
-    press('Save');
+    press('Save and continue');
 
-    await screen.findByRole('region', { name: 'What I recorded' });
+    await saved(page);
     const [body] = saves(page);
     expect(body).toMatchObject({
       chosen: { 'stack.database': 'b', 'stack.hosting': 'typed' },
@@ -149,9 +159,9 @@ describe('the project context questions', () => {
 
     fireEvent.click(within(teamSize()).getByRole('radio', { name: /^A small team/u }));
     expect(screen.getByLabelText('Team size')).toHaveProperty('value', '4');
-    press('Save');
+    press('Save and continue');
 
-    await screen.findByRole('region', { name: 'What I recorded' });
+    await saved(page);
     expect(saves(page)).toEqual([
       { context: { teamSize: 4 }, chosen: { 'context.teamSize': 'small' } },
     ]);
@@ -162,9 +172,9 @@ describe('the project context questions', () => {
     await openStep('Project context');
 
     fireEvent.input(screen.getByLabelText('Deadline'), { target: { value: 'March 2027' } });
-    press('Save');
+    press('Save and continue');
 
-    await screen.findByRole('region', { name: 'What I recorded' });
+    await saved(page);
     expect(saves(page)).toEqual([
       { context: { deadline: 'March 2027' }, chosen: { 'context.deadline': 'typed' } },
     ]);
@@ -183,7 +193,7 @@ describe('the build method and the principles', () => {
     });
     press('Save');
 
-    await screen.findByRole('region', { name: 'What I recorded' });
+    await saved(page);
     expect(saves(page)).toEqual([
       { chosen: { buildMethod: 'typed' }, typed: { buildMethod: 'A vendor builds it.' } },
     ]);
@@ -198,9 +208,9 @@ describe('the build method and the principles', () => {
     fireEvent.input(screen.getByLabelText('Your own answer'), {
       target: { value: 'Every module has an owner.' },
     });
-    press('Save');
+    press('Save and continue');
 
-    await screen.findByRole('region', { name: 'What I recorded' });
+    await saved(page);
     expect(saves(page)).toEqual([
       {
         principles: ['solid', 'kiss', 'tdd'],
