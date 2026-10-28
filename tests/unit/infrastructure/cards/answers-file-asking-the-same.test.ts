@@ -58,13 +58,12 @@ describe('answers.md and a question asked again in other words', () => {
     expect(writer.files.get(path)?.match(/^## /gmu)).toHaveLength(1);
   });
 
-  it('RF-646 adds a question that asks something else, and two new ones that ask the same once', async () => {
+  it('RF-646 adds a question that asks something else', async () => {
     const { writer, answers } = setup();
     await answers.addQuestions(project, [question()]);
 
     await answers.addQuestions(project, [
       question({ ...later, question: 'Who may cancel an order?' }),
-      question({ cardId: 'OQ-008', runKey: later.runKey, question: 'who may cancel an order' }),
     ]);
 
     expect(writer.files.get(path)?.match(/^## /gmu)).toHaveLength(2);

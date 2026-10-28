@@ -50,12 +50,12 @@ function askedBy(text: string): string {
   return words === '' ? text : words;
 }
 
-/** The questions the file already holds, as they are compared: by the words they ask. */
+/** The questions the file already holds: as written, and by the words they ask. */
 function questionsIn(text: string): Set<string> {
   return new Set(
     linesOf(text).flatMap((line) => {
       const found = heading.exec(line);
-      return found === null ? [] : [askedBy(found[1] ?? '')];
+      return found === null ? [] : [found[1] ?? '', askedBy(found[1] ?? '')];
     }),
   );
 }
@@ -79,14 +79,17 @@ export class FileAnswersFile implements AnswersFile {
     return this.queue.run(`${file.userId}/${file.path}`, async () => {
       const existing = await this.read(file);
       const known = questionsIn(existing);
+      const added = new Set<string>();
       const { mark, body } = markOf(existing);
       const end = lastLineEndOf(body);
       const sections = questions.flatMap((question) => {
         const text = this.line(question.question);
         const held =
-          question.survivor === true ? hasId(existing, question) : known.has(askedBy(text));
+          question.survivor === true
+            ? hasId(existing, question)
+            : added.has(text) || known.has(text) || known.has(askedBy(text));
         if (held) return [];
-        known.add(askedBy(text));
+        added.add(text);
         return [this.section(question, text, end)];
       });
       if (sections.length === 0) return;
