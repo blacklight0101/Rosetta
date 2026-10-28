@@ -272,3 +272,13 @@ project and the run are still there, then runs `down -v`. To run it by hand, use
 `docker compose -p rosetta-smoke -f compose.yaml -f compose.ci.yaml up -d --build --wait`, then
 `npx playwright test --config=playwright.compose.config.ts smoke` with the `.env` values exported, and finish with
 `docker compose -p rosetta-smoke -f compose.yaml -f compose.ci.yaml down -v`.
+
+## Running the tests on Windows (Git Bash)
+
+Some tests run workflow steps and release scripts with `bash`, as the CI runner does. On Windows the `bash` on `PATH`
+can be WSL's (`C:\Windows\System32\bash.exe`), which cannot run them. The test helper `tests/support/bash.ts` therefore
+uses Git Bash: the `bash.exe` of the Git install that is on `PATH` (the folder above its `git.exe`), or Git's default
+install under `Program Files`. It never uses the bash of `System32` or `WindowsApps`, and you do not need to change
+`PATH`. If no Git Bash is found, the tests stop at once with a message that names the fix: install
+[Git for Windows](https://git-scm.com/download/win), which puts `C:\Program Files\Git\cmd` on `PATH`. To check the
+workflow and release-script tests from any shell, run `npx vitest run --project integration tests/integration/tooling`.
