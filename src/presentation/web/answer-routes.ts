@@ -17,6 +17,10 @@ import { signedInOf } from './request-actor.js';
 //   suggested answers (RF-645) also has `options` (answer, description, recommended; the recommended
 //   one first) and `chosen` (`''`, the number of the chosen option or `typed`); a question saved
 //   before DEC-178 has neither and keeps its free answer.
+//   The list is the one list of the project (RF-646, DEC-179): the questions of the run and of the
+//   Deepens linked to it, merged; a question raised in several runs also has `runs`, and one whose
+//   answer replaced an older one has `history` (runKey and answer). The answer also carries
+//   `deepens`, how many Deepens the run's first understand run has, and `isDeepen`.
 // - PUT /api/runs/:runId/answers with `{ answers: [{ cardId, answer }] }` writes those answers into
 //   answers.md, keeps every other answer, and answers the run's questions as they are now. An
 //   answer is one line in the file (line breaks become spaces) and an empty one clears it. A card
@@ -61,16 +65,24 @@ const answersBody = z.strictObject({
     .refine((list) => new Set(list.map((entry) => entry.cardId)).size === list.length),
 });
 
-function questionsView(questions: readonly StatedQuestion[]): {
+function questionsView(
+  questions: readonly StatedQuestion[],
+  family?: { readonly deepens: number; readonly isDeepen: boolean },
+): {
   readonly questions: readonly StatedQuestion[];
+  readonly deepens?: number;
+  readonly isDeepen?: boolean;
 } {
   return {
     questions: questions.map(
-      ({ cardId, question, context, answer, state, dependents, options, chosen }) => ({
+      ({ cardId, question, context, answer, state, dependents, options, chosen, ...kept }) => ({
         ...{ cardId, question, context, answer, state, dependents },
         ...(options === undefined ? {} : { options, chosen: chosen ?? '' }),
+        ...(kept.runs === undefined ? {} : { runs: kept.runs }),
+        ...(kept.history === undefined ? {} : { history: kept.history }),
       }),
     ),
+    ...family,
   };
 }
 
@@ -124,7 +136,10 @@ export function registerAnswerRoutes(server: FastifyInstance, services: AnswerSe
         runId: request.params.runId,
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
-      return reply.header('cache-control', 'no-store').send(questionsView(outcome.value));
+      const { deepens, isDeepen } = outcome.value;
+      return reply
+        .header('cache-control', 'no-store')
+        .send(questionsView(outcome.value.questions, { deepens, isDeepen }));
     },
   );
   server.put<{ Params: { runId: string } }>(

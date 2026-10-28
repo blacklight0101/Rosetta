@@ -195,7 +195,12 @@ function Panel({ runId, onClose }: PanelProps): JSX.Element {
 }
 
 // RF-209
-export function DeepenAction({ runId }: { readonly runId: string }): JSX.Element {
+export function DeepenAction(props: {
+  readonly runId: string;
+  /** RF-646: Deepen is the recommended next action (answers given now will be used by it). */
+  readonly recommended?: boolean;
+}): JSX.Element {
+  const { runId } = props;
   const [open, setOpen] = useState(false);
   if (open) {
     return (
@@ -214,6 +219,8 @@ export function DeepenAction({ runId }: { readonly runId: string }): JSX.Element
         and confirm.
       </p>
       <Button
+        id="deepen-this-run"
+        variant={props.recommended === true ? 'primary' : 'secondary'}
         onClick={() => {
           setOpen(true);
         }}

@@ -24,6 +24,10 @@ export interface JourneySource extends JourneyRun {
   readonly supportedClaims: number;
   /** The questions of the run that are still open; 0 until it has ended `Completed`. */
   readonly openQuestions: number;
+  /** RF-646: how many Deepens are linked to the run's first understand run, whatever their state. */
+  readonly deepens: number;
+  /** RF-646: the run is itself a Deepen. */
+  readonly isDeepen: boolean;
 }
 
 /**
