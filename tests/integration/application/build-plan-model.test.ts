@@ -79,4 +79,14 @@ describe('RF-635 RF-639 the model and the verifier on the card line', () => {
     expect(cancel).toContain('\nDifficulty: 4 (middle model tier)\n');
     expect(cancel).toContain('\nVerifier: largest model tier\n');
   });
+
+  it('RF-639 every card of an AI-assisted package has exactly one verifier line', async () => {
+    const buildMethod = { aiAssisted: true, agentTool: { kind: 'claude-code' } } as const;
+
+    const files = await packageOf({ buildMethod }, plannerAnswering([charge, plain]));
+
+    const cards = cardsOf(files);
+    expect(cards).toHaveLength(2);
+    for (const card of cards) expect(card.match(/^Verifier: /gm)).toHaveLength(1);
+  });
 });
