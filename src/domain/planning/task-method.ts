@@ -59,7 +59,7 @@ const difficultyOfSize: Readonly<Record<TaskSize, number>> = { S: 4, M: 6, L: 8 
 export interface TaskDifficulty {
   readonly rating: number;
   readonly tier: (typeof difficultyBands)[number]['tier'];
-  /** The tier that verifies the card: the middle one for difficulty 1-8, the largest for 9-10 (RF-639). */
+  /** The tier that verifies the card: the largest for a risk class or difficulty 9-10, else the middle one (RF-635, RF-639). */
   readonly verifier: (typeof difficultyBands)[number]['tier'];
 }
 
@@ -80,7 +80,7 @@ export function difficultyOfTask(task: PlanTask): TaskDifficulty {
   const { size } = sizeOfTask(task);
   const atRisk = task.riskClass !== 'none';
   const rating = atRisk && size !== 'S' ? riskRating : difficultyOfSize[size];
-  const verifier = rating >= riskRating ? 'largest' : 'middle';
+  const verifier = atRisk || rating >= riskRating ? 'largest' : 'middle';
   return { rating, tier: tierForRisk(tierOfRating(rating), task.riskClass), verifier };
 }
 
