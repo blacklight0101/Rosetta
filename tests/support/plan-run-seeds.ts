@@ -19,7 +19,7 @@ const commitSha = '3f786850e387550fdab836ed7e6dc881de23001b';
 
 export interface UnderstandSeed {
   readonly cards: readonly Card[];
-  readonly questions?: readonly Pick<OpenQuestion, 'cardId' | 'question'>[];
+  readonly questions?: readonly Pick<OpenQuestion, 'cardId' | 'question' | 'options'>[];
   readonly endState?: Run['endState'];
   /** RF-614: the folder name of the run, when a test seeds more than one understand run. */
   readonly runKey?: string;
