@@ -82,6 +82,15 @@ export function agentToolNamedIn(texts: Readonly<Record<string, string>>): Named
   return NAMES.find((each) => each.pattern.test(text))?.tool;
 }
 
+/**
+ * True once the tool is one a save can send: chosen, and named when it is another tool. Only then
+ * does the step show the model fields and the save send them, so a model is never typed and dropped.
+ */
+export function toolUsable(draft: MethodDraft): boolean {
+  if (draft.toolKind === '') return false;
+  return draft.toolKind !== 'other' || draft.toolName.trim() !== '';
+}
+
 /** The title of a tool as the recorded line says it. */
 function toolTitle(draft: MethodDraft): string {
   const chosen = TOOL_CHOICES.find((choice) => choice.kind === draft.toolKind);
@@ -107,6 +116,7 @@ function modelsLine(draft: MethodDraft): string {
 export function methodLineOf(draft: MethodDraft): string {
   if (!draft.aiAssisted) return 'People will build';
   if (draft.toolKind === '') return 'Agents will build; tool not chosen yet';
+  if (!toolUsable(draft)) return 'Agents will build; the other tool has no name yet';
   return `Agents will build with ${toolTitle(draft)}. Models: ${modelsLine(draft)}`;
 }
 
@@ -118,9 +128,7 @@ export function buildMethodOf(draft: MethodDraft): {
 } {
   if (!draft.aiAssisted) return { aiAssisted: false };
   const name = draft.toolName.trim();
-  if (draft.toolKind === '' || (draft.toolKind === 'other' && name === '')) {
-    return { aiAssisted: true };
-  }
+  if (draft.toolKind === '' || !toolUsable(draft)) return { aiAssisted: true };
   const models = Object.fromEntries(
     MODEL_SLOTS.map((slot) => [slot, draft.models[slot].trim()] as const).filter(
       ([, model]) => model !== '',

@@ -5,13 +5,16 @@ import {
   MODEL_SLOTS,
   TOOL_CHOICES,
   modelExample,
+  toolUsable,
   type ModelSlot,
 } from '../lib/plan-setup/build-method.js';
 import type { Draft } from '../lib/plan-setup/draft.js';
 import { PlanChoice } from './PlanChoice.js';
 
 // RF-639, DEC-176: after "Agents will build", the agent tool and, once a tool is chosen, one model
-// name per tier and an optional escalation model. A tier left blank takes the tool's default.
+// name per tier and an optional escalation model. A tier left blank takes the tool's default. The
+// model fields show only once the tool can be sent (another tool needs its name), so no model is
+// typed and then dropped by the save.
 
 export interface PlanMethodModelsProps {
   readonly draft: Draft;
@@ -35,8 +38,8 @@ const HELP: Readonly<Record<ModelSlot, string>> = {
 
 function Models(props: PlanMethodModelsProps): JSX.Element | null {
   const { draft, change, problems } = props;
-  if (draft.toolKind === '') return null;
   const kind = draft.toolKind;
+  if (kind === '' || !toolUsable(draft)) return null;
   return (
     <>
       {MODEL_SLOTS.map((slot) => {
@@ -89,7 +92,7 @@ export function PlanMethodModels(props: PlanMethodModelsProps): JSX.Element {
           kind="text"
           id="build-tool-name"
           label="Name of the tool"
-          help={`At most ${String(MAX_NAME)} characters.`}
+          help={`The model fields show once the tool has a name. At most ${String(MAX_NAME)} characters.`}
           value={draft.toolName}
           error={nameError === undefined ? undefined : { message: nameError }}
           onInput={(value) => {
