@@ -7,6 +7,7 @@ import {
 } from '../../domain/planning/plan-coverage.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { probeStatesOutcome } from '../../domain/planning/task-card-quality.js';
+import { modelCheckLines } from './handoff-model-checks-markdown.js';
 import { keepOrFixOf } from './handoff-keep-or-fix.js';
 import { decisionLink } from './handoff-links.js';
 import { requirementLines } from './handoff-requirement-notes-markdown.js';
@@ -219,6 +220,7 @@ export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     ...sourceStopLines(handoff),
     ...coverageLines(handoff, esc),
     ...truthfulCheckLines(handoff, esc),
+    ...modelCheckLines(handoff),
     ...unmappedFlowLines(handoff, esc),
     ...styleLines(handoff, esc),
     ...stackClashCheckLines(handoff, esc),
