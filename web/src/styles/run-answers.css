@@ -62,3 +62,14 @@
   align-items: center;
   gap: var(--rst-sp-2) var(--rst-sp-3);
 }
+
+/* RF-645: the suggested answers of a question as option cards (the Plan setup option card). */
+.rst-p139-choices {
+  display: grid;
+  gap: var(--rst-sp-2);
+}
+
+.rst-p139-choices__label {
+  margin: 0;
+  font-weight: var(--rst-fw-head);
+}
