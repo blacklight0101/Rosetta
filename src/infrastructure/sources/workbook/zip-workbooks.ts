@@ -1,6 +1,11 @@
 import { readdir, rm, stat } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
-import type { LeftOut, WorkbookSummaryLine } from '../../../application/ports/workbook-staging.js';
+import type {
+  LeftOut,
+  ProgressListener,
+  WorkbookProgress,
+  WorkbookSummaryLine,
+} from '../../../application/ports/workbook-staging.js';
 import { describeError } from '../../../domain/errors/descriptions.js';
 import { RosettaError } from '../../../domain/errors/rosetta-error.js';
 import type { WorkbookEntry } from '../../../domain/sources/source.js';
@@ -10,7 +15,8 @@ import type { WorkbookLimits } from './workbook-limits.js';
 import { readWorkbook } from './workbook-reader.js';
 import type { WorkbookModel } from './workbook-model.js';
 import type { RenderedWorkbook } from './workbook-renderer.js';
-import { renderZip } from './zip-render.js';
+import { cellsOf } from './render-steps.js';
+import { renderZipAsync } from './zip-render.js';
 import { entryOf, fileHash, macroLeftOut, summaryOf, writeRendered } from './workbook-tree.js';
 
 // RF-152, RF-150, Q-41, DEC-150: the workbooks inside an unpacked zip. Each `.xlsx` or `.xlsm` is read
@@ -61,6 +67,21 @@ interface Read {
   readonly model: WorkbookModel;
 }
 
+/** The last report: everything is rendered and the workbooks are being written in place. */
+function savingOf(reads: readonly Read[]): WorkbookProgress {
+  const models = reads.map((read) => read.model);
+  const sheets = models.reduce((sum, model) => sum + model.sheets.length, 0);
+  const workbooks = reads.length;
+  return {
+    step: 'saving',
+    workbook: workbooks,
+    workbooks,
+    sheet: sheets,
+    sheets,
+    cells: cellsOf(models),
+  };
+}
+
 class Pass {
   readonly cells: LimitCounter;
   readonly entries: WorkbookEntry[] = [];
@@ -68,13 +89,32 @@ class Pass {
   readonly root: string;
   readonly limits: WorkbookLimits;
   readonly signal: AbortSignal;
+  private readonly onProgress: ProgressListener | undefined;
   private count = 0;
 
-  constructor(root: string, limits: WorkbookLimits, signal: AbortSignal) {
+  constructor(
+    root: string,
+    limits: WorkbookLimits,
+    signal: AbortSignal,
+    onProgress?: ProgressListener,
+  ) {
     this.root = root;
     this.limits = limits;
     this.signal = signal;
+    this.onProgress = onProgress;
     this.cells = new LimitCounter(limits.maxCells);
+  }
+
+  /** Tells the listener a workbook of `total` is about to be read (RF-159). */
+  reading(number: number, total: number, done: readonly Read[]): void {
+    const cells = cellsOf(done.map((read) => read.model));
+    this.onProgress?.({
+      step: 'reading',
+      workbook: number,
+      workbooks: total,
+      ...{ sheet: 0, sheets: 0 },
+      cells,
+    });
   }
 
   /** Reads one workbook, or deletes it and lists it; a stop of the request is not a refusal. */
@@ -95,10 +135,18 @@ class Pass {
   /** Renders what was read as one project, writes each workbook in place and then the map. */
   async render(reads: readonly Read[]): Promise<void> {
     if (reads.length === 0) return;
-    const { live, rendered, refused } = renderZip(
+    const pacing = {
+      check: () => {
+        this.signal.throwIfAborted();
+      },
+      ...(this.onProgress === undefined ? {} : { onProgress: this.onProgress }),
+    };
+    const { live, rendered, refused } = await renderZipAsync(
       reads.map((read) => ({ model: read.model, folder: read.relative })),
       this.limits.maxRenderedBytes,
+      pacing,
     );
+    this.onProgress?.(savingOf(reads));
     for (const [index, error] of refused) {
       const read = reads[index];
       if (read !== undefined) await this.leave(read.path, read.relative, error);
@@ -149,12 +197,14 @@ export async function renderZipWorkbooks(
   root: string,
   limits: WorkbookLimits,
   signal: AbortSignal,
+  onProgress?: ProgressListener,
 ): Promise<ZipWorkbooks | undefined> {
   const paths = await workbookPaths(root);
   if (paths.length === 0) return undefined;
-  const pass = new Pass(root, limits, signal);
+  const pass = new Pass(root, limits, signal, onProgress);
   const reads: Read[] = [];
-  for (const relative of paths) {
+  for (const [index, relative] of paths.entries()) {
+    pass.reading(index + 1, paths.length, reads);
     const read = await pass.read(relative);
     if (read !== undefined) reads.push(read);
   }
