@@ -71,7 +71,9 @@ describe('plan setup saving', () => {
     expect(saves(page)).toEqual([{}]);
     expect(within(summary).getAllByText('(default)').length).toBeGreaterThan(0);
     expect(within(summary).getByText('Strangler Fig')).not.toBeNull();
-    expect(within(summary).getByText('without AI-assisted build')).not.toBeNull();
+    expect(
+      within(summary).getByText('not answered yet: the package assumes people will build'),
+    ).not.toBeNull();
   });
 
   it('RF-605 shows what was recorded, edits it and saves again', async () => {

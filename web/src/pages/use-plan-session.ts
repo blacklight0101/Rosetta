@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'preact/hooks';
 import type { BriefView, PlanEstimate } from '../api/plan-schemas.js';
 import type { Project } from '../api/project-schemas.js';
 import { chooseStyle } from '../lib/plan-setup/choices.js';
-import { isAnswered, type Draft } from '../lib/plan-setup/draft.js';
+import { isAnswered, shownMethod, withAnswered, type Draft } from '../lib/plan-setup/draft.js';
 import {
   blockersOf,
   needsConsent,
@@ -48,6 +48,10 @@ const OPTION_STEPS: readonly string[] = ['architecture', 'stack'];
 
 function shownChoice(setup: PlanSetupState, load: OptionsLoad): Draft | undefined {
   const { draft } = setup;
+  if (setup.step === 'method') {
+    const shown = shownMethod(draft);
+    return shown === draft ? undefined : withAnswered(shown, ['buildMethod']);
+  }
   const options = load.status === 'ready' ? load.options : undefined;
   if (setup.step !== 'architecture' || options === undefined) return undefined;
   if (isAnswered(draft, 'architecture')) return undefined;
