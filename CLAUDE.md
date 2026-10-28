@@ -130,8 +130,11 @@ applied, and fixing it is part of applying the decision.
   after its requirement id; a `test:` commit with failing tests comes before the `feat:`/`fix:` commit that makes them
   pass. Levels unit / integration / end-to-end with the split in `docs/conventions.md`.
 - **Quality gates ([ADR-011](docs/adr/ADR-011-toolchain-and-quality-gates.md)):** `npm run verify` runs typecheck,
-  lint (zero warnings), format check, dependency-cruiser, knip and tests with coverage; it must pass before any card is
-  reported done, and CI runs the same gates. Never weaken a gate to make it pass.
+  lint (zero warnings), format check, dependency-cruiser, knip and tests with coverage, and CI on the pull request runs
+  it on Windows and Linux: CI is the gate that decides a merge (DEC-182). Before reporting a card, builders and
+  verifiers run `npm run verify:local` (the same static gates plus the tests related to the branch's changes); the
+  full `npm run verify` locally is for the owner or a change that touches the toolchain. Never weaken a gate to make
+  it pass.
 - **Coding rules:** `docs/conventions.md` (types parsed at boundaries, no `any`/`!`/casts, determinism ports, timeouts
   and abort signals, error-code catalogue, size limits, named exports).
 - **Packages:** the baseline list in `docs/environments-and-delivery.md`; any new runtime dependency needs an ADR.
