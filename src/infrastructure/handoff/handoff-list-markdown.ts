@@ -182,7 +182,12 @@ function documentLine(
 /** RF-620, RF-601: the documentation set first, then the parts of RF-601, each linking its file. */
 function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const entries = [
-    ...(handoff.brief.buildMethod.aiAssisted ? [[`[AGENTS.md](${handoffFiles.agents})`]] : []),
+    ...(handoff.brief.buildMethod.aiAssisted
+      ? [
+          [`[AGENTS.md](${handoffFiles.agents})`],
+          [`[orchestration.md](${handoffFiles.orchestration})`],
+        ]
+      : []),
     ...documentSet.map((document) => [documentLine(document, handoff, esc)]),
     [`[Requirements specification](${handoffFiles.requirements})`],
     [`[Target architecture](${handoffFiles.architecture})`],
