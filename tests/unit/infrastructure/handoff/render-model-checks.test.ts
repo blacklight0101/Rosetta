@@ -30,7 +30,11 @@ describe('RF-641 checks.md: the model of each card', () => {
 
   it('RF-641 a package whose tiers all have a model lists no finding', () => {
     const checks = checksOf(
-      withBuildMethod({ aiAssisted: true, agentTool: { kind: 'claude-code' } }),
+      withBuildMethod({
+        aiAssisted: true,
+        agentTool: { kind: 'claude-code' },
+        models: { smallest: 'haiku', middle: 'sonnet', largest: 'opus' },
+      }),
     );
 
     expect(checks).not.toContain(heading);
