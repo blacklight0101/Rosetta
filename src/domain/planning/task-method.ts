@@ -66,7 +66,8 @@ export interface TaskDifficulty {
 /** RF-635, DEC-176 Q-C: the rating an M or L card at a risk class gets, the lowest of the largest band. */
 const riskRating = 9;
 
-function tierOfRating(rating: number): TaskDifficulty['tier'] {
+/** The model tier of a rating from 1 to 10 (the bands of RF-635). */
+export function tierOfRating(rating: number): TaskDifficulty['tier'] {
   return difficultyBands.find((each) => rating >= each.from && rating <= each.to)?.tier ?? 'middle';
 }
 
