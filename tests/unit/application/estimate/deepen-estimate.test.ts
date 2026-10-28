@@ -59,6 +59,11 @@ const result: TaskResult = {
   ]),
 };
 
+const noAnswers = {
+  answers: { answeredQuestions: () => Promise.resolve([]) },
+  priorCards: { cardsOf: () => Promise.resolve([]), markAnswered: () => Promise.resolve([]) },
+};
+
 const results: TaskResults = {
   read: () => Promise.resolve([result]),
   write: () => Promise.resolve(),
@@ -100,6 +105,7 @@ async function harnessOf(settings: ProjectSettings, run: Partial<Run> = {}) {
     keys: new MemoryProviderKeyRepository(),
     priceTable: estimatePrices,
     models: NO_LISTED_MODELS,
+    ...noAnswers,
   });
   return { estimate, runs, understand };
 }
@@ -120,6 +126,7 @@ describe('RF-209 the estimate before a Deepen', () => {
       reread: 1,
       outOfScope: 1,
       failedAreas: 0,
+      answers: 0,
       // EV-04: files read in part count with the tokens of their unread lines.
       unreadFiles: 3,
       unreadTokens: 446,

@@ -24,9 +24,16 @@ import {
   announceRoundStart,
   announceStop,
 } from './deepen-events.js';
+import { markUsedAnswers } from './deepen-answers.js';
 import { claimsOfThisRun } from './deepen-room.js';
 import { mergeDuplicates } from './deepen-consolidation.js';
-import { addQuestions, overviewOf, saveRecord, writeOutputs } from './deepen-outputs.js';
+import {
+  addQuestions,
+  markMergedQuestions,
+  overviewOf,
+  saveRecord,
+  writeOutputs,
+} from './deepen-outputs.js';
 import type { DeepenParts } from './deepen-parts.js';
 import { runRound } from './deepen-round.js';
 import { seedDeepen } from './deepen-seed.js';
@@ -78,6 +85,8 @@ async function nextRound(
   const next = { state: end.state, record: withRound(listed, end.round) };
   await saveRecord(parts, next.record);
   await writeOutputs(parts, next.state);
+  // RF-241: only after the cards are written, so a round whose output failed has not used the answers.
+  await markUsedAnswers(parts.rerun, new Set(end.doneAreas));
   if (end.stopped !== undefined) return { progress: next, stop: end.stopped };
   const added = roundProgress(before, snapshotOf(end.state, codeMap));
   const stop = stopAfterRound(added, next.record.roundsDone, next.record.maxRounds);
@@ -100,6 +109,7 @@ async function finish(
   const merged = await mergeDuplicates(parts, cardsOf(final));
   const overview = await overviewOf(parts, final, merged?.cards);
   await writeOutputs(parts, final, { overview, merged });
+  await markMergedQuestions(parts, merged?.cards ?? cardsOf(final));
   if (merged !== undefined) await announceDeepenMerges(parts, merged);
   // RF-1108: a Stop that came during the merge or the overview ends the Deepen like any Stop.
   const ended = stop !== 'capReached' && parts.execution.signal.aborted ? 'stopped' : stop;
