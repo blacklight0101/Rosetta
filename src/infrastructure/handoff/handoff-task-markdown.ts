@@ -56,14 +56,15 @@ function sizeLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper
   const lines = [`Size: ${size} (${plural(points, 'point')})`, ''];
   const method = handoff.brief.buildMethod;
   if (!method.aiAssisted) return lines;
-  const { rating, tier, verifier } = difficultyOfTask(task);
-  return [
-    ...lines,
-    `Difficulty: ${String(rating)} (${tierText(method, tier, esc)})`,
-    '',
-    `Verifier: ${tierText(method, verifier, esc)}`,
-    '',
-  ];
+  const { rating, tier } = difficultyOfTask(task);
+  return [...lines, `Difficulty: ${String(rating)} (${tierText(method, tier, esc)})`, ''];
+}
+
+/** RF-639: the verifier tier of the card's band, written after its risk class. */
+function verifierLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const method = handoff.brief.buildMethod;
+  if (!method.aiAssisted) return [];
+  return [`Verifier: ${tierText(method, difficultyOfTask(task).verifier, esc)}`, ''];
 }
 
 function technologyLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
@@ -113,6 +114,8 @@ function cardLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper
     '',
     ...sizeLines(task, handoff, esc),
     ...riskLines(task),
+    ...verifierLines(task, handoff, esc),
+    ...verifierLines(task, handoff, esc),
     `Requirements: ${requirements.length === 0 ? 'none' : requirements.join(', ')}`,
     '',
     ...buildsLines(task, handoff, esc),
