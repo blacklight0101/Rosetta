@@ -20,12 +20,9 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { isWorkbookSnapshotKey } from '../../domain/sources/workbook-key.js';
 import { parseSnapshotRecord } from './snapshot-record.js';
 import { errorCode, snapshotWriteFailed } from './snapshot-errors.js';
+import type { TreeSummary } from './tree-summary.js';
 
-export interface TreeSummary {
-  readonly fileCount: number;
-  readonly totalBytes: number;
-  readonly snapshotHash: string;
-}
+export type { TreeSummary };
 
 const PARTIAL_PREFIX = '.partial-';
 const FILES = 'files';

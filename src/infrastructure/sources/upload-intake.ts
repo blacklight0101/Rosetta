@@ -156,3 +156,15 @@ export async function receiveZip(request: IntakeRequest, zipPath: string): Promi
   }
   return counter.bytes;
 }
+
+/** What an upload came to: the bytes written and the hash of those bytes. */
+export interface ReceivedUpload {
+  readonly bytes: number;
+  /** `sha256:` and 64 lower-case hexadecimal characters. */
+  readonly sha256: string;
+}
+
+/** Placeholder until the hash is taken while the body is written (P5-47). */
+export async function receiveUpload(request: IntakeRequest, path: string): Promise<ReceivedUpload> {
+  return { bytes: await receiveZip(request, path), sha256: '' };
+}
