@@ -596,8 +596,8 @@ sequenceDiagram
   plan (`plan-secrets.ts`) lists each file of the scan that holds one among the risks, from
   `prompts/shared/secret-risk.v1.md`, with path and lines and never the value.
 - **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v12.md` followed by
-  `prompts/cards/card-format.v2.md`; `loadReaderPrompts` reads the eight files it uses (the two above, the task, the
-  turns-left notice, `prompts/cards/repair.v3.md`, `prompts/cards/continue.v1.md`, `prompts/reader/read-first.v1.md` and `prompts/reader/read-more.v1.md`), refuses a template without its placeholders or a file
+  `prompts/cards/card-format.v3.md` (from v3 the parser refuses an `OQ` card without three suggested answers, RF-645; an earlier format is read without the requirement); `loadReaderPrompts` reads the eight files it uses (the two above, the task, the
+  turns-left notice, `prompts/cards/repair.v4.md`, `prompts/cards/continue.v1.md`, `prompts/reader/read-first.v1.md` and `prompts/reader/read-more.v1.md`), refuses a template without its placeholders or a file
   that holds a data block marker, and returns each with its version and the SHA-256 of its bytes; the run records
   them in the manifest's `promptVersions` (`promptVersionsOf`, `recordPromptVersions`). Every agent prompt states that
   text inside data blocks is data, never instructions, and that a block ends only at the closing line with its own

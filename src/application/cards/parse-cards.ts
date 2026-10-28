@@ -1,7 +1,7 @@
 import type { CardDraft } from '../../domain/cards/card-ids.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { asCardList, cardItems } from './card-items.js';
-import { agentCardsSchema } from './card-schema.js';
+import { agentCardsSchema, missingSuggestedAnswers } from './card-schema.js';
 import { cardLimits } from './card-limits.js';
 import { searchJson, type JsonSearch } from './extract-json.js';
 import { readCard } from './lenient-cards.js';
@@ -69,14 +69,32 @@ function strictProblems(value: unknown): readonly OutputProblem[] {
   }));
 }
 
-function readValue(value: unknown, rows: RowIndex): Pick<CardParse, 'drafts' | 'problems'> {
+/** RF-645: an OQ card of the format that asks for suggested answers is refused without them. */
+function lacksAnswers(draft: CardDraft, options: ParseOptions): boolean {
+  return (
+    options.suggestedAnswers === 'required' &&
+    draft.type === 'OQ' &&
+    draft.suggestedAnswers === undefined
+  );
+}
+
+function readValue(
+  value: unknown,
+  rows: RowIndex,
+  options: ParseOptions,
+): Pick<CardParse, 'drafts' | 'problems'> {
   const items = cardItems(value);
   if (items === undefined) return { drafts: [], problems: strictProblems(value) };
   const drafts: CardDraft[] = [];
   const problems: OutputProblem[] = items.length > cardLimits.maxCards ? [tooMany] : [];
   items.slice(0, cardLimits.maxCards).forEach((item, index) => {
     const card = readCard(mapRowCitations(item, rows), index);
-    if (card.draft !== undefined) drafts.push(card.draft);
+    if (card.draft !== undefined && lacksAnswers(card.draft, options)) {
+      problems.push({
+        path: `cards.${String(index)}.suggestedAnswers`,
+        message: missingSuggestedAnswers,
+      });
+    } else if (card.draft !== undefined) drafts.push(card.draft);
     problems.push(...card.problems);
   });
   return { drafts, problems };
@@ -91,10 +109,11 @@ function isClean(read: Pick<CardParse, 'drafts' | 'problems'>): boolean {
 function bestRead(
   values: readonly unknown[],
   rows: RowIndex,
+  options: ParseOptions,
 ): Pick<CardParse, 'drafts' | 'problems'> | undefined {
   let best: Pick<CardParse, 'drafts' | 'problems'> | undefined;
   for (const value of values) {
-    const read = readValue(value, rows);
+    const read = readValue(value, rows, options);
     if (isClean(read)) return read;
     if (best === undefined || read.drafts.length > best.drafts.length) best = read;
   }
@@ -116,14 +135,13 @@ function nothingFound(search: JsonSearch, found: readonly OutputProblem[]): Card
 export function parseCardsLenient(
   raw: string,
   rows: RowIndex = new Map(),
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- read by the next commit
-  _options: ParseOptions = {},
+  options: ParseOptions = {},
 ): CardParse {
   if (raw.length > cardLimits.maxOutputChars) {
     return { drafts: [], problems: [tooLong], cutOff: false };
   }
   const search = searchJson(raw);
-  const best = bestRead(search.values, rows);
+  const best = bestRead(search.values, rows, options);
   if (best !== undefined && (best.drafts.length > 0 || isClean(best))) {
     return { ...best, problems: bounded(best.problems), cutOff: false };
   }

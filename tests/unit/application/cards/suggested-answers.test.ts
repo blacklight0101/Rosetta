@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import { parseCardsLenient } from '../../../../src/application/cards/parse-cards.js';
 import { renderRepairRequest } from '../../../../src/application/cards/repair-request.js';
@@ -201,5 +201,23 @@ describe('RF-645 the v3 card format and the v4 repair prompt', () => {
     expect(v4.match(/\{\{problems\}\}/g)).toHaveLength(1);
     expect(v4).toMatch(/suggestedAnswers/u);
     expect(renderRepairRequest(v4, problems)).toContain('- cards.0.suggestedAnswers: Missing');
+  });
+});
+
+describe('RF-645 the recorded reader answers', () => {
+  it('RF-645 every OQ card of a recorded reader answer carries three suggested answers', async () => {
+    const names = (await readdir('tests/recordings/fake')).filter((name) =>
+      name.startsWith('understand-'),
+    );
+    const refused: string[] = [];
+    for (const name of names) {
+      const text = await readFile(`tests/recordings/fake/${name}`, 'utf8');
+      for (const match of text.matchAll(/\\"type\\": \\"OQ\\"/gu)) {
+        const rest = text.slice(match.index, match.index + 3000);
+        if (!rest.includes('suggestedAnswers')) refused.push(name);
+      }
+    }
+    expect(names.length).toBeGreaterThan(0);
+    expect(refused).toEqual([]);
   });
 });

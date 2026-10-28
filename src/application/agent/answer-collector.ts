@@ -8,7 +8,7 @@ import type { OutputProblem } from '../cards/output-problem.js';
 import { valuesOnlyRuleProblems } from '../cards/rule-citations.js';
 import { renderRepairRequest } from '../cards/repair-request.js';
 import { loadRowIndex, type RowLookup } from '../cards/row-citations.js';
-import type { ReaderPrompts } from './reader-prompts.js';
+import { asksSuggestedAnswers, type ReaderPrompts } from './reader-prompts.js';
 
 // RF-202, RF-208: what an agent's final answer is worth, with the follow-ups it earns. The first
 // answer is read leniently (valid cards and claims are kept, the rest is listed). Problems earn up
@@ -130,7 +130,9 @@ class Collector {
   /** RF-202: row citations are read as the lines of their rows before the cards are checked. */
   private async readText(answer: AnswerText): Promise<void> {
     const rows = await loadRowIndex(this.text, this.rows);
-    this.read = parseCardsLenient(this.text, rows);
+    this.read = parseCardsLenient(this.text, rows, {
+      suggestedAnswers: asksSuggestedAnswers(this.prompts.cardFormat) ? 'required' : 'optional',
+    });
     this.cut = isCutAnswer({ text: this.text, finishReason: answer.finishReason }, this.read);
     this.drafts = mergeDrafts(this.drafts, this.read.drafts, this.asked);
     this.asked = new Set();
