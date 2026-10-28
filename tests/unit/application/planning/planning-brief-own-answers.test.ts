@@ -3,6 +3,8 @@ import {
   parseBriefAnswers,
   parsePlanningBrief,
 } from '../../../../src/application/planning/planning-brief-schema.js';
+import { briefDecisions } from '../../../../src/domain/planning/brief-decisions.js';
+import { defaultedQuestions } from '../../../../src/domain/planning/brief-questions.js';
 import {
   briefProblems,
   buildBrief,
@@ -16,6 +18,17 @@ import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 
 const stamp = '2026-10-28T10:00:00.000Z';
 const own = { chosen: { migration: 'typed' }, typed: { migration: 'Move one module a week.' } };
+// Owner answer of 2026-10-28: until typed answers reach the planner, a typed answer is recorded but
+// the question keeps its default, stays defaulted, and its decision stays Proposed.
+const typedIds = ['architecture', 'migration', 'buildMethod'];
+const typedAll = {
+  chosen: { architecture: 'typed', migration: 'typed', buildMethod: 'typed' },
+  typed: {
+    architecture: 'Cells, one per region.',
+    migration: 'Move one module a week.',
+    buildMethod: 'A vendor builds it.',
+  },
+};
 
 describe('the brief with chosen options and typed answers', () => {
   it('RF-645 a brief saved before chosen and typed existed still parses and has neither', () => {
@@ -40,13 +53,6 @@ describe('the brief with chosen options and typed answers', () => {
     expect(parsePlanningBrief(JSON.parse(JSON.stringify(brief)))).toEqual(brief);
   });
 
-  it('RF-645 a question answered by typing is no longer listed as defaulted', () => {
-    const brief = buildBrief(own, shippedCatalogue);
-
-    expect(brief.defaulted).not.toContain('migration');
-    expect(brief.defaulted).toContain('architecture');
-  });
-
   it('RF-645 changing the option chosen is a change of the brief', () => {
     const left = buildBrief({ chosen: { migration: 'parallel-change' } }, shippedCatalogue);
     const right = buildBrief({ chosen: { migration: 'rewrite' } }, shippedCatalogue);
@@ -64,6 +70,37 @@ describe('the brief with chosen options and typed answers', () => {
     );
 
     expect(Object.keys(brief.chosen ?? {})).toEqual(['architecture', 'migration']);
+  });
+});
+
+describe('a typed answer before typed answers reach the planner', () => {
+  it('RF-645 DEC-178 a typed architecture or migration answer keeps the question defaulted', () => {
+    const brief = buildBrief(typedAll, shippedCatalogue);
+
+    expect(brief.defaulted).toEqual(expect.arrayContaining(typedIds));
+    expect(brief.typed).toEqual(typedAll.typed);
+    expect(brief.architecture.style).toBe(buildBrief({}, shippedCatalogue).architecture.style);
+    expect(brief.migration).toBe(buildBrief({}, shippedCatalogue).migration);
+  });
+
+  it('RF-645 DEC-178 a typed answer leaves the architecture and migration decisions Proposed', () => {
+    const brief = { ...buildBrief(typedAll, shippedCatalogue), savedAt: stamp };
+    const evidence = { supported: new Set<string>(), cards: [], tasks: [] };
+
+    const { decisions } = briefDecisions(brief, shippedCatalogue, evidence, 0);
+
+    const style = decisions.find((decision) => decision.title.startsWith('Architecture style'));
+    const migration = decisions.find((decision) => decision.title.startsWith('Migration'));
+    expect(style?.status).toBe('Proposed');
+    expect(migration?.status).toBe('Proposed');
+  });
+
+  it('RF-645 DEC-178 a question answered by typing is still listed as an open question', () => {
+    const brief = { ...buildBrief(typedAll, shippedCatalogue), savedAt: stamp };
+
+    const open = defaultedQuestions(brief, shippedCatalogue).map((question) => question.id);
+
+    expect(open).toEqual(expect.arrayContaining(typedIds));
   });
 });
 

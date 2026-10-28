@@ -23,6 +23,21 @@ async function saved(page: RenderedPage): Promise<void> {
 }
 
 const own = (): HTMLElement => screen.getByRole('radio', { name: /^Type your own answer/u });
+const NOTE = 'Recorded; the plan uses the default until typed answers reach the planner';
+
+/** A saved brief with a typed answer: the server keeps the question defaulted (owner, 2026-10-28). */
+function typedBrief(question: string, text = 'Move one module a week.') {
+  return {
+    ...unsavedBrief,
+    saved: true,
+    brief: {
+      ...unsavedBrief.brief,
+      savedAt: '2026-10-28T09:00:00.000Z',
+      chosen: { [question]: 'typed' },
+      typed: { [question]: text },
+    },
+  };
+}
 const labelOf = (radio: HTMLElement): string => (radio.parentElement?.textContent ?? '').trim();
 
 describe('the migration question', () => {
@@ -33,7 +48,7 @@ describe('the migration question', () => {
     const titles = screen.getAllByRole('radio').map(labelOf);
     expect(titles[0]).toMatch(/^Strangler Fig \(Recommended\)/u);
     expect(titles.at(-1)).toMatch(/^Type your own answer/u);
-    expect(screen.queryByLabelText('Your own answer')).toBeNull();
+    expect(screen.queryByLabelText('Your answer')).toBeNull();
   });
 
   it('RF-645 saves a typed answer in the brief and shows it in What I recorded', async () => {
@@ -41,7 +56,7 @@ describe('the migration question', () => {
     await openStep('Migration');
 
     fireEvent.click(own());
-    fireEvent.input(screen.getByLabelText('Your own answer'), {
+    fireEvent.input(screen.getByLabelText('Your answer'), {
       target: { value: 'Move one module a week.' },
     });
     press('Save and continue');
@@ -52,6 +67,7 @@ describe('the migration question', () => {
       { chosen: { migration: 'typed' }, typed: { migration: 'Move one module a week.' } },
     ]);
     expect(within(summary).getByText(/Your own answer: Move one module a week\./u)).not.toBeNull();
+    expect(within(summary).getByText(new RegExp(NOTE, 'u'))).not.toBeNull();
   });
 });
 
@@ -80,26 +96,37 @@ describe('the migration question: the option chosen', () => {
     expect(saves(page)).toEqual([{}]);
   });
 
-  it('RF-645 a brief saved with a typed answer opens on it', async () => {
-    const saved = {
-      ...unsavedBrief,
-      saved: true,
-      brief: {
-        ...unsavedBrief.brief,
-        savedAt: '2026-10-28T09:00:00.000Z',
-        defaulted: unsavedBrief.brief.defaulted.filter((id) => id !== 'migration'),
-        chosen: { migration: 'typed' },
-        typed: { migration: 'Move one module a week.' },
-      },
-    };
-    renderPlan({ [`GET ${base}/planning-brief`]: json(200, saved) });
+  it('RF-645 a brief saved with a typed answer opens on it, still defaulted, and saves it again', async () => {
+    const page = renderPlan({ [`GET ${base}/planning-brief`]: json(200, typedBrief('migration')) });
     await openStep('Migration');
 
     expect(own()).toHaveProperty('checked', true);
-    expect(screen.getByLabelText('Your own answer')).toHaveProperty(
-      'value',
-      'Move one module a week.',
-    );
+    expect(screen.getByLabelText('Your answer')).toHaveProperty('value', 'Move one module a week.');
+    const summary = screen.getByRole('region', { name: 'What I recorded' });
+    expect(within(summary).getByText(new RegExp(NOTE, 'u'))).not.toBeNull();
+    press('Save and continue');
+
+    await saved(page);
+    expect(saves(page)).toEqual([
+      { chosen: { migration: 'typed' }, typed: { migration: 'Move one module a week.' } },
+    ]);
+  });
+});
+
+describe('the architecture question: a typed answer', () => {
+  it('RF-645 DEC-178 saving the step keeps the typed answer, not the recommended style', async () => {
+    const brief = typedBrief('architecture');
+    const page = renderPlan({ [`GET ${base}/planning-brief`]: json(200, brief) });
+    await openStep('Architecture');
+    await screen.findByRole('radio', { name: /\(Recommended\)/u });
+
+    expect(own()).toHaveProperty('checked', true);
+    press('Save and continue');
+
+    await saved(page);
+    expect(saves(page)).toEqual([
+      { chosen: { architecture: 'typed' }, typed: { architecture: 'Move one module a week.' } },
+    ]);
   });
 });
 
@@ -188,9 +215,11 @@ describe('the build method and the principles', () => {
     const page = renderPlan();
     await openStep('Build method');
 
-    expect(screen.getByRole('radio', { name: /^Agents and people together/u })).not.toBeNull();
+    expect(
+      screen.getByRole('radio', { name: /^Agents build, people review each change/u }),
+    ).not.toBeNull();
     fireEvent.click(own());
-    fireEvent.input(screen.getByLabelText('Your own answer'), {
+    fireEvent.input(screen.getByLabelText('Your answer'), {
       target: { value: 'A vendor builds it.' },
     });
     press('Save');
@@ -199,6 +228,19 @@ describe('the build method and the principles', () => {
     expect(saves(page)).toEqual([
       { chosen: { buildMethod: 'typed' }, typed: { buildMethod: 'A vendor builds it.' } },
     ]);
+  });
+
+  it('RF-645 DEC-178 a brief with a typed build method still invites an answer and shows the text', async () => {
+    renderPlan({
+      [`GET ${base}/planning-brief`]: json(200, typedBrief('buildMethod', 'A vendor builds it.')),
+    });
+    await openStep('Build method');
+
+    expect(own()).toHaveProperty('checked', true);
+    expect(screen.getByText(/Your brief was saved before this question was answered/u)).not.toBeNull();
+    const summary = screen.getByRole('region', { name: 'What I recorded' });
+    expect(within(summary).getByText(/Your own answer: A vendor builds it\./u)).not.toBeNull();
+    expect(within(summary).getByText(new RegExp(NOTE, 'u'))).not.toBeNull();
   });
 
   it('RF-645 the principles list the recommended ones first and take a typed principle', async () => {
@@ -214,11 +256,26 @@ describe('the build method and the principles', () => {
 
     await saved(page);
     expect(saves(page)).toEqual([
-      {
-        principles: ['solid', 'kiss', 'tdd'],
-        chosen: { principles: 'typed' },
+      { chosen: { principles: 'typed' }, typed: { principles: 'Every module has an owner.' } },
+    ]);
+  });
+
+  it('RF-645 DEC-178 principles switched on are sent beside a typed principle', async () => {
+    const page = renderPlan();
+    await openStep('Principles');
+
+    fireEvent.click(screen.getAllByRole('checkbox')[0] ?? document.body);
+    fireEvent.input(screen.getByLabelText('Your own answer'), {
+      target: { value: 'Every module has an owner.' },
+    });
+    press('Save and continue');
+
+    await saved(page);
+    expect(saves(page)).toEqual([
+      expect.objectContaining({
+        principles: expect.any(Array),
         typed: { principles: 'Every module has an owner.' },
-      },
+      }),
     ]);
   });
 });
