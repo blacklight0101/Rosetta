@@ -77,6 +77,10 @@ export class QuestionsByRun implements AnswersFile {
   recordAnswers(): Promise<Result<readonly RecordedQuestion[], 'unknown-question'>> {
     return Promise.resolve(ok([]));
   }
+
+  keepMerge(): Promise<void> {
+    return Promise.resolve();
+  }
 }
 
 /** The card files of a test, the same for every run; remembers the paths it was asked for. */
