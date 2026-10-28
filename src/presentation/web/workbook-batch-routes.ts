@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { WorkbookBatches } from '../../application/use-cases/workbook-batches.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { batchStateBody } from './workbook-batch-body.js';
 import { signedInOf } from './request-actor.js';
 import { chunksOf, declaredBytesOf, discard, fileNameOf } from './upload-body.js';
 
@@ -10,8 +11,14 @@ import { chunksOf, declaredBytesOf, discard, fileNameOf } from './upload-body.js
 // - PUT    /api/projects/:id/source/batches/:batchId/files       takes one workbook: the raw body
 //   (`Content-Type: application/octet-stream`), read as a stream and never held in memory, and
 //   `X-File-Name`, percent-encoded. 201 `{ name, size }`.
-// - POST   /api/projects/:id/source/batches/:batchId/finish      reads, renders and publishes every
-//   workbook or none: 201 with the workbooks, what was left out, the snapshot hash and the instant.
+// - POST   /api/projects/:id/source/batches/:batchId/finish      accepts the batch at once: 202 with its
+//   state. The server then reads, renders and publishes every workbook or none (RF-159, DEC-183);
+//   closing the tab does not cancel it.
+// - GET    /api/projects/:id/source/batches/:batchId             the state: 200 `{ batchId, phase, files,
+//   elapsedMs, progress? | summary? | refusal? }`, `phase` being open, processing, stored or refused;
+//   a refusal has the status, code, message, next step and files of the error it would have been.
+// - GET    /api/projects/:id/source/batches/current              the same for the batch of the project,
+//   for a page that was reloaded; the outcome stays 30 minutes after the work ended.
 // - DELETE /api/projects/:id/source/batches/:batchId             cancels the batch: 204, so a user
 //   who chose other files does not wait 30 minutes for the batch to expire.
 // The size limit, the count, the free space and the time bound are the staging area's; every
@@ -91,16 +98,41 @@ function registerFinish(server: FastifyInstance, services: WorkbookBatchServices
     `${BASE}/:batchId/finish`,
     { config: { access: 'user' } },
     async (request, reply) => {
-      const aborted = new AbortController();
-      reply.raw.once('close', () => {
-        if (!reply.raw.writableFinished) aborted.abort();
-      });
+      // The work does not belong to the request: a client that goes away does not stop it.
       const outcome = await services.workbookBatches.finish({
         ...{ actor: signedInOf(request).actor, projectId: request.params.id },
-        ...{ batchId: request.params.batchId, ip: request.ip, signal: aborted.signal },
+        ...{ batchId: request.params.batchId, ip: request.ip },
       });
       if (!outcome.ok) throw new RosettaError(outcome.error);
-      return reply.status(201).send(outcome.value);
+      return reply.status(202).send(batchStateBody(outcome.value));
+    },
+  );
+}
+
+function registerState(server: FastifyInstance, services: WorkbookBatchServices): void {
+  server.get<{ Params: ProjectParams }>(
+    `${BASE}/current`,
+    { config: { access: 'user' } },
+    async (request) => {
+      const outcome = await services.workbookBatches.current({
+        actor: signedInOf(request).actor,
+        projectId: request.params.id,
+      });
+      if (!outcome.ok) throw new RosettaError(outcome.error);
+      return batchStateBody(outcome.value);
+    },
+  );
+  server.get<{ Params: BatchParams }>(
+    `${BASE}/:batchId`,
+    { config: { access: 'user' } },
+    async (request) => {
+      const outcome = await services.workbookBatches.state({
+        actor: signedInOf(request).actor,
+        projectId: request.params.id,
+        batchId: request.params.batchId,
+      });
+      if (!outcome.ok) throw new RosettaError(outcome.error);
+      return batchStateBody(outcome.value);
     },
   );
 }
@@ -131,6 +163,7 @@ export function registerWorkbookBatchRoutes(
     registerOpen(instance, services);
     registerFile(instance, services);
     registerFinish(instance, services);
+    registerState(instance, services);
     registerCancel(instance, services);
     done();
   });

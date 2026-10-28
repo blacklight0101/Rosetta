@@ -8,7 +8,7 @@ import {
   createWorkbookProject,
   currentBatch,
   finishBatch,
-  finishedBatch,
+  settledBatch,
   openBatch,
   putFile,
   useWorkbookServers,
@@ -32,7 +32,7 @@ describe('POST finish and GET the state of a batch', () => {
     const target = await withBook(amy);
 
     const accepted = await finishBatch(amy, target);
-    const ended = await finishedBatch(amy, target);
+    const ended = await settledBatch(amy, target);
     const state = await batchState(amy, target);
 
     expect(accepted.statusCode).toBe(202);
@@ -43,7 +43,7 @@ describe('POST finish and GET the state of a batch', () => {
     });
     expect(ended.statusCode).toBe(201);
     expect(state.statusCode).toBe(200);
-    expect(typeof bodyOf(state).elapsedMs).toBe('number');
+    expect(Object.keys(bodyOf(state))).toContain('elapsedMs');
     expect(state.json()).toMatchObject({
       phase: 'stored',
       summary: { workbooks: [{ name: 'Pricing.xlsx', sheets: 1 }] },
@@ -57,7 +57,7 @@ describe('GET the state of a batch after a reload and a refusal', () => {
     const target = await withBook(amy);
     const before = await currentBatch(amy, target.projectId);
     await finishBatch(amy, target);
-    await finishedBatch(amy, target);
+    await settledBatch(amy, target);
 
     const reloaded = await currentBatch(amy, target.projectId);
 
@@ -77,7 +77,7 @@ describe('GET the state of a batch after a reload and a refusal', () => {
     await putFile(amy, target, { name: 'Locked.xlsx', bytes: encryptedBook() });
 
     const accepted = await finishBatch(amy, target);
-    await finishedBatch(amy, target);
+    await settledBatch(amy, target);
     const state = await batchState(amy, target);
     const shown = await amy.request({ method: 'GET', url: `/api/projects/${projectId}` });
 

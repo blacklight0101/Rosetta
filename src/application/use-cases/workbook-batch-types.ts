@@ -27,7 +27,6 @@ export interface BatchFileRequest extends BatchRef {
 
 export interface FinishBatchRequest extends BatchRef {
   readonly ip: string;
-  readonly signal?: AbortSignal;
 }
 
 /** What the page shows after a batch is finished (RF-150). */
@@ -39,6 +38,7 @@ export interface WorkbookBatchSummary {
   /** The newest run read another snapshot than the one just stored (false while no run has one). */
   readonly codeChangedSinceLastRun: boolean;
 }
+
 /** RF-159: where a batch is. The last two are its outcomes, kept for a while for the page to read. */
 export type BatchPhase = 'open' | 'processing' | 'stored' | 'refused';
 

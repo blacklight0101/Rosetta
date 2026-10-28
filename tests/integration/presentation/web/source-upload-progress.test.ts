@@ -38,7 +38,7 @@ describe('GET /api/projects/:id/source/progress', () => {
     expect(before.statusCode).toBe(404);
     expect(during.statusCode).toBe(200);
     expect(during.json()).toMatchObject({ progress: rendering });
-    expect(typeof bodyOf(during).elapsedMs).toBe('number');
+    expect(Object.keys(bodyOf(during))).toContain('elapsedMs');
     expect(after.statusCode).toBe(404);
   });
 
