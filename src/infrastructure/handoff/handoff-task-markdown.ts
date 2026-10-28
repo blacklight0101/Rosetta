@@ -115,7 +115,6 @@ function cardLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper
     ...sizeLines(task, handoff, esc),
     ...riskLines(task),
     ...verifierLines(task, handoff, esc),
-    ...verifierLines(task, handoff, esc),
     `Requirements: ${requirements.length === 0 ? 'none' : requirements.join(', ')}`,
     '',
     ...buildsLines(task, handoff, esc),
