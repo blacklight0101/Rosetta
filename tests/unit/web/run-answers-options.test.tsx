@@ -111,7 +111,6 @@ describe('saving suggested answers on the answers page', () => {
       answers: [{ cardId: 'OQ-001', answer: 'Staff only.', chosen: 'typed' }],
     });
   });
-
 });
 
 describe('suggested answers already answered or hostile', () => {
