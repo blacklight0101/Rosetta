@@ -150,6 +150,10 @@ src/
                         seeds from the parent's task results and runs rounds until the stop rule), one round
                         (`runRound`: judge, re-read and coverage tasks, ids, citation check, judgement), the
                         round's reader tasks, the run's state and measures, and the outputs and record it writes
+    answers/            the one question list of a project (RF-646, DEC-179): `familyOf` (an understand run and the
+                        Deepens linked to it, counting only the Deepens that have ended) and `projectQuestions`
+                        (their questions merged by the merge record of the cards and by asking-the-same, the
+                        newer answer winning, the older kept in the history)
     cards/              the card schema, lenient parsing that keeps valid cards and claims (`parseCardsLenient`), the repair request (RF-202, RF-208)
     verifier/           citation check (step 1, `checkCitations`, P1-33), judgement of one claim (step 2, `judgeClaim`, P2-02)
     estimate/           `EstimateRun`, the assumptions and the reader's token estimate (RF-425, P1-30); `first-calls.ts` reserves the first parallel reader calls as the budget guard does and checks them against the caps that apply, so the start page can warn (RF-405, DEC-159, P3-96)
