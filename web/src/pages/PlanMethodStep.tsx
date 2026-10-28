@@ -40,71 +40,95 @@ function Why({ draft }: { readonly draft: Draft }): JSX.Element | null {
   );
 }
 
+interface ChoicesProps {
+  readonly draft: Draft;
+  readonly shown: Draft;
+  readonly change: (next: Draft) => void;
+  readonly choose: (next: Draft, option: string) => void;
+  readonly problem: string | undefined;
+}
+
+const CARDS = [
+  {
+    option: 'agents',
+    title: 'Agents will build',
+    aiAssisted: true,
+    note: `${AGENTS_GIVES} Leaves out: nothing.`,
+  },
+  {
+    option: 'people',
+    title: 'People will build',
+    aiAssisted: false,
+    note: `The package is the plan and the specification, as for any team. ${PEOPLE_LEAVES}`,
+  },
+  {
+    option: 'both',
+    title: 'Agents and people together',
+    aiAssisted: true,
+    note: `${AGENTS_GIVES} People lead and review every change; agents build the routine cards.`,
+  },
+] as const;
+
+function MethodChoices({ draft, shown, change, choose, problem }: ChoicesProps): JSX.Element {
+  const kept = draft.chosen['buildMethod'];
+  const answered = shown.answered.includes('buildMethod') || shown !== draft;
+  const on = (aiAssisted: boolean, option: string): boolean =>
+    answered &&
+    kept !== TYPED &&
+    shown.aiAssisted === aiAssisted &&
+    (!aiAssisted || (option === 'both') === (kept === 'both'));
+  return (
+    <div class="rst-plan-options" role="radiogroup" aria-labelledby="build-method-label">
+      <p id="build-method-label" class="rst-plan-label">
+        How will the team build the new system?
+      </p>
+      {CARDS.map((card) => (
+        <PlanChoice
+          key={card.option}
+          id={`build-method-${card.option}`}
+          group="build-method"
+          title={card.title}
+          checked={on(card.aiAssisted, card.option)}
+          onChoose={() => {
+            choose({ ...shown, aiAssisted: card.aiAssisted }, card.option);
+          }}
+        >
+          <p class="rst-plan-note">{card.note}</p>
+        </PlanChoice>
+      ))}
+      <PlanOwnChoice
+        question="buildMethod"
+        group="build-method"
+        draft={draft}
+        change={change}
+        problem={problem}
+      />
+    </div>
+  );
+}
+
 // RF-612
 export function PlanMethodStep({ draft, change, problems }: StepProps): JSX.Element {
   const shown = shownMethod(draft);
-  const kept = draft.chosen.buildMethod;
+  const kept = draft.chosen['buildMethod'];
   const choose = (next: Draft, option = kept ?? ''): void => {
     change(chooseOption(next, 'buildMethod', option));
   };
-  const typedAnswer = kept === TYPED;
   const answered = shown.answered.includes('buildMethod') || shown !== draft;
-  const agentsOn = answered && shown.aiAssisted && !typedAnswer;
+  const agentsOn = answered && shown.aiAssisted && kept !== TYPED;
   return (
     <PlanStepCard
       step="method"
       defaultText="No default: leave it unanswered and the package assumes people will build."
     >
       <Why draft={draft} />
-      <div class="rst-plan-options" role="radiogroup" aria-labelledby="build-method-label">
-        <p id="build-method-label" class="rst-plan-label">
-          How will the team build the new system?
-        </p>
-        <PlanChoice
-          id="build-method-agents"
-          group="build-method"
-          title="Agents will build"
-          checked={agentsOn && kept !== 'both'}
-          onChoose={() => {
-            choose({ ...shown, aiAssisted: true }, 'agents');
-          }}
-        >
-          <p class="rst-plan-note">{AGENTS_GIVES} Leaves out: nothing.</p>
-        </PlanChoice>
-        <PlanChoice
-          id="build-method-people"
-          group="build-method"
-          title="People will build"
-          checked={answered && !shown.aiAssisted && !typedAnswer}
-          onChoose={() => {
-            choose({ ...shown, aiAssisted: false }, 'people');
-          }}
-        >
-          <p class="rst-plan-note">
-            The package is the plan and the specification, as for any team. {PEOPLE_LEAVES}
-          </p>
-        </PlanChoice>
-        <PlanChoice
-          id="build-method-both"
-          group="build-method"
-          title="Agents and people together"
-          checked={agentsOn && kept === 'both'}
-          onChoose={() => {
-            choose({ ...shown, aiAssisted: true }, 'both');
-          }}
-        >
-          <p class="rst-plan-note">
-            {AGENTS_GIVES} People lead and review every change; agents build the routine cards.
-          </p>
-        </PlanChoice>
-        <PlanOwnChoice
-          question="buildMethod"
-          group="build-method"
-          draft={draft}
-          change={change}
-          problem={problems['typed.buildMethod']}
-        />
-      </div>
+      <MethodChoices
+        draft={draft}
+        shown={shown}
+        change={change}
+        choose={choose}
+        problem={problems['typed.buildMethod']}
+      />
       {agentsOn ? <PlanMethodModels draft={shown} change={choose} problems={problems} /> : null}
     </PlanStepCard>
   );

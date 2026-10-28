@@ -40,48 +40,56 @@ function shownOption(picked: StackChoice | undefined, options: readonly Question
   return options.find((option) => option.title === picked.choice)?.id ?? '';
 }
 
-function LayerRow(props: LayerRowProps): JSX.Element {
-  const { layer, options, offered, draft, change, problem } = props;
-  const picked = draft.stack[layer.id];
+function LayerOptions(props: LayerRowProps): JSX.Element {
+  const { layer, options, offered, draft, change } = props;
   const question = `stack.${layer.id}`;
-  const labelId = `stack-${layer.id}-name`;
+  const picked = draft.stack[layer.id];
   const shown = draft.chosen[question] === TYPED ? TYPED : shownOption(picked, options);
+  return (
+    <div class="rst-plan-layer__options">
+      {options.map((option) => (
+        <label key={option.id} class="rst-plan-layer__option">
+          <input
+            type="radio"
+            name={`stack-${layer.id}`}
+            checked={shown === option.id}
+            onChange={() => {
+              const pick = { choice: option.title, custom: false, offered, option: option.id };
+              change(chooseLayer(draft, layer.id, pick));
+            }}
+          />
+          <span>
+            <span>{option.title}</span>
+            {option.recommended ? <span> (Recommended)</span> : null}
+            <span class="rst-plan-note"> {option.description}</span>
+          </span>
+        </label>
+      ))}
+      <label class="rst-plan-layer__option">
+        <input
+          type="radio"
+          name={`stack-${layer.id}`}
+          checked={shown === TYPED}
+          onChange={() => {
+            change(withAnswered(chosen(draft, question, TYPED), [question]));
+          }}
+        />
+        <span>{OWN_ANSWER}</span>
+      </label>
+    </div>
+  );
+}
+
+function LayerRow(props: LayerRowProps): JSX.Element {
+  const { layer, offered, draft, change, problem } = props;
+  const picked = draft.stack[layer.id];
+  const labelId = `stack-${layer.id}-name`;
   return (
     <div class="rst-plan-layer" role="radiogroup" aria-labelledby={labelId}>
       <strong id={labelId} class="rst-plan-layer__name">
         {layer.name}
       </strong>
-      <div class="rst-plan-layer__options">
-        {options.map((option) => (
-          <label key={option.id} class="rst-plan-layer__option">
-            <input
-              type="radio"
-              name={`stack-${layer.id}`}
-              checked={shown === option.id}
-              onChange={() => {
-                const pick = { choice: option.title, custom: false, offered, option: option.id };
-                change(chooseLayer(draft, layer.id, pick));
-              }}
-            />
-            <span>
-              <span>{option.title}</span>
-              {option.recommended ? <span> (Recommended)</span> : null}
-              <span class="rst-plan-note"> {option.description}</span>
-            </span>
-          </label>
-        ))}
-        <label class="rst-plan-layer__option">
-          <input
-            type="radio"
-            name={`stack-${layer.id}`}
-            checked={shown === TYPED}
-            onChange={() => {
-              change(withAnswered(chosen(draft, question, TYPED), [question]));
-            }}
-          />
-          <span>{OWN_ANSWER}</span>
-        </label>
-      </div>
+      <LayerOptions {...props} />
       <Field
         kind="text"
         id={`stack-${layer.id}-own`}

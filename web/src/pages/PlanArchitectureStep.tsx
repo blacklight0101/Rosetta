@@ -66,7 +66,7 @@ function Proposed(props: ArchitectureProps & { readonly options: PlanOptions }):
           id={`style-${option.style}`}
           group="architecture"
           title={`${titleOf(catalogue, option.style)}${option.style === options.architecture.recommended ? ' (Recommended)' : ''}`}
-          checked={shown === option.style && draft.chosen.architecture !== TYPED}
+          checked={shown === option.style && draft.chosen['architecture'] !== TYPED}
           onChoose={() => {
             change(chooseStyle(draft, options, option.style));
           }}
@@ -94,7 +94,7 @@ function Others(props: ArchitectureProps & { readonly options: PlanOptions | und
           id={`style-${entry.id}`}
           group="architecture"
           title={entry.title}
-          checked={shown === entry.id && draft.chosen.architecture !== TYPED}
+          checked={shown === entry.id && draft.chosen['architecture'] !== TYPED}
           onChoose={() => {
             change(chooseStyle(draft, options, entry.id));
           }}

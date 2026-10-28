@@ -23,7 +23,7 @@ async function saved(page: RenderedPage): Promise<void> {
 }
 
 const own = (): HTMLElement => screen.getByRole('radio', { name: /^Type your own answer/u });
-const labelOf = (radio: HTMLElement): string => radio.parentElement?.textContent?.trim() ?? '';
+const labelOf = (radio: HTMLElement): string => (radio.parentElement?.textContent ?? '').trim();
 
 describe('the migration question', () => {
   it('RF-645 lists the options with the recommended first and your own answer last', async () => {
@@ -53,7 +53,9 @@ describe('the migration question', () => {
     ]);
     expect(within(summary).getByText(/Your own answer: Move one module a week\./u)).not.toBeNull();
   });
+});
 
+describe('the migration question: the option chosen', () => {
   it('RF-645 saves the option chosen with its id', async () => {
     const page = renderPlan();
     await openStep('Migration');

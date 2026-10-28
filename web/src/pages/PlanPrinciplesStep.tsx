@@ -62,7 +62,7 @@ export function PlanPrinciplesStep(props: StepProps): JSX.Element {
         id="own-principles-text"
         label="Your own answer"
         help="A principle of your own, if the catalogue misses it. Saved with the brief."
-        value={draft.typed.principles ?? ''}
+        value={draft.typed['principles'] ?? ''}
         error={
           problems['typed.principles'] === undefined
             ? undefined

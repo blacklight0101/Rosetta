@@ -24,7 +24,7 @@ export function PlanMigrationStep({ draft, catalogue, change, problems }: StepPr
             id={`migration-${strategy.id}`}
             group="migration"
             title={strategy.id === first ? `${strategy.title} (Recommended)` : strategy.title}
-            checked={draft.migration === strategy.id && draft.chosen.migration !== TYPED}
+            checked={draft.migration === strategy.id && draft.chosen['migration'] !== TYPED}
             onChoose={() => {
               change(chooseOption({ ...draft, migration: strategy.id }, 'migration', strategy.id));
             }}
