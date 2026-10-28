@@ -47,7 +47,16 @@ function plural(count: number, word: string): string {
 
 /** RF-639: the tier with the model the brief names for it; the tier alone when it names none. */
 function tierText(method: BuildMethod, tier: TaskDifficulty['tier'], esc: MarkdownEscaper): string {
-  const model = modelForTier(method, tier);
+  return cardModelText(method, tier, esc, modelForTier(method, tier));
+}
+
+// RF-639, RF-641, DEC-185
+export function cardModelText(
+  method: BuildMethod,
+  tier: TaskDifficulty['tier'],
+  esc: MarkdownEscaper,
+  model: string | undefined,
+): string {
   return model === undefined ? `${tier} model tier` : `${tier} tier, model: ${esc.inline(model)}`;
 }
 

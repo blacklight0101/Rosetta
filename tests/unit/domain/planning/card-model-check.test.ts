@@ -33,7 +33,22 @@ describe('RF-641 the model check of one card', () => {
   });
 
   it('RF-641 accepts the escalation model of the brief as a model of the tool', () => {
-    expect(kindsOf({ builderModel: 'fable' })).toEqual([]);
+    expect(kindsOf({ builderModel: 'fable' })).not.toContain('model-not-in-brief');
+  });
+
+  it('RF-641 DEC-185 lists a card on the escalation model as a note needing the owner approval', () => {
+    expect(checkCardModel(method, { ...clean, builderModel: 'fable' })).toEqual([
+      { cardId: 'T-001', kind: 'escalation-owner-approval', severity: 'note' },
+    ]);
+  });
+
+  it('RF-641 DEC-185 a card on a tier model has no escalation note', () => {
+    expect(kindsOf({ builderModel: 'opus' })).not.toContain('escalation-owner-approval');
+  });
+
+  it('RF-641 DEC-185 a brief with no escalation model gives no escalation note', () => {
+    const none: BuildMethod = { ...method, models: { smallest: 'haiku', middle: 'sonnet' } };
+    expect(kindsOf({ builderModel: 'haiku' }, none)).not.toContain('escalation-owner-approval');
   });
 
   it('RF-639 RF-641 lists a card whose tier has no model name', () => {
