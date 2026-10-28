@@ -69,6 +69,10 @@ function grepsOf(shape: Shape): string {
   return text.split('## Hard-rule greps')[1]?.split('\n## ')[0] ?? '';
 }
 
+function rowOf(text: string, pattern: string): string {
+  return text.split('\n').find((line) => line.startsWith('| ') && line.includes(pattern)) ?? '';
+}
+
 const securityPrinciples = ['security-by-design', 'owasp-top-10', 'observability'];
 const jsPatterns = ['`Date.now(`', '`console.`', '`child_process`', '`innerHTML`'];
 
@@ -155,5 +159,84 @@ describe('orchestration.md hard-rule greps by stack', () => {
     const text = grepsOf({ principles: ['kiss'], risk: 'none' });
 
     expect(text).toContain('Title kiss: Check kiss.');
+  });
+});
+
+describe('orchestration.md hard-rule greps stated or suggested', () => {
+  it('RF-640 a rule a principle states is marked stated by that principle', () => {
+    const text = grepsOf({
+      principles: ['security-by-design', 'owasp-top-10', 'observability', 'containers'],
+      language: 'C# on .NET',
+      risk: 'none',
+    });
+
+    expect(rowOf(text, '`-----BEGIN`')).toContain('stated by Title security-by-design');
+    expect(rowOf(text, '`USER root`')).toContain('stated by Title containers');
+    expect(rowOf(text, '`Console.Write`')).toContain('stated by Title observability');
+    expect(rowOf(text, '`FromSqlRaw(`')).toContain('stated by Title owasp-top-10');
+  });
+
+  it('RF-640 a rule a principle only motivates is marked suggested by that principle', () => {
+    const text = grepsOf({
+      principles: ['security-by-design', 'owasp-top-10', 'secure-sdlc'],
+      language: 'TypeScript on Node.js',
+      risk: 'none',
+    });
+
+    for (const pattern of ['`innerHTML`', '`eval(`', '`child_process`', '`rejectUnauthorized`']) {
+      const row = rowOf(text, pattern);
+      expect(row).toContain('suggested by Title security-by-design');
+      expect(row).not.toContain('stated by');
+    }
+    expect(rowOf(text, '`innerHTML`')).toContain('suggested by Title owasp-top-10');
+    expect(rowOf(text, '`rejectUnauthorized`')).toContain('suggested by Title secure-sdlc');
+  });
+
+  it.each([
+    ['data loss', '`DROP TABLE`'],
+    ['money', '`parseFloat(`'],
+  ] as const)('RF-640 a row of the risk class %s is suggested by it', (risk, pattern) => {
+    const text = grepsOf({ principles: [], language: 'TypeScript on Node.js', risk });
+    const row = rowOf(text, pattern);
+
+    expect(row).toContain(`suggested by the risk class ${risk}`);
+    expect(row).not.toContain('stated by');
+  });
+
+  it('RF-640 the intro says the team may drop a suggested row', () => {
+    const text = grepsOf({ principles: [], language: 'TypeScript on Node.js', risk: 'money' });
+
+    expect(text).toMatch(/"suggested by" is a suggestion[^\n]*the team may drop it/u);
+    expect(text).toContain('| Pattern | Rule | Source |');
+  });
+});
+
+describe('orchestration.md hard-rule greps for a language the table does not know', () => {
+  it('RF-640 a stack language the table does not know is named, not called unchosen', () => {
+    const text = grepsOf({ principles: securityPrinciples, language: 'Go 1.22', risk: 'none' });
+
+    expect(text).not.toMatch(/no language is chosen/iu);
+    expect(text).toContain('No search pattern is listed for Go 1.22');
+    expect(text).toContain('`-----BEGIN`');
+  });
+
+  it('RF-640 a known and an unknown language list the patterns of the known one', () => {
+    const base = packageOf({ principles: securityPrinciples, language: 'Rust', risk: 'none' });
+    const runtime = { layer: 'language-runtime', name: 'Language', decision: 'ADR-001' } as const;
+    const both: HandoffPackage = {
+      ...base,
+      choices: {
+        ...base.choices,
+        stack: [
+          { ...runtime, choice: 'Rust' },
+          { ...runtime, choice: 'TypeScript on Node.js' },
+        ],
+      },
+    };
+    const text = renderHandoff(both, masker)['orchestration.md'] ?? '';
+
+    expect(text).toContain('`console.`');
+    expect(text).toContain('No search pattern is listed for Rust');
+    expect(text).not.toMatch(/no language is chosen/iu);
   });
 });
