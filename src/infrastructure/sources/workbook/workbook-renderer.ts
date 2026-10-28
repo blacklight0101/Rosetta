@@ -1,3 +1,4 @@
+import type { ProgressListener } from '../../../application/ports/workbook-staging.js';
 import { placeCells } from './cell-order.js';
 import { DEFAULT_DEPENDENCY_LIMITS, type DependencyLimits } from './dependency-limits.js';
 import { plainModel } from './external-names.js';
@@ -188,4 +189,14 @@ export function renderProject(
   const bounds = { ...DEFAULT_DEPENDENCY_LIMITS, ...limits.dependencies };
   const content = renderDependencies(models, workbooks, bounds, budget);
   return { workbooks, dependencies: { path: 'dependencies.md', content } };
+}
+
+/** Placeholder until the render yields: the synchronous render behind the asynchronous signature. */
+export function renderProjectAsync(
+  models: readonly WorkbookModel[],
+  limits: RenderLimits,
+  pacing: { check: () => void; onProgress?: ProgressListener },
+): Promise<RenderedProject> {
+  pacing.check();
+  return Promise.resolve(renderProject(models, limits));
 }
