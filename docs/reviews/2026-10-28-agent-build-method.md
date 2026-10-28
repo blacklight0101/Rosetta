@@ -385,6 +385,8 @@ domain, the method markdown); P6-05 after P6-04; P6-07 and P6-08 are serialized 
 
 ## 12. Open questions, with defaults
 
+Note 2026-10-28: the owner took every default below (Q-A..Q-I) and accepted the proposed requirement changes of section 10; recorded as DEC-176.
+
 | Id  | Question                                                                                        | Default                                                                     | Needed by |
 | --- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------- |
 | Q-A | Is the build method question required, or defaulted on when the context names an agent tool?    | required, with the context shortcut                                         | P6-03     |
