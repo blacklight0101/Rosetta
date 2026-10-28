@@ -13,11 +13,11 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 184     | 67        | 98         | 19        | 0                  | 107     | 69      | 8      | 122        | 0         |
-| P2 Full understand      | 52      | 13        | 32         | 7         | 0                  | 22      | 28      | 2      | 31         | 0         |
+| P2 Full understand      | 53      | 14        | 32         | 7         | 0                  | 23      | 28      | 2      | 32         | 0         |
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
 | P6 Agent build method   | 12      | 1         | 11         | 0         | 0                  | 3       | 9       | 0      | 0          | 0         |
-| **Total**               | **424** | **106**   | **288**    | **30**    | **0**              | **206** | **204** | **14** | **241**    | **0**     |
+| **Total**               | **425** | **107**   | **288**    | **30**    | **0**              | **207** | **204** | **14** | **242**    | **0**     |
 
 ## Conventions for every card
 
@@ -3205,12 +3205,27 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/runbooks/local.md`; the tests that spawn `bash` (`tests/support/workflow-yaml.ts` `runStep`, `tests/support/fake-gh.ts`, `tests/support/fake-az.ts`); the P2-52 builder report on #946.
 - **Do**: on the owner's Windows machine `bash` on `PATH` resolves to WSL, so the workflow and provisioning tests that run steps with `bash` fail locally while CI passes; with `C:\Program Files\Git\bin` first on `PATH` they pass. Make the test helpers use Git Bash on Windows (for example the `bash.exe` next to `git.exe`), or fail with a clear message naming the fix, and document it in the local runbook.
 - **Delivers**: the helper change and its test; the runbook note.
 - **Done when**: `npm run verify` passes on the owner's machine without changing `PATH`, or stops at once with the message.
 - **Refs**: RNF-005, ADR-011, P2-52.
+
+---
+
+### P2-57 - Follow-up: the scheduled release did not fire; add backup runs
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `.github/workflows/scheduled-release.yml`; `tests/integration/tooling/scheduled-release-workflow.test.ts`; ADR-025; `docs/environments-and-delivery.md` section 8; `docs/runbooks/deploy.md` (Release to production).
+- **Do**: on 2026-10-28 GitHub started no run of Scheduled release at either cron (04:07 and 05:07 UTC), so the first release (DEC-175) did not deploy; GitHub runs schedules on a best-effort basis and may delay or drop them. Add backup schedules and widen the gate so a dropped run is caught the same morning: crons at 04:07, 05:07, 05:37 and 06:07 UTC, and the job goes on in the 06 and 07 hours of Europe/Madrid. The existing check (no Release of main's head queued, running or succeeded) keeps it to one deploy a morning. Say in the step summary which slot started it.
+- **Delivers**: the workflow change and its tests (crons, the 06/07 gate in summer and winter time, a second slot doing nothing after a first one started Release); ADR-025, environments-and-delivery section 8 and the runbook updated to "06:07 Madrid, with backups until 07:59".
+- **Done when**: the tests pass, and a Scheduled release run appears in Actions on the next morning after merge (owner or orchestrator check).
+- **Refs**: DEC-175, ADR-025.
 
 ---
 
@@ -6012,7 +6027,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (DEC-173)
-- **Status**: Todo
+- **Status**: Blocked (owner: read the review, choose the cards and answer Q-A..Q-I in docs/reviews/2026-10-28-agent-build-method.md; review merged in #948)
 - **Reads**: the package writer (`src/infrastructure/handoff/`, `handoff-method-markdown.ts` for `AGENTS.md`), the planning brief's build method question (`src/domain/planning/brief-questions.ts`), RF-612, RF-635 and RF-636, and this repository's own method as the reference: the project-blueprint skill it was planned with (docs-first repository, `CLAUDE.md`, `handoff.md`, RFC, ADRs, decision log, task cards with builder tiers, an independent verifier and human gates) and `docs/orchestration/README.md` with `.claude/agents/`. Owner test of 2026-10-25: a Sonnet full run of a single-file app gave a package with 18 task cards and no agent method, because AI-assisted build stayed on its default (off).
 - **Do**: a written review, then the cards it calls for (no code in this card). The goal: a team that takes the package builds the new system with the same method this repository was built with, as the project-blueprint skill sets it up.
   - What an agent sees first in the package, and whether it can tell how to proceed without a person explaining it.
