@@ -31,6 +31,8 @@ export function deepenServices(
       taskResults,
       priceTable: estimatePrices,
       models: NO_LISTED_MODELS,
+      answers: { answeredQuestions: () => Promise.resolve([]) },
+      priorCards: { cardsOf: () => Promise.resolve([]), markAnswered: () => Promise.resolve([]) },
     }),
     readUnderstanding: new ReadUnderstanding({
       ...{ runs: runs.runs, scans: new FixedScans(catalogAreas), taskResults },
