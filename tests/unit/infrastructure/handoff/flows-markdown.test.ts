@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
-import { handoffOf } from '../../../support/handoff-package-fixture.js';
+import { builtByPeople, handoffOf } from '../../../support/handoff-package-fixture.js';
 import { fakeOpenAiKey } from '../../../support/secret-fixture.js';
 
 // RF-625, RF-620, RF-602, ADR-013: flows/ of the package: an index of the main journeys and the
@@ -38,7 +38,8 @@ describe('flows/README.md', () => {
   });
 
   it('RF-620 the package README lists the flows after the data model, linking the index', () => {
-    const readme = filesOf()['README.md'] ?? '';
+    const readme =
+      renderHandoff(builtByPeople(handoffOf('Plain text.')), masker)['README.md'] ?? '';
 
     const order = readme
       .split('\n')

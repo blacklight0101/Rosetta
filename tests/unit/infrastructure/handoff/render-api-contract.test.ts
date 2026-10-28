@@ -5,7 +5,7 @@ import { emptyPrd } from '../../../../src/domain/planning/prd-content.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
 import { apiOperations } from '../../../support/api-contract-fixtures.js';
-import { handoffOf } from '../../../support/handoff-package-fixture.js';
+import { builtByPeople, handoffOf } from '../../../support/handoff-package-fixture.js';
 import { checkOpenApi } from '../../../support/openapi-check.js';
 import { fakeOpenAiKey } from '../../../support/secret-fixture.js';
 
@@ -22,7 +22,7 @@ const written: ApiContract = {
 };
 
 function files(contract: ApiContract, text = 'Plain text.'): Readonly<Record<string, string>> {
-  return renderHandoff(handoffOf(text, emptyPrd, { apiContract: contract }), masker);
+  return renderHandoff(builtByPeople(handoffOf(text, emptyPrd, { apiContract: contract })), masker);
 }
 
 function order(readme: string | undefined): string {

@@ -4,7 +4,7 @@ import type { PrdContent } from '../../../../src/domain/planning/prd-content.js'
 import { emptyPrd } from '../../../../src/domain/planning/prd-content.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
-import { handoffOf } from '../../../support/handoff-package-fixture.js';
+import { builtByPeople, handoffOf } from '../../../support/handoff-package-fixture.js';
 import { fakeOpenAiKey } from '../../../support/secret-fixture.js';
 
 // RF-620, RF-621, RF-602, RF-603, RNF-003: prd.md as it is written. Every statement links its
@@ -150,7 +150,7 @@ describe('prd.md: untrusted text', () => {
 
 describe('README and open questions with the PRD', () => {
   it('RF-620 the reading order lists the PRD first, then the parts of RF-601, each linking its file', () => {
-    const files = renderHandoff(handoffOf('Plain text.', filled), masker);
+    const files = renderHandoff(builtByPeople(handoffOf('Plain text.', filled)), masker);
 
     const order = (files['README.md'] ?? '').split('## Reading order')[1]?.split('##')[0] ?? '';
     const links = [...order.matchAll(/\]\(([^)#]+)\)/gu)].map((match) => match[1]);
