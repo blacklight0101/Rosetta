@@ -15,9 +15,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P1 Milestone slice (M1) | 184     | 67        | 98         | 19        | 0                  | 107     | 69      | 8      | 122        | 0         |
 | P2 Full understand      | 53      | 14        | 32         | 7         | 0                  | 23      | 28      | 2      | 32         | 0         |
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
-| P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
-| P6 Agent build method   | 19      | 1         | 18         | 0         | 0                  | 5       | 14      | 0      | 0          | 0         |
-| **Total**               | **432** | **107**   | **295**    | **30**    | **0**              | **209** | **209** | **14** | **242**    | **0**     |
+| P5 Polish (G-10)        | 47      | 9         | 38         | 0         | 0                  | 20      | 27      | 0      | 0          | 0         |
+| P6 Agent build method   | 25      | 2         | 23         | 0         | 0                  | 9       | 16      | 0      | 6          | 0         |
+| **Total**               | **441** | **108**   | **303**    | **30**    | **0**              | **214** | **213** | **14** | **248**    | **0**     |
 
 ## Conventions for every card
 
@@ -87,7 +87,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: G-01, G-03
 - **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` sections 5-7; `docs/conventions.md` sections 1, 2, 7, 8 and 10; `docs/architecture.md` section 4.
-- **Do**: create `package.json` (`"type": "module"`, engines from `.nvmrc`, scripts `build`, `dev`, `typecheck`, `lint`, `format`, `format:check`, `arch`, `deadcode`, `test`, `test:ci`, `test:levels`, `verify`), `.nvmrc`, `tsconfig.json` with every flag of conventions section 1, `eslint.config.ts` exactly as conventions section 10, `.prettierrc`, `.dependency-cruiser.cjs` with the layer rules of architecture section 3, `knip.json`, `vitest.config.ts` with projects `unit`, `integration`, `e2e` by folder and the coverage thresholds of conventions section 7, `commitlint.config.ts`, `lefthook.yml` (pre-commit, commit-msg, pre-push as environments section 5), `.editorconfig`, `.gitignore` additions; the folders of architecture section 4 with one module in `src/domain/` and one test per level that runs; `scripts/test-levels.mjs` printing `Unit n / Integration n / E2E n` with the shares and a warning outside 60/30/10 ±10, failing when the count is zero. Only devDependencies from the baseline of environments section 7.
+- **Do**: create `package.json` (`"type": "module"`, engines from `.nvmrc`, scripts `build`, `dev`, `typecheck`, `lint`, `format`, `format:check`, `arch`, `deadcode`, `test`, `test:ci`, `test:levels`, `verify`), `.nvmrc`, `tsconfig.json` with every flag of conventions section 1, `eslint.config.ts` exactly as conventions section 10, `.prettierrc`, `.dependency-cruiser.cjs` with the layer rules of architecture section 3, `knip.json`, `vitest.config.ts` with projects `unit`, `integration`, `e2e` by folder and the coverage thresholds of conventions section 7, `commitlint.config.ts`, `lefthook.yml` (pre-commit, commit-msg, pre-push as environments section 5), `.editorconfig`, `.gitignore` additions; the folders of architecture section 4 with one module in `src/domain/` and one test per level that runs; `scripts/test-levels.mjs` printing `Unit n / Integration n / E2E n` with the shares and a warning outside 60/30/10 Â±10, failing when the count is zero. Only devDependencies from the baseline of environments section 7.
 - **Delivers**: the files above; `npm run verify` green; `package-lock.json`.
 - **Done when**: the verifier runs `npm ci` and `npm run verify` (exit 0); a test file importing `src/infrastructure/` from `src/domain/` makes `npm run arch` fail (verifier tries it in a disposable worktree); an `any` in `src/` makes `npm run lint` fail; `npm run test:levels` prints three counts; `npm ls --depth=0` shows only baseline packages.
 - **Refs**: RNF-001, RNF-005, RNF-013, ADR-009, ADR-010, ADR-011, DEC-27, DEC-30, DEC-39, DEC-40.
@@ -2374,9 +2374,9 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Done
 - **Reads**: `web/src/lib/live-run/card-checks.ts`, `web/src/pages/CardsTab.tsx`, `web/src/components/badge-specs.ts`; the owner's report of 2026-10-18. On the run page Evidence tab, FEAT-001 had 2 Supported claims, 1 Rejected and 1 Citation invalid, yet its card showed only "citation invalid". ENT-001 had no invalid citation, only one Rejected claim, and it showed the same tag.
-- **Do**: replace the single per-card check (checked / invalid / waiting) with counts per claim status: "N supported · M rejected · K citation invalid · J waiting", showing only the non-zero parts in that order. Each part carries its glyph and text as well as colour, using the same badge vocabulary as the claim rows. A card whose claims are all Supported keeps a single "all supported" mark. While claims are still being checked, the waiting count updates live. A Rejected claim is never called "citation invalid".
+- **Do**: replace the single per-card check (checked / invalid / waiting) with counts per claim status: "N supported Â· M rejected Â· K citation invalid Â· J waiting", showing only the non-zero parts in that order. Each part carries its glyph and text as well as colour, using the same badge vocabulary as the claim rows. A card whose claims are all Supported keeps a single "all supported" mark. While claims are still being checked, the waiting count updates live. A Rejected claim is never called "citation invalid".
 - **Delivers**: the change, with unit tests of the counting and a component test of the row.
-- **Done when**: the FEAT-001 case shows "2 supported · 1 rejected · 1 citation invalid"; the ENT-001 case shows no "citation invalid"; it is accessible (axe, keyboard, 360 px); `npm run verify` is green.
+- **Done when**: the FEAT-001 case shows "2 supported Â· 1 rejected Â· 1 citation invalid"; the ENT-001 case shows no "citation invalid"; it is accessible (axe, keyboard, 360 px); `npm run verify` is green.
 - **Refs**: RF-1004, RF-1014, RF-1015, RF-301, owner report 2026-10-18, PR #577
 
 ---
@@ -4082,7 +4082,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Gate**: none
 - **Status**: Done
 - **Reads**: the run page (header, stepper, Deepen panel, area map, spend panel, All agents tab, Activity tab and event log); `docs/design-system.md`; RNF-010; RF-507 (model text as text); the owner's test of a Deepen run on an Excel project (2026-10-20, notes below).
-- **Do**: within the design system, fix: (1) plurals in the Deepen round lines ("1 files read"); (2) round 3 wording ("re-reading 60" names what, "0 unread files to read" reads plainly); (3) the stepper sub-lines are cut off ("127 of 127 citations check..."): fit or wrap; (4) area tiles all cut to "Asset_Mana...": show the part after the last "/" with the full name on hover and focus, and do not cut the sub-lines ("read · 1 fil...", "being rea..."); explain or drop the "#1" suffix in tile names; (5) the Activity tab count shows "1000" when the log holds more: show "1000+" or the real count; (6) the side "Spend for this run" bar stays empty with a local model while tokens are used: label it as cost, or show the token bar when the cost is zero; (7) the two links in the spend panel use one link style; (8) the "Start page" link sits with the title or the buttons, not floating between them; (9) the estimate line says "Range $0.00 to $0.00" with a local model and does not say when the run has passed the likely estimate: give the token range, and say "over the estimate" when it is; (10) agent cards with the same area title (Deepen rounds) show the round or what they re-read; (11) agent card headers line up when the title is long (role and badge on one line, or a fixed place); (12) a one-line range reads `file:27`, not `file:27-27`; (13) long paths wrap at "/" and before ":", not mid-word; (14) the coverage map's "6% of the reads" says "of all files read"; (15) event-log times read as time since the start ("+16:27.5"); (16) the "usage.recorded · verifier 0 micro-dollars" lines are folded into the line they belong to or grouped, and "micro-dollars" never appears; (17) Supported and Rejected verdict lines use the cards list's badge and colour; (18) a cut verdict reason can be opened in full; (19) inline code in model text (backticks) is shown as code styling, still as text, never HTML.
+- **Do**: within the design system, fix: (1) plurals in the Deepen round lines ("1 files read"); (2) round 3 wording ("re-reading 60" names what, "0 unread files to read" reads plainly); (3) the stepper sub-lines are cut off ("127 of 127 citations check..."): fit or wrap; (4) area tiles all cut to "Asset_Mana...": show the part after the last "/" with the full name on hover and focus, and do not cut the sub-lines ("read Â· 1 fil...", "being rea..."); explain or drop the "#1" suffix in tile names; (5) the Activity tab count shows "1000" when the log holds more: show "1000+" or the real count; (6) the side "Spend for this run" bar stays empty with a local model while tokens are used: label it as cost, or show the token bar when the cost is zero; (7) the two links in the spend panel use one link style; (8) the "Start page" link sits with the title or the buttons, not floating between them; (9) the estimate line says "Range $0.00 to $0.00" with a local model and does not say when the run has passed the likely estimate: give the token range, and say "over the estimate" when it is; (10) agent cards with the same area title (Deepen rounds) show the round or what they re-read; (11) agent card headers line up when the title is long (role and badge on one line, or a fixed place); (12) a one-line range reads `file:27`, not `file:27-27`; (13) long paths wrap at "/" and before ":", not mid-word; (14) the coverage map's "6% of the reads" says "of all files read"; (15) event-log times read as time since the start ("+16:27.5"); (16) the "usage.recorded Â· verifier 0 micro-dollars" lines are folded into the line they belong to or grouped, and "micro-dollars" never appears; (17) Supported and Rejected verdict lines use the cards list's badge and colour; (18) a cut verdict reason can be opened in full; (19) inline code in model text (backticks) is shown as code styling, still as text, never HTML.
 - **Review probes**: the run page at 360 px and desktop, light and dark, with a Deepen run of three rounds and a local model; axe in both schemes; a log of more than 1,000 events; a verdict reason of 2,000 characters; model text with backticks and with `<b>` (shown as text).
 - **Behaviour to preserve**: every RF-231 wording rule; RF-507 (no model text as HTML); the live updates and Pause updates.
 - **Delivers**: the fixes and tests.
@@ -6017,6 +6017,56 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 
 ---
 
+### P5-45 - Rendering a workbook project hands the server back between sheets
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-183)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/sources/workbook/workbook-publish.ts`, `workbook-renderer.ts` (`renderProject`), `render-dependencies.ts`, `package-reader.ts`, `src/infrastructure/sources/workbook-staging.ts` (the publish bound), RF-159, RNF-017, ADR-023. Today `renderProject` is one synchronous call: a large project blocks every request of the server, and cancel and the 5-minute bound are checked only before and after it.
+- **Do**:
+  - Make rendering asynchronous: it yields to the event loop between sheets, and in the dependency map between workbooks and between its passes.
+  - Check the abort signal and the publish bound at every yield.
+  - Report progress through a callback from reading and rendering: the step, workbook n of N, sheet n of M, non-empty cells so far. P5-46 shows it.
+  - The rendered tree stays byte-identical to before.
+- **Delivers**: the asynchronous renderer, unit tests, and integration tests of cancel and of the bound during rendering.
+- **Done when**: the existing workbook fixtures give the same `snapshotHash` as before; a test shows another request answered while a built large workbook renders; cancel and the bound stop during rendering and nothing is published.
+- **Refs**: RF-159, RNF-017, DEC-183, ADR-023.
+
+### P5-46 - Finishing a workbook batch returns at once and the page shows its progress
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P5-45
+- **Gate**: owner (DEC-183)
+- **Status**: Todo
+- **Reads**: `src/presentation/web/workbook-batch-routes.ts`, `src/application/use-cases/workbook-batches.ts`, `src/infrastructure/sources/workbook-staging.ts`, `zip-upload-store.ts` and `workbook/zip-workbooks.ts` (zips holding workbooks), `web/src/pages/WorkbookUploadForm.tsx`, `workbook-batch.ts`, `use-workbook-flow.ts`, `use-polled.ts`, `docs/design-system.md` (upload progress, long operations), RF-150, RF-158, RF-159.
+- **Do**:
+  - `finish` accepts the batch at once and the processing continues on the server; a state endpoint returns the step, the counts of P5-45, the elapsed time and the outcome (summary or refusal with its code); the existing `DELETE` cancels it.
+  - The endpoints keep the session, CSRF and owner checks; another user's batch answers 404.
+  - The page asks for the state every second and shows the steps, the workbook and sheet, the cells read, the elapsed time and Cancel; the summary and the refusals show as before; a reload or a later visit finds the project's batch and shows its progress; closing the tab does not cancel it.
+  - A zip holding workbooks shows the same progress.
+  - Document the progress pattern in `docs/design-system.md` and the endpoint in `docs/architecture.md`.
+- **Delivers**: the endpoints, the page, the documentation, integration and end-to-end tests.
+- **Done when**: an end-to-end test sees the steps and survives a reload during processing; integration tests cover the state, cancel, a refusal after the batch was accepted and another user's batch; the existing RF-150 tests pass.
+- **Refs**: RF-150, RF-158, RF-159, RNF-017, DEC-183.
+
+### P5-47 - Upload and snapshot hashes are computed while the files are written
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P5-45
+- **Gate**: owner (DEC-183)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/sources/upload-intake.ts`, `workbook-staging.ts`, `workbook/workbook-publish.ts`, `workbook/workbook-tree.ts`, `src/infrastructure/snapshots/snapshot-store.ts` (`inspect`), RF-152, RF-159. Today every uploaded workbook is read again for its SHA-256, and every rendered file is written, then read again and hashed.
+- **Do**:
+  - Hash each uploaded file while it is received and each rendered file while it is written, and record the snapshot from those hashes.
+  - `snapshotHash`, `snapshot.json` and the read-only tree stay identical; snapshots of other kinds keep their current path.
+- **Delivers**: the hashing change and tests.
+- **Done when**: the workbook fixtures give the same `snapshotHash` and `snapshot.json` as before; a test shows no uploaded or rendered file is read again after it is written.
+- **Refs**: RF-152, RF-159, DEC-183.
+
 ## Phase 6 - Agent build method (held by the owner)
 
 No card of this phase starts until the owner opens the phase (DEC-173).
@@ -6047,7 +6097,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (DEC-173; the proposed requirements accepted)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the planning brief (`src/domain/planning/planning-brief.ts`, `src/application/planning/planning-brief-schema.ts`, `brief-questions.ts`), the review sections 4 and 5, RF-612, RF-639 (proposed).
 - **Do**:
   - Extend `buildMethod` with the agent tool (`claude-code`, `codex`, `other` with a name) and one model name per tier plus an optional escalation model; the schema stays additive and a brief saved earlier still parses as people building (Q-B).
@@ -6063,7 +6113,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: P6-02
 - **Gate**: owner (DEC-173; the proposed requirements accepted)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web/src/pages/PlanMethodStep.tsx`, `web/src/lib/plan-setup/steps.ts` and `draft.ts`, the review section 4, `docs/design-system.md` section 14, `tests/e2e/plan-setup.spec.ts`.
 - **Do**:
   - Replace the checkbox with a required two-way choice (agents or people build) with the plain sentence of what each answer gives and leaves out; when the context names an agent tool, open on agents (Q-A).
@@ -6079,7 +6129,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: P6-02
 - **Gate**: owner (DEC-173; the proposed requirements accepted)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/planning/task-method.ts`, `handoff-task-markdown.ts`, `handoff-quality-markdown.ts`, RF-635, the review sections 5 and 6, `tests/integration/application/build-plan-quality.test.ts`.
 - **Do**:
   - Rate a card by size and risk class as the review proposes (Q-C): a `security boundary`, `data loss` or `money` card of size M or L is rated 9; the middle-tier floor for any other class stays.
@@ -6095,7 +6145,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: S
 - **Depends on**: P6-04
 - **Gate**: owner (DEC-173; the proposed requirements accepted)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/handoff/handoff-checks-markdown.ts`, `handoff-truthful-checks-markdown.ts`, the review section 6, RF-641 (proposed).
 - **Do**:
   - When AI-assisted build is on, write in `checks.md` a finding for a card whose model is not the chosen tool's, whose tier is below its band, whose risk class other than `none` has a tier below the middle, or whose verifier is below its builder (Q-D: list, never block); the card line shows its risk class next to the difficulty (RF-641 item 5).
@@ -6110,7 +6160,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: S
 - **Depends on**: P6-02
 - **Gate**: owner (DEC-173; the proposed requirements accepted)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `handoff-method-markdown.ts`, `handoff-list-markdown.ts` (reading order), `AGENTS.md` of this repository as the shape, the review sections 2 and 3, RF-640 (proposed).
 - **Do**:
   - Rewrite `agentsMarkdown` as an index of at most about 60 lines: start-here order, command table (from the stack answers or marked unknown), the rules broken most often, the layout; the long rules move to `orchestration.md` (P6-07).
@@ -6170,7 +6220,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (DEC-173; the proposed requirements accepted)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the planner prompts (`prompts/`), `src/domain/planning/foundation-cards.ts`, RF-630, `docs/verification/` as the shape, the review section 10.
 - **Do**:
   - For a plan of two or more phases add to each phase a closing card that maps its requirements to tests, lists measured targets and turns gaps into follow-up cards; add a security review card when a card has a risk class other than `none`.
@@ -6230,7 +6280,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (DEC-178)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `prompts/cards/card-format.v2.md`, `prompts/cards/repair.v3.md`, `src/application/cards/card-schema.ts`, `parse-cards.ts`, `src/application/understand/open-questions.ts`, RF-243, RF-645, ADR-005, ADR-008.
 - **Do**:
   - A new card-format and repair prompt version (RNF-004): an `OQ` card carries three suggested answers, one marked recommended and listed first, each with a short description and, when the code supports it, a citation.
@@ -6246,7 +6296,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: P6-14
 - **Gate**: owner (DEC-178)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web/src/pages/RunAnswers.tsx`, `YourTurn.tsx`, `src/application/use-cases/record-answers.ts`, `list-answers.ts`, `src/infrastructure/cards/answers-file.ts`, `docs/data-model.md` section 3.16, `docs/design-system.md`, RF-240, RF-645, RF-1007, RF-1017.
 - **Do**:
   - Show each question's suggested answers as choices, the recommended one first, plus "Type your own answer"; a question saved before the change keeps its free answer field.
@@ -6291,7 +6341,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (DEC-179)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/use-cases/start-deepen.ts`, `src/application/deepen/`, `src/application/understand/answer-rerun.ts` (`withAnswersOf`, `askingTheSame`), `reader-tasks.ts`, `src/application/ports/answers-file.ts`, RF-209, RF-241, RF-646, ADR-013.
 - **Do**:
   - Give every Deepen reader task the answered questions of its area as user context in a labelled data block, as the re-run with answers does; an answer is never evidence, so a claim still needs a code citation.
@@ -6316,3 +6366,96 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Delivers**: the use-case, journey and page changes, and integration and end-to-end tests.
 - **Done when**: the end-to-end test answers before a Deepen, runs it, and sees no question asked twice and only new ones before Plan setup.
 - **Refs**: RF-614, RF-615, RF-646, RF-1007, RF-1017, DEC-179.
+
+### P6-20 - Follow-up: the build method e2e waits for the save before a reload
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-03
+- **Gate**: owner (DEC-176)
+- **Status**: Todo
+- **Reads**: `tests/e2e/plan-setup-build-method.spec.ts` (the test at line 16), `tests/e2e/support/plan-setup-page.ts`, the Save handler of the build method step in `web/src/pages/`, RF-612, RF-639. The test failed 2 of 3 local runs, both right after `page.reload()` (lines 45 and 60), and fails on develop CI (run 40759431011, commit d7ee1e72, e2e shard 2), which blocks every pull request (issue #991). It asserts the saved choice before the save has landed.
+- **Do**:
+  - Wait for the save to finish (the save response or the "What I recorded" line) before every reload and every assertion on saved state in the spec.
+  - Find out whether a real defect hides behind the flakiness, such as a page that reloads before the save request ends, and fix it in a separate commit if so.
+- **Delivers**: the spec change and any defect fix with its test.
+- **Done when**: the spec passes `--repeat-each=10` locally and CI e2e is green.
+- **Refs**: RF-612, RF-639, P6-03; issue #991.
+
+### P6-21 - Follow-up: typed Plan setup answers reach the planner
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P6-16
+- **Gate**: owner (DEC-184)
+- **Status**: Todo
+- **Reads**: `src/application/plan/plan-inputs.ts`, the planner prompts in `prompts/`, the brief schema and the Plan setup pages in `web/src/pages/` (P6-16), `docs/data-model.md` section 3.20, RF-605, RF-645, ADR-013, DEC-184. Today a typed answer to principles, architecture, migration or build method is stored in the brief and shown in "What I recorded", but the planner does not see it, so the question stays in the defaulted list.
+- **Do**:
+  - Pass the typed text of those four questions to the planner inside a labelled data block (ADR-013); it is user context, never evidence or an instruction.
+  - Remove the question from the defaulted list once its typed answer reaches the planner; the ADR and the package then state the user's own answer instead of the default.
+  - Keep the previous behaviour for a question with no typed answer.
+- **Delivers**: the change, unit tests and an integration test with recorded responses.
+- **Done when**: an integration test shows a typed answer in the planner's data block, the question out of the defaulted list and the answer stated in the ADR and the package; `npm run verify` green.
+- **Refs**: RF-605, RF-645, ADR-013, DEC-184.
+
+### P6-22 - Follow-up: a tier model can be marked as running locally
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-05, P6-16
+- **Gate**: owner (DEC-185)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/handoff/handoff-model-checks-markdown.ts` (passes `local: false` today), `src/domain/planning/card-model-check.ts`, the brief schema, `docs/data-model.md` section 3.20, the build method step of Plan setup in `web/src/pages/`, RF-639, RF-641, DEC-185.
+- **Do**:
+  - Add an optional "runs locally" flag per tier model to the brief; it is additive, so a brief saved before the change still reads.
+  - Add a control for it to the build method step of Plan setup.
+  - Pass the flag to the model check, so the local-model warning of RF-641 (a local builder on a card above difficulty 2) fires from a real package.
+- **Delivers**: the schema and page change, the check wiring and tests.
+- **Done when**: a package whose brief marks the middle tier model as local lists the RF-641 warning in `checks.md` for a card above difficulty 2; a brief without the flag is unchanged; CI green.
+- **Refs**: RF-639, RF-641, DEC-185.
+
+### P6-23 - Follow-up: a card on the escalation model shows the owner's approval
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-04, P6-05
+- **Gate**: owner (DEC-185)
+- **Status**: Todo
+- **Reads**: `src/domain/planning/card-model-check.ts` (accepts the escalation model silently today), the card line writer of P6-04, the `checks.md` writer, RF-641, DEC-185.
+- **Do**:
+  - A card that uses the escalation model shows "escalation, owner approved" on its card line.
+  - `checks.md` lists such a card as a note that needs the owner's approval, without correcting anything.
+- **Delivers**: the card line and check change and tests.
+- **Done when**: a card on the escalation model shows the approval text on its line and in `checks.md`; a card on a tier model shows neither; CI green.
+- **Refs**: RF-641, DEC-185.
+
+### P6-24 - Follow-up: small gaps from the P6-10 review
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P6-10
+- **Gate**: owner (DEC-176)
+- **Status**: Todo
+- **Reads**: the verifier's PASS comment on the P6-10 pull request (#958), `tests/unit/domain/planning/phase-closing-cards.test.ts`, `src/domain/planning/foundation-cards.ts`, RF-630.
+- **Do**:
+  - Add a test that a phase with no cards gets no matrix card (the `own.length === 0` branch).
+  - Handle an empty last phase: the review card then has nothing waiting on it, so make it wait on the last phase that has cards, or state the rule and test it.
+- **Delivers**: the change and tests.
+- **Done when**: each gap has a passing test and a mutation of the branch fails one; recordings still replay.
+- **Refs**: RF-630, RF-635, P6-10.
+
+### P6-25 - Follow-up: small fixes from the P6-15 review
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-15
+- **Gate**: owner (DEC-178)
+- **Status**: Todo
+- **Reads**: the verifier's comment on the P6-15 pull request (#962), `src/infrastructure/cards/answers-sections.ts` (`optionsIn`, about line 85), `tests/unit/infrastructure/cards/answers-file-options.test.ts` (about line 146), `tests/unit/web/run-answers-options.test.tsx`, RF-645, RF-1007.
+- **Do**:
+  - Strip a leading "(Recommended) " from an answer that is not recommended when writing, so model text cannot fake the recommended mark and the write-parse round trip is exact.
+  - Make the hostile-text test assert the parsed answers and descriptions and the write-parse-write idempotence.
+  - Add a test that drives the choices by keyboard.
+- **Delivers**: the fix and tests.
+- **Done when**: the input `(Recommended) evil` with recommended=false parses back as not recommended; the hostile-text test would fail on the old code; a keyboard test passes.
+- **Refs**: RF-645, RF-1007, P6-15.
