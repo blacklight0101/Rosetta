@@ -54,12 +54,13 @@ describe('docs/runbooks/deploy.md: staging and release (DEC-175)', () => {
     expect(text).toMatch(/new value/iu);
   });
 
-  it('DEC-175 the Release to production section covers the pull request, the merge commit, 06:00, deploying now and the skip', async () => {
+  it('DEC-175 the Release to production section covers the pull request, the merge commit, 06:07 with backups until 07:59, deploying now and the skip', async () => {
     const text = section(await read('docs/runbooks/deploy.md'), '## Release to production');
 
     for (const fact of [
       'merge commit',
-      '06:00',
+      '06:07',
+      'backups until 07:59',
       'scheduled-release.yml',
       'Run workflow, branch `main`',
       'skip-staging-check',
