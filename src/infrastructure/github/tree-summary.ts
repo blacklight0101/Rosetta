@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 // RF-005, RF-152, DEC-183: what a snapshot tree comes to, built from the hash and size of each file.
 
 export interface TreeSummary {
@@ -13,7 +15,25 @@ export interface HashedFile {
   readonly bytes: number;
 }
 
-/** Placeholder until the summary is built from write-time hashes (P5-47). */
+/** Orders paths by code unit, as the tree hash has always done. */
+const byPath = (a: HashedFile, b: HashedFile): number =>
+  a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
+
+/**
+ * The count, the bytes and the `sha256:` hash of the sorted lines of path, NUL, file hash and newline.
+ * Whoever wrote the files hashed them, so this reads nothing (DEC-183); a walk of the written tree
+ * gives the same summary.
+ */
 export function summarizeTree(files: readonly HashedFile[]): TreeSummary {
-  return { fileCount: 0, totalBytes: 0, snapshotHash: `unset:${String(files.length)}` };
+  const hash = createHash('sha256');
+  let totalBytes = 0;
+  for (const file of [...files].sort(byPath)) {
+    totalBytes += file.bytes;
+    hash.update(`${file.path}\0${file.sha256}\n`);
+  }
+  return {
+    fileCount: files.length,
+    totalBytes,
+    snapshotHash: `sha256:${hash.digest('hex')}`,
+  };
 }

@@ -178,15 +178,15 @@ src/
     models/             model-list-file (`prices/models.yaml`, the models a role can be set to with their context window and maximum output, RF-405, DEC-156, Q-57)
     github/             github-hosts (allowlist), github-http-client (redirects, token, rate limits), github-api
                         (ref resolution), tarball-extractor (ADR-019 filter), snapshot-store (partial folders,
-                        hash, snapshot.json, read-only), snapshot-record (the three shapes of snapshot.json: GitHub, upload, workbook; `workbook-key` in the domain names the workbook folder beside the upload key), github-snapshot-fetcher, fake-source-fetcher
+                        hash, snapshot.json, read-only), tree-summary (the count, bytes and `snapshotHash` of a tree from the hash and size of each file; the store walks a tree for GitHub and zip snapshots, a workbook batch passes the hashes taken while it wrote, DEC-183), snapshot-record (the three shapes of snapshot.json: GitHub, upload, workbook; `workbook-key` in the domain names the workbook folder beside the upload key), github-snapshot-fetcher, fake-source-fetcher
     sources/            entry-guards (the path, device-name and counting checks that both extractors share), zip-extractor
                         (`YauzlZipExtractor`, ADR-022) with zip-entry-plan (the central-directory checks), zip-errors and zip-limits,
                         zip-upload-store (`ZipUploadStore`: free-space check, streaming under the limit with upload-intake, extraction, hash, snapshot,
                         read-only; RF-128, RF-129; it also reads, removes and removes by project the `workbook__` snapshots, and renders the
                         workbooks an unpacked zip holds in place with `workbook/zip-workbooks`, listing the ones it cannot render, RF-152, Q-41),
                         workbook-staging (`DiskWorkbookStaging`, the `WorkbookStaging` port, P3-48: a batch is a `.partial-batch-<id>` folder under
-                        `sources/`; each file streams to a `.part` that is renamed or removed; `workbook/workbook-publish` reads, renders and
-                        publishes every workbook of the batch or none, then deletes the staging folder), space-reservation (the one reservation of
+                        `sources/`; each file streams to a `.part` that is renamed or removed and is hashed as it streams (`receiveUpload`); `workbook/workbook-publish` reads, renders and
+                        publishes every workbook of the batch or none, hashing each rendered file as `writeRendered` writes it, so neither the uploads nor the tree are read again (DEC-183, P5-47), then deletes the staging folder), space-reservation (the one reservation of
                         free space, twice the limit, that the zip store and the batches share, DEC-149)
     sources/workbook/   the workbook package reader (RF-151, ADR-023, P3-44): `readWorkbook` opens an `.xlsx` or `.xlsm` with `yauzl` under the zip guards
                         (zip-entry-plan, entry-guards; nothing written to disk), streams each part into `saxes` through xml-stream (a document
