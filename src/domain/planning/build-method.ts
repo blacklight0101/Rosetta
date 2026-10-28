@@ -69,3 +69,9 @@ export function buildMethodDefaulted(given: BuildMethod | undefined): string[] {
     .filter((tier) => given.models?.[tier] === undefined)
     .map((tier) => `buildMethod.models.${tier}`);
 }
+
+/** The model the build method names for a tier, or undefined when it names none (RF-639). */
+// RF-639
+export function modelForTier(method: BuildMethod, tier: ModelTier): string | undefined {
+  return method.aiAssisted ? method.models?.[tier] : undefined;
+}
