@@ -13,11 +13,11 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 184     | 67        | 98         | 19        | 0                  | 107     | 69      | 8      | 122        | 0         |
-| P2 Full understand      | 50      | 11        | 32         | 7         | 0                  | 20      | 28      | 2      | 29         | 0         |
+| P2 Full understand      | 52      | 13        | 32         | 7         | 0                  | 22      | 28      | 2      | 31         | 0         |
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
 | P6 Agent build method   | 1       | 0         | 1          | 0         | 0                  | 0       | 1       | 0      | 0          | 0         |
-| **Total**               | **411** | **103**   | **278**    | **30**    | **0**              | **201** | **196** | **14** | **239**    | **0**     |
+| **Total**               | **413** | **105**   | **278**    | **30**    | **0**              | **203** | **196** | **14** | **241**    | **0**     |
 
 ## Conventions for every card
 
@@ -3130,7 +3130,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-49
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/eval/structure-score.ts` (REFERENCE_TYPE); `tests/unit/domain/eval/structure-score.test.ts`; the P2-49 verdict on #939.
 - **Do**: the exclusion of the noun "reference type" matches only after "a", "an", "the", "is" or "be", so "this reference type", "its reference type", "each reference type", "Reference types are ..." and "value types and reference types" now count as relations stated. Extend the exclusion to the other determiners and possessives and to the plural noun with no determiner, keeping the verb ("references type X", "reference types of brand") counted. Pin "is" with its own test (for example "which is reference type"), since today removing it leaves every test green.
 - **Delivers**: the wider exclusion; unit tests for each sentence above; the relation-word line of `docs/data-model.md` if it changes.
@@ -3145,7 +3145,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/unit/infrastructure/scan/packs/csharp/webforms-markup-hostile.test.ts`; `docs/conventions.md` (tests, determinism); the failed run on #940 (shard 2/3 of tests on windows-latest).
 - **Do**: "P5-31 anchors with no closing bracket is read in well under a second" took 1103 ms against its 1000 ms limit on a loaded Windows runner and turned `verify (windows-latest)` red on a pull request that does not touch it. Make the test prove the linear-time property without a tight wall-clock limit (for example compare the time of input n and 4n, or count steps), so it no longer depends on runner load.
 - **Delivers**: the reworked test; the same protection against a quadratic or catastrophic regex.
@@ -3160,7 +3160,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-50
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (owner check: time Build report with diagrams on the hosted URL, merged in #944)
 - **Reads**: `src/application/report/` (BuildReport), the run zip writer (`ReportZipWriter`), `tests/e2e/support/journey-pages.ts`; the P2-50 verdict on #940.
 - **Do**: P2-50 found that writing the run zip deflates the 5.5 MB `mermaid.min.js` (RF-508) and took 5 to 7 s on a Windows system drive, while the request waits for it. Measure Build report on a run with diagrams on the hosted Azure Files share (owner check, no provider spend). If it takes more than 2 s, store already-compressed assets such as `mermaid.min.js` without deflate (or write the zip after the response). Then give the 30 s wait of `buildReport` in the journey helper only to the journey with diagrams, back to the 5 s default for the others.
 - **Delivers**: the measurement in the pull request; the zip change if needed; the narrower wait.
@@ -3175,12 +3175,42 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `scripts/pre-push-tests.mjs`; ADR-025; `docs/orchestration/README.md` section 3.
 - **Do**: since DEC-175 task branches start from `develop`, but the pre-push hook still takes the merge base with `origin/main`, so it runs the tests of every change released since. Use the branch's upstream base (`origin/develop`, falling back to `origin/main` when `develop` does not exist).
 - **Delivers**: the hook change and its test.
 - **Done when**: on a branch cut from `develop`, the hook runs only the tests of the branch's own changes.
 - **Refs**: DEC-175, ADR-025, ADR-011.
+
+---
+
+### P2-55 - Follow-up: the other tests with a tight wall-clock limit
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P2-52
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/support/stopwatch.ts` (`growthOf`, P2-52); the P2-52 builder report on #946; `docs/conventions.md` (tests, determinism).
+- **Do**: P2-52 replaced the 1000 ms limits of the WebForms readers with a growth check, because a loaded Windows runner failed them. The same pattern remains in `sql-pack.test.ts` (3000 ms), `marker-skeleton-long-runs.test.ts`, `link-file-name.test.ts` (3000 ms), `external-paths-bounds.test.ts`, `parse-cards-untrusted.test.ts` (1000 ms), `code-map-scan.test.ts` (10 000 ms), the Ollama tag and context-probe tests and the secret-masker performance tests. For each, keep the protection it gives (linear time, a bounded loop) with `growthOf` and inputs below any internal cap, or a bound with at least 100x headroom over the measured time; leave a limit that only guards a timeout as it is and say so.
+- **Delivers**: the reworked tests; for each, a temporary mutation that makes it fail, described in the pull request.
+- **Done when**: no unit test fails on a loaded runner through a limit within 10x of its measured time, and each reworked test still fails on its mutation.
+- **Refs**: RNF-001, RNF-005, P2-52.
+
+---
+
+### P2-56 - Follow-up: local verify on Windows picks the WSL bash
+
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/runbooks/local.md`; the tests that spawn `bash` (`tests/support/workflow-yaml.ts` `runStep`, `tests/support/fake-gh.ts`, `tests/support/fake-az.ts`); the P2-52 builder report on #946.
+- **Do**: on the owner's Windows machine `bash` on `PATH` resolves to WSL, so the workflow and provisioning tests that run steps with `bash` fail locally while CI passes; with `C:\Program Files\Git\bin` first on `PATH` they pass. Make the test helpers use Git Bash on Windows (for example the `bash.exe` next to `git.exe`), or fail with a clear message naming the fix, and document it in the local runbook.
+- **Delivers**: the helper change and its test; the runbook note.
+- **Done when**: `npm run verify` passes on the owner's machine without changing `PATH`, or stops at once with the message.
+- **Refs**: RNF-005, ADR-011, P2-52.
 
 ---
 
