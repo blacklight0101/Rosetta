@@ -54,6 +54,16 @@ describe('RF-646 one list across an understand run and its Deepens', () => {
     expect(await world.list(1)).toMatchObject({ deepens: 1, isDeepen: true });
   });
 
+  it('RF-646 counts a Deepen only once it has ended, so the questions wait for it', async () => {
+    const world = await familyWorld([
+      { cards: [oq('OQ-001', cancel)], sections: [{ id: 'OQ-001', question: cancel }] },
+      { deepens: 0, cards: [oq('OQ-001', cancel)], sections: [], running: true },
+    ]);
+
+    expect(await world.list(0)).toMatchObject({ deepens: 0, isDeepen: false });
+    expect(await world.journey(0)).toMatchObject({ deepens: 0, isDeepen: false });
+  });
+
   it('RF-646 RF-1007 merges by the merge record of the cards: a survivor answered under a merged-away id', async () => {
     const world = await familyWorld([
       { cards: [oq('OQ-001', cancel)], sections: [{ id: 'OQ-001', question: cancel }] },

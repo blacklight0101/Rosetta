@@ -56,6 +56,8 @@ export interface RunSpec {
   readonly sections: readonly Section[];
   /** The ids of the cards marked Answered. */
   readonly answered?: readonly string[];
+  /** The run has not ended yet (a Deepen still running). */
+  readonly running?: boolean;
 }
 
 export const threeOptions: readonly SuggestedOption[] = [
@@ -123,7 +125,10 @@ async function seedRuns(stores: Stores, specs: readonly RunSpec[]): Promise<read
   for (const [index, spec] of specs.entries()) {
     const run = sampleRun({
       ...{ userId: project.userId, projectId: project.id, stage: 'understand' },
-      ...{ runKey: keyOf(index), queueState: 'Ended', endState: 'Completed' },
+      runKey: keyOf(index),
+      ...(spec.running === true
+        ? { queueState: 'Running', endState: null }
+        : { queueState: 'Ended', endState: 'Completed' }),
     });
     made.push(run);
     await runs.insert(run);

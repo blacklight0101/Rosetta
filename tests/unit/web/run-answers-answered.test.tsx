@@ -3,9 +3,11 @@ import { expect, it } from 'vitest';
 import { json, renderPage } from './fake-api.js';
 import { AnswersHarness } from './run-answers-harness.js';
 
-// RF-646, RF-1007, DEC-179: the Your questions page lists the questions still open first and the
-// answered ones in a collapsed "Answered" list that can be edited; a question raised in several runs is
-// listed once and its older answers are shown as text.
+// RF-646, RF-1007, DEC-179, DEC-154: the Your questions page lists the questions still open first and
+// the answered ones (a run used their answer) in a collapsed "Answered" list that can be edited; a
+// question whose answer is only saved stays with the open ones, so it can still be changed after the
+// page is read again. A question raised in several runs is listed once and its older answers are
+// shown as text.
 
 const runId = '2f0c4b1e-0000-4000-8000-000000000001';
 const route = `/api/runs/${runId}/answers`;
@@ -18,6 +20,7 @@ const row = (cardId: string, extra: Record<string, unknown>) => ({
 
 const answeredRow = row('OQ-002', {
   answer: 'Managers.',
+  state: 'Answered',
   runs: ['a', 'b'],
   history: [{ runKey: 'a', answer: '<b>Nobody</b>' }],
 });
@@ -74,4 +77,42 @@ it('RF-646 says no question waits when every question is answered', async () => 
   expect((await screen.findByTestId('no-open-questions')).textContent).toContain(
     'No question waits for an answer.',
   );
+});
+
+const options = [
+  { answer: 'Yes, show it', description: 'Keep the list.', recommended: true },
+  { answer: 'No, hide it', description: 'Hide the item.', recommended: false },
+];
+const savedRow = row('OQ-001', { answer: 'No, hide it', chosen: '2', options });
+const typed = 'Only while in stock.';
+
+it('RF-646 RF-645 a question with a saved answer stays with the open ones when the page is read again, and can be changed there', async () => {
+  const page = renderPage(<AnswersHarness runId={runId} ended />, {
+    [`GET ${route}`]: json(200, { questions: [savedRow], deepens: 1, isDeepen: false }),
+    [`PUT ${route}`]: json(200, {
+      questions: [{ ...savedRow, answer: typed, chosen: 'typed' }],
+    }),
+  });
+  const list = async () => within(await screen.findByRole('region', { name: 'Open questions' }));
+
+  expect((await screen.findByTestId('no-open-questions')).textContent).toContain(
+    'No question waits',
+  );
+  expect(screen.queryByTestId('answered-questions')).toBeNull();
+  expect((await list()).getByRole('radio', { name: /No, hide it/u })).toHaveProperty(
+    'checked',
+    true,
+  );
+  fireEvent.click((await list()).getByRole('radio', { name: 'Type your own answer' }));
+  fireEvent.input((await list()).getByLabelText('Answer to OQ-001'), { target: { value: typed } });
+  fireEvent.click((await list()).getByRole('button', { name: 'Save answer' }));
+
+  await waitFor(() => {
+    expect(screen.getByTestId('open-question').textContent).toContain(
+      'Answer saved in answers.md.',
+    );
+  });
+  expect(page.calls.filter((call) => call.method === 'PUT')).toHaveLength(1);
+  expect(screen.queryByTestId('answered-questions')).toBeNull();
+  expect(screen.getByLabelText('Answer to OQ-001')).toHaveProperty('value', typed);
 });
