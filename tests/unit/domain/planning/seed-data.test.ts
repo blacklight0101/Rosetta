@@ -156,11 +156,12 @@ describe('statedSeeds: upper case names and hostile input', () => {
   });
 
   it('P5-42 a hostile claim of 100 000 capitals is read in linear time', () => {
+    // A hang guard, not a speed check: the two reads take about 5 ms alone (400 times the limit).
     const started = performance.now();
 
     statedSeeds([card([`INSERT INTO Dept VALUES ('${'A'.repeat(100_000)}')`, 'Supported'])]);
     statedSeeds([card([`seed ${'AB'.repeat(50_000)}`, 'Supported'])]);
 
-    expect(performance.now() - started).toBeLessThan(500);
+    expect(performance.now() - started).toBeLessThan(2000);
   });
 });

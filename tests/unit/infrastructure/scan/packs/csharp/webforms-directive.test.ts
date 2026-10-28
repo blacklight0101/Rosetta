@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { codeBehindReference } from '../../../../../../src/infrastructure/scan/packs/csharp/webforms-directive.js';
-import { fastestOfMs, growthOf } from '../../../../../support/stopwatch.js';
+import { fastestOfMs, growthOf, growthStep, maxGrowth } from '../../../../../support/stopwatch.js';
 
 const page = (directive: string): string => `${directive}\n<html></html>\n`;
 
@@ -76,8 +76,8 @@ describe('WebForms code-behind link (part 2)', () => {
 });
 
 describe('WebForms code-behind link: linear time', () => {
-  // The reader looks at the first 65,536 characters only, so growth is measured below that cap (8 KB and
-  // 32 KB, each hostile shape filling the whole input) and the full-head case gets a generous absolute
+  // The reader looks at the first 65,536 characters only, so growth is measured below that cap (2 KB and
+  // 32 KB, 16 times, each hostile shape filling the whole input) and the full-head case gets a generous absolute
   // bound that load cannot reach but quadratic work in 64 KB would.
   const headLength = 65_536;
   const hostileShapes: readonly (readonly [string, (length: number) => string])[] = [
@@ -91,14 +91,14 @@ describe('WebForms code-behind link: linear time', () => {
     (_name, build) => {
       const { ratio, smallMs, largeMs } = growthOf(
         (text) => codeBehindReference('A.aspx', text),
-        build(8_192),
+        build(32_768 / growthStep),
         build(32_768),
       );
 
       expect(
         ratio,
-        `growth for 4x the input (8 KB ${smallMs.toFixed(3)} ms, 32 KB ${largeMs.toFixed(3)} ms)`,
-      ).toBeLessThan(8);
+        `growth for 16x the input (2 KB ${smallMs.toFixed(3)} ms, 32 KB ${largeMs.toFixed(3)} ms)`,
+      ).toBeLessThan(maxGrowth);
     },
   );
 
