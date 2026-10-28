@@ -3,6 +3,8 @@ import { modelForTier, resolveBuildMethod } from '../../domain/planning/build-me
 import type { BuildMethod } from '../../domain/planning/build-method.js';
 import { difficultyBands } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { grepRows, stackLanguages } from './handoff-grep-rules.js';
+import { handoffFiles } from './handoff-links.js';
 
 // RF-612, RF-640: the build protocol of an AI-assisted build, written in the package's own words:
 // who does what, which model tier takes which card, what happens when a review fails, how a card
@@ -132,29 +134,41 @@ const formatsSection: SectionWriter = () => [
   '',
 ];
 
-const greps: readonly (readonly [string, string])[] = [
-  ['`innerHTML`, `dangerouslySetInnerHTML`', 'Text from users and models is rendered as text'],
-  ['`eval(`, `new Function`', 'Nothing executes model output'],
-  ['`child_process`, `shell: true`', 'No shell commands from application code'],
-  ['`rejectUnauthorized`', 'TLS verification is never disabled'],
-  ['`Date.now(`, `Math.random(`', 'Time and ids come through ports'],
-  ['`console.`', 'Logging goes through the logger, outside the presentation layer'],
-  ['a key, token or password literal', 'No secret in code, tests or logs'],
-];
+function grepTableLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const rows = grepRows(handoff);
+  if (rows.length === 0) {
+    return [
+      'The package states no rule a search can check; the verifier checks the rules below by reading.',
+      '',
+    ];
+  }
+  return [
+    'The verifier searches the branch for these patterns and reports each hit that sits outside the place the rule allows. Each row comes from a principle, the style or the risk class of a card in this package.',
+    '',
+    '| Pattern | Rule | Stated by |',
+    '| ------- | ---- | --------- |',
+    ...rows.map(
+      (row) =>
+        `| ${row.patterns.map((each) => `\`${each}\``).join(', ')} | ${row.rule} | ${row.statedBy.map((each) => esc.inline(each)).join(', ')} |`,
+    ),
+    '',
+    ...(stackLanguages(handoff).length === 0
+      ? [
+          'No language is chosen in the stack, so only the patterns that hold in any language are listed; add those of the language when it is chosen.',
+          '',
+        ]
+      : []),
+  ];
+}
 
 const grepsSection: SectionWriter = (handoff, esc) => [
   '## Hard-rule greps',
   '',
-  'The verifier searches the branch for these patterns and reports each hit that sits outside the place the rule allows.',
-  '',
-  '| Pattern | Rule |',
-  '| ------- | ---- |',
-  ...greps.map(([pattern, rule]) => `| ${pattern} | ${rule} |`),
-  '',
+  ...grepTableLines(handoff, esc),
   ...(handoff.principles.length === 0
     ? []
     : [
-        'The chosen principles add these checks:',
+        'The chosen principles are checked by reading:',
         '',
         ...handoff.principles.map(
           (each) => `- ${esc.inline(each.title)}: ${esc.inline(each.check)}`,
@@ -180,7 +194,7 @@ export function orchestrationMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
   return [
     '# orchestration.md',
     '',
-    'The build protocol: who does what, which model takes which card, what happens when a review fails and when a pull request may merge. Start with [AGENTS.md](AGENTS.md).',
+    `The build protocol: who does what, which model takes which card, what happens when a review fails and when a pull request may merge. Start with [AGENTS.md](${handoffFiles.agents}).`,
     '',
     ...orchestrationSections.flatMap((each) => each(handoff, esc)),
   ].join('\n');

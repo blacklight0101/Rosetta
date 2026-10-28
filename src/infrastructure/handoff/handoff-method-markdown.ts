@@ -85,7 +85,7 @@ function replacedSystem(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   return upload === undefined ? esc.url(repository.url) : esc.inline(uploadSentence(upload));
 }
 
-const longRulesHeading = '## Long rules (they move to orchestration.md)';
+const longRulesHeading = '## Rules kept in this file';
 const unknownCommand = 'Unknown: decide it when the stack is set up';
 
 const commandRows: readonly (readonly [string, string])[] = [
@@ -153,12 +153,12 @@ function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   ];
 }
 
-/** The rules that wait here until `orchestration.md` takes them (P6-07). */
+/** The rules kept in this file; the build protocol is in `orchestration.md` (P6-07, RF-636). */
 function longRuleLines(): string[] {
   return [
     longRulesHeading,
     '',
-    'The sections below are the long rules of the build. They stay in this file until the build protocol has its own file; the start-here index above does not depend on them.',
+    `The sections below are the rules of the build kept in this file: task cards, quality, behaviour, operations and metrics. The build protocol (roles, bands, retry ladder, merge rules) is in [orchestration.md](${handoffFiles.orchestration}). The start-here index above does not depend on these sections.`,
     '',
     '## Task cards and difficulty',
     '',
