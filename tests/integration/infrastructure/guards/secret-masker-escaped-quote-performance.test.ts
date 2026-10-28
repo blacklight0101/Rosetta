@@ -1,14 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
-import { growthOf } from '../../../support/stopwatch.js';
+import { growthOf, growthStep, maxGrowth } from '../../../support/stopwatch.js';
 
 // P3-128 (RF-141): the escaped-quote rules read a value once. Hostile input with no closing quote must
 // grow about linearly. Integration level: the one real boundary is the wall clock. The masker has no
-// length cap, so each shape is built at 256 KB and at 1 MB.
-const oneMegabyte = 1024 * 1024;
-const smallSize = oneMegabyte / 4;
-/** Linear work takes about 4 times as long on 4 times the input; quadratic work about 16 times. */
-const maxGrowth = 8;
+// length cap, so each shape is built at 128 KB and at 2 MB (16 times).
+const smallSize = 128 * 1024;
+const largeSize = smallSize * growthStep;
 const bs = String.fromCharCode(92);
 const eq = `${bs}"`;
 
@@ -43,7 +41,7 @@ describe('SecretMasker on escaped quotes without a closing quote', () => {
     ['many opening quotes and no key', (size: number) => repeatTo(size, eq)],
     ['many keys with an empty value', (size: number) => repeatTo(size, `api_key=${eq}${eq} `)],
   ])('RF-141 masks %s in linear time', (_name, build) => {
-    const { ratio } = growthOf((text) => masker.mask(text), build(smallSize), build(oneMegabyte));
+    const { ratio } = growthOf((text) => masker.mask(text), build(smallSize), build(largeSize));
 
     expect(ratio).toBeLessThan(maxGrowth);
   });

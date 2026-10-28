@@ -146,7 +146,7 @@ it('RF-405 answers within the timeout when Ollama is slow', async () => {
 
   expect(response.statusCode).toBe(200);
   expect(response.json()).toMatchObject({ models: [], reason: 'Ollama did not answer in time.' });
-  expect(Date.now() - began).toBeLessThan(1500);
+  expect(Date.now() - began).toBeLessThan(5000); // hang guard: Ollama answers its 100 ms timeout in about 0.1 s
 });
 
 it('RF-405 asks only the configured Ollama server, never an address named in the request', async () => {

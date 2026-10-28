@@ -1,19 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { webFormsMarkup } from '../../../../../../src/infrastructure/scan/packs/csharp/webforms-markup.js';
-import { growthOf } from '../../../../../support/stopwatch.js';
+import { growthOf, growthStep, maxGrowth } from '../../../../../support/stopwatch.js';
 
 // P5-31, ADR-013, RNF-002: a hostile page costs the scan a bounded, linear amount of work. Each
-// input is built at two sizes, n and 4n. Linear work takes about four times as long on the larger
-// input and quadratic work about sixteen times, so the test checks the growth, not a wall-clock
+// input is built at two sizes, n and 16n. Linear work takes about sixteen times as long on the larger
+// input and quadratic work about 256 times, so the test checks the growth, not a wall-clock
 // limit that a loaded CI runner could break. A page past the work budget gives no markup (so no
 // markup claims) instead of hanging the scan.
 
-const size = 125_000;
+const size = 62_500;
 const repeatTo = (length: number, unit: string): string =>
   unit.repeat(Math.ceil(length / unit.length));
 
-/** Linear work is about 4 times on 4 times the input; this allows the constant factors and the noise. */
-const maxGrowth = 8;
 /** A generous cap that only a hang or a runaway reader can reach. */
 const hangMs = 10_000;
 
@@ -34,7 +32,7 @@ describe('the WebForms markup reader on hostile pages', () => {
     const { largeMs, ratio } = growthOf(
       (text) => webFormsMarkup('Hostile.aspx', text),
       build(size),
-      build(4 * size),
+      build(growthStep * size),
     );
 
     expect(ratio).toBeLessThan(maxGrowth);
