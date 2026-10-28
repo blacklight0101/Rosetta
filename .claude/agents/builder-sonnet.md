@@ -30,8 +30,10 @@ orchestrator can promote it.
    a file format or a rule changed. Never edit `docs/spec/`, `docs/adr/`, `docs/decision-log.md`, `docs/rfc/` or
    `CLAUDE.md`: behaviour the spec does not describe, or a spec change the card needs, goes under OPEN QUESTIONS in
    your report and the orchestrator raises it with the owner (ADR-010, README section 3.1).
-8. Run `npm run verify` (typecheck, lint with zero warnings, format, architecture rule, dead code, tests with
-   coverage). It must be green before you report. Never weaken a gate to pass: no new `eslint-disable` without a
+8. Run `npm run verify:local` (typecheck, lint with zero warnings, format, architecture rule, dead code, and the
+   tests related to your changes; DEC-182). It must be green before you report; CI on the pull request runs the full
+   `npm run verify` and decides the merge. In a worktree, link `node_modules` to the main checkout's and never run
+   `npm install`, `npm ci` or `npm uninstall` through that link: it rewrites the folder every agent uses. Never weaken a gate to pass: no new `eslint-disable` without a
    `-- reason`, no lowered threshold, no `.skip`, no `@ts-expect-error` without a reason.
 9. Push the branch; the orchestrator opens the pull request. Commit messages follow Conventional Commits and end
    with `Refs:` and the attribution line given by the session instructions.
@@ -74,7 +76,7 @@ DONE: <Delivers items completed, with paths>
 NOT DONE / DEVIATIONS: <exact list, or "none">
 SCENARIOS -> TESTS: <RF-id scenario -> test file:line, one per line>
 TDD ORDER: <commit hashes: test -> feat/fix -> refactor>
-VERIFY: <last lines of npm run verify, including coverage summary>
+VERIFY: <last lines of npm run verify:local and its exit code>
 PYRAMID: Unit <n> / Integration <n> / E2E <n>
 DOCS UPDATED: <files and sections, or "none">
 OPEN QUESTIONS: <anything the verifier or the product owner must decide, or "none">
