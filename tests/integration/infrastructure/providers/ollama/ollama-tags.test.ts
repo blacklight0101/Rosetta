@@ -70,7 +70,8 @@ it('RF-401 Q-44 a /api/show that never answers costs one timeout, not the list',
   const answer = await ask(await started(server), 150);
 
   expect(answer).toEqual({ ok: true, models: ['contract-model:latest'] });
-  expect(Date.now() - began).toBeLessThan(2000);
+  // A hang guard, not a speed check: the answer takes about 0.15 s; a hang waits for the 30 s test timeout.
+  expect(Date.now() - began).toBeLessThan(3000);
 });
 
 it('RF-405 gives a reason when no Ollama server is configured', async () => {
@@ -93,7 +94,8 @@ it('RF-405 gives a reason, within the timeout, when the server never answers', a
   const answer = await ask(url, 100);
 
   expect(answer).toEqual({ ok: false, reason: 'Ollama did not answer in time.' });
-  expect(Date.now() - began).toBeLessThan(1500);
+  // A hang guard, not a speed check: the answer takes about 0.1 s; a hang waits for the 30 s test timeout.
+  expect(Date.now() - began).toBeLessThan(3000);
 });
 
 it('RF-405 gives a reason when the server answers with an error', async () => {

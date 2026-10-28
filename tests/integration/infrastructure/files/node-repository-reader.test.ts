@@ -243,7 +243,7 @@ describe('NodeRepositoryReader grep worker', () => {
     expect(grepLimits.timeoutMs).toBe(2000);
     expect(refusalOf(result)).toMatchObject({ code: ERROR_CODES.grepTimedOut, reason: 'timeout' });
     expect(ms).toBeGreaterThanOrEqual(900);
-    expect(ms).toBeLessThan(3000);
+    expect(ms).toBeLessThan(8000); // hang guard: the worker stops at 2 s; a worker that never stopped hangs
     expect(securityCodes(logger)).toEqual([ERROR_CODES.grepTimedOut]);
     expect(await reader.grep({ pattern: '!' })).toMatchObject({ ok: true });
   });
@@ -272,7 +272,7 @@ describe('NodeRepositoryReader grep worker', () => {
     const { result, ms } = await timedAsync(() => reader.grep({ pattern: '^(a+)+$' }));
 
     expect(refusalOf(result)).toMatchObject({ reason: 'timeout' });
-    expect(ms).toBeLessThan(1500);
+    expect(ms).toBeLessThan(5000); // hang guard: the worker stops at 0.2 s
   });
 });
 

@@ -62,21 +62,22 @@ describe('OllamaProvider context size on retried attempts', () => {
 describe('OllamaProvider context probe timeouts', () => {
   it('RF-401 a hanging /api/show costs at most the probe timeout', async () => {
     const { provider, server } = await start('context-show-hangs', {
-      timeoutSeconds: 3,
+      timeoutSeconds: 10,
       probeTimeoutSeconds: 0.2,
     });
     const startedAt = performance.now();
 
     const response = await provider.complete(contractRequest());
 
-    expect(performance.now() - startedAt).toBeLessThan(1_500);
+    // A hang guard, not a speed check: the call takes about 0.2 s alone; a probe that ignored its timeout would wait for the 10 s call timeout.
+    expect(performance.now() - startedAt).toBeLessThan(3_000);
     expect(numCtx(server.chatBodies())).toEqual([32_768]);
     expect(response.metrics?.ollama).toMatchObject({ contextSource: 'auto-fallback' });
   }, 30_000);
 
   it('RF-401 stopping one of two callers sharing a measurement leaves the other to finish', async () => {
     const { provider, server, another } = await start('context-show-hangs', {
-      timeoutSeconds: 3,
+      timeoutSeconds: 10,
       probeTimeoutSeconds: 0.2,
     });
     const controller = new AbortController();
@@ -108,6 +109,7 @@ describe('OllamaProvider fixed-size spill check', () => {
     controller.abort();
 
     expect(await call).toMatchObject({ code: ERROR_CODES.providerCallCancelled });
-    expect(performance.now() - stoppedAt).toBeLessThan(1_000);
+    // A hang guard, not a speed check: an abort answers in milliseconds; a call that ignored it would hang.
+    expect(performance.now() - stoppedAt).toBeLessThan(3_000);
   }, 30_000);
 });

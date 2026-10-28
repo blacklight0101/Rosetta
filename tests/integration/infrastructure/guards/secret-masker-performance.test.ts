@@ -1,39 +1,41 @@
 import { describe, expect, it } from 'vitest';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { adversarialPieces, pkcs8Begin } from '../../../support/secret-fixture.js';
-import { fastestOfMs } from '../../../support/stopwatch.js';
+import { growthOf, growthStep, maxGrowth } from '../../../support/stopwatch.js';
 
-// Integration level: the one real boundary is the wall clock (conventions.md section 7).
-const oneMegabyte = 1024 * 1024;
-const budgetMs = 500;
+// Integration level: the one real boundary is the wall clock (conventions.md section 7). The masker has
+// no length cap, so each hostile shape is built at 128 KB and at 2 MB (16 times) and must grow about linearly.
+const smallSize = 128 * 1024;
+const largeSize = smallSize * growthStep;
 
 function repeatTo(size: number, piece: string): string {
   return piece.repeat(Math.ceil(size / piece.length)).slice(0, size);
 }
 
+function growthAt(masker: SecretMasker, build: (size: number) => string) {
+  return growthOf((text) => masker.mask(text), build(smallSize), build(largeSize));
+}
+
 describe('SecretMasker on hostile input', () => {
   const masker = new SecretMasker();
 
-  it.each(adversarialPieces)(
-    `RF-141 masks 1 MB of repeated %j within ${String(budgetMs)} ms`,
-    (piece) => {
-      const input = repeatTo(oneMegabyte, piece);
+  it.each(adversarialPieces)('RF-141 masks repeated %j in linear time', (piece) => {
+    const growth = growthAt(masker, (size) => repeatTo(size, piece));
 
-      expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
-    },
-  );
-
-  it('RF-141 masks 1 MB of text without line breaks after an unterminated key block in budget', () => {
-    const input = `${pkcs8Begin}${repeatTo(oneMegabyte, 'A')}`;
-
-    expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+    expect(growth.ratio).toBeLessThan(maxGrowth);
   });
 
-  it('RF-141 masks 1 MB without an @ after a scheme of many parts in budget (no length bound)', () => {
-    const scheme = Array.from({ length: 16 }, () => 'a').join('-');
-    const input = `${scheme}://user:${repeatTo(oneMegabyte, 'x')}`;
+  it('RF-141 masks text without line breaks after an unterminated key block in linear time', () => {
+    const growth = growthAt(masker, (size) => `${pkcs8Begin}${repeatTo(size, 'A')}`);
 
-    expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+    expect(growth.ratio).toBeLessThan(maxGrowth);
+  });
+
+  it('RF-141 masks a scheme of many parts without an @ in linear time (no length bound)', () => {
+    const scheme = Array.from({ length: 16 }, () => 'a').join('-');
+    const growth = growthAt(masker, (size) => `${scheme}://user:${repeatTo(size, 'x')}`);
+
+    expect(growth.ratio).toBeLessThan(maxGrowth);
   });
 
   it.each([
@@ -41,30 +43,27 @@ describe('SecretMasker on hostile input', () => {
     ['quoted scheme words', "'Bearer' "],
     ['mixed scheme words and double blanks', 'Basic  "Bearer" Negotiate  '],
     ['scheme words with many blanks', `Bearer${' '.repeat(40)}`],
-  ])(
-    `RF-141 masks 1 MB of --token and %s ending in a masked value within ${String(budgetMs)} ms`,
-    (_name, middle) => {
-      const option = ['-', '-', 'token'].join('');
-      const tail = ['[MASKED', 'bearer-token]'].join(':');
-      for (const head of [`${option} `, `${option}=`]) {
-        const input = `${head}${middle.repeat(Math.floor(oneMegabyte / middle.length))}${tail}`;
+  ])('RF-141 masks --token and %s ending in a masked value in linear time', (_name, middle) => {
+    const option = ['-', '-', 'token'].join('');
+    const tail = ['[MASKED', 'bearer-token]'].join(':');
+    for (const head of [`${option} `, `${option}=`]) {
+      const growth = growthAt(masker, (size) => `${head}${repeatTo(size, middle)}${tail}`);
 
-        expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
-      }
-    },
-  );
+      expect(growth.ratio).toBeLessThan(maxGrowth);
+    }
+  });
 });
 
 describe('SecretMasker on --token scheme words before a flag or an operator', () => {
   const masker = new SecretMasker();
 
   it.each([' --verbose', ' > out', ' ; ls'])(
-    `RF-141 masks 1 MB of --token and scheme words ending in %j within ${String(budgetMs)} ms`,
+    'RF-141 masks --token and scheme words ending in %j in linear time',
     (tail) => {
       const option = ['-', '-', 'token'].join('');
-      const input = `${option} ${repeatTo(oneMegabyte, 'Bearer ')}${tail}`;
+      const growth = growthAt(masker, (size) => `${option} ${repeatTo(size, 'Bearer ')}${tail}`);
 
-      expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+      expect(growth.ratio).toBeLessThan(maxGrowth);
     },
   );
 });
@@ -80,16 +79,13 @@ describe('SecretMasker on --token continuations, dash values and quoted values',
     ['backslash continuations', `Bearer ${backslash}\n`],
     ['caret continuations with CRLF', 'Bearer ^\r\n  '],
     ['backtick continuations and blanks', `Bearer${' '.repeat(8)}${backtick}${' '.repeat(8)}\n`],
-  ])(
-    `RF-141 masks 1 MB of --token and scheme words with %s within ${String(budgetMs)} ms`,
-    (_name, middle) => {
-      for (const tail of [maskedTail, ' --verbose', `${backslash}\n`]) {
-        const input = `${option} ${repeatTo(oneMegabyte, middle)}${tail}`;
+  ])('RF-141 masks --token and scheme words with %s in linear time', (_name, middle) => {
+    for (const tail of [maskedTail, ' --verbose', `${backslash}\n`]) {
+      const growth = growthAt(masker, (size) => `${option} ${repeatTo(size, middle)}${tail}`);
 
-        expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
-      }
-    },
-  );
+      expect(growth.ratio).toBeLessThan(maxGrowth);
+    }
+  });
 
   it.each([
     `${option} Bearer -`,
@@ -97,9 +93,9 @@ describe('SecretMasker on --token continuations, dash values and quoted values',
     `${option} Bearer-x "`,
     `${option} Bearer-x ${backslash}\n`,
     `${option} Bearer ${backslash}\n`,
-  ])(`RF-141 masks 1 MB of repeated %j within ${String(budgetMs)} ms`, (piece) => {
-    const input = repeatTo(oneMegabyte, piece);
+  ])('RF-141 masks repeated %j in linear time', (piece) => {
+    const growth = growthAt(masker, (size) => repeatTo(size, piece));
 
-    expect(fastestOfMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+    expect(growth.ratio).toBeLessThan(maxGrowth);
   });
 });
