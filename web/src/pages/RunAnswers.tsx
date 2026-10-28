@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { sectionTitles } from '../api/overview.js';
 import { waitsForAnswer, type OpenQuestionRow } from '../api/answers.js';
 import { Button } from '../components/Button.js';
@@ -230,8 +230,12 @@ function Items(props: ListProps & { readonly shown: Questions }): JSX.Element {
  */
 function QuestionLists(props: ListProps): JSX.Element {
   const [note, setNote] = useState('');
-  const open = props.questions.filter(waitsForAnswer);
-  const answered = props.questions.filter((question) => !waitsForAnswer(question));
+  // A question saved on this page stays where it is, with its message, until the page is read again.
+  const held = useRef(new Set<string>());
+  for (const question of props.questions.filter(waitsForAnswer)) held.current.add(question.cardId);
+  const stays = (question: OpenQuestionRow): boolean => held.current.has(question.cardId);
+  const open = props.questions.filter((question) => waitsForAnswer(question) || stays(question));
+  const answered = props.questions.filter((question) => !open.includes(question));
   const apply = (questions: Questions): void => {
     props.apply(questions);
     const left = questions.filter(waitsForAnswer).length;
