@@ -696,8 +696,13 @@ Generated skeleton, then edited by the user on the answers page (RF-240, RF-1007
 
 - Card: runs/20261010-140322-understand/cards/OQ/OQ-003.md
 - Context: Catalog/Default.aspx.cs:41-58 filters on ...
+- Options: (Recommended) Yes, show it greyed out - ...; No, hide it - ...; Yes, with a condition - ...
+- Chosen: 1
+- Runs: runs/20261010-140322-understand, runs/20261011-091500-understand
 - Answer:
 ```
+
+Options, chosen option and runs (added 2026-10-28, DEC-178, DEC-179, RF-645, RF-646): `- Options:` holds the card's three or more suggested answers on one line, the recommended one first and marked, each with its description; `- Chosen:` holds the number of the option the user chose, or `typed` for the user's own answer, and is empty while the question is open; `- Runs:` lists the runs whose cards raised the question, because the questions of an understand run and of its Deepens form one list. A section written before DEC-178 has none of the three lines and keeps its free answer line. When two answers to one question conflict after a merge of duplicates the newer wins and the older is kept in a `- History:` line, and no section is deleted.
 
 The heading carries the card id and the run, so a later run matches answers by card id and question text; an
 existing answer is never overwritten. `RunUnderstand` adds the `OQ` cards of the run when it ends (stopped runs
@@ -933,8 +938,8 @@ nothing is sent without `--yes` (RF-143). The tests drive the same code with the
 The answers saved by Plan setup (RF-605, ADR-018): `{ schemaVersion, savedAt, catalogueVersion,
 principles: [entryId], architecture: { style, recommended: [style], evidence: [cardId] },
 migration: "strangler-fig" | "parallel-change" | "rewrite", application?: "web" | "desktop" | "service" | "keep", stack: [{ layer, choice, custom, offered? }],
-context: { teamSize, experience, deadline, keepIntegrations: [text], dataMigration }, buildMethod: { aiAssisted },
-defaulted: [questionId] }`. `defaulted` lists the questions that took their default, so the package can list them
+context: { teamSize, experience, deadline, keepIntegrations: [text], dataMigration }, buildMethod: { aiAssisted, agentTool?, models? },
+defaulted: [questionId], chosen?: { [questionId]: optionId | "typed" } }`. `defaulted` lists the questions that took their default, so the package can list them
 as open questions (RF-604). Free-text answers are untrusted input: they reach the planner only inside labelled data
 blocks (ADR-013). `offered` (P5-25, optional, at most five texts) holds the options Plan setup showed for the layer when the choice was made; the stack decision record lists them. `application` (P5-39, optional) is the owner's answer to the kind of application; when it is absent the plan takes the kind from the code map and writes no answer back, and a saved choice never holds a `proposed` mark (the plan sets it in memory on a layer it proposes). `plan` copies the brief and the catalogue version into the run manifest (RNF-004).
 
