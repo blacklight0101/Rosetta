@@ -115,7 +115,10 @@ describe('DiskWorkbookStaging.publish while rendering (2)', () => {
       }),
     );
 
-    await expect(published).rejects.toMatchObject({ code: ERROR_CODES.uploadTimedOut });
+    await expect(published).rejects.toMatchObject({
+      code: ERROR_CODES.uploadTimedOut,
+      message: 'The upload rendering took too long.',
+    });
     expect(steps).not.toContain('saving');
     expect(await sourcesOf(dataDir)).toEqual([]);
   });
