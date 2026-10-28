@@ -130,6 +130,7 @@ export class DiskWorkbookStaging implements WorkbookStaging {
       return await publishWorkbooks(this.snapshots, {
         uploads: batch.files,
         ...{ projectId: request.projectId, uploadedAt: request.uploadedAt, check },
+        ...(request.onProgress === undefined ? {} : { onProgress: request.onProgress }),
         limits: this.limits,
         signal: AbortSignal.any([request.signal, bound]),
       });

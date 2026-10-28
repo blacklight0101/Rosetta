@@ -3,6 +3,8 @@ import type { Project } from './dependency-project.js';
 import type { RefBox } from './reference-box.js';
 import type { RefStore } from './dependency-store.js';
 
+const ROOTS_PER_TURN = 4096;
+
 // RF-153: circular references. The formula cells are the nodes; a formula has an edge to each formula
 // cell inside a box it reads. Strongly connected components are found with Tarjan's algorithm written
 // as a loop over an explicit stack (a chain of 100,000 cells must not overflow the call stack), and
@@ -94,9 +96,11 @@ class Search {
     return this.work;
   }
 
-  run(nodes: number): void {
+  /** Hands the server back every `ROOTS_PER_TURN` roots (RF-159). */
+  *run(nodes: number): Generator<void, void, undefined> {
     for (let root = 0; root < nodes && !this.stopped; root += 1) {
       if (at(this.index, root) < 0) this.from(root);
+      if (root % ROOTS_PER_TURN === ROOTS_PER_TURN - 1) yield;
     }
   }
 
@@ -181,14 +185,15 @@ class Search {
 }
 
 /** The circular references among `nodes` formula cells, within the step limit. */
-export function findCycles(
+/** The search, handing the server back while it runs (RF-159). */
+export function* findCyclesSteps(
   project: Project,
   store: RefStore,
   nodes: number,
   limits: CycleLimits,
-): CycleSearch {
+): Generator<void, CycleSearch, undefined> {
   const search = new Search(project, store, nodes, limits.maxCycleWork);
-  search.run(nodes);
+  yield* search.run(nodes);
   const sorted = [...search.found].sort((a, b) => at(a, 0) - at(b, 0));
   const listed = sorted.slice(0, limits.maxCyclesListed);
   return {
