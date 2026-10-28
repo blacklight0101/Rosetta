@@ -53,7 +53,7 @@ async function submit(client: ApiClient, projectId: string, draft: Draft): Promi
     : { problems, error: result.error };
 }
 
-// RF-605
+// RF-605. An answer changed while a save is on its way stays: the save replaces only the draft it sent.
 export function usePlanSetup(
   projectId: string,
   initial: BriefView,
@@ -68,7 +68,7 @@ export function usePlanSetup(
   const [error, setError] = useState<ApiFailure | undefined>(undefined);
   const [problems, setProblems] = useState<Problems>({});
   const save = useCallback(
-    async (then: 'next' | 'finish', sending: Draft): Promise<void> => {
+    async (then: 'next' | 'finish', sending: Draft, before: Draft): Promise<void> => {
       setSaving(true);
       setError(undefined);
       const saved = await submit(client, projectId, sending);
@@ -76,7 +76,7 @@ export function usePlanSetup(
       setProblems(saved.problems);
       if (saved.error !== undefined) setError(saved.error);
       if (saved.outOfDate === undefined) return;
-      setDraft(sending);
+      setDraft((current) => (current === before ? sending : current));
       setOutOfDate(saved.outOfDate);
       if (then === 'finish' || index === lastStep) setFinished(true);
       else setIndex(index + 1);
@@ -100,7 +100,7 @@ export function usePlanSetup(
     back: () => {
       setIndex(Math.max(0, index - 1));
     },
-    saveAndContinue: (accepted) => void save('next', accepted ?? draft),
-    useDefaults: () => void save('finish', draft),
+    saveAndContinue: (accepted) => void save('next', accepted ?? draft, draft),
+    useDefaults: () => void save('finish', draft, draft),
   };
 }

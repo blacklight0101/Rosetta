@@ -1,3 +1,4 @@
+import type { Page, Response } from '@playwright/test';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { expect, test } from './support/fixtures.js';
 import { openStartPage } from './support/live-run-page.js';
@@ -8,6 +9,20 @@ import { signInAs } from './support/sign-in.js';
 // RF-612, RF-639, DEC-176: the build method step of Plan setup in the browser. The spec has a file
 // of its own, so its `plan` account, project and brief are its own (account-key.ts): the step opens
 // on a brief that never answered the question, whatever plan-setup.spec.ts saved before it.
+
+const savedResponse = (page: Page): Promise<Response> =>
+  page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
+  );
+
+// "What I recorded" follows the draft on the page, not the saved brief, so a reload right after a
+// click on Save can beat the save: wait for the response of the save, the real signal that it landed.
+async function save(page: Page): Promise<void> {
+  const saved = savedResponse(page);
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  expect((await saved).ok()).toBe(true);
+}
 
 test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('plan', info.project.name));
@@ -36,7 +51,7 @@ test('RF-612 RF-639 the build method step asks agents or people, then the tool, 
   await page.getByRole('radio', { name: /^Codex/u }).check();
   await expect(page.getByLabel(/^Middle tier/u)).toHaveAttribute('placeholder', /middle model/u);
   await page.getByLabel(/^Middle tier/u).fill('gpt-mid');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await save(page);
   await expect(recorded(page)).toContainText(
     'Agents will build with Codex. Models: middle gpt-mid',
   );
@@ -50,13 +65,13 @@ test('RF-612 RF-639 the build method step asks agents or people, then the tool, 
   await expect(page.getByLabel(/^Middle tier/u)).toHaveCount(0);
   await page.getByLabel('Name of the tool').fill('Aider');
   await expect(page.getByLabel(/^Middle tier/u)).toHaveValue('gpt-mid');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await save(page);
   await expect(recorded(page)).toContainText(
     'Agents will build with Aider. Models: middle gpt-mid',
   );
 
   await people.check();
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await save(page);
   await expect(recorded(page)).toContainText('People will build');
   await expectNoSeriousViolations(page);
 });
@@ -82,10 +97,7 @@ test('RF-612 an answer changed while a save is on its way is kept when the save 
   });
   const people = page.getByRole('radio', { name: /^People will build/u });
   await page.getByRole('radio', { name: /^Agents will build/u }).check();
-  const saved = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
-  );
+  const saved = savedResponse(page);
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await people.check();
   release();
