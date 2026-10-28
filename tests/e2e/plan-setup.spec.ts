@@ -103,14 +103,17 @@ test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in
   await page.getByRole('button', { name: 'Save and continue' }).click();
   await page.getByLabel('Team size').fill('6');
   await page.getByRole('button', { name: 'Save and continue' }).click();
-  await page.getByRole('checkbox', { name: /AI agents/u }).check();
+  await page.getByRole('radio', { name: /^Agents will build/u }).check();
+  await page.getByRole('radio', { name: /^Claude Code/u }).check();
 
   await page.getByRole('button', { name: 'Save', exact: true }).click();
 
   await expect(recorded(page)).toContainText('Parallel Change');
   await expect(recorded(page)).toContainText('1 of 7 layers: On-premises Kubernetes');
   await expect(recorded(page)).toContainText('1 of 5 answered');
-  await expect(recorded(page)).toContainText('with AI-assisted build');
+  await expect(recorded(page)).toContainText(
+    'Agents will build with Claude Code. Models: smallest haiku, middle sonnet, largest opus',
+  );
   await expect(recorded(page).getByText('(default)').first()).toBeVisible();
   await page.reload();
   await expect(recorded(page)).toContainText('Parallel Change');

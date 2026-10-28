@@ -1,4 +1,5 @@
 import type { Catalogue } from '../../api/plan-schemas.js';
+import { methodLineOf } from './build-method.js';
 import { isAnswered, type Draft } from './draft.js';
 import { CONTEXT_FIELDS, STACK_LAYERS } from './steps.js';
 
@@ -63,8 +64,11 @@ function contextLine(draft: Draft): RecordedLine {
 }
 
 function methodLine(draft: Draft): RecordedLine {
-  const value = draft.aiAssisted ? 'with AI-assisted build' : 'without AI-assisted build';
-  return { key: 'Build method', value, isDefault: !isAnswered(draft, 'buildMethod') };
+  if (!isAnswered(draft, 'buildMethod')) {
+    const value = 'not answered yet: the package assumes people will build';
+    return { key: 'Build method', value, isDefault: true };
+  }
+  return { key: 'Build method', value: methodLineOf(draft), isDefault: false };
 }
 
 /** The six lines of "What I recorded", in step order. */
