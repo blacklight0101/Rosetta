@@ -22,6 +22,7 @@ import type { Run } from '../../domain/runs/run.js';
 import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
 import type { UnreadableItem } from '../../domain/planning/plan-draft.js';
 import { withFoundationCards } from '../../domain/planning/foundation-cards.js';
+import { withPhaseClosingCards } from '../../domain/planning/phase-closing-cards.js';
 import { placeOf } from './plan-repair.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
 import type { PlannedDocuments } from './plan-documents.js';
@@ -202,7 +203,7 @@ function unreadSecretItems(secrets: SecretRisks): HandoffPackage['leftOut'] {
   ];
 }
 
-/** P5-42: the plan with its fixed cards, with the brief's choices decided once over it. */
+/** P5-42, P6-10: the plan with its fixed and phase-closing cards, with the brief's choices decided once over it. */
 function decidedOf(
   content: PlanContent,
   parts: {
@@ -215,7 +216,9 @@ function decidedOf(
   catalogue: Catalogue,
 ): ReturnType<typeof decideOnce> {
   const { brief, sources, documents } = parts;
-  const withFixed = withFoundationCards(content, brief.migration, documents.dataModel.tables);
+  const withFixed = withPhaseClosingCards(
+    withFoundationCards(content, brief.migration, documents.dataModel.tables),
+  );
   return decideOnce(withFixed, brief, catalogue, evidenceOf(sources, documents.proposal));
 }
 
