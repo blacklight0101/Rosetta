@@ -86,7 +86,11 @@ export interface PlanningBrief {
   readonly defaulted: readonly string[];
   /** RF-645: the option answering each question, or "typed"; absent in a brief saved before DEC-178. */
   readonly chosen?: Readonly<Record<string, string>> | undefined;
-  /** RF-645: the text of a typed answer, by question id; absent when none was typed. */
+  /**
+   * RF-645: the text of a typed answer, by question id; absent when none was typed. Until typed
+   * answers reach the planner the text is only recorded: the question keeps its default and stays in
+   * `defaulted` (owner answer of 2026-10-28).
+   */
   readonly typed?: Readonly<Record<string, string>> | undefined;
 }
 
@@ -191,7 +195,6 @@ function architectureOf(given: BriefAnswers['architecture']): UnsavedBrief['arch
 }
 
 function defaultedQuestions(answers: BriefAnswers): string[] {
-  const typedIds = Object.keys(answers.typed ?? {});
   const given = answers.context;
   const answeredLayers = new Set((answers.stack ?? []).map((entry) => entry.layer));
   return [
@@ -203,7 +206,7 @@ function defaultedQuestions(answers: BriefAnswers): string[] {
       .filter((question) => given?.[question] === undefined || given[question] === null)
       .map((question) => `context.${question}`),
     ...buildMethodDefaulted(answers.buildMethod),
-  ].filter((id) => !typedIds.includes(id));
+  ];
 }
 
 function sortedRecord(

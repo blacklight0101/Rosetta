@@ -4,6 +4,12 @@
 /** The `chosen` value of a question answered with "Type your own answer". */
 export const TYPED = 'typed';
 
+/**
+ * Owner answer of 2026-10-28: until typed answers reach the planner, a typed answer to one of the
+ * text questions is recorded and shown, but the question keeps its default and stays defaulted.
+ */
+export const OWN_NOTE = 'Recorded; the plan uses the default until typed answers reach the planner';
+
 /** The questions whose typed answer is kept as text of its own; the others use their own field. */
 export const TEXT_QUESTIONS = ['principles', 'architecture', 'migration', 'buildMethod'] as const;
 

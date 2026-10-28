@@ -36,7 +36,7 @@ export function PlanOwnChoice(props: PlanOwnChoiceProps): JSX.Element {
         <Field
           kind="text"
           id={`own-${question}-text`}
-          label="Your own answer"
+          label="Your answer"
           value={draft.typed[question] ?? ''}
           error={problem === undefined ? undefined : { message: problem }}
           onInput={(text) => {

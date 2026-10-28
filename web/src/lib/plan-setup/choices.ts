@@ -73,12 +73,13 @@ export function chosen(draft: Draft, question: string, option: string): Draft {
   return { ...draft, chosen: option === '' ? rest : { ...rest, [question]: option } };
 }
 
-/** RF-645: the draft with a question answered by typing; an empty text keeps the choice but sends nothing. */
+/**
+ * RF-645: the draft with a question answered by typing; an empty text keeps the choice but sends
+ * nothing. The typed text does not answer the question's own field, so the question keeps its
+ * default and stays defaulted until typed answers reach the planner (owner, 2026-10-28).
+ */
 export function typeOwn(draft: Draft, question: string, text: string): Draft {
-  return withAnswered(
-    { ...chosen(draft, question, TYPED), typed: { ...draft.typed, [question]: text } },
-    [question],
-  );
+  return { ...chosen(draft, question, TYPED), typed: { ...draft.typed, [question]: text } };
 }
 
 /** RF-645: an option picked for a question that has no field of its own for a typed answer. */

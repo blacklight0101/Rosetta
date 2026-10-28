@@ -133,11 +133,13 @@ export function answersOf(draft: Draft): BriefAnswers {
   const stack = stackOf(draft);
   const asked = CONTEXT_FIELDS.filter((field) => answered(`context.${field}`));
   const context = contextOf(draft.context);
-  // A question answered by typing sends its text instead of an option; an empty text sends nothing.
+  // A question answered by typing sends its text instead of an option, and not its field, so it stays
+  // defaulted (owner, 2026-10-28); an empty text sends nothing.
   const plain = (id: string): boolean => answered(id) && draft.chosen[id] !== TYPED;
   const sends = (id: string): boolean => {
     if (TEXT_QUESTIONS.some((each) => each === id)) {
-      return answered(id) && !ownIsEmpty(draft.chosen, draft.typed, id);
+      if (draft.chosen[id] === TYPED) return !ownIsEmpty(draft.chosen, draft.typed, id);
+      return answered(id);
     }
     if (id.startsWith('stack.')) return stack.some((entry) => `stack.${entry.layer}` === id);
     return answered(id);

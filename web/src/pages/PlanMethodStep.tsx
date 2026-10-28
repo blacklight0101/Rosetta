@@ -63,9 +63,9 @@ const CARDS = [
   },
   {
     option: 'both',
-    title: 'Agents and people together',
+    title: 'Agents build, people review each change',
     aiAssisted: true,
-    note: `${AGENTS_GIVES} People lead and review every change; agents build the routine cards.`,
+    note: `${AGENTS_GIVES} Agents build every card and people review each change; the package is the same as for Agents will build.`,
   },
 ] as const;
 

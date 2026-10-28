@@ -176,8 +176,9 @@ const METHOD: readonly QuestionOption[] = [
   },
   {
     id: 'both',
-    title: 'Agents and people together',
-    description: 'People lead and review every change; agents build the routine cards.',
+    title: 'Agents build, people review each change',
+    description:
+      'Agents build every card and people review each change; the package is the same as for Agents will build.',
     recommended: false,
   },
 ];
