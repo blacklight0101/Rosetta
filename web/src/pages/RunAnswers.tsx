@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import { useRef, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import { sectionTitles } from '../api/overview.js';
 import { waitsForAnswer, type OpenQuestionRow } from '../api/answers.js';
 import { Button } from '../components/Button.js';
@@ -10,6 +10,7 @@ import { AnswerInput } from './AnswerChoices.js';
 import { sectionAnchor } from './AppOverview.js';
 import { useAnswerSave, type AnswerSave } from './use-answer-save.js';
 import { useFocusFirst, type FocusRequest } from './use-focus-first-question.js';
+import { useQuestionPlaces } from './use-question-places.js';
 import type { RunAnswersState } from './use-run-answers.js';
 import type { OverviewLoad } from './use-run-overview.js';
 
@@ -225,17 +226,12 @@ function Items(props: ListProps & { readonly shown: Questions }): JSX.Element {
 }
 
 /**
- * RF-646, RF-1007, DEC-179: the open questions first; the ones with an answer in a collapsed
+ * RF-646, RF-1007, DEC-179: the open questions first; the ones with an answer a run used in a collapsed
  * "Answered" list whose questions can be edited like the others. One list for the project.
  */
 function QuestionLists(props: ListProps): JSX.Element {
   const [note, setNote] = useState('');
-  // A question saved on this page stays where it is, with its message, until the page is read again.
-  const held = useRef(new Set<string>());
-  for (const question of props.questions.filter(waitsForAnswer)) held.current.add(question.cardId);
-  const stays = (question: OpenQuestionRow): boolean => held.current.has(question.cardId);
-  const open = props.questions.filter((question) => waitsForAnswer(question) || stays(question));
-  const answered = props.questions.filter((question) => !open.includes(question));
+  const { open, answered } = useQuestionPlaces(props.questions);
   const apply = (questions: Questions): void => {
     props.apply(questions);
     const left = questions.filter(waitsForAnswer).length;
@@ -248,13 +244,12 @@ function QuestionLists(props: ListProps): JSX.Element {
       <p class="rst-settings__note" role="status" data-testid="answers-status">
         {note}
       </p>
-      {open.length === 0 ? (
+      {props.questions.some(waitsForAnswer) ? null : (
         <p class="rst-settings__note" data-testid="no-open-questions">
           No question waits for an answer.
         </p>
-      ) : (
-        <Items {...props} apply={apply} shown={open} />
       )}
+      {open.length === 0 ? null : <Items {...props} apply={apply} shown={open} />}
       {answered.length === 0 ? null : (
         <details class="rst-p139-answered" data-testid="answered-questions">
           <summary>{`Answered (${String(answered.length)})`}</summary>
