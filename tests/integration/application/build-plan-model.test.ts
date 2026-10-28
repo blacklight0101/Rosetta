@@ -77,6 +77,6 @@ describe('RF-635 RF-639 the model and the verifier on the card line', () => {
 
     const [, cancel] = cardsOf(files);
     expect(cancel).toContain('\nDifficulty: 4 (middle model tier)\n');
-    expect(cancel).toContain('\nVerifier: middle model tier\n');
+    expect(cancel).toContain('\nVerifier: largest model tier\n');
   });
 });
