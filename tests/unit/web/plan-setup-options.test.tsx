@@ -46,6 +46,7 @@ describe('architecture step', () => {
           recommended: ['modular-monolith', 'hexagonal'],
           evidence: ['FEAT-001'],
         },
+        chosen: { architecture: 'hexagonal' },
       },
     ]);
   });
@@ -95,10 +96,10 @@ describe('stack step', () => {
     await ready();
     fireEvent.click(screen.getByRole('button', { name: 'Stack' }));
 
-    await screen.findByRole('radio', { name: 'database A' });
+    await screen.findByRole('radio', { name: /^database A/u });
     const layer = screen.getByRole('radiogroup', { name: 'Database' });
-    expect(within(layer).getByRole('radio', { name: 'database A' })).not.toBeNull();
-    expect(within(layer).getByRole('radio', { name: 'database B' })).not.toBeNull();
+    expect(within(layer).getByRole('radio', { name: /^database A/u })).not.toBeNull();
+    expect(within(layer).getByRole('radio', { name: /^database B/u })).not.toBeNull();
     expect(within(layer).getByLabelText('Your own for Database')).not.toBeNull();
     expect(screen.getAllByRole('radiogroup')).toHaveLength(7);
   });
@@ -109,10 +110,10 @@ describe('stack step answers', () => {
     const page = renderPlan();
     await ready();
     fireEvent.click(screen.getByRole('button', { name: 'Stack' }));
-    await screen.findByRole('radio', { name: 'database B' });
+    await screen.findByRole('radio', { name: /^database B/u });
     const database = screen.getByRole('radiogroup', { name: 'Database' });
 
-    fireEvent.click(within(database).getByRole('radio', { name: 'database B' }));
+    fireEvent.click(within(database).getByRole('radio', { name: /^database B/u }));
     fireEvent.input(screen.getByLabelText('Your own for Hosting'), {
       target: { value: 'On-premises Kubernetes' },
     });
@@ -135,6 +136,7 @@ describe('stack step answers', () => {
             offered: ['hosting A', 'hosting B'],
           },
         ],
+        chosen: { 'stack.database': 'b', 'stack.hosting': 'typed' },
       },
     ]);
   });

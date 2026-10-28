@@ -150,7 +150,7 @@ export class ZipUploadStore implements UploadStore {
     );
     const extraction = await this.extract(zipPath, filesDir, request.signal);
     await rm(zipPath, { force: true });
-    const books = await this.renderBooks(filesDir, request.signal);
+    const books = await this.renderBooks(filesDir, request);
     const summary = await this.snapshots.inspect(filesDir);
     const info: UploadSnapshotInfo = {
       kind: 'upload',
@@ -174,11 +174,13 @@ export class ZipUploadStore implements UploadStore {
   }
 
   /** RF-152, Q-41: renders the workbooks of the unpacked tree under the time bound of unpacking. */
-  private async renderBooks(filesDir: string, requestSignal: AbortSignal) {
+  private async renderBooks(filesDir: string, request: UploadRequest) {
+    const requestSignal = request.signal;
     const bound = AbortSignal.timeout(this.options.extractTimeoutMs ?? DEFAULT_EXTRACT_TIMEOUT_MS);
     const limits = this.options.workbookLimits ?? DEFAULT_WORKBOOK_LIMITS;
     try {
-      return await renderZipWorkbooks(filesDir, limits, AbortSignal.any([requestSignal, bound]));
+      const signal = AbortSignal.any([requestSignal, bound]);
+      return await renderZipWorkbooks(filesDir, limits, signal, request.onProgress);
     } catch (error) {
       if (requestSignal.aborted) throw stoppedBy(requestSignal, error);
       if (bound.aborted) throw uploadTimedOut('rendering workbooks');
