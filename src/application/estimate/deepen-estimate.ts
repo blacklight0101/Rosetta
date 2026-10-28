@@ -11,6 +11,8 @@ import { MERGE_ANSWER_TOKENS, MERGE_PROMPT_TOKENS } from '../consolidate/merge-r
 import { roundTasks } from '../deepen/deepen-tasks.js';
 import { latestScan } from '../deepen/latest-scan.js';
 import type { ModelList } from '../models/model-list.js';
+import type { AnswersFile } from '../ports/answers-file.js';
+import type { PriorCards } from '../ports/prior-cards.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderKeyRepository } from '../ports/provider-key-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -46,6 +48,9 @@ export interface DeepenEstimateDependencies {
   readonly priceTable: PriceTable;
   /** The shipped model list: the context window and output limit of each model (Q-57). */
   readonly models: ModelList;
+  /** DEC-179: the answers of the project the Deepen gives to its readers. */
+  readonly answers: Pick<AnswersFile, 'answeredQuestions'>;
+  readonly priorCards: PriorCards;
 }
 
 export interface DeepenEstimateRequest {
@@ -67,6 +72,8 @@ export interface DeepenEstimate {
     readonly outOfScope: number;
     /** EV-10: areas that failed and that the round reads again. */
     readonly failedAreas: number;
+    /** DEC-179: the answered questions of the project the first round gives to its readers. */
+    readonly answers: number;
     readonly unreadFiles: number;
     readonly unreadTokens: number;
   };
@@ -130,6 +137,7 @@ function planSummary(plan: RoundPlan): DeepenEstimate['plan'] {
     reread: plan.reread.length,
     outOfScope: plan.outOfScope.length,
     failedAreas: plan.failedAreas.length,
+    answers: 0,
     unreadFiles: plan.gaps.length,
     unreadTokens: plan.gaps.reduce((sum, gap) => sum + gap.tokens, 0),
   };
