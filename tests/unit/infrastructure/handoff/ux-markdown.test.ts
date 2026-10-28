@@ -3,7 +3,7 @@ import { dangerousIn } from '../../../support/render-markdown.js';
 import { noUx } from '../../../../src/domain/planning/target-ux.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
-import { handoffOf } from '../../../support/handoff-package-fixture.js';
+import { builtByPeople, handoffOf } from '../../../support/handoff-package-fixture.js';
 import { htmlProblems } from '../../../support/html-check.js';
 import { fakeOpenAiKey } from '../../../support/secret-fixture.js';
 import { uxOf } from '../../../support/ux-fixtures.js';
@@ -129,7 +129,8 @@ describe('ux/design-brief.md', () => {
 
 describe('ux/ and the package', () => {
   it('RF-620 the package README lists the user-interface material after the flows, linking the index', () => {
-    const readme = filesOf()['README.md'] ?? '';
+    const readme =
+      renderHandoff(builtByPeople(handoffOf('Plain text.')), masker)['README.md'] ?? '';
 
     const order = readme
       .split('\n')
