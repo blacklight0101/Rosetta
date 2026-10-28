@@ -8,6 +8,7 @@ import {
   readFileQuestionRefusal,
 } from '../../domain/cards/open-question-reading.js';
 import { cardLimits } from './card-limits.js';
+import { MIN_SUGGESTED_ANSWERS } from '../../domain/cards/suggested-answer.js';
 import { flowSchema, screenSchema, stepSchemaFields } from './flow-screen-schema.js';
 
 // RF-202, ADR-005: the strict shape of an agent's final answer. A card needs type, title, area,
@@ -28,6 +29,18 @@ export const agentClaimSchema = z.object({
   // RF-209: the rejected claim a Deepen re-read answers; a bad value is dropped, never the claim.
   replaces: z.string().trim().min(1).max(MAX_CLAIM_ID_CHARS).optional().catch(undefined),
 });
+
+/** RF-645, DEC-178: one suggested answer; its citation is optional because the code may not support it. */
+const suggestedAnswerSchema = z.object({
+  answer: text(cardLimits.maxAnswerChars),
+  description: text(cardLimits.maxQuestionChars),
+  recommended: z.boolean().default(false),
+  citations: z.array(citation).max(cardLimits.maxCitations).default([]),
+});
+
+const suggestedAnswersSchema = z.array(suggestedAnswerSchema).max(cardLimits.maxSuggestedAnswers);
+
+const suggestedAnswersNeeded = `An OQ card needs three suggested answers in suggestedAnswers: each with answer, description and recommended, exactly one marked recommended and listed first, and citations when the code supports the answer.`;
 
 type DetailField = 'question' | 'whyItMatters' | 'flow' | 'screen';
 
@@ -51,6 +64,7 @@ const cardShape = z.object({
   claims: z.array(agentClaimSchema).max(cardLimits.maxClaims).default([]),
   question: text(cardLimits.maxQuestionChars).optional(),
   whyItMatters: text(cardLimits.maxQuestionChars).optional(),
+  suggestedAnswers: suggestedAnswersSchema.optional(),
   flow: flowSchema.optional(),
   screen: screenSchema.optional(),
   // RF-209, DEC-158: the id of the card the parent run holds that a Deepen task's claims belong to;
@@ -70,10 +84,16 @@ function plainClaims(claims: ParsedCard['claims']): CardDraft['claims'] {
 }
 
 function draftOf(value: ParsedCard): CardDraft {
-  const { question, whyItMatters, flow, screen, claims, ...rest } = value;
+  const { question, whyItMatters, suggestedAnswers, flow, screen, claims, ...rest } = value;
   switch (value.type) {
     case 'OQ':
-      return { ...rest, claims: plainClaims(claims), question, whyItMatters };
+      return {
+        ...rest,
+        claims: plainClaims(claims),
+        question,
+        whyItMatters,
+        ...(suggestedAnswers === undefined ? {} : { suggestedAnswers }),
+      };
     case 'FLOW':
       return { ...rest, claims, flow };
     case 'SCRN':
@@ -94,6 +114,31 @@ function hasScreenClaims(value: ParsedCard): boolean {
   );
 }
 
+/** What is wrong with the list of suggested answers of an OQ card; empty when it is right. */
+function suggestedAnswerProblems(
+  answers: z.output<typeof suggestedAnswersSchema> | undefined,
+): string[] {
+  const problems: string[] = [];
+  if (answers === undefined) return problems;
+  if (answers.length < MIN_SUGGESTED_ANSWERS) {
+    problems.push(`${suggestedAnswersNeeded} Found ${String(answers.length)}; add at least three.`);
+    return problems;
+  }
+  if (answers.filter((each) => each.recommended).length !== 1) {
+    problems.push('Exactly one suggested answer must have recommended true.');
+  } else if (answers[0]?.recommended !== true) {
+    problems.push('The recommended suggested answer must be listed first.');
+  }
+  return problems;
+}
+
+/** RF-243: why the question is refused, or undefined when it may be asked. */
+function questionRefusal(question: string | undefined): string | undefined {
+  if (question === undefined) return undefined;
+  if (asksWhatCodeDoes(question)) return codeQuestionRefusal;
+  return asksWhatTheFileAnswers(question) ? readFileQuestionRefusal : undefined;
+}
+
 export const agentCardSchema = cardShape
   .superRefine((value, context) => {
     if (value.claims.length === 0 && !hasScreenClaims(value)) {
@@ -112,13 +157,18 @@ export const agentCardSchema = cardShape
         });
       }
     }
-    if (value.question !== undefined && asksWhatCodeDoes(value.question)) {
-      context.addIssue({ code: 'custom', path: ['question'], message: codeQuestionRefusal });
-    } else if (value.question !== undefined && asksWhatTheFileAnswers(value.question)) {
-      context.addIssue({ code: 'custom', path: ['question'], message: readFileQuestionRefusal });
+    const answers = value.type === 'OQ' ? suggestedAnswerProblems(value.suggestedAnswers) : [];
+    for (const message of answers) {
+      context.addIssue({ code: 'custom', path: ['suggestedAnswers'], message });
     }
+    const refusal = questionRefusal(value.question);
+    if (refusal !== undefined)
+      context.addIssue({ code: 'custom', path: ['question'], message: refusal });
   })
   .transform(draftOf);
+
+/** The message of an OQ card that has no suggested answers although its format asks for them. */
+export const missingSuggestedAnswers = suggestedAnswersNeeded;
 
 /** `{ "cards": [...] }`, at most `maxCards` cards. */
 export const agentCardsSchema = z.object({

@@ -137,13 +137,14 @@ describe('RF-634 the parallel groups of the roadmap', () => {
 
     const listed = new Map(cardsOf(files).map((card) => [card.slice(0, 5), filesOf(card)]));
     const groups = groupsOf(plain(files['roadmap.md']), 1);
-    // T-001 to T-003 are the skeleton, the data access and the harness; the planner's cards are T-004 to T-008.
+    // T-001 to T-003 are the skeleton, the data access and the harness; the planner's cards are T-004 to T-008; T-012 is the security review card.
     expect(groups).toEqual([
       ['T-001'],
       ['T-002'],
       ['T-003', 'T-004', 'T-006'],
       ['T-005', 'T-007'],
       ['T-008'],
+      ['T-012'],
     ]);
     for (const group of groups) {
       for (const [at, one] of group.entries()) {
@@ -166,8 +167,13 @@ describe('RF-634 the parallel groups of each phase', () => {
     const files = await packageWithoutEntities({}, recording);
 
     const roadmap = plain(files['roadmap.md']);
-    expect(groupsOf(roadmap, 1)).toEqual([['T-001'], ['T-002'], ['T-003', 'T-004']]);
-    expect(groupsOf(roadmap, 2)).toEqual([['T-005', 'T-006', 'T-007'], ['T-008']]);
+    expect(groupsOf(roadmap, 1)).toEqual([['T-001'], ['T-002'], ['T-003', 'T-004'], ['T-010']]);
+    expect(groupsOf(roadmap, 2)).toEqual([
+      ['T-005', 'T-006', 'T-007'],
+      ['T-008'],
+      ['T-009'],
+      ['T-011'],
+    ]);
     expect(cardsOf(files)[2]).toMatch(/\nDepends on:.*\[T-004\]\(tasks\.md#t-004\)\n/u);
   });
 
@@ -177,7 +183,7 @@ describe('RF-634 the parallel groups of each phase', () => {
     const off = { buildMethod: { aiAssisted: false } } as const;
     const unassisted = await packageOf(off, plannerAnswering(overlappingCards));
     for (const each of [files, unassisted]) {
-      expect(groupsOf(plain(each['roadmap.md']), 1)).toHaveLength(6);
+      expect(groupsOf(plain(each['roadmap.md']), 1)).toHaveLength(7);
     }
   });
 });

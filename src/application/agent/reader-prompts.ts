@@ -44,6 +44,11 @@ interface SurfacePrompts {
   readonly screens: PromptFile;
 }
 
+/** RF-645: the card format from v3 asks every OQ card for suggested answers; earlier ones do not. */
+export function asksSuggestedAnswers(cardFormat: PromptFile): boolean {
+  return Number(cardFormat.version.slice(1)) >= 3;
+}
+
 /** The one placeholder each template prompt must hold. */
 export const readerPlaceholders = {
   task: '{{area}}',
