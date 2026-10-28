@@ -155,10 +155,7 @@ function Earlier({ question }: { readonly question: OpenQuestionRow }): JSX.Elem
           <p>Earlier answers, kept in answers.md:</p>
           <ul>
             {history.map((each) => (
-              <li
-                key={`${each.runKey}
-${each.answer}`}
-              >
+              <li key={[each.runKey, each.answer].join('\n')}>
                 <RenderedText text={each.answer} />
               </li>
             ))}
