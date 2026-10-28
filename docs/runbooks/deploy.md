@@ -18,7 +18,7 @@ the HTTPS redirect of the app, the ZAP baseline in CI and the RNF-017 script are
 | Provisioning workflow      | `.github/workflows/azure-provision.yml`                      | `tests/integration/tooling/azure-provision-workflow.test.ts`                          |
 | Release and deploy         | `.github/workflows/release.yml`                              | `tests/integration/tooling/release-workflow.test.ts`, `release-staging-check.test.ts` |
 | Staging deploy             | `.github/workflows/staging.yml`                              | `tests/integration/tooling/staging-workflow.test.ts`                                  |
-| Release at 06:00 Madrid    | `.github/workflows/scheduled-release.yml`                    | `tests/integration/tooling/scheduled-release-workflow.test.ts`                        |
+| Release at 06:07 Madrid    | `.github/workflows/scheduled-release.yml`                    | `tests/integration/tooling/scheduled-release-workflow.test.ts`                        |
 | Smoke script               | `scripts/smoke.mjs`                                          | `tests/integration/scripts/smoke.test.ts`; the `compose-smoke` job of CI              |
 | HTTP to HTTPS redirect     | `src/presentation/web/https-redirect.ts`                     | `tests/integration/presentation/web/https-redirect.test.ts`                           |
 | OWASP ZAP baseline         | job `zap-baseline` of `.github/workflows/ci.yml`             | runs on every pull request and push to `main`; summary in the job summary             |
@@ -169,7 +169,7 @@ Owner steps, once, in order (none holds a value; the values come from the passwo
 ## Release and image
 
 `release.yml` runs on a pushed `v*` tag, by hand (Actions, Release, Run workflow, branch `main`) or when
-`scheduled-release.yml` starts it at 06:00 Madrid (section Release to production); never on a pull request or a push
+`scheduled-release.yml` starts it at 06:07 Madrid, backups until 07:59 (section Release to production); never on a pull request or a push
 to `main`.
 
 - **image**: checks that a tag is `v` plus the version of `package.json` and that the commit is on `main`, builds the
@@ -195,12 +195,12 @@ DEC-175, ADR-025. Teachers may sign in at any time, so nothing reaches productio
 3. The owner checks the batch on the staging URL and merges the pull request with **Create a merge commit**, never
    squash or rebase: the deploy needs the merge commit, whose second parent is the `develop` commit staging deployed.
    For a version, the owner then tags that merge commit `vX.Y.Z` (section Release and image).
-4. At 06:00 Europe/Madrid the next morning, `scheduled-release.yml` starts Release on `main` (once per head commit
+4. At 06:07 Europe/Madrid the next morning (backups until 07:59), `scheduled-release.yml` starts Release on `main` (once per head commit
    of `main`; only while `ROSETTA_DEPLOY_ENABLED` is `true`). Release rebuilds the image from `main` and deploys it
    (section Deploy) only when the ZAP baseline passed on the commit, its tree equals the tree of its `develop`
    parent, and `deploy (staging)` passed on that parent. While the repository variable `ROSETTA_STAGING_ENABLED` is not `true` (no staging app yet), the check is skipped with a warning in the job summary (`staging is not enabled; the staging check is skipped (DEC-175)`), so a squash commit on `main` deploys too; once it is `true` the check is enforced and only `skip-staging-check` overrides it.
-5. To deploy at once instead of at 06:00, once CI on `main` has passed the `zap-baseline` check:
-   Actions, Release, Run workflow, branch `main`. The 06:00 run then sees a successful run of that commit and does
+5. To deploy at once instead of at 06:07, once CI on `main` has passed the `zap-baseline` check:
+   Actions, Release, Run workflow, branch `main`. The 06:07 run then sees a successful run of that commit and does
    nothing.
 6. Emergency only: the same with the input `skip-staging-check` ticked, which deploys without the staging check and
    writes a warning in the job summary. A fix still goes through `develop` and a release pull request afterwards, so
@@ -209,7 +209,7 @@ DEC-175, ADR-025. Teachers may sign in at any time, so nothing reaches productio
 
 ## Deploy
 
-`scheduled-release.yml` starts it at 06:00 Madrid (section Release to production); to deploy at once, start it from
+`scheduled-release.yml` starts it at 06:07 Madrid, backups until 07:59 (section Release to production); to deploy at once, start it from
 Actions, Release, Run workflow, branch `main` (deploys come from `main` only; a tag run is refused by the
 environment). The order of `docs/environments-and-delivery.md` section 10 step 4, as the deploy job of
 `release.yml` runs it, one deploy at a time and never cancelled half-way:
