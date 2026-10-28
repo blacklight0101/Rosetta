@@ -110,3 +110,61 @@ describe('the kind of application (P5-39)', () => {
     expect(parseBriefAnswers({ stack })).toBeUndefined();
   });
 });
+
+describe('buildMethod: agent tool and models', () => {
+  const method = { aiAssisted: true, agentTool: { kind: 'claude-code' } };
+
+  it('RF-612 a brief saved before the agent tool existed still parses as people building', () => {
+    const old = { ...saved, buildMethod: { aiAssisted: false } };
+
+    expect(parsePlanningBrief(old)?.buildMethod).toEqual({ aiAssisted: false });
+  });
+
+  it.each([
+    ['claude-code', { kind: 'claude-code' }],
+    ['codex', { kind: 'codex' }],
+    ['another tool with a name', { kind: 'other', name: 'Aider' }],
+  ])('RF-639 reads the agent tool %s in a save', (_name, agentTool) => {
+    const body = { buildMethod: { aiAssisted: true, agentTool } };
+
+    expect(parseBriefAnswers(body)).toEqual(body);
+  });
+
+  it('RF-639 reads a model per tier and an escalation model', () => {
+    const body = {
+      buildMethod: {
+        ...method,
+        models: { smallest: 'haiku', middle: 'sonnet', largest: 'opus', escalation: 'fable' },
+      },
+    };
+
+    expect(parseBriefAnswers(body)).toEqual(body);
+    expect(parsePlanningBrief({ ...saved, ...body })?.buildMethod).toEqual(body.buildMethod);
+  });
+
+  it('RF-639 reads a missing model: a tier may be left out', () => {
+    const body = { buildMethod: { ...method, models: { middle: 'sonnet' } } };
+
+    expect(parseBriefAnswers(body)).toEqual(body);
+  });
+});
+
+describe('buildMethod: refused shapes', () => {
+  const method = { aiAssisted: true, agentTool: { kind: 'claude-code' } };
+
+  it.each([
+    ['another tool without a name', { aiAssisted: true, agentTool: { kind: 'other' } }],
+    [
+      'another tool with a blank name',
+      { aiAssisted: true, agentTool: { kind: 'other', name: ' ' } },
+    ],
+    ['a named Claude Code', { aiAssisted: true, agentTool: { kind: 'claude-code', name: 'x' } }],
+    ['an unknown tool', { aiAssisted: true, agentTool: { kind: 'copilot' } }],
+    ['a blank model', { ...method, models: { middle: ' ' } }],
+    ['a model over 80 characters', { ...method, models: { middle: 'm'.repeat(81) } }],
+    ['an unknown tier', { ...method, models: { huge: 'x' } }],
+  ])('RF-639 refuses %s', (_name, buildMethod) => {
+    expect(parseBriefAnswers({ buildMethod })).toBeUndefined();
+    expect(parsePlanningBrief({ ...saved, buildMethod })).toBeUndefined();
+  });
+});
