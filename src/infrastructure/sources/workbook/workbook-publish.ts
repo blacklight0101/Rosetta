@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { rm } from 'node:fs/promises';
 import type { WorkbookSnapshotInfo } from '../../../application/ports/source-fetcher.js';
-import type { LeftOut, PublishedWorkbooks } from '../../../application/ports/workbook-staging.js';
+import type {
+  LeftOut,
+  ProgressListener,
+  PublishedWorkbooks,
+  WorkbookProgress,
+} from '../../../application/ports/workbook-staging.js';
 import type { WorkbookEntry } from '../../../domain/sources/source.js';
 import { workbookSnapshotKey } from '../../../domain/sources/workbook-key.js';
 import type { SnapshotStore } from '../../github/snapshot-store.js';
@@ -9,10 +14,11 @@ import { LimitCounter } from '../entry-guards.js';
 import { namedRefusal } from './file-refusal.js';
 import type { WorkbookLimits } from './workbook-limits.js';
 import type { WorkbookModel } from './workbook-model.js';
+import { cellsOf } from './render-steps.js';
 import { readWorkbook } from './workbook-reader.js';
 import {
   DEFAULT_MAX_TOTAL_BYTES,
-  renderProject,
+  renderProjectAsync,
   WORKBOOK_RENDERER_VERSION,
   type RenderedWorkbook,
 } from './workbook-renderer.js';
@@ -39,14 +45,36 @@ export interface PublishInput {
   readonly signal: AbortSignal;
   /** Throws the reason when the request was stopped or the time bound passed. */
   readonly check: () => void;
+  /** Told where reading, rendering and saving have got to (RF-159). */
+  readonly onProgress?: ProgressListener;
+}
+
+const optional = (onProgress: ProgressListener | undefined): { onProgress?: ProgressListener } =>
+  onProgress === undefined ? {} : { onProgress };
+
+/** The last report: everything is read and rendered and the tree is being written. */
+function savingOf(models: readonly WorkbookModel[]): WorkbookProgress {
+  const sheets = models.reduce((sum, model) => sum + model.sheets.length, 0);
+  return {
+    ...{ step: 'saving', workbook: models.length, workbooks: models.length },
+    ...{ sheet: sheets, sheets, cells: cellsOf(models) },
+  };
 }
 
 /** Reads every workbook of the batch; the cells are counted for the whole project (RF-151). */
 async function readAll(input: PublishInput): Promise<WorkbookModel[]> {
   const cells = new LimitCounter(input.limits.maxCells);
   const models: WorkbookModel[] = [];
-  for (const upload of input.uploads) {
+  for (const [index, upload] of input.uploads.entries()) {
     input.check();
+    const workbook = { workbook: index + 1, workbooks: input.uploads.length };
+    input.onProgress?.({
+      step: 'reading',
+      ...workbook,
+      sheet: 0,
+      sheets: 0,
+      cells: cellsOf(models),
+    });
     try {
       const file = { path: upload.path, fileName: upload.fileName };
       models.push(await readWorkbook(file, input.limits, cells, input.signal));
@@ -103,9 +131,15 @@ export async function publishWorkbooks(
 ): Promise<PublishedWorkbooks> {
   const models = await readAll(input);
   input.check();
-  const project = renderProject(models, { maxTotalBytes: DEFAULT_MAX_TOTAL_BYTES });
+  const pacing = { check: input.check, ...optional(input.onProgress) };
+  const project = await renderProjectAsync(
+    models,
+    { maxTotalBytes: DEFAULT_MAX_TOTAL_BYTES },
+    pacing,
+  );
   const rendered = project.workbooks;
   input.check();
+  input.onProgress?.(savingOf(models));
   const { dir, filesDir } = await snapshots.createPartial(randomUUID());
   try {
     for (const book of rendered) await writeRendered(filesDir, '', book);
