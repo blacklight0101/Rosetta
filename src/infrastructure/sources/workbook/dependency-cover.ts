@@ -110,7 +110,6 @@ function coverSheet(
   return covered;
 }
 
-/** For each sheet (by id), 1 for the cells some formula reads, in the reading order of its grid. */
 /** The covering pass, handing the server back after each sheet (RF-159). */
 export function* coverageSteps(
   project: Project,
