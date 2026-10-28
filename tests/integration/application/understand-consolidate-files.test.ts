@@ -23,6 +23,18 @@ describe('an understand run: files of a merge that cannot be removed', UNDERSTAN
         claims: [{ text: 'The page shows every item.', citations: ['Default.aspx.cs:8-12'] }],
         question: 'Is any id allowed?',
         whyItMatters: 'The new system must refuse the same ids.',
+        suggestedAnswers: [
+          {
+            answer: 'No, ids are checked',
+            description: 'The service refuses unknown ids.',
+            recommended: true,
+          },
+          { answer: 'Yes, any id', description: 'The page lists whatever exists.' },
+          {
+            answer: 'Yes, within one account',
+            description: 'Ids are limited to the signed-in account.',
+          },
+        ],
       },
     ],
   });

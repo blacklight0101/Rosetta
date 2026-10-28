@@ -14,6 +14,7 @@ function isPlain(value: unknown): value is Plain {
 const detailNeededBy: Readonly<Record<string, string>> = {
   question: 'OQ',
   whyItMatters: 'OQ',
+  suggestedAnswers: 'OQ',
   flow: 'FLOW',
   screen: 'SCRN',
 };

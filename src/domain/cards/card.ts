@@ -1,6 +1,7 @@
 import { err, ok, type Result } from '../errors/result.js';
 import type { CardType, ClaimStatus, Confidence, OpenQuestionState } from './card-vocabulary.js';
 import type { Citation } from './citation.js';
+import type { SuggestedAnswer } from './suggested-answer.js';
 import { collapseClaims } from './claim-dedupe.js';
 import { canTransitionClaim } from './claim-transitions.js';
 import {
@@ -63,6 +64,8 @@ export interface Card {
   /** `OQ` cards only. */
   readonly question?: string;
   readonly whyItMatters?: string;
+  /** RF-645, DEC-178: absent on an `OQ` saved before the change. */
+  readonly suggestedAnswers?: readonly SuggestedAnswer[];
   readonly questionState?: OpenQuestionState;
   readonly mergedFrom?: readonly string[];
   /** The areas of the merged cards, in card order, when the card is a merge (RF-250). */
@@ -95,6 +98,7 @@ export interface CardInput {
   readonly claims: readonly ClaimInput[];
   readonly question?: string | undefined;
   readonly whyItMatters?: string | undefined;
+  readonly suggestedAnswers?: readonly SuggestedAnswer[] | undefined;
   readonly flow?: FlowDetail | undefined;
   readonly screen?: ScreenInput | undefined;
   readonly note?: string | undefined;
@@ -104,7 +108,10 @@ export type CardProblem =
   'no-claims' | 'claim-without-citation' | 'question-missing' | DetailProblem;
 export type ClaimTransitionProblem = 'claim-not-found' | 'transition-not-allowed';
 
-type QuestionFields = Pick<Card, 'question' | 'whyItMatters' | 'questionState'>;
+type QuestionFields = Pick<
+  Card,
+  'question' | 'whyItMatters' | 'questionState' | 'suggestedAnswers'
+>;
 
 function questionFields(input: CardInput): Result<QuestionFields, CardProblem> {
   if (input.type !== 'OQ') return ok({});
@@ -113,6 +120,7 @@ function questionFields(input: CardInput): Result<QuestionFields, CardProblem> {
     question: input.question,
     whyItMatters: input.whyItMatters,
     questionState: 'Open',
+    ...(input.suggestedAnswers === undefined ? {} : { suggestedAnswers: input.suggestedAnswers }),
   });
 }
 

@@ -38,7 +38,7 @@ describe('BuildPlan: the recorded answer of a small model that writes positions 
     const written = await h.handoffOf(run);
     const cards = plain(written['tasks.md']).split(/^## /mu).slice(1);
     expect(cards.map((each) => each.split('\n')[0])).toEqual([
-      ...Array.from({ length: 13 }, (_, at) => `T-${String(at + 1).padStart(3, '0')}`),
+      ...Array.from({ length: 16 }, (_, at) => `T-${String(at + 1).padStart(3, '0')}`),
     ]);
     expect(plain(written['checks.md'])).toContain('Every item is built by at least one task card.');
     expect(h.s.logger.entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1806' }));

@@ -49,6 +49,21 @@ const card: DeepRequired<Card> = {
   claims: [claim],
   question: 'Who may cancel?',
   whyItMatters: 'It decides the refund.',
+  suggestedAnswers: [
+    {
+      answer: 'The clerk',
+      description: 'Only the clerk.',
+      recommended: true,
+      citations: [cite(1, 2)],
+    },
+    { answer: 'Anyone', description: 'No check.', recommended: false, citations: [] },
+    {
+      answer: 'Anyone, with a condition',
+      description: 'Within a day.',
+      recommended: false,
+      citations: [],
+    },
+  ],
   questionState: 'Answered',
   mergedFrom: ['FLOW-001', 'FLOW-007'],
   mergedAreas: ['orders', 'billing'],
