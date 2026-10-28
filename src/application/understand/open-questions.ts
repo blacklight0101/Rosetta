@@ -1,6 +1,6 @@
 import type { Card } from '../../domain/cards/card.js';
 import { formatCitation } from '../../domain/cards/citation.js';
-import type { OpenQuestion } from '../ports/answers-file.js';
+import type { OpenQuestion, SuggestedOption } from '../ports/answers-file.js';
 
 // RF-243, RF-240, DEC-136: the open questions of a run as `answers.md` gets them. The same
 // question asked by several areas, or twice in one (Q-52), is one question that keeps every citation; the questions are
@@ -82,6 +82,17 @@ function areaOrder(groups: readonly Group[]): readonly string[] {
     .map((entry) => entry.area);
 }
 
+/** RF-645: the suggested answers of the card, as `answers.md` holds them; none on an older card. */
+function optionsOf(card: Card | undefined): readonly SuggestedOption[] | undefined {
+  const answers = card?.suggestedAnswers;
+  if (answers === undefined || answers.length === 0) return undefined;
+  return answers.map(({ answer, description, recommended }) => ({
+    answer,
+    description,
+    recommended,
+  }));
+}
+
 // RF-243
 export function openQuestionsOf(cards: readonly Card[], runKey: string): readonly OpenQuestion[] {
   const groups = groupsOf(cards);
@@ -96,11 +107,13 @@ export function openQuestionsOf(cards: readonly Card[], runKey: string): readonl
     );
   return ordered.map(({ group }): OpenQuestion => {
     const [first] = group.cards;
+    const options = optionsOf(first);
     return {
       cardId: first?.id ?? '',
       runKey,
       question: first?.question ?? first?.title ?? '',
       context: contextOf(group.cards),
+      ...(options === undefined ? {} : { options }),
     };
   });
 }

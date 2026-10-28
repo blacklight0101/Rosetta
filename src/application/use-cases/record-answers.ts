@@ -17,7 +17,7 @@ export interface RecordAnswersDependencies {
   readonly cards: PriorCards;
 }
 
-export type RecordAnswersProblem = 'not-found' | 'unknown-question';
+export type RecordAnswersProblem = 'not-found' | 'unknown-question' | 'invalid-choice';
 
 export class RecordAnswers {
   private readonly deps: RecordAnswersDependencies;

@@ -107,8 +107,10 @@ export function consolidatedQuestions(
   filed: readonly RecordedQuestion[],
   cards: readonly MergeCard[],
 ): readonly RecordedQuestion[] {
-  return listing(filed, cards).map(({ cardId, question, context, answer }) => ({
+  return listing(filed, cards).map(({ cardId, question, context, answer, options, chosen }) => ({
     ...{ cardId, question, context, answer },
+    // RF-645: a question with suggested answers keeps them and the choice made among them.
+    ...(options === undefined ? {} : { options, chosen: chosen ?? '' }),
   }));
 }
 

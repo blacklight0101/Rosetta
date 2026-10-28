@@ -13,6 +13,12 @@ const questionSchema = z.looseObject({
   state: z.enum(['Open', 'Answered']),
   /** RF-1017: how many cards other than open questions cite a file the question's cards cite. */
   dependents: z.number().int().min(0),
+  /** RF-645: the suggested answers, the recommended one first; none for a question saved before DEC-178. */
+  options: z
+    .array(z.looseObject({ answer: z.string(), description: z.string(), recommended: z.boolean() }))
+    .optional(),
+  /** RF-645: `''` while open, the number of the chosen option, or `typed`. */
+  chosen: z.string().optional(),
 });
 
 /** DEC-154: a question waits for the user while it is Open and has no saved answer. */
@@ -59,7 +65,12 @@ export function getAnsweredCount(
 export function saveAnswer(
   client: ApiClient,
   runId: string,
-  answer: { readonly cardId: string; readonly answer: string },
+  answer: {
+    readonly cardId: string;
+    readonly answer: string;
+    /** RF-645: the number (from 1) of the suggested answer chosen, or `typed`. */
+    readonly chosen?: number | 'typed';
+  },
 ): Promise<ApiResult<readonly OpenQuestionRow[]>> {
   return client.request({
     method: 'PUT',
