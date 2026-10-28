@@ -72,7 +72,7 @@ behaviour to preserve, operations (RF-636), build metrics, and human review (:12
 | Independent verifier per band (sonnet 1-8, opus 9-10); never verifies its own work      | absent. "A person reviews every pull request" (:131) is the only review                                               | yes    |
 | Retry ladder (FAIL 1 same builder, FAIL 2 fresh builder one band up, FAIL 3 owner)      | absent                                                                                                                | yes    |
 | Card status flow (`Todo` .. `Done`, `Blocked (reason)`)                                 | absent                                                                                                                | yes    |
-| Merge rules (CI green, verifier PASS, up to date, `needs-owner`, squash)                | partly: operations rule one PR at a time and up to date (RF-636, `handoff-parallel-markdown.ts:59`); no `needs-owner` | yes    |
+| Merge rules (CI green, verifier PASS, up to date, `needs-owner`, squash)                | partly: operations rule one PR at a time and up to date (RF-636, `handoff-parallel-markdown.ts:63`); no `needs-owner` | yes    |
 | Report format (builder) and verdict format (verifier)                                   | absent                                                                                                                | yes    |
 | Red test first (test commit before code)                                                | only if the `tdd` principle was chosen (`handoff-task-markdown.ts:65`); not stated as a rule of the method            | yes    |
 | Human gates and who opens them                                                          | absent. Gates exist in this repository (`docs/orchestration/README.md` section 7) but not in the package              | yes    |
@@ -100,7 +100,7 @@ Today (evidence):
 - An unanswered question is stored as `{ aiAssisted: false }` and listed as defaulted (`planning-brief.ts:189`, `:205`;
   `brief-questions.ts:90-94`: "No; the package has no AI-assisted build method.").
 - The help text lists what is added ("AGENTS.md, task cards rated by difficulty and a human review") and nothing about
-  what the package leaves out when it stays off. The model is told about it (`plan-message.ts:77`), but the user is not.
+  what the package leaves out when it stays off. The model is told about it (`src/application/plan/plan-message.ts:77`), but the user is not.
 - The brief has no field for the agent tool or the models (`planning-brief-schema.ts:58`:
   `buildMethod: { aiAssisted: boolean }`).
 
@@ -170,7 +170,7 @@ Proposal (new RF-639, section 10):
 - The bands stay 1-5 smallest, 6-8 middle, 9-10 largest. The package prints the map once (in `orchestration.md`) and each
   card line becomes `Difficulty: 6 (middle tier, model: sonnet)`.
 - The derivation changes so the largest tier is reachable (open question Q-C): size gives 4, 6, 8 as today; a risk class
-  of `security boundary`, `data loss` or `money` rates the card 9 when its size is M or L and keeps 8 when S [default:
+  of `security boundary`, `data loss` or `money` rates the card 9 when its size is M or L, while an S card keeps its rating (4) and only its tier rises to the middle [default:
   `security boundary` and `data loss` and `money` all raise an M or L card to the largest tier; an S card to the middle
   tier]. Alternative: keep the floor at the middle tier as RF-635 says today and let the planner mark a card 9-10 with a
   reason. The default follows the reference's cost-of-a-mistake test and costs more; the owner chooses (Q-C).
@@ -385,17 +385,17 @@ domain, the method markdown); P6-05 after P6-04; P6-07 and P6-08 are serialized 
 
 ## 12. Open questions, with defaults
 
-| Id  | Question                                                                                        | Default                                                             | Needed by |
-| --- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | --------- |
-| Q-A | Is the build method question required, or defaulted on when the context names an agent tool?    | required, with the context shortcut                                 | P6-03     |
-| Q-B | What happens to a brief saved before the change?                                                | stays "People will build"; the page invites to answer again         | P6-02     |
-| Q-C | How is the largest tier reached? Risk class on M or L cards rates 9, or the planner marks 9-10? | risk class on M or L cards rates 9; an S card keeps 8 (middle tier) | P6-04     |
-| Q-D | Does a failed model check block the package?                                                    | no; it is listed in `checks.md`                                     | P6-05     |
-| Q-E | Definitions for "another" tool?                                                                 | no; prose protocol only                                             | P6-09     |
-| Q-F | Warn when a local model is listed as a builder?                                                 | yes, for difficulty above 2                                         | P6-05     |
-| Q-G | Does the "builder never edits the task list" rule suit every team?                              | stated as a default, replaceable by a recorded decision             | P6-07     |
-| Q-H | How does the brief say the application is hosted?                                               | the project context field "deployment"; absent means no section     | P6-08     |
-| Q-I | Fable for Claude Code: ship the file?                                                           | only when the brief names an escalation model, owner-approval note  | P6-09     |
+| Id  | Question                                                                                        | Default                                                                     | Needed by |
+| --- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------- |
+| Q-A | Is the build method question required, or defaulted on when the context names an agent tool?    | required, with the context shortcut                                         | P6-03     |
+| Q-B | What happens to a brief saved before the change?                                                | stays "People will build"; the page invites to answer again                 | P6-02     |
+| Q-C | How is the largest tier reached? Risk class on M or L cards rates 9, or the planner marks 9-10? | risk class on M or L cards rates 9; an S card keeps its rating, middle tier | P6-04     |
+| Q-D | Does a failed model check block the package?                                                    | no; it is listed in `checks.md`                                             | P6-05     |
+| Q-E | Definitions for "another" tool?                                                                 | no; prose protocol only                                                     | P6-09     |
+| Q-F | Warn when a local model is listed as a builder?                                                 | yes, for difficulty above 2                                                 | P6-05     |
+| Q-G | Does the "builder never edits the task list" rule suit every team?                              | stated as a default, replaceable by a recorded decision                     | P6-07     |
+| Q-H | How does the brief say the application is hosted?                                               | the project context field "deployment"; absent means no section             | P6-08     |
+| Q-I | Fable for Claude Code: ship the file?                                                           | only when the brief names an escalation model, owner-approval note          | P6-09     |
 
 ## 13. What this review did not check
 

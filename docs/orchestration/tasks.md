@@ -6083,7 +6083,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Status**: Todo
 - **Reads**: `src/infrastructure/handoff/handoff-checks-markdown.ts`, `handoff-truthful-checks-markdown.ts`, the review section 6, RF-641 (proposed).
 - **Do**:
-  - When AI-assisted build is on, write in `checks.md` a finding for a card whose model is not the chosen tool's, whose tier is below its band, whose risk class other than `none` has a tier below the middle, or whose verifier is below its builder (Q-D: list, never block).
+  - When AI-assisted build is on, write in `checks.md` a finding for a card whose model is not the chosen tool's, whose tier is below its band, whose risk class other than `none` has a tier below the middle, or whose verifier is below its builder (Q-D: list, never block); the card line shows its risk class next to the difficulty (RF-641 item 5).
   - A clean package lists none; a local model on a card above difficulty 2 is a warning (Q-F).
 - **Delivers**: the check section and unit tests of each failure and of a clean package.
 - **Done when**: each failure has a passing test; a clean package has no finding.
@@ -6113,7 +6113,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Status**: Todo
 - **Reads**: the package writer, `docs/orchestration/README.md` sections 2, 3, 3.1 and 6, `.claude/agents/`, the review sections 3 and 7, RF-640 (proposed).
 - **Do**:
-  - Write `orchestration.md` (new file, linked second in the reading order): roles (orchestrator as the main session, builder per tier, independent verifier per band), the band table with the models, the retry ladder, the card status flow, the merge rules with `needs-owner`, the red test first, and the report and verdict formats.
+  - Write `orchestration.md` (new file, linked second in the reading order): roles (orchestrator as the main session, builder per tier, independent verifier per band), the band table with the models, the retry ladder, the card status flow, the merge rules with `needs-owner`, the red test first, the report and verdict formats, and the hard-rule greps the verifier runs (derived from the package's own hard rules).
   - Use the team's words and tool; name nothing from the owner's employer (DEC-03).
 - **Delivers**: the writer, the file registration in `handoff-links.ts` and structure tests.
 - **Done when**: each element has a test; the file is absent when people build; no employer term in the output.
