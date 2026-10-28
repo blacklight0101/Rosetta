@@ -37,10 +37,11 @@ test('RF-604 RF-610 RF-611 from a GitHub URL to a downloaded hand-off package th
   await page.getByLabel('Your own for Hosting').fill('On-premises Kubernetes');
   await page.getByRole('button', { name: 'Save and continue' }).click();
   await page.getByRole('button', { name: 'Save and continue' }).click();
-  await page.getByRole('checkbox', { name: /AI agents/u }).check();
+  await page.getByRole('radio', { name: /^Agents will build/u }).check();
+  await page.getByRole('radio', { name: /^Claude Code/u }).check();
   await saveBrief(page);
   await expect(recorded(page)).toContainText('Parallel Change');
-  await expect(recorded(page)).toContainText('with AI-assisted build');
+  await expect(recorded(page)).toContainText('Agents will build with Claude Code');
   await page.reload();
   await expect(recorded(page)).toContainText('Parallel Change');
   await expect(estimate(page)).not.toHaveAttribute('aria-busy', 'true');

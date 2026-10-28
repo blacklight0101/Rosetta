@@ -40,7 +40,8 @@
     "tests/e2e/run-report.spec.ts",
     "tests/e2e/settings-provider-test.spec.ts",
     "tests/e2e/visual/sweep-account.spec.ts",
-    "tests/e2e/side-navigation.spec.ts"
+    "tests/e2e/side-navigation.spec.ts",
+    "tests/e2e/plan-setup-build-method.spec.ts"
   ],
   "3": [
     "tests/e2e/account-password.spec.ts",

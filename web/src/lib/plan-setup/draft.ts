@@ -1,5 +1,13 @@
 import type { BriefAnswers } from '../../api/plan.js';
 import type { Brief, StackChoice } from '../../api/plan-schemas.js';
+import {
+  agentToolNamedIn,
+  buildMethodOf,
+  MAX_NAME,
+  methodDraftOf,
+  MODEL_SLOTS,
+  type MethodDraft,
+} from './build-method.js';
 import { CONTEXT_FIELDS, STACK_LAYERS, STEP_IDS, questionsOf, type ContextField } from './steps.js';
 
 // RF-605, RF-611, DEC-80, data-model.md section 3.20: the answers on the page before they are saved.
@@ -14,7 +22,7 @@ const MAX_TEAM = 10_000;
 
 type ContextText = Readonly<Record<ContextField, string>>;
 
-export interface Draft {
+export interface Draft extends MethodDraft {
   readonly principles: readonly string[];
   readonly style: string;
   readonly recommended: readonly string[];
@@ -23,7 +31,8 @@ export interface Draft {
   /** The picked technology by layer id; a layer with no entry is unanswered. */
   readonly stack: Readonly<Record<string, StackChoice>>;
   readonly context: ContextText;
-  readonly aiAssisted: boolean;
+  /** RF-612 (Q-B): a brief saved earlier never answered the build method, so the page asks again. */
+  readonly askedBefore: boolean;
   /** The ids of the questions the person answered (the ones the brief does not list as defaulted). */
   readonly answered: readonly string[];
 }
@@ -50,8 +59,24 @@ export function draftOf(brief: Brief): Draft {
       keepIntegrations: context.keepIntegrations.join('\n'),
       dataMigration: textOf(context.dataMigration),
     },
-    aiAssisted: brief.buildMethod.aiAssisted,
+    ...methodDraftOf(brief.buildMethod, brief.defaulted),
+    askedBefore: brief.savedAt !== null && brief.defaulted.includes('buildMethod'),
     answered: QUESTION_IDS.filter((id) => !brief.defaulted.includes(id)),
+  };
+}
+
+/**
+ * RF-612 (Q-A): while the build method is unanswered and the project context names an agent tool,
+ * the step shows agents and that tool selected. The person's own answer always wins.
+ */
+export function shownMethod(draft: Draft): Draft {
+  const named = agentToolNamedIn(draft.context);
+  if (draft.answered.includes('buildMethod') || named === undefined) return draft;
+  return {
+    ...draft,
+    aiAssisted: true,
+    toolKind: draft.toolKind === '' ? named.kind : draft.toolKind,
+    toolName: draft.toolName === '' ? (named.name ?? '') : draft.toolName,
   };
 }
 
@@ -117,7 +142,7 @@ export function answersOf(draft: Draft): BriefAnswers {
     ...(asked.length === 0
       ? {}
       : { context: Object.fromEntries(asked.map((field) => [field, context[field]])) }),
-    ...(answered('buildMethod') ? { buildMethod: { aiAssisted: draft.aiAssisted } } : {}),
+    ...(answered('buildMethod') ? { buildMethod: buildMethodOf(draft) } : {}),
   };
 }
 
@@ -130,6 +155,16 @@ function longTexts(context: ContextText): Record<string, string> {
       found[`context.${field}`] = `Use at most ${String(MAX_TEXT)} characters.`;
     }
   }
+  return found;
+}
+
+function methodProblems(draft: Draft): Record<string, string> {
+  const found: Record<string, string> = {};
+  const message = `Use at most ${String(MAX_NAME)} characters.`;
+  for (const slot of MODEL_SLOTS) {
+    if (draft.models[slot].trim().length > MAX_NAME) found[`buildMethod.models.${slot}`] = message;
+  }
+  if (draft.toolName.trim().length > MAX_NAME) found['buildMethod.agentTool'] = message;
   return found;
 }
 
@@ -156,5 +191,6 @@ export function problemsOf(draft: Draft): Readonly<Record<string, string>> {
       found[`stack.${layer}`] = `Use at most ${String(MAX_CHOICE)} characters.`;
     }
   }
+  Object.assign(found, methodProblems(draft));
   return found;
 }

@@ -87,8 +87,8 @@ export const STEP_TEXT: Readonly<Record<StepId, { readonly title: string; readon
       why: 'All of these are optional. What you answer shapes the size and order of the roadmap; what you leave blank is listed as an open question in the package.',
     },
     method: {
-      title: 'Will the team build the new system with AI agents?',
-      why: 'If so, the package adds an agent instructions file with your principles and stack as rules, task cards rated by difficulty and a human review on every pull request.',
+      title: 'Will agents or people build the new system?',
+      why: 'Your answer decides whether the package carries the working method for agents: a start-here file, a build protocol, agent definitions and the model of each task card. There is no default; leave it unanswered and the package assumes people will build and lists the question as open.',
     },
   };
 

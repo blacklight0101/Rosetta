@@ -204,7 +204,7 @@ describe('RF-612 the build method for an AI-assisted team', () => {
     const ratings = cardsOf(files).map(
       (card) => /\nDifficulty: (\d+) \((.+) model tier\)\n/u.exec(card)?.[1],
     );
-    expect(ratings).toEqual(['6', '4']);
+    expect(ratings).toEqual(['9', '4']);
     expect(plain(files['AGENTS.md'])).toContain('Difficulty 1 to 5');
   });
 
