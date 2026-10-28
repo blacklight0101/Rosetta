@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defaultedQuestions } from '../../../../src/domain/planning/brief-questions.js';
+import { modelForTier } from '../../../../src/domain/planning/build-method.js';
 import {
   buildBrief,
   sameBrief,
@@ -142,5 +143,22 @@ describe('defaultedQuestions: agent tool and models', () => {
 
     expect(largest?.answer).toMatch(/tier alone/i);
     expect(largest?.answer).toContain('checks.md');
+  });
+});
+
+describe('modelForTier', () => {
+  it('RF-639 names the model the build method gives the tier', () => {
+    const method = { aiAssisted: true, models: { middle: 'sonnet', largest: 'opus' } } as const;
+
+    expect(modelForTier(method, 'middle')).toBe('sonnet');
+    expect(modelForTier(method, 'largest')).toBe('opus');
+  });
+
+  it('RF-639 a tier with no model, people building and no models name nothing', () => {
+    expect(modelForTier({ aiAssisted: true, models: { middle: 'sonnet' } }, 'smallest')).toBe(
+      undefined,
+    );
+    expect(modelForTier({ aiAssisted: true }, 'middle')).toBe(undefined);
+    expect(modelForTier({ aiAssisted: false }, 'middle')).toBe(undefined);
   });
 });
