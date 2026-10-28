@@ -77,12 +77,12 @@ describe('difficultyOfTask: the risk class', () => {
   const risky = ['security boundary', 'data loss', 'money'] as const;
 
   it.each(risky)(
-    'RF-635 a small card of risk class %s keeps its rating and is built by the middle tier',
+    'RF-635 a small card of risk class %s keeps its rating, is built by the middle tier and is verified by the largest',
     (riskClass) => {
       expect(difficultyOfTask({ ...sizes.S, riskClass })).toEqual({
         rating: 4,
         tier: 'middle',
-        verifier: 'middle',
+        verifier: 'largest',
       });
     },
   );

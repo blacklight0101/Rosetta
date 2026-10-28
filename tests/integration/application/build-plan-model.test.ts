@@ -59,6 +59,17 @@ describe('RF-635 RF-639 the model and the verifier on the card line', () => {
     expect(small).toContain('\nVerifier: middle tier, model: sonnet\n');
   });
 
+  it('RF-635 a small card at a risk class is built by the middle tier and verified by the largest', async () => {
+    const buildMethod = { aiAssisted: true, agentTool: { kind: 'claude-code' } } as const;
+    const guarded = { ...plain, title: 'Guard', riskClass: 'security boundary', probes };
+
+    const files = await packageOf({ buildMethod }, plannerAnswering([guarded]));
+
+    const [card] = cardsOf(files);
+    expect(card).toContain('\nDifficulty: 4 (middle tier, model: sonnet)\n');
+    expect(card).toContain('\nVerifier: largest tier, model: opus\n');
+  });
+
   it('RF-639 a tier with no model name shows the tier alone', async () => {
     const buildMethod = { aiAssisted: true } as const;
 
