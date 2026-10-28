@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { codeBehindReference } from '../../../../../../src/infrastructure/scan/packs/csharp/webforms-directive.js';
-import { growthOf } from '../../../../../support/stopwatch.js';
+import { fastestOfMs, growthOf } from '../../../../../support/stopwatch.js';
 
 const page = (directive: string): string => `${directive}\n<html></html>\n`;
 
@@ -73,22 +73,44 @@ describe('WebForms code-behind link (part 2)', () => {
 
     expect(codeBehindReference('A.aspx', text)).toMatchObject({ to: 'A.aspx.cs' });
   });
+});
 
-  it.each([
-    ['a long run of attributes', (length: number) => `<%@ Page ${'a='.repeat(length / 2)} %>`],
-    ['an unterminated value', (length: number) => `<%@ Page CodeBehind="${'x'.repeat(length)}`],
-    ['many directives', (length: number) => '<%@ Import Namespace="N" %>\n'.repeat(length / 25)],
-  ])('RNF-001 %s is read in linear time without backtracking', (_name, build) => {
-    const { largeMs, ratio } = growthOf(
-      (text) => codeBehindReference('A.aspx', text),
-      build(125_000),
-      build(500_000),
-    );
+describe('WebForms code-behind link: linear time', () => {
+  // The reader looks at the first 65,536 characters only, so growth is measured below that cap (8 KB and
+  // 32 KB, each hostile shape filling the whole input) and the full-head case gets a generous absolute
+  // bound that load cannot reach but quadratic work in 64 KB would.
+  const headLength = 65_536;
+  const hostileShapes: readonly (readonly [string, (length: number) => string])[] = [
+    ['a long run of attributes', (length) => `<%@ Page ${'a='.repeat(length / 2)} %>`],
+    ['an unterminated value', (length) => `<%@ Page CodeBehind="${'x'.repeat(length)}`],
+    ['many directives', (length) => '<%@ Import Namespace="N" %>\n'.repeat(length / 25)],
+  ];
 
-    expect(codeBehindReference('A.aspx', build(500_000))).toBeUndefined();
-    expect(ratio).toBeLessThan(8);
-    expect(largeMs).toBeLessThan(10_000);
-  });
+  it.each(hostileShapes)(
+    'RNF-001 %s is read in linear time without backtracking',
+    (_name, build) => {
+      const { ratio, smallMs, largeMs } = growthOf(
+        (text) => codeBehindReference('A.aspx', text),
+        build(8_192),
+        build(32_768),
+      );
+
+      expect(
+        ratio,
+        `growth for 4x the input (8 KB ${smallMs.toFixed(3)} ms, 32 KB ${largeMs.toFixed(3)} ms)`,
+      ).toBeLessThan(8);
+    },
+  );
+
+  it.each(hostileShapes)(
+    'RNF-001 %s fills the 64 KB head within a generous bound',
+    (_name, build) => {
+      const text = build(headLength);
+
+      expect(codeBehindReference('A.aspx', text)).toBeUndefined();
+      expect(fastestOfMs(() => codeBehindReference('A.aspx', text), 3)).toBeLessThan(3_000);
+    },
+  );
 });
 
 describe('WebForms code-behind link: hostile values', () => {
