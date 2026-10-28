@@ -103,14 +103,17 @@ test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in
   await page.getByRole('button', { name: 'Save and continue' }).click();
   await page.getByLabel('Team size').fill('6');
   await page.getByRole('button', { name: 'Save and continue' }).click();
-  await page.getByRole('checkbox', { name: /AI agents/u }).check();
+  await page.getByRole('radio', { name: /^Agents will build/u }).check();
+  await page.getByRole('radio', { name: /^Claude Code/u }).check();
 
   await page.getByRole('button', { name: 'Save', exact: true }).click();
 
   await expect(recorded(page)).toContainText('Parallel Change');
   await expect(recorded(page)).toContainText('1 of 7 layers: On-premises Kubernetes');
   await expect(recorded(page)).toContainText('1 of 5 answered');
-  await expect(recorded(page)).toContainText('with AI-assisted build');
+  await expect(recorded(page)).toContainText(
+    'Agents will build with Claude Code. Models: smallest haiku, middle sonnet, largest opus',
+  );
   await expect(recorded(page).getByText('(default)').first()).toBeVisible();
   await page.reload();
   await expect(recorded(page)).toContainText('Parallel Change');
@@ -183,4 +186,45 @@ test('RF-614 RF-604 from the completed understand run to the package: Set up the
   await writeButton(page).click();
   await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });
   await expect(page.getByRole('link', { name: 'Download hand-off zip' })).toBeVisible();
+});
+
+test('RF-612 RF-639 the build method step asks agents or people, then the tool, then the models of each tool', async ({
+  page,
+}) => {
+  await openStartPage(page);
+  await openPlanSetup(page);
+  await openStep(page, 'Build method');
+  const agents = page.getByRole('radio', { name: /^Agents will build/u });
+  const people = page.getByRole('radio', { name: /^People will build/u });
+  await expect(agents).not.toBeChecked();
+  await expect(people).not.toBeChecked();
+  await expect(page.getByText(/Leaves out/u).first()).toBeVisible();
+  await expectNoSeriousViolations(page);
+
+  await agents.focus();
+  await page.keyboard.press('Space');
+  await expect(agents).toBeChecked();
+  await expect(page.getByLabel(/^Middle tier/u)).toHaveCount(0);
+  await page.getByRole('radio', { name: /^Codex/u }).check();
+  await expect(page.getByLabel(/^Middle tier/u)).toHaveAttribute('placeholder', /middle model/u);
+  await page.getByLabel(/^Middle tier/u).fill('gpt-mid');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(recorded(page)).toContainText(
+    'Agents will build with Codex. Models: middle gpt-mid',
+  );
+  await page.reload();
+  await openStep(page, 'Build method');
+  await expect(page.getByRole('radio', { name: /^Codex/u })).toBeChecked();
+  await expect(page.getByLabel(/^Middle tier/u)).toHaveValue('gpt-mid');
+  await expectNoSeriousViolations(page);
+
+  await page.getByRole('radio', { name: /^Another tool/u }).check();
+  await page.getByLabel('Name of the tool').fill('Aider');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(recorded(page)).toContainText('Agents will build with Aider');
+
+  await people.check();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(recorded(page)).toContainText('People will build');
+  await expectNoSeriousViolations(page);
 });

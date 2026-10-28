@@ -1,5 +1,6 @@
 import type { BriefAnswers } from '../../api/plan.js';
 import type { Brief, StackChoice } from '../../api/plan-schemas.js';
+import { NO_MODELS, type MethodDraft } from './build-method.js';
 import { CONTEXT_FIELDS, STACK_LAYERS, STEP_IDS, questionsOf, type ContextField } from './steps.js';
 
 // RF-605, RF-611, DEC-80, data-model.md section 3.20: the answers on the page before they are saved.
@@ -14,7 +15,7 @@ const MAX_TEAM = 10_000;
 
 type ContextText = Readonly<Record<ContextField, string>>;
 
-export interface Draft {
+export interface Draft extends MethodDraft {
   readonly principles: readonly string[];
   readonly style: string;
   readonly recommended: readonly string[];
@@ -23,7 +24,6 @@ export interface Draft {
   /** The picked technology by layer id; a layer with no entry is unanswered. */
   readonly stack: Readonly<Record<string, StackChoice>>;
   readonly context: ContextText;
-  readonly aiAssisted: boolean;
   /** The ids of the questions the person answered (the ones the brief does not list as defaulted). */
   readonly answered: readonly string[];
 }
@@ -51,8 +51,16 @@ export function draftOf(brief: Brief): Draft {
       dataMigration: textOf(context.dataMigration),
     },
     aiAssisted: brief.buildMethod.aiAssisted,
+    toolKind: '',
+    toolName: '',
+    models: NO_MODELS,
     answered: QUESTION_IDS.filter((id) => !brief.defaulted.includes(id)),
   };
+}
+
+/** The draft as the build method step shows it (stub of the red commit). */
+export function shownMethod(draft: Draft): Draft {
+  return draft;
 }
 
 export function isAnswered(draft: Draft, id: string): boolean {
