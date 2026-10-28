@@ -185,6 +185,28 @@ describe('the agent tool and the models: other tools', () => {
   });
 });
 
+describe('the agent tool and the models: another tool without a name', () => {
+  it('RF-639 another tool shows its models only once it has a name, and records what is sent', async () => {
+    const page = renderPlan();
+    await openMethod();
+    fireEvent.click(agents());
+    fireEvent.click(tool(/^Another tool/u));
+
+    expect(screen.queryByLabelText(/Middle tier/u)).toBeNull();
+    const name = screen.getByLabelText('Name of the tool');
+    fireEvent.input(name, { target: { value: 'Aider' } });
+    fireEvent.input(screen.getByLabelText(/Middle tier/u), { target: { value: 'aider-mid' } });
+    fireEvent.input(name, { target: { value: ' ' } });
+    expect(screen.queryByLabelText(/Middle tier/u)).toBeNull();
+    press('Save');
+
+    const summary = await screen.findByRole('region', { name: 'What I recorded' });
+    expect(saves(page)).toEqual([{ buildMethod: { aiAssisted: true } }]);
+    expect(within(summary).queryByText(/aider-mid/u)).toBeNull();
+    expect(within(summary).getByText(/the other tool has no name yet/u)).not.toBeNull();
+  });
+});
+
 describe('the agent tool and the models: a saved brief and a refusal', () => {
   it('RF-639 a saved tool and its models come back and are sent again on a re-save', async () => {
     const saved = briefWith(

@@ -24,6 +24,12 @@ const view = (buildMethod: unknown, defaulted: string[]) =>
 const unanswered = draftOf(briefViewSchema.parse(unsavedBrief).brief);
 
 describe('draft of the build method', () => {
+  it('RF-612 an old saved brief with only the yes or no loads as agents with no tool', () => {
+    expect(draftOf(view({ aiAssisted: true }, []).brief)).toMatchObject({
+      aiAssisted: true,
+      toolKind: '',
+    });
+  });
   it('RF-612 a brief on its defaults has no answer and sends no build method', () => {
     expect(unanswered.aiAssisted).toBe(false);
     expect(unanswered.answered).not.toContain('buildMethod');
@@ -195,5 +201,20 @@ describe('the build method line when the tool is open', () => {
     const draft = withAnswered({ ...unanswered, aiAssisted: true }, ['buildMethod']);
 
     expect(methodLineOf(draft)).toBe('Agents will build; tool not chosen yet');
+  });
+  it('RF-639 another tool without a name records no tool and no model, as the save sends none', () => {
+    const draft = withAnswered(
+      {
+        ...unanswered,
+        aiAssisted: true,
+        toolKind: 'other' as const,
+        toolName: ' ',
+        models: { ...unanswered.models, middle: 'aider-mid' },
+      },
+      ['buildMethod'],
+    );
+
+    expect(answersOf(draft).buildMethod).toEqual({ aiAssisted: true });
+    expect(methodLineOf(draft)).toBe('Agents will build; the other tool has no name yet');
   });
 });
