@@ -11,9 +11,14 @@ export function leftOutReadmeLines(handoff: HandoffPackage): string[] {
   return handoff.brief.buildMethod.aiAssisted ? [] : [leftOutSentence, ''];
 }
 
-/** RF-637: the build method as a whole-build question with its default, for a people build only. */
+/**
+ * RF-637: the build method as a whole-build question with its default, for a people build only.
+ * A build method that took its default is already a row of the brief questions that took their
+ * default, which says it is a whole-build question, so this section is left out to list it once.
+ */
 export function buildMethodQuestionLines(handoff: HandoffPackage): string[] {
   if (handoff.brief.buildMethod.aiAssisted) return [];
+  if (handoff.briefQuestions.some((question) => question.id === 'buildMethod')) return [];
   return [
     '## Build method',
     '',
