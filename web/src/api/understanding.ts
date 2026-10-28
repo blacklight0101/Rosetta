@@ -62,6 +62,8 @@ const deepenSchema = z.looseObject({
     .nullable(),
   outOfScope: z.array(z.looseObject({ claimId: z.string(), reason: z.string() })),
   rounds: z.array(roundSchema),
+  /** DEC-179: how many answers of the project the Deepen gave to its readers. */
+  answersUsed: count.default(0),
   before: summarySchema.nullable(),
   after: summarySchema.nullable(),
 });
@@ -91,6 +93,8 @@ const deepenEstimateSchema = z.looseObject({
     reread: count,
     outOfScope: count,
     failedAreas: count.default(0),
+    /** DEC-179: the answers of the project the first round gives to its readers. */
+    answers: count.default(0),
     unreadFiles: count,
     unreadTokens: count,
   }),

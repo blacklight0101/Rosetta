@@ -133,6 +133,30 @@ describe('RF-231 the measures before and after a Deepen', () => {
   });
 });
 
+describe('RF-209 DEC-179 the answers a Deepen used', () => {
+  async function answered(answersUsed: number): Promise<HTMLElement> {
+    const record = { ...deepenRecord, answersUsed };
+    await openEnded({ extra: { [understandingPath]: understanding(measures(), record) } });
+    return summary();
+  }
+
+  it('RF-209 says how many of the answers you gave the Deepen used', async () => {
+    expect(within(await answered(2)).getByTestId('deepen-answers').textContent).toContain(
+      '2 answers you gave were used by this Deepen',
+    );
+  });
+
+  it('RF-209 speaks of one answer in the singular and says nothing when it used none', async () => {
+    expect(within(await answered(1)).getByTestId('deepen-answers').textContent).toContain(
+      '1 answer you gave was used by this Deepen',
+    );
+  });
+
+  it('RF-209 shows no line for a Deepen that used no answer', async () => {
+    expect(within(await answered(0)).queryByTestId('deepen-answers')).toBeNull();
+  });
+});
+
 it('RF-231 reads the measures once for the page', async () => {
   const page = await openEnded({ extra: { [understandingPath]: understanding(measures()) } });
 

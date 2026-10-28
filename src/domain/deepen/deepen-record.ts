@@ -33,6 +33,8 @@ export interface DeepenRound {
   /** First-party files the round read lines of for the first time. */
   readonly filesRead: readonly string[];
   readonly newClaims: readonly DeepenNewClaim[];
+  /** DEC-179: the answered questions (`<run folder>/<card id>`) the round gave to its readers. */
+  readonly answersUsed: readonly string[];
   readonly tokens: number;
   readonly costMicros: number;
 }
@@ -112,6 +114,11 @@ export function reopenedDeepen(record: DeepenRecord): DeepenRecord {
 /** RF-209: the claims this Deepen sent back to a reader, in any round, finished or not. */
 export function rereadIn(record: DeepenRecord): ReadonlySet<string> {
   return new Set(record.rounds.flatMap((round) => round.reread.map((each) => each.claimId)));
+}
+
+/** RF-209, DEC-179: how many different answers of the project the Deepen gave to its readers. */
+export function answersUsedIn(record: Pick<DeepenRecord, 'rounds'>): number {
+  return new Set(record.rounds.flatMap((round) => round.answersUsed)).size;
 }
 
 /** EV-10: the failed areas this Deepen read again, in any round, finished or not. */

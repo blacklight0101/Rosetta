@@ -17,9 +17,11 @@ import {
 import { judgementPartsOf, runJudgementStep } from '../understand/claim-judgement.js';
 import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import { checkCitations } from '../verifier/citation-check.js';
+import { answersGivenTo, withDeepenAnswers } from './deepen-answers.js';
 import { roomCardsOf, roomStopReason } from './deepen-room.js';
 import { nextTaskNumber, roundTasks } from './deepen-tasks.js';
 import { runRoundTasks, taskCardsOf, taskResultOfRound, type EndedTask } from './deepen-readers.js';
+import type { ReaderTask } from '../understand/reader-tasks.js';
 import type { DeepenParts } from './deepen-parts.js';
 import { cardsOf, snapshotOf, withCards, type DeepenState } from './deepen-state.js';
 
@@ -31,6 +33,8 @@ import { cardsOf, snapshotOf, withCards, type DeepenState } from './deepen-state
 export interface RoundEnd {
   readonly state: DeepenState;
   readonly round: DeepenRound;
+  /** RF-241: the areas whose task ended `Done`; the answers they were given are now used. */
+  readonly doneAreas: readonly string[];
   /** Why the run must end now: a cap or the owner's Stop came during the round. */
   readonly stopped?: DeepenStopReason;
 }
@@ -169,6 +173,29 @@ function stopOf(
   return roomStopReason(parts.room?.reason);
 }
 
+/** RF-241: the areas whose task ended Done. */
+function doneAreasOf(ended: readonly EndedTask[]): string[] {
+  return ended.filter(({ outcome }) => outcome.state === 'Done').map(({ task }) => task.area.name);
+}
+
+/** The claims the plan names are judged first. */
+async function judgePlanned(
+  parts: DeepenParts,
+  state: DeepenState,
+  round: { readonly plan: RoundPlan; readonly cap: CapWatch },
+): Promise<DeepenState> {
+  const wanted = new Set(round.plan.judge);
+  const awaits = (claim: Card['claims'][number]): boolean => wanted.has(claim.claimId);
+  return withCards(state, await judge(parts, cardsOf(state), { awaits, cap: round.cap }));
+}
+
+/** The round's reader tasks; RF-209, DEC-179: each gets the answered questions of its area, as a re-run does. */
+function tasksOf(parts: DeepenParts, judged: DeepenState, plan: RoundPlan): readonly ReaderTask[] {
+  const first = nextTaskNumber(judged.results);
+  const planned = roundTasks(plan, parts.scanned.codeMap, first, cardsOf(judged));
+  return withDeepenAnswers(planned, parts.rerun);
+}
+
 // RF-209
 export async function runRound(
   parts: DeepenParts,
@@ -185,10 +212,8 @@ export async function runRound(
   const spent = await spentSoFar(parts);
   const before = snapshotOf(state, codeMap);
   const cap: CapWatch = { capped: false };
-  const wanted = new Set(plan.judge);
-  const awaits = (claim: Card['claims'][number]): boolean => wanted.has(claim.claimId);
-  const judged = withCards(state, await judge(parts, cardsOf(state), { awaits, cap }));
-  const tasks = roundTasks(plan, codeMap, nextTaskNumber(judged.results), cardsOf(judged));
+  const judged = await judgePlanned(parts, state, { plan, cap });
+  const tasks = tasksOf(parts, judged, plan);
   // RF-429, P5-30: the claims the tasks that ended have drafted wait for judgement at the round's end.
   let drafted = 0;
   const own = new Set([...input.ownClaims, ...plan.judge]);
@@ -203,8 +228,7 @@ export async function runRound(
   const results = ended.map((each) => taskResultOfRound(parts, each, written.added));
   const next = { results: [...withExtended(judged, written.extended).results, ...results] };
   const after = snapshotOf(next, codeMap);
-  const now = await spentSoFar(parts);
-  const stopped = stopOf(parts, ended, cap);
+  const [now, stopped] = [await spentSoFar(parts), stopOf(parts, ended, cap)];
   const round: DeepenRound = {
     round: input.round,
     complete: stopped === undefined || stopped === 'readersStopped',
@@ -213,8 +237,13 @@ export async function runRound(
     failedAreas: failedAreasDone(plan, ended, parts.execution.signal.aborted),
     filesRead: [...after.filesRead].filter((path) => !before.filesRead.has(path)),
     newClaims: newClaimsOf(written),
+    answersUsed: answersGivenTo(
+      ended.map((each) => each.task),
+      parts.rerun,
+    ),
     tokens: Math.max(0, now.tokens - spent.tokens),
     costMicros: Math.max(0, now.costMicros - spent.costMicros),
   };
-  return { state: next, round, ...(stopped === undefined ? {} : { stopped }) };
+  const doneAreas = doneAreasOf(ended);
+  return { state: next, round, doneAreas, ...(stopped === undefined ? {} : { stopped }) };
 }

@@ -833,7 +833,7 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   cards take ids after every card of the run; a claim's `replaces` is kept only when it names a claim that task was
   asked to re-read. Every Deepen reader task (a re-read and a reading of a never-read file) is also given the cards
   the run holds for its area (`roundTasks`: id, type and title as one more data block with the source `cards`, prompt
-  `prompts/reader/parent-cards.v2.md`, DEC-158). A card of the answer that carries the optional field `extends` with
+  `prompts/reader/parent-cards.v2.md`, DEC-158). Every Deepen reader task is also given the answered questions of its area as user context (RF-209, DEC-179): `planTasks` plans the project's answers for a Deepen with `planRerun` (an answer already used is given again), `deepen-answers.ts` applies `withAnswersOf` of the re-run with answers to each round's tasks (same `owner_answers` data block and `reader/answers.v1.md`: an answer is context, never evidence), marks the questions `Answered` once the task of their area ended `Done` and its cards are written, and records them in the round (`answersUsed`); at the end a card that asks the same as an answered question is `Answered` and `answers.md` (which compares questions by their words, Q-52) keeps that question once. A card of the answer that carries the optional field `extends` with
   the id of a listed `FEAT`, `BR`, `ENT` or `INT` card of its own type is not a new card: `assignCardIds` leaves it
   out and `extendCards` (domain) adds its claims to the listed card, which keeps its id, numbered on from its last
   claim; they pass the citation check and the judgement like any new claim, and `replaces` follows the same rule.

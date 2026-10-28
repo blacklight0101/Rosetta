@@ -8,15 +8,20 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Run } from '../../domain/runs/run.js';
 import { MERGE_ANSWER_TOKENS, MERGE_PROMPT_TOKENS } from '../consolidate/merge-request.js';
+import { answersGivenTo } from '../deepen/deepen-answers.js';
 import { roundTasks } from '../deepen/deepen-tasks.js';
 import { latestScan } from '../deepen/latest-scan.js';
 import type { ModelList } from '../models/model-list.js';
+import type { AnswersFile } from '../ports/answers-file.js';
+import type { PriorCards } from '../ports/prior-cards.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderKeyRepository } from '../ports/provider-key-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { TaskResults } from '../ports/task-results.js';
+import type { ReaderTask } from '../understand/reader-tasks.js';
 import { scopeOf } from '../runs/run-scope.js';
+import { planRerun } from '../understand/answer-rerun.js';
 import { assumptionsOf } from './estimate-assumptions.js';
 import { shareTokens, sumPoints, withJudgements } from './estimate-run.js';
 import type {
@@ -46,6 +51,9 @@ export interface DeepenEstimateDependencies {
   readonly priceTable: PriceTable;
   /** The shipped model list: the context window and output limit of each model (Q-57). */
   readonly models: ModelList;
+  /** DEC-179: the answers of the project the Deepen gives to its readers. */
+  readonly answers: Pick<AnswersFile, 'answeredQuestions'>;
+  readonly priorCards: PriorCards;
 }
 
 export interface DeepenEstimateRequest {
@@ -67,6 +75,8 @@ export interface DeepenEstimate {
     readonly outOfScope: number;
     /** EV-10: areas that failed and that the round reads again. */
     readonly failedAreas: number;
+    /** DEC-179: the answered questions of the project the first round gives to its readers. */
+    readonly answers: number;
     readonly unreadFiles: number;
     readonly unreadTokens: number;
   };
@@ -124,12 +134,13 @@ function overCap(point: EstimatePoint, cap: DeepenEstimate['cap']): boolean {
   return tokens > cap.maxTokens || point.costMicros > BigInt(cap.maxCostMicros);
 }
 
-function planSummary(plan: RoundPlan): DeepenEstimate['plan'] {
+function planSummary(plan: RoundPlan, answers: number): DeepenEstimate['plan'] {
   return {
     judge: plan.judge.length,
     reread: plan.reread.length,
     outOfScope: plan.outOfScope.length,
     failedAreas: plan.failedAreas.length,
+    answers,
     unreadFiles: plan.gaps.length,
     unreadTokens: plan.gaps.reduce((sum, gap) => sum + gap.tokens, 0),
   };
@@ -159,8 +170,10 @@ export class EstimateDeepen {
     const coveragePass = request.coveragePass !== false;
     const plan = await this.planOf(run, codeMap, coveragePass);
     const assumptions = assumptionsOf(project.settings, this.deps.models);
+    const tasks = roundTasks(plan, codeMap, 1);
+    const answers = await this.answersOf(run, codeMap, tasks);
     const reader = readerTokens(
-      roundTasks(plan, codeMap, 1).map((task) => task.area),
+      tasks.map((task) => task.area),
       assumptions,
     );
     const verifier = withJudgements(
@@ -182,10 +195,23 @@ export class EstimateDeepen {
         priceTableVersion: this.deps.priceTable.version,
         currency: this.deps.priceTable.currency,
       },
-      ...{ maxRounds, coveragePass, plan: planSummary(plan), roles, round, allRounds },
+      ...{ maxRounds, coveragePass, plan: planSummary(plan, answers), roles, round, allRounds },
       cap: { maxCostMicros: cap.maxCostMicros, maxTokens: cap.maxTokens },
       overCap: { round: overCap(round.high, cap), allRounds: overCap(allRounds.high, cap) },
     });
+  }
+
+  /** DEC-179: how many answered questions of the project the tasks of the first round are given. */
+  private async answersOf(
+    run: Run,
+    codeMap: CodeMap,
+    tasks: readonly ReaderTask[],
+  ): Promise<number> {
+    const deps = { answers: this.deps.answers, cards: this.deps.priorCards };
+    const project = { userId: run.userId, projectId: run.projectId };
+    const names = codeMap.areas.map((area) => area.name);
+    const plan = await planRerun(deps, project, names, { includeAnswered: true });
+    return answersGivenTo(tasks, { deps, plan }).length;
   }
 
   /** RF-209: the first round of a Deepen of the run, as its results stand. */
