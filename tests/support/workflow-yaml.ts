@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { parse } from 'yaml';
+import { bashCommand } from './bash.js';
 
 // The workflows of .github/workflows read as data for the release and ZAP workflow tests: a parsed
 // document and safe lookups into it, so a test never casts what the YAML parser returns.
@@ -70,7 +71,8 @@ export async function runStep(
   const environment = { PATH: process.env['PATH'] ?? '', ...env };
   const args = ['--noprofile', '--norc', '-eo', 'pipefail', '-c', `${prelude}\n${script}`];
   const textOf = (value: unknown): string => (typeof value === 'string' ? value : '');
-  return run('bash', args, { env: environment }).then(
+  const shell = await bashCommand();
+  return run(shell, args, { env: environment }).then(
     ({ stdout, stderr }) => ({ code: 0, output: `${stdout}${stderr}` }),
     (error: unknown) => ({
       code: Number(at(error, 'code') ?? 1),

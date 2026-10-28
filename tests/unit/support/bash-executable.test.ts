@@ -14,39 +14,43 @@ function lookupOf(
   platform: NodeJS.Platform = 'win32',
 ): BashLookup {
   const present = new Set(files.map((file) => file.toLowerCase()));
-  return { platform, env, exists: (path) => present.has(path.toLowerCase()) };
+  return {
+    platform,
+    env,
+    exists: (path) => Promise.resolve(present.has(path.toLowerCase())),
+  };
 }
 
 describe('P2-56 the test helper runs steps with Git Bash on Windows', () => {
-  it('P2-56 uses bash from PATH on other platforms', () => {
+  it('P2-56 uses bash from PATH on other platforms', async () => {
     const lookup = lookupOf([], { PATH: '/usr/bin' }, 'linux');
-    expect(resolveBash(lookup)).toBe('bash');
+    await expect(resolveBash(lookup)).resolves.toBe('bash');
   });
 
-  it('P2-56 picks the Git Bash next to git.exe, not the WSL bash that comes first on PATH', () => {
+  it('P2-56 picks the Git Bash next to git.exe, not the WSL bash that comes first on PATH', async () => {
     const lookup = lookupOf(
       ['C:\\Windows\\System32\\bash.exe', 'C:\\Program Files\\Git\\cmd\\git.exe', gitBin],
       { PATH: 'C:\\Windows\\System32;C:\\Program Files\\Git\\cmd' },
     );
-    expect(resolveBash(lookup)).toBe(gitBin);
+    await expect(resolveBash(lookup)).resolves.toBe(gitBin);
   });
 
-  it('P2-56 derives the Git root from a git.exe in mingw64\\bin as well', () => {
+  it('P2-56 derives the Git root from a git.exe in mingw64\\bin as well', async () => {
     const lookup = lookupOf(['C:\\Program Files\\Git\\mingw64\\bin\\git.exe', gitBin], {
       PATH: 'C:\\Program Files\\Git\\mingw64\\bin',
     });
-    expect(resolveBash(lookup)).toBe(gitBin);
+    await expect(resolveBash(lookup)).resolves.toBe(gitBin);
   });
 
-  it('P2-56 falls back to the default Git install when git is not on PATH', () => {
+  it('P2-56 falls back to the default Git install when git is not on PATH', async () => {
     const lookup = lookupOf([gitBin], {
       PATH: 'C:\\Windows\\System32',
       ProgramFiles: 'C:\\Program Files',
     });
-    expect(resolveBash(lookup)).toBe(gitBin);
+    await expect(resolveBash(lookup)).resolves.toBe(gitBin);
   });
 
-  it('P2-56 never returns the System32 or WindowsApps bash', () => {
+  it('P2-56 never returns the System32 or WindowsApps bash', async () => {
     const lookup = lookupOf(
       [
         'C:\\Windows\\System32\\bash.exe',
@@ -54,14 +58,16 @@ describe('P2-56 the test helper runs steps with Git Bash on Windows', () => {
       ],
       { PATH: 'C:\\Windows\\System32;C:\\Users\\me\\AppData\\Local\\Microsoft\\WindowsApps' },
     );
-    expect(() => resolveBash(lookup)).toThrow(/Git for Windows/u);
+    await expect(resolveBash(lookup)).rejects.toThrow(/Git for Windows/u);
   });
 
-  it('P2-56 stops with a message naming the fix when no Git Bash exists', () => {
+  it('P2-56 stops with a message naming the fix when no Git Bash exists', async () => {
     const lookup = lookupOf(['C:\\Windows\\System32\\bash.exe'], {
       PATH: 'C:\\Windows\\System32',
       ProgramFiles: 'C:\\Program Files',
     });
-    expect(() => resolveBash(lookup)).toThrow(/Install Git for Windows.*bin folder.*PATH/su);
+    await expect(resolveBash(lookup)).rejects.toThrow(
+      /Install Git for Windows.*bin folder.*PATH/su,
+    );
   });
 });

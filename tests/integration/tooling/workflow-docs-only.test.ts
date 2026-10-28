@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import { useTempRoot } from '../../support/temp-root.js';
+import { bashCommand } from '../../support/bash.js';
 import { ciJob, runLines } from '../../support/workflow-files.js';
 
 // The documentation-only path of environments-and-delivery.md section 6: a `changes` job decides
@@ -64,7 +65,8 @@ async function classify(root: string, event: string, changed: readonly string[])
   const output = join(root, 'github-output.txt');
   await writeFile(output, '');
   const env = { ...process.env, EVENT: event, BASE_SHA: base, HEAD_SHA: head };
-  await run('bash', ['-eo', 'pipefail', '-c', await classifyScript()], {
+  const shell = await bashCommand();
+  await run(shell, ['-eo', 'pipefail', '-c', await classifyScript()], {
     cwd: root,
     env: { ...env, GITHUB_OUTPUT: output },
   });
