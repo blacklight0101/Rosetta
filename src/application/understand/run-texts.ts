@@ -45,7 +45,7 @@ export async function recordRunTexts(
 ): Promise<RunTexts> {
   const { project, scanned, tasks, options, rerun } = input;
   const workbook = tasks.some((task) => areaHoldsWorkbook(task.area, scanned.workbookFolders));
-  const withAnswers = rerun !== undefined && tasks.length > 0;
+  const withAnswers = rerun !== undefined && tasks.length > 0 && rerun.plan.pending.length > 0;
   const use = { withAnswers, deepen: !!options.deepen, workbook };
   const marks = runMarks(tasks, scanned.codeMap);
   const { prompts, versions } = await runPrompts(sources, project.settings, use, marks);

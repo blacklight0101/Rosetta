@@ -72,17 +72,25 @@ export function askingTheSame(
   );
 }
 
+/** RF-209, DEC-179: a Deepen gives an answer again to every reader of its area, however often it was used. */
+export interface PlanOptions {
+  readonly includeAnswered?: boolean;
+}
+
 /** The cards that use the answer, or why the question cannot be used. */
 function cardsOrReason(
   question: AnsweredQuestion,
   earlier: readonly PriorCard[],
   codeMapAreas: readonly string[],
+  options: PlanOptions,
 ): { readonly cards: readonly PriorCard[] } | { readonly reason: SkipReason } {
   if (earlier.length === 0) return { reason: 'run-gone' };
   const card = earlier.find((each) => each.id === question.cardId && each.type === 'OQ');
   if (card === undefined) return { reason: 'card-gone' };
   // A merged question is answered only when every card behind it is (one area may have failed).
-  const open = askingTheSame(card, earlier).filter((each) => each.questionState !== 'Answered');
+  const open = askingTheSame(card, earlier).filter(
+    (each) => options.includeAnswered === true || each.questionState !== 'Answered',
+  );
   if (open.length === 0) return { reason: 'already-answered' };
   const usable = open.filter((each) => codeMapAreas.includes(each.area));
   return usable.length === 0 ? { reason: 'area-not-in-code-map' } : { cards: usable };
@@ -93,13 +101,14 @@ export async function planRerun(
   deps: RerunDependencies,
   project: ProjectRef,
   codeMapAreas: readonly string[],
+  options: PlanOptions = {},
 ): Promise<RerunPlan> {
   const answered = await deps.answers.answeredQuestions(project);
   const byRun = await cardsByRun(deps, project, answered);
   const pending: PendingQuestion[] = [];
   const skipped: SkippedQuestion[] = [];
   for (const question of answered) {
-    const found = cardsOrReason(question, byRun.get(question.runKey) ?? [], codeMapAreas);
+    const found = cardsOrReason(question, byRun.get(question.runKey) ?? [], codeMapAreas, options);
     if ('cards' in found) {
       // Two sections of one run can stand for the same question; a card is used once.
       const fresh = found.cards.filter(

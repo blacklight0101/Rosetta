@@ -35,6 +35,7 @@ function estimate(change: Partial<DeepenEstimate> = {}): DeepenEstimate {
       reread: 40,
       outOfScope: 6,
       failedAreas: 0,
+      answers: 0,
       unreadFiles: 12,
       unreadTokens: 3000,
     },
@@ -60,12 +61,31 @@ describe('RF-209 the first round', () => {
       reread: 1,
       outOfScope: 0,
       failedAreas: 0,
+      answers: 0,
       unreadFiles: 0,
       unreadTokens: 0,
     };
 
     expect(firstRoundText(estimate({ plan }))).toBe(
       'First round: likely $0.40 (low $0.20, high $0.90). It judges 1 claim, re-reads 1 rejected claim.',
+    );
+  });
+
+  it('RF-209 DEC-179 says how many of the answers you gave the round uses, in the singular too', () => {
+    const plan = {
+      judge: 1,
+      reread: 1,
+      outOfScope: 0,
+      failedAreas: 0,
+      unreadFiles: 0,
+      unreadTokens: 0,
+    };
+
+    expect(firstRoundText(estimate({ plan: { ...plan, answers: 3 } }))).toBe(
+      'First round: likely $0.40 (low $0.20, high $0.90). It judges 1 claim, re-reads 1 rejected claim. It uses 3 answers you already gave.',
+    );
+    expect(firstRoundText(estimate({ plan: { ...plan, answers: 1 } }))).toContain(
+      'It uses 1 answer you already gave.',
     );
   });
 
@@ -112,6 +132,7 @@ describe('RF-427 the warnings against the run cap', () => {
       reread: 0,
       outOfScope: 0,
       failedAreas: 2,
+      answers: 0,
       unreadFiles: 0,
       unreadTokens: 0,
     };

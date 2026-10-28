@@ -58,9 +58,11 @@ export function firstRoundText(estimate: DeepenEstimate): string {
     plan.outOfScope === 0
       ? ''
       : ` ${plural(plan.outOfScope, 'rejected claim')} cite only third-party or generated code and are left out of scope.`;
+  const answers =
+    plan.answers === 0 ? '' : ` It uses ${plural(plan.answers, 'answer')} you already gave.`;
   return (
     `First round: ${costs(estimate.round, estimate)}. It judges ${plural(plan.judge, 'claim')}, ` +
-    `re-reads ${plural(plan.reread, 'rejected claim')}${failed}${reads}.${apart}`
+    `re-reads ${plural(plan.reread, 'rejected claim')}${failed}${reads}.${apart}${answers}`
   );
 }
 

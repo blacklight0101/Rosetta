@@ -15,7 +15,7 @@ import { cardOf, claimOf } from '../../../support/deepen-fixtures.js';
 function round(n: number, partial: Partial<DeepenRound>): DeepenRound {
   return {
     ...{ round: n, complete: true, judged: [], reread: [], failedAreas: [], filesRead: [] },
-    ...{ newClaims: [], tokens: 0, costMicros: 0 },
+    ...{ newClaims: [], answersUsed: [], tokens: 0, costMicros: 0 },
     ...partial,
   };
 }
