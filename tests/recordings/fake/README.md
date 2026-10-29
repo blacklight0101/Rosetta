@@ -29,6 +29,8 @@ for the catalogue and order journeys and none for the service library (P2-19).
 
 `deepen-database-objects.json` and `verifier-deepen-database-objects.json` are a run on a Clinic area (a synthetic SQL script, `tests/fixtures/sql/clinic.sql`, copied into the `webforms-csharp` fixture) whose reader states only the table, then a Deepen whose one task reads the four objects with no card and states each; every claim is Supported (P5-36).
 
+`planner-single-file.json` holds the planner's plan (three task cards across the difficulty bands, one at risk of money) and product requirements document for a seeded run over a single-file application, a bill splitter that is one script. The method end-to-end test plans it with agents building, for Claude Code and for Codex, and reads the package (P6-12, RF-612, RF-639..RF-643).
+
 ## Provenance (RNF-009)
 
 Every file was written by hand for this repository by the Rosetta contributors and is covered by the repository's MIT

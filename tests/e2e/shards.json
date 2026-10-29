@@ -50,6 +50,7 @@
     "tests/e2e/announce-refusals.spec.ts",
     "tests/e2e/journeys/first-sign-in.spec.ts",
     "tests/e2e/journeys/handoff-package.spec.ts",
+    "tests/e2e/journeys/method-package.spec.ts",
     "tests/e2e/journeys/workbook-project.spec.ts",
     "tests/e2e/journeys/zip-project.spec.ts",
     "tests/e2e/journeys/language-without-pack.spec.ts",

@@ -1144,6 +1144,8 @@ downloaded from the run page, which the spec unzips with `tests/support/zip-read
 and its list of defaulted questions are checked against the saved brief. The evidence per requirement is in
 [docs/verification/r1-matrix.md](verification/r1-matrix.md), kept whole by `tests/integration/docs/r1-matrix.test.ts`.
 
+**The method end to end (P6-12).** `journeys/method-package.spec.ts` chooses "Agents will build" and an agent tool in Plan setup (Claude Code with its default models, Codex with three typed model names), writes the package and reads the zip as a new agent would: `AGENTS.md` then `orchestration.md` first in the README reading order, the sections of the build protocol, a model of its tier on every card, no finding in the model check of `checks.md`, the `agents/` files of the tool and no broken link between the files (`tests/support/package-reading.ts`, shared with the integration test). The single-file application itself is `tests/integration/application/build-plan-method-end-to-end.test.ts`: a seeded understand run of a bill splitter that is one script (`tests/support/single-file-plan-cards.ts`) planned by the fake provider replaying `tests/recordings/fake/planner-single-file.json` (`tests/support/single-file-method-run.ts`), once per tool. No provider is called (ADR-008).
+
 **Server key in the test server (P1-131).** `serve.ts` gives the test server a fake OpenAI key (`support/server-key.ts`, built
 from pieces, set in its environment only, never printed), so a user without a key of their own runs on the server key under
 the administrator's caps (RF-1106). `journeys/server-key-cap.spec.ts` saves a low run cap, runs, and puts the shared figures
