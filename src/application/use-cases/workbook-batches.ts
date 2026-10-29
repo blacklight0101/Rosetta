@@ -2,17 +2,11 @@ import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { workbookFileName } from '../../domain/sources/workbook-name.js';
-import type { AuditLog } from '../ports/audit-log.js';
-import type { Clock } from '../ports/clock.js';
-import type { Logger } from '../ports/logger.js';
-import type { ProjectRepository } from '../ports/project-repository.js';
-import type { IdGenerator } from '../ports/id-generator.js';
-import type { RunIndex } from '../ports/run-index.js';
-import type { UploadStore } from '../ports/upload-store.js';
-import type { StagedFile, WorkbookStaging } from '../ports/workbook-staging.js';
+import type { StagedFile } from '../ports/workbook-staging.js';
 import type { Project } from '../projects/project.js';
 import { IntervalTask } from '../projects/interval-task.js';
 import { runFinish } from './finish-workbooks.js';
+import type { WorkbookBatchesDependencies } from './workbook-batches-deps.js';
 import {
   hasEnded,
   newBatch,
@@ -37,20 +31,7 @@ import type {
 // RF-159, DEC-183: the finish is accepted at once and the work goes on after the request; the batch keeps
 // its progress and, for 30 minutes after the work ended, its outcome, for the page to read.
 
-export interface WorkbookBatchesDependencies {
-  readonly projects: ProjectRepository;
-  readonly runs: Pick<RunIndex, 'list'>;
-  readonly uploads: Pick<UploadStore, 'remove'>;
-  readonly staging: WorkbookStaging;
-  readonly auditLog: AuditLog;
-  readonly logger: Logger;
-  readonly clock: Clock;
-  /** `ROSETTA_UPLOAD_MAX_MB` in bytes: the total of one batch. */
-  readonly limitBytes: number;
-  /** The ids of the batches of a zip, which have no staging folder to name them (RF-159). */
-  readonly ids: Pick<IdGenerator, 'uuid'>;
-}
-
+export type { WorkbookBatchesDependencies } from './workbook-batches-deps.js';
 export type {
   BatchFileRequest,
   BatchProblem,
