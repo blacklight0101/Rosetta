@@ -139,6 +139,22 @@ const zipBody = z.object({
   workbooks: z.array(z.object({ name: z.string(), sheets: z.number() })),
   leftOut: z.array(z.object({ name: z.string(), reason: z.string() })),
 });
+const batchBody = z.object({ phase: z.string(), summary: zipBody.optional() });
+
+/** RF-159, DEC-188: the batch of an accepted zip, read until it ends. */
+async function ended(
+  send: (path: string) => Promise<Response>,
+  id: string,
+): Promise<z.infer<typeof batchBody>> {
+  for (let attempt = 0; attempt < 600; attempt += 1) {
+    const state = batchBody.parse(
+      await (await send(`/api/projects/${id}/source/batches/current`)).json(),
+    );
+    if (state.phase !== 'processing') return state;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error('the zip did not end');
+}
 const viewBody = z.object({ source: z.object({ workbooks: z.number().optional() }) });
 
 describe.skipIf(!hasTestDatabase)('the composed application and a zip that holds workbooks', () => {
@@ -168,10 +184,15 @@ describe.skipIf(!hasTestDatabase)('the composed application and a zip that holds
         name: 'Orders.zip',
         body: new Uint8Array(zip),
       });
-      const body = zipBody.parse(await uploaded.json());
+      const answer = batchBody.parse(await uploaded.json());
+      const outcome = await ended(send, id);
+      const body = zipBody.parse(outcome.summary);
       const view = viewBody.parse(await (await send(`/api/projects/${id}`)).json());
 
-      expect(uploaded.status).toBe(201);
+      // RF-159, DEC-188: the zip holds workbooks, so it is accepted at once and its batch ends stored.
+      expect(uploaded.status).toBe(202);
+      expect(answer.phase).toBe('processing');
+      expect(outcome.phase).toBe('stored');
       expect(body.workbooks.map((book) => book.name)).toEqual(['Pricing.xlsx']);
       expect(body.leftOut.map((item) => item.name)).toEqual(['Locked.xlsx']);
       expect(view.source.workbooks).toBe(1);
