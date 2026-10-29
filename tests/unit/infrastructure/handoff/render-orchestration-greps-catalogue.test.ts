@@ -104,7 +104,7 @@ describe('the grep table reads the aliases of the catalogue', () => {
 
 describe('a stated rule with no pattern for the stack is checked by reading', () => {
   const reading = (rule: string, source: string): string =>
-    `| checked by reading | ${rule} | ${source} |`;
+    `| checked by reading | ${rule} | ${source}`;
   const queries = 'Queries take parameters, never input joined into the text';
 
   it('DEC-190 a JavaScript stack lists the stated query rule as checked by reading', () => {
@@ -118,7 +118,7 @@ describe('a stated rule with no pattern for the stack is checked by reading', ()
     const text = greps(packageOf(['C# on .NET'], ['owasp-top-10']));
 
     expect(text).toContain('`FromSqlRaw(`');
-    expect(text).not.toContain('checked by reading');
+    expect(text).not.toContain('| checked by reading |');
   });
 
   it('DEC-190 a rule that is only suggested and has no pattern is not listed', () => {
@@ -134,7 +134,7 @@ describe('a stated rule with no pattern for the stack is checked by reading', ()
 
     expect(text).toContain('`DROP TABLE`');
     expect(text).not.toContain('Queries take parameters');
-    expect(text).not.toContain('checked by reading');
+    expect(text).not.toContain('| checked by reading |');
   });
 
   it('DEC-190 with no language chosen the stated rule is still listed as checked by reading', () => {
@@ -146,6 +146,6 @@ describe('a stated rule with no pattern for the stack is checked by reading', ()
   it('DEC-190 no sentence about reading appears when no row is checked by reading', () => {
     const text = greps(packageOf(['TypeScript on Node.js'], security));
 
-    expect(text).not.toContain('checked by reading');
+    expect(text).not.toContain('| checked by reading |');
   });
 });

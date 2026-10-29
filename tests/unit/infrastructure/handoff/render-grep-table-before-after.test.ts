@@ -13,11 +13,17 @@ const before = JSON.parse(
 const readingRow = '| checked by reading |';
 const readingSentence = 'A row whose pattern cell reads "checked by reading"';
 
+const NL = String.fromCharCode(10);
+
 function withoutAdditions(section: string): string {
-  return section
-    .split('\n')
-    .filter((line) => !line.startsWith(readingRow) && !line.startsWith(readingSentence))
-    .join('\n');
+  const lines = section.split(NL);
+  const kept = lines.filter(
+    (line, at) =>
+      !line.startsWith(readingRow) &&
+      !line.startsWith(readingSentence) &&
+      !(line === '' && lines[at - 1]?.startsWith(readingSentence) === true),
+  );
+  return kept.join(NL);
 }
 
 describe('the grep table before and after the catalogue file', () => {

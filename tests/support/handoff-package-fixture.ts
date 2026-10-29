@@ -2,7 +2,7 @@ import type {
   HandoffPackage,
   PackagePrinciple,
 } from '../../src/application/plan/handoff-package.js';
-import { noGrepRules } from '../../src/domain/planning/grep-rules.js';
+import { loadCatalogue } from '../../src/infrastructure/prompts/catalogue-files.js';
 import type { ExcludedClaim } from '../../src/domain/planning/plan-sources.js';
 import { noApiContract } from '../../src/domain/planning/api-contract.js';
 import { noUx } from '../../src/domain/planning/target-ux.js';
@@ -127,6 +127,9 @@ function excludedOf(text: string): ExcludedClaim {
   };
 }
 
+/** The grep rules of the shipped catalogue, as a plan run carries them (P6-28). */
+const shippedGrepRules = (await loadCatalogue('prompts')).grepRules;
+
 /** The package with this text in every model and repository field. */
 export function handoffOf(
   text: string,
@@ -169,7 +172,7 @@ export function handoffOf(
     openQuestions: [{ cardId: 'OQ-001', question: text, area: text }],
     prd,
     prdQuestions: prdQuestions(prd),
-    grepRules: noGrepRules,
+    grepRules: shippedGrepRules,
     ...extra,
   };
 }
