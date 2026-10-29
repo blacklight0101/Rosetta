@@ -9,6 +9,7 @@ import { runFinish } from './finish-workbooks.js';
 import type { WorkbookBatchesDependencies } from './workbook-batches-deps.js';
 import {
   hasEnded,
+  isBusy,
   newBatch,
   STARTING,
   stateOf,
@@ -74,7 +75,7 @@ export class WorkbookBatches {
     if (project.sourceKind !== 'workbook') return err(ERROR_CODES.conflict);
     const held = this.batches.get(projectId);
     // Nothing awaits between this check and the claim, so two opens together cannot both pass.
-    if ((held !== undefined && !hasEnded(held)) || this.opening.has(projectId)) {
+    if ((held !== undefined && isBusy(held)) || this.opening.has(projectId)) {
       return err(ERROR_CODES.uploadInProgress);
     }
     this.opening.add(projectId);
@@ -150,7 +151,7 @@ export class WorkbookBatches {
     await this.sweep();
     const held = this.batches.get(projectId);
     if (held === undefined) return true;
-    if (!hasEnded(held)) return false;
+    if (isBusy(held)) return false;
     await this.drop(projectId, held);
     return true;
   }
@@ -235,7 +236,7 @@ export class WorkbookBatches {
     this.sweeper.stop();
     this.abortAll();
     const works = [...this.batches.values()].flatMap((batch) =>
-      batch.work === undefined ? [] : [batch.work],
+      [batch.work, batch.late].flatMap((work) => (work === undefined ? [] : [work])),
     );
     await Promise.all(works);
     for (const [projectId, batch] of [...this.batches]) await this.drop(projectId, batch);
@@ -275,7 +276,7 @@ export class WorkbookBatches {
   private async sweep(): Promise<void> {
     const now = this.deps.clock.now().getTime();
     for (const [projectId, batch] of [...this.batches]) {
-      if (batch.phase === 'processing') continue;
+      if (batch.phase === 'processing' || batch.late !== undefined) continue;
       if (now - (batch.endedAt ?? batch.openedAt) <= BATCH_LIFETIME_MS) continue;
       if (batch.busy === undefined) await this.drop(projectId, batch);
       else {

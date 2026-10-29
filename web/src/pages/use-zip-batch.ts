@@ -5,6 +5,7 @@ import { uploadSummarySchema, type UploadState, type UploadSummary } from '../ap
 import { cancelBatch, readStateOf } from '../api/workbook-upload.js';
 import { useApp } from '../app/app-context.js';
 import { useAbortOnLeave } from './use-abort-on-leave.js';
+import { stopRun, useStopping } from './use-stopping.js';
 import { outcomeOf, watchBatch } from './workbook-watch.js';
 
 // RF-159, DEC-188: the page side of a zip that holds workbooks. The server accepts it at once and stores it
@@ -58,6 +59,8 @@ export interface ZipBatch {
   readonly follow: Follow;
   /** Stops the batch; a Cancel the server answers with 409 leaves the wait going. */
   readonly cancel: (project: Project | undefined, state: UploadState | undefined) => void;
+  /** A Cancel is waiting for the work to end (RF-159). */
+  readonly stopping: boolean;
 }
 
 /** RF-159, DEC-188: follows the batch of a zip that holds workbooks, and stops it. */
@@ -70,6 +73,7 @@ export function useZipBatch(
   const { client } = useApp();
   const leave = useAbortOnLeave();
   const stop = useRef(new AbortController());
+  const waiting = useStopping();
   const follow = (target: Project, first: UploadState, zip?: File): void => {
     stop.current = new AbortController();
     set('processing', first);
@@ -91,17 +95,14 @@ export function useZipBatch(
     });
   };
   const cancel = (project: Project | undefined, state: UploadState | undefined): void => {
-    const stopping = stop.current;
-    if (project === undefined || state === undefined) {
-      stopping.abort();
-      return;
-    }
-    void cancelBatch(client, { projectId: project.id, batchId: state.batchId }).then((answer) => {
-      // DEC-188: only an answer that the batch was stopped ends the wait. A 409 (the work had ended) or
-      // a failed request leaves it going on, and it shows how the batch really ended.
-      if (answer.ok) stopping.abort();
-    });
+    const target =
+      project === undefined || state === undefined
+        ? undefined
+        : { projectId: project.id, batchId: state.batchId };
+    // DEC-188: only an answer that the batch was stopped ends the wait. A 409 (the work had ended) or
+    // a failed request leaves it going on, and it shows how the batch really ended.
+    stopRun(waiting, stop.current, target && (() => cancelBatch(client, target)));
   };
   useResume(existing, idle, follow);
-  return { follow, cancel };
+  return { follow, cancel, stopping: waiting.stopping };
 }
