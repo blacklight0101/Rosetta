@@ -49,6 +49,8 @@ export interface BriefAnswers {
     readonly aiAssisted: boolean;
     readonly agentTool?: { readonly kind: string; readonly name?: string | undefined };
     readonly models?: Readonly<Record<string, string>>;
+    /** P6-22: the tier models that run locally; a key only when true. */
+    readonly local?: Readonly<Record<string, boolean>>;
   };
 }
 

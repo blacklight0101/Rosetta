@@ -32,18 +32,23 @@ const claudeCodeItem =
   "Agent definitions load only from the session's project folder, so otherwise a general-purpose subagent is told to read the builder or verifier file.";
 
 const windowsItems: readonly string[] = [
-  'Windows has reserved TCP port ranges; pick ports outside them.',
-  'The command-line length limit of `npx` applies to long argument lists; pass long lists through a file.',
-  'A running app locks build output; stop it before building.',
-  'The container engine stops with its Linux subsystem; start the subsystem first.',
-  'Overnight system restarts end running processes; check them in the morning.',
+  'Windows has reserved TCP port ranges.',
+  'The command-line length limit of `npx` applies to long argument lists.',
+  'A build locked by a running app is built in another configuration or after stopping the app.',
+  'The container engine stops with its Linux subsystem.',
+  'Overnight system restarts end running processes.',
 ];
 
 const dotnetItem =
   'A build locked by a running preview is built in another configuration or after stopping the preview.';
 
+// DEC-190: until the brief has a platform field, a stack answer that names Windows or IIS counts as
+// Windows; "Windows Authentication" is an authentication mechanism, not a platform, so it is removed
+// before the test.
 function platformIsWindows(handoff: HandoffPackage): boolean {
-  return handoff.choices.stack.some((each) => /\bwindows\b/iu.test(each.choice));
+  return handoff.choices.stack.some((each) =>
+    /\b(?:windows|iis)\b/iu.test(each.choice.replace(/\bwindows\s+authentication\b/giu, '')),
+  );
 }
 
 // RF-644
