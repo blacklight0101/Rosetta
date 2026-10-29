@@ -154,6 +154,42 @@ it('RF-159 Cancel stops the batch on the server, publishes nothing and offers Up
   expect(screen.getByRole('button', { name: 'Upload again' })).not.toBeNull();
 });
 
+it('RF-159 a Cancel the server refuses because the batch was already stored shows the summary, not "nothing published"', async () => {
+  const server = installFakeUploadServer();
+  renderWorkbookTab({
+    ...happyAnswers(),
+    [`GET ${stateRoute}`]: states(at(rendering, 3000), storedState()),
+    [`DELETE ${stateRoute}`]: json(409, storedState()),
+  });
+  await chooseValid();
+  await sendAll(server);
+  await screen.findByTestId('processing-detail');
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+  await tick();
+
+  await screen.findByText(/3 workbooks read/u);
+  expect(screen.queryByText(/Nothing was published/u)).toBeNull();
+});
+
+it('RF-159 a read of the state that fails once is tried again and the wait goes on', async () => {
+  const server = installFakeUploadServer();
+  const answers = [json(200, at(rendering, 3000)), failure(500, 'RST-5000')];
+  renderWorkbookTab({
+    ...happyAnswers(),
+    [`GET ${stateRoute}`]: () => answers.shift() ?? json(200, storedState()),
+  });
+  await chooseValid();
+  await sendAll(server);
+  await screen.findByTestId('processing-detail');
+
+  await tick();
+  await tick();
+
+  await screen.findByText(/3 workbooks read/u);
+  expect(screen.queryByRole('alert')).toBeNull();
+});
+
 it('RF-159 a batch the server no longer has ends the wait without a summary', async () => {
   const server = installFakeUploadServer();
   let reads = 0;
