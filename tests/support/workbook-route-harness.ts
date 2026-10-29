@@ -132,3 +132,62 @@ export function cancelBatch(
     url: `${batchesUrl(target.projectId)}/${target.batchId}`,
   });
 }
+
+export function batchState(
+  browser: TestBrowser,
+  target: { readonly projectId: string; readonly batchId: string },
+): Promise<LightMyRequestResponse> {
+  return browser.request({
+    method: 'GET',
+    url: `${batchesUrl(target.projectId)}/${target.batchId}`,
+  });
+}
+
+/** RF-159: the batch of the project, found without its id. */
+export function currentBatch(
+  browser: TestBrowser,
+  projectId: string,
+): Promise<LightMyRequestResponse> {
+  return browser.request({ method: 'GET', url: `${batchesUrl(projectId)}/current` });
+}
+
+/** What a reader of the finish sees once the work after the request has ended (RF-159). */
+export interface Finished {
+  readonly statusCode: number;
+  json(): unknown;
+}
+
+const stateBody = z.looseObject({
+  phase: z.string(),
+  summary: z.unknown().optional(),
+  refusal: z.looseObject({ status: z.number() }).optional(),
+});
+
+/**
+ * Asks for the state of a batch that was accepted every few milliseconds until it ends: the summary
+ * with 201 when it was stored, the refusal with its own status when it was refused.
+ */
+export async function settledBatch(
+  browser: TestBrowser,
+  target: { readonly projectId: string; readonly batchId: string },
+): Promise<Finished> {
+  for (let turn = 0; turn < 2000; turn += 1) {
+    const state = stateBody.parse((await batchState(browser, target)).json());
+    if (state.phase === 'stored') return { statusCode: 201, json: () => state.summary };
+    if (state.refusal !== undefined) {
+      const { status, ...body } = state.refusal;
+      return { statusCode: status, json: () => body };
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  throw new Error('the batch did not end');
+}
+
+/** Finishes the batch and waits for the work after the request; an answer that is not 202 is returned as it is. */
+export async function finishedBatch(
+  browser: TestBrowser,
+  target: { readonly projectId: string; readonly batchId: string },
+): Promise<Finished> {
+  const accepted = await finishBatch(browser, target);
+  return accepted.statusCode === 202 ? settledBatch(browser, target) : accepted;
+}

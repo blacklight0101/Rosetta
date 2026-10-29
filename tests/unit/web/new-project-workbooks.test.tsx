@@ -10,6 +10,8 @@ import {
   chooseValid,
   filesRoute,
   finishRoute,
+  stateRoute,
+  storedState,
   formOf,
   happyAnswers,
   posts,
@@ -245,7 +247,7 @@ it('RF-150 an unreadable finish answer is not taken for a stored batch', async (
   const server = installFakeUploadServer();
   renderWorkbookTab({
     ...happyAnswers(),
-    [`POST ${finishRoute}`]: json(201, { workbooks: 'many' }),
+    [`GET ${stateRoute}`]: json(200, storedState({ workbooks: 'many' })),
   });
   await chooseValid();
 

@@ -8,6 +8,7 @@ import {
   batchCase,
   bob,
   fileRequest,
+  finishAndWait,
   workbookProject,
   type BatchCase,
 } from '../../../support/workbook-batch-harness.js';
@@ -27,7 +28,6 @@ async function withFiles(test: BatchCase, names: readonly string[]): Promise<str
 function finishRequest(test: BatchCase, batchId: string, actor: Actor = amy) {
   return {
     ...{ actor, projectId: test.project.id, batchId, ip: '203.0.113.7' },
-    signal: new AbortController().signal,
   };
 }
 
@@ -36,7 +36,7 @@ describe('WorkbookBatches.finish', () => {
     const test = await batchCase();
     const batchId = await withFiles(test, ['Pricing.xlsx', 'Rates.xlsm']);
 
-    const outcome = await test.useCase.finish(finishRequest(test, batchId));
+    const outcome = await finishAndWait(test, finishRequest(test, batchId));
 
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
@@ -59,7 +59,7 @@ describe('WorkbookBatches.finish', () => {
     const test = await batchCase();
     const batchId = await withFiles(test, ['Pricing.xlsx', 'Rates.xlsm']);
 
-    await test.useCase.finish(finishRequest(test, batchId));
+    await finishAndWait(test, finishRequest(test, batchId));
 
     const stored = await test.projects.find(amy.userId, test.project.id);
     expect(stored?.upload).toMatchObject({
@@ -76,7 +76,7 @@ describe('WorkbookBatches.finish (2)', () => {
     const test = await batchCase();
     const batchId = await withFiles(test, ['Pricing.xlsx', 'Rates.xlsm']);
 
-    await test.useCase.finish(finishRequest(test, batchId));
+    await finishAndWait(test, finishRequest(test, batchId));
 
     const rows = await test.auditLog.list({ since: 0 });
     const uploaded = rows.filter((row) => row.action === 'source.workbook.uploaded');
@@ -104,10 +104,10 @@ describe('WorkbookBatches.finish (2)', () => {
   it('RF-150 ends the batch: a file after the finish and a second finish are not found', async () => {
     const test = await batchCase();
     const batchId = await withFiles(test, ['Pricing.xlsx']);
-    await test.useCase.finish(finishRequest(test, batchId));
+    await finishAndWait(test, finishRequest(test, batchId));
 
     const file = await test.useCase.receive(fileRequest(test.project, batchId));
-    const again = await test.useCase.finish(finishRequest(test, batchId));
+    const again = await finishAndWait(test, finishRequest(test, batchId));
     const reopened = await test.useCase.open({ actor: amy, projectId: test.project.id });
 
     expect(file).toEqual({ ok: false, error: ERROR_CODES.notFound });
@@ -121,7 +121,7 @@ describe('WorkbookBatches.finish (3)', () => {
     const test = await batchCase();
     const batchId = await withFiles(test, []);
 
-    const outcome = await test.useCase.finish(finishRequest(test, batchId));
+    const outcome = await finishAndWait(test, finishRequest(test, batchId));
     const file = await test.useCase.receive(fileRequest(test.project, batchId));
 
     expect(outcome).toEqual({ ok: false, error: ERROR_CODES.requestInvalid });
@@ -134,7 +134,7 @@ describe('WorkbookBatches.finish (3)', () => {
     const test = await batchCase();
     const batchId = await withFiles(test, ['Pricing.xlsx']);
 
-    const foreign = await test.useCase.finish(finishRequest(test, batchId, bob));
+    const foreign = await finishAndWait(test, finishRequest(test, batchId, bob));
 
     expect(foreign).toEqual({ ok: false, error: ERROR_CODES.notFound });
     expect(test.staging.published).toEqual([]);
@@ -147,7 +147,7 @@ describe('WorkbookBatches.finish when a workbook is refused', () => {
     const batchId = await withFiles(test, ['Pricing.xlsx']);
     test.staging.publishFails = new RosettaError(ERROR_CODES.workbookEncrypted);
 
-    await expect(test.useCase.finish(finishRequest(test, batchId))).rejects.toMatchObject({
+    await expect(finishAndWait(test, finishRequest(test, batchId))).rejects.toMatchObject({
       code: ERROR_CODES.workbookEncrypted,
     });
 
@@ -166,7 +166,7 @@ describe('WorkbookBatches.finish when a workbook is refused', () => {
         .remove(amy.userId, test.project.id, () => Promise.resolve())
         .then(() => undefined);
 
-    const outcome = await test.useCase.finish(finishRequest(test, batchId));
+    const outcome = await finishAndWait(test, finishRequest(test, batchId));
 
     expect(outcome).toEqual({ ok: false, error: ERROR_CODES.notFound });
     expect(test.uploads.removed).toHaveLength(1);
@@ -177,11 +177,11 @@ describe('WorkbookBatches.finish when the source is uploaded again', () => {
   it('RF-150 keeps the earlier snapshot while a run uses it and deletes it otherwise', async () => {
     const test = await batchCase(workbookProject());
     const first = await withFiles(test, ['Pricing.xlsx']);
-    await test.useCase.finish(finishRequest(test, first));
+    await finishAndWait(test, finishRequest(test, first));
     const earlier = (await test.projects.find(amy.userId, test.project.id))?.upload?.snapshotKey;
 
     const second = await withFiles(test, ['Costs.xlsx']);
-    const outcome = await test.useCase.finish(finishRequest(test, second));
+    const outcome = await finishAndWait(test, finishRequest(test, second));
 
     expect(outcome.ok).toBe(true);
     expect(test.uploads.removed).toEqual([earlier]);
@@ -190,7 +190,7 @@ describe('WorkbookBatches.finish when the source is uploaded again', () => {
   it('RF-150 says the code changed since the last run when the newest run read another snapshot', async () => {
     const test = await batchCase();
     const first = await withFiles(test, ['Pricing.xlsx']);
-    await test.useCase.finish(finishRequest(test, first));
+    await finishAndWait(test, finishRequest(test, first));
     const key = (await test.projects.find(amy.userId, test.project.id))?.upload?.snapshotKey ?? '';
     await test.runs.insert(
       sampleRun({
@@ -201,7 +201,7 @@ describe('WorkbookBatches.finish when the source is uploaded again', () => {
     test.projects.followRuns(test.runs);
 
     const second = await withFiles(test, ['Costs.xlsx']);
-    const outcome = await test.useCase.finish(finishRequest(test, second));
+    const outcome = await finishAndWait(test, finishRequest(test, second));
 
     expect(outcome.ok && outcome.value.codeChangedSinceLastRun).toBe(true);
     expect(test.uploads.removed).toEqual([]);

@@ -36,6 +36,7 @@ const finishBody = z.object({
   workbooks: z.array(z.object({ name: z.string(), sheets: z.number() })),
   snapshotHash: z.string(),
 });
+const stateBody = z.object({ phase: z.string(), summary: finishBody.optional() });
 
 /** A signed-in client of the started application: cookies kept by hand, as a browser does. */
 async function signedIn(address: string, password: string) {
@@ -129,6 +130,16 @@ async function putBook(send: Send, batch: { base: string; batchId: string }, nam
   });
 }
 
+/** RF-159: the summary the state of the batch gives once the work after the finish has ended. */
+async function summaryOf(send: Send, path: string): Promise<z.output<typeof finishBody>> {
+  for (let turn = 0; turn < 400; turn += 1) {
+    const state = stateBody.parse(await (await send(path)).json());
+    if (state.summary !== undefined) return state.summary;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error('the batch did not end');
+}
+
 describe.skipIf(!hasTestDatabase)('the composed application and a batch of workbooks', () => {
   it('RF-150 RF-157 takes a batch, publishes its snapshot, shows the source and deletes it with the project', async () => {
     const { application, password, dataDir, pool } = await composed(database);
@@ -140,14 +151,14 @@ describe.skipIf(!hasTestDatabase)('the composed application and a batch of workb
       const batch = await openedBatch(send, 'Pricing');
       const files = [await putBook(send, batch, 'A.xlsx'), await putBook(send, batch, 'B.xlsx')];
       const finished = await send(`${batch.base}/${batch.batchId}/finish`, { method: 'POST' });
-      const summary = finishBody.parse(await finished.json());
+      const summary = await summaryOf(send, `${batch.base}/${batch.batchId}`);
       const shown: unknown = await (await send(`/api/projects/${batch.id}`)).json();
       const stored = await workbookFolders(dataDir);
       const deleted = await send(`/api/projects/${batch.id}`, { method: 'DELETE' });
 
       expect(session.workbookMaxFiles).toBe(3);
       expect(files.map((file) => file.status)).toEqual([201, 201]);
-      expect(finished.status).toBe(201);
+      expect(finished.status).toBe(202);
       expect(summary.workbooks.map((workbook) => workbook.name)).toEqual(['A.xlsx', 'B.xlsx']);
       expect(stored).toEqual([`workbook__${batch.id}@${summary.snapshotHash.slice(7, 23)}`]);
       expect(shown).toMatchObject({ source: { workbooks: 2 }, sourceKind: 'workbook' });
