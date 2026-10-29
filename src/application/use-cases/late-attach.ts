@@ -53,6 +53,9 @@ export async function settleLate<S extends BatchSummary, P>(
   late: LateAttach<S, P>,
 ): Promise<void> {
   try {
+    // The refusal (RST-1918) is written when the work has ended; the correction comes after it, so the
+    // refusal can never overwrite it.
+    await batch.work;
     const settled = await late.attach.then(
       (result) => ({ result }),
       () => undefined,
