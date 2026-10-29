@@ -106,3 +106,30 @@ test('RF-612 an answer changed while a save is on its way is kept when the save 
   await expect(people).toBeChecked();
   await expect(recorded(page)).toContainText('People will build');
 });
+
+// RF-639, RF-641, DEC-185, P6-22: the runs-locally checkbox of a tier model: labelled, operable by
+// keyboard, kept by a save and a reload, and free of serious accessibility violations.
+test('RF-639 a tier model can be marked as running locally with the keyboard, and it is kept', async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  await understandCatalog(page);
+  await openStartPage(page);
+  await openPlanSetup(page);
+  await openStep(page, 'Build method');
+  await page.getByRole('radio', { name: /^Agents will build/u }).check();
+  await page.getByRole('radio', { name: /^Codex/u }).check();
+  const local = page.getByRole('checkbox', { name: /^Middle tier model runs locally/iu });
+  await expect(local).not.toBeChecked();
+  await local.focus();
+  await page.keyboard.press('Space');
+  await expect(local).toBeChecked();
+  await expectNoSeriousViolations(page);
+  await save(page);
+  await expect(recorded(page)).toContainText('runs locally: middle');
+
+  await page.reload();
+  await openStep(page, 'Build method');
+  await expect(local).toBeChecked();
+  await expectNoSeriousViolations(page);
+});
