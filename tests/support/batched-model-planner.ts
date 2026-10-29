@@ -30,6 +30,8 @@ export interface Script {
   readonly poison?: string | undefined;
   /** Every answer is whole but not JSON. */
   readonly garbage?: boolean | undefined;
+  /** Every answer is this text (P7-13: a recorded answer of the failing kind). */
+  readonly answer?: string | undefined;
 }
 
 function idsIn(message: string): string[] {
@@ -50,6 +52,7 @@ function tableFor(id: string): unknown {
 }
 
 function answerFor(script: Script, ids: readonly string[]): { text: string; cut: boolean } {
+  if (script.answer !== undefined) return { text: script.answer, cut: false };
   if (script.garbage === true) return { text: 'not json at all', cut: false };
   const cut = ids.length > script.maxEntities || ids.includes(script.poison ?? '-');
   const whole = JSON.stringify({ tables: ids.map(tableFor), dropped: [] });

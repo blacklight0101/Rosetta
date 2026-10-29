@@ -1,0 +1,135 @@
+{
+  "tables": [
+    {
+      "name": "inventory",
+      "purpose": "Keeps one row per product with its stock counts and store location.",
+      "sources": [
+        "ENT-002"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": false,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "product_name",
+          "type": "varchar(200)",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "Product Name"
+          },
+          "risk": ""
+        },
+        {
+          "name": "closing_stock",
+          "type": "integer",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "Closing Stock"
+          },
+          "risk": ""
+        },
+        {
+          "name": "est_asset_value",
+          "type": "numeric(12,2)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "Est. Asset Value"
+          },
+          "risk": ""
+        },
+        {
+          "name": "store_location",
+          "type": "varchar(20)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c2",
+            "field": "Store location"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [
+        "store_location is STORE ROOM 2 or STORE ROOM 3"
+      ],
+      "indexes": []
+    },
+    {
+      "name": "stock_in_out",
+      "purpose": "Logs one row per stock movement.",
+      "sources": [
+        "ENT-003"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": false,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "product_name",
+          "type": "varchar(200)",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-003.c2",
+            "field": "Product Name"
+          },
+          "risk": ""
+        },
+        {
+          "name": "movement_type",
+          "type": "varchar(3)",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-003.c2",
+            "field": "In/Out"
+          },
+          "risk": ""
+        },
+        {
+          "name": "quantity",
+          "type": "integer",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c2",
+            "field": "Qty"
+          },
+          "risk": ""
+        },
+        {
+          "name": "total_value",
+          "type": "numeric(12,2)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c2",
+            "field": "Total Value"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [
+        "movement_type is IN or OUT"
+      ],
+      "indexes": []
+    }
+  ],
+  "dropped": []
+}

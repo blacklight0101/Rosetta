@@ -119,3 +119,8 @@ export function typeProblems(model: TargetDataModel): DataModelProblem[] {
     }),
   );
 }
+
+/** P7-13 stub: the model with every type under the one name of its database. */
+export function withCanonicalTypes(model: TargetDataModel): TargetDataModel {
+  return model;
+}
