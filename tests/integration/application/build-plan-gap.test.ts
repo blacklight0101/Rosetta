@@ -247,7 +247,7 @@ describe('BuildPlan: plans the call cannot serve', () => {
 });
 
 describe('BuildPlan: the gap cards under SDD', () => {
-  it('RF-607 given SDD a card that implements no requirement is not added', async () => {
+  it('RF-607 P7-14 given SDD a card no requirement covers is added, with a note in checks.md', async () => {
     const h = await gappedPlan(
       gapRecordingOf(
         JSON.stringify({
@@ -262,7 +262,9 @@ describe('BuildPlan: the gap cards under SDD', () => {
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
-    expect((plain((await h.handoffOf(run))['tasks.md']).match(/^## T-/gmu) ?? []).length).toBe(11);
+    const written = await h.handoffOf(run);
+    expect((plain(written['tasks.md']).match(/^## T-/gmu) ?? []).length).toBe(12);
+    expect(plain(written['checks.md'])).toMatch(/builds flow:FLOW-001, but no requirement cites/u);
   });
 
   it('RF-607 without SDD the same card is added', async () => {

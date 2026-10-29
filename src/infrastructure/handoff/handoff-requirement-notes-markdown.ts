@@ -14,6 +14,9 @@ function lineOf(note: RequirementNote): string {
     const size = `${String(count)} requirement${count === 1 ? '' : 's'}`;
     return `- The task card at position ${String(card)} of the plan answer lists requirement position ${String(position)}, but the plan has ${size}; that position was ignored.`;
   }
+  if (note.kind === 'unbacked') {
+    return `- ${note.task} builds ${note.item}, but no requirement cites a source card behind it: the card is kept without a requirement, and the item needs a requirement (RF-607).`;
+  }
   const { task, requirement } = note;
   const none = `${SHARED} share nothing with what the task builds`;
   if (note.kind === 'unmatched') {
