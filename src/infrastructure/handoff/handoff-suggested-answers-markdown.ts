@@ -8,6 +8,9 @@ import type { MarkdownEscaper } from '../cards/markdown-text.js';
 
 const intro =
   'Suggested answers, the recommended one first; the team may answer otherwise or type its own:';
+// DEC-184: a question with no recommended option (the build method) says so instead.
+const introNone =
+  'Suggested answers, none recommended; the team may answer otherwise or type its own:';
 
 /** The recommended answer first, the others in the order given. */
 function recommendedFirst(options: readonly SuggestedOption[]): readonly SuggestedOption[] {
@@ -24,7 +27,7 @@ export function suggestedAnswerLines(
 ): string[] {
   if (options === undefined || options.length === 0) return [];
   return [
-    `  ${intro}`,
+    `  ${options.some((option) => option.recommended) ? intro : introNone}`,
     '',
     ...recommendedFirst(options).map(
       (option, index) =>

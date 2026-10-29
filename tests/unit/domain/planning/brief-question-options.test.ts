@@ -29,11 +29,15 @@ describe('briefQuestionOptions', () => {
     expect(method.some((option) => option.recommended)).toBe(false);
   });
 
-  it('RF-645 the other questions have one recommended option, the default', () => {
-    for (const [id, list] of Object.entries(options)) {
-      if (id === 'buildMethod') continue;
-      expect(list.filter((option) => option.recommended)).toHaveLength(1);
-    }
+  it('RF-645 each question marks its default recommended; a stack layer with no proposal marks none', () => {
+    const marked = (id: string): number => of(id).filter((option) => option.recommended).length;
+    const others = Object.keys(options).filter(
+      (id) => id !== 'buildMethod' && id !== 'principles' && !id.startsWith('stack.'),
+    );
+
+    expect(others.map(marked)).toEqual(others.map(() => 1));
+    expect(marked('principles')).toBeGreaterThan(0);
+    expect(marked('stack.database')).toBe(0);
     expect(of('migration').find((o) => o.recommended)?.answer).toBe('Strangler Fig');
     expect(of('architecture').find((o) => o.recommended)?.answer).toBe('Layered (N-tier)');
   });

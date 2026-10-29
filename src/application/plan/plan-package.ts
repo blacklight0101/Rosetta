@@ -2,6 +2,7 @@ import { claimMeaning } from '../../domain/planning/claim-meaning.js';
 import { usableCards } from '../../domain/planning/code-over-documentation.js';
 import { stackClashes } from '../../domain/planning/stack-rules.js';
 import { decideOnce } from '../../domain/planning/brief-restated.js';
+import { briefQuestionOptions } from '../../domain/planning/brief-question-options.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
 import { copiedExamples, exampleSentencesOfAll } from '../../domain/planning/copied-example.js';
 import { settleJudgements } from '../../domain/planning/claim-judgement.js';
@@ -281,6 +282,7 @@ export function handoffPackageOf(
     sources,
     excluded: excludedClaims(cards),
     briefQuestions: defaultedQuestions(brief, catalogue),
+    briefOptions: briefQuestionOptions(brief, catalogue),
     openQuestions: openQuestionsOf(questions, cards),
     prd,
     dataModel,
