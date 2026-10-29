@@ -102,6 +102,8 @@ export interface HandoffPackage {
   readonly sources: readonly SourceCard[];
   readonly excluded: readonly ExcludedClaim[];
   readonly briefQuestions: readonly DefaultedQuestion[];
+  /** P6-31, RF-645: the Plan setup options of a brief question that took its default, by question id. */
+  readonly briefOptions?: Readonly<Record<string, readonly SuggestedOption[]>> | undefined;
   readonly openQuestions: readonly UnansweredQuestion[];
   /** The product requirements document (RF-621), checked against the supported cards. */
   readonly prd: PrdContent;
