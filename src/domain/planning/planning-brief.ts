@@ -155,7 +155,7 @@ function isPrinciple(catalogue: Catalogue, id: string): boolean {
   );
 }
 
-/** What is wrong with the answers of a save: an unknown principle, a repeated layer or entry. */
+/** What is wrong with the answers of a save: an unknown principle, a repeated layer or entry, a typed build method with agents. */
 // RF-605
 export function briefProblems(answers: BriefAnswers, catalogue: Catalogue): BriefProblem[] {
   const problems: BriefProblem[] = [];
@@ -177,7 +177,14 @@ export function briefProblems(answers: BriefAnswers, catalogue: Catalogue): Brie
       problems.push({ field: `typed.${id}`, reason: 'This question takes no typed text.' });
     }
   }
-  return problems;
+  return [...problems, ...typedBuildMethodProblems(answers)];
+}
+
+// DEC-187 (4): a typed build method is not an agent build; Rosetta does not read free text as a choice.
+function typedBuildMethodProblems(answers: BriefAnswers): BriefProblem[] {
+  return answers.buildMethod?.aiAssisted === true && hasTypedText(answers.typed, 'buildMethod')
+    ? [{ field: 'typed.buildMethod', reason: 'A typed build method cannot be saved with agents.' }]
+    : [];
 }
 
 function contextOf(given: BriefAnswers['context']): ProjectContext {
