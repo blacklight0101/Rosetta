@@ -19,10 +19,12 @@ import type { BatchProblem, WorkbookBatchSummary } from './workbook-batch-types.
 export interface AttachDependencies {
   readonly projects: ProjectRepository;
   readonly runs: Pick<RunIndex, 'list'>;
-  readonly uploads: Pick<UploadStore, 'remove'>;
+  readonly uploads: Pick<UploadStore, 'remove' | 'rewriteInfo'>;
   readonly auditLog: AuditLog;
   readonly logger: Logger;
   readonly clock: Clock;
+  /** RF-159: how long the attach may take before the batch ends refused; 60 seconds when absent. */
+  readonly attachTimeoutMs?: number;
 }
 
 export interface Attachment {
@@ -53,10 +55,12 @@ export async function attachWorkbooks(
     updatedAt: uploadedAt.getTime(),
   });
   if (attached === undefined) {
-    // The project was deleted while the batch was read: its new snapshot has no owner.
-    await uploads.remove(published.key);
+    // The project was deleted while the batch was read: a snapshot this batch created has no owner.
+    if (published.created) await uploads.remove(published.key);
     return err(ERROR_CODES.notFound);
   }
+  // RF-128: the same content was already stored; now that it is the source, the newest upload names it.
+  if (!published.created) await uploads.rewriteInfo(published.key, published.info);
   await pruneEarlier(deps, project, published.key);
   await recordWorkbooks(deps, {
     ...{ actor, projectId: project.id, ip },

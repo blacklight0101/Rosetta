@@ -170,8 +170,10 @@ describe('StoreUpload Cancel of a zip at work', () => {
     const state = await accepted(await useCase.execute(request(project)));
     const target = { actor: amy, projectId: project.id, batchId: state.batchId };
 
-    const cancelled = await batches.cancel(target);
+    const stopping = batches.cancel(target);
+    await settle();
     release();
+    const cancelled = await stopping;
     await settle();
 
     expect(cancelled).toEqual({ ok: true, value: { cancelled: true } });
@@ -189,8 +191,14 @@ describe('StoreUpload Cancel of a zip stored just as it came', () => {
     const release = hold(uploads);
     const state = await accepted(await useCase.execute(request(project)));
 
-    await batches.cancel({ actor: amy, projectId: project.id, batchId: state.batchId });
+    const cancelling = batches.cancel({
+      actor: amy,
+      projectId: project.id,
+      batchId: state.batchId,
+    });
+    await settle();
     release();
+    await cancelling;
     await settle();
 
     expect(uploads.removed).toEqual([uploadSnapshotKey(project.id, uploads.hash)]);

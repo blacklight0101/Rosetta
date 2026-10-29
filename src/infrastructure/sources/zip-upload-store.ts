@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { SentSnapshot, UploadSnapshotInfo } from '../../application/ports/source-fetcher.js';
+import type {
+  SentSnapshot,
+  UploadSnapshotInfo,
+  WorkbookSnapshotInfo,
+} from '../../application/ports/source-fetcher.js';
 import type {
   StoredUpload,
   UploadRequest,
@@ -114,8 +118,10 @@ export class ZipUploadStore implements UploadStore {
   }
 
   // RF-128: the newest upload of the same content names the snapshot; the tree is not touched.
-  async rewriteInfo(key: string, info: UploadSnapshotInfo): Promise<void> {
-    if (!isUploadSnapshotKey(key)) throw snapshotWriteFailed(`${key} is not an upload`, undefined);
+  async rewriteInfo(key: string, info: UploadSnapshotInfo | WorkbookSnapshotInfo): Promise<void> {
+    if (!isUploadSnapshotKey(key) && !isWorkbookSnapshotKey(key)) {
+      throw snapshotWriteFailed(`${key} is not an upload`, undefined);
+    }
     await this.snapshots.rewriteInfo(key, info);
   }
 

@@ -114,6 +114,20 @@ it('RF-159 Cancel stops the work on the server, publishes nothing and offers Upl
   expect(screen.getByRole('button', { name: 'Upload again' })).not.toBeNull();
 });
 
+it('RF-159 a Cancel that fails with a server error keeps reading the state and shows how the zip really ended', async () => {
+  await accepted({
+    [`GET ${stateRoute}`]: states(at(rendering, 3000), stored),
+    [`DELETE ${stateRoute}`]: failure(500, 'RST-5000'),
+  });
+  await screen.findByTestId('processing-detail');
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+  await tick();
+
+  await screen.findByText(/70 files kept/u);
+  expect(screen.queryByText(/Nothing was published/u)).toBeNull();
+});
+
 it('DEC-188 a Cancel the server answers with 409 because the zip was already stored shows the summary', async () => {
   await accepted({
     [`GET ${stateRoute}`]: states(at(rendering, 3000), stored),

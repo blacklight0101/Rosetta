@@ -14,6 +14,8 @@ import { recordWorkbooks } from '../projects/record-workbooks.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { endBatch, stateOf, type BatchOutcome, type HeldBatch } from './workbook-batch-state.js';
 import type { BatchState } from './workbook-batch-types.js';
+import { withinAttachLimit } from './attach-limit.js';
+import { logBatchFailure } from './batch-failure-log.js';
 import { summaryOf, type UploadSummary } from './upload-summary.js';
 import type { WorkbookBatches } from './workbook-batches.js';
 
@@ -28,6 +30,8 @@ export interface StoreUploadDependencies {
   readonly clock: Clock;
   /** `ROSETTA_UPLOAD_MAX_MB` in bytes. */
   readonly limitBytes: number;
+  /** RF-159: how long the attach may take before the batch ends refused; 60 seconds when absent. */
+  readonly attachTimeoutMs?: number;
   /** RF-159, DEC-188: where the batch of a zip that holds workbooks lives, read like a workbook batch. */
   readonly batches: Pick<WorkbookBatches, 'claim' | 'adopt'>;
 }
@@ -132,30 +136,12 @@ export class StoreUpload {
         : { kind: 'refused', error: new RosettaError(result.error) };
     } catch (error) {
       outcome = { kind: 'refused', error };
-      await this.logFailure(error, signal);
+      await logBatchFailure(this.deps.logger, {
+        ...{ error, signal, stopped: 'A zip being stored was stopped.' },
+        unexpected: 'Storing a zip failed unexpectedly.',
+      });
     }
     endBatch(batch, outcome, this.deps.clock.now().getTime());
-  }
-
-  /**
-   * A stop by the user is told at info level; an error nobody expected is an error (RF-158). It is
-   * logged if the log can take it, as for a workbook batch: it never rejects, so the batch still ends.
-   */
-  private async logFailure(error: unknown, signal: AbortSignal): Promise<void> {
-    if (error instanceof RosettaError) return;
-    const stopped = signal.aborted;
-    const message = stopped
-      ? 'A zip being stored was stopped.'
-      : 'Storing a zip failed unexpectedly.';
-    const reason = error instanceof Error ? error.message : 'unknown';
-    try {
-      await this.deps.logger.log({
-        ...{ level: stopped ? 'info' : 'error', logger: 'sources', message },
-        data: { reason },
-      });
-    } catch {
-      // The log is down as well: the outcome still ends the batch.
-    }
   }
 
   /** Stops every upload in flight (server shutdown). */
@@ -201,7 +187,8 @@ export class StoreUpload {
       if (hooks.signal.aborted) return this.stopped(stored, hooks.signal);
       batch.attaching = true;
     }
-    return this.publish(request, { project, stored, fileName: name.value, uploadedAt });
+    const done = { project, stored, fileName: name.value, uploadedAt };
+    return withinAttachLimit(this.publish(request, done), this.deps.attachTimeoutMs);
   }
 
   /** The stored zip becomes the source of the project, with its audit rows (RF-128, RF-133). */

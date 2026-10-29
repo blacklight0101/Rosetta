@@ -195,8 +195,8 @@ function useRunner(input: RunnerInput): Runner {
     }
     const target = { projectId: project.id, batchId: out.processing.batchId };
     void cancelBatch(client, target).then((cancelled) => {
-      // RF-159: 409 means the work had already ended; the wait goes on and shows how it ended.
-      if (cancelled.ok || cancelled.error.status !== 409) stopping.abort();
+      // RF-159: only a stopped batch ends the wait; a 409 or a failed request shows how it really ended.
+      if (cancelled.ok) stopping.abort();
     });
   };
   return { send, follow, cancel };

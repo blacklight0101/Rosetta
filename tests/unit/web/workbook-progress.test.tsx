@@ -172,6 +172,24 @@ it('RF-159 a Cancel the server refuses because the batch was already stored show
   expect(screen.queryByText(/Nothing was published/u)).toBeNull();
 });
 
+it('RF-159 a Cancel that fails with a server error keeps reading the state and shows how the batch really ended', async () => {
+  const server = installFakeUploadServer();
+  renderWorkbookTab({
+    ...happyAnswers(),
+    [`GET ${stateRoute}`]: states(at(rendering, 3000), storedState()),
+    [`DELETE ${stateRoute}`]: failure(500, 'RST-5000'),
+  });
+  await chooseValid();
+  await sendAll(server);
+  await screen.findByTestId('processing-detail');
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+  await tick();
+
+  await screen.findByText(/3 workbooks read/u);
+  expect(screen.queryByText(/Nothing was published/u)).toBeNull();
+});
+
 it('RF-159 a read of the state that fails once is tried again and the wait goes on', async () => {
   const server = installFakeUploadServer();
   const answers = [json(200, at(rendering, 3000)), failure(500, 'RST-5000')];

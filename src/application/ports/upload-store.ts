@@ -1,4 +1,4 @@
-import type { SentSnapshot, UploadSnapshotInfo } from './source-fetcher.js';
+import type { SentSnapshot, UploadSnapshotInfo, WorkbookSnapshotInfo } from './source-fetcher.js';
 import type { LeftOut, ProgressListener, WorkbookSummaryLine } from './workbook-staging.js';
 
 // RF-128, RF-129, RF-130, RFC-004 section 4.2: where an uploaded zip becomes a snapshot. The store
@@ -57,10 +57,10 @@ export interface UploadStore {
   /** The snapshot of an upload or workbook key; undefined when there is none. */
   read(key: string): Promise<SentSnapshot | undefined>;
   /**
-   * RF-128: gives a stored snapshot the description of the newest upload of its content, once that
-   * upload is the project's source. The tree is never touched.
+   * RF-128: gives a stored snapshot the description of the newest upload of its content (a zip, or a
+   * batch of workbooks), once that upload is the project's source. The tree is never touched.
    */
-  rewriteInfo(key: string, info: UploadSnapshotInfo): Promise<void>;
+  rewriteInfo(key: string, info: UploadSnapshotInfo | WorkbookSnapshotInfo): Promise<void>;
   /** Deletes one snapshot; false when there is none. */
   remove(key: string): Promise<boolean>;
   /** Deletes every snapshot of the project's uploads and workbooks; how many went. */

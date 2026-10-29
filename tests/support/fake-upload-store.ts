@@ -28,6 +28,8 @@ export class FakeUploadStore implements UploadStore {
   reports: WorkbookProgress[] = [];
   /** When set, `store` waits for it. */
   gate: Promise<void> | undefined;
+  /** When set, `remove` waits for it: a deletion that is still going on (RF-159). */
+  removeGate: Promise<void> | undefined;
   /** RF-159: once the gate lets go, a store whose request was aborted stops, as the real one does. */
   stopsOnAbort = false;
   /** RF-159, DEC-188: the store tells its caller that the zip holds workbooks, as the real one does. */
@@ -72,11 +74,23 @@ export class FakeUploadStore implements UploadStore {
   /** The reports, the wait for the gate, a stop by the request and a failure the test asked for. */
   private async work(request: UploadRequest): Promise<void> {
     for (const report of this.reports) request.onProgress?.(report);
-    if (this.gate !== undefined) await this.gate;
+    // A real store stops at once when its request is aborted, so the Cancel that waits for it is answered.
+    if (this.gate !== undefined) await Promise.race([this.gate, this.stopped(request)]);
     if (this.stopsOnAbort && request.signal.aborted) {
       throw request.signal.reason instanceof Error ? request.signal.reason : new Error('stopped');
     }
     if (this.failWith !== undefined) throw this.failWith;
+  }
+
+  /** Settles when the request is aborted, if the store stops on abort; never otherwise. */
+  private stopped(request: UploadRequest): Promise<void> {
+    if (!this.stopsOnAbort) return new Promise<void>(() => undefined);
+    return new Promise<void>((resolve) => {
+      if (request.signal.aborted) resolve();
+      request.signal.addEventListener('abort', () => {
+        resolve();
+      });
+    });
   }
 
   read(): Promise<undefined> {
@@ -88,9 +102,10 @@ export class FakeUploadStore implements UploadStore {
     return Promise.resolve();
   }
 
-  remove(key: string): Promise<boolean> {
+  async remove(key: string): Promise<boolean> {
     this.removed.push(key);
-    return Promise.resolve(true);
+    if (this.removeGate !== undefined) await this.removeGate;
+    return true;
   }
 
   removeAllOf(projectId: string): Promise<number> {

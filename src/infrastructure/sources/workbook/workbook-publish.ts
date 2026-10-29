@@ -110,14 +110,12 @@ async function publishTree(
   partial: string,
   key: string,
   info: WorkbookSnapshotInfo,
-): Promise<void> {
+): Promise<boolean> {
   await snapshots.writeInfo(partial, info);
-  if (await snapshots.commit(partial, key)) {
-    await snapshots.makeReadOnly(snapshots.snapshotDir(key));
-  } else {
-    // The same content is already stored: the newest upload names it, as for a zip (RF-128).
-    await snapshots.rewriteInfo(key, info);
-  }
+  const created = await snapshots.commit(partial, key);
+  // The same content already stored is left as it is; it is named once the upload is kept (RF-159).
+  if (created) await snapshots.makeReadOnly(snapshots.snapshotDir(key));
+  return created;
 }
 
 /** Reads, renders and publishes the batch; nothing is left behind when it fails. */
@@ -155,8 +153,14 @@ export async function publishWorkbooks(
       skippedLinks: 0,
     };
     const key = workbookSnapshotKey(input.projectId, tree.snapshotHash);
-    await publishTree(snapshots, dir, key, info);
-    return { key, info, summary: entries.map(summaryOf), skipped: skippedOf(input, rendered) };
+    const created = await publishTree(snapshots, dir, key, info);
+    return {
+      key,
+      created,
+      info,
+      summary: entries.map(summaryOf),
+      skipped: skippedOf(input, rendered),
+    };
   } catch (error) {
     await rm(dir, { recursive: true, force: true });
     throw error;

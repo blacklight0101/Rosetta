@@ -119,8 +119,11 @@ describe('WorkbookBatches.finish and cancel', () => {
     const release = holdPublish(test);
     await test.useCase.finish(finishOf(test, batchId));
 
-    const cancelled = await test.useCase.cancel(ref(test, batchId));
+    // The Cancel answers when the work it stopped has ended, so the held publish is let go.
+    const cancelling = test.useCase.cancel(ref(test, batchId));
+    await new Promise((resolve) => setImmediate(resolve));
     release();
+    const cancelled = await cancelling;
     await vi.waitFor(() => {
       expect(test.staging.discarded).toContain(batchId);
     });
@@ -163,8 +166,11 @@ describe('WorkbookBatches.cancel that comes when the work is done or nearly done
     });
     await test.useCase.finish(finishOf(test, batchId));
 
-    expect((await test.useCase.cancel(ref(test, batchId))).ok).toBe(true);
+    // The Cancel answers when the work it stopped has cleaned up, so it is let go first.
+    const cancelling = test.useCase.cancel(ref(test, batchId));
+    await new Promise((resolve) => setImmediate(resolve));
     release();
+    expect((await cancelling).ok).toBe(true);
 
     await vi.waitFor(() => {
       expect(test.uploads.removed).toHaveLength(1);

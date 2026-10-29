@@ -176,3 +176,43 @@ test('RF-159 Cancel by keyboard shows the real outcome: nothing published when i
   expect(await shown.json()).toMatchObject({ source: stored ? { workbooks: 2 } : null });
   await expectNoSeriousViolations(page);
 });
+
+// The 409 path on every run: the test waits, through `page.request` (which the scripted routes do not
+// touch), until the real batch is stored; the page still shows the scripted "processing" state and its
+// Cancel button, so the DELETE always meets a batch that has ended and the server answers 409.
+test('RF-159 Cancel of a batch the server has already stored answers 409 and the page shows the summary, not "Nothing was published"', async ({
+  page,
+}) => {
+  const script: Script = { scripted: true, step: 'rendering', reads: 0 };
+  await scriptState(page, script);
+  const projectId = await startUpload(page);
+  const cancel = page.getByRole('button', { name: 'Cancel' });
+  await expect(cancel).toBeVisible();
+  await expect
+    .poll(async () => {
+      const current = await page.request.get(`/api/projects/${projectId}/source/batches/current`);
+      const body: unknown = await current.json();
+      const phase: unknown =
+        typeof body === 'object' && body !== null ? Reflect.get(body, 'phase') : undefined;
+      return phase;
+    })
+    .toBe('stored');
+  const answered = page.waitForResponse(
+    (response) => STATE_PATH.test(response.url()) && response.request().method() === 'DELETE',
+  );
+
+  await cancel.focus();
+  await page.keyboard.press('Enter');
+  const status = (await answered).status();
+  script.scripted = false;
+
+  expect(status).toBe(409);
+  await expect(page.getByRole('status').filter({ hasText: '2 workbooks read' })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.getByText('Nothing was published')).toHaveCount(0);
+  await expect(page.getByTestId('processing')).toHaveCount(0);
+  const shown = await page.request.get(`/api/projects/${projectId}`);
+  expect(await shown.json()).toMatchObject({ source: { workbooks: 2 } });
+  await expectNoSeriousViolations(page);
+});

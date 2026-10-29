@@ -1,6 +1,7 @@
 import type { Project } from '../../src/application/projects/project.js';
 import {
   WorkbookBatches,
+  type WorkbookBatchesDependencies,
   type BatchFileRequest,
   type BatchProblem,
   type FinishBatchRequest,
@@ -47,7 +48,10 @@ export interface BatchCase {
   readonly logger: MemoryLogger;
 }
 
-export async function batchCase(project: Project = workbookProject()): Promise<BatchCase> {
+export async function batchCase(
+  project: Project = workbookProject(),
+  extra: Pick<WorkbookBatchesDependencies, 'attachTimeoutMs'> = {},
+): Promise<BatchCase> {
   const projects = new MemoryProjectRepository();
   await projects.insertOrFind(project);
   const clock = new FixedClock('2026-10-19T08:30:00.000Z');
@@ -60,6 +64,7 @@ export async function batchCase(project: Project = workbookProject()): Promise<B
   const useCase = new WorkbookBatches({
     ...{ projects, runs, uploads, staging, auditLog, clock, limitBytes, logger },
     ids: new SequenceIdGenerator(),
+    ...extra,
   });
   return { useCase, project, projects, staging, uploads, runs, auditLog, clock, logger };
 }
