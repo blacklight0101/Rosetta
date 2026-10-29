@@ -18,6 +18,11 @@ export interface CardModelFacts {
   readonly verifierModel: string | undefined;
   /** The builder is a local model (DEC-176 Q-F). */
   readonly local: boolean;
+  /**
+   * The Status line of the card. At plan time a card has none; the orchestrator writes
+   * `escalationApprovedText` on it at the third FAIL, with the owner's approval in chat.
+   */
+  readonly status: string | undefined;
 }
 
 export type ModelFindingKind =
@@ -34,7 +39,7 @@ export type ModelFindingKind =
 export interface ModelFinding {
   readonly cardId: string;
   readonly kind: ModelFindingKind;
-  readonly severity: 'finding' | 'warning' | 'note';
+  readonly severity: 'finding' | 'warning';
 }
 
 /** A local model builds only scripted cards of difficulty 1 and 2 (Q-F). */
@@ -62,23 +67,34 @@ function kindsOf(method: BuildMethod, card: CardModelFacts): ModelFindingKind[] 
   return kinds;
 }
 
-/** DEC-185: the card builds on the escalation model, which is used only with the owner's approval. */
-export function usesEscalationModel(method: BuildMethod, model: string | undefined): boolean {
-  return model !== undefined && method.models?.escalation === model;
+/** The text the orchestrator writes on a card's Status line when the owner approved the escalation model. */
+export const escalationApprovedText = 'escalation, owner approved';
+
+/**
+ * The owner's decision of 2026-10-29 (supersedes DEC-185 item 7): a card on the escalation model is
+ * accepted only when its status carries the approval text; it is never set at plan time.
+ */
+function needsEscalationApproval(method: BuildMethod, card: CardModelFacts): boolean {
+  const escalation = method.models?.escalation;
+  if (escalation === undefined || card.builderModel !== escalation) return false;
+  return card.status?.includes(escalationApprovedText) !== true;
 }
 
 /** The findings for one card, in a fixed order; a clean card gives none. */
 // RF-641
 export function checkCardModel(method: BuildMethod, card: CardModelFacts): ModelFinding[] {
-  const found = kindsOf(method, card).map((kind) => ({
+  const kinds = kindsOf(method, card);
+  if (needsEscalationApproval(method, card)) kinds.push('escalation-owner-approval');
+  const found = kinds.map((kind) => ({
     cardId: card.cardId,
     kind,
     severity: 'finding' as const,
   }));
   const warning = card.local && card.rating > localModelCeiling;
-  const extra: ModelFinding[] = [];
-  if (warning) extra.push({ cardId: card.cardId, kind: 'local-model', severity: 'warning' });
-  if (usesEscalationModel(method, card.builderModel))
-    extra.push({ cardId: card.cardId, kind: 'escalation-owner-approval', severity: 'note' });
-  return [...found, ...extra];
+  return warning
+    ? [
+        ...found,
+        { cardId: card.cardId, kind: 'local-model' as const, severity: 'warning' as const },
+      ]
+    : found;
 }

@@ -26,12 +26,6 @@ const reasons: Readonly<Record<ModelFindingKind, string>> = {
   'local-model': 'a local model builds only cards of difficulty 1 and 2 (scripted work)',
 };
 
-// RF-641, DEC-185
-export function modelCheckLine(each: ModelFinding): string {
-  const label = each.severity === 'finding' ? '' : ` (${each.severity})`;
-  return `- ${each.cardId}${label}: ${reasons[each.kind]}`;
-}
-
 function findingsOf(task: PlanTask, handoff: HandoffPackage): ModelFinding[] {
   const method = handoff.brief.buildMethod;
   const { rating, tier, verifier } = difficultyOfTask(task);
@@ -41,6 +35,7 @@ function findingsOf(task: PlanTask, handoff: HandoffPackage): ModelFinding[] {
     ...{ builderTier: tier, builderModel: modelForTier(method, tier) },
     ...{ verifierTier: verifier, verifierModel: modelForTier(method, verifier) },
     local: false,
+    status: undefined,
   });
 }
 
@@ -52,9 +47,12 @@ export function modelCheckLines(handoff: HandoffPackage): string[] {
   return [
     '## Model of each card',
     '',
-    'The check lists each task card below by its id and corrects nothing; the package is written either way. A warning is not a fault of the package, but the card should be read again; a note asks for the approval of the owner.',
+    'The check lists each task card below by its id and corrects nothing; the package is written either way. A warning is not a fault of the package, but the card should be read again.',
     '',
-    ...found.map(modelCheckLine),
+    ...found.map(
+      (each) =>
+        `- ${each.cardId}${each.severity === 'warning' ? ' (warning)' : ''}: ${reasons[each.kind]}`,
+    ),
     '',
   ];
 }

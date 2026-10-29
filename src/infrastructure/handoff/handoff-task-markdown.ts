@@ -1,6 +1,5 @@
 import type { HandoffPackage, PackagePrinciple } from '../../application/plan/handoff-package.js';
 import { modelForTier, type BuildMethod } from '../../domain/planning/build-method.js';
-import { usesEscalationModel } from '../../domain/planning/card-model-check.js';
 import type { PlanPhase, PlanTask } from '../../domain/planning/plan-content.js';
 import {
   difficultyOfTask,
@@ -48,19 +47,8 @@ function plural(count: number, word: string): string {
 
 /** RF-639: the tier with the model the brief names for it; the tier alone when it names none. */
 function tierText(method: BuildMethod, tier: TaskDifficulty['tier'], esc: MarkdownEscaper): string {
-  return cardModelText(method, tier, esc, modelForTier(method, tier));
-}
-
-// RF-639, RF-641, DEC-185
-export function cardModelText(
-  method: BuildMethod,
-  tier: TaskDifficulty['tier'],
-  esc: MarkdownEscaper,
-  model: string | undefined,
-): string {
-  if (model === undefined) return `${tier} model tier`;
-  const approval = usesEscalationModel(method, model) ? ', escalation, owner approved' : '';
-  return `${tier} tier, model: ${esc.inline(model)}${approval}`;
+  const model = modelForTier(method, tier);
+  return model === undefined ? `${tier} model tier` : `${tier} tier, model: ${esc.inline(model)}`;
 }
 
 function sizeLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
