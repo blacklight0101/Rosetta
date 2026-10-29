@@ -11,10 +11,12 @@ import {
   type CatalogueEntry,
 } from '../../domain/planning/catalogue.js';
 import type { ClaimVerbs } from '../../domain/planning/claim-verbs.js';
+import type { GrepRules } from '../../domain/planning/grep-rules.js';
 import type { StackData } from '../../domain/planning/stack-data.js';
 import { parseCatalogueEntry, parseCatalogueReadme } from './catalogue-entry-file.js';
 import { parseStackProposals, parseStackRules, parseStackTechnologies } from './stack-data-file.js';
 import { parseClaimVerbs } from './claim-verbs-file.js';
+import { parseGrepRules } from './grep-rules-file.js';
 
 // RF-606, DEC-84, RNF-004: the catalogue folder `prompts/catalogue/`. Every file is named
 // `<id>.v<n>.md`; `readme.v<n>.md` declares the catalogue version and credits the master (DEC-85),
@@ -23,7 +25,7 @@ import { parseClaimVerbs } from './claim-verbs-file.js';
 // without a version, two versions of one entry, an empty group or a missing style is refused with
 // RST-1000. The three stack files (`stack-technologies`, `stack-rules`, `stack-proposals`, YAML) are part of the folder:
 // they are hashed with it and read by `stackOf` (RF-609).
-// P5-43: `claim-verbs` is part of the folder too.
+// P5-43: `claim-verbs` is part of the folder too. P6-28: so is `grep-rules` (RF-640, DEC-190).
 
 const catalogueFolder = 'catalogue';
 const fileNamePattern = /^([a-z0-9-]+)\.v(\d+)\.(?:md|yaml)$/u;
@@ -32,6 +34,7 @@ const technologiesStem = 'stack-technologies';
 const rulesStem = 'stack-rules';
 const proposalsStem = 'stack-proposals';
 const verbsStem = 'claim-verbs';
+const grepsStem = 'grep-rules';
 
 interface CatalogueFile {
   readonly name: string;
@@ -64,7 +67,7 @@ async function readCatalogueFiles(folder: string): Promise<CatalogueFile[]> {
   );
 }
 
-const dataStems = [technologiesStem, rulesStem, proposalsStem, verbsStem];
+const dataStems = [technologiesStem, rulesStem, proposalsStem, verbsStem, grepsStem];
 
 function oneFile(files: readonly CatalogueFile[], stem: string): CatalogueFile {
   const found = files.filter((file) => file.stem === stem);
@@ -91,6 +94,16 @@ function stackOf(files: readonly CatalogueFile[]): StackData {
 function claimVerbsOf(files: readonly CatalogueFile[]): ClaimVerbs {
   const file = oneFile(files, verbsStem);
   return parseClaimVerbs(file.name, file.version, file.bytes.toString('utf8'));
+}
+
+/** P6-28: the hard-rule greps and the language aliases, from their file; they may cite only known entries. */
+function grepRulesOf(
+  files: readonly CatalogueFile[],
+  entries: readonly CatalogueEntry[],
+): GrepRules {
+  const file = oneFile(files, grepsStem);
+  const known = new Set(entries.map((each) => each.id));
+  return parseGrepRules(file.name, file.version, file.bytes.toString('utf8'), known);
 }
 
 function sha256Of(files: readonly CatalogueFile[]): string {
@@ -125,5 +138,6 @@ export async function loadCatalogue(promptsFolder: string): Promise<Catalogue> {
     styles: sorted.filter(isArchitectureStyle),
     stack: stackOf(files),
     claimVerbs: claimVerbsOf(files),
+    grepRules: grepRulesOf(files, entries),
   };
 }
