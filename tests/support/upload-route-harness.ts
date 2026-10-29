@@ -46,7 +46,7 @@ const overview = z.looseObject({ projects: z.array(z.looseObject({ project: reco
 const listing = z.looseObject({ projects: z.array(record) });
 
 /** The JSON body of a response as an object of unknown values. */
-export function bodyOf(response: LightMyRequestResponse): Record<string, unknown> {
+export function bodyOf(response: { json(): unknown }): Record<string, unknown> {
   return record.parse(response.json());
 }
 

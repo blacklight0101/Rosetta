@@ -8,7 +8,9 @@ import { ready, renderStart } from './start-run-helpers.js';
 import {
   answerFile,
   chooseFiles,
+  acceptedBody,
   finishedBody,
+  storedState,
   sendButton,
   workbookFile,
 } from './workbook-fixtures.js';
@@ -40,7 +42,11 @@ async function replaceBatch(changed: boolean, finish: Record<string, unknown>): 
   renderStart({
     [`GET ${projectPath}`]: book(changed),
     'POST /api/projects/p-1/source/batches': json(201, { batchId: 'b-1' }),
-    'POST /api/projects/p-1/source/batches/b-1/finish': json(201, { ...finishedBody, ...finish }),
+    'POST /api/projects/p-1/source/batches/b-1/finish': json(202, acceptedBody),
+    'GET /api/projects/p-1/source/batches/b-1': json(
+      200,
+      storedState({ ...finishedBody, ...finish }),
+    ),
   });
   await ready();
   expect(screen.queryByText(notice) !== null).toBe(changed);

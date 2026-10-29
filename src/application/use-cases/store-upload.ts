@@ -8,7 +8,7 @@ import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { StoredUpload, UploadStore } from '../ports/upload-store.js';
-import type { LeftOut, WorkbookSummaryLine } from '../ports/workbook-staging.js';
+import type { LeftOut, WorkbookProgress, WorkbookSummaryLine } from '../ports/workbook-staging.js';
 import type { Project } from '../projects/project.js';
 import { pruneEarlier } from '../projects/prune-snapshot.js';
 import { recordWorkbooks } from '../projects/record-workbooks.js';
@@ -52,6 +52,18 @@ export interface UploadSummary {
   readonly leftOut?: readonly LeftOut[];
 }
 
+/** RF-159: how a zip being stored is going; `progress` is absent until it holds workbooks to render. */
+export interface UploadProgress {
+  readonly elapsedMs: number;
+  readonly progress: WorkbookProgress | null;
+}
+
+/** A zip being stored: when it started and where its workbooks have got to. */
+interface Storing {
+  readonly startedAt: number;
+  progress: WorkbookProgress | undefined;
+}
+
 export type UploadProblem =
   | typeof ERROR_CODES.notFound
   | typeof ERROR_CODES.conflict
@@ -85,6 +97,8 @@ export class StoreUpload {
   readonly deps: StoreUploadDependencies;
   /** One upload per project at a time; the key holds the owner so another user learns nothing. */
   private readonly active = new Map<string, AbortController>();
+  /** RF-159: the zips being stored, by the same key. */
+  private readonly storing = new Map<string, Storing>();
 
   constructor(deps: StoreUploadDependencies) {
     this.deps = deps;
@@ -96,11 +110,22 @@ export class StoreUpload {
     if (this.active.has(lock)) return err(ERROR_CODES.uploadInProgress);
     const own = new AbortController();
     this.active.set(lock, own);
+    const held: Storing = { startedAt: this.deps.clock.now().getTime(), progress: undefined };
+    this.storing.set(lock, held);
     try {
-      return await this.store(request, AbortSignal.any([request.signal, own.signal]));
+      return await this.store(request, AbortSignal.any([request.signal, own.signal]), held);
     } finally {
       this.active.delete(lock);
+      this.storing.delete(lock);
     }
+  }
+
+  /** RF-159, DEC-183: how the zip of the user's project is going; undefined when none is being stored. */
+  progressOf(actor: Actor, projectId: string): UploadProgress | undefined {
+    const held = this.storing.get(`${actor.userId}:${projectId}`);
+    if (held === undefined) return undefined;
+    const elapsedMs = this.deps.clock.now().getTime() - held.startedAt;
+    return { elapsedMs, progress: held.progress ?? null };
   }
 
   /** Stops every upload in flight (server shutdown). */
@@ -111,6 +136,7 @@ export class StoreUpload {
   private async store(
     request: StoreUploadRequest,
     signal: AbortSignal,
+    held: Storing,
   ): Promise<Result<UploadSummary, UploadProblem>> {
     const { projects, uploads, clock } = this.deps;
     const project = await projects.find(request.actor.userId, request.projectId);
@@ -133,18 +159,12 @@ export class StoreUpload {
       declaredBytes: request.declaredBytes,
       limitBytes: this.deps.limitBytes,
       signal,
-    });
-    const workbooks = stored.info.workbooks?.length ?? 0;
-    const attached = await projects.attachUpload({
-      userId: project.userId,
-      projectId: project.id,
-      upload: {
-        ...{ fileName: name.value, uploadedAt: uploadedAt.getTime(), snapshotKey: stored.key },
-        ...(workbooks === 0 ? {} : { workbooks }),
+      onProgress: (progress) => {
+        held.progress = progress;
       },
-      updatedAt: uploadedAt.getTime(),
     });
-    if (attached === undefined) {
+    const attached = await this.attach(project, stored, { fileName: name.value, uploadedAt });
+    if (!attached) {
       // The project was deleted while the zip arrived: its new snapshot has no owner.
       await uploads.remove(stored.key);
       return err(ERROR_CODES.notFound);
@@ -157,6 +177,25 @@ export class StoreUpload {
       workbooks: stored.info.workbooks ?? [],
     });
     return ok(summaryOf(stored, project, name.value, uploadedAt.toISOString()));
+  }
+
+  /** Records the stored zip as the project's source; false when the project is gone. */
+  private async attach(
+    project: Project,
+    stored: StoredUpload,
+    sent: { readonly fileName: string; readonly uploadedAt: Date },
+  ): Promise<boolean> {
+    const workbooks = stored.info.workbooks?.length ?? 0;
+    const attached = await this.deps.projects.attachUpload({
+      userId: project.userId,
+      projectId: project.id,
+      upload: {
+        ...{ fileName: sent.fileName, uploadedAt: sent.uploadedAt.getTime() },
+        ...{ snapshotKey: stored.key, ...(workbooks === 0 ? {} : { workbooks }) },
+      },
+      updatedAt: sent.uploadedAt.getTime(),
+    });
+    return attached !== undefined;
   }
 
   // RF-133: the name, size and hash of the zip, never its content.

@@ -12,6 +12,8 @@ import { chunksOf, declaredBytesOf, discard, fileNameOf } from './upload-body.js
 // The size limit, the free space and the time bound are the store's (RF-129); every refusal is an
 // error with its code, message and next step (error-mapper.ts). The Origin, session and CSRF
 // checks are the hooks'; another user's project answers 404.
+// RF-159: GET /api/projects/:id/source/progress answers 200 `{ elapsedMs, progress }` while the zip of the
+// project is being stored (`progress` is null until the zip holds workbooks to render) and 404 otherwise.
 
 export interface SourceUploadServices {
   readonly storeUpload: StoreUpload;
@@ -24,6 +26,19 @@ interface IdParams {
 // Windows browsers report a zip as application/x-zip-compressed; the first bytes decide either way.
 const ZIP_TYPES = ['application/zip', 'application/x-zip-compressed'];
 const ZIP_TYPE = /^application\/(zip|x-zip-compressed)\s*(;|$)/iu;
+function registerProgress(server: FastifyInstance, services: SourceUploadServices): void {
+  server.get<{ Params: IdParams }>(
+    '/api/projects/:id/source/progress',
+    { config: { access: 'user' } },
+    (request) => {
+      const { actor } = signedInOf(request);
+      const progress = services.storeUpload.progressOf(actor, request.params.id);
+      if (progress === undefined) throw new RosettaError(ERROR_CODES.notFound);
+      return progress;
+    },
+  );
+}
+
 // RF-128
 export function registerSourceUploadRoutes(
   server: FastifyInstance,
@@ -33,6 +48,7 @@ export function registerSourceUploadRoutes(
   server.addContentTypeParser(ZIP_TYPES, (_request, payload, done) => {
     done(null, payload);
   });
+  registerProgress(server, services);
   server.put<{ Params: IdParams }>(
     '/api/projects/:id/source',
     { config: { access: 'user' } },
