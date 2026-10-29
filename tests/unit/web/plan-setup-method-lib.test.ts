@@ -196,6 +196,26 @@ describe('the build method line of What I recorded', () => {
   });
 });
 
+describe('a typed build method on the page', () => {
+  it('DEC-187 a typed build method is sent as text and never with a build method', () => {
+    const draft = withAnswered(
+      {
+        ...unanswered,
+        aiAssisted: true,
+        toolKind: 'claude-code' as const,
+        chosen: { buildMethod: 'typed' },
+        typed: { buildMethod: 'Our own process' },
+      },
+      ['buildMethod'],
+    );
+
+    const answers = answersOf(draft);
+
+    expect(answers).not.toHaveProperty('buildMethod');
+    expect(answers.typed).toEqual({ buildMethod: 'Our own process' });
+  });
+});
+
 describe('the build method line when the tool is open', () => {
   it('RF-612 says the tool is not chosen yet when agents build and no tool is chosen', () => {
     const draft = withAnswered({ ...unanswered, aiAssisted: true }, ['buildMethod']);
