@@ -138,9 +138,6 @@ const contextQuestions = [
   'dataMigration',
 ] as const;
 
-/** RF-645: the questions whose typed answer is kept as text of its own (the others use their field). */
-const typedQuestions: readonly string[] = typedQuestionIds;
-
 function layerOrder(layer: StackLayer): number {
   return stackLayers.indexOf(layer);
 }
@@ -169,7 +166,7 @@ export function briefProblems(answers: BriefAnswers, catalogue: Catalogue): Brie
     problems.push({ field: 'stack', reason: 'A layer is listed twice.' });
   }
   for (const id of Object.keys(answers.typed ?? {})) {
-    if (!typedQuestions.includes(id)) {
+    if (!typedQuestionIds.some((each) => each === id)) {
       problems.push({ field: `typed.${id}`, reason: 'This question takes no typed text.' });
     }
   }
