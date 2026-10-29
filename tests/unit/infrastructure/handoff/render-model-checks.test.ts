@@ -75,7 +75,7 @@ describe('RF-641 DEC-185 P6-22 checks.md: a tier model that runs locally', () =>
     const base = handoffOf('Plain text.', emptyPrd);
     const tiers = new Set(base.content.tasks.map((task) => difficultyOfTask(task).tier));
     const unused = (['smallest', 'middle', 'largest'] as const).find((tier) => !tiers.has(tier));
-    if (unused === undefined) return;
+    if (unused === undefined) throw new Error('every tier has a card: no unused tier to test');
 
     const checks = checksOf(withBuildMethod({ ...claude, local: { [unused]: true } }));
 
@@ -83,7 +83,9 @@ describe('RF-641 DEC-185 P6-22 checks.md: a tier model that runs locally', () =>
   });
 
   it('RF-641 a brief without the flag gives the same checks.md as one with no local key', () => {
-    expect(checksOf(withBuildMethod(claude))).toBe(checksOf(withBuildMethod({ ...claude })));
+    expect(checksOf(withBuildMethod(claude))).toBe(
+      checksOf(builtByPeople(withBuildMethod({ aiAssisted: false }))),
+    );
     expect(checksOf(withBuildMethod(claude))).not.toContain('local model');
   });
 });

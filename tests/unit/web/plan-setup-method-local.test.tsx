@@ -55,7 +55,8 @@ describe('the runs-locally checkbox: shown', () => {
     fireEvent.click(screen.getByRole('radio', { name: /^Claude Code/u }));
 
     for (const tier of ['Smallest', 'Middle', 'Largest']) expect(box(tier).checked).toBe(false);
-    expect(screen.queryByRole('checkbox', { name: /Escalation.*runs locally/iu })).toBeNull();
+    expect(screen.queryAllByRole('checkbox', { name: /escalation/iu })).toHaveLength(0);
+    expect(screen.getAllByRole('checkbox', { name: /runs locally/iu })).toHaveLength(3);
   });
 });
 
