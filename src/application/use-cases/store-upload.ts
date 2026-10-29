@@ -14,6 +14,7 @@ import { recordWorkbooks } from '../projects/record-workbooks.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { endBatch, stateOf, type BatchOutcome, type HeldBatch } from './workbook-batch-state.js';
 import type { BatchState } from './workbook-batch-types.js';
+import { withinAttachLimit } from './attach-limit.js';
 import { logBatchFailure } from './batch-failure-log.js';
 import { summaryOf, type UploadSummary } from './upload-summary.js';
 import type { WorkbookBatches } from './workbook-batches.js';
@@ -186,7 +187,8 @@ export class StoreUpload {
       if (hooks.signal.aborted) return this.stopped(stored, hooks.signal);
       batch.attaching = true;
     }
-    return this.publish(request, { project, stored, fileName: name.value, uploadedAt });
+    const done = { project, stored, fileName: name.value, uploadedAt };
+    return withinAttachLimit(this.publish(request, done), this.deps.attachTimeoutMs);
   }
 
   /** The stored zip becomes the source of the project, with its audit rows (RF-128, RF-133). */

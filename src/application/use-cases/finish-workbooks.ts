@@ -3,6 +3,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Clock } from '../ports/clock.js';
 import type { WorkbookProgress, WorkbookStaging } from '../ports/workbook-staging.js';
 import type { Project } from '../projects/project.js';
+import { withinAttachLimit } from './attach-limit.js';
 import { logBatchFailure } from './batch-failure-log.js';
 import { attachWorkbooks, type AttachDependencies } from './attach-workbooks.js';
 import { endBatch, type BatchOutcome, type HeldBatch } from './workbook-batch-state.js';
@@ -71,7 +72,10 @@ async function finishWorkbooks(deps: FinishDependencies, work: FinishWork): Prom
       return { kind: 'refused', error: signal.reason };
     }
     onAttach?.();
-    const attached = await attachWorkbooks(deps, { actor, ip, project, published, uploadedAt });
+    const attached = await withinAttachLimit(
+      attachWorkbooks(deps, { actor, ip, project, published, uploadedAt }),
+      deps.attachTimeoutMs,
+    );
     return attached.ok
       ? { kind: 'stored', summary: attached.value }
       : { kind: 'refused', error: new RosettaError(attached.error) };
