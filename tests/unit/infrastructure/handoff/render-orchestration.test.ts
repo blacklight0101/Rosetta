@@ -158,8 +158,9 @@ describe('orchestration.md part 5', () => {
     const text = textOf();
     const headings = [...text.matchAll(/^## (.+)$/gmu)].map((match) => match[1]);
 
-    expect(orchestrationSections.length).toBeGreaterThanOrEqual(8);
-    expect(headings).toHaveLength(orchestrationSections.length);
+    // P6-08: the delivery flow is the one section a brief that is not hosted leaves out.
+    expect(orchestrationSections.length).toBeGreaterThanOrEqual(13);
+    expect(headings).toHaveLength(orchestrationSections.length - 1);
     expect(text).toMatch(/^# orchestration\.md$/mu);
   });
 
