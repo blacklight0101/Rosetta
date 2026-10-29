@@ -202,7 +202,10 @@ export function tasksOf(
   const first = nextTaskNumber(judged.results);
   const planned = roundTasks(input.plan, codeMap, first, cardsOf(judged));
   // DEC-198 (1): in round 1 every area with an answer not used yet gets a task.
-  const firstRound = { codeMap, firstNumber: first + planned.length };
+  const firstRound = {
+    ...{ codeMap, firstNumber: first + planned.length },
+    cards: cardsOf(judged),
+  };
   return withDeepenAnswers(planned, parts.rerun, input.round === 1 ? firstRound : undefined);
 }
 

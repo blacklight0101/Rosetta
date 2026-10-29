@@ -150,7 +150,7 @@
       "attempts": [
         {
           "response": {
-            "text": "```json\n{\n  \"cards\": []\n}\n```",
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Sold-out items are hidden\",\n      \"area\": \"Services\",\n      \"summary\": \"Sold-out items are hidden; the owner says so.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The list hides sold-out items.\",\n          \"citations\": [\n            \"Services/CatalogService.cs:12-12\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
             "toolCalls": [],
             "usage": {
               "inputTokens": 100,

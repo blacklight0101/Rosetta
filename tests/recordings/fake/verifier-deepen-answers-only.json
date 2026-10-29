@@ -77,6 +77,25 @@
           }
         }
       ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: Line 12 lowers the stock by one.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-3",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
     }
   ]
 }

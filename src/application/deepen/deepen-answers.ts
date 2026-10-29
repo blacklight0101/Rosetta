@@ -4,7 +4,7 @@ import { markAnswered, withAnswersOf, type Rerun } from '../understand/answer-re
 import { questionWords } from '../understand/open-questions.js';
 import type { ReaderTask } from '../understand/reader-tasks.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
-import { taskIdOf } from './deepen-tasks.js';
+import { taskIdOf, withParentCards } from './deepen-tasks.js';
 
 // RF-209, RF-241, RF-646, DEC-179, ADR-013: the answers of the project in a Deepen. Every reader task
 // of a Deepen gets the answered questions of its area as user context, through the code of the
@@ -23,9 +23,6 @@ export interface FirstRound {
 }
 
 /** DEC-198 (1): whether an answer not used yet is work for round 1 on its own. */
-export function hasAnswerTasks(rerun: Rerun | undefined, codeMap: Pick<CodeMap, 'areas'>): boolean {
-  return rerun === undefined ? false : codeMap.areas.length < 0;
-}
 
 /**
  * DEC-198 (1): in round 1 an area that holds an answered question not used yet, and that no task
@@ -42,7 +39,13 @@ function answerTasks(
   const found = areas.flatMap((name) => round.codeMap.areas.filter((area) => area.name === name));
   return found
     .filter((area) => area.files.length > 0)
-    .map((area, index) => ({ agentTaskId: taskIdOf(round.firstNumber + index), area }));
+    .map((area) => withParentCards({ area }, round.cards ?? []))
+    .map((task, index) => ({ ...task, agentTaskId: taskIdOf(round.firstNumber + index) }));
+}
+
+/** DEC-198 (1): whether an answer not used yet is work for round 1 on its own. */
+export function hasAnswerTasks(rerun: Rerun | undefined, codeMap: Pick<CodeMap, 'areas'>): boolean {
+  return rerun !== undefined && answerTasks([], rerun, { codeMap, firstNumber: 1 }).length > 0;
 }
 
 // RF-209, RF-241, DEC-198
