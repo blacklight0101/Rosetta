@@ -18,6 +18,10 @@ import { uploadSnapshotKey } from '../../src/domain/sources/upload-name.js';
 export class FakeUploadStore implements UploadStore {
   readonly requests: UploadRequest[] = [];
   readonly removed: string[] = [];
+  /** RF-128: the snapshots already stored; a store of one of them did not create it. */
+  readonly existing = new Set<string>();
+  /** RF-128: the keys whose description the newest upload of the same content rewrote. */
+  readonly renamed: string[] = [];
   readonly removedProjects: string[] = [];
   failWith: Error | undefined;
   /** The reports `store` makes to the request's `onProgress`, before it waits for the gate (RF-159). */
@@ -50,9 +54,13 @@ export class FakeUploadStore implements UploadStore {
         ? {}
         : { workbooks: this.held.entries }),
     };
+    const key = uploadSnapshotKey(request.projectId, this.hash);
+    const created = !this.existing.has(key);
+    this.existing.add(key);
     return {
-      key: uploadSnapshotKey(request.projectId, this.hash),
+      key,
       info,
+      ...{ created },
       zipBytes: this.zipBytes,
       skipped: 3,
       ...(this.held === undefined
@@ -73,6 +81,11 @@ export class FakeUploadStore implements UploadStore {
 
   read(): Promise<undefined> {
     return Promise.resolve(undefined);
+  }
+
+  rewriteInfo(key: string): Promise<void> {
+    this.renamed.push(key);
+    return Promise.resolve();
   }
 
   remove(key: string): Promise<boolean> {

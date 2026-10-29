@@ -115,6 +115,28 @@ describe('ZipUploadStore the same content stored again', () => {
   });
 });
 
+describe('ZipUploadStore the same content stored again, before it is kept', () => {
+  it('RF-159 storing the same content again creates nothing and leaves the published snapshot as it was', async () => {
+    const store = storeIn(root.path);
+    const first = await store.store(requestOf(bodyOf(await sampleZip())));
+    const before = await readFile(join(root.path, 'sources', first.key, 'snapshot.json'), 'utf8');
+
+    const second = await store.store(
+      requestOf(bodyOf(await sampleZip()), {
+        fileName: 'Renamed.zip',
+        uploadedAt: '2026-10-20T09:00:00.000Z',
+      }),
+    );
+
+    expect(first.created).toBe(true);
+    expect(second).toMatchObject({ key: first.key, created: false });
+    expect(second.info).toMatchObject({ fileName: 'Renamed.zip' });
+    expect(await readFile(join(root.path, 'sources', first.key, 'snapshot.json'), 'utf8')).toBe(
+      before,
+    );
+  });
+});
+
 describe('ZipUploadStore reading and removing', () => {
   it('RF-130 reads a stored snapshot back as an upload', async () => {
     const store = storeIn(root.path);

@@ -42,6 +42,8 @@ export interface UploadCase {
   readonly runs: MemoryRunIndex;
   readonly auditLog: MemoryAuditLog;
   readonly clock: FixedClock;
+  /** RF-158: the log of the use case, which a test can make fail. */
+  readonly logger: MemoryLogger;
 }
 
 export async function setup(project: Project = uploadProject()): Promise<UploadCase> {
@@ -61,7 +63,7 @@ export async function setup(project: Project = uploadProject()): Promise<UploadC
     ...{ projects, runs, uploads, auditLog, clock, limitBytes, batches },
     logger,
   });
-  return { useCase, batches, project, projects, uploads, runs, auditLog, clock };
+  return { useCase, batches, project, projects, uploads, runs, auditLog, clock, logger };
 }
 
 export function request(
