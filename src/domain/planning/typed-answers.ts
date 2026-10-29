@@ -17,14 +17,15 @@ interface TypedSource {
 
 /**
  * The typed text on one line: line breaks, C0 and C1 control characters, the bidi overrides and
- * isolates (U+202A..U+202E, U+2066..U+2069, which could make the text display other than it reads)
- * and runs of spaces become one space (ADR-013).
+ * isolates (U+202A..U+202E, U+2066..U+2069, which could make the text display other than it reads),
+ * the bidi marks (U+200E, U+200F, U+061C, which reorder neutral characters) and runs of spaces
+ * become one space (ADR-013).
  */
 export function typedText(text: string | undefined): string {
   return (text ?? '')
     .replace(
       // eslint-disable-next-line no-control-regex -- control characters are what this removes
-      /[\s\u0000-\u001f\u007f-\u009f‪-‮⁦-⁩]+/gu,
+      /[\s\u0000-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]+/gu,
       ' ',
     )
     .trim();
