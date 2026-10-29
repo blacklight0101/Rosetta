@@ -3,7 +3,8 @@ import type { ModelTable } from './data-model.js';
 import { isMigrationCard } from './plan-coverage.js';
 import type { PlanningBrief } from './planning-brief.js';
 
-// P5-42, RF-610, RF-623, DEC-76: the fixed cards every plan carries, written by code and never by the
+// P5-42, P6-27, RF-610, RF-623, DEC-76, DEC-190: the fixed cards every plan carries (the data-access and
+// data-migration cards only when the run found data: see `hasData`), written by code and never by the
 // planner. Neither recorded plan of the recall benchmark had a card for the scaffolding, the data
 // access, the harness that runs the approval tests, the data migration or the cut-over, so the
 // feature cards waited on nothing. The skeleton and the data-access cards come first and every other
@@ -180,22 +181,77 @@ function unique<T>(items: readonly T[]): T[] {
   return [...new Set(items)];
 }
 
+/** The plan with these cards; the notes of a requirement follow the cards to their new ids. */
+function withCards(
+  content: PlanContent,
+  cards: readonly PlanTask[],
+  renamed: ReadonlyMap<string, string>,
+): PlanContent {
+  const notes = content.requirementNotes?.map((note) =>
+    note.kind === 'position' ? note : { ...note, task: renamed.get(note.task) ?? note.task },
+  );
+  return { ...content, tasks: cards, ...(notes === undefined ? {} : { requirementNotes: notes }) };
+}
+
+/**
+ * P6-27, RF-610, DEC-190: a run that found no data. The skeleton card is first, then the harness, the
+ * cards of the plan and the cut-over; there is no data-access or data-migration card, so every card
+ * of the plan waits for the skeleton only and the cut-over for the skeleton, the harness and the others.
+ */
+function withoutDataCards(
+  content: PlanContent,
+  tasks: readonly PlanTask[],
+  strategy: Strategy,
+): PlanContent {
+  const skeletonId = planId('T', 1);
+  const harnessId = planId('T', 2);
+  const renamed = new Map(tasks.map((task, index) => [task.id, planId('T', 3 + index)]));
+  const moved = tasks.map((task, index): PlanTask => ({
+    ...task,
+    id: planId('T', 3 + index),
+    dependsOn: unique([skeletonId, ...task.dependsOn.map((on) => renamed.get(on) ?? on)]),
+  }));
+  const cards = [
+    fixedCard(skeleton, { id: skeletonId, phase: 1, dependsOn: [] }),
+    fixedCard(harness, { id: harnessId, phase: 1, dependsOn: [skeletonId] }),
+    ...moved,
+    fixedCard(cutOverTexts[strategy], {
+      ...{ id: planId('T', 3 + tasks.length), phase: content.phases.length },
+      dependsOn: [skeletonId, harnessId, ...moved.map((task) => task.id)],
+    }),
+  ];
+  return withCards(content, cards, renamed);
+}
+
 /**
  * P5-42: the plan with the skeleton card first, then the migrations card, the data-access card and
  * the harness, the cards of the plan, the data migration and the cut-over. Every card of the plan
  * waits for the skeleton and the data access (the migrations card for the skeleton only, since the
  * data access waits for it); the cut-over waits for all the others. A plan with no phase or no task
  * is returned as it is. A planner card that has the title of a fixed card is renamed, never taken for one.
+ * P6-27: with `hasData` false (no `ENT` claim and no table) the plan gets the skeleton, the harness and
+ * the cut-over card only.
  */
-// P5-42
+// P5-42, P6-27
 export function withFoundationCards(
   content: PlanContent,
   strategy: Strategy,
   tables: readonly ModelTable[],
+  hasData = true,
+): PlanContent {
+  const tasks = content.tasks.map(unreserved);
+  if (content.phases.length === 0 || tasks.length === 0) return content;
+  if (!hasData) return withoutDataCards(content, tasks, strategy);
+  return withDataCards(content, tasks, strategy, tables);
+}
+
+function withDataCards(
+  content: PlanContent,
+  tasks: readonly PlanTask[],
+  strategy: Strategy,
+  tables: readonly ModelTable[],
 ): PlanContent {
   const last = content.phases.length;
-  const tasks = content.tasks.map(unreserved);
-  if (last === 0 || tasks.length === 0) return content;
   const ordered = [
     ...tasks.filter((task) => isMigrationCard(task)),
     ...tasks.filter((task) => !isMigrationCard(task)),
@@ -233,8 +289,5 @@ export function withFoundationCards(
       ]),
     }),
   ];
-  const notes = content.requirementNotes?.map((note) =>
-    note.kind === 'position' ? note : { ...note, task: renamed.get(note.task) ?? note.task },
-  );
-  return { ...content, tasks: cards, ...(notes === undefined ? {} : { requirementNotes: notes }) };
+  return withCards(content, cards, renamed);
 }

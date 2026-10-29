@@ -122,12 +122,12 @@ describe('RF-634 overlapping cards are ordered, never in one parallel group', ()
   it('RF-634 the later card of two that overlap depends on the earlier, as a link', async () => {
     const cards = cardsOf(await packageWithoutEntities({}, plannerAnswering(overlappingCards)));
 
-    // T-001 to T-003 are the skeleton, the data access and the harness; the planner's cards start at T-004.
-    expect(cards[0]).not.toMatch(/\nDepends on:.*\[T-00[4-9]\]/u);
-    expect(cards[1]).toMatch(/\nDepends on:.*\[T-004\]\(tasks\.md#t-004\)\n/u);
-    expect(cards[2]).not.toMatch(/\nDepends on:.*\[T-00[4-9]\]/u);
-    expect(cards[3]).toMatch(/\nDepends on:.*\[T-004\]\(tasks\.md#t-004\)\n/u);
-    expect(cards[4]).toMatch(/\nDepends on:.*\[T-007\]\(tasks\.md#t-007\)\n/u);
+    // T-001 and T-002 are the skeleton and the harness (the plan has no data, P6-27); the planner's cards start at T-003.
+    expect(cards[0]).not.toMatch(/\nDepends on:.*\[T-00[3-9]\]/u);
+    expect(cards[1]).toMatch(/\nDepends on:.*\[T-003\]\(tasks\.md#t-003\)\n/u);
+    expect(cards[2]).not.toMatch(/\nDepends on:.*\[T-00[3-9]\]/u);
+    expect(cards[3]).toMatch(/\nDepends on:.*\[T-003\]\(tasks\.md#t-003\)\n/u);
+    expect(cards[4]).toMatch(/\nDepends on:.*\[T-006\]\(tasks\.md#t-006\)\n/u);
   });
 });
 
@@ -137,14 +137,13 @@ describe('RF-634 the parallel groups of the roadmap', () => {
 
     const listed = new Map(cardsOf(files).map((card) => [card.slice(0, 5), filesOf(card)]));
     const groups = groupsOf(plain(files['roadmap.md']), 1);
-    // T-001 to T-003 are the skeleton, the data access and the harness; the planner's cards are T-004 to T-008; T-012 is the security review card.
+    // T-001 and T-002 are the skeleton and the harness; the planner's cards are T-003 to T-007; T-010 is the verification matrix card of the phase.
     expect(groups).toEqual([
       ['T-001'],
-      ['T-002'],
-      ['T-003', 'T-004', 'T-006'],
-      ['T-005', 'T-007'],
-      ['T-008'],
-      ['T-012'],
+      ['T-002', 'T-003', 'T-005'],
+      ['T-004', 'T-006'],
+      ['T-007'],
+      ['T-010'],
     ]);
     for (const group of groups) {
       for (const [at, one] of group.entries()) {
@@ -167,14 +166,9 @@ describe('RF-634 the parallel groups of each phase', () => {
     const files = await packageWithoutEntities({}, recording);
 
     const roadmap = plain(files['roadmap.md']);
-    expect(groupsOf(roadmap, 1)).toEqual([['T-001'], ['T-002'], ['T-003', 'T-004'], ['T-010']]);
-    expect(groupsOf(roadmap, 2)).toEqual([
-      ['T-005', 'T-006', 'T-007'],
-      ['T-008'],
-      ['T-009'],
-      ['T-011'],
-    ]);
-    expect(cardsOf(files)[2]).toMatch(/\nDepends on:.*\[T-004\]\(tasks\.md#t-004\)\n/u);
+    expect(groupsOf(roadmap, 1)).toEqual([['T-001'], ['T-002', 'T-003'], ['T-008']]);
+    expect(groupsOf(roadmap, 2)).toEqual([['T-004', 'T-005'], ['T-006'], ['T-007'], ['T-009']]);
+    expect(cardsOf(files)[2]).toMatch(/\nDepends on:.*\[T-003\]\(tasks\.md#t-003\)\n/u);
   });
 
   it('RF-634 cards that overlap are ordered whether or not the build is AI-assisted', async () => {
