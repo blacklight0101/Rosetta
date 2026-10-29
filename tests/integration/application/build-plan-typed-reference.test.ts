@@ -19,7 +19,9 @@ const typed = {
   migration: 'Move one module a week behind a feature flag.',
   buildMethod: 'A vendor builds it and our team reviews every change.',
 } as const;
-const label = "the reference Rosetta's checks use";
+/** The label of the default: the default style or strategy and the one check of Rosetta that uses it. */
+const label =
+  /the default (style|strategy),? (and )?(is )?the reference Rosetta's (dependency|strategy-fit) check uses/u;
 const strangler = migrationStrategyInfo['strangler-fig'];
 /**
  * Text that names the default style or strategy, states the default strategy's ordering, or holds
@@ -69,7 +71,7 @@ function unlabelled(files: Readonly<Record<string, string>>): string[] {
     text
       .split('\n')
       .filter((line) => defaults.some((each) => line.includes(each)))
-      .filter((line) => !line.includes(label) && !unchosenOption(path, line))
+      .filter((line) => !label.test(line) && !unchosenOption(path, line))
       .map((line) => `${path}: ${line}`),
   );
 }
@@ -129,6 +131,21 @@ describe('RF-645 DEC-184 the package never presents the default as the chosen st
     const records = Object.entries(files).filter(([path]) => path.startsWith('decisions/'));
     expect(records.map(([, text]) => text).join('\n')).not.toContain('nearest');
     expect(records.map(([, text]) => text).join('\n')).toContain(label);
+  });
+});
+
+describe('RF-645 DEC-184 the label names the one check that uses the default', () => {
+  it('RF-645 the style and the strategy name the default and their check, never the checks in general', async () => {
+    const files = await packageOf(allFour);
+
+    const all = Object.values(files).join('\n');
+    expect(all).not.toContain("the reference Rosetta's checks use");
+    expect(files['architecture.md']).toMatch(
+      /Layered \(N-tier\) \(\[ADR-\d{3}\]\([^)]*\)\), the default style, is the reference Rosetta's dependency check uses, not the chosen style: /u,
+    );
+    expect(files['roadmap.md']).toMatch(
+      /Strangler Fig \(\[ADR-\d{3}\]\([^)]*\)\), the default strategy, is the reference Rosetta's strategy-fit check uses, not the chosen strategy: /u,
+    );
   });
 });
 

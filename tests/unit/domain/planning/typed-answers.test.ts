@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  checkReference,
   referenceTitle,
   typedAnswers,
   typedText,
@@ -70,13 +69,20 @@ describe('typedAnswers', () => {
 });
 
 describe('referenceTitle', () => {
-  it('RF-608 DEC-184 with a typed architecture the style is named as the reference of the checks', () => {
+  it('RF-608 DEC-184 with a typed architecture the style is named as the reference of the dependency check', () => {
     const brief = { defaulted: [], typed: { architecture: 'Cells, one per region.' } };
 
     expect(referenceTitle(brief, 'architecture', 'Layered (N-tier)')).toBe(
-      `Layered (N-tier) (${checkReference})`,
+      "Layered (N-tier) (the default style, the reference Rosetta's dependency check uses)",
     );
-    expect(checkReference).toBe("the reference Rosetta's checks use");
+  });
+
+  it('RF-610 DEC-184 with a typed migration the strategy is named as the reference of the strategy-fit check', () => {
+    const brief = { defaulted: [], typed: { migration: 'One module a week.' } };
+
+    expect(referenceTitle(brief, 'migration', 'Strangler Fig')).toBe(
+      "Strangler Fig (the default strategy, the reference Rosetta's strategy-fit check uses)",
+    );
   });
 
   it('RF-608 without a typed answer the title is unchanged', () => {
