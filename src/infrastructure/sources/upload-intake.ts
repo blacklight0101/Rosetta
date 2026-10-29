@@ -55,6 +55,7 @@ function isHeadOf(format: IntakeFormat, head: Buffer): boolean {
 export class Receiving extends Transform {
   bytes = 0;
   private readonly hash: Hash = createHash('sha256');
+  private digest: string | undefined;
   private head: Buffer = Buffer.alloc(0);
   private readonly limit: number;
   private readonly format: IntakeFormat;
@@ -83,9 +84,10 @@ export class Receiving extends Transform {
     done(null, chunk);
   }
 
-  /** `sha256:` and the hex digest of what passed; read once, after the end of the body. */
+  /** `sha256:` and the hex digest of what passed; the same value on every read after the end of the body. */
   get sha256(): string {
-    return `sha256:${this.hash.digest('hex')}`;
+    this.digest ??= `sha256:${this.hash.digest('hex')}`;
+    return this.digest;
   }
 
   override _flush(done: TransformCallback): void {
