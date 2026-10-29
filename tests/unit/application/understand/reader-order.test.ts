@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { planReaderTasks } from '../../../../src/application/understand/reader-tasks.js';
 import type { Area } from '../../../../src/domain/code-map/area.js';
 
-// RF-210 (P7-03, DEC-195, EV-68, EV-76): reader tasks take the application's own code first, largest
-// area first, then tests, then deployment and infrastructure, configuration and generated folders,
-// then libraries; never the code map's name order alone.
+// RF-210 (P7-03, DEC-195, EV-68, EV-76): reader tasks take the application's own code first, then
+// tests, then deployment and infrastructure, configuration and generated folders, then libraries.
+// Within a kind the code map's order is kept, so a run is reproducible against its recordings.
 
 function area(name: string, estimatedTokens: number): Area {
   return { name, files: [`${name}/a.cs`], estimatedTokens, mapLevel: 'coarse', origin: 'folder' };
@@ -44,9 +44,8 @@ describe('RF-210 reader order', () => {
     }
   });
 
-  it('RF-210 orders own code largest first, then tests, deployment, configuration, libraries', () => {
+  it('RF-210 orders by kind: own code, tests, deployment, configuration, libraries', () => {
     const mixed = [
-      area('Setup', 4_000),
       area('Config', 1_000),
       area('Docker', 8_000),
       area('Scripts#8', 48_625),
@@ -63,12 +62,11 @@ describe('RF-210 reader order', () => {
         mixed.map((each) => each.name),
       ),
     ).toEqual([
-      'Orders',
       'Catalog',
+      'Orders',
       'Shop.Tests',
       'Docker',
       'helm/charts',
-      'Setup',
       'Config',
       'obj',
       'Scripts#8',
@@ -76,11 +74,23 @@ describe('RF-210 reader order', () => {
   });
 });
 
-describe('RF-210 reader order ties', () => {
-  it('RF-210 keeps the code map order between areas of the same kind and size', () => {
-    const equal = ['b', 'a', 'c'].map((name) => area(name, 10));
+describe('RF-210 reader order folder names', () => {
+  it('RF-210 counts a Setup, VM or Azure folder as own code, as the eShop WebForms Setup is', () => {
+    const folders = ['.github/workflows', 'Setup', 'VM', 'Azure', 'Pipelines', 'Shop'];
+    const order = names(
+      folders.map((name) => area(name, 10)),
+      folders,
+    );
 
-    expect(names(equal, ['a', 'b', 'c'])).toEqual(['b', 'a', 'c']);
+    expect(order).toEqual(['Setup', 'VM', 'Azure', 'Shop', '.github/workflows', 'Pipelines']);
+  });
+});
+
+describe('RF-210 reader order ties', () => {
+  it('RF-210 keeps the code map order within a kind, whatever the sizes', () => {
+    const sized = [area('b', 10), area('a', 900), area('c', 50)];
+
+    expect(names(sized, ['a', 'b', 'c'])).toEqual(['b', 'a', 'c']);
   });
 
   it('RF-210 numbers the tasks in the new order, so card ids follow it', () => {
@@ -89,8 +99,8 @@ describe('RF-210 reader order ties', () => {
     expect(
       planned.ok && planned.value.slice(0, 2).map((task) => [task.agentTaskId, task.area.name]),
     ).toEqual([
-      ['reader-001', 'eShopModernizedWebForms'],
-      ['reader-002', 'eShopModernizedMVC'],
+      ['reader-001', '(root)'],
+      ['reader-002', 'ACI'],
     ]);
   });
 });

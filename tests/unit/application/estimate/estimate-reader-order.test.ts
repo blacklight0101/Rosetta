@@ -38,21 +38,21 @@ async function listed(requested?: readonly string[]): Promise<readonly string[]>
 }
 
 describe('RF-210 estimate order', () => {
-  it('RF-210 lists the app areas, largest first, before the deployment areas', async () => {
+  it('RF-210 lists the app areas, in code-map order, before the deployment areas', async () => {
     expect(await listed()).toEqual([
-      'eShopModernizedWebForms',
       'eShopModernizedMVC',
-      'Kubernetes',
-      'Docker',
+      'eShopModernizedWebForms',
       '.kube',
+      'Docker',
+      'Kubernetes',
     ]);
   });
 
   it('RF-210 lists a named subset in the same order as the run reads it', async () => {
     expect(await listed(['Docker', 'eShopModernizedMVC', 'Kubernetes'])).toEqual([
       'eShopModernizedMVC',
-      'Kubernetes',
       'Docker',
+      'Kubernetes',
     ]);
   });
 });
