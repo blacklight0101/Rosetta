@@ -199,6 +199,20 @@ describe('WorkbookBatches.state after acceptance', () => {
     expect((await stateOf(test, batchId)).refusal).toBeInstanceOf(Error);
     expect(test.logger.entries.filter((entry) => entry.level === 'error')).toHaveLength(1);
   });
+
+  it('RF-159 ends the batch as refused even when the logger throws, so it never stays at work', async () => {
+    const test = await batchCase();
+    const batchId = await withFile(test);
+    test.staging.publishFails = new Error('the disk went away');
+    vi.spyOn(test.logger, 'log').mockImplementation(() => {
+      throw new Error('the log is down');
+    });
+    await test.useCase.finish(finishOf(test, batchId));
+
+    await waitForPhase(test, batchId, 'refused');
+
+    expect((await test.useCase.open({ actor: amy, projectId: test.project.id })).ok).toBe(true);
+  });
 });
 
 describe('WorkbookBatches.state and current', () => {
