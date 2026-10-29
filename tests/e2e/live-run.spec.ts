@@ -197,9 +197,9 @@ test('RF-241 an Answered question can be reopened on the page, with no serious v
   );
   await page.goto(finishedRun);
   await openRunTab(page, 'Your questions');
-  const question = page
-    .getByRole('region', { name: 'Open questions' })
-    .getByTestId('open-question');
+  const region = page.getByRole('region', { name: 'Open questions' });
+  const question = region.getByTestId('open-question');
+  await region.getByTestId('answered-questions').getByText('Answered (1)').click(); // RF-646
   await expect(question).toContainText('Answered');
 
   await question.getByRole('button', { name: 'Reopen question' }).click();

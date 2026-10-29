@@ -18,6 +18,8 @@ export interface Context {
   readonly plan: JourneyRunFacts | null;
   /** Plan setup for the source run; none while the project has no understand run. */
   readonly setUp: string | undefined;
+  /** RF-646: the user chose not to Deepen the source run. */
+  readonly skippedDeepen: boolean;
 }
 
 export type RunPhase = 'working' | 'completed' | 'stopped';
@@ -59,4 +61,15 @@ export function plannableAtCap(
   run: Pick<JourneySourceFacts, 'endState' | 'supportedClaims'>,
 ): boolean {
   return run.endState === 'CapReached' && run.supportedClaims > 0;
+}
+
+/**
+ * RF-646, DEC-179: a run that can be deepened and has not been is not the time to ask: Deepen is
+ * recommended first, because it uses the answers given now. Once the last Deepen has ended, or when
+ * the user chose not to Deepen, the questions are asked.
+ */
+export function deepenFirst(c: Pick<Context, 'source' | 'skippedDeepen'>): boolean {
+  const { source } = c;
+  if (source === null || c.skippedDeepen) return false;
+  return phaseOf(source) === 'completed' && !source.isDeepen && source.deepens === 0;
 }

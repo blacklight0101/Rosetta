@@ -4,6 +4,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { ModelList } from '../models/model-list.js';
 import { roleLimits } from '../models/role-limits.js';
 import type { Project } from '../projects/project.js';
+import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { planInputs, type PlanInputDependencies } from '../plan/plan-inputs.js';
 import { maxPlannerContinuations } from '../plan/plan-continuation.js';
 import { reservedWithContinuations } from './plan-continuation-reserve.js';
@@ -49,7 +50,10 @@ export interface EstimatePlanDependencies
     RolePricing,
     PlanCapDependencies,
     PlanKeyDependencies,
-    PlanPromptFiles {}
+    PlanPromptFiles {
+  /** RF-646: finds the Deepens linked to the source run, whose questions are the same list. */
+  readonly manifests?: Pick<RunManifestStore, 'read'>;
+}
 
 export interface EstimatePlanRequest {
   readonly actor: Actor;
@@ -108,7 +112,7 @@ export class EstimatePlan {
   // RF-613, RF-1105
   async execute(request: EstimatePlanRequest): Promise<Result<PlanEstimate, EstimatePlanProblem>> {
     const ref = { userId: request.actor.userId, projectId: request.projectId };
-    const inputs = await planInputs(this.deps, ref, request.sourceRunId);
+    const inputs = await planInputs(this.deps, ref, request.sourceRunId, this.deps.manifests);
     if (!inputs.ok) return err(problemOf(inputs.error.code));
     const { project } = inputs.value;
     const { maxOutputTokens, contextTokens } = roleLimits(

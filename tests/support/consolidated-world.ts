@@ -159,7 +159,7 @@ function readersOf(seed: Seed, answers: FileAnswersFile): Omit<World, 'actor' | 
     ...{ answers, priorCards },
     list: async () => {
       const listed = await new ListAnswers({ runs, answers, cards: priorCards }).execute(request);
-      return listed.ok ? listed.value : [];
+      return listed.ok ? listed.value.questions : [];
     },
     record: (entries) =>
       new RecordAnswers({ runs, answers, cards: priorCards }).execute({
