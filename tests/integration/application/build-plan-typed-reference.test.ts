@@ -120,6 +120,16 @@ describe('RF-645 DEC-184 the package never presents the default as the chosen st
   });
 });
 
+describe('RF-605 DEC-184 the README principles', () => {
+  it('RF-605 the README lists the typed principle with the principles and practices', async () => {
+    const files = await packageOf(allFour);
+
+    const readme = files['README.md'] ?? '';
+    const section = readme.slice(readme.indexOf('## Principles and practices'));
+    expect(section).toContain(`- The owner's own principle: ${typed.principles}`);
+  });
+});
+
 describe('RF-608 DEC-184 a brief with no typed answer', () => {
   it('RF-608 a brief with no typed answer names the default as before, without the label', async () => {
     const files = await packageOf({});
