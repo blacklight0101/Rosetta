@@ -13,6 +13,7 @@ import {
   throttleSection,
 } from './handoff-orchestration-gates-markdown.js';
 import type { SectionWriter } from './handoff-orchestration-gates-markdown.js';
+import { lessonsSection } from './handoff-orchestration-lessons-markdown.js';
 import { handoffFiles } from './handoff-links.js';
 
 // RF-612, RF-640: the build protocol of an AI-assisted build, written in the package's own words:
@@ -214,6 +215,7 @@ export const orchestrationSections: readonly SectionWriter[] = [
   throttleSection,
   escalationSection,
   budgetsSection,
+  lessonsSection,
   deliverySection,
 ];
 
