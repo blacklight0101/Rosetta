@@ -7,13 +7,15 @@ import {
   type StackLayer,
 } from './planning-brief.js';
 import type { StackData } from './stack-data.js';
+import { typedAnswers } from './typed-answers.js';
 
 // P5-39, DEC-172, RF-609, RF-610, DEC-80: what the plan proposes where the brief leaves a choice open. The
 // kind of application is the owner's answer, else what the code map shows, else web. A stack layer
 // the owner left open gets the catalogue's option for the layer and the kind, marked `proposed`; the
 // owner's own choice is never touched. The migration strategy is checked against the kind and the
 // code map: a strangler fig needs a seam where a request can be routed, and a desktop client has
-// none, so its seam is the shared database, or the default strategy gives way to a rewrite.
+// none, so its seam is the shared database, or the default strategy gives way to a rewrite. With an
+// own migration answer (DEC-184) the default is checked only as the reference and is never changed.
 
 interface ProposedLayer {
   readonly layer: StackLayer;
@@ -27,7 +29,10 @@ export interface StrategyFit {
   readonly seam: 'shared-database' | null;
   /** The strategy the brief held, when the plan changed it (only a default strategy changes). */
   readonly changedFrom: MigrationStrategy | null;
-  /** Why the strategy does not fit and the owner kept it; null when it fits or was changed. */
+  /**
+   * Why the strategy does not fit and the owner kept it, or (with an own migration answer) why the
+   * default strategy, checked as the reference, does not fit; null when it fits or was changed.
+   */
   readonly finding: string | null;
   /** One sentence for the strategy record; empty when the strategy fits the kind. */
   readonly reason: string;
@@ -96,6 +101,15 @@ function fitOf(brief: PlanningBrief, kind: ApplicationKind, facts: LegacyFacts):
     reason: '',
   };
   if (kind !== 'desktop' || brief.migration !== 'strangler-fig') return kept;
+  if (typedAnswers(brief).migration !== undefined) {
+    // DEC-184: the owner typed an own strategy, so the default is checked only as the reference:
+    // nothing is changed and no seam record is written for a strategy nobody chose.
+    const seam = facts.database
+      ? 'The code map shows a database both systems use, which could be the seam.'
+      : 'The code map shows no shared database to use as a seam.';
+    const reason = `${noRoute} ${seam}`;
+    return { ...kept, finding: reason, reason };
+  }
   if (facts.database) {
     const reason = `${noRoute} The seam is the database both systems use: the new system runs against the legacy schema until the last phase.`;
     return { ...kept, seam: 'shared-database', reason };
