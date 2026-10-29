@@ -27,6 +27,13 @@ describe('typedText', () => {
     expect(typedText('‮evil⁩')).toBe('evil');
   });
 
+  it('ADR-013 strips the bidi marks: left-to-right, right-to-left and the Arabic letter mark', () => {
+    const [lrm, rlm, alm] = [0x200e, 0x200f, 0x061c].map((code) => String.fromCodePoint(code));
+    const marks = `a${lrm ?? ''}b${rlm ?? ''}c${alm ?? ''}d`;
+
+    expect(typedText(marks)).toBe('a b c d');
+  });
+
   it('RF-645 an empty or missing text is the empty text', () => {
     expect(typedText(undefined)).toBe('');
     expect(typedText(' \n ')).toBe('');
