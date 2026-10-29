@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { StoreUpload } from '../../application/use-cases/store-upload.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { batchStateBody } from './workbook-batch-body.js';
 import { signedInOf } from './request-actor.js';
 import { chunksOf, declaredBytesOf, discard, fileNameOf } from './upload-body.js';
 
@@ -12,8 +13,10 @@ import { chunksOf, declaredBytesOf, discard, fileNameOf } from './upload-body.js
 // The size limit, the free space and the time bound are the store's (RF-129); every refusal is an
 // error with its code, message and next step (error-mapper.ts). The Origin, session and CSRF
 // checks are the hooks'; another user's project answers 404.
-// RF-159: GET /api/projects/:id/source/progress answers 200 `{ elapsedMs, progress }` while the zip of the
-// project is being stored (`progress` is null until the zip holds workbooks to render) and 404 otherwise.
+// RF-159, DEC-188: when the zip holds workbooks, the upload is answered 202 with the state of its batch as
+// soon as the zip is received; the server then extracts, renders and stores it after the request, and the
+// page reads the state, the progress and the outcome, and cancels, through the batch routes of the project
+// (workbook-batch-routes.ts); closing the tab does not cancel it.
 
 export interface SourceUploadServices {
   readonly storeUpload: StoreUpload;
@@ -26,19 +29,6 @@ interface IdParams {
 // Windows browsers report a zip as application/x-zip-compressed; the first bytes decide either way.
 const ZIP_TYPES = ['application/zip', 'application/x-zip-compressed'];
 const ZIP_TYPE = /^application\/(zip|x-zip-compressed)\s*(;|$)/iu;
-function registerProgress(server: FastifyInstance, services: SourceUploadServices): void {
-  server.get<{ Params: IdParams }>(
-    '/api/projects/:id/source/progress',
-    { config: { access: 'user' } },
-    (request) => {
-      const { actor } = signedInOf(request);
-      const progress = services.storeUpload.progressOf(actor, request.params.id);
-      if (progress === undefined) throw new RosettaError(ERROR_CODES.notFound);
-      return progress;
-    },
-  );
-}
-
 // RF-128
 export function registerSourceUploadRoutes(
   server: FastifyInstance,
@@ -48,7 +38,6 @@ export function registerSourceUploadRoutes(
   server.addContentTypeParser(ZIP_TYPES, (_request, payload, done) => {
     done(null, payload);
   });
-  registerProgress(server, services);
   server.put<{ Params: IdParams }>(
     '/api/projects/:id/source',
     { config: { access: 'user' } },
@@ -72,6 +61,9 @@ export function registerSourceUploadRoutes(
           signal: aborted.signal,
         });
         if (!outcome.ok) throw new RosettaError(outcome.error);
+        if ('accepted' in outcome.value) {
+          return await reply.status(202).send(batchStateBody(outcome.value.accepted));
+        }
         return await reply.status(201).send(outcome.value);
       } catch (error) {
         // A refusal can come before the whole body is read: the rest is thrown away, for a while, so the

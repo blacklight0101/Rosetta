@@ -18,12 +18,20 @@ import { uploadSnapshotKey } from '../../src/domain/sources/upload-name.js';
 export class FakeUploadStore implements UploadStore {
   readonly requests: UploadRequest[] = [];
   readonly removed: string[] = [];
+  /** RF-128: the snapshots already stored; a store of one of them did not create it. */
+  readonly existing = new Set<string>();
+  /** RF-128: the keys whose description the newest upload of the same content rewrote. */
+  readonly renamed: string[] = [];
   readonly removedProjects: string[] = [];
   failWith: Error | undefined;
   /** The reports `store` makes to the request's `onProgress`, before it waits for the gate (RF-159). */
   reports: WorkbookProgress[] = [];
   /** When set, `store` waits for it. */
   gate: Promise<void> | undefined;
+  /** RF-159: once the gate lets go, a store whose request was aborted stops, as the real one does. */
+  stopsOnAbort = false;
+  /** RF-159, DEC-188: the store tells its caller that the zip holds workbooks, as the real one does. */
+  announcesWorkbooks = false;
   hash = `sha256:${'ab'.repeat(32)}`;
   zipBytes = 1234;
   /** RF-152: the workbooks the zip held and the ones left out; none by default, as for most zips. */
@@ -31,9 +39,9 @@ export class FakeUploadStore implements UploadStore {
 
   async store(request: UploadRequest): Promise<StoredUpload> {
     this.requests.push(request);
-    for (const report of this.reports) request.onProgress?.(report);
-    if (this.gate !== undefined) await this.gate;
-    if (this.failWith !== undefined) throw this.failWith;
+    // RF-159, DEC-188: a zip that holds workbooks is told to the caller before the heavy work starts.
+    if (this.announcesWorkbooks) await request.onWorkbooks?.();
+    await this.work(request);
     const info: UploadSnapshotInfo = {
       kind: 'upload',
       fileName: request.fileName,
@@ -46,9 +54,13 @@ export class FakeUploadStore implements UploadStore {
         ? {}
         : { workbooks: this.held.entries }),
     };
+    const key = uploadSnapshotKey(request.projectId, this.hash);
+    const created = !this.existing.has(key);
+    this.existing.add(key);
     return {
-      key: uploadSnapshotKey(request.projectId, this.hash),
+      key,
       info,
+      created,
       zipBytes: this.zipBytes,
       skipped: 3,
       ...(this.held === undefined
@@ -57,8 +69,23 @@ export class FakeUploadStore implements UploadStore {
     };
   }
 
+  /** The reports, the wait for the gate, a stop by the request and a failure the test asked for. */
+  private async work(request: UploadRequest): Promise<void> {
+    for (const report of this.reports) request.onProgress?.(report);
+    if (this.gate !== undefined) await this.gate;
+    if (this.stopsOnAbort && request.signal.aborted) {
+      throw request.signal.reason instanceof Error ? request.signal.reason : new Error('stopped');
+    }
+    if (this.failWith !== undefined) throw this.failWith;
+  }
+
   read(): Promise<undefined> {
     return Promise.resolve(undefined);
+  }
+
+  rewriteInfo(key: string): Promise<void> {
+    this.renamed.push(key);
+    return Promise.resolve();
   }
 
   remove(key: string): Promise<boolean> {

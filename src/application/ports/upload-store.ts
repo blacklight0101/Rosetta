@@ -23,12 +23,23 @@ export interface UploadRequest {
   readonly signal: AbortSignal;
   /** Told where the workbooks of the zip have got to (RF-159); it must not throw. */
   readonly onProgress?: ProgressListener;
+  /**
+   * RF-159, DEC-188: awaited once the zip is received and known to hold workbooks, before anything is
+   * unpacked; the caller answers at once and the work goes on. A rejection stops the upload.
+   */
+  readonly onWorkbooks?: () => Promise<void>;
 }
 
 export interface StoredUpload {
   /** The folder name under `<data>/sources/`. */
   readonly key: string;
   readonly info: UploadSnapshotInfo;
+  /**
+   * RF-128, RF-159: true when this upload put the snapshot in place; false when the same content was
+   * already stored (another upload's snapshot, maybe the project's source or a run's), which this
+   * upload must never delete or change unless it becomes the source.
+   */
+  readonly created: boolean;
   /** Bytes of the zip as received. */
   readonly zipBytes: number;
   /** Entries left out: links, unwritable names, `.git`, `node_modules`, `bin`, `obj`. */
@@ -45,6 +56,11 @@ export interface UploadStore {
   store(request: UploadRequest): Promise<StoredUpload>;
   /** The snapshot of an upload or workbook key; undefined when there is none. */
   read(key: string): Promise<SentSnapshot | undefined>;
+  /**
+   * RF-128: gives a stored snapshot the description of the newest upload of its content, once that
+   * upload is the project's source. The tree is never touched.
+   */
+  rewriteInfo(key: string, info: UploadSnapshotInfo): Promise<void>;
   /** Deletes one snapshot; false when there is none. */
   remove(key: string): Promise<boolean>;
   /** Deletes every snapshot of the project's uploads and workbooks; how many went. */
