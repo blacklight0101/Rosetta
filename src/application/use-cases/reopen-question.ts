@@ -1,12 +1,17 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import type { AnswersFile } from '../ports/answers-file.js';
+import {
+  projectQuestions,
+  type ProjectQuestion,
+  type QuestionMember,
+} from '../answers/project-questions.js';
+import { noManifests } from '../answers/run-family.js';
+import type { AnswersFile, ProjectRef } from '../ports/answers-file.js';
+import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { Logger } from '../ports/logger.js';
 import type { PriorCards, QuestionReopener } from '../ports/prior-cards.js';
 import type { RunIndex } from '../ports/run-index.js';
 import { askingTheSame } from '../understand/answer-rerun.js';
-import { consolidatedQuestions } from '../understand/consolidated-questions.js';
-import { consolidatedStates, type StatedQuestion } from './question-states.js';
 
 // RF-241, RF-1007, RF-1105: Reopen question lets the user open a question that a re-run marked
 // `Answered` again, so an answer edited after that is used by the next re-run with answers (a re-run
@@ -20,6 +25,8 @@ export interface ReopenQuestionDependencies {
   readonly answers: AnswersFile;
   readonly cards: PriorCards & QuestionReopener;
   readonly logger: Logger;
+  /** Finds the Deepens linked to the run; without it the run is a family of one. */
+  readonly manifests?: Pick<RunManifestStore, 'read'>;
 }
 
 export type ReopenQuestionProblem = 'not-found' | 'run-not-ended';
@@ -31,29 +38,48 @@ export class ReopenQuestion {
     this.deps = deps;
   }
 
-  // RF-241, RF-1007, RF-1105
+  // RF-241, RF-1007, RF-1105, RF-646
   async execute(request: {
     readonly actor: Actor;
     readonly runId: string;
     readonly cardId: string;
-  }): Promise<Result<readonly StatedQuestion[], ReopenQuestionProblem>> {
+  }): Promise<Result<readonly ProjectQuestion[], ReopenQuestionProblem>> {
     const { runs, answers, cards } = this.deps;
     const run = await runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
     const project = { userId: run.userId, projectId: run.projectId };
-    const filed = await answers.questionsOf(project, run.runKey);
-    const earlier = await cards.cardsOf(project, run.runKey);
-    // P5-11: only a question of the consolidated set can be reopened, a merged-away id is not one.
-    const listed = consolidatedQuestions(filed, earlier);
-    if (!listed.some((question) => question.cardId === request.cardId)) return err('not-found');
+    const read = {
+      ...{ runs, answers, priorCards: cards },
+      manifests: this.deps.manifests ?? noManifests,
+    };
+    const listed = (await projectQuestions(read, run)).questions;
+    // P5-11: only a question of the one list can be reopened, a merged-away id is not one.
+    const question = listed.find(
+      (each) =>
+        each.cardId === request.cardId || each.members.some((m) => m.cardId === request.cardId),
+    );
+    if (question === undefined) return err('not-found');
     if (run.queueState !== 'Ended') return err('run-not-ended');
-    const card = earlier.find((each) => each.id === request.cardId && each.type === 'OQ');
+    // RF-646: a question of the one list is answered in every version of it; each is opened.
+    for (const member of question.members) await this.reopenIn(project, run, member);
+    return ok((await projectQuestions(read, run)).questions);
+  }
+
+  private async reopenIn(
+    project: ProjectRef,
+    run: { readonly userId: string },
+    member: QuestionMember,
+  ): Promise<void> {
+    const { cards } = this.deps;
+    const earlier = await cards.cardsOf(project, member.runKey);
+    const card = earlier.find((each) => each.id === member.cardId && each.type === 'OQ');
     const answered = (card === undefined ? [] : askingTheSame(card, earlier))
       .filter((each) => each.questionState === 'Answered')
       .map((each) => each.id);
-    const reopened = answered.length === 0 ? [] : await cards.reopen(project, run.runKey, answered);
-    if (reopened.length > 0) await this.log(run, request.cardId, reopened);
-    return ok(await consolidatedStates(cards, project, run.runKey, filed));
+    const reopened =
+      answered.length === 0 ? [] : await cards.reopen(project, member.runKey, answered);
+    if (reopened.length > 0)
+      await this.log({ ...run, runKey: member.runKey }, member.cardId, reopened);
   }
 
   private async log(

@@ -1,6 +1,7 @@
 import type { Run } from '../runs/run.js';
 import { buildMethodDefaulted, resolveBuildMethod, type BuildMethod } from './build-method.js';
 import { defaultPrinciples, type ArchitectureStyleId, type Catalogue } from './catalogue.js';
+import { hasTypedText, typedQuestionIds } from './typed-answers.js';
 
 // RF-605, ADR-018, DEC-72, DEC-80, data-model.md section 3.20: the planning brief, the answers Plan
 // setup saves for a project. A question the user did not answer takes its default and is listed in
@@ -53,12 +54,18 @@ interface StackChoice {
   readonly proposed?: true | undefined;
 }
 
+/** RF-643: how the new application is run. */
+export const deployments = ['hosted', 'not-hosted'] as const;
+type Deployment = (typeof deployments)[number];
+
 interface ProjectContext {
   readonly teamSize: number | null;
   readonly experience: string | null;
   readonly deadline: string | null;
   readonly keepIntegrations: readonly string[];
   readonly dataMigration: string | null;
+  /** RF-643, Q-H: whether the new application is hosted; absent when nobody said. */
+  readonly deployment?: Deployment | undefined;
 }
 
 export interface PlanningBrief {
@@ -84,6 +91,14 @@ export interface PlanningBrief {
   readonly buildMethod: BuildMethod;
   /** The questions that took their default, in question order. */
   readonly defaulted: readonly string[];
+  /** RF-645: the option answering each question, or "typed"; absent in a brief saved before DEC-178. */
+  readonly chosen?: Readonly<Record<string, string>> | undefined;
+  /**
+   * RF-645: the text of a typed answer, by question id; absent when none was typed. A typed answer
+   * reaches the planner (DEC-184), so its question is not in `defaulted`, while the enumerated value
+   * (the style, the strategy, `aiAssisted`) keeps its default.
+   */
+  readonly typed?: Readonly<Record<string, string>> | undefined;
 }
 
 /** A brief that has not been saved yet. */
@@ -109,9 +124,12 @@ export interface BriefAnswers {
         readonly deadline?: string | null | undefined;
         readonly keepIntegrations?: readonly string[] | undefined;
         readonly dataMigration?: string | null | undefined;
+        readonly deployment?: Deployment | undefined;
       }
     | undefined;
   readonly buildMethod?: BuildMethod | undefined;
+  readonly chosen?: Readonly<Record<string, string>> | undefined;
+  readonly typed?: Readonly<Record<string, string>> | undefined;
 }
 
 export interface BriefProblem {
@@ -154,6 +172,11 @@ export function briefProblems(answers: BriefAnswers, catalogue: Catalogue): Brie
   if (new Set(layers).size !== layers.length) {
     problems.push({ field: 'stack', reason: 'A layer is listed twice.' });
   }
+  for (const id of Object.keys(answers.typed ?? {})) {
+    if (!typedQuestionIds.some((each) => each === id)) {
+      problems.push({ field: `typed.${id}`, reason: 'This question takes no typed text.' });
+    }
+  }
   return problems;
 }
 
@@ -165,6 +188,7 @@ function contextOf(given: BriefAnswers['context']): ProjectContext {
     deadline: answered.deadline ?? null,
     keepIntegrations: answered.keepIntegrations ?? [],
     dataMigration: answered.dataMigration ?? null,
+    ...(answered.deployment === undefined ? {} : { deployment: answered.deployment }),
   };
 }
 
@@ -178,17 +202,39 @@ function architectureOf(given: BriefAnswers['architecture']): UnsavedBrief['arch
 
 function defaultedQuestions(answers: BriefAnswers): string[] {
   const given = answers.context;
+  const typedIn = (id: (typeof typedQuestionIds)[number]): boolean =>
+    hasTypedText(answers.typed, id);
   const answeredLayers = new Set((answers.stack ?? []).map((entry) => entry.layer));
   return [
-    ...(answers.principles === undefined ? ['principles'] : []),
-    ...(answers.architecture === undefined ? ['architecture'] : []),
-    ...(answers.migration === undefined ? ['migration'] : []),
+    ...(answers.principles === undefined && !typedIn('principles') ? ['principles'] : []),
+    ...(answers.architecture === undefined && !typedIn('architecture') ? ['architecture'] : []),
+    ...(answers.migration === undefined && !typedIn('migration') ? ['migration'] : []),
     ...stackLayers.filter((layer) => !answeredLayers.has(layer)).map((layer) => `stack.${layer}`),
     ...contextQuestions
       .filter((question) => given?.[question] === undefined || given[question] === null)
       .map((question) => `context.${question}`),
-    ...buildMethodDefaulted(answers.buildMethod),
+    ...buildMethodDefaulted(answers.buildMethod).filter(
+      (id) => id !== 'buildMethod' || !typedIn('buildMethod'),
+    ),
   ];
+}
+
+function sortedRecord(
+  given: Readonly<Record<string, string>> | undefined,
+): Readonly<Record<string, string>> | undefined {
+  const keys = Object.keys(given ?? {}).sort();
+  if (given === undefined || keys.length === 0) return undefined;
+  return Object.fromEntries(keys.map((key) => [key, given[key] ?? '']));
+}
+
+/** RF-645: the chosen options and typed texts, each key order fixed; absent when there are none. */
+function ownAnswersOf(answers: BriefAnswers): Pick<UnsavedBrief, 'chosen' | 'typed'> {
+  const chosen = sortedRecord(answers.chosen);
+  const typed = sortedRecord(answers.typed);
+  return {
+    ...(chosen === undefined ? {} : { chosen }),
+    ...(typed === undefined ? {} : { typed }),
+  };
 }
 
 /** The brief for these answers with every unanswered question at its default (DEC-80). */
@@ -205,13 +251,21 @@ export function buildBrief(answers: BriefAnswers, catalogue: Catalogue): Unsaved
     context: contextOf(answers.context),
     buildMethod: resolveBuildMethod(answers.buildMethod),
     defaulted: defaultedQuestions(answers),
+    ...ownAnswersOf(answers),
   };
 }
 
 function contentOf(brief: UnsavedBrief): string {
   const { catalogueVersion, principles, architecture, migration, stack, context } = brief;
   const fields = [catalogueVersion, principles, architecture, migration, stack, context];
-  return JSON.stringify([...fields, brief.buildMethod, brief.defaulted, brief.application ?? null]);
+  return JSON.stringify([
+    ...fields,
+    brief.buildMethod,
+    brief.defaulted,
+    brief.application ?? null,
+    brief.chosen ?? null,
+    brief.typed ?? null,
+  ]);
 }
 
 /** Whether two briefs hold the same answers, whatever instant they were saved at. */

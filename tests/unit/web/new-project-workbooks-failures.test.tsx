@@ -3,16 +3,18 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { failure, json } from './fake-api.js';
 import { installFakeUploadServer } from './fake-upload-server.js';
 import {
+  acceptedBody,
   answerFile,
   batchRoute,
   chooseValid,
-  finishedBody,
   finishRoute,
   happyAnswers,
   posts,
   renderWorkbookTab,
   sendAll,
   sendButton,
+  stateRoute,
+  storedState,
 } from './workbook-fixtures.js';
 
 // RF-150, RF-158, RFC-005 section 4.2: what the Excel workbooks tab does when the project, the batch,
@@ -101,15 +103,19 @@ it('RF-150 a refused batch (one workbook refused at finish) names the file and r
   let finishes = 0;
   const view = renderWorkbookTab({
     ...happyAnswers(),
-    [`POST ${finishRoute}`]: () => {
+    [`POST ${finishRoute}`]: json(202, acceptedBody),
+    [`GET ${stateRoute}`]: () => {
       finishes += 1;
       return finishes === 1
-        ? json(422, {
-            code: 'RST-1922',
-            message: 'Costs.xlsm is password-protected.',
-            nextStep: 'Remove the password in Excel and upload again.',
+        ? json(200, {
+            ...{ batchId: 'b-1', phase: 'refused', files: 3, elapsedMs: 900 },
+            refusal: {
+              ...{ status: 422, code: 'RST-1922' },
+              message: 'Costs.xlsm is password-protected.',
+              nextStep: 'Remove the password in Excel and upload again.',
+            },
           })
-        : json(201, finishedBody);
+        : json(200, storedState());
     },
   });
   await chooseValid();

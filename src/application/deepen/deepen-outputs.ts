@@ -117,3 +117,19 @@ export function overviewOf(
   const thirdParty = thirdPartyAreaNames(parts.scanned.codeMap);
   return overviewStep({ ...parts, allTasks }, cards, { coverage, thirdParty });
 }
+
+/**
+ * RF-646, DEC-179: the Deepen holds copies of the cards of the run it improves. A question whose
+ * answer a round used is answered in those copies too, so the Deepen's own cards show it Answered
+ * (the list of the project is one, and the question is not asked again). Done after the cards are
+ * written, which would overwrite the mark.
+ */
+export async function markUsedCopies(parts: DeepenParts, record: DeepenRecord): Promise<void> {
+  const { run } = parts.execution;
+  const ids = record.rounds
+    .flatMap((round) => round.answersUsed)
+    .map((used) => used.slice(used.lastIndexOf('/') + 1));
+  if (ids.length === 0) return;
+  const project = { userId: run.userId, projectId: run.projectId };
+  await parts.deps.priorCards.markAnswered(project, run.runKey, [...new Set(ids)]);
+}

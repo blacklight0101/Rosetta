@@ -12,7 +12,7 @@ import {
   batchesUrl,
   cancelBatch,
   createWorkbookProject,
-  finishBatch,
+  finishedBatch,
   openBatch,
   putFile,
   useWorkbookServers,
@@ -34,7 +34,7 @@ describe('the batch routes', () => {
     if (typeof batchId !== 'string') throw new Error('no batch id');
     const first = await putFile(amy, { projectId, batchId }, { name: 'Pricing.xlsx', bytes: book });
     const second = await putFile(amy, { projectId, batchId }, { name: 'Rates.xlsm', bytes: book });
-    const finished = await finishBatch(amy, { projectId, batchId });
+    const finished = await finishedBatch(amy, { projectId, batchId });
     const shown = await amy.request({ method: 'GET', url: `/api/projects/${projectId}` });
 
     expect(opened.statusCode).toBe(201);
@@ -149,7 +149,7 @@ describe('the batch routes and what they refuse', () => {
     const projectId = await createWorkbookProject(amy);
     const batchId = await openBatch(amy, projectId);
 
-    const finished = await finishBatch(amy, { projectId, batchId });
+    const finished = await finishedBatch(amy, { projectId, batchId });
 
     expect(finished.statusCode).toBe(400);
     expect(finished.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
@@ -163,10 +163,10 @@ describe('the batch routes and what they refuse (2)', () => {
     const batchId = await openBatch(amy, projectId);
     const target = { projectId, batchId };
     await putFile(amy, target, { name: 'Pricing.xlsx', bytes: await sampleBook() });
-    await finishBatch(amy, target);
+    await finishedBatch(amy, target);
 
     const file = await putFile(amy, target, { name: 'More.xlsx', bytes: await sampleBook() });
-    const again = await finishBatch(amy, target);
+    const again = await finishedBatch(amy, target);
 
     expect(file.statusCode).toBe(404);
     expect(again.statusCode).toBe(404);
@@ -216,7 +216,7 @@ describe('the batch routes and a refused workbook', () => {
     await putFile(amy, target, { name: 'Pricing.xlsx', bytes: await sampleBook() });
     await putFile(amy, target, { name: 'Locked.xlsx', bytes: encryptedBook() });
 
-    const finished = await finishBatch(amy, target);
+    const finished = await finishedBatch(amy, target);
     const shown = await amy.request({ method: 'GET', url: `/api/projects/${projectId}` });
     const reopened = await amy.request({ method: 'POST', url: batchesUrl(projectId) });
 
@@ -237,7 +237,7 @@ describe('the batch routes and a refused workbook', () => {
     await putFile(amy, target, { name: 'Pricing.xlsx', bytes: await sampleBook() });
     await putFile(amy, target, { name: 'Long.xlsx', bytes: await formulaBook(8193) });
 
-    const finished = await finishBatch(amy, target);
+    const finished = await finishedBatch(amy, target);
     const shown = await amy.request({ method: 'GET', url: `/api/projects/${projectId}` });
 
     expect(finished.statusCode).toBe(400);
@@ -257,7 +257,7 @@ async function storedProject(
   const projectId = await createWorkbookProject(amy);
   const batchId = await openBatch(amy, projectId);
   await putFile(amy, { projectId, batchId }, { name: 'Pricing.xlsx', bytes: await sampleBook() });
-  await finishBatch(amy, { projectId, batchId });
+  await finishedBatch(amy, { projectId, batchId });
   const folder = (await readdir(join(dataDir, 'sources'))).find((n) => n.startsWith('workbook__'));
   if (folder === undefined) throw new Error('no workbook snapshot');
   return { projectId, infoFile: join(dataDir, 'sources', folder, 'snapshot.json') };

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { architectureStyleIds } from '../../domain/planning/catalogue.js';
 import {
   applicationKinds,
+  deployments,
   migrationStrategies,
   stackLayers,
   type BriefAnswers,
@@ -18,6 +19,7 @@ const MAX_CHOICE = 200;
 const MAX_LIST = 20;
 const MAX_OFFERED = 5;
 const MAX_MODEL = 80;
+const MAX_QUESTIONS = 40;
 
 const style = z.enum(architectureStyleIds);
 const entryId = z.string().min(1).max(MAX_ID);
@@ -62,7 +64,16 @@ const context = z.strictObject({
   deadline: text.nullable(),
   keepIntegrations: z.array(text).max(MAX_LIST),
   dataMigration: text.nullable(),
+  deployment: z.enum(deployments).optional(),
 });
+
+// RF-645, data-model.md section 3.20: the option that answered each question and the typed text.
+const chosen = z
+  .record(z.string().min(1).max(MAX_ID), z.string().min(1).max(MAX_ID))
+  .refine((entries) => Object.keys(entries).length <= MAX_QUESTIONS);
+const typed = z
+  .record(z.string().min(1).max(MAX_ID), text)
+  .refine((entries) => Object.keys(entries).length <= MAX_QUESTIONS);
 
 export const planningBriefSchema = z.strictObject({
   schemaVersion: z.literal(1),
@@ -76,6 +87,8 @@ export const planningBriefSchema = z.strictObject({
   context,
   buildMethod,
   defaulted: z.array(z.string().max(MAX_ID)).max(40),
+  chosen: chosen.optional(),
+  typed: typed.optional(),
 });
 
 /** The brief stored in the file; undefined when the text is not a version 1 brief. */
@@ -104,9 +117,12 @@ const answersSchema = z.strictObject({
       deadline: context.shape.deadline.optional(),
       keepIntegrations: context.shape.keepIntegrations.optional(),
       dataMigration: context.shape.dataMigration.optional(),
+      deployment: context.shape.deployment,
     })
     .optional(),
   buildMethod: buildMethod.optional(),
+  chosen: chosen.optional(),
+  typed: typed.optional(),
 });
 
 /** The body of a save; undefined when it breaks the shape or a limit. */

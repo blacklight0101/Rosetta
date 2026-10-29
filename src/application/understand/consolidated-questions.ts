@@ -75,7 +75,25 @@ function listedOf(id: string, group: Group, card: MergeCard | undefined): Listed
   const answer = answerOf(group.own, away);
   if (group.own !== undefined) return { ...group.own, answer, filed: true };
   const question = card?.question ?? card?.title ?? '';
-  return { cardId: id, question, context: away[0]?.context ?? '', answer, filed: false };
+  return {
+    ...{ cardId: id, question, context: away[0]?.context ?? '', answer, filed: false },
+    ...optionsOfAway(away, answer),
+  };
+}
+
+/**
+ * RF-645, RF-1007: a survivor with no section of its own offers the suggested answers of the section it
+ * absorbed (the card files do not hold them), with the choice made there when its answer is shown.
+ */
+function optionsOfAway(
+  away: readonly RecordedQuestion[],
+  answer: string,
+): Pick<RecordedQuestion, 'options' | 'chosen'> {
+  const given = away.find((each) => !isBlank(each.answer) && each.answer === answer);
+  const source =
+    given?.options === undefined ? away.find((each) => each.options !== undefined) : given;
+  if (source?.options === undefined) return {};
+  return { options: source.options, chosen: source === given ? (source.chosen ?? '') : '' };
 }
 
 function listing(
@@ -123,5 +141,8 @@ export function unfiledQuestions(
 ): readonly OpenQuestion[] {
   return listing(filed, cards)
     .filter((question) => !question.filed)
-    .map(({ cardId, question, context }) => ({ cardId, runKey, question, context }));
+    .map(({ cardId, question, context, options }) => ({
+      ...{ cardId, runKey, question, context },
+      ...(options === undefined ? {} : { options }),
+    }));
 }

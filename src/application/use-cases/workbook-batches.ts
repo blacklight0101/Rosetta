@@ -1,30 +1,33 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import { workbookFileName, workbookSourceName } from '../../domain/sources/workbook-name.js';
+import { workbookFileName } from '../../domain/sources/workbook-name.js';
 import type { AuditLog } from '../ports/audit-log.js';
 import type { Clock } from '../ports/clock.js';
 import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { UploadStore } from '../ports/upload-store.js';
-import type { PublishedWorkbooks, StagedFile, WorkbookStaging } from '../ports/workbook-staging.js';
+import type { StagedFile, WorkbookProgress, WorkbookStaging } from '../ports/workbook-staging.js';
 import type { Project } from '../projects/project.js';
 import { IntervalTask } from '../projects/interval-task.js';
+import { finishWorkbooks, refusedAnyway } from './finish-workbooks.js';
+import { hasEnded, newBatch, stateOf, type HeldBatch } from './workbook-batch-state.js';
 import type {
   BatchFileRequest,
   BatchProblem,
   BatchRef,
+  BatchState,
+  CancelOutcome,
   FinishBatchRequest,
-  WorkbookBatchSummary,
 } from './workbook-batch-types.js';
-import { pruneEarlier } from '../projects/prune-snapshot.js';
-import { recordWorkbooks } from '../projects/record-workbooks.js';
 
 // RF-150, RF-152, RF-157, RFC-005 section 4.2: Workbook batches turn the files a user sends into the
 // source of a workbook project. A batch is opened (one per project), takes one workbook per request,
 // and is finished: every workbook is read, rendered and published, or none is. A batch not finished
 // within 30 minutes is deleted. Refusals of a file are thrown by the staging area, naming the file.
+// RF-159, DEC-183: the finish is accepted at once and the work goes on after the request; the batch keeps
+// its progress and, for 30 minutes after the work ended, its outcome, for the page to read.
 
 export interface WorkbookBatchesDependencies {
   readonly projects: ProjectRepository;
@@ -42,35 +45,29 @@ export type {
   BatchFileRequest,
   BatchProblem,
   BatchRef,
+  BatchState,
+  CancelOutcome,
   FinishBatchRequest,
   WorkbookBatchSummary,
 } from './workbook-batch-types.js';
 
-/** A batch that is open: who owns it, since when, how much it holds and what is running on it. */
-interface OpenBatch {
-  readonly id: string;
-  readonly userId: string;
-  readonly openedAt: number;
-  bytes: number;
-  files: number;
-  /** Set while a file or the finish is being handled; one at a time. */
-  busy: AbortController | undefined;
-  /** The 30 minutes passed while it was busy: it goes when the work ends. */
-  expired: boolean;
-}
-
 interface Located {
   readonly project: Project;
-  readonly batch: OpenBatch;
+  readonly batch: HeldBatch;
 }
 
-/** RFC-005 section 4.2: a batch not finished within 30 minutes is deleted. */
+/** RFC-005 section 4.2: a batch not finished within 30 minutes is deleted; one that ended, 30 minutes after it. */
 const BATCH_LIFETIME_MS = 30 * 60_000;
+
+/** The first report of a batch at work, before the staging area says anything. */
+const STARTING: WorkbookProgress = {
+  ...{ step: 'reading', workbook: 0, workbooks: 0, sheet: 0, sheets: 0, cells: 0 },
+};
 
 export class WorkbookBatches {
   readonly deps: WorkbookBatchesDependencies;
-  /** The open batch of each project (one at a time), by project id. */
-  private readonly batches = new Map<string, OpenBatch>();
+  /** The batch of each project (one at a time), by project id. */
+  private readonly batches = new Map<string, HeldBatch>();
   /** Projects whose batch is being opened, so two opens together cannot both pass. */
   private readonly opening = new Set<string>();
   private readonly sweeper = new IntervalTask();
@@ -89,16 +86,18 @@ export class WorkbookBatches {
     const project = await this.deps.projects.find(actor.userId, projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
     if (project.sourceKind !== 'workbook') return err(ERROR_CODES.conflict);
+    const held = this.batches.get(projectId);
     // Nothing awaits between this check and the claim, so two opens together cannot both pass.
-    if (this.batches.has(projectId) || this.opening.has(projectId)) {
+    if ((held !== undefined && !hasEnded(held)) || this.opening.has(projectId)) {
       return err(ERROR_CODES.uploadInProgress);
     }
     this.opening.add(projectId);
     try {
+      // The outcome of the last batch is replaced by the new batch (RF-159).
+      if (held !== undefined) await this.drop(projectId, held);
       const batchId = await this.deps.staging.open(this.deps.limitBytes);
       const openedAt = this.deps.clock.now().getTime();
-      const batch = { id: batchId, userId: actor.userId, openedAt, bytes: 0, files: 0 };
-      this.batches.set(projectId, { ...batch, busy: undefined, expired: false });
+      this.batches.set(projectId, newBatch(batchId, actor.userId, openedAt));
       return ok({ batchId });
     } finally {
       this.opening.delete(projectId);
@@ -119,7 +118,8 @@ export class WorkbookBatches {
       );
     }
     const { batch } = located.value;
-    if (batch.busy !== undefined) return err(ERROR_CODES.uploadInProgress);
+    const unusable = unusableBecause(batch);
+    if (unusable !== undefined) return err(unusable);
     const own = new AbortController();
     batch.busy = own;
     try {
@@ -138,43 +138,61 @@ export class WorkbookBatches {
     }
   }
 
-  // RF-150, RF-152, RF-157
-  async finish(request: FinishBatchRequest): Promise<Result<WorkbookBatchSummary, BatchProblem>> {
+  /**
+   * RF-159, DEC-183: accepts the batch and answers at once; every workbook is read, rendered and
+   * published, or none is, after the request. The state tells how it goes and how it ended.
+   */
+  async finish(request: FinishBatchRequest): Promise<Result<BatchState, BatchProblem>> {
     await this.sweep();
     const located = await this.locate(request);
     if (!located.ok) return located;
     const { project, batch } = located.value;
-    if (batch.busy !== undefined) return err(ERROR_CODES.uploadInProgress);
+    const unusable = unusableBecause(batch);
+    if (unusable !== undefined) return err(unusable);
     if (batch.files === 0) return err(ERROR_CODES.requestInvalid);
     const own = new AbortController();
     batch.busy = own;
-    try {
-      const uploadedAt = this.deps.clock.now();
-      const published = await this.deps.staging.publish(batch.id, {
-        projectId: project.id,
-        uploadedAt: uploadedAt.toISOString(),
-        signal: AbortSignal.any([request.signal, own.signal]),
-      });
-      return await this.attach({ request, project, published, uploadedAt });
-    } catch (error) {
-      await this.deps.staging.discard(batch.id);
-      throw error;
-    } finally {
-      batch.busy = undefined;
-      // A cancel and a new batch may have come meanwhile: only this batch's own entry goes.
-      if (this.batches.get(project.id) === batch) this.batches.delete(project.id);
-    }
+    batch.phase = 'processing';
+    batch.startedAt = this.deps.clock.now().getTime();
+    batch.progress = STARTING;
+    batch.work = this.process({ request, project, batch, signal: own.signal });
+    return ok(stateOf(batch, batch.startedAt));
   }
 
-  // RF-150
-  async cancel(request: BatchRef): Promise<Result<undefined, BatchProblem>> {
+  /** The state of a batch (RF-159); not found for an unknown batch and for one of another user. */
+  async state(request: BatchRef): Promise<Result<BatchState, BatchProblem>> {
+    await this.sweep();
+    const located = await this.locate(request);
+    if (!located.ok) return located;
+    return ok(stateOf(located.value.batch, this.deps.clock.now().getTime()));
+  }
+
+  /** The state of the batch of a project, for a page that was reloaded and has no batch id (RF-159). */
+  async current(request: {
+    readonly actor: Actor;
+    readonly projectId: string;
+  }): Promise<Result<BatchState, BatchProblem>> {
+    await this.sweep();
+    const { actor, projectId } = request;
+    const project = await this.deps.projects.find(actor.userId, projectId);
+    const batch = this.batches.get(projectId);
+    if (project === undefined || batch?.userId !== actor.userId) return err(ERROR_CODES.notFound);
+    return ok(stateOf(batch, this.deps.clock.now().getTime()));
+  }
+
+  /** RF-150, RF-159: stops an open batch or one at work; one that ended (or is attaching) is left. */
+  async cancel(request: BatchRef): Promise<Result<CancelOutcome, BatchProblem>> {
     await this.sweep();
     const located = await this.locate(request);
     if (!located.ok) return located;
     const { batch } = located.value;
+    if (batch.attaching) await batch.work;
+    if (hasEnded(batch)) {
+      return ok({ cancelled: false, state: stateOf(batch, this.deps.clock.now().getTime()) });
+    }
     batch.busy?.abort();
     await this.drop(request.projectId, batch);
-    return ok(undefined);
+    return ok({ cancelled: true });
   }
 
   /** Deletes the expired batches every `intervalMs` without waiting for a batch call (RF-150). */
@@ -193,10 +211,14 @@ export class WorkbookBatches {
     );
   }
 
-  /** Server shutdown: stops the work in flight and deletes every open batch with its reserved space. */
+  /** Server shutdown: stops the work in flight and deletes every batch with its reserved space. */
   async close(): Promise<void> {
     this.sweeper.stop();
     this.abortAll();
+    const works = [...this.batches.values()].flatMap((batch) =>
+      batch.work === undefined ? [] : [batch.work],
+    );
+    await Promise.all(works);
     for (const [projectId, batch] of [...this.batches]) await this.drop(projectId, batch);
   }
 
@@ -216,63 +238,50 @@ export class WorkbookBatches {
     return ok({ project, batch });
   }
 
-  /** Records the published snapshot as the project's source (RF-150), or removes it when the project is gone. */
-  private async attach(input: {
+  /** RF-159: the work after the request; it never rejects, its outcome is kept on the batch. */
+  private async process(input: {
     readonly request: FinishBatchRequest;
     readonly project: Project;
-    readonly published: PublishedWorkbooks;
-    readonly uploadedAt: Date;
-  }): Promise<Result<WorkbookBatchSummary, BatchProblem>> {
-    const { request, project, published, uploadedAt } = input;
-    const { projects, uploads } = this.deps;
-    const names = published.info.workbooks.map((book) => book.fileName);
-    const attached = await projects.attachUpload({
-      userId: project.userId,
-      projectId: project.id,
-      upload: {
-        fileName: workbookSourceName(names),
-        uploadedAt: uploadedAt.getTime(),
-        snapshotKey: published.key,
-        workbooks: names.length,
+    readonly batch: HeldBatch;
+    readonly signal: AbortSignal;
+  }): Promise<void> {
+    const { request, project, batch, signal } = input;
+    const outcome = await finishWorkbooks(this.deps, {
+      ...{ batchId: batch.id, actor: request.actor, ip: request.ip, project, signal },
+      onProgress: (progress) => {
+        batch.progress = progress;
       },
-      updatedAt: uploadedAt.getTime(),
-    });
-    if (attached === undefined) {
-      // The project was deleted while the batch was read: its new snapshot has no owner.
-      await uploads.remove(published.key);
-      return err(ERROR_CODES.notFound);
-    }
-    await pruneEarlier(this.deps, project, published.key);
-    await recordWorkbooks(this.deps, {
-      ...{ actor: request.actor, projectId: project.id, ip: request.ip },
-      ...{ snapshotHash: published.info.snapshotHash, workbooks: published.info.workbooks },
-    });
-    return ok({
-      workbooks: published.summary,
-      skipped: published.skipped,
-      snapshotHash: published.info.snapshotHash,
-      uploadedAt: uploadedAt.toISOString(),
-      codeChangedSinceLastRun:
-        project.lastRunSnapshotKey !== undefined && project.lastRunSnapshotKey !== published.key,
-    });
+      onAttach: () => {
+        batch.attaching = true;
+      },
+    }).catch((error: unknown) => refusedAnyway(this.deps, error));
+    batch.outcome = outcome;
+    batch.endedAt = this.deps.clock.now().getTime();
+    batch.busy = undefined;
+    batch.progress = undefined;
+    batch.phase = outcome.kind;
   }
 
   /** Ends a batch that expired once the work on it is over. */
-  private async settle(projectId: string, batch: OpenBatch): Promise<void> {
+  private async settle(projectId: string, batch: HeldBatch): Promise<void> {
     batch.busy = undefined;
     if (batch.expired) await this.drop(projectId, batch);
   }
 
-  private async drop(projectId: string, batch: OpenBatch): Promise<void> {
+  private async drop(projectId: string, batch: HeldBatch): Promise<void> {
     if (this.batches.get(projectId) === batch) this.batches.delete(projectId);
     await this.deps.staging.discard(batch.id);
   }
 
-  /** Deletes the batches left open for 30 minutes; one still at work is stopped and goes when it ends. */
+  /**
+   * Deletes the batches left open for 30 minutes and the outcomes 30 minutes after the work ended; a
+   * batch at work is left to finish (its own bound stops it), one still receiving a file is stopped.
+   */
   private async sweep(): Promise<void> {
     const now = this.deps.clock.now().getTime();
     for (const [projectId, batch] of [...this.batches]) {
-      if (now - batch.openedAt <= BATCH_LIFETIME_MS) continue;
+      if (batch.phase === 'processing') continue;
+      if (now - (batch.endedAt ?? batch.openedAt) <= BATCH_LIFETIME_MS) continue;
       if (batch.busy === undefined) await this.drop(projectId, batch);
       else {
         batch.expired = true;
@@ -280,4 +289,10 @@ export class WorkbookBatches {
       }
     }
   }
+}
+
+/** Why a file or a finish cannot be taken now: the batch is at work, or it has ended (RF-159). */
+function unusableBecause(batch: HeldBatch): BatchProblem | undefined {
+  if (batch.phase === 'processing' || batch.busy !== undefined) return ERROR_CODES.uploadInProgress;
+  return batch.phase === 'open' ? undefined : ERROR_CODES.notFound;
 }

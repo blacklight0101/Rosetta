@@ -5,7 +5,11 @@ import type {
   UploadStore,
 } from '../../src/application/ports/upload-store.js';
 import type { WorkbookEntry } from '../../src/domain/sources/source.js';
-import type { LeftOut, WorkbookSummaryLine } from '../../src/application/ports/workbook-staging.js';
+import type {
+  LeftOut,
+  WorkbookProgress,
+  WorkbookSummaryLine,
+} from '../../src/application/ports/workbook-staging.js';
 import { uploadSnapshotKey } from '../../src/domain/sources/upload-name.js';
 
 // RF-128: an upload store for use case tests. It records what it was asked, answers a stored upload
@@ -16,6 +20,8 @@ export class FakeUploadStore implements UploadStore {
   readonly removed: string[] = [];
   readonly removedProjects: string[] = [];
   failWith: Error | undefined;
+  /** The reports `store` makes to the request's `onProgress`, before it waits for the gate (RF-159). */
+  reports: WorkbookProgress[] = [];
   /** When set, `store` waits for it. */
   gate: Promise<void> | undefined;
   hash = `sha256:${'ab'.repeat(32)}`;
@@ -25,6 +31,7 @@ export class FakeUploadStore implements UploadStore {
 
   async store(request: UploadRequest): Promise<StoredUpload> {
     this.requests.push(request);
+    for (const report of this.reports) request.onProgress?.(report);
     if (this.gate !== undefined) await this.gate;
     if (this.failWith !== undefined) throw this.failWith;
     const info: UploadSnapshotInfo = {

@@ -2,6 +2,13 @@ import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.js';
 import { difficultyBands } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import {
+  hasOwnAnswer,
+  ownAnswerLines,
+  ownAnswerText,
+  ownPrincipleBullets,
+  referenceLine,
+} from './handoff-own-answers-markdown.js';
 import { decisionLink, handoffFiles } from './handoff-links.js';
 import { metricsRuleLines } from './handoff-metrics-markdown.js';
 import { operationsLines } from './handoff-parallel-markdown.js';
@@ -17,24 +24,33 @@ import { uploadSentence } from '../../domain/sources/upload-facts.js';
 // words; a principle that was not chosen appears in neither.
 
 function principleLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  if (handoff.principles.length === 0) return ['No principle was chosen.', ''];
-  return handoff.principles.flatMap((each) => [
-    `### ${esc.inline(each.title)}`,
-    '',
-    `Rule: ${esc.inline(each.rule)}`,
-    '',
-    `Why it matters: ${esc.inline(each.why)}`,
-    '',
-    `How to check: ${esc.inline(each.check)}`,
-    '',
-  ]);
+  const own = ownAnswerLines(handoff, 'principles', esc);
+  if (handoff.principles.length === 0) return ['No principle was chosen.', '', ...own];
+  return [
+    ...handoff.principles.flatMap((each) => [
+      `### ${esc.inline(each.title)}`,
+      '',
+      `Rule: ${esc.inline(each.rule)}`,
+      '',
+      `Why it matters: ${esc.inline(each.why)}`,
+      '',
+      `How to check: ${esc.inline(each.check)}`,
+      '',
+    ]),
+    ...own,
+  ];
 }
 
 function styleLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const { style, choices } = handoff;
   const decision = choices.style === '' ? '' : ` (${decisionLink(choices.style)})`;
+  // DEC-184: the owner's own answer leads and the default style is only the reference.
+  const named = hasOwnAnswer(handoff, 'architecture')
+    ? referenceLine(esc.inline(style.title), decision, 'style', esc.inline(style.rule))
+    : `**${esc.inline(style.title)}**${decision}: ${esc.inline(style.rule)}`;
   return [
-    `**${esc.inline(style.title)}**${decision}: ${esc.inline(style.rule)}`,
+    ...ownAnswerLines(handoff, 'architecture', esc),
+    named,
     '',
     `How to check: ${esc.inline(style.check)}`,
     '',
@@ -85,7 +101,7 @@ function replacedSystem(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   return upload === undefined ? esc.url(repository.url) : esc.inline(uploadSentence(upload));
 }
 
-const longRulesHeading = '## Long rules (they move to orchestration.md)';
+const longRulesHeading = '## Rules kept in this file';
 const unknownCommand = 'Unknown: decide it when the stack is set up';
 
 const commandRows: readonly (readonly [string, string])[] = [
@@ -105,15 +121,37 @@ function commandLines(): string[] {
 }
 
 function principleBullets(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  if (handoff.principles.length === 0) return ['No principle was chosen.'];
-  return handoff.principles.map(
-    (each) =>
-      `- ${esc.inline(each.title)}: ${esc.inline(each.rule)} Check: ${esc.inline(each.check)}`,
-  );
+  const own = ownPrincipleBullets(handoff, esc);
+  if (handoff.principles.length === 0) return ['No principle was chosen.', ...own];
+  return [
+    ...handoff.principles.map(
+      (each) =>
+        `- ${esc.inline(each.title)}: ${esc.inline(each.rule)} Check: ${esc.inline(each.check)}`,
+    ),
+    ...own,
+  ];
+}
+
+/** The migration line of the layout: the owner's own answer first and the default as the reference. */
+function migrationLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const strategy = migrationStrategyInfo[handoff.brief.migration];
+  const record = ` (${decisionLink(handoff.choices.migration)})`;
+  const own = ownAnswerText(handoff, 'migration', esc);
+  if (own === undefined) {
+    return [
+      `Migration: ${esc.inline(strategy.title)}${record}. ${esc.inline(strategy.ordering)}`,
+      '',
+    ];
+  }
+  return [
+    `Migration, the owner's own answer: ${own}`,
+    '',
+    referenceLine(esc.inline(strategy.title), record, 'strategy', esc.inline(strategy.ordering)),
+    '',
+  ];
 }
 
 function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  const strategy = migrationStrategyInfo[handoff.brief.migration];
   return [
     '# AGENTS.md',
     '',
@@ -122,8 +160,9 @@ function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     '## Start here',
     '',
     `1. Read the [README](${handoffFiles.readme}) reading order: the requirements, the architecture and the decisions.`,
-    `2. Take one card from [the task cards](${handoffFiles.tasks}) and give it to the model tier of its band (see Task cards and difficulty below).`,
-    '3. Read [Operations](#operations) before you work next to other agents, and [Risk class](#risk-class) before you take a risky card.',
+    `2. Read [orchestration.md](${handoffFiles.orchestration}) for the roles, the model bands, the retry ladder and the merge rules.`,
+    `3. Take one card from [the task cards](${handoffFiles.tasks}) and give it to the model tier of its band (see Task cards and difficulty below).`,
+    '4. Read [Operations](#operations) before you work next to other agents, and [Risk class](#risk-class) before you take a risky card.',
     '',
     '## Commands',
     '',
@@ -138,8 +177,7 @@ function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     '## Layout',
     '',
     ...styleLines(handoff, esc),
-    `Migration: ${esc.inline(strategy.title)} (${decisionLink(handoff.choices.migration)}). ${esc.inline(strategy.ordering)}`,
-    '',
+    ...migrationLines(handoff, esc),
     ...technologyLines(handoff, esc),
     '## Plan before building',
     '',
@@ -152,12 +190,12 @@ function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   ];
 }
 
-/** The rules that wait here until `orchestration.md` takes them (P6-07). */
+/** The rules kept in this file; the build protocol is in `orchestration.md` (P6-07, RF-636). */
 function longRuleLines(): string[] {
   return [
     longRulesHeading,
     '',
-    'The sections below are the long rules of the build. They stay in this file until the build protocol has its own file; the start-here index above does not depend on them.',
+    `The sections below are the rules of the build kept in this file: task cards, quality, behaviour, operations and metrics. The build protocol (roles, bands, retry ladder, merge rules) is in [orchestration.md](${handoffFiles.orchestration}). The start-here index above does not depend on these sections.`,
     '',
     '## Task cards and difficulty',
     '',

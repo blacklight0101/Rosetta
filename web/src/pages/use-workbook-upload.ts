@@ -4,6 +4,7 @@ import type { Project } from '../api/project-schemas.js';
 import {
   defaultWorkbookMaxFiles,
   loadWorkbookMaxFiles,
+  type BatchState,
   type WorkbookSummary,
 } from '../api/workbook-upload.js';
 import { useApp } from '../app/app-context.js';
@@ -44,6 +45,9 @@ export interface WorkbookUpload {
   readonly summary: WorkbookSummary | undefined;
   readonly failure: ApiFailure | undefined;
   readonly project: Project | undefined;
+  /** RF-159: the server's state of the batch it is reading. */
+  readonly processing: BatchState | undefined;
+  readonly cancel: () => void;
   readonly choose: (files: readonly File[]) => void;
   readonly submit: () => void;
 }

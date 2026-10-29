@@ -28,7 +28,7 @@ function twoPhases() {
   );
 }
 
-function matrixCards(tasks: readonly { title: string }[]) {
+function matrixCards<T extends { title: string }>(tasks: readonly T[]): T[] {
   return tasks.filter((task) => /^Verify phase \d+ against its requirements/u.test(task.title));
 }
 
@@ -116,5 +116,49 @@ describe('withPhaseClosingCards security review and ids', () => {
     expect(
       titles.filter((title) => title === 'Verify phase 1 against its requirements'),
     ).toHaveLength(1);
+  });
+});
+
+describe('withPhaseClosingCards phases with no cards', () => {
+  it('RF-630 a phase with no cards gets no matrix card, the phases around it still do', () => {
+    const plan = planOf(
+      [
+        planTask({ id: 'T-001', title: 'Orders', phase: 1, requirements: ['REQ-001'] }),
+        planTask({ id: 'T-002', title: 'Mail', phase: 3, requirements: ['REQ-002'] }),
+      ],
+      3,
+    );
+    const matrices = matrixCards(withPhaseClosingCards(plan).tasks);
+
+    expect(matrices.map((task) => task.phase)).toEqual([1, 3]);
+  });
+
+  it('RF-630 an empty last phase: the review card sits in the last phase that has cards and gates its matrix', () => {
+    const plan = planOf(
+      [
+        planTask({ id: 'T-001', title: 'Pay', phase: 1, ...money }),
+        planTask({ id: 'T-002', title: 'Mail', phase: 2 }),
+      ],
+      3,
+    );
+    const tasks = withPhaseClosingCards(plan).tasks;
+    const review = tasks.find((task) => task.title.startsWith('Review the security'));
+    const gate = matrixCards(tasks).find((task) => task.phase === 2);
+
+    expect(review?.phase).toBe(2);
+    expect(gate?.dependsOn).toContain(review?.id);
+    expect(tasks.some((task) => task.dependsOn.includes(review?.id ?? ''))).toBe(true);
+    expect(matrixCards(tasks).map((task) => task.phase)).toEqual([1, 2]);
+  });
+});
+
+describe('withPhaseClosingCards cards outside the phases', () => {
+  it('RF-630 a risky card that names no phase of the plan keeps the review in the last phase', () => {
+    const plan = planOf([planTask({ id: 'T-001', title: 'Pay', phase: 9, ...money })], 2);
+    const review = withPhaseClosingCards(plan).tasks.find((task) =>
+      task.title.startsWith('Review the security'),
+    );
+
+    expect(review?.phase).toBe(2);
   });
 });

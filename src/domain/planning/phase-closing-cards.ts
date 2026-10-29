@@ -81,12 +81,17 @@ export function withPhaseClosingCards(content: PlanContent): PlanContent {
   let next = tasks.length;
   const nextId = (): string => planId('T', ++next);
   const risky = tasks.filter((task) => task.riskClass !== 'none');
+  // P6-24: an empty last phase must not strand the review, so the review sits in the last phase that
+  // has cards and gates that phase's matrix card.
+  const closingPhase =
+    content.phases.filter((phase) => tasks.some((task) => task.phase === phase.number)).at(-1)
+      ?.number ?? last;
   const review =
     risky.length === 0
       ? []
       : [
           closing(reviewText(risky), {
-            ...{ id: nextId(), phase: last },
+            ...{ id: nextId(), phase: closingPhase },
             dependsOn: risky.map((task) => task.id),
           }),
         ];
@@ -96,7 +101,7 @@ export function withPhaseClosingCards(content: PlanContent): PlanContent {
       : content.phases.flatMap((phase) => {
           const own = tasks.filter((task) => task.phase === phase.number);
           if (own.length === 0) return [];
-          const waits = phase.number === last ? review.map((card) => card.id) : [];
+          const waits = phase.number === closingPhase ? review.map((card) => card.id) : [];
           return [
             closing(matrixText(phase.number, own), {
               ...{ id: nextId(), phase: phase.number },

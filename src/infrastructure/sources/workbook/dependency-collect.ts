@@ -69,7 +69,11 @@ function sourceOf(
   return { refs, shift: NO_SHIFT };
 }
 
-export function collect(project: Project, limits: DependencyLimits): Collected {
+/** The collecting pass, handing the server back after each sheet (RF-159). */
+export function* collectSteps(
+  project: Project,
+  limits: DependencyLimits,
+): Generator<void, Collected, undefined> {
   const store = new RefStore(limits.maxReferences);
   const findings = new Findings(limits, project.sheets.length);
   const resolver = new Resolver(project, store, findings);
@@ -91,6 +95,7 @@ export function collect(project: Project, limits: DependencyLimits): Collected {
       store.begin();
       readOne(resolver, { sheet, ...where }, formula, { book, masters, findings, store });
     }
+    yield;
   }
   store.begin();
   return { store, findings, nodeSheet, nodePosition };

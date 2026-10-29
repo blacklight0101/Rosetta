@@ -26,6 +26,8 @@ export interface JourneyStripProps {
   readonly onResumed: () => void;
   /** Opens the questions where the page can show them; any other page opens the run. */
   readonly onAnswer?: (() => void) | undefined;
+  /** RF-646: opens the Deepen of the run where the page holds it; any other page opens the run. */
+  readonly onDeepen?: (() => void) | undefined;
   /** The path of the page that holds the strip: a second action that opens this page is left out. */
   readonly pagePath?: string | undefined;
 }
@@ -92,18 +94,21 @@ function Action(props: {
   readonly variant?: 'primary' | 'secondary';
   readonly onResumed: () => void;
   readonly onAnswer: (() => void) | undefined;
+  readonly onDeepen?: (() => void) | undefined;
 }): JSX.Element | null {
-  const { action, onAnswer } = props;
+  const { action, onAnswer, onDeepen } = props;
   if (action === undefined) return null;
   if (action.kind === 'resume') {
     return <ResumeButton runId={action.runId} label={action.label} onResumed={props.onResumed} />;
   }
   const answersHere = action.kind === 'answer' && onAnswer !== undefined;
+  const deepensHere = action.kind === 'deepen' && onDeepen !== undefined;
   return (
     <Button
       variant={props.variant ?? 'primary'}
       onClick={() => {
         if (answersHere) onAnswer();
+        else if (deepensHere) onDeepen();
         else navigate(action.href);
       }}
     >
@@ -132,7 +137,12 @@ export function JourneyStrip(props: JourneyStripProps): JSX.Element {
         ))}
       </ol>
       <div class="rst-road__foot">
-        <Action action={view.action} onResumed={props.onResumed} onAnswer={props.onAnswer} />
+        <Action
+          action={view.action}
+          onResumed={props.onResumed}
+          onAnswer={props.onAnswer}
+          onDeepen={props.onDeepen}
+        />
         <Action
           action={secondaryOf(view, props.pagePath)}
           variant="secondary"

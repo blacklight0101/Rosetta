@@ -1,7 +1,9 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { brokenRuleReason, styleRoles } from '../../domain/planning/style-rules.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { checkReference } from '../../domain/planning/typed-answers.js';
 import { handoffFiles } from './handoff-links.js';
+import { hasOwnAnswer } from './handoff-own-answers-markdown.js';
 
 // RF-608, RF-507, DEC-76: what the package says about its components and the chosen style. The
 // section of checks.md lists each dependency that breaks the rule of the style and each component
@@ -49,10 +51,14 @@ function unknownLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
 export function styleLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   if (handoff.content.components.length === 0) return [];
   const roles = styleRoles[handoff.brief.architecture.style].join(', ');
+  // DEC-184: with an own answer the style is only the reference of the checks.
+  const reference = hasOwnAnswer(handoff, 'architecture')
+    ? `, the default style, ${checkReference('style')},`
+    : ',';
   return [
     '## Components against the style',
     '',
-    `Each component has a role in the ${esc.inline(handoff.style.title)} style (${roles}), and the dependencies between components are checked against the rule of the style: ${esc.inline(handoff.style.rule)}`,
+    `Each component has a role in the ${esc.inline(handoff.style.title)} style (${roles})${reference} and the dependencies between components are checked against the rule of the style: ${esc.inline(handoff.style.rule)}`,
     '',
     ...brokenLines(handoff, esc),
     ...unknownLines(handoff, esc),

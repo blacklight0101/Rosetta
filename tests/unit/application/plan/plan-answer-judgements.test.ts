@@ -131,17 +131,17 @@ describe('claim judgements in the plan', () => {
 });
 
 describe('the planner prompt', () => {
-  it('RNF-004 P5-41 the planner prompt is package.v9.md and asks for the judgements', async () => {
+  it('RNF-004 P5-41 the planner prompt is package.v10.md and asks for the judgements', async () => {
     const file = await loadPlannerPrompt('prompts');
-    const text = await readFile('prompts/planner/package.v9.md', 'utf8');
+    const text = await readFile('prompts/planner/package.v10.md', 'utf8');
 
-    expect(file).toMatchObject({ name: 'planner/package.v9.md', version: 'v9' });
+    expect(file).toMatchObject({ name: 'planner/package.v10.md', version: 'v10' });
     expect(text).toContain('claimJudgements');
     expect(text).toContain('contradicts');
   });
 
   it('DEC-11 the judgement wording names no language, framework or product', async () => {
-    const text = await readFile('prompts/planner/package.v9.md', 'utf8');
+    const text = await readFile('prompts/planner/package.v10.md', 'utf8');
     const section = text.slice(text.indexOf('claimJudgements'));
 
     expect(section).not.toMatch(/\b(c#|\.net|asp|java|php|python|sql server|bcrypt)\b/iu);

@@ -8,7 +8,8 @@ import { ready, renderStart, start } from './start-run-helpers.js';
 import {
   answerFile,
   chooseFiles,
-  finishedBody,
+  acceptedBody,
+  storedState,
   sendButton,
   workbookFile,
 } from './workbook-fixtures.js';
@@ -57,7 +58,8 @@ it('RF-150 storing workbooks in the card opens Start and updates the label', asy
   renderStart({
     [`GET ${projectPath}`]: book(null),
     'POST /api/projects/p-1/source/batches': json(201, { batchId: 'b-1' }),
-    'POST /api/projects/p-1/source/batches/b-1/finish': json(201, finishedBody),
+    'POST /api/projects/p-1/source/batches/b-1/finish': json(202, acceptedBody),
+    'GET /api/projects/p-1/source/batches/b-1': json(200, storedState()),
   });
   await ready();
   chooseFiles(workbookFile('Pricing.xlsx'), workbookFile('Costs.xlsm'));

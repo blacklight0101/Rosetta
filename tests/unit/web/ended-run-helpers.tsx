@@ -96,6 +96,8 @@ export interface EndedOptions {
   readonly endState?: string;
   /** The stage of the run; understand unless a test says otherwise. */
   readonly stage?: string;
+  /** RF-646: how many Deepens the run has; 1 (the questions are asked) unless a test says otherwise. */
+  readonly deepens?: number;
   readonly extra?: Readonly<Record<string, Answer>>;
 }
 
@@ -108,7 +110,10 @@ export async function openEnded(options: EndedOptions = {}): Promise<LiveRun> {
       endState: options.endState ?? 'Completed',
     }),
     [`GET ${runPath}/overview`]: options.overviewBody ?? json(200, { overview }),
-    [`GET ${runPath}/answers`]: json(200, { questions: options.questions ?? threeQuestions }),
+    [`GET ${runPath}/answers`]: json(200, {
+      questions: options.questions ?? threeQuestions,
+      deepens: options.deepens ?? 1,
+    }),
     [`GET ${codeMapPath}`]: codeMapAnswer(ownAreas),
     ...options.extra,
   });

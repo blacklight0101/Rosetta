@@ -3,7 +3,7 @@ import type { ApiClient, ApiFailure } from '../api/client.js';
 import { savePlanningBrief } from '../api/plan.js';
 import type { BriefView } from '../api/plan-schemas.js';
 import { useApp } from '../app/app-context.js';
-import { answersOf, draftOf, problemsOf, type Draft } from '../lib/plan-setup/draft.js';
+import { answersOf, draftOf, problemsOf, savedDraft, type Draft } from '../lib/plan-setup/draft.js';
 import { STEP_IDS, type StepId } from '../lib/plan-setup/steps.js';
 
 // RF-605, RF-611: the answers on the page, the step that is open and the saving of the planning
@@ -76,7 +76,7 @@ export function usePlanSetup(
       setProblems(saved.problems);
       if (saved.error !== undefined) setError(saved.error);
       if (saved.outOfDate === undefined) return;
-      setDraft((current) => (current === before ? sending : current));
+      setDraft((current) => savedDraft(current === before ? sending : current));
       setOutOfDate(saved.outOfDate);
       if (then === 'finish' || index === lastStep) setFinished(true);
       else setIndex(index + 1);

@@ -4,7 +4,8 @@ import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { keepLegacyDefault, legacySafe } from '../../domain/planning/legacy-default.js';
 import { secureDefault, securityCards } from '../../domain/planning/keep-or-fix.js';
 import { keepOrFixQuestionLines, keepOrFixTable } from './handoff-keep-or-fix-markdown.js';
-import { decisionFile, documentSet, handoffFiles, idLink, sourceLinks } from './handoff-links.js';
+import { handoffFiles, idLink, sourceLinks } from './handoff-links.js';
+import { readingOrder } from './handoff-reading-order-markdown.js';
 import {
   proposalReadmeLines,
   stackClashQuestionLines,
@@ -12,6 +13,8 @@ import {
 } from './handoff-stack-markdown.js';
 import { leftOutSummaryLines } from './handoff-left-out-markdown.js';
 import { buildMethodQuestionLines, leftOutReadmeLines } from './handoff-build-method-markdown.js';
+import { ownPrincipleBullets } from './handoff-own-answers-markdown.js';
+import { suggestedAnswerLines } from './handoff-suggested-answers-markdown.js';
 import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
 import { uploadSentence } from '../../domain/sources/upload-facts.js';
 import { incompleteApiLines, incompleteLines } from './handoff-incomplete-markdown.js';
@@ -78,10 +81,10 @@ function prdQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string
 export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const waiting = waitingOf(handoff);
   const secure = securityCards(handoff.content.judgements ?? [], handoff.sources);
-  const unanswered = handoff.openQuestions.map(
-    (question) =>
-      `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)} Default: ${secure.has(question.cardId) ? secureDefault : keepLegacyDefault} Cards waiting: ${waitingCards(waiting, question.cardId)}`,
-  );
+  const unanswered = handoff.openQuestions.flatMap((question) => [
+    `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)} Default: ${secure.has(question.cardId) ? secureDefault : keepLegacyDefault} Cards waiting: ${waitingCards(waiting, question.cardId)}`,
+    ...suggestedAnswerLines(question.options, esc),
+  ]);
   return [
     '# Open questions',
     '',
@@ -91,7 +94,7 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     '',
     'A security question is the exception: its default is the secure option, never the legacy behaviour. The planner marks a claim as a security matter, and a question of the card that holds such a claim, and a keep-or-fix row about it, default to the secure option.',
     '',
-    ...buildMethodQuestionLines(handoff),
+    ...buildMethodQuestionLines(handoff, esc),
     '## Planning brief questions that took their default',
     '',
     'Nobody answered these questions when the brief was saved; the package was written with the default shown. Confirm or change each one. A question of the brief applies to the whole build, so it marks no single card as waiting.',
@@ -156,56 +159,6 @@ export function sourcesMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): 
       '',
     ]),
   ].join('\n');
-}
-
-function decisionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  const { decisions } = handoff.content;
-  if (decisions.length === 0) return ['   No decision record was written.'];
-  return decisions.map(
-    (decision) =>
-      `   - [${decision.id}](${decisionFile(decision.id)}): ${esc.inline(decision.title)}`,
-  );
-}
-
-/** The reading-order line of a document of the set; the API contract links its file only when there is one. */
-function documentLine(
-  document: (typeof documentSet)[number],
-  handoff: HandoffPackage,
-  esc: MarkdownEscaper,
-): string {
-  const { title, file } = document;
-  const { apiContract } = handoff;
-  if (file !== handoffFiles.apiContract || apiContract.kind === 'openapi') {
-    return `[${title}](${file})`;
-  }
-  return `${title}: no contract applies. ${esc.inline(apiContract.reason)}`;
-}
-
-/** RF-620, RF-601: the documentation set first, then the parts of RF-601, each linking its file. */
-function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  const entries = [
-    ...(handoff.brief.buildMethod.aiAssisted ? [[`[AGENTS.md](${handoffFiles.agents})`]] : []),
-    ...documentSet.map((document) => [documentLine(document, handoff, esc)]),
-    [`[Requirements specification](${handoffFiles.requirements})`],
-    [`[Target architecture](${handoffFiles.architecture})`],
-    ['Architecture decision records', ...decisionLines(handoff, esc)],
-    [`[Entity mapping](${handoffFiles.entities})`],
-    ...(handoff.workbookFormulas === undefined
-      ? []
-      : [[`[Workbook formulas](${handoffFiles.workbookFormulas})`]]),
-    [`[Roadmap](${handoffFiles.roadmap})`],
-    [`[Task cards](${handoffFiles.tasks})`],
-    [`[Risks](${handoffFiles.risks})`],
-    [`[Open questions](${handoffFiles.openQuestions})`],
-    [`[Claims left out](${handoffFiles.claimsLeftOut})`],
-    [`[Package checks](${handoffFiles.checks})`],
-    [`[Source cards](${handoffFiles.sources})`],
-    [`[Realistic data shapes](${handoffFiles.fixtures})`],
-    [`[Conventions](${handoffFiles.conventions})`],
-  ];
-  return entries.flatMap((lines, index) =>
-    lines.map((line, at) => (at === 0 ? `${String(index + 1)}. ${line}` : line)),
-  );
 }
 
 /** RF-624: where the API contract is, or why none applies, and the cards no operation serves. */
@@ -293,6 +246,7 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
       : handoff.principles.map(
           (principle) => `- **${esc.inline(principle.title)}**: ${esc.inline(principle.rule)}`,
         )),
+    ...ownPrincipleBullets(handoff, esc),
     '',
   ].join('\n');
 }
