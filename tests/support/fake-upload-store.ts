@@ -74,11 +74,23 @@ export class FakeUploadStore implements UploadStore {
   /** The reports, the wait for the gate, a stop by the request and a failure the test asked for. */
   private async work(request: UploadRequest): Promise<void> {
     for (const report of this.reports) request.onProgress?.(report);
-    if (this.gate !== undefined) await this.gate;
+    // A real store stops at once when its request is aborted, so the Cancel that waits for it is answered.
+    if (this.gate !== undefined) await Promise.race([this.gate, this.stopped(request)]);
     if (this.stopsOnAbort && request.signal.aborted) {
       throw request.signal.reason instanceof Error ? request.signal.reason : new Error('stopped');
     }
     if (this.failWith !== undefined) throw this.failWith;
+  }
+
+  /** Settles when the request is aborted, if the store stops on abort; never otherwise. */
+  private stopped(request: UploadRequest): Promise<void> {
+    if (!this.stopsOnAbort) return new Promise<void>(() => undefined);
+    return new Promise<void>((resolve) => {
+      if (request.signal.aborted) resolve();
+      request.signal.addEventListener('abort', () => {
+        resolve();
+      });
+    });
   }
 
   read(): Promise<undefined> {
