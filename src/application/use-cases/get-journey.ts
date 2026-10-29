@@ -15,7 +15,8 @@ import type { RunEventHistory } from '../ports/run-events.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { scopeOf } from '../runs/run-scope.js';
-import { waitsForAnswer, consolidatedStates } from './question-states.js';
+import { projectQuestions } from '../answers/project-questions.js';
+import { waitsForAnswer } from './question-states.js';
 
 // RF-615, RF-614, RF-1105, DEC-142, DEC-143: Get journey gives the journey strip the facts it is drawn
 // from: the understand run the package is written from, its open questions, whether a brief is
@@ -42,6 +43,9 @@ export interface GetJourneyRequest {
   /** The id of an understand or a plan run of the project; none means the newest of the project. */
   readonly runId?: string | undefined;
 }
+
+/** A run that is not `Completed` asks no question and, for the journey, has no Deepen. */
+const NO_QUESTIONS = { openQuestions: 0, deepens: 0, isDeepen: false } as const;
 
 type NotFound = typeof ERROR_CODES.notFound;
 /** The understand run each plan run was written from, by the id of the plan run. */
@@ -165,17 +169,21 @@ export class GetJourney {
     const facts = await this.runFacts(run);
     if (run.endState === 'CapReached') {
       const kept = supportedCards(await this.deps.cards.cardsOf(scopeOf(run)));
-      return { ...facts, supportedClaims: claimsOf(kept), openQuestions: 0 };
+      return { ...facts, supportedClaims: claimsOf(kept), ...NO_QUESTIONS };
     }
-    if (!isCompleted(run)) return { ...facts, supportedClaims: 0, openQuestions: 0 };
-    const project = { userId: run.userId, projectId: run.projectId };
+    if (!isCompleted(run)) return { ...facts, supportedClaims: 0, ...NO_QUESTIONS };
     const cards = supportedCards(await this.deps.cards.cardsOf(scopeOf(run)));
-    const asked = await this.deps.answers.questionsOf(project, run.runKey);
-    const stated = await consolidatedStates(this.deps.priorCards, project, run.runKey, asked);
+    // RF-646, DEC-179: the project's one list, the run's questions and those of its Deepens.
+    const { questions, family } = await projectQuestions(
+      { ...this.deps, manifests: this.deps.manifests },
+      run,
+    );
     return {
       ...facts,
       supportedClaims: claimsOf(cards),
-      openQuestions: stated.filter(waitsForAnswer).length,
+      openQuestions: questions.filter(waitsForAnswer).length,
+      deepens: family.deepens,
+      isDeepen: family.isDeepen,
     };
   }
 }

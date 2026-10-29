@@ -3,6 +3,7 @@ import { runDownloadPath } from '../../api/runs.js';
 import { costLabel } from '../live-run/format.js';
 import { nextOf, type JourneyAction, type JourneyLink } from './journey-action.js';
 import {
+  deepenFirst,
   endText,
   lockReason,
   phaseOf,
@@ -92,7 +93,7 @@ function understandPart({ source }: Context): Part {
   return ofRun(source, { state: 'done', detail, href: runPage(source) });
 }
 
-function questionsPart({ source, facts }: Context): Part {
+function questionsPart({ source, facts, skippedDeepen: skipped }: Context): Part {
   if (source === null) return locked('Needs an understand run');
   const phase = phaseOf(source);
   if (phase === 'working') return locked('Comes after the run finishes');
@@ -110,6 +111,11 @@ function questionsPart({ source, facts }: Context): Part {
         ? '1 question left on its default'
         : `${String(open)} questions left on their defaults`;
     return { state: 'done', detail: left, href };
+  }
+  // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by it.
+  if (deepenFirst({ source, skippedDeepen: skipped })) {
+    const detail = `${plural(open, 'open question')}, asked after the last Deepen: answers given now will be used by it`;
+    return { state: 'upcoming', detail, href };
   }
   return { state: 'upcoming', detail: plural(open, 'open question'), href };
 }
@@ -207,10 +213,15 @@ const stateOf = (part: Part, here: boolean): StepState =>
   here && part.state === 'upcoming' ? 'current' : part.state;
 
 // RF-615
-export function journeyOf(facts: JourneyFacts, projectId: string): JourneyView {
+export function journeyOf(
+  facts: JourneyFacts,
+  projectId: string,
+  /** RF-646: the user chose not to Deepen the source run. */
+  skippedDeepen = false,
+): JourneyView {
   const { source, plan } = facts;
   const setUp = source === null ? undefined : `/projects/${projectId}/plan-setup?run=${source.id}`;
-  const context: Context = { facts, projectId, source, plan, setUp };
+  const context: Context = { facts, projectId, source, plan, setUp, skippedDeepen };
   const next = nextOf(context);
   const costs = costsOf(context);
   const steps = parts.map(([key, title, partOf]): JourneyStep => {
