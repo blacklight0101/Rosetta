@@ -41,6 +41,10 @@ export interface BriefAnswers {
     offered?: readonly string[] | undefined;
   }[];
   readonly context?: Readonly<Record<string, unknown>>;
+  /** RF-645: the option that answered each question, or "typed". */
+  readonly chosen?: Readonly<Record<string, string>>;
+  /** RF-645: the text of a typed answer, by question id. */
+  readonly typed?: Readonly<Record<string, string>>;
   readonly buildMethod?: {
     readonly aiAssisted: boolean;
     readonly agentTool?: { readonly kind: string; readonly name?: string | undefined };
