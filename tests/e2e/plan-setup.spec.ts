@@ -102,6 +102,13 @@ test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in
   await page.getByLabel('Your own for Hosting').fill('On-premises Kubernetes');
   await page.getByRole('button', { name: 'Save and continue' }).click();
   await page.getByLabel('Team size', { exact: true }).fill('6');
+  // P6-26 (RF-611, DEC-189): the hosted question has no recommended answer and works by keyboard.
+  const hosting = page.getByRole('radiogroup', { name: 'Will the new application be hosted?' });
+  await expect(hosting.getByRole('radio', { checked: true })).toHaveCount(0);
+  await expect(hosting).not.toContainText('Recommended');
+  await hosting.getByRole('radio', { name: 'Hosted', exact: true }).focus();
+  await page.keyboard.press('Space');
+  await expectNoSeriousViolations(page);
   await page.getByRole('button', { name: 'Save and continue' }).click();
   await page.getByRole('radio', { name: /^Agents will build/u }).check();
   await page.getByRole('radio', { name: /^Claude Code/u }).check();
@@ -116,13 +123,14 @@ test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in
 
   await expect(recorded(page)).toContainText('Parallel Change');
   await expect(recorded(page)).toContainText('1 of 7 layers: On-premises Kubernetes');
-  await expect(recorded(page)).toContainText('1 of 5 answered');
+  await expect(recorded(page)).toContainText('1 of 5 answered; the new application will be hosted');
   await expect(recorded(page)).toContainText(
     'Agents will build with Claude Code. Models: smallest haiku, middle sonnet, largest opus',
   );
   await expect(recorded(page).getByText('(default)').first()).toBeVisible();
   await page.reload();
   await expect(recorded(page)).toContainText('Parallel Change');
+  await expect(recorded(page)).toContainText('will be hosted');
   await openStep(page, 'Migration');
   await page.getByRole('radio', { name: /^Strangler Fig/u }).check();
   await page.getByRole('button', { name: 'Save and continue' }).click();
