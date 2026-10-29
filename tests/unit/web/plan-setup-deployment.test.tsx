@@ -15,6 +15,7 @@ async function openContext(): Promise<HTMLElement> {
 
 describe('the hosted question', () => {
   it('P6-26 is a radio group with a legend, three answers, none chosen and none recommended', async () => {
+    renderPlan();
     const group = await openContext();
 
     expect(group.tagName).toBe('FIELDSET');

@@ -6,6 +6,7 @@ import { PlanContextChoices } from './PlanContextChoices.js';
 import { MAX_TEXT } from '../lib/plan-setup/draft.js';
 import type { ContextField } from '../lib/plan-setup/steps.js';
 import { Field } from '../components/Field.js';
+import { PlanHostedQuestion } from './PlanHostedQuestion.js';
 import { PlanStepCard } from './PlanStepCard.js';
 import type { StepProps } from './PlanPrinciplesStep.js';
 
@@ -98,6 +99,9 @@ export function PlanContextStep({ draft, catalogue, change, problems }: StepProp
           </div>
         );
       })}
+      <div class="rst-plan-question">
+        <PlanHostedQuestion draft={draft} change={change} />
+      </div>
     </PlanStepCard>
   );
 }

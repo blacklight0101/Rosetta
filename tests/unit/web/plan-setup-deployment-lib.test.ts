@@ -21,6 +21,7 @@ const viewWith = (deployment: string | undefined, defaulted: string[] = []) =>
     },
   });
 
+const ALL_DEFAULTED = unsavedBrief.brief.defaulted;
 const unanswered = draftOf(briefViewSchema.parse(unsavedBrief).brief);
 const contextLine = (draft: typeof unanswered) =>
   recordedLines(draft, catalogue).find((each) => each.key === 'Project context');
@@ -53,10 +54,12 @@ describe('the draft of the hosted question', () => {
 
     expect(answersOf(draft).context).toEqual({ teamSize: 6, deployment: 'hosted' });
   });
+});
 
+describe('the hosted question saved and read back', () => {
   it('P6-26 a saved answer is read back and sent again (round trip)', () => {
     for (const deployment of ['hosted', 'not-hosted'] as const) {
-      const draft = draftOf(viewWith(deployment).brief);
+      const draft = draftOf(viewWith(deployment, ALL_DEFAULTED).brief);
 
       expect(draft.deployment).toBe(deployment);
       expect(answersOf(draft).context).toEqual({ deployment });
@@ -67,7 +70,8 @@ describe('the draft of the hosted question', () => {
     const draft = draftOf(viewWith(undefined).brief);
 
     expect(draft.deployment).toBe('');
-    expect(answersOf(draft)).toEqual({});
+    expect(answersOf(draft).context).not.toHaveProperty('deployment');
+    expect(answersOf(draftOf(viewWith(undefined, ALL_DEFAULTED).brief))).toEqual({});
   });
 
   it('P6-26 the web schema keeps the answer and refuses another value', () => {
