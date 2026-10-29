@@ -28,7 +28,7 @@ import { diagramDocumentPaths, extractDiagrams } from '../report/report-diagrams
 import type { ScannedSource } from '../ports/scan-results.js';
 import { scopeOf } from '../runs/run-scope.js';
 import type { PriorCards } from '../ports/prior-cards.js';
-import { consolidatedQuestions } from '../understand/consolidated-questions.js';
+import { projectQuestions, recordedOf } from '../answers/project-questions.js';
 import { exportFileName } from './export-zip.js';
 
 // RF-504, RF-506, RF-1013, RF-1105: Build report on a run. It gives the owner of a finished run its
@@ -127,10 +127,9 @@ export class BuildReport {
     Pick<ReportInputs, 'generatedAt' | 'coverage' | 'cost' | 'projectTotals' | 'questions'>
   > {
     const { files, answers, priorCards, costs, clock } = this.deps;
-    const project = { userId: run.userId, projectId: run.projectId };
-    const filed = await answers.questionsOf(project, run.runKey);
-    // P5-11: the questions of the consolidated set, as the answers page lists them.
-    const questions = consolidatedQuestions(filed, await priorCards.cardsOf(project, run.runKey));
+    // P5-11, RF-646: the questions of the one list, as the answers page lists them.
+    const listed = await projectQuestions({ ...this.deps, answers, priorCards }, run);
+    const questions = listed.questions.map(recordedOf);
     return {
       generatedAt: clock.now().toISOString(),
       coverage: parseCoverage(await files.read(scope, 'coverage.json')),

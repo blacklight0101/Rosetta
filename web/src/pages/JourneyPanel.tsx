@@ -3,6 +3,7 @@ import { navigate } from '../app/router.js';
 import { journeyOf } from '../lib/journey/journey-steps.js';
 import { JourneyStrip } from './JourneyStrip.js';
 import { useJourney } from './use-journey.js';
+import { useSkipDeepen } from './use-skip-deepen.js';
 
 // RF-615, RF-1015: the journey strip of a page: reads the facts of the run the page is about
 // (`/api/projects/:id/journey`) and draws them. The understand run page, Plan setup and the plan run
@@ -19,6 +20,8 @@ export interface JourneyPanelProps {
   readonly onResumed?: (() => void) | undefined;
   /** Opens the questions where the page can show them. */
   readonly onAnswer?: (() => void) | undefined;
+  /** RF-646: focuses the Deepen of the run where the page holds it. */
+  readonly onDeepen?: (() => void) | undefined;
   /** The path of the page the strip is on (Plan setup), so no action links to the page itself. */
   readonly pagePath?: string | undefined;
 }
@@ -27,16 +30,18 @@ export interface JourneyPanelProps {
 export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
   const { projectId, runId, refresh } = props;
   const load = useJourney({ projectId, runId }, refresh);
+  const skip = useSkipDeepen(runId);
   if (load.status === 'loading') return null;
   if (load.status === 'failed') {
     return <p class="rst-road-note">{`The journey could not be read (${load.error.code}).`}</p>;
   }
-  const view = journeyOf(load.facts, projectId);
+  const view = journeyOf(load.facts, projectId, skip.skipped);
   const source = load.facts.source;
   return (
     <JourneyStrip
       view={view}
       onAnswer={props.onAnswer}
+      onDeepen={props.onDeepen}
       pagePath={props.pagePath}
       onResumed={
         props.onResumed ??

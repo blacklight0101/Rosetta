@@ -59,7 +59,9 @@ describe('the build method question', () => {
     press('Save');
 
     const summary = await screen.findByRole('region', { name: 'What I recorded' });
-    expect(saves(page)).toEqual([{ buildMethod: { aiAssisted: false } }]);
+    expect(saves(page)).toEqual([
+      { buildMethod: { aiAssisted: false }, chosen: { buildMethod: 'people' } },
+    ]);
     expect(within(summary).getByText('People will build')).not.toBeNull();
   });
 });
@@ -130,7 +132,10 @@ describe('the agent tool and the models: the answers', () => {
 
     const summary = await screen.findByRole('region', { name: 'What I recorded' });
     expect(saves(page)).toEqual([
-      { buildMethod: { aiAssisted: true, agentTool: { kind: 'claude-code' } } },
+      {
+        buildMethod: { aiAssisted: true, agentTool: { kind: 'claude-code' } },
+        chosen: { buildMethod: 'agents' },
+      },
     ]);
     expect(
       within(summary).getByText(
@@ -162,6 +167,7 @@ describe('the agent tool and the models: other tools', () => {
           agentTool: { kind: 'codex' },
           models: { middle: 'gpt-mid' },
         },
+        chosen: { buildMethod: 'agents' },
       },
     ]);
     expect(
@@ -180,7 +186,10 @@ describe('the agent tool and the models: other tools', () => {
 
     await screen.findByRole('region', { name: 'What I recorded' });
     expect(saves(page)).toEqual([
-      { buildMethod: { aiAssisted: true, agentTool: { kind: 'other', name: 'Aider' } } },
+      {
+        buildMethod: { aiAssisted: true, agentTool: { kind: 'other', name: 'Aider' } },
+        chosen: { buildMethod: 'agents' },
+      },
     ]);
   });
 });
@@ -201,7 +210,9 @@ describe('the agent tool and the models: another tool without a name', () => {
     press('Save');
 
     const summary = await screen.findByRole('region', { name: 'What I recorded' });
-    expect(saves(page)).toEqual([{ buildMethod: { aiAssisted: true } }]);
+    expect(saves(page)).toEqual([
+      { buildMethod: { aiAssisted: true }, chosen: { buildMethod: 'agents' } },
+    ]);
     expect(within(summary).queryByText(/aider-mid/u)).toBeNull();
     expect(within(summary).getByText(/the other tool has no name yet/u)).not.toBeNull();
   });

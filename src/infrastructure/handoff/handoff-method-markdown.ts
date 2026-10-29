@@ -85,7 +85,7 @@ function replacedSystem(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   return upload === undefined ? esc.url(repository.url) : esc.inline(uploadSentence(upload));
 }
 
-const longRulesHeading = '## Long rules (they move to orchestration.md)';
+const longRulesHeading = '## Rules kept in this file';
 const unknownCommand = 'Unknown: decide it when the stack is set up';
 
 const commandRows: readonly (readonly [string, string])[] = [
@@ -122,8 +122,9 @@ function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     '## Start here',
     '',
     `1. Read the [README](${handoffFiles.readme}) reading order: the requirements, the architecture and the decisions.`,
-    `2. Take one card from [the task cards](${handoffFiles.tasks}) and give it to the model tier of its band (see Task cards and difficulty below).`,
-    '3. Read [Operations](#operations) before you work next to other agents, and [Risk class](#risk-class) before you take a risky card.',
+    `2. Read [orchestration.md](${handoffFiles.orchestration}) for the roles, the model bands, the retry ladder and the merge rules.`,
+    `3. Take one card from [the task cards](${handoffFiles.tasks}) and give it to the model tier of its band (see Task cards and difficulty below).`,
+    '4. Read [Operations](#operations) before you work next to other agents, and [Risk class](#risk-class) before you take a risky card.',
     '',
     '## Commands',
     '',
@@ -152,12 +153,12 @@ function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   ];
 }
 
-/** The rules that wait here until `orchestration.md` takes them (P6-07). */
+/** The rules kept in this file; the build protocol is in `orchestration.md` (P6-07, RF-636). */
 function longRuleLines(): string[] {
   return [
     longRulesHeading,
     '',
-    'The sections below are the long rules of the build. They stay in this file until the build protocol has its own file; the start-here index above does not depend on them.',
+    `The sections below are the rules of the build kept in this file: task cards, quality, behaviour, operations and metrics. The build protocol (roles, bands, retry ladder, merge rules) is in [orchestration.md](${handoffFiles.orchestration}). The start-here index above does not depend on these sections.`,
     '',
     '## Task cards and difficulty',
     '',

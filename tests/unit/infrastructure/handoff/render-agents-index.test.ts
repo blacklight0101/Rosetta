@@ -4,11 +4,11 @@ import { renderHandoff } from '../../../../src/infrastructure/handoff/file-hando
 import { handoffOf } from '../../../support/handoff-package-fixture.js';
 
 // RF-612, RF-636, RF-640, DEC-176, P6-06: AGENTS.md of an AI-assisted build is a start-here index
-// that comes first in the README reading order. The long rules sit after a marked heading until
-// orchestration.md (P6-07) takes them; the index above that heading has a line budget.
+// that comes first in the README reading order. The rules kept in it sit after a marked heading and
+// the index above that heading has a line budget; the build protocol is in orchestration.md (P6-07).
 
 const masker = new SecretMasker();
-const longRules = '## Long rules (they move to orchestration.md)';
+const longRules = '## Rules kept in this file';
 
 function filesOf(aiAssisted: boolean): Readonly<Record<string, string>> {
   const base = handoffOf('Plain text.');
@@ -66,5 +66,16 @@ describe('AGENTS.md as the start-here index', () => {
 
     expect(Object.keys(files)).not.toContain('AGENTS.md');
     expect(files['README.md']).not.toContain('AGENTS.md');
+  });
+});
+
+describe('AGENTS.md and orchestration.md', () => {
+  it('RF-640 AGENTS.md does not claim its rules move to orchestration.md', () => {
+    const text = filesOf(true)['AGENTS.md'] ?? '';
+    const kept = text.split(longRules)[1] ?? '';
+
+    expect(text).not.toMatch(/\bmoves? to orchestration/iu);
+    expect(text).not.toMatch(/until the build protocol has its own file/iu);
+    expect(kept).toMatch(/build protocol .*\]\(orchestration\.md\)/iu);
   });
 });
