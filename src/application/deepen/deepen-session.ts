@@ -24,7 +24,7 @@ import {
   announceRoundStart,
   announceStop,
 } from './deepen-events.js';
-import { markUsedAnswers } from './deepen-answers.js';
+import { hasAnswerTasks, markUsedAnswers } from './deepen-answers.js';
 import { claimsOfThisRun } from './deepen-room.js';
 import { mergeDuplicates } from './deepen-consolidation.js';
 import {
@@ -74,7 +74,10 @@ async function nextRound(
     objects: objectsInCoverage(codeMap, coverageEntriesOf(state)),
   });
   const listed = withOutOfScope(record, plan.outOfScope);
-  if (isEmptyRound(plan)) return { progress: { state, record: listed }, stop: 'noProgress' };
+  // DEC-198 (1): in round 1 an answer not used yet is work, though the plan has none.
+  const answered = record.rounds.length === 0 && hasAnswerTasks(parts.rerun, codeMap);
+  if (isEmptyRound(plan) && !answered)
+    return { progress: { state, record: listed }, stop: 'noProgress' };
   const before = snapshotOf(state, codeMap);
   const round = record.rounds.length + 1;
   await announceRoundStart(parts, { round, maxRounds: record.maxRounds, plan });

@@ -19,7 +19,7 @@ import { FilePlanningBriefStore } from '../infrastructure/files/file-planning-br
 import { runPath } from '../infrastructure/files/workspace-paths.js';
 import { JsonlEgressLog } from '../infrastructure/guards/jsonl-egress-log.js';
 import { MaskedLineFinder } from '../infrastructure/guards/masked-line-finder.js';
-import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
+import { SecretMasker, type TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { FileHandoffWriter } from '../infrastructure/handoff/file-handoff-writer.js';
 import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
 import {
@@ -63,6 +63,14 @@ export interface PlanParts {
   readonly answers: AnswersFile;
 }
 
+/**
+ * P7-11 (RF-141): the package is read by people and agents, so a masked value in it is the bare
+ * marker; the note of the masked-value prompt is meant for the model only.
+ */
+export function packageHandoffWriter(writer: OutputWriter): FileHandoffWriter {
+  return new FileHandoffWriter({ writer, masker: new SecretMasker() });
+}
+
 // RF-604
 export function composePlan(parts: PlanParts): BuildPlan {
   const { pool, logger, masker, dataDir, writer } = parts;
@@ -85,7 +93,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
     ledger: new PgCostLedger(pool),
     costTotals: new PgCostTotals(pool),
     costReports: new FileCostReportWriter({ writer, masker }),
-    handoff: new FileHandoffWriter({ writer, masker }),
+    handoff: packageHandoffWriter(writer),
     catalogue: () => loadCatalogue(promptsFolder),
     prompt: () => loadPlannerPrompt(promptsFolder),
     prdPrompt: () => loadPrdPrompt(promptsFolder),

@@ -87,7 +87,7 @@ describe('BuildPlan: the security controls of a small model are kept', () => {
     expect(all).toContain('The database accepts no outside connection. Always.');
     expect(all).toContain('[cut]');
     expect(all).not.toContain('Mystery control');
-    expect(all).toContain('technical.security, position 3: the field "approach"');
+    expect(all).toContain('`technical.security, position 3`: the field "approach"');
     expect(all).not.toContain('technical.security, position 1');
     expect(all).not.toContain('technical.security, position 2');
   });

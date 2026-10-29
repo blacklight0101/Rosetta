@@ -70,9 +70,9 @@ describe('BuildPlan: a task card that cannot be read', () => {
     const checks = (await h.handoffOf(run))['checks.md'] ?? '';
     expect(checks).toContain('## Left out');
     expect(checks).toContain('### Task cards');
-    expect(checks).toContain('- 2: the field "acceptanceCriteria". The card is not readable');
-    expect(checks).toContain('- 3: the field "phase". The phase is not a phase of the plan.');
-    expect(checks.split('- 2: the field').length).toBe(2);
+    expect(checks).toContain('- `2`: the field "acceptanceCriteria". The card is not readable');
+    expect(checks).toContain('- `3`: the field "phase". The phase is not a phase of the plan.');
+    expect(checks.split('- `2`: the field').length).toBe(2);
     const messages = h.s.logger.entries.map((entry) => entry.message);
     expect(messages.some((message) => message.includes('named no requirement'))).toBe(false);
   });

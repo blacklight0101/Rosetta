@@ -80,9 +80,9 @@ describe('BuildPlan: an item of the plan answer that does not read', () => {
     const checks = plain(files['checks.md']);
     expect(checks).toContain('## Left out');
     for (const item of [
-      'technical.security, position 1: the field "description"',
-      'technical.security, position 3: the field "description"',
-      'technical.environments, position 1: the field "purpose"',
+      '`technical.security, position 1`: the field "description"',
+      '`technical.security, position 3`: the field "description"',
+      '`technical.environments, position 1`: the field "purpose"',
     ]) {
       expect(checks).toContain(item);
     }
