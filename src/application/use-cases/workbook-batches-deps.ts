@@ -19,6 +19,8 @@ export interface WorkbookBatchesDependencies {
   readonly clock: Clock;
   /** `ROSETTA_UPLOAD_MAX_MB` in bytes: the total of one batch. */
   readonly limitBytes: number;
+  /** RF-159: how long the attach may take before the batch ends refused; 60 seconds when absent. */
+  readonly attachTimeoutMs?: number;
   /** The ids of the batches of a zip, which have no staging folder to name them (RF-159). */
   readonly ids: Pick<IdGenerator, 'uuid'>;
 }

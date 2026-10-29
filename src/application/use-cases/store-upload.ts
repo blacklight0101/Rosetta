@@ -29,6 +29,8 @@ export interface StoreUploadDependencies {
   readonly clock: Clock;
   /** `ROSETTA_UPLOAD_MAX_MB` in bytes. */
   readonly limitBytes: number;
+  /** RF-159: how long the attach may take before the batch ends refused; 60 seconds when absent. */
+  readonly attachTimeoutMs?: number;
   /** RF-159, DEC-188: where the batch of a zip that holds workbooks lives, read like a workbook batch. */
   readonly batches: Pick<WorkbookBatches, 'claim' | 'adopt'>;
 }

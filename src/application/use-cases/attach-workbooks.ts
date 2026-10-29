@@ -23,6 +23,8 @@ export interface AttachDependencies {
   readonly auditLog: AuditLog;
   readonly logger: Logger;
   readonly clock: Clock;
+  /** RF-159: how long the attach may take before the batch ends refused; 60 seconds when absent. */
+  readonly attachTimeoutMs?: number;
 }
 
 export interface Attachment {

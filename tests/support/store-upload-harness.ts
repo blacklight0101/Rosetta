@@ -2,6 +2,7 @@ import type { Project } from '../../src/application/projects/project.js';
 import { WorkbookBatches } from '../../src/application/use-cases/workbook-batches.js';
 import {
   StoreUpload,
+  type StoreUploadDependencies,
   type StoreUploadRequest,
 } from '../../src/application/use-cases/store-upload.js';
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
@@ -46,7 +47,10 @@ export interface UploadCase {
   readonly logger: MemoryLogger;
 }
 
-export async function setup(project: Project = uploadProject()): Promise<UploadCase> {
+export async function setup(
+  project: Project = uploadProject(),
+  extra: Pick<StoreUploadDependencies, 'attachTimeoutMs'> = {},
+): Promise<UploadCase> {
   const projects = new MemoryProjectRepository();
   await projects.insertOrFind(project);
   const clock = new FixedClock('2026-10-19T08:30:00.000Z');
@@ -61,7 +65,7 @@ export async function setup(project: Project = uploadProject()): Promise<UploadC
   });
   const useCase = new StoreUpload({
     ...{ projects, runs, uploads, auditLog, clock, limitBytes, batches },
-    logger,
+    ...{ logger, ...extra },
   });
   return { useCase, batches, project, projects, uploads, runs, auditLog, clock, logger };
 }
