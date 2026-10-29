@@ -16,7 +16,7 @@ export interface FinishDependencies extends AttachDependencies {
   readonly staging: WorkbookStaging;
 }
 
-export interface FinishWork {
+interface FinishWork {
   readonly batchId: string;
   readonly actor: Actor;
   readonly ip: string;
@@ -50,10 +50,7 @@ function report(deps: FinishDependencies, message: string, error: unknown): Prom
 }
 
 // RF-159
-export async function finishWorkbooks(
-  deps: FinishDependencies,
-  work: FinishWork,
-): Promise<BatchOutcome> {
+async function finishWorkbooks(deps: FinishDependencies, work: FinishWork): Promise<BatchOutcome> {
   const { batchId, actor, ip, project, signal, onProgress, onAttach } = work;
   try {
     const uploadedAt = deps.clock.now();
@@ -80,10 +77,7 @@ export async function finishWorkbooks(
  * RF-159: the last resort of the work after the request, so the batch never stays at work: the error is
  * the outcome, and it is logged if the log can take it.
  */
-export async function refusedAnyway(
-  deps: FinishDependencies,
-  error: unknown,
-): Promise<BatchOutcome> {
+async function refusedAnyway(deps: FinishDependencies, error: unknown): Promise<BatchOutcome> {
   try {
     await report(deps, 'The work on a workbook batch failed unexpectedly.', error);
   } catch {

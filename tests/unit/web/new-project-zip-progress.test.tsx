@@ -44,7 +44,9 @@ function states(...list: Record<string, unknown>[]): Answer {
   };
 }
 
-const tick = (): Promise<void> => vi.advanceTimersByTimeAsync(1000);
+async function tick(): Promise<void> {
+  await vi.advanceTimersByTimeAsync(1000);
+}
 
 async function accepted(answers: Record<string, Answer>) {
   const server = installFakeUploadServer();
