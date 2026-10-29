@@ -19,6 +19,14 @@ export interface RunJourneyProps {
 const phaseKey = (phase: RunPhase): string =>
   phase.kind === 'ended' ? phase.endState : phase.kind;
 
+/** RF-646: the journey's "Deepen this run first" takes the user to the Deepen of the Your turn panel. */
+function focusDeepen(): void {
+  const button = document.getElementById('deepen-this-run');
+  if (button === null) return;
+  if (typeof button.scrollIntoView === 'function') button.scrollIntoView({ block: 'center' });
+  button.focus();
+}
+
 // RF-615
 export function UnderstandJourney(
   props: RunJourneyProps & {
@@ -33,6 +41,7 @@ export function UnderstandJourney(
       {...{ projectId: run.projectId, runId: run.id, onResumed: props.onResumed }}
       refresh={`${phaseKey(phase)}:${String(open ?? '')}`}
       onAnswer={props.onAnswer}
+      onDeepen={focusDeepen}
     />
   );
 }

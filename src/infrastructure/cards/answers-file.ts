@@ -4,6 +4,7 @@ import type {
   AnswersFile,
   OpenQuestion,
   ProjectRef,
+  MergeEdit,
   RecordedQuestion,
 } from '../../application/ports/answers-file.js';
 import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
@@ -13,15 +14,9 @@ import { ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { projectPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import {
-  answeredQuestionsOf,
-  lastLineEndOf,
-  linesOf,
-  markOf,
-  optionsLineOf,
-  questionsOfRun,
-  withAnswers,
-} from './answers-sections.js';
+import { lastLineEndOf, linesOf, markOf, optionsLineOf } from './answers-section-parse.js';
+import { withMerges } from './answers-merge.js';
+import { answeredQuestionsOf, questionsOfRun, withAnswers } from './answers-sections.js';
 
 // RF-240, DEC-98, data-model.md section 3.16: the project's `answers.md`. A run adds one section per
 // open question it found that the file does not hold yet (matched by the question text), after the
@@ -123,6 +118,20 @@ export class FileAnswersFile implements AnswersFile {
       if (!text.ok) return text;
       if (text.value !== existing) await this.write(file, text.value);
       return ok(questionsOfRun(text.value, runKey));
+    });
+  }
+
+  // RF-646
+  keepMerge(project: ProjectRef, edits: readonly MergeEdit[]): Promise<void> {
+    const file = fileOf(project);
+    return this.queue.run(`${file.userId}/${file.path}`, async () => {
+      const existing = await this.read(file);
+      const masked = edits.map((edit) => ({
+        ...edit,
+        history: edit.history.map((each) => ({ ...each, answer: this.line(each.answer) })),
+      }));
+      const text = withMerges(existing, masked);
+      if (text !== existing) await this.write(file, text);
     });
   }
 

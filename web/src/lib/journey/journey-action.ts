@@ -1,4 +1,11 @@
-import { phaseOf, plannableAtCap, type Context, type StepKey } from './journey-context.js';
+import type { JourneySourceFacts } from '../../api/journey-schemas.js';
+import {
+  deepenFirst,
+  phaseOf,
+  plannableAtCap,
+  type Context,
+  type StepKey,
+} from './journey-context.js';
 
 // RF-615, RF-614, RF-006, DEC-143 Q-F: the one next action of the journey and the step that holds it.
 // In order: start a run; wait while a run works; Resume a run that stopped (the plan steps stay
@@ -11,6 +18,8 @@ export type JourneyAction =
   | { readonly kind: 'link'; readonly label: string; readonly href: string }
   /** Opens the questions; the page that can show them does so, any other page opens the run. */
   | { readonly kind: 'answer'; readonly label: string; readonly href: string }
+  /** RF-646: opens the Deepen of the run; the run page focuses it, any other page opens the run. */
+  | { readonly kind: 'deepen'; readonly label: string; readonly href: string }
   | { readonly kind: 'resume'; readonly label: string; readonly runId: string };
 
 /** An action that only opens a page. */
@@ -52,6 +61,17 @@ function afterTheRun(c: Context, setUp: string): Next | undefined {
   }
   // RF-615 (Q-44): a saved brief moves the journey on; the questions stay answerable on the run page.
   if (source.openQuestions === 0 || c.facts.briefSaved) return undefined;
+  return questionsNext(c, source, setUp);
+}
+
+/** RF-646, DEC-179: Deepen first; the questions come after the last Deepen, or at once when the user skips it. */
+function questionsNext(c: Context, source: JourneySourceFacts, setUp: string): Next {
+  if (deepenFirst(c)) {
+    return {
+      action: { kind: 'deepen', label: 'Deepen this run first', href: `/runs/${source.id}` },
+      here: 'questions',
+    };
+  }
   const count = source.openQuestions;
   const label = `Answer ${String(count)} question${count === 1 ? '' : 's'}`;
   return {

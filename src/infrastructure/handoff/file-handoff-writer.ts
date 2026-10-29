@@ -17,6 +17,7 @@ import { withIncompleteNotice } from './handoff-incomplete-markdown.js';
 import { openApiYaml } from './handoff-openapi-yaml.js';
 import { orchestrationMarkdown } from './handoff-orchestration-markdown.js';
 import { agentsMarkdown, conventionsMarkdown } from './handoff-method-markdown.js';
+import { agentFiles } from './handoff-agents-folder.js';
 import { fixturesMarkdown } from './handoff-fixtures-markdown.js';
 import { columnFormulas, workbookFormulasMarkdown } from './handoff-formulas-markdown.js';
 import { prdMarkdown } from './handoff-prd-markdown.js';
@@ -76,6 +77,7 @@ function optionalFiles(
       ? {
           [handoffFiles.agents]: agentsMarkdown(handoff, esc),
           [handoffFiles.orchestration]: orchestrationMarkdown(handoff, esc),
+          ...agentFiles(handoff, esc, masker),
         }
       : {}),
   };

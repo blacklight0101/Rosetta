@@ -73,3 +73,21 @@
   margin: 0;
   font-weight: var(--rst-fw-head);
 }
+
+/* RF-646, DEC-179: the answered questions of the one list, collapsed and still editable. */
+.rst-p139-answered {
+  border-block-start: 1px solid var(--rst-rule);
+  padding-block-start: var(--rst-sp-2);
+}
+
+.rst-p139-answered > summary {
+  cursor: pointer;
+  padding-block: var(--rst-sp-2);
+  color: var(--rst-ink);
+  font-weight: 600;
+}
+
+.rst-p139-answered > summary:focus-visible {
+  outline: 2px solid var(--rst-focus, currentColor);
+  outline-offset: 2px;
+}
