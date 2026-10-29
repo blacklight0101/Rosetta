@@ -18,6 +18,7 @@ const clean: CardModelFacts = {
   ...{ cardId: 'T-001', rating: 6, riskClass: 'none', riskShown: true, local: false },
   ...{ builderTier: 'middle', builderModel: 'sonnet' },
   ...{ verifierTier: 'middle', verifierModel: 'sonnet' },
+  status: undefined,
 };
 
 const kindsOf = (facts: Partial<CardModelFacts>, given = method) =>
@@ -35,22 +36,41 @@ describe('RF-641 the model check of one card', () => {
   it('RF-641 accepts the escalation model of the brief as a model of the tool', () => {
     expect(kindsOf({ builderModel: 'fable' })).not.toContain('model-not-in-brief');
   });
+});
 
-  it('RF-641 DEC-185 lists a card on the escalation model as a note needing the owner approval', () => {
+describe('RF-641 the escalation model of a card', () => {
+  it('RF-641 owner decision of 2026-10-29: a plan-time card on the escalation model is reported as a finding', () => {
     expect(checkCardModel(method, { ...clean, builderModel: 'fable' })).toEqual([
-      { cardId: 'T-001', kind: 'escalation-owner-approval', severity: 'note' },
+      { cardId: 'T-001', kind: 'escalation-owner-approval', severity: 'finding' },
     ]);
   });
 
-  it('RF-641 DEC-185 a card on a tier model has no escalation note', () => {
-    expect(kindsOf({ builderModel: 'opus' })).not.toContain('escalation-owner-approval');
+  it('RF-641 owner decision of 2026-10-29: a card whose status carries the approval text is accepted', () => {
+    const status = 'In progress (escalation, owner approved)';
+
+    expect(checkCardModel(method, { ...clean, builderModel: 'fable', status })).toEqual([]);
   });
 
-  it('RF-641 DEC-185 a brief with no escalation model gives no escalation note', () => {
+  it('RF-641 owner decision of 2026-10-29: another status does not accept the escalation model', () => {
+    expect(kindsOf({ builderModel: 'fable', status: 'In progress' })).toEqual([
+      'escalation-owner-approval',
+    ]);
+  });
+
+  it('RF-641 a card on a tier model is unaffected by the escalation check', () => {
+    expect(kindsOf({ builderModel: 'opus' })).not.toContain('escalation-owner-approval');
+    expect(kindsOf({ builderModel: 'opus', status: 'escalation, owner approved' })).not.toContain(
+      'escalation-owner-approval',
+    );
+  });
+
+  it('RF-641 a brief with no escalation model gives no escalation finding', () => {
     const none: BuildMethod = { ...method, models: { smallest: 'haiku', middle: 'sonnet' } };
     expect(kindsOf({ builderModel: 'haiku' }, none)).not.toContain('escalation-owner-approval');
   });
+});
 
+describe('RF-641 the tier, band and risk class of one card', () => {
   it('RF-639 RF-641 lists a card whose tier has no model name', () => {
     expect(kindsOf({ builderModel: undefined })).toEqual(['tier-unnamed']);
   });
