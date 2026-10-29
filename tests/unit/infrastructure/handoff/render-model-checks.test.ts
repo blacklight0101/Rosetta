@@ -51,3 +51,31 @@ describe('RF-641 checks.md: the model of each card', () => {
     expect(checksOf(builtByPeople(withBuildMethod({ aiAssisted: true })))).not.toContain(heading);
   });
 });
+
+// RF-641, owner decision of 2026-10-29: at plan time no card carries "escalation, owner approved",
+// so a card the tier table puts on the escalation model is a finding in checks.md, and no card
+// line shows escalation.
+describe('RF-641 plan-time cards on the escalation model', () => {
+  const sameModel = withBuildMethod({
+    aiAssisted: true,
+    agentTool: { kind: 'claude-code' },
+    models: { smallest: 'fable', middle: 'fable', largest: 'fable', escalation: 'fable' },
+  });
+
+  it('RF-641 checks.md reports each such card as needing the owner approval, unlabelled', () => {
+    const checks = checksOf(sameModel);
+
+    expect(checks).toContain(heading);
+    expect(checks).toMatch(
+      /^- T-\d+: uses the escalation model, which needs the owner approval$/mu,
+    );
+    expect(checks).not.toMatch(/\((note|warning)\)/u);
+  });
+
+  it('RF-641 no card line shows escalation at plan time', () => {
+    const tasks = renderHandoff(sameModel, masker)['tasks.md'] ?? '';
+
+    expect(tasks).toContain('model: fable');
+    expect(tasks).not.toMatch(/escalation/iu);
+  });
+});
