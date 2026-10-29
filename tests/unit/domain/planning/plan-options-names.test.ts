@@ -83,3 +83,50 @@ describe('the stack record of a pick', () => {
     expect(lines.join('\n')).not.toContain('typed by the owner');
   });
 });
+
+describe('names that hold a dash (P7-10)', () => {
+  it('RF-609 never splits the name of an option that came with its own description', () => {
+    const draft = validDraft();
+    const stack = [
+      {
+        layer: 'front-end',
+        options: [
+          { name: 'Blazor - Server', description: 'Renders on the server.' },
+          { name: 'Blazor - WebAssembly', description: 'Runs in the browser.' },
+        ],
+      },
+      ...draft.stack.filter((each) => each.layer !== 'front-end'),
+    ];
+
+    const built = buildPlanOptions(withStack(draft, stack), verifiedIds);
+
+    expect(built.ok).toBe(true);
+    if (!built.ok) return;
+    const frontEnd = built.value.stack.find((each) => each.layer === 'front-end');
+    expect(frontEnd?.options).toEqual(['Blazor - Server', 'Blazor - WebAssembly']);
+    expect(frontEnd?.descriptions).toEqual(['Renders on the server.', 'Runs in the browser.']);
+  });
+
+  it('RF-609 reads an option object with no description', () => {
+    const draft = {
+      ...validDraft(),
+      stack: [{ layer: 'database', options: [{ name: 'PostgreSQL 17' }] }],
+    };
+
+    expect(parsePlanOptionsAnswer(JSON.stringify(draft))?.stack[0]?.options[0]).toEqual({
+      name: 'PostgreSQL 17',
+    });
+  });
+
+  it('RF-609 does not mark a typed "Blazor - WebAssembly with offline" as the offered "Blazor - Server"', () => {
+    const lines = stackOptions(shippedCatalogue.stack.technologies, {
+      layer: 'front-end',
+      choice: 'Blazor - WebAssembly with offline',
+      offered: ['Blazor - Server', 'Razor Pages'],
+    });
+
+    expect(lines[0]).toContain('typed by the owner');
+    expect(lines.join('\n')).not.toContain('(chosen): Offered');
+    expect(lines.filter((line) => line.includes('(chosen)'))).toHaveLength(1);
+  });
+});

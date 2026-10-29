@@ -44,7 +44,7 @@ describe('decideOnce: a subject title with the choice in its text', () => {
 
   it('RF-610 drops "Migration Order Focus" that names the strategy of the brief', () => {
     const { restated, choices } = decided({ migration: 'strangler-fig' }, [
-      decision('Migration Order Focus', 'Migrate by strangler fig, one area at a time.'),
+      decision('Migration Order Focus', 'Migrate by strangler fig.'),
     ]);
 
     expect(restated).toEqual([{ title: 'Migration Order Focus', record: choices.migration }]);
@@ -109,5 +109,21 @@ describe('decideOnce: the typed answers', () => {
     ]);
 
     expect(restated).toEqual([]);
+  });
+});
+
+describe('decideOnce: versions', () => {
+  it('RF-609 finds a technology whose version sits inside its name in the text', () => {
+    const { restated } = decided(
+      {
+        stack: [
+          { layer: 'backend-framework', choice: 'ASP.NET Core 8 MVC', custom: true },
+          { layer: 'database', choice: 'PostgreSQL 17', custom: true },
+        ],
+      },
+      [decision('Technology Stack Selection', 'Use ASP.NET Core 8 MVC with PostgreSQL 16.')],
+    );
+
+    expect(restated).toHaveLength(1);
   });
 });

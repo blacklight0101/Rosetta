@@ -30,7 +30,7 @@ interface LayerOptions {
 }
 
 /** An option of a layer as the planner wrote it: a name and a description, or one line with both. */
-type DraftOption = string | { readonly name: string; readonly description: string };
+type DraftOption = string | { readonly name: string; readonly description?: string | undefined };
 
 export interface PlanOptions {
   readonly architecture: {
@@ -149,7 +149,7 @@ export function splitOption(text: string): { readonly name: string; readonly des
 function readOption(option: DraftOption): { readonly name: string; readonly description: string } {
   if (typeof option === 'string') return splitOption(option);
   const split = splitOption(option.name);
-  const description = option.description.trim().slice(0, MAX_DESCRIPTION_CHARS).trim();
+  const description = (option.description ?? '').trim().slice(0, MAX_DESCRIPTION_CHARS).trim();
   return { name: split.name, description: description === '' ? split.description : description };
 }
 
