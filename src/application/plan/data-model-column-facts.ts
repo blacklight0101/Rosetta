@@ -2,7 +2,7 @@ import type { ModelColumn, ModelTable, TargetDataModel } from '../../domain/plan
 import { unconfirmedType } from '../../domain/planning/data-model-names.js';
 import { columnClaimsOf } from '../../domain/planning/column-claims.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
-import { baseOf, databaseTypeNames } from './data-model-database.js';
+import { isDatabaseType, sameType } from './data-model-database.js';
 import type { DataModelProblem } from './data-model-answer.js';
 
 // RF-623, P5-37, ADR-013: the type, nullability and default of a column come from the supported
@@ -30,17 +30,11 @@ export function columnFactsOf(text: string): ColumnFact[] {
 }
 
 const plain = (name: string): string => name.toLowerCase().replace(/_/gu, '');
-const squeezed = (type: string): string => type.toLowerCase().replace(/\s+/gu, '');
 
 function factOf(column: ModelColumn, text: string): ColumnFact | undefined {
   if (column.legacy === null) return undefined;
   const names = [plain(column.legacy.field), plain(column.name)];
   return columnFactsOf(text).find((fact) => names.includes(plain(fact.name)));
-}
-
-function usable(type: string, database: string | null): boolean {
-  const names = databaseTypeNames(database);
-  return names === null || names.includes(baseOf(type));
 }
 
 interface Checked {
@@ -49,10 +43,12 @@ interface Checked {
 }
 
 function typeStep(column: ModelColumn, fact: ColumnFact, database: string | null): Checked {
-  const same = column.type === unconfirmedType || squeezed(column.type) === squeezed(fact.type);
-  if (same) return { column, problems: [] };
   const reasoned = column.migrationRisk !== '';
-  if (!reasoned && usable(fact.type, database)) {
+  if (column.type === unconfirmedType) return { column, problems: [] };
+  if (sameType(database, column.type, fact.type)) {
+    return { column: reasoned ? column : { ...column, type: fact.type }, problems: [] };
+  }
+  if (!reasoned && isDatabaseType(database, fact.type)) {
     return { column: { ...column, type: fact.type }, problems: [] };
   }
   const why = reasoned

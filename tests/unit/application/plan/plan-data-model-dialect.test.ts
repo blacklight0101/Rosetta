@@ -19,7 +19,7 @@ describe('planDataModel: the dialect of one model', () => {
 
     const types = assembly.model.tables.flatMap((table) => table.columns.map((c) => c.type));
     expect(types).not.toContain('integer');
-    expect(types.filter((type) => type === 'int')).toHaveLength(5);
+    expect(types.filter((type) => type === 'int')).toHaveLength(4);
   });
 
   it('RF-623 lists nothing about integer: no column the model keeps is a problem (EV-74)', async () => {
