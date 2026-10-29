@@ -1,3 +1,4 @@
+import type { SuggestedOption } from '../ports/answers-file.js';
 import type { ApiContract } from '../../domain/planning/api-contract.js';
 import type { MeaningCheck } from '../../domain/planning/claim-meaning.js';
 import type { CopiedExample } from '../../domain/planning/copied-example.js';
@@ -47,6 +48,8 @@ interface UnansweredQuestion {
   readonly area: string;
   readonly cardId: string;
   readonly question: string;
+  /** RF-645: the card's suggested answers, the recommended one first; absent on an older card. */
+  readonly options?: readonly SuggestedOption[] | undefined;
 }
 
 /**
