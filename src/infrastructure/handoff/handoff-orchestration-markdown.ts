@@ -4,8 +4,13 @@ import { escalationApprovedText } from '../../domain/planning/card-model-check.j
 import type { BuildMethod } from '../../domain/planning/build-method.js';
 import { difficultyBands } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
-import { grepRows, stackLanguages, unlistedLanguages } from './handoff-grep-rules.js';
-import type { GrepSource } from './handoff-grep-rules.js';
+import {
+  grepRows,
+  stackLanguages,
+  unlistedLanguages,
+  type GrepRow,
+  type GrepSource,
+} from './handoff-grep-rules.js';
 import { deliverySection } from './handoff-orchestration-delivery-markdown.js';
 import {
   budgetsSection,
@@ -168,10 +173,27 @@ function grepTableLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[]
     '| ------- | ---- | ------ |',
     ...rows.map(
       (row) =>
-        `| ${row.patterns.map((each) => `\`${each}\``).join(', ')} | ${row.rule} | ${sourceText(row.sources, esc)} |`,
+        `| ${patternCell(row)} | ${esc.inline(row.rule)} | ${sourceText(row.sources, esc)} |`,
     ),
     '',
+    ...readingLines(rows),
     ...languageLines(handoff, esc),
+  ];
+}
+
+/** The patterns of a row in code spans; a rule with none is checked by reading (DEC-190). */
+function patternCell(row: GrepRow): string {
+  return row.patterns.length === 0
+    ? 'checked by reading'
+    : row.patterns.map((each) => `\`${each}\``).join(', ');
+}
+
+/** DEC-190: says what a "checked by reading" row is; nothing when no row is. */
+function readingLines(rows: readonly GrepRow[]): string[] {
+  if (rows.every((row) => row.patterns.length > 0)) return [];
+  return [
+    'A row whose pattern cell reads "checked by reading" is a rule the package states that has no search pattern for this stack; the verifier checks it by reading the code.',
+    '',
   ];
 }
 
