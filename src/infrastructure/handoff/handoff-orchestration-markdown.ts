@@ -5,6 +5,14 @@ import { difficultyBands } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { grepRows, stackLanguages, unlistedLanguages } from './handoff-grep-rules.js';
 import type { GrepSource } from './handoff-grep-rules.js';
+import { deliverySection } from './handoff-orchestration-delivery-markdown.js';
+import {
+  budgetsSection,
+  escalationSection,
+  gatesSection,
+  throttleSection,
+} from './handoff-orchestration-gates-markdown.js';
+import type { SectionWriter } from './handoff-orchestration-gates-markdown.js';
 import { handoffFiles } from './handoff-links.js';
 
 // RF-612, RF-640: the build protocol of an AI-assisted build, written in the package's own words:
@@ -13,7 +21,6 @@ import { handoffFiles } from './handoff-links.js';
 // function in `orchestrationSections`; a later card adds its section to that list. Model names
 // come from the brief and go through the escaper; nothing else in the file is model text.
 
-type SectionWriter = (handoff: HandoffPackage, esc: MarkdownEscaper) => string[];
 type Tier = (typeof difficultyBands)[number]['tier'];
 
 const notNamed = 'not named';
@@ -203,6 +210,11 @@ export const orchestrationSections: readonly SectionWriter[] = [
   redTestSection,
   formatsSection,
   grepsSection,
+  gatesSection,
+  throttleSection,
+  escalationSection,
+  budgetsSection,
+  deliverySection,
 ];
 
 // RF-640

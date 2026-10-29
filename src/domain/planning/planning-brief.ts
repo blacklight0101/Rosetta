@@ -53,12 +53,18 @@ interface StackChoice {
   readonly proposed?: true | undefined;
 }
 
+/** RF-643: how the new application is run. */
+export const deployments = ['hosted', 'not-hosted'] as const;
+type Deployment = (typeof deployments)[number];
+
 interface ProjectContext {
   readonly teamSize: number | null;
   readonly experience: string | null;
   readonly deadline: string | null;
   readonly keepIntegrations: readonly string[];
   readonly dataMigration: string | null;
+  /** RF-643, Q-H: whether the new application is hosted; absent when nobody said. */
+  readonly deployment?: Deployment | undefined;
 }
 
 export interface PlanningBrief {
@@ -117,6 +123,7 @@ export interface BriefAnswers {
         readonly deadline?: string | null | undefined;
         readonly keepIntegrations?: readonly string[] | undefined;
         readonly dataMigration?: string | null | undefined;
+        readonly deployment?: Deployment | undefined;
       }
     | undefined;
   readonly buildMethod?: BuildMethod | undefined;
@@ -183,6 +190,7 @@ function contextOf(given: BriefAnswers['context']): ProjectContext {
     deadline: answered.deadline ?? null,
     keepIntegrations: answered.keepIntegrations ?? [],
     dataMigration: answered.dataMigration ?? null,
+    ...(answered.deployment === undefined ? {} : { deployment: answered.deployment }),
   };
 }
 
