@@ -23,14 +23,17 @@ const STOPPED: ApiFailure = {
 };
 
 /** RF-159: a form opened on a project asks for its batch once; one being read is followed from there. */
-function useResume(existing: Project | undefined, follow: Follow): void {
+function useResume(existing: Project | undefined, idle: boolean, follow: Follow): void {
   const { client } = useApp();
+  // As the workbooks form: only an idle form picks a batch up, also when the read answers late.
+  const idleNow = useRef(idle);
+  idleNow.current = idle;
   useEffect(() => {
-    if (existing === undefined) return undefined;
+    if (existing === undefined || !idleNow.current) return undefined;
     const reading = new AbortController();
     void readStateOf(client, { projectId: existing.id }, reading.signal, uploadSummarySchema).then(
       (read) => {
-        if (!read.ok || reading.signal.aborted) return;
+        if (!read.ok || reading.signal.aborted || !idleNow.current) return;
         if (read.value.phase !== 'open') follow(existing, read.value);
       },
     );
@@ -62,6 +65,7 @@ export function useZipBatch(
   existing: Project | undefined,
   ending: Ending,
   set: (phase: UploadPhase, state: UploadState | undefined) => void,
+  idle: boolean,
 ): ZipBatch {
   const { client } = useApp();
   const leave = useAbortOnLeave();
@@ -97,6 +101,6 @@ export function useZipBatch(
       if (answer.ok || answer.error.status !== 409) stopping.abort();
     });
   };
-  useResume(existing, follow);
+  useResume(existing, idle, follow);
   return { follow, cancel };
 }

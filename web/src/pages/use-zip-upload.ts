@@ -174,7 +174,7 @@ function useUploadFlow(options: ZipUploadOptions): Flow {
   const [project, setProject] = useState(options.existing);
   const [percent, setPercent] = useState(0);
   const out = useOutcome(options);
-  const watching = useZipBatch(options.existing, out.ending, out.set);
+  const watching = useZipBatch(options.existing, out.ending, out.set, out.phase === 'idle');
   const abort = useAbortOnLeave();
   /** The project the zip goes to: the one that exists, or a new one named by the user. */
   const make = async (name: string): Promise<Project | undefined> => {
