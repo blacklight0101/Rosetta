@@ -24,7 +24,7 @@ const strategySpecific =
 
 type Typed = Pick<PlanningBrief, 'defaulted' | 'typed'>;
 
-function planned(brief: Typed): PlanTask[] {
+function planned(brief: Typed): readonly PlanTask[] {
   const migrated = withMigrationCard(planOf(twoTasks(), 3), tables);
   return withOwnAnswerCards(withFoundationCards(migrated, 'strangler-fig', tables), brief, records)
     .tasks;

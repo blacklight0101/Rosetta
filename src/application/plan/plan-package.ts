@@ -23,6 +23,7 @@ import type { Run } from '../../domain/runs/run.js';
 import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
 import type { UnreadableItem } from '../../domain/planning/plan-draft.js';
 import { withFoundationCards } from '../../domain/planning/foundation-cards.js';
+import { withOwnAnswerCards } from '../../domain/planning/own-answer-cards.js';
 import { withPhaseClosingCards } from '../../domain/planning/phase-closing-cards.js';
 import { placeOf } from './plan-repair.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
@@ -205,7 +206,7 @@ function unreadSecretItems(secrets: SecretRisks): HandoffPackage['leftOut'] {
   ];
 }
 
-/** P5-42, P6-10: the plan with its fixed and phase-closing cards, with the brief's choices decided once over it. */
+/** P5-42, P6-10, P6-21: the plan with its fixed and phase-closing cards, with the brief's choices decided once over it. */
 function decidedOf(
   content: PlanContent,
   parts: {
@@ -221,7 +222,9 @@ function decidedOf(
   const withFixed = withPhaseClosingCards(
     withFoundationCards(content, brief.migration, documents.dataModel.tables),
   );
-  return decideOnce(withFixed, brief, catalogue, evidenceOf(sources, documents.proposal));
+  const decided = decideOnce(withFixed, brief, catalogue, evidenceOf(sources, documents.proposal));
+  // RF-645, DEC-184: the fixed cards follow an own answer, which is known by its record only now.
+  return { ...decided, content: withOwnAnswerCards(decided.content, brief, decided.choices) };
 }
 
 /** P5-43, RF-602: where the plan changed the meaning of its claims. */
