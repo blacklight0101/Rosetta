@@ -29,6 +29,23 @@ export interface OpenQuestion {
   readonly options?: readonly SuggestedOption[] | undefined;
 }
 
+/** RF-646, DEC-179: an older answer to a question, kept in the history of its section. */
+export interface AnswerRecord {
+  /** The folder name of the run whose section held the answer. */
+  readonly runKey: string;
+  readonly answer: string;
+}
+
+/** RF-646: what a merge of duplicates keeps in the section that survives. */
+export interface MergeEdit {
+  readonly runKey: string;
+  readonly cardId: string;
+  /** Every run whose cards raised the question, oldest first (the `- Runs:` line). */
+  readonly runs: readonly string[];
+  /** The older answers that lost to a newer one (the `- History:` lines). */
+  readonly history: readonly AnswerRecord[];
+}
+
 /** A question of one run as the file holds it; `answer` is empty while it has none. */
 export interface RecordedQuestion {
   readonly cardId: string;
@@ -39,6 +56,10 @@ export interface RecordedQuestion {
   readonly options?: readonly SuggestedOption[];
   /** RF-645: `''` while open, the number of the chosen option or `typed`; absent with no options. */
   readonly chosen?: string;
+  /** RF-646: the runs whose cards raised the question, when the section names them. */
+  readonly runs?: readonly string[];
+  /** RF-646: the older answers kept by a merge of duplicates. */
+  readonly history?: readonly AnswerRecord[];
 }
 
 /** The answer the user gave to one question of the run. */
@@ -82,4 +103,10 @@ export interface AnswersFile {
     runKey: string,
     answers: readonly AnswerEntry[],
   ): Promise<Result<readonly RecordedQuestion[], 'unknown-question' | 'invalid-choice'>>;
+  /**
+   * RF-646, DEC-179: keeps in the named sections the runs that raised the question and the older
+   * answers a merge of duplicates replaced. Idempotent: nothing is written when the lines are there;
+   * a section the file does not hold is skipped; no section is deleted.
+   */
+  keepMerge(project: ProjectRef, edits: readonly MergeEdit[]): Promise<void>;
 }

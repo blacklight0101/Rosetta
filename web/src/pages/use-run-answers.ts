@@ -12,7 +12,14 @@ export type AnswersLoad =
   | { readonly status: 'waiting' }
   | { readonly status: 'loading' }
   | { readonly status: 'failed'; readonly error: ApiFailure }
-  | { readonly status: 'ready'; readonly questions: readonly OpenQuestionRow[] };
+  | {
+      readonly status: 'ready';
+      readonly questions: readonly OpenQuestionRow[];
+      /** RF-646: how many Deepens of the run's first understand run have ended. */
+      readonly deepens: number;
+      /** RF-646: the run is itself a Deepen. */
+      readonly isDeepen: boolean;
+    };
 
 export interface RunAnswersState {
   readonly load: AnswersLoad;
@@ -35,7 +42,7 @@ export function useRunAnswers(runId: string, ended: boolean): RunAnswersState {
       const mine = latest.current;
       void getAnswers(client, runId, abort.signal).then((result) => {
         if (abort.signal.aborted || mine !== latest.current) return;
-        if (result.ok) setLoad({ status: 'ready', questions: result.value });
+        if (result.ok) setLoad({ status: 'ready', ...result.value });
         else if (first) setLoad({ status: 'failed', error: result.error });
       });
     };
@@ -53,7 +60,11 @@ export function useRunAnswers(runId: string, ended: boolean): RunAnswersState {
   }, [client, runId, ended]);
   const apply = (questions: readonly OpenQuestionRow[]): void => {
     latest.current += 1;
-    setLoad({ status: 'ready', questions });
+    setLoad((was) =>
+      was.status === 'ready'
+        ? { ...was, questions }
+        : { status: 'ready', questions, deepens: 0, isDeepen: false },
+    );
   };
   return { load, apply };
 }

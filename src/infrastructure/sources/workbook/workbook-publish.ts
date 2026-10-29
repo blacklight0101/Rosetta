@@ -10,6 +10,7 @@ import type {
 import type { WorkbookEntry } from '../../../domain/sources/source.js';
 import { workbookSnapshotKey } from '../../../domain/sources/workbook-key.js';
 import type { SnapshotStore } from '../../github/snapshot-store.js';
+import { summarizeTree, type HashedFile } from '../../github/tree-summary.js';
 import { LimitCounter } from '../entry-guards.js';
 import { namedRefusal } from './file-refusal.js';
 import type { WorkbookLimits } from './workbook-limits.js';
@@ -24,7 +25,6 @@ import {
 } from './workbook-renderer.js';
 import {
   entryOf,
-  fileHash,
   macroLeftOut,
   summaryOf,
   writeRendered,
@@ -33,7 +33,7 @@ import {
 
 // RF-150, RF-151, RF-152, RFC-005 section 4.2: a finished batch becomes a snapshot. Every workbook
 // is read under the limits and rendered, or none is: the first refusal ends the batch, naming its
-// file. The rendered tree is written into a partial folder, hashed, described by `snapshot.json`
+// file. The rendered tree is written into a partial folder, hashed as it is written, described by `snapshot.json`
 // and renamed into place read-only, as the tree of a zip is.
 
 export interface PublishInput {
@@ -87,15 +87,12 @@ async function readAll(input: PublishInput): Promise<WorkbookModel[]> {
 }
 
 /** The record of each workbook, in the order they were uploaded; the folder is the rendered one. */
-async function entriesOf(
-  input: PublishInput,
-  rendered: readonly RenderedWorkbook[],
-): Promise<WorkbookEntry[]> {
+function entriesOf(input: PublishInput, rendered: readonly RenderedWorkbook[]): WorkbookEntry[] {
   const entries: WorkbookEntry[] = [];
   for (const [index, upload] of input.uploads.entries()) {
     const book = rendered[index];
     if (book === undefined) continue;
-    entries.push(entryOf(upload, await fileHash(upload.path), book.folder, book));
+    entries.push(entryOf(upload, upload.sha256, book.folder, book));
   }
   return entries;
 }
@@ -142,11 +139,13 @@ export async function publishWorkbooks(
   input.onProgress?.(savingOf(models));
   const { dir, filesDir } = await snapshots.createPartial(randomUUID());
   try {
-    for (const book of rendered) await writeRendered(filesDir, '', book);
-    await writeRendered(filesDir, '', { files: [project.dependencies] });
-    const entries = await entriesOf(input, rendered);
+    // The hashes come from the bytes as they are written; neither the uploads nor the tree are read again (DEC-183).
+    const hashed: HashedFile[] = [];
+    for (const book of rendered) hashed.push(...(await writeRendered(filesDir, '', book)));
+    hashed.push(...(await writeRendered(filesDir, '', { files: [project.dependencies] })));
+    const entries = entriesOf(input, rendered);
     input.check();
-    const tree = await snapshots.inspect(filesDir);
+    const tree = summarizeTree(hashed);
     const info: WorkbookSnapshotInfo = {
       kind: 'workbook',
       uploadedAt: input.uploadedAt,
