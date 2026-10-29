@@ -6,7 +6,7 @@ import { readBatchState, type BatchState, type WorkbookSummary } from '../api/wo
 // times; a batch the server no longer has (cancelled, expired) ends the wait.
 
 /** How often the state is asked for. */
-export const WATCH_POLL_MS = 1000;
+const WATCH_POLL_MS = 1000;
 /** Reads in a row that may fail before the wait gives up. */
 const FAILED_READS_ALLOWED = 5;
 
@@ -21,7 +21,7 @@ export interface BatchWatch {
 }
 
 /** What the page shows when the batch ended without an outcome: cancelled, expired or gone. */
-export const STOPPED: ApiFailure = {
+const STOPPED: ApiFailure = {
   status: 0,
   code: 'RST-2010',
   message: 'The upload was stopped before it finished.',

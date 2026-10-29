@@ -19,7 +19,7 @@ const STEPS: readonly { readonly step: Step; readonly label: string; readonly sa
 const count = (value: number): string => value.toLocaleString('en-US');
 
 /** The elapsed time as minutes and seconds, 0:07 or 12:03. */
-export function clockText(milliseconds: number): string {
+function clockText(milliseconds: number): string {
   const seconds = Math.floor(milliseconds / 1000);
   const rest = String(seconds % 60).padStart(2, '0');
   return `${String(Math.floor(seconds / 60))}:${rest}`;
