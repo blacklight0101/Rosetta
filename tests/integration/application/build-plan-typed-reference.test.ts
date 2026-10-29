@@ -167,6 +167,16 @@ describe('RF-645 DEC-184 the fixed task cards follow the own answers', () => {
   });
 });
 
+describe('RF-612 DEC-184 the migration line of AGENTS.md', () => {
+  it('RF-612 RF-645 AGENTS.md names the own migration answer once, without a doubled label', async () => {
+    const files = await packageOf(agentBuild);
+
+    const agents = files['AGENTS.md'] ?? '';
+    expect(agents).not.toContain("Migration: The owner's own answer");
+    expect(agents).toContain(`Migration, the owner's own answer: ${typed.migration}`);
+  });
+});
+
 describe('RF-605 DEC-184 the README principles', () => {
   it('RF-605 the README lists the typed principle with the principles and practices', async () => {
     const files = await packageOf(allFour);
