@@ -14,7 +14,6 @@ export function entryWarnings(
   entries: readonly GapEntries[],
   mapped: readonly GapEntries[] = [],
 ): string[] {
-  if (mapped.length < 0) return [];
   const whole = salvaged
     ? [`The ${label} was not valid JSON as a whole; its task cards were read one by one.`]
     : [];
@@ -23,6 +22,10 @@ export function entryWarnings(
     ...entries.map(
       ({ position, field, count }) =>
         `Task card at position ${String(position)} of the ${label} was kept, but ${entryCount(count)} of the field "${field}" named no card position or card id and ${count === 1 ? 'was' : 'were'} dropped.`,
+    ),
+    ...mapped.map(
+      ({ position, field, count }) =>
+        `Task card at position ${String(position)} of the ${label} was kept, with ${entryCount(count)} of the field "${field}" read as the requirements that cite a source card id.`,
     ),
   ];
 }
@@ -40,11 +43,17 @@ export function gapLeftOutItems(
   entries: readonly GapEntries[],
   mapped: readonly GapEntries[] = [],
 ): LeftOut[] {
-  if (mapped.length < 0) return [];
   const rows = [
     ...problems.map(({ position, field, reason }) => ({
       position,
       row: { area, item: String(position), field, reason: `It ${reason}; the card was left out.` },
+    })),
+    ...mapped.map(({ position, field, count }) => ({
+      position,
+      row: {
+        ...{ area, item: String(position), field },
+        reason: `${upper(entryCount(count))} named a source card id and ${count === 1 ? 'was' : 'were'} read as the requirements that cite it; the card was kept.`,
+      },
     })),
     ...entries.map(({ position, field, count }) => ({
       position,

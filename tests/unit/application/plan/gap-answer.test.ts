@@ -42,6 +42,7 @@ describe('parseGapAnswer', () => {
       positions: [],
       problems: [],
       entries: [],
+      mapped: [],
     });
   });
 
@@ -101,14 +102,20 @@ describe('parseGapAnswer: positions written as objects (Q-54)', () => {
     ['a position of 201', { position: 201 }],
     ['a fractional position', { position: 1.5 }],
     ['null', null],
-    ['a string', '3'],
-  ])('RF-627 Q-54 %s leaves the card out and names its position and field', (_name, bad) => {
+    ['a text that is no card id', 'the login card'],
+  ])('RF-627 P7-15 %s in requirements is dropped, counted and the card kept', (_name, bad) => {
     const answer = read({ tasks: [card, { ...card, requirements: [bad] }] });
 
-    expect(answer?.drafts).toEqual([card]);
-    expect(answer?.problems).toMatchObject([
-      { position: 2, field: 'requirements', builds: ['flow:FLOW-007'] },
-    ]);
+    expect(answer?.drafts).toEqual([card, { ...card, requirements: [] }]);
+    expect(answer?.problems).toEqual([]);
+    expect(answer?.entries).toEqual([{ position: 2, field: 'requirements', count: 1 }]);
+  });
+
+  it('RF-627 P7-15 a string of digits in requirements is its position', () => {
+    const answer = read({ tasks: [{ ...card, requirements: ['3'] }] });
+
+    expect(answer?.drafts[0]?.requirements).toEqual([3]);
+    expect(answer?.entries).toEqual([]);
   });
 });
 
@@ -143,7 +150,7 @@ describe('parseGapAnswer: what a card that is left out reports (Q-54)', () => {
   it('RF-627 Q-54 the problem holds a reason and no text of the answer', () => {
     const sentinel = 'sentinel-title-' + 'x'.repeat(8);
     const answer = read({
-      tasks: [{ ...card, title: sentinel, requirements: [{ id: sentinel }] }],
+      tasks: [{ ...card, title: sentinel, phase: { id: sentinel } }],
     });
 
     expect(JSON.stringify(answer?.problems)).not.toContain(sentinel);

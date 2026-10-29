@@ -68,7 +68,7 @@ describe('parseGapAnswer: a card id written as a requirement (P7-15)', () => {
       ['1', 'requirements'],
       ['1', 'requirements'],
     ]);
-    expect(rows.map((row) => row.reason).join(' ')).toMatch(/mapped.*dropped|dropped.*mapped/u);
+    expect(rows.map((row) => row.reason).join(' ')).toMatch(/source card id.*dropped/u);
     expect(warnings.join(' ')).toContain('"requirements"');
     expect(JSON.stringify([rows, warnings])).not.toMatch(/FEAT-009|abc/u);
   });

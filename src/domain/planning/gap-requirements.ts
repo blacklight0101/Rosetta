@@ -37,6 +37,14 @@ export function gapRequirements(
   return { requirements: [], derived: [], unbacked: builds };
 }
 
+/** P7-15: the requirements that cite any of the source cards the answer wrote as requirements. */
+export function citingRequirements(content: PlanContent, cards: readonly string[]): string[] {
+  const named = new Set(cards);
+  return content.requirements
+    .filter((each) => each.sources.some((card) => named.has(card)))
+    .map((each) => each.id);
+}
+
 /** The notes for checks.md about the requirements code gave a gap card, once it has its id. */
 export function gapRequirementNotes(task: string, found: GapRequirements): RequirementNote[] {
   return [

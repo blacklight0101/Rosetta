@@ -24,10 +24,6 @@ function unreadableOf(extra: object): unknown {
   return parsePlanAnswer(answerWith(extra))?.unreadableTasks;
 }
 
-function reasonOf(extra: object): string | undefined {
-  return parsePlanAnswer(answerWith(extra))?.unreadableTasks?.[0]?.reason;
-}
-
 describe('parsePlanAnswer: positions written as digit strings (EV-30)', () => {
   it('RF-601 EV-30 a string of digits reads as its position in requirements and dependsOn', () => {
     const extra = { requirements: ['1', '12'], dependsOn: ['2'] };
@@ -36,19 +32,17 @@ describe('parsePlanAnswer: positions written as digit strings (EV-30)', () => {
   });
 
   it.each(['abc', '1.5', ' 3', '0', '201'])(
-    'RF-601 EV-30 the position %j is not a number and leaves that card unreadable',
+    'RF-601 P7-15 the position %j is not a number and is dropped, the card kept',
     (bad) => {
-      expect(unreadableOf({ requirements: [bad] })).toEqual([
-        expect.objectContaining({ position: 1, field: 'requirements' }),
-      ]);
+      expect(unreadableOf({ requirements: [bad] })).toBeUndefined();
+      expect(tasksOf({ requirements: [bad] })).toMatchObject([{ requirements: [] }]);
     },
   );
 
-  it('RF-601 EV-30 the Left out reason says that a position was not a number', () => {
-    expect(unreadableOf({ dependsOn: ['abc'] })).toEqual([
-      expect.objectContaining({ position: 1, field: 'dependsOn' }),
-    ]);
-    expect(reasonOf({ dependsOn: ['abc'] })).toContain('not a number');
+  it('RF-601 P7-15 the Left out row says how many entries of dependsOn were dropped', () => {
+    const items = parsePlanAnswer(answerWith({ dependsOn: ['abc'] }))?.unreadableItems;
+    expect(items).toEqual([expect.objectContaining({ position: 1, field: 'dependsOn' })]);
+    expect(items?.[0]?.reason).toContain('1 entry');
   });
 
   it('RF-601 EV-30 the recorded eShop answer with digit-string positions keeps its six cards', async () => {
