@@ -15,6 +15,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { endBatch, stateOf, type BatchOutcome, type HeldBatch } from './workbook-batch-state.js';
 import type { BatchState } from './workbook-batch-types.js';
 import { withinAttachLimit } from './attach-limit.js';
+import { settleLate } from './late-attach.js';
 import { bestEffort } from './best-effort.js';
 import { recordUpload } from './record-upload.js';
 import { logBatchFailure } from './batch-failure-log.js';
@@ -190,7 +191,29 @@ export class StoreUpload {
       batch.attaching = true;
     }
     const done = { project, stored, fileName: name.value, uploadedAt };
-    return withinAttachLimit(this.publish(request, done), this.deps.attachTimeoutMs);
+    const publishing = this.publish(request, done);
+    const late = (): void => {
+      if (batch !== undefined) batch.late = this.settleLate(batch, publishing, done);
+    };
+    return withinAttachLimit(publishing, this.deps.attachTimeoutMs, late);
+  }
+
+  /** RF-159: the project stays busy until the attach that passed its limit settles; the batch is then corrected. */
+  private settleLate(
+    batch: HeldBatch,
+    attach: Promise<Result<UploadSummary, UploadProblem>>,
+    done: {
+      readonly project: Project;
+      readonly stored: StoredUpload;
+      readonly fileName: string;
+      readonly uploadedAt: Date;
+    },
+  ): Promise<void> {
+    const { project, stored, fileName, uploadedAt } = done;
+    const { key, created } = stored;
+    const summary = (): UploadSummary =>
+      summaryOf(stored, project, fileName, uploadedAt.toISOString());
+    return settleLate(this.deps, batch, { ...{ attach, project, key, created }, summary });
   }
 
   /** The stored zip becomes the source of the project, with its audit rows (RF-128, RF-133). */

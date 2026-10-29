@@ -77,12 +77,21 @@ export async function attachWorkbooks(
       ...{ snapshotHash: published.info.snapshotHash, workbooks: published.info.workbooks },
     }),
   );
-  return ok({
+  return ok(summaryOfBatch(project, published, uploadedAt));
+}
+
+/** What the page shows after the workbooks became the source (RF-150). */
+export function summaryOfBatch(
+  project: Project,
+  published: PublishedWorkbooks,
+  uploadedAt: Date,
+): WorkbookBatchSummary {
+  return {
     workbooks: published.summary,
     skipped: published.skipped,
     snapshotHash: published.info.snapshotHash,
     uploadedAt: uploadedAt.toISOString(),
     codeChangedSinceLastRun:
       project.lastRunSnapshotKey !== undefined && project.lastRunSnapshotKey !== published.key,
-  });
+  };
 }

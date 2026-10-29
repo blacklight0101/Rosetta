@@ -5,7 +5,7 @@ import { amy as zipper, request, setup } from '../../../support/store-upload-har
 import { amy, batchCase, fileRequest } from '../../../support/workbook-batch-harness.js';
 
 // RF-159, DEC-183: the attach of a source has a time limit, so a Cancel that waits for it cannot hang.
-// The batch then ends refused with the code of a time bound (RST-1918).
+// The batch then ends refused with the code of a time bound (RST-1918); the project stays busy until the attach settles.
 
 const LIMIT_MS = 40;
 const never = (): Promise<never> => new Promise<never>(() => undefined);
@@ -33,7 +33,11 @@ describe('WorkbookBatches an attach that never ends', () => {
     const refusal = cancelled.ok && !cancelled.value.cancelled && cancelled.value.state.refusal;
     expect(refusal).toBeInstanceOf(RosettaError);
     expect(refusal).toMatchObject({ code: ERROR_CODES.uploadTimedOut });
-    expect((await world.useCase.open({ actor: amy, projectId: world.project.id })).ok).toBe(true);
+    // The attach has not settled: the project stays busy until it does (late-attach.test.ts).
+    expect(await world.useCase.open({ actor: amy, projectId: world.project.id })).toMatchObject({
+      ok: false,
+      error: ERROR_CODES.uploadInProgress,
+    });
   });
 });
 
