@@ -18,10 +18,10 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 
 const readerPromptNames = {
   system: 'reader/area.v12.md',
-  cardFormat: 'cards/card-format.v2.md',
+  cardFormat: 'cards/card-format.v3.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
-  repair: 'cards/repair.v3.md',
+  repair: 'cards/repair.v4.md',
   continue: 'cards/continue.v1.md',
   readFirst: 'reader/read-first.v1.md',
   readMore: 'reader/read-more.v1.md',
@@ -92,7 +92,7 @@ export async function loadPlanOptionsPrompt(promptsFolder: string): Promise<Prom
 /** The planner's prompt for the hand-off package (RF-604), checked and hashed. */
 // RNF-004
 export function loadPlannerPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/package.v9.md');
+  return loadPromptFile(promptsFolder, 'planner/package.v10.md');
 }
 
 /**

@@ -56,7 +56,7 @@ function riskRuleLines(): string[] {
   return [
     '## Risk class',
     '',
-    `Every task card has a risk class next to its difficulty: ${riskClasses.join(', ')}. A card with a risk class other than none is built by at least the middle model tier and reviewed with its probes, whatever its difficulty, because a small card at a trust boundary can still do the most harm.`,
+    `Every task card has a risk class next to its difficulty: ${riskClasses.join(', ')}. A card with a risk class other than none is built by at least the middle model tier and reviewed with its probes, whatever its difficulty, because a small card at a trust boundary can still do the most harm. A medium or large card with a risk class other than none is rated 9 and built by the largest model tier.`,
     '',
   ];
 }

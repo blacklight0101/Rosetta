@@ -32,7 +32,7 @@ Every rule below refers to these settings by name, so a stack change is made her
 | Commit message         | Conventional Commits, `type(scope): subject`, a `Refs:` footer with the card, RF, ADR and DEC ids, and the attribution line given by the session instructions                                                                                                                                                                                                                                                |
 | Issue and pull request | one GitHub issue per card (title `<id> <title>`, milestone of the phase, labels `difficulty:<n>` and `builder:<model>`); one pull request per card from `.github/pull_request_template.md`, closing its issue (DEC-35)                                                                                                                                                                                       |
 | Merge                  | into `develop`, by the orchestrator, squash only, under the merge rules of section 3.1 (DEC-96, DEC-175); pull requests labelled `needs-owner`, and every release pull request into `main` (section 3.2), are merged only by the owner                                                                                                                                                                       |
-| Agents in flight       | up to two (three after a usage reset) plan builders, as many local verifiers as pull requests are ready, an API-billed builder or verifier when the key has credit, and cards in the owner's cloud sessions, under the usage bands of section 8.1 (DEC-115, DEC-128, DEC-130)                                                                                                                                |
+| Agents in flight       | at most four plan builders at the same time (DEC-181), as many local verifiers as pull requests are ready, an API-billed builder or verifier when the key has credit, and cards in the owner's cloud sessions, under the usage bands of section 8.1 (DEC-115, DEC-128, DEC-130, DEC-180, DEC-181)                                                                                                            |
 | Serialized resources   | `db/migrations/`; `src/presentation/composition-root.ts` and `src/presentation/main.ts`; `package.json` and `package-lock.json`; `.github/workflows/`; `web/src/app/routes.ts`; `tests/support/access-matrix-rows.ts` (new routes add their access-matrix rows there)                                                                                                                                        |
 | Requirement comment    | `// RF-nnn` (or `RNF-nnn`) on the line above each implementing class or function                                                                                                                                                                                                                                                                                                                             |
 
@@ -183,7 +183,8 @@ emergency skip are in `docs/runbooks/deploy.md`, section Release to production.
   card does not ask for.
 - Every new behaviour cites its requirement id at the implementing type (section 1). Every structural change updates
   `docs/architecture.md` in the same branch; every schema or file-format change updates `docs/data-model.md`.
-- Run `npm run verify` before reporting and paste its last lines. Tests run without external systems (fakes,
+- Run `npm run verify:local` before reporting and paste its last lines and exit code; CI on the pull request runs
+  the full `npm run verify` (DEC-182). Tests run without external systems (fakes,
   recordings, a disposable PostgreSQL).
 - Do not touch `docs/spec`, `docs/rfc`, `docs/adr` or `docs/decision-log.md` unless the card says so; such a change
   makes the pull request `needs-owner` (section 3.1).
@@ -195,7 +196,7 @@ emergency skip are in `docs/runbooks/deploy.md`, section Release to production.
 The verifier receives the card, the builder report and the branch name. It works in the branch's worktree without
 changing it; its only writes are in a disposable detached worktree for the mutation check, removed afterwards. Its
 full procedure is in `.claude/agents/verifier.md` (difficulty 1-8), `.claude/agents/verifier-opus.md`
-(difficulty 9-10) and `.claude/agents/verifier-fable.md` (fable escalation only). In short: scope, gates (`npm ci`, `npm run verify` run by itself), scenario coverage and TDD order,
+(difficulty 9-10) and `.claude/agents/verifier-fable.md` (fable escalation only). In short: scope, gates (`npm run verify:local` run by itself, CI's full `npm run verify` on the pull request, DEC-182), scenario coverage and TDD order,
 mutation check, the card's _Done when_ exactly as written, page walk for page cards, ADR conformance, the hard-rule
 greps of section 5.1, engineering standards, SOLID and KISS, security, docs, report honesty.
 
@@ -254,7 +255,7 @@ same ids and names as `handoff.md` (DEC-99). The orchestrator never opens a gate
 - Two cards run at the same time only when their _Delivers_ paths are disjoint and they share no serialized resource
   (section 1). Migration numbers are fixed per card in `docs/data-model.md` section 7 and tasks.md; the orchestrator
   never reassigns them.
-- Keep at most the configured number of agents in flight (one plan agent at a time, DEC-115, plus one API-billed verifier, DEC-128). One card has one verifier at a time.
+- Keep at most four builders in flight at the same time (DEC-181), plus one API-billed verifier (DEC-128); agents already running finish and none is paused. One card has one verifier at a time.
 - When the owner asks to pause (usage limits), stop the running agents; their worktrees keep the work. On resume,
   continue the same agent (SendMessage) rather than starting the card again.
 - Use Agent-tool subagents (one per builder or verifier, each builder in its own worktree). A Workflow script runs

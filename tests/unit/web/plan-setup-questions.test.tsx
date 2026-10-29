@@ -1,8 +1,8 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
+import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { press, ready, renderPlan, saves, stepName } from './plan-setup-helpers.js';
 
-// RF-610, RF-611, RF-612: the migration, project context and build method steps.
+// RF-610, RF-611: the migration and project context steps (the build method step: plan-setup-method.test.tsx).
 
 async function openStep(name: string): Promise<void> {
   await ready();
@@ -28,7 +28,9 @@ describe('migration step', () => {
     press('Save and continue');
 
     await screen.findByRole('heading', { name: /Which technology/u, level: 2 });
-    expect(saves(page)).toEqual([{ migration: 'parallel-change' }]);
+    expect(saves(page)).toEqual([
+      { migration: 'parallel-change', chosen: { migration: 'parallel-change' } },
+    ]);
   });
 });
 
@@ -44,13 +46,14 @@ describe('project context step', () => {
     });
     press('Save and continue');
 
-    await screen.findByRole('heading', { name: /Will the team build/u, level: 2 });
+    await screen.findByRole('heading', { name: /Will agents or people build/u, level: 2 });
     expect(saves(page)).toEqual([
       {
         context: {
           teamSize: 6,
           keepIntegrations: ['SAP', 'Active Directory'],
         },
+        chosen: { 'context.teamSize': 'typed', 'context.keepIntegrations': 'typed' },
       },
     ]);
   });
@@ -64,20 +67,5 @@ describe('project context step', () => {
 
     expect(await screen.findByText(/Use a whole number from 1 to 10000/u)).not.toBeNull();
     expect(saves(page)).toEqual([]);
-  });
-});
-
-describe('build method step', () => {
-  it('RF-612 records an AI-assisted build and finishes the steps', async () => {
-    const page = renderPlan();
-    await openStep('Build method');
-
-    expect(screen.getByRole('checkbox', { name: /AI agents/u })).toHaveProperty('checked', false);
-    fireEvent.click(screen.getByRole('checkbox', { name: /AI agents/u }));
-    press('Save');
-
-    const summary = await screen.findByRole('region', { name: 'What I recorded' });
-    expect(saves(page)).toEqual([{ buildMethod: { aiAssisted: true } }]);
-    expect(within(summary).getByText('with AI-assisted build')).not.toBeNull();
   });
 });

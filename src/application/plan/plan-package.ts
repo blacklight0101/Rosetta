@@ -2,6 +2,7 @@ import { claimMeaning } from '../../domain/planning/claim-meaning.js';
 import { usableCards } from '../../domain/planning/code-over-documentation.js';
 import { stackClashes } from '../../domain/planning/stack-rules.js';
 import { decideOnce } from '../../domain/planning/brief-restated.js';
+import { briefQuestionOptions } from '../../domain/planning/brief-question-options.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
 import { copiedExamples, exampleSentencesOfAll } from '../../domain/planning/copied-example.js';
 import { settleJudgements } from '../../domain/planning/claim-judgement.js';
@@ -13,6 +14,7 @@ import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content
 import { addSecretRisks, type SecretRisks } from '../../domain/planning/secret-risks.js';
 import type { ScanFacts } from './plan-scan-facts.js';
 import { addStyleRisks, checkStyle } from '../../domain/planning/style-rules.js';
+import { referenceTitle } from '../../domain/planning/typed-answers.js';
 import {
   excludedClaims,
   sourceStopOf,
@@ -21,7 +23,10 @@ import {
 import type { Run } from '../../domain/runs/run.js';
 import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
 import type { UnreadableItem } from '../../domain/planning/plan-draft.js';
+import { hasData } from '../../domain/planning/data-presence.js';
 import { withFoundationCards } from '../../domain/planning/foundation-cards.js';
+import { withOwnAnswerCards } from '../../domain/planning/own-answer-cards.js';
+import { withPhaseClosingCards } from '../../domain/planning/phase-closing-cards.js';
 import { placeOf } from './plan-repair.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
 import type { PlannedDocuments } from './plan-documents.js';
@@ -49,8 +54,9 @@ function openQuestionsOf(
 ): HandoffPackage['openQuestions'] {
   return questions
     .filter((question) => question.answer.trim() === '')
-    .map(({ cardId, question }) => ({
+    .map(({ cardId, question, options }) => ({
       ...{ cardId, question },
+      ...(options === undefined ? {} : { options }),
       area: cards.find((card) => card.id === cardId)?.area ?? '',
     }));
 }
@@ -202,7 +208,7 @@ function unreadSecretItems(secrets: SecretRisks): HandoffPackage['leftOut'] {
   ];
 }
 
-/** P5-42: the plan with its fixed cards, with the brief's choices decided once over it. */
+/** P5-42, P6-10, P6-21, P6-27: the plan with its fixed (no data cards when the run found no data) and phase-closing cards, with the brief's choices decided once over it. */
 function decidedOf(
   content: PlanContent,
   parts: {
@@ -215,8 +221,13 @@ function decidedOf(
   catalogue: Catalogue,
 ): ReturnType<typeof decideOnce> {
   const { brief, sources, documents } = parts;
-  const withFixed = withFoundationCards(content, brief.migration, documents.dataModel.tables);
-  return decideOnce(withFixed, brief, catalogue, evidenceOf(sources, documents.proposal));
+  const { tables } = documents.dataModel;
+  const withFixed = withPhaseClosingCards(
+    withFoundationCards(content, brief.migration, tables, hasData(sources, tables)),
+  );
+  const decided = decideOnce(withFixed, brief, catalogue, evidenceOf(sources, documents.proposal));
+  // RF-645, DEC-184: the fixed cards follow an own answer, which is known by its record only now.
+  return { ...decided, content: withOwnAnswerCards(decided.content, brief, decided.choices) };
 }
 
 /** P5-43, RF-602: where the plan changed the meaning of its claims. */
@@ -263,7 +274,7 @@ export function handoffPackageOf(
     principles: brief.principles.map((id) => principleOf(catalogue, id)),
     content: contentOf(decided.content, {
       styleCheck,
-      style,
+      style: { ...style, title: referenceTitle(brief, 'architecture', style.title) },
       questions,
       secrets: documents.secrets,
     }),
@@ -273,6 +284,7 @@ export function handoffPackageOf(
     sources,
     excluded: excludedClaims(cards),
     briefQuestions: defaultedQuestions(brief, catalogue),
+    briefOptions: briefQuestionOptions(brief, catalogue),
     openQuestions: openQuestionsOf(questions, cards),
     prd,
     dataModel,
@@ -282,6 +294,7 @@ export function handoffPackageOf(
     prdQuestions: prdQuestions(prd),
     ...carried(documents, documents.secrets),
     copiedExamples: copiedIn(prd, decided.content, documents.examples),
+    grepRules: catalogue.grepRules,
     meaning: meaningOf(decided.content, { ...documents, sources, overruled }, catalogue),
   };
 }

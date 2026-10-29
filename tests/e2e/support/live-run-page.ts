@@ -144,3 +144,59 @@ export async function expectNotCovered(covered: Locator): Promise<void> {
   await expect(covered).toContainText('Next step: run a Deepen to read');
   await expect(covered).not.toContainText('Every area of the run gave at least one card.');
 }
+
+/** RF-1007: the open question with that card id on the page of a finished run. */
+export function openQuestion(page: Page, cardId: string): Locator {
+  return page
+    .getByRole('region', { name: 'Open questions' })
+    .getByTestId('open-question')
+    .filter({ hasText: cardId });
+}
+
+/**
+ * RF-645: the question lists its suggested answers, the recommended one first, and "Type your own
+ * answer" last; the second option is chosen with the arrow key and saved, with the keyboard alone.
+ */
+export async function chooseSecondSuggestedAnswer(question: Locator): Promise<void> {
+  const radios = question.getByRole('radio');
+  await expect(radios).toHaveCount(4);
+  await expect(radios.first()).toHaveAccessibleName(/^\(Recommended\) /u);
+  await expect(radios.last()).toHaveAccessibleName('Type your own answer');
+  await expect(question.getByRole('textbox')).toHaveCount(0);
+  await radios.first().focus();
+  await question.page().keyboard.press('ArrowDown');
+  await expect(radios.nth(1)).toBeChecked();
+  await saveWithKeyboard(question);
+  // The choice is in answers.md: the page shows it again after a reload.
+  await question.page().reload();
+  await openRunTab(question.page(), 'Your questions');
+  await expect(radios.nth(1)).toBeChecked();
+}
+
+/** RF-645: Tab leaves the group of choices (or the field) for "Save answer", and Enter saves. */
+async function saveWithKeyboard(question: Locator): Promise<void> {
+  const page = question.page();
+  await page.keyboard.press('Tab');
+  await expect(question.getByRole('button', { name: 'Save answer' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(question).toContainText('Answer saved in answers.md.');
+}
+
+/**
+ * RF-645: the arrow keys reach "Type your own answer", Tab goes to its field, the text replaces
+ * what the field holds and the answer is saved, all with the keyboard.
+ */
+export async function typeOwnAnswerWithKeyboard(question: Locator, answer: string): Promise<void> {
+  const { keyboard } = question.page();
+  const radios = question.getByRole('radio');
+  await radios.first().focus();
+  await keyboard.press('ArrowDown');
+  await keyboard.press('ArrowDown');
+  await keyboard.press('ArrowDown');
+  await expect(radios.last()).toBeChecked();
+  await keyboard.press('Tab');
+  await expect(question.getByLabel('Answer to OQ-001')).toBeFocused();
+  await keyboard.press('Control+A');
+  await keyboard.type(answer);
+  await saveWithKeyboard(question);
+}

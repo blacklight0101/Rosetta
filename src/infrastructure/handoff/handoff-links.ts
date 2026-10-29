@@ -25,6 +25,8 @@ export const handoffFiles = {
   sources: 'sources.md',
   conventions: 'conventions.md',
   agents: 'AGENTS.md',
+  agentsReadme: 'agents/README.md',
+  orchestration: 'orchestration.md',
   fixtures: 'fixtures.md',
   workbookFormulas: 'workbook-formulas.md',
   checks: 'checks.md',

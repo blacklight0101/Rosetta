@@ -1,0 +1,41 @@
+import type { HandoffPackage } from '../../application/plan/handoff-package.js';
+import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { ownAnswerLines } from './handoff-own-answers-markdown.js';
+
+// RF-612, RF-637, P6-11: what a package written for people building leaves out. Only a people build
+// says it; an agent build has these files and says nothing about them.
+
+const leftOutSentence =
+  'This package has no agent files, no model per card and no build protocol, because people build the system.';
+
+/** RF-612: the README sentence of a people build, followed by a blank line; nothing for an agent build. */
+export function leftOutReadmeLines(handoff: HandoffPackage): string[] {
+  return handoff.brief.buildMethod.aiAssisted ? [] : [leftOutSentence, ''];
+}
+
+/**
+ * RF-637: the build method as a whole-build question with its default, for a people build only.
+ * A build method that took its default is already a row of the brief questions that took their
+ * default, which says it is a whole-build question, so this section is left out to list it once.
+ */
+export function buildMethodQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  if (handoff.brief.buildMethod.aiAssisted) return [];
+  if (handoff.briefQuestions.some((question) => question.id === 'buildMethod')) return [];
+  const own = ownAnswerLines(handoff, 'buildMethod', esc);
+  // DEC-184: the owner typed the answer, so it is stated instead of the default.
+  if (own.length > 0) {
+    return [
+      '## Build method',
+      '',
+      ...own,
+      'Whether the team builds with AI agents is a whole-build question, so no card waits on it. Rosetta cannot read the answer as a choice of AI agents, so this package has no agent files, no model per card and no build protocol. A team that builds with agents can answer the question again to add them.',
+      '',
+    ];
+  }
+  return [
+    '## Build method',
+    '',
+    'Whether the team builds with AI agents is a whole-build question, so no card waits on it. Default: people build, so the package has no agent files, no model per card and no build protocol. A team that builds with agents can answer the question again to add them, or answer otherwise.',
+    '',
+  ];
+}

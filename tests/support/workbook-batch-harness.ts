@@ -1,8 +1,13 @@
 import type { Project } from '../../src/application/projects/project.js';
 import {
   WorkbookBatches,
+  type WorkbookBatchesDependencies,
   type BatchFileRequest,
+  type BatchProblem,
+  type FinishBatchRequest,
+  type WorkbookBatchSummary,
 } from '../../src/application/use-cases/workbook-batches.js';
+import type { Result } from '../../src/domain/errors/result.js';
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
@@ -12,6 +17,7 @@ import { FakeWorkbookStaging } from './fake-workbook-staging.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { sampleProject } from './project-fixtures.js';
+import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 // RF-150, RF-157: the batch use case over memory adapters, a fake staging area and a fake store.
 
@@ -39,9 +45,13 @@ export interface BatchCase {
   readonly runs: MemoryRunIndex;
   readonly auditLog: MemoryAuditLog;
   readonly clock: FixedClock;
+  readonly logger: MemoryLogger;
 }
 
-export async function batchCase(project: Project = workbookProject()): Promise<BatchCase> {
+export async function batchCase(
+  project: Project = workbookProject(),
+  extra: Pick<WorkbookBatchesDependencies, 'attachTimeoutMs'> = {},
+): Promise<BatchCase> {
   const projects = new MemoryProjectRepository();
   await projects.insertOrFind(project);
   const clock = new FixedClock('2026-10-19T08:30:00.000Z');
@@ -50,11 +60,18 @@ export async function batchCase(project: Project = workbookProject()): Promise<B
   const uploads = new FakeUploadStore();
   const runs = new MemoryRunIndex();
   const auditLog = new MemoryAuditLog(masker);
+  const logger = new MemoryLogger(clock, masker);
   const useCase = new WorkbookBatches({
-    ...{ projects, runs, uploads, staging, auditLog, clock, limitBytes },
-    logger: new MemoryLogger(clock, masker),
+    ...{ projects, runs, uploads, staging, auditLog, clock, limitBytes, logger },
+    ids: new SequenceIdGenerator(),
+    ...extra,
   });
-  return { useCase, project, projects, staging, uploads, runs, auditLog, clock };
+  return { useCase, project, projects, staging, uploads, runs, auditLog, clock, logger };
+}
+
+/** The summary of a batch of workbooks (the batch of a zip has the summary of the upload). */
+function isBatchSummary(summary: object): summary is WorkbookBatchSummary {
+  return 'skipped' in summary && Array.isArray(summary.skipped);
 }
 
 export function bodyOf(bytes: number): AsyncIterable<Uint8Array> {
@@ -79,4 +96,30 @@ export function fileRequest(
     signal: new AbortController().signal,
     ...overrides,
   };
+}
+
+/**
+ * Finishes a batch and waits for the work after the request (RF-159): the summary when it was
+ * stored, the refusal thrown as the finish used to throw it, or the problem that stopped the finish.
+ */
+export async function finishAndWait(
+  test: BatchCase,
+  request: FinishBatchRequest,
+): Promise<Result<WorkbookBatchSummary, BatchProblem>> {
+  const accepted = await test.useCase.finish(request);
+  if (!accepted.ok) return accepted;
+  for (let turn = 0; turn < 1000; turn += 1) {
+    const state = await test.useCase.state(request);
+    if (!state.ok) return state;
+    const { summary } = state.value;
+    if (state.value.phase === 'stored' && summary !== undefined && isBatchSummary(summary)) {
+      return { ok: true, value: summary };
+    }
+    if (state.value.phase === 'refused') {
+      const { refusal } = state.value;
+      throw refusal instanceof Error ? refusal : new Error('refused');
+    }
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  throw new Error('the batch did not end');
 }

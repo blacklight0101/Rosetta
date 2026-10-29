@@ -1,0 +1,218 @@
+import type { Page, Route } from '@playwright/test';
+import { expect, test } from './support/fixtures.js';
+import { expectNoSeriousViolations } from './support/axe.js';
+import { accountFor } from './support/seed.js';
+import { signInAs } from './support/sign-in.js';
+import { journeyWorkbooks } from './support/workbook-journey.js';
+
+// RF-159, RF-150, RNF-010, DEC-183: the Excel workbooks form while the server reads the batch. The
+// project, the batch, the files and the finish are the real server's. A small batch is read in a few
+// milliseconds, too fast to see, so the answers of the state endpoint are scripted for as long as a
+// test says (what a large workbook would answer); once it lets go, the real state, with the real
+// summary, comes through. The server's own timing and the polling are in the integration tests.
+
+const STATE_PATH = /\/api\/projects\/[^/]+\/source\/batches\/[^/]+$/u;
+
+interface Script {
+  /** While true the state endpoint answers `states`; afterwards the real server answers. */
+  scripted: boolean;
+  step: 'rendering' | 'saving';
+  reads: number;
+}
+
+const progress = (step: Script['step']) =>
+  step === 'rendering'
+    ? { step, workbook: 2, workbooks: 2, sheet: 1, sheets: 3, cells: 1200 }
+    : { step, workbook: 2, workbooks: 2, sheet: 3, sheets: 3, cells: 2400 };
+
+async function scriptState(page: Page, script: Script): Promise<void> {
+  await page.route(STATE_PATH, async (route: Route) => {
+    if (route.request().method() !== 'GET' || !script.scripted) {
+      await route.continue();
+      return;
+    }
+    script.reads += 1;
+    const batchId = route.request().url().split('/').pop() ?? '';
+    await route.fulfill({
+      json: {
+        ...{ batchId, phase: 'processing', files: 2, elapsedMs: 7000 + script.reads * 1000 },
+        progress: progress(script.step),
+      },
+    });
+  });
+  await page.route(/\/api\/projects\/[^/]+\/source\/batches\/current$/u, async (route: Route) => {
+    if (!script.scripted) {
+      await route.continue();
+      return;
+    }
+    const real = await route.fetch();
+    const body: unknown = await real.json();
+    const batchId: unknown =
+      typeof body === 'object' && body !== null ? Reflect.get(body, 'batchId') : '';
+    await route.fulfill({
+      json: {
+        ...{ batchId, phase: 'processing', files: 2, elapsedMs: 21_000 },
+        progress: progress(script.step),
+      },
+    });
+  });
+}
+
+async function startUpload(page: Page): Promise<string> {
+  const files = await journeyWorkbooks();
+  const created = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/projects') && response.request().method() === 'POST',
+  );
+  await page.getByLabel('Workbook files').setInputFiles([...files]);
+  await page.getByRole('button', { name: 'Upload workbooks' }).click();
+  const body: unknown = await (await created).json();
+  const id: unknown =
+    typeof body === 'object' && body !== null ? Reflect.get(body, 'id') : undefined;
+  if (typeof id !== 'string') throw new Error('the project has no id');
+  return id;
+}
+
+test.beforeEach(async ({ context, page }, info) => {
+  await signInAs(context, accountFor('projects', info.project.name));
+  await page.goto('/projects');
+  await page.getByRole('tab', { name: 'Excel workbooks' }).click();
+});
+
+test('RF-159 shows the steps, the workbook and sheet, the cells and the time, then the summary', async ({
+  page,
+}) => {
+  const script: Script = { scripted: true, step: 'rendering', reads: 0 };
+  await scriptState(page, script);
+
+  await startUpload(page);
+
+  const panel = page.getByTestId('processing');
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText('Rendering sheets')).toHaveAttribute('data-state', 'current');
+  await expect(panel.getByText('Reading workbooks')).toHaveAttribute('data-state', 'done');
+  await expect(page.getByTestId('processing-detail')).toContainText(
+    'Workbook 2 of 2, sheet 1 of 3. 1,200 cells read.',
+  );
+  await expect(page.getByTestId('processing-detail')).toContainText('elapsed');
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  const said = page.getByRole('status').filter({ hasText: 'Rendering the sheets.' });
+  await expect(said).toHaveAttribute('aria-live', 'polite');
+  await expectNoSeriousViolations(page);
+
+  script.step = 'saving';
+  await expect(panel.getByText('Saving', { exact: true })).toHaveAttribute(
+    'data-state',
+    'current',
+    {
+      timeout: 10_000,
+    },
+  );
+  await expect(said).toHaveCount(0);
+
+  script.scripted = false;
+  await expect(page.getByRole('status').filter({ hasText: '2 workbooks read' })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(panel).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Start a run' })).toBeVisible();
+});
+
+test('RF-159 closing the page does not cancel the work: the project page shows its progress after a reload and then the summary', async ({
+  page,
+}) => {
+  const script: Script = { scripted: true, step: 'rendering', reads: 0 };
+  await scriptState(page, script);
+  const projectId = await startUpload(page);
+  await expect(page.getByTestId('processing')).toBeVisible();
+
+  await page.goto(`/projects/${projectId}/start`);
+  await expect(page.getByTestId('processing-detail')).toContainText('1,200 cells read');
+  await page.reload();
+  await expect(page.getByTestId('processing-detail')).toContainText('Workbook 2 of 2');
+  const cancel = page.getByRole('button', { name: 'Cancel' });
+  await cancel.focus();
+  await expect(cancel).toBeFocused();
+  await expectNoSeriousViolations(page);
+
+  script.scripted = false;
+  await expect(page.getByRole('status').filter({ hasText: '2 workbooks read' })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(
+    page.getByText(/Pricing\.xlsm.*Discounts\.xlsx|Excel, 2 workbooks/u).first(),
+  ).toBeVisible();
+});
+
+// The real batch of two small workbooks may still be at work when Cancel is pressed, or already stored
+// behind the scripted state: the server answers 204 (stopped, nothing published) or 409 (it had
+// ended), and the page must show what really happened, never a false "Nothing was published".
+test('RF-159 Cancel by keyboard shows the real outcome: nothing published when it stopped the batch, the summary when it was already stored', async ({
+  page,
+}) => {
+  const script: Script = { scripted: true, step: 'rendering', reads: 0 };
+  await scriptState(page, script);
+  const projectId = await startUpload(page);
+  const cancel = page.getByRole('button', { name: 'Cancel' });
+  await expect(cancel).toBeVisible();
+  const answered = page.waitForResponse(
+    (response) => STATE_PATH.test(response.url()) && response.request().method() === 'DELETE',
+  );
+
+  await cancel.focus();
+  await page.keyboard.press('Enter');
+  const status = (await answered).status();
+  script.scripted = false;
+
+  expect([204, 409]).toContain(status);
+  const stored = status === 409;
+  const outcome = stored
+    ? page.getByRole('status').filter({ hasText: '2 workbooks read' })
+    : page.getByRole('alert').filter({ hasText: 'Nothing was published' });
+  await expect(outcome).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('Nothing was published')).toHaveCount(stored ? 0 : 1);
+  await expect(page.getByTestId('processing')).toHaveCount(0);
+  const shown = await page.request.get(`/api/projects/${projectId}`);
+  expect(await shown.json()).toMatchObject({ source: stored ? { workbooks: 2 } : null });
+  await expectNoSeriousViolations(page);
+});
+
+// The 409 path on every run: the test waits, through `page.request` (which the scripted routes do not
+// touch), until the real batch is stored; the page still shows the scripted "processing" state and its
+// Cancel button, so the DELETE always meets a batch that has ended and the server answers 409.
+test('RF-159 Cancel of a batch the server has already stored answers 409 and the page shows the summary, not "Nothing was published"', async ({
+  page,
+}) => {
+  const script: Script = { scripted: true, step: 'rendering', reads: 0 };
+  await scriptState(page, script);
+  const projectId = await startUpload(page);
+  const cancel = page.getByRole('button', { name: 'Cancel' });
+  await expect(cancel).toBeVisible();
+  await expect
+    .poll(async () => {
+      const current = await page.request.get(`/api/projects/${projectId}/source/batches/current`);
+      const body: unknown = await current.json();
+      const phase: unknown =
+        typeof body === 'object' && body !== null ? Reflect.get(body, 'phase') : undefined;
+      return phase;
+    })
+    .toBe('stored');
+  const answered = page.waitForResponse(
+    (response) => STATE_PATH.test(response.url()) && response.request().method() === 'DELETE',
+  );
+
+  await cancel.focus();
+  await page.keyboard.press('Enter');
+  const status = (await answered).status();
+  script.scripted = false;
+
+  expect(status).toBe(409);
+  await expect(page.getByRole('status').filter({ hasText: '2 workbooks read' })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.getByText('Nothing was published')).toHaveCount(0);
+  await expect(page.getByTestId('processing')).toHaveCount(0);
+  const shown = await page.request.get(`/api/projects/${projectId}`);
+  expect(await shown.json()).toMatchObject({ source: { workbooks: 2 } });
+  await expectNoSeriousViolations(page);
+});

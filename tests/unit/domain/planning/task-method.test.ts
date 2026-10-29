@@ -67,35 +67,51 @@ describe('difficultyOfTask', () => {
   ] as const)(
     'RF-612 %i requirements and %i criteria rate %i for the %s tier',
     (r, c, rating, tier) => {
-      expect(difficultyOfTask(task(r, c))).toEqual({ rating, tier });
+      expect(difficultyOfTask(task(r, c))).toEqual({ rating, tier, verifier: 'middle' });
     },
   );
 });
 
 describe('difficultyOfTask: the risk class', () => {
-  const small = task(1, 1);
+  const sizes = { S: task(1, 1), M: task(1, 2), L: task(3, 3) } as const;
+  const risky = ['security boundary', 'data loss', 'money'] as const;
 
-  it.each(['security boundary', 'data loss', 'money'] as const)(
-    'RF-635 a small card of risk class %s is built by the middle tier, its rating unchanged',
+  it.each(risky)(
+    'RF-635 a small card of risk class %s keeps its rating, is built by the middle tier and is verified by the largest',
     (riskClass) => {
-      expect(difficultyOfTask({ ...small, riskClass })).toEqual({ rating: 4, tier: 'middle' });
+      expect(difficultyOfTask({ ...sizes.S, riskClass })).toEqual({
+        rating: 4,
+        tier: 'middle',
+        verifier: 'largest',
+      });
     },
   );
 
-  it('RF-635 a card of risk class none keeps the tier of its rating', () => {
-    expect(difficultyOfTask({ ...small, riskClass: 'none' })).toEqual({
-      rating: 4,
-      tier: 'smallest',
-    });
-  });
+  it.each(risky.flatMap((riskClass) => [['M', riskClass] as const, ['L', riskClass] as const]))(
+    'RF-635 a %s card of risk class %s is rated 9, built by the largest tier and verified by it',
+    (size, riskClass) => {
+      expect(difficultyOfTask({ ...sizes[size], riskClass })).toEqual({
+        rating: 9,
+        tier: 'largest',
+        verifier: 'largest',
+      });
+    },
+  );
 
-  it('RF-635 a risk class never lowers the tier of a larger card', () => {
-    expect(difficultyOfTask({ ...task(3, 3), riskClass: 'money' }).tier).toBe('middle');
-    expect(difficultyOfTask({ ...task(1, 2), riskClass: 'data loss' })).toEqual({
-      rating: 6,
-      tier: 'middle',
-    });
-  });
+  it.each([
+    ['S', 4, 'smallest'],
+    ['M', 6, 'middle'],
+    ['L', 8, 'middle'],
+  ] as const)(
+    'RF-635 a %s card of risk class none is rated %i by its size alone',
+    (size, rating, tier) => {
+      expect(difficultyOfTask({ ...sizes[size], riskClass: 'none' })).toEqual({
+        rating,
+        tier,
+        verifier: 'middle',
+      });
+    },
+  );
 });
 
 describe('tierForRisk', () => {

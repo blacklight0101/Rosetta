@@ -6,6 +6,7 @@ import type {
   PublishRequest,
   ReceiveRequest,
   StagedFile,
+  WorkbookProgress,
   WorkbookStaging,
 } from '../../application/ports/workbook-staging.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -13,7 +14,13 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { snapshotWriteFailed } from '../github/snapshot-errors.js';
 import { SnapshotStore } from '../github/snapshot-store.js';
 import type { Release, SpaceReservation } from './space-reservation.js';
-import { receiveZip, uploadTimedOut, uploadTooLarge, type IntakeFormat } from './upload-intake.js';
+import {
+  receiveUpload,
+  uploadTimedOut,
+  uploadTooLarge,
+  type IntakeFormat,
+  type ReceivedUpload,
+} from './upload-intake.js';
 import { refusingFile } from './workbook/file-refusal.js';
 import { checkWorkbookBatch } from './workbook/workbook-batch.js';
 import { workbookNotReadable } from './workbook/workbook-errors.js';
@@ -51,6 +58,13 @@ interface OpenBatch {
 const PARTIAL_BATCH_PREFIX = '.partial-batch-';
 const DEFAULT_STALL_MS = 60_000;
 const DEFAULT_PUBLISH_TIMEOUT_MS = 5 * 60_000;
+/** How the time-bound message names each step (RF-159). */
+const STEP_NAMES = {
+  reading: 'reading',
+  rendering: 'rendering',
+  dependencies: 'dependency map',
+  saving: 'saving',
+} as const satisfies Record<WorkbookProgress['step'], string>;
 /** DEC-149: a batch needs its files and the rendered tree, so twice the limit must be free. */
 const FREE_SPACE_FACTOR = 2;
 
@@ -106,30 +120,39 @@ export class DiskWorkbookStaging implements WorkbookStaging {
     }
     batch.sequence += 1;
     const path = join(batch.dir, `${String(batch.sequence)}.xlsx`);
-    const size = await refusingFile(fileName, () => this.stream(request, `${path}.part`));
+    const { bytes: size, sha256 } = await refusingFile(fileName, () =>
+      this.stream(request, `${path}.part`),
+    );
     try {
       await rename(`${path}.part`, path);
     } catch (error) {
       await rm(`${path}.part`, { force: true });
       throw snapshotWriteFailed('upload could not be stored', error);
     }
-    batch.files.push({ fileName, path, size });
+    batch.files.push({ fileName, path, size, sha256 });
     return { name: fileName, size };
   }
 
   async publish(id: string, request: PublishRequest): Promise<PublishedWorkbooks> {
     const batch = this.batches.get(id) ?? this.missing();
     const bound = AbortSignal.timeout(this.options.publishTimeoutMs ?? DEFAULT_PUBLISH_TIMEOUT_MS);
+    // The step the work is in, so the time bound names what took too long.
+    let step: WorkbookProgress['step'] = 'reading';
+    const onProgress = (progress: WorkbookProgress): void => {
+      step = progress.step;
+      request.onProgress?.(progress);
+    };
     const check = (): void => {
       if (request.signal.aborted) {
         throw request.signal.reason instanceof Error ? request.signal.reason : new Error('stopped');
       }
-      if (bound.aborted) throw uploadTimedOut('reading');
+      if (bound.aborted) throw uploadTimedOut(STEP_NAMES[step]);
     };
     try {
       return await publishWorkbooks(this.snapshots, {
         uploads: batch.files,
         ...{ projectId: request.projectId, uploadedAt: request.uploadedAt, check },
+        onProgress,
         limits: this.limits,
         signal: AbortSignal.any([request.signal, bound]),
       });
@@ -150,9 +173,9 @@ export class DiskWorkbookStaging implements WorkbookStaging {
   }
 
   /** The body to a `.part` file; whatever fails leaves no file. */
-  private async stream(request: ReceiveRequest, partPath: string): Promise<number> {
+  private async stream(request: ReceiveRequest, partPath: string): Promise<ReceivedUpload> {
     try {
-      return await receiveZip(
+      return await receiveUpload(
         {
           body: request.body,
           limitBytes: request.limitBytes,

@@ -1,7 +1,7 @@
 # ADR-011: Adopt a strict TypeScript toolchain with automated quality gates
 
 **Date**: 2026-10-09
-**Status**: Accepted
+**Status**: Amended
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -29,6 +29,12 @@ We choose option 1. One command, `npm run verify`, runs every gate in this order
 `deadcode` (knip), `test` (Vitest with coverage thresholds). The exact packages, versions and settings are in
 [environments-and-delivery.md](../environments-and-delivery.md) section 7 and the rules in
 [conventions.md](../conventions.md); a new runtime dependency still needs an ADR.
+
+**Amended 2026-10-28 (DEC-182).** The gates and their order are unchanged, and CI on every pull request still runs
+the whole of `npm run verify` on Windows and Linux; CI is the gate that decides a merge. Locally, builders and
+verifiers run `npm run verify:local`: the same static gates and only the tests related to the branch's changes
+(`vitest run --changed origin/develop`). Reason: with four builders and their verifiers on one machine, overlapping
+full runs took 20-40 minutes each and timed out under load.
 
 ## Rationale
 

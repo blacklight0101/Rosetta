@@ -163,6 +163,7 @@ RST-1523 is the providers code of a model the shipped list marks `noTools` (it c
     whole block with `test.describe('...', { tag: '@visual' }, () => { ... })`.
 - No real provider calls: the test setup sets `ROSETTA_TEST=1` and blocks outbound network; providers are the fake
   provider with recordings in `tests/recordings/` (ADR-008).
+  A recording for a new subject (P6-12: `planner-single-file.json`, the plan and the product requirements answers for a single-file bill splitter) is written by hand like the others, says so in its `description`, holds synthetic content only, and is read by a support harness in `tests/support/`; the card seed it plans from is a `*-plan-cards.ts` file beside `plan-cards.ts`.
 - Every port has a contract test suite that the real adapters and the fakes both pass.
 - No `.only`, no skipped tests on `main`, no snapshot for something an assertion can state. **(tool:
   `@vitest/eslint-plugin`)**
@@ -189,7 +190,8 @@ too. ESLint never formats (`eslint-config-prettier` last). **(tool)**
   wrote it, and a pull request opened by an agent ends with one line naming the tool; the exact forms are in `AGENTS.md`.
   No tool or model is fixed: Claude, Codex or any other agent uses its own line.
 - TDD order on every code card: `test:` commit(s) with failing tests, then `feat:`/`fix:`, then optional
-  `refactor:` (ADR-010).
+  `refactor:` (ADR-010). A `test:` commit may hold minimal placeholder production code (a stub) so that lint and
+  typecheck pass while the tests fail on behaviour (DEC-191).
 - Pull requests use the template, target `develop`, close their issue, and are merged with squash, by the orchestrator under `docs/orchestration/README.md` section 3.1 or, when labelled `needs-owner`, by the owner (DEC-96); the squash title is the
   pull request title in Conventional Commit form. A release pull request `develop` -> `main` is merged only by the
   owner, with a merge commit (DEC-175, orchestration protocol section 3.2).

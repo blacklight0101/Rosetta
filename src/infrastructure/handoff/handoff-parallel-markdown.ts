@@ -66,6 +66,7 @@ export function operationsLines(): string[] {
     '- Never edit a script while it is running.',
     "- Reserve a port range for each agent, and check the machine's excluded port ranges before you choose a port.",
     '- Keep a register of known flaky tests, each with an owner card.',
+    '- A pull request that changes the specification, the decisions or the agent files is labelled `needs-owner` and a person merges it. A builder never edits the task list on a task branch: the orchestrator records status in one batched pull request. Both are the default; a team without a status pull request replaces them by a decision it records.',
     `- Take shared identifiers (error codes, migration numbers, configuration keys, ports) only from the card; never choose one yourself. Cards that list the same file are never built at the same time: the roadmap lists the groups of cards that can run together (see [the roadmap](${handoffFiles.roadmap})).`,
     '',
   ];

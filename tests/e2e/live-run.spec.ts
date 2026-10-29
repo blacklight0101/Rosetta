@@ -2,12 +2,15 @@ import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import {
   agentPanel,
+  chooseSecondSuggestedAnswer,
   expectNotCovered,
+  openQuestion,
   openRunTab,
   openStartPage,
   runStatus,
   startAndOpenLiveRun,
   startUnderstand,
+  typeOwnAnswerWithKeyboard,
   valueOf,
 } from './support/live-run-page.js';
 import { expectMeterFromUsage } from './support/meter-usage.js';
@@ -158,21 +161,17 @@ test('RF-264 the overview of the application comes first on the page of a finish
   await expect(overview).toBeVisible();
 });
 
-test('RF-1007 an answer typed on the page is saved in answers.md and is there after a reload', async ({
+test('RF-645 RF-1007 a suggested answer, then an answer of your own, both chosen by keyboard, are saved in answers.md and there after a reload', async ({
   page,
 }) => {
   const answer = 'Yes, a sold-out item stays in the list, greyed out.';
-  const questionOf = () =>
-    page
-      .getByRole('region', { name: 'Open questions' })
-      .getByTestId('open-question')
-      .filter({ hasText: 'OQ-001' });
+  const questionOf = () => openQuestion(page, 'OQ-001');
   await page.goto(finishedRun);
   await openRunTab(page, 'Your questions');
   await expect(questionOf()).toContainText('Open');
-
-  await questionOf().getByLabel('Answer to OQ-001').fill(answer);
-  await questionOf().getByRole('button', { name: 'Save answer' }).click();
+  await chooseSecondSuggestedAnswer(questionOf());
+  await expectNoSeriousViolations(page);
+  await typeOwnAnswerWithKeyboard(questionOf(), answer);
 
   await expect(questionOf()).toContainText('Answer saved in answers.md.');
   await expectNoSeriousViolations(page);
@@ -197,9 +196,9 @@ test('RF-241 an Answered question can be reopened on the page, with no serious v
   );
   await page.goto(finishedRun);
   await openRunTab(page, 'Your questions');
-  const question = page
-    .getByRole('region', { name: 'Open questions' })
-    .getByTestId('open-question');
+  const region = page.getByRole('region', { name: 'Open questions' });
+  const question = region.getByTestId('open-question');
+  await region.getByTestId('answered-questions').getByText('Answered (1)').click(); // RF-646
   await expect(question).toContainText('Answered');
 
   await question.getByRole('button', { name: 'Reopen question' }).click();

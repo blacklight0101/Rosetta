@@ -13,12 +13,21 @@ import { signedInOf } from './request-actor.js';
 // - GET /api/runs/:runId/answers answers `{ questions }`: the questions the run added to the
 //   project's answers.md, each with its card id, question, context and the answer recorded so far
 //   (empty while it has none), its state, `Open` or `Answered` (RF-241), and `dependents`, how many
-//   cards other than open questions cite a file the question's cards cite (RF-1017).
+//   cards other than open questions cite a file the question's cards cite (RF-1017). A question with
+//   suggested answers (RF-645) also has `options` (answer, description, recommended; the recommended
+//   one first) and `chosen` (`''`, the number of the chosen option or `typed`); a question saved
+//   before DEC-178 has neither and keeps its free answer.
+//   The list is the one list of the project (RF-646, DEC-179): the questions of the run and of the
+//   Deepens linked to it, merged; a question raised in several runs also has `runs`, and one whose
+//   answer replaced an older one has `history` (runKey and answer). The answer also carries
+//   `deepens`, how many Deepens of the run's first understand run have ended, and `isDeepen`.
 // - PUT /api/runs/:runId/answers with `{ answers: [{ cardId, answer }] }` writes those answers into
 //   answers.md, keeps every other answer, and answers the run's questions as they are now. An
 //   answer is one line in the file (line breaks become spaces) and an empty one clears it. A card
 //   id the run has no question for answers 404 and writes nothing; a body that breaks the limits
-//   below answers 400 (RST-2000).
+//   below answers 400 (RST-2000), and so does a `chosen` option the question does not offer. An entry
+//   may carry `chosen`: the number (from 1) of the suggested answer chosen, whose own text is then
+//   written, or `typed` for the user's own answer (RF-645).
 // - POST /api/runs/:runId/answers/:cardId/reopen opens an Answered question again, so an answer edited
 //   after that is used by the next re-run with answers (RF-241), and answers the run's questions as
 //   they are now. A question that is still Open changes nothing; a card id the run has no question
@@ -38,6 +47,8 @@ export interface AnswerServices {
 const MAX_ANSWER = 4000;
 /** The most answers in one request. */
 const MAX_ANSWERS = 50;
+/** The most suggested answers a question can offer. */
+const MAX_OPTIONS = 20;
 const BODY_LIMIT_BYTES = 256 * 1024;
 
 const answersBody = z.strictObject({
@@ -46,24 +57,32 @@ const answersBody = z.strictObject({
       z.strictObject({
         cardId: z.string().regex(/^OQ-\d{1,6}$/u),
         answer: z.string().max(MAX_ANSWER),
+        // RF-645: the number of the suggested answer chosen, or `typed`; absent for a free answer.
+        chosen: z.union([z.int().min(1).max(MAX_OPTIONS), z.literal('typed')]).optional(),
       }),
     )
     .max(MAX_ANSWERS)
     .refine((list) => new Set(list.map((entry) => entry.cardId)).size === list.length),
 });
 
-function questionsView(questions: readonly StatedQuestion[]): {
+function questionsView(
+  questions: readonly StatedQuestion[],
+  family?: { readonly deepens: number; readonly isDeepen: boolean },
+): {
   readonly questions: readonly StatedQuestion[];
+  readonly deepens?: number;
+  readonly isDeepen?: boolean;
 } {
   return {
-    questions: questions.map(({ cardId, question, context, answer, state, dependents }) => ({
-      cardId,
-      question,
-      context,
-      answer,
-      state,
-      dependents,
-    })),
+    questions: questions.map(
+      ({ cardId, question, context, answer, state, dependents, options, chosen, ...kept }) => ({
+        ...{ cardId, question, context, answer, state, dependents },
+        ...(options === undefined ? {} : { options, chosen: chosen ?? '' }),
+        ...(kept.runs === undefined ? {} : { runs: kept.runs }),
+        ...(kept.history === undefined ? {} : { history: kept.history }),
+      }),
+    ),
+    ...family,
   };
 }
 
@@ -117,7 +136,10 @@ export function registerAnswerRoutes(server: FastifyInstance, services: AnswerSe
         runId: request.params.runId,
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
-      return reply.header('cache-control', 'no-store').send(questionsView(outcome.value));
+      const { deepens, isDeepen } = outcome.value;
+      return reply
+        .header('cache-control', 'no-store')
+        .send(questionsView(outcome.value.questions, { deepens, isDeepen }));
     },
   );
   server.put<{ Params: { runId: string } }>(
@@ -131,7 +153,11 @@ export function registerAnswerRoutes(server: FastifyInstance, services: AnswerSe
         runId: request.params.runId,
         answers: body.data.answers,
       });
-      if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
+      if (!outcome.ok) {
+        throw new RosettaError(
+          outcome.error === 'invalid-choice' ? ERROR_CODES.requestInvalid : ERROR_CODES.notFound,
+        );
+      }
       return reply.header('cache-control', 'no-store').send(questionsView(outcome.value));
     },
   );

@@ -1,9 +1,11 @@
+import type { SuggestedOption } from '../ports/answers-file.js';
 import type { ApiContract } from '../../domain/planning/api-contract.js';
 import type { MeaningCheck } from '../../domain/planning/claim-meaning.js';
 import type { CopiedExample } from '../../domain/planning/copied-example.js';
 import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
 import type { RestatedDecision } from '../../domain/planning/brief-restated.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
+import type { GrepRules } from '../../domain/planning/grep-rules.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
 import type { StackClash } from '../../domain/planning/stack-rules.js';
 import type { StyleCheck } from '../../domain/planning/style-rules.js';
@@ -47,6 +49,8 @@ interface UnansweredQuestion {
   readonly area: string;
   readonly cardId: string;
   readonly question: string;
+  /** RF-645: the card's suggested answers, the recommended one first; absent on an older card. */
+  readonly options?: readonly SuggestedOption[] | undefined;
 }
 
 /**
@@ -99,6 +103,8 @@ export interface HandoffPackage {
   readonly sources: readonly SourceCard[];
   readonly excluded: readonly ExcludedClaim[];
   readonly briefQuestions: readonly DefaultedQuestion[];
+  /** P6-31, RF-645: the Plan setup options of a brief question that took its default, by question id. */
+  readonly briefOptions?: Readonly<Record<string, readonly SuggestedOption[]>> | undefined;
   readonly openQuestions: readonly UnansweredQuestion[];
   /** The product requirements document (RF-621), checked against the supported cards. */
   readonly prd: PrdContent;
@@ -112,6 +118,8 @@ export interface HandoffPackage {
   readonly copiedExamples: readonly CopiedExample[];
   /** P3-101: the parts of the plan the package leaves out, listed in checks.md by area. */
   readonly leftOut: readonly LeftOutItem[];
+  /** P6-28, RF-640: the hard-rule greps and language aliases of the catalogue the plan run used. */
+  readonly grepRules: GrepRules;
   /** P5-43, RF-602: where the plan changed the meaning of its claims; checks.md lists it, the PRD marks proposed roles. */
   readonly meaning?: MeaningCheck | undefined;
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { codeBehindReference } from '../../../../../../src/infrastructure/scan/packs/csharp/webforms-directive.js';
+import { fastestOfMs, growthOf, growthStep, maxGrowth } from '../../../../../support/stopwatch.js';
 
 const page = (directive: string): string => `${directive}\n<html></html>\n`;
 
@@ -72,18 +73,44 @@ describe('WebForms code-behind link (part 2)', () => {
 
     expect(codeBehindReference('A.aspx', text)).toMatchObject({ to: 'A.aspx.cs' });
   });
+});
 
-  it('RNF-001 answers quickly on hostile input without backtracking', () => {
-    const hostile = `<%@ Page ${'a='.repeat(200_000)} %>`;
-    const unterminated = `<%@ Page CodeBehind="${'x'.repeat(2_000_000)}`;
-    const manyDirectives = '<%@ Import Namespace="N" %>\n'.repeat(100_000);
-    const start = performance.now();
+describe('WebForms code-behind link: linear time', () => {
+  // The reader looks at the first 65,536 characters only, so growth is measured below that cap (2 KB and
+  // 32 KB, 16 times, each hostile shape filling the whole input) and the full-head case gets a generous absolute
+  // bound that load cannot reach but quadratic work in 64 KB would.
+  const headLength = 65_536;
+  const hostileShapes: readonly (readonly [string, (length: number) => string])[] = [
+    ['a long run of attributes', (length) => `<%@ Page ${'a='.repeat(length / 2)} %>`],
+    ['an unterminated value', (length) => `<%@ Page CodeBehind="${'x'.repeat(length)}`],
+    ['many directives', (length) => '<%@ Import Namespace="N" %>\n'.repeat(length / 25)],
+  ];
 
-    expect(codeBehindReference('A.aspx', hostile)).toBeUndefined();
-    expect(codeBehindReference('A.aspx', unterminated)).toBeUndefined();
-    expect(codeBehindReference('A.aspx', manyDirectives)).toBeUndefined();
-    expect(performance.now() - start).toBeLessThan(1000);
-  });
+  it.each(hostileShapes)(
+    'RNF-001 %s is read in linear time without backtracking',
+    (_name, build) => {
+      const { ratio, smallMs, largeMs } = growthOf(
+        (text) => codeBehindReference('A.aspx', text),
+        build(32_768 / growthStep),
+        build(32_768),
+      );
+
+      expect(
+        ratio,
+        `growth for 16x the input (2 KB ${smallMs.toFixed(3)} ms, 32 KB ${largeMs.toFixed(3)} ms)`,
+      ).toBeLessThan(maxGrowth);
+    },
+  );
+
+  it.each(hostileShapes)(
+    'RNF-001 %s fills the 64 KB head within a generous bound',
+    (_name, build) => {
+      const text = build(headLength);
+
+      expect(codeBehindReference('A.aspx', text)).toBeUndefined();
+      expect(fastestOfMs(() => codeBehindReference('A.aspx', text), 3)).toBeLessThan(3_000);
+    },
+  );
 });
 
 describe('WebForms code-behind link: hostile values', () => {

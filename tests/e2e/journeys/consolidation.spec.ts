@@ -79,7 +79,7 @@ test('RF-250 RF-262 the cards two areas wrote about one entity and one rule are 
     'cards/ENT/ENT-001.md',
   ]);
 
-  await buildReport(page);
+  await buildReport(page, 30_000);
   await page.getByRole('link', { name: 'Open the report as Markdown' }).click();
   const report = page.locator('body');
   await expect(report).toContainText('2 cards, 5 claims: 4 Supported, 1 Rejected.');

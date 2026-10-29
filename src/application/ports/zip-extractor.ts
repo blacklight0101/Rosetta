@@ -15,4 +15,10 @@ export interface ZipExtraction {
 // RST-19xx range and leave no destination folder behind. The upload use case (RF-128) calls it.
 export interface ZipExtractor {
   extract(zipPath: string, targetDir: string, signal: AbortSignal): Promise<ZipExtraction>;
+  /**
+   * RF-159, DEC-188: whether the files the extraction would keep include a workbook, judged from the
+   * central directory alone (nothing is written). The same refusals as `extract` for a zip that
+   * cannot be taken.
+   */
+  holdsWorkbooks(zipPath: string): Promise<boolean>;
 }

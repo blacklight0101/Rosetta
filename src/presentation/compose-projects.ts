@@ -128,6 +128,12 @@ function uploadsOf(
   const uploads = createUploadStore(dataDir, reservation, limits);
   const limitBytes = uploadLimitBytes(parts.uploadMaxMb);
   const auditLog = new PgAuditLog(pool, masker);
+  const batchClock = parts.batchClock ?? clock;
+  const workbookBatches = new WorkbookBatches({
+    ...{ projects, runs, logger, auditLog, uploads, limitBytes },
+    ...{ clock: batchClock, ids: new TimestampIdGenerator(clock) },
+    staging: new DiskWorkbookStaging({ dataDir, reservation, limits }),
+  });
   return {
     workbookRenderer: new WorkbookRendererCheck({
       uploads,
@@ -136,18 +142,9 @@ function uploadsOf(
     }),
     storeUpload: new StoreUpload({
       ...{ projects, runs, logger, clock, auditLog },
-      uploads,
-      limitBytes,
+      ...{ uploads, limitBytes, batches: workbookBatches },
     }),
-    workbookBatches: new WorkbookBatches({
-      ...{ projects, runs, logger, auditLog, uploads, limitBytes },
-      clock: parts.batchClock ?? clock,
-      staging: new DiskWorkbookStaging({
-        dataDir,
-        reservation,
-        limits,
-      }),
-    }),
+    workbookBatches,
   };
 }
 
@@ -203,7 +200,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       ...{ priceTable: parts.priceTable, models: parts.models },
       ...{ cards: keptRunCards(writer), priorCards: keptPriorCards(writer) },
       ...{ users: new PgUserRepository(pool), answers: new FileAnswersFile({ writer, masker }) },
-      serverSettings: settings,
+      ...{ serverSettings: settings, manifests: new FileRunManifestStore({ writer, masker }) },
       ...{ keys: new PgProviderKeyRepository(pool), serverKeys: parts.serverKeys },
       catalogue: () => Promise.resolve(catalogue),
       ...plannerPrompts(parts.promptsFolder),

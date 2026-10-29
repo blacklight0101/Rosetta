@@ -13,6 +13,16 @@ const questionSchema = z.looseObject({
   state: z.enum(['Open', 'Answered']),
   /** RF-1017: how many cards other than open questions cite a file the question's cards cite. */
   dependents: z.number().int().min(0),
+  /** RF-645: the suggested answers, the recommended one first; none for a question saved before DEC-178. */
+  options: z
+    .array(z.looseObject({ answer: z.string(), description: z.string(), recommended: z.boolean() }))
+    .optional(),
+  /** RF-645: `''` while open, the number of the chosen option, or `typed`. */
+  chosen: z.string().optional(),
+  /** RF-646: the folders of the runs whose cards raised the question, when more than one did. */
+  runs: z.array(z.string()).optional(),
+  /** RF-646: the older answers a newer one replaced, kept in answers.md. */
+  history: z.array(z.looseObject({ runKey: z.string(), answer: z.string() })).optional(),
 });
 
 /** DEC-154: a question waits for the user while it is Open and has no saved answer. */
@@ -25,6 +35,15 @@ const questionsSchema = z
 
 export type OpenQuestionRow = z.output<typeof questionSchema>;
 
+/** RF-646: the one list of the project and what the page needs to know about the run's Deepens. */
+const answersSchema = z.looseObject({
+  questions: z.array(questionSchema),
+  deepens: z.number().int().min(0).default(0),
+  isDeepen: z.boolean().default(false),
+});
+
+export type AnswersRead = z.output<typeof answersSchema>;
+
 const countSchema = z
   .looseObject({ count: z.number().int().min(0) })
   .transform((body) => body.count);
@@ -36,8 +55,8 @@ export function getAnswers(
   client: ApiClient,
   runId: string,
   signal: AbortSignal,
-): Promise<ApiResult<readonly OpenQuestionRow[]>> {
-  return client.request({ method: 'GET', path: pathOf(runId), schema: questionsSchema, signal });
+): Promise<ApiResult<AnswersRead>> {
+  return client.request({ method: 'GET', path: pathOf(runId), schema: answersSchema, signal });
 }
 
 /** RF-241: how many questions have an answer and are still Open; a re-run with answers uses them. */
@@ -59,7 +78,12 @@ export function getAnsweredCount(
 export function saveAnswer(
   client: ApiClient,
   runId: string,
-  answer: { readonly cardId: string; readonly answer: string },
+  answer: {
+    readonly cardId: string;
+    readonly answer: string;
+    /** RF-645: the number (from 1) of the suggested answer chosen, or `typed`. */
+    readonly chosen?: number | 'typed';
+  },
 ): Promise<ApiResult<readonly OpenQuestionRow[]>> {
   return client.request({
     method: 'PUT',

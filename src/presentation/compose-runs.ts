@@ -170,9 +170,11 @@ function runServices(service: ServiceParts): RunServices {
       ...{ pool: parts.pool, logger: parts.logger, clock: parts.clock, masker: parts.masker },
       ...{ writer, runs, manifests, history: log, scans, answers, dataDir: parts.dataDir },
     }),
-    listAnswers: new ListAnswers({ runs, answers, cards }),
-    recordAnswers: new RecordAnswers({ runs, answers, cards }),
-    reopenQuestion: new ReopenQuestion({ runs, answers, cards, logger: parts.logger }),
+    listAnswers: new ListAnswers({ runs, answers, cards, manifests }),
+    recordAnswers: new RecordAnswers({ runs, answers, cards, manifests }),
+    reopenQuestion: new ReopenQuestion({
+      ...{ runs, answers, cards, manifests, logger: parts.logger },
+    }),
     countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
     ...composeRunReads(runs, writer),
     // RF-608, RF-609: the options of Plan setup, asked of the planner for a project.

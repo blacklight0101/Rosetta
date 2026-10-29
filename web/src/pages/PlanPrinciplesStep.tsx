@@ -1,7 +1,7 @@
 import type { JSX } from 'preact';
 import type { Catalogue, CatalogueEntry } from '../api/plan-schemas.js';
 import { Field } from '../components/Field.js';
-import { togglePrinciple } from '../lib/plan-setup/choices.js';
+import { togglePrinciple, typePrinciple } from '../lib/plan-setup/choices.js';
 import type { Draft } from '../lib/plan-setup/draft.js';
 import { GROUP_NAMES, STYLE_GROUP } from '../lib/plan-setup/steps.js';
 import { PlanStepCard } from './PlanStepCard.js';
@@ -29,7 +29,7 @@ function groupsOf(
 
 // RF-606
 export function PlanPrinciplesStep(props: StepProps): JSX.Element {
-  const { draft, catalogue, change } = props;
+  const { draft, catalogue, change, problems } = props;
   const entries = principlesOf(catalogue);
   const on = entries.filter((entry) => entry.defaultOn).length;
   return (
@@ -40,21 +40,38 @@ export function PlanPrinciplesStep(props: StepProps): JSX.Element {
       {groupsOf(entries).map(([group, members]) => (
         <fieldset key={group} class="rst-plan-group">
           <legend>{GROUP_NAMES[group] ?? group}</legend>
-          {members.map((entry) => (
-            <Field
-              key={entry.id}
-              kind="checkbox"
-              id={`principle-${entry.id}`}
-              label={entry.defaultOn ? `${entry.title} (Recommended)` : entry.title}
-              help={entry.rule}
-              checked={draft.principles.includes(entry.id)}
-              onChange={(checked) => {
-                change(togglePrinciple(draft, catalogue, entry.id, checked));
-              }}
-            />
-          ))}
+          {[...members.filter((e) => e.defaultOn), ...members.filter((e) => !e.defaultOn)].map(
+            (entry) => (
+              <Field
+                key={entry.id}
+                kind="checkbox"
+                id={`principle-${entry.id}`}
+                label={entry.defaultOn ? `${entry.title} (Recommended)` : entry.title}
+                help={entry.rule}
+                checked={draft.principles.includes(entry.id)}
+                onChange={(checked) => {
+                  change(togglePrinciple(draft, catalogue, entry.id, checked));
+                }}
+              />
+            ),
+          )}
         </fieldset>
       ))}
+      <Field
+        kind="text"
+        id="own-principles-text"
+        label="Your own answer"
+        help="A principle of your own, if the catalogue misses it. Saved with the brief."
+        value={draft.typed['principles'] ?? ''}
+        error={
+          problems['typed.principles'] === undefined
+            ? undefined
+            : { message: problems['typed.principles'] }
+        }
+        onInput={(text) => {
+          change(typePrinciple(draft, text));
+        }}
+      />
       <p class="rst-plan-note">{`Catalogue ${String(catalogue.version)}. Its curriculum follows the Master en Desarrollo con IA (BIG School); entries are written by Rosetta.`}</p>
     </PlanStepCard>
   );

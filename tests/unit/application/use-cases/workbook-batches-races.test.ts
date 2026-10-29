@@ -17,10 +17,7 @@ async function opened(test: Awaited<ReturnType<typeof batchCase>>): Promise<stri
 }
 
 const finishOf = (test: Awaited<ReturnType<typeof batchCase>>, batchId: string) =>
-  test.useCase.finish({
-    ...{ actor: amy, projectId: test.project.id, batchId, ip: '203.0.113.7' },
-    signal: new AbortController().signal,
-  });
+  test.useCase.finish({ actor: amy, projectId: test.project.id, batchId, ip: '203.0.113.7' });
 
 describe('WorkbookBatches a finish that ends after its batch was cancelled', () => {
   it('RF-150 leaves the batch opened since in place: its files are taken and its staging kept', async () => {
@@ -36,17 +33,51 @@ describe('WorkbookBatches a finish that ends after its batch was cancelled', () 
     await vi.waitFor(() => {
       expect(test.staging.published).toEqual([first]);
     });
-    await test.useCase.cancel({ actor: amy, projectId: test.project.id, batchId: first });
-    const second = await opened(test);
-
+    const cancelling = test.useCase.cancel({
+      ...{ actor: amy, projectId: test.project.id, batchId: first },
+    });
+    await new Promise((resolve) => setImmediate(resolve));
     release();
+    await cancelling;
     await finishing;
+    const second = await opened(test);
     const file = await test.useCase.receive(
       fileRequest(test.project, second, { fileName: 'Two.xlsx', body: bodyOf(5) }),
     );
 
     expect(file.ok).toBe(true);
     expect(test.staging.discarded).not.toContain(second);
+  });
+});
+
+describe('WorkbookBatches a cancel that comes while the source is being attached', () => {
+  it('RF-159 waits for the attach and answers the stored state, so it never says nothing was published', async () => {
+    const test = await batchCase();
+    const batchId = await opened(test);
+    await test.useCase.receive(fileRequest(test.project, batchId));
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const attach = test.projects.attachUpload.bind(test.projects);
+    const attaching = vi.spyOn(test.projects, 'attachUpload').mockImplementation(async (input) => {
+      await held;
+      return attach(input);
+    });
+    await finishOf(test, batchId);
+    await vi.waitFor(() => {
+      expect(attaching).toHaveBeenCalledTimes(1);
+    });
+
+    const cancelling = test.useCase.cancel({ actor: amy, projectId: test.project.id, batchId });
+    release();
+    const cancelled = await cancelling;
+
+    expect(cancelled).toMatchObject({
+      ok: true,
+      value: { cancelled: false, state: { batchId, phase: 'stored' } },
+    });
+    expect((await test.projects.find(amy.userId, test.project.id))?.upload?.workbooks).toBe(1);
   });
 });
 

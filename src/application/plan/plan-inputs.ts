@@ -8,7 +8,8 @@ import type { UploadFacts } from '../../domain/sources/upload-facts.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { AnswersFile, RecordedQuestion } from '../ports/answers-file.js';
 import type { PriorCards } from '../ports/prior-cards.js';
-import { consolidatedQuestions } from '../understand/consolidated-questions.js';
+import { projectQuestions, recordedOf } from '../answers/project-questions.js';
+import { noManifests } from '../answers/run-family.js';
 import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunCards } from '../ports/run-cards.js';
@@ -96,7 +97,7 @@ export async function planInputs(
   run: Pick<Run, 'userId' | 'projectId'>,
   /** The id of the run to plan from, as an option records it; anything but text names none. */
   sourceRunId?: unknown,
-  /** RF-131: where the zip of an uploaded project is read from; the plan estimate needs none. */
+  /** RF-646: finds the Deepens of the source run; RF-131: where the zip of an uploaded project is read from. */
   manifests?: Pick<RunManifestStore, 'read'>,
 ): Promise<Result<PlanInputs, PlanInputProblem>> {
   const project = await deps.projects.find(run.userId, run.projectId);
@@ -116,12 +117,13 @@ export async function planInputs(
   // P5-32: a reference to a merged-away card id points at the card that was kept.
   const cards = resolveCardAliases(await deps.cards.cardsOf(scopeOf(sourceRun)));
   if (supportedCards(cards).length === 0) return err(problems.claims);
-  const filed = await deps.answers.questionsOf(ref, sourceRun.runKey);
-  const questions = consolidatedQuestions(
-    filed,
-    // Only the open questions' cards say what consolidation merged (P5-22).
-    await deps.priorCards.cardsOf(ref, sourceRun.runKey, ['OQ']),
+  // RF-646, DEC-179: the project's one list of questions, the source run's and its Deepens'.
+  const listed = await projectQuestions(
+    { ...deps, manifests: manifests ?? noManifests },
+    sourceRun,
+    { lean: true },
   );
+  const questions = listed.questions.map(recordedOf);
   const upload =
     project.sourceKind === 'github'
       ? undefined

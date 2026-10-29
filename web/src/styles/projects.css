@@ -99,3 +99,43 @@
 .rst-wb__state[data-state='sent'] {
   color: var(--rst-ink);
 }
+
+/*
+ * P5-46, RF-159, design-system.md section 14 (Projects, Excel workbooks): the progress of the server
+ * while it reads the workbooks of a batch: the steps in order, the one at work marked, and the line
+ * with the workbook, the sheet, the cells and the time. Tokens only.
+ */
+.rst-wb__progress {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--rst-sp-3);
+}
+
+.rst-wb__steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-2) var(--rst-sp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-wb__steps li {
+  color: var(--rst-ink-soft);
+}
+
+.rst-wb__steps li[data-state='done']::before {
+  content: '\2713\00a0';
+}
+
+.rst-wb__steps li[data-state='current'] {
+  color: var(--rst-ink);
+  font-weight: 600;
+}
+
+.rst-wb__detail {
+  margin: 0;
+  font-size: var(--rst-fs-sm);
+}

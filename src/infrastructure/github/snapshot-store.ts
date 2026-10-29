@@ -20,12 +20,9 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { isWorkbookSnapshotKey } from '../../domain/sources/workbook-key.js';
 import { parseSnapshotRecord } from './snapshot-record.js';
 import { errorCode, snapshotWriteFailed } from './snapshot-errors.js';
+import { summarizeTree, type HashedFile, type TreeSummary } from './tree-summary.js';
 
-export interface TreeSummary {
-  readonly fileCount: number;
-  readonly totalBytes: number;
-  readonly snapshotHash: string;
-}
+export type { TreeSummary };
 
 const PARTIAL_PREFIX = '.partial-';
 const FILES = 'files';
@@ -189,17 +186,17 @@ export class SnapshotStore {
   inspect(filesDir: string): Promise<TreeSummary> {
     return onDisk('tree could not be read', async () => {
       const realRoot = await realpath(filesDir);
-      const paths = (await listFiles(filesDir, realRoot)).sort((a, b) =>
-        a < b ? -1 : a > b ? 1 : 0,
-      );
-      const hash = createHash('sha256');
-      let totalBytes = 0;
+      const paths = await listFiles(filesDir, realRoot);
+      const files: HashedFile[] = [];
       for (const path of paths) {
         const absolute = join(filesDir, path);
-        totalBytes += (await stat(absolute)).size;
-        hash.update(`${path}\0${await hashFile(absolute)}\n`);
+        files.push({
+          path,
+          sha256: await hashFile(absolute),
+          bytes: (await stat(absolute)).size,
+        });
       }
-      return { fileCount: paths.length, totalBytes, snapshotHash: `sha256:${hash.digest('hex')}` };
+      return summarizeTree(files);
     });
   }
 

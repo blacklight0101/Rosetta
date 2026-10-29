@@ -232,3 +232,21 @@ describe('YazlArchiveWriter and large runs', () => {
     expect(stream.destroyed).toBe(true);
   });
 });
+
+describe('YazlArchiveWriter compression', () => {
+  it('RF-508 stores a minified script without deflate and deflates the text files, bytes intact', async () => {
+    const minified = Buffer.from(`${'var a=1;'.repeat(5000)}\n`);
+    await seed(scope, {
+      'report/mermaid.min.js': minified,
+      'spec.md': '# Specification\n'.repeat(100),
+    });
+
+    const entries = await archived('run');
+
+    const byName = new Map(entries.map((entry) => [entry.name, entry]));
+    const script = byName.get(`${scope.runKey}/report/mermaid.min.js`);
+    expect(script?.method).toBe(0);
+    expect(script?.data.equals(minified)).toBe(true);
+    expect(byName.get(`${scope.runKey}/spec.md`)?.method).toBe(8);
+  });
+});

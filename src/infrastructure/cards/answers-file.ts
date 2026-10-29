@@ -4,22 +4,19 @@ import type {
   AnswersFile,
   OpenQuestion,
   ProjectRef,
+  MergeEdit,
   RecordedQuestion,
 } from '../../application/ports/answers-file.js';
 import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
+import { questionWords } from '../../application/understand/open-questions.js';
 import { KeyedQueue } from '../../application/support/keyed-queue.js';
-import { err, ok, type Result } from '../../domain/errors/result.js';
+import { ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { projectPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import {
-  answeredQuestionsOf,
-  lastLineEndOf,
-  linesOf,
-  markOf,
-  questionsOfRun,
-  withAnswers,
-} from './answers-sections.js';
+import { lastLineEndOf, linesOf, markOf, optionsLineOf } from './answers-section-parse.js';
+import { withMerges } from './answers-merge.js';
+import { answeredQuestionsOf, questionsOfRun, withAnswers } from './answers-sections.js';
 
 // RF-240, DEC-98, data-model.md section 3.16: the project's `answers.md`. A run adds one section per
 // open question it found that the file does not hold yet (matched by the question text), after the
@@ -43,12 +40,18 @@ function fileOf(project: ProjectRef): WorkspaceFile {
   return { userId: project.userId, path: `${projectPath(project.projectId)}/answers.md` };
 }
 
-/** The questions the file already holds, as written in their headings. */
+/** RF-646, Q-52: two questions that ask the same have the same words, whatever the case and marks. */
+function askedBy(text: string): string {
+  const words = questionWords(text);
+  return words === '' ? text : words;
+}
+
+/** The questions the file already holds: as written, and by the words they ask. */
 function questionsIn(text: string): Set<string> {
   return new Set(
     linesOf(text).flatMap((line) => {
       const found = heading.exec(line);
-      return found === null ? [] : [found[1] ?? ''];
+      return found === null ? [] : [found[1] ?? '', askedBy(found[1] ?? '')];
     }),
   );
 }
@@ -72,13 +75,17 @@ export class FileAnswersFile implements AnswersFile {
     return this.queue.run(`${file.userId}/${file.path}`, async () => {
       const existing = await this.read(file);
       const known = questionsIn(existing);
+      const added = new Set<string>();
       const { mark, body } = markOf(existing);
       const end = lastLineEndOf(body);
       const sections = questions.flatMap((question) => {
         const text = this.line(question.question);
-        const held = question.survivor === true ? hasId(existing, question) : known.has(text);
+        const held =
+          question.survivor === true
+            ? hasId(existing, question)
+            : added.has(text) || known.has(text) || known.has(askedBy(text));
         if (held) return [];
-        known.add(text);
+        added.add(text);
         return [this.section(question, text, end)];
       });
       if (sections.length === 0) return;
@@ -102,27 +109,55 @@ export class FileAnswersFile implements AnswersFile {
     project: ProjectRef,
     runKey: string,
     answers: readonly AnswerEntry[],
-  ): Promise<Result<readonly RecordedQuestion[], 'unknown-question'>> {
+  ): Promise<Result<readonly RecordedQuestion[], 'unknown-question' | 'invalid-choice'>> {
     const file = fileOf(project);
     return this.queue.run(`${file.userId}/${file.path}`, async () => {
       const existing = await this.read(file);
       const lines = answers.map((entry) => ({ ...entry, answer: this.line(entry.answer) }));
       const text = withAnswers(existing, runKey, lines);
-      if (text === undefined) return err('unknown-question');
+      if (!text.ok) return text;
+      if (text.value !== existing) await this.write(file, text.value);
+      return ok(questionsOfRun(text.value, runKey));
+    });
+  }
+
+  // RF-646
+  keepMerge(project: ProjectRef, edits: readonly MergeEdit[]): Promise<void> {
+    const file = fileOf(project);
+    return this.queue.run(`${file.userId}/${file.path}`, async () => {
+      const existing = await this.read(file);
+      const masked = edits.map((edit) => ({
+        ...edit,
+        history: edit.history.map((each) => ({ ...each, answer: this.line(each.answer) })),
+      }));
+      const text = withMerges(existing, masked);
       if (text !== existing) await this.write(file, text);
-      return ok(questionsOfRun(text, runKey));
     });
   }
 
   /** One section, its lines joined with the line end of the file's last line. */
   private section(question: OpenQuestion, text: string, end: string): string {
+    const options = this.optionsLine(question);
     return [
       `## ${question.cardId} - ${text}`,
       '',
       `- Card: runs/${question.runKey}/cards/OQ/${question.cardId}.md`,
       `- Context: ${this.line(question.context)}`,
+      ...(options === '' ? [] : [`- Options: ${options}`, '- Chosen:']),
       '- Answer:',
     ].join(end);
+  }
+
+  /** RF-645: the suggested answers of the question on one line, masked; '' when it has none. */
+  private optionsLine(question: OpenQuestion): string {
+    const options = (question.options ?? [])
+      .map((option) => ({
+        ...option,
+        answer: this.line(option.answer),
+        description: this.line(option.description),
+      }))
+      .filter((option) => option.answer !== '');
+    return optionsLineOf(options);
   }
 
   /** Masked text on one line: masked as written, then its whitespace collapsed (P2-42). */

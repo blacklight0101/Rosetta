@@ -168,6 +168,17 @@
   border-bottom: 1px solid var(--rst-rule);
 }
 
+.rst-plan-layer__options {
+  display: grid;
+  gap: 6px;
+}
+
+.rst-plan-question {
+  display: grid;
+  gap: var(--rst-sp-3);
+  padding-bottom: var(--rst-sp-4);
+}
+
 .rst-plan-layer__option {
   display: flex;
   gap: 8px;
@@ -182,7 +193,7 @@
 
 @media (min-width: 800px) {
   .rst-plan-layer {
-    grid-template-columns: 160px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
+    grid-template-columns: 160px minmax(0, 1.6fr) minmax(0, 1fr);
     align-items: start;
   }
 }

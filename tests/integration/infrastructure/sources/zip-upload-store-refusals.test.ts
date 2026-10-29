@@ -164,6 +164,7 @@ interface Seen {
 /** An extractor that waits until it is aborted, and remembers whether its destination existed. */
 function hangingExtractor(seen: Seen): ZipExtractor {
   return {
+    holdsWorkbooks: () => Promise.resolve(false),
     async extract(_zipPath, targetDir, signal) {
       seen.target = targetDir;
       seen.existed = await listTree(targetDir).then(

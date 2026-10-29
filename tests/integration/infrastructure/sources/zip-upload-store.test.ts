@@ -83,10 +83,9 @@ describe('ZipUploadStore what is counted and kept', () => {
   });
 });
 describe('ZipUploadStore the same content stored again', () => {
-  it('RF-128 the newest upload of the same content names the snapshot, and it stays read-only', async () => {
+  it('RF-128 the newest upload of the same content names the snapshot once kept, and it stays read-only', async () => {
     const store = storeIn(root.path);
     const first = await store.store(requestOf(bodyOf(await sampleZip())));
-
     const second = await store.store(
       requestOf(bodyOf(await sampleZip()), {
         fileName: 'Renamed.zip',
@@ -94,7 +93,8 @@ describe('ZipUploadStore the same content stored again', () => {
       }),
     );
 
-    expect(second.info).toMatchObject({ fileName: 'Renamed.zip' });
+    await store.rewriteInfo(second.key, second.info);
+
     expect(await store.read(first.key)).toMatchObject({
       fileName: 'Renamed.zip',
       uploadedAt: '2026-10-20T09:00:00.000Z',
@@ -112,6 +112,28 @@ describe('ZipUploadStore the same content stored again', () => {
 
     expect(second.key).not.toBe(first.key);
     expect(await sourcesEntries(root.path)).toEqual([first.key, second.key].sort());
+  });
+});
+
+describe('ZipUploadStore the same content stored again, before it is kept', () => {
+  it('RF-159 storing the same content again creates nothing and leaves the published snapshot as it was', async () => {
+    const store = storeIn(root.path);
+    const first = await store.store(requestOf(bodyOf(await sampleZip())));
+    const before = await readFile(join(root.path, 'sources', first.key, 'snapshot.json'), 'utf8');
+
+    const second = await store.store(
+      requestOf(bodyOf(await sampleZip()), {
+        fileName: 'Renamed.zip',
+        uploadedAt: '2026-10-20T09:00:00.000Z',
+      }),
+    );
+
+    expect(first.created).toBe(true);
+    expect(second).toMatchObject({ key: first.key, created: false });
+    expect(second.info).toMatchObject({ fileName: 'Renamed.zip' });
+    expect(await readFile(join(root.path, 'sources', first.key, 'snapshot.json'), 'utf8')).toBe(
+      before,
+    );
   });
 });
 

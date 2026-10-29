@@ -41,7 +41,17 @@ export interface BriefAnswers {
     offered?: readonly string[] | undefined;
   }[];
   readonly context?: Readonly<Record<string, unknown>>;
-  readonly buildMethod?: { readonly aiAssisted: boolean };
+  /** RF-645: the option that answered each question, or "typed". */
+  readonly chosen?: Readonly<Record<string, string>>;
+  /** RF-645: the text of a typed answer, by question id. */
+  readonly typed?: Readonly<Record<string, string>>;
+  readonly buildMethod?: {
+    readonly aiAssisted: boolean;
+    readonly agentTool?: { readonly kind: string; readonly name?: string | undefined };
+    readonly models?: Readonly<Record<string, string>>;
+    /** P6-22: the tier models that run locally; a key only when true. */
+    readonly local?: Readonly<Record<string, boolean>>;
+  };
 }
 
 // RF-606

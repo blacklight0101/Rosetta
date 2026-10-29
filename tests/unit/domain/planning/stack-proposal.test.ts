@@ -131,3 +131,25 @@ describe('proposeFor: the migration strategy against the kind', () => {
     expect(proposal.fit.seam).toBeNull();
   });
 });
+
+describe('proposeFor: the strategy fit with an own migration answer (DEC-184)', () => {
+  const own = briefOf({ typed: { migration: 'Move one module a week behind a feature flag.' } });
+
+  it('RF-645 the default strategy is checked only as the reference: no seam record, a finding instead', () => {
+    const { proposal, brief } = proposeFor(own, desktop, stack);
+
+    expect(brief.migration).toBe('strangler-fig');
+    expect(proposal.fit.seam).toBeNull();
+    expect(proposal.fit.changedFrom).toBeNull();
+    expect(proposal.fit.finding).toContain('no request reaches it');
+    expect(proposal.fit.finding).toContain('database');
+  });
+
+  it('RF-645 with no database the default is not changed to a rewrite and the misfit is a finding', () => {
+    const { proposal, brief } = proposeFor(own, desktopNoDatabase, stack);
+
+    expect(brief.migration).toBe('strangler-fig');
+    expect(proposal.fit.changedFrom).toBeNull();
+    expect(proposal.fit.finding).toContain('no shared database');
+  });
+});

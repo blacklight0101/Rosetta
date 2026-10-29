@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
+import { bashCommand } from '../../support/bash.js';
 import { useTempRoot } from '../../support/temp-root.js';
 
 // DEC-29, DEC-104, RF-1300, P1-55: scripts/release-tags.sh, the step of release.yml that works out
@@ -48,7 +49,8 @@ async function tags(refType: string, refName: string, sha: string): Promise<Outc
     ...{ IMAGE: image, REF_TYPE: refType, REF_NAME: refName, GITHUB_SHA: sha },
     GITHUB_OUTPUT: output,
   };
-  const code = await run('bash', ['--noprofile', '--norc', '-eo', 'pipefail', script], {
+  const shell = await bashCommand();
+  const code = await run(shell, ['--noprofile', '--norc', '-eo', 'pipefail', script], {
     cwd: root.path,
     env,
   }).then(

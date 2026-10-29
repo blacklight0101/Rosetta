@@ -5,7 +5,11 @@ import type {
   UploadStore,
 } from '../../src/application/ports/upload-store.js';
 import type { WorkbookEntry } from '../../src/domain/sources/source.js';
-import type { LeftOut, WorkbookSummaryLine } from '../../src/application/ports/workbook-staging.js';
+import type {
+  LeftOut,
+  WorkbookProgress,
+  WorkbookSummaryLine,
+} from '../../src/application/ports/workbook-staging.js';
 import { uploadSnapshotKey } from '../../src/domain/sources/upload-name.js';
 
 // RF-128: an upload store for use case tests. It records what it was asked, answers a stored upload
@@ -14,10 +18,22 @@ import { uploadSnapshotKey } from '../../src/domain/sources/upload-name.js';
 export class FakeUploadStore implements UploadStore {
   readonly requests: UploadRequest[] = [];
   readonly removed: string[] = [];
+  /** RF-128: the snapshots already stored; a store of one of them did not create it. */
+  readonly existing = new Set<string>();
+  /** RF-128: the keys whose description the newest upload of the same content rewrote. */
+  readonly renamed: string[] = [];
   readonly removedProjects: string[] = [];
   failWith: Error | undefined;
+  /** The reports `store` makes to the request's `onProgress`, before it waits for the gate (RF-159). */
+  reports: WorkbookProgress[] = [];
   /** When set, `store` waits for it. */
   gate: Promise<void> | undefined;
+  /** When set, `remove` waits for it: a deletion that is still going on (RF-159). */
+  removeGate: Promise<void> | undefined;
+  /** RF-159: once the gate lets go, a store whose request was aborted stops, as the real one does. */
+  stopsOnAbort = false;
+  /** RF-159, DEC-188: the store tells its caller that the zip holds workbooks, as the real one does. */
+  announcesWorkbooks = false;
   hash = `sha256:${'ab'.repeat(32)}`;
   zipBytes = 1234;
   /** RF-152: the workbooks the zip held and the ones left out; none by default, as for most zips. */
@@ -25,8 +41,9 @@ export class FakeUploadStore implements UploadStore {
 
   async store(request: UploadRequest): Promise<StoredUpload> {
     this.requests.push(request);
-    if (this.gate !== undefined) await this.gate;
-    if (this.failWith !== undefined) throw this.failWith;
+    // RF-159, DEC-188: a zip that holds workbooks is told to the caller before the heavy work starts.
+    if (this.announcesWorkbooks) await request.onWorkbooks?.();
+    await this.work(request);
     const info: UploadSnapshotInfo = {
       kind: 'upload',
       fileName: request.fileName,
@@ -39,9 +56,13 @@ export class FakeUploadStore implements UploadStore {
         ? {}
         : { workbooks: this.held.entries }),
     };
+    const key = uploadSnapshotKey(request.projectId, this.hash);
+    const created = !this.existing.has(key);
+    this.existing.add(key);
     return {
-      key: uploadSnapshotKey(request.projectId, this.hash),
+      key,
       info,
+      created,
       zipBytes: this.zipBytes,
       skipped: 3,
       ...(this.held === undefined
@@ -50,13 +71,41 @@ export class FakeUploadStore implements UploadStore {
     };
   }
 
+  /** The reports, the wait for the gate, a stop by the request and a failure the test asked for. */
+  private async work(request: UploadRequest): Promise<void> {
+    for (const report of this.reports) request.onProgress?.(report);
+    // A real store stops at once when its request is aborted, so the Cancel that waits for it is answered.
+    if (this.gate !== undefined) await Promise.race([this.gate, this.stopped(request)]);
+    if (this.stopsOnAbort && request.signal.aborted) {
+      throw request.signal.reason instanceof Error ? request.signal.reason : new Error('stopped');
+    }
+    if (this.failWith !== undefined) throw this.failWith;
+  }
+
+  /** Settles when the request is aborted, if the store stops on abort; never otherwise. */
+  private stopped(request: UploadRequest): Promise<void> {
+    if (!this.stopsOnAbort) return new Promise<void>(() => undefined);
+    return new Promise<void>((resolve) => {
+      if (request.signal.aborted) resolve();
+      request.signal.addEventListener('abort', () => {
+        resolve();
+      });
+    });
+  }
+
   read(): Promise<undefined> {
     return Promise.resolve(undefined);
   }
 
-  remove(key: string): Promise<boolean> {
+  rewriteInfo(key: string): Promise<void> {
+    this.renamed.push(key);
+    return Promise.resolve();
+  }
+
+  async remove(key: string): Promise<boolean> {
     this.removed.push(key);
-    return Promise.resolve(true);
+    if (this.removeGate !== undefined) await this.removeGate;
+    return true;
   }
 
   removeAllOf(projectId: string): Promise<number> {

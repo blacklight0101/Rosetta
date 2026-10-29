@@ -13,11 +13,11 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 184     | 67        | 98         | 19        | 0                  | 107     | 69      | 8      | 122        | 0         |
-| P2 Full understand      | 46      | 8         | 31         | 7         | 0                  | 16      | 28      | 2      | 25         | 0         |
+| P2 Full understand      | 53      | 14        | 32         | 7         | 0                  | 23      | 28      | 2      | 32         | 0         |
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
-| P5 Polish (G-10)        | 44      | 9         | 35         | 0         | 0                  | 19      | 25      | 0      | 0          | 0         |
-| P6 Agent build method   | 1       | 0         | 1          | 0         | 0                  | 0       | 1       | 0      | 0          | 0         |
-| **Total**               | **407** | **100**   | **277**    | **30**    | **0**              | **197** | **196** | **14** | **235**    | **0**     |
+| P5 Polish (G-10)        | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
+| P6 Agent build method   | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
+| **Total**               | **452** | **112**   | **310**    | **30**    | **0**              | **219** | **219** | **14** | **259**    | **0**     |
 
 ## Conventions for every card
 
@@ -87,7 +87,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: G-01, G-03
 - **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` sections 5-7; `docs/conventions.md` sections 1, 2, 7, 8 and 10; `docs/architecture.md` section 4.
-- **Do**: create `package.json` (`"type": "module"`, engines from `.nvmrc`, scripts `build`, `dev`, `typecheck`, `lint`, `format`, `format:check`, `arch`, `deadcode`, `test`, `test:ci`, `test:levels`, `verify`), `.nvmrc`, `tsconfig.json` with every flag of conventions section 1, `eslint.config.ts` exactly as conventions section 10, `.prettierrc`, `.dependency-cruiser.cjs` with the layer rules of architecture section 3, `knip.json`, `vitest.config.ts` with projects `unit`, `integration`, `e2e` by folder and the coverage thresholds of conventions section 7, `commitlint.config.ts`, `lefthook.yml` (pre-commit, commit-msg, pre-push as environments section 5), `.editorconfig`, `.gitignore` additions; the folders of architecture section 4 with one module in `src/domain/` and one test per level that runs; `scripts/test-levels.mjs` printing `Unit n / Integration n / E2E n` with the shares and a warning outside 60/30/10 ±10, failing when the count is zero. Only devDependencies from the baseline of environments section 7.
+- **Do**: create `package.json` (`"type": "module"`, engines from `.nvmrc`, scripts `build`, `dev`, `typecheck`, `lint`, `format`, `format:check`, `arch`, `deadcode`, `test`, `test:ci`, `test:levels`, `verify`), `.nvmrc`, `tsconfig.json` with every flag of conventions section 1, `eslint.config.ts` exactly as conventions section 10, `.prettierrc`, `.dependency-cruiser.cjs` with the layer rules of architecture section 3, `knip.json`, `vitest.config.ts` with projects `unit`, `integration`, `e2e` by folder and the coverage thresholds of conventions section 7, `commitlint.config.ts`, `lefthook.yml` (pre-commit, commit-msg, pre-push as environments section 5), `.editorconfig`, `.gitignore` additions; the folders of architecture section 4 with one module in `src/domain/` and one test per level that runs; `scripts/test-levels.mjs` printing `Unit n / Integration n / E2E n` with the shares and a warning outside 60/30/10 Â±10, failing when the count is zero. Only devDependencies from the baseline of environments section 7.
 - **Delivers**: the files above; `npm run verify` green; `package-lock.json`.
 - **Done when**: the verifier runs `npm ci` and `npm run verify` (exit 0); a test file importing `src/infrastructure/` from `src/domain/` makes `npm run arch` fail (verifier tries it in a disposable worktree); an `any` in `src/` makes `npm run lint` fail; `npm run test:levels` prints three counts; `npm ls --depth=0` shows only baseline packages.
 - **Refs**: RNF-001, RNF-005, RNF-013, ADR-009, ADR-010, ADR-011, DEC-27, DEC-30, DEC-39, DEC-40.
@@ -2374,9 +2374,9 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Done
 - **Reads**: `web/src/lib/live-run/card-checks.ts`, `web/src/pages/CardsTab.tsx`, `web/src/components/badge-specs.ts`; the owner's report of 2026-10-18. On the run page Evidence tab, FEAT-001 had 2 Supported claims, 1 Rejected and 1 Citation invalid, yet its card showed only "citation invalid". ENT-001 had no invalid citation, only one Rejected claim, and it showed the same tag.
-- **Do**: replace the single per-card check (checked / invalid / waiting) with counts per claim status: "N supported · M rejected · K citation invalid · J waiting", showing only the non-zero parts in that order. Each part carries its glyph and text as well as colour, using the same badge vocabulary as the claim rows. A card whose claims are all Supported keeps a single "all supported" mark. While claims are still being checked, the waiting count updates live. A Rejected claim is never called "citation invalid".
+- **Do**: replace the single per-card check (checked / invalid / waiting) with counts per claim status: "N supported Â· M rejected Â· K citation invalid Â· J waiting", showing only the non-zero parts in that order. Each part carries its glyph and text as well as colour, using the same badge vocabulary as the claim rows. A card whose claims are all Supported keeps a single "all supported" mark. While claims are still being checked, the waiting count updates live. A Rejected claim is never called "citation invalid".
 - **Delivers**: the change, with unit tests of the counting and a component test of the row.
-- **Done when**: the FEAT-001 case shows "2 supported · 1 rejected · 1 citation invalid"; the ENT-001 case shows no "citation invalid"; it is accessible (axe, keyboard, 360 px); `npm run verify` is green.
+- **Done when**: the FEAT-001 case shows "2 supported Â· 1 rejected Â· 1 citation invalid"; the ENT-001 case shows no "citation invalid"; it is accessible (axe, keyboard, 360 px); `npm run verify` is green.
 - **Refs**: RF-1004, RF-1014, RF-1015, RF-301, owner report 2026-10-18, PR #577
 
 ---
@@ -3084,7 +3084,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-46
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/estimate/estimate-assumptions.ts`; `tests/unit/application/estimate/estimate-accuracy-shop-run.test.ts` and its fixture; `docs/verification/p2-matrix.md` RNF-012 row; the P2-46 verdict on #935.
 - **Do**: P2-46 calibrated the likely reader turns (25 % of `maxTurns`) and the verifier input share on one small app (7 reader tasks, 2.6 turns on average). Add a second recorded run, shaped on a larger evaluation case of the golden set, and check that the likely estimate stays within 30 % of its actual cost; if it does not, adjust the assumptions so both recorded runs pass. The high estimate stays every turn used.
 - **Delivers**: the second fixture and its test; the assumptions adjusted if needed; the RNF-012 row naming both runs.
@@ -3099,7 +3099,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-47
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/eval/structure-score.ts` (the reference-type exclusion); `tests/unit/domain/eval/structure-score.test.ts`; the P2-47 round 2 verdict on #936.
 - **Do**: the exclusion of the noun "reference type" also drops a verb followed directly by the word "type": "The item references type CatalogType." and "Items reference types of brand." count as 0 relations stated. Exclude "reference type" only as a noun (after a determiner or "be", "is", "a", "the"), so the verb still counts.
 - **Delivers**: the narrower exclusion; unit tests for both sentences above (stated) and "must be a reference type" (not stated); the relation-word line of `docs/data-model.md` if it changes.
@@ -3115,12 +3115,117 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/e2e/journeys/consolidation.spec.ts`; `scripts/run-e2e.mjs`; P1-43 (run replay page).
 - **Do**: on Windows with a local PostgreSQL, `tests/e2e/journeys/consolidation.spec.ts:43` fails at line 48: the link "Open the run replay" is not found within 5 s. It fails the same way on `main` at 42e7a78d, before P2-46 and P2-47, and on its own (one worker); CI on Linux passes. Find whether the link is missing, slow, or named differently on Windows, and fix the cause in the app or the test (no longer timeout unless the cause is timing).
 - **Delivers**: the fix and the spec passing on Windows and Linux.
 - **Done when**: `node scripts/run-e2e.mjs tests/e2e/journeys/consolidation.spec.ts --project=desktop-light --workers=1` passes on Windows with a local database, and CI stays green.
 - **Refs**: RF-250, RF-262, RNF-005, P1-43.
+
+---
+
+### P2-51 - Follow-up: the reference-type exclusion after other determiners
+
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P2-49
+- **Gate**: none
+- **Status**: Done
+- **Reads**: `src/domain/eval/structure-score.ts` (REFERENCE_TYPE); `tests/unit/domain/eval/structure-score.test.ts`; the P2-49 verdict on #939.
+- **Do**: the exclusion of the noun "reference type" matches only after "a", "an", "the", "is" or "be", so "this reference type", "its reference type", "each reference type", "Reference types are ..." and "value types and reference types" now count as relations stated. Extend the exclusion to the other determiners and possessives and to the plural noun with no determiner, keeping the verb ("references type X", "reference types of brand") counted. Pin "is" with its own test (for example "which is reference type"), since today removing it leaves every test green.
+- **Delivers**: the wider exclusion; unit tests for each sentence above; the relation-word line of `docs/data-model.md` if it changes.
+- **Done when**: the noun forms score as not stated, the verb forms as stated, and removing any one word of the exclusion makes a test fail.
+- **Refs**: RNF-006, RF-262, P2-49.
+
+---
+
+### P2-52 - Follow-up: the wall-clock test of the WebForms markup reader flakes on Windows CI
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Done
+- **Reads**: `tests/unit/infrastructure/scan/packs/csharp/webforms-markup-hostile.test.ts`; `docs/conventions.md` (tests, determinism); the failed run on #940 (shard 2/3 of tests on windows-latest).
+- **Do**: "P5-31 anchors with no closing bracket is read in well under a second" took 1103 ms against its 1000 ms limit on a loaded Windows runner and turned `verify (windows-latest)` red on a pull request that does not touch it. Make the test prove the linear-time property without a tight wall-clock limit (for example compare the time of input n and 4n, or count steps), so it no longer depends on runner load.
+- **Delivers**: the reworked test; the same protection against a quadratic or catastrophic regex.
+- **Done when**: the test fails when the reader is made quadratic (shown in the pull request) and passes on Windows and Linux CI.
+- **Refs**: RNF-005, P5-31.
+
+---
+
+### P2-53 - Follow-up: report build time with diagrams on the hosted share
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P2-50
+- **Gate**: none
+- **Status**: Blocked (owner check: time Build report with diagrams on the hosted URL, merged in #944)
+- **Reads**: `src/application/report/` (BuildReport), the run zip writer (`ReportZipWriter`), `tests/e2e/support/journey-pages.ts`; the P2-50 verdict on #940.
+- **Do**: P2-50 found that writing the run zip deflates the 5.5 MB `mermaid.min.js` (RF-508) and took 5 to 7 s on a Windows system drive, while the request waits for it. Measure Build report on a run with diagrams on the hosted Azure Files share (owner check, no provider spend). If it takes more than 2 s, store already-compressed assets such as `mermaid.min.js` without deflate (or write the zip after the response). Then give the 30 s wait of `buildReport` in the journey helper only to the journey with diagrams, back to the 5 s default for the others.
+- **Delivers**: the measurement in the pull request; the zip change if needed; the narrower wait.
+- **Done when**: Build report with diagrams answers within 2 s on the hosted share (or the measurement shows it already does), and only the consolidation journey waits longer than 5 s.
+- **Refs**: RF-508, RF-250, RNF-005, P2-50.
+
+---
+
+### P2-54 - Follow-up: the pre-push hook takes its base from develop
+
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Done
+- **Reads**: `scripts/pre-push-tests.mjs`; ADR-025; `docs/orchestration/README.md` section 3.
+- **Do**: since DEC-175 task branches start from `develop`, but the pre-push hook still takes the merge base with `origin/main`, so it runs the tests of every change released since. Use the branch's upstream base (`origin/develop`, falling back to `origin/main` when `develop` does not exist).
+- **Delivers**: the hook change and its test.
+- **Done when**: on a branch cut from `develop`, the hook runs only the tests of the branch's own changes.
+- **Refs**: DEC-175, ADR-025, ADR-011.
+
+---
+
+### P2-55 - Follow-up: the other tests with a tight wall-clock limit
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P2-52
+- **Gate**: none
+- **Status**: Done (#949)
+- **Reads**: `tests/support/stopwatch.ts` (`growthOf`, P2-52); the P2-52 builder report on #946; `docs/conventions.md` (tests, determinism).
+- **Do**: P2-52 replaced the 1000 ms limits of the WebForms readers with a growth check, because a loaded Windows runner failed them. The same pattern remains in `sql-pack.test.ts` (3000 ms), `marker-skeleton-long-runs.test.ts`, `link-file-name.test.ts` (3000 ms), `external-paths-bounds.test.ts`, `parse-cards-untrusted.test.ts` (1000 ms), `code-map-scan.test.ts` (10 000 ms), the Ollama tag and context-probe tests and the secret-masker performance tests. For each, keep the protection it gives (linear time, a bounded loop) with `growthOf` and inputs below any internal cap, or a bound with at least 100x headroom over the measured time; leave a limit that only guards a timeout as it is and say so.
+- **Delivers**: the reworked tests; for each, a temporary mutation that makes it fail, described in the pull request.
+- **Done when**: no unit test fails on a loaded runner through a limit within 10x of its measured time, and each reworked test still fails on its mutation.
+- **Refs**: RNF-001, RNF-005, P2-52.
+
+---
+
+### P2-56 - Follow-up: local verify on Windows picks the WSL bash
+
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Done
+- **Reads**: `docs/runbooks/local.md`; the tests that spawn `bash` (`tests/support/workflow-yaml.ts` `runStep`, `tests/support/fake-gh.ts`, `tests/support/fake-az.ts`); the P2-52 builder report on #946.
+- **Do**: on the owner's Windows machine `bash` on `PATH` resolves to WSL, so the workflow and provisioning tests that run steps with `bash` fail locally while CI passes; with `C:\Program Files\Git\bin` first on `PATH` they pass. Make the test helpers use Git Bash on Windows (for example the `bash.exe` next to `git.exe`), or fail with a clear message naming the fix, and document it in the local runbook.
+- **Delivers**: the helper change and its test; the runbook note.
+- **Done when**: `npm run verify` passes on the owner's machine without changing `PATH`, or stops at once with the message.
+- **Refs**: RNF-005, ADR-011, P2-52.
+
+---
+
+### P2-57 - Follow-up: the scheduled release did not fire; add backup runs
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Done (#952)
+- **Reads**: `.github/workflows/scheduled-release.yml`; `tests/integration/tooling/scheduled-release-workflow.test.ts`; ADR-025; `docs/environments-and-delivery.md` section 8; `docs/runbooks/deploy.md` (Release to production).
+- **Do**: on 2026-10-28 GitHub started no run of Scheduled release at either cron (04:07 and 05:07 UTC), so the first release (DEC-175) did not deploy; GitHub runs schedules on a best-effort basis and may delay or drop them. Add backup schedules and widen the gate so a dropped run is caught the same morning: crons at 04:07, 05:07, 05:37 and 06:07 UTC, and the job goes on in the 06 and 07 hours of Europe/Madrid. The existing check (no Release of main's head queued, running or succeeded) keeps it to one deploy a morning. Say in the step summary which slot started it.
+- **Delivers**: the workflow change and its tests (crons, the 06/07 gate in summer and winter time, a second slot doing nothing after a first one started Release); ADR-025, environments-and-delivery section 8 and the runbook updated to "06:07 Madrid, with backups until 07:59".
+- **Done when**: the tests pass, and a Scheduled release run appears in Actions on the next morning after merge (owner or orchestrator check).
+- **Refs**: DEC-175, ADR-025.
 
 ---
 
@@ -3977,7 +4082,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Gate**: none
 - **Status**: Done
 - **Reads**: the run page (header, stepper, Deepen panel, area map, spend panel, All agents tab, Activity tab and event log); `docs/design-system.md`; RNF-010; RF-507 (model text as text); the owner's test of a Deepen run on an Excel project (2026-10-20, notes below).
-- **Do**: within the design system, fix: (1) plurals in the Deepen round lines ("1 files read"); (2) round 3 wording ("re-reading 60" names what, "0 unread files to read" reads plainly); (3) the stepper sub-lines are cut off ("127 of 127 citations check..."): fit or wrap; (4) area tiles all cut to "Asset_Mana...": show the part after the last "/" with the full name on hover and focus, and do not cut the sub-lines ("read · 1 fil...", "being rea..."); explain or drop the "#1" suffix in tile names; (5) the Activity tab count shows "1000" when the log holds more: show "1000+" or the real count; (6) the side "Spend for this run" bar stays empty with a local model while tokens are used: label it as cost, or show the token bar when the cost is zero; (7) the two links in the spend panel use one link style; (8) the "Start page" link sits with the title or the buttons, not floating between them; (9) the estimate line says "Range $0.00 to $0.00" with a local model and does not say when the run has passed the likely estimate: give the token range, and say "over the estimate" when it is; (10) agent cards with the same area title (Deepen rounds) show the round or what they re-read; (11) agent card headers line up when the title is long (role and badge on one line, or a fixed place); (12) a one-line range reads `file:27`, not `file:27-27`; (13) long paths wrap at "/" and before ":", not mid-word; (14) the coverage map's "6% of the reads" says "of all files read"; (15) event-log times read as time since the start ("+16:27.5"); (16) the "usage.recorded · verifier 0 micro-dollars" lines are folded into the line they belong to or grouped, and "micro-dollars" never appears; (17) Supported and Rejected verdict lines use the cards list's badge and colour; (18) a cut verdict reason can be opened in full; (19) inline code in model text (backticks) is shown as code styling, still as text, never HTML.
+- **Do**: within the design system, fix: (1) plurals in the Deepen round lines ("1 files read"); (2) round 3 wording ("re-reading 60" names what, "0 unread files to read" reads plainly); (3) the stepper sub-lines are cut off ("127 of 127 citations check..."): fit or wrap; (4) area tiles all cut to "Asset_Mana...": show the part after the last "/" with the full name on hover and focus, and do not cut the sub-lines ("read Â· 1 fil...", "being rea..."); explain or drop the "#1" suffix in tile names; (5) the Activity tab count shows "1000" when the log holds more: show "1000+" or the real count; (6) the side "Spend for this run" bar stays empty with a local model while tokens are used: label it as cost, or show the token bar when the cost is zero; (7) the two links in the spend panel use one link style; (8) the "Start page" link sits with the title or the buttons, not floating between them; (9) the estimate line says "Range $0.00 to $0.00" with a local model and does not say when the run has passed the likely estimate: give the token range, and say "over the estimate" when it is; (10) agent cards with the same area title (Deepen rounds) show the round or what they re-read; (11) agent card headers line up when the title is long (role and badge on one line, or a fixed place); (12) a one-line range reads `file:27`, not `file:27-27`; (13) long paths wrap at "/" and before ":", not mid-word; (14) the coverage map's "6% of the reads" says "of all files read"; (15) event-log times read as time since the start ("+16:27.5"); (16) the "usage.recorded Â· verifier 0 micro-dollars" lines are folded into the line they belong to or grouped, and "micro-dollars" never appears; (17) Supported and Rejected verdict lines use the cards list's badge and colour; (18) a cut verdict reason can be opened in full; (19) inline code in model text (backticks) is shown as code styling, still as text, never HTML.
 - **Review probes**: the run page at 360 px and desktop, light and dark, with a Deepen run of three rounds and a local model; axe in both schemes; a log of more than 1,000 events; a verdict reason of 2,000 characters; model text with backticks and with `<b>` (shown as text).
 - **Behaviour to preserve**: every RF-231 wording rule; RF-507 (no model text as HTML); the live updates and Pause updates.
 - **Delivers**: the fixes and tests.
@@ -5912,6 +6017,107 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 
 ---
 
+### P5-45 - Rendering a workbook project hands the server back between sheets
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-183)
+- **Status**: Done (#1000)
+- **Reads**: `src/infrastructure/sources/workbook/workbook-publish.ts`, `workbook-renderer.ts` (`renderProject`), `render-dependencies.ts`, `package-reader.ts`, `src/infrastructure/sources/workbook-staging.ts` (the publish bound), RF-159, RNF-017, ADR-023. Today `renderProject` is one synchronous call: a large project blocks every request of the server, and cancel and the 5-minute bound are checked only before and after it.
+- **Do**:
+  - Make rendering asynchronous: it yields to the event loop between sheets, and in the dependency map between workbooks and between its passes.
+  - Check the abort signal and the publish bound at every yield.
+  - Report progress through a callback from reading and rendering: the step, workbook n of N, sheet n of M, non-empty cells so far. P5-46 shows it.
+  - The rendered tree stays byte-identical to before.
+- **Delivers**: the asynchronous renderer, unit tests, and integration tests of cancel and of the bound during rendering.
+- **Done when**: the existing workbook fixtures give the same `snapshotHash` as before; a test shows another request answered while a built large workbook renders; cancel and the bound stop during rendering and nothing is published.
+- **Refs**: RF-159, RNF-017, DEC-183, ADR-023.
+
+### P5-46 - Finishing a workbook batch returns at once and the page shows its progress
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P5-45
+- **Gate**: owner (DEC-183)
+- **Status**: Done (#1005)
+- **Reads**: `src/presentation/web/workbook-batch-routes.ts`, `src/application/use-cases/workbook-batches.ts`, `src/infrastructure/sources/workbook-staging.ts`, `zip-upload-store.ts` and `workbook/zip-workbooks.ts` (zips holding workbooks), `web/src/pages/WorkbookUploadForm.tsx`, `workbook-batch.ts`, `use-workbook-flow.ts`, `use-polled.ts`, `docs/design-system.md` (upload progress, long operations), RF-150, RF-158, RF-159.
+- **Do**:
+  - `finish` accepts the batch at once and the processing continues on the server; a state endpoint returns the step, the counts of P5-45, the elapsed time and the outcome (summary or refusal with its code); the existing `DELETE` cancels it.
+  - The endpoints keep the session, CSRF and owner checks; another user's batch answers 404.
+  - The page asks for the state every second and shows the steps, the workbook and sheet, the cells read, the elapsed time and Cancel; the summary and the refusals show as before; a reload or a later visit finds the project's batch and shows its progress; closing the tab does not cancel it.
+  - A zip holding workbooks shows the same progress.
+  - Document the progress pattern in `docs/design-system.md` and the endpoint in `docs/architecture.md`.
+- **Delivers**: the endpoints, the page, the documentation, integration and end-to-end tests.
+- **Done when**: an end-to-end test sees the steps and survives a reload during processing; integration tests cover the state, cancel, a refusal after the batch was accepted and another user's batch; the existing RF-150 tests pass.
+- **Refs**: RF-150, RF-158, RF-159, RNF-017, DEC-183.
+
+### P5-47 - Upload and snapshot hashes are computed while the files are written
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P5-45
+- **Gate**: owner (DEC-183)
+- **Status**: Done (#1004)
+- **Reads**: `src/infrastructure/sources/upload-intake.ts`, `workbook-staging.ts`, `workbook/workbook-publish.ts`, `workbook/workbook-tree.ts`, `src/infrastructure/snapshots/snapshot-store.ts` (`inspect`), RF-152, RF-159. Today every uploaded workbook is read again for its SHA-256, and every rendered file is written, then read again and hashed.
+- **Do**:
+  - Hash each uploaded file while it is received and each rendered file while it is written, and record the snapshot from those hashes.
+  - `snapshotHash`, `snapshot.json` and the read-only tree stay identical; snapshots of other kinds keep their current path.
+- **Delivers**: the hashing change and tests.
+- **Done when**: the workbook fixtures give the same `snapshotHash` and `snapshot.json` as before; a test shows no uploaded or rendered file is read again after it is written.
+- **Refs**: RF-152, RF-159, DEC-183.
+
+### P5-48 - Follow-up: a zip holding workbooks is accepted at once, with Cancel
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P5-46
+- **Gate**: owner (DEC-188)
+- **Status**: Todo
+- **Reads**: `src/presentation/web/source-upload-routes.ts` (the zip PUT, still synchronous), `src/infrastructure/sources/zip-upload-store.ts`, `src/infrastructure/sources/workbook/zip-render.ts`, `src/application/use-cases/workbook-batches.ts` and `finish-workbooks.ts` (the pattern P5-46 built), `web/src/pages/ZipUploadForm.tsx`, `use-zip-upload.ts`, `workbook-watch.ts`, `docs/architecture.md` (the `WorkbookBatches` row), RF-128, RF-159, DEC-183, DEC-188. Today a zip that holds workbooks is extracted and rendered inside the upload request: closing the tab cancels it and the hosted ingress cuts it after about 4 minutes.
+- **Do**:
+  - Accept a zip that holds workbooks at once and extract, render and store it after the request, with the same state endpoint, progress steps, time bound and Cancel as a workbook batch.
+  - Closing the tab does not cancel it; a reload or a later visit shows its progress; a Cancel after it ended answers 409 with its state and keeps the published source, as for a batch.
+  - Keep the session, CSRF and owner checks; another user's upload answers 404 and gets access-matrix rows.
+  - A zip without workbooks keeps its current path.
+  - Update `docs/architecture.md` for the endpoint.
+- **Delivers**: the server and page change, integration and end-to-end tests.
+- **Done when**: an integration test shows the zip request answered before rendering ends and the progress read from the state endpoint; Cancel during processing publishes nothing; Cancel after the end answers 409 and keeps the source; an end-to-end test survives a reload during processing; the existing RF-128 and RF-150 tests pass; CI green.
+- **Refs**: RF-128, RF-159, RNF-017, DEC-183, DEC-188, P5-46.
+
+### P5-49 - Follow-up: gaps from the P5-46 review
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P5-46
+- **Gate**: owner (DEC-183)
+- **Status**: Todo
+- **Reads**: the verifier's comments on the P5-46 pull request (#1005), `tests/e2e/projects-workbooks-progress.spec.ts` (the Cancel test), `src/application/use-cases/workbook-batches.ts` (`cancel`, the wait on `batch.work` during attach), `src/application/use-cases/finish-workbooks.ts` (the error log), `web/src/pages/workbook-watch.ts` ("Nothing was published"), `use-workbook-flow.ts`, RF-159.
+- **Do**:
+  - Make the end-to-end Cancel test deterministic for the 409 path: a separate test that waits until the batch is `stored` (through `page.request`) before pressing Cancel, besides the test of a Cancel during processing.
+  - Put a time limit on the attach step, so a Cancel that waits on an attach cannot hang; the batch then ends refused with its code.
+  - Log a user's abort at info level, not as "failed unexpectedly" at error level; other failures stay at error.
+  - When the Cancel `DELETE` fails with anything other than 409 (network, 5xx), keep reading the state and show the real outcome instead of "Nothing was published".
+- **Delivers**: the changes and tests.
+- **Done when**: the 409 end-to-end test takes the 409 path in every run (`--repeat-each=5`); a test with an attach that never ends shows the bound; a log test shows an abort at info; a web test with a failed `DELETE` shows the outcome read from the state; CI green.
+- **Refs**: RF-159, DEC-183, DEC-188, P5-46.
+
+### P5-50 - Follow-up: gaps from the P5-47 review
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P5-47
+- **Gate**: owner (DEC-183)
+- **Status**: Todo
+- **Reads**: the verifier's comment on the P5-47 pull request (#1004), `tests/integration/infrastructure/sources/workbook-staging-no-reread.test.ts`, `src/infrastructure/sources/workbook/workbook-tree.ts` (`bytes`, about line 61), `src/infrastructure/sources/upload-intake.ts` (the `sha256` getter, about line 87), RF-152, RF-159.
+- **Do**:
+  - Harden the no-re-read test so it also sees reads through `node:fs` (`createReadStream`, `readFileSync`) and `FileHandle.readFile`, not only `node:fs/promises` `open().read` and `readFile`.
+  - Add a test with non-ASCII cell text that checks the rendered byte count against `Buffer.byteLength`.
+  - Make the SHA-256 of an upload idempotent: a second read returns the same value instead of throwing.
+- **Delivers**: the tests and the getter change.
+- **Done when**: a mutation that re-hashes through `createReadStream` fails the no-re-read test; the mutation `bytes: file.content.length` fails the non-ASCII test; reading the hash twice gives the same value; the workbook `snapshotHash` is unchanged; CI green.
+- **Refs**: RF-152, RF-159, DEC-183, P5-47.
+
 ## Phase 6 - Agent build method (held by the owner)
 
 No card of this phase starts until the owner opens the phase (DEC-173).
@@ -5922,7 +6128,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (DEC-173)
-- **Status**: Todo
+- **Status**: Done (#948; the owner took every default and opened the phase, DEC-176..DEC-179)
 - **Reads**: the package writer (`src/infrastructure/handoff/`, `handoff-method-markdown.ts` for `AGENTS.md`), the planning brief's build method question (`src/domain/planning/brief-questions.ts`), RF-612, RF-635 and RF-636, and this repository's own method as the reference: the project-blueprint skill it was planned with (docs-first repository, `CLAUDE.md`, `handoff.md`, RFC, ADRs, decision log, task cards with builder tiers, an independent verifier and human gates) and `docs/orchestration/README.md` with `.claude/agents/`. Owner test of 2026-10-25: a Sonnet full run of a single-file app gave a package with 18 task cards and no agent method, because AI-assisted build stayed on its default (off).
 - **Do**: a written review, then the cards it calls for (no code in this card). The goal: a team that takes the package builds the new system with the same method this repository was built with, as the project-blueprint skill sets it up.
   - What an agent sees first in the package, and whether it can tell how to proceed without a person explaining it.
@@ -5935,3 +6141,509 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Delivers**: `docs/reviews/2026-xx-agent-build-method.md` with the findings and the proposed cards; the cards appended to this phase.
 - **Done when**: the owner has read the review and chosen which proposed cards to build.
 - **Refs**: RF-612, RF-635, RF-636, DEC-60, DEC-76, DEC-173.
+
+### P6-02 - The brief records the agent tool and a model per tier
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Done
+- **Reads**: the planning brief (`src/domain/planning/planning-brief.ts`, `src/application/planning/planning-brief-schema.ts`, `brief-questions.ts`), the review sections 4 and 5, RF-612, RF-639 (proposed).
+- **Do**:
+  - Extend `buildMethod` with the agent tool (`claude-code`, `codex`, `other` with a name) and one model name per tier plus an optional escalation model; the schema stays additive and a brief saved earlier still parses as people building (Q-B).
+  - Defaults: Claude Code gets `haiku`, `sonnet`, `opus`; Codex and another tool have none, so the question is required for them.
+  - The defaulted-question text says plainly what the default leaves out.
+- **Delivers**: the domain type, the zod schema, the defaults and unit tests; the brief hash covers the new fields.
+- **Done when**: unit tests for each tool, an old brief and a missing model; `npm run verify` green.
+- **Refs**: RF-612, RF-639; review F-7. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-03 - Plan setup asks the build method plainly and says what it leaves out
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-02
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Done
+- **Reads**: `web/src/pages/PlanMethodStep.tsx`, `web/src/lib/plan-setup/steps.ts` and `draft.ts`, the review section 4, `docs/design-system.md` section 14, `tests/e2e/plan-setup.spec.ts`.
+- **Do**:
+  - Replace the checkbox with a required two-way choice (agents or people build) with the plain sentence of what each answer gives and leaves out; when the context names an agent tool, open on agents (Q-A).
+  - After the agents answer, ask the tool and a model per tier with their defaults from P6-02.
+  - The step is keyboard-operable and passes the accessibility check like the other steps.
+- **Delivers**: the step, the recorded summary line and e2e tests for both answers and for each tool.
+- **Done when**: the e2e test walks both answers; no serious accessibility violation; the recorded line names tool and models.
+- **Refs**: RF-612, RF-639; review F-4. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-04 - Task cards name the model of their tier and the largest tier is reachable
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P6-02
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Done
+- **Reads**: `src/domain/planning/task-method.ts`, `handoff-task-markdown.ts`, `handoff-quality-markdown.ts`, RF-635, the review sections 5 and 6, `tests/integration/application/build-plan-quality.test.ts`.
+- **Do**:
+  - Rate a card by size and risk class as the review proposes (Q-C): a `security boundary`, `data loss` or `money` card of size M or L is rated 9; the middle-tier floor for any other class stays.
+  - Each card line reads `Difficulty: n (tier, model: <name>)` with the model from the brief; with no model for the tier it reads the tier alone and the check of P6-05 lists it.
+  - Name the verifier tier of the band on the card.
+- **Delivers**: the changed derivation, the card line and unit tests for every size and risk class.
+- **Done when**: a table test of all size and class pairs; the largest tier appears in a package with a `money` card; `npm run verify` green.
+- **Refs**: RF-635, RF-639; review F-5, F-6. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-05 - A package check for the model of every card
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P6-04
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Done
+- **Reads**: `src/infrastructure/handoff/handoff-checks-markdown.ts`, `handoff-truthful-checks-markdown.ts`, the review section 6, RF-641 (proposed).
+- **Do**:
+  - When AI-assisted build is on, write in `checks.md` a finding for a card whose model is not the chosen tool's, whose tier is below its band, whose risk class other than `none` has a tier below the middle, or whose verifier is below its builder (Q-D: list, never block); the card line shows its risk class next to the difficulty (RF-641 item 5).
+  - A clean package lists none; a local model on a card above difficulty 2 is a warning (Q-F).
+- **Delivers**: the check section and unit tests of each failure and of a clean package.
+- **Done when**: each failure has a passing test; a clean package has no finding.
+- **Refs**: RF-635, RF-641; review F-8. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-06 - AGENTS.md becomes the start-here index and comes first
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-02
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Done
+- **Reads**: `handoff-method-markdown.ts`, `handoff-list-markdown.ts` (reading order), `AGENTS.md` of this repository as the shape, the review sections 2 and 3, RF-640 (proposed).
+- **Do**:
+  - Rewrite `agentsMarkdown` as an index of at most about 60 lines: start-here order, command table (from the stack answers or marked unknown), the rules broken most often, the layout; the long rules move to `orchestration.md` (P6-07).
+  - Put `AGENTS.md` first in the README reading order when the method is on; keep operations (RF-636) and the risk class rule reachable by link.
+- **Delivers**: the writer change and a structure test with a line budget.
+- **Done when**: the file is within the budget and first in the reading order; the existing operations and risk tests still pass.
+- **Refs**: RF-612, RF-636, RF-640; review F-1, F-3. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-07 - orchestration.md: roles, bands, retry ladder, status flow, merge rules
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P6-04, P6-06
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Done (#986)
+- **Reads**: the package writer, `docs/orchestration/README.md` sections 2, 3, 3.1 and 6, `.claude/agents/`, the review sections 3 and 7, RF-640 (proposed).
+- **Do**:
+  - Write `orchestration.md` (new file, linked second in the reading order): roles (orchestrator as the main session, builder per tier, independent verifier per band), the band table with the models, the retry ladder, the card status flow, the merge rules with `needs-owner`, the red test first, the report and verdict formats, and the hard-rule greps the verifier runs (derived from the package's own hard rules).
+  - Use the team's words and tool; name nothing from the owner's employer (DEC-03).
+- **Delivers**: the writer, the file registration in `handoff-links.ts` and structure tests.
+- **Done when**: each element has a test; the file is absent when people build; no employer term in the output.
+- **Refs**: RF-612, RF-640; review F-2. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-08 - orchestration.md: gates, usage throttle, escalation, delivery flow
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-07
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Done (#1008)
+- **Reads**: the `orchestration.md` writer from P6-07, `docs/orchestration/README.md` sections 7, 8.1 and 10, ADR-025, the review sections 8 and 9, RF-643 (proposed).
+- **Do**:
+  - Add sections: human gates (from the plan's own gates), usage throttle with default bands marked as the team's choice, escalation and stop conditions, size budgets of living files.
+  - Add the recommended delivery flow only when the brief says the app is hosted (Q-H), as a recommendation the team may replace by a recorded decision.
+- **Delivers**: the new sections and tests, including the hosted and not hosted cases.
+- **Done when**: the section is absent for a non-hosted brief; every section has a structure test.
+- **Refs**: RF-640, RF-643; review F-10. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-09 - Agent definitions per tool in the package
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-04, P6-07
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Done (#1007)
+- **Reads**: `.claude/agents/` of this repository (shape only), the review section 7, DEC-60, RF-642 (proposed), `file-handoff-writer.ts`.
+- **Do**:
+  - Write an `agents/` folder for Claude Code (orchestrator, a builder per tier, a verifier per band, each with the `model:` of its tier) and for Codex (plain role prompts); prose only for another tool (Q-E); the escalation file only with a named escalation model and the owner-approval note (Q-I).
+  - Nothing installs or runs: no hook, command or plugin file (DEC-60).
+- **Delivers**: the writer, the notes on where to copy and structure tests per tool.
+- **Done when**: a test finds no hook, command or plugin file; each definition carries its tier's model.
+- **Refs**: RF-612, RF-642, DEC-60; review F-9. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-10 - Phase-closing verification-matrix and security review cards in the plan
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Done
+- **Reads**: the planner prompts (`prompts/`), `src/domain/planning/foundation-cards.ts`, RF-630, `docs/verification/` as the shape, the review section 10.
+- **Do**:
+  - For a plan of two or more phases add to each phase a closing card that maps its requirements to tests, lists measured targets and turns gaps into follow-up cards; add a security review card when a card has a risk class other than `none`.
+  - Derive the cards without a model call where possible, so the same plan always gets the same cards.
+- **Delivers**: the card derivation, the prompt change if any, and tests.
+- **Done when**: a two-phase plan has a matrix card per phase; a plan with a `money` card has a security review card; recordings still replay.
+- **Refs**: RF-630, RF-635; review section 8. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-11 - The package says what it leaves out when people build
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P6-03
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Done (#964)
+- **Reads**: `handoff-list-markdown.ts`, `handoff-left-out-markdown.ts`, the open-questions writer, the review section 4.
+- **Do**:
+  - When people build, the README says in one sentence that the package has no agent files, no model per card and no protocol, and `open-questions.md` lists the build method as a whole-build question with its default (RF-637).
+- **Delivers**: two sentences in the writer and a structure test for both answers.
+- **Done when**: the sentence is present for people building and absent for agents.
+- **Refs**: RF-612, RF-637; review F-4. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-12 - Method end to end: a single-file app run with the method on
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P6-05, P6-08, P6-09, P6-11
+- **Gate**: owner (DEC-173; the proposed requirements accepted)
+- **Status**: Done (#1011)
+- **Reads**: `tests/e2e/journeys/handoff-package.spec.ts`, `tests/integration/application/build-plan-method.test.ts`, the fake-provider recordings for a single-file app (ADR-008), the review section 1.
+- **Do**:
+  - Run a recorded plan of a single-file app with agents building (Claude Code and Codex) and read the package as a new agent would: `AGENTS.md` first, `orchestration.md`, a model on every card, a clean model check, the agent files.
+  - Update `docs/architecture.md` and `docs/conventions.md` for the new files.
+- **Delivers**: the journey test, the recordings and the documentation updates.
+- **Done when**: the journey passes on Windows and Linux; no real provider call.
+- **Refs**: RF-612, RF-635, RF-636, RF-639..RF-643. Proposed in `docs/reviews/2026-10-28-agent-build-method.md`.
+
+### P6-13 - orchestration.md: lessons from running a build
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-08
+- **Gate**: owner (DEC-177)
+- **Status**: Done (#1010)
+- **Reads**: the `orchestration.md` writer from P6-07 and P6-08, RF-644, DEC-177, the brief's tool, platform and stack answers (`src/domain/planning/`).
+- **Do**:
+  - Add the section "Lessons from running a build" to `orchestration.md` with the items RF-644 lists as always present, one or two sentences each, tool-neutral.
+  - Add the tool-specific item only when the brief names that tool, and the platform or stack items only when the brief's platform or stack matches.
+  - Name no employer and no other project (DEC-03).
+- **Delivers**: the section in the writer and structure tests.
+- **Done when**: a test finds every always-present item; the tool and platform items appear only for a matching brief; the section is absent when people build; no employer or project name in the output.
+- **Refs**: RF-640, RF-644, DEC-177.
+
+### P6-14 - Open questions carry three suggested answers
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-178)
+- **Status**: Done
+- **Reads**: `prompts/cards/card-format.v2.md`, `prompts/cards/repair.v3.md`, `src/application/cards/card-schema.ts`, `parse-cards.ts`, `src/application/understand/open-questions.ts`, RF-243, RF-645, ADR-005, ADR-008.
+- **Do**:
+  - A new card-format and repair prompt version (RNF-004): an `OQ` card carries three suggested answers, one marked recommended and listed first, each with a short description and, when the code supports it, a citation.
+  - The parser refuses an `OQ` card without them with a repair message, as RF-243 does; cards saved before the change parse with no suggested answers.
+  - The recommended answer is the default that applies when the question is skipped; a yes/no question gets a qualified third answer, never filler.
+- **Delivers**: the prompt versions, the schema and parser change, unit tests and re-recorded responses where the format changed.
+- **Done when**: unit tests for a valid card, each missing part and an old card; recordings replay; `npm run verify` green.
+- **Refs**: RF-243, RF-645, DEC-178.
+
+### P6-15 - Your questions: choose a suggested answer or type your own
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-14
+- **Gate**: owner (DEC-178)
+- **Status**: Done
+- **Reads**: `web/src/pages/RunAnswers.tsx`, `YourTurn.tsx`, `src/application/use-cases/record-answers.ts`, `list-answers.ts`, `src/infrastructure/cards/answers-file.ts`, `docs/data-model.md` section 3.16, `docs/design-system.md`, RF-240, RF-645, RF-1007, RF-1017.
+- **Do**:
+  - Show each question's suggested answers as choices, the recommended one first, plus "Type your own answer"; a question saved before the change keeps its free answer field.
+  - Record in `answers.md` the answer and which option was chosen (or that it was typed); keyboard-operable like the other forms.
+- **Delivers**: the page, the use-case and file changes, and integration and end-to-end tests.
+- **Done when**: the end-to-end test picks a suggested answer and types one; the old-question case passes; no serious accessibility violation.
+- **Refs**: RF-240, RF-645, RF-1007, RF-1017, DEC-178.
+
+### P6-16 - Plan setup: at least three options and your own answer on every question
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-03
+- **Gate**: owner (DEC-178)
+- **Status**: Done (#984)
+- **Reads**: `src/domain/planning/brief-questions.ts`, `src/application/planning/planning-brief-schema.ts`, `web/src/pages/Plan*Step.tsx`, `PlanStepCard.tsx`, `tests/e2e/plan-setup.spec.ts`, RF-605, RF-645.
+- **Do**:
+  - Give every Plan setup question at least three options, one recommended and first, each with a one-line description, plus "Type your own answer"; a question with two natural answers adds a qualified third.
+  - Save a typed answer in the brief (additive schema; an older brief still parses).
+- **Delivers**: the question data, the step components, the schema change and tests.
+- **Done when**: a unit test finds three options and one recommended on every question; the end-to-end test saves a typed answer and shows it in "What I recorded".
+- **Refs**: RF-605, RF-645, DEC-178.
+
+### P6-17 - The package's open questions list suggested answers
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-11, P6-14
+- **Gate**: owner (DEC-178)
+- **Status**: Done (#1002)
+- **Reads**: the `open-questions.md` writers in `src/infrastructure/handoff/` (`handoff-left-out-markdown.ts`, `handoff-keep-or-fix-markdown.ts`), RF-637, RF-645.
+- **Do**:
+  - Each open question of the package lists its three suggested answers with the recommended one first and says the team may answer otherwise.
+  - A question with no suggested answers (from an older run) is listed as before.
+- **Delivers**: the writer change and structure tests.
+- **Done when**: tests for a question with suggested answers and one without.
+- **Refs**: RF-637, RF-645, DEC-178.
+
+### P6-18 - Deepen uses the project's answers and does not ask again
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-179)
+- **Status**: Done
+- **Reads**: `src/application/use-cases/start-deepen.ts`, `src/application/deepen/`, `src/application/understand/answer-rerun.ts` (`withAnswersOf`, `askingTheSame`), `reader-tasks.ts`, `src/application/ports/answers-file.ts`, RF-209, RF-241, RF-646, ADR-013.
+- **Do**:
+  - Give every Deepen reader task the answered questions of its area as user context in a labelled data block, as the re-run with answers does; an answer is never evidence, so a claim still needs a code citation.
+  - Mark the questions it used `Answered`; a new open question that asks the same as an answered one is merged into it and keeps the answer; an unanswered one raised again is merged, not duplicated.
+  - The Deepen estimate and its summary say how many answers it used.
+- **Delivers**: the change, unit tests and an integration test with recorded responses.
+- **Done when**: the integration test shows a Deepen that uses an answer and does not ask its question again; `npm run verify` green.
+- **Refs**: RF-209, RF-241, RF-646, DEC-179.
+
+### P6-19 - One question list, asked once before planning
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P6-15, P6-18
+- **Gate**: owner (DEC-179)
+- **Status**: Done (#992)
+- **Reads**: `src/application/use-cases/get-journey.ts`, `list-answers.ts`, `question-states.ts`, `src/application/understand/consolidated-questions.ts`, `src/application/plan/plan-inputs.ts`, `web/src/pages/RunJourney.tsx`, `JourneyPanel.tsx`, `YourTurn.tsx`, `RunAnswers.tsx`, RF-614, RF-615, RF-646, RF-1007, RF-1017.
+- **Do**:
+  - Treat the questions of an understand run and its Deepens as one list, merged by the cards' merge record and asking-the-same; existing duplicates merge on read keeping every answer, the newer answer winning and the older kept in the history.
+  - After a run that can be deepened, the journey and "Your turn" recommend Deepen first and say answers given now will be used; the request to answer comes after the last Deepen, or at once when the user chooses not to Deepen.
+  - Before Plan setup list only the questions still open, with answered ones in a collapsed, editable "Answered" list; plan inputs use the one list.
+- **Delivers**: the use-case, journey and page changes, and integration and end-to-end tests.
+- **Done when**: the end-to-end test answers before a Deepen, runs it, and sees no question asked twice and only new ones before Plan setup.
+- **Refs**: RF-614, RF-615, RF-646, RF-1007, RF-1017, DEC-179.
+
+### P6-20 - Follow-up: the build method e2e waits for the save before a reload
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-03
+- **Gate**: owner (DEC-176)
+- **Status**: Done (#999)
+- **Reads**: `tests/e2e/plan-setup-build-method.spec.ts` (the test at line 16), `tests/e2e/support/plan-setup-page.ts`, the Save handler of the build method step in `web/src/pages/`, RF-612, RF-639. The test failed 2 of 3 local runs, both right after `page.reload()` (lines 45 and 60), and fails on develop CI (run 40759431011, commit d7ee1e72, e2e shard 2), which blocks every pull request (issue #991). It asserts the saved choice before the save has landed.
+- **Do**:
+  - Wait for the save to finish (the save response or the "What I recorded" line) before every reload and every assertion on saved state in the spec.
+  - Find out whether a real defect hides behind the flakiness, such as a page that reloads before the save request ends, and fix it in a separate commit if so.
+- **Delivers**: the spec change and any defect fix with its test.
+- **Done when**: the spec passes `--repeat-each=10` locally and CI e2e is green.
+- **Refs**: RF-612, RF-639, P6-03; issue #991.
+
+### P6-21 - Follow-up: typed Plan setup answers reach the planner
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P6-16
+- **Gate**: owner (DEC-184)
+- **Status**: Done (#1006)
+- **Reads**: `src/application/plan/plan-inputs.ts`, the planner prompts in `prompts/`, the brief schema and the Plan setup pages in `web/src/pages/` (P6-16), `docs/data-model.md` section 3.20, RF-605, RF-645, ADR-013, DEC-184. Today a typed answer to principles, architecture, migration or build method is stored in the brief and shown in "What I recorded", but the planner does not see it, so the question stays in the defaulted list.
+- **Do**:
+  - Pass the typed text of those four questions to the planner inside a labelled data block (ADR-013); it is user context, never evidence or an instruction.
+  - Remove the question from the defaulted list once its typed answer reaches the planner; the ADR and the package then state the user's own answer instead of the default.
+  - Keep the previous behaviour for a question with no typed answer.
+- **Delivers**: the change, unit tests and an integration test with recorded responses.
+- **Done when**: an integration test shows a typed answer in the planner's data block, the question out of the defaulted list and the answer stated in the ADR and the package; `npm run verify` green.
+- **Refs**: RF-605, RF-645, ADR-013, DEC-184.
+
+### P6-22 - Follow-up: a tier model can be marked as running locally
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-05, P6-16
+- **Gate**: owner (DEC-185)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/handoff/handoff-model-checks-markdown.ts` (passes `local: false` today), `src/domain/planning/card-model-check.ts`, the brief schema, `docs/data-model.md` section 3.20, the build method step of Plan setup in `web/src/pages/`, RF-639, RF-641, DEC-185.
+- **Do**:
+  - Add an optional "runs locally" flag per tier model to the brief; it is additive, so a brief saved before the change still reads.
+  - Add a control for it to the build method step of Plan setup.
+  - Pass the flag to the model check, so the local-model warning of RF-641 (a local builder on a card above difficulty 2) fires from a real package.
+- **Delivers**: the schema and page change, the check wiring and tests.
+- **Done when**: a package whose brief marks the middle tier model as local lists the RF-641 warning in `checks.md` for a card above difficulty 2; a brief without the flag is unchanged; CI green.
+- **Refs**: RF-639, RF-641, DEC-185.
+
+### P6-23 - Follow-up: a card on the escalation model shows the owner's approval
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-04, P6-05
+- **Gate**: owner (DEC-192)
+- **Status**: In progress (rework under DEC-192, pull request #1001)
+- **Reads**: `src/domain/planning/card-model-check.ts` (accepts the escalation model silently today), the card line writer of P6-04 (`src/infrastructure/handoff/handoff-task-markdown.ts`), the retry ladder in `src/infrastructure/handoff/handoff-orchestration-markdown.ts`, the escalation section in `handoff-orchestration-gates-markdown.ts`, the `checks.md` writer `handoff-model-checks-markdown.ts`, RF-640, RF-641, DEC-192 (replaces DEC-185 item 7).
+- **Do**:
+  - A card never gets the escalation model when the plan is made: no plan-time card line shows escalation or "escalation, owner approved".
+  - The retry ladder of the package's `orchestration.md` states the exact Status-line text: at a card's third verifier FAIL, and only with the owner's approval in chat, the orchestrator writes "escalation, owner approved" on that card's Status line and then uses the escalation model.
+  - The card-model check accepts the escalation model only on a card whose Status line carries that text; any other card on the escalation model is listed in `checks.md`, without correcting anything.
+- **Delivers**: the retry ladder, card line and check changes, and tests.
+- **Done when**: a test shows the exact Status-line text in the retry ladder of `orchestration.md`; a test shows no generated card line names escalation; the check accepts a card on the escalation model whose Status line carries "escalation, owner approved" and lists one whose Status line does not; a card on a tier model is unchanged; CI green.
+- **Refs**: RF-640, RF-641, DEC-192; replaces the DEC-185 item 7 scope of this card.
+
+### P6-24 - Follow-up: small gaps from the P6-10 review
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P6-10
+- **Gate**: owner (DEC-176)
+- **Status**: Done (#1003)
+- **Reads**: the verifier's PASS comment on the P6-10 pull request (#958), `tests/unit/domain/planning/phase-closing-cards.test.ts`, `src/domain/planning/foundation-cards.ts`, RF-630.
+- **Do**:
+  - Add a test that a phase with no cards gets no matrix card (the `own.length === 0` branch).
+  - Handle an empty last phase: the review card then has nothing waiting on it, so make it wait on the last phase that has cards, or state the rule and test it.
+- **Delivers**: the change and tests.
+- **Done when**: each gap has a passing test and a mutation of the branch fails one; recordings still replay.
+- **Refs**: RF-630, RF-635, P6-10.
+
+### P6-25 - Follow-up: small fixes from the P6-15 review
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P6-15
+- **Gate**: owner (DEC-178)
+- **Status**: Done (#1009)
+- **Reads**: the verifier's comment on the P6-15 pull request (#962), `src/infrastructure/cards/answers-sections.ts` (`optionsIn`, about line 85), `tests/unit/infrastructure/cards/answers-file-options.test.ts` (about line 146), `tests/unit/web/run-answers-options.test.tsx`, RF-645, RF-1007.
+- **Do**:
+  - Strip a leading "(Recommended) " from an answer that is not recommended when writing, so model text cannot fake the recommended mark and the write-parse round trip is exact.
+  - Make the hostile-text test assert the parsed answers and descriptions and the write-parse-write idempotence.
+  - Add a test that drives the choices by keyboard.
+- **Delivers**: the fix and tests.
+- **Done when**: the input `(Recommended) evil` with recommended=false parses back as not recommended; the hostile-text test would fail on the old code; a keyboard test passes.
+- **Refs**: RF-645, RF-1007, P6-15.
+
+### P6-26 - Follow-up: Plan setup asks whether the new application will be hosted
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P6-08, P6-16
+- **Gate**: owner (DEC-189)
+- **Status**: Todo
+- **Reads**: `web/src/pages/PlanContextStep.tsx`, `web/src/lib/plan-setup/question-options.ts`, `draft.ts`, `steps.ts`, `recorded.ts`, `src/domain/planning/planning-brief.ts` (`contextQuestions`, `context.deployment`), `src/infrastructure/handoff/handoff-orchestration-delivery-markdown.ts`, `docs/data-model.md` section 3.20, RF-605, RF-611, RF-643, RF-645, DEC-176, DEC-189. P6-08 added the brief field `context.deployment` (`hosted` or `not-hosted`), but Plan setup does not ask it.
+- **Do**:
+  - Add the optional project-context question "Will the new application be hosted?" with the answers hosted, not hosted and not stated, and no recommended option (an exception to RF-645, like the build method).
+  - Hosted and not hosted fill `context.deployment`; not stated, or no answer, leaves the field absent.
+  - Show the answer in "What I recorded".
+  - Keep the delivery-flow rule of RF-643: the section is written only for a hosted application.
+- **Delivers**: the page and brief change, unit and end-to-end tests.
+- **Done when**: an end-to-end test answers hosted and sees it in "What I recorded"; a package test shows the "Recommended delivery flow" section for hosted and none for not hosted, not stated and no answer; a brief saved before the change reads unchanged; CI green.
+- **Refs**: RF-605, RF-611, RF-643, RF-645, DEC-176, DEC-189.
+
+### P6-27 - Follow-up: no data cards when the run found no data model
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-21
+- **Gate**: owner (DEC-190)
+- **Status**: Todo
+- **Reads**: `src/domain/planning/foundation-cards.ts`, `own-answer-cards.ts`, `src/application/plan/plan-package.ts` (`withFoundationCards`), `src/domain/planning/data-model.ts`, the recorded plan fixtures under `tests/recordings/`, RF-610, RF-630, DEC-190.
+- **Do**:
+  - When the understand run has no `ENT` claim and the data model has no table, drop the data-access and data-migration cards.
+  - Keep the skeleton, approval-test harness and cut-over cards always; no card depends on a dropped card.
+  - A run with a data model keeps the five cards as before.
+- **Delivers**: the change, unit tests and an integration test with recorded responses.
+- **Done when**: a package from a run with no `ENT` claim and no table has three fixed cards and no dependency on a missing card; the existing recordings with a data model give the same `tasks.md` as before; CI green.
+- **Refs**: RF-610, RF-630, DEC-190.
+
+### P6-28 - Follow-up: grep patterns and aliases move to a catalogue file
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P6-07
+- **Gate**: owner (DEC-190)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/handoff/handoff-grep-rules.ts` (`grepRules`, `languageNames`), `handoff-orchestration-markdown.ts` (`grepTableLines`), `handoff-orchestration-lessons-markdown.ts` (`stackLanguages`), `prompts/catalogue/stack-technologies.v2.yaml` (the `language-runtime` aliases), the catalogue loader, `docs/data-model.md` (prompt versions), RF-640, RNF-004, DEC-190.
+- **Do**:
+  - Move the per-language grep patterns and the aliases that map a stack answer to a language, including `dotnet` and `jvm`, to a versioned catalogue file under `prompts/catalogue`, loaded and recorded like the other catalogue files (RNF-004).
+  - List a rule that a chosen principle states but that has no pattern for the stack as "checked by reading" in the hard-rule table.
+  - The generated table stays the same for a stack that has patterns.
+- **Delivers**: the catalogue file, the loader change and tests.
+- **Done when**: the grep table of the recorded packages is unchanged; a stack named only by an alias (for example `jvm`) gets its patterns; a stated rule with no pattern for the stack shows "checked by reading"; no pattern or alias is left as a literal in code; CI green.
+- **Refs**: RF-640, RNF-004, DEC-190, P6-07.
+
+### P6-29 - Follow-up: the Windows lessons key on Windows and IIS and state only the facts
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P6-13
+- **Gate**: owner (DEC-190)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/handoff/handoff-orchestration-lessons-markdown.ts` (`platformIsWindows`, `windowsItems`, `dotnetItem`), its tests, RF-644, DEC-190.
+- **Do**:
+  - Until the brief has a platform field, a stack answer that names Windows or IIS counts as Windows; "Windows Authentication" alone does not.
+  - Trim each Windows item to the fact RF-644 states, without added advice.
+  - Word the locked-build-output item like the .NET item.
+- **Delivers**: the change and tests.
+- **Done when**: tests show the Windows items for a stack answer naming IIS, none for one naming only Windows Authentication, and the trimmed wording; CI green.
+- **Refs**: RF-644, DEC-190, P6-13.
+
+### P6-30 - Follow-up: the package links agents/README.md and says what another tool gets
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P6-09
+- **Gate**: owner (DEC-190)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/handoff/handoff-reading-order-markdown.ts`, `handoff-method-markdown.ts` (`AGENTS.md`), `handoff-agents-folder.ts`, `handoff-orchestration-markdown.ts`, `handoff-links.ts`, RF-640, RF-642, DEC-190.
+- **Do**:
+  - Link `agents/README.md` from the package README reading order and from `AGENTS.md` when the folder is written.
+  - In `orchestration.md`, say that another tool gets the roles in prose only.
+  - Keep the package free of an escalation verifier definition, and test it.
+- **Delivers**: the change and tests.
+- **Done when**: structure tests show both links for Claude Code and Codex, none for another tool, the prose-only sentence for another tool, and no escalation verifier file; CI green.
+- **Refs**: RF-640, RF-642, DEC-190, P6-09.
+
+### P6-31 - Follow-up: the default line and the recommended answer agree, and brief questions list their options
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P6-17
+- **Gate**: owner (DEC-189)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/handoff/handoff-suggested-answers-markdown.ts`, `handoff-build-method-markdown.ts`, `handoff-list-markdown.ts`, `web/src/lib/plan-setup/question-options.ts` (the Plan setup options), the open-questions tests, RF-637, RF-645, DEC-189.
+- **Do**:
+  - Write "at least three" suggested answers where the package says "three".
+  - When an analysis question's "Default:" line and its recommended suggested answer differ, say so in one sentence under the question.
+  - A brief question that took its default lists the Plan setup options as its suggested answers; the build method lists its options with none marked recommended.
+- **Delivers**: the change and structure tests.
+- **Done when**: tests show the sentence for a question whose default and recommended answer differ and none when they agree, the Plan setup options under a defaulted brief question, and no recommended mark on the build method; CI green.
+- **Refs**: RF-637, RF-645, DEC-189, P6-17.
+
+### P6-32 - Follow-up: the API refuses a typed build method with an agent build
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P6-21
+- **Gate**: owner (DEC-187)
+- **Status**: Todo
+- **Reads**: `src/domain/planning/planning-brief.ts` (`briefProblems`), `src/application/use-cases/save-planning-brief.ts`, the brief route tests, the verifier's PASS comment on the P6-21 pull request (#1006, finding 2), RF-645, DEC-187.
+- **Do**:
+  - Refuse a brief save that carries a typed `buildMethod` together with `buildMethod.aiAssisted: true`, with the brief's existing refusal code and a plain message.
+  - Plan setup never sends this combination; keep it so.
+- **Delivers**: the check and tests.
+- **Done when**: an integration test of the save route shows the refusal; a typed build method alone and an agent build alone still save; CI green.
+- **Refs**: RF-612, RF-645, DEC-187, P6-21.
+
+### P6-33 - Follow-up: test and wording gaps from the reviews of 2026-10-28 and 2026-10-29
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P6-12, P6-16, P6-17, P6-19, P6-20, P6-21, P6-24, P6-25
+- **Gate**: owner (DEC-176)
+- **Status**: Todo
+- **Reads**: the verifier comments on the pull requests of P6-12 (#1011), P6-16 (#984), P6-17 (#1002), P6-19 (#992), P6-20 (#999), P6-21 (#1006), P6-24 (#1003) and P6-25 (#1009); the files named below; RF-405, RF-605, RF-630, RF-637, RF-642, RF-645, RF-646.
+- **Do**:
+  - P6-12: `tests/integration/application/build-plan-method-end-to-end.test.ts` checks `agents/escalation.md`; check `agents/builder-escalation.md`, and check the Codex role files for the model of their tier.
+  - P6-24: correct the stale header and JSDoc of `src/domain/planning/phase-closing-cards.ts`.
+  - P6-25: a mark-only answer ("(Recommended)" with no other text) must not fold its description into the answer (`src/infrastructure/cards/answers-sections.ts`); add the test.
+  - `docs/verification/r1-matrix.md`: the example lines of RF-1006 and RF-1108 point one line off; point them at the line that names the id.
+  - P6-17: add a test of the recommended-first reordering of suggested answers.
+  - P6-16: add a draft test: choose a real architecture answer, then type an own one, and the save sends no `architecture`.
+  - `web/src/pages/use-plan-setup.ts`: unit tests for a failed save and for two saves in a row.
+  - `web/src/pages/AdminModelsPage.tsx` (about line 124): fix the stale-overwrite pattern P6-20 fixed in Plan setup, with a test.
+  - P6-21: write the bidi characters of the class in `src/domain/planning/typed-answers.ts` as `\u` escapes; behaviour unchanged.
+  - P6-19: while a Deepen is already running, the Your turn panel does not say "Deepen this run first" (`web/src/pages/YourTurn.tsx`, `web/src/lib/journey/journey-action.ts`); it says a Deepen is running.
+  - P6-21: the builder prose "in the layer the architecture names" (`src/infrastructure/handoff/handoff-agent-prose.ts`) reads oddly with an own style; word it for any architecture.
+- **Delivers**: the fixes and tests, one commit per item.
+- **Done when**: each item has a passing test or, for wording-only items, an updated assertion; the r1-matrix guard passes; recordings still replay; CI green.
+- **Refs**: RF-405, RF-605, RF-630, RF-637, RF-642, RF-645, RF-646, P6-12, P6-16, P6-17, P6-19, P6-20, P6-21, P6-24, P6-25.

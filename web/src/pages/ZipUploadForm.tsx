@@ -4,6 +4,7 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { Link } from '../components/Link.js';
 import { bytesText } from '../lib/bytes.js';
+import { ProcessingProgress } from './ProcessingProgress.js';
 import { useZipUpload, type ZipUpload, type ZipUploadOptions } from './use-zip-upload.js';
 
 // RF-128, RF-134, RFC-004 section 4.5, design-system.md section 14 (Projects): the Upload a zip
@@ -68,7 +69,16 @@ function Summary(props: {
 }
 
 function Outcome({ upload }: { readonly upload: ZipUpload }): JSX.Element | null {
-  const { failure, project, summary, phase, percent } = upload;
+  const { failure, project, summary, phase, percent, processing } = upload;
+  if (phase === 'processing') {
+    return (
+      <ProcessingProgress
+        progress={processing?.progress}
+        elapsedMs={processing?.elapsedMs ?? 0}
+        onCancel={upload.cancel}
+      />
+    );
+  }
   if (phase === 'sending') return <Progress percent={percent} />;
   if (summary !== undefined) return <Summary upload={upload} summary={summary} />;
   if (failure === undefined) return null;
@@ -97,7 +107,7 @@ function ChosenFields(props: {
 }): JSX.Element {
   const { upload, hasProject } = props;
   const { file } = upload;
-  const sending = upload.phase === 'sending';
+  const sending = upload.phase === 'sending' || upload.phase === 'processing';
   return (
     <>
       <Field
@@ -149,7 +159,7 @@ export function ZipUploadForm(props: ZipUploadOptions): JSX.Element {
         <Button
           type="submit"
           variant="primary"
-          busy={phase === 'sending'}
+          busy={phase === 'sending' || phase === 'processing'}
           {...(reason === undefined ? {} : { disabledReason: reason })}
         >
           {phase === 'failed' && upload.project !== undefined ? 'Upload again' : 'Upload zip'}

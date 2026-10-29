@@ -1,13 +1,14 @@
 import { z } from 'zod';
 import type { ApiClient, ApiResult } from './client.js';
 import { projectSchema, type Project } from './project-schemas.js';
-import { sessionSchema } from './schemas.js';
+import { errorBodySchema, sessionSchema } from './schemas.js';
 
 // RF-150, RF-158, RFC-005 section 4.2: the calls of the Excel workbooks tab. The project is created
 // first (`POST /api/projects` with `sourceKind: 'workbook'` and a name); a batch is opened
 // (`POST /api/projects/:id/source/batches`); each workbook goes in its own request (`PUT .../files`,
-// raw body, `X-File-Name`); the batch is finished (`POST .../finish`), which reads, renders and
-// publishes every workbook or none.
+// raw body, `X-File-Name`); the batch is finished (`POST .../finish`), which the server accepts
+// at once (202) and then reads, renders and publishes every workbook or none; the state is asked for
+// with `GET .../batches/:batchId` (or `.../current` after a reload) until the summary or the refusal (RF-159).
 
 /** Q-32: the most workbooks in one project until the server reports its own (`GET /api/session`). */
 export const defaultWorkbookMaxFiles = 20;
@@ -29,21 +30,21 @@ export async function loadWorkbookMaxFiles(
     : defaultWorkbookMaxFiles;
 }
 
-/** Cancels an open batch so the next one can be opened at once (RST-1919); a failure is not worth telling. */
+/**
+ * Cancels a batch so the next one can be opened at once (RST-1919). The answer is 409 when the work on it
+ * had already ended (RF-159): then it was not cancelled and its state tells how it ended.
+ */
 // RF-150
-export async function cancelBatch(
+export function cancelBatch(
   client: ApiClient,
   batch: { readonly projectId: string; readonly batchId: string },
-): Promise<void> {
-  await client.request({
+): Promise<ApiResult<undefined>> {
+  return client.request({
     method: 'DELETE',
     path: `${batchPath(batch.projectId)}/${encodeURIComponent(batch.batchId)}`,
     schema: z.undefined(),
   });
 }
-
-/** Reading and rendering a set of workbooks can take minutes; a batch lives 30 minutes. */
-const finishTimeoutMs = 10 * 60_000;
 
 const batchSchema = z.object({ batchId: z.string().min(1) });
 
@@ -51,7 +52,7 @@ const fileStoredSchema = z.object({ name: z.string(), size: z.number().int().non
 
 const count = z.number().int().nonnegative();
 
-const workbookSummarySchema = z.object({
+export const workbookSummarySchema = z.object({
   /** What was read of each workbook (RF-150). */
   workbooks: z.array(
     z.object({
@@ -71,6 +72,50 @@ const workbookSummarySchema = z.object({
 });
 
 export type WorkbookSummary = z.output<typeof workbookSummarySchema>;
+
+/** RF-159: where the server is while it reads a batch. */
+const progressSchema = z.object({
+  step: z.enum(['reading', 'rendering', 'dependencies', 'saving']),
+  workbook: count,
+  workbooks: count,
+  sheet: count,
+  sheets: count,
+  cells: count,
+});
+
+export type WorkbookProgress = z.output<typeof progressSchema>;
+
+const refusalSchema = errorBodySchema.extend({ status: z.number().int() });
+
+/**
+ * RF-159, RF-158: the state of a batch: at work with its progress, or ended with the summary or the
+ * refusal. The summary is the one of the batch: of workbooks, or (DEC-188) of the zip that holds them.
+ */
+export interface BatchStateOf<T> {
+  readonly batchId: string;
+  readonly phase: 'open' | 'processing' | 'stored' | 'refused';
+  readonly files: number;
+  readonly elapsedMs: number;
+  readonly progress?: WorkbookProgress | undefined;
+  readonly summary?: T | undefined;
+  readonly refusal?: z.output<typeof refusalSchema> | undefined;
+}
+
+export type BatchState = BatchStateOf<WorkbookSummary>;
+
+export function stateSchemaOf<T>(summary: z.ZodType<T>): z.ZodType<BatchStateOf<T>> {
+  return z.object({
+    batchId: z.string().min(1),
+    phase: z.enum(['open', 'processing', 'stored', 'refused']),
+    files: count,
+    elapsedMs: count,
+    progress: progressSchema.optional(),
+    summary: summary.optional(),
+    refusal: refusalSchema.optional(),
+  });
+}
+
+const batchStateSchema = stateSchemaOf(workbookSummarySchema);
 
 /** Who follows a file on its way: its progress, and the signal that cancels it. */
 interface FileWatch {
@@ -128,17 +173,41 @@ export function sendWorkbook(
   });
 }
 
-// RF-150
+// RF-159: the server accepts the batch at once (202) and answers its state; the work goes on after it.
 export function finishBatch(
   client: ApiClient,
   batch: { readonly projectId: string; readonly batchId: string },
   signal: AbortSignal,
-): Promise<ApiResult<WorkbookSummary>> {
+): Promise<ApiResult<BatchState>> {
   return client.request({
     method: 'POST',
     path: `${batchPath(batch.projectId)}/${encodeURIComponent(batch.batchId)}/finish`,
-    schema: workbookSummarySchema,
-    timeoutMs: finishTimeoutMs,
+    schema: batchStateSchema,
+    signal,
+  });
+}
+
+/** RF-159: the state of a batch, or of the batch of the project when no id is known (a reloaded page). */
+export function readBatchState(
+  client: ApiClient,
+  batch: { readonly projectId: string; readonly batchId?: string | undefined },
+  signal: AbortSignal,
+): Promise<ApiResult<BatchState>> {
+  return readStateOf(client, batch, signal, workbookSummarySchema);
+}
+
+/** The same read for a batch whose summary is not the one of workbooks (the batch of a zip, DEC-188). */
+export function readStateOf<T>(
+  client: ApiClient,
+  batch: { readonly projectId: string; readonly batchId?: string | undefined },
+  signal: AbortSignal,
+  summary: z.ZodType<T>,
+): Promise<ApiResult<BatchStateOf<T>>> {
+  const which = batch.batchId === undefined ? 'current' : encodeURIComponent(batch.batchId);
+  return client.request({
+    method: 'GET',
+    path: `${batchPath(batch.projectId)}/${which}`,
+    schema: stateSchemaOf(summary),
     signal,
   });
 }

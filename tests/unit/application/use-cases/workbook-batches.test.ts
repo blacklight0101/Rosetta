@@ -104,7 +104,6 @@ describe('WorkbookBatches a batch left open', () => {
     const file = await test.useCase.receive(fileRequest(test.project, batchId));
     const finish = await test.useCase.finish({
       ...{ actor: amy, projectId: test.project.id, batchId, ip: '203.0.113.7' },
-      signal: new AbortController().signal,
     });
 
     expect(file).toEqual({ ok: false, error: ERROR_CODES.notFound });

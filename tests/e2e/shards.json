@@ -10,6 +10,7 @@
     "tests/e2e/journeys/two-users.spec.ts",
     "tests/e2e/live-run.spec.ts",
     "tests/e2e/plan-setup.spec.ts",
+    "tests/e2e/plan-setup-own-answer.spec.ts",
     "tests/e2e/project-settings.spec.ts",
     "tests/e2e/projects.spec.ts",
     "tests/e2e/report-diagrams.spec.ts",
@@ -40,7 +41,8 @@
     "tests/e2e/run-report.spec.ts",
     "tests/e2e/settings-provider-test.spec.ts",
     "tests/e2e/visual/sweep-account.spec.ts",
-    "tests/e2e/side-navigation.spec.ts"
+    "tests/e2e/side-navigation.spec.ts",
+    "tests/e2e/plan-setup-build-method.spec.ts"
   ],
   "3": [
     "tests/e2e/account-password.spec.ts",
@@ -48,6 +50,7 @@
     "tests/e2e/announce-refusals.spec.ts",
     "tests/e2e/journeys/first-sign-in.spec.ts",
     "tests/e2e/journeys/handoff-package.spec.ts",
+    "tests/e2e/journeys/method-package.spec.ts",
     "tests/e2e/journeys/workbook-project.spec.ts",
     "tests/e2e/journeys/zip-project.spec.ts",
     "tests/e2e/journeys/language-without-pack.spec.ts",
@@ -66,6 +69,8 @@
     "tests/e2e/visual/sweep-public.spec.ts",
     "tests/e2e/visual/sweep-runs.spec.ts",
     "tests/e2e/projects-upload.spec.ts",
-    "tests/e2e/projects-workbooks.spec.ts"
+    "tests/e2e/projects-workbooks.spec.ts",
+    "tests/e2e/projects-workbooks-progress.spec.ts",
+    "tests/e2e/projects-zip-workbooks-progress.spec.ts"
   ]
 }

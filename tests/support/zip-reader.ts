@@ -8,6 +8,8 @@ import { inflateRaw } from 'node:zlib';
 export interface ZipEntry {
   readonly name: string;
   readonly directory: boolean;
+  /** 0 for stored, 8 for deflated. */
+  readonly method: number;
   readonly data: Buffer;
 }
 
@@ -59,7 +61,7 @@ export async function readZip(bytes: Uint8Array): Promise<readonly ZipEntry[]> {
     const data = directory
       ? Buffer.alloc(0)
       : await dataOf(zip, method, size, zip.readUInt32LE(at + 42));
-    entries.push({ name, directory, data });
+    entries.push({ name, directory, method, data });
     at += 46 + nameLength + extraLength + commentLength;
   }
   return entries;

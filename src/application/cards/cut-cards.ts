@@ -1,5 +1,5 @@
 import { balancedEnd } from './extract-json.js';
-import { parseCardsLenient, type CardParse } from './parse-cards.js';
+import { parseCardsLenient, type CardParse, type ParseOptions } from './parse-cards.js';
 import type { RowIndex } from './row-citations.js';
 
 // RF-208, Q-55: an answer cut off at the model's output limit and not continued still holds cards
@@ -31,12 +31,19 @@ function cutProblem(kept: number): CardParse['problems'][number] {
   };
 }
 
-/** The cards finished before the cut, with the cut card listed as a problem; undefined if none. */
-export function readCutCards(raw: string, rows: RowIndex = new Map()): CardParse | undefined {
+/**
+ * The cards finished before the cut, with the cut card listed as a problem; undefined if none.
+ * They are read with the options of the whole answer (RF-645: suggested answers when required).
+ */
+export function readCutCards(
+  raw: string,
+  rows: RowIndex = new Map(),
+  options: ParseOptions = {},
+): CardParse | undefined {
   const start = cardsStart.exec(raw);
   if (start === null) return undefined;
   const items = completeItems(raw, start.index + start[0].length);
-  const read = parseCardsLenient(`{"cards":[${items.join(',')}]}`, rows);
+  const read = parseCardsLenient(`{"cards":[${items.join(',')}]}`, rows, options);
   if (read.drafts.length === 0) return undefined;
   return {
     drafts: read.drafts,

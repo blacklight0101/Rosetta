@@ -63,6 +63,26 @@ export const workbookRows: Readonly<Record<string, readonly Probe[]>> = {
       expected: ownerOnly(404),
     },
   ],
+  'GET /api/projects/:id/source/batches/current': [
+    {
+      method: 'GET',
+      url: (context: Context) => `${batches(context)}/current`,
+      expected: ownerOnly(404),
+    },
+  ],
+  'HEAD /api/projects/:id/source/batches/current': [
+    {
+      method: 'HEAD',
+      url: (context: Context) => `${batches(context)}/current`,
+      expected: ownerOnly(404),
+    },
+  ],
+  'HEAD /api/projects/:id/source/batches/:batchId': [
+    { method: 'HEAD', url: aBatch, expected: ownerOnly(404) },
+  ],
+  'GET /api/projects/:id/source/batches/:batchId': [
+    { method: 'GET', url: aBatch, expected: ownerOnly(404) },
+  ],
   'DELETE /api/projects/:id/source/batches/:batchId': [
     { method: 'DELETE', url: aBatch, expected: ownerOnly(404) },
   ],

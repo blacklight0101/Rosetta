@@ -1,19 +1,22 @@
 import type { JSX } from 'preact';
+import { useState } from 'preact/hooks';
 import { sectionTitles } from '../api/overview.js';
 import { waitsForAnswer, type OpenQuestionRow } from '../api/answers.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
-import { Field } from '../components/Field.js';
 import { RenderedText } from '../components/RenderedText.js';
 import { StatusBadge } from '../components/StatusBadge.js';
+import { AnswerInput } from './AnswerChoices.js';
 import { sectionAnchor } from './AppOverview.js';
 import { useAnswerSave, type AnswerSave } from './use-answer-save.js';
 import { useFocusFirst, type FocusRequest } from './use-focus-first-question.js';
+import { useQuestionPlaces } from './use-question-places.js';
 import type { RunAnswersState } from './use-run-answers.js';
 import type { OverviewLoad } from './use-run-overview.js';
 
 // RF-1007, RF-240, RF-507: the open questions of an understand run on its live page, each with a
-// field for the answer. Saving writes the answer into the project's answers.md (the other answers
+// field for the answer, or its suggested answers as choices plus "Type your own answer" (RF-645,
+// DEC-178; a question saved before that keeps the field). Saving writes the answer into the project's answers.md (the other answers
 // stay); a question is marked answered only when its area is analysed again with the answers
 // (RF-241), so a saved answer reads "Answer saved" (not open, DEC-154) until a re-run used it, then Answered. A re-run skips
 // an Answered question, so one whose answer was edited is reopened first (RF-241). Question and
@@ -38,11 +41,6 @@ export interface RunAnswersProps {
 }
 
 type Questions = readonly OpenQuestionRow[];
-
-const SAVE_HELP =
-  "Saved on one line in the project's answers.md. Leave it empty to clear the answer.";
-const REOPEN_HELP =
-  ' This question is Answered: reopen it for the next re-run to use an edited answer.';
 
 function ReopenButton(props: { readonly save: AnswerSave }): JSX.Element {
   const { save } = props;
@@ -76,15 +74,7 @@ function AnswerForm(props: {
       }}
     >
       {save.failure === undefined ? null : <ErrorBanner error={save.failure} />}
-      <Field
-        kind="textarea"
-        id={`answer-${question.cardId}`}
-        label={`Answer to ${question.cardId}`}
-        rows={3}
-        value={save.text}
-        help={answered ? `${SAVE_HELP}${REOPEN_HELP}` : SAVE_HELP}
-        onInput={save.type}
-      />
+      <AnswerInput question={question} save={save} />
       <div class="rst-p139-question__actions">
         <Button type="submit" variant="secondary" busy={save.busy}>
           Save answer
@@ -150,6 +140,32 @@ function shownState(question: OpenQuestionRow): 'Open' | 'Answer saved' | 'Answe
   return waitsForAnswer(question) ? 'Open' : 'Answer saved';
 }
 
+/** RF-646: a question raised in several runs says so; the older answers it replaced are kept and shown. */
+function Earlier({ question }: { readonly question: OpenQuestionRow }): JSX.Element | null {
+  const runs = question.runs?.length ?? 0;
+  const history = question.history ?? [];
+  if (runs < 2 && history.length === 0) return null;
+  return (
+    <div class="rst-p139-question__context" data-testid="question-earlier">
+      {runs < 2 ? null : (
+        <p>{`Asked in ${String(runs)} runs of this project; it is listed once.`}</p>
+      )}
+      {history.length === 0 ? null : (
+        <>
+          <p>Earlier answers, kept in answers.md:</p>
+          <ul>
+            {history.map((each) => (
+              <li key={[each.runKey, each.answer].join('\n')}>
+                <RenderedText text={each.answer} />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
 function QuestionItem(props: {
   readonly runId: string;
   readonly question: OpenQuestionRow;
@@ -172,8 +188,72 @@ function QuestionItem(props: {
         <Concerns section={props.section} onConcern={props.onConcern} />
       )}
       <Reasons question={question} />
+      <Earlier question={question} />
       <AnswerForm question={question} save={save} />
     </li>
+  );
+}
+
+interface ListProps {
+  readonly runId: string;
+  readonly questions: Questions;
+  readonly apply: (questions: Questions) => void;
+  readonly links: readonly {
+    readonly cardId: string;
+    readonly section: keyof typeof sectionTitles;
+  }[];
+  readonly onConcern: RunAnswersProps['onConcern'];
+}
+
+function Items(props: ListProps & { readonly shown: Questions }): JSX.Element {
+  return (
+    <ol class="rst-p139-answers__list">
+      {props.shown.map((question) => (
+        <QuestionItem
+          key={question.cardId}
+          runId={props.runId}
+          question={question}
+          apply={props.apply}
+          section={props.links.find((link) => link.cardId === question.cardId)?.section}
+          onConcern={props.onConcern}
+        />
+      ))}
+    </ol>
+  );
+}
+
+/**
+ * RF-646, RF-1007, DEC-179: the open questions first; the ones with an answer a run used in a collapsed
+ * "Answered" list whose questions can be edited like the others. One list for the project.
+ */
+function QuestionLists(props: ListProps): JSX.Element {
+  const [note, setNote] = useState('');
+  const { open, answered } = useQuestionPlaces(props.questions);
+  const apply = (questions: Questions): void => {
+    props.apply(questions);
+    const left = questions.filter(waitsForAnswer).length;
+    setNote(
+      `Saved. ${String(left)} ${left === 1 ? 'question waits' : 'questions wait'} for an answer.`,
+    );
+  };
+  return (
+    <>
+      <p class="rst-settings__note" role="status" data-testid="answers-status">
+        {note}
+      </p>
+      {props.questions.some(waitsForAnswer) ? null : (
+        <p class="rst-settings__note" data-testid="no-open-questions">
+          No question waits for an answer.
+        </p>
+      )}
+      {open.length === 0 ? null : <Items {...props} apply={apply} shown={open} />}
+      {answered.length === 0 ? null : (
+        <details class="rst-p139-answered" data-testid="answered-questions">
+          <summary>{`Answered (${String(answered.length)})`}</summary>
+          <Items {...props} apply={apply} shown={answered} />
+        </details>
+      )}
+    </>
   );
 }
 
@@ -194,20 +274,7 @@ function Body({ runId, answers, overview, onConcern }: RunAnswersProps): JSX.Ele
   if (load.questions.length === 0) {
     return <p class="rst-settings__note">This run added no open questions.</p>;
   }
-  return (
-    <ol class="rst-p139-answers__list">
-      {load.questions.map((question) => (
-        <QuestionItem
-          key={question.cardId}
-          runId={runId}
-          question={question}
-          apply={apply}
-          section={links.find((link) => link.cardId === question.cardId)?.section}
-          onConcern={onConcern}
-        />
-      ))}
-    </ol>
-  );
+  return <QuestionLists {...{ runId, apply, links, onConcern }} questions={load.questions} />;
 }
 
 // RF-1007

@@ -49,9 +49,34 @@ const briefSchema = z.object({
     deadline: z.string().nullable(),
     keepIntegrations: z.array(z.string()),
     dataMigration: z.string().nullable(),
+    /** P6-26 (RF-643): absent when the owner did not say; an older brief has none. */
+    deployment: z.enum(['hosted', 'not-hosted']).optional(),
   }),
-  buildMethod: z.object({ aiAssisted: z.boolean() }),
+  buildMethod: z.object({
+    aiAssisted: z.boolean(),
+    agentTool: z
+      .object({ kind: z.enum(['claude-code', 'codex', 'other']), name: z.string().optional() })
+      .optional(),
+    models: z
+      .object({
+        smallest: z.string().optional(),
+        middle: z.string().optional(),
+        largest: z.string().optional(),
+        escalation: z.string().optional(),
+      })
+      .optional(),
+    local: z
+      .object({
+        smallest: z.boolean().optional(),
+        middle: z.boolean().optional(),
+        largest: z.boolean().optional(),
+      })
+      .optional(),
+  }),
   defaulted: z.array(z.string()),
+  /** RF-645: the option that answered each question, or "typed"; absent in an older brief. */
+  chosen: z.record(z.string(), z.string()).optional(),
+  typed: z.record(z.string(), z.string()).optional(),
 });
 
 export const briefViewSchema = z.object({

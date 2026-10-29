@@ -27,11 +27,31 @@ export interface ReceiveRequest {
   readonly signal: AbortSignal;
 }
 
+/** RF-159: the step the server is in while a batch is processed. */
+type WorkbookStep = 'reading' | 'rendering' | 'dependencies' | 'saving';
+
+/**
+ * RF-159, DEC-183: where processing has got to. `workbook` and `sheet` count from 1 (0 before the
+ * first is known); `cells` are the non-empty cells read so far.
+ */
+export interface WorkbookProgress {
+  readonly step: WorkbookStep;
+  readonly workbook: number;
+  readonly workbooks: number;
+  readonly sheet: number;
+  readonly sheets: number;
+  readonly cells: number;
+}
+
+export type ProgressListener = (progress: WorkbookProgress) => void;
+
 export interface PublishRequest {
   readonly projectId: string;
   /** ISO 8601 instant in UTC, from the Clock. */
   readonly uploadedAt: string;
   readonly signal: AbortSignal;
+  /** Told where processing has got to (RF-159); it must not throw. */
+  readonly onProgress?: ProgressListener;
 }
 
 /** What one workbook counted for the page (RF-150). */
@@ -53,6 +73,12 @@ export interface LeftOut {
 export interface PublishedWorkbooks {
   /** The folder name under `<data>/sources/`: `workbook__<project id>@<16 hex>`. */
   readonly key: string;
+  /**
+   * RF-159: true when this batch put the snapshot in place; false when the same content was already
+   * stored (the project's source, or a run's), which this batch must never delete or change unless it
+   * becomes the source.
+   */
+  readonly created: boolean;
   readonly info: WorkbookSnapshotInfo;
   readonly summary: readonly WorkbookSummaryLine[];
   readonly skipped: readonly LeftOut[];

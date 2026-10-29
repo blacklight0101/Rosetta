@@ -1,8 +1,12 @@
 import type { JSX } from 'preact';
-import { withAnswered } from '../lib/plan-setup/draft.js';
+import { chosen } from '../lib/plan-setup/choices.js';
+import { withAnswered, type Draft } from '../lib/plan-setup/draft.js';
+import { TYPED } from '../lib/plan-setup/own-answers.js';
+import { PlanContextChoices } from './PlanContextChoices.js';
 import { MAX_TEXT } from '../lib/plan-setup/draft.js';
 import type { ContextField } from '../lib/plan-setup/steps.js';
 import { Field } from '../components/Field.js';
+import { PlanHostedQuestion } from './PlanHostedQuestion.js';
 import { PlanStepCard } from './PlanStepCard.js';
 import type { StepProps } from './PlanPrinciplesStep.js';
 
@@ -47,14 +51,18 @@ const FIELDS: readonly {
   },
 ];
 
+/** The draft once a context field is typed: the field is answered by typing. */
+function withText(draft: Draft, field: ContextField, value: string): Draft {
+  return withAnswered(
+    chosen({ ...draft, context: { ...draft.context, [field]: value } }, `context.${field}`, TYPED),
+    [`context.${field}`],
+  );
+}
+
 // RF-611
-export function PlanContextStep({ draft, change, problems }: StepProps): JSX.Element {
+export function PlanContextStep({ draft, catalogue, change, problems }: StepProps): JSX.Element {
   const set = (field: ContextField, value: string): void => {
-    change(
-      withAnswered({ ...draft, context: { ...draft.context, [field]: value } }, [
-        `context.${field}`,
-      ]),
-    );
+    change(withText(draft, field, value));
   };
   return (
     <PlanStepCard
@@ -73,12 +81,24 @@ export function PlanContextStep({ draft, change, problems }: StepProps): JSX.Ele
             set(field, value);
           },
         };
-        return multiline ? (
-          <Field key={field} kind="textarea" rows={4} {...common} />
-        ) : (
-          <Field key={field} kind="text" {...common} />
+        return (
+          <div key={field} class="rst-plan-question">
+            <PlanContextChoices
+              field={field}
+              label={label}
+              draft={draft}
+              catalogue={catalogue}
+              change={change}
+            />
+            {multiline ? (
+              <Field kind="textarea" rows={4} {...common} />
+            ) : (
+              <Field kind="text" {...common} />
+            )}
+          </div>
         );
       })}
+      <PlanHostedQuestion draft={draft} change={change} />
     </PlanStepCard>
   );
 }

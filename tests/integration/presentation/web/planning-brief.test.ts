@@ -162,6 +162,53 @@ describe('PUT /api/projects/:id/planning-brief: field problems', () => {
   });
 });
 
+describe('PUT /api/projects/:id/planning-brief: typed build method', () => {
+  const agentBuild = { aiAssisted: true, agentTool: { kind: 'claude-code' } };
+
+  it('DEC-187 refuses a typed build method together with agents building, and writes nothing', async () => {
+    const { test, amy, project } = await setup();
+
+    const response = await put(amy, project.id, {
+      buildMethod: agentBuild,
+      typed: { buildMethod: 'Our own process' },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      code: ERROR_CODES.requestInvalid,
+      problems: [{ field: 'typed.buildMethod' }],
+    });
+    expect(fileOf(test, project.id)).toBeUndefined();
+  });
+
+  it('DEC-187 a typed build method alone still saves, and the question leaves defaulted', async () => {
+    const { amy, project } = await setup();
+
+    const response = await put(amy, project.id, { typed: { buildMethod: 'Our own process' } });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      saved: true,
+      brief: { buildMethod: { aiAssisted: false }, typed: { buildMethod: 'Our own process' } },
+    });
+    expect(response.json<{ brief: { defaulted: string[] } }>().brief.defaulted).not.toContain(
+      'buildMethod',
+    );
+  });
+
+  it('DEC-187 an agent build alone still saves', async () => {
+    const { amy, project } = await setup();
+
+    const response = await put(amy, project.id, { buildMethod: agentBuild });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      saved: true,
+      brief: { buildMethod: { aiAssisted: true, agentTool: { kind: 'claude-code' } } },
+    });
+  });
+});
+
 describe('planning brief out of date', () => {
   it('RF-605 changing an answer after a package exists tells the page the package is out of date', async () => {
     const { test, amy, project } = await setup();

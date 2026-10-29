@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { SentSnapshot, UploadSnapshotInfo } from '../../application/ports/source-fetcher.js';
+import type {
+  SentSnapshot,
+  UploadSnapshotInfo,
+  WorkbookSnapshotInfo,
+} from '../../application/ports/source-fetcher.js';
 import type {
   StoredUpload,
   UploadRequest,
@@ -113,6 +117,14 @@ export class ZipUploadStore implements UploadStore {
     return snapshot?.kind === wanted ? snapshot : undefined;
   }
 
+  // RF-128: the newest upload of the same content names the snapshot; the tree is not touched.
+  async rewriteInfo(key: string, info: UploadSnapshotInfo | WorkbookSnapshotInfo): Promise<void> {
+    if (!isUploadSnapshotKey(key) && !isWorkbookSnapshotKey(key)) {
+      throw snapshotWriteFailed(`${key} is not an upload`, undefined);
+    }
+    await this.snapshots.rewriteInfo(key, info);
+  }
+
   remove(key: string): Promise<boolean> {
     const mine = isUploadSnapshotKey(key) || isWorkbookSnapshotKey(key);
     return mine ? this.cache.remove(key) : Promise.resolve(false);
@@ -148,9 +160,16 @@ export class ZipUploadStore implements UploadStore {
       },
       zipPath,
     );
+    // RF-159, DEC-188: a zip that holds workbooks is told to the caller, which answers at once.
+    if (
+      request.onWorkbooks !== undefined &&
+      (await this.options.extractor.holdsWorkbooks(zipPath))
+    ) {
+      await request.onWorkbooks();
+    }
     const extraction = await this.extract(zipPath, filesDir, request.signal);
     await rm(zipPath, { force: true });
-    const books = await this.renderBooks(filesDir, request.signal);
+    const books = await this.renderBooks(filesDir, request);
     const summary = await this.snapshots.inspect(filesDir);
     const info: UploadSnapshotInfo = {
       kind: 'upload',
@@ -162,23 +181,22 @@ export class ZipUploadStore implements UploadStore {
     };
     const key = uploadSnapshotKey(request.projectId, summary.snapshotHash);
     await this.snapshots.writeInfo(partial, info);
-    if (await this.snapshots.commit(partial, key)) {
-      await this.snapshots.makeReadOnly(this.snapshots.snapshotDir(key));
-    } else {
-      // The same content is already stored: the newest upload names it (RF-128).
-      await this.snapshots.rewriteInfo(key, info);
-    }
+    // RF-159: the same content already stored is left as it is; it is named once the upload is kept.
+    const created = await this.snapshots.commit(partial, key);
+    if (created) await this.snapshots.makeReadOnly(this.snapshots.snapshotDir(key));
     const skipped = info.skippedLinks + extraction.leftOutEntries;
     const held = books === undefined ? {} : { workbooks: books.lines, leftOut: books.leftOut };
-    return { key, info, zipBytes, skipped, ...held };
+    return { key, info, created, zipBytes, skipped, ...held };
   }
 
   /** RF-152, Q-41: renders the workbooks of the unpacked tree under the time bound of unpacking. */
-  private async renderBooks(filesDir: string, requestSignal: AbortSignal) {
+  private async renderBooks(filesDir: string, request: UploadRequest) {
+    const requestSignal = request.signal;
     const bound = AbortSignal.timeout(this.options.extractTimeoutMs ?? DEFAULT_EXTRACT_TIMEOUT_MS);
     const limits = this.options.workbookLimits ?? DEFAULT_WORKBOOK_LIMITS;
     try {
-      return await renderZipWorkbooks(filesDir, limits, AbortSignal.any([requestSignal, bound]));
+      const signal = AbortSignal.any([requestSignal, bound]);
+      return await renderZipWorkbooks(filesDir, limits, signal, request.onProgress);
     } catch (error) {
       if (requestSignal.aborted) throw stoppedBy(requestSignal, error);
       if (bound.aborted) throw uploadTimedOut('rendering workbooks');

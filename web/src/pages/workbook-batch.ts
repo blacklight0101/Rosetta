@@ -6,13 +6,18 @@ import {
   finishBatch,
   openBatch,
   sendWorkbook,
+  type BatchState,
   type WorkbookSummary,
+  workbookSummarySchema,
 } from '../api/workbook-upload.js';
+import { watchBatch } from './workbook-watch.js';
 
 // RF-150, RFC-005 section 4.2: one run of the Excel workbooks upload. It makes the project (unless
 // there is one), opens a batch (unless the one a failed run left open still fits the files), sends
-// the files one per request, and finishes the batch. A file that failed can be sent again alone,
-// so an open batch is kept for the next run; a finished batch, good or refused, is spent.
+// the files one per request, and finishes the batch. The server accepts the finish at once and reads
+// the workbooks after it; the run then asks for the state every second until the summary or the
+// refusal (RF-159). A file that failed can be sent again alone, so an open batch is kept for the next
+// run; a finished batch, good or refused, is spent.
 
 /** A batch the server holds open, and the files it already has. */
 export interface OpenBatch {
@@ -29,6 +34,8 @@ export interface BatchEvents {
   readonly file: (index: number, state: FileState) => void;
   readonly progress: (index: number, percent: number) => void;
   readonly finishing: () => void;
+  /** RF-159: the server's state of the batch it is reading. */
+  readonly processing: (state: BatchState) => void;
 }
 
 export interface BatchRun {
@@ -105,12 +112,16 @@ export async function runBatch(run: BatchRun): Promise<ApiResult<WorkbookSummary
   const sent = await sendFiles(run, project.value.id, opened.value);
   if (!sent.ok) return sent;
   run.events.finishing();
-  const finished = await finishBatch(
-    run.client,
-    { projectId: project.value.id, batchId: sent.value.id },
-    run.signal,
-  );
+  const finish = { projectId: project.value.id, batchId: sent.value.id };
+  const accepted = await finishBatch(run.client, finish, run.signal);
   run.events.batch(undefined);
+  if (accepted.ok) run.events.processing(accepted.value);
+  const finished = accepted.ok
+    ? await watchBatch({
+        ...{ ...run, ...finish, onState: run.events.processing },
+        summary: workbookSummarySchema,
+      })
+    : accepted;
   if (!finished.ok) {
     // Nothing is published: no file counts as stored any more.
     run.files.forEach((_, index) => {

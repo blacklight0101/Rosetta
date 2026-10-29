@@ -2,13 +2,14 @@ import { useCallback, useEffect, useState } from 'preact/hooks';
 import type { BriefView, PlanEstimate } from '../api/plan-schemas.js';
 import type { Project } from '../api/project-schemas.js';
 import { chooseStyle } from '../lib/plan-setup/choices.js';
-import { isAnswered, type Draft } from '../lib/plan-setup/draft.js';
+import { isAnswered, shownMethod, withAnswered, type Draft } from '../lib/plan-setup/draft.js';
 import {
   blockersOf,
   needsConsent,
   plannerOfProject,
   type Blocker,
 } from '../lib/plan-setup/estimate.js';
+import { TYPED } from '../lib/plan-setup/own-answers.js';
 import { usePlanEstimate, type EstimateLoad } from './use-plan-estimate.js';
 import { usePlanOptions, type OptionsLoad } from './use-plan-options.js';
 import { usePrivateCode, type PrivateCode } from './use-private-code.js';
@@ -48,9 +49,14 @@ const OPTION_STEPS: readonly string[] = ['architecture', 'stack'];
 
 function shownChoice(setup: PlanSetupState, load: OptionsLoad): Draft | undefined {
   const { draft } = setup;
+  if (setup.step === 'method') {
+    const shown = shownMethod(draft);
+    return shown === draft ? undefined : withAnswered(shown, ['buildMethod']);
+  }
   const options = load.status === 'ready' ? load.options : undefined;
   if (setup.step !== 'architecture' || options === undefined) return undefined;
-  if (isAnswered(draft, 'architecture')) return undefined;
+  // A typed answer is kept as it is, not replaced by the recommended style (RF-645).
+  if (isAnswered(draft, 'architecture') || draft.chosen['architecture'] === TYPED) return undefined;
   return chooseStyle(draft, options, options.architecture.recommended);
 }
 

@@ -81,6 +81,13 @@ function OutOfScope({ deepen }: { readonly deepen: DeepenRecordData }): JSX.Elem
   );
 }
 
+/** DEC-179: how many of the answers the owner gave the Deepen used. */
+function AnswersUsed({ count }: { readonly count: number }): JSX.Element | null {
+  if (count === 0) return null;
+  const text = count === 1 ? '1 answer you gave was' : `${String(count)} answers you gave were`;
+  return <p data-testid="deepen-answers">{`${text} used by this Deepen.`}</p>;
+}
+
 // RF-231, RF-209
 export function DeepenOutcome({ deepen }: { readonly deepen: DeepenRecordData }): JSX.Element {
   const { before, after } = deepen;
@@ -96,6 +103,7 @@ export function DeepenOutcome({ deepen }: { readonly deepen: DeepenRecordData })
         </p>
       )}
       {before === null || after === null ? null : <Table rows={beforeAfterRows(before, after)} />}
+      <AnswersUsed count={deepen.answersUsed} />
       <OutOfScope deepen={deepen} />
     </section>
   );

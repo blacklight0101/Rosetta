@@ -1,7 +1,9 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
+import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.js';
 import type { StackClash } from '../../domain/planning/stack-rules.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { decisionLink, handoffFiles } from './handoff-links.js';
+import { hasOwnAnswer } from './handoff-own-answers-markdown.js';
 
 // RF-609, RF-507: what the package says about a clash between the owner's stack choices. The rule
 // ids, the question and the default are Rosetta's words; the clash text holds the owner's choices,
@@ -99,27 +101,42 @@ export function proposalLines(handoff: HandoffPackage, esc: MarkdownEscaper): st
   ];
 }
 
+/** The default strategy's title when the owner typed an own migration answer (DEC-184); undefined otherwise. */
+function referenceStrategy(handoff: HandoffPackage, esc: MarkdownEscaper): string | undefined {
+  if (!hasOwnAnswer(handoff, 'migration')) return undefined;
+  return esc.inline(migrationStrategyInfo[handoff.brief.migration].title);
+}
+
 /** P5-39: the TRD lines under the strategy: what Rosetta changed or added to fit the kind. */
 export function strategyLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const fit = handoff.proposal?.fit;
   if (fit === undefined || fit.reason === '') return [];
   const seam = handoff.choices.seam ?? '';
+  const reference = referenceStrategy(handoff, esc);
+  const label =
+    reference !== undefined
+      ? `Fit of ${reference}, the reference strategy, with the application`
+      : fit.changedFrom === null
+        ? 'Fit with the application'
+        : 'Proposed by Rosetta';
   return [
-    `${fit.changedFrom === null ? 'Fit with the application' : 'Proposed by Rosetta'}: ${esc.inline(fit.reason)}${seam === '' ? '' : ` (${decisionLink(seam)})`}`,
+    `${label}: ${esc.inline(fit.reason)}${seam === '' ? '' : ` (${decisionLink(seam)})`}`,
     '',
   ];
 }
 
-/** P5-39: the checks.md section for a strategy that does not fit and that the owner chose. */
+/**
+ * P5-39: the checks.md section for a strategy that does not fit and that the owner chose. DEC-184:
+ * with an own migration answer the check ran against the default strategy as the reference.
+ */
 export function strategyFitCheckLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const finding = handoff.proposal?.fit.finding ?? null;
   if (finding === null) return [];
-  return [
-    '## Migration strategy fit',
-    '',
-    esc.inline(finding),
-    '',
-    'The owner chose this strategy, so Rosetta kept it. Decide the seam between the two systems before the first phase.',
-    '',
-  ];
+  const reference = referenceStrategy(handoff, esc);
+  const record = ` (${decisionLink(handoff.choices.migration)})`;
+  const verdict =
+    reference === undefined
+      ? 'The owner chose this strategy, so Rosetta kept it. Decide the seam between the two systems before the first phase.'
+      : `The owner answered with an own strategy${record}. Rosetta checked its default strategy, ${reference}, as the reference, not the owner's answer: check the owner's answer against this finding and decide the seam between the two systems before the first phase.`;
+  return ['## Migration strategy fit', '', esc.inline(finding), '', verdict, ''];
 }
