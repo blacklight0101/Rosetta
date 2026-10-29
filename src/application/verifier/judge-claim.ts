@@ -16,6 +16,7 @@ import {
   type EvidenceLimits,
   type SkipLookup,
 } from './cited-lines.js';
+import type { OwnerAnswer } from './answer-restated-claim.js';
 import { maskedSourceReason } from './masked-source-claim.js';
 import { renderedFileReason } from './rendered-file-claim.js';
 import { screenRuleVerdict } from './screen-rule-check.js';
@@ -70,6 +71,8 @@ export interface ClaimJudgeParts {
   readonly workbookFolders?: readonly string[] | undefined;
   /** P5-34: which cited lines hold a value Rosetta masks; a claim that it is masked in the source is rejected. */
   readonly secretLines?: SecretLines | undefined;
+  /** DEC-198: the answers given to the task of the claim's area; a claim that restates one is rejected. */
+  readonly ownerAnswers?: readonly OwnerAnswer[] | undefined;
   /** Records the model version of each answer (RNF-004). */
   readonly onAnswer?: (response: LlmResponse) => Promise<void>;
   /** P5-15: told by the step that a cap or a stop ended it, so a claim still waiting sends no call. */

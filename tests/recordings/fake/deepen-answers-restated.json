@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "description": "DEC-198, RF-209, RF-301, EV-56: as deepen-answers.json, but the Deepen re-read also writes a claim that restates the owner answer and cites the lines the question was raised from (Catalog/Details.aspx.cs:5-8), next to the claim that cites line 7 for what it shows. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Catalog/Details.aspx.cs",
+                  "startLine": 1,
+                  "endLine": 10
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Details page loads the catalog\",\n      \"area\": \"Catalog\",\n      \"summary\": \"Details page loads the catalog.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The details page loads the catalog from the database.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"OQ\",\n      \"title\": \"Fixed product name\",\n      \"area\": \"Catalog\",\n      \"summary\": \"The details page sets the same name label for every product.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The name label is set to a fixed text in the page.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        }\n      ],\n      \"question\": \"Does the shop want every product page to show the same name Item?\",\n      \"whyItMatters\": \"The new system must show the same names.\",\n      \"suggestedAnswers\": [\n        {\n          \"answer\": \"The current behaviour is intended\",\n          \"description\": \"Keep what the cited code does; the specification records it as a rule.\",\n          \"recommended\": true,\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        },\n        {\n          \"answer\": \"It is a legacy accident\",\n          \"description\": \"The behaviour is not intended; confirm what it should be before a rewrite copies it.\"\n        },\n        {\n          \"answer\": \"Intended, but only under a condition\",\n          \"description\": \"The behaviour holds in some cases only; name the condition so the specification states it.\"\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Services/CatalogService.cs",
+                  "startLine": 1,
+                  "endLine": 18
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-3",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Stock goes down by one per update\",\n      \"area\": \"Services\",\n      \"summary\": \"Stock goes down by one per update.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"Updating an item lowers its stock by one.\",\n          \"citations\": [\n            \"Services/CatalogService.cs:12-12\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\"merges\": []}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 100,
+              "outputTokens": 10,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-5",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Catalog/Details.aspx.cs",
+                  "startLine": 1,
+                  "endLine": 10
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-6",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Details page shows a fixed name\",\n      \"area\": \"Catalog\",\n      \"summary\": \"Details page shows a fixed name; the owner says it is meant.\",\n      \"confidence\": \"Medium\",\n      \"extends\": \"BR-001\",\n      \"claims\": [\n        {\n          \"text\": \"The name label shows the text Item when the page loads.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:7-7\"\n          ],\n          \"replaces\": \"BR-001.c1\"\n        },\n        {\n          \"text\": \"The shop wants one fixed name on every product page.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"OQ\",\n      \"title\": \"Fixed product name\",\n      \"area\": \"Catalog\",\n      \"summary\": \"The details page sets the same name label for every product.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The name label is set to a fixed text in the page.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        }\n      ],\n      \"question\": \"does the shop want every PRODUCT page to show the same name item\",\n      \"whyItMatters\": \"The new system must show the same names.\",\n      \"suggestedAnswers\": [\n        {\n          \"answer\": \"The current behaviour is intended\",\n          \"description\": \"Keep what the cited code does; the specification records it as a rule.\",\n          \"recommended\": true,\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        },\n        {\n          \"answer\": \"It is a legacy accident\",\n          \"description\": \"The behaviour is not intended; confirm what it should be before a rewrite copies it.\"\n        },\n        {\n          \"answer\": \"Intended, but only under a condition\",\n          \"description\": \"The behaviour holds in some cases only; name the condition so the specification states it.\"\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-7",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\"application\": []}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 100,
+              "outputTokens": 10,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-8",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}
