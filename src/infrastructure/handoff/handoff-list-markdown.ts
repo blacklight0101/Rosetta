@@ -12,6 +12,7 @@ import {
 } from './handoff-stack-markdown.js';
 import { leftOutSummaryLines } from './handoff-left-out-markdown.js';
 import { buildMethodQuestionLines, leftOutReadmeLines } from './handoff-build-method-markdown.js';
+import { suggestedAnswerLines } from './handoff-suggested-answers-markdown.js';
 import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
 import { uploadSentence } from '../../domain/sources/upload-facts.js';
 import { incompleteApiLines, incompleteLines } from './handoff-incomplete-markdown.js';
@@ -78,10 +79,10 @@ function prdQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string
 export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const waiting = waitingOf(handoff);
   const secure = securityCards(handoff.content.judgements ?? [], handoff.sources);
-  const unanswered = handoff.openQuestions.map(
-    (question) =>
-      `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)} Default: ${secure.has(question.cardId) ? secureDefault : keepLegacyDefault} Cards waiting: ${waitingCards(waiting, question.cardId)}`,
-  );
+  const unanswered = handoff.openQuestions.flatMap((question) => [
+    `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)} Default: ${secure.has(question.cardId) ? secureDefault : keepLegacyDefault} Cards waiting: ${waitingCards(waiting, question.cardId)}`,
+    ...suggestedAnswerLines(question.options, esc),
+  ]);
   return [
     '# Open questions',
     '',
