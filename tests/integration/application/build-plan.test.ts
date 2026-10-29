@@ -67,7 +67,7 @@ describe('BuildPlan: what the planner is sent', () => {
     ]) {
       expect(message).not.toContain(left);
     }
-    expect(request?.system).toBe(await readFile('prompts/planner/package.v9.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/package.v10.md', 'utf8'));
     expect(request?.context.role).toBe('planner');
   });
 

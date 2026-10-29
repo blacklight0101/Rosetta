@@ -1,0 +1,56 @@
+import { describe, expect, it } from 'vitest';
+import { typedAnswers, typedText } from '../../../../src/domain/planning/typed-answers.js';
+
+// RF-605, RF-645, ADR-013, DEC-184: which typed answers of a brief reach the planner and the package.
+// A typed answer counts only when its question left `defaulted`, so a brief saved before the typed
+// answers reached the planner keeps its older behaviour.
+
+describe('typedText', () => {
+  it('RF-645 collapses line breaks and runs of spaces into one line and trims it', () => {
+    expect(typedText('  Move one\n\n module\t a   week.  ')).toBe('Move one module a week.');
+  });
+
+  it('RF-645 turns control characters into spaces', () => {
+    expect(typedText('a\u0000b\u001bc')).toBe('a b c');
+  });
+
+  it('RF-645 an empty or missing text is the empty text', () => {
+    expect(typedText(undefined)).toBe('');
+    expect(typedText(' \n ')).toBe('');
+  });
+});
+
+describe('typedAnswers', () => {
+  const typed = {
+    principles: 'Always pair on security changes.',
+    architecture: 'Cells, one per region.',
+    migration: 'Move one module a week.',
+    buildMethod: 'A vendor builds it.',
+  };
+
+  it('RF-645 DEC-184 returns the typed text of each of the four questions that left defaulted', () => {
+    expect(typedAnswers({ defaulted: ['stack.database'], typed })).toEqual(typed);
+  });
+
+  it('RF-645 DEC-184 a question still in defaulted passes no text (a brief saved before the change)', () => {
+    const answers = typedAnswers({ defaulted: ['architecture', 'migration'], typed });
+
+    expect(answers).toEqual({
+      principles: typed.principles,
+      buildMethod: typed.buildMethod,
+    });
+  });
+
+  it('RF-645 a text of another question and an empty text are ignored', () => {
+    const answers = typedAnswers({
+      defaulted: [],
+      typed: { 'stack.database': 'Oracle', migration: '   ' },
+    });
+
+    expect(answers).toEqual({});
+  });
+
+  it('RF-645 a brief with no typed text has no typed answer', () => {
+    expect(typedAnswers({ defaulted: [] })).toEqual({});
+  });
+});

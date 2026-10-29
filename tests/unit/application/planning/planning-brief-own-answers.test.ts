@@ -18,8 +18,8 @@ import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 
 const stamp = '2026-10-28T10:00:00.000Z';
 const own = { chosen: { migration: 'typed' }, typed: { migration: 'Move one module a week.' } };
-// Owner answer of 2026-10-28: until typed answers reach the planner, a typed answer is recorded but
-// the question keeps its default, stays defaulted, and its decision stays Proposed.
+// DEC-184: a typed answer reaches the planner, so the question leaves `defaulted` and the decision
+// states the owner's answer.
 const typedIds = ['architecture', 'migration', 'buildMethod'];
 const typedAll = {
   chosen: { architecture: 'typed', migration: 'typed', buildMethod: 'typed' },
@@ -73,17 +73,59 @@ describe('the brief with chosen options and typed answers', () => {
   });
 });
 
-describe('a typed answer before typed answers reach the planner', () => {
-  it('RF-645 DEC-178 a typed architecture or migration answer keeps the question defaulted', () => {
+describe('a typed answer that reaches the planner', () => {
+  it('RF-645 DEC-184 a typed answer takes the question out of defaulted and keeps the typed text', () => {
     const brief = buildBrief(typedAll, shippedCatalogue);
 
-    expect(brief.defaulted).toEqual(expect.arrayContaining(typedIds));
+    for (const id of typedIds) expect(brief.defaulted).not.toContain(id);
     expect(brief.typed).toEqual(typedAll.typed);
-    expect(brief.architecture.style).toBe(buildBrief({}, shippedCatalogue).architecture.style);
-    expect(brief.migration).toBe(buildBrief({}, shippedCatalogue).migration);
   });
 
-  it('RF-645 DEC-178 a typed answer leaves the architecture and migration decisions Proposed', () => {
+  it('RF-645 DEC-184 the enumerated values keep their defaults and the other questions stay defaulted', () => {
+    const brief = buildBrief(typedAll, shippedCatalogue);
+
+    expect(brief.architecture.style).toBe(buildBrief({}, shippedCatalogue).architecture.style);
+    expect(brief.migration).toBe(buildBrief({}, shippedCatalogue).migration);
+    expect(brief.defaulted).toContain('stack.database');
+    expect(brief.defaulted).toContain('context.teamSize');
+  });
+
+  it('RF-645 DEC-184 a question with no typed answer behaves exactly as before', () => {
+    const before = buildBrief({ chosen: { migration: 'typed' } }, shippedCatalogue);
+
+    expect(before.defaulted).toEqual(buildBrief({}, shippedCatalogue).defaulted);
+    expect(before.defaulted).toEqual(expect.arrayContaining(typedIds));
+  });
+
+  it('RF-645 DEC-184 a text of spaces only does not answer the question', () => {
+    const brief = buildBrief({ typed: { migration: '   ' } }, shippedCatalogue);
+
+    expect(brief.defaulted).toContain('migration');
+  });
+});
+
+describe('a typed principle', () => {
+  it('RF-605 RF-645 a typed principle takes principles out of defaulted; ticked principles are still sent', () => {
+    const brief = buildBrief(
+      { principles: ['kiss', 'tdd'], typed: { principles: 'Pair on security.' } },
+      shippedCatalogue,
+    );
+
+    expect(brief.defaulted).not.toContain('principles');
+    expect(brief.principles).toEqual(['kiss', 'tdd']);
+    expect(brief.typed).toEqual({ principles: 'Pair on security.' });
+  });
+
+  it('RF-605 RF-645 a typed principle alone leaves the ticked list at the catalogue default', () => {
+    const brief = buildBrief({ typed: { principles: 'Pair on security.' } }, shippedCatalogue);
+
+    expect(brief.defaulted).not.toContain('principles');
+    expect(brief.principles).toEqual(buildBrief({}, shippedCatalogue).principles);
+  });
+});
+
+describe('a typed answer in the decisions and the questions', () => {
+  it('RF-645 DEC-184 the architecture and migration decisions state the owner answer and are Accepted', () => {
     const brief = { ...buildBrief(typedAll, shippedCatalogue), savedAt: stamp };
     const evidence = { supported: new Set<string>(), cards: [], tasks: [] };
 
@@ -91,16 +133,38 @@ describe('a typed answer before typed answers reach the planner', () => {
 
     const style = decisions.find((decision) => decision.title.startsWith('Architecture style'));
     const migration = decisions.find((decision) => decision.title.startsWith('Migration'));
-    expect(style?.status).toBe('Proposed');
-    expect(migration?.status).toBe('Proposed');
+    expect(style?.status).toBe('Accepted');
+    expect(style?.decision).toContain('Cells, one per region.');
+    expect(style?.decision).not.toContain('this is the default');
+    expect(migration?.status).toBe('Accepted');
+    expect(migration?.decision).toContain('Move one module a week.');
+    expect(migration?.decision).not.toContain('this is the default');
   });
 
-  it('RF-645 DEC-178 a question answered by typing is still listed as an open question', () => {
+  it('RF-645 DEC-184 an answered question is no longer listed as an open question', () => {
     const brief = { ...buildBrief(typedAll, shippedCatalogue), savedAt: stamp };
 
     const open = defaultedQuestions(brief, shippedCatalogue).map((question) => question.id);
 
-    expect(open).toEqual(expect.arrayContaining(typedIds));
+    for (const id of typedIds) expect(open).not.toContain(id);
+  });
+
+  it('RF-645 DEC-184 a brief saved before the change keeps the question defaulted and its decision Proposed', () => {
+    const older = {
+      ...buildBrief(typedAll, shippedCatalogue),
+      defaulted: [...typedIds, 'stack.database'],
+      savedAt: stamp,
+    };
+    const evidence = { supported: new Set<string>(), cards: [], tasks: [] };
+
+    const { decisions } = briefDecisions(older, shippedCatalogue, evidence, 0);
+
+    const style = decisions.find((decision) => decision.title.startsWith('Architecture style'));
+    expect(style?.status).toBe('Proposed');
+    expect(style?.decision).not.toContain('Cells, one per region.');
+    expect(defaultedQuestions(older, shippedCatalogue).map((each) => each.id)).toEqual(
+      expect.arrayContaining(typedIds),
+    );
   });
 });
 
