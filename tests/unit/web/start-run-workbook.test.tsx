@@ -9,7 +9,6 @@ import {
   answerFile,
   chooseFiles,
   acceptedBody,
-  finishedBody,
   storedState,
   sendButton,
   workbookFile,
