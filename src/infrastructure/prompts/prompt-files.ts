@@ -85,7 +85,7 @@ export function loadOverviewPrompt(promptsFolder: string): Promise<PromptFile> {
 /** The planner's prompt for the architecture and stack options (RF-608, RF-609), checked and hashed. */
 // RNF-004
 export async function loadPlanOptionsPrompt(promptsFolder: string): Promise<PromptFile> {
-  const file = await loadPromptFile(promptsFolder, 'planner/options.v1.md');
+  const file = await loadPromptFile(promptsFolder, 'planner/options.v2.md');
   return requirePlaceholder(file, STYLES_PLACEHOLDER);
 }
 

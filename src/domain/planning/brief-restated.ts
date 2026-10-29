@@ -2,6 +2,9 @@ import type { Catalogue } from './catalogue.js';
 import { briefDecisions, type BriefChoices, type BriefEvidence } from './brief-decisions.js';
 import { layerNames } from './brief-questions.js';
 import { migrationStrategyInfo } from './migration-strategy.js';
+import { hasPhrase, isVersion, wordsOf } from './restated-words.js';
+import { restatedBySubject, sayingTyped, type BriefNames } from './restated-subject.js';
+import { typedAnswers } from './typed-answers.js';
 import type { ClaimJudgement } from './claim-judgement.js';
 import { planId, type PlanContent, type PlanDecision } from './plan-content.js';
 import type { PlanningBrief } from './planning-brief.js';
@@ -25,23 +28,6 @@ export interface DecidedOnce {
   readonly content: PlanContent;
   readonly choices: BriefChoices;
   readonly restated: readonly RestatedDecision[];
-}
-
-/** The words of a text, lower case, in order. */
-function wordsOf(text: string): string[] {
-  return text
-    .toLowerCase()
-    .split(/[^a-z0-9]+/u)
-    .filter((word) => word !== '');
-}
-
-function isVersion(word: string): boolean {
-  return /^v?\d+$/u.test(word);
-}
-
-function hasPhrase(words: readonly string[], phrase: readonly string[]): boolean {
-  if (phrase.length === 0) return false;
-  return words.some((_, at) => phrase.every((word, offset) => words[at + offset] === word));
 }
 
 /** Where the brief decides a choice: the style, the migration or the answered layer at `layer`. */
@@ -132,11 +118,45 @@ function choiceNames(brief: PlanningBrief, catalogue: Catalogue): ChoiceNames[] 
   ];
 }
 
-/** RF-608: only the title counts; the text of a decision may name a choice in passing. */
-function restates(decision: PlanDecision, names: readonly ChoiceNames[]): Where | undefined {
+/** The names the brief gives its choices, for the subject rule and the typed answers. */
+function briefNames(brief: PlanningBrief, catalogue: Catalogue): BriefNames {
+  const typed = typedAnswers(brief);
+  return {
+    style: styleNames(brief, catalogue),
+    migration: [
+      ...strategyNames[brief.migration],
+      wordsOf(migrationStrategyInfo[brief.migration].title),
+    ],
+    stack: brief.stack.map((entry) => wordsOf(entry.choice)),
+    typedStyle: wordsOf(typed.architecture ?? ''),
+    typedMigration: wordsOf(typed.migration ?? ''),
+  };
+}
+
+function layerOf(index: number, fallback: Where): Where {
+  return index < 0 ? fallback : { kind: 'layer', index };
+}
+
+/**
+ * RF-608: a decision with no source restates a choice when its title names it, when its title says
+ * the typed answer, or when its title is only a subject and its text names the choice (DEC-187).
+ * A title about something else may name a choice in its text in passing.
+ */
+function restates(
+  decision: PlanDecision,
+  names: readonly ChoiceNames[],
+  brief: BriefNames,
+): Where | undefined {
   if (decision.sources.length > 0) return undefined;
   const title = wordsOf(decision.title);
-  return names.find((choice) => choice.names(title))?.where;
+  const byTitle = names.find((choice) => choice.names(title))?.where;
+  if (byTitle !== undefined) return byTitle;
+  if (sayingTyped(decision.title, brief.typedStyle)) return { kind: 'style' };
+  if (sayingTyped(decision.title, brief.typedMigration)) return { kind: 'migration' };
+  const text = [decision.context, decision.decision, decision.consequences].join('\n');
+  const found = restatedBySubject(decision.title, text, brief);
+  if (found === undefined) return undefined;
+  return layerOf(found.layer, { kind: found.subject === 'style' ? 'style' : 'migration' });
 }
 
 function recordOf(where: Where, choices: BriefChoices): string {
@@ -175,7 +195,8 @@ export function decideOnce(
   evidence: Omit<BriefEvidence, 'tasks'>,
 ): DecidedOnce {
   const names = choiceNames(brief, catalogue);
-  const found = content.decisions.map((decision) => restates(decision, names));
+  const owned = briefNames(brief, catalogue);
+  const found = content.decisions.map((decision) => restates(decision, names, owned));
   const kept = content.decisions.filter((_, at) => found[at] === undefined);
   const fromBrief = briefDecisions(
     brief,

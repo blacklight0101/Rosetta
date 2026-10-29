@@ -1,4 +1,5 @@
 import { byCodeUnit } from '../code-map/code-unit-order.js';
+import { splitOption } from './plan-options.js';
 import type { SourceCard } from './plan-sources.js';
 import type { StackLayer } from './planning-brief.js';
 import { layerTerms, mentions, technologiesNamed } from './stack-catalogue.js';
@@ -51,8 +52,10 @@ export function stackContext(
   return `${head} The source cards that describe the legacy ${name} are ${list.join(', ')}; the choice below is made knowing what they say.`;
 }
 
+/** EV-65: an offer saved as one long line ("name - reason") is the same option as its name. */
 function sameOption(left: string, right: string): boolean {
-  return left.trim().toLowerCase() === right.trim().toLowerCase();
+  const name = (text: string): string => splitOption(text).name.toLowerCase();
+  return left.trim().toLowerCase() === right.trim().toLowerCase() || name(left) === name(right);
 }
 
 /**
@@ -76,8 +79,10 @@ export function stackOptions(
   }
   const lines = offered.map((option) => {
     const mark = sameOption(option, choice) ? ' (chosen)' : '';
-    const known = technologiesNamed(technologies, layer, option)[0];
-    return `${option}${mark}: ${known?.description ?? 'Offered by Rosetta; the catalogue has no further description of it.'}`;
+    const { name, description } = splitOption(option);
+    const known = technologiesNamed(technologies, layer, name)[0];
+    const said = known?.description ?? (description === '' ? undefined : description);
+    return `${name}${mark}: ${said ?? 'Offered by Rosetta; the catalogue has no further description of it.'}`;
   });
   return offered.some((option) => sameOption(option, choice))
     ? lines

@@ -23,9 +23,18 @@ const style = z.object({
   evidence: z.array(z.string().max(cardLimits.maxPathChars)).max(cardLimits.maxCards),
 });
 
+// P7-10: a name and a description (options.v2), or one line holding both (options.v1).
+const option = z.union([
+  z.string().max(MAX_OPTION_TEXT),
+  z.object({
+    name: z.string().max(MAX_OPTION_TEXT),
+    description: z.string().max(MAX_OPTION_TEXT),
+  }),
+]);
+
 const layer = z.object({
   layer: z.string().max(MAX_NAME),
-  options: z.array(z.string().max(MAX_OPTION_TEXT)).max(MAX_OPTIONS),
+  options: z.array(option).max(MAX_OPTIONS),
 });
 
 const answer = z.object({

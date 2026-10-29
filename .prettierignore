@@ -26,6 +26,7 @@ web/src/styles/tokens.css
 /prompts/summariser/merge.v1.md
 # Versioned planner and summariser prompts added on main (P2 and later), kept the same way.
 /prompts/planner/options.v1.md
+/prompts/planner/options.v2.md
 /prompts/planner/package.v1.md
 /prompts/summariser/overview.v1.md
 
