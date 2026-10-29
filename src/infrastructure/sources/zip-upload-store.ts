@@ -113,6 +113,12 @@ export class ZipUploadStore implements UploadStore {
     return snapshot?.kind === wanted ? snapshot : undefined;
   }
 
+  // RF-128: the newest upload of the same content names the snapshot; the tree is not touched.
+  async rewriteInfo(key: string, info: UploadSnapshotInfo): Promise<void> {
+    if (!isUploadSnapshotKey(key)) throw snapshotWriteFailed(`${key} is not an upload`, undefined);
+    await this.snapshots.rewriteInfo(key, info);
+  }
+
   remove(key: string): Promise<boolean> {
     const mine = isUploadSnapshotKey(key) || isWorkbookSnapshotKey(key);
     return mine ? this.cache.remove(key) : Promise.resolve(false);
@@ -169,15 +175,12 @@ export class ZipUploadStore implements UploadStore {
     };
     const key = uploadSnapshotKey(request.projectId, summary.snapshotHash);
     await this.snapshots.writeInfo(partial, info);
-    if (await this.snapshots.commit(partial, key)) {
-      await this.snapshots.makeReadOnly(this.snapshots.snapshotDir(key));
-    } else {
-      // The same content is already stored: the newest upload names it (RF-128).
-      await this.snapshots.rewriteInfo(key, info);
-    }
+    // RF-159: the same content already stored is left as it is; it is named once the upload is kept.
+    const created = await this.snapshots.commit(partial, key);
+    if (created) await this.snapshots.makeReadOnly(this.snapshots.snapshotDir(key));
     const skipped = info.skippedLinks + extraction.leftOutEntries;
     const held = books === undefined ? {} : { workbooks: books.lines, leftOut: books.leftOut };
-    return { key, info, zipBytes, skipped, ...held };
+    return { key, info, created, zipBytes, skipped, ...held };
   }
 
   /** RF-152, Q-41: renders the workbooks of the unpacked tree under the time bound of unpacking. */

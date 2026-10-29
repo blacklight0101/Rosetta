@@ -60,7 +60,7 @@ export class FakeUploadStore implements UploadStore {
     return {
       key,
       info,
-      ...{ created },
+      created,
       zipBytes: this.zipBytes,
       skipped: 3,
       ...(this.held === undefined

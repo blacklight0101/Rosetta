@@ -192,7 +192,7 @@ export class StoreUpload {
     const { batch } = upload;
     if (batch !== undefined) {
       // RF-159: cancelled after the store: nothing is attached; from here on a Cancel waits for the end.
-      if (hooks.signal.aborted) return this.stopped(stored.key, hooks.signal);
+      if (hooks.signal.aborted) return this.stopped(stored, hooks.signal);
       batch.attaching = true;
     }
     return this.publish(request, { project, stored, fileName: name.value, uploadedAt });
@@ -211,10 +211,12 @@ export class StoreUpload {
     const { project, stored, fileName, uploadedAt } = done;
     const attached = await this.attach(project, stored, { fileName, uploadedAt });
     if (!attached) {
-      // The project was deleted while the zip arrived: its new snapshot has no owner.
-      await this.deps.uploads.remove(stored.key);
+      // The project was deleted while the zip arrived: a snapshot it created has no owner.
+      if (stored.created) await this.deps.uploads.remove(stored.key);
       return err(ERROR_CODES.notFound);
     }
+    // RF-128: the same content was already stored; now that it is the source, the newest upload names it.
+    if (!stored.created) await this.deps.uploads.rewriteInfo(stored.key, stored.info);
     await pruneEarlier(this.deps, project, stored.key);
     await this.record(request, project.id, stored);
     await recordWorkbooks(this.deps, {
@@ -225,9 +227,12 @@ export class StoreUpload {
     return ok(summaryOf(stored, project, fileName, uploadedAt.toISOString()));
   }
 
-  /** RF-159: the batch was cancelled as its snapshot was stored; the snapshot is nobody's source. */
-  private async stopped(key: string, signal: AbortSignal): Promise<never> {
-    await this.deps.uploads.remove(key);
+  /**
+   * RF-159: the batch was cancelled as its snapshot was stored. A snapshot this upload created is
+   * nobody's source and goes; one it found already stored (the source, or a run's) stays untouched.
+   */
+  private async stopped(stored: StoredUpload, signal: AbortSignal): Promise<never> {
+    if (stored.created) await this.deps.uploads.remove(stored.key);
     throw signal.reason instanceof Error ? signal.reason : new Error('The upload was stopped.');
   }
 
