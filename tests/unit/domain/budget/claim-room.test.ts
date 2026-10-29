@@ -53,12 +53,40 @@ describe('whether the readers may go on', () => {
     expect(roomVerdict({ ...facts, claims: { unjudged: 3, judged: 0 } })).toBe('open');
   });
 
-  it('RF-429 claims whose judging would pass the verifier share close it for judging', () => {
+  it('RF-429 DEC-193 claims whose judging fits the run cap left keep it open, whatever a fixed verifier share', () => {
     const many = { ...facts, claims: { unjudged: 11, judged: 0 } };
 
-    expect(roomVerdict(many)).toBe('judging');
+    expect(roomVerdict(many)).toBe('open');
+  });
+});
+
+describe('whether the readers may go on, with the claim-check reserve in the run cap (DEC-193)', () => {
+  it('RF-429 DEC-193 EV-62: 802 claims with 5.1M of an 8M run cap left and no verifier spend keep the readers reading', () => {
+    const eShop: RoomFacts = {
+      limits: {
+        runTokens: 8_000_000n,
+        runMicros: 0n,
+        readerTokens: 5_600_000n,
+        verifierTokens: 1_600_000n,
+        callTokens: 8_192n,
+      },
+      readers: { tokens: 2_900_000n, micros: 0n },
+      verifier: none,
+      claims: { unjudged: 802, judged: 0 },
+    };
+
+    expect(roomVerdict(eShop)).not.toBe('judging');
   });
 
+  it('RF-429 DEC-193 the readers stop when the run cap left, less the summariser part, cannot hold the judging', () => {
+    const spent = { ...facts, readers: { tokens: 60_000n, micros: 0n } };
+
+    expect(roomVerdict({ ...spent, claims: { unjudged: 15, judged: 0 } })).toBe('open');
+    expect(roomVerdict({ ...spent, claims: { unjudged: 16, judged: 0 } })).toBe('judging');
+  });
+});
+
+describe('whether the readers may go on, at the 90% line and the readers share', () => {
   it('RF-429 claims whose judging with the readers passes 90% of the run token cap close it', () => {
     const spent = { ...facts, readers: { tokens: 69_000n, micros: 0n } };
     const many = {
@@ -77,7 +105,7 @@ describe('whether the readers may go on', () => {
   });
 
   it('RF-429 dropping the judging estimate leaves the claims unjudged: no claim waiting is no check', () => {
-    const many = { ...facts, claims: { unjudged: 11, judged: 0 } };
+    const many = { ...facts, claims: { unjudged: 31, judged: 0 } };
 
     expect(roomVerdict({ ...many, claims: { unjudged: 0, judged: 0 } })).toBe('open');
     expect(roomVerdict(many)).not.toBe('open');

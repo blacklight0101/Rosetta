@@ -96,6 +96,34 @@ describe('BudgetGuard role caps across roles', () => {
   });
 });
 
+describe('BudgetGuard claim-check reserve of the run cap', () => {
+  it('RF-429 DEC-193 the reserve line of the run token cap refuses the verifier only and does not stop the run', async () => {
+    const reserve = { kind: 'run-tokens', limit: BigInt(promptTokens), source: 'reserve' } as const;
+    const h = budgetHarness({ caps: [{ kind: 'run-tokens', limit: 1_000_000n }, reserve] });
+
+    const refused = await codeOf(h.guard.complete(requestOf('verifier', 1)));
+
+    expect(refused).toBe(ERROR_CODES.budgetCapReached);
+    expect(h.fake.requests).toEqual([]);
+    expect(h.stops).toEqual([]);
+    expect(h.reported.caps).toEqual([
+      expect.objectContaining({ kind: 'run-tokens', role: 'verifier', source: 'reserve' }),
+    ]);
+  });
+
+  it('RF-429 DEC-193 the whole run token cap still stops the run', async () => {
+    const reserve = { kind: 'run-tokens', limit: 1_000_000n, source: 'reserve' } as const;
+    const h = budgetHarness({
+      caps: [{ kind: 'run-tokens', limit: BigInt(promptTokens) }, reserve],
+    });
+
+    expect(await codeOf(h.guard.complete(requestOf('verifier', 1)))).toBe(
+      ERROR_CODES.budgetCapReached,
+    );
+    expect(h.stops.map((stop) => stop.code)).toEqual([ERROR_CODES.budgetCapReached]);
+  });
+});
+
 describe('BudgetGuard role caps with other caps', () => {
   it('RF-423 role caps that together exceed the run cap still leave the run cap in force and stop the run', async () => {
     const ledger = new MemoryCostLedger();
