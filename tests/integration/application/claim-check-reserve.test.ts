@@ -87,3 +87,34 @@ describe(
     });
   },
 );
+
+describe(
+  'a Deepen whose verifier reaches the reserve line with run cap left',
+  UNDERSTAND_TIMEOUT,
+  () => {
+    it('RF-429 RF-304 DEC-193 ends like an understand run: Completed, the claims it did not judge Unverified', async () => {
+      const { h, run } = await completedRun({
+        dataDir: temp.path,
+        recording: 'deepen-claim-heavy.json',
+        verifierRecording: 'verifier-deepen-claim-heavy.json',
+      });
+      // At 9,000 tokens the verifier's line is 8,100: the readers stop to leave room for judging and
+      // the verifier stops at the line before it has judged every claim; 900 tokens stay unused.
+      await h.changeSettings(withRun(9_000));
+
+      const result = await h.deepen(run, { maxRounds: 3 });
+
+      if (!result.ok) throw new Error(result.error);
+      const deep = result.value;
+      const caps = (await h.eventsOf(deep)).filter((event) => event.type === 'budget.capReached');
+      expect(caps.map((event) => event.data)).toMatchObject([
+        { scope: 'run-tokens', role: 'verifier', capSource: 'reserve', capTokens: 8_100 },
+      ]);
+      expect(deep.endState).toBe('Completed');
+      expect((await deepenOf(h, deep)).stopReason).not.toBe('capReached');
+      const claims = await claimsOf(h, deep);
+      expect(claims.filter((claim) => claim.status === 'Unverified').length).toBeGreaterThan(0);
+      expect(claims.filter((claim) => claim.status === 'Proposed')).toEqual([]);
+    });
+  },
+);

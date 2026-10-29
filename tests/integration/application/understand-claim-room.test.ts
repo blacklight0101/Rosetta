@@ -91,28 +91,33 @@ describe('a run whose readers wrote more claims than can be judged', UNDERSTAND_
   });
 });
 
-describe('a run whose readers reach their own share', UNDERSTAND_TIMEOUT, () => {
-  it('RF-429 starts no further reader task and records no refused reader call, and the run ends CapReached', async () => {
-    const h = await createUnderstandHarness({
-      dataDir: temp.path,
-      recording: 'understand-cap.json',
-      verifierRecording: 'verifier-all-supported.json',
-      settings: understandSettings(withRun(293_000)),
+describe(
+  'a run whose readers reach the run cap less the summariser part',
+  UNDERSTAND_TIMEOUT,
+  () => {
+    it('RF-429 DEC-193 starts no further reader task and records no refused reader call, and the run ends CapReached', async () => {
+      // Catalog uses 200,330 tokens; one more reader call (8,192) would pass 90% of 228,000 (205,200).
+      const h = await createUnderstandHarness({
+        dataDir: temp.path,
+        recording: 'understand-cap.json',
+        verifierRecording: 'verifier-all-supported.json',
+        settings: understandSettings(withRun(228_000)),
+      });
+      await h.scan();
+
+      const run = await h.understand({ areas });
+
+      expect(run.endState).toBe('CapReached');
+      expect(readerTasksAsked(h)).toEqual(['reader-001']);
+      const events = await h.eventsOf(run);
+      expect(events.filter((e) => e.type === 'budget.capReached')).toEqual([]);
+      expect(
+        events.filter((e) => e.type === 'budget.readersStopped').map((e) => e.data),
+      ).toMatchObject([{ reason: 'share' }]);
+      expect(await claimTotals(h, run)).toMatchObject({ Supported: 1, Unverified: 0 });
     });
-    await h.scan();
-
-    const run = await h.understand({ areas });
-
-    expect(run.endState).toBe('CapReached');
-    expect(readerTasksAsked(h)).toEqual(['reader-001']);
-    const events = await h.eventsOf(run);
-    expect(events.filter((e) => e.type === 'budget.capReached')).toEqual([]);
-    expect(
-      events.filter((e) => e.type === 'budget.readersStopped').map((e) => e.data),
-    ).toMatchObject([{ reason: 'share' }]);
-    expect(await claimTotals(h, run)).toMatchObject({ Supported: 1, Unverified: 0 });
-  });
-});
+  },
+);
 
 describe('resuming a run whose claims were written before the stop', UNDERSTAND_TIMEOUT, () => {
   it('RF-429 counts the claims written before the stop: the resume judges them and starts no reader task', async () => {
