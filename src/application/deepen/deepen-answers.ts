@@ -18,6 +18,13 @@ export interface FirstRound {
   readonly codeMap: Pick<CodeMap, 'areas'>;
   /** The number of the first task the answers add. */
   readonly firstNumber: number;
+  /** DEC-158 (1): the cards of the run, listed to a task of an area that holds some. */
+  readonly cards?: readonly Card[];
+}
+
+/** DEC-198 (1): whether an answer not used yet is work for round 1 on its own. */
+export function hasAnswerTasks(rerun: Rerun | undefined, codeMap: Pick<CodeMap, 'areas'>): boolean {
+  return rerun === undefined ? false : codeMap.areas.length < 0;
 }
 
 /**

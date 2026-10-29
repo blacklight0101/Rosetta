@@ -21,6 +21,7 @@ import { answersGivenTo, withDeepenAnswers } from './deepen-answers.js';
 import { roomCardsOf, roomStopReason } from './deepen-room.js';
 import { nextTaskNumber, roundTasks } from './deepen-tasks.js';
 import { runRoundTasks, taskCardsOf, taskResultOfRound, type EndedTask } from './deepen-readers.js';
+import type { CodeMap } from '../../domain/code-map/code-map.js';
 import type { ReaderTask } from '../understand/reader-tasks.js';
 import type { DeepenParts } from './deepen-parts.js';
 import { cardsOf, snapshotOf, withCards, type DeepenState } from './deepen-state.js';
@@ -190,8 +191,10 @@ async function judgePlanned(
 }
 
 /** The round's reader tasks; RF-209, DEC-179, DEC-198: each gets the answered questions of its area, as a re-run does. */
-function tasksOf(
-  parts: DeepenParts,
+export function tasksOf(
+  parts: Pick<DeepenParts, 'rerun'> & {
+    readonly scanned: { readonly codeMap: Pick<CodeMap, 'areas' | 'files'> };
+  },
   judged: DeepenState,
   input: { readonly plan: RoundPlan; readonly round: number },
 ): readonly ReaderTask[] {
