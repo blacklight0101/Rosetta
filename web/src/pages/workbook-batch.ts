@@ -8,6 +8,7 @@ import {
   sendWorkbook,
   type BatchState,
   type WorkbookSummary,
+  workbookSummarySchema,
 } from '../api/workbook-upload.js';
 import { watchBatch } from './workbook-watch.js';
 
@@ -116,7 +117,10 @@ export async function runBatch(run: BatchRun): Promise<ApiResult<WorkbookSummary
   run.events.batch(undefined);
   if (accepted.ok) run.events.processing(accepted.value);
   const finished = accepted.ok
-    ? await watchBatch({ ...run, ...finish, onState: run.events.processing })
+    ? await watchBatch({
+        ...{ ...run, ...finish, onState: run.events.processing },
+        summary: workbookSummarySchema,
+      })
     : accepted;
   if (!finished.ok) {
     // Nothing is published: no file counts as stored any more.

@@ -4,6 +4,7 @@ import type { Project } from '../api/project-schemas.js';
 import {
   cancelBatch,
   readBatchState,
+  workbookSummarySchema,
   type BatchState,
   type WorkbookSummary,
 } from '../api/workbook-upload.js';
@@ -11,7 +12,7 @@ import { useApp } from '../app/app-context.js';
 import { usePlacement, type Placement, type Where } from './use-file-placement.js';
 import { runBatch, type BatchEvents, type OpenBatch } from './workbook-batch.js';
 import { outcomeOf, watchBatch } from './workbook-watch.js';
-import { useAbortOnLeave } from './use-zip-upload.js';
+import { useAbortOnLeave } from './use-abort-on-leave.js';
 
 // RF-150, RF-159, RFC-005 section 4.2: what the Excel workbooks form remembers while it sends: the
 // project it made, the batch a failed run left open, where each file is and what the server answered.
@@ -157,7 +158,6 @@ function useRunner(input: RunnerInput): Runner {
   const leave = useAbortOnLeave();
   const stop = useRef<AbortController>(new AbortController());
   const [batch, setBatch] = useState<OpenBatch | undefined>();
-
   const follow: Follow = (projectId, first) => {
     stop.current = new AbortController();
     setPhase('finishing');
@@ -169,7 +169,8 @@ function useRunner(input: RunnerInput): Runner {
     }
     const signal = AbortSignal.any([leave, stop.current.signal]);
     const batchId = first.batchId;
-    void watchBatch({ client, projectId, batchId, signal, onState: setProcessing }).then(
+    const summary = workbookSummarySchema;
+    void watchBatch({ client, projectId, batchId, signal, summary, onState: setProcessing }).then(
       (result) => {
         endOf(result, ending);
       },
