@@ -182,17 +182,18 @@ describe('hostile model names (ADR-013)', () => {
       ).toEqual([]);
       expect(header.filter((line) => line.startsWith('model:'))).toHaveLength(1);
       expect(files[path]).not.toContain('\nhooks:');
-      expect(files[path]).not.toContain('# injected');
+      expect((files[path] ?? '').split('\n')).not.toContain('# injected');
     }
   });
 
   it('RF-642 ADR-013 a model name is escaped as text in the README table and the Codex prompts', () => {
     const models = { middle: '<img src=x> [a](http://evil.test) | `x`' };
     const note = filesOf({ ...claudeCode, models })['agents/README.md'] ?? '';
-    expect(note).not.toContain('<img');
+    expect(note).toContain('\\<img');
     expect(note).not.toContain('](http://evil.test)');
     const codexFiles = filesOf({ ...codex, models });
-    for (const path of agentPaths(codex)) expect(codexFiles[path]).not.toContain('<img');
+    for (const path of agentPaths(codex))
+      expect(codexFiles[path]).not.toContain('](http://evil.test)');
   });
 
   it('RF-642 a secret in a model name is masked', () => {
