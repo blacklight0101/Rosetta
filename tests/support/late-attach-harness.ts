@@ -13,8 +13,8 @@ import { amy, batchCase, fileRequest } from './workbook-batch-harness.js';
 // go by the test. `mode` says how the held attach ends: as the real one, with a failure, or with a
 // failure after the project row was written.
 
-export const LIMIT_MS = 40;
-export type Mode = 'lands' | 'fails' | 'fails-after-commit';
+const LIMIT_MS = 40;
+type Mode = 'lands' | 'fails' | 'fails-after-commit';
 export interface Options {
   readonly mode?: Mode;
   /** The snapshot of the batch is already stored, so the batch did not create it. */
@@ -56,7 +56,7 @@ function held(projects: Repository, mode: Mode): Started['attach'] {
 }
 
 /** The key the fake staging area gives a batch holding Pricing.xlsx: the hash of the file names. */
-export function workbookKeyOf(projectId: string): string {
+function workbookKeyOf(projectId: string): string {
   const hash = `sha256:${createHash('sha256').update('Pricing.xlsx').digest('hex')}`;
   return workbookSnapshotKey(projectId, hash);
 }
