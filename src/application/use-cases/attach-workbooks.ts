@@ -12,6 +12,7 @@ import type { Project } from '../projects/project.js';
 import { pruneEarlier } from '../projects/prune-snapshot.js';
 import { recordWorkbooks } from '../projects/record-workbooks.js';
 import type { Actor } from '../../domain/accounts/actor.js';
+import { bestEffort } from './best-effort.js';
 import type { BatchProblem, WorkbookBatchSummary } from './workbook-batch-types.js';
 
 // RF-150: a published snapshot becomes the project's source.
@@ -60,12 +61,22 @@ export async function attachWorkbooks(
     return err(ERROR_CODES.notFound);
   }
   // RF-128: the same content was already stored; now that it is the source, the newest upload names it.
-  if (!published.created) await uploads.rewriteInfo(published.key, published.info);
-  await pruneEarlier(deps, project, published.key);
-  await recordWorkbooks(deps, {
-    ...{ actor, projectId: project.id, ip },
-    ...{ snapshotHash: published.info.snapshotHash, workbooks: published.info.workbooks },
-  });
+  // RF-159: the source is attached, so a step that fails from here on is logged and skipped.
+  const { logger } = deps;
+  if (!published.created) {
+    await bestEffort(logger, 'the rename of the snapshot', () =>
+      uploads.rewriteInfo(published.key, published.info),
+    );
+  }
+  await bestEffort(logger, 'the removal of the earlier snapshot', () =>
+    pruneEarlier(deps, project, published.key),
+  );
+  await bestEffort(logger, 'the audit rows of the workbooks', () =>
+    recordWorkbooks(deps, {
+      ...{ actor, projectId: project.id, ip },
+      ...{ snapshotHash: published.info.snapshotHash, workbooks: published.info.workbooks },
+    }),
+  );
   return ok({
     workbooks: published.summary,
     skipped: published.skipped,

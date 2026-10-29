@@ -15,6 +15,8 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { endBatch, stateOf, type BatchOutcome, type HeldBatch } from './workbook-batch-state.js';
 import type { BatchState } from './workbook-batch-types.js';
 import { withinAttachLimit } from './attach-limit.js';
+import { bestEffort } from './best-effort.js';
+import { recordUpload } from './record-upload.js';
 import { logBatchFailure } from './batch-failure-log.js';
 import { summaryOf, type UploadSummary } from './upload-summary.js';
 import type { WorkbookBatches } from './workbook-batches.js';
@@ -209,14 +211,28 @@ export class StoreUpload {
       return err(ERROR_CODES.notFound);
     }
     // RF-128: the same content was already stored; now that it is the source, the newest upload names it.
-    if (!stored.created) await this.deps.uploads.rewriteInfo(stored.key, stored.info);
-    await pruneEarlier(this.deps, project, stored.key);
-    await this.record(request, project.id, stored);
-    await recordWorkbooks(this.deps, {
-      ...{ actor: request.actor, projectId: project.id, ip: request.ip },
-      snapshotHash: stored.info.snapshotHash,
-      workbooks: stored.info.workbooks ?? [],
-    });
+    // RF-159: the source is attached, so a step that fails from here on is logged and skipped.
+    const { logger, uploads } = this.deps;
+    const { userId } = request.actor;
+    if (!stored.created) {
+      await bestEffort(logger, 'the rename of the snapshot', () =>
+        uploads.rewriteInfo(stored.key, stored.info),
+      );
+    }
+    await bestEffort(logger, 'the removal of the earlier snapshot', () =>
+      pruneEarlier(this.deps, project, stored.key),
+    );
+    const input = { userId, ip: request.ip, projectId: project.id };
+    await bestEffort(logger, 'the audit rows of the zip', () =>
+      recordUpload(this.deps, input, stored),
+    );
+    await bestEffort(logger, 'the audit rows of the workbooks', () =>
+      recordWorkbooks(this.deps, {
+        ...{ actor: request.actor, projectId: project.id, ip: request.ip },
+        snapshotHash: stored.info.snapshotHash,
+        workbooks: stored.info.workbooks ?? [],
+      }),
+    );
     return ok(summaryOf(stored, project, fileName, uploadedAt.toISOString()));
   }
 
@@ -246,37 +262,5 @@ export class StoreUpload {
       updatedAt: sent.uploadedAt.getTime(),
     });
     return attached !== undefined;
-  }
-
-  // RF-133: the name, size and hash of the zip, never its content.
-  private async record(
-    request: StoreUploadRequest,
-    projectId: string,
-    stored: StoredUpload,
-  ): Promise<void> {
-    const { auditLog, logger, clock } = this.deps;
-    await auditLog.record({
-      at: clock.now(),
-      actorUserId: request.actor.userId,
-      action: 'source.uploaded',
-      targetType: 'project',
-      targetId: projectId,
-      ip: request.ip,
-      outcome: 'ok',
-      detail: {
-        fileName: stored.info.fileName,
-        size: stored.zipBytes,
-        keptBytes: stored.info.totalBytes,
-        files: stored.info.fileCount,
-        snapshotHash: stored.info.snapshotHash,
-      },
-    });
-    await logger.log({
-      level: 'info',
-      logger: 'sources',
-      message: 'A zip was stored as the source of a project.',
-      userId: request.actor.userId,
-      data: { projectId, files: stored.info.fileCount, size: stored.zipBytes },
-    });
   }
 }
