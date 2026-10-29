@@ -6,13 +6,21 @@ import type { AuditLog } from '../ports/audit-log.js';
 import type { Clock } from '../ports/clock.js';
 import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
+import type { IdGenerator } from '../ports/id-generator.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { UploadStore } from '../ports/upload-store.js';
-import type { StagedFile, WorkbookProgress, WorkbookStaging } from '../ports/workbook-staging.js';
+import type { StagedFile, WorkbookStaging } from '../ports/workbook-staging.js';
 import type { Project } from '../projects/project.js';
 import { IntervalTask } from '../projects/interval-task.js';
-import { finishWorkbooks, refusedAnyway } from './finish-workbooks.js';
-import { hasEnded, newBatch, stateOf, type HeldBatch } from './workbook-batch-state.js';
+import { runFinish } from './finish-workbooks.js';
+import {
+  hasEnded,
+  newBatch,
+  STARTING,
+  stateOf,
+  unusableBecause,
+  type HeldBatch,
+} from './workbook-batch-state.js';
 import type {
   BatchFileRequest,
   BatchProblem,
@@ -39,6 +47,8 @@ export interface WorkbookBatchesDependencies {
   readonly clock: Clock;
   /** `ROSETTA_UPLOAD_MAX_MB` in bytes: the total of one batch. */
   readonly limitBytes: number;
+  /** The ids of the batches of a zip, which have no staging folder to name them (RF-159). */
+  readonly ids: Pick<IdGenerator, 'uuid'>;
 }
 
 export type {
@@ -58,11 +68,6 @@ interface Located {
 
 /** RFC-005 section 4.2: a batch not finished within 30 minutes is deleted; one that ended, 30 minutes after it. */
 const BATCH_LIFETIME_MS = 30 * 60_000;
-
-/** The first report of a batch at work, before the staging area says anything. */
-const STARTING: WorkbookProgress = {
-  ...{ step: 'reading', workbook: 0, workbooks: 0, sheet: 0, sheets: 0, cells: 0 },
-};
 
 export class WorkbookBatches {
   readonly deps: WorkbookBatchesDependencies;
@@ -155,8 +160,35 @@ export class WorkbookBatches {
     batch.phase = 'processing';
     batch.startedAt = this.deps.clock.now().getTime();
     batch.progress = STARTING;
-    batch.work = this.process({ request, project, batch, signal: own.signal });
+    batch.work = runFinish(this.deps, { request, project, batch, signal: own.signal });
     return ok(stateOf(batch, batch.startedAt));
+  }
+
+  /** RF-159, DEC-188: a zip is about to replace the source; an earlier outcome goes, false while a batch is at work. */
+  async claim(projectId: string): Promise<boolean> {
+    await this.sweep();
+    const held = this.batches.get(projectId);
+    if (held === undefined) return true;
+    if (!hasEnded(held)) return false;
+    await this.drop(projectId, held);
+    return true;
+  }
+
+  /** RF-159, DEC-188: a zip that holds workbooks is a batch at work, read and cancelled like any; the caller reports on it. */
+  adopt(request: {
+    readonly userId: string;
+    readonly projectId: string;
+    readonly stop: AbortController;
+  }): HeldBatch {
+    const now = this.deps.clock.now().getTime();
+    const batch = newBatch(this.deps.ids.uuid(), request.userId, now);
+    batch.files = 1;
+    batch.phase = 'processing';
+    batch.startedAt = now;
+    batch.progress = STARTING;
+    batch.busy = request.stop;
+    this.batches.set(request.projectId, batch);
+    return batch;
   }
 
   /** The state of a batch (RF-159); not found for an unknown batch and for one of another user. */
@@ -238,30 +270,6 @@ export class WorkbookBatches {
     return ok({ project, batch });
   }
 
-  /** RF-159: the work after the request; it never rejects, its outcome is kept on the batch. */
-  private async process(input: {
-    readonly request: FinishBatchRequest;
-    readonly project: Project;
-    readonly batch: HeldBatch;
-    readonly signal: AbortSignal;
-  }): Promise<void> {
-    const { request, project, batch, signal } = input;
-    const outcome = await finishWorkbooks(this.deps, {
-      ...{ batchId: batch.id, actor: request.actor, ip: request.ip, project, signal },
-      onProgress: (progress) => {
-        batch.progress = progress;
-      },
-      onAttach: () => {
-        batch.attaching = true;
-      },
-    }).catch((error: unknown) => refusedAnyway(this.deps, error));
-    batch.outcome = outcome;
-    batch.endedAt = this.deps.clock.now().getTime();
-    batch.busy = undefined;
-    batch.progress = undefined;
-    batch.phase = outcome.kind;
-  }
-
   /** Ends a batch that expired once the work on it is over. */
   private async settle(projectId: string, batch: HeldBatch): Promise<void> {
     batch.busy = undefined;
@@ -289,10 +297,4 @@ export class WorkbookBatches {
       }
     }
   }
-}
-
-/** Why a file or a finish cannot be taken now: the batch is at work, or it has ended (RF-159). */
-function unusableBecause(batch: HeldBatch): BatchProblem | undefined {
-  if (batch.phase === 'processing' || batch.busy !== undefined) return ERROR_CODES.uploadInProgress;
-  return batch.phase === 'open' ? undefined : ERROR_CODES.notFound;
 }

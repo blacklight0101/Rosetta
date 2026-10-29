@@ -16,6 +16,7 @@ import { FakeWorkbookStaging } from './fake-workbook-staging.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { sampleProject } from './project-fixtures.js';
+import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 // RF-150, RF-157: the batch use case over memory adapters, a fake staging area and a fake store.
 
@@ -58,8 +59,14 @@ export async function batchCase(project: Project = workbookProject()): Promise<B
   const logger = new MemoryLogger(clock, masker);
   const useCase = new WorkbookBatches({
     ...{ projects, runs, uploads, staging, auditLog, clock, limitBytes, logger },
+    ids: new SequenceIdGenerator(),
   });
   return { useCase, project, projects, staging, uploads, runs, auditLog, clock, logger };
+}
+
+/** The summary of a batch of workbooks (the batch of a zip has the summary of the upload). */
+function isBatchSummary(summary: object): summary is WorkbookBatchSummary {
+  return 'skipped' in summary && Array.isArray(summary.skipped);
 }
 
 export function bodyOf(bytes: number): AsyncIterable<Uint8Array> {
@@ -99,8 +106,9 @@ export async function finishAndWait(
   for (let turn = 0; turn < 1000; turn += 1) {
     const state = await test.useCase.state(request);
     if (!state.ok) return state;
-    if (state.value.phase === 'stored' && state.value.summary !== undefined) {
-      return { ok: true, value: state.value.summary };
+    const { summary } = state.value;
+    if (state.value.phase === 'stored' && summary !== undefined && isBatchSummary(summary)) {
+      return { ok: true, value: summary };
     }
     if (state.value.phase === 'refused') {
       const { refusal } = state.value;

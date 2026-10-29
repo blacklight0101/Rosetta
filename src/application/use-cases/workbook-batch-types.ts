@@ -1,5 +1,6 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import type { ERROR_CODES } from '../../domain/errors/codes.js';
+import type { UploadSummary } from './upload-summary.js';
 import type { LeftOut, WorkbookProgress, WorkbookSummaryLine } from '../ports/workbook-staging.js';
 
 // RF-150: the requests and answers of the workbook batch use case.
@@ -52,8 +53,8 @@ export interface BatchState {
   readonly elapsedMs: number;
   /** While processing: the step and the counts. */
   readonly progress?: WorkbookProgress;
-  /** When stored: what the page shows (RF-150). */
-  readonly summary?: WorkbookBatchSummary;
+  /** When stored: what the page shows (RF-150); for the batch of a zip, the summary of the upload (RF-128). */
+  readonly summary?: WorkbookBatchSummary | UploadSummary;
   /** When refused: the error, which the presentation turns into code, message and next step (RF-158). */
   readonly refusal?: unknown;
 }

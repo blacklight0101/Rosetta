@@ -52,7 +52,7 @@ const fileStoredSchema = z.object({ name: z.string(), size: z.number().int().non
 
 const count = z.number().int().nonnegative();
 
-const workbookSummarySchema = z.object({
+export const workbookSummarySchema = z.object({
   /** What was read of each workbook (RF-150). */
   workbooks: z.array(
     z.object({
@@ -74,7 +74,7 @@ const workbookSummarySchema = z.object({
 export type WorkbookSummary = z.output<typeof workbookSummarySchema>;
 
 /** RF-159: where the server is while it reads a batch. */
-export const progressSchema = z.object({
+const progressSchema = z.object({
   step: z.enum(['reading', 'rendering', 'dependencies', 'saving']),
   workbook: count,
   workbooks: count,
@@ -85,18 +85,37 @@ export const progressSchema = z.object({
 
 export type WorkbookProgress = z.output<typeof progressSchema>;
 
-/** RF-159, RF-158: the state of a batch: at work with its progress, or ended with the summary or the refusal. */
-const batchStateSchema = z.object({
-  batchId: z.string().min(1),
-  phase: z.enum(['open', 'processing', 'stored', 'refused']),
-  files: count,
-  elapsedMs: count,
-  progress: progressSchema.optional(),
-  summary: workbookSummarySchema.optional(),
-  refusal: errorBodySchema.extend({ status: z.number().int() }).optional(),
-});
+const refusalSchema = errorBodySchema.extend({ status: z.number().int() });
 
-export type BatchState = z.output<typeof batchStateSchema>;
+/**
+ * RF-159, RF-158: the state of a batch: at work with its progress, or ended with the summary or the
+ * refusal. The summary is the one of the batch: of workbooks, or (DEC-188) of the zip that holds them.
+ */
+export interface BatchStateOf<T> {
+  readonly batchId: string;
+  readonly phase: 'open' | 'processing' | 'stored' | 'refused';
+  readonly files: number;
+  readonly elapsedMs: number;
+  readonly progress?: WorkbookProgress | undefined;
+  readonly summary?: T | undefined;
+  readonly refusal?: z.output<typeof refusalSchema> | undefined;
+}
+
+export type BatchState = BatchStateOf<WorkbookSummary>;
+
+export function stateSchemaOf<T>(summary: z.ZodType<T>): z.ZodType<BatchStateOf<T>> {
+  return z.object({
+    batchId: z.string().min(1),
+    phase: z.enum(['open', 'processing', 'stored', 'refused']),
+    files: count,
+    elapsedMs: count,
+    progress: progressSchema.optional(),
+    summary: summary.optional(),
+    refusal: refusalSchema.optional(),
+  });
+}
+
+const batchStateSchema = stateSchemaOf(workbookSummarySchema);
 
 /** Who follows a file on its way: its progress, and the signal that cancels it. */
 interface FileWatch {
@@ -174,11 +193,21 @@ export function readBatchState(
   batch: { readonly projectId: string; readonly batchId?: string | undefined },
   signal: AbortSignal,
 ): Promise<ApiResult<BatchState>> {
+  return readStateOf(client, batch, signal, workbookSummarySchema);
+}
+
+/** The same read for a batch whose summary is not the one of workbooks (the batch of a zip, DEC-188). */
+export function readStateOf<T>(
+  client: ApiClient,
+  batch: { readonly projectId: string; readonly batchId?: string | undefined },
+  signal: AbortSignal,
+  summary: z.ZodType<T>,
+): Promise<ApiResult<BatchStateOf<T>>> {
   const which = batch.batchId === undefined ? 'current' : encodeURIComponent(batch.batchId);
   return client.request({
     method: 'GET',
     path: `${batchPath(batch.projectId)}/${which}`,
-    schema: batchStateSchema,
+    schema: stateSchemaOf(summary),
     signal,
   });
 }

@@ -70,6 +70,7 @@
     "tests/e2e/visual/sweep-runs.spec.ts",
     "tests/e2e/projects-upload.spec.ts",
     "tests/e2e/projects-workbooks.spec.ts",
-    "tests/e2e/projects-workbooks-progress.spec.ts"
+    "tests/e2e/projects-workbooks-progress.spec.ts",
+    "tests/e2e/projects-zip-workbooks-progress.spec.ts"
   ]
 }

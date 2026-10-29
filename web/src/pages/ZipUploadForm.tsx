@@ -70,11 +70,12 @@ function Summary(props: {
 
 function Outcome({ upload }: { readonly upload: ZipUpload }): JSX.Element | null {
   const { failure, project, summary, phase, percent, processing } = upload;
-  if (phase === 'sending' && processing !== undefined) {
+  if (phase === 'processing') {
     return (
       <ProcessingProgress
-        progress={processing.progress ?? undefined}
-        elapsedMs={processing.elapsedMs}
+        progress={processing?.progress}
+        elapsedMs={processing?.elapsedMs ?? 0}
+        onCancel={upload.cancel}
       />
     );
   }
@@ -106,7 +107,7 @@ function ChosenFields(props: {
 }): JSX.Element {
   const { upload, hasProject } = props;
   const { file } = upload;
-  const sending = upload.phase === 'sending';
+  const sending = upload.phase === 'sending' || upload.phase === 'processing';
   return (
     <>
       <Field
@@ -158,7 +159,7 @@ export function ZipUploadForm(props: ZipUploadOptions): JSX.Element {
         <Button
           type="submit"
           variant="primary"
-          busy={phase === 'sending'}
+          busy={phase === 'sending' || phase === 'processing'}
           {...(reason === undefined ? {} : { disabledReason: reason })}
         >
           {phase === 'failed' && upload.project !== undefined ? 'Upload again' : 'Upload zip'}

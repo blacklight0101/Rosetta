@@ -91,18 +91,21 @@ function uploadServices(
   upload: UploadParts,
 ): Pick<ServerOptions['projects'], 'storeUpload' | 'workbookBatches' | 'workbookRenderer'> {
   const { projects, auditLog, logger, clock } = parts;
+  const workbookBatches = new WorkbookBatches({
+    ...{ projects, runs, auditLog, logger, clock },
+    uploads: upload.store,
+    staging: upload.staging,
+    limitBytes: upload.limitBytes,
+    ids: new SequenceIdGenerator(),
+  });
   return {
     storeUpload: new StoreUpload({
       ...{ projects, runs, auditLog, logger, clock },
       uploads: upload.store,
       limitBytes: upload.limitBytes,
+      batches: workbookBatches,
     }),
-    workbookBatches: new WorkbookBatches({
-      ...{ projects, runs, auditLog, logger, clock },
-      uploads: upload.store,
-      staging: upload.staging,
-      limitBytes: upload.limitBytes,
-    }),
+    workbookBatches,
     workbookRenderer: new WorkbookRendererCheck({
       uploads: upload.store,
       currentVersion: WORKBOOK_RENDERER_VERSION,

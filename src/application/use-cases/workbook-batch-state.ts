@@ -1,12 +1,19 @@
 import type { WorkbookProgress } from '../ports/workbook-staging.js';
-import type { BatchPhase, BatchState, WorkbookBatchSummary } from './workbook-batch-types.js';
+import { ERROR_CODES } from '../../domain/errors/codes.js';
+import type { UploadSummary } from './upload-summary.js';
+import type {
+  BatchPhase,
+  BatchProblem,
+  BatchState,
+  WorkbookBatchSummary,
+} from './workbook-batch-types.js';
 
 // RF-150, RF-159, DEC-183: what the use case keeps of a batch while it is open, at work and after it
 // ended, and how that becomes the state the page reads.
 
 /** How a batch that was finished ended: stored, or refused with the error that stopped it. */
 export type BatchOutcome =
-  | { readonly kind: 'stored'; readonly summary: WorkbookBatchSummary }
+  | { readonly kind: 'stored'; readonly summary: WorkbookBatchSummary | UploadSummary }
   | { readonly kind: 'refused'; readonly error: unknown };
 
 /** A batch that is held: who owns it, since when, how much it holds and what is running on it. */
@@ -59,4 +66,24 @@ export function stateOf(batch: HeldBatch, now: number): BatchState {
     ...(outcome?.kind === 'stored' ? { summary: outcome.summary } : {}),
     ...(outcome?.kind === 'refused' ? { refusal: outcome.error } : {}),
   };
+}
+
+/** The first report of a batch at work, before the work says anything. */
+export const STARTING: WorkbookProgress = {
+  ...{ step: 'reading', workbook: 0, workbooks: 0, sheet: 0, sheets: 0, cells: 0 },
+};
+
+/** RF-159: the work on a batch ended; its outcome is kept for the page to read. */
+export function endBatch(batch: HeldBatch, outcome: BatchOutcome, now: number): void {
+  batch.outcome = outcome;
+  batch.endedAt = now;
+  batch.busy = undefined;
+  batch.progress = undefined;
+  batch.phase = outcome.kind;
+}
+
+/** Why a file or a finish cannot be taken now: the batch is at work, or it has ended (RF-159). */
+export function unusableBecause(batch: HeldBatch): BatchProblem | undefined {
+  if (batch.phase === 'processing' || batch.busy !== undefined) return ERROR_CODES.uploadInProgress;
+  return batch.phase === 'open' ? undefined : ERROR_CODES.notFound;
 }
