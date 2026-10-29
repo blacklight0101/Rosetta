@@ -10,6 +10,7 @@ import {
   runStatus,
   startAndOpenLiveRun,
   startUnderstand,
+  typeOwnAnswerWithKeyboard,
   valueOf,
 } from './support/live-run-page.js';
 import { expectMeterFromUsage } from './support/meter-usage.js';
@@ -160,7 +161,7 @@ test('RF-264 the overview of the application comes first on the page of a finish
   await expect(overview).toBeVisible();
 });
 
-test('RF-645 RF-1007 a suggested answer, then an answer of your own, are saved in answers.md and there after a reload', async ({
+test('RF-645 RF-1007 a suggested answer, then an answer of your own, both chosen by keyboard, are saved in answers.md and there after a reload', async ({
   page,
 }) => {
   const answer = 'Yes, a sold-out item stays in the list, greyed out.';
@@ -170,9 +171,7 @@ test('RF-645 RF-1007 a suggested answer, then an answer of your own, are saved i
   await expect(questionOf()).toContainText('Open');
   await chooseSecondSuggestedAnswer(questionOf());
   await expectNoSeriousViolations(page);
-  await questionOf().getByRole('radio', { name: 'Type your own answer' }).check();
-  await questionOf().getByLabel('Answer to OQ-001').fill(answer);
-  await questionOf().getByRole('button', { name: 'Save answer' }).click();
+  await typeOwnAnswerWithKeyboard(questionOf(), answer);
 
   await expect(questionOf()).toContainText('Answer saved in answers.md.');
   await expectNoSeriousViolations(page);
