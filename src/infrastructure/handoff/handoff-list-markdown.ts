@@ -13,6 +13,7 @@ import {
 } from './handoff-stack-markdown.js';
 import { leftOutSummaryLines } from './handoff-left-out-markdown.js';
 import { buildMethodQuestionLines, leftOutReadmeLines } from './handoff-build-method-markdown.js';
+import { ownPrincipleBullets } from './handoff-own-answers-markdown.js';
 import { suggestedAnswerLines } from './handoff-suggested-answers-markdown.js';
 import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
 import { uploadSentence } from '../../domain/sources/upload-facts.js';
@@ -245,6 +246,7 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
       : handoff.principles.map(
           (principle) => `- **${esc.inline(principle.title)}**: ${esc.inline(principle.rule)}`,
         )),
+    ...ownPrincipleBullets(handoff, esc),
     '',
   ].join('\n');
 }
