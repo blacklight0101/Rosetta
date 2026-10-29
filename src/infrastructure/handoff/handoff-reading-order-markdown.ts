@@ -1,6 +1,7 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { decisionFile, documentSet, handoffFiles } from './handoff-links.js';
+import { writesAgentFolder } from './handoff-agents-folder.js';
 
 // RF-620, RF-601, RF-640: the reading order of the README: AGENTS.md and orchestration.md first for
 // an AI-assisted build, then the documentation set, then the parts of RF-601, each linking its file.
@@ -54,6 +55,9 @@ export function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): str
     [`[Source cards](${handoffFiles.sources})`],
     [`[Realistic data shapes](${handoffFiles.fixtures})`],
     [`[Conventions](${handoffFiles.conventions})`],
+    ...(writesAgentFolder(handoff.brief.buildMethod)
+      ? [[`[Agent definitions](${handoffFiles.agentsReadme})`]]
+      : []),
   ];
   return entries.flatMap((lines, index) =>
     lines.map((line, at) => (at === 0 ? `${String(index + 1)}. ${line}` : line)),

@@ -147,6 +147,13 @@ function readmeFile(method: BuildMethod, roles: readonly Role[], esc: MarkdownEs
   ].join('\n');
 }
 
+/** Whether the package writes the `agents/` folder: only for Claude Code and Codex (Q-E, RF-642). */
+// RF-642, P6-30
+export function writesAgentFolder(given: BuildMethod | undefined): boolean {
+  const kind = resolveBuildMethod(given).agentTool?.kind;
+  return kind === 'claude-code' || kind === 'codex';
+}
+
 /**
  * The files of the `agents/` folder by path inside the package, or none when people build or the
  * tool is neither Claude Code nor Codex (Q-E).
@@ -157,6 +164,7 @@ export function agentFiles(
   esc: MarkdownEscaper,
   masker: TextMasker,
 ): Record<string, string> {
+  if (!writesAgentFolder(handoff.brief.buildMethod)) return {};
   const method = resolveBuildMethod(handoff.brief.buildMethod);
   const kind = method.agentTool?.kind;
   if (kind !== 'claude-code' && kind !== 'codex') return {};
