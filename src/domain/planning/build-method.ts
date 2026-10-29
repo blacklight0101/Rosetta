@@ -21,7 +21,7 @@ interface BuildModels {
 }
 
 /** The tiers whose model runs on the team's own machine (P6-22, RF-641); a key is present only when true. */
-export type LocalTiers = Partial<Record<ModelTier, true | undefined>>;
+type LocalTiers = Partial<Record<ModelTier, true | undefined>>;
 
 export interface BuildMethod {
   readonly aiAssisted: boolean;
