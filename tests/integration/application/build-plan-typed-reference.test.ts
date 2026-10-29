@@ -21,8 +21,20 @@ const typed = {
 } as const;
 const label = "the reference Rosetta's checks use";
 const strangler = migrationStrategyInfo['strangler-fig'];
-/** Text that names the default style or strategy, or states the default strategy's ordering. */
-const defaults = ['Layered (N-tier)', strangler.title, strangler.ordering];
+/**
+ * Text that names the default style or strategy, states the default strategy's ordering, or holds
+ * what only a strangler fig prescribes (a routing layer or facade in front of both systems).
+ */
+const defaults = [
+  'Layered (N-tier)',
+  strangler.title,
+  strangler.ordering,
+  'routing',
+  'routed',
+  'facade',
+];
+/** What a cut-over card of a catalogue strategy prescribes. */
+const strategySpecific = /routing|routed|facade|strangler|frozen for writes|old way/iu;
 
 let dataDir = '';
 
@@ -117,6 +129,24 @@ describe('RF-645 DEC-184 the package never presents the default as the chosen st
     const records = Object.entries(files).filter(([path]) => path.startsWith('decisions/'));
     expect(records.map(([, text]) => text).join('\n')).not.toContain('nearest');
     expect(records.map(([, text]) => text).join('\n')).toContain(label);
+  });
+});
+
+describe('RF-645 DEC-184 the fixed task cards follow the own answers', () => {
+  it('RF-645 DEC-184 the cut-over card follows the own migration answer and prescribes no strategy', async () => {
+    const files = await packageOf(allFour);
+
+    const tasks = files['tasks.md'] ?? '';
+    const cutOver = tasks.slice(tasks.indexOf('**Cut over from the legacy system'));
+    expect(cutOver).toMatch(/owner's own migration answer in ADR-\d{3}/u);
+    expect(tasks).not.toMatch(strategySpecific);
+  });
+
+  it('RF-645 DEC-184 the skeleton card points to the own architecture answer, not to the layers of a style', async () => {
+    const files = await packageOf(allFour);
+
+    expect(files['tasks.md']).toMatch(/owner's own architecture answer in ADR-\d{3}/u);
+    expect(files['tasks.md']).not.toContain('layers of the chosen architecture style');
   });
 });
 
