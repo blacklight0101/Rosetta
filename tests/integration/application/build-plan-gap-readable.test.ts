@@ -43,10 +43,10 @@ describe('BuildPlan: answers shaped like the eShop plan a9700a80 (P7-14)', () =>
     const checks = plain((await h.handoffOf(await h.plan()))['checks.md']);
 
     expect(checks).toContain('### Gap answer');
-    expect(checks).toMatch(/^- 2: the field "dependsOn"\. 2 entries .*card was kept\./mu);
-    expect(checks).toMatch(/^- 3: the field "phase"\. .*card was left out\./mu);
+    expect(checks).toMatch(/^- `2`: the field "dependsOn"\. 2 entries .*card was kept\./mu);
+    expect(checks).toMatch(/^- `3`: the field "phase"\. .*card was left out\./mu);
     expect(checks).toContain('### Gap repair answer');
-    expect(checks).toMatch(/^- 1: the field "card"\. .*not valid JSON.*card was left out\./mu);
+    expect(checks).toMatch(/^- `1`: the field "card"\. .*not valid JSON.*card was left out\./mu);
   });
 
   it('RF-627 P7-14 the log says the repair answer was read card by card, with no answer text', async () => {
