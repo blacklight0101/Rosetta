@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { typedAnswers, typedText } from '../../../../src/domain/planning/typed-answers.js';
+import {
+  checkReference,
+  referenceTitle,
+  typedAnswers,
+  typedText,
+} from '../../../../src/domain/planning/typed-answers.js';
 
 // RF-605, RF-645, ADR-013, DEC-184: which typed answers of a brief reach the planner and the package.
 // A typed answer counts only when its question left `defaulted`, so a brief saved before the typed
@@ -52,5 +57,22 @@ describe('typedAnswers', () => {
 
   it('RF-645 a brief with no typed text has no typed answer', () => {
     expect(typedAnswers({ defaulted: [] })).toEqual({});
+  });
+});
+
+describe('referenceTitle', () => {
+  it('RF-608 DEC-184 with a typed architecture the style is named as the reference of the checks', () => {
+    const brief = { defaulted: [], typed: { architecture: 'Cells, one per region.' } };
+
+    expect(referenceTitle(brief, 'architecture', 'Layered (N-tier)')).toBe(
+      `Layered (N-tier) (${checkReference})`,
+    );
+    expect(checkReference).toBe("the reference Rosetta's checks use");
+  });
+
+  it('RF-608 without a typed answer the title is unchanged', () => {
+    expect(referenceTitle({ defaulted: [] }, 'architecture', 'Layered (N-tier)')).toBe(
+      'Layered (N-tier)',
+    );
   });
 });

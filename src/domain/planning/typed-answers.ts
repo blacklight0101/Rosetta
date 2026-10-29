@@ -31,6 +31,14 @@ export function typedAnswers(brief: TypedSource): Partial<Record<TypedQuestionId
   return found;
 }
 
+/** What the package calls the enumerated default when the owner typed an own answer (stub). */
+export const checkReference = '';
+
+/** The title of the default style or strategy, named as the check reference when an own answer exists (stub). */
+export function referenceTitle(_brief: TypedSource, _id: TypedQuestionId, title: string): string {
+  return title;
+}
+
 /** Whether a save carries a typed text for the question (used to leave `defaulted`). */
 export function hasTypedText(
   typed: Readonly<Record<string, string>> | undefined,
