@@ -163,6 +163,7 @@ RST-1523 is the providers code of a model the shipped list marks `noTools` (it c
     whole block with `test.describe('...', { tag: '@visual' }, () => { ... })`.
 - No real provider calls: the test setup sets `ROSETTA_TEST=1` and blocks outbound network; providers are the fake
   provider with recordings in `tests/recordings/` (ADR-008).
+  A recording for a new subject (P6-12: `planner-single-file.json`, the plan and the product requirements answers for a single-file bill splitter) is written by hand like the others, says so in its `description`, holds synthetic content only, and is read by a support harness in `tests/support/`; the card seed it plans from is a `*-plan-cards.ts` file beside `plan-cards.ts`.
 - Every port has a contract test suite that the real adapters and the fakes both pass.
 - No `.only`, no skipped tests on `main`, no snapshot for something an assertion can state. **(tool:
   `@vitest/eslint-plugin`)**
