@@ -40,7 +40,7 @@ export interface RoundEnd {
   readonly stopped?: DeepenStopReason;
 }
 
-/** The verifier's own cap (RF-423) refused a call during the round. */
+/** The verifier's own cap (RF-423), not its line of the run cap (DEC-193), refused a call during the round. */
 interface CapWatch {
   capped: boolean;
 }
@@ -53,8 +53,10 @@ async function judge(
   const base = judgementPartsOf(parts, parts.deps.clock);
   const awaits = select.awaits ?? awaitsJudgement;
   if (!cards.some((card) => card.claims.some(awaits))) return cards;
+  // DEC-193: a verifier stopped only at its line of the run cap ends the Deepen as it ends an
+  // understand run, with the claims it did not judge Unverified; a cap of its own still ends it CapReached.
   const onCapped = (): void => {
-    select.cap.capped = true;
+    if (parts.room?.verifierAtLine() !== true) select.cap.capped = true;
   };
   return runJudgementStep(cards, { ...base, awaits, onCapped });
 }

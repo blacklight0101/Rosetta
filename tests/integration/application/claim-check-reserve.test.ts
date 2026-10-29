@@ -98,18 +98,22 @@ describe(
         recording: 'deepen-claim-heavy.json',
         verifierRecording: 'verifier-deepen-claim-heavy.json',
       });
-      // At 9,000 tokens the verifier's line is 8,100: the readers stop to leave room for judging and
-      // the verifier stops at the line before it has judged every claim; 900 tokens stay unused.
-      await h.changeSettings(withRun(9_000));
+      // At 11,000 tokens the verifier's line is 9,900: the readers stop to leave room for judging
+      // and the verifier stops at the line with two claims not judged; the rest is the summariser's.
+      await h.changeSettings(withRun(11_000));
 
       const result = await h.deepen(run, { maxRounds: 3 });
 
       if (!result.ok) throw new Error(result.error);
       const deep = result.value;
       const caps = (await h.eventsOf(deep)).filter((event) => event.type === 'budget.capReached');
-      expect(caps.map((event) => event.data)).toMatchObject([
-        { scope: 'run-tokens', role: 'verifier', capSource: 'reserve', capTokens: 8_100 },
-      ]);
+      const line = {
+        scope: 'run-tokens',
+        role: 'verifier',
+        capSource: 'reserve',
+        capTokens: 9_900,
+      };
+      expect(caps.map((event) => event.data)).toContainEqual(expect.objectContaining(line));
       expect(deep.endState).toBe('Completed');
       expect((await deepenOf(h, deep)).stopReason).not.toBe('capReached');
       const claims = await claimsOf(h, deep);

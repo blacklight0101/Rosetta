@@ -1,11 +1,11 @@
 import { SUMMARISER_SHARE_PERCENT } from './budget.js';
 
 // RF-429, P5-20, DEC-170, DEC-193: whether the readers of a run may start another task or take
-// another turn. The readers' spend plus the estimated cost of judging every claim written and not
-// yet judged has to stay within the readers' and the verifier's part of the run caps (90%, the rest
-// is the summariser's): the verifier's room is what is left of the run cap, no fixed share of its own
-// (DEC-193). And the readers' own share has to have room for one more call. Tokens are the
-// cap-weighted count of DEC-168.
+// another turn. The run's spend (every role) plus the estimated cost of judging every claim written
+// and not yet judged has to stay within the run caps less the summariser's part (90%): the verifier's
+// room is what is left of the run cap, no fixed share of its own. The readers have no fixed share
+// either (DEC-193): their next call has to fit below that line too, and within a reader token cap of
+// the project settings when one is set. Tokens are the cap-weighted count of DEC-168.
 
 /**
  * The tokens one judgement is taken to cost before the run has judged a claim. A verifier call
@@ -16,7 +16,7 @@ import { SUMMARISER_SHARE_PERCENT } from './budget.js';
 export const DEFAULT_JUDGING_TOKENS = 2_000n;
 
 /** The part of a run cap the readers and the verifier share; the rest is the summariser's. */
-const READERS_AND_VERIFIER_PERCENT = BigInt(100 - SUMMARISER_SHARE_PERCENT);
+const BELOW_SUMMARY_PERCENT = BigInt(100 - SUMMARISER_SHARE_PERCENT);
 
 /** Cap-weighted tokens (DEC-168) and micro-dollars spent. */
 export interface Spend {
@@ -29,11 +29,13 @@ export interface RoomFacts {
     /** The run caps in force; a cost cap of 0 is not checked. */
     readonly runTokens: bigint;
     readonly runMicros: bigint;
-    /** The readers' share of the run token cap, or the reader token cap of the project. */
-    readonly readerTokens: bigint;
+    /** The reader token cap of the project settings; none when unset (RF-423). */
+    readonly readerTokens?: bigint;
     /** The least a reader call needs: its output limit, which every worst case includes. */
     readonly callTokens: bigint;
   };
+  /** What every role of the run has spent, the readers and the verifier included. */
+  readonly run: Spend;
   readonly readers: Spend;
   readonly verifier: Spend;
   /** Claims written and not judged, and claims the verifier has judged so far in the run. */
@@ -60,32 +62,37 @@ function within(spent: bigint, cap: bigint, percent: bigint): boolean {
   return spent * 100n <= cap * percent;
 }
 
-/** Whether judging the waiting claims fits the caps beside what the readers and verifier spent. */
+/** Whether judging the waiting claims fits the run caps beside what the run has spent. */
 function judgingFits(facts: RoomFacts): boolean {
-  const { limits, readers, verifier, claims } = facts;
+  const { limits, run, claims } = facts;
   const waiting = BigInt(claims.unjudged);
   const each = judgingEstimate(facts);
-  const tokens = waiting * each.tokens;
-  const micros = waiting * each.micros;
-  const together = within(
-    readers.tokens + verifier.tokens + tokens,
+  const tokens = within(
+    run.tokens + waiting * each.tokens,
     limits.runTokens,
-    READERS_AND_VERIFIER_PERCENT,
+    BELOW_SUMMARY_PERCENT,
   );
   const dear =
     limits.runMicros > 0n &&
-    !within(
-      readers.micros + verifier.micros + micros,
-      limits.runMicros,
-      READERS_AND_VERIFIER_PERCENT,
-    );
-  return together && !dear;
+    !within(run.micros + waiting * each.micros, limits.runMicros, BELOW_SUMMARY_PERCENT);
+  return tokens && !dear;
+}
+
+/** Whether one more reader call stays within a reader token cap of the project (RF-423). */
+function ownCapFits(facts: RoomFacts): boolean {
+  const { limits, readers } = facts;
+  return (
+    limits.readerTokens === undefined || readers.tokens + limits.callTokens <= limits.readerTokens
+  );
 }
 
 // RF-429
 export function roomVerdict(facts: RoomFacts): RoomVerdict {
-  const { limits, readers, claims } = facts;
-  if (readers.tokens + limits.callTokens > limits.readerTokens) return 'readers-full';
-  if (claims.unjudged === 0) return 'open';
-  return judgingFits(facts) ? 'open' : 'judging';
+  const { limits, run, claims } = facts;
+  if (!ownCapFits(facts)) return 'readers-full';
+  // DEC-193: no fixed share; the next call has to fit below the summariser's part of the run cap. A
+  // run past that line has used its cap up (CapReached), whatever the claims waiting.
+  const lineFits = within(run.tokens + limits.callTokens, limits.runTokens, BELOW_SUMMARY_PERCENT);
+  if (!lineFits) return 'readers-full';
+  return claims.unjudged > 0 && !judgingFits(facts) ? 'judging' : 'open';
 }

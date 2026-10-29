@@ -78,12 +78,12 @@ describe('role caps of the provider factory, one role at a time', () => {
     expect(harness.stops).toEqual([]);
   });
 
-  it('RF-423 without role caps in the settings only the readers share of the run tokens applies (RF-429)', async () => {
+  it('RF-423 RF-429 DEC-193 without role caps in the settings a reader has no role cap and no share of the run tokens', async () => {
     const { harness, reader } = await setUp(base);
 
     await reader.complete(callFor('reader', 'contract-model', 1));
 
-    expect(kindsOf(harness.ledger.reservations[0]?.caps ?? [])).toEqual(['role-tokens']);
+    expect(kindsOf(harness.ledger.reservations[0]?.caps ?? [])).toEqual([]);
   });
 
   it('RF-407 a provider test belongs to no run, so no role cap applies to it', async () => {
@@ -105,7 +105,6 @@ describe('role caps of zero', () => {
     const [held] = harness.ledger.reservations;
     expect(held?.caps.filter((cap) => cap.kind.startsWith('role'))).toEqual([
       { kind: 'role-cost', limit: 0n },
-      { kind: 'role-tokens', limit: 1_400_000n, source: 'reserve' },
     ]);
     expect(harness.ledger.entries).toEqual([]);
   });

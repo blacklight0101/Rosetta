@@ -31,7 +31,11 @@ interface AccountCaps {
   readonly ownDailyCapMicros: bigint | null;
 }
 
-/** RF-429, EV-27: the share of the run token cap the readers may use; the rest verifies their claims. */
+/**
+ * RF-429, P5-18: the share of a scope cap's room (user-day, own-day, server-month) the readers may use
+ * when that room is below the run cost cap; the rest judges their claims. DEC-193 dropped the readers'
+ * fixed share of the run token cap: the room check holds them below the summariser's part instead.
+ */
 export const READER_SHARE_PERCENT = 70;
 
 /**
@@ -59,7 +63,7 @@ export type ScopeSpent = Readonly<Partial<Record<ScopeKind, bigint>>>;
 export interface CapInputs {
   readonly run: RunBudget;
   readonly role?: RoleBudget;
-  /** RF-429: the call's role is a reader, which stops at a share of the run token cap unless it has its own. */
+  /** RF-429, P5-18: the call's role is a reader, which may get a share of a scope cap's room. */
   readonly reader?: boolean;
   /** RF-429, DEC-193: the call's role is the verifier, held to the run token cap less the summariser's part unless it has its own. */
   readonly verifier?: boolean;
@@ -82,22 +86,6 @@ function roleCaps(role: RoleBudget | undefined): readonly UsageCap[] {
     caps.push({ kind: 'role-cost', limit: role.maxCostMicros });
   if (role?.maxTokens !== undefined) caps.push({ kind: 'role-tokens', limit: role.maxTokens });
   return caps;
-}
-
-/**
- * RF-429: a reader with no token cap of its own is held to `READER_SHARE_PERCENT` of the run token
- * cap of its key source, so the rest judges their claims. The share is a role cap, so it stops the
- * readers only, never the run (RF-423). It counts tokens only: a share of the cost cap would refuse
- * the first reader calls of models that fit the default cap today (Q-57, DEC-159).
- */
-function readerShareCaps(keys: readonly UsageCap[]): readonly UsageCap[] {
-  return keys
-    .filter((cap) => cap.kind === 'run-tokens')
-    .map((cap) => ({
-      kind: 'role-tokens',
-      limit: (cap.limit * BigInt(READER_SHARE_PERCENT)) / 100n,
-      source: 'reserve',
-    }));
 }
 
 /**
@@ -153,9 +141,7 @@ function scopeShareCaps(
 export function capsFor(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
   const keys = keyCaps(keySource, inputs);
   const own = roleCaps(inputs.role);
-  const ownTokens = own.some((cap) => cap.kind === 'role-tokens');
   const shares: UsageCap[] = [];
-  if (inputs.reader === true && !ownTokens) shares.push(...readerShareCaps(keys));
   if (
     inputs.reader === true &&
     inputs.scopeSpent !== undefined &&
@@ -165,6 +151,7 @@ export function capsFor(keySource: KeySource, inputs: CapInputs): readonly Usage
   }
   // DEC-193: the run's own caps come first, so a verifier call that would pass the whole run cap (or a
   // scope cap) still stops the run; one that passes only the line stops the verifier.
+  const ownTokens = own.some((cap) => cap.kind === 'role-tokens');
   if (inputs.verifier === true && !ownTokens) shares.push(...claimCheckCaps(keys));
   return [...keys, ...own, ...shares];
 }
