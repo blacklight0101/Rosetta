@@ -11,7 +11,7 @@ import { signInAs } from './support/sign-in.js';
 
 test.describe.configure({ mode: 'serial' });
 
-const NOTE = 'Recorded; the plan uses the default until typed answers reach the planner';
+const NOTE = 'Recorded; the planner reads it as your own answer';
 
 test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('plan', info.project.name));

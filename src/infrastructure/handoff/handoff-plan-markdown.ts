@@ -7,6 +7,7 @@ import { fenced } from '../cards/flow-diagram-section.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { decisionLink, handoffFiles, sourceLinks } from './handoff-links.js';
+import { ownAnswerLines } from './handoff-own-answers-markdown.js';
 import { followsStyle } from './handoff-style-markdown.js';
 
 // RF-601, RF-602, RF-603, ADR-013: the planning documents of the hand-off package: requirements,
@@ -63,6 +64,7 @@ export function architectureMarkdown(
     '',
     `Architecture style: **${esc.inline(style.title)}**. ${esc.inline(style.rule)}`,
     '',
+    ...ownAnswerLines(handoff, 'architecture', esc),
     esc.block(content.summary === '' ? 'The planner wrote no summary.' : content.summary),
     '',
     '## Following the style',

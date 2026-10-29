@@ -3,6 +3,7 @@ import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.
 import type { PlanPhase } from '../../domain/planning/plan-content.js';
 import { sizeOfPhase } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { ownAnswerLines } from './handoff-own-answers-markdown.js';
 import { groupLines } from './handoff-parallel-markdown.js';
 import { bullets, decisionLink, handoffFiles, idLink } from './handoff-links.js';
 import { waitingLines, waitingNote, waitingOf } from './handoff-waiting-markdown.js';
@@ -25,6 +26,7 @@ function strategyLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
     '',
     esc.inline(info.ordering),
     '',
+    ...ownAnswerLines(handoff, 'migration', esc),
   ];
 }
 

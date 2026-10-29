@@ -23,7 +23,7 @@ async function saved(page: RenderedPage): Promise<void> {
 }
 
 const own = (): HTMLElement => screen.getByRole('radio', { name: /^Type your own answer/u });
-const NOTE = 'Recorded; the plan uses the default until typed answers reach the planner';
+const NOTE = 'Recorded; the planner reads it as your own answer';
 
 /** A saved brief with a typed answer: the server keeps the question defaulted (owner, 2026-10-28). */
 function typedBrief(question: string, text = 'Move one module a week.') {

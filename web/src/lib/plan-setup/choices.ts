@@ -75,8 +75,8 @@ export function chosen(draft: Draft, question: string, option: string): Draft {
 
 /**
  * RF-645: the draft with a question answered by typing; an empty text keeps the choice but sends
- * nothing. The typed text does not answer the question's own field, so the question keeps its
- * default and stays defaulted until typed answers reach the planner (owner, 2026-10-28).
+ * nothing. The typed text does not answer the question's own field: the server keeps the enumerated
+ * default value and sends the text to the planner as the owner's own answer (DEC-184).
  */
 export function typeOwn(draft: Draft, question: string, text: string): Draft {
   return { ...chosen(draft, question, TYPED), typed: { ...draft.typed, [question]: text } };

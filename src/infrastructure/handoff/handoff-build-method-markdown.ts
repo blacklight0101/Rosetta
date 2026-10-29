@@ -1,4 +1,6 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
+import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { ownAnswerLines } from './handoff-own-answers-markdown.js';
 
 // RF-612, RF-637, P6-11: what a package written for people building leaves out. Only a people build
 // says it; an agent build has these files and says nothing about them.
@@ -16,9 +18,20 @@ export function leftOutReadmeLines(handoff: HandoffPackage): string[] {
  * A build method that took its default is already a row of the brief questions that took their
  * default, which says it is a whole-build question, so this section is left out to list it once.
  */
-export function buildMethodQuestionLines(handoff: HandoffPackage): string[] {
+export function buildMethodQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   if (handoff.brief.buildMethod.aiAssisted) return [];
   if (handoff.briefQuestions.some((question) => question.id === 'buildMethod')) return [];
+  const own = ownAnswerLines(handoff, 'buildMethod', esc);
+  // DEC-184: the owner typed the answer, so it is stated instead of the default.
+  if (own.length > 0) {
+    return [
+      '## Build method',
+      '',
+      ...own,
+      'Whether the team builds with AI agents is a whole-build question, so no card waits on it. Rosetta cannot read the answer as a choice of AI agents, so this package has no agent files, no model per card and no build protocol. A team that builds with agents can answer the question again to add them.',
+      '',
+    ];
+  }
   return [
     '## Build method',
     '',

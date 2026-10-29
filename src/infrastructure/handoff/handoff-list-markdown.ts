@@ -92,7 +92,7 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     '',
     'A security question is the exception: its default is the secure option, never the legacy behaviour. The planner marks a claim as a security matter, and a question of the card that holds such a claim, and a keep-or-fix row about it, default to the secure option.',
     '',
-    ...buildMethodQuestionLines(handoff),
+    ...buildMethodQuestionLines(handoff, esc),
     '## Planning brief questions that took their default',
     '',
     'Nobody answered these questions when the brief was saved; the package was written with the default shown. Confirm or change each one. A question of the brief applies to the whole build, so it marks no single card as waiting.',

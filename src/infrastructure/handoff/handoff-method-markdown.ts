@@ -2,6 +2,7 @@ import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.js';
 import { difficultyBands } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { ownAnswerLines, ownPrincipleBullets } from './handoff-own-answers-markdown.js';
 import { decisionLink, handoffFiles } from './handoff-links.js';
 import { metricsRuleLines } from './handoff-metrics-markdown.js';
 import { operationsLines } from './handoff-parallel-markdown.js';
@@ -17,23 +18,28 @@ import { uploadSentence } from '../../domain/sources/upload-facts.js';
 // words; a principle that was not chosen appears in neither.
 
 function principleLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  if (handoff.principles.length === 0) return ['No principle was chosen.', ''];
-  return handoff.principles.flatMap((each) => [
-    `### ${esc.inline(each.title)}`,
-    '',
-    `Rule: ${esc.inline(each.rule)}`,
-    '',
-    `Why it matters: ${esc.inline(each.why)}`,
-    '',
-    `How to check: ${esc.inline(each.check)}`,
-    '',
-  ]);
+  const own = ownAnswerLines(handoff, 'principles', esc);
+  if (handoff.principles.length === 0) return ['No principle was chosen.', '', ...own];
+  return [
+    ...handoff.principles.flatMap((each) => [
+      `### ${esc.inline(each.title)}`,
+      '',
+      `Rule: ${esc.inline(each.rule)}`,
+      '',
+      `Why it matters: ${esc.inline(each.why)}`,
+      '',
+      `How to check: ${esc.inline(each.check)}`,
+      '',
+    ]),
+    ...own,
+  ];
 }
 
 function styleLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const { style, choices } = handoff;
   const decision = choices.style === '' ? '' : ` (${decisionLink(choices.style)})`;
   return [
+    ...ownAnswerLines(handoff, 'architecture', esc),
     `**${esc.inline(style.title)}**${decision}: ${esc.inline(style.rule)}`,
     '',
     `How to check: ${esc.inline(style.check)}`,
@@ -105,11 +111,15 @@ function commandLines(): string[] {
 }
 
 function principleBullets(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  if (handoff.principles.length === 0) return ['No principle was chosen.'];
-  return handoff.principles.map(
-    (each) =>
-      `- ${esc.inline(each.title)}: ${esc.inline(each.rule)} Check: ${esc.inline(each.check)}`,
-  );
+  const own = ownPrincipleBullets(handoff, esc);
+  if (handoff.principles.length === 0) return ['No principle was chosen.', ...own];
+  return [
+    ...handoff.principles.map(
+      (each) =>
+        `- ${esc.inline(each.title)}: ${esc.inline(each.rule)} Check: ${esc.inline(each.check)}`,
+    ),
+    ...own,
+  ];
 }
 
 function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {

@@ -12,6 +12,7 @@ import type { StackTechnology } from './stack-data.js';
 import type { SourceCard } from './plan-sources.js';
 import { planId, type PlanDecision } from './plan-content.js';
 import { migrationStrategies, type PlanningBrief, type StackLayer } from './planning-brief.js';
+import { typedAnswers } from './typed-answers.js';
 import type { PlanProposal, StrategyFit } from './stack-proposal.js';
 
 // RF-608, RF-609, RF-610, ADR-018, DEC-76, DEC-78: the choices of the planning brief as decision
@@ -91,6 +92,9 @@ function styleDecision(
     recommended.length === 0
       ? 'Rosetta made no recommendation for this brief.'
       : `Rosetta recommended ${recommended.map((each) => catalogue.styles.find((entry) => entry.id === each)?.title ?? each).join(' and ')} from the code map and the verified cards.`;
+  const own = typedAnswers(brief).architecture;
+  if (own !== undefined)
+    return ownStyleDecision({ brief, chosen, considered, sources, recommendation }, own, id);
   const unchosen = brief.defaulted.includes('architecture');
   return {
     id,
@@ -101,6 +105,31 @@ function styleDecision(
     consequences: `The components of the target architecture follow the style. How to check it: ${chosen.check}`,
     options: considered.map((each) => styleLine(each, each.id === style)),
     sources,
+  };
+}
+
+/** DEC-184: the owner typed the style, so the record states the answer; the check keeps the nearest known style. */
+function ownStyleDecision(
+  parts: {
+    readonly brief: PlanningBrief;
+    readonly chosen: ArchitectureStyle;
+    readonly considered: readonly ArchitectureStyle[];
+    readonly sources: readonly string[];
+    readonly recommendation: string;
+  },
+  own: string,
+  id: string,
+): PlanDecision {
+  const { chosen, considered, sources, recommendation } = parts;
+  return {
+    id,
+    title: "Architecture style: the owner's own answer",
+    status: 'Accepted',
+    context: `The new system needs an architecture style. The owner typed an answer instead of choosing one of the styles. ${recommendation}`,
+    decision: `Follow the owner's own answer: ${own}`,
+    consequences: `The components of the target architecture follow the owner's answer. Rosetta's automatic dependency check knows only its catalogue, so it compares them with the nearest style, ${chosen.title}. How to check that style: ${chosen.check}`,
+    options: [...considered.map((each) => styleLine(each, false)), `Own answer (chosen): ${own}`],
+    sources: [...sources],
   };
 }
 
@@ -124,6 +153,27 @@ function migrationDecision(brief: PlanningBrief, id: string, fit?: StrategyFit):
       const name = each === brief.migration ? `${option.title} (chosen)` : option.title;
       return `${name}: ${option.tradeOff}`;
     }),
+    sources: [],
+  };
+}
+
+/** DEC-184: the owner typed the strategy, so the record states the answer and the strategies are only the reference. */
+function ownMigrationDecision(brief: PlanningBrief, own: string, id: string): PlanDecision {
+  const info = migrationStrategyInfo[brief.migration];
+  return {
+    id,
+    title: "Migration strategy: the owner's own answer",
+    status: 'Accepted',
+    context:
+      'The legacy system has to be replaced by the new one. The owner typed an answer instead of choosing one of the strategies, and the answer decides in which order the phases of the roadmap run.',
+    decision: `Follow the owner's own answer: ${own}`,
+    consequences: `The phases of the roadmap follow the owner's answer. The strategy closest to the default, ${info.title}, is the reference where the answer is silent: ${info.tradeOff}`,
+    options: [
+      ...migrationStrategies.map(
+        (each) => `${migrationStrategyInfo[each].title}: ${migrationStrategyInfo[each].tradeOff}`,
+      ),
+      `Own answer (chosen): ${own}`,
+    ],
     sources: [],
   };
 }
@@ -194,7 +244,11 @@ export function briefDecisions(
   const layers = brief.stack.map((entry) =>
     stackDecision(entry, nextId(), evidence, catalogue.stack.technologies),
   );
-  const migration = migrationDecision(brief, nextId(), proposal?.fit);
+  const ownMigration = typedAnswers(brief).migration;
+  const migration =
+    ownMigration === undefined
+      ? migrationDecision(brief, nextId(), proposal?.fit)
+      : ownMigrationDecision(brief, ownMigration, nextId());
   const seam = proposal?.fit.seam ? seamDecision(proposal.fit, nextId()) : undefined;
   return {
     decisions: presentOnly([style, ...layers, migration, seam]),
