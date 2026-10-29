@@ -12,7 +12,7 @@ import type { StackTechnology } from './stack-data.js';
 import type { SourceCard } from './plan-sources.js';
 import { planId, type PlanDecision } from './plan-content.js';
 import { migrationStrategies, type PlanningBrief, type StackLayer } from './planning-brief.js';
-import { typedAnswers } from './typed-answers.js';
+import { checkReference, typedAnswers } from './typed-answers.js';
 import type { PlanProposal, StrategyFit } from './stack-proposal.js';
 
 // RF-608, RF-609, RF-610, ADR-018, DEC-76, DEC-78: the choices of the planning brief as decision
@@ -108,7 +108,7 @@ function styleDecision(
   };
 }
 
-/** DEC-184: the owner typed the style, so the record states the answer; the check keeps the nearest known style. */
+/** DEC-184: the owner typed the style, so the record states the answer; the default style is only the reference of the checks. */
 function ownStyleDecision(
   parts: {
     readonly brief: PlanningBrief;
@@ -127,7 +127,7 @@ function ownStyleDecision(
     status: 'Accepted',
     context: `The new system needs an architecture style. The owner typed an answer instead of choosing one of the styles. ${recommendation}`,
     decision: `Follow the owner's own answer: ${own}`,
-    consequences: `The components of the target architecture follow the owner's answer. Rosetta's automatic dependency check knows only its catalogue, so it compares them with the nearest style, ${chosen.title}. How to check that style: ${chosen.check}`,
+    consequences: `The components of the target architecture follow the owner's answer. Rosetta's automatic dependency check knows only its catalogue, so it compares them with ${chosen.title}, the default style and ${checkReference}. How to check that style: ${chosen.check}`,
     options: [...considered.map((each) => styleLine(each, false)), `Own answer (chosen): ${own}`],
     sources: [...sources],
   };
@@ -167,7 +167,7 @@ function ownMigrationDecision(brief: PlanningBrief, own: string, id: string): Pl
     context:
       'The legacy system has to be replaced by the new one. The owner typed an answer instead of choosing one of the strategies, and the answer decides in which order the phases of the roadmap run.',
     decision: `Follow the owner's own answer: ${own}`,
-    consequences: `The phases of the roadmap follow the owner's answer. The strategy closest to the default, ${info.title}, is the reference where the answer is silent: ${info.tradeOff}`,
+    consequences: `The phases of the roadmap follow the owner's answer. ${info.title}, the default strategy, is ${checkReference}, not the chosen strategy: ${info.tradeOff}`,
     options: [
       ...migrationStrategies.map(
         (each) => `${migrationStrategyInfo[each].title}: ${migrationStrategyInfo[each].tradeOff}`,

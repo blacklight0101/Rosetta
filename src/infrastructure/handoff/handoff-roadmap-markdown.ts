@@ -3,7 +3,7 @@ import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.
 import type { PlanPhase } from '../../domain/planning/plan-content.js';
 import { sizeOfPhase } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
-import { ownAnswerLines } from './handoff-own-answers-markdown.js';
+import { hasOwnAnswer, ownAnswerLines, referenceLine } from './handoff-own-answers-markdown.js';
 import { groupLines } from './handoff-parallel-markdown.js';
 import { bullets, decisionLink, handoffFiles, idLink } from './handoff-links.js';
 import { waitingLines, waitingNote, waitingOf } from './handoff-waiting-markdown.js';
@@ -19,14 +19,24 @@ const notStated = 'not stated';
 
 function strategyLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const info = migrationStrategyInfo[handoff.brief.migration];
+  const record = ` (${decisionLink(handoff.choices.migration)})`;
+  // DEC-184: the owner's own answer leads and the default strategy is only the reference.
+  if (hasOwnAnswer(handoff, 'migration')) {
+    return [
+      '## Migration strategy',
+      '',
+      ...ownAnswerLines(handoff, 'migration', esc),
+      referenceLine(esc.inline(info.title), record, 'strategy', esc.inline(info.ordering)),
+      '',
+    ];
+  }
   return [
     '## Migration strategy',
     '',
-    `**${esc.inline(info.title)}** (${decisionLink(handoff.choices.migration)})`,
+    `**${esc.inline(info.title)}**${record}`,
     '',
     esc.inline(info.ordering),
     '',
-    ...ownAnswerLines(handoff, 'migration', esc),
   ];
 }
 

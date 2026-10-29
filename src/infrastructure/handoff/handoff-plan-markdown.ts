@@ -7,7 +7,8 @@ import { fenced } from '../cards/flow-diagram-section.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { decisionLink, handoffFiles, sourceLinks } from './handoff-links.js';
-import { ownAnswerLines } from './handoff-own-answers-markdown.js';
+import { checkReference } from '../../domain/planning/typed-answers.js';
+import { hasOwnAnswer, ownAnswerLines, referenceLine } from './handoff-own-answers-markdown.js';
 import { followsStyle } from './handoff-style-markdown.js';
 
 // RF-601, RF-602, RF-603, ADR-013: the planning documents of the hand-off package: requirements,
@@ -40,11 +41,27 @@ export function requirementsMarkdown(handoff: HandoffPackage, esc: MarkdownEscap
 /** RF-608: the sentence on the style; it no longer says the components follow it when a rule is broken. */
 function followingSentence(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const { style, choices } = handoff;
-  const record = choices.style === '' ? '' : ` (${decisionLink(choices.style)})`;
+  const linked = choices.style === '' ? '' : ` (${decisionLink(choices.style)})`;
+  // DEC-184: with an own answer the style is only the reference of the checks.
+  const record = hasOwnAnswer(handoff, 'architecture') ? `${linked}, ${checkReference}` : linked;
   if (!followsStyle(handoff)) {
     return `The components below do not all follow the ${esc.inline(style.title)} style${record}: at least one dependency breaks its rule. See [the package checks](${handoffFiles.checks}) and [the risks](${handoffFiles.risks}). How to check it: ${esc.inline(style.check)}`;
   }
   return `The components below follow the ${esc.inline(style.title)} style${record}. How to check it: ${esc.inline(style.check)}`;
+}
+
+/** The style the file opens with: the owner's own answer first and the default as the reference. */
+function styleOpening(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const { style, choices } = handoff;
+  if (!hasOwnAnswer(handoff, 'architecture')) {
+    return [`Architecture style: **${esc.inline(style.title)}**. ${esc.inline(style.rule)}`, ''];
+  }
+  const record = choices.style === '' ? '' : ` (${decisionLink(choices.style)})`;
+  return [
+    ...ownAnswerLines(handoff, 'architecture', esc),
+    referenceLine(esc.inline(style.title), record, 'style', esc.inline(style.rule)),
+    '',
+  ];
 }
 
 // RF-601, RF-603
@@ -53,7 +70,7 @@ export function architectureMarkdown(
   esc: MarkdownEscaper,
   masker: TextMasker,
 ): string {
-  const { content, style } = handoff;
+  const { content } = handoff;
   const masked = content.components.map((component) => ({
     name: masker.mask(component.name).text,
     dependsOn: component.dependsOn.map((name) => masker.mask(name).text),
@@ -62,9 +79,7 @@ export function architectureMarkdown(
   return [
     '# Target architecture',
     '',
-    `Architecture style: **${esc.inline(style.title)}**. ${esc.inline(style.rule)}`,
-    '',
-    ...ownAnswerLines(handoff, 'architecture', esc),
+    ...styleOpening(handoff, esc),
     esc.block(content.summary === '' ? 'The planner wrote no summary.' : content.summary),
     '',
     '## Following the style',

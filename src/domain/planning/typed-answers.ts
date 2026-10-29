@@ -31,12 +31,16 @@ export function typedAnswers(brief: TypedSource): Partial<Record<TypedQuestionId
   return found;
 }
 
-/** What the package calls the enumerated default when the owner typed an own answer (stub). */
-export const checkReference = '';
+/**
+ * DEC-184: what the package and the records call the enumerated default (the style, the strategy)
+ * when the owner typed an own answer. The default is never the chosen one then; Rosetta keeps it
+ * only as the reference its own checks compare with.
+ */
+export const checkReference = "the reference Rosetta's checks use";
 
-/** The title of the default style or strategy, named as the check reference when an own answer exists (stub). */
-export function referenceTitle(_brief: TypedSource, _id: TypedQuestionId, title: string): string {
-  return title;
+/** The title of the default style or strategy, named as the check reference when an own answer exists. */
+export function referenceTitle(brief: TypedSource, id: TypedQuestionId, title: string): string {
+  return typedAnswers(brief)[id] === undefined ? title : `${title} (${checkReference})`;
 }
 
 /** Whether a save carries a typed text for the question (used to leave `defaulted`). */

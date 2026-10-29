@@ -13,6 +13,7 @@ import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content
 import { addSecretRisks, type SecretRisks } from '../../domain/planning/secret-risks.js';
 import type { ScanFacts } from './plan-scan-facts.js';
 import { addStyleRisks, checkStyle } from '../../domain/planning/style-rules.js';
+import { referenceTitle } from '../../domain/planning/typed-answers.js';
 import {
   excludedClaims,
   sourceStopOf,
@@ -267,7 +268,7 @@ export function handoffPackageOf(
     principles: brief.principles.map((id) => principleOf(catalogue, id)),
     content: contentOf(decided.content, {
       styleCheck,
-      style,
+      style: { ...style, title: referenceTitle(brief, 'architecture', style.title) },
       questions,
       secrets: documents.secrets,
     }),

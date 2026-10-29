@@ -2,7 +2,12 @@ import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.js';
 import { difficultyBands } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
-import { ownAnswerLines, ownPrincipleBullets } from './handoff-own-answers-markdown.js';
+import {
+  hasOwnAnswer,
+  ownAnswerLines,
+  ownPrincipleBullets,
+  referenceLine,
+} from './handoff-own-answers-markdown.js';
 import { decisionLink, handoffFiles } from './handoff-links.js';
 import { metricsRuleLines } from './handoff-metrics-markdown.js';
 import { operationsLines } from './handoff-parallel-markdown.js';
@@ -38,9 +43,13 @@ function principleLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[]
 function styleLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const { style, choices } = handoff;
   const decision = choices.style === '' ? '' : ` (${decisionLink(choices.style)})`;
+  // DEC-184: the owner's own answer leads and the default style is only the reference.
+  const named = hasOwnAnswer(handoff, 'architecture')
+    ? referenceLine(esc.inline(style.title), decision, 'style', esc.inline(style.rule))
+    : `**${esc.inline(style.title)}**${decision}: ${esc.inline(style.rule)}`;
   return [
     ...ownAnswerLines(handoff, 'architecture', esc),
-    `**${esc.inline(style.title)}**${decision}: ${esc.inline(style.rule)}`,
+    named,
     '',
     `How to check: ${esc.inline(style.check)}`,
     '',
@@ -122,8 +131,27 @@ function principleBullets(handoff: HandoffPackage, esc: MarkdownEscaper): string
   ];
 }
 
-function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+/** The migration line of the layout: the owner's own answer first and the default as the reference. */
+function migrationLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const strategy = migrationStrategyInfo[handoff.brief.migration];
+  const record = ` (${decisionLink(handoff.choices.migration)})`;
+  if (!hasOwnAnswer(handoff, 'migration')) {
+    return [
+      `Migration: ${esc.inline(strategy.title)}${record}. ${esc.inline(strategy.ordering)}`,
+      '',
+    ];
+  }
+  const own = ownAnswerLines(handoff, 'migration', esc).map((line) =>
+    line === '' ? '' : `Migration: ${line}`,
+  );
+  return [
+    ...own,
+    referenceLine(esc.inline(strategy.title), record, 'strategy', esc.inline(strategy.ordering)),
+    '',
+  ];
+}
+
+function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   return [
     '# AGENTS.md',
     '',
@@ -149,8 +177,7 @@ function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     '## Layout',
     '',
     ...styleLines(handoff, esc),
-    `Migration: ${esc.inline(strategy.title)} (${decisionLink(handoff.choices.migration)}). ${esc.inline(strategy.ordering)}`,
-    '',
+    ...migrationLines(handoff, esc),
     ...technologyLines(handoff, esc),
     '## Plan before building',
     '',
