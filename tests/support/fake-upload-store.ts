@@ -28,6 +28,8 @@ export class FakeUploadStore implements UploadStore {
   reports: WorkbookProgress[] = [];
   /** When set, `store` waits for it. */
   gate: Promise<void> | undefined;
+  /** When set, `remove` waits for it: a deletion that is still going on (RF-159). */
+  removeGate: Promise<void> | undefined;
   /** RF-159: once the gate lets go, a store whose request was aborted stops, as the real one does. */
   stopsOnAbort = false;
   /** RF-159, DEC-188: the store tells its caller that the zip holds workbooks, as the real one does. */
@@ -88,9 +90,10 @@ export class FakeUploadStore implements UploadStore {
     return Promise.resolve();
   }
 
-  remove(key: string): Promise<boolean> {
+  async remove(key: string): Promise<boolean> {
     this.removed.push(key);
-    return Promise.resolve(true);
+    if (this.removeGate !== undefined) await this.removeGate;
+    return true;
   }
 
   removeAllOf(projectId: string): Promise<number> {
