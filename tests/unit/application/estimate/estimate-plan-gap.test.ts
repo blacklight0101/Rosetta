@@ -26,7 +26,7 @@ describe('EstimatePlan: the call for the items no task card builds', () => {
   it('Q-45 counts the gap call, with its own measured prompt, after the coverage call', async () => {
     const { assumptions } = await estimateOf();
 
-    const system = (await readFile('prompts/planner/gap.v2.md', 'utf8')).length;
+    const system = (await readFile('prompts/planner/gap.v3.md', 'utf8')).length;
     expect(assumptions.calls).toBe(6);
     expect(assumptions.gapPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(assumptions.gapPromptTokens).not.toBe(assumptions.coveragePromptTokens);
@@ -48,8 +48,8 @@ describe('EstimatePlan: the repair attempt of the call for the items no task car
   it('Q-54 RF-627 counts the repair call after the gap call, with the gap prompt and the repair prompt measured', async () => {
     const { assumptions } = await estimateOf();
 
-    const system = (await readFile('prompts/planner/gap.v2.md', 'utf8')).length;
-    const repair = (await readFile('prompts/planner/gap-repair.v2.md', 'utf8')).length;
+    const system = (await readFile('prompts/planner/gap.v3.md', 'utf8')).length;
+    const repair = (await readFile('prompts/planner/gap-repair.v3.md', 'utf8')).length;
     expect(assumptions.gapRepairPromptTokens).toBeGreaterThan(
       assumptions.gapPromptTokens + Math.ceil(repair / 4) - 1,
     );
@@ -75,7 +75,7 @@ describe('EstimatePlan: the problems the repair is sized with', () => {
   it('Q-54 sizes the repair for a problem line of every card an answer may hold', async () => {
     const { assumptions } = await estimateOf();
 
-    const repair = (await readFile('prompts/planner/gap-repair.v2.md', 'utf8')).length;
+    const repair = (await readFile('prompts/planner/gap-repair.v3.md', 'utf8')).length;
     const added = assumptions.gapRepairPromptTokens - assumptions.gapPromptTokens;
     // 50 cards, a line of about 70 characters each, at four characters per token.
     expect(added - Math.ceil(repair / 4)).toBeGreaterThan(800);
