@@ -135,6 +135,44 @@ describe('WorkbookBatches.finish and cancel', () => {
   });
 });
 
+describe('WorkbookBatches.cancel that comes when the work is done or nearly done', () => {
+  it('RF-159 cancel after the batch was stored leaves it, answers its state and keeps the source', async () => {
+    const test = await batchCase();
+    const batchId = await withFile(test);
+    await test.useCase.finish(finishOf(test, batchId));
+    await waitForPhase(test, batchId, 'stored');
+
+    const cancelled = await test.useCase.cancel(ref(test, batchId));
+
+    expect(cancelled).toMatchObject({
+      ok: true,
+      value: { cancelled: false, state: { batchId, phase: 'stored' } },
+    });
+    expect((await stateOf(test, batchId)).phase).toBe('stored');
+    expect((await test.projects.find(amy.userId, test.project.id))?.upload?.workbooks).toBe(1);
+  });
+
+  it('RF-159 cancel that lands after the publish attaches nothing and removes the snapshot', async () => {
+    const test = await batchCase();
+    const batchId = await withFile(test);
+    const publish = test.staging.publish.bind(test.staging);
+    const release = holdPublish(test);
+    vi.spyOn(test.staging, 'publish').mockImplementation(async (id, request) => {
+      // The publish ends without seeing the cancel: only the attach is left.
+      return publish(id, { ...request, signal: new AbortController().signal });
+    });
+    await test.useCase.finish(finishOf(test, batchId));
+
+    expect((await test.useCase.cancel(ref(test, batchId))).ok).toBe(true);
+    release();
+
+    await vi.waitFor(() => {
+      expect(test.uploads.removed).toHaveLength(1);
+    });
+    expect((await test.projects.find(amy.userId, test.project.id))?.upload).toBeUndefined();
+  });
+});
+
 describe('WorkbookBatches.state after acceptance', () => {
   it('RF-158 shows a refusal after acceptance with its error and publishes nothing', async () => {
     const test = await batchCase();

@@ -112,6 +112,22 @@ describe('POST finish and cancel', () => {
     expect(state.statusCode).toBe(404);
     expect(reopened.statusCode).toBe(201);
   });
+
+  it('RF-159 cancel after the batch was stored answers 409 with the state and the project keeps the source', async () => {
+    const { amy } = await setup();
+    const target = await withBook(amy);
+    await finishBatch(amy, target);
+    await settledBatch(amy, target);
+
+    const cancelled = await cancelBatch(amy, target);
+    const state = await batchState(amy, target);
+    const shown = await amy.request({ method: 'GET', url: `/api/projects/${target.projectId}` });
+
+    expect(cancelled.statusCode).toBe(409);
+    expect(cancelled.json()).toMatchObject({ batchId: target.batchId, phase: 'stored' });
+    expect(state.json()).toMatchObject({ phase: 'stored' });
+    expect(shown.json()).toMatchObject({ source: { fileName: 'Pricing.xlsx', workbooks: 1 } });
+  });
 });
 
 describe('the state routes and who may read them', () => {
