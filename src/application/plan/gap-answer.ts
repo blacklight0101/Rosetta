@@ -54,6 +54,9 @@ export interface GapAnswer {
   readonly problems: GapProblem[];
   /** P7-14: the cards kept with entries dropped from a list. */
   readonly entries: GapEntries[];
+  /** P7-15: the cards kept with entries of 
+equirements mapped from a source card id. */
+  readonly mapped: GapEntries[];
   /** P7-14: set when the answer was not JSON as a whole and its cards were read one by one. */
   readonly salvaged?: true;
   /** RF-627: set when the single-item rule gave the one card that named no builds the one item. */
@@ -105,7 +108,7 @@ function readCards(cards: readonly unknown[], uncoveredItem: string | undefined)
     uncoveredItem !== undefined && cards.length === 1 && namesNoBuilds(cards[0], uncoveredItem)
       ? uncoveredItem
       : undefined;
-  const answer: GapAnswer = { drafts: [], positions: [], problems: [], entries: [] };
+  const answer: GapAnswer = { drafts: [], positions: [], problems: [], entries: [], mapped: [] };
   cards.forEach((each, index) => {
     const position = index + 1;
     if (each instanceof UnreadableCard) {

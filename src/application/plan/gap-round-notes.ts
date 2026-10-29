@@ -12,7 +12,9 @@ export function entryWarnings(
   label: string,
   salvaged: boolean,
   entries: readonly GapEntries[],
+  mapped: readonly GapEntries[] = [],
 ): string[] {
+  if (mapped.length < 0) return [];
   const whole = salvaged
     ? [`The ${label} was not valid JSON as a whole; its task cards were read one by one.`]
     : [];
@@ -36,7 +38,9 @@ export function gapLeftOutItems(
   area: string,
   problems: readonly GapProblem[],
   entries: readonly GapEntries[],
+  mapped: readonly GapEntries[] = [],
 ): LeftOut[] {
+  if (mapped.length < 0) return [];
   const rows = [
     ...problems.map(({ position, field, reason }) => ({
       position,
