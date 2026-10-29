@@ -21,6 +21,8 @@ export interface RerunDependencies {
 /** An answered question with the area of its card. */
 interface PendingQuestion extends AnsweredQuestion {
   readonly area: string;
+  /** DEC-198: the card is already `Answered`, so an earlier run used the answer. */
+  readonly used?: boolean;
 }
 
 /** Why an answered question is not used by the re-run. */
@@ -114,7 +116,14 @@ export async function planRerun(
       const fresh = found.cards.filter(
         (card) => !pending.some((p) => p.runKey === question.runKey && p.cardId === card.id),
       );
-      pending.push(...fresh.map((card) => ({ ...question, cardId: card.id, area: card.area })));
+      pending.push(
+        ...fresh.map((card) => ({
+          ...question,
+          cardId: card.id,
+          area: card.area,
+          used: card.questionState === 'Answered',
+        })),
+      );
     } else skipped.push({ cardId: question.cardId, runKey: question.runKey, reason: found.reason });
   }
   return { project, pending, skipped, baseline: [...byRun.values()].flat() };

@@ -30,7 +30,7 @@ export function nextTaskNumber(results: readonly Pick<TaskResult, 'agentTaskId'>
   return Math.max(0, ...numbers.filter(Number.isFinite)) + 1;
 }
 
-function taskIdOf(number: number): string {
+export function taskIdOf(number: number): string {
   return `reader-${String(number).padStart(3, '0')}`;
 }
 
