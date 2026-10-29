@@ -43,6 +43,8 @@ const rolesSection: SectionWriter = () => [
   '- Independent verifier: a different agent from the builder checks the branch against the card, the requirements, the decisions and the conventions, runs every gate itself and returns PASS or FAIL. It never edits the branch and never verifies its own work.',
   '- Person: answers open questions, opens the human gates and merges every pull request labelled `needs-owner`.',
   '',
+  'A tool other than Claude Code or Codex gets these roles in prose only: this section, and no `agents/` folder.',
+  '',
 ];
 
 const bandsSection: SectionWriter = (handoff, esc) => {
