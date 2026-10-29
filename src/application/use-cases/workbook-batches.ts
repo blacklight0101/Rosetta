@@ -11,7 +11,7 @@ import type { UploadStore } from '../ports/upload-store.js';
 import type { StagedFile, WorkbookProgress, WorkbookStaging } from '../ports/workbook-staging.js';
 import type { Project } from '../projects/project.js';
 import { IntervalTask } from '../projects/interval-task.js';
-import { finishWorkbooks } from './finish-workbooks.js';
+import { finishWorkbooks, refusedAnyway } from './finish-workbooks.js';
 import { hasEnded, newBatch, stateOf, type HeldBatch } from './workbook-batch-state.js';
 import type {
   BatchFileRequest,
@@ -253,7 +253,7 @@ export class WorkbookBatches {
       onProgress: (progress) => {
         batch.progress = progress;
       },
-    });
+    }).catch((error: unknown) => refusedAnyway(this.deps, error));
     batch.outcome = outcome;
     batch.endedAt = this.deps.clock.now().getTime();
     batch.busy = undefined;

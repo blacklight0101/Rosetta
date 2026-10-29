@@ -70,3 +70,19 @@ export async function finishWorkbooks(
     return { kind: 'refused', error };
   }
 }
+
+/**
+ * RF-159: the last resort of the work after the request, so the batch never stays at work: the error is
+ * the outcome, and it is logged if the log can take it.
+ */
+export async function refusedAnyway(
+  deps: FinishDependencies,
+  error: unknown,
+): Promise<BatchOutcome> {
+  try {
+    await report(deps, 'The work on a workbook batch failed unexpectedly.', error);
+  } catch {
+    // The log is down as well: the outcome still ends the batch.
+  }
+  return { kind: 'refused', error };
+}
