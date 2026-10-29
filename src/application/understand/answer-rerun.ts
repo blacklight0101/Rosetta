@@ -142,14 +142,17 @@ export function onlyAreas(plan: RerunPlan, areas: readonly string[]): RerunPlan 
   return { ...plan, pending: plan.pending.filter((question) => areas.includes(question.area)) };
 }
 
-/** What the reader of the area is told: each question, where it came from and the answer. */
+/**
+ * What the reader of the area is told: each question, its area and the answer, as owner facts. DEC-198:
+ * not the lines the question was raised from, which a reader would cite for what the owner said.
+ */
 function answersTextOf(plan: RerunPlan, area: string): string | undefined {
   const questions = plan.pending.filter((question) => question.area === area);
   if (questions.length === 0) return undefined;
   return questions
     .map(
       (each) =>
-        `Question ${each.cardId}: ${each.question}\nRaised from: ${each.context}\nOwner's answer: ${each.answer}`,
+        `Question ${each.cardId} (Area: ${each.area}): ${each.question}\nOwner's answer: ${each.answer}`,
     )
     .join('\n\n');
 }

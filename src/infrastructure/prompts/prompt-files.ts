@@ -30,7 +30,7 @@ const readerPromptNames = {
 /** RF-155: added only to areas that hold a rendered workbook. */
 const workbookPromptName = 'reader/workbook.v5.md';
 
-const answersPromptName = 'reader/answers.v1.md';
+const answersPromptName = 'reader/answers.v2.md';
 const rereadPromptName = 'reader/reread.v4.md';
 const parentCardsPromptName = 'reader/parent-cards.v2.md';
 

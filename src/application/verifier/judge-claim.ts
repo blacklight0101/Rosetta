@@ -16,7 +16,7 @@ import {
   type EvidenceLimits,
   type SkipLookup,
 } from './cited-lines.js';
-import type { OwnerAnswer } from './answer-restated-claim.js';
+import { restatedAnswerReason, type OwnerAnswer } from './answer-restated-claim.js';
 import { maskedSourceReason } from './masked-source-claim.js';
 import { renderedFileReason } from './rendered-file-claim.js';
 import { screenRuleVerdict } from './screen-rule-check.js';
@@ -193,6 +193,14 @@ function ruleJudgement(
   return rule === undefined ? undefined : { kind: 'judged', ...rule, withoutModel: true };
 }
 
+/** P3-105, DEC-198: why the claim is rejected from its own words and citations, with no lines read. */
+function claimReason(parts: ClaimJudgeParts, claim: JudgedClaim): string | undefined {
+  return (
+    renderedFileReason(claim, parts.workbookFolders) ??
+    restatedAnswerReason(claim, parts.ownerAnswers ?? [])
+  );
+}
+
 /** The claim's verdict, `Unverified` with the reason, or `stopped` (RF-301). */
 // RF-301
 export async function judgeClaim(
@@ -202,9 +210,9 @@ export async function judgeClaim(
 ): Promise<Judgement> {
   const ended = endedBefore(parts);
   if (ended !== undefined) return ended;
-  const rendered = renderedFileReason(claim, parts.workbookFolders);
-  if (rendered !== undefined) {
-    return { kind: 'judged', status: 'Rejected', reason: rendered, withoutModel: true };
+  const free = claimReason(parts, claim);
+  if (free !== undefined) {
+    return { kind: 'judged', status: 'Rejected', reason: free, withoutModel: true };
   }
   const evidence = await readCitedLines(
     parts.reader,
