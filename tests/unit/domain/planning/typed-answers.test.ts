@@ -19,6 +19,15 @@ describe('typedText', () => {
     expect(typedText('a\u0000b\u001bc')).toBe('a b c');
   });
 
+  it('ADR-013 strips C1 controls and bidi override and isolate characters', () => {
+    const c1 = 'a\u0080b\u0085c\u009fd';
+    const bidi = 'e‪e‫f‬g‭h‮i⁦j⁧k⁨l⁩m';
+
+    expect(typedText(c1)).toBe('a b c d');
+    expect(typedText(bidi)).toBe('e e f g h i j k l m');
+    expect(typedText('‮evil⁩')).toBe('evil');
+  });
+
   it('RF-645 an empty or missing text is the empty text', () => {
     expect(typedText(undefined)).toBe('');
     expect(typedText(' \n ')).toBe('');
