@@ -72,21 +72,50 @@ describe('orchestration.md usage throttle', () => {
     expect(section).toMatch(/cannot be read/iu);
   });
 
+  it('RF-640 RF-634 one agent at a time is the default, and parallel groups raise it by a recorded decision', () => {
+    const section = sectionOf(textOf(), 'Usage throttle');
+
+    expect(section).not.toMatch(/orchestrator runs one agent at a time/iu);
+    expect(section).toMatch(/default bands the orchestrator launches one agent at a time/iu);
+    expect(section).toMatch(/in parallel raises this limit by a decision it records/iu);
+  });
+
   it('RF-640 names the usage command only for Claude Code', () => {
     expect(sectionOf(textOf(), 'Usage throttle')).toContain('`/usage`');
     expect(sectionOf(textOf({ method: codex }), 'Usage throttle')).not.toContain('/usage');
+  });
+
+  it('RF-640 assumes a weekly window only for Claude Code', () => {
+    const claude = sectionOf(textOf(), 'Usage throttle');
+    const other = sectionOf(textOf({ method: codex }), 'Usage throttle');
+
+    expect(claude).toMatch(/Above 70% of the weekly window, at most one agent per hour/u);
+    expect(other).not.toMatch(/weekly/iu);
+    expect(other).toMatch(/Above 70% of the longest usage window/u);
   });
 });
 
 describe('orchestration.md escalation and stop conditions', () => {
   it('RF-640 a card never gets the escalation model at plan time; only at the third failure with approval', () => {
-    const section = sectionOf(textOf(), 'Escalation and stop conditions');
+    const section = sectionOf(
+      textOf({ method: { ...claudeCode, models: { escalation: 'huge-x' } } }),
+      'Escalation and stop conditions',
+    );
 
     expect(section).toMatch(/never gets the escalation model/iu);
     expect(section).toMatch(/plan is made/iu);
     expect(section).toMatch(/third failure/iu);
     expect(section).toMatch(/owner's approval/iu);
     expect(section).toMatch(/orchestrator records/iu);
+  });
+
+  it('RF-640 with no escalation model named, the section speaks of none and points to the retry ladder', () => {
+    const section = sectionOf(textOf(), 'Escalation and stop conditions');
+
+    expect(section).toMatch(/no escalation model is named/iu);
+    expect(section).not.toMatch(/\bthe escalation model\b/iu);
+    expect(section).toMatch(/retry ladder/iu);
+    expect(section).toMatch(/owner decides/iu);
   });
 
   it('RF-640 invents no way for a card to get the model and repeats no model name', () => {
