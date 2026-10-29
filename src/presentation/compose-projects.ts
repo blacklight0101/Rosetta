@@ -203,7 +203,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       ...{ priceTable: parts.priceTable, models: parts.models },
       ...{ cards: keptRunCards(writer), priorCards: keptPriorCards(writer) },
       ...{ users: new PgUserRepository(pool), answers: new FileAnswersFile({ writer, masker }) },
-      serverSettings: settings,
+      ...{ serverSettings: settings, manifests: new FileRunManifestStore({ writer, masker }) },
       ...{ keys: new PgProviderKeyRepository(pool), serverKeys: parts.serverKeys },
       catalogue: () => Promise.resolve(catalogue),
       ...plannerPrompts(parts.promptsFolder),

@@ -29,6 +29,7 @@ import { claimsOfThisRun } from './deepen-room.js';
 import { mergeDuplicates } from './deepen-consolidation.js';
 import {
   addQuestions,
+  markUsedCopies,
   markMergedQuestions,
   overviewOf,
   saveRecord,
@@ -110,6 +111,7 @@ async function finish(
   const overview = await overviewOf(parts, final, merged?.cards);
   await writeOutputs(parts, final, { overview, merged });
   await markMergedQuestions(parts, merged?.cards ?? cardsOf(final));
+  await markUsedCopies(parts, record);
   if (merged !== undefined) await announceDeepenMerges(parts, merged);
   // RF-1108: a Stop that came during the merge or the overview ends the Deepen like any Stop.
   const ended = stop !== 'capReached' && parts.execution.signal.aborted ? 'stopped' : stop;

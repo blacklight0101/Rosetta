@@ -42,6 +42,23 @@ async function goOnWithTheDefaultsAndBack(page: Page): Promise<void> {
   await page.goBack();
 }
 
+/**
+ * RF-646, DEC-179: a run that can be deepened asks nothing yet: Your turn recommends Deepen first and
+ * says that answers given now will be used by it, and the journey recommends it too. Choosing not to
+ * Deepen asks for the answers at once.
+ */
+async function chooseNotToDeepen(page: Page): Promise<void> {
+  const turn = page.getByRole('region', { name: 'Your turn' });
+  await expect(turn.getByTestId('deepen-first')).toContainText('Deepen this run first');
+  await expect(turn.getByTestId('deepen-first')).toContainText('uses the answers given before it');
+  await expect(
+    journeyOf(page).getByRole('button', { name: 'Deepen this run first' }),
+  ).toBeVisible();
+  await expect(turn.getByRole('button', { name: /^Answer / })).toHaveCount(0);
+  await turn.getByRole('button', { name: 'Do not Deepen: answer the questions now' }).click();
+  await expect(turn.getByTestId('deepen-first')).toHaveCount(0);
+}
+
 /** DEC-154, RNF-010: both actions of the journey fit and pass axe at 360 px, light and dark. */
 async function expectActionsFit(page: Page, info: TestInfo): Promise<void> {
   await transitionsDone(page);
@@ -108,6 +125,7 @@ test('RF-240 RF-241 RF-1007 the owner answers the open question and the area run
   await runRow(page, '-understand')
     .getByRole('link', { name: /^View run /u })
     .click();
+  await chooseNotToDeepen(page);
   await goOnWithTheDefaultsAndBack(page);
   const question = openQuestion(page, 'OQ-001');
   await journeyOf(page).getByRole('button', { name: 'Answer 1 question' }).click();
@@ -237,4 +255,39 @@ test('RF-209 RF-231 a confirmed Deepen runs its rounds on the page and shows wha
   const live = (await progress.textContent()) ?? '';
   await page.reload();
   await expect(page.getByRole('region', { name: 'Deepen progress' })).toHaveText(live);
+});
+
+test('RF-646 RF-1007 the question answered before the Deepen is listed once after it, in the Answered list', async ({
+  page,
+}, info) => {
+  test.setTimeout(240_000);
+  await signInThroughPage(page, accountFor('journey-run', info.project.name));
+  await expect(page).toHaveURL(/\/projects$/u);
+  await openHistory(page);
+  // The newest understand run is the Deepen of the test before.
+  await runRow(page, '-understand')
+    .getByRole('link', { name: /^View run /u })
+    .first()
+    .click();
+
+  const turn = page.getByRole('region', { name: 'Your turn' });
+  await expect(turn.getByTestId('deepen-first')).toHaveCount(0);
+  await openRunTab(page, 'Your questions');
+  const region = page.getByRole('region', { name: 'Open questions' });
+  // One list: the question answered before the Deepen is there once and is not asked again.
+  await expect(region.getByTestId('open-question').filter({ hasText: 'OQ-001' })).toHaveCount(1);
+  const answered = region.getByTestId('answered-questions');
+  await expect(answered.getByTestId('open-question').filter({ hasText: 'OQ-001' })).toHaveCount(1);
+  // Only new questions are asked before Plan setup. The recorded runs raise one question (OQ-001) and
+  // the Deepen's readers raise no other, so nothing is left to ask: no question outside the Answered list.
+  await expect(region.getByTestId('no-open-questions')).toBeVisible();
+  await expect(region.getByTestId('open-question')).toHaveCount(1);
+  // The list is collapsed and opens from the keyboard.
+  await expect(answered).not.toHaveAttribute('open', '');
+  await answered.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(answered).toHaveAttribute('open', '');
+  await expect(answered.getByLabel('Answer to OQ-001')).toBeVisible();
+  await transitionsDone(page);
+  await expectNoSeriousViolations(page);
 });

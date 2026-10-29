@@ -19,7 +19,15 @@ const journeyRun = z.object({
 
 export const journeySchema = z.object({
   /** The understand run the package is written from; null while the project has none. */
-  source: journeyRun.extend({ supportedClaims: count, openQuestions: count }).nullable(),
+  source: journeyRun
+    .extend({
+      supportedClaims: count,
+      openQuestions: count,
+      /** RF-646: the Deepens linked to the run's first understand run. */
+      deepens: count.default(0),
+      isDeepen: z.boolean().default(false),
+    })
+    .nullable(),
   scanRunId: z.string().nullable(),
   briefSaved: z.boolean(),
   /** The newest plan run written from the source run. */

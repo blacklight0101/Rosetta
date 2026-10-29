@@ -7,6 +7,7 @@ import { PlanNext } from './PlanNext.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 import { DeepenAction } from './DeepenAction.js';
 import type { AnswersLoad } from './use-run-answers.js';
+import { useSkipDeepen, type SkipDeepen } from './use-skip-deepen.js';
 
 type AnswersLoadReady = Extract<AnswersLoad, { readonly status: 'ready' }>;
 
@@ -47,7 +48,42 @@ function NoneWaiting(props: { readonly answers: AnswersLoadReady['questions'] })
   );
 }
 
-function Next(props: YourTurnProps): JSX.Element {
+/**
+ * RF-646, DEC-179: Deepen is recommended before answering when the run can be deepened and no Deepen
+ * has been made of it: a Deepen uses the answers given before it. Once the last Deepen has ended, or
+ * when the user chose not to Deepen, the questions are asked.
+ */
+function recommendsDeepen(props: Pick<YourTurnProps, 'answers' | 'deepenRunId'>): boolean {
+  const { answers } = props;
+  return (
+    props.deepenRunId !== undefined &&
+    answers.status === 'ready' &&
+    !answers.isDeepen &&
+    answers.deepens === 0
+  );
+}
+
+/** RF-646: Deepen first; the questions are asked after it, or at once when the user skips it. */
+function DeepenFirst(props: { readonly open: number; readonly skip: SkipDeepen }): JSX.Element {
+  const { open, skip } = props;
+  return (
+    <>
+      <p data-testid="deepen-first">
+        {`Deepen this run first. A Deepen uses the answers given before it, so the ${plural(open, 'question')} below are asked after the last Deepen and a question you answer now is not asked again. You can still answer earlier from the Your questions tab.`}
+      </p>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          skip.choose(true);
+        }}
+      >
+        Do not Deepen: answer the questions now
+      </Button>
+    </>
+  );
+}
+
+function Next(props: YourTurnProps & { readonly skip: SkipDeepen }): JSX.Element {
   const { answers } = props;
   if (props.failed) {
     return (
@@ -64,6 +100,9 @@ function Next(props: YourTurnProps): JSX.Element {
   if (answers.status !== 'ready') return <p>Loading the open questions.</p>;
   const open = answers.questions.filter(waitsForAnswer).length;
   if (open === 0) return <NoneWaiting answers={answers.questions} />;
+  if (recommendsDeepen(props) && !props.skip.skipped) {
+    return <DeepenFirst open={open} skip={props.skip} />;
+  }
   return (
     <>
       <p>
@@ -73,6 +112,16 @@ function Next(props: YourTurnProps): JSX.Element {
       <Button variant="primary" onClick={props.onAnswer}>
         {`Answer ${plural(open, 'question')}`}
       </Button>
+      {props.skip.skipped && recommendsDeepen(props) ? (
+        <Button
+          variant="ghost"
+          onClick={() => {
+            props.skip.choose(false);
+          }}
+        >
+          Deepen first after all
+        </Button>
+      ) : null}
     </>
   );
 }
@@ -95,16 +144,20 @@ function questionsOpen(answers: AnswersLoad): boolean {
 export function YourTurn(props: YourTurnProps): JSX.Element {
   const facts = endFactsOf(props.state);
   const { run, state } = props;
+  const skip = useSkipDeepen(run.id);
+  const deepenFirst = recommendsDeepen(props) && !skip.skipped && questionsOpen(props.answers);
   return (
     <section class="rst-card rst-p170-turn" aria-label="Your turn">
       <h2 class="rst-live-section__title">Your turn</h2>
-      <Next {...props} />
-      {props.deepenRunId === undefined ? null : <DeepenAction runId={props.deepenRunId} />}
+      <Next {...props} skip={skip} />
+      {props.deepenRunId === undefined ? null : (
+        <DeepenAction runId={props.deepenRunId} recommended={deepenFirst} />
+      )}
       {props.asks || props.failed ? (
         <PlanNext
           {...{ runId: run.id, projectId: run.projectId }}
           {...{ endState: state.ended?.endState ?? '', supportedClaims: facts.supportedClaims }}
-          questionsOpen={questionsOpen(props.answers)}
+          questionsOpen={questionsOpen(props.answers) && !deepenFirst}
         />
       ) : null}
       <ul class="rst-p170-facts" aria-label="Run facts">

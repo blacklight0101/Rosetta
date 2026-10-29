@@ -1,3 +1,4 @@
+import { createHash, type Hash } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
 import { Transform, type TransformCallback } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -50,9 +51,10 @@ function isHeadOf(format: IntakeFormat, head: Buffer): boolean {
   return format.signatures.some((signature) => head.every((byte, at) => byte === signature[at]));
 }
 
-/** Counts the bytes, enforces the limit and checks the first four bytes. */
+/** Counts and hashes the bytes, enforces the limit and checks the first four bytes. */
 class Receiving extends Transform {
   bytes = 0;
+  private readonly hash: Hash = createHash('sha256');
   private head: Buffer = Buffer.alloc(0);
   private readonly limit: number;
   private readonly format: IntakeFormat;
@@ -77,7 +79,13 @@ class Receiving extends Transform {
         return;
       }
     }
+    this.hash.update(chunk);
     done(null, chunk);
+  }
+
+  /** `sha256:` and the hex digest of what passed; read once, after the end of the body. */
+  get sha256(): string {
+    return `sha256:${this.hash.digest('hex')}`;
   }
 
   override _flush(done: TransformCallback): void {
@@ -137,15 +145,22 @@ export interface IntakeRequest {
   readonly format?: IntakeFormat;
 }
 
-/** Streams the body to `zipPath` (which must not exist) and returns the bytes written. */
-// RF-128, RF-129, RF-150
-export async function receiveZip(request: IntakeRequest, zipPath: string): Promise<number> {
+/** What an upload came to: the bytes written and the hash of those same bytes (DEC-183). */
+export interface ReceivedUpload {
+  readonly bytes: number;
+  /** `sha256:` and 64 lower-case hexadecimal characters. */
+  readonly sha256: string;
+}
+
+/** Streams the body to `path` (which must not exist), hashing the bytes as they pass to the file. */
+// RF-128, RF-129, RF-150, RF-152
+export async function receiveUpload(request: IntakeRequest, path: string): Promise<ReceivedUpload> {
   const counter = new Receiving(request.limitBytes, request.format ?? ZIP_FORMAT);
   try {
     await pipeline(
       withoutStalls(request.body, { stallMs: request.stallMs, signal: request.signal }),
       counter,
-      createWriteStream(zipPath, { flags: 'wx' }),
+      createWriteStream(path, { flags: 'wx' }),
       { signal: request.signal },
     );
   } catch (error) {
@@ -154,5 +169,11 @@ export async function receiveZip(request: IntakeRequest, zipPath: string): Promi
     if (isFileSystemFailure(error)) throw snapshotWriteFailed('upload could not be stored', error);
     throw error;
   }
-  return counter.bytes;
+  return { bytes: counter.bytes, sha256: counter.sha256 };
+}
+
+/** Streams the body to `zipPath` (which must not exist) and returns the bytes written. */
+// RF-128, RF-129, RF-150
+export async function receiveZip(request: IntakeRequest, zipPath: string): Promise<number> {
+  return (await receiveUpload(request, zipPath)).bytes;
 }
