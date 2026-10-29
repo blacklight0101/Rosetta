@@ -24,6 +24,8 @@ export class FakeUploadStore implements UploadStore {
   reports: WorkbookProgress[] = [];
   /** When set, `store` waits for it. */
   gate: Promise<void> | undefined;
+  /** RF-159: once the gate lets go, a store whose request was aborted stops, as the real one does. */
+  stopsOnAbort = false;
   hash = `sha256:${'ab'.repeat(32)}`;
   zipBytes = 1234;
   /** RF-152: the workbooks the zip held and the ones left out; none by default, as for most zips. */
@@ -31,9 +33,9 @@ export class FakeUploadStore implements UploadStore {
 
   async store(request: UploadRequest): Promise<StoredUpload> {
     this.requests.push(request);
-    for (const report of this.reports) request.onProgress?.(report);
-    if (this.gate !== undefined) await this.gate;
-    if (this.failWith !== undefined) throw this.failWith;
+    // RF-159, DEC-188: a zip that holds workbooks is told to the caller before the heavy work starts.
+    if (this.held !== undefined) await request.onWorkbooks?.();
+    await this.work(request);
     const info: UploadSnapshotInfo = {
       kind: 'upload',
       fileName: request.fileName,
@@ -55,6 +57,16 @@ export class FakeUploadStore implements UploadStore {
         ? {}
         : { workbooks: this.held.lines, leftOut: this.held.leftOut }),
     };
+  }
+
+  /** The reports, the wait for the gate, a stop by the request and a failure the test asked for. */
+  private async work(request: UploadRequest): Promise<void> {
+    for (const report of this.reports) request.onProgress?.(report);
+    if (this.gate !== undefined) await this.gate;
+    if (this.stopsOnAbort && request.signal.aborted) {
+      throw request.signal.reason instanceof Error ? request.signal.reason : new Error('stopped');
+    }
+    if (this.failWith !== undefined) throw this.failWith;
   }
 
   read(): Promise<undefined> {

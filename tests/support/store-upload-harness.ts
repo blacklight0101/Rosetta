@@ -1,4 +1,5 @@
 import type { Project } from '../../src/application/projects/project.js';
+import { WorkbookBatches } from '../../src/application/use-cases/workbook-batches.js';
 import {
   StoreUpload,
   type StoreUploadRequest,
@@ -8,9 +9,11 @@ import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-proj
 import { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import { FakeUploadStore } from './fake-upload-store.js';
+import { FakeWorkbookStaging } from './fake-workbook-staging.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { sampleProject } from './project-fixtures.js';
+import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 // RF-128, RF-133: the Store upload use case over memory adapters and a fake upload store.
 
@@ -31,6 +34,8 @@ export const uploadProject = (overrides: Partial<Project> = {}): Project =>
 
 export interface UploadCase {
   readonly useCase: StoreUpload;
+  /** RF-159: where the batch of an accepted zip is held and read. */
+  readonly batches: WorkbookBatches;
   readonly project: Project;
   readonly projects: MemoryProjectRepository;
   readonly uploads: FakeUploadStore;
@@ -47,11 +52,16 @@ export async function setup(project: Project = uploadProject()): Promise<UploadC
   const uploads = new FakeUploadStore();
   const runs = new MemoryRunIndex();
   const auditLog = new MemoryAuditLog(masker);
-  const useCase = new StoreUpload({
-    ...{ projects, runs, uploads, auditLog, clock, limitBytes },
-    logger: new MemoryLogger(clock, masker),
+  const logger = new MemoryLogger(clock, masker);
+  const batches = new WorkbookBatches({
+    ...{ projects, runs, uploads, auditLog, clock, limitBytes, logger },
+    ...{ staging: new FakeWorkbookStaging(), ids: new SequenceIdGenerator() },
   });
-  return { useCase, project, projects, uploads, runs, auditLog, clock };
+  const useCase = new StoreUpload({
+    ...{ projects, runs, uploads, auditLog, clock, limitBytes, batches },
+    logger,
+  });
+  return { useCase, batches, project, projects, uploads, runs, auditLog, clock };
 }
 
 export function request(

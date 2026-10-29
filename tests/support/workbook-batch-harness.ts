@@ -16,6 +16,7 @@ import { FakeWorkbookStaging } from './fake-workbook-staging.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { sampleProject } from './project-fixtures.js';
+import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 // RF-150, RF-157: the batch use case over memory adapters, a fake staging area and a fake store.
 
@@ -58,6 +59,7 @@ export async function batchCase(project: Project = workbookProject()): Promise<B
   const logger = new MemoryLogger(clock, masker);
   const useCase = new WorkbookBatches({
     ...{ projects, runs, uploads, staging, auditLog, clock, limitBytes, logger },
+    ids: new SequenceIdGenerator(),
   });
   return { useCase, project, projects, staging, uploads, runs, auditLog, clock, logger };
 }

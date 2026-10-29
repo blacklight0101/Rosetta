@@ -23,6 +23,11 @@ export interface UploadRequest {
   readonly signal: AbortSignal;
   /** Told where the workbooks of the zip have got to (RF-159); it must not throw. */
   readonly onProgress?: ProgressListener;
+  /**
+   * RF-159, DEC-188: awaited once the zip is received and known to hold workbooks, before anything is
+   * unpacked; the caller answers at once and the work goes on. A rejection stops the upload.
+   */
+  readonly onWorkbooks?: () => Promise<void>;
 }
 
 export interface StoredUpload {
