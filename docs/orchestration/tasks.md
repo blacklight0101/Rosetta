@@ -17,7 +17,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method   | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
-| **Total**               | **452** | **112**   | **310**    | **30**    | **0**              | **219** | **219** | **14** | **259**    | **0**     |
+| P7 Evaluation fixes     | 19      | 1         | 12         | 6         | 0                  | 2       | 14      | 3      | 3          | 0         |
+| **Total**               | **471** | **113**   | **322**    | **36**    | **0**              | **221** | **233** | **17** | **262**    | **0**     |
 
 ## Conventions for every card
 
@@ -6073,7 +6074,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: M
 - **Depends on**: P5-46
 - **Gate**: owner (DEC-188)
-- **Status**: Todo
+- **Status**: Done (#1026)
 - **Reads**: `src/presentation/web/source-upload-routes.ts` (the zip PUT, still synchronous), `src/infrastructure/sources/zip-upload-store.ts`, `src/infrastructure/sources/workbook/zip-render.ts`, `src/application/use-cases/workbook-batches.ts` and `finish-workbooks.ts` (the pattern P5-46 built), `web/src/pages/ZipUploadForm.tsx`, `use-zip-upload.ts`, `workbook-watch.ts`, `docs/architecture.md` (the `WorkbookBatches` row), RF-128, RF-159, DEC-183, DEC-188. Today a zip that holds workbooks is extracted and rendered inside the upload request: closing the tab cancels it and the hosted ingress cuts it after about 4 minutes.
 - **Do**:
   - Accept a zip that holds workbooks at once and extract, render and store it after the request, with the same state endpoint, progress steps, time bound and Cancel as a workbook batch.
@@ -6091,7 +6092,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: P5-46
 - **Gate**: owner (DEC-183)
-- **Status**: Todo
+- **Status**: Done (#1034)
 - **Reads**: the verifier's comments on the P5-46 pull request (#1005), `tests/e2e/projects-workbooks-progress.spec.ts` (the Cancel test), `src/application/use-cases/workbook-batches.ts` (`cancel`, the wait on `batch.work` during attach), `src/application/use-cases/finish-workbooks.ts` (the error log), `web/src/pages/workbook-watch.ts` ("Nothing was published"), `use-workbook-flow.ts`, RF-159.
 - **Do**:
   - Make the end-to-end Cancel test deterministic for the 409 path: a separate test that waits until the batch is `stored` (through `page.request`) before pressing Cancel, besides the test of a Cancel during processing.
@@ -6108,7 +6109,7 @@ No card of this phase starts until the owner opens gate G-10 (DEC-165).
 - **Size**: S
 - **Depends on**: P5-47
 - **Gate**: owner (DEC-183)
-- **Status**: Todo
+- **Status**: Done (#1033)
 - **Reads**: the verifier's comment on the P5-47 pull request (#1004), `tests/integration/infrastructure/sources/workbook-staging-no-reread.test.ts`, `src/infrastructure/sources/workbook/workbook-tree.ts` (`bytes`, about line 61), `src/infrastructure/sources/upload-intake.ts` (the `sha256` getter, about line 87), RF-152, RF-159.
 - **Do**:
   - Harden the no-re-read test so it also sees reads through `node:fs` (`createReadStream`, `readFileSync`) and `FileHandle.readFile`, not only `node:fs/promises` `open().read` and `readFile`.
@@ -6455,7 +6456,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: P6-05, P6-16
 - **Gate**: owner (DEC-185)
-- **Status**: Todo
+- **Status**: Done (#1024)
 - **Reads**: `src/infrastructure/handoff/handoff-model-checks-markdown.ts` (passes `local: false` today), `src/domain/planning/card-model-check.ts`, the brief schema, `docs/data-model.md` section 3.20, the build method step of Plan setup in `web/src/pages/`, RF-639, RF-641, DEC-185.
 - **Do**:
   - Add an optional "runs locally" flag per tier model to the brief; it is additive, so a brief saved before the change still reads.
@@ -6471,7 +6472,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: S
 - **Depends on**: P6-04, P6-05
 - **Gate**: owner (DEC-192)
-- **Status**: In progress (rework under DEC-192, pull request #1001)
+- **Status**: Done (#1001)
 - **Reads**: `src/domain/planning/card-model-check.ts` (accepts the escalation model silently today), the card line writer of P6-04 (`src/infrastructure/handoff/handoff-task-markdown.ts`), the retry ladder in `src/infrastructure/handoff/handoff-orchestration-markdown.ts`, the escalation section in `handoff-orchestration-gates-markdown.ts`, the `checks.md` writer `handoff-model-checks-markdown.ts`, RF-640, RF-641, DEC-192 (replaces DEC-185 item 7).
 - **Do**:
   - A card never gets the escalation model when the plan is made: no plan-time card line shows escalation or "escalation, owner approved".
@@ -6518,7 +6519,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: P6-08, P6-16
 - **Gate**: owner (DEC-189)
-- **Status**: Todo
+- **Status**: Done (#1030)
 - **Reads**: `web/src/pages/PlanContextStep.tsx`, `web/src/lib/plan-setup/question-options.ts`, `draft.ts`, `steps.ts`, `recorded.ts`, `src/domain/planning/planning-brief.ts` (`contextQuestions`, `context.deployment`), `src/infrastructure/handoff/handoff-orchestration-delivery-markdown.ts`, `docs/data-model.md` section 3.20, RF-605, RF-611, RF-643, RF-645, DEC-176, DEC-189. P6-08 added the brief field `context.deployment` (`hosted` or `not-hosted`), but Plan setup does not ask it.
 - **Do**:
   - Add the optional project-context question "Will the new application be hosted?" with the answers hosted, not hosted and not stated, and no recommended option (an exception to RF-645, like the build method).
@@ -6535,7 +6536,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: P6-21
 - **Gate**: owner (DEC-190)
-- **Status**: Todo
+- **Status**: Done (#1029)
 - **Reads**: `src/domain/planning/foundation-cards.ts`, `own-answer-cards.ts`, `src/application/plan/plan-package.ts` (`withFoundationCards`), `src/domain/planning/data-model.ts`, the recorded plan fixtures under `tests/recordings/`, RF-610, RF-630, DEC-190.
 - **Do**:
   - When the understand run has no `ENT` claim and the data model has no table, drop the data-access and data-migration cards.
@@ -6551,7 +6552,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: P6-07
 - **Gate**: owner (DEC-190)
-- **Status**: Todo
+- **Status**: Done (#1027)
 - **Reads**: `src/infrastructure/handoff/handoff-grep-rules.ts` (`grepRules`, `languageNames`), `handoff-orchestration-markdown.ts` (`grepTableLines`), `handoff-orchestration-lessons-markdown.ts` (`stackLanguages`), `prompts/catalogue/stack-technologies.v2.yaml` (the `language-runtime` aliases), the catalogue loader, `docs/data-model.md` (prompt versions), RF-640, RNF-004, DEC-190.
 - **Do**:
   - Move the per-language grep patterns and the aliases that map a stack answer to a language, including `dotnet` and `jvm`, to a versioned catalogue file under `prompts/catalogue`, loaded and recorded like the other catalogue files (RNF-004).
@@ -6567,7 +6568,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: S
 - **Depends on**: P6-13
 - **Gate**: owner (DEC-190)
-- **Status**: Todo
+- **Status**: Done (#1025)
 - **Reads**: `src/infrastructure/handoff/handoff-orchestration-lessons-markdown.ts` (`platformIsWindows`, `windowsItems`, `dotnetItem`), its tests, RF-644, DEC-190.
 - **Do**:
   - Until the brief has a platform field, a stack answer that names Windows or IIS counts as Windows; "Windows Authentication" alone does not.
@@ -6583,7 +6584,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: S
 - **Depends on**: P6-09
 - **Gate**: owner (DEC-190)
-- **Status**: Todo
+- **Status**: Done (#1028)
 - **Reads**: `src/infrastructure/handoff/handoff-reading-order-markdown.ts`, `handoff-method-markdown.ts` (`AGENTS.md`), `handoff-agents-folder.ts`, `handoff-orchestration-markdown.ts`, `handoff-links.ts`, RF-640, RF-642, DEC-190.
 - **Do**:
   - Link `agents/README.md` from the package README reading order and from `AGENTS.md` when the folder is written.
@@ -6599,7 +6600,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: M
 - **Depends on**: P6-17
 - **Gate**: owner (DEC-189)
-- **Status**: Todo
+- **Status**: Done (#1031)
 - **Reads**: `src/infrastructure/handoff/handoff-suggested-answers-markdown.ts`, `handoff-build-method-markdown.ts`, `handoff-list-markdown.ts`, `web/src/lib/plan-setup/question-options.ts` (the Plan setup options), the open-questions tests, RF-637, RF-645, DEC-189.
 - **Do**:
   - Write "at least three" suggested answers where the package says "three".
@@ -6615,7 +6616,7 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Size**: S
 - **Depends on**: P6-21
 - **Gate**: owner (DEC-187)
-- **Status**: Todo
+- **Status**: Done (#1032)
 - **Reads**: `src/domain/planning/planning-brief.ts` (`briefProblems`), `src/application/use-cases/save-planning-brief.ts`, the brief route tests, the verifier's PASS comment on the P6-21 pull request (#1006, finding 2), RF-645, DEC-187.
 - **Do**:
   - Refuse a brief save that carries a typed `buildMethod` together with `buildMethod.aiAssisted: true`, with the brief's existing refusal code and a plain message.
@@ -6647,3 +6648,344 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 - **Delivers**: the fixes and tests, one commit per item.
 - **Done when**: each item has a passing test or, for wording-only items, an updated assertion; the r1-matrix guard passes; recordings still replay; CI green.
 - **Refs**: RF-405, RF-605, RF-630, RF-637, RF-642, RF-645, RF-646, P6-12, P6-16, P6-17, P6-19, P6-20, P6-21, P6-24, P6-25.
+
+## Phase 7 - Fixes from the end-to-end evaluation of 2026-10-29
+
+The owner approved these cards from the end-to-end evaluation of 2026-10-29 (Asset Manager, Invoice Generator and
+eShopModernizing on a local Ollama model and on Haiku, develop at 1c19520d). Finding ids: EV-44 is the Haiku
+finding that the server key is not checked; the Ollama findings are EV-56..EV-67; EV-68 is the Haiku eShop early
+stop. Run ids are those of the evaluation stack. Waves: (1) P7-01, P7-07, P7-11, P7-14; (2) P7-02, P7-03, P7-08,
+P7-13; (3) P7-04, P7-05, P7-09, P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-19. Two cards of
+one wave never edit the same file; Depends on carries the order where they would.
+
+### P7-01 - The claim-check reserve comes out of the run cap
+
+- **Difficulty**: 10 (opus)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-193)
+- **Status**: Todo
+- **Reads**: `src/domain/budget/budget.ts` (`READER_SHARE_PERCENT`, `VERIFIER_SHARE_PERCENT` at lines 35-38, `shareCaps` 93-101, `capsFor` 141-157), `src/domain/budget/claim-room.ts` (`DEFAULT_JUDGING_TOKENS` line 13, `roomVerdict` and `judgingFits` 63-91), `src/application/understand/reader-room.ts` (`roomLimitsOf`, `admits`), `src/infrastructure/guards/budget-guard.ts` (`refuse`, 193-224), `src/application/runs/run-budget-events.ts` (`capData`), `src/infrastructure/providers/provider-factory.ts` (`capsOf`, 254-276), RF-423, RF-429, DEC-166, DEC-170, DEC-193. Evidence, EV-62: eShop understand `eb19d0b6` sent `budget.readersStopped {reason: judging, claimsWaiting: 802}` with 2.9M of the 8M run cap spent, because 802 claims x 2,000 tokens is more than the verifier's fixed 20% share (1.6M); the eShop Deepen `4935508c` ended `CapReached` (RST-1600) on `budget.capReached {role: verifier, capSource: reserve, capTokens: 1600000}` with about 1.5M of the run cap unused.
+- **Do**:
+  - Start with red tests: `roomVerdict` with 802 waiting claims, verifier spend 0 and 5.1M of an 8M run cap left does not answer `judging`; a verifier at its 20% share with run cap left is not refused.
+  - Make the verifier's room what is left of the run cap after the readers' spend, minus the summariser's 10% (DEC-193), instead of a fixed 20% role cap with `capSource: reserve`.
+  - The readers stop (`budget.readersStopped`) only when the run cap left cannot hold the judging of the claims written.
+  - The run ends `CapReached` only when the run cap or a scope cap is used up; a verifier cap in the project settings applies as before.
+  - Keep every cap a hard limit: no call passes the run, role, day or month cap (DEC-112).
+  - Do not edit `deepen-round.ts` or the Deepen estimate (P7-07 edits them in the same wave).
+- **Delivers**: the budget change, unit tests and an integration test with the fake provider.
+- **Done when**: a claim-heavy recorded understand run judges every written claim and leaves no more than the summariser's part of the run cap unused; a recorded Deepen shaped like `4935508c` does not end on a verifier reserve; the RF-429 tests that still hold pass; CI green.
+- **Refs**: RF-423, RF-429, ADR-007, DEC-166, DEC-170, DEC-193; evaluation of 2026-10-29, EV-62.
+
+### P7-02 - A run that skips areas ends Partly read, and the next Deepen reads them
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P7-01
+- **Gate**: owner (DEC-194)
+- **Status**: Todo
+- **Reads**: `src/application/understand/understand-session.ts` (line 117 skips a task silently, `persist`), `src/application/understand/session-outcome.ts` (`sessionOutcome`, 50-65), `reader-room.ts` (`endsWithoutRoomStops`, 132-139), `src/application/understand/run-coverage.ts` (`areas`, 99-108), `src/domain/deepen/understanding-measures.ts` (`filesOf`, `coverageMeasures`), `src/domain/deepen/round-plan.ts` (`gapsOf`, 154-170), `src/application/deepen/deepen-record.ts` (`canDeepen`, 130-132), `deepen-room.ts` (`roomStopReason`), `deepen-session.ts` (`finish`, 98-124), `web/src/components/badge-specs.ts`, RF-209, RF-230, RF-231, RF-429, DEC-194. Evidence: EV-62 (understand `eb19d0b6`: readers 077-080 never started, the run ended `Completed`, `coverage.json` listed 76 areas, denominator 397,948 instead of 401,951, and the Deepen never read the four); EV-68 (Haiku eShop, 3M token cap: 37 of 108 areas read, `Completed` at 3.9% coverage, the Deepen only re-read the understand run's scope).
+- **Do**:
+  - Start with red tests: `sessionOutcome` with never-started tasks is not `Completed`; `RunCoverage.areas()` after a skipped task lists the area as not read; `planRound` takes an area of the run's plan that has no coverage entry as a gap.
+  - End an understand run or a Deepen that left planned areas unread `CapReached` (DEC-194) and show it as "Partly read" on the run page, the journey and the run list; a run that read every planned area keeps "Cap reached".
+  - Record each skipped area in `coverage.json` and `coverage.md` as "not read", so it counts in the denominator.
+  - Let Deepen start from such a run and plan the unread areas as gaps; Resume also reads them. Plan setup treats the run as any `CapReached` run (DEC-166).
+  - Update `docs/architecture.md` (state lists) and `docs/design-system.md` section 6 for the label.
+- **Delivers**: the end state, coverage and Deepen scope changes, unit, integration and end-to-end tests.
+- **Done when**: a recorded run whose readers stop with areas left ends `CapReached`, shows "Partly read", lists the areas as not read and a Deepen of it reads them; a run that reads every area still ends `Completed`; CI green.
+- **Refs**: RF-209, RF-230, RF-231, RF-429, ADR-007, DEC-166, DEC-194; evaluation of 2026-10-29, EV-62, EV-68.
+
+### P7-03 - Readers take the app's own code first, and deployment folders last
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-195)
+- **Status**: Todo
+- **Reads**: `src/application/understand/reader-tasks.ts` (`planReaderTasks` 53-67, `ownCodeFirst` 45-50), `src/domain/code-map/code-map.ts` (`byCodeUnit`, line 189), `area-grouping.ts` (line 212), `src/domain/code-map/third-party.ts` (`isKubeSchema` 94-97, `byFolder` 99-107, `thirdPartyAreaNames` 125-134), `src/application/estimate/estimate-run.ts` (uses the same planner), RF-104, RF-200, RF-210, DEC-195. Evidence: EV-68 (Haiku eShop read 37 of 108 areas in alphabetical order, mostly deployment folders); EV-63 (`Kubernetes/eShopModernizedSQL-K8s/.kube/schema/v1.6.6/schema484738234`, 93,147 tokens, counts as own code: 10 areas, 1.39M tokens in the default selection; the regex `/.json$/iu` has an unescaped dot).
+- **Do**:
+  - Start with red tests: `planReaderTasks` puts application code before deployment, configuration and generated areas; a file under `.kube/schema` with no extension is third-party.
+  - Order reader tasks by kind (RF-210): the app's own code first (largest first), then tests, then deployment and infrastructure (`Kubernetes`, `.kube`, `docker`, `deploy`, `helm`, Service Fabric folders), configuration and generated folders, then libraries; never by name alone.
+  - Treat every file under a `.kube/schema` folder as third-party (RF-104) and escape the dot.
+  - The estimate uses the same order, so its likely figure for a capped run names the areas it would reach.
+- **Delivers**: the order and detection change, unit tests and an estimate test.
+- **Done when**: an eShop-shaped fixture plans the MVC and WebForms app areas before `Kubernetes`, `.kube` and `Docker` areas; the `.kube/schema` file without `.json` is left out of the default selection; CI green.
+- **Refs**: RF-104, RF-200, RF-210, ADR-004, DEC-195; evaluation of 2026-10-29, EV-63, EV-68.
+
+### P7-04 - A realistic estimate with likely and worst-case totals, and no run without a key
+
+- **Difficulty**: 9 (opus)
+- **Size**: L
+- **Depends on**: P7-01, P7-02, P7-03, P7-07
+- **Gate**: owner (DEC-196)
+- **Status**: Todo
+- **Reads**: `src/application/estimate/estimate-run.ts` (216-268), `estimate-assumptions.ts`, `reader-estimate.ts`, `deepen-estimate.ts` (`overCap` 132-135, all rounds 124-130), `estimate-plan.ts`, `role-estimate.ts` (`keySourceOf`, 64-72), the cost ledger (`cost_ledger`, RF-428), `src/application/use-cases/start-run.ts` (157-183), `submit-run.ts`, `start-deepen.ts`, `resume-run.ts`, `src/application/providers/key-choice.ts` (`chooseKeySource`, 39-47), the `KeySourceLookup` port and `src/presentation/compose-start-caps.ts`, `web/src/pages/SummaryBar.tsx` (18-27), `EstimateSection.tsx`, `StartConfirmDialog.tsx`, `ServerKeyNote.tsx`, RF-425, RF-430, RF-431, DEC-196. Evidence: EV-62 (the 8M estimate for eShop did not cover the Deepen, which needed 16M); EV-44 (Haiku: with an empty server `ANTHROPIC_API_KEY` both understand runs were queued and failed RST-2302 at $0; the key is checked only in `RunUnderstand.rolesOf`).
+- **Do**:
+  - Start with red tests: with no user key and no server key, `StartRun` returns RST-2302 and creates no run row; the understand estimate of a role with no usable key says the key is missing; an estimate gives a likely and a worst-case total that includes the default Deepen rounds and claim checking.
+  - Give the understand estimate a likely and a worst-case total for the whole journey (understand, the default Deepen rounds, claim checking and the plan), from the source size and the measured totals of earlier runs of the same provider and model in the ledger, with the fixed assumptions only when there is no history (RF-430).
+  - Show on the start button the figure the user approves, and store it on the run as the approved amount (P7-05 uses it).
+  - Refuse an understand run, a Deepen and a resume without a usable key before it is queued, with RST-2302 and a plain message; the estimate shows "key missing" for that role (RF-431).
+  - Keep the estimate a pure read: no model call.
+- **Delivers**: the estimator, start checks, page changes, unit, integration and end-to-end tests.
+- **Done when**: a test shows the eShop-shaped estimate's worst case above the measured total of the evaluation runs; a run without a key is refused before the queue; the start button shows the approved figure; CI green.
+- **Refs**: RF-425, RF-428, RF-430, RF-431, RF-1104, ADR-007, ADR-015, DEC-196; evaluation of 2026-10-29, EV-44, EV-62.
+
+### P7-05 - Pause and ask near the approved amount instead of a hard stop
+
+- **Difficulty**: 10 (opus)
+- **Size**: L
+- **Depends on**: P7-01, P7-02, P7-04
+- **Gate**: owner (DEC-196; ADR-026 accepted)
+- **Status**: Todo
+- **Reads**: ADR-026, `src/domain/runs/run-states.ts` (lines 9 and 13), `src/domain/runs/run.ts` (`endRun`, `RESUMABLE_END_STATES` line 66), `db/migrations/0002_projects_runs.sql` (the state checks, lines 29-41; the next migration is `0018`), `src/infrastructure/db/run-rows.ts`, `pg-run-index.ts`, `memory-run-index.ts`, `src/application/runs/run-queue.ts` (174-236), `run-lifecycle.ts`, `src/domain/runs/queue-rules.ts`, `src/infrastructure/guards/budget-guard.ts`, `run-budget-events.ts`, `resume-run.ts`, `web/src/components/badge-specs.ts`, `web/src/lib/live-run/resumable.ts`, `web/src/pages/ResumeControl.tsx`, `docs/architecture.md` section 5, `docs/data-model.md` sections 3.6, 3.9 and 4, `docs/process-flows.md` section 4, `docs/design-system.md` sections 6 and 14, RF-006, RF-422, RF-432, DEC-196. Evidence: EV-62 (the eShop Deepen stopped `CapReached` and had to be resumed by hand after the owner raised the cap).
+- **Do**:
+  - Start with red tests: a run that reaches its approved amount minus the next call's room goes to `AwaitingApproval`, writes its work and frees its slot; Continue (+N) puts it back in the queue with the amount raised by N; Stop ends it `CapReached` with the same saved result as today.
+  - Add the queue state `AwaitingApproval` ("Waiting for your approval") with migration `0018`, the domain, the run index, events and the web badge.
+  - The paused run releases its running slot (ADR-026); on Continue it waits in the queue like a resumed run.
+  - The run page asks "Continue (+N)" and "Stop here", N defaulting to the worst-case remainder of P7-04; only the run's owner can answer; another user's run answers 404 and gets access-matrix rows.
+  - A paused run survives a server restart; the day and month caps and the server caps stay hard limits (DEC-112).
+  - Update the documents listed in Reads.
+- **Delivers**: the state, the migration, the routes, the page and tests at each level.
+- **Done when**: an integration test pauses a run, continues it and it ends `Completed`; another pauses and stops it and the result equals today's `CapReached`; a queue test shows the slot freed; CI green.
+- **Refs**: RF-006, RF-422, RF-432, RF-1108, ADR-007, ADR-026, DEC-196; evaluation of 2026-10-29, EV-62.
+
+### P7-06 - No cap for local models, and the round counter after a resume
+
+- **Difficulty**: 10 (opus)
+- **Size**: M
+- **Depends on**: P7-05
+- **Gate**: owner (DEC-197)
+- **Status**: Todo
+- **Reads**: `src/application/projects/project-settings.ts` (`runCapsSchema`, 117-123), `src/domain/budget/price-table.ts` (`localKinds`, line 38), `src/domain/budget/budget.ts` (`capsFor`), `src/infrastructure/providers/provider-factory.ts` (`capsOf`), `src/application/deepen/deepen-session.ts` (round number at line 79, limit at 66), `deepen-record.ts` (`withRound`, `reopenedDeepen` 110-112), `deepen-seed.ts` (34-41), `deepen-events.ts`, the project settings page in `web/src/pages/`, RF-209, RF-422, RF-433, DEC-197. Evidence: EV-62 (eShop on Ollama costs $0 but stopped at its 8M token cap; after the resume the events say round 4 of `maxRounds` 3, because the incomplete round 3 stays in `rounds` and the number is `rounds.length + 1`).
+- **Do**:
+  - Start with red tests: a stored Deepen with rounds 1 and 2 complete and 3 incomplete resumes as `deepen.round.started {round: 3, maxRounds: 3}`; a run whose every role is local runs past the token cap when the project setting is on and pauses (P7-05) when it is off.
+  - Add the project setting "No cap for local models" (off by default, RF-433): when on and every role of the run is on a local provider, the run has no token cap and no pause; a run with one cloud role keeps pause-and-ask.
+  - Number a resumed round from the complete rounds, replacing the incomplete one.
+- **Delivers**: the setting, the cap and counter changes, unit and integration tests.
+- **Done when**: the tests above pass; a cloud role in the run keeps every cap; CI green.
+- **Refs**: RF-209, RF-422, RF-433, ADR-007, ADR-026, DEC-197; evaluation of 2026-10-29, EV-62.
+
+### P7-07 - A picked suggested answer reaches Deepen like a typed one
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-198)
+- **Status**: Todo
+- **Reads**: `src/application/deepen/deepen-tasks.ts` (`roundTasks`, 159-182), `deepen-round.ts` (`tasksOf` 192-197, `answersUsed` 240-243), `deepen-answers.ts` (`withDeepenAnswers` 15-20, `answersGivenTo` 23-33, marking 36-42), `src/application/understand/answer-rerun.ts` (`withAnswersOf` 149-157, `markAnswered` 161-174), `task-plan.ts` (39-57), `deepen-outputs.ts` (`markUsedCopies`), `src/application/estimate/deepen-estimate.ts` (`answersOf`, 205-215), `src/infrastructure/cards/answers-sections.ts` (`writtenFor`, `answeredQuestionsOf`), RF-209, RF-241, RF-646, DEC-198. Evidence, EV-58: eShop understand `eb19d0b6` had four answers (OQ-011 and OQ-013 typed, OQ-015 `chosen: 2`, OQ-008 `chosen: 1`); the Deepen estimate said `"answers": 2` and after Deepen `4935508c` the picked ones stayed `Open`. Cause found in the code: the chosen option is saved with its text and read back like a typed answer; the answers are lost because Deepen gives an answer only to a reader task that already exists for the question's area, and OQ-015 (`eShopModernizedMVC/Setup`) and OQ-008 (`eShopLegacyMVC/App_Start`) had no re-read, gap or failed area. The Deepen manifest's `answersUsed` lists only OQ-011 and OQ-013.
+- **Do**:
+  - Start with a red test that reproduces EV-58: an answered question in area X (once chosen, once typed) and a round plan with no task in X; expect a task for X with the answers block, the question in `answersUsed` and `Answered` after the round.
+  - Add a pin test that `chosen` is not the cause: `recordAnswers` with `chosen: 2` is read back by `answeredQuestions()` with the option's text.
+  - In round 1 of a Deepen, add a reader task for every area that holds an answered question not used yet (DEC-198), reading the area as the re-run does.
+  - Count those answers and the added tasks in the Deepen estimate.
+- **Delivers**: the change, unit tests and an integration test with recorded responses.
+- **Done when**: the red test passes; the estimate counts every pending answer; a Deepen with no pending answer plans as before; CI green.
+- **Refs**: RF-209, RF-241, RF-646, DEC-179, DEC-198; evaluation of 2026-10-29, EV-58.
+
+### P7-08 - Owner answers are owner facts, never source to cite
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P7-07
+- **Gate**: owner (DEC-198)
+- **Status**: Todo
+- **Reads**: `src/application/understand/answer-rerun.ts` (`answersTextOf`, 137-146), `open-questions.ts` (`contextOf`, 57-72), `prompts/reader/answers.v1.md`, `src/application/understand/run-prompts.ts`, `reader-prompts.ts`, `src/application/verifier/judge-claim.ts` (`ruleJudgement` 175-191, `ClaimJudgeParts`), `src/application/understand/claim-judgement.ts` (`judgementPartsOf`), the rule files `masked-source-claim.ts` and `rendered-file-claim.ts` as the pattern, RF-209, RF-241, RF-301, DEC-198. Evidence, EV-56: Invoice Deepen `90c48e40` turned the owner's typed answer to OQ-002 into claims FEAT-001.c13, c14, c19, BR-001.c6 and OQ-003.c4 (Supported) and others (Rejected), all citing `Invoice_Generator.xlsm/workbook.md:14-20`, the question's context; the answers block hands the reader that range as "Raised from: <path:lines>".
+- **Do**:
+  - Start with red tests: the answers text holds no `path:start-end`; a claim whose only citations sit inside an answered question's context range and whose text restates the answer is not `Supported` and carries a reason.
+  - A new reader answers prompt version (RNF-004) gives the question and the owner's answer as owner facts with the question's area, not its cited lines.
+  - Add a model-free verifier rule: a claim from a task that was given answers, whose citations all fall in an answered question's context range and whose text restates the answer, is `Rejected` with the reason "restates the owner's answer".
+  - A claim that cites the same lines for what they show stays judgeable.
+- **Delivers**: the prompt version, the rule, unit tests and re-recorded responses where the prompt changed.
+- **Done when**: a recorded Invoice-shaped Deepen has no Supported claim resting on the context lines alone; recordings replay; CI green.
+- **Refs**: RF-209, RF-241, RF-301, RNF-004, ADR-005, ADR-013, DEC-198; evaluation of 2026-10-29, EV-56.
+
+### P7-09 - Deepen does not ask an answered question again under a new id
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P7-07, P7-08
+- **Gate**: owner (DEC-179)
+- **Status**: Todo
+- **Reads**: `src/application/understand/open-questions.ts` (`questionWords`, 19-24), `src/application/deepen/deepen-answers.ts` (`mergedIntoAnswered`, 45-54), `deepen-outputs.ts` (`markMergedQuestions`), `answer-rerun.ts` (`askingTheSame`), `src/infrastructure/cards/answers-file.ts` (`askedBy`), `src/application/answers/project-questions.ts` (`groupFor`), RF-209, RF-243, RF-646, Q-52. Evidence, EV-57: Invoice OQ-003 "What is the specific business process flow ..." after OQ-002 was answered (same area, two extra words); eShop OQ-024 "Where is the specific database connection string stored ..." after OQ-013 was answered (another area, other words). Every check compares the normalised words for exact equality.
+- **Do**:
+  - Start with red tests: the Invoice pair merges into the answered OQ-002; the eShop pair merges into OQ-013 across areas.
+  - Use one shared "asks the same" rule for the four call sites: stop words removed and a high word overlap, plus the question's subject; give the Deepen reader the answered questions of the whole project, not only its area, so it does not ask them.
+  - A question that only shares a few words stays apart; Q-52 for cards of one area is unchanged.
+- **Delivers**: the rule, unit tests and an integration test with recorded responses.
+- **Done when**: both pairs merge and keep the answer; a fixture of distinct questions stays distinct; CI green.
+- **Refs**: RF-209, RF-243, RF-646, DEC-179; evaluation of 2026-10-29, EV-57.
+
+### P7-10 - Planner fixes: ADRs that restate, stack option names, the keep-or-fix default
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-187)
+- **Status**: Todo
+- **Reads**: `src/domain/planning/brief-restated.ts` (`decideOnce` 171-214, `restates` 136-140, `namesStyle`, `namesMigration`, `namesTechnology`), `src/domain/planning/brief-decisions.ts`, `prompts/planner/package.v10.md` (52-56), `prompts/planner/options.v1.md` (46-76), `src/application/planning/plan-options-answer.ts`, `src/domain/planning/plan-options.ts` (`twoOptions`, `stackOf`), `src/domain/planning/stack-adr.ts` (`sameOption`), `web/src/pages/PlanStackStep.tsx` (`shownOption`), `src/infrastructure/handoff/handoff-list-markdown.ts` (line 98), `handoff-behaviour-markdown.ts` (line 128), `handoff-keep-or-fix-markdown.ts`, `src/domain/planning/keep-or-fix.ts`, RF-608, RF-609, RF-631, RF-645, DEC-187. Evidence: EV-60 (Invoice `decisions/ADR-001.md` "Architecture Style Adoption" restates the typed architecture of ADR-002; eShop ADR-002 "Migration Order Focus" restates the typed migration of ADR-012 and ADR-001 restates the seven stack ADRs); EV-65 (eShop plan options returned "SQL Server 2019 - Keeping compatible RDBMS for minimal data migration risk", so a pick was saved as typed and every stack ADR says "typed by the owner"); EV-66 (Invoice `open-questions.md` line 5 says a default keeps the legacy behaviour, but KF-001..KF-003 default to "Fix", as RF-631 wants).
+- **Do**:
+  - Start with red tests: `decideOnce` drops "Architecture Style Adoption", "Migration Order Focus" and "Technology Stack Selection" against the brief records and typed answers; parsing the long stack option gives the name "SQL Server 2019" with the description apart; the rule sentence names keep-or-fix as a default to fix.
+  - Match a planner decision against the brief, its typed answers and the owner's answers by subject and body, not only by catalogue words.
+  - A new options prompt version returns a name and a description per option; the page shows the description, and a pick saves the name as offered.
+  - Word the default rule in `open-questions.md` and `AGENTS.md` with both exceptions (security and keep-or-fix), as RF-631 states.
+  - Do not edit `plan-package.ts` (P7-18 splits it in the same wave).
+- **Delivers**: the changes, the prompt versions, unit tests and re-recorded responses.
+- **Done when**: recorded Invoice and eShop plans have no planner ADR that restates a brief record; a picked stack option gives "(chosen)" in its ADR; the keep-or-fix test passes; CI green.
+- **Refs**: RF-608, RF-609, RF-631, RF-645, RNF-004, ADR-018, DEC-187; evaluation of 2026-10-29, EV-60, EV-65, EV-66.
+
+### P7-11 - The masking step leaves the package's own patterns and column names alone
+
+- **Difficulty**: 10 (opus)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-16)
+- **Status**: Todo
+- **Reads**: `src/infrastructure/handoff/file-handoff-writer.ts` (`write`, the last mask at line 163), `src/infrastructure/handoff/handoff-orchestration-markdown.ts` (`patternCell` 187-190, `grepTableLines`), `src/infrastructure/guards/secret-masker.ts` (`passwordKey` 44-45, the bare-value rule 154-160, `bareMarker`), `secret-option-pieces.ts`, `src/infrastructure/prompts/masked-value-prompt.ts`, `prompts/shared/masked-value.v1.md`, `prompts/catalogue/grep-rules.v1.yaml` (line 87), `src/presentation/compose-plan.ts` (line 88), RF-141, RF-640, ADR-006, ADR-013. Evidence, EV-59: every package of the evaluation has in `orchestration.md` line 98 `` `password =[MASKED:password] (a secret value is written here ...) `` instead of `` `password =` ``: the masker takes the closing backtick as the value. The eShop `checks.md` masks the column name `sa_password` the same way.
+- **Do**:
+  - Start with red tests through `FileHandoffWriter` with a real masker: `orchestration.md` keeps `` `password =` `` and holds no `[MASKED:`; a data model column `sa_password` stays readable in `checks.md`; a real secret in model text in the package is still masked.
+  - Keep the last mask for model text; write Rosetta's own catalogue patterns and identifiers so that they are not read as an assignment with a value, and do not take a lone backtick or an empty value as a secret.
+  - In the package, a masked value uses the bare marker, not the prompt note meant for the model.
+  - Add masker regression tests for each rule touched; never weaken a rule for model or repository text.
+- **Delivers**: the change and tests.
+- **Done when**: the recorded packages hold no `[MASKED:` in fixed text; every existing masker test passes; CI green.
+- **Refs**: RF-141, RF-640, ADR-006, ADR-013, DEC-16; evaluation of 2026-10-29, EV-59.
+
+### P7-12 - Local tiers show in the package, and Codex is offered tier model names
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P7-11
+- **Gate**: owner (DEC-185)
+- **Status**: Todo
+- **Reads**: `src/domain/planning/build-method.ts` (`local` 31-32, `claudeCodeModels` 35-40, `modelsOf` 44, `isLocalTier` 89-90), `src/domain/planning/card-model-check.ts` (`localModelCeiling`, line 46), `src/domain/planning/task-method.ts` (`difficultyBands`, 51-55), `src/infrastructure/handoff/handoff-orchestration-markdown.ts` (`bandsSection` 56-76, `modelOf`), `handoff-agents-folder.ts` (`readmeFile` 127-148, `noteLines`), `handoff-model-checks-markdown.ts`, `web/src/lib/plan-setup/build-method.ts` (`TOOL_CHOICES`, `claudeCodeModels` 50-54, `modelExample`, `modelOf`), `web/src/pages/PlanMethodModels.tsx`, RF-639, RF-641, DEC-185. Evidence: EV-61 (Invoice brief `local: {smallest: true}`; `orchestration.md` line 20 and `agents/README.md` line 10 name `gemma4:e4b` but never say it runs locally, and the band table still gives it difficulty 1-5); EV-64 (for Codex the middle and largest tiers stay "not named" and `checks.md` lists 16 "no model is named" lines).
+- **Do**:
+  - Start with red tests: the band table and `agents/README.md` say "runs locally" for a local tier; a local tier's band stops at the RF-641 ceiling (difficulty 2) and the cards above it go to the next tier; Plan setup offers tier model names for Codex.
+  - Keep the ceiling in one domain constant shared by the check and the band table.
+  - Add a Codex model map in both `build-method.ts` files, so the band table names models for Codex.
+- **Delivers**: the writer, domain and page changes, unit and web tests.
+- **Done when**: an Invoice-shaped package says the smallest tier runs locally and gives it no card above difficulty 2; a Codex brief with no typed names gets the offered names; CI green.
+- **Refs**: RF-639, RF-640, RF-641, DEC-185; evaluation of 2026-10-29, EV-61, EV-64.
+
+### P7-13 - The data model: no duplicate or junk tables, no placeholder columns, the stack's dialect
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-176)
+- **Status**: Todo
+- **Reads**: `src/domain/planning/data-model-tables.ts` (`checkedTables`, uniqueness at line 133), `data-model-assembly.ts`, `src/application/plan/plan-data-model.ts` (`planDataModel`, batches joined at 63-66), `data-model-batches.ts`, `data-model-placeholders.ts`, `data-model-database.ts` (`typeProblems` 100-121, the SQL Server list 9-15), `prompts/planner/data-model.v4.md`, `src/infrastructure/handoff/handoff-data-model-markdown.ts`, RF-603, RF-623, DEC-176. Evidence: EV-31 and EV-40 are still open; in this evaluation eShop `data-model.md` lines 146-339 have `catalog_brand` and `catalog_brands`, `catalog_type` and `catalog_types`, `catalog_item` and `catalog_items`, plus `sql_data_deployment_configuration`, `catalog_database_context_registration`, `application_configuration_parameters` and `paginated_items_viewmodel`; Asset Manager has `metrics_to_derive_status` and `valuation_lookup_range`; Invoice has `invoice_generator_xlsm` and `vba_glossary_table` and `text` on SQL Server.
+- **Do**:
+  - Start with red tests: `catalog_brand` and `catalog_brands` give one table with both sources; a configuration or view-model "entity" gives no table; `metrics_to_derive_status` is refused as a placeholder; `text` on SQL Server is a type problem.
+  - Merge tables whose names differ only by plural, case or separators, uniting their sources and columns.
+  - Skip an `ENT` card that describes no stored data (configuration, view model, registration, the workbook file itself) and list it in `checks.md`.
+  - Widen the placeholder filter to column names that describe work rather than data.
+  - Add the deprecated types of each database (SQL Server `text`, `ntext`, `image`) to the dialect check, with the replacement named.
+  - Do not edit `plan-package.ts`.
+- **Delivers**: the changes, a prompt version if needed, unit tests and an integration test with recorded responses.
+- **Done when**: recorded eShop, Asset Manager and Invoice plans have none of the tables or columns above; recordings replay; CI green.
+- **Refs**: RF-603, RF-623, RNF-004, DEC-176; evaluation EV-31, EV-40, evaluation of 2026-10-29.
+
+### P7-14 - The plan does not fail RST-1806 when gap cards are readable
+
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-176)
+- **Status**: Todo
+- **Reads**: `src/application/use-cases/build-plan.ts` (RST-1806 at 196-199, warnings only logged at 183), `src/application/plan/plan-links.ts` (`gapRound` 75-99, `repairable` 125-133, `planGap` 136-164), `src/application/plan/plan-answer.ts` (`gapTaskSchema` 107-113, `numberPosition` 55-60), `src/application/plan/gap-answer.ts` (`parseGapAnswer`, 98-104), `src/application/cards/extract-json.ts` (`searchJson`, 140-161), `src/domain/planning/plan-gap.ts` (`keptDrafts` 98-104, `faultOf` 83), `src/domain/planning/plan-content.ts` (`noRequirement`, 172-176), `src/domain/planning/plan-coverage.ts` (`alignRequirements`), `prompts/planner/gap.v2.md` (line 22), `gap-repair.v2.md`, RF-601, RF-607, RF-627, DEC-176. Cause found in the two failed runs:
+  - Ollama eShop plan `a9700a80`: the package answer dropped 6 of 7 cards (EV-67, P7-15), so coverage had one card and 25 items open; the gap round dropped 5 of 15 cards because `dependsOn` held item ids such as `"operation:getCatalogItems"`; the repair answer was not JSON (`"requirements": [ none ]`) and its `dependsOn` held digit strings that the gap schema refuses, so it added nothing and 11 items stayed open.
+  - Haiku Invoice first plan `8ff8e480`: the gap card for F-007 had `"requirements": []`; with `sdd` in the brief `keptDrafts` left it out, the repair wrote the same card again, and one item stayed open. No requirement cites FEAT-011, the source of F-007, and `gap.v2.md` allows an empty list.
+  - In both runs one bad element drops a whole gap card and there is no further round.
+- **Do**:
+  - Start with red tests: `parseGapAnswer` reads `dependsOn: ["1"]` as position 1; `dependsOn: ["operation:x"]` drops the entry and keeps the card; an answer with one card holding `[ none ]` still reads the other cards; `addGapTasks` under SDD derives a requirement for a card that builds a source-backed item, and leaves out only a card that has none to derive.
+  - Read gap cards element by element; accept digit strings in `dependsOn` as the package answer does; salvage the task objects of an answer that is not JSON as a whole.
+  - Under SDD, align a gap card's requirements from what it builds before refusing it; when no requirement covers its item, write the item as a requirement note in `checks.md` instead of dropping the card.
+  - List gap and repair left-outs in `checks.md`.
+  - New gap and gap-repair prompt versions say an SDD card names a requirement.
+- **Delivers**: the parser, domain and prompt changes, unit tests and integration tests with recorded answers shaped like both runs.
+- **Done when**: the gap and repair answers of `a9700a80` and the gap answers of `8ff8e480` give no unread gap card, and each run ends `Completed` or names every open item in `checks.md`; recordings replay; CI green.
+- **Refs**: RF-601, RF-607, RF-627, RNF-004, ADR-018, DEC-176; evaluation of 2026-10-29, EV-67, plans `a9700a80` and `8ff8e480`.
+
+### P7-15 - A card id written as a requirement is repaired, not the task card dropped
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P7-14
+- **Gate**: owner (DEC-176)
+- **Status**: Todo
+- **Reads**: `src/application/plan/plan-answer.ts` (`cardWith` 82-100, `listedPosition` 50-61, `taskSchema` 103-105, `readTasks` 176-204, `draftOf` 234-271, `POSITION_REASON`), `src/domain/planning/left-out-card.ts`, `src/domain/planning/requirement-notes.ts`, `src/infrastructure/handoff/handoff-requirement-notes-markdown.ts`, `src/application/plan/plan-repair.ts` (`draftAfterRepair`), RF-601, RF-627. Evidence, EV-67 (an EV-30 variant): eShop plan `a9700a80` planner-package answer has `"requirements": [1, 2, 11, "FEAT-114"]` and cards 4-7 hold only ids such as `"BR-009"`; `checks.md` leaves out task cards 2-7 as "a position in its requirements or dependsOn is not a number from 1 to 200". Most ids map: FEAT-114 to REQ-004, FEAT-106 to REQ-005, BR-009 to REQ-006, FEAT-122 and SCRN-022 to REQ-001, FEAT-124 to REQ-003.
+- **Do**:
+  - Start with a red test: `readPlanAnswer` with a card whose `requirements` is `[1, 2, 11, "FEAT-114"]` and a requirement sourced from FEAT-114 keeps the card with that requirement's position and no unreadable task.
+  - Read `requirements` and `dependsOn` element by element; map a source card id to the requirement whose sources cite it; drop an entry that maps to nothing and note it in "Requirements of the task cards".
+  - A card left with no requirement under SDD follows P7-14's rule.
+- **Delivers**: the change and unit tests.
+- **Done when**: the `a9700a80` answer keeps all seven cards; a bad `dependsOn` entry drops only the entry; CI green.
+- **Refs**: RF-601, RF-627, DEC-176; evaluation of 2026-10-29, EV-67; earlier EV-30.
+
+### P7-16 - Follow-up: upload gaps from the P5-48 and P5-49 reviews
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P5-48, P5-49
+- **Gate**: owner (DEC-188)
+- **Status**: Todo
+- **Reads**: the verifier comments on the pull requests of P5-48 (#1026) and P5-49 (#1034); `src/application/use-cases/store-upload.ts` (attach at line 205, the steps after it at 212-219, `settle` 137-142), `attach-workbooks.ts` (63-68), `finish-workbooks.ts` (75-84), `attach-limit.ts` (`ATTACH_TIMEOUT_MS` line 9, `withinAttachLimit` 15-34), `workbook-batches.ts` (205-212), `batch-failure-log.ts` (line 20), `web/src/pages/ProcessingProgress.tsx` (67-69), `use-workbook-flow.ts` (190-200), `use-zip-batch.ts` (93-105), `docs/design-system.md` (the "Processing progress" row), RF-128, RF-159, DEC-183, DEC-188.
+- **Do**:
+  - Start with red tests for each point.
+  - P5-48: a step after the attach that fails (`pruneEarlier`, the audit row, `record`, `recordWorkbooks`, `rewriteInfo`) no longer leaves the batch `refused` while the source is attached; the batch ends `stored` and the late step is logged as best effort.
+  - P5-49: a late attach after its 60 s limit can no longer become the source; keep the project busy (RST-1919) until it settles, and correct the batch state from the project row; fix the comment that says its late result is dropped.
+  - P5-49: log RST-1918 (`uploadTimedOut`) at error with the batch id.
+  - P5-49: show "Stopping..." and disable Cancel while the Cancel request waits, for workbooks and for a zip.
+- **Delivers**: the fixes and tests, one commit per point.
+- **Done when**: each point has a passing test that failed before; CI green.
+- **Refs**: RF-128, RF-159, DEC-183, DEC-188, P5-48, P5-49.
+
+### P7-17 - Follow-up: wording and test minors from the P6-26..P6-31 reviews
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P7-10, P7-12, P6-33
+- **Gate**: owner (DEC-189)
+- **Status**: Todo
+- **Reads**: the verifier comments on the pull requests of P6-26 (#1030), P6-27 (#1029), P6-28 (#1027), P6-29 (#1025), P6-30 (#1028) and P6-31 (#1031); the files named below; RF-605, RF-610, RF-637, RF-640, RF-642, RF-644, RF-645, RNF-004.
+- **Do**:
+  - P6-26: when hosting is the only project-context answer, `web/src/lib/plan-setup/recorded.ts` (`contextLine`, 72-92) still says how many questions were answered, for example "0 of 5 answered; the new application will be hosted".
+  - P6-27: the cut-over card of a run with no data model says nothing about migrated data or row counts (`src/domain/planning/foundation-cards.ts`, `cutOverTexts` 146-159, used at 218); add a unit test that pins the requirement-note renumber of `withoutDataCards` (201-224); fix the test title "no phase is empty".
+  - P6-28: assert the absent "A row whose pattern cell reads" sentence in `render-orchestration-greps-catalogue.test.ts` (146-150); remove the stale comment in `render-grep-table-before-after.test.ts` (line 44); refuse format characters (`\p{Cf}`) in `grep-rules-file.ts` (line 21).
+  - P6-29: on a Windows .NET stack write one locked-build bullet, not two (`handoff-orchestration-lessons-markdown.ts`, lines 37 and 42-43), and exclude "Windows auth" and "Windows Integrated Authentication" from Windows (line 50).
+  - P6-30: drop the unreachable tool check in `handoff-agents-folder.ts` (`writesAgentFolder`, lines 167-170); update the header comment of `handoff-reading-order-markdown.ts` (lines 6-7).
+  - P6-31: make the Plan setup option wording one source, served to the web from the server (`web/src/lib/plan-setup/question-options.ts` and `src/domain/planning/brief-question-options.ts`); list the three build method options, none recommended, under an answered "## Build method" section (`handoff-build-method-markdown.ts`, 26-33); write "at least three" in `card-schema.ts` (line 43), in a new `card-format` and `repair` prompt version (RNF-004); give the principles their own intro ("the defaults first", `handoff-suggested-answers-markdown.ts` 9-10); test `esc.inline` on the bullet of `handoff-default-options-markdown.ts` (line 39) with hostile text.
+- **Delivers**: the fixes and tests, one commit per item.
+- **Done when**: each item has a passing test or, for wording-only items, an updated assertion; recordings still replay; CI green.
+- **Refs**: RF-605, RF-610, RF-637, RF-640, RF-642, RF-644, RF-645, RNF-004, DEC-189, DEC-190, P6-26, P6-27, P6-28, P6-29, P6-30, P6-31.
+
+### P7-18 - Follow-up: split the two files at the size limit and remove the casts of the read counter
+
+- **Difficulty**: 5 (haiku)
+- **Size**: M
+- **Depends on**: P7-13, P7-14
+- **Gate**: owner (DEC-176)
+- **Status**: Todo
+- **Reads**: `src/application/plan/plan-package.ts` and `src/domain/planning/planning-brief.ts` (both at 300 lines, the limit of `docs/conventions.md` section 4 and the `max-lines` lint rule), `tests/support/read-counter.ts` (`as` casts at lines 40, 43, 50 and 57), `tests/integration/infrastructure/sources/workbook-staging-no-reread.test.ts` (`chunk as Buffer`, line 69), the cast-free version at `C:\Users\black\AppData\Local\Temp\claude\G--BuildingFolder\efc058fb-16c5-45a9-960d-ad1c9922c9b1\scratchpad\p550-read-counter-nocast.ts` (69 lines, no casts, `Reflect.apply`), the verifier comments on the pull requests of P6-31 (#1031), P6-32 (#1032) and P5-50 (#1033).
+- **Do**:
+  - Move `briefProblems` out of `planning-brief.ts` to `brief-problems.ts`, and a cohesive part of `plan-package.ts` to its own module; behaviour unchanged.
+  - Replace `read-counter.ts` with a cast-free version based on the one above, and remove the cast in the no-re-read test; count the `node:fs` `promises.*`, callback and sync reads the P5-50 review listed.
+- **Delivers**: the refactors and tests.
+- **Done when**: both files are well under 300 lines; `grep -n " as " tests/support/read-counter.ts` finds none; a mutation that reads through `readSync` fails the no-re-read test; recordings and goldens unchanged; CI green.
+- **Refs**: RF-152, RF-159, RF-645, P5-50, P6-31, P6-32.
+
+### P7-19 - Re-run the three-app evaluation on Ollama and Haiku
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: L
+- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P6-33
+- **Gate**: owner
+- **Status**: Todo
+- **Reads**: the evaluation of 2026-10-29 (findings EV-44, EV-56..EV-68 and their repros), `docs/verification/`, RNF-006, RNF-012.
+- **Do**:
+  - Run Asset Manager, Invoice Generator and eShopModernizing end to end (scan, understand, Deepen, answers, plan) on a local Ollama model and on Haiku, one test user per provider, with the default caps and pause-and-ask.
+  - Check each finding of the evaluation of 2026-10-29 by its repro and report fixed, better or still present, with file:line evidence.
+  - Compare time, tokens, cost and coverage with the 2026-10-29 runs; new findings take the next free EV ids.
+- **Delivers**: the evaluation report and the follow-up cards it calls for.
+- **Done when**: the owner has read the report.
+- **Refs**: RNF-006, RNF-012; evaluation of 2026-10-29.
