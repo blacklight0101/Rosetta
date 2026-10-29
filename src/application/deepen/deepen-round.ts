@@ -21,6 +21,7 @@ import { answersGivenTo, withDeepenAnswers } from './deepen-answers.js';
 import { roomCardsOf, roomStopReason } from './deepen-room.js';
 import { nextTaskNumber, roundTasks } from './deepen-tasks.js';
 import { runRoundTasks, taskCardsOf, taskResultOfRound, type EndedTask } from './deepen-readers.js';
+import type { CodeMap } from '../../domain/code-map/code-map.js';
 import type { ReaderTask } from '../understand/reader-tasks.js';
 import type { DeepenParts } from './deepen-parts.js';
 import { cardsOf, snapshotOf, withCards, type DeepenState } from './deepen-state.js';
@@ -189,11 +190,23 @@ async function judgePlanned(
   return withCards(state, await judge(parts, cardsOf(state), { awaits, cap: round.cap }));
 }
 
-/** The round's reader tasks; RF-209, DEC-179: each gets the answered questions of its area, as a re-run does. */
-function tasksOf(parts: DeepenParts, judged: DeepenState, plan: RoundPlan): readonly ReaderTask[] {
+/** The round's reader tasks; RF-209, DEC-179, DEC-198: each gets the answered questions of its area, as a re-run does. */
+export function tasksOf(
+  parts: Pick<DeepenParts, 'rerun'> & {
+    readonly scanned: { readonly codeMap: Pick<CodeMap, 'areas' | 'files'> };
+  },
+  judged: DeepenState,
+  input: { readonly plan: RoundPlan; readonly round: number },
+): readonly ReaderTask[] {
+  const { codeMap } = parts.scanned;
   const first = nextTaskNumber(judged.results);
-  const planned = roundTasks(plan, parts.scanned.codeMap, first, cardsOf(judged));
-  return withDeepenAnswers(planned, parts.rerun);
+  const planned = roundTasks(input.plan, codeMap, first, cardsOf(judged));
+  // DEC-198 (1): in round 1 every area with an answer not used yet gets a task.
+  const firstRound = {
+    ...{ codeMap, firstNumber: first + planned.length },
+    cards: cardsOf(judged),
+  };
+  return withDeepenAnswers(planned, parts.rerun, input.round === 1 ? firstRound : undefined);
 }
 
 // RF-209
@@ -213,7 +226,7 @@ export async function runRound(
   const before = snapshotOf(state, codeMap);
   const cap: CapWatch = { capped: false };
   const judged = await judgePlanned(parts, state, { plan, cap });
-  const tasks = tasksOf(parts, judged, plan);
+  const tasks = tasksOf(parts, judged, input);
   // RF-429, P5-30: the claims the tasks that ended have drafted wait for judgement at the round's end.
   let drafted = 0;
   const own = new Set([...input.ownClaims, ...plan.judge]);

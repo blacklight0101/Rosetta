@@ -225,3 +225,22 @@ async function writeParseWrite(parsed: NonNullable<OpenQuestion['options']>): Pr
   await answers.addQuestions(project, [{ ...withOptions(), options: parsed }]);
   return textOf(writer);
 }
+
+// RF-209, RF-241, DEC-198, EV-58: a picked option is read back like a typed answer, so the loss of a
+// picked answer in a Deepen is not in the file.
+describe('answers.md and the answers a Deepen reads back', () => {
+  it('EV-58 reads a picked option back with the text of the option, like a typed answer', async () => {
+    const { answers } = await setup();
+    await answers.recordAnswers(project, run, [
+      { cardId: 'OQ-001', answer: 'ignored', chosen: 2 },
+      { cardId: 'OQ-002', answer: 'Only for staff.' },
+    ]);
+
+    const read = await answers.answeredQuestions(project);
+
+    expect(read.map(({ cardId, answer }) => ({ cardId, answer }))).toEqual([
+      { cardId: 'OQ-001', answer: 'No, hide it' },
+      { cardId: 'OQ-002', answer: 'Only for staff.' },
+    ]);
+  });
+});
