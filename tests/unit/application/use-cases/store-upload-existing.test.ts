@@ -152,3 +152,32 @@ describe('StoreUpload the same content uploaded again and kept', () => {
     expect(uploads.renamed).toEqual([]);
   });
 });
+
+describe('StoreUpload the project is deleted while the zip is stored', () => {
+  async function deleteThenRelease(world: Case, project: Project): Promise<void> {
+    const release = holding(world.uploads);
+    await batchOf(world, project);
+    await world.projects.remove(amy.userId, project.id, () => Promise.resolve());
+    release();
+    await settle();
+  }
+
+  it('RF-159 keeps a snapshot of the same content that was already stored, and renames nothing', async () => {
+    const id = '00000000-0000-4000-a000-0000000000e6';
+    const { world, project } = await withSource(id, (probe) => probe.uploads.hash);
+
+    await deleteThenRelease(world, project);
+
+    expect(world.uploads.removed).toEqual([]);
+    expect(world.uploads.renamed).toEqual([]);
+  });
+
+  it('RF-159 deletes the snapshot the upload created, which has no owner', async () => {
+    const id = '00000000-0000-4000-a000-0000000000e7';
+    const { world, project } = await withSource(id, () => otherHash);
+
+    await deleteThenRelease(world, project);
+
+    expect(world.uploads.removed).toEqual([uploadSnapshotKey(id, world.uploads.hash)]);
+  });
+});

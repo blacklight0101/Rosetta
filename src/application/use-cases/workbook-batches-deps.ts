@@ -12,7 +12,7 @@ import type { WorkbookStaging } from '../ports/workbook-staging.js';
 export interface WorkbookBatchesDependencies {
   readonly projects: ProjectRepository;
   readonly runs: Pick<RunIndex, 'list'>;
-  readonly uploads: Pick<UploadStore, 'remove'>;
+  readonly uploads: Pick<UploadStore, 'remove' | 'rewriteInfo'>;
   readonly staging: WorkbookStaging;
   readonly auditLog: AuditLog;
   readonly logger: Logger;

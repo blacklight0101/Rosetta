@@ -19,12 +19,16 @@ export class FakeWorkbookStaging implements WorkbookStaging {
   readonly received: (ReceiveRequest & { readonly id: string })[] = [];
   readonly published: string[] = [];
   readonly held = new Map<string, StagedFile[]>();
+  /** RF-159: the snapshots already stored; a batch that publishes one of them did not create it. */
+  readonly existing = new Set<string>();
   receiveFails: Error | undefined;
   publishFails: Error | undefined;
   /** Runs while a batch is being published, for a change that happens meanwhile. */
   duringPublish: (() => Promise<void>) | undefined;
   /** The reports `publish` makes to the request's `onProgress`, before `duringPublish` (RF-159). */
   reports: WorkbookProgress[] = [];
+  /** A cancel that lands as the snapshot is committed: `publish` still ends with the snapshot. */
+  endsAfterAbort = false;
   /** When set, `receive` waits for it. */
   gate: Promise<void> | undefined;
   private counter = 0;
@@ -50,9 +54,10 @@ export class FakeWorkbookStaging implements WorkbookStaging {
 
   async publish(id: string, request: PublishRequest): Promise<PublishedWorkbooks> {
     this.published.push(id);
+    const files = this.held.get(id) ?? [];
     for (const report of this.reports) request.onProgress?.(report);
     await this.duringPublish?.();
-    if (request.signal.aborted) {
+    if (request.signal.aborted && !this.endsAfterAbort) {
       this.held.delete(id);
       throw request.signal.reason instanceof Error ? request.signal.reason : new Error('stopped');
     }
@@ -60,7 +65,6 @@ export class FakeWorkbookStaging implements WorkbookStaging {
       this.held.delete(id);
       throw this.publishFails;
     }
-    const files = this.held.get(id) ?? [];
     this.held.delete(id);
     const hash = `sha256:${createHash('sha256')
       .update(files.map((f) => f.name).join('|'))
@@ -72,8 +76,12 @@ export class FakeWorkbookStaging implements WorkbookStaging {
       sha256: `sha256:${'cd'.repeat(32)}`,
       counts: { sheets: 2, nonEmptyCells: 30, formulas: 4, macroModules: 0, macrosSkipped: 0 },
     }));
+    const key = workbookSnapshotKey(request.projectId, hash);
+    const created = !this.existing.has(key);
+    this.existing.add(key);
     return {
-      key: workbookSnapshotKey(request.projectId, hash),
+      key,
+      created,
       info: {
         kind: 'workbook',
         uploadedAt: request.uploadedAt,

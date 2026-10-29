@@ -73,6 +73,12 @@ export interface LeftOut {
 export interface PublishedWorkbooks {
   /** The folder name under `<data>/sources/`: `workbook__<project id>@<16 hex>`. */
   readonly key: string;
+  /**
+   * RF-159: true when this batch put the snapshot in place; false when the same content was already
+   * stored (the project's source, or a run's), which this batch must never delete or change unless it
+   * becomes the source.
+   */
+  readonly created: boolean;
   readonly info: WorkbookSnapshotInfo;
   readonly summary: readonly WorkbookSummaryLine[];
   readonly skipped: readonly LeftOut[];

@@ -19,7 +19,7 @@ import type { BatchProblem, WorkbookBatchSummary } from './workbook-batch-types.
 export interface AttachDependencies {
   readonly projects: ProjectRepository;
   readonly runs: Pick<RunIndex, 'list'>;
-  readonly uploads: Pick<UploadStore, 'remove'>;
+  readonly uploads: Pick<UploadStore, 'remove' | 'rewriteInfo'>;
   readonly auditLog: AuditLog;
   readonly logger: Logger;
   readonly clock: Clock;
