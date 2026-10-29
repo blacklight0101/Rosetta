@@ -730,7 +730,7 @@ As a developer I want to send Rosetta back over what it did not confirm so that 
 **RF-210 Readers take the app's own code first** - R1 - Should - Source DEC-195, EV-68 - ADR-004, ADR-007
 As a developer I want the readers to spend the budget on my application's code before its deployment and configuration folders so that a capped run reads what matters first.
 
-- Given a run over several areas, when its reader tasks are planned, then the application's own code comes first (largest area first), then tests, then deployment, infrastructure, configuration and generated folders (for example `Kubernetes`, `.kube`, `docker`, `deploy`, `helm`), then library areas; areas are never taken in name order alone.
+- Given a run over several areas, when its reader tasks are planned, then the application's own code comes first, then tests, then deployment, infrastructure, configuration and generated folders (for example `Kubernetes`, `.kube`, `docker`, `deploy`, `helm`), then library areas; within a kind the code map's order is kept, and only clear folder names count as deployment (a `Setup` folder is application code).
 - Given the estimate of a run whose cap cannot hold every area, when it is shown, then it uses the same order, so the areas the likely figure reaches are the ones the run reads first.
   Verification: unit tests of the task order with an eShopModernizing-shaped fixture; a unit test of the estimate order.
 
