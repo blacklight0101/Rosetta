@@ -49,6 +49,8 @@ const briefSchema = z.object({
     deadline: z.string().nullable(),
     keepIntegrations: z.array(z.string()),
     dataMigration: z.string().nullable(),
+    /** P6-26 (RF-643): absent when the owner did not say; an older brief has none. */
+    deployment: z.enum(['hosted', 'not-hosted']).optional(),
   }),
   buildMethod: z.object({
     aiAssisted: z.boolean(),
@@ -61,6 +63,13 @@ const briefSchema = z.object({
         middle: z.string().optional(),
         largest: z.string().optional(),
         escalation: z.string().optional(),
+      })
+      .optional(),
+    local: z
+      .object({
+        smallest: z.boolean().optional(),
+        middle: z.boolean().optional(),
+        largest: z.boolean().optional(),
       })
       .optional(),
   }),
