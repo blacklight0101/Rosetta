@@ -10,7 +10,7 @@ import { handoffOf } from './handoff-package-fixture.js';
 
 const masker = new SecretMasker();
 
-export const stacks: Readonly<Record<string, readonly string[]>> = {
+const stacks: Readonly<Record<string, readonly string[]>> = {
   none: [],
   typescript: ['TypeScript on Node.js'],
   dotnet: ['C# on .NET'],
@@ -21,7 +21,7 @@ export const stacks: Readonly<Record<string, readonly string[]>> = {
   unknown: ['Go 1.22'],
 };
 
-export const principleSets: Readonly<Record<string, readonly string[]>> = {
+const principleSets: Readonly<Record<string, readonly string[]>> = {
   none: [],
   kiss: ['kiss'],
   security: ['security-by-design', 'secure-sdlc'],
@@ -37,7 +37,7 @@ export const principleSets: Readonly<Record<string, readonly string[]>> = {
   ],
 };
 
-export const risks: readonly RiskClass[] = ['none', 'security boundary', 'data loss', 'money'];
+const risks: readonly RiskClass[] = ['none', 'security boundary', 'data loss', 'money'];
 
 function packageOf(languages: readonly string[], principles: readonly string[], risk: RiskClass) {
   const base = handoffOf('Plain text.');
@@ -67,7 +67,7 @@ function packageOf(languages: readonly string[], principles: readonly string[], 
 }
 
 /** The "Hard-rule greps" section of one package built from these answers. */
-export function grepSection(
+function grepSection(
   languages: readonly string[],
   principles: readonly string[],
   risk: RiskClass,
