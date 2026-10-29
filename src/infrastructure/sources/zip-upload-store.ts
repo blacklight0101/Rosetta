@@ -119,7 +119,9 @@ export class ZipUploadStore implements UploadStore {
 
   // RF-128: the newest upload of the same content names the snapshot; the tree is not touched.
   async rewriteInfo(key: string, info: UploadSnapshotInfo | WorkbookSnapshotInfo): Promise<void> {
-    if (!isUploadSnapshotKey(key)) throw snapshotWriteFailed(`${key} is not an upload`, undefined);
+    if (!isUploadSnapshotKey(key) && !isWorkbookSnapshotKey(key)) {
+      throw snapshotWriteFailed(`${key} is not an upload`, undefined);
+    }
     await this.snapshots.rewriteInfo(key, info);
   }
 

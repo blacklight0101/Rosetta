@@ -53,10 +53,12 @@ export async function attachWorkbooks(
     updatedAt: uploadedAt.getTime(),
   });
   if (attached === undefined) {
-    // The project was deleted while the batch was read: its new snapshot has no owner.
-    await uploads.remove(published.key);
+    // The project was deleted while the batch was read: a snapshot this batch created has no owner.
+    if (published.created) await uploads.remove(published.key);
     return err(ERROR_CODES.notFound);
   }
+  // RF-128: the same content was already stored; now that it is the source, the newest upload names it.
+  if (!published.created) await uploads.rewriteInfo(published.key, published.info);
   await pruneEarlier(deps, project, published.key);
   await recordWorkbooks(deps, {
     ...{ actor, projectId: project.id, ip },

@@ -113,12 +113,8 @@ async function publishTree(
 ): Promise<boolean> {
   await snapshots.writeInfo(partial, info);
   const created = await snapshots.commit(partial, key);
-  if (created) {
-    await snapshots.makeReadOnly(snapshots.snapshotDir(key));
-  } else {
-    // The same content is already stored: the newest upload names it, as for a zip (RF-128).
-    await snapshots.rewriteInfo(key, info);
-  }
+  // The same content already stored is left as it is; it is named once the upload is kept (RF-159).
+  if (created) await snapshots.makeReadOnly(snapshots.snapshotDir(key));
   return created;
 }
 

@@ -58,8 +58,9 @@ async function finishWorkbooks(deps: FinishDependencies, work: FinishWork): Prom
       ...{ projectId: project.id, uploadedAt: uploadedAt.toISOString(), signal, onProgress },
     });
     if (signal.aborted) {
-      // Cancelled after the publish: the snapshot is nobody's source, so nothing is attached (RF-159).
-      await deps.uploads.remove(published.key);
+      // Cancelled after the publish: nothing is attached (RF-159). A snapshot this batch created is
+      // nobody's and goes; one it found already stored (the source, or a run's) stays untouched.
+      if (published.created) await deps.uploads.remove(published.key);
       return { kind: 'refused', error: signal.reason };
     }
     onAttach?.();
