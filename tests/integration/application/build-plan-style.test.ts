@@ -161,3 +161,39 @@ describe('RF-608 the planner is sent the roles of the chosen style', () => {
     expect(message).toMatch(/"roles": \[\s*"core",\s*"port",\s*"adapter"\s*\]/u);
   });
 });
+
+describe('RF-608 DEC-184 with an own architecture answer the style is only the check reference', () => {
+  const own = { typed: { architecture: 'Cells, one per region, each with its own database.' } };
+  const reference =
+    "Rosetta's automatic dependency check compares the components below with the Layered (N-tier) style";
+
+  it('RF-645 clean components: the sentence says the check compares them, never that they follow the style', async () => {
+    const files = await packageOf(
+      own,
+      recordingWith([
+        part('Pages', 'presentation', ['Rules']),
+        part('Rules', 'business', ['Tables']),
+        part('Tables', 'data'),
+      ]),
+    );
+
+    const architecture = plain(files['architecture.md']);
+    expect(architecture).not.toContain('The components below follow');
+    expect(architecture).toContain(reference);
+    expect(architecture).toMatch(/not the chosen style; they keep its rule\. How to check it: /u);
+  });
+
+  it('RF-645 a broken rule: the sentence names the reference and the broken rule, never "do not all follow"', async () => {
+    const files = await packageOf(
+      own,
+      recordingWith([part('Pages', 'presentation'), part('Tables', 'data', ['Pages'])]),
+    );
+
+    const architecture = plain(files['architecture.md']);
+    expect(architecture).not.toContain('do not all follow');
+    expect(architecture).toContain(reference);
+    expect(architecture).toMatch(
+      /not the chosen style, and at least one dependency breaks its rule/u,
+    );
+  });
+});
