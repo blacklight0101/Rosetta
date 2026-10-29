@@ -30,7 +30,7 @@ export function nextTaskNumber(results: readonly Pick<TaskResult, 'agentTaskId'>
   return Math.max(0, ...numbers.filter(Number.isFinite)) + 1;
 }
 
-function taskIdOf(number: number): string {
+export function taskIdOf(number: number): string {
   return `reader-${String(number).padStart(3, '0')}`;
 }
 
@@ -100,7 +100,7 @@ function cardsOfArea(cards: readonly Card[], name: string): readonly Card[] {
  * block, and the ids a card of the task may add its claims to. A title is model text: it only ever
  * travels inside the block. A task whose area holds no card is given neither.
  */
-function withParentCards(
+export function withParentCards(
   task: Omit<ReaderTask, 'agentTaskId'>,
   cards: readonly Card[],
 ): Omit<ReaderTask, 'agentTaskId'> {
