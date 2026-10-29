@@ -32,6 +32,15 @@ export const finishedBody = {
   uploadedAt: '2026-10-19T08:00:00.000Z',
 };
 
+/** RF-159: what the server answers to the finish: accepted, at work. */
+export const acceptedBody = { batchId: 'b-1', phase: 'processing', files: 3, elapsedMs: 0 };
+
+/** RF-159: the state of a batch the server stored, with the summary the page shows. */
+export const storedState = (summary: unknown = finishedBody): Record<string, unknown> => ({
+  ...{ batchId: 'b-1', phase: 'stored', files: 3, elapsedMs: 4200 },
+  summary,
+});
+
 const threeNames = ['Pricing.xlsx', 'Costs.xlsm', 'Rates.xlsx'] as const;
 
 export function workbookFile(name: string, size?: number): File {
@@ -44,13 +53,15 @@ export function workbookFile(name: string, size?: number): File {
 export const batchRoute = '/api/projects/p-9/source/batches';
 export const finishRoute = `${batchRoute}/b-1/finish`;
 export const filesRoute = `${batchRoute}/b-1/files`;
+export const stateRoute = `${batchRoute}/b-1`;
 
 /** Answers for a page whose batch calls all succeed; a test overrides the one it is about. */
 export function happyAnswers(): Record<string, Answer> {
   return {
     'POST /api/projects': json(201, sourcelessBook),
     [`POST ${batchRoute}`]: batchOpened,
-    [`POST ${finishRoute}`]: json(201, finishedBody),
+    [`POST ${finishRoute}`]: json(202, acceptedBody),
+    [`GET ${stateRoute}`]: json(200, storedState()),
   };
 }
 

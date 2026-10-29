@@ -5,8 +5,8 @@ import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 
 // RF-150, RF-158, RNF-010, RFC-005 section 4.9: the Excel workbooks tab of the New project form. The
-// batch endpoint (P3-48) is not built yet, so the project and batch routes answer from this file
-// (the fake server of the card); the page, its checks and its layout are real. The limit is lowered
+// project and batch routes answer from this file (the fake server of the card, with the state of the
+// batch after the finish, RF-159); the page, its checks and its layout are real. The limit is lowered
 // to 1 MB through the session answer, so a set above it is small enough to build in a test.
 
 const workbook = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
@@ -64,7 +64,8 @@ async function limitTo(page: Page, megabytes: number): Promise<void> {
   });
 }
 
-async function answerBatchCalls(page: Page, finish: { status: number; json: unknown }) {
+/** RF-159: the server accepts the finish at once; the state it then answers is the outcome. */
+async function answerBatchCalls(page: Page, state: { status: number; json: unknown }) {
   await page.route('**/api/projects', async (route: Route) => {
     if (route.request().method() === 'POST') {
       await route.fulfill({ status: 201, json: project });
@@ -77,7 +78,13 @@ async function answerBatchCalls(page: Page, finish: { status: number; json: unkn
     await route.fulfill({ status: 201, json: { name: 'x', size: 8 } });
   });
   await page.route('**/api/projects/p-book/source/batches/b-1/finish', async (route: Route) => {
-    await route.fulfill(finish);
+    await route.fulfill({
+      status: 202,
+      json: { batchId: 'b-1', phase: 'processing', files: 2, elapsedMs: 0 },
+    });
+  });
+  await page.route('**/api/projects/p-book/source/batches/b-1', async (route: Route) => {
+    await route.fulfill(state);
   });
 }
 
@@ -142,7 +149,10 @@ test(
   'RF-150 uploads two workbooks one by one, shows what was read and lists the project as Excel',
   { tag: '@phone' },
   async ({ page }) => {
-    await answerBatchCalls(page, { status: 201, json: finished });
+    await answerBatchCalls(page, {
+      status: 200,
+      json: { batchId: 'b-1', phase: 'stored', files: 2, elapsedMs: 3100, summary: finished },
+    });
     await page.getByLabel('Workbook files').setInputFiles(two);
     await expect(page.getByLabel('Project name')).toHaveValue('Pricing');
 
@@ -162,11 +172,14 @@ test(
 
 test('RF-150 a refused batch shows its message and offers Upload again', async ({ page }) => {
   await answerBatchCalls(page, {
-    status: 422,
+    status: 200,
     json: {
-      code: 'RST-1922',
-      message: 'Costs.xlsm is password-protected.',
-      nextStep: 'Remove the password in Excel and upload again.',
+      ...{ batchId: 'b-1', phase: 'refused', files: 2, elapsedMs: 900 },
+      refusal: {
+        ...{ status: 422, code: 'RST-1922' },
+        message: 'Costs.xlsm is password-protected.',
+        nextStep: 'Remove the password in Excel and upload again.',
+      },
     },
   });
   await page.getByLabel('Workbook files').setInputFiles(two);

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import type { ZipProgress } from '../api/source-upload.js';
 import type { ApiFailure } from '../api/client.js';
 import type { Project } from '../api/project-schemas.js';
 import {
   createUploadProject,
   defaultUploadLimitMb,
   loadUploadLimitMb,
+  readZipProgress,
   uploadSource,
   type UploadSummary,
 } from '../api/source-upload.js';
@@ -39,6 +41,8 @@ export interface ZipUpload {
   readonly needsName: boolean;
   readonly phase: UploadPhase;
   readonly percent: number;
+  /** RF-159: how the server reads the workbooks of the zip, once the zip is there and it holds some. */
+  readonly processing: ZipProgress | undefined;
   readonly summary: UploadSummary | undefined;
   readonly failure: ApiFailure | undefined;
   /** The project the zip goes to, once there is one. */
@@ -105,6 +109,7 @@ interface Flow {
   readonly project: Project | undefined;
   readonly phase: UploadPhase;
   readonly percent: number;
+  readonly processing: ZipProgress | undefined;
   readonly summary: UploadSummary | undefined;
   readonly failure: ApiFailure | undefined;
   readonly send: (zip: File, name: string) => Promise<void>;
@@ -121,6 +126,33 @@ export function useAbortOnLeave(): AbortSignal {
     };
   }, []);
   return controller.current.signal;
+}
+
+/** How often the server is asked where it is with the zip (RF-159). */
+const PROGRESS_MS = 1000;
+
+/** RF-159: once the whole zip is sent, asks every second how the server reads its workbooks. */
+function useZipProgress(projectId: string | undefined, sent: boolean): ZipProgress | undefined {
+  const { client } = useApp();
+  const [progress, setProgress] = useState<ZipProgress | undefined>();
+  useEffect(() => {
+    setProgress(undefined);
+    if (projectId === undefined || !sent) return undefined;
+    const abort = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const tick = async (): Promise<void> => {
+      const read = await readZipProgress(client, projectId, abort.signal);
+      if (abort.signal.aborted) return;
+      if (read.ok && read.value.progress !== null) setProgress(read.value);
+      timer = setTimeout(() => void tick(), PROGRESS_MS);
+    };
+    void tick();
+    return () => {
+      abort.abort();
+      clearTimeout(timer);
+    };
+  }, [client, projectId, sent]);
+  return progress;
 }
 
 /** The project as the server now holds it: the stored zip's name and date, and whether the code changed. */
@@ -178,7 +210,8 @@ function useUploadFlow(options: ZipUploadOptions): Flow {
     setPhase('done');
     options.onStored(projectAfter(target, zip, stored.value));
   };
-  return { project, phase, percent, summary, failure, send, reset };
+  const processing = useZipProgress(project?.id, phase === 'sending' && percent >= 100);
+  return { project, phase, percent, processing, summary, failure, send, reset };
 }
 
 // RF-128, RF-134

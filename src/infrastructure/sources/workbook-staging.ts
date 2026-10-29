@@ -6,6 +6,7 @@ import type {
   PublishRequest,
   ReceiveRequest,
   StagedFile,
+  WorkbookProgress,
   WorkbookStaging,
 } from '../../application/ports/workbook-staging.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -57,6 +58,13 @@ interface OpenBatch {
 const PARTIAL_BATCH_PREFIX = '.partial-batch-';
 const DEFAULT_STALL_MS = 60_000;
 const DEFAULT_PUBLISH_TIMEOUT_MS = 5 * 60_000;
+/** How the time-bound message names each step (RF-159). */
+const STEP_NAMES = {
+  reading: 'reading',
+  rendering: 'rendering',
+  dependencies: 'dependency map',
+  saving: 'saving',
+} as const satisfies Record<WorkbookProgress['step'], string>;
 /** DEC-149: a batch needs its files and the rendered tree, so twice the limit must be free. */
 const FREE_SPACE_FACTOR = 2;
 
@@ -128,17 +136,23 @@ export class DiskWorkbookStaging implements WorkbookStaging {
   async publish(id: string, request: PublishRequest): Promise<PublishedWorkbooks> {
     const batch = this.batches.get(id) ?? this.missing();
     const bound = AbortSignal.timeout(this.options.publishTimeoutMs ?? DEFAULT_PUBLISH_TIMEOUT_MS);
+    // The step the work is in, so the time bound names what took too long.
+    let step: WorkbookProgress['step'] = 'reading';
+    const onProgress = (progress: WorkbookProgress): void => {
+      step = progress.step;
+      request.onProgress?.(progress);
+    };
     const check = (): void => {
       if (request.signal.aborted) {
         throw request.signal.reason instanceof Error ? request.signal.reason : new Error('stopped');
       }
-      if (bound.aborted) throw uploadTimedOut('reading');
+      if (bound.aborted) throw uploadTimedOut(STEP_NAMES[step]);
     };
     try {
       return await publishWorkbooks(this.snapshots, {
         uploads: batch.files,
         ...{ projectId: request.projectId, uploadedAt: request.uploadedAt, check },
-        ...(request.onProgress === undefined ? {} : { onProgress: request.onProgress }),
+        onProgress,
         limits: this.limits,
         signal: AbortSignal.any([request.signal, bound]),
       });

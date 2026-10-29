@@ -7,6 +7,7 @@ import {
   cancelBatch,
   createWorkbookProject,
   finishBatch,
+  finishedBatch,
   openBatch,
   putFile,
   useWorkbookServers,
@@ -192,7 +193,7 @@ describe('the batch routes and the audit trail', () => {
     const bytes = await sampleBook();
     await putFile(amy, target, { name: 'Pricing.xlsx', bytes });
 
-    await finishBatch(amy, target);
+    await finishedBatch(amy, target);
 
     const rows = await test.audit.list({ since: 0 });
     const row = rows.find((entry) => entry.action === 'source.workbook.uploaded');

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { ApiClient, ApiResult } from './client.js';
 import { projectSchema, type Project } from './project-schemas.js';
 import { sessionSchema } from './schemas.js';
+import { progressSchema, type WorkbookProgress } from './workbook-upload.js';
 
 // RF-128, RF-129, RF-134, RFC-004 section 4.2: the calls of the Upload a zip tab. The project is
 // created first (`POST /api/projects` with `sourceKind: 'upload'` and a name), then the archive goes
@@ -59,6 +60,31 @@ export function uploadSource(
     schema: uploadSummarySchema,
     onProgress: watch.onProgress,
     ...(watch.signal === undefined ? {} : { signal: watch.signal }),
+  });
+}
+
+/** RF-159: how the zip being stored is going; `progress` is null until it holds workbooks to render. */
+const zipProgressSchema = z.object({
+  elapsedMs: z.number().int().nonnegative(),
+  progress: progressSchema.nullable(),
+});
+
+export interface ZipProgress {
+  readonly elapsedMs: number;
+  readonly progress: WorkbookProgress | null;
+}
+
+// RF-159: 404 while no zip of the project is being stored.
+export function readZipProgress(
+  client: ApiClient,
+  projectId: string,
+  signal: AbortSignal,
+): Promise<ApiResult<ZipProgress>> {
+  return client.request({
+    method: 'GET',
+    path: `/api/projects/${encodeURIComponent(projectId)}/source/progress`,
+    schema: zipProgressSchema,
+    signal,
   });
 }
 
