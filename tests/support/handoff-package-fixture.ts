@@ -2,6 +2,7 @@ import type {
   HandoffPackage,
   PackagePrinciple,
 } from '../../src/application/plan/handoff-package.js';
+import { noGrepRules } from '../../src/domain/planning/grep-rules.js';
 import type { ExcludedClaim } from '../../src/domain/planning/plan-sources.js';
 import { noApiContract } from '../../src/domain/planning/api-contract.js';
 import { noUx } from '../../src/domain/planning/target-ux.js';
@@ -168,6 +169,7 @@ export function handoffOf(
     openQuestions: [{ cardId: 'OQ-001', question: text, area: text }],
     prd,
     prdQuestions: prdQuestions(prd),
+    grepRules: noGrepRules,
     ...extra,
   };
 }

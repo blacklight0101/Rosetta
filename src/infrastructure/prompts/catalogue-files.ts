@@ -11,6 +11,7 @@ import {
   type CatalogueEntry,
 } from '../../domain/planning/catalogue.js';
 import type { ClaimVerbs } from '../../domain/planning/claim-verbs.js';
+import { noGrepRules } from '../../domain/planning/grep-rules.js';
 import type { StackData } from '../../domain/planning/stack-data.js';
 import { parseCatalogueEntry, parseCatalogueReadme } from './catalogue-entry-file.js';
 import { parseStackProposals, parseStackRules, parseStackTechnologies } from './stack-data-file.js';
@@ -125,5 +126,6 @@ export async function loadCatalogue(promptsFolder: string): Promise<Catalogue> {
     styles: sorted.filter(isArchitectureStyle),
     stack: stackOf(files),
     claimVerbs: claimVerbsOf(files),
+    grepRules: noGrepRules, // stub until the file is read
   };
 }

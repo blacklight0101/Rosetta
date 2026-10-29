@@ -290,6 +290,7 @@ export function handoffPackageOf(
     prdQuestions: prdQuestions(prd),
     ...carried(documents, documents.secrets),
     copiedExamples: copiedIn(prd, decided.content, documents.examples),
+    grepRules: catalogue.grepRules,
     meaning: meaningOf(decided.content, { ...documents, sources, overruled }, catalogue),
   };
 }
