@@ -38,11 +38,13 @@ export interface ProcessingProgressProps {
   readonly elapsedMs: number;
   /** Stops the work; absent where the work cannot be stopped from the page. */
   readonly onCancel?: (() => void) | undefined;
+  /** The Cancel request is waiting for the work to end: the button reads "Stopping..." and is disabled. */
+  readonly stopping?: boolean | undefined;
 }
 
 // RF-159
 export function ProcessingProgress(props: ProcessingProgressProps): JSX.Element {
-  const { progress, elapsedMs, onCancel } = props;
+  const { progress, elapsedMs, onCancel, stopping = false } = props;
   const at = STEPS.findIndex((entry) => entry.step === progress?.step);
   const current = STEPS[Math.max(at, 0)];
   return (
@@ -62,11 +64,11 @@ export function ProcessingProgress(props: ProcessingProgressProps): JSX.Element 
         {detailText(progress)} <span class="rst-mono">{clockText(elapsedMs)}</span> elapsed.
       </p>
       <p class="rst-visually-hidden" role="status" aria-live="polite">
-        {current?.saying}
+        {stopping ? 'Stopping the work.' : current?.saying}
       </p>
       {onCancel === undefined ? null : (
-        <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+        <Button type="button" variant="secondary" busy={stopping} onClick={onCancel}>
+          {stopping ? 'Stopping\u2026' : 'Cancel'}
         </Button>
       )}
     </section>

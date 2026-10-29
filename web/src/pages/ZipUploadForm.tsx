@@ -76,6 +76,7 @@ function Outcome({ upload }: { readonly upload: ZipUpload }): JSX.Element | null
         progress={processing?.progress}
         elapsedMs={processing?.elapsedMs ?? 0}
         onCancel={upload.cancel}
+        stopping={upload.stopping}
       />
     );
   }
