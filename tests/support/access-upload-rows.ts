@@ -16,6 +16,13 @@ export const uploadRows: Readonly<Record<string, readonly Probe[]>> = {
       expected: ownerOnly(404),
     },
   ],
+  'HEAD /api/projects/:id/source/progress': [
+    {
+      method: 'HEAD',
+      url: (context: Context) => `/api/projects/${context.projectId}/source/progress`,
+      expected: ownerOnly(404),
+    },
+  ],
   'PUT /api/projects/:id/source': [
     {
       method: 'PUT',
@@ -76,6 +83,16 @@ export const workbookRows: Readonly<Record<string, readonly Probe[]>> = {
       url: (context: Context) => `${batches(context)}/current`,
       expected: ownerOnly(404),
     },
+  ],
+  'HEAD /api/projects/:id/source/batches/current': [
+    {
+      method: 'HEAD',
+      url: (context: Context) => `${batches(context)}/current`,
+      expected: ownerOnly(404),
+    },
+  ],
+  'HEAD /api/projects/:id/source/batches/:batchId': [
+    { method: 'HEAD', url: aBatch, expected: ownerOnly(404) },
   ],
   'GET /api/projects/:id/source/batches/:batchId': [
     { method: 'GET', url: aBatch, expected: ownerOnly(404) },
