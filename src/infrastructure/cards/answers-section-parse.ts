@@ -68,6 +68,13 @@ const RECOMMENDED = '(Recommended) ';
 const OPTION_SEPARATOR = '; ';
 const DESCRIPTION_SEPARATOR = ' - ';
 
+/** RF-645: the text without any leading recommended marks, which only a recommended option carries. */
+function unmarked(text: string): string {
+  let rest = text.trimStart();
+  while (rest.startsWith(RECOMMENDED)) rest = rest.slice(RECOMMENDED.length);
+  return rest;
+}
+
 /**
  * RF-645: the `- Options:` line for suggested answers whose text is already masked and on one line:
  * the separators of the format are removed from the text, so a line parses back to the same options.
@@ -78,7 +85,8 @@ export function optionsLineOf(options: readonly SuggestedOption[]): string {
       const answer = option.answer.replaceAll(';', ',').replaceAll(DESCRIPTION_SEPARATOR, ' / ');
       const description = option.description.replaceAll(';', ',');
       const text = description === '' ? answer : `${answer}${DESCRIPTION_SEPARATOR}${description}`;
-      return option.recommended ? `${RECOMMENDED}${text}` : text;
+      // The mark is the format's, not the model's: text that starts with it cannot fake it.
+      return option.recommended ? `${RECOMMENDED}${text}` : unmarked(text);
     })
     .join(OPTION_SEPARATOR);
 }
