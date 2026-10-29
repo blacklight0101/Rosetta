@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { architectureStyleIds } from '../../domain/planning/catalogue.js';
 import {
   applicationKinds,
+  deployments,
   migrationStrategies,
   stackLayers,
   type BriefAnswers,
@@ -63,6 +64,7 @@ const context = z.strictObject({
   deadline: text.nullable(),
   keepIntegrations: z.array(text).max(MAX_LIST),
   dataMigration: text.nullable(),
+  deployment: z.enum(deployments).optional(),
 });
 
 // RF-645, data-model.md section 3.20: the option that answered each question and the typed text.
@@ -115,6 +117,7 @@ const answersSchema = z.strictObject({
       deadline: context.shape.deadline.optional(),
       keepIntegrations: context.shape.keepIntegrations.optional(),
       dataMigration: context.shape.dataMigration.optional(),
+      deployment: context.shape.deployment,
     })
     .optional(),
   buildMethod: buildMethod.optional(),

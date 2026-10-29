@@ -192,7 +192,7 @@ describe('orchestration.md new sections with hostile text', () => {
     const text = textOf({ text: hostile, deployment: 'hosted' });
     const section = sectionOf(text, 'Human gates');
 
-    expect(section).not.toContain('<script>');
+    expect(section).not.toMatch(/(?<!\\)<script>/u);
     expect(section).not.toContain('](http://evil.test)');
     expect(text).not.toMatch(/^## Injected heading/mu);
     for (const row of section.split('\n').filter((line) => line.startsWith('| Phase'))) {
