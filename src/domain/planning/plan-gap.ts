@@ -3,6 +3,8 @@ import { planId, type PlanContent, type PlanTask } from './plan-content.js';
 import type { CoverageItem } from './plan-coverage.js';
 import type { DraftTask } from './plan-draft.js';
 import { draftFault } from './left-out-card.js';
+import { gapRequirementNotes, gapRequirements, type GapRequirements } from './gap-requirements.js';
+import type { Sources } from './requirement-alignment.js';
 import type { RiskClass } from './task-card-quality.js';
 
 // Q-45, RF-627, RF-630, ADR-013, ADR-018: the task cards the planner wrote for the items no card
@@ -12,7 +14,9 @@ import type { RiskClass } from './task-card-quality.js';
 // really is a gap. What it builds is cut to the gaps (an id that is no gap, covered or invented,
 // builds nothing) and listed in the order of the gaps. The kept cards take the ids after the last
 // card of the plan, in the order of the answer; what they wait for is worked out like the plan's
-// own cards (RF-634) over the whole plan. The cards that were there are not changed.
+// own cards (RF-634) over the whole plan. The cards that were there are not changed. P7-14: under
+// SDD a card with no requirement gets the ones behind what it builds, or is kept with a note when no
+// requirement covers its items (gap-requirements.ts); only a card with nothing to derive is refused.
 
 /** A task card the planner wrote for the gaps: a draft task without needs, and the ids it builds. */
 export interface GapDraft extends Omit<DraftTask, 'needs' | 'dependsOn'> {
@@ -26,7 +30,7 @@ interface KeptDraft {
   readonly position: number;
   readonly draft: GapDraft;
   readonly riskClass: RiskClass;
-  readonly requirements: readonly string[];
+  readonly requirements: GapRequirements;
   readonly builds: readonly string[];
   readonly files: readonly string[];
 }
@@ -44,6 +48,8 @@ export interface GapOptions {
   readonly positions?: readonly number[];
   /** RF-607: given SDD, a card that implements no requirement is not written. */
   readonly specificationDriven?: boolean;
+  /** P7-14: the source cards behind each item id, to find the requirements of a card under SDD. */
+  readonly itemSources?: Sources;
 }
 
 function unique<T>(items: readonly T[]): T[] {
@@ -95,12 +101,12 @@ function keptDrafts(
     const { riskClass } = draft;
     const named = new Set(draft.builds);
     const builds = uncovered.filter((each) => named.has(each.id)).map((each) => each.id);
-    const requirements = unique(
+    const listed = unique(
       draft.requirements.flatMap((at) => content.requirements[at - 1]?.id ?? []),
     );
-    const missing = options.specificationDriven === true && requirements.length === 0;
-    const field = faultOf(content, draft, builds, missing);
-    if (field !== undefined || riskClass === undefined) {
+    const requirements = gapRequirements(content, listed, builds, options);
+    const field = faultOf(content, draft, builds, requirements === undefined);
+    if (field !== undefined || riskClass === undefined || requirements === undefined) {
       result.leftOut.push(leftOut(position, field ?? 'riskClass', draft.builds));
       return;
     }
@@ -151,14 +157,23 @@ export function addGapTasks(
     ...kept.map((_, at) => planId('T', first + at + 1)),
   ];
   const dependencies = dependenciesOver(content.tasks, kept);
-  const added = kept.map(({ draft, riskClass, requirements, builds, files }, at): PlanTask => {
-    const { title, phase, acceptanceCriteria, invariant, adds, probes } = draft;
-    return {
-      ...{ id: ids[first + at] ?? planId('T', first + at + 1), title, phase, requirements },
-      ...{ acceptanceCriteria, invariant, riskClass, adds, probes, files, builds },
-      identifiers: [],
-      dependsOn: (dependencies[first + at] ?? []).flatMap((on) => ids[on] ?? []),
-    };
-  });
-  return { content: { ...content, tasks: [...content.tasks, ...added] }, leftOut };
+  const added = kept.map(
+    ({ draft, riskClass, requirements: found, builds, files }, at): PlanTask => {
+      const { title, phase, acceptanceCriteria, invariant, adds, probes } = draft;
+      const requirements = found.requirements;
+      return {
+        ...{ id: ids[first + at] ?? planId('T', first + at + 1), title, phase, requirements },
+        ...{ acceptanceCriteria, invariant, riskClass, adds, probes, files, builds },
+        identifiers: [],
+        dependsOn: (dependencies[first + at] ?? []).flatMap((on) => ids[on] ?? []),
+      };
+    },
+  );
+  const notes = kept.flatMap((each, at) =>
+    gapRequirementNotes(added[at]?.id ?? '', each.requirements),
+  );
+  const requirementNotes = [...(content.requirementNotes ?? []), ...notes];
+  const tasks = [...content.tasks, ...added];
+  const noted = requirementNotes.length === 0 ? {} : { requirementNotes };
+  return { content: { ...content, tasks, ...noted }, leftOut };
 }
