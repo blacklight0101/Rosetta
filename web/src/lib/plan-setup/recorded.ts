@@ -69,14 +69,26 @@ function stackNames(draft: Draft): string {
   return STACK_LAYERS.flatMap((layer) => draft.stack[layer.id]?.choice ?? []).join(', ');
 }
 
+/** P6-26: how "What I recorded" says the hosted answer; not stated says nothing. */
+const HOSTING_WORDS: Readonly<Partial<Record<Draft['deployment'], string>>> = {
+  hosted: 'the new application will be hosted',
+  'not-hosted': 'the new application will not be hosted',
+};
+
 function contextLine(draft: Draft): RecordedLine {
   const given = CONTEXT_FIELDS.filter((field) => draft.context[field].trim() !== '').length;
   const total = String(CONTEXT_FIELDS.length);
-  const none = 'no answers; listed as open questions';
+  const hosting = HOSTING_WORDS[draft.deployment];
+  const parts = [
+    ...(given === 0 ? [] : [`${String(given)} of ${total} answered`]),
+    ...(hosting === undefined ? [] : [hosting]),
+  ];
   return {
     key: 'Project context',
-    value: given === 0 ? none : `${String(given)} of ${total} answered`,
-    isDefault: !CONTEXT_FIELDS.some((field) => isAnswered(draft, `context.${field}`)),
+    value: parts.length === 0 ? 'no answers; listed as open questions' : parts.join('; '),
+    isDefault:
+      hosting === undefined &&
+      !CONTEXT_FIELDS.some((field) => isAnswered(draft, `context.${field}`)),
   };
 }
 
