@@ -193,7 +193,10 @@ export class WorkbookBatches {
     return ok(stateOf(batch, this.deps.clock.now().getTime()));
   }
 
-  /** RF-150, RF-159: stops an open batch or one at work; one that ended (or is attaching) is left. */
+  /**
+   * RF-150, RF-159: stops an open batch or one at work and answers when its work has ended; one that
+   * ended (or is attaching) is left.
+   */
   async cancel(request: BatchRef): Promise<Result<CancelOutcome, BatchProblem>> {
     await this.sweep();
     const located = await this.locate(request);
@@ -204,6 +207,9 @@ export class WorkbookBatches {
       return ok({ cancelled: false, state: stateOf(batch, this.deps.clock.now().getTime()) });
     }
     batch.busy?.abort();
+    // The batch stays held, so the project stays busy, until the work it stopped has cleaned up: a new
+    // upload cannot be accepted while the old work may still delete a snapshot the new one attaches.
+    await batch.work;
     await this.drop(request.projectId, batch);
     return ok({ cancelled: true });
   }

@@ -64,8 +64,10 @@ describe('StoreUpload a late Cancel of a zip whose content is already stored', (
     const release = holding(world.uploads);
     const batchId = await batchOf(world, project);
 
-    await world.batches.cancel({ actor: amy, projectId: project.id, batchId });
+    const cancelling = world.batches.cancel({ actor: amy, projectId: project.id, batchId });
+    await settle();
     release();
+    await cancelling;
     await settle();
 
     expect(world.uploads.removed).toEqual([]);
@@ -90,8 +92,10 @@ describe('StoreUpload a late Cancel of a zip whose content is already stored', (
     const release = holding(world.uploads);
     const batchId = await batchOf(world, project);
 
-    await world.batches.cancel({ actor: amy, projectId: project.id, batchId });
+    const cancelling = world.batches.cancel({ actor: amy, projectId: project.id, batchId });
+    await settle();
     release();
+    await cancelling;
     await settle();
 
     expect(world.uploads.removed).toEqual([]);
@@ -107,8 +111,10 @@ describe('StoreUpload a late Cancel of a zip whose content is new', () => {
     const release = holding(world.uploads);
     const batchId = await batchOf(world, project);
 
-    await world.batches.cancel({ actor: amy, projectId: project.id, batchId });
+    const cancelling = world.batches.cancel({ actor: amy, projectId: project.id, batchId });
+    await settle();
     release();
+    await cancelling;
     await settle();
 
     expect(world.uploads.removed).toEqual([uploadSnapshotKey(id, world.uploads.hash)]);
@@ -190,8 +196,10 @@ describe('StoreUpload the log of a zip that did not end well', () => {
     const release = holding(world.uploads);
     const batchId = await batchOf(world, project);
 
-    await world.batches.cancel({ actor: amy, projectId: project.id, batchId });
+    const cancelling = world.batches.cancel({ actor: amy, projectId: project.id, batchId });
+    await settle();
     release();
+    await cancelling;
     await settle();
 
     const levels = world.logger.entries.map((entry) => entry.level);

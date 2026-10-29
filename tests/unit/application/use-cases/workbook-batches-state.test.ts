@@ -119,8 +119,11 @@ describe('WorkbookBatches.finish and cancel', () => {
     const release = holdPublish(test);
     await test.useCase.finish(finishOf(test, batchId));
 
-    const cancelled = await test.useCase.cancel(ref(test, batchId));
+    // The Cancel answers when the work it stopped has ended, so the held publish is let go.
+    const cancelling = test.useCase.cancel(ref(test, batchId));
+    await new Promise((resolve) => setImmediate(resolve));
     release();
+    const cancelled = await cancelling;
     await vi.waitFor(() => {
       expect(test.staging.discarded).toContain(batchId);
     });

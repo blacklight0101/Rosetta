@@ -33,11 +33,14 @@ describe('WorkbookBatches a finish that ends after its batch was cancelled', () 
     await vi.waitFor(() => {
       expect(test.staging.published).toEqual([first]);
     });
-    await test.useCase.cancel({ actor: amy, projectId: test.project.id, batchId: first });
-    const second = await opened(test);
-
+    const cancelling = test.useCase.cancel({
+      ...{ actor: amy, projectId: test.project.id, batchId: first },
+    });
+    await new Promise((resolve) => setImmediate(resolve));
     release();
+    await cancelling;
     await finishing;
+    const second = await opened(test);
     const file = await test.useCase.receive(
       fileRequest(test.project, second, { fileName: 'Two.xlsx', body: bodyOf(5) }),
     );
