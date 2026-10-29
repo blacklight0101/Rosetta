@@ -1,4 +1,5 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
+import { resolveBuildMethod } from '../../domain/planning/build-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { handoffFiles } from './handoff-links.js';
 
@@ -46,7 +47,7 @@ export const throttleSection: SectionWriter = (handoff) => {
   return [
     '## Usage throttle',
     '',
-    `The build must not stop because the usage of the agent plan ran out. The orchestrator runs one agent at a time and reads the usage before every launch and after every finish: ${claude ? "the session's usage tool, a scheduled check that reads it, or the person (`/usage` works in a terminal session)" : 'the usage report of the agent tool, or the person if the tool reports none'}. The bands below are a default and the team's choice: change the percentages or the rules and record the change as a decision.`,
+    `The build must not stop because the usage of the agent plan ran out. Under these default bands the orchestrator launches one agent at a time; a team that builds the roadmap's groups in parallel raises this limit by a decision it records. The orchestrator reads the usage before every launch and after every finish: ${claude ? "the session's usage tool, a scheduled check that reads it, or the person (`/usage` works in a terminal session)" : 'the usage report of the agent tool, or the person if the tool reports none'}. The bands below are a default and the team's choice: change the percentages or the rules and record the change as a decision.`,
     '',
     `| ${claude ? '5-hour window' : 'Shortest usage window'} used | What may start |`,
     '| ------------------ | -------------- |',
@@ -56,7 +57,7 @@ export const throttleSection: SectionWriter = (handoff) => {
     '| 85% or more | stop until the window resets; record the hold and the reset time, and resume just after it |',
     '',
     '- A running agent is not killed when a band is crossed; the next launch waits for the right band, and a paused agent is resumed, not restarted.',
-    '- Above 70% of the weekly window, at most one agent per hour.',
+    `- Above 70% of the ${claude ? 'weekly window' : 'longest usage window'}, at most one agent per hour.`,
     '- Verifiers of a second round and later probe only the changed code and the earlier findings.',
     '- When the usage cannot be read, keep to the 50% to 70% rules until it can.',
     '',
@@ -64,10 +65,12 @@ export const throttleSection: SectionWriter = (handoff) => {
 };
 
 // RF-640
-export const escalationSection: SectionWriter = () => [
+export const escalationSection: SectionWriter = (handoff) => [
   '## Escalation and stop conditions',
   '',
-  "A card never gets the escalation model when the plan is made. The escalation model is used only at the third failure of a card, and only with the owner's approval in chat; the orchestrator records that approval on the card.",
+  resolveBuildMethod(handoff.brief.buildMethod).models?.escalation === undefined
+    ? 'No escalation model is named: at the third failure of a card the owner decides what happens next, as the retry ladder says.'
+    : "A card never gets the escalation model when the plan is made. The escalation model is used only at the third failure of a card, and only with the owner's approval in chat; the orchestrator records that approval on the card.",
   '',
   'Stop starting new work, write `Blocked (<reason>)` on the cards concerned and tell the person when:',
   '',
