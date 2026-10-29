@@ -22,6 +22,8 @@ export interface FinishWork {
   readonly signal: AbortSignal;
   /** Told where the work has got to (RF-159). */
   readonly onProgress: (progress: WorkbookProgress) => void;
+  /** Told when the source is being attached: from here on a cancel can no longer stop it. */
+  readonly onAttach?: () => void;
 }
 
 /** Nothing of a batch that failed stays staged; an error nobody expected is logged. */
@@ -50,7 +52,7 @@ export async function finishWorkbooks(
   deps: FinishDependencies,
   work: FinishWork,
 ): Promise<BatchOutcome> {
-  const { batchId, actor, ip, project, signal, onProgress } = work;
+  const { batchId, actor, ip, project, signal, onProgress, onAttach } = work;
   try {
     const uploadedAt = deps.clock.now();
     const published = await deps.staging.publish(batchId, {
@@ -61,6 +63,7 @@ export async function finishWorkbooks(
       await deps.uploads.remove(published.key);
       return { kind: 'refused', error: signal.reason };
     }
+    onAttach?.();
     const attached = await attachWorkbooks(deps, { actor, ip, project, published, uploadedAt });
     return attached.ok
       ? { kind: 'stored', summary: attached.value }

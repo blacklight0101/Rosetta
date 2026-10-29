@@ -28,13 +28,15 @@ export interface HeldBatch {
   outcome: BatchOutcome | undefined;
   /** The work after the finish; it never rejects. */
   work: Promise<void> | undefined;
+  /** The work is attaching the source, which a cancel cannot stop: it waits for the end. */
+  attaching: boolean;
 }
 
 export function newBatch(id: string, userId: string, openedAt: number): HeldBatch {
   return {
     ...{ id, userId, openedAt, bytes: 0, files: 0, phase: 'open', busy: undefined },
     ...{ expired: false, startedAt: undefined, endedAt: undefined },
-    ...{ progress: undefined, outcome: undefined, work: undefined },
+    ...{ progress: undefined, outcome: undefined, work: undefined, attaching: false },
   };
 }
 

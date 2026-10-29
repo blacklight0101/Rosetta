@@ -180,15 +180,13 @@ export class WorkbookBatches {
     return ok(stateOf(batch, this.deps.clock.now().getTime()));
   }
 
-  /**
-   * RF-150, RF-159: stops a batch that is open or at work (a batch at work publishes nothing). A batch
-   * whose work already ended is left as it is and its state answered, so the page shows how it ended.
-   */
+  /** RF-150, RF-159: stops an open batch or one at work; one that ended (or is attaching) is left. */
   async cancel(request: BatchRef): Promise<Result<CancelOutcome, BatchProblem>> {
     await this.sweep();
     const located = await this.locate(request);
     if (!located.ok) return located;
     const { batch } = located.value;
+    if (batch.attaching) await batch.work;
     if (hasEnded(batch)) {
       return ok({ cancelled: false, state: stateOf(batch, this.deps.clock.now().getTime()) });
     }
@@ -252,6 +250,9 @@ export class WorkbookBatches {
       ...{ batchId: batch.id, actor: request.actor, ip: request.ip, project, signal },
       onProgress: (progress) => {
         batch.progress = progress;
+      },
+      onAttach: () => {
+        batch.attaching = true;
       },
     }).catch((error: unknown) => refusedAnyway(this.deps, error));
     batch.outcome = outcome;
