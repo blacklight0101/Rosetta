@@ -22,6 +22,7 @@ const reasons: Readonly<Record<ModelFindingKind, string>> = {
   'risk-verifier-below-largest': 'its risk class needs the largest tier as verifier',
   'verifier-below-builder': 'its verifier is of a lower tier than its builder',
   'risk-not-shown': 'its risk class is not shown next to its difficulty',
+  'escalation-owner-approval': 'uses the escalation model, which needs the owner approval',
   'local-model': 'a local model builds only cards of difficulty 1 and 2 (scripted work)',
 };
 
@@ -34,6 +35,7 @@ function findingsOf(task: PlanTask, handoff: HandoffPackage): ModelFinding[] {
     ...{ builderTier: tier, builderModel: modelForTier(method, tier) },
     ...{ verifierTier: verifier, verifierModel: modelForTier(method, verifier) },
     local: isLocalTier(method, tier),
+    status: undefined,
   });
 }
 
