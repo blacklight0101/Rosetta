@@ -46,7 +46,7 @@ export function typedAnswers(brief: TypedSource): Partial<Record<TypedQuestionId
  * answer. The default is never the chosen one then; Rosetta keeps it only as the reference that
  * check compares with: the dependency check for the style, the strategy-fit check for the strategy.
  */
-export const referenceChecks = {
+const referenceChecks = {
   style: "Rosetta's dependency check",
   strategy: "Rosetta's strategy-fit check",
 } as const;
