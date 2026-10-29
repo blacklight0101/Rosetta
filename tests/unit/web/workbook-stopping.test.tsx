@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/preact';
+import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { failure, json } from './fake-api.js';
 import { installFakeUploadServer } from './fake-upload-server.js';
@@ -50,11 +50,20 @@ it('RF-159 shows Stopping... with Cancel disabled while the Cancel request waits
   await sendAll(server);
   await screen.findByTestId('processing-detail');
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+  const cancel = await screen.findByRole('button', { name: 'Cancel' });
+  cancel.focus();
+  fireEvent.click(cancel);
 
   const stopping = await screen.findByRole('button', { name: /Stopping/u });
   expect(stopping.hasAttribute('disabled')).toBe(true);
   expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+  expect(stopping.getAttribute('aria-busy')).toBe('true');
+  const status = screen
+    .getAllByRole('status')
+    .find((el) => el.textContent === 'Stopping the work.');
+  expect(status).toBeDefined();
+  // The focused button is disabled: the keyboard focus moves to the status, which says what is going on.
+  expect(document.activeElement).toBe(status);
   release();
   expect((await screen.findByRole('alert')).textContent).toContain('Nothing was published');
 });
@@ -75,4 +84,30 @@ it('RF-159 a Cancel request that fails gives the Cancel button back', async () =
   const again = await screen.findByRole('button', { name: 'Cancel' });
   expect(again.hasAttribute('disabled')).toBe(false);
   expect(screen.queryByRole('button', { name: /Stopping/u })).toBeNull();
+});
+
+it('RF-159 a Cancel the server answers with 409 gives the Cancel button, and the focus, back', async () => {
+  const server = installFakeUploadServer();
+  renderWorkbookTab({
+    ...happyAnswers(),
+    [`GET ${stateRoute}`]: reading,
+    [`DELETE ${stateRoute}`]: json(409, {
+      ...{ batchId: 'b-1', phase: 'processing', files: 3, elapsedMs: 3000 },
+      progress: rendering,
+    }),
+  });
+  await chooseValid();
+  await sendAll(server);
+  await screen.findByTestId('processing-detail');
+
+  const cancel = await screen.findByRole('button', { name: 'Cancel' });
+  cancel.focus();
+  fireEvent.click(cancel);
+
+  const again = await screen.findByRole('button', { name: 'Cancel' });
+  expect(again.hasAttribute('disabled')).toBe(false);
+  expect(again.getAttribute('aria-busy')).toBeNull();
+  await waitFor(() => {
+    expect(document.activeElement).toBe(again);
+  });
 });
