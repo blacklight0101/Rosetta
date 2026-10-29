@@ -1,5 +1,9 @@
+import type * as Fs from 'node:fs';
 import type * as FsPromises from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearReads, readsByPath } from '../../../support/read-counter.js';
 import {
   projectId,
   sampleBook,
@@ -8,42 +12,37 @@ import {
   useStagingFolders,
 } from '../../../support/workbook-staging-harness.js';
 
-// RF-152, RF-159, DEC-183, P5-47: the file-system port is counted. Every read through
-// `node:fs/promises` is noted with its path and the bytes it returned. A file that was just written
-// (an upload, a rendered file) must not be read again to be hashed: the hash came from the bytes
-// that were written.
+// RF-152, RF-159, DEC-183, P5-47, P5-50: the file-system port is counted. Every read through
+// `node:fs`, `node:fs/promises` and a `FileHandle` is noted with its path and the bytes it returned:
+// `read`, `readFile`, `createReadStream`, `readFileSync`. A file that was just written (an upload, a
+// rendered file) must not be read again to be hashed: the hash came from the bytes that were written.
 
-const reads = vi.hoisted(() => ({ byPath: new Map<string, number>() }));
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof Fs>();
+  const { countStream, noteRead, byteLength } = await import('../../../support/read-counter.js');
+  return {
+    ...actual,
+    createReadStream: (...args: Parameters<typeof actual.createReadStream>) =>
+      countStream(actual.createReadStream(...args), args[0]),
+    readFileSync: (...args: Parameters<typeof actual.readFileSync>) => {
+      // eslint-disable-next-line n/no-sync -- the wrapped call itself.
+      const bytes = actual.readFileSync(...args);
+      noteRead(args[0], byteLength(bytes));
+      return bytes;
+    },
+  };
+});
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof FsPromises>();
-  const note = (path: unknown, bytes: number): void => {
-    const key = String(path);
-    reads.byPath.set(key, (reads.byPath.get(key) ?? 0) + bytes);
-  };
+  const { countHandle, noteRead, byteLength } = await import('../../../support/read-counter.js');
   return {
     ...actual,
-    open: async (...args: Parameters<typeof actual.open>) => {
-      const handle = await actual.open(...args);
-      const path = args[0];
-      return new Proxy(handle, {
-        get(target, name) {
-          const value: unknown = Reflect.get(target, name, target);
-          if (typeof value !== 'function') return value;
-          if (name !== 'read') return (value as (...a: unknown[]) => unknown).bind(target);
-          return async (...readArgs: unknown[]) => {
-            const result = await (
-              value as (...a: unknown[]) => Promise<{ bytesRead: number }>
-            ).bind(target)(...readArgs);
-            note(path, result.bytesRead);
-            return result;
-          };
-        },
-      });
-    },
+    open: async (...args: Parameters<typeof actual.open>) =>
+      countHandle(await actual.open(...args), String(args[0])),
     readFile: async (...args: Parameters<typeof actual.readFile>) => {
       const bytes = await actual.readFile(...args);
-      note(args[0], bytes.length);
+      noteRead(args[0], byteLength(bytes));
       return bytes;
     },
   };
@@ -51,11 +50,41 @@ vi.mock('node:fs/promises', async (importOriginal) => {
 
 const folders = useStagingFolders(afterEach);
 beforeEach(() => {
-  reads.byPath.clear();
+  clearReads();
 });
 
 /** The head of a workbook is looked at to tell a package from a compound file (4 bytes). */
 const SIGNATURE_BYTES = 4;
+
+describe('the read counter', () => {
+  it('P5-50 counts a read through each API it covers', async () => {
+    const { dataDir } = await folders();
+    const path = join(dataDir, 'probe.bin');
+    const content = Buffer.alloc(3000, 7);
+    await writeFile(path, content);
+    const { createReadStream, readFileSync } = await import('node:fs');
+    const { open } = await import('node:fs/promises');
+
+    const chunks: Buffer[] = [];
+    for await (const chunk of createReadStream(path)) chunks.push(chunk as Buffer);
+    expect(Buffer.concat(chunks).equals(content)).toBe(true);
+    expect(readsByPath.get(path)).toBe(content.length);
+    clearReads();
+
+    // eslint-disable-next-line n/no-sync -- the counter covers the sync API too.
+    readFileSync(path);
+    expect(readsByPath.get(path)).toBe(content.length);
+    clearReads();
+
+    const handle = await open(path);
+    try {
+      await handle.readFile();
+    } finally {
+      await handle.close();
+    }
+    expect(readsByPath.get(path)).toBe(content.length);
+  });
+});
 
 describe('workbook batch, files read after they are written', () => {
   it('RF-152 reads no uploaded file and no rendered file again to hash it', async () => {
@@ -64,7 +93,7 @@ describe('workbook batch, files read after they are written', () => {
       ['Pricing.xlsx', await sampleBook()],
       ['Rates.xlsx', await sampleBook()],
     ]);
-    reads.byPath.clear();
+    clearReads();
 
     const published = await staging.publish(id, {
       projectId,
@@ -72,7 +101,7 @@ describe('workbook batch, files read after they are written', () => {
       signal: new AbortController().signal,
     });
 
-    const inSources = [...reads.byPath].filter(([path]) => path.startsWith(dataDir));
+    const inSources = [...readsByPath].filter(([path]) => path.startsWith(dataDir));
     const rendered = inSources.filter(
       ([path]) => path.includes(published.key) || !path.endsWith('.xlsx'),
     );
@@ -90,7 +119,7 @@ describe('workbook batch, files read after they are written', () => {
       uploadedAt,
       signal: new AbortController().signal,
     });
-    reads.byPath.clear();
+    clearReads();
 
     await staging.publish((await stageFiles(staging, [['Pricing.xlsx', book]])).id, {
       projectId,
@@ -98,7 +127,7 @@ describe('workbook batch, files read after they are written', () => {
       signal: new AbortController().signal,
     });
 
-    const treeReads = [...reads.byPath].filter(
+    const treeReads = [...readsByPath].filter(
       ([path]) => path.startsWith(dataDir) && path.includes('files'),
     );
     expect(treeReads).toEqual([]);
