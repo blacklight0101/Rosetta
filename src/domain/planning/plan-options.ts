@@ -24,6 +24,14 @@ interface StyleOption {
 interface LayerOptions {
   readonly layer: StackLayer;
   readonly options: readonly [string, string];
+  readonly descriptions: readonly [string, string];
+}
+
+type DraftOption = string | { readonly name: string; readonly description: string };
+
+/** Stub until P7-10 splits a long option into a name and a description. */
+export function splitOption(text: string): { readonly name: string; readonly description: string } {
+  return { name: text.trim(), description: '' };
 }
 
 export interface PlanOptions {
@@ -47,7 +55,7 @@ export interface OptionsDraft {
       readonly evidence: readonly string[];
     }[];
   };
-  readonly stack: readonly { readonly layer: string; readonly options: readonly string[] }[];
+  readonly stack: readonly { readonly layer: string; readonly options: readonly DraftOption[] }[];
 }
 
 /** Model-written text in a message: quoted and cut short. */
@@ -124,10 +132,11 @@ function architectureOf(
 }
 
 /** The first two different options (compared without case), each bounded; fewer is no answer. */
-function twoOptions(texts: readonly string[]): [string, string] | undefined {
+function twoOptions(drafts: readonly DraftOption[]): [string, string] | undefined {
   const seen = new Set<string>();
   const kept: string[] = [];
-  for (const text of texts) {
+  for (const draft of drafts) {
+    const text = typeof draft === 'string' ? draft : draft.name;
     const option = text.trim().slice(0, MAX_OPTION_CHARS).trim();
     if (option === '' || seen.has(option.toLowerCase())) continue;
     seen.add(option.toLowerCase());
@@ -149,7 +158,7 @@ function stackOf(draft: OptionsDraft['stack']): Stack {
     if (given.length === 0) problems.push(`The layer ${layer} has no options.`);
     else if (options === undefined)
       problems.push(`The layer ${layer} needs two different options.`);
-    else layers.push({ layer, options });
+    else layers.push({ layer, options, descriptions: ['', ''] });
   }
   return problems.length > 0 ? err(problems) : ok(layers);
 }
