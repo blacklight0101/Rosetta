@@ -148,6 +148,13 @@ export class ZipUploadStore implements UploadStore {
       },
       zipPath,
     );
+    // RF-159, DEC-188: a zip that holds workbooks is told to the caller, which answers at once.
+    if (
+      request.onWorkbooks !== undefined &&
+      (await this.options.extractor.holdsWorkbooks(zipPath))
+    ) {
+      await request.onWorkbooks();
+    }
     const extraction = await this.extract(zipPath, filesDir, request.signal);
     await rm(zipPath, { force: true });
     const books = await this.renderBooks(filesDir, request);

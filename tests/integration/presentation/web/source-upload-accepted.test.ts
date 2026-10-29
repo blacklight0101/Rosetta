@@ -45,6 +45,7 @@ async function accepted() {
   const { amy, uploads } = world;
   const id = await createUploadProject(amy);
   uploads.held = { entries: [entry], lines: [line], leftOut: [] };
+  uploads.announcesWorkbooks = true;
   uploads.reports = [rendering];
   uploads.stopsOnAbort = true;
   let release: () => void = () => undefined;

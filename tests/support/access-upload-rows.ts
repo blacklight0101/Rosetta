@@ -9,20 +9,6 @@ const zipBody = (): Buffer => Buffer.from([0x50, 0x4b, 0x03, 0x04]);
 const zipHeaders = { 'content-type': 'application/zip' };
 
 export const uploadRows: Readonly<Record<string, readonly Probe[]>> = {
-  'GET /api/projects/:id/source/progress': [
-    {
-      method: 'GET',
-      url: (context: Context) => `/api/projects/${context.projectId}/source/progress`,
-      expected: ownerOnly(404),
-    },
-  ],
-  'HEAD /api/projects/:id/source/progress': [
-    {
-      method: 'HEAD',
-      url: (context: Context) => `/api/projects/${context.projectId}/source/progress`,
-      expected: ownerOnly(404),
-    },
-  ],
   'PUT /api/projects/:id/source': [
     {
       method: 'PUT',

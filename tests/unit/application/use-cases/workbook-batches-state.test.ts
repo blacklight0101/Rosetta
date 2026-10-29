@@ -91,7 +91,7 @@ describe('WorkbookBatches.finish accepts the batch at once', () => {
     const state = await stateOf(test, batchId);
 
     expect(state.elapsedMs).toBe(2500);
-    expect(state.summary?.workbooks.map((book) => book.name)).toEqual(['Pricing.xlsx']);
+    expect(state.summary?.workbooks?.map((book) => book.name)).toEqual(['Pricing.xlsx']);
     expect((await test.projects.find(amy.userId, test.project.id))?.upload?.workbooks).toBe(1);
   });
 });

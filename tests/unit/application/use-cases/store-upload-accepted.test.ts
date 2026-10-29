@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { WorkbookProgress } from '../../../../src/application/ports/workbook-staging.js';
 import type { BatchState } from '../../../../src/application/use-cases/workbook-batches.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
@@ -18,9 +19,9 @@ const entry = {
   counts,
 };
 const line = { name: 'docs/Pricing.xlsx', sheets: 2, cells: 30, formulas: 4, macroModules: 0 };
-const rendering = {
+const rendering: WorkbookProgress = {
   ...{ step: 'rendering', workbook: 1, workbooks: 2, sheet: 3, sheets: 5, cells: 400 },
-} as const;
+};
 
 function held() {
   return { entries: [entry], lines: [line], leftOut: [] };
@@ -51,6 +52,7 @@ describe('StoreUpload a zip that holds workbooks is accepted at once', () => {
   it('RF-159 answers with the batch at work while the store has not ended', async () => {
     const { useCase, project, uploads, batches } = await setup();
     uploads.held = held();
+    uploads.announcesWorkbooks = true;
     uploads.reports = [rendering];
     const release = hold(uploads);
 
@@ -68,6 +70,7 @@ describe('StoreUpload a zip that holds workbooks is accepted at once', () => {
   it('RF-159 ends with the summary of the zip, the source of the project and the audit rows', async () => {
     const { useCase, project, uploads, batches, projects, auditLog } = await setup();
     uploads.held = held();
+    uploads.announcesWorkbooks = true;
     const release = hold(uploads);
     const state = await accepted(await useCase.execute(request(project)));
 
@@ -91,6 +94,7 @@ describe('StoreUpload a zip whose work fails', () => {
   it('RF-158 ends refused with the error that stopped the work', async () => {
     const { useCase, project, uploads, batches } = await setup();
     uploads.held = held();
+    uploads.announcesWorkbooks = true;
     uploads.failWith = new RosettaError(ERROR_CODES.zipNotReadable);
     const state = await accepted(await useCase.execute(request(project)));
 
@@ -109,6 +113,7 @@ describe('StoreUpload a zip at work and a client that goes away', () => {
   it('RF-159 a client that goes away after the answer does not stop the work', async () => {
     const { useCase, project, uploads, batches } = await setup();
     uploads.held = held();
+    uploads.announcesWorkbooks = true;
     uploads.stopsOnAbort = true;
     const release = hold(uploads);
     const closing = new AbortController();
@@ -141,6 +146,7 @@ describe('StoreUpload a zip at work and a client that goes away', () => {
   it('RF-128 a second zip is refused while the first is being stored, then accepted after it ended', async () => {
     const { useCase, project, uploads } = await setup();
     uploads.held = held();
+    uploads.announcesWorkbooks = true;
     const release = hold(uploads);
     await accepted(await useCase.execute(request(project)));
 
@@ -158,6 +164,7 @@ describe('StoreUpload Cancel of a zip at work', () => {
   it('RF-159 publishes nothing: no source, no audit row, and the batch is gone', async () => {
     const { useCase, project, uploads, batches, projects, auditLog } = await setup();
     uploads.held = held();
+    uploads.announcesWorkbooks = true;
     uploads.stopsOnAbort = true;
     const release = hold(uploads);
     const state = await accepted(await useCase.execute(request(project)));
@@ -178,6 +185,7 @@ describe('StoreUpload Cancel of a zip stored just as it came', () => {
   it('RF-159 deletes the snapshot of a zip stored just as the Cancel came', async () => {
     const { useCase, project, uploads, batches, projects } = await setup();
     uploads.held = held();
+    uploads.announcesWorkbooks = true;
     const release = hold(uploads);
     const state = await accepted(await useCase.execute(request(project)));
 
@@ -192,6 +200,7 @@ describe('StoreUpload Cancel of a zip stored just as it came', () => {
   it('RF-159, DEC-188 a Cancel after the end answers with the state and keeps the source', async () => {
     const { useCase, project, uploads, batches, projects } = await setup();
     uploads.held = held();
+    uploads.announcesWorkbooks = true;
     const state = await accepted(await useCase.execute(request(project)));
     await settle();
 
@@ -212,6 +221,7 @@ describe('StoreUpload the batch of a zip belongs to its owner', () => {
   it('RF-1105 answers not found to another user for the state, the current batch and the Cancel', async () => {
     const { useCase, project, uploads, batches } = await setup();
     uploads.held = held();
+    uploads.announcesWorkbooks = true;
     const release = hold(uploads);
     const state = await accepted(await useCase.execute(request(project)));
     const stranger = { userId: '00000000-0000-4000-9000-0000000000b2', role: 'user' } as const;
@@ -242,9 +252,11 @@ describe('StoreUpload a zip that holds no workbook', () => {
   it('RF-159 forgets the outcome of an earlier zip, which no longer describes the source', async () => {
     const { useCase, project, uploads, batches } = await setup();
     uploads.held = held();
+    uploads.announcesWorkbooks = true;
     await accepted(await useCase.execute(request(project)));
     await settle();
     uploads.held = undefined;
+    uploads.announcesWorkbooks = false;
 
     await useCase.execute(request(project));
 

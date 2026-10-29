@@ -1,9 +1,11 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import type { Clock } from '../ports/clock.js';
 import type { WorkbookProgress, WorkbookStaging } from '../ports/workbook-staging.js';
 import type { Project } from '../projects/project.js';
 import { attachWorkbooks, type AttachDependencies } from './attach-workbooks.js';
-import type { BatchOutcome } from './workbook-batch-state.js';
+import { endBatch, type BatchOutcome, type HeldBatch } from './workbook-batch-state.js';
+import type { FinishBatchRequest } from './workbook-batch-types.js';
 
 // RF-150, RF-158, RF-159, DEC-183: the work after the finish was accepted. A workbook batch is read,
 // rendered and published and becomes the source of the project, or it ends with the error that stopped
@@ -88,4 +90,27 @@ export async function refusedAnyway(
     // The log is down as well: the outcome still ends the batch.
   }
   return { kind: 'refused', error };
+}
+
+/** RF-159: the work after the request; it never rejects, its outcome is kept on the batch. */
+export async function runFinish(
+  deps: FinishDependencies & { readonly clock: Clock },
+  input: {
+    readonly request: FinishBatchRequest;
+    readonly project: Project;
+    readonly batch: HeldBatch;
+    readonly signal: AbortSignal;
+  },
+): Promise<void> {
+  const { request, project, batch, signal } = input;
+  const outcome = await finishWorkbooks(deps, {
+    ...{ batchId: batch.id, actor: request.actor, ip: request.ip, project, signal },
+    onProgress: (progress) => {
+      batch.progress = progress;
+    },
+    onAttach: () => {
+      batch.attaching = true;
+    },
+  }).catch((error: unknown) => refusedAnyway(deps, error));
+  endBatch(batch, outcome, deps.clock.now().getTime());
 }

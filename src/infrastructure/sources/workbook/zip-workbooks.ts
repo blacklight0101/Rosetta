@@ -12,6 +12,7 @@ import type { WorkbookEntry } from '../../../domain/sources/source.js';
 import { LimitCounter } from '../entry-guards.js';
 import { workbookTooManyFiles } from './workbook-errors.js';
 import type { WorkbookLimits } from './workbook-limits.js';
+import { isWorkbookName } from './workbook-extensions.js';
 import { readWorkbook } from './workbook-reader.js';
 import type { WorkbookModel } from './workbook-model.js';
 import type { RenderedWorkbook } from './workbook-renderer.js';
@@ -31,7 +32,6 @@ export interface ZipWorkbooks {
   readonly leftOut: readonly LeftOut[];
 }
 
-const WORKBOOK_EXTENSIONS = ['.xlsx', '.xlsm', '.xls', '.xlsb'];
 const byCodeUnit = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
 /** The relative paths (with `/`) of the workbook files of the tree, in code-unit order. */
@@ -39,8 +39,7 @@ async function workbookPaths(root: string): Promise<string[]> {
   const found: string[] = [];
   const entries = await readdir(root, { recursive: true, withFileTypes: true });
   for (const entry of entries) {
-    const lower = entry.name.toLowerCase();
-    if (!entry.isFile() || !WORKBOOK_EXTENSIONS.some((ext) => lower.endsWith(ext))) continue;
+    if (!entry.isFile() || !isWorkbookName(entry.name)) continue;
     found.push(relative(root, join(entry.parentPath, entry.name)).split(sep).join('/'));
   }
   return found.sort(byCodeUnit);

@@ -8,6 +8,7 @@ import type { ZipExtraction, ZipExtractor } from '../../application/ports/zip-ex
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { isFileSystemFailure, snapshotWriteFailed } from '../github/snapshot-errors.js';
 import { LimitCounter } from './entry-guards.js';
+import { isWorkbookName } from './workbook/workbook-extensions.js';
 import { planExtraction, type PlannedFile } from './zip-entry-plan.js';
 import { zipNotReadable, zipTooLarge } from './zip-errors.js';
 import type { ZipExtractionLimits } from './zip-limits.js';
@@ -76,6 +77,25 @@ export class YauzlZipExtractor implements ZipExtractor {
       if (written.bytes !== entry.uncompressedSize) {
         throw zipNotReadable('an entry is not the size its header declares');
       }
+    }
+  }
+
+  // RF-159, DEC-188
+  async holdsWorkbooks(zipPath: string): Promise<boolean> {
+    let zip: ZipFile | undefined;
+    try {
+      zip = await openPromise(zipPath, {
+        lazyEntries: true,
+        autoClose: false,
+        decodeStrings: false,
+        validateEntrySizes: false,
+      });
+      const plan = await planExtraction(zip, this.limits);
+      return plan.files.some((file) => isWorkbookName(file.segments.at(-1) ?? ''));
+    } catch (error) {
+      throw failureOf(error, new AbortController().signal);
+    } finally {
+      zip?.close();
     }
   }
 

@@ -64,6 +64,11 @@ export async function batchCase(project: Project = workbookProject()): Promise<B
   return { useCase, project, projects, staging, uploads, runs, auditLog, clock, logger };
 }
 
+/** The summary of a batch of workbooks (the batch of a zip has the summary of the upload). */
+function isBatchSummary(summary: object): summary is WorkbookBatchSummary {
+  return 'skipped' in summary && Array.isArray(summary.skipped);
+}
+
 export function bodyOf(bytes: number): AsyncIterable<Uint8Array> {
   return (async function* () {
     await Promise.resolve();
@@ -101,8 +106,9 @@ export async function finishAndWait(
   for (let turn = 0; turn < 1000; turn += 1) {
     const state = await test.useCase.state(request);
     if (!state.ok) return state;
-    if (state.value.phase === 'stored' && state.value.summary !== undefined) {
-      return { ok: true, value: state.value.summary };
+    const { summary } = state.value;
+    if (state.value.phase === 'stored' && summary !== undefined && isBatchSummary(summary)) {
+      return { ok: true, value: summary };
     }
     if (state.value.phase === 'refused') {
       const { refusal } = state.value;
