@@ -8,7 +8,7 @@ import {
   MODEL_SLOTS,
   type MethodDraft,
 } from './build-method.js';
-import { ownAnswersOf, ownIsEmpty, TEXT_QUESTIONS, TYPED } from './own-answers.js';
+import { ownAnswersOf, ownIsEmpty, ownText, TEXT_QUESTIONS, TYPED } from './own-answers.js';
 import { CONTEXT_FIELDS, STACK_LAYERS, STEP_IDS, questionsOf, type ContextField } from './steps.js';
 
 // RF-605, RF-611, DEC-80, data-model.md section 3.20: the answers on the page before they are saved.
@@ -40,6 +40,11 @@ export interface Draft extends MethodDraft {
   readonly chosen: Readonly<Record<string, string>>;
   /** RF-645: the typed text of a question that keeps it apart (principles, architecture, migration, build method). */
   readonly typed: Readonly<Record<string, string>>;
+  /**
+   * DEC-184: the text questions with a typed answer that the saved brief still lists as defaulted (a
+   * brief saved before P6-21). The planner does not read that text until the brief is saved again.
+   */
+  readonly typedDefaulted: readonly string[];
 }
 
 /** Every question id of the brief, in question order (data-model.md section 3.20). */
@@ -69,7 +74,16 @@ export function draftOf(brief: Brief): Draft {
     answered: QUESTION_IDS.filter((id) => !brief.defaulted.includes(id)),
     chosen: brief.chosen ?? {},
     typed: brief.typed ?? {},
+    typedDefaulted: TEXT_QUESTIONS.filter(
+      (id) =>
+        brief.defaulted.includes(id) && ownText(brief.chosen ?? {}, brief.typed ?? {}, id) !== '',
+    ),
   };
+}
+
+/** DEC-184: the draft once saved; every typed answer it holds was sent, so none stays defaulted. */
+export function savedDraft(draft: Draft): Draft {
+  return draft.typedDefaulted.length === 0 ? draft : { ...draft, typedDefaulted: [] };
 }
 
 /**
@@ -133,8 +147,8 @@ export function answersOf(draft: Draft): BriefAnswers {
   const stack = stackOf(draft);
   const asked = CONTEXT_FIELDS.filter((field) => answered(`context.${field}`));
   const context = contextOf(draft.context);
-  // A question answered by typing sends its text instead of an option, and not its field, so it stays
-  // defaulted (owner, 2026-10-28); an empty text sends nothing.
+  // A question answered by typing sends its text instead of an option, and not its field: the server
+  // keeps the default value and the text reaches the planner (DEC-184); an empty text sends nothing.
   const plain = (id: string): boolean => answered(id) && draft.chosen[id] !== TYPED;
   const sends = (id: string): boolean => {
     if (TEXT_QUESTIONS.some((each) => each === id)) {

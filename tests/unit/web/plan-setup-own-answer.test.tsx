@@ -113,8 +113,10 @@ describe('the migration question: the option chosen', () => {
     expect(saves(page)).toEqual([
       { chosen: { migration: 'typed' }, typed: { migration: 'Move one module a week.' } },
     ]);
-    const after = screen.getByRole('region', { name: 'What I recorded' });
-    expect(within(after).getByText(new RegExp(NOTE, 'u'))).not.toBeNull();
+    await waitFor(() => {
+      const after = screen.getByRole('region', { name: 'What I recorded' });
+      expect(within(after).getByText(new RegExp(NOTE, 'u'))).not.toBeNull();
+    });
   });
 });
 
