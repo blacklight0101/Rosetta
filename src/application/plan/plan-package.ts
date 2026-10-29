@@ -50,8 +50,9 @@ function openQuestionsOf(
 ): HandoffPackage['openQuestions'] {
   return questions
     .filter((question) => question.answer.trim() === '')
-    .map(({ cardId, question }) => ({
+    .map(({ cardId, question, options }) => ({
       ...{ cardId, question },
+      ...(options === undefined ? {} : { options }),
       area: cards.find((card) => card.id === cardId)?.area ?? '',
     }));
 }

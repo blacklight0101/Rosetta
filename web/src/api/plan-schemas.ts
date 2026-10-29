@@ -65,6 +65,9 @@ const briefSchema = z.object({
       .optional(),
   }),
   defaulted: z.array(z.string()),
+  /** RF-645: the option that answered each question, or "typed"; absent in an older brief. */
+  chosen: z.record(z.string(), z.string()).optional(),
+  typed: z.record(z.string(), z.string()).optional(),
 });
 
 export const briefViewSchema = z.object({

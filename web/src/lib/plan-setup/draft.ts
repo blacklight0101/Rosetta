@@ -8,6 +8,7 @@ import {
   MODEL_SLOTS,
   type MethodDraft,
 } from './build-method.js';
+import { ownAnswersOf, ownIsEmpty, TEXT_QUESTIONS, TYPED } from './own-answers.js';
 import { CONTEXT_FIELDS, STACK_LAYERS, STEP_IDS, questionsOf, type ContextField } from './steps.js';
 
 // RF-605, RF-611, DEC-80, data-model.md section 3.20: the answers on the page before they are saved.
@@ -35,6 +36,10 @@ export interface Draft extends MethodDraft {
   readonly askedBefore: boolean;
   /** The ids of the questions the person answered (the ones the brief does not list as defaulted). */
   readonly answered: readonly string[];
+  /** RF-645: the option that answered each question, or "typed". */
+  readonly chosen: Readonly<Record<string, string>>;
+  /** RF-645: the typed text of a question that keeps it apart (principles, architecture, migration, build method). */
+  readonly typed: Readonly<Record<string, string>>;
 }
 
 /** Every question id of the brief, in question order (data-model.md section 3.20). */
@@ -62,6 +67,8 @@ export function draftOf(brief: Brief): Draft {
     ...methodDraftOf(brief.buildMethod, brief.defaulted),
     askedBefore: brief.savedAt !== null && brief.defaulted.includes('buildMethod'),
     answered: QUESTION_IDS.filter((id) => !brief.defaulted.includes(id)),
+    chosen: brief.chosen ?? {},
+    typed: brief.typed ?? {},
   };
 }
 
@@ -126,9 +133,20 @@ export function answersOf(draft: Draft): BriefAnswers {
   const stack = stackOf(draft);
   const asked = CONTEXT_FIELDS.filter((field) => answered(`context.${field}`));
   const context = contextOf(draft.context);
+  // A question answered by typing sends its text instead of an option, and not its field, so it stays
+  // defaulted (owner, 2026-10-28); an empty text sends nothing.
+  const plain = (id: string): boolean => answered(id) && draft.chosen[id] !== TYPED;
+  const sends = (id: string): boolean => {
+    if (TEXT_QUESTIONS.some((each) => each === id)) {
+      if (draft.chosen[id] === TYPED) return !ownIsEmpty(draft.chosen, draft.typed, id);
+      return answered(id);
+    }
+    if (id.startsWith('stack.')) return stack.some((entry) => `stack.${entry.layer}` === id);
+    return answered(id);
+  };
   return {
     ...(answered('principles') ? { principles: draft.principles } : {}),
-    ...(answered('architecture')
+    ...(plain('architecture')
       ? {
           architecture: {
             style: draft.style,
@@ -137,12 +155,13 @@ export function answersOf(draft: Draft): BriefAnswers {
           },
         }
       : {}),
-    ...(answered('migration') ? { migration: draft.migration } : {}),
+    ...(plain('migration') ? { migration: draft.migration } : {}),
     ...(stack.length === 0 ? {} : { stack }),
     ...(asked.length === 0
       ? {}
       : { context: Object.fromEntries(asked.map((field) => [field, context[field]])) }),
-    ...(answered('buildMethod') ? { buildMethod: buildMethodOf(draft) } : {}),
+    ...(plain('buildMethod') ? { buildMethod: buildMethodOf(draft) } : {}),
+    ...ownAnswersOf(draft, sends),
   };
 }
 
@@ -154,6 +173,15 @@ function longTexts(context: ContextText): Record<string, string> {
     if (context[field].trim().length > MAX_TEXT) {
       found[`context.${field}`] = `Use at most ${String(MAX_TEXT)} characters.`;
     }
+  }
+  return found;
+}
+
+function typedProblems(draft: Draft): Record<string, string> {
+  const found: Record<string, string> = {};
+  for (const [id, text] of Object.entries(draft.typed)) {
+    if (text.trim().length > MAX_TEXT)
+      found[`typed.${id}`] = `Use at most ${String(MAX_TEXT)} characters.`;
   }
   return found;
 }
@@ -191,6 +219,6 @@ export function problemsOf(draft: Draft): Readonly<Record<string, string>> {
       found[`stack.${layer}`] = `Use at most ${String(MAX_CHOICE)} characters.`;
     }
   }
-  Object.assign(found, methodProblems(draft));
+  Object.assign(found, typedProblems(draft), methodProblems(draft));
   return found;
 }

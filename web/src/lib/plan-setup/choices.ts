@@ -1,5 +1,6 @@
 import type { Catalogue, PlanOptions } from '../../api/plan-schemas.js';
 import { withAnswered, type Draft } from './draft.js';
+import { TYPED } from './own-answers.js';
 import { STYLE_GROUP } from './steps.js';
 
 // RF-605, RF-608, RF-609: how a click on the page changes the draft. A choice records the question
@@ -27,9 +28,8 @@ export function shownStyle(
 export function chooseStyle(draft: Draft, options: PlanOptions | undefined, style: string): Draft {
   const evidence =
     options?.architecture.options.find((option) => option.style === style)?.evidence ?? [];
-  return withAnswered({ ...draft, style, recommended: proposedOf(options), evidence }, [
-    'architecture',
-  ]);
+  const next = { ...draft, style, recommended: proposedOf(options), evidence };
+  return withAnswered(chosen(next, 'architecture', style), ['architecture']);
 }
 
 /**
@@ -39,13 +39,20 @@ export function chooseStyle(draft: Draft, options: PlanOptions | undefined, styl
 export function chooseLayer(
   draft: Draft,
   layer: string,
-  pick: { readonly choice: string; readonly custom: boolean; readonly offered?: readonly string[] },
+  pick: {
+    readonly choice: string;
+    readonly custom: boolean;
+    readonly offered?: readonly string[];
+    /** RF-645: the id of the option picked; a typed choice needs none. */
+    readonly option?: string;
+  },
 ): Draft {
   const { choice, custom, offered = [] } = pick;
   const others = Object.fromEntries(Object.entries(draft.stack).filter(([key]) => key !== layer));
-  if (choice.trim() === '') return { ...draft, stack: others };
+  const marked = chosen(draft, `stack.${layer}`, custom ? TYPED : (pick.option ?? ''));
+  if (choice.trim() === '') return { ...marked, stack: others };
   const entry = { layer, choice, custom, ...(offered.length === 0 ? {} : { offered }) };
-  return withAnswered({ ...draft, stack: { ...others, [layer]: entry } }, [`stack.${layer}`]);
+  return withAnswered({ ...marked, stack: { ...others, [layer]: entry } }, [`stack.${layer}`]);
 }
 
 /** The principles kept, in catalogue order. */
@@ -58,4 +65,35 @@ export function togglePrinciple(
   const kept = new Set(on ? [...draft.principles, id] : draft.principles.filter((p) => p !== id));
   const principles = catalogue.entries.map((entry) => entry.id).filter((each) => kept.has(each));
   return withAnswered({ ...draft, principles }, ['principles']);
+}
+
+/** RF-645: the draft with the option that answers a question recorded; an empty id clears it. */
+export function chosen(draft: Draft, question: string, option: string): Draft {
+  const rest = Object.fromEntries(Object.entries(draft.chosen).filter(([id]) => id !== question));
+  return { ...draft, chosen: option === '' ? rest : { ...rest, [question]: option } };
+}
+
+/**
+ * RF-645: the draft with a question answered by typing; an empty text keeps the choice but sends
+ * nothing. The typed text does not answer the question's own field, so the question keeps its
+ * default and stays defaulted until typed answers reach the planner (owner, 2026-10-28).
+ */
+export function typeOwn(draft: Draft, question: string, text: string): Draft {
+  return { ...chosen(draft, question, TYPED), typed: { ...draft.typed, [question]: text } };
+}
+
+/** RF-645: an option picked for a question that has no field of its own for a typed answer. */
+export function chooseOption(draft: Draft, question: string, option: string): Draft {
+  return withAnswered(chosen(draft, question, option), [question]);
+}
+
+/** RF-645: a typed principle beside the toggles; an empty text takes the typed answer back. */
+export function typePrinciple(draft: Draft, text: string): Draft {
+  if (text.trim() === '') {
+    const typed = Object.fromEntries(
+      Object.entries(draft.typed).filter(([id]) => id !== 'principles'),
+    );
+    return { ...chosen(draft, 'principles', ''), typed };
+  }
+  return typeOwn(draft, 'principles', text);
 }
