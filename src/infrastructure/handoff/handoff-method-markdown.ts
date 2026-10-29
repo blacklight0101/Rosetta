@@ -9,6 +9,7 @@ import {
   ownPrincipleBullets,
   referenceLine,
 } from './handoff-own-answers-markdown.js';
+import { writesAgentFolder } from './handoff-agents-folder.js';
 import { decisionLink, handoffFiles } from './handoff-links.js';
 import { metricsRuleLines } from './handoff-metrics-markdown.js';
 import { operationsLines } from './handoff-parallel-markdown.js';
@@ -160,7 +161,7 @@ function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     '## Start here',
     '',
     `1. Read the [README](${handoffFiles.readme}) reading order: the requirements, the architecture and the decisions.`,
-    `2. Read [orchestration.md](${handoffFiles.orchestration}) for the roles, the model bands, the retry ladder and the merge rules.`,
+    `2. Read [orchestration.md](${handoffFiles.orchestration}) for the roles, the model bands, the retry ladder and the merge rules.${writesAgentFolder(handoff.brief.buildMethod) ? ` The agent definitions of those roles are in [agents/README.md](${handoffFiles.agentsReadme}); copy them only as that note says.` : ''}`,
     `3. Take one card from [the task cards](${handoffFiles.tasks}) and give it to the model tier of its band (see Task cards and difficulty below).`,
     '4. Read [Operations](#operations) before you work next to other agents, and [Risk class](#risk-class) before you take a risky card.',
     '',

@@ -87,7 +87,7 @@ describe('RF-630 the invariant and the Done-when scenarios', () => {
 
     const files = await packageWithoutEntities({}, recording);
 
-    expect(cardsOf(files).map((card) => card.split('\n')[0])).toEqual(['T-004']);
+    expect(cardsOf(files).map((card) => card.split('\n')[0])).toEqual(['T-003']);
     expect(plain(files['tasks.md'])).not.toContain('No invariant');
   });
 

@@ -3,10 +3,12 @@ import { Field } from '../components/Field.js';
 import {
   MAX_NAME,
   MODEL_SLOTS,
+  TIERS,
   TOOL_CHOICES,
   modelExample,
   toolUsable,
   type ModelSlot,
+  type Tier,
 } from '../lib/plan-setup/build-method.js';
 import type { Draft } from '../lib/plan-setup/draft.js';
 import { PlanChoice } from './PlanChoice.js';
@@ -36,6 +38,12 @@ const HELP: Readonly<Record<ModelSlot, string>> = {
   escalation: 'Used only with your approval in chat; it never has a default.',
 };
 
+// P6-22, RF-641: a tier model can be marked as running locally; a local model builds only cards of
+// difficulty 1 and 2, so the package check lists a card above that. The escalation model has no flag.
+function isTier(slot: ModelSlot): slot is Tier {
+  return (TIERS as readonly string[]).includes(slot);
+}
+
 function Models(props: PlanMethodModelsProps): JSX.Element | null {
   const { draft, change, problems } = props;
   const kind = draft.toolKind;
@@ -45,19 +53,32 @@ function Models(props: PlanMethodModelsProps): JSX.Element | null {
       {MODEL_SLOTS.map((slot) => {
         const error = problems[`buildMethod.models.${slot}`];
         return (
-          <Field
-            key={slot}
-            kind="text"
-            id={`build-model-${slot}`}
-            label={LABELS[slot]}
-            help={`${HELP[slot]} Leave blank for the default${slot === 'escalation' ? ': none' : ''}.`}
-            placeholder={modelExample(kind, slot)}
-            value={draft.models[slot]}
-            error={error === undefined ? undefined : { message: error }}
-            onInput={(value) => {
-              change({ ...draft, models: { ...draft.models, [slot]: value } });
-            }}
-          />
+          <div key={slot}>
+            <Field
+              kind="text"
+              id={`build-model-${slot}`}
+              label={LABELS[slot]}
+              help={`${HELP[slot]} Leave blank for the default${slot === 'escalation' ? ': none' : ''}.`}
+              placeholder={modelExample(kind, slot)}
+              value={draft.models[slot]}
+              error={error === undefined ? undefined : { message: error }}
+              onInput={(value) => {
+                change({ ...draft, models: { ...draft.models, [slot]: value } });
+              }}
+            />
+            {isTier(slot) ? (
+              <Field
+                kind="checkbox"
+                id={`build-local-${slot}`}
+                label={`Runs locally: ${slot} tier model`}
+                help="A local model builds only cards of difficulty 1 and 2; the package check lists a higher card on it."
+                checked={draft.local[slot]}
+                onChange={(checked) => {
+                  change({ ...draft, local: { ...draft.local, [slot]: checked } });
+                }}
+              />
+            ) : null}
+          </div>
         );
       })}
     </>

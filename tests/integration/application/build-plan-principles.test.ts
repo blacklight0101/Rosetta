@@ -103,7 +103,7 @@ describe('RF-607 SDD on the task cards', () => {
     const files = await packageWithoutEntities({ principles: ['sdd'] }, recording);
 
     const cards = cardsOf(files);
-    expect(cards.map((card) => card.split('\n')[0])).toEqual(['T-004']);
+    expect(cards.map((card) => card.split('\n')[0])).toEqual(['T-003']);
     expect(cards[0]).toContain('Requirements: [REQ-001](requirements.md#req-001)');
     expect(plain(files['tasks.md'])).not.toContain('No requirement');
   });

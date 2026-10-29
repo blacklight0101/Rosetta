@@ -1,0 +1,119 @@
+# The hard-rule greps of orchestration.md and the words a stack answer uses to name a language (P6-28, DEC-190).
+# RF-640, RNF-004: part of the versioned catalogue; its name carries the version and the catalogue SHA-256 covers it.
+# A language lists the aliases (lower case) that make a stack answer name it; an alias matches whole words, ignoring case.
+# Keep them in step with the aliases of the language-runtime layer in stack-technologies.v2.yaml (a test checks it).
+# A rule gets a row only when a chosen principle or style states it, or suggests it, or a card's risk class suggests it.
+# `stated` and `suggested` are catalogue entry ids. A pattern is a plain search text; `any` holds those of every language.
+# A pattern holds no backtick, no pipe and no line break, because the table writes it in a code span.
+languages:
+  - id: javascript
+    aliases:
+      [
+        typescript,
+        javascript,
+        node.js,
+        node,
+        deno,
+        bun,
+        react,
+        angular,
+        vue,
+        svelte,
+        next.js,
+        nestjs,
+      ]
+  - id: dotnet
+    aliases: [.net, dotnet, c#, f#, blazor]
+  - id: java
+    aliases: [java, jvm, kotlin, spring, jakarta]
+  - id: python
+    aliases: [python, django, flask, fastapi]
+  - id: php
+    aliases: [php, laravel, symfony]
+rules:
+  - rule: Text from users and models is shown as text, never as markup
+    stated: []
+    suggested: [owasp-top-10, security-by-design]
+    risks: [security boundary]
+    patterns:
+      javascript: ['innerHTML', 'dangerouslySetInnerHTML']
+      dotnet: ['Html.Raw(', 'MarkupString']
+      java: ['th:utext']
+      python: ['mark_safe(']
+  - rule: Nothing runs code built from input
+    stated: []
+    suggested: [owasp-top-10, security-by-design]
+    risks: [security boundary]
+    patterns:
+      javascript: ['eval(', 'new Function']
+      dotnet: ['CSharpScript']
+      java: ['ScriptEngine']
+      python: ['eval(', 'exec(']
+      php: ['eval(', 'create_function(']
+  - rule: Queries take parameters, never input joined into the text
+    stated: [owasp-top-10]
+    suggested: []
+    risks: [security boundary, data loss]
+    patterns:
+      dotnet: ['FromSqlRaw(', 'ExecuteSqlRaw(']
+      java: ['createStatement(', 'createNativeQuery(']
+      python: ['.execute(f"']
+      php: ['mysqli_query(', '->query("']
+  - rule: No shell commands from application code
+    stated: []
+    suggested: [security-by-design]
+    risks: [security boundary]
+    patterns:
+      javascript: ['child_process', 'shell: true']
+      dotnet: ['Process.Start(']
+      java: ['Runtime.getRuntime().exec', 'ProcessBuilder']
+      python: ['subprocess', 'os.system(']
+      php: ['shell_exec(', 'passthru(']
+  - rule: Certificate checks are never switched off
+    stated: []
+    suggested: [security-by-design, secure-sdlc]
+    risks: [security boundary]
+    patterns:
+      javascript: ['rejectUnauthorized', 'NODE_TLS_REJECT_UNAUTHORIZED']
+      dotnet: ['ServerCertificateCustomValidationCallback']
+      java: ['X509TrustManager', 'NoopHostnameVerifier']
+      python: ['verify=False']
+      php: ['CURLOPT_SSL_VERIFYPEER']
+  - rule: No secret in code, tests, images or logs
+    stated: [security-by-design, containers, observability]
+    suggested: [owasp-top-10, secure-sdlc, stride]
+    risks: [security boundary]
+    patterns:
+      any: ['-----BEGIN', 'password =', 'secret =', 'token =']
+  - rule: Logs go through the structured logger
+    stated: [observability]
+    suggested: []
+    risks: []
+    patterns:
+      javascript: ['console.']
+      dotnet: ['Console.Write']
+      java: ['System.out.print', 'printStackTrace(']
+      python: ['print(']
+      php: ['var_dump(', 'print_r(']
+  - rule: The image runs as a user without administrator rights
+    stated: [containers]
+    suggested: []
+    risks: []
+    patterns:
+      any: ['USER root']
+  - rule: Data is removed only by a reviewed migration
+    stated: []
+    suggested: []
+    risks: [data loss]
+    patterns:
+      any: ['DROP TABLE', 'TRUNCATE']
+  - rule: Amounts of money are never floating-point numbers
+    stated: []
+    suggested: []
+    risks: [money]
+    patterns:
+      javascript: ['parseFloat(']
+      dotnet: ['double ', 'float ']
+      java: ['double ', 'float ']
+      python: ['float(']
+      php: ['floatval(']

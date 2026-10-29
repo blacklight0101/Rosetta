@@ -8,8 +8,8 @@ export type ToolKind = 'claude-code' | 'codex' | 'other';
 /** The tiers of the difficulty bands, smallest first, and the escalation model (RF-639). */
 export const MODEL_SLOTS = ['smallest', 'middle', 'largest', 'escalation'] as const;
 export type ModelSlot = (typeof MODEL_SLOTS)[number];
-type Tier = Exclude<ModelSlot, 'escalation'>;
-const TIERS: readonly Tier[] = ['smallest', 'middle', 'largest'];
+export type Tier = Exclude<ModelSlot, 'escalation'>;
+export const TIERS: readonly Tier[] = ['smallest', 'middle', 'largest'];
 
 /** The longest model or tool name the brief keeps (the server limit). */
 export const MAX_NAME = 80;
@@ -23,6 +23,8 @@ export interface MethodDraft {
   readonly toolName: string;
   /** The model names as typed; empty text is a name not given. */
   readonly models: Readonly<Record<ModelSlot, string>>;
+  /** P6-22 (RF-641): the tier models that run on the team's own machine. */
+  readonly local: Readonly<Record<Tier, boolean>>;
 }
 
 const NO_MODELS: Readonly<Record<ModelSlot, string>> = {
@@ -30,6 +32,12 @@ const NO_MODELS: Readonly<Record<ModelSlot, string>> = {
   middle: '',
   largest: '',
   escalation: '',
+};
+
+const NO_LOCAL: Readonly<Record<Tier, boolean>> = {
+  smallest: false,
+  middle: false,
+  largest: false,
 };
 
 /** The tools the step offers, in order (RF-639); the list a later card extends with more options. */
@@ -108,6 +116,8 @@ function modelsLine(draft: MethodDraft): string {
   const parts = [named.join(', ')].filter((part) => part !== '');
   const escalation = draft.models.escalation.trim();
   if (escalation !== '') parts.push(`escalation ${escalation}`);
+  const local = TIERS.filter((tier) => draft.local[tier]);
+  if (local.length > 0) parts.push(`runs locally: ${local.join(', ')}`);
   if (missing.length > 0) parts.push(`no name for ${missing.join(', ')}`);
   return parts.join('; ');
 }
@@ -125,6 +135,7 @@ export function buildMethodOf(draft: MethodDraft): {
   readonly aiAssisted: boolean;
   readonly agentTool?: { readonly kind: ToolKind; readonly name?: string | undefined };
   readonly models?: Partial<Record<ModelSlot, string>>;
+  readonly local?: Partial<Record<Tier, boolean>>;
 } {
   if (!draft.aiAssisted) return { aiAssisted: false };
   const name = draft.toolName.trim();
@@ -134,10 +145,14 @@ export function buildMethodOf(draft: MethodDraft): {
       ([, model]) => model !== '',
     ),
   );
+  const local = Object.fromEntries(
+    TIERS.filter((tier) => draft.local[tier]).map((tier) => [tier, true]),
+  );
   return {
     aiAssisted: true,
     agentTool: draft.toolKind === 'other' ? { kind: 'other', name } : { kind: draft.toolKind },
     ...(Object.keys(models).length === 0 ? {} : { models }),
+    ...(Object.keys(local).length === 0 ? {} : { local }),
   };
 }
 
@@ -145,12 +160,13 @@ interface SavedMethod {
   readonly aiAssisted: boolean;
   readonly agentTool?: { readonly kind: ToolKind; readonly name?: string | undefined } | undefined;
   readonly models?: Partial<Record<ModelSlot, string | undefined>> | undefined;
+  readonly local?: Partial<Record<Tier, boolean | undefined>> | undefined;
 }
 
 /** The method part of a draft from a saved brief: only the models the person named are kept. */
 export function methodDraftOf(saved: SavedMethod, defaulted: readonly string[]): MethodDraft {
   if (defaulted.includes('buildMethod') || !saved.aiAssisted) {
-    return { aiAssisted: false, toolKind: '', toolName: '', models: NO_MODELS };
+    return { aiAssisted: false, toolKind: '', toolName: '', models: NO_MODELS, local: NO_LOCAL };
   }
   const named = (slot: ModelSlot): string => {
     const kept = slot === 'escalation' || !defaulted.includes(`buildMethod.models.${slot}`);
@@ -165,6 +181,11 @@ export function methodDraftOf(saved: SavedMethod, defaulted: readonly string[]):
       middle: named('middle'),
       largest: named('largest'),
       escalation: named('escalation'),
+    },
+    local: {
+      smallest: saved.local?.smallest === true,
+      middle: saved.local?.middle === true,
+      largest: saved.local?.largest === true,
     },
   };
 }
