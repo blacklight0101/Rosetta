@@ -115,6 +115,12 @@ export interface TargetDataModel {
   readonly dropped: readonly DroppedField[];
 }
 
+/** P7-13: the table kept and the names of the tables merged into it. */
+export interface MergedTable {
+  readonly kept: string;
+  readonly merged: readonly string[];
+}
+
 /** How many items of the draft the model leaves out, for the log. */
 export interface LeftOut {
   readonly tables: number;
@@ -126,6 +132,8 @@ export interface LeftOut {
 export interface DataModelAssembly {
   readonly model: TargetDataModel;
   readonly leftOut: LeftOut;
+  /** P7-13: the tables merged because their names differ only by plural, case or separators. */
+  readonly merged: readonly MergedTable[];
 }
 
 /** The supported claims of the `ENT` cards, in card and claim order. */

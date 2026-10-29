@@ -74,5 +74,6 @@ export function assembleDataModel(
   return {
     model: { database, tables, dropped: droppedFields(draft, tables, legacy) },
     leftOut: tally,
+    merged: [],
   };
 }
