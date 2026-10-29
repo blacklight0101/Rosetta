@@ -130,7 +130,7 @@ describe('RF-645 DEC-184 the package never presents the default as the chosen st
 
     const records = Object.entries(files).filter(([path]) => path.startsWith('decisions/'));
     expect(records.map(([, text]) => text).join('\n')).not.toContain('nearest');
-    expect(records.map(([, text]) => text).join('\n')).toContain(label);
+    expect(records.map(([, text]) => text).join('\n')).toMatch(label);
   });
 });
 

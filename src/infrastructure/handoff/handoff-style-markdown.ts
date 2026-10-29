@@ -52,7 +52,9 @@ export function styleLines(handoff: HandoffPackage, esc: MarkdownEscaper): strin
   if (handoff.content.components.length === 0) return [];
   const roles = styleRoles[handoff.brief.architecture.style].join(', ');
   // DEC-184: with an own answer the style is only the reference of the checks.
-  const reference = hasOwnAnswer(handoff, 'architecture') ? `, ${checkReference},` : ',';
+  const reference = hasOwnAnswer(handoff, 'architecture')
+    ? `, the default style, ${checkReference('style')},`
+    : ',';
   return [
     '## Components against the style',
     '',

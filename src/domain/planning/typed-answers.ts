@@ -41,15 +41,26 @@ export function typedAnswers(brief: TypedSource): Partial<Record<TypedQuestionId
 }
 
 /**
- * DEC-184: what the package and the records call the enumerated default (the style, the strategy)
- * when the owner typed an own answer. The default is never the chosen one then; Rosetta keeps it
- * only as the reference its own checks compare with.
+ * DEC-184: the one check of Rosetta that uses the enumerated default when the owner typed an own
+ * answer. The default is never the chosen one then; Rosetta keeps it only as the reference that
+ * check compares with: the dependency check for the style, the strategy-fit check for the strategy.
  */
-export const checkReference = "the reference Rosetta's checks use";
+export const referenceChecks = {
+  style: "Rosetta's dependency check",
+  strategy: "Rosetta's strategy-fit check",
+} as const;
+export type ReferenceKind = keyof typeof referenceChecks;
 
-/** The title of the default style or strategy, named as the check reference when an own answer exists. */
+/** "the reference Rosetta's dependency check uses" (or its strategy-fit check). */
+export function checkReference(kind: ReferenceKind): string {
+  return `the reference ${referenceChecks[kind]} uses`;
+}
+
+/** The title of the default style or strategy, named as the default and its check's reference when an own answer exists. */
 export function referenceTitle(brief: TypedSource, id: TypedQuestionId, title: string): string {
-  return typedAnswers(brief)[id] === undefined ? title : `${title} (${checkReference})`;
+  if (typedAnswers(brief)[id] === undefined) return title;
+  const kind: ReferenceKind = id === 'migration' ? 'strategy' : 'style';
+  return `${title} (the default ${kind}, ${checkReference(kind)})`;
 }
 
 /** Whether a save carries a typed text for the question (used to leave `defaulted`). */

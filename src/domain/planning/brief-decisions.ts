@@ -127,7 +127,7 @@ function ownStyleDecision(
     status: 'Accepted',
     context: `The new system needs an architecture style. The owner typed an answer instead of choosing one of the styles. ${recommendation}`,
     decision: `Follow the owner's own answer: ${own}`,
-    consequences: `The components of the target architecture follow the owner's answer. Rosetta's automatic dependency check knows only its catalogue, so it compares them with ${chosen.title}, the default style and ${checkReference}. How to check that style: ${chosen.check}`,
+    consequences: `The components of the target architecture follow the owner's answer. Rosetta's automatic dependency check knows only its catalogue, so it compares them with ${chosen.title}, the default style and ${checkReference('style')}. How to check that style: ${chosen.check}`,
     options: [...considered.map((each) => styleLine(each, false)), `Own answer (chosen): ${own}`],
     sources: [...sources],
   };
@@ -167,7 +167,7 @@ function ownMigrationDecision(brief: PlanningBrief, own: string, id: string): Pl
     context:
       'The legacy system has to be replaced by the new one. The owner typed an answer instead of choosing one of the strategies, and the answer decides in which order the phases of the roadmap run.',
     decision: `Follow the owner's own answer: ${own}`,
-    consequences: `The phases of the roadmap follow the owner's answer. ${info.title}, the default strategy, is ${checkReference}, not the chosen strategy: ${info.tradeOff}`,
+    consequences: `The phases of the roadmap and the cut-over card follow the owner's answer. ${info.title}, the default strategy, is ${checkReference('strategy')}, not the chosen strategy: ${info.tradeOff}`,
     options: [
       ...migrationStrategies.map(
         (each) => `${migrationStrategyInfo[each].title}: ${migrationStrategyInfo[each].tradeOff}`,

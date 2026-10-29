@@ -43,7 +43,9 @@ function followingSentence(handoff: HandoffPackage, esc: MarkdownEscaper): strin
   const { style, choices } = handoff;
   const linked = choices.style === '' ? '' : ` (${decisionLink(choices.style)})`;
   // DEC-184: with an own answer the style is only the reference of the checks.
-  const record = hasOwnAnswer(handoff, 'architecture') ? `${linked}, ${checkReference}` : linked;
+  const record = hasOwnAnswer(handoff, 'architecture')
+    ? `${linked}, the default style, ${checkReference('style')}`
+    : linked;
   if (!followsStyle(handoff)) {
     return `The components below do not all follow the ${esc.inline(style.title)} style${record}: at least one dependency breaks its rule. See [the package checks](${handoffFiles.checks}) and [the risks](${handoffFiles.risks}). How to check it: ${esc.inline(style.check)}`;
   }
