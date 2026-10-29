@@ -53,3 +53,43 @@ describe.each([
     expect(uploads.removed).toHaveLength(1);
   });
 });
+
+describe.each([
+  ['WorkbookBatches', workbookBatch],
+  ['StoreUpload', zipBatch],
+])('%s a late attach that failed', (_name, start) => {
+  it('RF-159 reads stored when the project row shows it committed before it failed', async () => {
+    const { world, ref, attach, batches } = await start({ mode: 'fails-after-commit' });
+    await vi.waitFor(async () => {
+      const read = await batches.state(ref);
+      expect(read.ok && read.value.phase).toBe('refused');
+    });
+
+    attach.release();
+
+    await vi.waitFor(async () => {
+      const read = await batches.state(ref);
+      expect(read.ok && read.value.phase).toBe('stored');
+    });
+    const row = await world.projects.find(ref.actor.userId, ref.projectId);
+    expect(row?.upload?.snapshotKey).toBeDefined();
+    expect(world.uploads.removed).toEqual([]);
+  });
+
+  it('RF-159 removes nothing it did not create: a snapshot that was already stored stays', async () => {
+    const { world, ref, attach, open, batches } = await start({
+      ...{ mode: 'fails', existing: true },
+    });
+    await vi.waitFor(async () => {
+      const read = await batches.state(ref);
+      expect(read.ok && read.value.phase).toBe('refused');
+    });
+
+    attach.release();
+
+    await vi.waitFor(async () => {
+      expect(await open()).toBe(true);
+    });
+    expect(world.uploads.removed).toEqual([]);
+  });
+});

@@ -1,7 +1,13 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { workbookSnapshotKey } from '../../../../src/domain/sources/workbook-key.js';
-import { amy as zipper, request, setup } from '../../../support/store-upload-harness.js';
+import { uploadSnapshotKey } from '../../../../src/domain/sources/upload-name.js';
+import {
+  amy as zipper,
+  request,
+  setup,
+  uploadProject,
+} from '../../../support/store-upload-harness.js';
 import {
   amy,
   batchCase,
@@ -105,3 +111,28 @@ describe('StoreUpload the audit row fails after the attach', () => {
     expect(world.logger.text()).toContain('after the source was attached');
   });
 });
+
+describe.each(['the rename of the snapshot', 'the removal of the earlier snapshot'])(
+  'StoreUpload %s fails after the attach',
+  (step) => {
+    it('RF-128 a zip answers its summary and logs the step', async () => {
+      const earlier = 'upload__earlier@0000000000000000';
+      const project = uploadProject({
+        upload: { fileName: 'Old.zip', uploadedAt: 1, snapshotKey: earlier },
+      });
+      const world = await setup(project);
+      const down = new Error('step down');
+      if (step === 'the rename of the snapshot') {
+        world.uploads.existing.add(uploadSnapshotKey(project.id, world.uploads.hash));
+        vi.spyOn(world.uploads, 'rewriteInfo').mockRejectedValue(down);
+      } else vi.spyOn(world.runs, 'list').mockRejectedValue(down);
+
+      const outcome = await world.useCase.execute(request(world.project));
+
+      expect(outcome.ok).toBe(true);
+      const row = await world.projects.find(project.userId, project.id);
+      expect(row?.upload?.snapshotKey).not.toBe(earlier);
+      expect(world.logger.text()).toContain(step);
+    });
+  },
+);
