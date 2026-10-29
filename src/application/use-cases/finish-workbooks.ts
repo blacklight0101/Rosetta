@@ -3,6 +3,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Clock } from '../ports/clock.js';
 import type { WorkbookProgress, WorkbookStaging } from '../ports/workbook-staging.js';
 import type { Project } from '../projects/project.js';
+import { logBatchFailure } from './batch-failure-log.js';
 import { attachWorkbooks, type AttachDependencies } from './attach-workbooks.js';
 import { endBatch, type BatchOutcome, type HeldBatch } from './workbook-batch-state.js';
 import type { FinishBatchRequest } from './workbook-batch-types.js';
@@ -29,7 +30,11 @@ interface FinishWork {
 }
 
 /** Nothing of a batch that failed stays staged; an error nobody expected is logged. */
-async function failed(deps: FinishDependencies, batchId: string, error: unknown): Promise<void> {
+async function failed(
+  deps: FinishDependencies,
+  batchId: string,
+  failure: { readonly error: unknown; readonly signal: AbortSignal },
+): Promise<void> {
   try {
     await deps.staging.discard(batchId);
   } catch (discardError) {
@@ -39,9 +44,11 @@ async function failed(deps: FinishDependencies, batchId: string, error: unknown)
       discardError,
     );
   }
-  if (!(error instanceof RosettaError)) {
-    await report(deps, 'Finishing a workbook batch failed unexpectedly.', error);
-  }
+  await logBatchFailure(deps.logger, {
+    ...failure,
+    stopped: 'A workbook batch was stopped.',
+    unexpected: 'Finishing a workbook batch failed unexpectedly.',
+  });
 }
 
 function report(deps: FinishDependencies, message: string, error: unknown): Promise<void> {
@@ -69,7 +76,7 @@ async function finishWorkbooks(deps: FinishDependencies, work: FinishWork): Prom
       ? { kind: 'stored', summary: attached.value }
       : { kind: 'refused', error: new RosettaError(attached.error) };
   } catch (error) {
-    await failed(deps, batchId, error);
+    await failed(deps, batchId, { error, signal });
     return { kind: 'refused', error };
   }
 }

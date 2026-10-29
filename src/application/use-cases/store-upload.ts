@@ -14,6 +14,7 @@ import { recordWorkbooks } from '../projects/record-workbooks.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { endBatch, stateOf, type BatchOutcome, type HeldBatch } from './workbook-batch-state.js';
 import type { BatchState } from './workbook-batch-types.js';
+import { logBatchFailure } from './batch-failure-log.js';
 import { summaryOf, type UploadSummary } from './upload-summary.js';
 import type { WorkbookBatches } from './workbook-batches.js';
 
@@ -132,30 +133,12 @@ export class StoreUpload {
         : { kind: 'refused', error: new RosettaError(result.error) };
     } catch (error) {
       outcome = { kind: 'refused', error };
-      await this.logFailure(error, signal);
+      await logBatchFailure(this.deps.logger, {
+        ...{ error, signal, stopped: 'A zip being stored was stopped.' },
+        unexpected: 'Storing a zip failed unexpectedly.',
+      });
     }
     endBatch(batch, outcome, this.deps.clock.now().getTime());
-  }
-
-  /**
-   * A stop by the user is told at info level; an error nobody expected is an error (RF-158). It is
-   * logged if the log can take it, as for a workbook batch: it never rejects, so the batch still ends.
-   */
-  private async logFailure(error: unknown, signal: AbortSignal): Promise<void> {
-    if (error instanceof RosettaError) return;
-    const stopped = signal.aborted;
-    const message = stopped
-      ? 'A zip being stored was stopped.'
-      : 'Storing a zip failed unexpectedly.';
-    const reason = error instanceof Error ? error.message : 'unknown';
-    try {
-      await this.deps.logger.log({
-        ...{ level: stopped ? 'info' : 'error', logger: 'sources', message },
-        data: { reason },
-      });
-    } catch {
-      // The log is down as well: the outcome still ends the batch.
-    }
   }
 
   /** Stops every upload in flight (server shutdown). */
