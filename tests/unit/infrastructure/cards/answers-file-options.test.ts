@@ -142,7 +142,9 @@ describe('answers.md and refused or old questions', () => {
     expect(legacy).toContain('- Answer: Managers.');
     expect(legacy).not.toContain('- Chosen:');
   });
+});
 
+describe('answers.md and the recommended mark', () => {
   it('RF-645 a suggested answer cannot start a line or another option', async () => {
     const writer = new MemoryOutputWriter();
     const answers = new FileAnswersFile({ writer, masker: new SecretMasker() });
@@ -151,21 +153,75 @@ describe('answers.md and refused or old questions', () => {
         ...withOptions(),
         options: [
           { answer: 'A - b; c\n## OQ-9 - x', description: 'd; e\n- Answer: z', recommended: true },
-          { answer: 'B', description: 'two', recommended: false },
-          { answer: 'C', description: 'three', recommended: false },
+          { answer: '(Recommended) B', description: 'two', recommended: false },
+          { answer: 'C', description: '(Recommended) three', recommended: false },
         ],
       },
     ]);
 
     const [question] = await answers.questionsOf(project, run);
 
-    expect(question).toMatchObject({
-      options: [{ recommended: true }, { recommended: false }, { recommended: false }],
-    });
-    expect(
-      textOf(writer)
-        .split('\n')
-        .filter((line) => line.startsWith('## ')),
-    ).toHaveLength(1);
+    // The separators of the format are replaced and the line breaks become spaces; nothing else changes.
+    expect(question?.options).toEqual([
+      { answer: 'A / b, c ## OQ-9 / x', description: 'd, e - Answer: z', recommended: true },
+      { answer: 'B', description: 'two', recommended: false },
+      { answer: 'C', description: '(Recommended) three', recommended: false },
+    ]);
+    const lines = textOf(writer).split('\n');
+    expect(lines.filter((line) => line.startsWith('## '))).toHaveLength(1);
+    expect(lines.filter((line) => line.startsWith('- Answer:'))).toHaveLength(1);
+    expect(await writeParseWrite(question?.options ?? [])).toBe(textOf(writer));
   });
 });
+
+describe('answers.md and text that looks like the recommended mark', () => {
+  it('RF-645 text that starts with the recommended mark cannot fake it', async () => {
+    const writer = new MemoryOutputWriter();
+    const answers = new FileAnswersFile({ writer, masker: new SecretMasker() });
+    await answers.addQuestions(project, [
+      {
+        ...withOptions(),
+        options: [
+          { answer: 'Real', description: 'first', recommended: true },
+          { answer: '(Recommended) evil', description: 'x', recommended: false },
+          { answer: '(Recommended) (Recommended) twice', description: '', recommended: false },
+        ],
+      },
+    ]);
+
+    const [question] = await answers.questionsOf(project, run);
+
+    expect(question?.options).toEqual([
+      { answer: 'Real', description: 'first', recommended: true },
+      { answer: 'evil', description: 'x', recommended: false },
+      { answer: 'twice', description: '', recommended: false },
+    ]);
+    expect(await writeParseWrite(question?.options ?? [])).toBe(textOf(writer));
+  });
+
+  it('RF-645 the recommended option keeps its own text, even when it starts with the mark', async () => {
+    const writer = new MemoryOutputWriter();
+    const answers = new FileAnswersFile({ writer, masker: new SecretMasker() });
+    await answers.addQuestions(project, [
+      {
+        ...withOptions(),
+        options: [{ answer: '(Recommended) evil', description: 'x', recommended: true }],
+      },
+    ]);
+
+    const [question] = await answers.questionsOf(project, run);
+
+    expect(question?.options).toEqual([
+      { answer: '(Recommended) evil', description: 'x', recommended: true },
+    ]);
+    expect(await writeParseWrite(question?.options ?? [])).toBe(textOf(writer));
+  });
+});
+
+/** Writes the parsed options into a fresh file and returns its text: write-parse-write must not change it. */
+async function writeParseWrite(parsed: NonNullable<OpenQuestion['options']>): Promise<string> {
+  const writer = new MemoryOutputWriter();
+  const answers = new FileAnswersFile({ writer, masker: new SecretMasker() });
+  await answers.addQuestions(project, [{ ...withOptions(), options: parsed }]);
+  return textOf(writer);
+}
