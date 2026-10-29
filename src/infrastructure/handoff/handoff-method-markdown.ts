@@ -5,6 +5,7 @@ import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import {
   hasOwnAnswer,
   ownAnswerLines,
+  ownAnswerText,
   ownPrincipleBullets,
   referenceLine,
 } from './handoff-own-answers-markdown.js';
@@ -135,17 +136,16 @@ function principleBullets(handoff: HandoffPackage, esc: MarkdownEscaper): string
 function migrationLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const strategy = migrationStrategyInfo[handoff.brief.migration];
   const record = ` (${decisionLink(handoff.choices.migration)})`;
-  if (!hasOwnAnswer(handoff, 'migration')) {
+  const own = ownAnswerText(handoff, 'migration', esc);
+  if (own === undefined) {
     return [
       `Migration: ${esc.inline(strategy.title)}${record}. ${esc.inline(strategy.ordering)}`,
       '',
     ];
   }
-  const own = ownAnswerLines(handoff, 'migration', esc).map((line) =>
-    line === '' ? '' : `Migration: ${line}`,
-  );
   return [
-    ...own,
+    `Migration, the owner's own answer: ${own}`,
+    '',
     referenceLine(esc.inline(strategy.title), record, 'strategy', esc.inline(strategy.ordering)),
     '',
   ];

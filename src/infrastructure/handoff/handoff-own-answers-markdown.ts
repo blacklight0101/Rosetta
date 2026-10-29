@@ -31,14 +31,24 @@ export function referenceLine(
   return `${title}${record}, the default ${kind}, is ${checkReference(kind)}, not the chosen ${kind}: ${detail}`;
 }
 
+/** The owner's own answer to the question, escaped as one line; undefined when there is none. */
+export function ownAnswerText(
+  handoff: Pick<HandoffPackage, 'brief'>,
+  id: TypedQuestionId,
+  esc: MarkdownEscaper,
+): string | undefined {
+  const text = typedAnswers(handoff.brief)[id];
+  return text === undefined ? undefined : esc.inline(text);
+}
+
 /** The owner's own answer to the question as one paragraph and a blank line; nothing when there is none. */
 export function ownAnswerLines(
   handoff: Pick<HandoffPackage, 'brief'>,
   id: TypedQuestionId,
   esc: MarkdownEscaper,
 ): string[] {
-  const text = typedAnswers(handoff.brief)[id];
-  return text === undefined ? [] : [`The owner's own answer: ${esc.inline(text)}`, ''];
+  const text = ownAnswerText(handoff, id, esc);
+  return text === undefined ? [] : [`The owner's own answer: ${text}`, ''];
 }
 
 /** The owner's own principle as a list item (the lists of principles are bullets); nothing when none. */
