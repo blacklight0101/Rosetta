@@ -153,9 +153,10 @@ const baseRules: readonly MaskRule[] = [
   {
     kind: 'password',
     // An escaped quote in front of the value stays visible, and an empty escaped value is no value
-    // (P3-128).
+    // (P3-128). A lone backtick, or a run of them with no value character after it, closes a code
+    // span such as `password =` and is no value either (P7-11).
     pattern: new RegExp(
-      String.raw`(?<keep>${passwordKey}(?:\\{1,4}["'])?)${notMasked}(?![="'])(?!\\{1,4}["'])[^\s;,&"']+`,
+      String.raw`(?<keep>${passwordKey}(?:\\{1,4}["'])?)${notMasked}(?![="'])(?!\\{1,4}["'])(?!\x60+(?![^\s;,&"']))[^\s;,&"']+`,
       'gi',
     ),
   },
