@@ -26,7 +26,12 @@ export type RequirementNote =
       readonly task: string;
       readonly requirement: string;
       readonly kept: number;
-    };
+    }
+  /**
+   * P7-14, RF-607: under SDD the gap card `task` builds `item`, but no requirement cites a source
+   * card behind it; the card is kept without a requirement and the item needs one.
+   */
+  | { readonly kind: 'unbacked'; readonly task: string; readonly item: string };
 
 /** The requirement positions the draft tasks name that are outside the list of `count` requirements. */
 // RF-627

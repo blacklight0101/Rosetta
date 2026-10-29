@@ -103,12 +103,14 @@ function cardWith(positions: z.ZodType<number>) {
 const taskSchema = cardWith(listedPosition).extend({
   contradicts: z.array(z.unknown()).max(MAX_LIST).optional(),
 });
-// P5-40: a gap card may also wait for a card already in the plan, named by its `T-` id.
+// P5-40: a gap card may also wait for a card already in the plan, named by its `T-` id. P7-14: each
+// entry is read on its own (digits as a position, as above); one that does not read is dropped.
 const cardId = z.string().regex(/^T-[0-9]{3,6}$/);
 export const gapTaskSchema = cardWith(numberPosition).extend({
   dependsOn: z
-    .array(z.union([numberPosition, cardId]))
+    .array(z.union([listedPosition, cardId]).nullable().catch(null))
     .max(MAX_LIST)
+    .transform((list) => list.flatMap((each) => (each === null ? [] : [each])))
     .default([]),
 });
 

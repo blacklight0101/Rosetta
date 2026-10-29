@@ -2,7 +2,7 @@
   "strangler-fig": {
     "README.md": "bda3a4db6616773b9b940e5831eb73664e87b4328db1c9316a1fdf4f5a77a862",
     "architecture.md": "84f506226308662bc29cf6165dde0491b2454d0fdfe4e9c0a17e729ea8e1a55b",
-    "checks.md": "0d9b8689e9194477b6a2305297061f5147a1bad045100d8f1883eb0ffc9bba64",
+    "checks.md": "7edf307068b5316e3b778d7bd8c6e349f6c0bb1e47a5615f47f8f3331a04f3ae",
     "claims-left-out.md": "ce31de1750fc4b0ba86c82c28fb2d7cde103cb055d0ff8cdcea7b6565c81c901",
     "conventions.md": "6cabe47237b5dffda2ed62fbe197ef033848b67d3930ea0fab5003801f728236",
     "data-model.md": "b901937035c1b9cef231db10951195876848d8f87ac0d3fadc3b8a56ef90f25a",
@@ -26,7 +26,7 @@
   "parallel-change": {
     "README.md": "882500276d561fd82163174a6bdcaaedcd8c27b64a5dd70b2683a11a46cbc2ee",
     "architecture.md": "84f506226308662bc29cf6165dde0491b2454d0fdfe4e9c0a17e729ea8e1a55b",
-    "checks.md": "0d9b8689e9194477b6a2305297061f5147a1bad045100d8f1883eb0ffc9bba64",
+    "checks.md": "7edf307068b5316e3b778d7bd8c6e349f6c0bb1e47a5615f47f8f3331a04f3ae",
     "claims-left-out.md": "ce31de1750fc4b0ba86c82c28fb2d7cde103cb055d0ff8cdcea7b6565c81c901",
     "conventions.md": "6cabe47237b5dffda2ed62fbe197ef033848b67d3930ea0fab5003801f728236",
     "data-model.md": "b901937035c1b9cef231db10951195876848d8f87ac0d3fadc3b8a56ef90f25a",
@@ -50,7 +50,7 @@
   "rewrite": {
     "README.md": "e6d987e70d4949b1d45200a3ec5bf0b052af410176530ba137b2dd8495778557",
     "architecture.md": "84f506226308662bc29cf6165dde0491b2454d0fdfe4e9c0a17e729ea8e1a55b",
-    "checks.md": "0d9b8689e9194477b6a2305297061f5147a1bad045100d8f1883eb0ffc9bba64",
+    "checks.md": "7edf307068b5316e3b778d7bd8c6e349f6c0bb1e47a5615f47f8f3331a04f3ae",
     "claims-left-out.md": "ce31de1750fc4b0ba86c82c28fb2d7cde103cb055d0ff8cdcea7b6565c81c901",
     "conventions.md": "6cabe47237b5dffda2ed62fbe197ef033848b67d3930ea0fab5003801f728236",
     "data-model.md": "b901937035c1b9cef231db10951195876848d8f87ac0d3fadc3b8a56ef90f25a",

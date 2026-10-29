@@ -159,7 +159,7 @@ function leftOutLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
         .filter((each) => each.area === area)
         .map(
           (each) =>
-            `- ${esc.inline(each.item)}: the field "${esc.inline(each.field)}". ${esc.inline(each.reason)}`,
+            `- ${esc.code(each.item)}: the field "${esc.inline(each.field)}". ${esc.inline(each.reason)}`,
         ),
       '',
     ]),
