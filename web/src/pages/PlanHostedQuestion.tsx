@@ -39,22 +39,24 @@ export interface PlanHostedQuestionProps {
 // RF-611
 export function PlanHostedQuestion({ draft, change }: PlanHostedQuestionProps): JSX.Element {
   return (
-    <fieldset role="radiogroup" class="rst-plan-group rst-plan-options">
-      <legend>{QUESTION}</legend>
-      {ANSWERS.map((answer) => (
-        <PlanChoice
-          key={answer.value}
-          id={`context-deployment-${answer.value}`}
-          group="context-deployment"
-          title={answer.title}
-          checked={draft.deployment === answer.value}
-          onChoose={() => {
-            change({ ...draft, deployment: answer.value });
-          }}
-        >
-          <p class="rst-plan-note">{answer.note}</p>
-        </PlanChoice>
-      ))}
-    </fieldset>
+    <div class="rst-plan-question">
+      <fieldset role="radiogroup" class="rst-plan-group rst-plan-options">
+        <legend>{QUESTION}</legend>
+        {ANSWERS.map((answer) => (
+          <PlanChoice
+            key={answer.value}
+            id={`context-deployment-${answer.value}`}
+            group="context-deployment"
+            title={answer.title}
+            checked={draft.deployment === answer.value}
+            onChoose={() => {
+              change({ ...draft, deployment: answer.value });
+            }}
+          >
+            <p class="rst-plan-note">{answer.note}</p>
+          </PlanChoice>
+        ))}
+      </fieldset>
+    </div>
   );
 }

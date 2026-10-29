@@ -20,7 +20,7 @@ describe('the hosted question', () => {
 
     expect(group.tagName).toBe('FIELDSET');
     expect(group.querySelector('legend')?.textContent).toBe('Will the new application be hosted?');
-    const radios = within(group).getAllByRole('radio') as HTMLInputElement[];
+    const radios = within(group).getAllByRole<HTMLInputElement>('radio');
     expect(radios.map((radio) => radio.labels?.[0]?.textContent)).toEqual([
       'Hosted',
       'Not hosted',
