@@ -62,7 +62,10 @@ describe('the package of a run with no data model', () => {
     expect(names).not.toContain(titles.access);
     expect(names).not.toContain(titles.migration);
     expect(names[0]).toBe(titles.skeleton);
-    expect(names.at(-1)).toBe(titles.cutOver);
+    // RF-635: the cut-over card is at a risk, so the security review waits for it.
+    const cutOver = cards.find((card) => card.title === titles.cutOver);
+    const review = cards.find((card) => card.title.startsWith('Review the security'));
+    expect(review?.dependsOn).toContain(cutOver?.id);
   });
 
   it('P6-27 no card depends on a card the package does not have, and the ids run on without a gap', () => {
