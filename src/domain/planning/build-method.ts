@@ -20,11 +20,16 @@ interface BuildModels {
   readonly escalation?: string | undefined;
 }
 
+/** The tiers whose model runs on the team's own machine (P6-22, RF-641); a key is present only when true. */
+type LocalTiers = Partial<Record<ModelTier, true | undefined>>;
+
 export interface BuildMethod {
   readonly aiAssisted: boolean;
   /** Present only when agents build and the tool was answered. */
   readonly agentTool?: AgentTool | undefined;
   readonly models?: BuildModels | undefined;
+  /** Optional and additive: the tier models that run locally (RF-641); absent when none does. */
+  readonly local?: LocalTiers | undefined;
 }
 
 /** The model aliases Claude Code gets when the team names none (RF-639). */
@@ -47,15 +52,24 @@ function modelsOf(given: BuildMethod): BuildModels | undefined {
   return Object.keys(models).length === 0 ? undefined : models;
 }
 
+/** The local flags to keep: only with a tool answered, in tier order, and none when empty (P6-22). */
+function localOf(given: BuildMethod): LocalTiers | undefined {
+  if (given.agentTool === undefined) return undefined;
+  const kept = modelTiers.filter((tier) => given.local?.[tier] === true);
+  return kept.length === 0 ? undefined : Object.fromEntries(kept.map((tier) => [tier, true]));
+}
+
 /** The build method to store: people building keep neither a tool nor a model. */
 // RF-639
 export function resolveBuildMethod(given: BuildMethod | undefined): BuildMethod {
   if (given?.aiAssisted !== true) return { aiAssisted: false };
   const models = modelsOf(given);
+  const local = localOf(given);
   return {
     aiAssisted: true,
     ...(given.agentTool === undefined ? {} : { agentTool: given.agentTool }),
     ...(models === undefined ? {} : { models }),
+    ...(local === undefined ? {} : { local }),
   };
 }
 
@@ -68,6 +82,12 @@ export function buildMethodDefaulted(given: BuildMethod | undefined): string[] {
   return modelTiers
     .filter((tier) => given.models?.[tier] === undefined)
     .map((tier) => `buildMethod.models.${tier}`);
+}
+
+/** True when the build method marks the model of this tier as running locally (RF-641, P6-22). */
+// RF-641
+export function isLocalTier(method: BuildMethod, tier: ModelTier): boolean {
+  return method.aiAssisted && method.local?.[tier] === true;
 }
 
 /** The model the build method names for a tier, or undefined when it names none (RF-639). */
