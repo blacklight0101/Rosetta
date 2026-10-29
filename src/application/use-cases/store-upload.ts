@@ -139,7 +139,7 @@ export class StoreUpload {
     } catch (error) {
       outcome = { kind: 'refused', error };
       await logBatchFailure(this.deps.logger, {
-        ...{ error, signal, stopped: 'A zip being stored was stopped.' },
+        ...{ error, signal, batchId: batch.id, stopped: 'A zip being stored was stopped.' },
         unexpected: 'Storing a zip failed unexpectedly.',
       });
     }

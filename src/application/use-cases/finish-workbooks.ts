@@ -47,6 +47,7 @@ async function failed(
   }
   await logBatchFailure(deps.logger, {
     ...failure,
+    batchId,
     stopped: 'A workbook batch was stopped.',
     unexpected: 'Finishing a workbook batch failed unexpectedly.',
   });
