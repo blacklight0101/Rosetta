@@ -52,7 +52,7 @@ function isHeadOf(format: IntakeFormat, head: Buffer): boolean {
 }
 
 /** Counts and hashes the bytes, enforces the limit and checks the first four bytes. */
-class Receiving extends Transform {
+export class Receiving extends Transform {
   bytes = 0;
   private readonly hash: Hash = createHash('sha256');
   private head: Buffer = Buffer.alloc(0);
