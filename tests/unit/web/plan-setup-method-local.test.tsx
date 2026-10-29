@@ -26,7 +26,7 @@ async function openMethod(): Promise<void> {
 }
 
 const box = (tier: string): HTMLInputElement =>
-  screen.getByRole('checkbox', { name: new RegExp(`${tier} tier model runs locally`, 'iu') });
+  screen.getByRole('checkbox', { name: new RegExp(`runs locally: ${tier} tier model`, 'iu') });
 
 describe('the runs-locally flag in the draft', () => {
   it('RF-639 a saved brief without the flag loads with every tier unticked and sends no key', () => {

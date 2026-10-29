@@ -119,7 +119,7 @@ test('RF-639 a tier model can be marked as running locally with the keyboard, an
   await openStep(page, 'Build method');
   await page.getByRole('radio', { name: /^Agents will build/u }).check();
   await page.getByRole('radio', { name: /^Codex/u }).check();
-  const local = page.getByRole('checkbox', { name: /^Middle tier model runs locally/iu });
+  const local = page.getByRole('checkbox', { name: /^Runs locally: middle tier model/iu });
   await expect(local).not.toBeChecked();
   await local.focus();
   await page.keyboard.press('Space');

@@ -63,6 +63,13 @@ const briefSchema = z.object({
         escalation: z.string().optional(),
       })
       .optional(),
+    local: z
+      .object({
+        smallest: z.boolean().optional(),
+        middle: z.boolean().optional(),
+        largest: z.boolean().optional(),
+      })
+      .optional(),
   }),
   defaulted: z.array(z.string()),
   /** RF-645: the option that answered each question, or "typed"; absent in an older brief. */
