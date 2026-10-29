@@ -1,4 +1,4 @@
-import type { DataModelAssembly } from '../../domain/planning/data-model.js';
+import type { DataModelAssembly, MergedTable } from '../../domain/planning/data-model.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { DataModelProblem } from './data-model-answer.js';
@@ -14,6 +14,12 @@ import { missingNamed } from './data-model-named.js';
 
 const copiedReason =
   'The planner answer for this table failed after a retry, so its names, columns, types and keys are copied from the legacy claims; confirm them.';
+
+function mergeNote(merge: MergedTable): DataModelProblem {
+  const names = merge.merged.join(', ');
+  const reason = `Tables whose names differ only by plural, case or separators were merged into this one: ${names}.`;
+  return { item: merge.kept, field: `table ${merge.kept}`, reason };
+}
 
 /** The model, whether it has a table, what the checks flag (all of kind `check`) and the tables copied. */
 export interface CheckedModel {
@@ -40,6 +46,7 @@ export function checkedModel(
   const found = readable
     ? [
         ...copied.map((item) => ({ item, field: `table ${item}`, reason: copiedReason })),
+        ...assembled.merged.map(mergeNote),
         ...typeProblems(model),
         ...keys.problems,
         ...facts.problems,

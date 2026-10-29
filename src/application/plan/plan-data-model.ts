@@ -9,6 +9,7 @@ import { assembleDataModel } from '../../domain/planning/data-model-assembly.js'
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import { checkedModel } from './data-model-checked.js';
+import { withoutStorelessCards, withoutStorelessTables } from './data-model-skipped.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { parseDataModelAnswer, type DataModelProblem } from './data-model-answer.js';
 import { dataModelMessage, packableCards } from './data-model-message.js';
@@ -154,17 +155,19 @@ function namedAfterCards(cards: readonly SourceCard[]): DraftTable[] {
 // RF-623
 export async function planDataModel(
   call: PlannerCall,
-  input: DataModelInput,
+  given: DataModelInput,
 ): Promise<PlannedDataModel> {
+  const { cards, skipped, ids } = withoutStorelessCards(given.cards);
+  const input = { ...given, cards };
   const database = databaseOf(input.brief);
   const legacy = legacyClaimsOf(input.cards);
   if (legacy.length === 0)
     return {
       assembly: assembleDataModel(emptyDraft, legacy, database),
       readable: true,
-      problems: [],
+      problems: skipped,
       answered: false,
-      flagged: 0,
+      flagged: skipped.length,
       copied: [],
       cutOffNote: '',
     };
@@ -177,7 +180,8 @@ export async function planDataModel(
   const all = joined(parts);
   const cutOffNote = all.cut ? cutOffMessage(limit) : '';
   const copied = copiedTables(all.failed, all.draft.tables);
-  const draft = { ...all.draft, tables: [...all.draft.tables, ...copied] };
+  const kept = withoutStorelessTables(all.draft.tables, ids);
+  const draft = { ...all.draft, tables: [...kept, ...copied] };
   let assembled = assembleDataModel(draft, legacy, database);
   if (assembled.model.tables.length === 0) {
     const fromClaims = legacyTablesOf(entities);
@@ -187,17 +191,19 @@ export async function planDataModel(
       database,
     );
   }
-  return checked(assembled, input, all, cutOffNote);
+  return checked(assembled, input, { all, cutOffNote, skipped });
 }
 
 /** The model once the checks have run, with what they flag and the tables copied (P3-120, P5-38). */
 function checked(
   assembled: DataModelAssembly,
   input: DataModelInput,
-  all: Batched,
-  cutOffNote: string,
+  rest: { all: Batched; cutOffNote: string; skipped: readonly DataModelProblem[] },
 ): PlannedDataModel {
-  const { assembly, readable, flagged, copied } = checkedModel(assembled, input.cards, input.brief);
+  const { all, cutOffNote, skipped } = rest;
+  const model = checkedModel(assembled, input.cards, input.brief);
+  const { assembly, readable, copied } = model;
+  const flagged = [...skipped, ...model.flagged];
   return {
     assembly,
     readable,
