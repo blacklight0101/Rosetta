@@ -190,3 +190,30 @@ it('RF-159 a form opened on a project with no batch shows nothing of a batch', a
   expect(screen.queryByTestId('processing')).toBeNull();
   expect(screen.queryByRole('alert')).toBeNull();
 });
+
+it('RF-159 a resume read that answers after an upload began does not replace it with the old outcome', async () => {
+  const server = installFakeUploadServer();
+  let answerOld: (response: Response) => void = () => undefined;
+  const old = new Promise<Response>((resolve) => {
+    answerOld = resolve;
+  });
+  renderPage(<ZipUploadForm existing={project} onStored={vi.fn()} />, {
+    'GET /api/projects/p-9/source/batches/current': () => old,
+  });
+  await chooseValid();
+  await sendOne(server);
+
+  answerOld(
+    json(200, {
+      ...{ batchId: 'b-0', phase: 'refused', files: 1, elapsedMs: 900 },
+      refusal: {
+        ...{ status: 400, code: 'RST-1922', message: 'Old.xlsm is password-protected.' },
+        nextStep: 'Remove the password in Excel and upload again.',
+      },
+    }),
+  );
+  await tick();
+
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.getByRole('progressbar', { name: 'Upload progress' })).not.toBeNull();
+});
