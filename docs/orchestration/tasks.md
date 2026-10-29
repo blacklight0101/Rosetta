@@ -17,8 +17,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method   | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
-| P7 Evaluation fixes     | 19      | 1         | 12         | 6         | 0                  | 2       | 14      | 3      | 3          | 0         |
-| **Total**               | **471** | **113**   | **322**    | **36**    | **0**              | **221** | **233** | **17** | **262**    | **0**     |
+| P7 Evaluation fixes     | 22      | 1         | 15         | 6         | 0                  | 2       | 16      | 4      | 3          | 0         |
+| **Total**               | **474** | **113**   | **325**    | **36**    | **0**              | **221** | **235** | **18** | **262**    | **0**     |
 
 ## Conventions for every card
 
@@ -6654,9 +6654,13 @@ No card of this phase starts until the owner opens the phase (DEC-173).
 The owner approved these cards from the end-to-end evaluation of 2026-10-29 (Asset Manager, Invoice Generator and
 eShopModernizing on a local Ollama model and on Haiku, develop at 1c19520d). Finding ids: EV-44 is the Haiku
 finding that the server key is not checked; the Ollama findings are EV-56..EV-67; EV-68 is the Haiku eShop early
-stop. Run ids are those of the evaluation stack. Waves: (1) P7-01, P7-07, P7-11, P7-14; (2) P7-02, P7-03, P7-08,
-P7-13; (3) P7-04, P7-05, P7-09, P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-19. Two cards of
-one wave never edit the same file; Depends on carries the order where they would.
+stop. The Haiku report numbers its own findings EV-44..EV-57; EV-44 keeps its id, and its EV-45..EV-57 are
+EV-69..EV-81 here, in the same order. A Haiku finding that is the same problem as an earlier one is added to that
+card's evidence: EV-71 to P7-11, EV-72 and EV-77 to P7-12, EV-76 to P7-02 and P7-03, EV-79 to P7-14. EV-74 and EV-75
+extend P7-13; EV-81 is P7-20; EV-69, EV-70, EV-73, EV-78 and EV-80 are P7-21 and P7-22. Run ids are those of the
+evaluation stack. Waves: (1) P7-01, P7-07, P7-11, P7-14; (2) P7-02, P7-03, P7-08, P7-13; (3) P7-04, P7-05, P7-09,
+P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-20, P7-21, P7-22; (6) P7-19. Two cards of one wave
+never edit the same file; Depends on carries the order where they would.
 
 ### P7-01 - The claim-check reserve comes out of the run cap
 
@@ -6684,7 +6688,7 @@ one wave never edit the same file; Depends on carries the order where they would
 - **Depends on**: P7-01
 - **Gate**: owner (DEC-194)
 - **Status**: Todo
-- **Reads**: `src/application/understand/understand-session.ts` (line 117 skips a task silently, `persist`), `src/application/understand/session-outcome.ts` (`sessionOutcome`, 50-65), `reader-room.ts` (`endsWithoutRoomStops`, 132-139), `src/application/understand/run-coverage.ts` (`areas`, 99-108), `src/domain/deepen/understanding-measures.ts` (`filesOf`, `coverageMeasures`), `src/domain/deepen/round-plan.ts` (`gapsOf`, 154-170), `src/application/deepen/deepen-record.ts` (`canDeepen`, 130-132), `deepen-room.ts` (`roomStopReason`), `deepen-session.ts` (`finish`, 98-124), `web/src/components/badge-specs.ts`, RF-209, RF-230, RF-231, RF-429, DEC-194. Evidence: EV-62 (understand `eb19d0b6`: readers 077-080 never started, the run ended `Completed`, `coverage.json` listed 76 areas, denominator 397,948 instead of 401,951, and the Deepen never read the four); EV-68 (Haiku eShop, 3M token cap: 37 of 108 areas read, `Completed` at 3.9% coverage, the Deepen only re-read the understand run's scope).
+- **Reads**: `src/application/understand/understand-session.ts` (line 117 skips a task silently, `persist`), `src/application/understand/session-outcome.ts` (`sessionOutcome`, 50-65), `reader-room.ts` (`endsWithoutRoomStops`, 132-139), `src/application/understand/run-coverage.ts` (`areas`, 99-108), `src/domain/deepen/understanding-measures.ts` (`filesOf`, `coverageMeasures`), `src/domain/deepen/round-plan.ts` (`gapsOf`, 154-170), `src/application/deepen/deepen-record.ts` (`canDeepen`, 130-132), `deepen-room.ts` (`roomStopReason`), `deepen-session.ts` (`finish`, 98-124), `web/src/components/badge-specs.ts`, RF-209, RF-230, RF-231, RF-429, DEC-194. Evidence: EV-62 (understand `eb19d0b6`: readers 077-080 never started, the run ended `Completed`, `coverage.json` listed 76 areas, denominator 397,948 instead of 401,951, and the Deepen never read the four); EV-68 (Haiku eShop, 3M token cap: 37 of 108 areas read, `Completed` at 3.9% coverage, the Deepen only re-read the understand run's scope); EV-76 (the Haiku report's id for the same stop: understand `8702def7` sent `budget.readersStopped {reason: judging, claimsWaiting: 303}` at 1.56M of 3M tokens, the Deepen `bf2d77f1` sent `outOfScope: 1`; the second run `9f286dd0` with a 12M token cap still started only 95 of 108 areas and never read ModernizedWebForms).
 - **Do**:
   - Start with red tests: `sessionOutcome` with never-started tasks is not `Completed`; `RunCoverage.areas()` after a skipped task lists the area as not read; `planRound` takes an area of the run's plan that has no coverage entry as a gap.
   - End an understand run or a Deepen that left planned areas unread `CapReached` (DEC-194) and show it as "Partly read" on the run page, the journey and the run list; a run that read every planned area keeps "Cap reached".
@@ -6693,7 +6697,7 @@ one wave never edit the same file; Depends on carries the order where they would
   - Update `docs/architecture.md` (state lists) and `docs/design-system.md` section 6 for the label.
 - **Delivers**: the end state, coverage and Deepen scope changes, unit, integration and end-to-end tests.
 - **Done when**: a recorded run whose readers stop with areas left ends `CapReached`, shows "Partly read", lists the areas as not read and a Deepen of it reads them; a run that reads every area still ends `Completed`; CI green.
-- **Refs**: RF-209, RF-230, RF-231, RF-429, ADR-007, DEC-166, DEC-194; evaluation of 2026-10-29, EV-62, EV-68.
+- **Refs**: RF-209, RF-230, RF-231, RF-429, ADR-007, DEC-166, DEC-194; evaluation of 2026-10-29, EV-62, EV-68, EV-76.
 
 ### P7-03 - Readers take the app's own code first, and deployment folders last
 
@@ -6702,7 +6706,7 @@ one wave never edit the same file; Depends on carries the order where they would
 - **Depends on**: none
 - **Gate**: owner (DEC-195)
 - **Status**: Todo
-- **Reads**: `src/application/understand/reader-tasks.ts` (`planReaderTasks` 53-67, `ownCodeFirst` 45-50), `src/domain/code-map/code-map.ts` (`byCodeUnit`, line 189), `area-grouping.ts` (line 212), `src/domain/code-map/third-party.ts` (`isKubeSchema` 94-97, `byFolder` 99-107, `thirdPartyAreaNames` 125-134), `src/application/estimate/estimate-run.ts` (uses the same planner), RF-104, RF-200, RF-210, DEC-195. Evidence: EV-68 (Haiku eShop read 37 of 108 areas in alphabetical order, mostly deployment folders); EV-63 (`Kubernetes/eShopModernizedSQL-K8s/.kube/schema/v1.6.6/schema484738234`, 93,147 tokens, counts as own code: 10 areas, 1.39M tokens in the default selection; the regex `/.json$/iu` has an unescaped dot).
+- **Reads**: `src/application/understand/reader-tasks.ts` (`planReaderTasks` 53-67, `ownCodeFirst` 45-50), `src/domain/code-map/code-map.ts` (`byCodeUnit`, line 189), `area-grouping.ts` (line 212), `src/domain/code-map/third-party.ts` (`isKubeSchema` 94-97, `byFolder` 99-107, `thirdPartyAreaNames` 125-134), `src/application/estimate/estimate-run.ts` (uses the same planner), RF-104, RF-200, RF-210, DEC-195. Evidence: EV-68 (Haiku eShop read 37 of 108 areas in alphabetical order, mostly deployment folders); EV-63 (`Kubernetes/eShopModernizedSQL-K8s/.kube/schema/v1.6.6/schema484738234`, 93,147 tokens, counts as own code: 10 areas, 1.39M tokens in the default selection; the regex `/.json$/iu` has an unescaped dot); EV-76 (the same Haiku stop: the 37 areas were (root), ACI, Kubernetes, ServiceFabric, Setup, VM and eShopPorted; the vendored `Scripts#8`, 48,625 tokens, was read in full as own code).
 - **Do**:
   - Start with red tests: `planReaderTasks` puts application code before deployment, configuration and generated areas; a file under `.kube/schema` with no extension is third-party.
   - Order reader tasks by kind (RF-210): the app's own code first (largest first), then tests, then deployment and infrastructure (`Kubernetes`, `.kube`, `docker`, `deploy`, `helm`, Service Fabric folders), configuration and generated folders, then libraries; never by name alone.
@@ -6710,7 +6714,7 @@ one wave never edit the same file; Depends on carries the order where they would
   - The estimate uses the same order, so its likely figure for a capped run names the areas it would reach.
 - **Delivers**: the order and detection change, unit tests and an estimate test.
 - **Done when**: an eShop-shaped fixture plans the MVC and WebForms app areas before `Kubernetes`, `.kube` and `Docker` areas; the `.kube/schema` file without `.json` is left out of the default selection; CI green.
-- **Refs**: RF-104, RF-200, RF-210, ADR-004, DEC-195; evaluation of 2026-10-29, EV-63, EV-68.
+- **Refs**: RF-104, RF-200, RF-210, ADR-004, DEC-195; evaluation of 2026-10-29, EV-63, EV-68, EV-76.
 
 ### P7-04 - A realistic estimate with likely and worst-case totals, and no run without a key
 
@@ -6840,7 +6844,7 @@ one wave never edit the same file; Depends on carries the order where they would
 - **Depends on**: none
 - **Gate**: owner (DEC-16)
 - **Status**: Todo
-- **Reads**: `src/infrastructure/handoff/file-handoff-writer.ts` (`write`, the last mask at line 163), `src/infrastructure/handoff/handoff-orchestration-markdown.ts` (`patternCell` 187-190, `grepTableLines`), `src/infrastructure/guards/secret-masker.ts` (`passwordKey` 44-45, the bare-value rule 154-160, `bareMarker`), `secret-option-pieces.ts`, `src/infrastructure/prompts/masked-value-prompt.ts`, `prompts/shared/masked-value.v1.md`, `prompts/catalogue/grep-rules.v1.yaml` (line 87), `src/presentation/compose-plan.ts` (line 88), RF-141, RF-640, ADR-006, ADR-013. Evidence, EV-59: every package of the evaluation has in `orchestration.md` line 98 `` `password =[MASKED:password] (a secret value is written here ...) `` instead of `` `password =` ``: the masker takes the closing backtick as the value. The eShop `checks.md` masks the column name `sa_password` the same way.
+- **Reads**: `src/infrastructure/handoff/file-handoff-writer.ts` (`write`, the last mask at line 163), `src/infrastructure/handoff/handoff-orchestration-markdown.ts` (`patternCell` 187-190, `grepTableLines`), `src/infrastructure/guards/secret-masker.ts` (`passwordKey` 44-45, the bare-value rule 154-160, `bareMarker`), `secret-option-pieces.ts`, `src/infrastructure/prompts/masked-value-prompt.ts`, `prompts/shared/masked-value.v1.md`, `prompts/catalogue/grep-rules.v1.yaml` (line 87), `src/presentation/compose-plan.ts` (line 88), RF-141, RF-640, ADR-006, ADR-013. Evidence, EV-59: every package of the evaluation has in `orchestration.md` line 98 `` `password =[MASKED:password] (a secret value is written here ...) `` instead of `` `password =` ``: the masker takes the closing backtick as the value. The eShop `checks.md` masks the column name `sa_password` the same way. EV-71 (Haiku, the same problem): all three Haiku packages have the same line 98; the code span runs into the next table cell, the note "before sending" is wrong for a written file, and `prompts/catalogue/grep-rules.v1.yaml` does not write the pattern self-safe although the package's own lessons say to write such patterns as `Passwor[d]=`.
 - **Do**:
   - Start with red tests through `FileHandoffWriter` with a real masker: `orchestration.md` keeps `` `password =` `` and holds no `[MASKED:`; a data model column `sa_password` stays readable in `checks.md`; a real secret in model text in the package is still masked.
   - Keep the last mask for model text; write Rosetta's own catalogue patterns and identifiers so that they are not read as an assignment with a value, and do not take a lone backtick or an empty value as a secret.
@@ -6848,7 +6852,7 @@ one wave never edit the same file; Depends on carries the order where they would
   - Add masker regression tests for each rule touched; never weaken a rule for model or repository text.
 - **Delivers**: the change and tests.
 - **Done when**: the recorded packages hold no `[MASKED:` in fixed text; every existing masker test passes; CI green.
-- **Refs**: RF-141, RF-640, ADR-006, ADR-013, DEC-16; evaluation of 2026-10-29, EV-59.
+- **Refs**: RF-141, RF-640, ADR-006, ADR-013, DEC-16; evaluation of 2026-10-29, EV-59, EV-71.
 
 ### P7-12 - Local tiers show in the package, and Codex is offered tier model names
 
@@ -6857,33 +6861,38 @@ one wave never edit the same file; Depends on carries the order where they would
 - **Depends on**: P7-11
 - **Gate**: owner (DEC-185)
 - **Status**: Todo
-- **Reads**: `src/domain/planning/build-method.ts` (`local` 31-32, `claudeCodeModels` 35-40, `modelsOf` 44, `isLocalTier` 89-90), `src/domain/planning/card-model-check.ts` (`localModelCeiling`, line 46), `src/domain/planning/task-method.ts` (`difficultyBands`, 51-55), `src/infrastructure/handoff/handoff-orchestration-markdown.ts` (`bandsSection` 56-76, `modelOf`), `handoff-agents-folder.ts` (`readmeFile` 127-148, `noteLines`), `handoff-model-checks-markdown.ts`, `web/src/lib/plan-setup/build-method.ts` (`TOOL_CHOICES`, `claudeCodeModels` 50-54, `modelExample`, `modelOf`), `web/src/pages/PlanMethodModels.tsx`, RF-639, RF-641, DEC-185. Evidence: EV-61 (Invoice brief `local: {smallest: true}`; `orchestration.md` line 20 and `agents/README.md` line 10 name `gemma4:e4b` but never say it runs locally, and the band table still gives it difficulty 1-5); EV-64 (for Codex the middle and largest tiers stay "not named" and `checks.md` lists 16 "no model is named" lines).
+- **Reads**: `src/domain/planning/build-method.ts` (`local` 31-32, `claudeCodeModels` 35-40, `modelsOf` 44, `isLocalTier` 89-90), `src/domain/planning/card-model-check.ts` (`localModelCeiling`, line 46), `src/domain/planning/task-method.ts` (`difficultyBands`, 51-55), `src/infrastructure/handoff/handoff-orchestration-markdown.ts` (`bandsSection` 56-76, `modelOf`), `handoff-agents-folder.ts` (`readmeFile` 127-148, `noteLines`), `handoff-model-checks-markdown.ts`, `web/src/lib/plan-setup/build-method.ts` (`TOOL_CHOICES`, `claudeCodeModels` 50-54, `modelExample`, `modelOf`), `web/src/pages/PlanMethodModels.tsx`, RF-639, RF-641, DEC-185. Evidence: EV-61 (Invoice brief `local: {smallest: true}`; `orchestration.md` line 20 and `agents/README.md` line 10 name `gemma4:e4b` but never say it runs locally, and the band table still gives it difficulty 1-5); EV-64 (for Codex the middle and largest tiers stay "not named" and `checks.md` lists 16 "no model is named" lines); EV-72 (Haiku, the same problem as EV-61: the Invoice and eShop briefs mark gemma4:e4b local, "runs locally" has 0 hits in both packages, and the only trace is the `checks.md` warning of `handoff-model-checks-markdown.ts` line 26, which needs a smallest-tier card; every card was difficulty 6 or more); EV-77 (Haiku, the same problem as EV-64: Plan setup shows only placeholders for Codex, `web/src/lib/plan-setup/build-method.ts` 62-67; and the Invoice `open-questions.md` lines 24-25 list `buildMethod.models.middle` and `buildMethod.models.largest` as defaulted with no suggested answers, unlike every other defaulted brief question). The suggested answers of a defaulted brief question come from `briefQuestionOptions` and `optionsOf` in `src/domain/planning/brief-question-options.ts`, written by `briefOptionLines` in `src/infrastructure/handoff/handoff-default-options-markdown.ts`.
 - **Do**:
-  - Start with red tests: the band table and `agents/README.md` say "runs locally" for a local tier; a local tier's band stops at the RF-641 ceiling (difficulty 2) and the cards above it go to the next tier; Plan setup offers tier model names for Codex.
+  - Start with red tests: the band table and `agents/README.md` say "runs locally" for a local tier, also when no card is in that tier; a local tier's band stops at the RF-641 ceiling (difficulty 2) and the cards above it go to the next tier; Plan setup offers tier model names for Codex; a Codex brief that leaves `buildMethod.models.middle` and `buildMethod.models.largest` blank lists at least three suggested answers for each in `open-questions.md`.
   - Keep the ceiling in one domain constant shared by the check and the band table.
   - Add a Codex model map in both `build-method.ts` files, so the band table names models for Codex.
+  - Give `optionsOf` suggested answers for a blank tier-model question, taken from the model map of the brief's tool (the Codex map for Codex), recommended first, as for the other defaulted brief questions (RF-645).
 - **Delivers**: the writer, domain and page changes, unit and web tests.
-- **Done when**: an Invoice-shaped package says the smallest tier runs locally and gives it no card above difficulty 2; a Codex brief with no typed names gets the offered names; CI green.
-- **Refs**: RF-639, RF-640, RF-641, DEC-185; evaluation of 2026-10-29, EV-61, EV-64.
+- **Done when**: an Invoice-shaped package says the smallest tier runs locally and gives it no card above difficulty 2; a Codex brief with no typed names gets the offered names; its blank tier questions list suggested answers in `open-questions.md`; CI green.
+- **Refs**: RF-639, RF-640, RF-641, RF-645, DEC-185; evaluation of 2026-10-29, EV-61, EV-64, EV-72, EV-77.
 
 ### P7-13 - The data model: no duplicate or junk tables, no placeholder columns, the stack's dialect
 
 - **Difficulty**: 8 (sonnet)
-- **Size**: M
+- **Size**: L
 - **Depends on**: none
 - **Gate**: owner (DEC-176)
 - **Status**: Todo
-- **Reads**: `src/domain/planning/data-model-tables.ts` (`checkedTables`, uniqueness at line 133), `data-model-assembly.ts`, `src/application/plan/plan-data-model.ts` (`planDataModel`, batches joined at 63-66), `data-model-batches.ts`, `data-model-placeholders.ts`, `data-model-database.ts` (`typeProblems` 100-121, the SQL Server list 9-15), `prompts/planner/data-model.v4.md`, `src/infrastructure/handoff/handoff-data-model-markdown.ts`, RF-603, RF-623, DEC-176. Evidence: EV-31 and EV-40 are still open; in this evaluation eShop `data-model.md` lines 146-339 have `catalog_brand` and `catalog_brands`, `catalog_type` and `catalog_types`, `catalog_item` and `catalog_items`, plus `sql_data_deployment_configuration`, `catalog_database_context_registration`, `application_configuration_parameters` and `paginated_items_viewmodel`; Asset Manager has `metrics_to_derive_status` and `valuation_lookup_range`; Invoice has `invoice_generator_xlsm` and `vba_glossary_table` and `text` on SQL Server.
+- **Reads**: `src/domain/planning/data-model-tables.ts` (`checkedTables`, uniqueness at line 133), `data-model-assembly.ts`, `src/application/plan/plan-data-model.ts` (`planDataModel`, batches joined at 63-66), `data-model-batches.ts`, `data-model-placeholders.ts`, `data-model-database.ts` (`typeProblems` 100-121, the SQL Server list 9-15), `prompts/planner/data-model.v4.md`, `src/infrastructure/handoff/handoff-data-model-markdown.ts`, RF-603, RF-623, DEC-176. Evidence: EV-31 and EV-40 are still open; in this evaluation eShop `data-model.md` lines 146-339 have `catalog_brand` and `catalog_brands`, `catalog_type` and `catalog_types`, `catalog_item` and `catalog_items`, plus `sql_data_deployment_configuration`, `catalog_database_context_registration`, `application_configuration_parameters` and `paginated_items_viewmodel`; Asset Manager has `metrics_to_derive_status` and `valuation_lookup_range`; Invoice has `invoice_generator_xlsm` and `vba_glossary_table` and `text` on SQL Server. Haiku evidence, also read: `src/application/plan/plan-package.ts` (`leftOutItems` and `dataModelItems`, 118-141: every data model problem becomes a "Left out" row), `src/domain/planning/data-model-names.ts` (`unconfirmedType`). EV-74: Asset Manager plan `da35a56f` `checks.md` lines 74-92 list 17 columns as left out, "not a SQL Server type", yet `data-model.md` lines 76-119 still hold them as `integer`, which is a valid T-SQL synonym of `int` and is missing from the SQL Server list; eShop plan `c3569e00` lists `price` as left out while the catalog table keeps `price decimal(10,2)`. EV-75: the same Asset Manager model has `movement_type varchar(3)` (`data-model.md` line 107) for a column that holds "Opening Stock" (13 characters, the list validation "IN,OUT,Opening Stock" cited by BR-007), and mixes `integer`, `numeric(12,2)` and `varchar` with `int` and `nvarchar(200)` (lines 76 and 167); eShop has `description` and `picture_file_name` typed "to confirm" (lines 88 and 90).
 - **Do**:
-  - Start with red tests: `catalog_brand` and `catalog_brands` give one table with both sources; a configuration or view-model "entity" gives no table; `metrics_to_derive_status` is refused as a placeholder; `text` on SQL Server is a type problem.
+  - Start with red tests: `catalog_brand` and `catalog_brands` give one table with both sources; a configuration or view-model "entity" gives no table; `metrics_to_derive_status` is refused as a placeholder; `text` on SQL Server is a type problem; `integer` on SQL Server is accepted and written `int`; a column the model keeps is never listed under "Left out"; a `varchar(3)` column whose source lists "Opening Stock" is a problem.
   - Merge tables whose names differ only by plural, case or separators, uniting their sources and columns.
   - Skip an `ENT` card that describes no stored data (configuration, view model, registration, the workbook file itself) and list it in `checks.md`.
   - Widen the placeholder filter to column names that describe work rather than data.
   - Add the deprecated types of each database (SQL Server `text`, `ntext`, `image`) to the dialect check, with the replacement named.
-  - Do not edit `plan-package.ts`.
+  - Accept the synonyms each database has (SQL Server `integer`, `dec`, `character varying`, `national character varying` and the like) and write them under the one name the model uses, so one model holds one dialect.
+  - A type problem on a column the model keeps is a "Data model" check, not a "Left out" row; "Left out" lists only what the model dropped. The kind goes on the problem; `dataModelItems` in `plan-package.ts` only reads it.
+  - Check a character column's length against the longest value its source claims list (a list validation, an enum, a constant); a shorter length is widened to fit and noted in `checks.md`.
+  - A "to confirm" type takes the type of the legacy column when its source names one; otherwise it stays and is listed in `checks.md`.
+  - Do not edit `plan-package.ts` beyond reading the problem kind (P7-18 splits the file).
 - **Delivers**: the changes, a prompt version if needed, unit tests and an integration test with recorded responses.
-- **Done when**: recorded eShop, Asset Manager and Invoice plans have none of the tables or columns above; recordings replay; CI green.
-- **Refs**: RF-603, RF-623, RNF-004, DEC-176; evaluation EV-31, EV-40, evaluation of 2026-10-29.
+- **Done when**: recorded eShop, Asset Manager and Invoice plans have none of the tables or columns above; the Asset Manager plan keeps its `integer` columns as `int` with no "Left out" row for them and gives `movement_type` room for "Opening Stock"; recordings replay; CI green.
+- **Refs**: RF-603, RF-623, RNF-004, DEC-176; evaluation EV-31, EV-40, evaluation of 2026-10-29, EV-74, EV-75.
 
 ### P7-14 - The plan does not fail RST-1806 when gap cards are readable
 
@@ -6894,8 +6903,9 @@ one wave never edit the same file; Depends on carries the order where they would
 - **Status**: Todo
 - **Reads**: `src/application/use-cases/build-plan.ts` (RST-1806 at 196-199, warnings only logged at 183), `src/application/plan/plan-links.ts` (`gapRound` 75-99, `repairable` 125-133, `planGap` 136-164), `src/application/plan/plan-answer.ts` (`gapTaskSchema` 107-113, `numberPosition` 55-60), `src/application/plan/gap-answer.ts` (`parseGapAnswer`, 98-104), `src/application/cards/extract-json.ts` (`searchJson`, 140-161), `src/domain/planning/plan-gap.ts` (`keptDrafts` 98-104, `faultOf` 83), `src/domain/planning/plan-content.ts` (`noRequirement`, 172-176), `src/domain/planning/plan-coverage.ts` (`alignRequirements`), `prompts/planner/gap.v2.md` (line 22), `gap-repair.v2.md`, RF-601, RF-607, RF-627, DEC-176. Cause found in the two failed runs:
   - Ollama eShop plan `a9700a80`: the package answer dropped 6 of 7 cards (EV-67, P7-15), so coverage had one card and 25 items open; the gap round dropped 5 of 15 cards because `dependsOn` held item ids such as `"operation:getCatalogItems"`; the repair answer was not JSON (`"requirements": [ none ]`) and its `dependsOn` held digit strings that the gap schema refuses, so it added nothing and 11 items stayed open.
-  - Haiku Invoice first plan `8ff8e480`: the gap card for F-007 had `"requirements": []`; with `sdd` in the brief `keptDrafts` left it out, the repair wrote the same card again, and one item stayed open. No requirement cites FEAT-011, the source of F-007, and `gap.v2.md` allows an empty list.
+  - Haiku Invoice first plan `8ff8e480` (the Haiku report's EV-30 re-check): F-007 is the menu navigation feature, and no card of the package answer built it; the gap card for F-007 had `"requirements": []`; with `sdd` in the brief `keptDrafts` left it out, the repair wrote the same card again, and one item stayed open. No requirement cites FEAT-011, the source of F-007, and `gap.v2.md` allows an empty list.
   - In both runs one bad element drops a whole gap card and there is no further round.
+  - EV-79 (Haiku): the eShop plans `ff6ffae1` and `e5638a9b`, from the 349-card Deepen `8544b460`, both ended RST-1806 with different open items (3 of 32: the Service Fabric deployment, About and Contact; then 4 of 30: catalogue features and the brand API; `checks.md` lines 7-16 of each run), so a retry does not converge. Each try made two calls of about 325k input tokens with little caching and cost $0.47. The cause of the open items is not yet read from their answers; this card checks them against the causes above. The cost of a plan from a large Deepen is not in this card.
 - **Do**:
   - Start with red tests: `parseGapAnswer` reads `dependsOn: ["1"]` as position 1; `dependsOn: ["operation:x"]` drops the entry and keeps the card; an answer with one card holding `[ none ]` still reads the other cards; `addGapTasks` under SDD derives a requirement for a card that builds a source-backed item, and leaves out only a card that has none to derive.
   - Read gap cards element by element; accept digit strings in `dependsOn` as the package answer does; salvage the task objects of an answer that is not JSON as a whole.
@@ -6904,7 +6914,7 @@ one wave never edit the same file; Depends on carries the order where they would
   - New gap and gap-repair prompt versions say an SDD card names a requirement.
 - **Delivers**: the parser, domain and prompt changes, unit tests and integration tests with recorded answers shaped like both runs.
 - **Done when**: the gap and repair answers of `a9700a80` and the gap answers of `8ff8e480` give no unread gap card, and each run ends `Completed` or names every open item in `checks.md`; recordings replay; CI green.
-- **Refs**: RF-601, RF-607, RF-627, RNF-004, ADR-018, DEC-176; evaluation of 2026-10-29, EV-67, plans `a9700a80` and `8ff8e480`.
+- **Refs**: RF-601, RF-607, RF-627, RNF-004, ADR-018, DEC-176; evaluation of 2026-10-29, EV-67, EV-79, plans `a9700a80`, `8ff8e480`, `ff6ffae1` and `e5638a9b`.
 
 ### P7-15 - A card id written as a requirement is repaired, not the task card dropped
 
@@ -6978,10 +6988,10 @@ one wave never edit the same file; Depends on carries the order where they would
 
 - **Difficulty**: 8 (sonnet)
 - **Size**: L
-- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P6-33
+- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P7-20, P7-21, P7-22, P6-33
 - **Gate**: owner
 - **Status**: Todo
-- **Reads**: the evaluation of 2026-10-29 (findings EV-44, EV-56..EV-68 and their repros), `docs/verification/`, RNF-006, RNF-012.
+- **Reads**: the evaluation of 2026-10-29 (findings EV-44, EV-56..EV-81 and their repros), `docs/verification/`, RNF-006, RNF-012.
 - **Do**:
   - Run Asset Manager, Invoice Generator and eShopModernizing end to end (scan, understand, Deepen, answers, plan) on a local Ollama model and on Haiku, one test user per provider, with the default caps and pause-and-ask.
   - Check each finding of the evaluation of 2026-10-29 by its repro and report fixed, better or still present, with file:line evidence.
@@ -6989,3 +6999,52 @@ one wave never edit the same file; Depends on carries the order where they would
 - **Delivers**: the evaluation report and the follow-up cards it calls for.
 - **Done when**: the owner has read the report.
 - **Refs**: RNF-006, RNF-012; evaluation of 2026-10-29.
+
+### P7-20 - The data-access card never depends on a migrations card that is not there
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P7-13, P7-14, P7-17, P7-18
+- **Gate**: owner (DEC-190)
+- **Status**: Todo
+- **Reads**: `src/domain/planning/foundation-cards.ts` (the `access` card text at 56-71, its first criterion at line 62; `withDataCards` 248-293, where `schemas` counts the cards with the migrations title; `withoutDataCards` 201-224), `src/domain/planning/plan-coverage.ts` (`MIGRATION_TITLE` line 125, `isMigrationCard` 128-130, `withMigrationCard` 166-186: no card when there is no table, no phase or no task), `src/application/plan/plan-coverage.ts` (`planCoverage`, the migrations card is added at line 69), `src/application/plan/plan-links.ts` (`gapRound`, `planGap`, `planLinks`), `src/domain/planning/phase-titles.ts` (`titlePhases`), `src/domain/planning/requirement-alignment.ts` (`alignRequirements`), `src/application/plan/plan-package.ts` (`decidedOf`, line 226), `src/domain/planning/data-presence.ts` (`hasData`), RF-610, RF-623, RF-630, DEC-190. Evidence, EV-81 (a variant of the P6-27 rule): eShop plan `e5638a9b` (Haiku, the second run) has 5 tables but no migrations card. T-002, the fixed data-access card, says "Given the tables of the migrations card ..." (`tasks.md` lines 82 and 102) and depends on T-001 only; the planner card T-004 "Create the catalogue schema and seed it on first run" stands in for the migrations. Placement: the cause is in the fixed cards and the migrations card (`foundation-cards.ts`, `plan-coverage.ts`), not in the data model of P7-13 or the plan answer of P7-15. P7-17 edits `foundation-cards.ts` (its P6-27 item) and P7-18 splits `plan-package.ts`, so this card waits for both, and for P7-13 and P7-14, which change the tables and the gap rounds.
+- **Do**:
+  - Start with red tests: a plan with tables and no card titled with `MIGRATION_TITLE` gives a data-access card whose criteria name no migrations card; a plan with tables still holds the migrations card after the gap rounds; the data-access card depends on the migrations card, or on the planner card that creates the schema when there is one.
+  - Find where the eShop plan lost the migrations card (the coverage step, a gap round, `titlePhases` or the fixed cards) and fix it there; write the cause in the pull request.
+  - Word the data-access card from what the plan holds: "the tables of the migrations card" only when that card exists, "the tables of the target data model" otherwise.
+  - Keep the DEC-190 rule: no data card when the run found no data, and no card depends on a card that is not there.
+- **Delivers**: the fix, unit tests and an integration test with a recorded plan shaped like `e5638a9b`.
+- **Done when**: the recorded eShop-shaped plan with tables has a migrations card and a data-access card that depends on it; no fixed card names a card the plan does not hold; the recordings with a data model give the same `tasks.md` as before; CI green.
+- **Refs**: RF-610, RF-623, RF-630, DEC-190, P6-27; evaluation of 2026-10-29, EV-81.
+
+### P7-21 - Haiku minors: suggested answers, a typed architecture, grep rows of a proposed layer
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P7-10, P7-17, P6-33
+- **Gate**: owner (DEC-178, DEC-187)
+- **Status**: Todo
+- **Reads**: `prompts/cards/card-format.v3.md` (the example third answer at line 48, the rule at 81-82) and `prompts/cards/repair.v4.md` (14-17), or the versions P7-17 writes; `src/application/cards/card-schema.ts` (`suggestedAnswersNeeded` line 43, the check at 123), `src/domain/cards/suggested-answer.ts`; `web/src/lib/plan-setup/choices.ts` (`chooseStyle` 28-33, `proposedOf`), `web/src/lib/plan-setup/own-answers.ts`, `web/src/lib/plan-setup/draft.ts` (`recommended`, lines 35, 69 and 177), `web/src/pages/PlanArchitectureStep.tsx`, `web/src/pages/use-plan-session.ts` (line 60), `src/domain/planning/brief-decisions.ts` (`styleDecision`, the "made no recommendation" sentence at line 93), `src/infrastructure/handoff/handoff-style-markdown.ts` (line 38); `src/infrastructure/handoff/handoff-grep-rules.ts` (`stackLanguages` 32-37), `src/domain/planning/planning-brief.ts` (`StackChoice`, the P5-39 flag of a proposed layer at 50-53); RF-608, RF-637, RF-640, RF-645, DEC-178, DEC-187.
+- **Do**: one commit per item, each with a red test first.
+  - EV-69: the third suggested answer has the same kind as the question. A new `card-format` and `repair` prompt version (RNF-004) gives a qualified "Yes, but ..." only to a yes/no question; a "who", "which", "where" or "what" question gets a third answer of the same kind. Add a model-free check that sends an `OQ` card back for repair when its question is not a yes/no question and an answer starts with "Yes" or "No". Evidence: Asset Manager plan `da35a56f` `open-questions.md` line 152 ("Who uses ...?" with "3. Yes, but only some sheets ..."), Invoice plan `92b3a1ea` line 155, eShop plan `c3569e00` lines 137-185 (19 of 25 questions; 43 of 61 in the second eShop run).
+  - EV-73: a typed architecture answer keeps Rosetta's recommendation. Saving a typed answer keeps `recommended` and the evidence of the styles the planner proposed; the ADR of the own answer names the recommendation and lists the proposed styles as options considered; the style check of `checks.md` judges the components against the owner's own answer and does not fall back to Layered. Evidence: the Invoice brief has `architecture.recommended: []` after the typed "Modular monolith with a separate reporting module"; `decisions/ADR-004.md` line 7 says "Rosetta made no recommendation for this brief", lines 11-12 list only Layered, and `checks.md` lines 47-58 leave all four modules with "no role of the style".
+  - Grep rows of a proposed layer (noted, not counted as a finding, in the Haiku report): a language named only by a stack layer the owner left open and Rosetta proposed (the P5-39 flag) adds no patterns to the grep table; the table says which proposed layer's patterns were left out. Evidence: the Asset Manager and Invoice tables (`orchestration.md` lines 93-113) list `innerHTML` and `child_process` because Rosetta proposed React for the default front-end layer of a C# stack.
+- **Delivers**: the prompt versions, the check, the web and writer changes, unit, web and integration tests, re-recorded responses where a prompt changed.
+- **Done when**: each item has a passing test that failed before; recorded packages give no "Yes, but" third answer to a "who" question, an own architecture ADR that names the recommendation, and no JavaScript row for a proposed front end on a C# stack; recordings replay; CI green.
+- **Refs**: RF-608, RF-637, RF-640, RF-645, RNF-004, DEC-178, DEC-187; evaluation of 2026-10-29, EV-69, EV-73.
+
+### P7-22 - Haiku minors: a missing branch at create, earlier-draft text in claims, the queue position
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P7-05, P7-08
+- **Gate**: owner
+- **Status**: Todo
+- **Reads**: `src/application/use-cases/create-project.ts` (`execute`, 72-88: it parses the address and makes no network call), `src/domain/sources/github-repo-ref.ts` (`parseGitHubUrl`), `src/application/projects/url-reasons.ts`, `src/presentation/web/project-routes.ts` (the field error at 161-167), `src/infrastructure/github/github-api.ts` (`commitSha` 84-96, RST-1901 `githubRefNotFound`), `src/infrastructure/github/fake-source-fetcher.ts` (line 58); `prompts/reader/reread.v4.md`, `src/infrastructure/prompts/prompt-files.ts` (line 34), `src/application/verifier/judge-claim.ts` (`ruleJudgement` 175-191), `src/application/verifier/masked-source-claim.ts` as the pattern of a rule file; `src/application/use-cases/get-run.ts` (`position`, 58-61), `src/presentation/web/run-routes.ts`, `web/src/pages/RunStatusBar.tsx` (`Badge`, line 35), `web/src/pages/HistoryRuns.tsx`, `web/src/pages/use-queue-position.ts`, `web/src/pages/QueueNotice.tsx`, `docs/design-system.md` section 14 (queue notice); RF-010, RF-120, RF-209, RF-301, RF-1108.
+- **Do**: one commit per item, each with a red test first.
+  - EV-70: a GitHub address whose branch or tag does not exist is refused at create. Create project resolves the ref with the GitHub client and, on RST-1901, answers the field error next to the address and creates nothing; when GitHub cannot be reached it creates the project as today and the scan checks again. This adds the first network call to create, so add the Given to RF-010 first; the owner approves it in the pull request. Evidence: `POST /api/projects` with `.../eshopmodernizing/tree/master` answered 201 (project `26e77c45`; the repository has only `main`); the scan waited 107 min in the queue and failed RST-1901 in 0.6 s.
+  - EV-78: a claim stands on its own. A new `reread` prompt version (RNF-004) says a new claim states what the code does and never refers to an earlier or rejected claim; a model-free verifier rule in its own file, called from `ruleJudgement`, rejects a claim whose text refers to an earlier claim, with the reason. Evidence: Invoice Deepen `5c35f8ef`, `cards/ENT/ENT-003.md` line 34 ("... so the earlier claim that no identifier column exists is wrong.") and `cards/FEAT/FEAT-008.md` line 82, both Supported.
+  - EV-80: every page that shows a queued run shows its position (RF-1108): the live run page (`RunStatusBar`), the run history and the journey, not only the start page and the Projects page; it also says how many runs are ahead. Evidence: queue waits of 38.7 to 101.4 min for Asset Manager and Invoice; a 2-minute plan waited 64 min and the history showed only `Queued`. A wait estimate is not in RF-1108; it needs a new requirement from the owner first.
+- **Delivers**: the create check, the prompt version and the rule, the page changes, unit, integration and web tests, re-recorded responses where the prompt changed.
+- **Done when**: each item has a passing test that failed before; a project at a missing branch is refused with the field error; a recorded Deepen re-read gives no claim that refers to an earlier claim; the live run page and the history show the position of a queued run; recordings replay; CI green.
+- **Refs**: RF-010, RF-120, RF-209, RF-301, RF-1108, RNF-004; evaluation of 2026-10-29, EV-70, EV-78, EV-80.
