@@ -80,7 +80,7 @@ async function finishWorkbooks(deps: FinishDependencies, work: FinishWork): Prom
       return { kind: 'refused', error: signal.reason };
     }
     onAttach?.();
-    const attach = attachWorkbooks(deps, { actor, ip, project, published, uploadedAt });
+    const attach = attachWorkbooks(deps, { actor, ip, project, published, uploadedAt, batchId });
     const { key, created } = published;
     const summary = (): WorkbookBatchSummary => summaryOfBatch(project, published, uploadedAt);
     const attached = await withinAttachLimit(attach, deps.attachTimeoutMs, () => {

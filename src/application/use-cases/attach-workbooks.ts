@@ -34,6 +34,8 @@ export interface Attachment {
   readonly project: Project;
   readonly published: PublishedWorkbooks;
   readonly uploadedAt: Date;
+  /** The batch the snapshot was published for, named in the log of a step that was skipped. */
+  readonly batchId?: string | undefined;
 }
 
 /** Records the published snapshot as the project's source (RF-150), or removes it when the project is gone. */
@@ -41,7 +43,7 @@ export async function attachWorkbooks(
   deps: AttachDependencies,
   input: Attachment,
 ): Promise<Result<WorkbookBatchSummary, BatchProblem>> {
-  const { actor, ip, project, published, uploadedAt } = input;
+  const { actor, ip, project, published, uploadedAt, batchId } = input;
   const { projects, uploads } = deps;
   const names = published.info.workbooks.map((book) => book.fileName);
   const attached = await projects.attachUpload({
@@ -63,15 +65,16 @@ export async function attachWorkbooks(
   // RF-128: the same content was already stored; now that it is the source, the newest upload names it.
   // RF-159: the source is attached, so a step that fails from here on is logged and skipped.
   const { logger } = deps;
+  const context = { projectId: project.id, snapshotKey: published.key, batchId };
   if (!published.created) {
-    await bestEffort(logger, 'the rename of the snapshot', () =>
+    await bestEffort(logger, 'the rename of the snapshot', context, () =>
       uploads.rewriteInfo(published.key, published.info),
     );
   }
-  await bestEffort(logger, 'the removal of the earlier snapshot', () =>
+  await bestEffort(logger, 'the removal of the earlier snapshot', context, () =>
     pruneEarlier(deps, project, published.key),
   );
-  await bestEffort(logger, 'the audit rows of the workbooks', () =>
+  await bestEffort(logger, 'the audit rows of the workbooks', context, () =>
     recordWorkbooks(deps, {
       ...{ actor, projectId: project.id, ip },
       ...{ snapshotHash: published.info.snapshotHash, workbooks: published.info.workbooks },

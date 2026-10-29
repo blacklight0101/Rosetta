@@ -190,7 +190,7 @@ export class StoreUpload {
       if (hooks.signal.aborted) return this.stopped(stored, hooks.signal);
       batch.attaching = true;
     }
-    const done = { project, stored, fileName: name.value, uploadedAt };
+    const done = { project, stored, fileName: name.value, uploadedAt, batchId: batch?.id };
     const publishing = this.publish(request, done);
     const late = (): void => {
       if (batch !== undefined) batch.late = this.settleLate(batch, publishing, done);
@@ -224,6 +224,7 @@ export class StoreUpload {
       readonly stored: StoredUpload;
       readonly fileName: string;
       readonly uploadedAt: Date;
+      readonly batchId?: string | undefined;
     },
   ): Promise<Result<UploadSummary, UploadProblem>> {
     const { project, stored, fileName, uploadedAt } = done;
@@ -236,20 +237,21 @@ export class StoreUpload {
     // RF-128: the same content was already stored; now that it is the source, the newest upload names it.
     // RF-159: the source is attached, so a step that fails from here on is logged and skipped.
     const { logger, uploads } = this.deps;
+    const context = { projectId: project.id, snapshotKey: stored.key, batchId: done.batchId };
     const { userId } = request.actor;
     if (!stored.created) {
-      await bestEffort(logger, 'the rename of the snapshot', () =>
+      await bestEffort(logger, 'the rename of the snapshot', context, () =>
         uploads.rewriteInfo(stored.key, stored.info),
       );
     }
-    await bestEffort(logger, 'the removal of the earlier snapshot', () =>
+    await bestEffort(logger, 'the removal of the earlier snapshot', context, () =>
       pruneEarlier(this.deps, project, stored.key),
     );
     const input = { userId, ip: request.ip, projectId: project.id };
-    await bestEffort(logger, 'the audit rows of the zip', () =>
+    await bestEffort(logger, 'the audit rows of the zip', context, () =>
       recordUpload(this.deps, input, stored),
     );
-    await bestEffort(logger, 'the audit rows of the workbooks', () =>
+    await bestEffort(logger, 'the audit rows of the workbooks', context, () =>
       recordWorkbooks(this.deps, {
         ...{ actor: request.actor, projectId: project.id, ip: request.ip },
         snapshotHash: stored.info.snapshotHash,
