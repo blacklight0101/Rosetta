@@ -144,20 +144,35 @@ test('RF-159 closing the page does not cancel the work: the project page shows i
   ).toBeVisible();
 });
 
-test('RF-159 Cancel stops the batch, publishes nothing and offers Upload again by keyboard', async ({
+// The real batch of two small workbooks may still be at work when Cancel is pressed, or already stored
+// behind the scripted state: the server answers 204 (stopped, nothing published) or 409 (it had
+// ended), and the page must show what really happened, never a false "Nothing was published".
+test('RF-159 Cancel by keyboard shows the real outcome: nothing published when it stopped the batch, the summary when it was already stored', async ({
   page,
 }) => {
   const script: Script = { scripted: true, step: 'rendering', reads: 0 };
   await scriptState(page, script);
-  await startUpload(page);
+  const projectId = await startUpload(page);
   const cancel = page.getByRole('button', { name: 'Cancel' });
   await expect(cancel).toBeVisible();
+  const answered = page.waitForResponse(
+    (response) => STATE_PATH.test(response.url()) && response.request().method() === 'DELETE',
+  );
 
   await cancel.focus();
   await page.keyboard.press('Enter');
+  const status = (await answered).status();
+  script.scripted = false;
 
-  await expect(page.getByRole('alert')).toContainText('Nothing was published');
-  await expect(page.getByRole('button', { name: 'Upload again' })).toBeVisible();
+  expect([204, 409]).toContain(status);
+  const stored = status === 409;
+  const outcome = stored
+    ? page.getByRole('status').filter({ hasText: '2 workbooks read' })
+    : page.getByRole('alert').filter({ hasText: 'Nothing was published' });
+  await expect(outcome).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('Nothing was published')).toHaveCount(stored ? 0 : 1);
   await expect(page.getByTestId('processing')).toHaveCount(0);
+  const shown = await page.request.get(`/api/projects/${projectId}`);
+  expect(await shown.json()).toMatchObject({ source: stored ? { workbooks: 2 } : null });
   await expectNoSeriousViolations(page);
 });

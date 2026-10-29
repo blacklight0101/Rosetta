@@ -39,7 +39,7 @@ export interface WorkbookFlow {
   /** RF-159: what the server says of the batch it is reading; absent until it answers. */
   readonly processing: BatchState | undefined;
   readonly send: (name: string, files: readonly File[]) => void;
-  /** RF-159: stops the batch being read; nothing is published. */
+  /** RF-159: stops the batch being read; nothing is published, unless the batch had already ended. */
   readonly cancel: () => void;
   /** New files were chosen: forget the last result and place every file at Waiting. */
   readonly reset: (count: number) => void;
@@ -187,10 +187,16 @@ function useRunner(input: RunnerInput): Runner {
   };
 
   const cancel = (): void => {
-    if (project !== undefined && out.processing !== undefined) {
-      void cancelBatch(client, { projectId: project.id, batchId: out.processing.batchId });
+    const stopping = stop.current;
+    if (project === undefined || out.processing === undefined) {
+      stopping.abort();
+      return;
     }
-    stop.current.abort();
+    const target = { projectId: project.id, batchId: out.processing.batchId };
+    void cancelBatch(client, target).then((cancelled) => {
+      // RF-159: 409 means the work had already ended; the wait goes on and shows how it ended.
+      if (cancelled.ok || cancelled.error.status !== 409) stopping.abort();
+    });
   };
   return { send, follow, cancel };
 }

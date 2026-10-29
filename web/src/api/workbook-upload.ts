@@ -30,13 +30,16 @@ export async function loadWorkbookMaxFiles(
     : defaultWorkbookMaxFiles;
 }
 
-/** Cancels an open batch so the next one can be opened at once (RST-1919); a failure is not worth telling. */
+/**
+ * Cancels a batch so the next one can be opened at once (RST-1919). The answer is 409 when the work on it
+ * had already ended (RF-159): then it was not cancelled and its state tells how it ended.
+ */
 // RF-150
-export async function cancelBatch(
+export function cancelBatch(
   client: ApiClient,
   batch: { readonly projectId: string; readonly batchId: string },
-): Promise<void> {
-  await client.request({
+): Promise<ApiResult<undefined>> {
+  return client.request({
     method: 'DELETE',
     path: `${batchPath(batch.projectId)}/${encodeURIComponent(batch.batchId)}`,
     schema: z.undefined(),
