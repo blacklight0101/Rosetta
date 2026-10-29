@@ -102,6 +102,19 @@ describe('orchestration.md part 3', () => {
     expect(text).toMatch(/third failure.*owner/iu);
   });
 
+  it('RF-640 the third failure writes the status text only when an escalation model is named', () => {
+    const text = 'escalation, owner approved';
+    const named = textOf({ ...claudeCode, models: { escalation: 'huge-x' } });
+    const none = textOf();
+
+    expect(named).toMatch(
+      /third failure.*owner's approval in chat.*Status line.*`escalation, owner approved`/iu,
+    );
+    expect(named.split(text).length - 1).toBe(1);
+    expect(none).not.toContain(text);
+    expect(none).toMatch(/third failure.*the owner decides/iu);
+  });
+
   it('RF-640 the card status flow lists every status and the blocked reasons', () => {
     const text = textOf();
 

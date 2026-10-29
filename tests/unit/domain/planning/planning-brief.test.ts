@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { noClaimVerbs } from '../../../../src/domain/planning/claim-verbs.js';
+import { noGrepRules } from '../../../../src/domain/planning/grep-rules.js';
 import { noStackData } from '../../../../src/domain/planning/stack-data.js';
 import type { Catalogue } from '../../../../src/domain/planning/catalogue.js';
 import {
@@ -29,6 +30,7 @@ const catalogue: Catalogue = {
   styles: [],
   stack: noStackData,
   claimVerbs: noClaimVerbs,
+  grepRules: noGrepRules,
 };
 
 describe('buildBrief: no answers', () => {

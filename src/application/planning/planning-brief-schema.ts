@@ -46,10 +46,18 @@ const models = z.strictObject({
   largest: model.optional(),
   escalation: model.optional(),
 });
+// P6-22: the tier models that run locally; a key is present only when true, so a brief saved before
+// the flag has no key and reads unchanged.
+const local = z.strictObject({
+  smallest: z.literal(true).optional(),
+  middle: z.literal(true).optional(),
+  largest: z.literal(true).optional(),
+});
 const buildMethod = z.strictObject({
   aiAssisted: z.boolean(),
   agentTool: agentTool.optional(),
   models: models.optional(),
+  local: local.optional(),
 });
 
 const architecture = z.strictObject({

@@ -9,6 +9,13 @@ import { handoffOf } from '../../../support/handoff-package-fixture.js';
 // stack, and no employer or project name. People building get no orchestration.md at all.
 
 const masker = new SecretMasker();
+const windowsParts: readonly RegExp[] = [
+  /reserved TCP port ranges/iu,
+  /command-line length limit of `npx`/iu,
+  /a build locked by a running app is built in another configuration or after stopping the app/iu,
+  /container engine stops with its Linux subsystem/iu,
+  /overnight system restarts/iu,
+];
 const claudeCode: BuildMethod = { aiAssisted: true, agentTool: { kind: 'claude-code' } };
 const codex: BuildMethod = { aiAssisted: true, agentTool: { kind: 'codex' } };
 
@@ -108,19 +115,45 @@ describe('orchestration.md lessons', () => {
 
   it('RF-644 the Windows items appear only for a Windows platform', () => {
     const windows = lessonsOf(claudeCode, [{ layer: 'hosting', choice: 'Windows Server' }]);
-    for (const part of [
-      /reserved TCP port ranges/iu,
-      /command-line length limit of `npx`/iu,
-      /running app locks build output/iu,
-      /container engine stops with its Linux subsystem/iu,
-      /overnight system restarts/iu,
-    ]) {
+    for (const part of windowsParts) {
       expect(windows).toMatch(part);
       expect(lessonsOf(claudeCode, [{ layer: 'hosting', choice: 'Linux container' }])).not.toMatch(
         part,
       );
       expect(lessonsOf()).not.toMatch(part);
     }
+  });
+});
+
+describe('orchestration.md Windows keying (DEC-190)', () => {
+  it('RF-644 DEC-190 a stack answer naming IIS gets the Windows items', () => {
+    const iis = lessonsOf(claudeCode, [{ layer: 'hosting', choice: 'IIS 10' }]);
+    for (const part of windowsParts) {
+      expect(iis).toMatch(part);
+    }
+  });
+
+  it('RF-644 DEC-190 Windows Authentication alone gets no Windows items', () => {
+    const auth = lessonsOf(claudeCode, [
+      { layer: 'hosting', choice: 'Linux containers with Windows Authentication via Kerberos' },
+    ]);
+    for (const part of windowsParts) {
+      expect(auth).not.toMatch(part);
+    }
+  });
+
+  it('RF-644 DEC-190 each Windows item states only its fact, in the trimmed wording', () => {
+    const windows = lessonsOf(claudeCode, [{ layer: 'hosting', choice: 'Windows Server' }]);
+    const bullets = windows.split('\n').filter((each) => each.startsWith('- '));
+    expect(bullets).toEqual(
+      expect.arrayContaining([
+        '- Windows has reserved TCP port ranges.',
+        '- The command-line length limit of `npx` applies to long argument lists.',
+        '- A build locked by a running app is built in another configuration or after stopping the app.',
+        '- The container engine stops with its Linux subsystem.',
+        '- Overnight system restarts end running processes.',
+      ]),
+    );
   });
 });
 
@@ -143,7 +176,7 @@ describe('orchestration.md lessons for a matching brief', () => {
     );
   });
 
-  it('RF-644 DEC-03 names no employer and no other project, and brief text is escaped', () => {
+  it('RF-644 DEC-03 names no employer and no other project', () => {
     const everything = lessonsOf(claudeCode, [
       { layer: 'hosting', choice: 'Windows Server' },
       { layer: 'language-runtime', choice: '.NET' },
