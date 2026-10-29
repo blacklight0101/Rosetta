@@ -2,6 +2,13 @@ import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.js';
 import { difficultyBands } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import {
+  hasOwnAnswer,
+  ownAnswerLines,
+  ownAnswerText,
+  ownPrincipleBullets,
+  referenceLine,
+} from './handoff-own-answers-markdown.js';
 import { decisionLink, handoffFiles } from './handoff-links.js';
 import { metricsRuleLines } from './handoff-metrics-markdown.js';
 import { operationsLines } from './handoff-parallel-markdown.js';
@@ -17,24 +24,33 @@ import { uploadSentence } from '../../domain/sources/upload-facts.js';
 // words; a principle that was not chosen appears in neither.
 
 function principleLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  if (handoff.principles.length === 0) return ['No principle was chosen.', ''];
-  return handoff.principles.flatMap((each) => [
-    `### ${esc.inline(each.title)}`,
-    '',
-    `Rule: ${esc.inline(each.rule)}`,
-    '',
-    `Why it matters: ${esc.inline(each.why)}`,
-    '',
-    `How to check: ${esc.inline(each.check)}`,
-    '',
-  ]);
+  const own = ownAnswerLines(handoff, 'principles', esc);
+  if (handoff.principles.length === 0) return ['No principle was chosen.', '', ...own];
+  return [
+    ...handoff.principles.flatMap((each) => [
+      `### ${esc.inline(each.title)}`,
+      '',
+      `Rule: ${esc.inline(each.rule)}`,
+      '',
+      `Why it matters: ${esc.inline(each.why)}`,
+      '',
+      `How to check: ${esc.inline(each.check)}`,
+      '',
+    ]),
+    ...own,
+  ];
 }
 
 function styleLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const { style, choices } = handoff;
   const decision = choices.style === '' ? '' : ` (${decisionLink(choices.style)})`;
+  // DEC-184: the owner's own answer leads and the default style is only the reference.
+  const named = hasOwnAnswer(handoff, 'architecture')
+    ? referenceLine(esc.inline(style.title), decision, 'style', esc.inline(style.rule))
+    : `**${esc.inline(style.title)}**${decision}: ${esc.inline(style.rule)}`;
   return [
-    `**${esc.inline(style.title)}**${decision}: ${esc.inline(style.rule)}`,
+    ...ownAnswerLines(handoff, 'architecture', esc),
+    named,
     '',
     `How to check: ${esc.inline(style.check)}`,
     '',
@@ -105,15 +121,37 @@ function commandLines(): string[] {
 }
 
 function principleBullets(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  if (handoff.principles.length === 0) return ['No principle was chosen.'];
-  return handoff.principles.map(
-    (each) =>
-      `- ${esc.inline(each.title)}: ${esc.inline(each.rule)} Check: ${esc.inline(each.check)}`,
-  );
+  const own = ownPrincipleBullets(handoff, esc);
+  if (handoff.principles.length === 0) return ['No principle was chosen.', ...own];
+  return [
+    ...handoff.principles.map(
+      (each) =>
+        `- ${esc.inline(each.title)}: ${esc.inline(each.rule)} Check: ${esc.inline(each.check)}`,
+    ),
+    ...own,
+  ];
+}
+
+/** The migration line of the layout: the owner's own answer first and the default as the reference. */
+function migrationLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const strategy = migrationStrategyInfo[handoff.brief.migration];
+  const record = ` (${decisionLink(handoff.choices.migration)})`;
+  const own = ownAnswerText(handoff, 'migration', esc);
+  if (own === undefined) {
+    return [
+      `Migration: ${esc.inline(strategy.title)}${record}. ${esc.inline(strategy.ordering)}`,
+      '',
+    ];
+  }
+  return [
+    `Migration, the owner's own answer: ${own}`,
+    '',
+    referenceLine(esc.inline(strategy.title), record, 'strategy', esc.inline(strategy.ordering)),
+    '',
+  ];
 }
 
 function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  const strategy = migrationStrategyInfo[handoff.brief.migration];
   return [
     '# AGENTS.md',
     '',
@@ -139,8 +177,7 @@ function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     '## Layout',
     '',
     ...styleLines(handoff, esc),
-    `Migration: ${esc.inline(strategy.title)} (${decisionLink(handoff.choices.migration)}). ${esc.inline(strategy.ordering)}`,
-    '',
+    ...migrationLines(handoff, esc),
     ...technologyLines(handoff, esc),
     '## Plan before building',
     '',

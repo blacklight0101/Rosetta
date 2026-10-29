@@ -9,6 +9,7 @@ import { fenced } from '../cards/flow-diagram-section.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { decisionLink, handoffFiles, idLink, sourceLinks } from './handoff-links.js';
+import { hasOwnAnswer, ownAnswerLines, referenceLine } from './handoff-own-answers-markdown.js';
 import { securityLines } from './handoff-trd-security.js';
 
 // RF-622, RF-608, RF-609, RF-610, ADR-018, DEC-134: the technical requirements document. Seven
@@ -39,7 +40,12 @@ function overview(handoff: HandoffPackage, esc: MarkdownEscaper, masker: TextMas
       'The chosen style is not in the catalogue, so no record was written.',
     ),
     '',
-    `Architecture style: ${esc.inline(style.title)}. ${esc.inline(style.rule)}`,
+    ...(hasOwnAnswer(handoff, 'architecture')
+      ? [
+          ...ownAnswerLines(handoff, 'architecture', esc),
+          referenceLine(esc.inline(style.title), '', 'style', esc.inline(style.rule)),
+        ]
+      : [`Architecture style: ${esc.inline(style.title)}. ${esc.inline(style.rule)}`]),
     '',
     ...(content.summary === '' ? [] : [esc.block(content.summary), '']),
     ...(names.length === 0
@@ -212,11 +218,20 @@ function migrationSection(handoff: HandoffPackage, esc: MarkdownEscaper): string
     '',
     decisionsLine([choices.migration], 'No record was written for the strategy.'),
     '',
-    `Strategy: ${esc.inline(info.title)}${record}`,
-    '',
-    ...strategyLines(handoff, esc),
-    esc.inline(info.ordering),
-    '',
+    ...(hasOwnAnswer(handoff, 'migration')
+      ? [
+          ...ownAnswerLines(handoff, 'migration', esc),
+          referenceLine(esc.inline(info.title), record, 'strategy', esc.inline(info.ordering)),
+          '',
+          ...strategyLines(handoff, esc),
+        ]
+      : [
+          `Strategy: ${esc.inline(info.title)}${record}`,
+          '',
+          ...strategyLines(handoff, esc),
+          esc.inline(info.ordering),
+          '',
+        ]),
     `Data migration: ${data === null ? 'not stated' : esc.inline(data)}`,
     '',
     ...(content.phases.length === 0

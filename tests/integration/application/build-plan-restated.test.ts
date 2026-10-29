@@ -124,14 +124,14 @@ describe('RF-610 RF-609 the migration and the stack are written once', () => {
 });
 
 describe('RF-608 the planner prompt says the brief already has its records', () => {
-  it('RF-608 RNF-004 the planner prompt the run loads is package.v9.md at version v9', async () => {
+  it('RF-608 RNF-004 the planner prompt the run loads is package.v10.md at version v10', async () => {
     const file = await loadPlannerPrompt('prompts');
 
-    expect(file).toMatchObject({ name: 'planner/package.v9.md', version: 'v9' });
+    expect(file).toMatchObject({ name: 'planner/package.v10.md', version: 'v10' });
   });
 
-  it('RF-608 package.v9.md tells the planner not to write the brief choices again', async () => {
-    const prompt = await readFile('prompts/planner/package.v9.md', 'utf8');
+  it('RF-608 package.v10.md tells the planner not to write the brief choices again', async () => {
+    const prompt = await readFile('prompts/planner/package.v10.md', 'utf8');
 
     expect(prompt).toContain('already has a decision record');
     expect(prompt).toContain('architecture style');

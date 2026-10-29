@@ -23,9 +23,11 @@ async function saved(page: RenderedPage): Promise<void> {
 }
 
 const own = (): HTMLElement => screen.getByRole('radio', { name: /^Type your own answer/u });
-const NOTE = 'Recorded; the plan uses the default until typed answers reach the planner';
+const NOTE = 'Recorded; the planner reads it as your own answer';
+/** DEC-184: a brief saved before P6-21 still lists the typed question as defaulted. */
+const OLD_NOTE = 'Recorded; the plan uses the default until you save the brief again';
 
-/** A saved brief with a typed answer: the server keeps the question defaulted (owner, 2026-10-28). */
+/** A brief saved before P6-21 with a typed answer: the question is still defaulted. */
 function typedBrief(question: string, text = 'Move one module a week.') {
   return {
     ...unsavedBrief,
@@ -103,13 +105,18 @@ describe('the migration question: the option chosen', () => {
     expect(own()).toHaveProperty('checked', true);
     expect(screen.getByLabelText('Your answer')).toHaveProperty('value', 'Move one module a week.');
     const summary = screen.getByRole('region', { name: 'What I recorded' });
-    expect(within(summary).getByText(new RegExp(NOTE, 'u'))).not.toBeNull();
+    expect(within(summary).getByText(new RegExp(OLD_NOTE, 'u'))).not.toBeNull();
+    expect(within(summary).queryByText(new RegExp(NOTE, 'u'))).toBeNull();
     press('Save and continue');
 
     await saved(page);
     expect(saves(page)).toEqual([
       { chosen: { migration: 'typed' }, typed: { migration: 'Move one module a week.' } },
     ]);
+    await waitFor(() => {
+      const after = screen.getByRole('region', { name: 'What I recorded' });
+      expect(within(after).getByText(new RegExp(NOTE, 'u'))).not.toBeNull();
+    });
   });
 });
 
@@ -242,7 +249,7 @@ describe('the build method', () => {
     ).not.toBeNull();
     const summary = screen.getByRole('region', { name: 'What I recorded' });
     expect(within(summary).getByText(/Your own answer: A vendor builds it\./u)).not.toBeNull();
-    expect(within(summary).getByText(new RegExp(NOTE, 'u'))).not.toBeNull();
+    expect(within(summary).getByText(new RegExp(OLD_NOTE, 'u'))).not.toBeNull();
   });
 });
 

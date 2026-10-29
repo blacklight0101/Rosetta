@@ -1,7 +1,7 @@
 import type { Catalogue } from '../../api/plan-schemas.js';
 import { methodLineOf } from './build-method.js';
 import { isAnswered, type Draft } from './draft.js';
-import { OWN_NOTE, ownText } from './own-answers.js';
+import { DEFAULTED_NOTE, OWN_NOTE, ownText } from './own-answers.js';
 import { CONTEXT_FIELDS, STACK_LAYERS } from './steps.js';
 
 // RF-605, design-system.md section 14 (Plan setup): the "What I recorded" summary. One line for
@@ -14,10 +14,15 @@ export interface RecordedLine {
   readonly isDefault: boolean;
 }
 
-/** RF-645: the words of a question answered by typing, with the note that the default still applies. */
+/**
+ * RF-645, DEC-184: the words of a question answered by typing, with a note that follows the saved
+ * brief: the planner reads the text, or, while the brief still lists the question as defaulted, the
+ * plan uses the default until the brief is saved again.
+ */
 function ownWords(draft: Draft, id: string): string | undefined {
   const text = ownText(draft.chosen, draft.typed, id);
-  return text === '' ? undefined : `Your own answer: ${text} (${OWN_NOTE})`;
+  const note = draft.typedDefaulted.includes(id) ? DEFAULTED_NOTE : OWN_NOTE;
+  return text === '' ? undefined : `Your own answer: ${text} (${note})`;
 }
 
 function titleOf(catalogue: Catalogue, id: string): string {

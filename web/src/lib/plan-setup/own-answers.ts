@@ -5,10 +5,16 @@
 export const TYPED = 'typed';
 
 /**
- * Owner answer of 2026-10-28: until typed answers reach the planner, a typed answer to one of the
- * text questions is recorded and shown, but the question keeps its default and stays defaulted.
+ * DEC-184: a typed answer to one of the text questions reaches the planner as the owner's own
+ * words once the saved brief no longer lists the question as defaulted.
  */
-export const OWN_NOTE = 'Recorded; the plan uses the default until typed answers reach the planner';
+export const OWN_NOTE = 'Recorded; the planner reads it as your own answer';
+
+/**
+ * DEC-184: a brief saved before P6-21 still lists the typed question as defaulted, so the planner
+ * does not read the text and the plan uses the default until the brief is saved again.
+ */
+export const DEFAULTED_NOTE = 'Recorded; the plan uses the default until you save the brief again';
 
 /** The questions whose typed answer is kept as text of its own; the others use their own field. */
 export const TEXT_QUESTIONS = ['principles', 'architecture', 'migration', 'buildMethod'] as const;

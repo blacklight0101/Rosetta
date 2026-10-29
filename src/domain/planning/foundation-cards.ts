@@ -13,13 +13,15 @@ import type { PlanningBrief } from './planning-brief.js';
 
 type Strategy = PlanningBrief['migration'];
 
-const titles = {
+/** The titles of the fixed cards (P6-21: a card that follows an own answer is found by its title). */
+export const foundationTitles = {
   skeleton: 'Set up the solution skeleton and continuous integration in the chosen stack',
   access: 'Build the data-access layer on the chosen database',
   harness: 'Build the approval-test harness that runs the legacy behaviour',
   migration: 'Migrate the legacy data into the target tables with a row-count check',
   cutOver: 'Cut over from the legacy system to the new system',
 } as const;
+const titles = foundationTitles;
 
 const fixedTitles: ReadonlySet<string> = new Set(Object.values(titles));
 
@@ -33,6 +35,10 @@ type CardText = Pick<
   'title' | 'invariant' | 'acceptanceCriteria' | 'probes' | 'riskClass'
 >;
 
+/** The skeleton's criterion on the style; an own architecture answer replaces it (P6-21). */
+export const skeletonStyleCriterion =
+  'Given the layers of the chosen architecture style, when the skeleton is built, then each layer has its own place and a layer that reaches into one it may not use fails the structure check.';
+
 const skeleton: CardText = {
   title: titles.skeleton,
   invariant:
@@ -41,7 +47,7 @@ const skeleton: CardText = {
   acceptanceCriteria: [
     'Given an empty checkout, when the build and the tests run in continuous integration, then the build succeeds and the one placeholder test passes.',
     'Given a change that breaks a test, when continuous integration runs, then the run fails and the change cannot be merged.',
-    'Given the layers of the chosen architecture style, when the skeleton is built, then each layer has its own place and a layer that reaches into one it may not use fails the structure check.',
+    skeletonStyleCriterion,
   ],
   probes: [],
 };

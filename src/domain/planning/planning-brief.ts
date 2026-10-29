@@ -1,6 +1,7 @@
 import type { Run } from '../runs/run.js';
 import { buildMethodDefaulted, resolveBuildMethod, type BuildMethod } from './build-method.js';
 import { defaultPrinciples, type ArchitectureStyleId, type Catalogue } from './catalogue.js';
+import { hasTypedText, typedQuestionIds } from './typed-answers.js';
 
 // RF-605, ADR-018, DEC-72, DEC-80, data-model.md section 3.20: the planning brief, the answers Plan
 // setup saves for a project. A question the user did not answer takes its default and is listed in
@@ -93,9 +94,9 @@ export interface PlanningBrief {
   /** RF-645: the option answering each question, or "typed"; absent in a brief saved before DEC-178. */
   readonly chosen?: Readonly<Record<string, string>> | undefined;
   /**
-   * RF-645: the text of a typed answer, by question id; absent when none was typed. Until typed
-   * answers reach the planner the text is only recorded: the question keeps its default and stays in
-   * `defaulted` (owner answer of 2026-10-28).
+   * RF-645: the text of a typed answer, by question id; absent when none was typed. A typed answer
+   * reaches the planner (DEC-184), so its question is not in `defaulted`, while the enumerated value
+   * (the style, the strategy, `aiAssisted`) keeps its default.
    */
   readonly typed?: Readonly<Record<string, string>> | undefined;
 }
@@ -144,9 +145,6 @@ const contextQuestions = [
   'dataMigration',
 ] as const;
 
-/** RF-645: the questions whose typed answer is kept as text of its own (the others use their field). */
-const typedQuestions = ['principles', 'architecture', 'migration', 'buildMethod'];
-
 function layerOrder(layer: StackLayer): number {
   return stackLayers.indexOf(layer);
 }
@@ -175,7 +173,7 @@ export function briefProblems(answers: BriefAnswers, catalogue: Catalogue): Brie
     problems.push({ field: 'stack', reason: 'A layer is listed twice.' });
   }
   for (const id of Object.keys(answers.typed ?? {})) {
-    if (!typedQuestions.includes(id)) {
+    if (!typedQuestionIds.some((each) => each === id)) {
       problems.push({ field: `typed.${id}`, reason: 'This question takes no typed text.' });
     }
   }
@@ -204,16 +202,20 @@ function architectureOf(given: BriefAnswers['architecture']): UnsavedBrief['arch
 
 function defaultedQuestions(answers: BriefAnswers): string[] {
   const given = answers.context;
+  const typedIn = (id: (typeof typedQuestionIds)[number]): boolean =>
+    hasTypedText(answers.typed, id);
   const answeredLayers = new Set((answers.stack ?? []).map((entry) => entry.layer));
   return [
-    ...(answers.principles === undefined ? ['principles'] : []),
-    ...(answers.architecture === undefined ? ['architecture'] : []),
-    ...(answers.migration === undefined ? ['migration'] : []),
+    ...(answers.principles === undefined && !typedIn('principles') ? ['principles'] : []),
+    ...(answers.architecture === undefined && !typedIn('architecture') ? ['architecture'] : []),
+    ...(answers.migration === undefined && !typedIn('migration') ? ['migration'] : []),
     ...stackLayers.filter((layer) => !answeredLayers.has(layer)).map((layer) => `stack.${layer}`),
     ...contextQuestions
       .filter((question) => given?.[question] === undefined || given[question] === null)
       .map((question) => `context.${question}`),
-    ...buildMethodDefaulted(answers.buildMethod),
+    ...buildMethodDefaulted(answers.buildMethod).filter(
+      (id) => id !== 'buildMethod' || !typedIn('buildMethod'),
+    ),
   ];
 }
 
