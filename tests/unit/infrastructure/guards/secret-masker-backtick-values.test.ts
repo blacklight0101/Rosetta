@@ -16,7 +16,7 @@ describe('the closing backtick of a code span after a password key (P7-11)', () 
     '| `-----BEGIN`, `password =`, `secret =`, `token =` | No secret in code |',
     'Search for `password =`',
     'Search for `password =` in the branch.',
-    'Search for `password=`, then `pwd:`.',
+    'Search for `password=`, then `pwd:` too.',
     '`password =``',
     'password = ``',
     'the column `sa_password`: the field "table x columns 9".',

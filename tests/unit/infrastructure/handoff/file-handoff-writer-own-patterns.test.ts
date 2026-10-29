@@ -48,7 +48,7 @@ class KeepingWriter implements OutputWriter {
 /** The package with Security by design chosen, so the secret row of the grep table is written. */
 function secured(text: string, extra: Partial<HandoffPackage> = {}): HandoffPackage {
   const handoff = handoffOf(text, emptyPrd, extra);
-  const principle = {
+  const principle: HandoffPackage['principles'][number] = {
     ...{ id: 'security-by-design', title: 'Security by design', rule: 'Secure.', why: 'Safe.' },
     ...{ check: 'Checked.', group: 'design-principles' },
   };
