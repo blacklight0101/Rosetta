@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "description": "RF-612, RF-639..RF-643, P6-12: the planner role answering a plan run over a seeded understand run of a single-file application, a bill splitter that is one script: the plan (three task cards across the difficulty bands, one of them at risk of money), then the product requirements document. Written by hand for the fake provider; no real provider was called, and the application is synthetic (RNF-009).",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"summary\": \"A bill splitter kept as one script, moved to a tested module with the same output.\",\n  \"requirements\": [\n    {\n      \"title\": \"Split a bill\",\n      \"statement\": \"The bill is divided between the people named on the command line.\",\n      \"sources\": [\n        \"FEAT-001\"\n      ]\n    },\n    {\n      \"title\": \"Cents that do not divide evenly\",\n      \"statement\": \"Shares are rounded down to the cent and the remainder goes to the first person.\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    },\n    {\n      \"title\": \"Print the shares\",\n      \"statement\": \"One line per person shows that person's share.\",\n      \"sources\": [\n        \"FEAT-002\"\n      ]\n    }\n  ],\n  \"components\": [\n    {\n      \"name\": \"Command line\",\n      \"responsibility\": \"Reads the bill and the names and prints the shares.\",\n      \"dependsOn\": [\n        \"Splitter\"\n      ]\n    },\n    {\n      \"name\": \"Splitter\",\n      \"responsibility\": \"Divides an amount of cents between people and keeps the remainder rule.\",\n      \"dependsOn\": []\n    }\n  ],\n  \"decisions\": [\n    {\n      \"title\": \"Keep the rounding rule in one function\",\n      \"context\": \"The rule sits inside the loop that prints the shares.\",\n      \"decision\": \"The splitter owns the rounding rule; the command line only prints.\",\n      \"consequences\": \"The rule is tested without a terminal.\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ],\n  \"entities\": [],\n  \"phases\": [\n    {\n      \"name\": \"One script, tested\",\n      \"goal\": \"The script is a tested module with the same output.\",\n      \"exitCriteria\": [\n        \"The same bill gives the same shares as the script did.\"\n      ]\n    }\n  ],\n  \"tasks\": [\n    {\n      \"title\": \"Read the bill and the names\",\n      \"phase\": 1,\n      \"riskClass\": \"none\",\n      \"invariant\": \"The splitter receives the bill in whole cents and the names in the order given.\",\n      \"requirements\": [\n        1\n      ],\n      \"acceptanceCriteria\": [\n        \"Given a bill of 100.00 and three names, when the command runs, then the splitter receives 10000 cents and three names.\"\n      ],\n      \"files\": [\n        \"splitbill/cli.py\",\n        \"tests/test_cli.py\"\n      ]\n    },\n    {\n      \"title\": \"Split the bill into shares\",\n      \"phase\": 1,\n      \"requirements\": [\n        1,\n        2\n      ],\n      \"acceptanceCriteria\": [\n        \"Given 100.00 and three people, when the bill is split, then the shares are 33.34, 33.33 and 33.33.\",\n        \"Given a bill of 0.01 and two people, when it is split, then the first person pays 0.01.\"\n      ],\n      \"invariant\": \"The shares add up to the bill to the cent, however many people share it.\",\n      \"riskClass\": \"money\",\n      \"adds\": [\n        \"limit\"\n      ],\n      \"probes\": [\n        \"One person, two people and a bill of 0 => the shares still add up to the bill.\",\n        \"A bill that divides evenly and one with a remainder of every size => the shares add up to the bill and only the first share is larger.\",\n        \"More people than cents => the bill is refused with the error code, not split into zero shares.\"\n      ],\n      \"files\": [\n        \"splitbill/splitter.py\",\n        \"tests/test_splitter.py\"\n      ],\n      \"needs\": [\n        {\n          \"kind\": \"error code\",\n          \"purpose\": \"no people named\"\n        }\n      ],\n      \"dependsOn\": [\n        1\n      ]\n    },\n    {\n      \"title\": \"Print the shares and refuse bad input\",\n      \"phase\": 1,\n      \"riskClass\": \"none\",\n      \"invariant\": \"One line is printed per person, in the order the names were given, and nothing is printed for a refused bill.\",\n      \"requirements\": [\n        3,\n        1\n      ],\n      \"acceptanceCriteria\": [\n        \"Given three shares, when they are printed, then there is one line per person.\",\n        \"Given a bill that is not a number, when the command runs, then it exits with a message and no shares.\"\n      ],\n      \"files\": [\n        \"splitbill/cli.py\",\n        \"tests/test_cli.py\"\n      ],\n      \"dependsOn\": [\n        2\n      ]\n    }\n  ],\n  \"risks\": [\n    {\n      \"text\": \"The script may be called by another script that reads its output line by line.\",\n      \"sources\": [\n        \"FEAT-002\"\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 3000,
+              "outputTokens": 800,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"problem\": {\n    \"text\": \"A bill is split by hand and the cents are lost or counted twice.\",\n    \"sources\": [\n      \"BR-001\"\n    ]\n  },\n  \"goal\": {\n    \"text\": \"Split a bill between people so that the shares add up to the bill.\",\n    \"sources\": [\n      \"FEAT-001\"\n    ]\n  },\n  \"features\": [\n    {\n      \"title\": \"Split a bill\",\n      \"description\": \"A person gives a bill and some names and gets one share each.\",\n      \"priority\": \"Must\",\n      \"sources\": [\n        \"FEAT-001\"\n      ]\n    },\n    {\n      \"title\": \"Print the shares\",\n      \"description\": \"One line per person with that person's share.\",\n      \"priority\": \"Must\",\n      \"sources\": [\n        \"FEAT-002\"\n      ]\n    }\n  ],\n  \"rules\": [\n    {\n      \"text\": \"Shares are rounded down to the cent and the remainder goes to the first person.\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ],\n  \"outOfScope\": [],\n  \"roles\": [],\n  \"nonFunctional\": []\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 2500,
+              "outputTokens": 500,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}
