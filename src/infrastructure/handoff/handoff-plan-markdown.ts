@@ -42,14 +42,20 @@ export function requirementsMarkdown(handoff: HandoffPackage, esc: MarkdownEscap
 function followingSentence(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const { style, choices } = handoff;
   const linked = choices.style === '' ? '' : ` (${decisionLink(choices.style)})`;
-  // DEC-184: with an own answer the style is only the reference of the checks.
-  const record = hasOwnAnswer(handoff, 'architecture')
-    ? `${linked}, the default style, ${checkReference('style')}`
-    : linked;
-  if (!followsStyle(handoff)) {
-    return `The components below do not all follow the ${esc.inline(style.title)} style${record}: at least one dependency breaks its rule. See [the package checks](${handoffFiles.checks}) and [the risks](${handoffFiles.risks}). How to check it: ${esc.inline(style.check)}`;
+  const title = esc.inline(style.title);
+  const check = `How to check it: ${esc.inline(style.check)}`;
+  const broken = `See [the package checks](${handoffFiles.checks}) and [the risks](${handoffFiles.risks}).`;
+  if (hasOwnAnswer(handoff, 'architecture')) {
+    // DEC-184: the style is not chosen; Rosetta's dependency check only compares with it.
+    const compares = `Rosetta's automatic dependency check compares the components below with the ${title} style${linked}, the default style and ${checkReference('style')}, not the chosen style`;
+    return followsStyle(handoff)
+      ? `${compares}; they keep its rule. ${check}`
+      : `${compares}, and at least one dependency breaks its rule. ${broken} ${check}`;
   }
-  return `The components below follow the ${esc.inline(style.title)} style${record}. How to check it: ${esc.inline(style.check)}`;
+  if (!followsStyle(handoff)) {
+    return `The components below do not all follow the ${title} style${linked}: at least one dependency breaks its rule. ${broken} ${check}`;
+  }
+  return `The components below follow the ${title} style${linked}. ${check}`;
 }
 
 /** The style the file opens with: the owner's own answer first and the default as the reference. */
