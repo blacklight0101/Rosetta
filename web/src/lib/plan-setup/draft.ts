@@ -21,6 +21,12 @@ export const MAX_CHOICE = 200;
 const MAX_INTEGRATIONS = 20;
 const MAX_TEAM = 10_000;
 
+/**
+ * P6-26 (RF-611, DEC-189): the answer to "Will the new application be hosted?". Empty is not asked
+ * yet; "not-stated" is chosen on purpose. Neither sends a key, and the question is never defaulted.
+ */
+export type HostedAnswer = '' | 'hosted' | 'not-hosted' | 'not-stated';
+
 type ContextText = Readonly<Record<ContextField, string>>;
 
 export interface Draft extends MethodDraft {
@@ -32,6 +38,8 @@ export interface Draft extends MethodDraft {
   /** The picked technology by layer id; a layer with no entry is unanswered. */
   readonly stack: Readonly<Record<string, StackChoice>>;
   readonly context: ContextText;
+  /** P6-26: the hosted question; it writes `context.deployment` for hosted or not hosted only. */
+  readonly deployment: HostedAnswer;
   /** RF-612 (Q-B): a brief saved earlier never answered the build method, so the page asks again. */
   readonly askedBefore: boolean;
   /** The ids of the questions the person answered (the ones the brief does not list as defaulted). */
@@ -69,6 +77,7 @@ export function draftOf(brief: Brief): Draft {
       keepIntegrations: context.keepIntegrations.join('\n'),
       dataMigration: textOf(context.dataMigration),
     },
+    deployment: context.deployment ?? '',
     ...methodDraftOf(brief.buildMethod, brief.defaulted),
     askedBefore: brief.savedAt !== null && brief.defaulted.includes('buildMethod'),
     answered: QUESTION_IDS.filter((id) => !brief.defaulted.includes(id)),
@@ -147,6 +156,7 @@ export function answersOf(draft: Draft): BriefAnswers {
   const stack = stackOf(draft);
   const asked = CONTEXT_FIELDS.filter((field) => answered(`context.${field}`));
   const context = contextOf(draft.context);
+  const hosted = draft.deployment === 'hosted' || draft.deployment === 'not-hosted';
   // A question answered by typing sends its text instead of an option, and not its field: the server
   // keeps the default value and the text reaches the planner (DEC-184); an empty text sends nothing.
   const plain = (id: string): boolean => answered(id) && draft.chosen[id] !== TYPED;
@@ -171,9 +181,14 @@ export function answersOf(draft: Draft): BriefAnswers {
       : {}),
     ...(plain('migration') ? { migration: draft.migration } : {}),
     ...(stack.length === 0 ? {} : { stack }),
-    ...(asked.length === 0
+    ...(asked.length === 0 && !hosted
       ? {}
-      : { context: Object.fromEntries(asked.map((field) => [field, context[field]])) }),
+      : {
+          context: {
+            ...Object.fromEntries(asked.map((field) => [field, context[field]])),
+            ...(hosted ? { deployment: draft.deployment } : {}),
+          },
+        }),
     ...(plain('buildMethod') ? { buildMethod: buildMethodOf(draft) } : {}),
     ...ownAnswersOf(draft, sends),
   };
