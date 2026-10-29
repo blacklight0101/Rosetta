@@ -56,6 +56,11 @@ export async function finishWorkbooks(
     const published = await deps.staging.publish(batchId, {
       ...{ projectId: project.id, uploadedAt: uploadedAt.toISOString(), signal, onProgress },
     });
+    if (signal.aborted) {
+      // Cancelled after the publish: the snapshot is nobody's source, so nothing is attached (RF-159).
+      await deps.uploads.remove(published.key);
+      return { kind: 'refused', error: signal.reason };
+    }
     const attached = await attachWorkbooks(deps, { actor, ip, project, published, uploadedAt });
     return attached.ok
       ? { kind: 'stored', summary: attached.value }

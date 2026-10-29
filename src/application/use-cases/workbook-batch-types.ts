@@ -57,3 +57,7 @@ export interface BatchState {
   /** When refused: the error, which the presentation turns into code, message and next step (RF-158). */
   readonly refusal?: unknown;
 }
+
+/** RF-159: a cancel stops the batch, unless its work had already ended; then it answers how it ended. */
+export type CancelOutcome =
+  { readonly cancelled: true } | { readonly cancelled: false; readonly state: BatchState };

@@ -18,6 +18,7 @@ import type {
   BatchProblem,
   BatchRef,
   BatchState,
+  CancelOutcome,
   FinishBatchRequest,
 } from './workbook-batch-types.js';
 
@@ -45,6 +46,7 @@ export type {
   BatchProblem,
   BatchRef,
   BatchState,
+  CancelOutcome,
   FinishBatchRequest,
   WorkbookBatchSummary,
 } from './workbook-batch-types.js';
@@ -178,15 +180,21 @@ export class WorkbookBatches {
     return ok(stateOf(batch, this.deps.clock.now().getTime()));
   }
 
-  // RF-150, RF-159
-  async cancel(request: BatchRef): Promise<Result<undefined, BatchProblem>> {
+  /**
+   * RF-150, RF-159: stops a batch that is open or at work (a batch at work publishes nothing). A batch
+   * whose work already ended is left as it is and its state answered, so the page shows how it ended.
+   */
+  async cancel(request: BatchRef): Promise<Result<CancelOutcome, BatchProblem>> {
     await this.sweep();
     const located = await this.locate(request);
     if (!located.ok) return located;
     const { batch } = located.value;
+    if (hasEnded(batch)) {
+      return ok({ cancelled: false, state: stateOf(batch, this.deps.clock.now().getTime()) });
+    }
     batch.busy?.abort();
     await this.drop(request.projectId, batch);
-    return ok(undefined);
+    return ok({ cancelled: true });
   }
 
   /** Deletes the expired batches every `intervalMs` without waiting for a batch call (RF-150). */

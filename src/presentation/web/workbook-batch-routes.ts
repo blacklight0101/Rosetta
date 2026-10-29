@@ -20,7 +20,8 @@ import { chunksOf, declaredBytesOf, discard, fileNameOf } from './upload-body.js
 // - GET    /api/projects/:id/source/batches/current              the same for the batch of the project,
 //   for a page that was reloaded; the outcome stays 30 minutes after the work ended.
 // - DELETE /api/projects/:id/source/batches/:batchId             cancels the batch: 204, so a user
-//   who chose other files does not wait 30 minutes for the batch to expire.
+//   who chose other files does not wait 30 minutes for the batch to expire. A batch whose work already
+//   ended (stored or refused) is not cancelled: 409 with its state.
 // The size limit, the count, the free space and the time bound are the staging area's; every
 // refusal is an error with its code, message and next step (error-mapper.ts), also naming the file
 // when it is about one. The Origin, session and CSRF checks are the hooks'; another user's project,
@@ -148,6 +149,10 @@ function registerCancel(server: FastifyInstance, services: WorkbookBatchServices
         batchId: request.params.batchId,
       });
       if (!outcome.ok) throw new RosettaError(outcome.error);
+      // RF-159: the work had already ended; the batch stays and the page is told how it ended.
+      if (!outcome.value.cancelled) {
+        return reply.status(409).send(batchStateBody(outcome.value.state));
+      }
       return reply.status(204).send();
     },
   );
