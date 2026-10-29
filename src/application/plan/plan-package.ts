@@ -22,6 +22,7 @@ import {
 import type { Run } from '../../domain/runs/run.js';
 import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
 import type { UnreadableItem } from '../../domain/planning/plan-draft.js';
+import { hasData } from '../../domain/planning/data-presence.js';
 import { withFoundationCards } from '../../domain/planning/foundation-cards.js';
 import { withOwnAnswerCards } from '../../domain/planning/own-answer-cards.js';
 import { withPhaseClosingCards } from '../../domain/planning/phase-closing-cards.js';
@@ -206,7 +207,7 @@ function unreadSecretItems(secrets: SecretRisks): HandoffPackage['leftOut'] {
   ];
 }
 
-/** P5-42, P6-10, P6-21: the plan with its fixed and phase-closing cards, with the brief's choices decided once over it. */
+/** P5-42, P6-10, P6-21, P6-27: the plan with its fixed (no data cards when the run found no data) and phase-closing cards, with the brief's choices decided once over it. */
 function decidedOf(
   content: PlanContent,
   parts: {
@@ -219,8 +220,9 @@ function decidedOf(
   catalogue: Catalogue,
 ): ReturnType<typeof decideOnce> {
   const { brief, sources, documents } = parts;
+  const { tables } = documents.dataModel;
   const withFixed = withPhaseClosingCards(
-    withFoundationCards(content, brief.migration, documents.dataModel.tables),
+    withFoundationCards(content, brief.migration, tables, hasData(sources, tables)),
   );
   const decided = decideOnce(withFixed, brief, catalogue, evidenceOf(sources, documents.proposal));
   // RF-645, DEC-184: the fixed cards follow an own answer, which is known by its record only now.
