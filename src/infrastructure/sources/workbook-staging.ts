@@ -13,7 +13,13 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { snapshotWriteFailed } from '../github/snapshot-errors.js';
 import { SnapshotStore } from '../github/snapshot-store.js';
 import type { Release, SpaceReservation } from './space-reservation.js';
-import { receiveZip, uploadTimedOut, uploadTooLarge, type IntakeFormat } from './upload-intake.js';
+import {
+  receiveUpload,
+  uploadTimedOut,
+  uploadTooLarge,
+  type IntakeFormat,
+  type ReceivedUpload,
+} from './upload-intake.js';
 import { refusingFile } from './workbook/file-refusal.js';
 import { checkWorkbookBatch } from './workbook/workbook-batch.js';
 import { workbookNotReadable } from './workbook/workbook-errors.js';
@@ -106,14 +112,16 @@ export class DiskWorkbookStaging implements WorkbookStaging {
     }
     batch.sequence += 1;
     const path = join(batch.dir, `${String(batch.sequence)}.xlsx`);
-    const size = await refusingFile(fileName, () => this.stream(request, `${path}.part`));
+    const { bytes: size, sha256 } = await refusingFile(fileName, () =>
+      this.stream(request, `${path}.part`),
+    );
     try {
       await rename(`${path}.part`, path);
     } catch (error) {
       await rm(`${path}.part`, { force: true });
       throw snapshotWriteFailed('upload could not be stored', error);
     }
-    batch.files.push({ fileName, path, size });
+    batch.files.push({ fileName, path, size, sha256 });
     return { name: fileName, size };
   }
 
@@ -151,9 +159,9 @@ export class DiskWorkbookStaging implements WorkbookStaging {
   }
 
   /** The body to a `.part` file; whatever fails leaves no file. */
-  private async stream(request: ReceiveRequest, partPath: string): Promise<number> {
+  private async stream(request: ReceiveRequest, partPath: string): Promise<ReceivedUpload> {
     try {
-      return await receiveZip(
+      return await receiveUpload(
         {
           body: request.body,
           limitBytes: request.limitBytes,
