@@ -124,21 +124,23 @@ export class StoreUpload {
     batch: HeldBatch,
     signal: AbortSignal,
   ): Promise<void> {
-    const outcome = await work.then(
-      (result): BatchOutcome => {
-        return result.ok
-          ? { kind: 'stored', summary: result.value }
-          : { kind: 'refused', error: new RosettaError(result.error) };
-      },
-      async (error: unknown): Promise<BatchOutcome> => {
-        await this.logFailure(error, signal);
-        return { kind: 'refused', error };
-      },
-    );
+    let outcome: BatchOutcome;
+    try {
+      const result = await work;
+      outcome = result.ok
+        ? { kind: 'stored', summary: result.value }
+        : { kind: 'refused', error: new RosettaError(result.error) };
+    } catch (error) {
+      outcome = { kind: 'refused', error };
+      await this.logFailure(error, signal);
+    }
     endBatch(batch, outcome, this.deps.clock.now().getTime());
   }
 
-  /** A stop by the user is told at info level; an error nobody expected is an error (RF-158). */
+  /**
+   * A stop by the user is told at info level; an error nobody expected is an error (RF-158). It is
+   * logged if the log can take it, as for a workbook batch: it never rejects, so the batch still ends.
+   */
   private async logFailure(error: unknown, signal: AbortSignal): Promise<void> {
     if (error instanceof RosettaError) return;
     const stopped = signal.aborted;
@@ -146,10 +148,14 @@ export class StoreUpload {
       ? 'A zip being stored was stopped.'
       : 'Storing a zip failed unexpectedly.';
     const reason = error instanceof Error ? error.message : 'unknown';
-    await this.deps.logger.log({
-      ...{ level: stopped ? 'info' : 'error', logger: 'sources', message },
-      data: { reason },
-    });
+    try {
+      await this.deps.logger.log({
+        ...{ level: stopped ? 'info' : 'error', logger: 'sources', message },
+        data: { reason },
+      });
+    } catch {
+      // The log is down as well: the outcome still ends the batch.
+    }
   }
 
   /** Stops every upload in flight (server shutdown). */
