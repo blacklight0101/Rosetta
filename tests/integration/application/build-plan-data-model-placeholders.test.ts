@@ -46,7 +46,7 @@ describe('BuildPlan: placeholder and repeated columns', () => {
     expect(model).not.toContain('invoice_date_2');
     const checks = files['checks.md'] ?? '';
     expect(checks).toContain('### Data model');
-    expect(checks).toContain('- invoice_date_2:');
-    expect(checks).toContain('- status_2:');
+    expect(checks).toContain('- `invoice_date_2`:');
+    expect(checks).toContain('- `status_2`:');
   });
 });

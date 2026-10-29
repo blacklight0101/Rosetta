@@ -244,7 +244,7 @@ describe('BuildPlan: an unusable data model answer', () => {
     expect(files['tasks.md'] ?? '').toContain('Write the database migrations in the chosen stack');
     const checks = files['checks.md'] ?? '';
     expect(checks).toContain('### Data model');
-    expect(checks).toContain('- range_note: the field "table entry columns 3".');
+    expect(checks).toContain('- `range_note`: the field "table entry columns 3".');
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     const messages = warned.map((entry) => entry.message).join(' ');
     expect(messages).toContain('dropped parts that failed their schema');
