@@ -97,8 +97,9 @@ export function useZipBatch(
       return;
     }
     void cancelBatch(client, { projectId: project.id, batchId: state.batchId }).then((answer) => {
-      // DEC-188: 409 means the work had already ended; the wait goes on and shows how it ended.
-      if (answer.ok || answer.error.status !== 409) stopping.abort();
+      // DEC-188: only an answer that the batch was stopped ends the wait. A 409 (the work had ended) or
+      // a failed request leaves it going on, and it shows how the batch really ended.
+      if (answer.ok) stopping.abort();
     });
   };
   useResume(existing, idle, follow);
