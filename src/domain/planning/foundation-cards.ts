@@ -188,10 +188,12 @@ function unique<T>(items: readonly T[]): T[] {
  * is returned as it is. A planner card that has the title of a fixed card is renamed, never taken for one.
  */
 // P5-42
+/* eslint-disable max-lines-per-function, @typescript-eslint/no-unused-vars -- P6-27: red commit, the next one uses the flag */
 export function withFoundationCards(
   content: PlanContent,
   strategy: Strategy,
   tables: readonly ModelTable[],
+  _hasData = true,
 ): PlanContent {
   const last = content.phases.length;
   const tasks = content.tasks.map(unreserved);
