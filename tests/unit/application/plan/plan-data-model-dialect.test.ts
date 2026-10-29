@@ -36,3 +36,23 @@ describe('planDataModel: the dialect of one model', () => {
     expect(problems.slice(0, split).every((each) => each.kind === undefined)).toBe(true);
   });
 });
+
+describe('planDataModel: the length of movement_type (EV-75)', () => {
+  it('RF-623 gives movement_type room for Opening Stock and notes the change as a check', async () => {
+    const { assembly, problems } = await planned();
+
+    const table = assembly.model.tables.find((each) => each.name === 'stock_in_out');
+    expect(table?.columns.find((each) => each.name === 'movement_type')?.type).toBe('varchar(13)');
+    const note = problems.find((each) => each.item === 'movement_type');
+    expect(note?.kind).toBe('check');
+    expect(note?.reason).toContain('13');
+  });
+
+  it('RF-623 keeps the other lengths as the planner wrote them', async () => {
+    const { assembly } = await planned();
+
+    const types = assembly.model.tables.flatMap((table) => table.columns.map((c) => c.type));
+    expect(types).toContain('varchar(200)');
+    expect(types).toContain('varchar(20)');
+  });
+});
