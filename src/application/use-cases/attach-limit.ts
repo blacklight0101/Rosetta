@@ -6,7 +6,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // end the batch instead of holding it, and the Cancel, for good.
 
 /** How long the attach may take when the dependencies do not say. */
-export const ATTACH_TIMEOUT_MS = 60_000;
+const ATTACH_TIMEOUT_MS = 60_000;
 
 /**
  * The result of `attach`, or a RosettaError with the time-bound code (RST-1918) when it takes longer
