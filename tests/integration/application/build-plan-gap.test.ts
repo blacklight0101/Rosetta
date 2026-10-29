@@ -60,7 +60,7 @@ describe('BuildPlan: the call for the items no card builds is sent', () => {
       expect(message).not.toContain(`"id": "${built}"`);
     }
     expect(message).toContain('"title": "Order placement"');
-    expect(request?.system).toBe(await readFile('prompts/planner/gap.v2.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/gap.v3.md', 'utf8'));
     expect(request?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-gap' });
     const all = [
       ...h.providers.requests(),
@@ -76,7 +76,7 @@ describe('BuildPlan: the call for the items no card builds is sent', () => {
     const manifest = await h.manifestOf(await h.plan());
 
     expect(Object.keys(manifest.promptVersions)).toEqual(
-      expect.arrayContaining(['planner/gap.v2.md', 'planner/coverage.v1.md']),
+      expect.arrayContaining(['planner/gap.v3.md', 'planner/coverage.v1.md']),
     );
   });
 
