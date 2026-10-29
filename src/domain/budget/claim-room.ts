@@ -1,8 +1,11 @@
-// RF-429, P5-20, DEC-170 (amends DEC-166): whether the readers of a run may start another task or
-// take another turn. The readers' spend plus the estimated cost of judging every claim written and
-// not yet judged has to stay within the readers' and the verifier's part of the run caps (90%, the
-// rest is the summariser's), and within the verifier's own share; and the readers' own share has to
-// have room for one more call. Tokens are the cap-weighted count of DEC-168.
+import { SUMMARISER_SHARE_PERCENT } from './budget.js';
+
+// RF-429, P5-20, DEC-170, DEC-193: whether the readers of a run may start another task or take
+// another turn. The readers' spend plus the estimated cost of judging every claim written and not
+// yet judged has to stay within the readers' and the verifier's part of the run caps (90%, the rest
+// is the summariser's): the verifier's room is what is left of the run cap, no fixed share of its own
+// (DEC-193). And the readers' own share has to have room for one more call. Tokens are the
+// cap-weighted count of DEC-168.
 
 /**
  * The tokens one judgement is taken to cost before the run has judged a claim. A verifier call
@@ -13,7 +16,7 @@
 export const DEFAULT_JUDGING_TOKENS = 2_000n;
 
 /** The part of a run cap the readers and the verifier share; the rest is the summariser's. */
-const READERS_AND_VERIFIER_PERCENT = 90n;
+const READERS_AND_VERIFIER_PERCENT = BigInt(100 - SUMMARISER_SHARE_PERCENT);
 
 /** Cap-weighted tokens (DEC-168) and micro-dollars spent. */
 export interface Spend {
@@ -28,8 +31,6 @@ export interface RoomFacts {
     readonly runMicros: bigint;
     /** The readers' share of the run token cap, or the reader token cap of the project. */
     readonly readerTokens: bigint;
-    /** The verifier's share of the run token cap (a verifier cap of the project does not shrink it). */
-    readonly verifierTokens: bigint;
     /** The least a reader call needs: its output limit, which every worst case includes. */
     readonly callTokens: bigint;
   };
@@ -71,7 +72,6 @@ function judgingFits(facts: RoomFacts): boolean {
     limits.runTokens,
     READERS_AND_VERIFIER_PERCENT,
   );
-  const own = verifier.tokens + tokens <= limits.verifierTokens;
   const dear =
     limits.runMicros > 0n &&
     !within(
@@ -79,7 +79,7 @@ function judgingFits(facts: RoomFacts): boolean {
       limits.runMicros,
       READERS_AND_VERIFIER_PERCENT,
     );
-  return together && own && !dear;
+  return together && !dear;
 }
 
 // RF-429

@@ -12,16 +12,17 @@ import {
 // RF-429, RF-250, RF-264, RF-304, P3-121 (HB-03, HB-11), DEC-193: the verifier of a run may use what
 // the readers left of the run token cap, minus the summariser's 10%. The recording
 // understand-consolidate.json has five claims and duplicate cards; verifier-heavy-supported.json
-// judges each claim with 6,000 input tokens. At a run cap of 42,000 tokens the readers use 9,820 and
-// the five verdicts would use everything else, so the summariser, which merges the duplicates and
-// writes the overview, was refused. Now the verifier stops at 37,800 tokens of the run (the run cap
-// less the summariser's part) and the summariser still runs.
+// judges each claim with 6,000 input tokens. At a run cap of 40,000 tokens the readers use 9,820 and
+// the five verdicts (6,040 each) would use everything else, so the summariser, which merges the
+// duplicates and writes the overview, would be refused. The verifier stops at 36,000 tokens of the
+// run (the run cap less the summariser's part) after four verdicts, 33,980 spent, and the summariser
+// still runs: no more than the summariser's part and one verdict of the run cap is left unused.
 
 const temp = useTempRoot('rosetta-understand-verifier-reserve-');
 
 const tight = understandSettings((settings) => ({
   ...settings,
-  budget: { ...settings.budget, run: { maxCostMicros: 50_000_000, maxTokens: 42_000 } },
+  budget: { ...settings.budget, run: { maxCostMicros: 50_000_000, maxTokens: 40_000 } },
 }));
 
 async function tightRun() {
@@ -46,7 +47,10 @@ describe(
       const events = await h.eventsOf(run);
       const caps = events.filter((event) => event.type === 'budget.capReached');
       expect(caps.map((event) => event.data)).toMatchObject([
-        { scope: 'run-tokens', role: 'verifier', capSource: 'reserve', capTokens: 37_800 },
+        {
+          ...{ scope: 'run-tokens', role: 'verifier', capSource: 'reserve' },
+          ...{ capTokens: 36_000, spentTokens: 33_980 },
+        },
       ]);
       const ended = events.find((event) => event.type === 'verify.judgement.ended');
       expect(ended?.data).toMatchObject({ notJudged: 0 });

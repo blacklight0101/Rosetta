@@ -1,5 +1,5 @@
 import { roomVerdict, type RoomFacts, type Spend } from '../../domain/budget/claim-room.js';
-import { READER_SHARE_PERCENT, VERIFIER_SHARE_PERCENT } from '../../domain/budget/budget.js';
+import { READER_SHARE_PERCENT } from '../../domain/budget/budget.js';
 import type { Card } from '../../domain/cards/card.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -42,7 +42,11 @@ function percentOf(value: bigint, percent: number): bigint {
   return (value * BigInt(percent)) / 100n;
 }
 
-/** The caps the check holds the readers to: the run's, and the shares or role caps of the roles. */
+/**
+ * The caps the check holds the readers to: the run's, and the readers' share or role cap. The
+ * verifier's room is what the run cap leaves (DEC-193); a verifier cap of the project is the owner's
+ * choice to cut judging short, not a reason to stop reading.
+ */
 function roomLimitsOf(settings: ProjectSettings, reader: RoleProvider): RoomFacts['limits'] {
   const { run } = settings.budget;
   const caps = reader.runCaps ?? {
@@ -54,8 +58,6 @@ function roomLimitsOf(settings: ProjectSettings, reader: RoleProvider): RoomFact
     runTokens: caps.tokens,
     runMicros: caps.micros,
     readerTokens: readerCap ?? percentOf(caps.tokens, READER_SHARE_PERCENT),
-    // A verifier cap of the project is the owner's choice to cut judging short, not a reason to stop reading.
-    verifierTokens: percentOf(caps.tokens, VERIFIER_SHARE_PERCENT),
     callTokens: BigInt(reader.maxOutputTokens),
   };
 }

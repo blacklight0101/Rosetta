@@ -16,7 +16,6 @@ const facts: RoomFacts = {
     runTokens: 100_000n,
     runMicros: 1_000_000n,
     readerTokens: 70_000n,
-    verifierTokens: 20_000n,
     callTokens: 1_000n,
   },
   readers: { tokens: 30_000n, micros: 300_000n },
@@ -67,7 +66,6 @@ describe('whether the readers may go on, with the claim-check reserve in the run
         runTokens: 8_000_000n,
         runMicros: 0n,
         readerTokens: 5_600_000n,
-        verifierTokens: 1_600_000n,
         callTokens: 8_192n,
       },
       readers: { tokens: 2_900_000n, micros: 0n },
@@ -91,7 +89,6 @@ describe('whether the readers may go on, at the 90% line and the readers share',
     const spent = { ...facts, readers: { tokens: 69_000n, micros: 0n } };
     const many = {
       ...spent,
-      limits: { ...facts.limits, verifierTokens: 90_000n },
       claims: { unjudged: 11, judged: 0 },
     };
 

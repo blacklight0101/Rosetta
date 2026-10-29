@@ -6,11 +6,12 @@ import { useTempRoot } from '../../support/temp-root.js';
 import { UNDERSTAND_TIMEOUT } from '../../support/understand-full-run.js';
 import type { UnderstandHarness } from '../../support/understand-run-harness.js';
 
-// RF-429, P5-30, DEC-170: the readers of a Deepen stop starting work when the claims the Deepen wrote
-// could no longer be judged with what the caps leave. deepen-claim-heavy.json: the first task of the
-// round (the re-read of the rejected Catalog claim) writes twelve claims; the second (the unread
-// Catalog/Details.aspx) would write one more. At a run cap of 100,000 tokens the verifier share is
-// 20,000, and twelve claims at the default estimate (2,000 tokens each) are 24,000.
+// RF-429, P5-30, DEC-170, DEC-193: the readers of a Deepen stop starting work when the claims the
+// Deepen wrote could no longer be judged with what the run cap leaves. deepen-claim-heavy.json: the
+// first task of the round (the re-read of the rejected Catalog claim) writes twelve claims; the second
+// (the unread Catalog/Details.aspx) would write one more. At a run cap of 27,000 tokens the readers
+// and the verifier share 24,300 (the rest is the summariser's), and twelve claims at the default
+// estimate (2,000 tokens each) are 24,000 beside what the first task spent.
 
 const temp = useTempRoot('rosetta-deepen-reader-room-');
 
@@ -46,7 +47,7 @@ describe('RF-429 P5-30 a Deepen whose readers wrote more claims than can be judg
     'RF-429 starts no further reader task, judges every written claim and ends with its stop reason',
     UNDERSTAND_TIMEOUT,
     async () => {
-      const { h, deep } = await deepened('deepen-claim-heavy.json', 100_000);
+      const { h, deep } = await deepened('deepen-claim-heavy.json', 27_000);
 
       expect(deep.endState).toBe('Completed');
       expect(deepenReaders(h)).toEqual(['reader-003']);
@@ -64,7 +65,7 @@ describe('RF-429 P5-30 a Deepen whose readers wrote more claims than can be judg
     'RF-429 says once, in the event log, that the readers stopped, and ends the Deepen with that reason',
     UNDERSTAND_TIMEOUT,
     async () => {
-      const { h, deep } = await deepened('deepen-claim-heavy.json', 100_000);
+      const { h, deep } = await deepened('deepen-claim-heavy.json', 27_000);
 
       const events = await h.eventsOf(deep);
       const stops = events.filter((event) => event.type === 'budget.readersStopped');
@@ -107,12 +108,12 @@ describe('RF-429 P5-30 a resumed Deepen whose earlier round wrote claims', () =>
       });
       // The verifier cap is too small for one call: the readers stop for the claims, the judgement
       // is refused and the twelve claims stay Unverified.
-      await h.changeSettings(withRun(100_000, { verifier: { maxTokens: 100 } }));
+      await h.changeSettings(withRun(27_000, { verifier: { maxTokens: 100 } }));
       const first = await h.deepen(run, { maxRounds: 3 });
       if (!first.ok) throw new Error(first.error);
       expect(first.value.endState).toBe('CapReached');
       expect(await waiting(h, first.value)).toBe(12);
-      await h.changeSettings(withRun(100_000));
+      await h.changeSettings(withRun(27_000));
 
       const resumed = await h.resume(first.value);
 

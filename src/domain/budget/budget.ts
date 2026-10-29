@@ -34,8 +34,11 @@ interface AccountCaps {
 /** RF-429, EV-27: the share of the run token cap the readers may use; the rest verifies their claims. */
 export const READER_SHARE_PERCENT = 70;
 
-/** RF-429, P3-121: the share of the run token cap the verifier may use; the rest is the summariser's. */
-export const VERIFIER_SHARE_PERCENT = 20;
+/**
+ * RF-429, P3-121, DEC-193: the part of the run token cap kept for the summariser. The verifier may use
+ * what the run has left below the rest, whatever the readers spent (no fixed share of its own).
+ */
+export const SUMMARISER_SHARE_PERCENT = 10;
 
 /** The caps of the role that makes the call (`budget.roles.<role>`, RF-423); none when unset. */
 export interface RoleBudget {
@@ -58,7 +61,7 @@ export interface CapInputs {
   readonly role?: RoleBudget;
   /** RF-429: the call's role is a reader, which stops at a share of the run token cap unless it has its own. */
   readonly reader?: boolean;
-  /** RF-429: the call's role is the verifier, which stops at its share of the run token cap unless it has its own. */
+  /** RF-429, DEC-193: the call's role is the verifier, held to the run token cap less the summariser's part unless it has its own. */
   readonly verifier?: boolean;
   /** P5-18: the spend of the scope caps at run start, so the readers' share can be taken of their room. */
   readonly scopeSpent?: ScopeSpent;
@@ -82,28 +85,37 @@ function roleCaps(role: RoleBudget | undefined): readonly UsageCap[] {
 }
 
 /**
- * RF-429: a reader or the verifier with no token cap of its own is held to a share of the run token
- * cap of its key source: the readers to `READER_SHARE_PERCENT`, the verifier to
- * `VERIFIER_SHARE_PERCENT`. What is left (10% at the shipped shares) is the summariser's, which
- * merges the duplicate cards and writes the overview after the claims are judged (P3-121). The share is
- * a role cap, so it stops that role only, never the run (RF-423). It counts tokens only: a share
- * of the cost cap would refuse the first reader calls of models that fit the default cap today
- * (Q-57, DEC-159).
+ * RF-429: a reader with no token cap of its own is held to `READER_SHARE_PERCENT` of the run token
+ * cap of its key source, so the rest judges their claims. The share is a role cap, so it stops the
+ * readers only, never the run (RF-423). It counts tokens only: a share of the cost cap would refuse
+ * the first reader calls of models that fit the default cap today (Q-57, DEC-159).
  */
-function shareCaps(keys: readonly UsageCap[], percent: number): readonly UsageCap[] {
+function readerShareCaps(keys: readonly UsageCap[]): readonly UsageCap[] {
   return keys
     .filter((cap) => cap.kind === 'run-tokens')
     .map((cap) => ({
       kind: 'role-tokens',
-      limit: (cap.limit * BigInt(percent)) / 100n,
+      limit: (cap.limit * BigInt(READER_SHARE_PERCENT)) / 100n,
       source: 'reserve',
     }));
 }
 
-/** The share of the run token cap the call's role gets, when it has one (RF-429). */
-function sharePercentOf(inputs: CapInputs): number | undefined {
-  if (inputs.reader === true) return READER_SHARE_PERCENT;
-  return inputs.verifier === true ? VERIFIER_SHARE_PERCENT : undefined;
+/**
+ * RF-429, DEC-193 (replaces the fixed 20% share of DEC-166): the claim-check reserve comes out of the
+ * run cap. A verifier with no token cap of its own may use what is left of the run token cap after
+ * the readers' spend (and every other call of the run), less `SUMMARISER_SHARE_PERCENT`, which pays
+ * for the merges and the overview after the claims are judged (P3-121). It is a line on the run's
+ * own token count, marked `reserve`: the budget guard treats its refusal as a stop of the verifier
+ * only (RF-423), and the whole run token cap still stops the run (DEC-112).
+ */
+function claimCheckCaps(keys: readonly UsageCap[]): readonly UsageCap[] {
+  return keys
+    .filter((cap) => cap.kind === 'run-tokens')
+    .map((cap) => ({
+      kind: 'run-tokens',
+      limit: (cap.limit * BigInt(100 - SUMMARISER_SHARE_PERCENT)) / 100n,
+      source: 'reserve',
+    }));
 }
 
 /**
@@ -141,11 +153,9 @@ function scopeShareCaps(
 export function capsFor(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
   const keys = keyCaps(keySource, inputs);
   const own = roleCaps(inputs.role);
-  const percent = sharePercentOf(inputs);
+  const ownTokens = own.some((cap) => cap.kind === 'role-tokens');
   const shares: UsageCap[] = [];
-  if (percent !== undefined && !own.some((cap) => cap.kind === 'role-tokens')) {
-    shares.push(...shareCaps(keys, percent));
-  }
+  if (inputs.reader === true && !ownTokens) shares.push(...readerShareCaps(keys));
   if (
     inputs.reader === true &&
     inputs.scopeSpent !== undefined &&
@@ -153,6 +163,9 @@ export function capsFor(keySource: KeySource, inputs: CapInputs): readonly Usage
   ) {
     shares.push(...scopeShareCaps(keys, inputs.scopeSpent, inputs.readerRunMicros ?? 0n));
   }
+  // DEC-193: the run's own caps come first, so a verifier call that would pass the whole run cap (or a
+  // scope cap) still stops the run; one that passes only the line stops the verifier.
+  if (inputs.verifier === true && !ownTokens) shares.push(...claimCheckCaps(keys));
   return [...keys, ...own, ...shares];
 }
 
