@@ -181,3 +181,34 @@ describe('StoreUpload the project is deleted while the zip is stored', () => {
     expect(world.uploads.removed).toEqual([uploadSnapshotKey(id, world.uploads.hash)]);
   });
 });
+
+describe('StoreUpload the log of a zip that did not end well', () => {
+  it('RF-159 tells a Cancel at info level and logs no error', async () => {
+    const id = '00000000-0000-4000-a000-0000000000e8';
+    const { world, project } = await withSource(id, () => otherHash);
+    world.uploads.stopsOnAbort = true;
+    const release = holding(world.uploads);
+    const batchId = await batchOf(world, project);
+
+    await world.batches.cancel({ actor: amy, projectId: project.id, batchId });
+    release();
+    await settle();
+
+    const levels = world.logger.entries.map((entry) => entry.level);
+    expect(levels).not.toContain('error');
+    expect(levels).toContain('info');
+  });
+
+  it('RF-158 still logs an error nobody expected at error level', async () => {
+    const id = '00000000-0000-4000-a000-0000000000e9';
+    const { world, project } = await withSource(id, () => otherHash);
+    world.uploads.failWith = new Error('the disk went away');
+    const release = holding(world.uploads);
+    await batchOf(world, project);
+
+    release();
+    await settle();
+
+    expect(world.logger.entries.map((entry) => entry.level)).toEqual(['error']);
+  });
+});
