@@ -83,7 +83,7 @@ export function scriptedPlanner(script: Script): { call: PlannerCall; requests: 
       ...{ provider, name: 'fake', kind: 'fake', model: 'm', maxOutputTokens: 4_096 },
       keySource: 'user',
     },
-    prompt: { name: 'planner/data-model.v4.md', version: 'v4', sha256: 'b'.repeat(64), text: 'x' },
+    prompt: { name: 'planner/data-model.v5.md', version: 'v5', sha256: 'b'.repeat(64), text: 'x' },
     continuePrompt: {
       name: 'planner/continue.v1.md',
       version: 'v1',

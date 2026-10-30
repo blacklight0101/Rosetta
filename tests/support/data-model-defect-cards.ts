@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import type { SourceCard } from '../../src/domain/planning/plan-sources.js';
+import type { Card } from '../../src/domain/cards/card.js';
 import { card } from './data-model-sqlserver-orders.js';
+import { base, claim, judgedCard } from './plan-cards.js';
 
 // P7-13, EV-31, EV-40, EV-74, EV-75: the entity cards behind the data-model defects of the
 // evaluation of 2026-10-29, written for this repository in new words (a stock workbook, a catalog
@@ -83,4 +85,17 @@ export function invoiceCards(): SourceCard[] {
 /** The text of a recorded planner answer of the failing kind. */
 export function answerText(name: string): Promise<string> {
   return readFile(new URL(`../fixtures/planner/${name}.json`, import.meta.url), 'utf8');
+}
+
+/** The same cards as the cards of an understand run, every claim Supported, for a plan run. */
+export function runCards(cards: readonly SourceCard[]): Card[] {
+  return cards.map((each) =>
+    judgedCard(
+      {
+        ...base(each.id, each.type, each.title),
+        claims: each.claims.map((one) => claim(one.text, 'src/Stock/Sheet.cs')),
+      },
+      each.claims.map(() => 'Supported' as const),
+    ),
+  );
 }
