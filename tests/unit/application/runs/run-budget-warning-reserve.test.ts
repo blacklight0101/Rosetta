@@ -42,3 +42,24 @@ it('RF-1003 DEC-193 a verifier call at 86% of the run token cap warns at 50 and 
     { scope: 'run', sharePercent: 80 },
   ]);
 });
+
+const line = { kind: 'run-tokens', limit: 900n, spent: 880n, needed: 50n } as const;
+const ownCost = { kind: 'role-cost', limit: 100n, spent: 90n, needed: 20n } as const;
+
+it('RF-429 DEC-193 a verifier refused only at its line of the run cap counts as stopped at the line', async () => {
+  const reporter = new RunBudgetEvents({ events: emitter(), run: zero, project: zero });
+
+  await reporter.capReached({ ...line, role: 'verifier', source: 'reserve' });
+
+  expect(reporter.stoppedAtLine('verifier')).toBe(true);
+  expect(reporter.stoppedAtLine('reader')).toBe(false);
+});
+
+it('RF-423 DEC-193 a verifier refused at its line and at a cost cap of its own is not stopped only at the line', async () => {
+  const reporter = new RunBudgetEvents({ events: emitter(), run: zero, project: zero });
+
+  await reporter.capReached({ ...line, role: 'verifier', source: 'reserve' });
+  await reporter.capReached({ ...ownCost, role: 'verifier' });
+
+  expect(reporter.stoppedAtLine('verifier')).toBe(false);
+});
