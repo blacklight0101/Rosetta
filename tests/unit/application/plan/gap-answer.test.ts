@@ -42,7 +42,6 @@ describe('parseGapAnswer', () => {
       positions: [],
       problems: [],
       entries: [],
-      mapped: [],
     });
   });
 

@@ -31,7 +31,7 @@ describe('parseGapAnswer: a card id written as a requirement (P7-15)', () => {
 
     expect(answer?.problems).toEqual([]);
     expect(answer?.drafts).toHaveLength(1);
-    expect(answer?.mapped).toEqual([{ position: 1, field: 'requirements', count: 1 }]);
+    expect(answer?.drafts[0]?.requirementCards).toEqual(['FEAT-009']);
     expect(answer?.entries).toEqual([{ position: 1, field: 'requirements', count: 2 }]);
   });
 
@@ -42,7 +42,9 @@ describe('parseGapAnswer: a card id written as a requirement (P7-15)', () => {
 
     expect(result.leftOut).toEqual([]);
     expect(result.content.tasks[2]?.requirements).toEqual(['REQ-002']);
-    expect(result.content.requirementNotes).toBeUndefined();
+    expect(result.content.requirementNotes).toEqual([
+      { kind: 'cited', task: 'T-003', mapped: 1, dropped: 0 },
+    ]);
   });
 
   it('RF-607 P7-15 under SDD a list that drops to nothing is filled from what the card builds', () => {
@@ -53,22 +55,20 @@ describe('parseGapAnswer: a card id written as a requirement (P7-15)', () => {
     expect(result.leftOut).toEqual([]);
     expect(result.content.tasks[2]?.requirements).toEqual(['REQ-002']);
     expect(result.content.requirementNotes).toEqual([
+      { kind: 'cited', task: 'T-003', mapped: 0, dropped: 1 },
       { kind: 'added', task: 'T-003', requirement: 'REQ-002' },
     ]);
   });
 
-  it('RF-627 P7-15 checks.md and the log list mapped and dropped entries with no answer text', () => {
+  it('RF-627 P7-15 checks.md and the log list the dropped entries with no answer text', () => {
     const answer = parseGapAnswer(answerWith(['FEAT-009', 'abc']));
     if (answer === undefined) throw new Error('the answer must read');
 
-    const rows = gapLeftOutItems('Gap answer', answer.problems, answer.entries, answer.mapped);
-    const warnings = entryWarnings('gap answer', false, answer.entries, answer.mapped);
+    const rows = gapLeftOutItems('Gap answer', answer.problems, answer.entries);
+    const warnings = entryWarnings('gap answer', false, answer.entries);
 
-    expect(rows.map((row) => [row.item, row.field])).toEqual([
-      ['1', 'requirements'],
-      ['1', 'requirements'],
-    ]);
-    expect(rows.map((row) => row.reason).join(' ')).toMatch(/source card id.*dropped/u);
+    expect(rows.map((row) => [row.item, row.field])).toEqual([['1', 'requirements']]);
+    expect(rows[0]?.reason).toMatch(/dropped; the card was kept/u);
     expect(warnings.join(' ')).toContain('"requirements"');
     expect(JSON.stringify([rows, warnings])).not.toMatch(/FEAT-009|abc/u);
   });

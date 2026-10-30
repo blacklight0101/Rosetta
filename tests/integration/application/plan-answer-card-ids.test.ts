@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parsePlanAnswer } from '../../../src/application/plan/plan-answer.js';
-import { leftOutItems } from '../../../src/application/plan/plan-package.js';
+import { requirementLines } from '../../../src/infrastructure/handoff/handoff-requirement-notes-markdown.js';
 import { assemblePlan } from '../../../src/domain/planning/plan-content.js';
 import { invariant, scenario } from '../../support/task-card-fixtures.js';
 
@@ -56,20 +56,17 @@ describe('plan answer shaped like the eShop plan a9700a80 (P7-15)', () => {
     ]);
   });
 
-  it('RF-601 P7-15 checks.md lists the mapped entries by position and field, never answer text', () => {
+  it('RF-601 P7-15 checks.md notes the mapped entries by card position and field, never answer text', () => {
     const draft = parsePlanAnswer(JSON.stringify(answer));
     if (draft === undefined) throw new Error('the answer must read');
     const plan = assemblePlan(draft, new Set(sources), { specificationDriven: true });
 
-    const rows = leftOutItems({
-      leftOut: plan.leftOut,
-      unreadable: plan.unreadable,
-      dataModelProblems: [],
-    });
+    const text = requirementLines(plan.content.requirementNotes ?? []).join('\n');
 
-    expect(rows).toHaveLength(7);
-    expect(rows[0]).toMatchObject({ area: 'Plan answer', item: 'tasks, position 1' });
-    expect(rows.every((row) => row.field === 'requirements')).toBe(true);
-    expect(JSON.stringify(rows)).not.toMatch(/FEAT|BR-009|SCRN/u);
+    const entries = (plan.content.requirementNotes ?? []).filter((note) => note.kind === 'entries');
+    expect(entries).toHaveLength(7);
+    expect(text).toContain('The task card at position 1 of the plan answer was kept');
+    expect(text).not.toMatch(/FEAT|BR-009|SCRN/u);
+    expect(plan.unreadable).toEqual([]);
   });
 });

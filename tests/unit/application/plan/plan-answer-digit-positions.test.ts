@@ -39,10 +39,9 @@ describe('parsePlanAnswer: positions written as digit strings (EV-30)', () => {
     },
   );
 
-  it('RF-601 P7-15 the Left out row says how many entries of dependsOn were dropped', () => {
-    const items = parsePlanAnswer(answerWith({ dependsOn: ['abc'] }))?.unreadableItems;
-    expect(items).toEqual([expect.objectContaining({ position: 1, field: 'dependsOn' })]);
-    expect(items?.[0]?.reason).toContain('1 entry');
+  it('RF-601 P7-15 the entries of dependsOn that were dropped are counted in a note', () => {
+    const notes = parsePlanAnswer(answerWith({ dependsOn: ['abc'] }))?.entryNotes;
+    expect(notes).toEqual([{ card: 1, field: 'dependsOn', mapped: 0, dropped: 1 }]);
   });
 
   it('RF-601 EV-30 the recorded eShop answer with digit-string positions keeps its six cards', async () => {

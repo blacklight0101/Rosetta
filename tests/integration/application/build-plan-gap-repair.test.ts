@@ -63,7 +63,7 @@ describe('BuildPlan: a card that cannot be read is logged', () => {
   const broken = (title: string, requirements: unknown, builds: string[]) =>
     card(title, builds, { requirements });
 
-  it('Q-54 { "position": "3" } and { "id": 3 } are refused, and the log names the position and the field', async () => {
+  it('Q-54 P7-15 a requirements field that is no list leaves the card out, and the log names the position and the field', async () => {
     const answer = answerOf(
       card('Operations', operations),
       broken(sentinel, { position: '3' }, ['flow:FLOW-001']),

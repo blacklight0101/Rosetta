@@ -4,7 +4,9 @@ import type { CoverageItem } from './plan-coverage.js';
 import type { DraftTask } from './plan-draft.js';
 import { draftFault } from './left-out-card.js';
 import {
+  citedNotes,
   citingRequirements,
+  type CitedRequirements,
   gapRequirementNotes,
   gapRequirements,
   type GapRequirements,
@@ -38,6 +40,7 @@ interface KeptDraft {
   readonly draft: GapDraft;
   readonly riskClass: RiskClass;
   readonly requirements: GapRequirements;
+  readonly cited: CitedRequirements;
   readonly builds: readonly string[];
   readonly files: readonly string[];
 }
@@ -108,9 +111,10 @@ function keptDrafts(
     const { riskClass } = draft;
     const named = new Set(draft.builds);
     const builds = uncovered.filter((each) => named.has(each.id)).map((each) => each.id);
+    const cited = citingRequirements(content, draft.requirementCards ?? []);
     const listed = unique([
       ...draft.requirements.flatMap((at) => content.requirements[at - 1]?.id ?? []),
-      ...citingRequirements(content, draft.requirementCards ?? []),
+      ...cited.ids,
     ]);
     const requirements = gapRequirements(content, listed, builds, options);
     const field = faultOf(content, draft, builds, requirements === undefined);
@@ -119,7 +123,7 @@ function keptDrafts(
       return;
     }
     const files = listedFiles(draft.files);
-    result.kept.push({ ...{ position, draft, riskClass }, requirements, builds, files });
+    result.kept.push({ ...{ position, draft, riskClass }, requirements, cited, builds, files });
   });
   return result;
 }
@@ -177,9 +181,10 @@ export function addGapTasks(
       };
     },
   );
-  const notes = kept.flatMap((each, at) =>
-    gapRequirementNotes(added[at]?.id ?? '', each.requirements),
-  );
+  const notes = kept.flatMap((each, at) => [
+    ...citedNotes(added[at]?.id ?? '', each.cited),
+    ...gapRequirementNotes(added[at]?.id ?? '', each.requirements),
+  ]);
   const requirementNotes = [...(content.requirementNotes ?? []), ...notes];
   const tasks = [...content.tasks, ...added];
   const noted = requirementNotes.length === 0 ? {} : { requirementNotes };

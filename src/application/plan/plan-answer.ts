@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type {
   DraftTask,
+  EntryNote,
   PlanDraft,
   UnreadableItem,
   UnreadableTask,
@@ -167,8 +168,10 @@ function readTasks(
 ): {
   readonly tasks: DraftTask[];
   readonly unreadableTasks: UnreadableTask[];
+  readonly notes: EntryNote[];
 } {
   const unreadableTasks: UnreadableTask[] = [];
+  const notes: EntryNote[] = [];
   const tasks = list.map((each, index) => {
     const read = taskSchema.safeParse(each);
     if (read.success) {
@@ -176,7 +179,7 @@ function readTasks(
       const contradicts = contradictionsOf(raw, index + 1, lost);
       // P3-126: the positions name the lists as the planner wrote them; items left out shift them.
       // P7-15: each entry is read on its own; the card is kept whatever the entries are.
-      const lists = readLists(index + 1, rest, moved, lost);
+      const lists = readLists(index + 1, rest, moved, notes);
       return { ...rest, ...lists, phase: moved.phase(phase), contradicts };
     }
     const issue = read.error.issues[0];
@@ -185,7 +188,7 @@ function readTasks(
     unreadableTasks.push({ position: index + 1, field, reason: UNREADABLE_REASON });
     return unreadablePlaceholder;
   });
-  return { tasks, unreadableTasks };
+  return { tasks, unreadableTasks, notes };
 }
 
 /** P3-126: where an item that was kept moved, so the positions that name it still point at it. */
@@ -236,7 +239,7 @@ function draftOf(lists: z.infer<typeof answer>): PlanReading {
     citing: citingOf(requirements.items),
     phase: (position: number) => phases.at(position) ?? 0,
   };
-  const { tasks, unreadableTasks } = readTasks(lists.tasks, moves, lost);
+  const { tasks, unreadableTasks, notes } = readTasks(lists.tasks, moves, lost);
   return {
     problems: [],
     draft: {
@@ -251,6 +254,7 @@ function draftOf(lists: z.infer<typeof answer>): PlanReading {
       technical,
       ...judgementDrafts(judgements.items, decisions.at),
       ...(unreadableTasks.length > 0 ? { unreadableTasks } : {}),
+      ...(notes.length > 0 ? { entryNotes: notes } : {}),
       ...(lost.length > 0 ? { unreadableItems: lost } : {}),
     },
   };

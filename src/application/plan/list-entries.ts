@@ -1,4 +1,4 @@
-import type { UnreadableItem } from '../../domain/planning/plan-draft.js';
+import type { EntryNote } from '../../domain/planning/plan-draft.js';
 import { listedPosition } from './list-positions.js';
 
 // P7-15, EV-67, RF-601, RF-627, ADR-013: a list of requirements or dependsOn in a task card is read
@@ -88,54 +88,27 @@ function resolveDependsOn(raw: readonly unknown[]): ResolvedList {
   return { positions: [...read.positions], mapped: 0, dropped: read.dropped };
 }
 
-function entries(count: number): string {
-  return `${String(count)} ${count === 1 ? 'entry' : 'entries'}`;
-}
-
-const NOUNS: Readonly<Record<string, string>> = {
-  requirements: 'requirement position or cited source card id',
-  dependsOn: 'task card position',
-};
-
-/** The rows for checks.md and the log about one card whose list was mapped or had entries dropped. */
-function entryItems(
-  position: number,
-  field: string,
-  changed: Pick<ResolvedList, 'mapped' | 'dropped'>,
-): UnreadableItem[] {
-  const { mapped, dropped } = changed;
-  const one = (count: number): string => (count === 1 ? 'was' : 'were');
-  const mappedRow: UnreadableItem[] =
-    mapped === 0
-      ? []
-      : [
-          {
-            ...{ list: 'tasks', position, field },
-            reason: `${entries(mapped)} named a source card id and ${one(mapped)} mapped to the requirements that cite it; the card was kept.`,
-          },
-        ];
-  const droppedRow: UnreadableItem[] =
-    dropped === 0
-      ? []
-      : [
-          {
-            ...{ list: 'tasks', position, field },
-            reason: `${entries(dropped)} named no ${NOUNS[field] ?? 'position'} and ${one(dropped)} dropped; the card was kept.`,
-          },
-        ];
-  return [...mappedRow, ...droppedRow];
-}
-
 /** The `requirements` and `dependsOn` of the card at `position`, read entry by entry (P7-15). */
 export function readLists(
   position: number,
   card: { readonly requirements: readonly unknown[]; readonly dependsOn: readonly unknown[] },
   moves: EntryMoves,
-  lost: UnreadableItem[],
+  notes: EntryNote[],
 ): { readonly requirements: number[]; readonly dependsOn: number[] } {
   const requirements = resolveRequirements(card.requirements, moves);
   const dependsOn = resolveDependsOn(card.dependsOn);
-  lost.push(...entryItems(position, 'requirements', requirements));
-  lost.push(...entryItems(position, 'dependsOn', dependsOn));
+  for (const [field, found] of [
+    ['requirements', requirements],
+    ['dependsOn', dependsOn],
+  ] as const) {
+    const { mapped, dropped } = found;
+    if (mapped + dropped > 0) notes.push({ card: position, field, mapped, dropped });
+  }
   return { requirements: requirements.positions, dependsOn: dependsOn.positions };
+}
+
+/** The log line for a card kept with entries mapped or dropped: its place, field and counts only. */
+export function entryNoteMessage(note: EntryNote): string {
+  const { card, field, mapped, dropped } = note;
+  return `Task card at position ${String(card)} of the plan answer was kept; in its field "${field}", ${String(mapped)} source card id(s) were mapped to requirements and ${String(dropped)} entr${dropped === 1 ? 'y was' : 'ies were'} dropped.`;
 }

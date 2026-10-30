@@ -38,21 +38,14 @@ describe('parsePlanAnswer: a card id written as a requirement (P7-15)', () => {
     expect(draft?.unreadableTasks).toBeUndefined();
     expect(draft?.tasks).toHaveLength(1);
     expect(draft?.tasks[0]?.requirements).toEqual([1]);
-    expect(draft?.unreadableItems).toEqual([
-      expect.objectContaining({ list: 'tasks', position: 1, field: 'requirements' }),
-    ]);
-    expect(draft?.unreadableItems?.[0]?.reason).toContain('6 entries');
+    expect(draft?.entryNotes).toEqual([{ card: 1, field: 'requirements', mapped: 0, dropped: 6 }]);
+    expect(draft?.unreadableItems).toBeUndefined();
   });
 
-  it('RF-601 P7-15 a mapped card id is listed with its count and no word of the answer', () => {
+  it('RF-601 P7-15 a mapped card id is noted with its count and no word of the answer', () => {
     const draft = draftWith({ requirements: ['FEAT-114', 'FEAT-106'] });
 
-    const items = draft?.unreadableItems ?? [];
-    expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ list: 'tasks', position: 1, field: 'requirements' });
-    expect(items[0]?.reason).toContain('2 entries');
-    expect(items[0]?.reason).toContain('mapped');
-    expect(JSON.stringify(items)).not.toContain('FEAT-1');
+    expect(draft?.entryNotes).toEqual([{ card: 1, field: 'requirements', mapped: 2, dropped: 0 }]);
   });
 });
 
@@ -62,9 +55,7 @@ describe('parsePlanAnswer: a bad entry of dependsOn or a list that is no list (P
 
     expect(draft?.unreadableTasks).toBeUndefined();
     expect(draft?.tasks[0]?.dependsOn).toEqual([1]);
-    expect(draft?.unreadableItems).toEqual([
-      expect.objectContaining({ list: 'tasks', position: 1, field: 'dependsOn' }),
-    ]);
+    expect(draft?.entryNotes).toEqual([{ card: 1, field: 'dependsOn', mapped: 0, dropped: 2 }]);
   });
 
   it('RF-601 P7-15 a card whose requirements all drop is kept with an empty list', () => {

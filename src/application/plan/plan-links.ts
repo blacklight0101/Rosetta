@@ -116,12 +116,7 @@ function roundWarnings(round: Round, label: string, unreadable: string): string[
         ];
   return [
     ...ruled,
-    ...entryWarnings(
-      label,
-      round.answer.salvaged === true,
-      round.answer.entries,
-      round.answer.mapped,
-    ),
+    ...entryWarnings(label, round.answer.salvaged === true, round.answer.entries),
     ...round.problems.map(
       ({ position, field, reason }) =>
         `Task card at position ${String(position)} of the ${label} was left out: the field "${field}" ${reason}.`,
@@ -131,12 +126,7 @@ function roundWarnings(round: Round, label: string, unreadable: string): string[
 
 /** P7-14: the rows of checks.md for a round, under the answer's own area. */
 function roundLeftOut(round: Round, area: string): HandoffPackage['leftOut'] {
-  return gapLeftOutItems(
-    area,
-    round.problems,
-    round.answer?.entries ?? [],
-    round.answer?.mapped ?? [],
-  );
+  return gapLeftOutItems(area, round.problems, round.answer?.entries ?? []);
 }
 
 /**
