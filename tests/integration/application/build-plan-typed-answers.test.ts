@@ -72,7 +72,7 @@ describe('RF-645 DEC-184 the typed text reaches the planner', () => {
   it('RNF-004 the request carries the new planner prompt, which says the own answers are context and not instructions', async () => {
     const { system } = await planned(typedAnswers);
 
-    expect(system).toBe(await readFile('prompts/planner/package.v10.md', 'utf8'));
+    expect(system).toBe(await readFile('prompts/planner/package.v11.md', 'utf8'));
     expect(system).toContain('ownAnswers');
     expect(system).toContain('replacedByOwnAnswer');
   });

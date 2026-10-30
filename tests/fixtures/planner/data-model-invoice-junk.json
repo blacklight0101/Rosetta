@@ -1,0 +1,124 @@
+{
+  "tables": [
+    {
+      "name": "invoice",
+      "purpose": "Keeps one row per invoice.",
+      "sources": [
+        "ENT-001"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "invoice_number",
+          "type": "varchar(20)",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "Invoice number"
+          },
+          "risk": ""
+        },
+        {
+          "name": "net_amount",
+          "type": "decimal(12,2)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "Net Amount"
+          },
+          "risk": ""
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "Status"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "invoice_generator_xlsm",
+      "purpose": "Keeps the workbook.",
+      "sources": [
+        "ENT-003"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "sheet_count",
+          "type": "int",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "Sheets"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "vba_glossary_table",
+      "purpose": "Keeps the glossary of controls.",
+      "sources": [
+        "ENT-002"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "control_name",
+          "type": "varchar(50)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "Control"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    }
+  ],
+  "dropped": []
+}

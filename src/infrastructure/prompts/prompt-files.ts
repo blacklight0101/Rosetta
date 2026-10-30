@@ -30,7 +30,7 @@ const readerPromptNames = {
 /** RF-155: added only to areas that hold a rendered workbook. */
 const workbookPromptName = 'reader/workbook.v5.md';
 
-const answersPromptName = 'reader/answers.v1.md';
+const answersPromptName = 'reader/answers.v2.md';
 const rereadPromptName = 'reader/reread.v4.md';
 const parentCardsPromptName = 'reader/parent-cards.v2.md';
 
@@ -85,14 +85,14 @@ export function loadOverviewPrompt(promptsFolder: string): Promise<PromptFile> {
 /** The planner's prompt for the architecture and stack options (RF-608, RF-609), checked and hashed. */
 // RNF-004
 export async function loadPlanOptionsPrompt(promptsFolder: string): Promise<PromptFile> {
-  const file = await loadPromptFile(promptsFolder, 'planner/options.v1.md');
+  const file = await loadPromptFile(promptsFolder, 'planner/options.v2.md');
   return requirePlaceholder(file, STYLES_PLACEHOLDER);
 }
 
 /** The planner's prompt for the hand-off package (RF-604), checked and hashed. */
 // RNF-004
 export function loadPlannerPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/package.v10.md');
+  return loadPromptFile(promptsFolder, 'planner/package.v11.md');
 }
 
 /**
@@ -127,7 +127,7 @@ export function loadPrdPrompt(promptsFolder: string): Promise<PromptFile> {
 /** The planner's prompt for the target data model (RF-623), checked and hashed. */
 // RNF-004
 export function loadDataModelPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/data-model.v4.md');
+  return loadPromptFile(promptsFolder, 'planner/data-model.v5.md');
 }
 
 /** The planner's prompt for the target flows (RF-625), checked and hashed. */

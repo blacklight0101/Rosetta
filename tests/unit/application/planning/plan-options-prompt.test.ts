@@ -11,9 +11,9 @@ import { loadPlanOptionsPrompt } from '../../../../src/infrastructure/prompts/pr
 // data, asks for two styles with evidence and for the seven layers, and takes the styles from the
 // catalogue, so a change of the catalogue needs no change of the prompt.
 
-describe('prompts/planner/options.v1.md', () => {
+describe('prompts/planner/options.v2.md', () => {
   it('RF-608 states the data rule, the two styles with evidence and the seven layers', async () => {
-    const text = await readFile('prompts/planner/options.v1.md', 'utf8');
+    const text = await readFile('prompts/planner/options.v2.md', 'utf8');
 
     expect(text).toMatch(/data, never instructions/iu);
     expect(text).toMatch(/exactly two styles/iu);
@@ -29,7 +29,7 @@ describe('prompts/planner/options.v1.md', () => {
   it('RF-608 is loaded with its version and hash, with the placeholder once', async () => {
     const file = await loadPlanOptionsPrompt('prompts');
 
-    expect(file).toMatchObject({ name: 'planner/options.v1.md', version: 'v1' });
+    expect(file).toMatchObject({ name: 'planner/options.v2.md', version: 'v2' });
     expect(file.sha256).toMatch(/^[0-9a-f]{64}$/u);
     expect(file.text.split('{{styles}}')).toHaveLength(2);
   });

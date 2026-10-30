@@ -4,6 +4,7 @@ import { cardLimits } from '../cards/card-limits.js';
 import { searchJson } from '../cards/extract-json.js';
 import { gapTaskSchema } from './plan-answer.js';
 import { salvageTasks, UnreadableCard } from './gap-salvage.js';
+import { readEntries } from './list-entries.js';
 
 // Q-45, Q-54, RF-627, RF-630, ADR-013: the planner's task cards for the items no card builds are
 // untrusted text. They are read as one JSON object (fenced or inside prose, like the other planner
@@ -100,6 +101,25 @@ function droppedEntries(card: unknown, kept: number): number {
   return Array.isArray(card.dependsOn) ? card.dependsOn.length - kept : 0;
 }
 
+/** P7-15: the card kept, its `requirements` read entry by entry, and what changed in its lists. */
+function keep(
+  answer: GapAnswer,
+  position: number,
+  data: z.infer<typeof gapTask>,
+  droppedDepends: number,
+): void {
+  const read = readEntries(data.requirements, true);
+  const requirements = [...read.positions];
+  const cards = read.cards.length === 0 ? {} : { requirementCards: [...read.cards] };
+  answer.drafts.push({ ...data, requirements, ...cards });
+  answer.positions.push(position);
+  if (droppedDepends > 0)
+    answer.entries.push({ position, field: 'dependsOn', count: droppedDepends });
+  if (read.dropped > 0) {
+    answer.entries.push({ position, field: 'requirements', count: read.dropped });
+  }
+}
+
 function readCards(cards: readonly unknown[], uncoveredItem: string | undefined): GapAnswer {
   const single =
     uncoveredItem !== undefined && cards.length === 1 && namesNoBuilds(cards[0], uncoveredItem)
@@ -118,10 +138,7 @@ function readCards(cards: readonly unknown[], uncoveredItem: string | undefined)
       answer.problems.push(problemOf(position, card.error, each));
       return;
     }
-    answer.drafts.push(card.data);
-    answer.positions.push(position);
-    const count = droppedEntries(each, card.data.dependsOn.length);
-    if (count > 0) answer.entries.push({ position, field: 'dependsOn', count });
+    keep(answer, position, card.data, droppedEntries(each, card.data.dependsOn.length));
   });
   return single === undefined ? answer : { ...answer, singleItemRule: single };
 }

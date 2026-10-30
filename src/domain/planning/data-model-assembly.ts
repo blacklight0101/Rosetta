@@ -1,3 +1,4 @@
+import { mergedDrafts } from './data-model-merge.js';
 import { checkedTables, newTally, type ClaimIndex } from './data-model-tables.js';
 import type {
   DataModelAssembly,
@@ -70,9 +71,11 @@ export function assembleDataModel(
 ): DataModelAssembly {
   const claims: ClaimIndex = new Map(legacy.map((claim) => [claim.claimId, claim]));
   const tally = newTally();
-  const tables = checkedTables(draft.tables, claims, tally);
+  const { tables: merged, merges } = mergedDrafts(draft.tables);
+  const tables = checkedTables(merged, claims, tally);
   return {
     model: { database, tables, dropped: droppedFields(draft, tables, legacy) },
     leftOut: tally,
+    merged: merges,
   };
 }
