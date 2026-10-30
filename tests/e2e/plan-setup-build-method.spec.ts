@@ -49,11 +49,11 @@ test('RF-612 RF-639 the build method step asks agents or people, then the tool, 
   await expect(agents).toBeChecked();
   await expect(page.getByLabel(/^Middle tier/u)).toHaveCount(0);
   await page.getByRole('radio', { name: /^Codex/u }).check();
-  await expect(page.getByLabel(/^Middle tier/u)).toHaveAttribute('placeholder', /middle model/u);
+  await expect(page.getByLabel(/^Middle tier/u)).toHaveAttribute('placeholder', 'gpt-5-codex');
   await page.getByLabel(/^Middle tier/u).fill('gpt-mid');
   await save(page);
   await expect(recorded(page)).toContainText(
-    'Agents will build with Codex. Models: middle gpt-mid',
+    'Agents will build with Codex. Models: smallest gpt-5-mini, middle gpt-mid, largest gpt-5',
   );
   await page.reload();
   await openStep(page, 'Build method');
