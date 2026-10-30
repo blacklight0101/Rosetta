@@ -18,7 +18,11 @@ const copiedReason =
 
 function mergeNote(merge: MergedTable): DataModelProblem {
   const names = merge.merged.join(', ');
-  const reason = `Tables whose names differ only by plural, case or separators were merged into this one: ${names}.`;
+  const twins =
+    merge.columns === undefined
+      ? ''
+      : ` Columns with the same name apart from case or separators were united: ${merge.columns.join(', ')}.`;
+  const reason = `Tables whose names differ only by plural, case or separators were merged into this one: ${names}.${twins}`;
   return { item: merge.kept, field: `table ${merge.kept}`, reason };
 }
 

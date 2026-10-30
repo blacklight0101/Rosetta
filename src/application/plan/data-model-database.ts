@@ -128,6 +128,15 @@ export function sameType(choice: string | null, left: string, right: string): bo
   );
 }
 
+// SQL Server reads a char, varchar, nchar, nvarchar, binary or varbinary without a length as one character.
+const lengthTypes = new Set(['char', 'varchar', 'nchar', 'nvarchar', 'binary', 'varbinary']);
+
+function unsizedReason(database: string, type: string): string | undefined {
+  if (database !== 'SQL Server' || type.includes('(') || !lengthTypes.has(baseOf(type)))
+    return undefined;
+  return `The type "${baseOf(type)}" has no length, and SQL Server reads it as a length of 1, so give it a length or max.`;
+}
+
 /** The columns whose type belongs to another database than the chosen one, and the unchecked database. */
 // RF-623, P3-120, P7-13
 export function typeProblems(model: TargetDataModel): DataModelProblem[] {
@@ -143,6 +152,8 @@ export function typeProblems(model: TargetDataModel): DataModelProblem[] {
       const base = baseOf(column.type);
       const field = `table ${table.name} columns`;
       const replacement = old[base];
+      const unsized = unsizedReason(chosen.name, column.type);
+      if (unsized !== undefined) return [{ item: column.name, field, reason: unsized }];
       if (replacement !== undefined) {
         const reason = `The type "${base}" is deprecated in ${chosen.name}, so use ${replacement} for it.`;
         return [{ item: column.name, field, reason }];
