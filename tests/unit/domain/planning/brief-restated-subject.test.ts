@@ -96,7 +96,7 @@ describe('decideOnce: the typed answers', () => {
     const { restated } = decided(typedArchitecture, [
       decision(
         'Architecture Style Adoption',
-        'Build a modular monolith with a separate reporting module.',
+        'Adopt a modular monolith with a separate reporting module.',
       ),
     ]);
 

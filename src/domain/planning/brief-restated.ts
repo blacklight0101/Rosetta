@@ -151,8 +151,9 @@ function restates(
   const title = wordsOf(decision.title);
   const byTitle = names.find((choice) => choice.names(title))?.where;
   if (byTitle !== undefined) return byTitle;
-  if (sayingTyped(decision.title, brief.typedStyle)) return { kind: 'style' };
-  if (sayingTyped(decision.title, brief.typedMigration)) return { kind: 'migration' };
+  if (sayingTyped(decision.title, brief.typedStyle, brief.style)) return { kind: 'style' };
+  if (sayingTyped(decision.title, brief.typedMigration, brief.migration))
+    return { kind: 'migration' };
   const found = restatedBySubject(decision.title, decision.decision, brief);
   if (found === undefined) return undefined;
   return layerOf(found.layer, { kind: found.subject === 'style' ? 'style' : 'migration' });

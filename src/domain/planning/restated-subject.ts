@@ -22,6 +22,7 @@ const filler = new Set([
   ...['selection', 'selected', 'pick', 'decision', 'approach', 'focus', 'plan', 'standard'],
   ...['standardization', 'standardisation', 'architecture', 'architectural', 'style'],
   ...['migration', 'migrate', 'migrated', 'strategy', 'technology', 'technologies', 'stack'],
+  ...['module', 'component', 'part', 'parts', 'followed'],
 ]);
 
 const subjectWords: Readonly<Record<Subject, readonly string[]>> = {
@@ -80,24 +81,25 @@ function addsNothing(text: Words, known: readonly Words[], layers: boolean): boo
 
 /**
  * Whether a text says the typed answer by its content words: at least two and half of them, and at
- * least a third of the content words of the text itself, so a long decision that happens to use a
- * few of them is left alone.
+ * least a third of the content words of the text itself, and the text adds nothing else beyond the
+ * brief's names, filler and a few connectives, so a decision that adds an order or a login stays.
  */
-function saysTyped(text: Words, typed: Words, share: number): boolean {
+function saysTyped(text: Words, typed: Words, share: number, known: readonly Words[]): boolean {
   const wanted = new Set(contentOf(typed));
   const content = contentOf(text);
   const matched = new Set(content.filter((word) => wanted.has(word)));
   if (wanted.size < 2 || matched.size < Math.max(2, Math.ceil(wanted.size / 2))) return false;
-  return matched.size >= share * new Set(content).size;
+  const enough = matched.size >= share * new Set(content).size;
+  return enough && addsNothing(text, [typed, ...known], false);
 }
 
 const choosingVerbs = ['adopt', 'use', 'choose', 'select', 'pick'];
 
 /** RF-608: a title that begins with a choosing verb and says the typed answer, or says all of it. */
-export function sayingTyped(title: string, typed: Words): boolean {
+export function sayingTyped(title: string, typed: Words, known: readonly Words[] = []): boolean {
   const words = wordsOf(title);
   if (typed.length >= 2 && hasPhrase(words, typed)) return true;
-  return choosingVerbs.includes(words[0] ?? '') && saysTyped(words, typed, 0.5);
+  return choosingVerbs.includes(words[0] ?? '') && saysTyped(words, typed, 0.5, known);
 }
 
 type Found = { readonly subject: Subject; readonly layer: number } | undefined;
@@ -115,7 +117,9 @@ function choiceFound(subject: 'style' | 'migration', names: BriefNames, body: Wo
   const typed = subject === 'style' ? names.typedStyle : names.typedMigration;
   const only = addsNothing(body, names[subject], false);
   const namesIt = names[subject].some((phrase) => hasPhrase(body, phrase));
-  return (only && namesIt) || saysTyped(body, typed, 0.3) ? { subject, layer: -1 } : undefined;
+  return (only && namesIt) || saysTyped(body, typed, 0.3, names[subject])
+    ? { subject, layer: -1 }
+    : undefined;
 }
 
 /** RF-608: where a subject title restates a choice, by the text of the decision; the layer index for the stack. */
