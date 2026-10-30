@@ -96,7 +96,7 @@ describe('decideOnce: the typed answers', () => {
     const { restated } = decided(typedArchitecture, [
       decision(
         'Architecture Style Adoption',
-        'Adopt a modular monolith with a separate reporting module.',
+        'Build a modular monolith with a separate reporting module.',
       ),
     ]);
 
@@ -125,5 +125,19 @@ describe('decideOnce: versions', () => {
     );
 
     expect(restated).toHaveLength(1);
+  });
+});
+
+describe('decideOnce: other verbs of choosing', () => {
+  it('RF-608 RF-610 drops a subject title whose text builds or implements the recorded choice', () => {
+    const { restated } = decided(
+      { architecture: { style: 'layered' }, migration: 'strangler-fig' },
+      [
+        decision('Architecture Style Adoption', 'Build a layered architecture.'),
+        decision('Migration Strategy Adoption', 'Implement the strangler fig strategy.'),
+      ],
+    );
+
+    expect(restated).toHaveLength(2);
   });
 });
