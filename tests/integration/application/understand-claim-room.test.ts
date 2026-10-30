@@ -12,11 +12,12 @@ import {
   type UnderstandHarness,
 } from '../../support/understand-run-harness.js';
 
-// RF-429, P5-20, DEC-170: the readers of a run stop starting work when the claims they wrote could no
-// longer be judged with what the caps leave, or when their own share has no room for another call.
-// understand-claim-heavy.json: Catalog uses about 33,000 tokens and writes twelve claims; Services
-// would read a file and give no card. At a run cap of 100,000 tokens the verifier share is 20,000,
-// and twelve claims at the default estimate (2,000 tokens each) are 24,000.
+// RF-429, P5-20, DEC-170, DEC-193: the readers of a run stop starting work when the claims they wrote
+// could no longer be judged with what the run cap leaves, or when their own share has no room for
+// another call. understand-claim-heavy.json: Catalog uses about 33,000 tokens and writes twelve
+// claims; Services would read a file and give no card. At a run cap of 58,000 tokens the readers and
+// the verifier share 52,200 (the rest is the summariser's), and twelve claims at the default estimate
+// (2,000 tokens each) are 24,000 more than Catalog spent; the readers' share (40,600) still has room.
 
 const temp = useTempRoot('rosetta-understand-claim-room-');
 const areas = ['Catalog', 'Services'];
@@ -62,7 +63,7 @@ const readerTasksAsked = (h: UnderstandHarness): string[] =>
 
 describe('a run whose readers wrote more claims than can be judged', UNDERSTAND_TIMEOUT, () => {
   it('RF-429 starts no reader task once the claims written could not all be judged, and judges every one', async () => {
-    const { h, run } = await started('understand-claim-heavy.json', 100_000);
+    const { h, run } = await started('understand-claim-heavy.json', 58_000);
 
     expect(run.endState).toBe('Completed');
     expect(readerTasksAsked(h)).toEqual(['reader-001']);
@@ -74,7 +75,7 @@ describe('a run whose readers wrote more claims than can be judged', UNDERSTAND_
   });
 
   it('RF-429 says once, in the event log, that the readers stopped to leave room to judge the claims', async () => {
-    const { h, run } = await started('understand-claim-heavy.json', 100_000);
+    const { h, run } = await started('understand-claim-heavy.json', 58_000);
 
     const stops = (await h.eventsOf(run)).filter((e) => e.type === 'budget.readersStopped');
     expect(stops.map((event) => event.data)).toMatchObject([{ reason: 'judging' }]);
@@ -90,37 +91,42 @@ describe('a run whose readers wrote more claims than can be judged', UNDERSTAND_
   });
 });
 
-describe('a run whose readers reach their own share', UNDERSTAND_TIMEOUT, () => {
-  it('RF-429 starts no further reader task and records no refused reader call, and the run ends CapReached', async () => {
-    const h = await createUnderstandHarness({
-      dataDir: temp.path,
-      recording: 'understand-cap.json',
-      verifierRecording: 'verifier-all-supported.json',
-      settings: understandSettings(withRun(293_000)),
+describe(
+  'a run whose readers reach the run cap less the summariser part',
+  UNDERSTAND_TIMEOUT,
+  () => {
+    it('RF-429 DEC-193 starts no further reader task and records no refused reader call, and the run ends CapReached', async () => {
+      // Catalog uses 200,330 tokens; one more reader call (8,192) would pass 90% of 228,000 (205,200).
+      const h = await createUnderstandHarness({
+        dataDir: temp.path,
+        recording: 'understand-cap.json',
+        verifierRecording: 'verifier-all-supported.json',
+        settings: understandSettings(withRun(228_000)),
+      });
+      await h.scan();
+
+      const run = await h.understand({ areas });
+
+      expect(run.endState).toBe('CapReached');
+      expect(readerTasksAsked(h)).toEqual(['reader-001']);
+      const events = await h.eventsOf(run);
+      expect(events.filter((e) => e.type === 'budget.capReached')).toEqual([]);
+      expect(
+        events.filter((e) => e.type === 'budget.readersStopped').map((e) => e.data),
+      ).toMatchObject([{ reason: 'share' }]);
+      expect(await claimTotals(h, run)).toMatchObject({ Supported: 1, Unverified: 0 });
     });
-    await h.scan();
-
-    const run = await h.understand({ areas });
-
-    expect(run.endState).toBe('CapReached');
-    expect(readerTasksAsked(h)).toEqual(['reader-001']);
-    const events = await h.eventsOf(run);
-    expect(events.filter((e) => e.type === 'budget.capReached')).toEqual([]);
-    expect(
-      events.filter((e) => e.type === 'budget.readersStopped').map((e) => e.data),
-    ).toMatchObject([{ reason: 'share' }]);
-    expect(await claimTotals(h, run)).toMatchObject({ Supported: 1, Unverified: 0 });
-  });
-});
+  },
+);
 
 describe('resuming a run whose claims were written before the stop', UNDERSTAND_TIMEOUT, () => {
   it('RF-429 counts the claims written before the stop: the resume judges them and starts no reader task', async () => {
     // Run 1: the readers' own cap and a verifier cap too small for one call stop it with the twelve
     // claims written and Unverified.
     const first = understandSettings((settings) => ({
-      ...withRun(100_000)(settings),
+      ...withRun(58_000)(settings),
       budget: {
-        ...withRun(100_000)(settings).budget,
+        ...withRun(58_000)(settings).budget,
         roles: { reader: { maxTokens: 33_100 }, verifier: { maxTokens: 100 } },
       },
     }));
@@ -135,7 +141,7 @@ describe('resuming a run whose claims were written before the stop', UNDERSTAND_
     expect(run.endState).toBe('CapReached');
     expect(await claimTotals(h, run)).toMatchObject({ Unverified: 12 });
     await h.changeSettings((settings) => {
-      return { ...settings, budget: { ...withRun(100_000)(settings).budget, roles: {} } };
+      return { ...settings, budget: { ...withRun(58_000)(settings).budget, roles: {} } };
     });
 
     await h.resume(run);

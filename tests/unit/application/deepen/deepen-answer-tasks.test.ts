@@ -63,7 +63,7 @@ describe('DEC-198 (1) a picked answer in an area with no task', () => {
     ]);
     expect(given.map((task) => task.area.name)).toEqual(['Catalog', 'Setup', 'App_Start']);
     expect(given[1]?.area.files).toEqual(['Setup/a.cs', 'Setup/b.cs']);
-    expect(given[1]?.answers).toContain('Question OQ-015: Question of OQ-015?\n');
+    expect(given[1]?.answers).toContain('Question OQ-015 (Area: Setup): Question of OQ-015?');
     expect(given[1]?.answers).toContain("Owner's answer: No, hide it");
     expect(given[2]?.answers).toContain("Owner's answer: Yes, show it");
   });

@@ -48,6 +48,8 @@ export interface WorkbookUpload {
   /** RF-159: the server's state of the batch it is reading. */
   readonly processing: BatchState | undefined;
   readonly cancel: () => void;
+  /** RF-159: a Cancel is waiting for the work to end. */
+  readonly stopping: boolean;
   readonly choose: (files: readonly File[]) => void;
   readonly submit: () => void;
 }

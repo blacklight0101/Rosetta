@@ -37,19 +37,30 @@ export interface HeldBatch {
   work: Promise<void> | undefined;
   /** The work is attaching the source, which a cancel cannot stop: it waits for the end. */
   attaching: boolean;
+  /** An attach that passed its time limit and has not settled: the project stays busy until it does (RF-159). */
+  late: Promise<void> | undefined;
 }
 
 export function newBatch(id: string, userId: string, openedAt: number): HeldBatch {
   return {
     ...{ id, userId, openedAt, bytes: 0, files: 0, phase: 'open', busy: undefined },
     ...{ expired: false, startedAt: undefined, endedAt: undefined },
-    ...{ progress: undefined, outcome: undefined, work: undefined, attaching: false },
+    ...{
+      progress: undefined,
+      outcome: undefined,
+      work: undefined,
+      attaching: false,
+      late: undefined,
+    },
   };
 }
 
 /** A batch whose work has ended; it stays readable for the lifetime counted from the end. */
 export const hasEnded = (batch: HeldBatch): boolean =>
   batch.phase === 'stored' || batch.phase === 'refused';
+
+/** A batch that keeps its project busy: one at work, and one whose late attach has not settled. */
+export const isBusy = (batch: HeldBatch): boolean => !hasEnded(batch) || batch.late !== undefined;
 
 /** The state of a batch at `now` (milliseconds since the epoch). */
 export function stateOf(batch: HeldBatch, now: number): BatchState {

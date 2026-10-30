@@ -13,6 +13,7 @@ import { usePlacement, type Placement, type Where } from './use-file-placement.j
 import { runBatch, type BatchEvents, type OpenBatch } from './workbook-batch.js';
 import { outcomeOf, watchBatch } from './workbook-watch.js';
 import { useAbortOnLeave } from './use-abort-on-leave.js';
+import { stopRun, useStopping } from './use-stopping.js';
 
 // RF-150, RF-159, RFC-005 section 4.2: what the Excel workbooks form remembers while it sends: the
 // project it made, the batch a failed run left open, where each file is and what the server answered.
@@ -42,6 +43,8 @@ export interface WorkbookFlow {
   readonly send: (name: string, files: readonly File[]) => void;
   /** RF-159: stops the batch being read; nothing is published, unless the batch had already ended. */
   readonly cancel: () => void;
+  /** RF-159: a Cancel is waiting for the work to end. */
+  readonly stopping: boolean;
   /** New files were chosen: forget the last result and place every file at Waiting. */
   readonly reset: (count: number) => void;
 }
@@ -127,6 +130,7 @@ interface Runner {
   readonly send: (name: string, files: readonly File[]) => void;
   readonly follow: Follow;
   readonly cancel: () => void;
+  readonly stopping: boolean;
 }
 
 /** What a run tells the form as it goes. */
@@ -158,6 +162,7 @@ function useRunner(input: RunnerInput): Runner {
   const leave = useAbortOnLeave();
   const stop = useRef<AbortController>(new AbortController());
   const [batch, setBatch] = useState<OpenBatch | undefined>();
+  const waiting = useStopping();
   const follow: Follow = (projectId, first) => {
     stop.current = new AbortController();
     setPhase('finishing');
@@ -188,18 +193,14 @@ function useRunner(input: RunnerInput): Runner {
   };
 
   const cancel = (): void => {
-    const stopping = stop.current;
-    if (project === undefined || out.processing === undefined) {
-      stopping.abort();
-      return;
-    }
-    const target = { projectId: project.id, batchId: out.processing.batchId };
-    void cancelBatch(client, target).then((cancelled) => {
-      // RF-159: only a stopped batch ends the wait; a 409 or a failed request shows how it really ended.
-      if (cancelled.ok) stopping.abort();
-    });
+    const target =
+      project === undefined || out.processing === undefined
+        ? undefined
+        : { projectId: project.id, batchId: out.processing.batchId };
+    // RF-159: only a stopped batch ends the wait; a 409 or a failed request shows how it really ended.
+    stopRun(waiting, stop.current, target && (() => cancelBatch(client, target)));
   };
-  return { send, follow, cancel };
+  return { send, follow, cancel, stopping: waiting.stopping };
 }
 
 // RF-150, RF-159
@@ -221,6 +222,6 @@ export function useWorkbookFlow(options: WorkbookFlowOptions): WorkbookFlow {
   };
   return {
     ...{ project, phase, where: placement.where, summary, failure, processing },
-    ...{ send, cancel: runner.cancel, reset },
+    ...{ send, cancel: runner.cancel, stopping: runner.stopping, reset },
   };
 }
