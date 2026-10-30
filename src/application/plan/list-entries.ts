@@ -45,14 +45,14 @@ export interface EntryMoves {
 }
 
 /** The list as positions, with the number of card ids that mapped and of entries dropped. */
-export interface ResolvedList {
+interface ResolvedList {
   readonly positions: number[];
   readonly mapped: number;
   readonly dropped: number;
 }
 
 /** The `requirements` of a package card: positions moved, card ids mapped, the rest dropped. */
-export function resolveRequirements(raw: readonly unknown[], moves: EntryMoves): ResolvedList {
+function resolveRequirements(raw: readonly unknown[], moves: EntryMoves): ResolvedList {
   const positions: number[] = [];
   let mapped = 0;
   let dropped = 0;
@@ -83,7 +83,7 @@ export function citingOf(
   return (id) => cited.get(id) ?? [];
 }
 /** The `dependsOn` of a package card: positions kept, every other entry dropped. */
-export function resolveDependsOn(raw: readonly unknown[]): ResolvedList {
+function resolveDependsOn(raw: readonly unknown[]): ResolvedList {
   const read = readEntries(raw, false);
   return { positions: [...read.positions], mapped: 0, dropped: read.dropped };
 }
@@ -98,7 +98,7 @@ const NOUNS: Readonly<Record<string, string>> = {
 };
 
 /** The rows for checks.md and the log about one card whose list was mapped or had entries dropped. */
-export function entryItems(
+function entryItems(
   position: number,
   field: string,
   changed: Pick<ResolvedList, 'mapped' | 'dropped'>,
