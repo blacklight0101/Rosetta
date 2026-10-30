@@ -17,8 +17,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method   | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
-| P7 Evaluation fixes     | 37      | 5         | 26         | 6         | 0                  | 6       | 25      | 6      | 3          | 0         |
-| **Total**               | **489** | **117**   | **336**    | **36**    | **0**              | **225** | **244** | **20** | **262**    | **0**     |
+| P7 Evaluation fixes     | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
+| **Total**               | **490** | **118**   | **336**    | **36**    | **0**              | **226** | **244** | **20** | **262**    | **0**     |
 
 ## Conventions for every card
 
@@ -6659,7 +6659,7 @@ EV-69..EV-81 here, in the same order. A Haiku finding that is the same problem a
 card's evidence: EV-71 to P7-11, EV-72 and EV-77 to P7-12, EV-76 to P7-02 and P7-03, EV-79 to P7-14. EV-74 and EV-75
 extend P7-13; EV-81 is P7-20; EV-69, EV-70, EV-73, EV-78 and EV-80 are P7-21 and P7-22. Run ids are those of the
 evaluation stack. Waves: (1) P7-01, P7-07, P7-11, P7-14; (2) P7-02, P7-03, P7-08, P7-13; (3) P7-04, P7-05, P7-09,
-P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-20, P7-21, P7-22, P7-23, P7-24 (DEC-200, DEC-201), P7-25, P7-26, P7-27, P7-28, P7-29, P7-30, P7-31, P7-32; (6) P7-33, then P7-34 and P7-36, then P7-35 and P7-37 (DEC-204, the guided journey); (7) P7-19. Two cards of one wave
+P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-20, P7-21, P7-22, P7-23, P7-24 (DEC-200, DEC-201), P7-25, P7-26, P7-27, P7-28, P7-29, P7-30, P7-31, P7-32, P7-38; (6) P7-33, then P7-34 and P7-36, then P7-35 and P7-37 (DEC-204, the guided journey); (7) P7-19. Two cards of one wave
 never edit the same file; Depends on carries the order where they would.
 
 ### P7-01 - The claim-check reserve comes out of the run cap
@@ -6988,7 +6988,7 @@ never edit the same file; Depends on carries the order where they would.
 
 - **Difficulty**: 8 (sonnet)
 - **Size**: L
-- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P7-20, P7-21, P7-22, P7-23, P7-24, P7-25, P7-26, P7-27, P7-29, P7-30, P7-31, P7-32, P7-33, P7-34, P7-35, P7-36, P7-37, P6-33
+- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P7-20, P7-21, P7-22, P7-23, P7-24, P7-25, P7-26, P7-27, P7-29, P7-30, P7-31, P7-32, P7-33, P7-34, P7-35, P7-36, P7-37, P7-38, P6-33
 - **Gate**: owner
 - **Status**: Todo
 - **Reads**: the evaluation of 2026-10-29 (findings EV-44, EV-56..EV-81 and their repros), `docs/verification/`, RNF-006, RNF-012.
@@ -7269,3 +7269,19 @@ never edit the same file; Depends on carries the order where they would.
 - **Delivers**: the page removal, the settings fields, the redirect, web and integration tests, the runbook note for evaluations.
 - **Done when**: no page asks for a stage or caps; project settings hold them; an evaluation run still starts a single stage through the API; CI green.
 - **Refs**: RF-120, RF-420..RF-429, DEC-117, DEC-204; owner review of the start-to-package flow of 2026-10-30 (upload, start, scan only, open the live run, back to the start page, understand with caps, start, open the live run again).
+
+### P7-38 - Retry failed areas keeps the run's consent
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `web/src/pages/FailedAreas.tsx` (`useRetry`, the request with `cloudConsent: false` at line 44, the RST-1515 branch), `web/src/api/runs.ts` (`startRun`), the run-start route and use case (`retryOf`, the consent check), the egress guard's consent rule, RF-145, RF-301, RF-1108.
+- **Do**: red tests first; add the Given to the retry requirement first.
+  - Today the retry of failed areas always asks with no cloud consent, so a run that had consent gets RST-1515 and is sent to the start page.
+  - A retry (`retryOf` set) inherits the cloud consent recorded on the run it retries, checked on the server from that run's record, never taken from the browser; the provider and the source are the same, so no new data leaves.
+  - When the retried run had no consent and the area needs a cloud provider, the consent box shows next to "Retry failed areas", naming the providers, as on the start page; the retry starts once it is ticked.
+- **Delivers**: the server rule, the page change, unit, integration and web tests.
+- **Done when**: retrying a failed area of a run that had consent starts the run with no RST-1515; a run with no consent shows the box beside the button; a forged `retryOf` of another user's run answers 404; CI green.
+- **Refs**: RF-145, RF-301, RF-1108; owner report of 2026-10-30 (production run `20261030-122738-understand`: Retry failed areas answered RST-1515).
