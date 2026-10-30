@@ -128,16 +128,11 @@ export function leftOutItems(documents: {
   ];
 }
 
-/** P3-102: the data-model parts the parser dropped, for checks.md (area "Data model"). */
+/** P3-102, P7-13: the data-model parts the parser dropped and the checks of the kept ones, for checks.md (the problem keeps its kind). */
 function dataModelItems(
   problems: PlannedDocuments['dataModelProblems'],
 ): HandoffPackage['leftOut'] {
-  return problems.map((each) => ({
-    area: 'Data model',
-    item: each.item,
-    field: each.field,
-    reason: each.reason,
-  }));
+  return problems.map((each) => ({ area: 'Data model', ...each }));
 }
 
 /** P3-117: the sentences of the PRD and the plan that copy an example of a planner prompt. */

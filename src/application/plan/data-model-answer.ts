@@ -70,6 +70,8 @@ export interface DataModelProblem {
   readonly item: string;
   readonly field: string;
   readonly reason: string;
+  /** P7-13: `check` for a part the model keeps (checks.md "Data model"); absent for a part the parser dropped. */
+  readonly kind?: 'check' | undefined;
 }
 
 type Problems = DataModelProblem[];

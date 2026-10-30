@@ -8,7 +8,7 @@ import { customerCard, planCards, planQuestions } from '../../support/plan-cards
 
 // P3-120, RF-623, ADR-008: a plan run under SQL Server over the recorded planner answer (which
 // uses PostgreSQL types): the data model call is given the SQL Server type names and checks.md
-// lists the types that do not belong to the database.
+// lists the types that do not belong to the database in its Data model section (P7-13), not under Left out.
 
 const recordingPath = join('tests', 'recordings', 'fake', 'planner-package.json');
 const briefAnswers = {
@@ -39,7 +39,7 @@ describe('BuildPlan: the data model and the chosen database', () => {
     const files = await h.handoffOf(await h.plan());
 
     const checks = (files['checks.md'] ?? '').replaceAll(String.fromCharCode(92), '');
-    expect(checks).toContain('### Data model');
+    expect(checks).toMatch(/^## Data model$/mu);
     expect(checks).toContain('is not a SQL Server type');
     const request = h.providers.requests()[2];
     expect(request?.messages.map((each) => each.content).join(' ')).toContain('uniqueidentifier');

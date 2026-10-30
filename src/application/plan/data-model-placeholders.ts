@@ -29,13 +29,24 @@ const REPEATED =
 export const NO_REAL_COLUMN =
   'The table has only placeholder or repeated columns, so the parser drops it.';
 
+const WORK =
+  'The column name describes work (a metric used to derive a value, a range used for lookups), not a field of the legacy data, so the parser drops it.';
+
 const placeholder = /^(?:some_.*|(?:field|column)_?\d+)$/iu;
+// The two shapes of the evaluation (EV-31, EV-40): a metric used to derive a value (`metrics_to_derive_x`) and
+// a range used for lookups (`x_lookup_range`); or a legacy field that is a cell range. Names such as `discount_to_apply` are data.
+const work = /^metrics?_(?:used_)?to_(?:derive|calculate|compute|determine)_|_lookup_range$/iu;
+const cellRange = /\brange\s+[A-Z]{1,3}\d*:[A-Z]{1,3}\d*/iu;
 const copy = /^(.+)_(\d+)$/u;
 
 const same = (value: string): string => value.trim().toLowerCase();
 
 function isPlaceholder(column: Named): boolean {
   return placeholder.test(column.name);
+}
+
+function isWork(column: Named): boolean {
+  return work.test(column.name) || (column.legacy !== null && cellRange.test(column.legacy.field));
 }
 
 function isRepeat(column: Named, real: readonly Named[]): boolean {
@@ -64,10 +75,11 @@ export function withoutPlaceholders<T extends Named>(
   where: string,
   problems: Problem[],
 ): T[] {
-  const named = columns.filter((column) => !isPlaceholder(column));
+  const named = columns.filter((column) => !isPlaceholder(column) && !isWork(column));
   const kept = named.filter((column) => !isRepeat(column, named));
   for (const column of columns) {
     if (isPlaceholder(column)) problems.push(problemOf(column, where, PLACEHOLDER));
+    else if (isWork(column)) problems.push(problemOf(column, where, WORK));
     else if (!kept.includes(column)) problems.push(problemOf(column, where, REPEATED));
   }
   return kept;

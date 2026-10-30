@@ -63,6 +63,8 @@ interface LeftOutItem {
   readonly item: string;
   readonly field: string;
   readonly reason: string;
+  /** P7-13: `check` for a part of the data model the package keeps; checks.md lists it apart from "Left out". */
+  readonly kind?: 'check' | undefined;
 }
 
 export interface HandoffPackage {

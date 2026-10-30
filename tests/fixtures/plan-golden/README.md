@@ -8,6 +8,7 @@ cards could be dropped, and `build-plan-golden-package.test.ts` compares a fresh
 data model keeps its package byte for byte. When a change meant to alter the package lands, the file is written
 again from the test support (`tests/support/package-hashes.ts`) in the same change, and the change says why. The hashes were regenerated after P6-31 changed `open-questions.md`;
 only its entries changed. They were regenerated again after P7-11 wrote the name of a left-out part of `checks.md` as a code span; only `checks.md` changed.
+They were regenerated again after P7-13 added the "Data model" section to `checks.md`: the recorded answer has one column typed "to confirm" (`note` of `customer_order`, a type that is not a type name), which `checks.md` now lists in that section; only `checks.md` changed, in each of the three strategies, and every other file keeps its hash.
 
 ## Provenance (RNF-009)
 

@@ -127,7 +127,7 @@ export function loadPrdPrompt(promptsFolder: string): Promise<PromptFile> {
 /** The planner's prompt for the target data model (RF-623), checked and hashed. */
 // RNF-004
 export function loadDataModelPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/data-model.v4.md');
+  return loadPromptFile(promptsFolder, 'planner/data-model.v5.md');
 }
 
 /** The planner's prompt for the target flows (RF-625), checked and hashed. */

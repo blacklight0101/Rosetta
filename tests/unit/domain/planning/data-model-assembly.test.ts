@@ -196,7 +196,7 @@ describe('assembleDataModel: keys', () => {
 });
 
 describe('assembleDataModel: names and types', () => {
-  it('RF-603 refuses a table or column whose name is not an identifier, and a duplicate', () => {
+  it('RF-603 refuses a table or column whose name is not an identifier; a table written twice is merged', () => {
     const columns = [
       { name: 'id', type: 'uuid', nullable: false, legacy: null, risk: '' },
       { name: 'id', type: 'text', nullable: false, legacy: null, risk: '' },
@@ -217,7 +217,7 @@ describe('assembleDataModel: names and types', () => {
 
     expect(model.tables.map((table) => table.name)).toEqual(['customer', 'customer_order']);
     expect(model.tables[0]?.columns.map((column) => column.name)).toEqual(['id']);
-    expect(leftOut).toMatchObject({ tables: 2, columns: 2 });
+    expect(leftOut).toMatchObject({ tables: 1, columns: 2 });
   });
 
   it('RF-603 writes a type that is not a type name as to confirm', () => {
