@@ -33,7 +33,7 @@ const LABELS: Readonly<Record<ModelSlot, string>> = {
 
 const HELP: Readonly<Record<ModelSlot, string>> = {
   smallest: 'Used for difficulty 1 to 5, or 1 and 2 when it runs locally.',
-  middle: 'Used for difficulty 6 to 8 and to verify them.',
+  middle: 'Used for difficulty 6 to 8 and to verify them; when it runs locally it takes no card.',
   largest: 'Used for difficulty 9 and 10 and to verify them.',
   escalation: 'Used only with your approval in chat; it never has a default.',
 };

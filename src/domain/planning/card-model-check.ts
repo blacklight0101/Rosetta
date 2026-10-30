@@ -56,7 +56,8 @@ function kindsOf(method: BuildMethod, card: CardModelFacts): ModelFindingKind[] 
   const atRisk = card.riskClass !== 'none';
   if (card.builderModel === undefined) kinds.push('tier-unnamed');
   else if (!namedModels(method).includes(card.builderModel)) kinds.push('model-not-in-brief');
-  if (rank(card.builderTier) < rank(tierOfRating(card.rating))) kinds.push('tier-below-band');
+  if (rank(card.builderTier) < rank(tierOfRating(card.rating, method)))
+    kinds.push('tier-below-band');
   if (atRisk && rank(card.builderTier) < rank('middle')) kinds.push('risk-tier-below-middle');
   if (atRisk && card.verifierTier !== 'largest') kinds.push('risk-verifier-below-largest');
   if (rank(card.verifierTier) < rank(card.builderTier)) kinds.push('verifier-below-builder');

@@ -114,13 +114,28 @@ export function difficultyOfTask(task: PlanTask, method?: BuildMethod): TaskDiff
   const atRisk = task.riskClass !== 'none';
   const rating = atRisk && size !== 'S' ? riskRating : difficultyOfSize[size];
   const verifier = atRisk || rating >= riskRating ? 'largest' : 'middle';
-  return { rating, tier: tierForRisk(tierOfRating(rating, method), task.riskClass), verifier };
+  return {
+    rating,
+    tier: tierForRisk(tierOfRating(rating, method), task.riskClass, method),
+    verifier,
+  };
 }
 
 type ModelTier = TaskDifficulty['tier'];
 
-/** RF-635: a risk class other than `none` raises the smallest tier to the middle one, never lowers. */
+/**
+ * RF-635, RF-641: a risk class other than `none` raises the smallest tier to the middle one, never
+ * lowers. When the middle tier has no band (it runs locally), the card goes to the next tier that has.
+ */
 // RF-635
-export function tierForRisk(tier: ModelTier, riskClass: PlanTask['riskClass']): ModelTier {
-  return tier === 'smallest' && riskClass !== 'none' ? 'middle' : tier;
+export function tierForRisk(
+  tier: ModelTier,
+  riskClass: PlanTask['riskClass'],
+  method?: BuildMethod,
+): ModelTier {
+  if (tier !== 'smallest' || riskClass === 'none') return tier;
+  const bands = bandsFor(method);
+  return (
+    (['middle', 'largest'] as const).find((each) => bands.some((b) => b.tier === each)) ?? 'largest'
+  );
 }

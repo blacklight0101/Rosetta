@@ -24,7 +24,7 @@ function modelOf(method: BuildMethod, tier: Tier, esc: MarkdownEscaper): string 
   return model === undefined ? notNamed : esc.inline(model);
 }
 
-/** The builder model cell: the name, and `runs locally` when the tier is marked local (RF-641). */
+/** The model cell of a builder or a verifier: the name, and `runs locally` when the tier is marked local (RF-641). */
 function builderCell(method: BuildMethod, tier: Tier, esc: MarkdownEscaper): string {
   const model = modelOf(method, tier, esc);
   return isLocalTier(method, tier) ? `${model}, runs locally` : model;
@@ -63,7 +63,7 @@ export const bandsSection: SectionWriter = (handoff, esc) => {
     '| ---------- | ------------ | ------------- | ------------- | -------------- |',
     ...bands.map((band) => {
       const verifier = verifierTier(band);
-      return `| ${String(band.from)} to ${String(band.to)} | ${band.tier} | ${builderCell(method, band.tier, esc)} | ${verifier} | ${modelOf(method, verifier, esc)} |`;
+      return `| ${String(band.from)} to ${String(band.to)} | ${band.tier} | ${builderCell(method, band.tier, esc)} | ${verifier} | ${builderCell(method, verifier, esc)} |`;
     }),
     '',
     ...localLines(method, bands),
