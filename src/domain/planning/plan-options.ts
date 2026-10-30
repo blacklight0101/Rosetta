@@ -148,9 +148,12 @@ export function splitOption(text: string): { readonly name: string; readonly des
 
 function readOption(option: DraftOption): { readonly name: string; readonly description: string } {
   if (typeof option === 'string') return splitOption(option);
-  const split = splitOption(option.name);
-  const description = (option.description ?? '').trim().slice(0, MAX_DESCRIPTION_CHARS).trim();
-  return { name: split.name, description: description === '' ? split.description : description };
+  // options.v2 gives the name and the description apart, so a dash inside the name stays.
+  const name = option.name.trim().slice(0, MAX_OPTION_CHARS).trim();
+  return {
+    name,
+    description: (option.description ?? '').trim().slice(0, MAX_DESCRIPTION_CHARS).trim(),
+  };
 }
 
 /** The first two options with different names (compared without case), each bounded; fewer is no answer. */

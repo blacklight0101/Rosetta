@@ -52,10 +52,10 @@ export function stackContext(
   return `${head} The source cards that describe the legacy ${name} are ${list.join(', ')}; the choice below is made knowing what they say.`;
 }
 
-/** EV-65: an offer saved as one long line ("name - reason") is the same option as its name. */
+/** EV-65: an offer saved as one long line ("name - reason") is the same option as its name; a typed line is never cut. */
 function sameOption(left: string, right: string): boolean {
-  const name = (text: string): string => splitOption(text).name.toLowerCase();
-  return left.trim().toLowerCase() === right.trim().toLowerCase() || name(left) === name(right);
+  const same = left.trim().toLowerCase() === right.trim().toLowerCase();
+  return same || splitOption(left).name.toLowerCase() === right.trim().toLowerCase();
 }
 
 /**

@@ -153,8 +153,7 @@ function restates(
   if (byTitle !== undefined) return byTitle;
   if (sayingTyped(decision.title, brief.typedStyle)) return { kind: 'style' };
   if (sayingTyped(decision.title, brief.typedMigration)) return { kind: 'migration' };
-  const text = [decision.context, decision.decision, decision.consequences].join('\n');
-  const found = restatedBySubject(decision.title, text, brief);
+  const found = restatedBySubject(decision.title, decision.decision, brief);
   if (found === undefined) return undefined;
   return layerOf(found.layer, { kind: found.subject === 'style' ? 'style' : 'migration' });
 }

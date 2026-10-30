@@ -28,7 +28,7 @@ const option = z.union([
   z.string().max(MAX_OPTION_TEXT),
   z.object({
     name: z.string().max(MAX_OPTION_TEXT),
-    description: z.string().max(MAX_OPTION_TEXT),
+    description: z.string().max(MAX_OPTION_TEXT).optional(),
   }),
 ]);
 
