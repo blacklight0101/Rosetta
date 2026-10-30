@@ -16,6 +16,7 @@ import type { RunIndex } from '../ports/run-index.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { Project } from '../projects/project.js';
 import { plannedAreas } from '../understand/planned-areas.js';
+import { readingOrder } from '../understand/reader-order.js';
 import { planReaderTasks } from '../understand/reader-tasks.js';
 import {
   MERGE_ANSWER_TOKENS,
@@ -209,8 +210,10 @@ function offeredFor(
   planned: readonly Area[],
   covered: readonly Area[],
   requested: readonly string[] | undefined,
+  thirdParty: ReadonlySet<string>,
 ): readonly Area[] {
-  return (requested ?? []).length > 0 ? planned.filter((area) => covered.includes(area)) : planned;
+  const ordered = readingOrder(planned, thirdParty); // RF-210: the readers' order
+  return (requested ?? []).length > 0 ? ordered.filter((area) => covered.includes(area)) : ordered;
 }
 
 export class EstimateRun {
@@ -233,7 +236,7 @@ export class EstimateRun {
     const tasks = planReaderTasks(planned, request.areas, thirdParty);
     if (!tasks.ok) return err(ERROR_CODES.areaUnknown);
     const areas = tasks.value.map((task) => task.area);
-    const offered = offeredFor(planned, areas, request.areas);
+    const offered = offeredFor(planned, areas, request.areas, thirdParty);
     const assumptions = assumptionsOf(project.settings, this.deps.models);
     const marks = new Map(areas.map((area) => [area.name, marksOf(area, codeMap)]));
     const workbooks = workbookAreaNames(areas, workbookFolders);

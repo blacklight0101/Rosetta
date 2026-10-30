@@ -51,6 +51,8 @@ export interface ZipUpload {
   readonly submit: () => void;
   /** RF-159: stops the zip being stored; nothing is published, unless it had already ended. */
   readonly cancel: () => void;
+  /** RF-159: a Cancel is waiting for the work to end. */
+  readonly stopping: boolean;
 }
 
 interface Checked {
@@ -116,6 +118,7 @@ interface Flow {
   readonly failure: ApiFailure | undefined;
   readonly send: (zip: File, name: string) => Promise<void>;
   readonly cancel: () => void;
+  readonly stopping: boolean;
   readonly reset: () => void;
 }
 
@@ -206,7 +209,8 @@ function useUploadFlow(options: ZipUploadOptions): Flow {
     watching.cancel(project, out.processing);
   };
   const { phase, processing, summary, failure, reset } = out;
-  return { project, phase, percent, processing, summary, failure, send, cancel, reset };
+  const { stopping } = watching;
+  return { project, phase, percent, processing, summary, failure, send, cancel, stopping, reset };
 }
 
 // RF-128, RF-134

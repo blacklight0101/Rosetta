@@ -39,6 +39,7 @@ function Working({ upload }: { readonly upload: WorkbookUpload }): JSX.Element {
       progress={processing?.progress}
       elapsedMs={processing?.elapsedMs ?? 0}
       onCancel={processing === undefined ? undefined : upload.cancel}
+      stopping={upload.stopping}
     />
   );
 }
