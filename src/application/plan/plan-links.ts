@@ -5,12 +5,15 @@ import {
   type CoverageItem,
 } from '../../domain/planning/plan-coverage.js';
 import { addGapTasks } from '../../domain/planning/plan-gap.js';
+import { sourcesOfItems } from '../../domain/planning/requirement-alignment.js';
 import { titlePhases } from '../../domain/planning/phase-titles.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { gapMessage } from './gap-message.js';
 import { parseGapAnswer, type GapAnswer, type GapProblem } from './gap-answer.js';
 import { gapRepairMessage, type GapRepair } from './gap-repair-message.js';
+import { entryWarnings, gapLeftOutItems } from './gap-round-notes.js';
+import type { HandoffPackage } from './handoff-package.js';
 import {
   checkedPlan,
   coverageWarnings,
@@ -37,6 +40,8 @@ export interface PlannedLinks {
   readonly planned: PlannedCoverage;
   /** What to log: cards left out, an answer that could not be read, and the items no card builds. */
   readonly warnings: readonly string[];
+  /** P7-14: the cards the gap and repair answers left out, or kept with entries dropped, for checks.md. */
+  readonly leftOut: HandoffPackage['leftOut'];
   /** Why the extra call was not served; the plan is then the one the calls before it left. */
   readonly refusal?: RosettaError;
 }
@@ -89,6 +94,7 @@ async function gapRound(
   const positions = answer?.positions;
   const taken = addGapTasks(content, answer?.drafts ?? [], report.uncovered, {
     ...{ specificationDriven, ...(positions === undefined ? {} : { positions }) },
+    itemSources: sourcesOfItems(documents),
   });
   const grown = checkedPlan(taken.content, documents);
   const closed = { ...planned, content: grown, report: coverageOf(report.items, grown.tasks) };
@@ -110,11 +116,17 @@ function roundWarnings(round: Round, label: string, unreadable: string): string[
         ];
   return [
     ...ruled,
+    ...entryWarnings(label, round.answer.salvaged === true, round.answer.entries),
     ...round.problems.map(
       ({ position, field, reason }) =>
         `Task card at position ${String(position)} of the ${label} was left out: the field "${field}" ${reason}.`,
     ),
   ];
+}
+
+/** P7-14: the rows of checks.md for a round, under the answer's own area. */
+function roundLeftOut(round: Round, area: string): HandoffPackage['leftOut'] {
+  return gapLeftOutItems(area, round.problems, round.answer?.entries ?? []);
 }
 
 /**
@@ -140,14 +152,15 @@ async function planGap(
 ): Promise<PlannedLinks> {
   const { specificationDriven } = calls;
   if (covered.report.uncovered.length === 0 || covered.content.phases.length === 0) {
-    return { planned: covered, warnings: [] };
+    return { planned: covered, warnings: [], leftOut: [] };
   }
   const first = await gapRound(calls.gap, covered, { specificationDriven, documents });
   const warnings = roundWarnings(first, 'gap answer', UNREADABLE_GAP);
+  const leftOut = roundLeftOut(first, 'Gap answer');
   // RF-627: once the first round covered every item there is nothing for a repair to build.
   const open = first.planned.report.uncovered;
   const problems = open.length === 0 ? [] : repairable(first.problems, open);
-  if (problems.length === 0) return { planned: first.planned, warnings };
+  if (problems.length === 0) return { planned: first.planned, warnings, leftOut };
   const repair = { prompt: calls.repairPrompt, problems };
   try {
     const second = await gapRound(calls.gap, first.planned, {
@@ -156,10 +169,11 @@ async function planGap(
       repair,
     });
     const again = roundWarnings(second, 'gap repair answer', UNREADABLE_REPAIR);
-    return { planned: second.planned, warnings: [...warnings, ...again] };
+    const repaired = [...leftOut, ...roundLeftOut(second, 'Gap repair answer')];
+    return { planned: second.planned, warnings: [...warnings, ...again], leftOut: repaired };
   } catch (error) {
     if (calls.gap.signal.aborted || !(error instanceof RosettaError)) throw error;
-    return { planned: first.planned, warnings, refusal: error };
+    return { planned: first.planned, warnings, leftOut, refusal: error };
   }
 }
 
@@ -178,6 +192,6 @@ export async function planLinks(calls: LinkCalls, input: CoverageInput): Promise
   } catch (error) {
     if (calls.gap.signal.aborted || !(error instanceof RosettaError)) throw error;
     const planned = titled(covered);
-    return { planned, warnings: coverageWarnings(planned), refusal: error };
+    return { planned, warnings: coverageWarnings(planned), leftOut: [], refusal: error };
   }
 }

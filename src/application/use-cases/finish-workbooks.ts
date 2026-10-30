@@ -5,9 +5,14 @@ import type { WorkbookProgress, WorkbookStaging } from '../ports/workbook-stagin
 import type { Project } from '../projects/project.js';
 import { withinAttachLimit } from './attach-limit.js';
 import { logBatchFailure } from './batch-failure-log.js';
-import { attachWorkbooks, type AttachDependencies } from './attach-workbooks.js';
+import { attachWorkbooks, summaryOfBatch, type AttachDependencies } from './attach-workbooks.js';
+import { settleLate, type LateAttach } from './late-attach.js';
 import { endBatch, type BatchOutcome, type HeldBatch } from './workbook-batch-state.js';
-import type { FinishBatchRequest } from './workbook-batch-types.js';
+import type {
+  BatchProblem,
+  FinishBatchRequest,
+  WorkbookBatchSummary,
+} from './workbook-batch-types.js';
 
 // RF-150, RF-158, RF-159, DEC-183: the work after the finish was accepted. A workbook batch is read,
 // rendered and published and becomes the source of the project, or it ends with the error that stopped
@@ -28,6 +33,8 @@ interface FinishWork {
   readonly onProgress: (progress: WorkbookProgress) => void;
   /** Told when the source is being attached: from here on a cancel can no longer stop it. */
   readonly onAttach?: () => void;
+  /** Told when the attach passed its time limit and goes on (RF-159). */
+  readonly onLate?: (late: LateAttach<WorkbookBatchSummary, BatchProblem>) => void;
 }
 
 /** Nothing of a batch that failed stays staged; an error nobody expected is logged. */
@@ -47,6 +54,7 @@ async function failed(
   }
   await logBatchFailure(deps.logger, {
     ...failure,
+    batchId,
     stopped: 'A workbook batch was stopped.',
     unexpected: 'Finishing a workbook batch failed unexpectedly.',
   });
@@ -59,7 +67,7 @@ function report(deps: FinishDependencies, message: string, error: unknown): Prom
 
 // RF-159
 async function finishWorkbooks(deps: FinishDependencies, work: FinishWork): Promise<BatchOutcome> {
-  const { batchId, actor, ip, project, signal, onProgress, onAttach } = work;
+  const { batchId, actor, ip, project, signal, onProgress, onAttach, onLate } = work;
   try {
     const uploadedAt = deps.clock.now();
     const published = await deps.staging.publish(batchId, {
@@ -72,10 +80,12 @@ async function finishWorkbooks(deps: FinishDependencies, work: FinishWork): Prom
       return { kind: 'refused', error: signal.reason };
     }
     onAttach?.();
-    const attached = await withinAttachLimit(
-      attachWorkbooks(deps, { actor, ip, project, published, uploadedAt }),
-      deps.attachTimeoutMs,
-    );
+    const attach = attachWorkbooks(deps, { actor, ip, project, published, uploadedAt, batchId });
+    const { key, created } = published;
+    const summary = (): WorkbookBatchSummary => summaryOfBatch(project, published, uploadedAt);
+    const attached = await withinAttachLimit(attach, deps.attachTimeoutMs, () => {
+      onLate?.({ ...{ attach, project, key, created }, summary });
+    });
     return attached.ok
       ? { kind: 'stored', summary: attached.value }
       : { kind: 'refused', error: new RosettaError(attached.error) };
@@ -116,6 +126,9 @@ export async function runFinish(
     },
     onAttach: () => {
       batch.attaching = true;
+    },
+    onLate: (late) => {
+      batch.late = settleLate(deps, batch, late);
     },
   }).catch((error: unknown) => refusedAnyway(deps, error));
   endBatch(batch, outcome, deps.clock.now().getTime());

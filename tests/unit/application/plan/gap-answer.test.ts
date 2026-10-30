@@ -37,7 +37,12 @@ describe('parseGapAnswer', () => {
   });
 
   it('RF-627 an answer with no card is still an answer', () => {
-    expect(parseGapAnswer('{"tasks": []}')).toEqual({ drafts: [], positions: [], problems: [] });
+    expect(parseGapAnswer('{"tasks": []}')).toEqual({
+      drafts: [],
+      positions: [],
+      problems: [],
+      entries: [],
+    });
   });
 
   it('RF-630 a list the answer leaves out is empty, and a risk class that does not exist is left out', () => {
@@ -114,16 +119,15 @@ describe('parseGapAnswer: what a card that is left out reports (Q-54)', () => {
     expect(answer?.drafts[0]?.dependsOn).toEqual(['T-001', 2, 'T-012']);
   });
 
-  it('RF-627 P5-40 a text that is no card id stays refused in dependsOn', () => {
-    const answer = read({ tasks: [{ ...card, dependsOn: ['the login card'] }] });
+  it.each([
+    ['a text that is no card id', 'the login card'],
+    ['an object with an id and no position', { id: 1 }],
+  ])('RF-627 P7-14 %s in dependsOn is dropped and the card kept', (_name, entry) => {
+    const answer = read({ tasks: [{ ...card, dependsOn: [entry, 'T-001'] }] });
 
-    expect(answer?.problems).toMatchObject([{ position: 1, field: 'dependsOn' }]);
-  });
-
-  it('RF-627 Q-54 names dependsOn when that list is the wrong one', () => {
-    const answer = read({ tasks: [{ ...card, dependsOn: [{ id: 1 }] }] });
-
-    expect(answer?.problems).toMatchObject([{ position: 1, field: 'dependsOn' }]);
+    expect(answer?.drafts[0]?.dependsOn).toEqual(['T-001']);
+    expect(answer?.problems).toEqual([]);
+    expect(answer?.entries).toEqual([{ position: 1, field: 'dependsOn', count: 1 }]);
   });
 
   it('RF-627 Q-54 names the card when the card is not an object, and keeps no ids from it', () => {

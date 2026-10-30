@@ -139,9 +139,9 @@ describe('BuildPlan: the repair attempt', () => {
       expect(message).not.toContain(`"id": "${done}"`);
     }
     expect(message).toContain('"title": "Operations"');
-    const repairPrompt = await readFile('prompts/planner/gap-repair.v2.md', 'utf8');
+    const repairPrompt = await readFile('prompts/planner/gap-repair.v3.md', 'utf8');
     expect(message).toContain(repairPrompt.trim().split('\n')[0]);
-    expect(repair?.system).toBe(await readFile('prompts/planner/gap.v2.md', 'utf8'));
+    expect(repair?.system).toBe(await readFile('prompts/planner/gap.v3.md', 'utf8'));
     expect(repair?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-gap' });
     expect(message).not.toContain(sentinel);
   });
@@ -161,7 +161,7 @@ describe('BuildPlan: the repair attempt is a call like the others', () => {
     ];
     expect(new Set(all.map((each) => each.context.callId)).size).toBe(9);
     expect(Object.keys(manifest.promptVersions)).toEqual(
-      expect.arrayContaining(['planner/gap.v2.md', 'planner/gap-repair.v2.md']),
+      expect.arrayContaining(['planner/gap.v3.md', 'planner/gap-repair.v3.md']),
     );
   });
 });
@@ -202,8 +202,10 @@ describe('BuildPlan: a repair that does not fix the answer', () => {
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     expect(warned.map((entry) => entry.message).join(' ')).toContain('could not be read');
   });
+});
 
-  it('Q-54 the repair cards under SDD still need a requirement', async () => {
+describe('BuildPlan: a repair card under SDD (P7-14)', () => {
+  it('Q-54 P7-14 a repair card under SDD with no requirement to derive is kept, and checks.md notes its items', async () => {
     const first = answerOf(card('Operations', operations), unreadable);
     const bare = card('The journey', rest, { requirements: [] });
     const h = await gappedPlan(gapRecordingOfAll(first, answerOf(bare)));
@@ -211,8 +213,10 @@ describe('BuildPlan: a repair that does not fix the answer', () => {
 
     const run = await h.plan();
 
-    expect(run.endState).toBe('Failed');
-    expect(plain((await h.handoffOf(run))['tasks.md'])).not.toContain('The journey');
+    expect(run.endState).toBe('Completed');
+    const written = await h.handoffOf(run);
+    expect(plain(written['tasks.md'])).toContain('The journey');
+    expect(plain(written['checks.md'])).toMatch(/builds flow:FLOW-001, but no requirement cites/u);
   });
 });
 
