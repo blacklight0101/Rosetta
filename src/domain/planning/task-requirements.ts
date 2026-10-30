@@ -38,7 +38,7 @@ export function taskRequirementNotes(
 }
 
 /** The notes about the entries of the lists code mapped or dropped while reading the answer. */
-export function entryNotesOf(entries: readonly EntryNote[] = []): RequirementNote[] {
+function entryNotesOf(entries: readonly EntryNote[] = []): RequirementNote[] {
   return entries.map((each): RequirementNote => ({ kind: 'entries', ...each }));
 }
 
