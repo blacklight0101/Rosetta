@@ -37,7 +37,11 @@ function view(options: PlanOptions): Record<string, unknown> {
       recommended: architecture.recommended,
       options: architecture.options.map((option) => ({ ...option })),
     },
-    stack: stack.map(({ layer, options: choices }) => ({ layer, options: [...choices] })),
+    stack: stack.map(({ layer, options: choices, descriptions }) => ({
+      layer,
+      options: [...choices],
+      descriptions: [...descriptions],
+    })),
   };
 }
 

@@ -49,7 +49,7 @@ describe('BuildPlan: the run manifest', () => {
         .update(await readFile(`prompts/planner/${name}`))
         .digest('hex');
     expect(manifest.promptVersions).toEqual({
-      'planner/package.v10.md': { version: 'v10', sha256: await sha('package.v10.md') },
+      'planner/package.v11.md': { version: 'v11', sha256: await sha('package.v11.md') },
       'planner/continue.v1.md': { version: 'v1', sha256: await sha('continue.v1.md') },
       'planner/prd.v4.md': { version: 'v4', sha256: await sha('prd.v4.md') },
       'planner/data-model.v5.md': { version: 'v5', sha256: await sha('data-model.v5.md') },

@@ -2,6 +2,7 @@ import { assemblePlan, type PlanAssembly } from '../../domain/planning/plan-cont
 import type { PlanDraft } from '../../domain/planning/plan-draft.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { Logger } from '../ports/logger.js';
+import { entryNoteMessage } from './list-entries.js';
 import { unreadableMessages } from './plan-repair.js';
 
 // RF-604: the planner's answer checked against the supported cards; what the check leaves out is
@@ -23,6 +24,9 @@ export async function checkedAssembly(
       message,
     });
   for (const message of unreadableMessages(assembly.unreadable)) await warn(message);
+  for (const note of assembly.content.requirementNotes ?? []) {
+    if (note.kind === 'entries') await warn(entryNoteMessage(note));
+  }
   for (const left of assembly.leftOut) {
     const { position, field, reason } = left;
     await warn(

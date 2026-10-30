@@ -173,7 +173,7 @@ const boundedFaults: [string, object, string][] = [
     'files',
   ],
   ['a file longer than the bound', { files: ['x'.repeat(501)] }, 'files'],
-  ['a dependency that is not a position', { dependsOn: [0] }, 'dependsOn'],
+  ['more dependencies than the bound', { dependsOn: new Array<number>(51).fill(1) }, 'dependsOn'],
   [
     'more needs than the bound',
     { needs: Array.from({ length: 51 }, () => ({ kind: 'port', purpose: 'p' })) },
@@ -236,10 +236,9 @@ describe('parsePlanAnswer: positions written as objects (Q-54)', () => {
     ['an object with an id and no position', { id: 3 }],
     ['a position of 0', { position: 0 }],
     ['null', null],
-  ])('RF-601 Q-54 %s leaves that card unreadable, as a text did before', (_name, bad) => {
-    expect(unreadableOf({ requirements: [bad] })).toEqual([
-      expect.objectContaining({ position: 1, field: 'requirements' }),
-    ]);
+  ])('RF-601 P7-15 %s in requirements is dropped and the card kept', (_name, bad) => {
+    expect(unreadableOf({ requirements: [bad] })).toBeUndefined();
+    expect(tasksOf({ requirements: [bad] })).toMatchObject([{ requirements: [] }]);
   });
 });
 
@@ -250,10 +249,9 @@ describe('parsePlanAnswer: positions written as an index (EV-01)', () => {
     expect(tasksOf(extra)).toMatchObject([{ requirements: [1, 2], dependsOn: [3] }]);
   });
 
-  it('RF-601 EV-01 an index of 0 leaves that card unreadable', () => {
-    expect(unreadableOf({ requirements: [{ index: 0 }] })).toEqual([
-      expect.objectContaining({ position: 1, field: 'requirements' }),
-    ]);
+  it('RF-601 P7-15 an index of 0 is dropped and the card kept', () => {
+    expect(unreadableOf({ requirements: [{ index: 0 }] })).toBeUndefined();
+    expect(tasksOf({ requirements: [{ index: 0 }] })).toMatchObject([{ requirements: [] }]);
   });
 
   it('RF-601 EV-01 the recorded index-form answer of the evaluation assembles', async () => {

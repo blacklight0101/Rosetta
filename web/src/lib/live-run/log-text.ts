@@ -80,7 +80,7 @@ const writers: Readonly<Record<string, Writer>> = {
   'budget.capReached': (data) => capReachedText(data),
   'budget.readersStopped': (data) =>
     data['reason'] === 'share'
-      ? 'Readers stopped: their share of the run cap is used up.'
+      ? 'Readers stopped: the run cap, less the part kept for the summary, or the reader cap is used up.'
       : `Readers stopped to leave room to judge the ${field(data, 'claimsWaiting')} claims written.`,
   'run.ended': (data) =>
     `${field(data, 'endState')}${data['errorCode'] === undefined ? '' : ` · ${field(data, 'errorCode')}`}`,

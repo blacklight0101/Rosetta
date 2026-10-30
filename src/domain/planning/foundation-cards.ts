@@ -188,7 +188,9 @@ function withCards(
   renamed: ReadonlyMap<string, string>,
 ): PlanContent {
   const notes = content.requirementNotes?.map((note) =>
-    note.kind === 'position' ? note : { ...note, task: renamed.get(note.task) ?? note.task },
+    note.kind === 'position' || note.kind === 'entries'
+      ? note
+      : { ...note, task: renamed.get(note.task) ?? note.task },
   );
   return { ...content, tasks: cards, ...(notes === undefined ? {} : { requirementNotes: notes }) };
 }

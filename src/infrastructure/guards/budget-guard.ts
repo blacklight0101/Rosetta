@@ -193,8 +193,10 @@ export class BudgetGuard implements LlmProvider {
   private async refuse(request: LlmRequest, breach: CapBreach, at: Date): Promise<never> {
     const { recorder, ids, logger, stopRun, target } = this.options;
     const refusal = new RosettaError(ERROR_CODES.budgetCapReached);
-    // RF-423: the cap of a role stops that role's calls only; any other cap stops the whole run.
-    const roleStop = breach.kind === 'role-cost' || breach.kind === 'role-tokens';
+    // RF-423: the cap of a role stops that role's calls only, and so does a role's reserve of the run
+    // cap (RF-429, DEC-193: the verifier's line below the summariser's part); any other cap stops the run.
+    const roleStop =
+      breach.kind === 'role-cost' || breach.kind === 'role-tokens' || breach.source === 'reserve';
     const reported: CapBreach = roleStop ? { ...breach, role: request.context.role } : breach;
     const spanId = ids.uuid().replaceAll('-', '').slice(-spanIdLength);
     await this.books.quietly('The refused call could not be recorded.', request, () =>
