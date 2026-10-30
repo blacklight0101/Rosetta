@@ -17,8 +17,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method   | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
-| P7 Evaluation fixes     | 32      | 5         | 21         | 6         | 0                  | 6       | 22      | 4      | 3          | 0         |
-| **Total**               | **484** | **117**   | **331**    | **36**    | **0**              | **225** | **241** | **18** | **262**    | **0**     |
+| P7 Evaluation fixes     | 37      | 5         | 26         | 6         | 0                  | 6       | 25      | 6      | 3          | 0         |
+| **Total**               | **489** | **117**   | **336**    | **36**    | **0**              | **225** | **244** | **20** | **262**    | **0**     |
 
 ## Conventions for every card
 
@@ -6659,7 +6659,7 @@ EV-69..EV-81 here, in the same order. A Haiku finding that is the same problem a
 card's evidence: EV-71 to P7-11, EV-72 and EV-77 to P7-12, EV-76 to P7-02 and P7-03, EV-79 to P7-14. EV-74 and EV-75
 extend P7-13; EV-81 is P7-20; EV-69, EV-70, EV-73, EV-78 and EV-80 are P7-21 and P7-22. Run ids are those of the
 evaluation stack. Waves: (1) P7-01, P7-07, P7-11, P7-14; (2) P7-02, P7-03, P7-08, P7-13; (3) P7-04, P7-05, P7-09,
-P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-20, P7-21, P7-22, P7-23, P7-24 (DEC-200, DEC-201), P7-25, P7-26, P7-27, P7-28, P7-29, P7-30, P7-31, P7-32; (6) P7-19. Two cards of one wave
+P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-20, P7-21, P7-22, P7-23, P7-24 (DEC-200, DEC-201), P7-25, P7-26, P7-27, P7-28, P7-29, P7-30, P7-31, P7-32; (6) P7-33, then P7-34 and P7-36, then P7-35 and P7-37 (DEC-204, the guided journey); (7) P7-19. Two cards of one wave
 never edit the same file; Depends on carries the order where they would.
 
 ### P7-01 - The claim-check reserve comes out of the run cap
@@ -6988,7 +6988,7 @@ never edit the same file; Depends on carries the order where they would.
 
 - **Difficulty**: 8 (sonnet)
 - **Size**: L
-- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P7-20, P7-21, P7-22, P7-23, P7-24, P7-25, P7-26, P7-27, P7-29, P7-30, P7-31, P7-32, P6-33
+- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P7-20, P7-21, P7-22, P7-23, P7-24, P7-25, P7-26, P7-27, P7-29, P7-30, P7-31, P7-32, P7-33, P7-34, P7-35, P7-36, P7-37, P6-33
 - **Gate**: owner
 - **Status**: Todo
 - **Reads**: the evaluation of 2026-10-29 (findings EV-44, EV-56..EV-81 and their repros), `docs/verification/`, RNF-006, RNF-012.
@@ -7197,3 +7197,75 @@ never edit the same file; Depends on carries the order where they would.
 - **Delivers**: the merge rule, the writers' changes, unit tests with synthetic sheet names and an integration test of a recorded workbook plan.
 - **Done when**: a recorded plan with three per-site tables of the same columns writes one table with a `site` column and lists the merge; tables with different columns stay apart; an out-of-scope sheet has no table; CI green.
 - **Refs**: RF-623, P7-13; owner review of a workbook hand-off package of 2026-10-30 (plan run `20261030-111557-plan`; the package is the owner's and stays outside this repository).
+
+### P7-33 - ADR and requirements for the guided journey
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (DEC-204)
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-026` (pause and ask), ADR-007, ADR-012, ADR-018, `docs/spec/requirements.md` (RF-010, RF-120, RF-209, RF-301, RF-430, RF-1002, RF-1015, RF-1108), `docs/process-flows.md`, `docs/design-system.md`, DEC-196, DEC-204.
+- **Do**: write ADR-027 "Guided journey per project" from the template and its row in the ADR index: one approved amount for the whole journey, the steps chained under it, the start page with stages and caps removed, and the two waits the owner chose (Deepen and the plan each wait for a click). Add or change the requirements with Given/When/Then for P7-34..P7-37, update the traceability matrix, `process-flows.md` (one journey diagram) and `design-system.md` (the journey strip and the next-step panel). No code.
+- **Delivers**: ADR-027, the requirement changes, the flow diagram, the design-system entries.
+- **Done when**: every scenario of P7-34..P7-37 has a requirement id; the docs tests pass; CI green.
+- **Refs**: ADR-026, ADR-007, RF-430, RF-1015, DEC-196, DEC-204; owner review of the start-to-package flow of 2026-10-30 (upload, start, scan only, open the live run, back to the start page, understand with caps, start, open the live run again).
+
+### P7-34 - One Analyse start: scan, approve the journey once, understand
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: L
+- **Depends on**: P7-33, P7-01, P7-02, P7-04, P7-05
+- **Gate**: owner (DEC-204)
+- **Status**: Todo
+- **Reads**: the start page and its run form, `src/application/use-cases/create-project.ts`, the upload flow (`use-workbook-flow.ts`, `use-zip-batch.ts`), the estimate use case and its journey total (P7-04), the run queue (RF-1108), the live run route, RF-120, RF-430, RF-1015, ADR-026, ADR-027.
+- **Do**: red tests first.
+  - Adding a source (upload or GitHub address) starts the free scan by itself; no "scan only" choice.
+  - When the scan ends, the project page shows what was found (areas, size) and one estimate for the whole journey (understand, claim checking, one Deepen round, the plan), likely and worst case, with one button, Analyse. Pressing it records the approved amount on the journey (DEC-196) and starts understand.
+  - Starting any step opens its live page by itself; there is no "Open the live run" click.
+  - Every step of the journey runs under the one approved amount and pauses and asks near it (ADR-026); a step never asks for caps again.
+- **Delivers**: the journey record (a migration if the run index needs it, with `data-model.md`), the use case, the page changes, unit, integration, web and one end-to-end test with the fake provider.
+- **Done when**: an end-to-end test goes from upload to a finished understand with two clicks (upload, Analyse); the journey's spend is checked against the one approved amount; CI green.
+- **Refs**: RF-120, RF-430, RF-1015, RF-1108, ADR-026, DEC-204; owner review of the start-to-package flow of 2026-10-30 (upload, start, scan only, open the live run, back to the start page, understand with caps, start, open the live run again).
+
+### P7-35 - The project page is the journey and offers the next step
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: L
+- **Depends on**: P7-34, P7-25, P7-26
+- **Gate**: owner (DEC-204)
+- **Status**: Todo
+- **Reads**: `web/src/pages/RunningBody.tsx`, `EndedBody.tsx`, `PlanNext.tsx`, the journey strip of the plan run ("Journey from code to package"), the Deepen start, the history page, RF-209, RF-1002, RF-1015, ADR-027.
+- **Do**: red tests first.
+  - The journey strip shows on the project page and on every run page: each step with its state and cost, the current one marked, each one a link.
+  - When a step ends, the page offers the next one in place, with its estimate and what is left of the approved amount: Deepen (a button; DEC-204: it never starts by itself) with what it would read, "Answer questions" when the run has open questions, "Set up the plan", and then "Start the plan" (a button; DEC-204: it never starts by itself). The user never goes back to a start page between steps.
+  - History and settings stay one click away.
+- **Delivers**: the page and strip changes, web tests and one end-to-end test from a finished understand to a downloaded package.
+- **Done when**: from a finished understand, Deepen, questions, plan setup and the plan are each reached from the page they follow, with no visit to another page; CI green.
+- **Refs**: RF-209, RF-1002, RF-1015, DEC-204; owner review of the start-to-package flow of 2026-10-30 (upload, start, scan only, open the live run, back to the start page, understand with caps, start, open the live run again).
+
+### P7-36 - Questions and plan setup on one screen, recommended answers filled in
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P7-33, P7-29, P7-31
+- **Gate**: owner (DEC-178, DEC-204)
+- **Status**: Todo
+- **Reads**: the Your questions tab and the answers page, the Plan setup steps (`PlanMethodStep.tsx`, the stack step, the estimate step), `src/application/use-cases/answer-question.ts`, the brief schema, RF-301, RF-645, DEC-178.
+- **Do**: red tests first. One screen holds the open questions of the run and the Plan setup questions, each filled in with its recommended answer (RF-645) and marked as such; the main button is "Accept the recommended answers", and the owner changes only what they care about. Saving writes `answers.md` and the brief as today and shows the plan's estimate with a "Start the plan" button (DEC-204: the plan waits for the click).
+- **Delivers**: the screen, its use of the existing answer and brief use cases, web tests, an end-to-end test.
+- **Done when**: a run with three open questions reaches a saved brief in one screen and one click; a changed answer is kept; CI green.
+- **Refs**: RF-301, RF-645, DEC-178, DEC-204; owner review of the start-to-package flow of 2026-10-30 (upload, start, scan only, open the live run, back to the start page, understand with caps, start, open the live run again).
+
+### P7-37 - The stage picker and run caps leave the start page
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P7-34
+- **Gate**: owner (DEC-204)
+- **Status**: Todo
+- **Reads**: the start page (stage choice, caps, models, areas), `web/src/pages/ProjectSettingsForm.tsx`, the run-start API and its callers (the evaluation tools use the API), RF-120, RF-420..RF-429, DEC-117, DEC-204.
+- **Do**: red tests first. Remove the stage choice and the per-run caps from the start page (DEC-204: removed, not hidden). Caps, models and parallelism live in project settings and apply to the journey; the approved amount of P7-34 is the per-journey limit. The run-start API keeps its stage parameter for the evaluation tools and the administrator, under the same checks. Redirect the old start-page address to the project page.
+- **Delivers**: the page removal, the settings fields, the redirect, web and integration tests, the runbook note for evaluations.
+- **Done when**: no page asks for a stage or caps; project settings hold them; an evaluation run still starts a single stage through the API; CI green.
+- **Refs**: RF-120, RF-420..RF-429, DEC-117, DEC-204; owner review of the start-to-package flow of 2026-10-30 (upload, start, scan only, open the live run, back to the start page, understand with caps, start, open the live run again).
