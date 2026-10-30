@@ -1,0 +1,445 @@
+{
+  "summary": "",
+  "requirements": [
+    {
+      "title": "Display catalog items with filters and pagination",
+      "statement": "The system must retrieve paginated catalog items based on brand ID and type ID filters, ignoring filters if the provided ID is 0, and display all relevant item details in a list format.",
+      "sources": [
+        "BR-071",
+        "FEAT-110",
+        "FEAT-122",
+        "SCRN-022",
+        "INT-069",
+        "INT-070"
+      ]
+    },
+    {
+      "title": "Retrieve and display detailed catalog item information",
+      "statement": "The system must retrieve a specific catalog item by its ID, eagerly loading associated catalog brand and catalog type information, and display all item details including stock and pricing.",
+      "sources": [
+        "FEAT-018",
+        "FEAT-107",
+        "SCRN-023",
+        "FEAT-101",
+        "FEAT-115"
+      ]
+    },
+    {
+      "title": "Manage catalog item lifecycle",
+      "statement": "The system must support creating a new catalog item by providing all necessary details (Name, Description, Brand, Type, Price, Stock, Thresholds, Image), updating an existing item, and removing an item from the service/database.",
+      "sources": [
+        "FEAT-018",
+        "FEAT-101",
+        "FEAT-111",
+        "FEAT-112",
+        "FEAT-113",
+        "FEAT-124",
+        "FEAT-126",
+        "FLOW-012",
+        "FLOW-014",
+        "FLOW-015",
+        "FLOW-017",
+        "INT-041"
+      ]
+    },
+    {
+      "title": "Manage stock availability records",
+      "statement": "The system must allow for creating or updating stock records for a specific item on a given date, either by creating a new record or overwriting an existing one, and must be able to query the available stock for a specific item and date.",
+      "sources": [
+        "FEAT-067",
+        "FEAT-088",
+        "FEAT-114",
+        "FEAT-115",
+        "INT-041"
+      ]
+    },
+    {
+      "title": "Calculate final catalog item price with active discounts",
+      "statement": "The final displayed price for a catalog item must be calculated by multiplying the original price by (1 - discount percentage), based on currently active discounts checked against the date.",
+      "sources": [
+        "BR-056",
+        "BR-069",
+        "BR-070",
+        "FEAT-106",
+        "FEAT-135",
+        "FLOW-005"
+      ]
+    },
+    {
+      "title": "Manage application configuration securely",
+      "statement": "Configuration values, including database connection strings and secrets, must not be hardcoded in container packages, and sensitive credentials should be managed securely via environment variables or configuration providers.",
+      "sources": [
+        "BR-009",
+        "INT-013",
+        "INT-037",
+        "OQ-002"
+      ]
+    },
+    {
+      "title": "Support dynamic view switching based on device",
+      "statement": "The system must dynamically switch the presentation view between 'Mobile' and 'Desktop' based on whether the incoming request is detected as mobile.",
+      "sources": [
+        "BR-102",
+        "FEAT-089"
+      ]
+    },
+    {
+      "title": "Display application session and machine info",
+      "statement": "The application footer must display the server's machine name and the time the current user session began.",
+      "sources": [
+        "BR-074",
+        "FLOW-001"
+      ]
+    },
+    {
+      "title": "Handle application initialization and data seeding",
+      "statement": "Upon startup, the application must initialize core catalog data by setting up database schema (including sequences) and populating catalog types, brands, discounts, and initial stock levels from known data sources.",
+      "sources": [
+        "FLOW-002",
+        "BR-091",
+        "INT-044"
+      ]
+    },
+    {
+      "title": "Support user authentication via Azure Active Directory",
+      "statement": "The application must conditionally display login/logout controls, supporting authentication flow through Azure Active Directory.",
+      "sources": [
+        "INT-050",
+        "INT-069",
+        "INT-092"
+      ]
+    },
+    {
+      "title": "Handle image uploads for catalog items",
+      "statement": "The system must support uploading an image when creating or editing a catalog item, and the system must use an ImageService to process this image, linking the filename to the catalog item.",
+      "sources": [
+        "INT-033",
+        "SCRN-010",
+        "FLOW-007",
+        "FLOW-009"
+      ]
+    },
+    {
+      "title": "Log application events for monitoring",
+      "statement": "The logging system must capture contextual properties like 'activity' and 'requestinfo' and manage log files using a rolling file appender with specified limits and backup counts.",
+      "sources": [
+        "BR-090",
+        "ENT-069"
+      ]
+    },
+    {
+      "title": "Maintain service availability and scaling configuration",
+      "statement": "The containerized services must be configured to run across a defined number of instances as specified in deployment profiles.",
+      "sources": [
+        "BR-005",
+        "BR-100"
+      ]
+    }
+  ],
+  "phases": [
+    {
+      "name": "Phase 1: Catalog Data & Core Service Foundation",
+      "goal": "Establish the new Data Access Layer and Business Layer, successfully migrating the catalog service functionalities, including CRUD operations, discounts, and stock management.",
+      "exitCriteria": [
+        "Catalog Item CRUD operations are fully functional in the new system.",
+        "Stock management and discount calculation logic are verified against legacy behavior.",
+        "Core entities (CatalogItem, CatalogBrand, CatalogType, DiscountItem, Stock) are persisted and retrieved correctly."
+      ]
+    },
+    {
+      "name": "Phase 2: Frontend Interface Modernization",
+      "goal": "Replace the primary legacy catalog web interfaces (WebForms and MVC) with Razor Pages, focusing on the main product listing and detail views.",
+      "exitCriteria": [
+        "The new Razor Pages successfully display paginated catalog items with all required details.",
+        "Creation, editing, and deletion workflows for catalog items are live on the new presentation layer.",
+        "Dynamic features like view switching and UI elements are functional in the new frontend."
+      ]
+    },
+    {
+      "name": "Phase 3: Externalization and Cleanup",
+      "goal": "Migrate remaining services, finalize configuration hardening, and decommission the legacy codebase.",
+      "exitCriteria": [
+        "All external integrations (e.g., authentication) are correctly routed or replaced.",
+        "Hardcoded configuration and secrets are fully externalized to the deployment environment.",
+        "The legacy system is retired after a verification period."
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "title": "Implement Catalog CRUD via Service",
+      "phase": 1,
+      "requirements": [
+        1,
+        2,
+        3,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36
+      ],
+      "acceptanceCriteria": [
+        "Given a valid CatalogItem object, when CreateCatalogItem is called, then a new CatalogItem is persisted with an auto-generated ID.",
+        "Given a valid CatalogItem ID, when FindCatalogItem is called, then the complete CatalogItem, including its Brand and Type, is returned.",
+        "Given a specific CatalogItem ID, when UpdateCatalogItem is called with valid data, then the item is marked as Modified and saved to the database.",
+        "Given a specific CatalogItem ID, when RemoveCatalogItem is called, then the item is successfully removed from the data source."
+      ],
+      "invariant": "Catalog item data integrity must be maintained across all Create, Update, and Delete operations.",
+      "riskClass": "data loss",
+      "adds": [
+        "check"
+      ],
+      "probes": [
+        "Submit item with null Name => refused with validation error for Name",
+        "Attempt to update item with invalid Price format => refused with validation error for Price"
+      ],
+      "files": [
+        "src/business/CatalogService.cs",
+        "src/data/CatalogRepository.cs"
+      ],
+      "needs": [
+        {
+          "kind": "error code",
+          "purpose": "Error handling mechanism for CRUD failures"
+        }
+      ],
+      "dependsOn": [],
+      "contradicts": []
+    },
+    {
+      "title": "Implement Stock Management Logic",
+      "phase": 1,
+      "requirements": [
+        1,
+        2,
+        11,
+        "FEAT-114"
+      ],
+      "acceptanceCriteria": [
+        "Given an existing stock record for an item and date, when CreateAvailableStock is called, then the AvailableStock is updated with the new quantity.",
+        "Given no stock record for an item and date, when CreateAvailableStock is called, then a new stock record is created and assigned a unique StockId.",
+        "Given an item ID and a date, when GetAvailableStock is called, then the correct AvailableStock value is returned, or 0 if no record exists."
+      ],
+      "invariant": "Stock records must accurately reflect the latest recorded availability for a given item and date.",
+      "riskClass": "data loss",
+      "adds": [
+        "check",
+        "limit"
+      ],
+      "probes": [
+        "Attempt to update stock with negative quantity => refused with validation error",
+        "Query stock for a date one day beyond the recorded range => returns 0"
+      ],
+      "files": [
+        "src/business/StockService.cs",
+        "src/data/StockRepository.cs"
+      ],
+      "needs": [
+        {
+          "kind": "error code",
+          "purpose": "Stock service error handling"
+        }
+      ],
+      "dependsOn": [],
+      "contradicts": []
+    },
+    {
+      "title": "Implement Discount Pricing Logic",
+      "phase": 1,
+      "requirements": [
+        1,
+        2,
+        "FEAT-106"
+      ],
+      "acceptanceCriteria": [
+        "Given a catalog item with original price P and an active discount D%, when price calculation runs, then the final price is P * (1 - D%).",
+        "Given the current date is within the DiscountItem's Start and End dates, when GetDiscount is called, then the discount item is returned."
+      ],
+      "invariant": "Price calculation must always reflect the active discount percentage derived from available DiscountItems.",
+      "riskClass": "money",
+      "adds": [
+        "parser"
+      ],
+      "probes": [
+        "Calculate price when discount date is exactly one day before start date => no discount returned",
+        "Calculate price when discount date is exactly one day after end date => no discount returned"
+      ],
+      "files": [
+        "src/business/PricingService.cs",
+        "src/data/DiscountRepository.cs"
+      ],
+      "needs": [
+        {
+          "kind": "configuration key",
+          "purpose": "Discount eligibility rules"
+        }
+      ],
+      "dependsOn": [],
+      "contradicts": []
+    },
+    {
+      "title": "Migrate Configuration to Environment Variables",
+      "phase": 1,
+      "requirements": [
+        "BR-009"
+      ],
+      "acceptanceCriteria": [
+        "Given the container is deployed, when the ConnectionString is required, then it is sourced from an environment variable.",
+        "Given the container is deployed, when the post-logout redirect URI is required, then it is sourced from an environment variable."
+      ],
+      "invariant": "No connection strings or critical configuration values must appear hardcoded in source files or container manifests.",
+      "riskClass": "security boundary",
+      "adds": [
+        "filter"
+      ],
+      "probes": [
+        "Check ServiceManifest.xml for hardcoded ConnectionString => it must not be present",
+        "Check ServiceManifest.xml for hardcoded PostLogoutRedirectURI => it must not be present"
+      ],
+      "files": [
+        "src/infrastructure/ConfigurationLoader.cs"
+      ],
+      "needs": [
+        {
+          "kind": "configuration key",
+          "purpose": "Database connection string"
+        }
+      ],
+      "dependsOn": [],
+      "contradicts": []
+    },
+    {
+      "title": "Implement Catalog Item API and Controller",
+      "phase": 2,
+      "requirements": [
+        "FEAT-018",
+        "FEAT-122",
+        "FEAT-124",
+        "SCRN-022",
+        "SCRN-023"
+      ],
+      "acceptanceCriteria": [
+        "Given request parameters pageIndex=2 and pageSize=10, when calling the Index action, then the service returns the second page of catalog items.",
+        "Given a valid ID, when calling the Details action, then the corresponding catalog item is returned, and all associated brand/type data is present.",
+        "Given request parameters for Create, when submitting a valid form, then the service successfully creates the item and redirects to Index.",
+        "Given a specific ID, when calling the Edit action, then the corresponding item is loaded, and Brand/Type dropdowns are pre-populated with existing values."
+      ],
+      "invariant": "The presentation layer must accurately reflect the state of the catalog items retrieved from the business service.",
+      "riskClass": "none",
+      "adds": [
+        "parser"
+      ],
+      "probes": [
+        "Request page index too large => returns an appropriate empty result set",
+        "Request ID for details page that does not exist => returns 404 NotFound"
+      ],
+      "files": [
+        "src/presentation/CatalogController.cs",
+        "src/presentation/CatalogIndexPage.cshtml"
+      ],
+      "needs": [
+        {
+          "kind": "port",
+          "purpose": "API endpoint for catalog listing"
+        }
+      ],
+      "dependsOn": [
+        1
+      ],
+      "contradicts": []
+    },
+    {
+      "title": "Implement Item Image Handling",
+      "phase": 2,
+      "requirements": [
+        "INT-052",
+        "INT-106",
+        "SCRN-012",
+        "SCRN-024"
+      ],
+      "acceptanceCriteria": [
+        "Given a catalog item ID and a filename, when requesting the image via the dedicated endpoint, then the image file bytes are returned with the correct MIME type.",
+        "Given the ViewAzureStorage flag is true, when loading the Edit page, then an image upload interface is rendered.",
+        "Given an item is loaded, when AddUriPlaceHolder is called, then the PictureUri is correctly formed as /Pics/{Id}.png."
+      ],
+      "invariant": "All references to catalog item images must resolve correctly via the dedicated URI mapping.",
+      "riskClass": "data loss",
+      "adds": [
+        "check"
+      ],
+      "probes": [
+        "Request image for ID that does not exist => returns 404 Not Found",
+        "Request image with file extension that is not supported => returns 404 Not Found"
+      ],
+      "files": [
+        "src/infrastructure/ImageService.cs",
+        "src/presentation/PicController.cs"
+      ],
+      "needs": [
+        {
+          "kind": "configuration key",
+          "purpose": "Azure storage toggle"
+        }
+      ],
+      "dependsOn": [],
+      "contradicts": []
+    },
+    {
+      "title": "Finalize Application Startup and Telemetry",
+      "phase": 3,
+      "requirements": [
+        "BR-093",
+        "FLOW-011",
+        "FLOW-016",
+        "FLOW-010"
+      ],
+      "acceptanceCriteria": [
+        "Given an HTTP request begins, when the application starts, then a 'WebApplication_BeginRequest' debug log entry is recorded.",
+        "Given the application starts, when registration occurs, then controllers and API controllers are correctly registered via Autofac.",
+        "Given a request arrives, when the system initializes, then the ActivityIdHelper ensures a unique ActivityId is available in the correlation manager.",
+        "Given a request arrives, when CatalogService is invoked, then the service correctly retrieves Brand and Type associations for the item."
+      ],
+      "invariant": "Application startup must be consistent, setting up all necessary dependencies and telemetry hooks before handling any request.",
+      "riskClass": "security boundary",
+      "adds": [
+        "check"
+      ],
+      "probes": [
+        "Simulate request without required context initialization => request fails gracefully",
+        "Attempt to access endpoint before service startup is complete => returns service unavailable"
+      ],
+      "files": [
+        "src/infrastructure/Startup.cs",
+        "src/infrastructure/TelemetryMiddleware.cs"
+      ],
+      "needs": [
+        {
+          "kind": "configuration key",
+          "purpose": "Application Insight Instrumentation Key"
+        }
+      ],
+      "dependsOn": [
+        1
+      ],
+      "contradicts": []
+    }
+  ]
+}
