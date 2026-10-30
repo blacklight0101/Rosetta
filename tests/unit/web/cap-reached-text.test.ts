@@ -76,3 +76,17 @@ it('RF-429 the readers share of the run cap says what is kept for verifying and 
     'The readers stopped at 1400000 tokens, their share of the run cap. The rest is kept to verify the claims they wrote. Raise the run cap in the project settings to read further.',
   );
 });
+
+it('RF-429 DEC-193 the claim-check reserve of the run cap says the summary part is kept and how to judge further', () => {
+  expect(
+    capReachedText({
+      role: 'verifier',
+      scope: 'run-tokens',
+      capSource: 'reserve',
+      capTokens: 7_200_000,
+      spentTokens: 7_199_000,
+    }),
+  ).toBe(
+    'The claim checks stopped at 7200000 tokens, the run cap less the part kept for the summary. Raise the run cap in the project settings to check the claims left.',
+  );
+});

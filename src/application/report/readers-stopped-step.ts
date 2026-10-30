@@ -14,7 +14,7 @@ export function readersStoppedStep(
   const { reason, claimsWaiting } = parsed.data;
   const text =
     reason === 'share'
-      ? 'Readers stopped: their share of the run cap is used up.'
+      ? 'Readers stopped: the run cap, less the part kept for the summary, or the reader cap is used up.'
       : `Readers stopped to leave room to judge the ${String(claimsWaiting)} claims written.`;
   return { kind: 'budget', label: 'Readers stopped', text };
 }
