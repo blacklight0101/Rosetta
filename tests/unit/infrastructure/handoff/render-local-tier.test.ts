@@ -90,3 +90,43 @@ describe('P7-12 a local tier is given no card above difficulty 2', () => {
     expect(checks).not.toContain('a local model builds only cards');
   });
 });
+
+describe('P7-12 round 2: risk class, verifier cell and a brief saved before the change', () => {
+  const riskCard = (method: BuildMethod): string => {
+    const base = handoffOf('Plain text.');
+    const tasks = [planTask({ id: 'T-001', riskClass: 'security boundary' })];
+    const files = renderHandoff(
+      {
+        ...base,
+        content: { ...base.content, tasks },
+        brief: { ...base.brief, buildMethod: method },
+      },
+      masker,
+    );
+    return files['tasks.md'] ?? '';
+  };
+
+  it('RF-635 RF-641 a risk class card never goes to a local middle tier: it goes to the largest', () => {
+    const text = riskCard({ ...invoice, local: { middle: true } });
+
+    expect(text).toContain('Difficulty: 4 (largest tier, model: gpt-top)');
+    expect(text).not.toContain('middle tier, model: gpt-mid');
+  });
+
+  it('RF-641 the verifier model cell says runs locally when the verifier model is local', () => {
+    const text =
+      filesOf({ ...invoice, local: { smallest: true, middle: true } })['orchestration.md'] ?? '';
+
+    expect(text).toMatch(
+      /^\| 1 to 2 \| smallest \| gemma4:e4b, runs locally \| middle \| gpt-mid, runs locally \|/mu,
+    );
+  });
+
+  it('RF-639 a Codex brief saved before the change gets the offered names on cards and in the check', () => {
+    const files = filesOf({ aiAssisted: true, agentTool: { kind: 'codex' } });
+
+    expect(files['tasks.md']).toContain('Difficulty: 4 (smallest tier, model: gpt-5-mini)');
+    expect(files['tasks.md']).toContain('Verifier: middle tier, model: gpt-5-codex');
+    expect(files['checks.md'] ?? '').not.toContain('no model is named');
+  });
+});

@@ -89,3 +89,23 @@ describe('the tier of a rating on a local build', () => {
     expect(found.map((each) => each.kind)).toContain('local-model');
   });
 });
+
+describe('P7-12 round 2: the risk class and the check use the bands of the build', () => {
+  const risky = planTask({ riskClass: 'security boundary' });
+
+  it('RF-635 RF-641 a small card at a risk class goes to the first tier from the middle up that has a band', () => {
+    expect(difficultyOfTask(risky).tier).toBe('middle');
+    expect(difficultyOfTask(risky, local({ smallest: true })).tier).toBe('middle');
+    expect(difficultyOfTask(risky, local({ middle: true })).tier).toBe('largest');
+  });
+
+  it('RF-641 the check reads the tier of a band like the writers do', () => {
+    const found = checkCardModel(local({ smallest: true }), {
+      ...{ cardId: 'T-001', rating: 3, riskClass: 'none', riskShown: true },
+      ...{ builderTier: 'smallest', builderModel: undefined, verifierTier: 'middle' },
+      ...{ verifierModel: undefined, local: true, status: undefined },
+    });
+
+    expect(found.map((each) => each.kind)).toContain('tier-below-band');
+  });
+});
