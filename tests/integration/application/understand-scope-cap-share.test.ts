@@ -190,7 +190,7 @@ describe('a resumed understand run near a scope cap', UNDERSTAND_TIMEOUT, () => 
 });
 
 describe('an understand run whose run cap binds', UNDERSTAND_TIMEOUT, () => {
-  it('RF-429 P5-18 a scope cap far above the run cap adds no cost share: the readers stop only by the token share', async () => {
+  it('RF-429 P5-18 DEC-193 a scope cap far above the run cap adds no cost share, and the readers read every area', async () => {
     const h = await createUnderstandHarness({
       dataDir: temp.path,
       recording: 'understand-cap.json',
@@ -207,11 +207,10 @@ describe('an understand run whose run cap binds', UNDERSTAND_TIMEOUT, () => {
 
     const run = await h.understand({ areas: ['Catalog', 'Services'], cloudConsent: true });
 
-    expect(run.endState).toBe('CapReached');
-    const capEvents = (await h.eventsOf(run)).filter((event) => event.type === 'budget.capReached');
-    expect(capEvents).toEqual([]);
-    // P5-20: the readers' share has no room for another call, so no task starts to be refused.
-    const stops = (await h.eventsOf(run)).filter((event) => event.type === 'budget.readersStopped');
-    expect(stops.map((event) => event.data)).toMatchObject([{ reason: 'share' }]);
+    // DEC-193: no fixed token share stops the readers at 70% of the run cap either.
+    expect(run.endState).toBe('Completed');
+    const events = await h.eventsOf(run);
+    expect(events.filter((event) => event.type === 'budget.capReached')).toEqual([]);
+    expect(events.some((event) => event.type === 'budget.readersStopped')).toBe(false);
   });
 });

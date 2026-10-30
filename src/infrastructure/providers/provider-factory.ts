@@ -261,7 +261,8 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       run: { maxCostMicros: BigInt(run.maxCostMicros), maxTokens: BigInt(run.maxTokens) },
       // RF-423: a call held to the ceiling belongs to no run, so a role's run caps do not apply to it.
       ...(isCeilinged(request) ? {} : { role: roleBudgetOf(request.settings, role) }),
-      // RF-429: readers and verifier stop at a share of the run caps; the summariser keeps the rest.
+      // RF-429, DEC-193: the readers stop at their share, the verifier at the run cap less the
+      // summariser's part, which the summariser keeps.
       reader: role === 'reader' && !isCeilinged(request),
       verifier: role === 'verifier' && !isCeilinged(request),
       ...(scopeSpent === undefined ? {} : { scopeSpent, readerRunMicros }),
