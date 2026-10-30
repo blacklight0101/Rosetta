@@ -84,7 +84,7 @@ describe('P5-08 item 3: a probe states its expected outcome', () => {
     expect(plain(files['checks.md'])).not.toContain('Probes without an expected outcome');
   });
 
-  it.each(['planner/package.v10.md', 'planner/gap.v2.md'])(
+  it.each(['planner/package.v10.md', 'planner/gap.v3.md'])(
     'RF-630 %s asks for the expected outcome of every probe',
     async (name) => {
       const text = await readFile(`prompts/${name}`, 'utf8');

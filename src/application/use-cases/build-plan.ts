@@ -184,7 +184,10 @@ export class BuildPlan implements RunExecutor {
     const facts = await planScanFacts(deps, inputs, prompts.secretRisk.text);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
       ...{ ...documents, ...facts, examples, proposal },
-      leftOut: leftOutItems({ ...assembly, dataModelProblems: documents.dataModelProblems }),
+      leftOut: [
+        ...leftOutItems({ ...assembly, dataModelProblems: documents.dataModelProblems }),
+        ...links.leftOut,
+      ],
     });
     await this.deps.handoff.write(scopeOf(run), handoff);
     // Q-45: the extra call was refused or failed; the package of the first call stays as it is.
