@@ -159,3 +159,21 @@ describe('the words of the cited lines', () => {
     expect(restatedAnswerReason(cited, [owner], [lines])).toBeUndefined();
   });
 });
+
+describe('the guard on short answers', () => {
+  it('DEC-198 leaves an answer of exactly 3 meaningful words to the model, though the claim repeats them', () => {
+    const lines: CitedExcerpt = {
+      ...{ path: 'Jobs/Weekly.cs', startLine: 3, endLine: 3, skipped: false },
+      lines: ['Schedule.Run();'],
+    };
+    const owner: OwnerAnswer = {
+      ...{ area: 'X', cardId: 'OQ-004', question: 'What does the job do?' },
+      context: 'Jobs/Weekly.cs:3-3 The job runs.',
+      answer: 'Weekly invoice export.',
+    };
+    const text = 'The weekly invoice export runs.';
+
+    const cited = claim(text, cite(3, 3, 'Jobs/Weekly.cs'));
+    expect(restatedAnswerReason(cited, [owner], [lines])).toBeUndefined();
+  });
+});
