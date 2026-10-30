@@ -93,3 +93,38 @@ describe('planDataModel: the Invoice answer', () => {
     expect(problem?.reason).toContain('varchar(max)');
   });
 });
+
+describe('planDataModel: the note of a merge lists the columns united', () => {
+  it('RF-623 names the separator twin of a column in the note', async () => {
+    const column = (name: string) => ({
+      name,
+      type: 'int',
+      nullable: true,
+      legacy: null,
+      risk: '',
+    });
+    const table = (name: string, columns: string[]) => ({
+      ...{ name, purpose: 'Keeps rows.', sources: ['ENT-003'], primaryKey: [], uniqueKeys: [] },
+      ...{ columns: columns.map(column), foreignKeys: [], checks: [], indexes: [] },
+    });
+    const answer = JSON.stringify({
+      tables: [
+        table('catalog_item', ['picture_file_name']),
+        table('catalog_items', ['picturefilename']),
+      ],
+      dropped: [],
+    });
+    const { call } = scriptedPlanner({ maxEntities: 20, answer });
+
+    const result = await planDataModel(call, {
+      cards: catalogCards(),
+      brief: briefOf('SQL Server'),
+    });
+
+    const note = result.problems.find((each) => each.item === 'catalog_item');
+    expect(note?.reason).toContain('picturefilename');
+    expect(result.assembly.model.tables[0]?.columns.map((each) => each.name)).toEqual([
+      'picture_file_name',
+    ]);
+  });
+});

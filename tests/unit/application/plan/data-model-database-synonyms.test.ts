@@ -87,3 +87,25 @@ describe('deprecated types', () => {
     expect(typeProblems(withTypes(['text'], 'MySQL'))).toEqual([]);
   });
 });
+
+describe('a character type without a length', () => {
+  it('RF-623 lists varchar, nvarchar, char and varbinary without a length on SQL Server (length 1)', () => {
+    const types = ['varchar', 'nvarchar', 'char', 'varbinary', 'VARCHAR'];
+    const problems = typeProblems(withTypes(types, 'SQL Server'));
+
+    expect(problems.map((each) => each.item)).toEqual(['c0', 'c1', 'c2', 'c3', 'c4']);
+    expect(problems[0]?.reason).toContain('length');
+    expect(problems[0]?.reason).toContain('1');
+  });
+
+  it('RF-623 accepts a length, max and the types that take none', () => {
+    const types = ['varchar(20)', 'nvarchar(max)', 'int', 'datetime2', 'text'];
+    const problems = typeProblems(withTypes(types, 'SQL Server'));
+
+    expect(problems.map((each) => each.item)).toEqual(['c4']);
+  });
+
+  it('RF-623 leaves varchar alone on PostgreSQL, where it has no limit', () => {
+    expect(typeProblems(withTypes(['varchar', 'character varying'], 'PostgreSQL'))).toEqual([]);
+  });
+});
