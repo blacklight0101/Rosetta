@@ -8,7 +8,7 @@ import { legacyTablesOf } from '../../domain/planning/data-model-legacy-tables.j
 import { assembleDataModel } from '../../domain/planning/data-model-assembly.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
-import { checkedModel } from './data-model-checked.js';
+import { checkedModel, withoutKeptLeftOut } from './data-model-checked.js';
 import { withoutStorelessCards, withoutStorelessTables } from './data-model-skipped.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { parseDataModelAnswer, type DataModelProblem } from './data-model-answer.js';
@@ -207,7 +207,7 @@ function checked(
   return {
     assembly,
     readable,
-    problems: [...all.problems, ...flagged],
+    problems: [...withoutKeptLeftOut(all.problems, assembly), ...flagged],
     flagged: flagged.length,
     answered: all.answered,
     copied,

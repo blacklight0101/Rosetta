@@ -63,3 +63,28 @@ export function checkedModel(
     : [];
   return { assembly, readable, copied, flagged: found.map((each) => ({ ...each, kind: 'check' })) };
 }
+
+const tableColumns = /^table (\S+) columns(?: \d+)?$/u;
+const copyReason =
+  'A malformed copy of this column in the planner answer was ignored; the model keeps the column.';
+
+/**
+ * The parser's dropped parts, with a row about a column the model keeps (after the merge) made a
+ * check, so "Left out" never lists a column that is still in the model (P7-13, EV-74).
+ */
+// RF-627
+export function withoutKeptLeftOut(
+  problems: readonly DataModelProblem[],
+  assembly: DataModelAssembly,
+): DataModelProblem[] {
+  const merged = new Map(
+    assembly.merged.flatMap((each) => each.merged.map((name) => [name, each.kept])),
+  );
+  return problems.map((problem) => {
+    const named = tableColumns.exec(problem.field)?.[1];
+    if (problem.kind !== undefined || named === undefined) return problem;
+    const table = assembly.model.tables.find((each) => each.name === (merged.get(named) ?? named));
+    const kept = table?.columns.some((column) => column.name === problem.item) === true;
+    return kept ? { ...problem, kind: 'check', reason: copyReason } : problem;
+  });
+}
