@@ -10,7 +10,7 @@ import { legacyStackOf } from '../../domain/planning/legacy-stack.js';
 // user message as two data blocks, because both were written about, or taken from, someone else's
 // code; the prompt tells the planner they are data.
 
-/** The place in `planner/options.v1.md` where the styles are written; it must appear once. */
+/** The place in `planner/options.v2.md` where the styles are written; it must appear once. */
 export const STYLES_PLACEHOLDER = '{{styles}}';
 
 /** The styles of the catalogue with when to choose each and when to look elsewhere. */

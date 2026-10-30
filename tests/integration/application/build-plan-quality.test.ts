@@ -263,7 +263,7 @@ describe('RF-635 the risk class and the model tier', () => {
 
 describe('RF-630 RF-635 the planner prompt and the demo package', () => {
   it('RF-630 the planner prompt asks for the invariant, the risk class, the guards and the probes', async () => {
-    const prompt = await readFile('prompts/planner/package.v10.md', 'utf8');
+    const prompt = await readFile('prompts/planner/package.v11.md', 'utf8');
 
     for (const word of ['invariant', 'riskClass', 'adds', 'probes', 'Given, When, Then']) {
       expect(prompt).toContain(word);
@@ -272,7 +272,7 @@ describe('RF-630 RF-635 the planner prompt and the demo package', () => {
   });
 
   it('RF-630 the example answer in the planner prompt keeps every task it shows', async () => {
-    const prompt = await readFile('prompts/planner/package.v10.md', 'utf8');
+    const prompt = await readFile('prompts/planner/package.v11.md', 'utf8');
     const example = filledExampleOf(prompt);
 
     const draft = parsePlanAnswer(example);

@@ -77,7 +77,7 @@ describe('RF-209 the answers a Deepen task is given', () => {
     expect(given[0]?.answers).toContain("Owner's answer: Staff only.");
     expect(given[0]?.answers).toContain("Owner's answer: Never.");
     expect(given[1]?.answers).toBe(given[0]?.answers);
-    expect(given[2]?.answers).toContain('Question OQ-003: Question of OQ-003?');
+    expect(given[2]?.answers).toContain('Question OQ-003 (Area: Services): Question of OQ-003?');
   });
 
   it('RF-209 gives a task of an area with no answered question nothing, and keeps its other data', () => {

@@ -70,7 +70,7 @@ describe('the architecture recommendation', () => {
     expect(request?.context.role).toBe('planner');
     expect(request?.model).toBe('fake-planner');
     expect(request?.system).toContain('You are the planner of Rosetta');
-    expect(h.parts.prompt.name).toBe('planner/options.v1.md');
+    expect(h.parts.prompt.name).toBe('planner/options.v2.md');
     expect(h.parts.prompt.sha256).toMatch(/^[0-9a-f]{64}$/u);
     expect(h.factory.ledger.entries).toHaveLength(1);
     expect(h.factory.metered).toHaveLength(1);
@@ -168,6 +168,10 @@ describe('the stack options', () => {
     expect(result.value.stack[3]).toEqual({
       layer: 'database',
       options: ['SQL Server 2022', 'PostgreSQL 17'],
+      descriptions: [
+        'Keeps what the legacy database layer already uses.',
+        'Replaces the legacy database layer with a current alternative.',
+      ],
     });
   });
 
