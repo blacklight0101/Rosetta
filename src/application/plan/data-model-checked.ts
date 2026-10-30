@@ -4,6 +4,7 @@ import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { DataModelProblem } from './data-model-answer.js';
 import { applyColumnFacts } from './data-model-column-facts.js';
 import { typeProblems, withCanonicalTypes } from './data-model-database.js';
+import { fitLengths, unconfirmedTypes } from './data-model-type-fit.js';
 import { keepLegacyKeys } from './data-model-legacy-keys.js';
 import { missingNamed } from './data-model-named.js';
 
@@ -37,7 +38,8 @@ export function checkedModel(
 ): CheckedModel {
   const keys = keepLegacyKeys(assembled.model, cards, brief);
   const facts = applyColumnFacts(keys.model, cards);
-  const model = withCanonicalTypes(facts.model);
+  const fitted = fitLengths(facts.model, cards);
+  const model = withCanonicalTypes(fitted.model);
   const assembly = { ...assembled, model };
   const readable = model.tables.length > 0;
   const copied = model.tables
@@ -50,6 +52,8 @@ export function checkedModel(
         ...typeProblems(model),
         ...keys.problems,
         ...facts.problems,
+        ...fitted.problems,
+        ...unconfirmedTypes(model),
         ...missingNamed(model, cards),
       ]
     : [];

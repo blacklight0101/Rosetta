@@ -44,7 +44,10 @@ interface Checked {
 
 function typeStep(column: ModelColumn, fact: ColumnFact, database: string | null): Checked {
   const reasoned = column.migrationRisk !== '';
-  if (column.type === unconfirmedType) return { column, problems: [] };
+  if (column.type === unconfirmedType) {
+    const known = isDatabaseType(database, fact.type);
+    return { column: known ? { ...column, type: fact.type } : column, problems: [] };
+  }
   if (sameType(database, column.type, fact.type)) {
     return { column: reasoned ? column : { ...column, type: fact.type }, problems: [] };
   }
