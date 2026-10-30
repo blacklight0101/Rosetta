@@ -31,16 +31,12 @@ describe('parseDataModelAnswer: columns that describe work (Asset Manager, Ollam
     expect(parsed?.problems[0]?.reason).toContain('work');
   });
 
-  it.each([
-    'metrics_to_derive_status',
-    'values_to_calculate_total',
-    'columns_used_to_check_stock',
-    'data_referenced_for_lookups',
-    'price_lookup_range',
-    'lookup_table',
-  ])('RF-623 drops %s', (name) => {
-    expect(kept(parse(col(name)))).toEqual(['id']);
-  });
+  it.each(['metrics_to_derive_status', 'metrics_used_to_derive_status', 'price_lookup_range'])(
+    'RF-623 drops %s',
+    (name) => {
+      expect(kept(parse(col(name)))).toEqual(['id']);
+    },
+  );
 
   it('RF-623 drops a column whose legacy field is a cell range description', () => {
     const parsed = parse(col('valuation_data', 'Range D:N contains data referenced'));
@@ -57,6 +53,9 @@ describe('parseDataModelAnswer: columns that describe work (Asset Manager, Ollam
     'derived_status',
     'status_to_date',
     'metric_value',
+    ...['discount_to_apply', 'rate_to_apply', 'amount_to_convert', 'date_to_check'],
+    ...['quantity_used_by_job', 'materials_used_for_repair', 'tax_to_calculate'],
+    ...['items_to_generate', 'country_lookup_values', 'lookup_table', 'units_to_validate'],
   ])('RF-623 keeps %s', (name) => {
     expect(kept(parse(col(name, 'Ship to')))).toEqual(['id', name]);
   });

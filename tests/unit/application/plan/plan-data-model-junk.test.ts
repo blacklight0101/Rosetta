@@ -159,3 +159,33 @@ describe('planDataModel: a configuration card that states stored data reaches th
     expect(result.problems.filter((each) => each.field === 'entity card')).toEqual([]);
   });
 });
+
+describe('planDataModel: Left out after the merge', () => {
+  it('RF-623 does not list a column the merged model keeps as left out', async () => {
+    const column = (name: string, type: unknown) => ({ name, type, nullable: true, risk: '' });
+    const table = (name: string, columns: unknown[]) => ({
+      ...{ name, purpose: 'Keeps rows.', sources: ['ENT-001'], primaryKey: [], uniqueKeys: [] },
+      ...{ columns, foreignKeys: [], checks: [], indexes: [] },
+    });
+    const answer = JSON.stringify({
+      tables: [
+        table('catalog_brand', [column('id', 'int'), column('brand', 5)]),
+        table('catalog_brands', [column('id', 'int'), column('brand', 'nvarchar(100)')]),
+      ],
+      dropped: [],
+    });
+    const { call } = scriptedPlanner({ maxEntities: 20, answer });
+
+    const result = await planDataModel(call, {
+      cards: catalogCards(),
+      brief: briefOf('SQL Server'),
+    });
+
+    const names = result.assembly.model.tables[0]?.columns.map((each) => each.name);
+    expect(names).toEqual(['id', 'brand']);
+    const rows = result.problems.filter((each) => each.item === 'brand');
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((each) => each.kind === 'check')).toBe(true);
+    expect(rows[0]?.reason).toContain('malformed copy');
+  });
+});
