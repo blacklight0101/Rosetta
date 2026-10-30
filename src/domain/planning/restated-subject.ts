@@ -23,6 +23,7 @@ const filler = new Set([
   ...['standardization', 'standardisation', 'architecture', 'architectural', 'style'],
   ...['migration', 'migrate', 'migrated', 'strategy', 'technology', 'technologies', 'stack'],
   ...['module', 'component', 'part', 'parts', 'followed'],
+  ...['build', 'implement', 'follow', 'go', 'apply', 'create'],
 ]);
 
 const subjectWords: Readonly<Record<Subject, readonly string[]>> = {
@@ -93,13 +94,16 @@ function saysTyped(text: Words, typed: Words, share: number, known: readonly Wor
   return enough && addsNothing(text, [typed, ...known], false);
 }
 
-const choosingVerbs = ['adopt', 'use', 'choose', 'select', 'pick'];
+const choosingVerbs = ['adopt', 'use', 'choose', 'select', 'pick', 'build', 'implement'];
+const moreVerbs = ['follow', 'go', 'apply', 'create'];
 
 /** RF-608: a title that begins with a choosing verb and says the typed answer, or says all of it. */
 export function sayingTyped(title: string, typed: Words, known: readonly Words[] = []): boolean {
   const words = wordsOf(title);
   if (typed.length >= 2 && hasPhrase(words, typed)) return true;
-  return choosingVerbs.includes(words[0] ?? '') && saysTyped(words, typed, 0.5, known);
+  return (
+    [...choosingVerbs, ...moreVerbs].includes(words[0] ?? '') && saysTyped(words, typed, 0.5, known)
+  );
 }
 
 type Found = { readonly subject: Subject; readonly layer: number } | undefined;
