@@ -94,32 +94,68 @@ describe('the answer a claim restates', () => {
 });
 
 describe('a short answer', () => {
-  const path = 'Catalog/Details.aspx.cs';
-  const lines: CitedExcerpt = {
-    ...{ path, startLine: 5, endLine: 8, skipped: false },
-    lines: [
-      'protected void Page_Load(object sender, System.EventArgs e)',
-      'NameLabel.Text = "Item";',
-    ],
-  };
-  const short: OwnerAnswer = {
-    ...{ area: 'Catalog', cardId: 'OQ-001', answer: 'Yes, intended.' },
-    question: 'Does the shop want every product page to show one fixed placeholder title?',
-    context: 'Catalog/Details.aspx.cs:5-8 The name label is set to a fixed text.',
-  };
-  const on = (text: string) => claim(text, cite(5, 8, path));
-
-  it('DEC-198 is read with its question, so a claim restating the question is rejected', () => {
-    const text = 'The shop wants every product page to show one fixed placeholder title.';
-
-    expect(restatedAnswerReason(on(text), [short], [lines])).toContain(
-      "restates the owner's answer",
-    );
+  // A short answer says too little to tell a restatement from a fact about the lines, and the words of
+  // its question describe the context lines: the claim is left to the verifier model (a known gap).
+  const details = 'Catalog/Details.aspx.cs';
+  const service = 'Services/CatalogService.cs';
+  const excerpt = (path: string, startLine: number, lines: string[]): CitedExcerpt => ({
+    ...{ path, startLine, endLine: startLine + lines.length - 1, skipped: false, lines },
   });
+  const load = excerpt(details, 5, [
+    '        protected void Page_Load(object sender, System.EventArgs e)',
+    '        {',
+    '            NameLabel.Text = "Item";',
+    '        }',
+  ]);
+  const update = excerpt(service, 12, [
+    '            var sql = "UPDATE CatalogItem SET Stock = Stock - 1 WHERE Id = @id";',
+  ]);
+  const yes = (cardId: string, question: string, context: string): OwnerAnswer => ({
+    ...{ area: 'X', cardId, question, context, answer: 'Yes' },
+  });
+  const nameQ = yes(
+    'OQ-001',
+    'Does the shop want every product page to show the same name Item?',
+    `${details}:5-8 The name label is set to a fixed text.`,
+  );
+  const stockQ = yes(
+    'OQ-002',
+    'Is the stock lowered by one every time the list is loaded?',
+    `${service}:12-12 The stock is lowered.`,
+  );
 
-  it('DEC-198 a claim about what the lines show is still judged', () => {
-    const text = 'The page sets the name label to the text Item when it loads.';
+  it.each([
+    ['Every product details page shows the same name, Item.', nameQ, load, [5, 8]],
+    ['The page shows the same fixed name for every product.', nameQ, load, [5, 8]],
+    [
+      'On load the details page shows the name Item whatever product is displayed.',
+      nameQ,
+      load,
+      [5, 8],
+    ],
+    ['The query lowers the stock of one catalog item by one.', stockQ, update, [12, 12]],
+    ['The stock is lowered by one every time the list is loaded.', stockQ, update, [12, 12]],
+  ] as const)('DEC-198 leaves a true claim to the model: %s', (text, answer, lines, at) => {
+    const cited = claim(text, cite(at[0], at[1], lines.path));
 
-    expect(restatedAnswerReason(on(text), [short], [lines])).toBeUndefined();
+    expect(restatedAnswerReason(cited, [answer], [lines])).toBeUndefined();
+  });
+});
+
+describe('the words of the cited lines', () => {
+  it('DEC-198 are split at camelCase, PascalCase and snake_case, so CatalogItem holds catalog and item', () => {
+    const lines: CitedExcerpt = {
+      ...{ path: 'Services/CatalogService.cs', startLine: 12, endLine: 12, skipped: false },
+      lines: ['var sql = "UPDATE CatalogItem SET Stock = Stock - 1 WHERE order_id = @id";'],
+    };
+    const owner: OwnerAnswer = {
+      ...{ area: 'X', cardId: 'OQ-003', question: 'Does a sale lower the stock?' },
+      context: 'Services/CatalogService.cs:12-12 The stock is lowered.',
+      answer: 'Sales lower catalog item stock, one unit each time, per order.',
+    };
+    const text = 'It updates the catalog item stock by one unit for the order.';
+
+    const cited = claim(text, cite(12, 12, 'Services/CatalogService.cs'));
+    expect(restatedAnswerReason(cited, [owner], [lines])).toBeUndefined();
   });
 });
