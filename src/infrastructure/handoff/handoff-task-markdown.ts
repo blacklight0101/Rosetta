@@ -1,5 +1,9 @@
 import type { HandoffPackage, PackagePrinciple } from '../../application/plan/handoff-package.js';
-import { modelForTier, type BuildMethod } from '../../domain/planning/build-method.js';
+import {
+  modelForTier,
+  resolveBuildMethod,
+  type BuildMethod,
+} from '../../domain/planning/build-method.js';
 import type { PlanPhase, PlanTask } from '../../domain/planning/plan-content.js';
 import {
   difficultyOfTask,
@@ -54,15 +58,15 @@ function tierText(method: BuildMethod, tier: TaskDifficulty['tier'], esc: Markdo
 function sizeLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const { size, points } = sizeOfTask(task);
   const lines = [`Size: ${size} (${plural(points, 'point')})`, ''];
-  const method = handoff.brief.buildMethod;
+  const method = resolveBuildMethod(handoff.brief.buildMethod);
   if (!method.aiAssisted) return lines;
-  const { rating, tier } = difficultyOfTask(task);
+  const { rating, tier } = difficultyOfTask(task, method);
   return [...lines, `Difficulty: ${String(rating)} (${tierText(method, tier, esc)})`, ''];
 }
 
 /** RF-639: the verifier tier of the card's band, written after its risk class. */
 function verifierLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  const method = handoff.brief.buildMethod;
+  const method = resolveBuildMethod(handoff.brief.buildMethod);
   if (!method.aiAssisted) return [];
   return [`Verifier: ${tierText(method, difficultyOfTask(task).verifier, esc)}`, ''];
 }

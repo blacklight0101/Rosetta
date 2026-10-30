@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { briefViewSchema } from '../../../web/src/api/plan-schemas.js';
-import { agentToolNamedIn, methodLineOf } from '../../../web/src/lib/plan-setup/build-method.js';
+import {
+  agentToolNamedIn,
+  buildMethodOf,
+  methodLineOf,
+  modelExample,
+} from '../../../web/src/lib/plan-setup/build-method.js';
 import {
   answersOf,
   draftOf,
@@ -184,15 +189,30 @@ describe('the build method line of What I recorded', () => {
       {
         ...unanswered,
         aiAssisted: true,
-        toolKind: 'codex' as const,
+        toolKind: 'other' as const,
+        toolName: 'Aider',
         models: { ...unanswered.models, middle: 'gpt-mid', escalation: 'gpt-top' },
       },
       ['buildMethod'],
     );
 
     expect(methodLineOf(draft)).toBe(
-      'Agents will build with Codex. Models: middle gpt-mid; escalation gpt-top; no name for smallest, largest',
+      'Agents will build with Aider. Models: middle gpt-mid; escalation gpt-top; no name for smallest, largest',
     );
+  });
+});
+
+describe('the build method line of What I recorded: Codex defaults', () => {
+  it('RF-639 P7-12 names the Codex tier models offered when the person types none', () => {
+    const draft = withAnswered({ ...unanswered, aiAssisted: true, toolKind: 'codex' as const }, [
+      'buildMethod',
+    ]);
+
+    expect(methodLineOf(draft)).toBe(
+      'Agents will build with Codex. Models: smallest gpt-5-mini, middle gpt-5-codex, largest gpt-5',
+    );
+    expect(buildMethodOf(draft)).not.toHaveProperty('models');
+    expect(modelExample('codex', 'largest')).toBe('gpt-5');
   });
 });
 

@@ -1,5 +1,9 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
-import { isLocalTier, modelForTier } from '../../domain/planning/build-method.js';
+import {
+  isLocalTier,
+  modelForTier,
+  resolveBuildMethod,
+} from '../../domain/planning/build-method.js';
 import {
   checkCardModel,
   type ModelFinding,
@@ -27,8 +31,8 @@ const reasons: Readonly<Record<ModelFindingKind, string>> = {
 };
 
 function findingsOf(task: PlanTask, handoff: HandoffPackage): ModelFinding[] {
-  const method = handoff.brief.buildMethod;
-  const { rating, tier, verifier } = difficultyOfTask(task);
+  const method = resolveBuildMethod(handoff.brief.buildMethod);
+  const { rating, tier, verifier } = difficultyOfTask(task, method);
   return checkCardModel(method, {
     ...{ cardId: task.id, rating, riskClass: task.riskClass },
     riskShown: riskLines(task)[0]?.includes(task.riskClass) === true,

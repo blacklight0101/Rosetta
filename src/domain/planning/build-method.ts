@@ -1,7 +1,7 @@
 // RF-612, RF-639, DEC-176, data-model.md section 3.20: how the team builds. `aiAssisted` is the
 // answer to "agents or people"; with agents, the brief also records the agent tool and one model
-// name per tier. Claude Code has default aliases; Codex and another tool have none (names change
-// too fast to ship), so a tier without a name stays unnamed and the package lists it (RF-641).
+// name per tier. Claude Code and Codex have a model map offered as the default of each tier (P7-12);
+// another tool has none, so a tier without a name stays unnamed and the package lists it (RF-641).
 
 type AgentTool =
   | { readonly kind: 'claude-code' }
@@ -32,6 +32,9 @@ export interface BuildMethod {
   readonly local?: LocalTiers | undefined;
 }
 
+/** A local model builds only scripted cards of difficulty 1 and 2 (DEC-176 Q-F, RF-641): one ceiling for the check and the bands. */
+export const localModelCeiling = 2;
+
 /** The model aliases Claude Code gets when the team names none (RF-639). */
 const claudeCodeModels: Readonly<Record<ModelTier, string>> = {
   smallest: 'haiku',
@@ -39,9 +42,25 @@ const claudeCodeModels: Readonly<Record<ModelTier, string>> = {
   largest: 'opus',
 };
 
+/** The model names Codex is offered when the team names none (P7-12, EV-64); the web page keeps the same map. */
+const codexModels: Readonly<Record<ModelTier, string>> = {
+  smallest: 'gpt-5-mini',
+  middle: 'gpt-5-codex',
+  largest: 'gpt-5',
+};
+
+/** The model map of a tool: one name per tier, or none for another tool (RF-639, P7-12). */
+// RF-639
+export function modelMapOf(
+  tool: AgentTool | undefined,
+): Readonly<Record<ModelTier, string>> | undefined {
+  if (tool?.kind === 'claude-code') return claudeCodeModels;
+  return tool?.kind === 'codex' ? codexModels : undefined;
+}
+
 function modelsOf(given: BuildMethod): BuildModels | undefined {
   if (given.agentTool === undefined) return undefined;
-  const fallback: BuildModels = given.agentTool.kind === 'claude-code' ? claudeCodeModels : {};
+  const fallback: BuildModels = modelMapOf(given.agentTool) ?? {};
   const named = given.models ?? {};
   const models: Record<string, string> = {};
   for (const tier of modelTiers) {
