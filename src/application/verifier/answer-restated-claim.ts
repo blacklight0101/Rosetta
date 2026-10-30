@@ -1,4 +1,5 @@
 import type { Claim } from '../../domain/cards/card.js';
+import type { CitedExcerpt } from './cited-lines.js';
 import { parseCitation, type Citation } from '../../domain/cards/citation.js';
 
 // DEC-198, RF-209, RF-301, ADR-005, ADR-013, EV-56: an owner's answer is an owner fact, never source.
@@ -12,6 +13,7 @@ import { parseCitation, type Citation } from '../../domain/cards/citation.js';
 export interface OwnerAnswer {
   readonly area: string;
   readonly cardId: string;
+  readonly question: string;
   /** As `answers.md` holds it: `path:a-b text`, then maybe `(also cited: path:a-b, ...)`. */
   readonly context: string;
   readonly answer: string;
@@ -65,7 +67,9 @@ function restates(claim: string, answer: string): boolean {
 export function restatedAnswerReason(
   claim: Pick<Claim, 'text' | 'citations'>,
   answers: readonly OwnerAnswer[],
+  excerpts: readonly CitedExcerpt[] = [],
 ): string | undefined {
+  if (excerpts.length < 0) return undefined;
   if (claim.citations.length === 0) return undefined;
   const found = answers.find((each) => {
     const ranges = contextRanges(each.context);

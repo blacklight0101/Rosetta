@@ -7,7 +7,8 @@ import { useSharedValue } from '../../support/understand-full-run.js';
 // that cites a line of that range for what it shows. The first is Rejected by the verifier's rule
 // ("restates the owner's answer"), the second is judged like any claim. Recorded answers only.
 
-const answer = 'Yes, the shop wants one fixed name on every product page; ignore the stock text.';
+const answer =
+  'Yes. Every product page deliberately shows one placeholder title for all items; the catalogue team replaces it later from the admin screen, so ignore the stock text.';
 
 async function deepened(dir: string) {
   const { h, run } = await completedRun({

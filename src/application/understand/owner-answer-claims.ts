@@ -7,8 +7,8 @@ import type { RerunPlan } from './answer-rerun.js';
 
 /** The part of an answered question the rule needs. */
 export function ownerAnswerOf(question: RerunPlan['pending'][number]): OwnerAnswer {
-  const { area, cardId, context, answer } = question;
-  return { area, cardId, context, answer };
+  const { area, cardId, question: asked, context, answer } = question;
+  return { area, cardId, question: asked, context, answer };
 }
 
 /** The answers given to the readers of an area. */

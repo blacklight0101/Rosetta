@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { judgeClaim } from '../../../src/application/verifier/judge-claim.js';
 import { recordingOf } from '../../support/fake-recordings.js';
 import { MemoryRepositoryReader } from '../../support/memory-repository-reader.js';
+import { featureC3, oq002, SHEETS_FILE, sheetTable } from '../../support/invoice-owner-answer.js';
 import { verifierHarness } from '../../support/verifier-harness.js';
 
 // RF-301, ADR-005, ADR-013, DEC-198, EV-56: the verifier does not let an owner's answer stand as
@@ -11,7 +12,6 @@ import { verifierHarness } from '../../support/verifier-harness.js';
 // recorded (ADR-008).
 
 const span = '0123456789abf004';
-const SHEETS = 'Invoice_Generator.xlsm/workbook.md';
 
 const supported = {
   retried: [],
@@ -23,20 +23,15 @@ const supported = {
   },
 } as const;
 
+const filler = (count: number, from: number) =>
+  Array.from({ length: count }, (_, index) => `Row ${String(from + index)}`);
 const reader = new MemoryRepositoryReader({
-  [SHEETS]: Array.from({ length: 30 }, (_, index) => `Sheet ${String(index + 1)}`).join('\n'),
+  [SHEETS_FILE]: [...filler(13, 1), ...sheetTable, ...filler(5, 21)].join(String.fromCharCode(10)),
 });
 
-const ownerAnswers = [
-  {
-    ...{ area: 'Invoice_Generator.xlsm', cardId: 'OQ-002' },
-    context: `${SHEETS}:14-20 The workbook lists the sheets of the invoice file.`,
-    answer:
-      'The clerk fills the Template sheet with the customer and the items, then the macro copies the Template into a new invoice sheet.',
-  },
-];
+const ownerAnswers = [oq002];
 
-const cited = [{ path: SHEETS, startLine: 14, endLine: 20 }];
+const cited = [{ path: SHEETS_FILE, startLine: 14, endLine: 20 }];
 
 async function judged(text: string, given = true) {
   const h = await verifierHarness({ recording: recordingOf(supported) });
@@ -48,9 +43,7 @@ async function judged(text: string, given = true) {
 
 describe('the verifier and the answers of the owner', () => {
   it('DEC-198 rejects the restated answer without a model call (FEAT-001.c14 of EV-56)', async () => {
-    const { judgement, calls } = await judged(
-      'The macro copies the Template sheet into a new invoice sheet.',
-    );
+    const { judgement, calls } = await judged(featureC3);
 
     expect(judgement).toMatchObject({ kind: 'judged', status: 'Rejected', withoutModel: true });
     expect(judgement.kind === 'judged' ? judgement.reason : '').toContain(
@@ -61,7 +54,7 @@ describe('the verifier and the answers of the owner', () => {
 
   it('DEC-198 judges a claim on the same lines that says what they show', async () => {
     const { judgement, calls } = await judged(
-      'The workbook index lists the sheets Items and Totals.',
+      'The workbook has a Dashboard sheet, an Invoice sheet and a Masterdata sheet.',
     );
 
     expect(judgement).toMatchObject({ kind: 'judged', status: 'Supported' });
@@ -69,10 +62,7 @@ describe('the verifier and the answers of the owner', () => {
   });
 
   it('DEC-198 judges the restating claim like any other when the task was given no answer', async () => {
-    const { judgement, calls } = await judged(
-      'The macro copies the Template sheet into a new invoice sheet.',
-      false,
-    );
+    const { judgement, calls } = await judged(featureC3, false);
 
     expect(judgement).toMatchObject({ kind: 'judged', status: 'Supported' });
     expect(calls).toBe(1);
