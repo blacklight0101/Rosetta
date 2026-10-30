@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { planDataModel } from '../../../../src/application/plan/plan-data-model.js';
-import { briefOf } from '../../../support/data-model-sqlserver-orders.js';
+import { briefOf, card } from '../../../support/data-model-sqlserver-orders.js';
 import {
   answerText,
   catalogCards,
@@ -126,5 +126,36 @@ describe('planDataModel: the note of a merge lists the columns united', () => {
     expect(result.assembly.model.tables[0]?.columns.map((each) => each.name)).toEqual([
       'picture_file_name',
     ]);
+  });
+});
+
+describe('planDataModel: a configuration card that states stored data reaches the planner', () => {
+  it('RF-623 sends ENT-120 and gives the price its precision of 19,4', async () => {
+    const cards = [
+      card('ENT-120', 'ENT', 'EntityModel Configuration and Entities', [
+        'Column CatalogItem.Price: decimal(19,4), NOT NULL.',
+      ]),
+    ];
+    const column = {
+      ...{ name: 'price', type: 'decimal(18,2)', nullable: false, risk: '' },
+      legacy: { claim: 'ENT-120.c1', field: 'Price' },
+    };
+    const table = {
+      ...{ name: 'catalog_item', purpose: 'Keeps the products.', sources: ['ENT-120'] },
+      ...{ columns: [column], primaryKey: [], uniqueKeys: [], foreignKeys: [], checks: [] },
+      indexes: [],
+    };
+    const { call, requests } = scriptedPlanner({
+      maxEntities: 20,
+      answer: JSON.stringify({ tables: [table], dropped: [] }),
+    });
+
+    const result = await planDataModel(call, { cards, brief: briefOf('SQL Server') });
+
+    const sent = requests.map((each) => each.messages.map((m) => m.content).join('')).join('');
+    expect(sent).toContain('ENT-120');
+    const price = result.assembly.model.tables[0]?.columns[0];
+    expect(price?.type).toBe('decimal(19,4)');
+    expect(result.problems.filter((each) => each.field === 'entity card')).toEqual([]);
   });
 });

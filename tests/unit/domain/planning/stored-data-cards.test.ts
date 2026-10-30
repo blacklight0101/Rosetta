@@ -54,3 +54,69 @@ describe('noStoredData', () => {
     expect(noStoredData(named)).toBeUndefined();
   });
 });
+
+describe('noStoredData: claims that state stored data (P7-13 round 2)', () => {
+  const said = (title: string, ...claims: string[]) => card('ENT-100', 'ENT', title, claims);
+
+  it.each([
+    ['Printer Configuration', 'Column Printer.Name: varchar(50), NOT NULL.'],
+    ['Tax Parameters', 'The Tax table has the columns Rate and Region.'],
+    ['Report Parameters', 'ReportParameter has a primary key Id and a foreign key to Report.'],
+    ['Configuration Item (CMDB)', 'Each configuration item is a row with a nullable Owner column.'],
+    ['Workbook Entries', 'The entries are rows of a table with the columns Date and Amount.'],
+    ['OrderViewModel', 'The Total is a decimal(19,4) value that is NOT NULL.'],
+  ])('RF-623 keeps %s, whose claims state stored data', (title, claim) => {
+    expect(noStoredData(said(title, claim))).toBeUndefined();
+  });
+
+  it.each([
+    ['Printer Configuration', 'configuration'],
+    ['Tax Parameters', 'configuration'],
+    ['Workbook Entries', 'workbook file'],
+  ])('RF-623 still skips %s when its claims state none', (title, kind) => {
+    expect(noStoredData(said(title, 'The class reads its values from the settings file.'))).toBe(
+      kind,
+    );
+  });
+
+  it('RF-623 keeps the card of the Ollama eShop that holds the precision of a price (ENT-120)', () => {
+    const entity = said(
+      'EntityModel Configuration and Entities',
+      'The CatalogItem Price has precision 19,4.',
+      'The CatalogBrand Brand is not unicode.',
+    );
+
+    expect(noStoredData(entity)).toBeUndefined();
+  });
+
+  it.each(['Application Entities and Configuration', 'Configuration entity'])(
+    'RF-623 counts an entity as data: %s',
+    (title) => {
+      expect(noStoredData(said(title, 'It is described.'))).toBeUndefined();
+    },
+  );
+});
+
+describe('noStoredData: classes that only serve (P7-13 round 2)', () => {
+  const said = (title: string, ...claims: string[]) => card('ENT-100', 'ENT', title, claims);
+
+  it.each(['SqlDataService', 'WebFormsService', 'ActivityIdHelper', 'ServiceContainer'])(
+    'RF-623 skips the class %s',
+    (title) => {
+      expect(noStoredData(said(title, 'It calls the service.'))).toBe('service class');
+    },
+  );
+
+  it.each(['Service', 'Customer Service', 'Service table', 'Helper'])(
+    'RF-623 keeps %s, which is not the name of a class',
+    (title) => {
+      expect(noStoredData(said(title, 'It is described.'))).toBeUndefined();
+    },
+  );
+
+  it('RF-623 keeps a service class whose claims state stored data', () => {
+    const named = said('SqlDataService', 'Column Orders.Id: int, NOT NULL.');
+
+    expect(noStoredData(named)).toBeUndefined();
+  });
+});
