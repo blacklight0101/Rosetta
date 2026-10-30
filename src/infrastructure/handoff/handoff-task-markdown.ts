@@ -56,7 +56,7 @@ function sizeLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper
   const lines = [`Size: ${size} (${plural(points, 'point')})`, ''];
   const method = handoff.brief.buildMethod;
   if (!method.aiAssisted) return lines;
-  const { rating, tier } = difficultyOfTask(task);
+  const { rating, tier } = difficultyOfTask(task, method);
   return [...lines, `Difficulty: ${String(rating)} (${tierText(method, tier, esc)})`, ''];
 }
 

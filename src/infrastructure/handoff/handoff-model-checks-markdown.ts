@@ -28,7 +28,7 @@ const reasons: Readonly<Record<ModelFindingKind, string>> = {
 
 function findingsOf(task: PlanTask, handoff: HandoffPackage): ModelFinding[] {
   const method = handoff.brief.buildMethod;
-  const { rating, tier, verifier } = difficultyOfTask(task);
+  const { rating, tier, verifier } = difficultyOfTask(task, method);
   return checkCardModel(method, {
     ...{ cardId: task.id, rating, riskClass: task.riskClass },
     riskShown: riskLines(task)[0]?.includes(task.riskClass) === true,

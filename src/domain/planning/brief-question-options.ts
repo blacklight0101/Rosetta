@@ -1,3 +1,4 @@
+import { modelMapOf, modelTiers } from './build-method.js';
 import type { Catalogue } from './catalogue.js';
 import { migrationStrategies } from './planning-brief.js';
 import type { PlanningBrief } from './planning-brief.js';
@@ -6,7 +7,8 @@ import { migrationStrategyInfo } from './migration-strategy.js';
 // RF-637, RF-645, DEC-178, DEC-184, DEC-189, P6-31: the Plan setup options of each brief question
 // that took its default, so the open questions of the package list them as suggested answers. The
 // wording follows web/src/lib/plan-setup/question-options.ts, which the page shows; the default
-// is the recommended option, and the build method has no recommended option (DEC-184).
+// is the recommended option, and the build method has no recommended option (DEC-184). A tier-model
+// question that took its default offers the model map of the brief's tool (P7-12, EV-77).
 
 export interface BriefOption {
   readonly answer: string;
@@ -136,11 +138,35 @@ function stack(layer: string, brief: PlanningBrief, catalogue: Catalogue): Brief
   ];
 }
 
+/** P7-12, RF-639, RF-645: the tool's models for a blank tier, the tier's own first and recommended. */
+function modelOptions(tier: string, brief: PlanningBrief): BriefOption[] {
+  const map = modelMapOf(brief.buildMethod.agentTool);
+  const own = modelTiers.find((each) => each === tier);
+  if (map === undefined || own === undefined) return [];
+  const title = brief.buildMethod.agentTool?.kind === 'codex' ? 'Codex' : 'Claude Code';
+  return recommendedFirst(
+    modelTiers.map((each) =>
+      each === own
+        ? pick(
+            map[each],
+            `The ${each} tier model of ${title}; this tier uses it until you name another.`,
+            true,
+          )
+        : pick(
+            map[each],
+            `The ${each} tier model of ${title}, for a team that builds this tier with it.`,
+          ),
+    ),
+  );
+}
+
 function optionsOf(id: string, brief: PlanningBrief, catalogue: Catalogue): BriefOption[] {
   if (id === 'principles') return principles(catalogue);
   if (id === 'architecture') return architecture(brief, catalogue);
   if (id === 'migration') return migration();
   if (id === 'buildMethod') return [...METHOD];
+  if (id.startsWith('buildMethod.models.'))
+    return modelOptions(id.slice('buildMethod.models.'.length), brief);
   if (id.startsWith('stack.')) return stack(id.slice('stack.'.length), brief, catalogue);
   return [...(CONTEXT[id] ?? [])];
 }

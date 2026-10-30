@@ -170,7 +170,9 @@ describe('the agent tool and the models: other tools', () => {
       },
     ]);
     expect(
-      within(summary).getByText(/Agents will build with Codex\. Models: middle gpt-mid/u),
+      within(summary).getByText(
+        /Agents will build with Codex\. Models: smallest gpt-5-mini, middle gpt-mid, largest gpt-5/u,
+      ),
     ).not.toBeNull();
   });
 

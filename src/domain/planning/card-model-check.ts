@@ -1,4 +1,4 @@
-import { modelTiers, type BuildMethod } from './build-method.js';
+import { localModelCeiling, modelTiers, type BuildMethod } from './build-method.js';
 import { tierOfRating } from './task-method.js';
 
 // RF-641, RF-635, RF-639, DEC-176 Q-D and Q-F: what the package check says about the model of one
@@ -41,9 +41,6 @@ export interface ModelFinding {
   readonly kind: ModelFindingKind;
   readonly severity: 'finding' | 'warning';
 }
-
-/** A local model builds only scripted cards of difficulty 1 and 2 (Q-F). */
-const localModelCeiling = 2;
 
 const rank = (tier: Tier): number => modelTiers.indexOf(tier);
 
