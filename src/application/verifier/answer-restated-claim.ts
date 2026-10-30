@@ -7,8 +7,8 @@ import type { CitedExcerpt } from './cited-lines.js';
 // was raised from (its context), and a small model passed them as Supported. The check is free and
 // needs no model, so it runs once the cited lines are read: the claim comes from a task that was
 // given the answer, every citation of it falls inside the context lines of one answered question,
-// and most of the claim's words that the cited lines do not hold are words of the answer (of the
-// question too when the answer is short). A claim that says what the lines show has no such words
+// and most of the claim's words that the cited lines do not hold are words of the answer (an
+// answer of fewer than 4 meaningful words is left to the verifier model, a known gap). A claim that says what the lines show has no such words
 // and is judged like any claim.
 
 /** An answered question given to a reader: the lines it was raised from and the owner's answer. */
@@ -25,7 +25,7 @@ export interface OwnerAnswer {
 const MIN_OWNER_WORDS = 3;
 /** ... and at least this share of the claim words absent from the cited lines. */
 const MIN_OWNER_SHARE = 0.5;
-/** An answer of fewer meaningful words than this is read together with its question. */
+/** An answer of fewer meaningful words than this is left to the verifier model: a known gap. */
 const SHORT_ANSWER = 4;
 
 const stopWords = new Set(
@@ -52,9 +52,15 @@ function inside(citation: Citation, range: Citation): boolean {
   );
 }
 
-/** The words that carry meaning: lower case, without short and common words, "s" endings cut. */
+/**
+ * The words that carry meaning: identifiers split at camelCase, PascalCase and snake_case, lower
+ * case, without short and common words, "s" endings cut.
+ */
 function wordsOf(text: string): ReadonlySet<string> {
-  const words = text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+  const split = text
+    .replace(/([\p{Ll}\p{N}])(\p{Lu})/gu, '$1 $2')
+    .replace(/(\p{Lu})(\p{Lu}\p{Ll})/gu, '$1 $2');
+  const words = split.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
   const kept = words.filter((word) => word.length >= 3 && !stopWords.has(word));
   return new Set(kept.map((word) => (word.length > 3 ? word.replace(/s$/u, '') : word)));
 }
@@ -74,17 +80,12 @@ function citedText(excerpts: readonly CitedExcerpt[]): string {
     .join('\n');
 }
 
-/** The owner's words: the answer's, with the question's when the answer says too little. */
-function ownerWords(answer: OwnerAnswer): ReadonlySet<string> {
-  const words = wordsOf(answer.answer);
-  return words.size >= SHORT_ANSWER ? words : new Set([...words, ...wordsOf(answer.question)]);
-}
-
 /** Whether the claim words the cited lines do not hold are, for the most part, the owner's. */
 function restates(claim: string, answer: OwnerAnswer, cited: string): boolean {
   const shown = wordsOf(cited);
   const beyond = [...wordsOf(claim)].filter((word) => !shown.has(word));
-  const owner = ownerWords(answer);
+  const owner = wordsOf(answer.answer);
+  if (owner.size < SHORT_ANSWER) return false;
   const fromOwner = beyond.filter((word) => owner.has(word));
   return fromOwner.length >= MIN_OWNER_WORDS && fromOwner.length / beyond.length >= MIN_OWNER_SHARE;
 }
