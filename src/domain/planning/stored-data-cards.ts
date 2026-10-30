@@ -38,15 +38,19 @@ function alwaysKind(has: Has, words: readonly string[]): string | undefined {
   return has('glossary') ? 'glossary' : undefined;
 }
 
-/** The kinds that are data when the title also names a table, a sheet, rows or records. */
-function unlessStored(has: Has, title: string, words: readonly string[]): string | undefined {
-  if (workbookFile.test(title) || has('workbook')) return 'workbook file';
+/** The kinds that are data when the title also names a table, a sheet, rows or records (a workbook file is told apart in kindOf). */
+function unlessStored(has: Has, words: readonly string[]): string | undefined {
   if (has('registration') && words.some((word) => codeAround.has(word))) return 'registration';
   return has('configuration', 'config', 'parameters') ? 'configuration' : undefined;
 }
 
 const stored =
   /\bcolumns?\b|\btable\b|\bprecision\b|\bprimary key\b|\bforeign key\b|\bnullable\b|\bnot null\b|\bunicode\b|\b(?:n?varchar|decimal|numeric|bigint|datetime2?)\s*\(/iu;
+// A typed column fact (`Column T.c: type`) or a sized type: the word "column" alone is not enough.
+const typedColumn =
+  /\bColumn\s+\w+\.\w+\s*:|\b(?:n?varchar|decimal|numeric|bigint|datetime2?)\s*\(/iu;
+// Plain words that say rows are stored, for a class named like a serving one (PaymentProvider).
+const storedInProse = /\b(?:stored|kept|persisted|saved)\b|\brows?\b/iu;
 const serving = new Set(['service', 'helper', 'container', 'factory', 'provider']);
 
 /** A title written as the name of a class (no spaces, two words or more) that ends in a serving word. */
@@ -55,19 +59,23 @@ function servingClass(title: string, words: readonly string[]): boolean {
   return /^[A-Za-z0-9_]+$/u.test(title) && words.length > 1 && serving.has(last);
 }
 
-function kindOf(title: string, words: readonly string[]): string | undefined {
+function kindOf(card: SourceCard, words: readonly string[]): string | undefined {
+  const { title } = card;
+  const says = (pattern: RegExp): boolean =>
+    card.claims.some((claim) => claim.status === 'Supported' && pattern.test(claim.text));
   const has: Has = (...wanted) => wanted.some((word) => words.includes(word));
   const always = alwaysKind(has, words);
   if (always !== undefined) return always;
-  if (servingClass(title, words)) return 'service class';
-  return has(...data) ? undefined : unlessStored(has, title, words);
+  if (workbookFile.test(title) || has('workbook')) {
+    return says(typedColumn) || has(...data) ? undefined : 'workbook file';
+  }
+  if (says(stored)) return undefined;
+  if (servingClass(title, words)) return says(storedInProse) ? undefined : 'service class';
+  return has(...data) ? undefined : unlessStored(has, words);
 }
 
 /** Why the card needs no table (a configuration, a view model, ...); undefined when it describes stored data. */
 // RF-623
 export function noStoredData(card: SourceCard): string | undefined {
-  const statesData = card.claims.some(
-    (claim) => claim.status === 'Supported' && stored.test(claim.text),
-  );
-  return statesData ? undefined : kindOf(card.title, wordsOf(card.title));
+  return kindOf(card, wordsOf(card.title));
 }
