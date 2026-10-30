@@ -7133,7 +7133,7 @@ never edit the same file; Depends on carries the order where they would.
 - **Done when**: a dispatch outside the window with an undeployed `main` starts Release; a second one does nothing; the ADR note and runbook are updated; CI green.
 - **Refs**: ADR-025, DEC-175; release of 2026-10-30 (Release run 41006957132, started by hand).
 
-### P7-29 - Every stack layer offers four options, the recommended one first
+### P7-29 - Every stack layer offers its options with the recommended one first
 
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
@@ -7144,8 +7144,9 @@ never edit the same file; Depends on carries the order where they would.
 - **Do**: red tests first; change the first scenario of RF-609 first (the owner approves it in the pull request).
   - Today, without the consent to send code excerpts, each layer of "Which technology for each layer?" offers only "Keep the legacy technology" and "Type your own answer", fewer than the three options RF-645 asks for, and nothing is recommended.
   - Each layer offers four options in the RF-645 pattern: the recommended proposal first, marked "(Recommended)", the second proposal, "Keep the legacy technology", and "Type your own answer", each with a one-line description of what it means and its consequence. The recommended option is the default a skipped layer takes.
+  - DEC-203: when the source is Excel workbooks, or the layer's legacy technology is marked end of life in the catalogue (a new `endOfLife` flag per technology in `stack-proposals.v<n>.yaml`, for example VBA, VB6, classic ASP, ASP.NET Web Forms, .NET Framework, WCF), "Keep the legacy technology" is not offered; the layer offers the two proposals and "Type your own answer", so the owner who wants to keep it types it.
   - Without the consent, both proposals come from the catalogue (`stack-proposals.v<n>.yaml`) for the application kind and the legacy languages of the code map, the same rule RF-609 already uses for a layer left open, so no code is sent; with the consent, the planner's options replace them and say so. A layer the catalogue has no option for says so and still offers the legacy and own-answer options.
   - The default line changes from "nothing chosen; each layer you skip is listed as an open question" to the recommended option per layer, and the layer's ADR records which option was recommended and which was chosen.
 - **Delivers**: the step, the catalogue lookup on the page, the brief field for the recommended option, unit, integration and web tests.
-- **Done when**: without consent every layer of an eShop-shaped and of a workbook scan shows four options with one recommended; a skipped layer takes the recommendation; with consent the planner's options show; CI green.
-- **Refs**: RF-609, RF-645, RF-145, DEC-172, DEC-178; owner report of 2026-10-30 (production Plan setup: two options per layer and no proposals before consent).
+- **Done when**: without consent every layer of a current-stack scan shows four options with one recommended, and a workbook scan or an end-of-life layer shows three, without "Keep the legacy technology"; a skipped layer takes the recommendation; with consent the planner's options show; CI green.
+- **Refs**: RF-609, RF-645, RF-145, DEC-172, DEC-178, DEC-203; owner report of 2026-10-30 (production Plan setup: two options per layer and no proposals before consent).
