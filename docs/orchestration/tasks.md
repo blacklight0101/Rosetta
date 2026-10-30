@@ -17,8 +17,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method   | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
-| P7 Evaluation fixes     | 25      | 3         | 16         | 6         | 0                  | 4       | 17      | 4      | 3          | 0         |
-| **Total**               | **477** | **115**   | **326**    | **36**    | **0**              | **223** | **236** | **18** | **262**    | **0**     |
+| P7 Evaluation fixes     | 28      | 5         | 17         | 6         | 0                  | 6       | 18      | 4      | 3          | 0         |
+| **Total**               | **480** | **117**   | **327**    | **36**    | **0**              | **225** | **237** | **18** | **262**    | **0**     |
 
 ## Conventions for every card
 
@@ -6659,7 +6659,7 @@ EV-69..EV-81 here, in the same order. A Haiku finding that is the same problem a
 card's evidence: EV-71 to P7-11, EV-72 and EV-77 to P7-12, EV-76 to P7-02 and P7-03, EV-79 to P7-14. EV-74 and EV-75
 extend P7-13; EV-81 is P7-20; EV-69, EV-70, EV-73, EV-78 and EV-80 are P7-21 and P7-22. Run ids are those of the
 evaluation stack. Waves: (1) P7-01, P7-07, P7-11, P7-14; (2) P7-02, P7-03, P7-08, P7-13; (3) P7-04, P7-05, P7-09,
-P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-20, P7-21, P7-22, P7-23, P7-24 (DEC-200, DEC-201), P7-25; (6) P7-19. Two cards of one wave
+P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-20, P7-21, P7-22, P7-23, P7-24 (DEC-200, DEC-201), P7-25, P7-26, P7-27, P7-28; (6) P7-19. Two cards of one wave
 never edit the same file; Depends on carries the order where they would.
 
 ### P7-01 - The claim-check reserve comes out of the run cap
@@ -6988,7 +6988,7 @@ never edit the same file; Depends on carries the order where they would.
 
 - **Difficulty**: 8 (sonnet)
 - **Size**: L
-- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P7-20, P7-21, P7-22, P7-23, P7-24, P7-25, P6-33
+- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P7-20, P7-21, P7-22, P7-23, P7-24, P7-25, P7-26, P7-27, P6-33
 - **Gate**: owner
 - **Status**: Todo
 - **Reads**: the evaluation of 2026-10-29 (findings EV-44, EV-56..EV-81 and their repros), `docs/verification/`, RNF-006, RNF-012.
@@ -6996,6 +6996,7 @@ never edit the same file; Depends on carries the order where they would.
   - Run Asset Manager, Invoice Generator and eShopModernizing end to end (scan, understand, Deepen, answers, plan) on a local Ollama model and on Haiku, one test user per provider, with the default caps and pause-and-ask.
   - Check each finding of the evaluation of 2026-10-29 by its repro and report fixed, better or still present, with file:line evidence.
   - Compare time, tokens, cost and coverage with the 2026-10-29 runs; new findings take the next free EV ids.
+  - Also measure, per plan, the items each task card builds and the spread of Size and Difficulty: eShop got 19-20 task cards against 15-17 for the two small apps, so its cards may be too large to build in one go (owner question of 2026-10-30). Re-run the owner's production plan shape that failed RST-1806 on one item (a gap card left out under SDD because its source card reached no requirement) and confirm P7-14 keeps it.
 - **Delivers**: the evaluation report and the follow-up cards it calls for.
 - **Done when**: the owner has read the report.
 - **Refs**: RNF-006, RNF-012; evaluation of 2026-10-29.
@@ -7090,3 +7091,44 @@ never edit the same file; Depends on carries the order where they would.
 - **Delivers**: the stepper and page changes, web unit tests and one end-to-end test of a recorded plan run.
 - **Done when**: a recorded plan run shows the working step with its elapsed time and tokens while each call runs; a plan run page has no Agents, Cards or Claims panel; a failed plan run tells the user to try the plan again; CI green.
 - **Refs**: RF-1002, RF-1003, RF-1015; owner report of 2026-10-30 (production plan run `20261030-090405-plan`: no sign of progress during the planner calls, understand panels on a plan run).
+
+### P7-26 - The overview is written even when the run reaches its cap
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P7-01, P7-02
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/understand/overview-step.ts`, the overview writer (`ask`, the `unavailable` and `thin` notices), `src/application/deepen/deepen-session.ts` (`finish`, the overview at line 111), `src/application/understand/reader-room.ts` and `src/domain/budget/claim-room.ts` (the claim-check reserve, as changed by P7-01), `web/src/pages/PlanNext.tsx` and the "Your turn" panel of an ended run, RF-231, RF-264, RF-304, RF-429, ADR-007, ADR-026.
+- **Do**: red tests first; add the Given to RF-264 first.
+  - Hold back room for the summariser's overview call inside the run cap, like the claim-check reserve of P7-01, so an understand run or a Deepen that ends on its cap still writes its overview. When even that room is gone, the run page offers "Write the overview" with the estimated cost, which runs the overview step alone on the run's cards under the budget guard.
+  - The "Your turn" text of an understand run or a Deepen that ended on its cap says what was left (unread areas, claims not judged, the overview) and offers Deepen, not "Resume it with the Resume run button" and "Set up the plan appears once it completes".
+- **Delivers**: the reserve, the button and its use case, the panel text, unit, integration and web tests.
+- **Done when**: a recorded Deepen that ends on its cap has an overview; a run whose overview call was refused shows "Write the overview" and writes it; the panel of a capped run names what was left; CI green.
+- **Refs**: RF-231, RF-264, RF-304, RF-429, ADR-007, ADR-026; owner report of 2026-10-30 (production Deepen of `20261030-105451-understand`: "This run wrote no overview" after the readers were stopped by the claim-check reserve).
+
+### P7-27 - "Cost per role and estimate" scrolls to what it opens
+
+- **Difficulty**: 2 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `web/src/pages/SpendPanel.tsx` (the link, line 103), `web/src/pages/RunningBody.tsx` (`open`, 179-182; `onOpenRoles`, 207-209; the Run details section), `web/src/pages/EndedBody.tsx` (line 128, the scroll pattern), RF-1003, RF-1015.
+- **Do**: red test first. The link selects the All agents tab of Run details and scrolls that section into view, as a tile of the code map does for its area; today it only changes the tab below the fold, so the click looks like nothing happened.
+- **Delivers**: the change and a web test.
+- **Done when**: a test shows the click selects the tab and calls `scrollIntoView` on the Run details section; CI green.
+- **Refs**: RF-1003, RF-1015; owner report of 2026-10-30.
+
+### P7-28 - The morning release starts even when GitHub delays its schedule
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (workflow change, ADR-025)
+- **Status**: Todo
+- **Reads**: `.github/workflows/scheduled-release.yml` (the 06/07 Madrid hour guard, the four cron slots), `.github/workflows/release.yml`, `docs/environments-and-delivery.md` (section 10), ADR-025, DEC-175.
+- **Do**: GitHub started no slot on 2026-10-28 and none by 06:09 Madrid on 2026-10-30, and on 2026-10-29 it started them between 12:28 and 13:53 Madrid, when the hour guard made them do nothing; production was deployed by hand. Keep 06:07 Madrid as the target and make a late slot still deploy: a slot that fires after 07:59 Madrid deploys when `main` has a head commit with no Release run and that commit was merged before 06:00 that day, so a delayed schedule deploys late rather than not at all. Write the slot that started it and its delay in the step summary. Amend ADR-025 with a dated note.
+- **Delivers**: the workflow change, the ADR note, the runbook line, a test of the guard script if it is extracted.
+- **Done when**: a dispatch outside the window with an undeployed `main` starts Release; a second one does nothing; the ADR note and runbook are updated; CI green.
+- **Refs**: ADR-025, DEC-175; release of 2026-10-30 (Release run 41006957132, started by hand).
