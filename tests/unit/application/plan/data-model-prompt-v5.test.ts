@@ -49,3 +49,23 @@ describe('prompts/planner/data-model.v5.md: what the planner is told (P7-13)', (
     expect(await text()).toContain('"tables"');
   });
 });
+
+describe('prompts/planner/data-model.v5.md: the file itself (P7-13 round 2)', () => {
+  it('RNF-004 holds no control character other than a line feed', async () => {
+    const found = Array.from(await text()).filter((char) => {
+      const code = char.codePointAt(0) ?? 0;
+      return code !== 10 && (code < 32 || code === 127);
+    });
+
+    expect(found).toEqual([]);
+  });
+
+  it('RF-623 names every deprecated type and its replacement', async () => {
+    const prompt = await text();
+
+    for (const name of ['`text`', '`ntext`', '`image`']) expect(prompt).toContain(name);
+    for (const name of ['`varchar(max)`', '`nvarchar(max)`', '`varbinary(max)`']) {
+      expect(prompt).toContain(name);
+    }
+  });
+});
