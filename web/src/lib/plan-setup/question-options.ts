@@ -139,15 +139,21 @@ function architectureOptions({ catalogue, options }: OptionSources): QuestionOpt
   });
 }
 
+/** P7-10: the planner's description of the option; the generic line when it gave none. */
+function describedOption(said: string | undefined, index: number): string {
+  if (said !== undefined && said !== '') return said;
+  return index === 0
+    ? 'The closest to the legacy technology, so the smallest change for the team.'
+    : 'The other proposal for this layer, derived from the legacy stack.';
+}
+
 function stackOptions(layer: string, options: PlanOptions | undefined): QuestionOption[] {
-  const offered = options?.stack.find((each) => each.layer === layer)?.options ?? [];
+  const found = options?.stack.find((each) => each.layer === layer);
+  const offered = found?.options ?? [];
   const proposals = offered.map((choice, index) => ({
     id: index === 0 ? 'a' : 'b',
     title: choice,
-    description:
-      index === 0
-        ? 'The closest to the legacy technology, so the smallest change for the team.'
-        : 'The other proposal for this layer, derived from the legacy stack.',
+    description: describedOption(found?.descriptions?.[index], index),
     recommended: index === 0,
   }));
   return [

@@ -99,7 +99,14 @@ const styleOption = z.object({
 
 export const planOptionsSchema = z.object({
   architecture: z.object({ recommended: z.string(), options: z.array(styleOption) }),
-  stack: z.array(z.object({ layer: z.string(), options: z.array(z.string()) })),
+  stack: z.array(
+    z.object({
+      layer: z.string(),
+      options: z.array(z.string()),
+      /** P7-10: what each option is for, in the same order; absent from an older answer. */
+      descriptions: z.array(z.string()).optional(),
+    }),
+  ),
 });
 
 export type PlanOptions = z.output<typeof planOptionsSchema>;

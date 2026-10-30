@@ -16,24 +16,27 @@ interface Recorded {
   }[];
 }
 
+const nameOf = (option: string | { name: string }): string =>
+  typeof option === 'string' ? option : option.name;
+
+/** The JSON object of the answer in a recorded reply, or an empty one. */
+function answerOf(text: string): {
+  stack?: { layer: string; options: (string | { name: string })[] }[];
+} {
+  const json = /```json\n([\s\S]*?)```/u.exec(text)?.[1] ?? '{}';
+  return JSON.parse(json) as ReturnType<typeof answerOf>;
+}
+
 async function offeredOptions(): Promise<[string, string][]> {
   const recording = JSON.parse(
     await readFile('tests/recordings/fake/plan-options.json', 'utf8'),
   ) as Recorded;
-  const found: [string, string][] = [];
-  for (const call of recording.calls) {
-    const text = call.attempts[0]?.response?.text ?? '';
-    const json = /```json\n([\s\S]*?)```/u.exec(text)?.[1] ?? '{}';
-    const answer = JSON.parse(json) as {
-      stack?: { layer: string; options: string[] }[];
-    };
-    for (const { layer, options } of answer.stack ?? []) {
-      for (const option of options) found.push([layer, option]);
-    }
-  }
-  return found;
+  return recording.calls.flatMap((call) =>
+    (answerOf(call.attempts[0]?.response?.text ?? '').stack ?? []).flatMap(({ layer, options }) =>
+      options.map((option): [string, string] => [layer, nameOf(option)]),
+    ),
+  );
 }
-
 describe('the options Plan setup offers and the technology table', () => {
   it('RF-609 every option of the recorded planner answers is named by a technology of the catalogue', async () => {
     const offered = await offeredOptions();
