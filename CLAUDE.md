@@ -153,9 +153,9 @@ applied, and fixing it is part of applying the decision.
   Agents never push to either, never force-push them, never bypass a ruleset and never rewrite published history.
   Builders never merge. Task-card branches are cut from `develop` and their pull requests target it. The orchestrator
   merges task-card pull requests into `develop` itself, with squash, only under the merge rules of
-  `docs/orchestration/README.md` section 3.1 (CI green, verifier PASS posted, branch up to date) (DEC-96); a pull
-  request that changes `docs/spec/`, `docs/adr/`, `docs/decision-log.md`, `docs/rfc/` or this file, and every
-  documentation pull request outside a card, is merged only by the owner.
+  `docs/orchestration/README.md` section 3.1 (CI green, verifier PASS posted, branch up to date) (DEC-96), also
+  when the card changes `docs/spec/`, `docs/adr/`, `docs/decision-log.md` or `docs/rfc/` (DEC-199); a pull request
+  that changes this file, and every documentation pull request outside a card, is merged only by the owner.
 - **Releases (DEC-175).** When the owner says a batch is ready, the orchestrator opens one pull request `develop` ->
   `main` listing its cards, labelled `needs-owner`; only the owner merges it, with a merge commit (never squash), and
   production deploys it at 06:00 Europe/Madrid the next morning. The orchestrator never merges a release.
