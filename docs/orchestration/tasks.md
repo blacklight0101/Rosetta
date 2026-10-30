@@ -17,8 +17,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method   | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
-| P7 Evaluation fixes     | 24      | 3         | 15         | 6         | 0                  | 4       | 16      | 4      | 3          | 0         |
-| **Total**               | **476** | **115**   | **325**    | **36**    | **0**              | **223** | **235** | **18** | **262**    | **0**     |
+| P7 Evaluation fixes     | 25      | 3         | 16         | 6         | 0                  | 4       | 17      | 4      | 3          | 0         |
+| **Total**               | **477** | **115**   | **326**    | **36**    | **0**              | **223** | **236** | **18** | **262**    | **0**     |
 
 ## Conventions for every card
 
@@ -6659,7 +6659,7 @@ EV-69..EV-81 here, in the same order. A Haiku finding that is the same problem a
 card's evidence: EV-71 to P7-11, EV-72 and EV-77 to P7-12, EV-76 to P7-02 and P7-03, EV-79 to P7-14. EV-74 and EV-75
 extend P7-13; EV-81 is P7-20; EV-69, EV-70, EV-73, EV-78 and EV-80 are P7-21 and P7-22. Run ids are those of the
 evaluation stack. Waves: (1) P7-01, P7-07, P7-11, P7-14; (2) P7-02, P7-03, P7-08, P7-13; (3) P7-04, P7-05, P7-09,
-P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-20, P7-21, P7-22, P7-23, P7-24 (DEC-200, DEC-201); (6) P7-19. Two cards of one wave
+P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-20, P7-21, P7-22, P7-23, P7-24 (DEC-200, DEC-201), P7-25; (6) P7-19. Two cards of one wave
 never edit the same file; Depends on carries the order where they would.
 
 ### P7-01 - The claim-check reserve comes out of the run cap
@@ -6988,7 +6988,7 @@ never edit the same file; Depends on carries the order where they would.
 
 - **Difficulty**: 8 (sonnet)
 - **Size**: L
-- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P7-20, P7-21, P7-22, P7-23, P7-24, P6-33
+- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P7-20, P7-21, P7-22, P7-23, P7-24, P7-25, P6-33
 - **Gate**: owner
 - **Status**: Todo
 - **Reads**: the evaluation of 2026-10-29 (findings EV-44, EV-56..EV-81 and their repros), `docs/verification/`, RNF-006, RNF-012.
@@ -7074,3 +7074,19 @@ never edit the same file; Depends on carries the order where they would.
 - **Delivers**: the writer and check changes, unit and integration tests.
 - **Done when**: an Invoice-shaped package with a local middle tier shows "runs locally" on the Verifier lines it affects and one warning in `checks.md`; a package with no local tier is unchanged; CI green.
 - **Refs**: RF-641, DEC-185, DEC-201.
+
+### P7-25 - The plan run shows that the planner is working, and only plan figures
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P7-14
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `web/src/lib/live-run/run-stepper.ts` (the plan steps Brief, Planner calls, Package, Checks, lines 131-142), `web/src/pages/RunningBody.tsx` (the Run details tabs and the rail), `web/src/pages/PlanNext.tsx` (the "Your turn" text, lines 45-46), `web/src/pages/EndedBody.tsx`, `web/src/pages/SpendPanel.tsx`, the run events of a plan run (`src/application/use-cases/build-plan.ts`), `docs/design-system.md` (stepper, badges, live run page); RF-1002, RF-1003, RF-1015.
+- **Do**: red tests first. Add the Given of each point to RF-1015 first.
+  - While a planner call runs (package, gap round, repair), the current step of the plan stepper shows it is working: a moving indicator, the call's name, the time since it started and the tokens so far, updated live like a reader's panel. Between calls the step says which call comes next.
+  - A plan run shows plan figures, not understand figures: no Agents, Cards proposed or Claims panels; instead the planner calls with their tokens and cost, and the package checks once written.
+  - The "Your turn" text of a failed plan run names the plan's own next action ("Try the plan again", with what `checks.md` lists), not "Resume run" and "Set up the plan appears once it completes", which belong to an understand run.
+- **Delivers**: the stepper and page changes, web unit tests and one end-to-end test of a recorded plan run.
+- **Done when**: a recorded plan run shows the working step with its elapsed time and tokens while each call runs; a plan run page has no Agents, Cards or Claims panel; a failed plan run tells the user to try the plan again; CI green.
+- **Refs**: RF-1002, RF-1003, RF-1015; owner report of 2026-10-30 (production plan run `20261030-090405-plan`: no sign of progress during the planner calls, understand panels on a plan run).
