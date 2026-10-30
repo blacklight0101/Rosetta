@@ -1,13 +1,15 @@
 import type { Claim } from '../../domain/cards/card.js';
-import type { CitedExcerpt } from './cited-lines.js';
 import { parseCitation, type Citation } from '../../domain/cards/citation.js';
+import type { CitedExcerpt } from './cited-lines.js';
 
 // DEC-198, RF-209, RF-301, ADR-005, ADR-013, EV-56: an owner's answer is an owner fact, never source.
 // The Invoice Deepen turned the owner's typed answer into claims that cite the lines the question
-// was raised from (its context), and a small model passed one as Supported. The check is free and
-// needs no model: the claim comes from a task that was given the answer, every citation of it falls
-// inside the context lines of one answered question, and its words are the answer's words. A claim
-// that cites the same lines for what they show says other things and is judged like any claim.
+// was raised from (its context), and a small model passed them as Supported. The check is free and
+// needs no model, so it runs once the cited lines are read: the claim comes from a task that was
+// given the answer, every citation of it falls inside the context lines of one answered question,
+// and most of the claim's words that the cited lines do not hold are words of the answer (of the
+// question too when the answer is short). A claim that says what the lines show has no such words
+// and is judged like any claim.
 
 /** An answered question given to a reader: the lines it was raised from and the owner's answer. */
 export interface OwnerAnswer {
@@ -19,10 +21,12 @@ export interface OwnerAnswer {
   readonly answer: string;
 }
 
-/** Fewer words than this say too little to tell a restatement from a short fact about the lines. */
-const MIN_WORDS = 4;
-/** The share of the claim's words that the answer holds for the claim to restate it. */
-const MIN_SHARE = 0.75;
+/** The claim words absent from the cited lines that come from the owner, at least this many ... */
+const MIN_OWNER_WORDS = 3;
+/** ... and at least this share of the claim words absent from the cited lines. */
+const MIN_OWNER_SHARE = 0.5;
+/** An answer of fewer meaningful words than this is read together with its question. */
+const SHORT_ANSWER = 4;
 
 const stopWords = new Set(
   `the and for are was were with that this from into onto not but has have had its their there
@@ -55,11 +59,34 @@ function wordsOf(text: string): ReadonlySet<string> {
   return new Set(kept.map((word) => (word.length > 3 ? word.replace(/s$/u, '') : word)));
 }
 
-function restates(claim: string, answer: string): boolean {
-  const mine = [...wordsOf(claim)];
-  if (mine.length < MIN_WORDS) return false;
-  const theirs = wordsOf(answer);
-  return mine.filter((word) => theirs.has(word)).length / mine.length >= MIN_SHARE;
+/** The text of the cited lines; the margin lines of an excerpt are not cited. */
+function citedText(excerpts: readonly CitedExcerpt[]): string {
+  return excerpts
+    .filter((excerpt) => !excerpt.skipped)
+    .flatMap((excerpt) => {
+      const from = excerpt.citedStartLine ?? excerpt.startLine;
+      const to = excerpt.citedEndLine ?? excerpt.endLine;
+      return excerpt.lines.filter((_, index) => {
+        const line = excerpt.startLine + index;
+        return line >= from && line <= to;
+      });
+    })
+    .join('\n');
+}
+
+/** The owner's words: the answer's, with the question's when the answer says too little. */
+function ownerWords(answer: OwnerAnswer): ReadonlySet<string> {
+  const words = wordsOf(answer.answer);
+  return words.size >= SHORT_ANSWER ? words : new Set([...words, ...wordsOf(answer.question)]);
+}
+
+/** Whether the claim words the cited lines do not hold are, for the most part, the owner's. */
+function restates(claim: string, answer: OwnerAnswer, cited: string): boolean {
+  const shown = wordsOf(cited);
+  const beyond = [...wordsOf(claim)].filter((word) => !shown.has(word));
+  const owner = ownerWords(answer);
+  const fromOwner = beyond.filter((word) => owner.has(word));
+  return fromOwner.length >= MIN_OWNER_WORDS && fromOwner.length / beyond.length >= MIN_OWNER_SHARE;
 }
 
 /** Why the claim is rejected, or undefined when it does not restate an answer on its context lines. */
@@ -67,14 +94,14 @@ function restates(claim: string, answer: string): boolean {
 export function restatedAnswerReason(
   claim: Pick<Claim, 'text' | 'citations'>,
   answers: readonly OwnerAnswer[],
-  excerpts: readonly CitedExcerpt[] = [],
+  excerpts: readonly CitedExcerpt[],
 ): string | undefined {
-  if (excerpts.length < 0) return undefined;
   if (claim.citations.length === 0) return undefined;
+  const cited = citedText(excerpts);
   const found = answers.find((each) => {
     const ranges = contextRanges(each.context);
     const resting = claim.citations.every((c) => ranges.some((range) => inside(c, range)));
-    return resting && restates(claim.text, each.answer);
+    return resting && restates(claim.text, each, cited);
   });
   if (found === undefined) return undefined;
   return `The claim restates the owner's answer to ${found.cardId} and cites only the lines that question was raised from: an owner's answer is a fact from the owner, not source in the code.`;

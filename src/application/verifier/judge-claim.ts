@@ -185,20 +185,15 @@ function ruleJudgement(
     parts.secretLines === undefined
       ? undefined
       : maskedSourceReason(claim, excerpts, parts.secretLines);
-  if (masked !== undefined) {
-    return { kind: 'judged', status: 'Rejected', reason: masked, withoutModel: true };
+  // DEC-198: the claim restates an owner's answer on the lines its question was raised from.
+  const restated = restatedAnswerReason(claim, parts.ownerAnswers ?? [], excerpts);
+  const rejected = masked ?? restated;
+  if (rejected !== undefined) {
+    return { kind: 'judged', status: 'Rejected', reason: rejected, withoutModel: true };
   }
   // P3-122, P5-31: a derived field or route claim the cited lines decide.
   const rule = screenRuleVerdict(claim, excerpts);
   return rule === undefined ? undefined : { kind: 'judged', ...rule, withoutModel: true };
-}
-
-/** P3-105, DEC-198: why the claim is rejected from its own words and citations, with no lines read. */
-function claimReason(parts: ClaimJudgeParts, claim: JudgedClaim): string | undefined {
-  return (
-    renderedFileReason(claim, parts.workbookFolders) ??
-    restatedAnswerReason(claim, parts.ownerAnswers ?? [])
-  );
 }
 
 /** The claim's verdict, `Unverified` with the reason, or `stopped` (RF-301). */
@@ -210,9 +205,9 @@ export async function judgeClaim(
 ): Promise<Judgement> {
   const ended = endedBefore(parts);
   if (ended !== undefined) return ended;
-  const free = claimReason(parts, claim);
-  if (free !== undefined) {
-    return { kind: 'judged', status: 'Rejected', reason: free, withoutModel: true };
+  const rendered = renderedFileReason(claim, parts.workbookFolders);
+  if (rendered !== undefined) {
+    return { kind: 'judged', status: 'Rejected', reason: rendered, withoutModel: true };
   }
   const evidence = await readCitedLines(
     parts.reader,
