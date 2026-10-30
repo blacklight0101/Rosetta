@@ -146,16 +146,15 @@ describe('the agent tool and the models: the answers', () => {
 });
 
 describe('the agent tool and the models: other tools', () => {
-  it('RF-639 Codex has no default model names and sends the names typed', async () => {
+  it('RF-639 P7-12 Codex offers tier model names as defaults and sends only the names typed', async () => {
     const page = renderPlan();
     await openMethod();
 
     fireEvent.click(agents());
     fireEvent.click(tool(/^Codex/u));
-    expect(screen.getByLabelText(/Middle tier/u)).toHaveProperty(
-      'placeholder',
-      'the middle model of your plan',
-    );
+    expect(screen.getByLabelText(/Smallest tier/u)).toHaveProperty('placeholder', 'gpt-5-mini');
+    expect(screen.getByLabelText(/Middle tier/u)).toHaveProperty('placeholder', 'gpt-5-codex');
+    expect(screen.getByLabelText(/Largest tier/u)).toHaveProperty('placeholder', 'gpt-5');
     fireEvent.input(screen.getByLabelText(/Middle tier/u), { target: { value: 'gpt-mid' } });
     press('Save');
 
@@ -171,7 +170,9 @@ describe('the agent tool and the models: other tools', () => {
       },
     ]);
     expect(
-      within(summary).getByText(/Agents will build with Codex\. Models: middle gpt-mid/u),
+      within(summary).getByText(
+        /Agents will build with Codex\. Models: smallest gpt-5-mini, middle gpt-mid, largest gpt-5/u,
+      ),
     ).not.toBeNull();
   });
 

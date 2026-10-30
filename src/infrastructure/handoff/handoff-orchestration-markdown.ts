@@ -1,8 +1,6 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
-import { modelForTier, resolveBuildMethod } from '../../domain/planning/build-method.js';
+import { resolveBuildMethod } from '../../domain/planning/build-method.js';
 import { escalationApprovedText } from '../../domain/planning/card-model-check.js';
-import type { BuildMethod } from '../../domain/planning/build-method.js';
-import { difficultyBands } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import {
   grepRows,
@@ -11,6 +9,7 @@ import {
   type GrepRow,
   type GrepSource,
 } from './handoff-grep-rules.js';
+import { bandsSection } from './handoff-orchestration-bands-markdown.js';
 import { deliverySection } from './handoff-orchestration-delivery-markdown.js';
 import {
   budgetsSection,
@@ -28,19 +27,6 @@ import { handoffFiles } from './handoff-links.js';
 // function in `orchestrationSections`; a later card adds its section to that list. Model names
 // come from the brief and go through the escaper; nothing else in the file is model text.
 
-type Tier = (typeof difficultyBands)[number]['tier'];
-
-const notNamed = 'not named';
-
-function modelOf(method: BuildMethod, tier: Tier, esc: MarkdownEscaper): string {
-  const model = modelForTier(method, tier);
-  return model === undefined ? notNamed : esc.inline(model);
-}
-
-function verifierTier(from: number): Tier {
-  return from >= 9 ? 'largest' : 'middle';
-}
-
 const rolesSection: SectionWriter = () => [
   '## Roles',
   '',
@@ -52,28 +38,6 @@ const rolesSection: SectionWriter = () => [
   'A tool other than Claude Code or Codex gets these roles in prose only: this section, and no `agents/` folder.',
   '',
 ];
-
-const bandsSection: SectionWriter = (handoff, esc) => {
-  const method = resolveBuildMethod(handoff.brief.buildMethod);
-  const escalation = method.models?.escalation;
-  return [
-    '## Bands and models',
-    '',
-    'The difficulty of a card (1 to 10) selects the tier that builds it and the tier that verifies it. A card with a risk class other than `none` is built by at least the middle tier. When in doubt between two bands, take the higher one.',
-    '',
-    '| Difficulty | Builder tier | Builder model | Verifier tier | Verifier model |',
-    '| ---------- | ------------ | ------------- | ------------- | -------------- |',
-    ...difficultyBands.map((band) => {
-      const verifier = verifierTier(band.from);
-      return `| ${String(band.from)} to ${String(band.to)} | ${band.tier} | ${modelOf(method, band.tier, esc)} | ${verifier} | ${modelOf(method, verifier, esc)} |`;
-    }),
-    '',
-    escalation === undefined
-      ? 'No escalation model is named: when a card fails a third time, the owner decides what happens next.'
-      : `The escalation model is ${esc.inline(escalation)}. It is used only with the owner's approval in chat, for a third attempt at a card; no card starts there.`,
-    '',
-  ];
-};
 
 // RF-640, RF-641, the owner's decision of 2026-10-29: the Status text exists only with a named escalation model.
 function thirdFailureLines(handoff: HandoffPackage): string[] {

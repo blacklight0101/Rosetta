@@ -1,4 +1,5 @@
-import { difficultyBands } from '../../domain/planning/task-method.js';
+import { bandsFor, type difficultyBands } from '../../domain/planning/task-method.js';
+import type { BuildMethod } from '../../domain/planning/build-method.js';
 import { handoffFiles } from './handoff-links.js';
 
 // RF-642, DEC-60: the words of the role definitions in the package's `agents/` folder. Every line
@@ -9,10 +10,12 @@ import { handoffFiles } from './handoff-links.js';
 
 export type BuilderTier = (typeof difficultyBands)[number]['tier'];
 
-/** The difficulty range a tier builds, as `1 to 5`. */
-function rangeOf(tier: BuilderTier): string {
-  const band = difficultyBands.find((each) => each.tier === tier);
-  return band === undefined ? '' : `${String(band.from)} to ${String(band.to)}`;
+/** The difficulty range a tier builds, as `1 to 5`; a local tier's band stops at its ceiling (RF-641). */
+function rangeOf(tier: BuilderTier, method: BuildMethod): string {
+  const band = bandsFor(method).find((each) => each.tier === tier);
+  return band === undefined
+    ? 'none (a local tier that takes no card)'
+    : `${String(band.from)} to ${String(band.to)}`;
 }
 
 const readFirst = [
@@ -45,9 +48,9 @@ export function orchestratorLines(): string[] {
 }
 
 // RF-639, RF-640
-export function builderLines(tier: BuilderTier): string[] {
+export function builderLines(tier: BuilderTier, method: BuildMethod): string[] {
   return [
-    `You are a builder for cards of difficulty ${rangeOf(tier)}. You implement exactly one card on the branch the orchestrator made for it.`,
+    `You are a builder for cards of difficulty ${rangeOf(tier, method)}. You implement exactly one card on the branch the orchestrator made for it.`,
     '',
     ...readFirst,
     '',

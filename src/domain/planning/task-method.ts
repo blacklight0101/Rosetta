@@ -1,3 +1,4 @@
+import { isLocalTier, localModelCeiling, type BuildMethod } from './build-method.js';
 import type { PlanPhase, PlanTask } from './plan-content.js';
 
 // RF-611, RF-612, DEC-75, DEC-79: what the package derives from a task card without asking the
@@ -54,6 +55,35 @@ export const difficultyBands = [
   { from: 9, to: 10, tier: 'largest' },
 ] as const;
 
+export interface DifficultyBand {
+  readonly from: number;
+  readonly to: number;
+  readonly tier: (typeof difficultyBands)[number]['tier'];
+}
+
+/**
+ * RF-635, RF-641, P7-12: the bands of a build. A tier whose model runs locally stops at the local
+ * ceiling (difficulty 2) and the next tier starts right after it; a local tier whose band would be
+ * empty takes no card. The last tier never stops: nothing is above it. Without a local tier these
+ * are `difficultyBands`.
+ */
+// RF-641
+export function bandsFor(method?: BuildMethod): readonly DifficultyBand[] {
+  const bands: DifficultyBand[] = [];
+  let start = 1;
+  difficultyBands.forEach((natural, index) => {
+    const local =
+      method !== undefined &&
+      index < difficultyBands.length - 1 &&
+      isLocalTier(method, natural.tier);
+    const to = local ? Math.min(natural.to, localModelCeiling) : natural.to;
+    if (to < start) return;
+    bands.push({ from: start, to, tier: natural.tier });
+    start = to + 1;
+  });
+  return bands;
+}
+
 const difficultyOfSize: Readonly<Record<TaskSize, number>> = { S: 4, M: 6, L: 8 };
 
 export interface TaskDifficulty {
@@ -66,9 +96,11 @@ export interface TaskDifficulty {
 /** RF-635, DEC-176 Q-C: the rating an M or L card at a risk class gets, the lowest of the largest band. */
 const riskRating = 9;
 
-/** The model tier of a rating from 1 to 10 (the bands of RF-635). */
-export function tierOfRating(rating: number): TaskDifficulty['tier'] {
-  return difficultyBands.find((each) => rating >= each.from && rating <= each.to)?.tier ?? 'middle';
+/** The model tier of a rating from 1 to 10 (the bands of RF-635, moved by a local tier, RF-641). */
+export function tierOfRating(rating: number, method?: BuildMethod): TaskDifficulty['tier'] {
+  return (
+    bandsFor(method).find((each) => rating >= each.from && rating <= each.to)?.tier ?? 'middle'
+  );
 }
 
 /**
@@ -77,18 +109,33 @@ export function tierOfRating(rating: number): TaskDifficulty['tier'] {
  * largest tier) and raises a small card to the middle tier without changing its rating.
  */
 // RF-612, RF-635, RF-639
-export function difficultyOfTask(task: PlanTask): TaskDifficulty {
+export function difficultyOfTask(task: PlanTask, method?: BuildMethod): TaskDifficulty {
   const { size } = sizeOfTask(task);
   const atRisk = task.riskClass !== 'none';
   const rating = atRisk && size !== 'S' ? riskRating : difficultyOfSize[size];
   const verifier = atRisk || rating >= riskRating ? 'largest' : 'middle';
-  return { rating, tier: tierForRisk(tierOfRating(rating), task.riskClass), verifier };
+  return {
+    rating,
+    tier: tierForRisk(tierOfRating(rating, method), task.riskClass, method),
+    verifier,
+  };
 }
 
 type ModelTier = TaskDifficulty['tier'];
 
-/** RF-635: a risk class other than `none` raises the smallest tier to the middle one, never lowers. */
+/**
+ * RF-635, RF-641: a risk class other than `none` raises the smallest tier to the middle one, never
+ * lowers. When the middle tier has no band (it runs locally), the card goes to the next tier that has.
+ */
 // RF-635
-export function tierForRisk(tier: ModelTier, riskClass: PlanTask['riskClass']): ModelTier {
-  return tier === 'smallest' && riskClass !== 'none' ? 'middle' : tier;
+export function tierForRisk(
+  tier: ModelTier,
+  riskClass: PlanTask['riskClass'],
+  method?: BuildMethod,
+): ModelTier {
+  if (tier !== 'smallest' || riskClass === 'none') return tier;
+  const bands = bandsFor(method);
+  return (
+    (['middle', 'largest'] as const).find((each) => bands.some((b) => b.tier === each)) ?? 'largest'
+  );
 }

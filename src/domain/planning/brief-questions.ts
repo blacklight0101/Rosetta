@@ -68,6 +68,10 @@ function contextQuestion(id: string, field: string): DefaultedQuestion {
 const unnamedTier =
   'None named; the card shows the tier alone, with no model name, and checks.md lists it.';
 
+function toolName(brief: PlanningBrief): string {
+  return brief.buildMethod.agentTool?.kind === 'codex' ? 'Codex' : 'Claude Code';
+}
+
 function buildMethodQuestion(id: string, brief: PlanningBrief): DefaultedQuestion | undefined {
   if (id === 'buildMethod.agentTool') {
     return {
@@ -82,7 +86,7 @@ function buildMethodQuestion(id: string, brief: PlanningBrief): DefaultedQuestio
   return {
     id,
     question: `Which model fills the ${tier} tier?`,
-    answer: model === undefined ? unnamedTier : `The Claude Code default: ${model}.`,
+    answer: model === undefined ? unnamedTier : `The ${toolName(brief)} default: ${model}.`,
   };
 }
 

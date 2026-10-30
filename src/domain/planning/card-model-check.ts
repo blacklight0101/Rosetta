@@ -1,4 +1,4 @@
-import { modelTiers, type BuildMethod } from './build-method.js';
+import { localModelCeiling, modelTiers, type BuildMethod } from './build-method.js';
 import { tierOfRating } from './task-method.js';
 
 // RF-641, RF-635, RF-639, DEC-176 Q-D and Q-F: what the package check says about the model of one
@@ -42,9 +42,6 @@ export interface ModelFinding {
   readonly severity: 'finding' | 'warning';
 }
 
-/** A local model builds only scripted cards of difficulty 1 and 2 (Q-F). */
-const localModelCeiling = 2;
-
 const rank = (tier: Tier): number => modelTiers.indexOf(tier);
 
 function namedModels(method: BuildMethod): string[] {
@@ -59,7 +56,8 @@ function kindsOf(method: BuildMethod, card: CardModelFacts): ModelFindingKind[] 
   const atRisk = card.riskClass !== 'none';
   if (card.builderModel === undefined) kinds.push('tier-unnamed');
   else if (!namedModels(method).includes(card.builderModel)) kinds.push('model-not-in-brief');
-  if (rank(card.builderTier) < rank(tierOfRating(card.rating))) kinds.push('tier-below-band');
+  if (rank(card.builderTier) < rank(tierOfRating(card.rating, method)))
+    kinds.push('tier-below-band');
   if (atRisk && rank(card.builderTier) < rank('middle')) kinds.push('risk-tier-below-middle');
   if (atRisk && card.verifierTier !== 'largest') kinds.push('risk-verifier-below-largest');
   if (rank(card.verifierTier) < rank(card.builderTier)) kinds.push('verifier-below-builder');
