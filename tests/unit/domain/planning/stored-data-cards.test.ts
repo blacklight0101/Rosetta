@@ -63,8 +63,7 @@ describe('noStoredData: claims that state stored data (P7-13 round 2)', () => {
     ['Tax Parameters', 'The Tax table has the columns Rate and Region.'],
     ['Report Parameters', 'ReportParameter has a primary key Id and a foreign key to Report.'],
     ['Configuration Item (CMDB)', 'Each configuration item is a row with a nullable Owner column.'],
-    ['Workbook Entries', 'The entries are rows of a table with the columns Date and Amount.'],
-    ['OrderViewModel', 'The Total is a decimal(19,4) value that is NOT NULL.'],
+    ['Workbook Entries', 'Column Entries.Amount: decimal(19,4), NOT NULL.'],
   ])('RF-623 keeps %s, whose claims state stored data', (title, claim) => {
     expect(noStoredData(said(title, claim))).toBeUndefined();
   });
@@ -118,5 +117,51 @@ describe('noStoredData: classes that only serve (P7-13 round 2)', () => {
     const named = said('SqlDataService', 'Column Orders.Id: int, NOT NULL.');
 
     expect(noStoredData(named)).toBeUndefined();
+  });
+});
+
+describe('noStoredData: the fixed kinds win over the word column (P7-13 round 3)', () => {
+  const said = (title: string, ...claims: string[]) => card('ENT-100', 'ENT', title, claims);
+
+  it('RF-623 leaves out the glossary of the Ollama Invoice run (ENT-004), whose claim says 8 columns', () => {
+    const glossary = said(
+      'VBA Glossary Table',
+      'The VBA Glossary Table has 8 columns: Controls, Control Type, Purpose.',
+    );
+
+    expect(noStoredData(glossary)).toBe('glossary');
+  });
+
+  it.each([
+    ['OrderViewModel', 'The view model has columns Total and Date in a table.', 'view model'],
+    ['OrderViewModel', 'Column Orders.Total: decimal(19,4), NOT NULL.', 'view model'],
+    ['Invoice Generator workbook file', 'It has a column of totals.', 'workbook file'],
+    ['Invoice_Generator.xlsm', 'The table on Sheet1 has 3 columns.', 'workbook file'],
+  ])('RF-623 leaves out %s whose claim only mentions columns', (title, claim, kind) => {
+    expect(noStoredData(said(title, claim))).toBe(kind);
+  });
+
+  it('RF-623 keeps a workbook card that states a typed column', () => {
+    const typed = said('Invoice workbook', 'Column Invoice.Total: decimal(19,4), NOT NULL.');
+
+    expect(noStoredData(typed)).toBeUndefined();
+  });
+});
+
+describe('noStoredData: serving classes that store rows (P7-13 round 3)', () => {
+  const said = (title: string, ...claims: string[]) => card('ENT-100', 'ENT', title, claims);
+
+  it.each([
+    [
+      'PaymentProvider',
+      'A payment provider has a name and an endpoint; rows are kept per merchant.',
+    ],
+    ['ShippingProvider', 'Each shipping provider is stored with its code.'],
+  ])('RF-623 keeps %s, whose claims describe stored data in prose', (title, claim) => {
+    expect(noStoredData(said(title, claim))).toBeUndefined();
+  });
+
+  it('RF-623 still skips a service class that only calls', () => {
+    expect(noStoredData(said('PaymentProvider', 'It calls the gateway.'))).toBe('service class');
   });
 });
