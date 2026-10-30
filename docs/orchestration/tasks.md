@@ -17,8 +17,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P3 Report and plan      | 132     | 16        | 112        | 4         | 0                  | 55      | 73      | 4      | 88         | 0         |
 | P5 Polish (G-10)        | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method   | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
-| P7 Evaluation fixes     | 29      | 5         | 18         | 6         | 0                  | 6       | 19      | 4      | 3          | 0         |
-| **Total**               | **481** | **117**   | **328**    | **36**    | **0**              | **225** | **238** | **18** | **262**    | **0**     |
+| P7 Evaluation fixes     | 32      | 5         | 21         | 6         | 0                  | 6       | 22      | 4      | 3          | 0         |
+| **Total**               | **484** | **117**   | **331**    | **36**    | **0**              | **225** | **241** | **18** | **262**    | **0**     |
 
 ## Conventions for every card
 
@@ -6659,7 +6659,7 @@ EV-69..EV-81 here, in the same order. A Haiku finding that is the same problem a
 card's evidence: EV-71 to P7-11, EV-72 and EV-77 to P7-12, EV-76 to P7-02 and P7-03, EV-79 to P7-14. EV-74 and EV-75
 extend P7-13; EV-81 is P7-20; EV-69, EV-70, EV-73, EV-78 and EV-80 are P7-21 and P7-22. Run ids are those of the
 evaluation stack. Waves: (1) P7-01, P7-07, P7-11, P7-14; (2) P7-02, P7-03, P7-08, P7-13; (3) P7-04, P7-05, P7-09,
-P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-20, P7-21, P7-22, P7-23, P7-24 (DEC-200, DEC-201), P7-25, P7-26, P7-27, P7-28, P7-29; (6) P7-19. Two cards of one wave
+P7-12; (4) P7-06, P7-10, P7-15, P6-33, P7-16, P7-17, P7-18; (5) P7-20, P7-21, P7-22, P7-23, P7-24 (DEC-200, DEC-201), P7-25, P7-26, P7-27, P7-28, P7-29, P7-30, P7-31, P7-32; (6) P7-19. Two cards of one wave
 never edit the same file; Depends on carries the order where they would.
 
 ### P7-01 - The claim-check reserve comes out of the run cap
@@ -6988,7 +6988,7 @@ never edit the same file; Depends on carries the order where they would.
 
 - **Difficulty**: 8 (sonnet)
 - **Size**: L
-- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P7-20, P7-21, P7-22, P7-23, P7-24, P7-25, P7-26, P7-27, P7-29, P6-33
+- **Depends on**: P7-01, P7-02, P7-03, P7-04, P7-05, P7-06, P7-07, P7-08, P7-09, P7-10, P7-11, P7-12, P7-13, P7-14, P7-15, P7-16, P7-17, P7-18, P7-20, P7-21, P7-22, P7-23, P7-24, P7-25, P7-26, P7-27, P7-29, P7-30, P7-31, P7-32, P6-33
 - **Gate**: owner
 - **Status**: Todo
 - **Reads**: the evaluation of 2026-10-29 (findings EV-44, EV-56..EV-81 and their repros), `docs/verification/`, RNF-006, RNF-012.
@@ -7150,3 +7150,50 @@ never edit the same file; Depends on carries the order where they would.
 - **Delivers**: the step, the catalogue lookup on the page, the brief field for the recommended option, unit, integration and web tests.
 - **Done when**: without consent every layer of a current-stack scan shows four options with one recommended, and a workbook scan or an end-of-life layer shows three, without "Keep the legacy technology"; a skipped layer takes the recommendation; with consent the planner's options show; CI green.
 - **Refs**: RF-609, RF-645, RF-145, DEC-172, DEC-178, DEC-203; owner report of 2026-10-30 (production Plan setup: two options per layer and no proposals before consent).
+
+### P7-30 - A stack answer that names only a platform is asked again
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P7-29
+- **Gate**: owner (DEC-178)
+- **Status**: Todo
+- **Reads**: the stack step of Plan setup, `src/domain/planning/stack-proposal.ts`, `prompts/catalogue/stack-proposals.v1.yaml` and `stack-technologies.v2.yaml`, the API-contract rule that needs a front end and a back end it can tell apart (RF-624), RF-609, RF-645, DEC-178.
+- **Do**: red tests first; add the Given to RF-609 first.
+  - A typed answer for a layer that names only a platform or a word with no technology (".net", "java", "node", "default", "any") is not specific: Plan setup says so next to the field and offers the catalogue's technologies of that platform for the layer as choices (for a .NET front end: Blazor Server, Razor Pages or MVC, a separate client), the recommended one first.
+  - When the owner saves it anyway, the package treats the layer as open: its ADR is `Proposed` with the catalogue's recommendation, `open-questions.md` lists it, and the API-contract rule uses the recommendation, so a front end and back end that are both ".net" no longer leave the package with no API contract and no reason a builder can act on.
+- **Delivers**: the check and its catalogue words, the page hint, the package rule, unit, integration and web tests.
+- **Done when**: a brief with ".net" for front end and back end and "default" for testing gets a hint in Plan setup and, when saved, a package whose three layers are `Proposed` with a concrete technology and listed as open questions; a brief with a concrete technology is unchanged; CI green.
+- **Refs**: RF-609, RF-624, RF-645, DEC-178; owner review of a workbook hand-off package of 2026-10-30 (plan run `20261030-111557-plan`; the package is the owner's and stays outside this repository).
+
+### P7-31 - A workbook plan asks for sign-in, the secrets store and the screens
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P7-29
+- **Gate**: owner (DEC-150, DEC-178)
+- **Status**: Todo
+- **Reads**: the Plan setup questions (`web/src/pages/PlanMethodStep.tsx` and the brief schema), `src/domain/planning/plan-content.ts`, the security section writer of `trd.md` (the "Approach: other" lines), the flows and user-interface writers (RF-625, RF-626) and what they write for a workbook source today (a `flows/README.md` and `ux/README.md` with no journey or screen), RF-150..RF-159, RF-625, RF-626, RF-645, DEC-150.
+- **Do**: red tests first; add the new questions to the spec first, each with its default (the owner approves them in the pull request).
+  - A workbook has no sign-in, no secrets handling and no screens to read, so the package cannot take them from the code. For a workbook source Plan setup asks three questions in the RF-645 pattern: how people sign in (the recommended option follows the hosting answer, for example Windows authentication for an intranet IIS host), where secrets the cards found go (a named store), and whether each register gets list, edit and search screens.
+  - The answers reach the planner inside the owner's data block; the package writes the sign-in and the store into `trd.md` and their ADRs instead of "Approach: other", and `ux/` lists one screen set per table of the data model with its fields, so `flows/` and `ux/` are no longer empty for a workbook.
+  - A skipped question takes its default and is listed in `open-questions.md`.
+- **Delivers**: the questions, the brief fields, the package changes, unit, integration and web tests, re-recorded responses where a prompt changes.
+- **Done when**: a recorded workbook plan asks the three questions; its package names the sign-in and the secrets store and lists screens per table; a repository plan is unchanged; CI green.
+- **Refs**: RF-150..RF-159, RF-625, RF-626, RF-645, DEC-150, DEC-178; owner review of a workbook hand-off package of 2026-10-30 (plan run `20261030-111557-plan`; the package is the owner's and stays outside this repository).
+
+### P7-32 - Tables split by site or copy are one table with a column
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P7-13
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/domain/planning/stored-data-cards.ts` and the twin-table merge of P7-13 (merge key, merge note), the data-model writer and `checks.md` "Data model" section, `entity-mapping.md` writer, RF-623.
+- **Do**: red tests first; add the Given to RF-623 first.
+  - P7-13 merges tables whose names differ by plural, case or separators. A workbook often has one sheet per site or per copy with the same columns (`access_point`, `access_point_site_a`, `access_point_site_b`; `phone_inventory`, `phone_inventory_site_a`). When tables share a name stem and at least most of their columns, and the rest of the name is a suffix that is not a column, they become one table with a discriminator column (named from the kind of suffix, such as `site`, or `source_sheet` when the kind is unclear), the sources and rules of all, and keys that pointed at any now pointing at the one.
+  - `checks.md` lists each merge with the suffixes it turned into values, and `entity-mapping.md` maps each legacy sheet to the table and its value, so the data migration can fill the column.
+  - A table that a PRD out-of-scope line drops (for example an empty sheet) is not written as a table.
+- **Delivers**: the merge rule, the writers' changes, unit tests with synthetic sheet names and an integration test of a recorded workbook plan.
+- **Done when**: a recorded plan with three per-site tables of the same columns writes one table with a `site` column and lists the merge; tables with different columns stay apart; an out-of-scope sheet has no table; CI green.
+- **Refs**: RF-623, P7-13; owner review of a workbook hand-off package of 2026-10-30 (plan run `20261030-111557-plan`; the package is the owner's and stays outside this repository).
