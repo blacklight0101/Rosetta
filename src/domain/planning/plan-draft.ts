@@ -93,8 +93,20 @@ export interface PlanDraft {
   readonly unreadableTasks?: readonly UnreadableTask[];
   /** P3-126: the items of the other lists left out because they could not be read. */
   readonly unreadableItems?: readonly UnreadableItem[];
+  /** P7-15: cards kept although entries of their requirements or dependsOn were mapped or dropped. */
+  readonly entryNotes?: readonly EntryNote[];
   /** P5-41: the planner's judgements of claims. */
   readonly claimJudgements?: readonly DraftClaimJudgement[];
+}
+
+/** P7-15: the entries of one list of the task card at `card` (from 1) that code mapped or dropped. */
+export interface EntryNote {
+  readonly card: number;
+  readonly field: string;
+  /** Source card ids read as the requirements that cite them. */
+  readonly mapped: number;
+  /** Entries that were no position and no cited card id. */
+  readonly dropped: number;
 }
 
 export interface UnreadableTask {

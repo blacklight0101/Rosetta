@@ -37,6 +37,39 @@ export function gapRequirements(
   return { requirements: [], derived: [], unbacked: builds };
 }
 
+/** The ids a gap card wrote as requirements, resolved: the requirements found and how many entries mapped or dropped. */
+export interface CitedRequirements {
+  readonly ids: string[];
+  readonly mapped: number;
+  readonly dropped: number;
+}
+
+/**
+ * P7-15: an id the answer wrote as a requirement is a requirement id of the plan or a source card
+ * that some requirement cites; an id that is neither is dropped (counted), never taken as mapped.
+ */
+export function citingRequirements(
+  content: PlanContent,
+  cards: readonly string[],
+): CitedRequirements {
+  const ids: string[] = [];
+  let dropped = 0;
+  for (const card of cards) {
+    const found = content.requirements.filter(
+      (each) => each.id === card || each.sources.includes(card),
+    );
+    if (found.length === 0) dropped += 1;
+    else ids.push(...found.map((each) => each.id));
+  }
+  return { ids, mapped: cards.length - dropped, dropped };
+}
+
+/** The note for checks.md about the ids a kept gap card wrote as requirements, if there were any. */
+export function citedNotes(task: string, cited: CitedRequirements): RequirementNote[] {
+  const { mapped, dropped } = cited;
+  return mapped + dropped === 0 ? [] : [{ kind: 'cited', task, mapped, dropped }];
+}
+
 /** The notes for checks.md about the requirements code gave a gap card, once it has its id. */
 export function gapRequirementNotes(task: string, found: GapRequirements): RequirementNote[] {
   return [

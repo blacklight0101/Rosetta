@@ -8,7 +8,32 @@ import type { RequirementNote } from '../../domain/planning/requirement-notes.js
 
 const SHARED = 'its source cards';
 
+const NOUNS: Readonly<Record<string, string>> = {
+  requirements: 'requirement position or cited source card id',
+  dependsOn: 'task card position',
+};
+
+const entries = (count: number): string => `${String(count)} ${count === 1 ? 'entry' : 'entries'}`;
+const were = (count: number): string => (count === 1 ? 'was' : 'were');
+
+/** P7-15: what happened to the entries of one list of a card that was kept. */
+function changesOf(note: { mapped: number; dropped: number }, field: string): string {
+  const mapped = `${entries(note.mapped)} named a source card id and ${were(note.mapped)} mapped to the requirements that cite it`;
+  const noun = NOUNS[field] ?? 'position';
+  const dropped = `${entries(note.dropped)} named no ${noun} and ${were(note.dropped)} dropped`;
+  return [...(note.mapped > 0 ? [mapped] : []), ...(note.dropped > 0 ? [dropped] : [])].join('; ');
+}
+
 function lineOf(note: RequirementNote): string {
+  if (note.kind === 'entries') {
+    return `- The task card at position ${String(note.card)} of the plan answer was kept; in its "${note.field}", ${changesOf(note, note.field)}.`;
+  }
+  if (note.kind === 'cited') {
+    return `- ${note.task} was kept; in its "requirements", ${changesOf(note, 'requirements')}.`;
+  }
+  if (note.kind === 'none') {
+    return `- ${note.task} names no requirement the plan has: the card is kept without a requirement, and needs one (RF-607).`;
+  }
   if (note.kind === 'position') {
     const { card, position, count } = note;
     const size = `${String(count)} requirement${count === 1 ? '' : 's'}`;
