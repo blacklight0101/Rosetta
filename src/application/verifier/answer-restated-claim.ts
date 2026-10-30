@@ -8,14 +8,13 @@ import type { CitedExcerpt } from './cited-lines.js';
 // needs no model, so it runs once the cited lines are read: the claim comes from a task that was
 // given the answer, every citation of it falls inside the context lines of one answered question,
 // and most of the claim's words that the cited lines do not hold are words of the answer (an
-// answer of fewer than 4 meaningful words is left to the verifier model, a known gap). A claim that says what the lines show has no such words
-// and is judged like any claim.
+// answer of fewer than 4 meaningful words is left to the verifier model, a known gap). A claim
+// that says what the lines show has no such words and is judged like any claim.
 
 /** An answered question given to a reader: the lines it was raised from and the owner's answer. */
 export interface OwnerAnswer {
   readonly area: string;
   readonly cardId: string;
-  readonly question: string;
   /** As `answers.md` holds it: `path:a-b text`, then maybe `(also cited: path:a-b, ...)`. */
   readonly context: string;
   readonly answer: string;

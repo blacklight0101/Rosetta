@@ -25,7 +25,6 @@ export const sheetExcerpt: CitedExcerpt = {
 
 export const oq002: OwnerAnswer = {
   ...{ area: 'Invoice_Generator.xlsm', cardId: 'OQ-002' },
-  question: 'What is the specific business process flow of the invoice workbook?',
   context: `${SHEETS_FILE}:14-20 The workbook contains sheets named 'Instructions', 'Dashboard', 'Invoice', 'Masterdata', 'Template', 'Calculation', and 'VBA Code Glossary'.`,
   answer:
     'From README.md (How It Works): customer data is kept in Masterdata (Add Customer / Edit Master Data on the Dashboard); a new invoice is entered in the Invoice sheet (customer picked through the orange search cell); Create Invoices lists open invoices with a blank status, fills the Template sheet and exports the invoice as PDF and Excel into two folders, and can draft an Outlook email with the PDF attached; the Calculation sheet then feeds the monthly revenue chart on the Dashboard.',

@@ -82,7 +82,7 @@ describe('a claim the rule leaves to the verifier', () => {
 describe('the answer a claim restates', () => {
   it('DEC-198 is the one of the question whose lines it cites', () => {
     const other: OwnerAnswer = {
-      ...{ area: oq002.area, cardId: 'OQ-009', question: 'How do customers pay?' },
+      ...{ area: oq002.area, cardId: 'OQ-009' },
       ...{ context: 'Elsewhere/notes.md:1-3 A note.' },
       answer: 'Customers pay by bank transfer within thirty days.',
     };
@@ -110,19 +110,11 @@ describe('a short answer', () => {
   const update = excerpt(service, 12, [
     '            var sql = "UPDATE CatalogItem SET Stock = Stock - 1 WHERE Id = @id";',
   ]);
-  const yes = (cardId: string, question: string, context: string): OwnerAnswer => ({
-    ...{ area: 'X', cardId, question, context, answer: 'Yes' },
+  const yes = (cardId: string, context: string): OwnerAnswer => ({
+    ...{ area: 'X', cardId, context, answer: 'Yes' },
   });
-  const nameQ = yes(
-    'OQ-001',
-    'Does the shop want every product page to show the same name Item?',
-    `${details}:5-8 The name label is set to a fixed text.`,
-  );
-  const stockQ = yes(
-    'OQ-002',
-    'Is the stock lowered by one every time the list is loaded?',
-    `${service}:12-12 The stock is lowered.`,
-  );
+  const nameQ = yes('OQ-001', `${details}:5-8 The name label is set to a fixed text.`);
+  const stockQ = yes('OQ-002', `${service}:12-12 The stock is lowered.`);
 
   it.each([
     ['Every product details page shows the same name, Item.', nameQ, load, [5, 8]],
@@ -149,7 +141,7 @@ describe('the words of the cited lines', () => {
       lines: ['var sql = "UPDATE CatalogItem SET Stock = Stock - 1 WHERE order_id = @id";'],
     };
     const owner: OwnerAnswer = {
-      ...{ area: 'X', cardId: 'OQ-003', question: 'Does a sale lower the stock?' },
+      ...{ area: 'X', cardId: 'OQ-003' },
       context: 'Services/CatalogService.cs:12-12 The stock is lowered.',
       answer: 'Sales lower catalog item stock, one unit each time, per order.',
     };
@@ -167,7 +159,7 @@ describe('the guard on short answers', () => {
       lines: ['Schedule.Run();'],
     };
     const owner: OwnerAnswer = {
-      ...{ area: 'X', cardId: 'OQ-004', question: 'What does the job do?' },
+      ...{ area: 'X', cardId: 'OQ-004' },
       context: 'Jobs/Weekly.cs:3-3 The job runs.',
       answer: 'Weekly invoice export.',
     };
