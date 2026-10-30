@@ -5,7 +5,10 @@ import type { SourceCard } from './plan-sources.js';
 // controls, the workbook file itself, a class that only serves) is no table. The title is read as
 // words (camel case split), and a title that names a table, a sheet, rows, records or an entity is
 // data whatever else it says. A card whose supported claims state stored data (a column with its
-// type, a key, a precision, nullability) is kept whatever its title, so its facts reach the planner. The names are those of the cards the evaluation produced; checks.md lists each card skipped
+// type, a key, a precision, nullability) is kept whatever its title, so its facts reach the planner,
+// except a view model or a glossary, which never is, and a workbook file, which is kept only when a
+// claim states a typed column (`Column T.c: type` or a sized type) or its title names a table, a sheet,
+// rows or records. The names are those of the cards the evaluation produced; checks.md lists each card skipped
 // with its kind, and a wrong guess costs one line to put back, never a silent loss.
 
 const data = new Set([
