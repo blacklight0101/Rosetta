@@ -171,7 +171,28 @@ describe('genuine decisions under a subject title stay (style, stack and others)
 
     expect(restatedBy(brief, [tests])).toEqual([]);
   });
+});
 
+describe('a typed answer with more in the text stays', () => {
+  it('RF-610 keeps "Migration Order Focus" that adds an order to the typed answer', () => {
+    const orders = adr('Migration Order Focus', [
+      'The owner typed an order.',
+      'Catalog first, then orders, then WebForms admin pages last.',
+      'Each step ships alone.',
+    ]);
+
+    expect(restatedBy(eShop, [orders])).toEqual([]);
+  });
+
+  it('RF-610 keeps "Migration Order Focus" that adds a login to the typed answer', () => {
+    const login = adr('Migration Order Focus', [
+      'The owner typed an order.',
+      'Migrate the catalog first and WebForms last, keeping both sites behind one login.',
+      'Users sign in once.',
+    ]);
+
+    expect(restatedBy(eShop, [login])).toEqual([]);
+  });
   it('RF-608 keeps decisions on other subjects', () => {
     const out = restatedBy(brief, [
       adr('Keep brand delete as a no-op', ['c', 'Keep the delete a no-op.', 'x']),
