@@ -24,6 +24,15 @@ export interface DeepenOptions {
   readonly coveragePass: boolean;
 }
 
+/**
+ * RF-430, RF-432, DEC-196: the journey total the user approved on the start button, recorded on the
+ * run; the run pauses and asks near it (P7-05). Micro-dollars are a JSON number, as in the manifest.
+ */
+export interface ApprovedAmount {
+  readonly tokens: number;
+  readonly costMicros: number;
+}
+
 export interface UnderstandOptions {
   readonly areas?: readonly string[];
   readonly cloudConsent: boolean;
@@ -35,6 +44,8 @@ export interface UnderstandOptions {
   readonly deepen?: DeepenOptions;
   /** RF-208, Q-43: the id of the run whose failed areas this run reads again; its cards are held. */
   readonly retryOf?: string;
+  /** RF-430: the amount the user approved at the start. */
+  readonly approvedAmount?: ApprovedAmount;
 }
 
 const optionsSchema = z.object({

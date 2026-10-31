@@ -15,6 +15,7 @@ import {
   understandOptionsOf,
 } from '../understand/understand-options.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
+import type { RoleKeyDependencies } from '../runs/role-keys.js';
 
 // RF-209, RF-1105, RF-143, ADR-007, DEC-144, DEC-145: Start Deepen is what the owner's confirmation
 // on the estimate calls (`POST /api/runs/:runId/deepen`). It never starts by itself: nothing but
@@ -31,6 +32,8 @@ export interface StartDeepenDependencies {
   readonly submit: Pick<SubmitRun, 'execute'>;
   /** The host of the server's Ollama (`ROSETTA_OLLAMA_URL`); an Ollama elsewhere needs consent (RF-143). */
   readonly ollamaHost?: string;
+  /** RF-431: whether each role of the run has a usable key; checked before the run is queued. */
+  readonly roleKeys?: RoleKeyDependencies;
 }
 
 export interface StartDeepenRequest {

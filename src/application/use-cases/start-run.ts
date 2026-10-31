@@ -14,6 +14,8 @@ import {
   understandOptionsOf,
 } from '../understand/understand-options.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
+import type { RoleKeyDependencies } from '../runs/role-keys.js';
+import type { ApprovedAmount } from '../understand/understand-options.js';
 
 // RF-003, RF-1108, RF-1105, RF-143, RF-132, RF-200: Start run is what `POST /api/projects/:id/runs` calls.
 // It finds the signed-in user's project (another user's id and an unknown id answer the same) and
@@ -35,6 +37,8 @@ export interface StartRunDependencies {
   readonly submit: SubmitRun;
   /** The host of the server's Ollama (`ROSETTA_OLLAMA_URL`); an Ollama elsewhere needs consent (RF-143). */
   readonly ollamaHost?: string;
+  /** RF-431: whether each role of the run has a usable key; checked before the run is queued. */
+  readonly roleKeys?: RoleKeyDependencies;
 }
 
 export interface StartRunRequest {
@@ -53,6 +57,8 @@ export interface StartRunRequest {
   readonly sourceRunId?: string;
   /** RF-208, Q-43: `understand` reads `areas` again for this run (its id) and holds its cards. */
   readonly retryOf?: string;
+  /** RF-430: the figure the user approved on the start button, recorded as the run's approved amount. */
+  readonly approvedAmount?: ApprovedAmount;
 }
 
 export type StartRunProblem =

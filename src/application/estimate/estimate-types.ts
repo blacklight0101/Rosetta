@@ -36,6 +36,8 @@ export interface RoleEstimate {
   readonly priced: boolean;
   /** Q-58: the effort a reasoning model is asked for; absent for any other model. */
   readonly reasoningEffort?: ReasoningEffort;
+  /** RF-431: neither the user's key nor an allowed server key can serve the role; a run is refused. */
+  readonly keyMissing?: true;
   readonly points: ByScenario<EstimatePoint>;
 }
 
@@ -154,4 +156,25 @@ export interface RunEstimate {
   readonly total: ByScenario<EstimatePoint>;
   /** Absent when the estimate is made without the account's caps (an evaluation). */
   readonly firstCalls?: FirstCalls;
+  /** RF-430: the likely and the worst-case total of the whole journey, the figure the user approves. */
+  readonly journey?: JourneyEstimate;
+}
+
+/** RF-430: one total of the journey: tokens (input and output) and micro-dollars. */
+export interface JourneyFigure {
+  readonly tokens: number;
+  readonly costMicros: bigint;
+}
+
+/**
+ * RF-430, DEC-196, DEC-204: the likely and the worst-case total of the whole journey (understand with
+ * claim checking, the default Deepen rounds and the plan). The likely figure is the one the user
+ * approves at the start; the worst case is what the journey may cost at most as far as is known.
+ */
+export interface JourneyEstimate {
+  /** `history`: scaled from the measured totals of earlier runs; `assumptions`: the fixed shares. */
+  readonly basis: 'history' | 'assumptions';
+  readonly deepenRounds: number;
+  readonly likely: JourneyFigure;
+  readonly worstCase: JourneyFigure;
 }
