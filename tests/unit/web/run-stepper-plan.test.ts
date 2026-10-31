@@ -22,6 +22,7 @@ function row(queueState: RunRow['queueState']): RunRow {
     totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
     reportBuilt: false,
     failedAreas: 0,
+    unreadAreas: 0,
   };
 }
 

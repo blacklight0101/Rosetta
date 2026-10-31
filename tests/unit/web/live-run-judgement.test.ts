@@ -26,7 +26,7 @@ function row(queueState: RunRow['queueState'] = 'Running'): RunRow {
     ...{ id: 'run-1', projectId: 'p-1', runId: 'r', stage: 'understand', queueState },
     ...{ endState: null, commitSha: null, startedAt: null, position: null },
     totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
-    ...{ reportBuilt: false, failedAreas: 0 },
+    ...{ reportBuilt: false, failedAreas: 0, unreadAreas: 0 },
   };
 }
 
