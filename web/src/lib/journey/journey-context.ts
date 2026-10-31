@@ -35,8 +35,12 @@ export const workingText = (run: Pick<JourneyRunFacts, 'queueState'>): string =>
   run.queueState === 'Queued' ? 'Waiting in the queue' : 'Running now';
 
 /** How a run that stopped ended, with the code it ended with. */
-export function endText(run: Pick<JourneyRunFacts, 'endState' | 'errorCode'>): string {
+export function endText(
+  run: Pick<JourneyRunFacts, 'endState' | 'errorCode' | 'unreadAreas'>,
+): string {
   const code = run.errorCode === null ? '' : ` (${run.errorCode})`;
+  // P7-02: a capped run that left areas unread reads "Partly read".
+  if (run.endState === 'CapReached' && (run.unreadAreas ?? 0) > 0) return `Partly read${code}`;
   if (run.endState === 'CapReached') return `Stopped at its cap${code}`;
   return run.endState === 'Failed' ? `Failed${code}` : `Interrupted${code}`;
 }

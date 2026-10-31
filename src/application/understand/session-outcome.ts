@@ -35,6 +35,17 @@ interface SessionEnd {
   readonly resumed: boolean;
   /** P5-20: the readers stopped because their own share of a cap had no room left (RF-429). */
   readonly readersFull?: boolean;
+  /** P7-02: planned areas (not of third-party code) no reader started. */
+  readonly unreadAreas?: number;
+}
+
+/** RF-423, P7-02: a role cap, the readers' share or planned areas left unread end the run short. */
+function stoppedShort(end: SessionEnd, unreadAreas: number): boolean {
+  return (
+    end.readersFull === true ||
+    unreadAreas > 0 ||
+    end.ends.some((each) => each.state === 'StoppedByCap')
+  );
 }
 
 /**
@@ -48,12 +59,20 @@ interface SessionEnd {
  */
 // RF-1108, RF-208
 export function sessionOutcome(end: SessionEnd): RunOutcome {
-  if (end.aborted) return { endState: 'Interrupted' };
+  // P7-02, DEC-194: planned areas no reader started; the run did not read what it was asked to.
+  const count = end.unreadAreas ?? 0;
+  const unread = count > 0 ? { unreadAreas: count } : {};
+  if (end.aborted) return { endState: 'Interrupted', ...unread };
   if (end.outputFailure !== undefined) return { endState: 'Failed', errorCode: end.outputFailure };
-  const { ends } = end;
-  if (end.readersFull === true || ends.some((each) => each.state === 'StoppedByCap')) {
-    return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
+  if (stoppedShort(end, count)) {
+    return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached, ...unread };
   }
+  return failuresOutcome(end);
+}
+
+/** RF-208, RF-006: how a run that was not stopped short ends, from the areas that gave no card. */
+function failuresOutcome(end: SessionEnd): RunOutcome {
+  const { ends } = end;
   const failed = ends.filter((each) => areaFailureOf(each) !== undefined);
   if (failed.length === 0) return { endState: 'Completed' };
   // RF-006: a resume that kept finished tasks did not fail as a whole.

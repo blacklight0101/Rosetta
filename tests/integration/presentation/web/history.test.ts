@@ -40,7 +40,13 @@ describe('GET /api/projects/:id/history runs', () => {
     });
     expect(runs[1]).toEqual({
       ...{ id: done.id, runId: done.runKey, stage: 'scan', queueState: 'Ended' },
-      ...{ endState: 'Completed', commitSha: completedCommit, sizeBytes: 5, failedAreas: 0 },
+      ...{
+        endState: 'Completed',
+        commitSha: completedCommit,
+        sizeBytes: 5,
+        failedAreas: 0,
+        unreadAreas: 0,
+      },
       ...{ queuedAt: instant, startedAt: instant, endedAt: instant },
       totals: {
         ...{ costMicros: 1_310_000, inputTokens: 400_000 },

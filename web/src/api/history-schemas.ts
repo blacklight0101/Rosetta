@@ -25,6 +25,8 @@ const historyRunSchema = z.object({
   sizeBytes: count,
   /** RF-208: the areas of the run that gave no usable card. */
   failedAreas: count.default(0),
+  /** P7-02: the planned areas no reader started; a capped run with some reads "Partly read". */
+  unreadAreas: count.default(0),
 });
 
 export type HistoryRun = z.output<typeof historyRunSchema>;

@@ -5,6 +5,7 @@ import type { HistoryRun } from '../api/history-schemas.js';
 import { Button } from '../components/Button.js';
 import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
+import { RunEndBadge } from '../components/RunEndBadge.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
 import { isResumable } from '../lib/live-run/resumable.js';
@@ -33,7 +34,7 @@ function StateBadge({ run }: { readonly run: HistoryRun }): JSX.Element {
   if (run.queueState === 'Ended' && ended !== undefined) {
     return (
       <>
-        <StatusBadge list="RunEndState" value={ended} />
+        <RunEndBadge endState={ended} unreadAreas={run.unreadAreas} />
         <FailedAreasNote count={run.failedAreas} />
       </>
     );

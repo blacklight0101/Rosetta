@@ -33,6 +33,10 @@ const indexSchema = z.object({
   cards: z.array(z.object({ claimCounts: z.record(z.string(), z.number()) })),
 });
 
+const coverageSchema = z.object({
+  areas: z.array(z.object({ area: z.string(), note: z.string().optional() })),
+});
+
 async function claimTotals(h: UnderstandHarness, run: Run): Promise<Record<string, number>> {
   const index = indexSchema.parse(await readJson(join(h.runFolder(run), 'cards', 'index.json')));
   const totals: Record<string, number> = {};
@@ -65,7 +69,9 @@ describe('a run whose readers wrote more claims than can be judged', UNDERSTAND_
   it('RF-429 starts no reader task once the claims written could not all be judged, and judges every one', async () => {
     const { h, run } = await started('understand-claim-heavy.json', 58_000);
 
-    expect(run.endState).toBe('Completed');
+    // P7-02, DEC-194: Services was planned and never started, so the run is Partly read.
+    expect(run.endState).toBe('CapReached');
+    expect(run.unreadAreas).toBe(1);
     expect(readerTasksAsked(h)).toEqual(['reader-001']);
     expect((await h.manifestOf(run)).agentTasks.map((task) => [task.area, task.state])).toEqual([
       ['Catalog', 'Done'],
@@ -81,6 +87,17 @@ describe('a run whose readers wrote more claims than can be judged', UNDERSTAND_
     expect(stops.map((event) => event.data)).toMatchObject([{ reason: 'judging' }]);
   });
 
+  it('P7-02 lists the area no reader started in coverage.json as not read, in the denominator', async () => {
+    const { h, run } = await started('understand-claim-heavy.json', 58_000);
+
+    const coverage = await readJson(join(h.runFolder(run), 'coverage.json'));
+
+    expect(coverageSchema.parse(coverage).areas.map((a) => [a.area, a.note])).toEqual([
+      ['Catalog', undefined],
+      ['Services', 'not read'],
+    ]);
+  });
+
   it('RF-429 a run with few claims behaves as before: both tasks run and the run Completes', async () => {
     const { h, run } = await started('understand-few-claims.json', 100_000);
 
@@ -88,6 +105,24 @@ describe('a run whose readers wrote more claims than can be judged', UNDERSTAND_
     expect(readerTasksAsked(h)).toEqual(['reader-001', 'reader-002']);
     expect((await h.eventsOf(run)).some((e) => e.type === 'budget.readersStopped')).toBe(false);
     expect(await claimTotals(h, run)).toMatchObject({ Supported: 2, Unverified: 0 });
+  });
+});
+
+describe('a Deepen of a Partly read run', UNDERSTAND_TIMEOUT, () => {
+  it('P7-02 DEC-194 starts from the run and plans the area no reader started as a gap', async () => {
+    const { h, run } = await started('understand-claim-heavy.json', 58_000);
+    await h.changeSettings(withRun(1_000_000));
+
+    const result = await h.deepen(run);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const start = (await h.eventsOf(result.value)).find((e) => e.type === 'deepen.round.started');
+    expect(start?.data).toMatchObject({ round: 1, unreadFiles: 2 });
+    expect((await h.manifestOf(result.value)).deepen?.plannedAreas).toEqual([
+      'Catalog',
+      'Services',
+    ]);
   });
 });
 

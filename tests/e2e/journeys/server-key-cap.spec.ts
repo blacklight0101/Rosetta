@@ -114,7 +114,7 @@ test(
       await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.50');
       await startAndOpenLiveRun(page);
 
-      await expect(runStatus(page)).toContainText('Cap reached', { timeout: 90_000 });
+      await expect(runStatus(page)).toContainText(/Cap reached|Partly read/u, { timeout: 90_000 });
       await transitionsDone(page);
       await expectNoSeriousViolations(page);
       await expect(page.getByTestId('run-failure')).toContainText('RST-1600');

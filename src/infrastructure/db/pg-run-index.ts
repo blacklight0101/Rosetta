@@ -8,7 +8,12 @@ import type {
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import { RESUMABLE_END_STATES, type Run, type RunTotals } from '../../domain/runs/run.js';
+import {
+  RESUMABLE_END_STATES,
+  type AreaCounts,
+  type Run,
+  type RunTotals,
+} from '../../domain/runs/run.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
 import type { DatabasePool } from './pool.js';
 import { RUN_COLUMNS, toProjectRunSummary, toRun, toSnapshotUsage } from './run-rows.js';
@@ -22,7 +27,7 @@ import { RUN_COLUMNS, toProjectRunSummary, toRun, toSnapshotUsage } from './run-
 const SELECT = 'SELECT ' + RUN_COLUMNS + ' FROM runs';
 const RETURNING = ' RETURNING ' + RUN_COLUMNS;
 const INSERT =
-  'INSERT INTO runs (id, project_id, user_id, run_key, stage, commit_sha, snapshot_key, queue_state, end_state, queued_at, started_at, ended_at, cost_micros, input_tokens, output_tokens, cached_input_tokens, failed_areas) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT ON CONSTRAINT runs_run_key_key DO NOTHING';
+  'INSERT INTO runs (id, project_id, user_id, run_key, stage, commit_sha, snapshot_key, queue_state, end_state, queued_at, started_at, ended_at, cost_micros, input_tokens, output_tokens, cached_input_tokens, failed_areas, unread_areas) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT ON CONSTRAINT runs_run_key_key DO NOTHING';
 const FIND = SELECT + ' WHERE user_id = $1 AND id = $2';
 const LIST = SELECT + ' WHERE user_id = $1 AND project_id = $2 ORDER BY queued_at DESC, id';
 // RF-1008: the newest run of each asked project (DISTINCT ON keeps the first row of each project in
@@ -37,11 +42,11 @@ const START =
   "UPDATE runs SET queue_state = 'Running', started_at = $2 WHERE id = $1 AND queue_state = 'Queued'" +
   RETURNING;
 const END =
-  "UPDATE runs SET queue_state = 'Ended', end_state = $2::text, ended_at = $3, failed_areas = $4 WHERE id = $1 AND (queue_state = 'Running' OR (queue_state = 'Queued' AND $2::text = 'Interrupted'))" +
+  "UPDATE runs SET queue_state = 'Ended', end_state = $2::text, ended_at = $3, failed_areas = $4, unread_areas = $5 WHERE id = $1 AND (queue_state = 'Running' OR (queue_state = 'Queued' AND $2::text = 'Interrupted'))" +
   RETURNING;
 // RF-006: one conditional UPDATE, so two parallel resumes queue the run once.
 const REOPEN =
-  "UPDATE runs SET queue_state = 'Queued', end_state = NULL, failed_areas = 0, queued_at = $3, started_at = NULL, ended_at = NULL WHERE user_id = $1 AND id = $2 AND queue_state = 'Ended' AND end_state = ANY($4::text[])" +
+  "UPDATE runs SET queue_state = 'Queued', end_state = NULL, failed_areas = 0, unread_areas = 0, queued_at = $3, started_at = NULL, ended_at = NULL WHERE user_id = $1 AND id = $2 AND queue_state = 'Ended' AND end_state = ANY($4::text[])" +
   RETURNING;
 const RECORD_SOURCE =
   "UPDATE runs SET commit_sha = $2, snapshot_key = $3 WHERE id = $1 AND queue_state <> 'Ended'" +
@@ -90,6 +95,7 @@ export class PgRunIndex implements RunIndex {
       run.totals.outputTokens,
       run.totals.cachedInputTokens,
       run.failedAreas,
+      run.unreadAreas,
     ]);
     return inserted.rowCount === 1 ? ok(run) : err('run-key-taken');
   }
@@ -131,9 +137,10 @@ export class PgRunIndex implements RunIndex {
     runId: string,
     endState: RunEndState,
     at: EpochMs,
-    failedAreas = 0,
+    counts: AreaCounts = {},
   ): Promise<Run | undefined> {
-    return this.change(runId, END, [endState, new Date(at), failedAreas]);
+    const { failedAreas = 0, unreadAreas = 0 } = counts;
+    return this.change(runId, END, [endState, new Date(at), failedAreas, unreadAreas]);
   }
 
   async reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {
