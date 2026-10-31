@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { mayDeepen } from '../lib/live-run/may-deepen.js';
 import { useEffect, useState } from 'preact/hooks';
 import { waitsForAnswer } from '../api/answers.js';
 import type { RunEstimate } from '../api/estimate-schemas.js';
@@ -283,7 +284,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
         <Rail
           {...{ run, stage, failed, asks }}
           answers={answers.load}
-          deepenRunId={asks && state.ended?.endState === 'Completed' ? run.id : undefined}
+          deepenRunId={asks && mayDeepen(state.ended, run) ? run.id : undefined}
           state={shown}
           costMicros={props.costMicros}
           report={report}

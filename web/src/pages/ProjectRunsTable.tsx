@@ -3,6 +3,7 @@ import type { Project } from '../api/project-schemas.js';
 import type { LastRun, ProjectOverviewRow } from '../api/overview-schemas.js';
 import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
+import { RunEndBadge } from '../components/RunEndBadge.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { sourceLabel } from '../lib/source-label.js';
 import { tokensText, totalCostText } from '../lib/cost-text.js';
@@ -27,7 +28,7 @@ function RunState({ run }: { readonly run: LastRun | null }): JSX.Element | null
   if (run.queueState === 'Ended' && run.endState !== null) {
     return (
       <>
-        <StatusBadge list="RunEndState" value={run.endState} />
+        <RunEndBadge endState={run.endState} unreadAreas={run.unreadAreas} />
         <FailedAreasNote count={run.failedAreas} />
         {mayHaveMeasures(run) ? <RunMeasures runId={run.id} /> : null}
       </>

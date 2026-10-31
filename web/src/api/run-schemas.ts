@@ -27,6 +27,8 @@ export const runSchema = z.looseObject({
   reportBuilt: z.boolean().default(false),
   /** RF-208: the areas of the run that gave no usable card. */
   failedAreas: count.default(0),
+  /** P7-02: the planned areas no reader started. */
+  unreadAreas: count.default(0),
 });
 
 export type RunRow = z.output<typeof runSchema>;

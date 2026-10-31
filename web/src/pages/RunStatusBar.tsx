@@ -4,6 +4,7 @@ import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
+import { RunEndBadge } from '../components/RunEndBadge.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
@@ -19,6 +20,8 @@ export interface RunStatusBarProps {
   readonly phase: RunPhase;
   /** RF-208: the areas of the run that gave no usable card, shown next to an ended state. */
   readonly failedAreas?: number;
+  /** P7-02: the planned areas no reader started, for "Partly read". */
+  readonly unreadAreas?: number;
   readonly stopping: boolean;
   readonly busy: boolean;
   readonly stopError: ApiFailure | undefined;
@@ -31,14 +34,20 @@ export interface RunStatusBarProps {
   readonly resume?: ComponentChildren;
 }
 
-function Badge({ phase }: { readonly phase: RunPhase }): JSX.Element {
+function Badge({
+  phase,
+  unreadAreas,
+}: {
+  readonly phase: RunPhase;
+  readonly unreadAreas?: number | undefined;
+}): JSX.Element {
   if (phase.kind === 'queued') return <StatusBadge list="RunQueueState" value="Queued" />;
   if (phase.kind === 'running') return <StatusBadge list="RunQueueState" value="Running" />;
   const endState = stateLists.RunEndState.find((each) => each === phase.endState);
   return endState === undefined ? (
     <StatusBadge list="RunQueueState" value="Ended" />
   ) : (
-    <StatusBadge list="RunEndState" value={endState} />
+    <RunEndBadge endState={endState} unreadAreas={unreadAreas} />
   );
 }
 
@@ -55,7 +64,7 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
           <Link href={`/projects/${encodeURIComponent(props.projectId)}/start`}>Start page</Link>
         </div>
         <span role="status" data-testid="run-status" class="rst-live-head__state">
-          <Badge phase={phase} />
+          <Badge phase={phase} unreadAreas={props.unreadAreas} />
           {phase.kind === 'ended' ? (
             <FailedAreasNote count={props.failedAreas ?? 0} class="rst-live-head__note" />
           ) : null}

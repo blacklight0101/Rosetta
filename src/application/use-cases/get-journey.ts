@@ -157,6 +157,7 @@ export class GetJourney {
     return {
       ...{ id: run.id, runKey: run.runKey, queueState: run.queueState, endState: run.endState },
       ...{ endedAt: run.endedAt, costMicros: run.totals.costMicros },
+      unreadAreas: run.unreadAreas,
       errorCode: await endCodeOf(this.deps.history, run),
     };
   }

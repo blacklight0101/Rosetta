@@ -62,7 +62,7 @@ test('RF-006 RF-422 RF-301 a run stops at the cap, the owner raises it and resum
   await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
   const live = await startAndOpenLiveRun(page);
 
-  await expect(runStatus(page)).toContainText('Cap reached', { timeout: 120_000 });
+  await expect(runStatus(page)).toContainText(/Cap reached|Partly read/u, { timeout: 120_000 });
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
   await expect(page.getByTestId('run-failure')).toContainText('RST-1600');

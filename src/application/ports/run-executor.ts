@@ -51,6 +51,8 @@ export interface RunOutcome {
   readonly errorCode?: ErrorCode;
   /** RF-208: areas of a `Completed` run that gave no usable card; shown with `run.ended`. */
   readonly failedAreas?: number;
+  /** P7-02: planned areas of a `CapReached` understand run that no reader started. */
+  readonly unreadAreas?: number;
 }
 
 export interface RunExecutor {
