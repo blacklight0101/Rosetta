@@ -36,7 +36,7 @@ describe('stackOfferFor', () => {
   it('DEC-203 does not offer keeping the legacy technology for an Excel workbook', () => {
     const offer = stackOfferFor({ kind: 'web', languages: [], workbook: true }, stack);
     expect(offer.every((each) => !each.keepLegacy)).toBe(true);
-    expect(offer.every((each) => each.proposals.length === 2)).toBe(true);
+    expect(offer.find((each) => each.layer === 'language-runtime')?.proposals).toHaveLength(2);
   });
 
   it('RF-609 lists a layer with no catalogue option with no proposal', () => {

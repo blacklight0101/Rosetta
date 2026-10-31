@@ -10,6 +10,7 @@ import { PrivateCodeNotice } from './PrivateCodeNotice.js';
 import { providerLabel } from './provider-choices.js';
 import { PlanEstimateCard } from './PlanEstimateCard.js';
 import { PlanRecorded } from './PlanRecorded.js';
+import { useStackOffer } from './use-stack-offer.js';
 import { PlanStepBody } from './PlanStepBody.js';
 import { PlanStepButtons } from './PlanStepButtons.js';
 import { PlanSourcePanel } from './PlanSourcePanel.js';
@@ -110,6 +111,7 @@ function Actions({ session }: { readonly session: PlanSession }): JSX.Element {
 function PlanSetupBody(props: BodyProps): JSX.Element {
   const { projectId, catalogue, view, project, source, sourceError, sourceRunId } = props;
   const session = usePlanSession({ projectId, sourceRunId }, view, project);
+  const offer = useStackOffer(projectId, sourceRunId);
   return (
     <div class="rst-plan">
       <Head source={source} error={sourceError} />
@@ -128,6 +130,7 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
           change={session.change}
           problems={session.problems}
           load={session.options}
+          offer={offer}
           waitingForConsent={session.waitingForConsent}
           askAgain={session.askAgain}
         />
