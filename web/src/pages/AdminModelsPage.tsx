@@ -121,7 +121,8 @@ function useEditing(saved: DefaultRoles): Editing {
       setRefusals((count) => count + 1);
       return;
     }
-    setDraft(draftOf(result.value));
+    // P6-33: an edit made while the save was on its way stays; the answer replaces only the draft sent.
+    setDraft((current) => (current === draft ? draftOf(result.value) : current));
     context.reset(result.value.ollamaContextTokens);
     setApplied(result.value);
     setMessage('Default models saved.');
