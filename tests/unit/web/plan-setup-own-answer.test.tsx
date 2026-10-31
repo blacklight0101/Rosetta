@@ -137,6 +137,31 @@ describe('the architecture question: a typed answer', () => {
   });
 });
 
+describe('the architecture question: a real answer, then an own one', () => {
+  it('RF-645 P6-16 choosing a style and then typing an own answer sends no architecture', async () => {
+    const page = renderPlan();
+    await openStep('Architecture');
+
+    await screen.findByRole('radio', { name: /\(Recommended\)/u });
+    const [, second] = screen.getAllByRole('radio');
+    fireEvent.click(second ?? own());
+    expect(second).toHaveProperty('checked', true);
+    fireEvent.click(own());
+    fireEvent.input(screen.getByLabelText('Your answer'), {
+      target: { value: 'Keep the portal and add an API beside it.' },
+    });
+    press('Save and continue');
+
+    await saved(page);
+    expect(saves(page)).toEqual([
+      {
+        chosen: { architecture: 'typed' },
+        typed: { architecture: 'Keep the portal and add an API beside it.' },
+      },
+    ]);
+  });
+});
+
 describe('the stack question', () => {
   const layer = (): HTMLElement => screen.getByRole('radiogroup', { name: 'Database' });
 
