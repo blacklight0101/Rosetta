@@ -1,4 +1,4 @@
-import type { Catalogue, PlanOptions } from '../../api/plan-schemas.js';
+import type { Catalogue, PlanOptions, StackOffer } from '../../api/plan-schemas.js';
 import { STEP_IDS, questionsOf, STACK_LAYERS, STYLE_GROUP } from './steps.js';
 
 // RF-645, RF-605, DEC-178: the options of every Plan setup question, the way Claude Code asks: at
@@ -24,6 +24,8 @@ export const OPTION_QUESTIONS: readonly string[] = STEP_IDS.flatMap((step) => qu
 export interface OptionSources {
   readonly catalogue: Catalogue;
   readonly options: PlanOptions | undefined;
+  /** P7-29: the catalogue's proposals of each layer; absent while they load or when they failed. */
+  readonly offer?: StackOffer | undefined;
 }
 
 /** The title with its "(Recommended)" mark. */
