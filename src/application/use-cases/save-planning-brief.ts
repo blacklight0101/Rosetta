@@ -3,11 +3,10 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import type { FieldProblem } from '../../domain/errors/field-problems.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
+import { briefProblems } from '../../domain/planning/brief-problems.js';
+import { isBriefOutOfDate, sameBrief } from '../../domain/planning/brief-freshness.js';
 import {
-  briefProblems,
   buildBrief,
-  isBriefOutOfDate,
-  sameBrief,
   type BriefAnswers,
   type PlanningBrief,
 } from '../../domain/planning/planning-brief.js';

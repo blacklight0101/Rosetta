@@ -31,7 +31,8 @@ import {
   type PlanFiles,
   type PlanPromptSources,
 } from '../plan/plan-prompts.js';
-import { handoffPackageOf, leftOutItems } from '../plan/plan-package.js';
+import { leftOutItems } from '../plan/plan-left-out.js';
+import { handoffPackageOf } from '../plan/plan-package.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
 import type { HandoffWriter } from '../ports/handoff-writer.js';
 import type { IdGenerator } from '../ports/id-generator.js';
