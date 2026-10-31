@@ -28,6 +28,8 @@ export const journeySchema = z.object({
       /** RF-646: the Deepens linked to the run's first understand run. */
       deepens: count.default(0),
       isDeepen: z.boolean().default(false),
+      /** P6-33: a Deepen of the run is queued or running. */
+      deepening: z.boolean().default(false),
     })
     .nullable(),
   scanRunId: z.string().nullable(),

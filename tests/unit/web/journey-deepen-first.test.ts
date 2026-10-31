@@ -21,6 +21,22 @@ describe('RF-646 the journey and Deepen', () => {
     expect(step(view, 'questions')).toMatchObject({ here: true });
     expect(step(view, 'questions').detail).toContain('answers given now will be used by it');
   });
+});
+
+describe('RF-646 the journey and a running Deepen', () => {
+  it('RF-646 P6-19 says a Deepen is running instead of recommending one', () => {
+    const view = journeyOf(asking({ deepening: true }), projectId);
+
+    expect(view.action).toBeUndefined();
+    expect(step(view, 'questions')).toMatchObject({ here: true });
+    expect(step(view, 'questions').detail).toContain('the Deepen that is running');
+  });
+
+  it('RF-646 P6-19 asks for the answers at once when the user skips a running Deepen', () => {
+    const view = journeyOf(asking({ deepening: true }), projectId, true);
+
+    expect(view.action).toMatchObject({ kind: 'answer', label: 'Answer 2 questions' });
+  });
 
   it('RF-646 asks for the answers after the last Deepen', () => {
     const view = journeyOf(asking({ deepens: 1 }), projectId);

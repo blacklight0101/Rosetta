@@ -1,6 +1,7 @@
 import type { JourneySourceFacts } from '../../api/journey-schemas.js';
 import {
   deepenFirst,
+  deepenRunning,
   phaseOf,
   plannableAtCap,
   type Context,
@@ -66,6 +67,8 @@ function afterTheRun(c: Context, setUp: string): Next | undefined {
 
 /** RF-646, DEC-179: Deepen first; the questions come after the last Deepen, or at once when the user skips it. */
 function questionsNext(c: Context, source: JourneySourceFacts, setUp: string): Next {
+  // P6-19: a Deepen is running; there is nothing to start, the questions come after it.
+  if (deepenRunning(c)) return { action: undefined, here: 'questions' };
   if (deepenFirst(c)) {
     return {
       action: { kind: 'deepen', label: 'Deepen this run first', href: `/runs/${source.id}` },

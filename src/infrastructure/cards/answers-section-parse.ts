@@ -67,6 +67,7 @@ export interface Section {
 const RECOMMENDED = '(Recommended) ';
 const OPTION_SEPARATOR = '; ';
 const DESCRIPTION_SEPARATOR = ' - ';
+const MARK_ONLY_SEPARATOR = '- ';
 
 /** RF-645: the text without any leading recommended marks, which only a recommended option carries. */
 function unmarked(text: string): string {
@@ -100,6 +101,14 @@ function optionsIn(value: string): readonly SuggestedOption[] | undefined {
     .map((part): SuggestedOption => {
       const recommended = part.startsWith(RECOMMENDED);
       const text = recommended ? part.slice(RECOMMENDED.length) : part;
+      // P6-25: a mark with no answer after it ("(Recommended) - description") has an empty answer.
+      if (recommended && text.startsWith(MARK_ONLY_SEPARATOR)) {
+        return {
+          answer: '',
+          description: text.slice(MARK_ONLY_SEPARATOR.length),
+          recommended,
+        };
+      }
       const cut = text.indexOf(DESCRIPTION_SEPARATOR);
       const answer = cut < 0 ? text : text.slice(0, cut);
       return {

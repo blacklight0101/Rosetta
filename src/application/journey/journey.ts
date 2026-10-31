@@ -30,6 +30,8 @@ export interface JourneySource extends JourneyRun {
   readonly deepens: number;
   /** RF-646: the run is itself a Deepen. */
   readonly isDeepen: boolean;
+  /** P6-33: a Deepen linked to the run's first understand run is queued or running. */
+  readonly deepening: boolean;
 }
 
 /**

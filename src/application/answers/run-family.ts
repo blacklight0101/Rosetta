@@ -26,6 +26,8 @@ export interface RunFamily {
   readonly deepens: number;
   /** The run asked about is a Deepen. */
   readonly isDeepen: boolean;
+  /** P6-33: a Deepen of the family is queued or running, so the questions wait for it. */
+  readonly deepening: boolean;
 }
 
 /** The run a queued Deepen names in its options before its manifest holds the record. */
@@ -80,5 +82,6 @@ export async function familyOf(deps: FamilyDependencies, run: Run): Promise<RunF
     runs: runs.length === 0 ? [run] : runs,
     deepens: runs.filter((each) => each.id !== root && each.queueState === 'Ended').length,
     isDeepen: root !== run.id,
+    deepening: runs.some((each) => each.id !== root && each.queueState !== 'Ended'),
   };
 }

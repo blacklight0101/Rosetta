@@ -75,5 +75,14 @@ export function plannableAtCap(
 export function deepenFirst(c: Pick<Context, 'source' | 'skippedDeepen'>): boolean {
   const { source } = c;
   if (source === null || c.skippedDeepen) return false;
-  return phaseOf(source) === 'completed' && !source.isDeepen && source.deepens === 0;
+  return (
+    phaseOf(source) === 'completed' && !source.isDeepen && source.deepens === 0 && !source.deepening
+  );
+}
+
+/** P6-19, RF-646: a Deepen is queued or running, so the questions wait for it unless the user skipped it. */
+export function deepenRunning(c: Pick<Context, 'source' | 'skippedDeepen'>): boolean {
+  const { source } = c;
+  if (source === null || c.skippedDeepen) return false;
+  return phaseOf(source) === 'completed' && !source.isDeepen && source.deepening;
 }
