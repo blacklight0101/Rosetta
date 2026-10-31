@@ -1,7 +1,6 @@
-import type { Run } from '../runs/run.js';
 import { buildMethodDefaulted, resolveBuildMethod, type BuildMethod } from './build-method.js';
 import { defaultPrinciples, type ArchitectureStyleId, type Catalogue } from './catalogue.js';
-import { hasTypedText, typedQuestionIds } from './typed-answers.js';
+import { hasTypedText, type typedQuestionIds } from './typed-answers.js';
 
 // RF-605, ADR-018, DEC-72, DEC-80, data-model.md section 3.20: the planning brief, the answers Plan
 // setup saves for a project. A question the user did not answer takes its default and is listed in
@@ -132,11 +131,6 @@ export interface BriefAnswers {
   readonly typed?: Readonly<Record<string, string>> | undefined;
 }
 
-export interface BriefProblem {
-  readonly field: string;
-  readonly reason: string;
-}
-
 const contextQuestions = [
   'teamSize',
   'experience',
@@ -147,44 +141,6 @@ const contextQuestions = [
 
 function layerOrder(layer: StackLayer): number {
   return stackLayers.indexOf(layer);
-}
-
-function isPrinciple(catalogue: Catalogue, id: string): boolean {
-  return catalogue.entries.some(
-    (entry) => entry.id === id && entry.group !== 'architecture-styles',
-  );
-}
-
-/** What is wrong with the answers of a save: an unknown principle, a repeated layer or entry, a typed build method with agents. */
-// RF-605
-export function briefProblems(answers: BriefAnswers, catalogue: Catalogue): BriefProblem[] {
-  const problems: BriefProblem[] = [];
-  const principles = answers.principles ?? [];
-  principles.forEach((id, index) => {
-    if (!isPrinciple(catalogue, id)) {
-      problems.push({ field: `principles.${String(index)}`, reason: `${id} is not a principle.` });
-    }
-  });
-  if (new Set(principles).size !== principles.length) {
-    problems.push({ field: 'principles', reason: 'A principle is listed twice.' });
-  }
-  const layers = (answers.stack ?? []).map((entry) => entry.layer);
-  if (new Set(layers).size !== layers.length) {
-    problems.push({ field: 'stack', reason: 'A layer is listed twice.' });
-  }
-  for (const id of Object.keys(answers.typed ?? {})) {
-    if (!typedQuestionIds.some((each) => each === id)) {
-      problems.push({ field: `typed.${id}`, reason: 'This question takes no typed text.' });
-    }
-  }
-  return [...problems, ...typedBuildMethodProblems(answers)];
-}
-
-// DEC-187 (4): a typed build method is not an agent build; Rosetta does not read free text as a choice.
-function typedBuildMethodProblems(answers: BriefAnswers): BriefProblem[] {
-  return answers.buildMethod?.aiAssisted === true && hasTypedText(answers.typed, 'buildMethod')
-    ? [{ field: 'typed.buildMethod', reason: 'A typed build method cannot be saved with agents.' }]
-    : [];
 }
 
 function contextOf(given: BriefAnswers['context']): ProjectContext {
@@ -260,41 +216,4 @@ export function buildBrief(answers: BriefAnswers, catalogue: Catalogue): Unsaved
     defaulted: defaultedQuestions(answers),
     ...ownAnswersOf(answers),
   };
-}
-
-function contentOf(brief: UnsavedBrief): string {
-  const { catalogueVersion, principles, architecture, migration, stack, context } = brief;
-  const fields = [catalogueVersion, principles, architecture, migration, stack, context];
-  return JSON.stringify([
-    ...fields,
-    brief.buildMethod,
-    brief.defaulted,
-    brief.application ?? null,
-    brief.chosen ?? null,
-    brief.typed ?? null,
-  ]);
-}
-
-/** Whether two briefs hold the same answers, whatever instant they were saved at. */
-// RF-605
-export function sameBrief(left: UnsavedBrief, right: UnsavedBrief): boolean {
-  return contentOf(left) === contentOf(right);
-}
-
-/** The start of the newest completed plan run, or undefined when no package exists. */
-function newestPackageStart(runs: readonly Run[]): number | undefined {
-  const starts = runs
-    .filter((run) => run.stage === 'plan' && run.endState === 'Completed')
-    .map((run) => run.startedAt ?? run.queuedAt);
-  return starts.length === 0 ? undefined : Math.max(...starts);
-}
-
-/**
- * RF-605: the brief is out of date when it was saved after the newest completed `plan` run started,
- * because that package was written from an earlier brief. Without a package it cannot be.
- */
-// RF-605
-export function isBriefOutOfDate(savedAt: string, runs: readonly Run[]): boolean {
-  const start = newestPackageStart(runs);
-  return start !== undefined && Date.parse(savedAt) > start;
 }

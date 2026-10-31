@@ -2,7 +2,7 @@ import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
-import { isBriefOutOfDate } from '../../domain/planning/planning-brief.js';
+import { isBriefOutOfDate } from '../../domain/planning/brief-freshness.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { Journey, JourneyHandoff, JourneyRun, JourneySource } from '../journey/journey.js';
 import { endCodeOf, planSourceKey } from '../journey/journey-lookup.js';

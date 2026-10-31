@@ -21,13 +21,11 @@ import {
   type SourceCard,
 } from '../../domain/planning/plan-sources.js';
 import type { Run } from '../../domain/runs/run.js';
-import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
-import type { UnreadableItem } from '../../domain/planning/plan-draft.js';
 import { hasData } from '../../domain/planning/data-presence.js';
 import { withFoundationCards } from '../../domain/planning/foundation-cards.js';
 import { withOwnAnswerCards } from '../../domain/planning/own-answer-cards.js';
 import { withPhaseClosingCards } from '../../domain/planning/phase-closing-cards.js';
-import { placeOf } from './plan-repair.js';
+import { unreadSecretItems } from './plan-left-out.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
 import type { PlannedDocuments } from './plan-documents.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
@@ -95,46 +93,6 @@ function settledJudgements(
   return { judgements: settleJudgements(content.judgements, answered) };
 }
 
-/** P3-101: the task cards the answer left out, by position, for checks.md. */
-function taskCardItems(cards: readonly LeftOutCard[]): HandoffPackage['leftOut'] {
-  return cards.map((each) => ({
-    area: 'Task cards',
-    item: String(each.position),
-    field: each.field,
-    reason: each.reason,
-  }));
-}
-
-/** P3-126: the items of the other lists of the answer that could not be read, for checks.md. */
-function unreadableItems(items: readonly UnreadableItem[]): HandoffPackage['leftOut'] {
-  return items.map((each) => ({
-    area: 'Plan answer',
-    item: placeOf(each),
-    field: each.field,
-    reason: each.reason,
-  }));
-}
-
-/** P3-101, P3-102, P3-126: every part of the plan the package leaves out, for checks.md. */
-export function leftOutItems(documents: {
-  readonly leftOut: readonly LeftOutCard[];
-  readonly unreadable: readonly UnreadableItem[];
-  readonly dataModelProblems: PlannedDocuments['dataModelProblems'];
-}): HandoffPackage['leftOut'] {
-  return [
-    ...taskCardItems(documents.leftOut),
-    ...unreadableItems(documents.unreadable),
-    ...dataModelItems(documents.dataModelProblems),
-  ];
-}
-
-/** P3-102, P7-13: the data-model parts the parser dropped and the checks of the kept ones, for checks.md (the problem keeps its kind). */
-function dataModelItems(
-  problems: PlannedDocuments['dataModelProblems'],
-): HandoffPackage['leftOut'] {
-  return problems.map((each) => ({ area: 'Data model', ...each }));
-}
-
 /** P3-117: the sentences of the PRD and the plan that copy an example of a planner prompt. */
 function copiedIn(
   prd: PrdContent,
@@ -187,20 +145,6 @@ function carried(
 ): Pick<HandoffPackage, 'workbookFormulas' | 'incomplete' | 'leftOut'> {
   const { workbookFormulas, incomplete, leftOut } = documents;
   return { workbookFormulas, incomplete, leftOut: [...leftOut, ...unreadSecretItems(secrets)] };
-}
-
-/** P5-34: a scan that could not be read is not "no plain-text secret"; checks.md says so. */
-function unreadSecretItems(secrets: SecretRisks): HandoffPackage['leftOut'] {
-  if (secrets.unread !== true) return [];
-  return [
-    {
-      area: 'Risks',
-      item: 'Plain-text secrets',
-      field: 'scan',
-      reason:
-        'The scan could not be read, so the risks do not list the files that hold a plain-text secret. None was found and none was ruled out.',
-    },
-  ];
 }
 
 /** P5-42, P6-10, P6-21, P6-27: the plan with its fixed (no data cards when the run found no data) and phase-closing cards, with the brief's choices decided once over it. */
