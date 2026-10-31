@@ -117,6 +117,8 @@ export const endedData = z.looseObject({
   errorCode: text.optional(),
   /** RF-208: areas of a completed run that gave no usable card. */
   failedAreas: count.optional(),
+  /** P7-02: planned areas of a capped run that no reader started. */
+  unreadAreas: count.optional(),
   totals: z.looseObject({ costMicros: micros.optional() }).optional(),
 });
 

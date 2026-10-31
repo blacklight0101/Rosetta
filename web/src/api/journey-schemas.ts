@@ -15,6 +15,8 @@ const journeyRun = z.object({
   costMicros: count,
   /** The `RST` code the run ended with, if any. */
   errorCode: z.string().nullable(),
+  /** P7-02: the planned areas no reader started. */
+  unreadAreas: count.optional(),
 });
 
 export const journeySchema = z.object({

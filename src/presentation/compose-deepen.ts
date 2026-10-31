@@ -49,7 +49,7 @@ export function composeDeepen(parts: DeepenParts): DeepenServices {
     }),
     estimateDeepen: new EstimateDeepen({
       ...{ projects, runs, scans, priceTable: parts.priceTable, models: parts.models },
-      taskResults,
+      ...{ taskResults, manifests },
       keys: new PgProviderKeyRepository(parts.pool),
       answers: new FileAnswersFile({ writer: parts.writer, masker: parts.masker }),
       priorCards: new FilePriorCards(parts.writer),

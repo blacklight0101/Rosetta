@@ -16,6 +16,8 @@ export interface JourneyRun {
   readonly costMicros: number;
   /** The `RST` code the run ended with; null when it ended without one or has not ended. */
   readonly errorCode: string | null;
+  /** P7-02: the planned areas no reader started; a capped run with some is "Partly read". */
+  readonly unreadAreas?: number;
 }
 
 /** The understand run the package is written from. */

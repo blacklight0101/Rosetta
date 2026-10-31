@@ -90,7 +90,7 @@ describe('a run whose readers wrote more claims than can be judged', UNDERSTAND_
   it('P7-02 lists the area no reader started in coverage.json as not read, in the denominator', async () => {
     const { h, run } = await started('understand-claim-heavy.json', 58_000);
 
-    const coverage = await readJson(join(h.runFolder(run), 'cards', 'coverage.json'));
+    const coverage = await readJson(join(h.runFolder(run), 'coverage.json'));
 
     expect(coverageSchema.parse(coverage).areas.map((a) => [a.area, a.note])).toEqual([
       ['Catalog', undefined],
@@ -105,6 +105,24 @@ describe('a run whose readers wrote more claims than can be judged', UNDERSTAND_
     expect(readerTasksAsked(h)).toEqual(['reader-001', 'reader-002']);
     expect((await h.eventsOf(run)).some((e) => e.type === 'budget.readersStopped')).toBe(false);
     expect(await claimTotals(h, run)).toMatchObject({ Supported: 2, Unverified: 0 });
+  });
+});
+
+describe('a Deepen of a Partly read run', UNDERSTAND_TIMEOUT, () => {
+  it('P7-02 DEC-194 starts from the run and plans the area no reader started as a gap', async () => {
+    const { h, run } = await started('understand-claim-heavy.json', 58_000);
+    await h.changeSettings(withRun(1_000_000));
+
+    const result = await h.deepen(run);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const start = (await h.eventsOf(result.value)).find((e) => e.type === 'deepen.round.started');
+    expect(start?.data).toMatchObject({ round: 1, unreadFiles: 2 });
+    expect((await h.manifestOf(result.value)).deepen?.plannedAreas).toEqual([
+      'Catalog',
+      'Services',
+    ]);
   });
 });
 

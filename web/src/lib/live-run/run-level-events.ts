@@ -78,9 +78,9 @@ export function onSourceResolved(state: RunState, event: RunEvent): RunState {
 export function onRunEnded(state: RunState, event: RunEvent): RunState {
   const parsed = endedData.safeParse(event.data);
   if (!parsed.success) return state;
-  const { endState, errorCode, totals, failedAreas } = parsed.data;
+  const { endState, errorCode, totals, failedAreas, unreadAreas } = parsed.data;
   const costMicros = totals?.costMicros;
-  return { ...state, ended: { endState, errorCode, costMicros, failedAreas } };
+  return { ...state, ended: { endState, errorCode, costMicros, failedAreas, unreadAreas } };
 }
 
 /** The files and areas the scan found; an event that does not carry both changes nothing. */

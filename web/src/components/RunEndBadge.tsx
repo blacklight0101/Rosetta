@@ -10,6 +10,9 @@ export interface RunEndBadgeProps {
   readonly unreadAreas?: number | undefined;
 }
 
-export function RunEndBadge({ endState }: RunEndBadgeProps): JSX.Element {
+export function RunEndBadge({ endState, unreadAreas }: RunEndBadgeProps): JSX.Element {
+  if (endState === 'CapReached' && (unreadAreas ?? 0) > 0) {
+    return <StatusBadge list="RunPartlyRead" value="PartlyRead" />;
+  }
   return <StatusBadge list="RunEndState" value={endState} />;
 }

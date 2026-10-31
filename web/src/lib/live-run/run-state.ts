@@ -122,6 +122,8 @@ interface EndedState {
   readonly costMicros: number | undefined;
   /** RF-208: how many areas gave no usable card; undefined for a run that does not say. */
   readonly failedAreas: number | undefined;
+  /** P7-02: how many planned areas no reader started; undefined for a run that does not say. */
+  readonly unreadAreas: number | undefined;
 }
 
 interface RoleTokens {

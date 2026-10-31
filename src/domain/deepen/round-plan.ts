@@ -97,7 +97,7 @@ export interface RoundInput {
   /** P5-36: the database objects of the areas the run read. */
   readonly objects?: readonly DatabaseObject[];
   /** P7-02: the names of the areas the run planned; one with no coverage entry is read whole. */
-  readonly plannedAreas?: readonly string[];
+  readonly plannedAreas?: readonly string[] | undefined;
   /** P7-02: the areas of the code map, to name the files of a planned area with no entry. */
   readonly areas?: readonly Pick<Area, 'name' | 'files'>[];
 }
@@ -157,6 +157,12 @@ function gapOf(file: FileEntry, area: string, reads: readonly LineRange[]): GapF
 
 /** RF-209, Q-J, EV-04: the first-party files, or parts of them, no entry read, largest first, then by path. */
 function gapsOf(input: RoundInput): readonly GapFile[] {
+  const gaps = new Map(coverageGapsOf(input).map((gap) => [gap.path, gap]));
+  for (const gap of unstartedGapsOf(input)) if (!gaps.has(gap.path)) gaps.set(gap.path, gap);
+  return sortedGaps([...gaps.values()]);
+}
+
+function coverageGapsOf(input: RoundInput): readonly GapFile[] {
   if (!input.coveragePass) return [];
   const files = new Map(input.files.map((file) => [file.path, file]));
   const reads = readsByPath(input.coverage);
@@ -169,9 +175,32 @@ function gapsOf(input: RoundInput): readonly GapFile[] {
       if (gap !== undefined) gaps.set(path, gap);
     }
   }
-  return [...gaps.values()].sort(
+  return [...gaps.values()];
+}
+
+function sortedGaps(gaps: readonly GapFile[]): readonly GapFile[] {
+  return [...gaps].sort(
     (left, right) => right.tokens - left.tokens || byCodeUnit(left.path, right.path),
   );
+}
+
+/**
+ * P7-02, DEC-194: the first-party files of an area of the run's plan that no coverage entry names:
+ * no reader started it, so every file of it is unread. Whether the coverage pass is ticked or not.
+ */
+function unstartedGapsOf(input: RoundInput): readonly GapFile[] {
+  const planned = new Set(input.plannedAreas ?? []);
+  if (planned.size === 0) return [];
+  const started = new Set(input.coverage.map((entry) => entry.area));
+  const files = new Map(input.files.map((file) => [file.path, file]));
+  return (input.areas ?? []).flatMap((area) => {
+    if (!planned.has(area.name) || started.has(area.name)) return [];
+    return area.files.flatMap((path) => {
+      const file = files.get(path);
+      if (file === undefined || isThirdPartyFile(file) || file.estimatedTokens <= 0) return [];
+      return [{ path, area: area.name, tokens: file.estimatedTokens }];
+    });
+  });
 }
 
 /** EV-10: the areas whose every coverage entry failed and that this Deepen has not read again. */

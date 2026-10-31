@@ -46,6 +46,8 @@ export interface DeepenRecord {
   readonly parentRunKey: string;
   readonly maxRounds: number;
   readonly coveragePass: boolean;
+  /** P7-02: the areas the understand run planned, carried on from run to Deepen; absent before. */
+  readonly plannedAreas?: readonly string[] | undefined;
   /** Rounds that ran to their end. */
   readonly roundsDone: number;
   readonly stopReason: DeepenStopReason | null;
@@ -61,7 +63,10 @@ function measureSummaryOf(measures: UnderstandingMeasures): MeasureSummary {
 
 // RF-209
 export function newDeepenRecord(
-  parent: Pick<DeepenRecord, 'parentRunId' | 'parentRunKey' | 'maxRounds' | 'coveragePass'>,
+  parent: Pick<
+    DeepenRecord,
+    'parentRunId' | 'parentRunKey' | 'maxRounds' | 'coveragePass' | 'plannedAreas'
+  >,
   before: UnderstandingMeasures,
 ): DeepenRecord {
   return {
@@ -130,5 +135,9 @@ export function retriedAreasIn(record: DeepenRecord): ReadonlySet<string> {
 export function canDeepen(
   run: Pick<Run, 'stage' | 'endState'> & { readonly unreadAreas?: number },
 ): boolean {
-  return run.stage === 'understand' && run.endState === 'Completed';
+  if (run.stage !== 'understand') return false;
+  // P7-02, DEC-194: a capped run that left planned areas unread ("Partly read") can be deepened.
+  return (
+    run.endState === 'Completed' || (run.endState === 'CapReached' && (run.unreadAreas ?? 0) > 0)
+  );
 }

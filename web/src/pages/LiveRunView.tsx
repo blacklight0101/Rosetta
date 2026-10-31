@@ -124,6 +124,7 @@ export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps)
       <RunStatusBar
         {...{ phase, stage, projectId: run.projectId, runKey: run.runId }}
         failedAreas={state.ended?.failedAreas ?? run.failedAreas}
+        unreadAreas={state.ended?.unreadAreas ?? run.unreadAreas}
         {...{ stopping: stop.stopping, busy: stop.busy, stopError: stop.error, onStop: stop.stop }}
         updatesNote={view.note}
         resume={<ResumeControl {...{ phase, onResumed, runId: run.id, stage }} />}
