@@ -36,6 +36,14 @@ export interface Run {
   readonly totals: RunTotals;
   /** RF-208: the areas of an understand run that gave no usable card; 0 for any other run. */
   readonly failedAreas: number;
+  /** P7-02: the planned areas of an understand run that no reader started (shown as "Partly read"); 0 for any other run. */
+  readonly unreadAreas: number;
+}
+
+/** RF-208, P7-02: the area counts an understand run ends with. */
+export interface AreaCounts {
+  readonly failedAreas?: number;
+  readonly unreadAreas?: number;
 }
 
 export type StartProblem = 'not-queued';
@@ -53,13 +61,20 @@ export function endRun(
   run: Run,
   endState: RunEndState,
   at: EpochMs,
-  failedAreas = 0,
+  counts: AreaCounts = {},
 ): Result<Run, EndProblem> {
   if (run.queueState === 'Ended') return err('already-ended');
   if (run.queueState === 'Queued' && endState !== 'Interrupted') {
     return err('queued-run-can-only-be-interrupted');
   }
-  return ok({ ...run, queueState: 'Ended', endState, endedAt: at, failedAreas });
+  return ok({
+    ...run,
+    queueState: 'Ended',
+    endState,
+    endedAt: at,
+    failedAreas: counts.failedAreas ?? 0,
+    unreadAreas: counts.unreadAreas ?? 0,
+  });
 }
 
 /** RF-006: the end states a resume can start from; a `Completed` run has nothing left to do. */
@@ -79,6 +94,7 @@ export function reopenRun(run: Run, at: EpochMs): Result<Run, ReopenProblem> {
     queueState: 'Queued',
     endState: null,
     failedAreas: 0,
+    unreadAreas: 0,
     queuedAt: at,
     startedAt: null,
     endedAt: null,

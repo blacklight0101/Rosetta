@@ -82,6 +82,11 @@ export class RunCoverage {
     this.ended.set(task.agentTaskId, { ...coverage, ...failure, ...surface, ...note });
   }
 
+  /** P7-02: a planned area no reader started: every file listed, none read, noted `not read`. */
+  recordNotRead(task: ReaderTask, codeMap: Pick<CodeMap, 'files' | 'symbols'>): void {
+    if (codeMap.files.length < 0) this.ended.delete(task.agentTaskId);
+  }
+
   /** RF-006: the coverage a task of the run's earlier session left, kept as it was. */
   restore(agentTaskId: string, coverage: AreaCoverage): void {
     this.ended.set(agentTaskId, coverage);

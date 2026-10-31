@@ -32,6 +32,7 @@ export function sampleRun(overrides: Partial<Run> = {}): Run {
     endedAt: null,
     totals: noTotals,
     failedAreas: 0,
+    unreadAreas: 0,
     ...overrides,
   };
 }

@@ -35,6 +35,8 @@ interface SessionEnd {
   readonly resumed: boolean;
   /** P5-20: the readers stopped because their own share of a cap had no room left (RF-429). */
   readonly readersFull?: boolean;
+  /** P7-02: planned areas (not of third-party code) no reader started. */
+  readonly unreadAreas?: number;
 }
 
 /**

@@ -100,12 +100,7 @@ export class RunLifecycle {
   // RF-003, RNF-002
   async finish(run: Run, endState: RunEndState, detail: EndDetail = {}): Promise<Run | undefined> {
     const now = this.deps.clock.now();
-    const ended = await this.deps.runs.end(
-      run.id,
-      endState,
-      now.getTime(),
-      detail.failedAreas ?? 0,
-    );
+    const ended = await this.deps.runs.end(run.id, endState, now.getTime(), detail);
     if (ended === undefined) return undefined;
     const manifest = await this.attempt(ended, 'the manifest', () =>
       this.endManifestOf(ended, endState, now.toISOString()),
@@ -157,6 +152,7 @@ export class RunLifecycle {
 export interface EndDetail {
   readonly errorCode?: ErrorCode;
   readonly failedAreas?: number;
+  readonly unreadAreas?: number;
 }
 
 function endData(
@@ -165,11 +161,12 @@ function endData(
   manifest: RunManifest | undefined,
   detail: EndDetail,
 ): Record<string, unknown> {
-  const { errorCode, failedAreas } = detail;
+  const { errorCode, failedAreas, unreadAreas } = detail;
   return {
     endState,
     totals: { ...manifest?.totals, ...run.totals, calls: manifest?.totals.calls ?? 0 },
     ...(errorCode === undefined ? {} : { errorCode }),
     ...(failedAreas === undefined ? {} : { failedAreas }),
+    ...(unreadAreas === undefined ? {} : { unreadAreas }),
   };
 }

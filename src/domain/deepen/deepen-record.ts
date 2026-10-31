@@ -127,6 +127,8 @@ export function retriedAreasIn(record: DeepenRecord): ReadonlySet<string> {
 }
 
 /** RF-209: only an understand run that ended `Completed` can be deepened (a Deepen run too, Q-L). */
-export function canDeepen(run: Pick<Run, 'stage' | 'endState'>): boolean {
+export function canDeepen(
+  run: Pick<Run, 'stage' | 'endState'> & { readonly unreadAreas?: number },
+): boolean {
   return run.stage === 'understand' && run.endState === 'Completed';
 }

@@ -9,6 +9,7 @@ import type { Card, Claim, VerdictReasonKind } from '../cards/card.js';
 import type { Citation } from '../cards/citation.js';
 import { readsByPath } from '../cards/coverage-union.js';
 import { filesNotReadInFull } from '../cards/read-in-full.js';
+import type { Area } from '../code-map/area.js';
 import { byCodeUnit } from '../code-map/code-unit-order.js';
 import type { FileEntry } from '../code-map/file-entry.js';
 import { isThirdPartyFile } from '../code-map/third-party.js';
@@ -95,6 +96,10 @@ export interface RoundInput {
   readonly coveragePass: boolean;
   /** P5-36: the database objects of the areas the run read. */
   readonly objects?: readonly DatabaseObject[];
+  /** P7-02: the names of the areas the run planned; one with no coverage entry is read whole. */
+  readonly plannedAreas?: readonly string[];
+  /** P7-02: the areas of the code map, to name the files of a planned area with no entry. */
+  readonly areas?: readonly Pick<Area, 'name' | 'files'>[];
 }
 
 /** The reason the summary gives for a rejected claim that cites only third-party or generated code. */

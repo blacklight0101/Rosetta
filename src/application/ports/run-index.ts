@@ -1,6 +1,6 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
 import type { Result } from '../../domain/errors/result.js';
-import type { Run, RunTotals } from '../../domain/runs/run.js';
+import type { AreaCounts, Run, RunTotals } from '../../domain/runs/run.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
 
 // Architecture section 7, data-model.md section 4 (`runs`), RF-1108, RF-1105: the run rows. The
@@ -63,7 +63,7 @@ export interface RunIndex {
     runId: string,
     endState: RunEndState,
     at: EpochMs,
-    failedAreas?: number,
+    counts?: AreaCounts,
   ): Promise<Run | undefined>;
   /**
    * RF-006: `Ended` -> `Queued` for the user's run that ended `CapReached`, `Failed` or `Interrupted`, at

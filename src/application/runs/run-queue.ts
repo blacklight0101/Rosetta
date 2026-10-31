@@ -49,17 +49,19 @@ const STEP = 'queue';
 function stoppedOutcome(signal: AbortSignal, outcome: RunOutcome): RunOutcome {
   if (!signal.aborted) return outcome;
   if (isCapStop(signal.reason)) {
-    return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
+    const unread = outcome.unreadAreas === undefined ? {} : { unreadAreas: outcome.unreadAreas };
+    return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached, ...unread };
   }
   return outcome.endState === 'Failed' ? { endState: 'Interrupted' } : outcome;
 }
 
 /** The parts of the outcome `run.ended` carries besides the end state (RF-208). */
 function endDetailOf(outcome: RunOutcome): EndDetail {
-  const { errorCode, failedAreas } = outcome;
+  const { errorCode, failedAreas, unreadAreas } = outcome;
   return {
     ...(errorCode === undefined ? {} : { errorCode }),
     ...(failedAreas === undefined ? {} : { failedAreas }),
+    ...(unreadAreas === undefined || outcome.endState !== 'CapReached' ? {} : { unreadAreas }),
   };
 }
 
