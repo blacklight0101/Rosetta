@@ -45,7 +45,7 @@ export interface GetJourneyRequest {
 }
 
 /** A run that is not `Completed` asks no question and, for the journey, has no Deepen. */
-const NO_QUESTIONS = { openQuestions: 0, deepens: 0, isDeepen: false } as const;
+const NO_QUESTIONS = { openQuestions: 0, deepens: 0, isDeepen: false, deepening: false } as const;
 
 type NotFound = typeof ERROR_CODES.notFound;
 /** The understand run each plan run was written from, by the id of the plan run. */
@@ -185,6 +185,7 @@ export class GetJourney {
       openQuestions: questions.filter(waitsForAnswer).length,
       deepens: family.deepens,
       isDeepen: family.isDeepen,
+      deepening: family.deepening,
     };
   }
 }

@@ -59,7 +59,39 @@ function recommendsDeepen(props: Pick<YourTurnProps, 'answers' | 'deepenRunId'>)
     props.deepenRunId !== undefined &&
     answers.status === 'ready' &&
     !answers.isDeepen &&
-    answers.deepens === 0
+    answers.deepens === 0 &&
+    !answers.deepening
+  );
+}
+
+/** P6-19, RF-646: a Deepen of the run is queued or running, so it is not the time to say "Deepen first". */
+function deepenIsRunning(props: Pick<YourTurnProps, 'answers' | 'deepenRunId'>): boolean {
+  const { answers } = props;
+  return (
+    props.deepenRunId !== undefined &&
+    answers.status === 'ready' &&
+    !answers.isDeepen &&
+    answers.deepening
+  );
+}
+
+/** P6-19: a Deepen is running; the questions are asked after it, or at once when the user skips it. */
+function DeepenRunning(props: { readonly open: number; readonly skip: SkipDeepen }): JSX.Element {
+  const { open, skip } = props;
+  return (
+    <>
+      <p data-testid="deepen-running">
+        {`A Deepen is running. The ${plural(open, 'question')} below are asked after it ends, so a question you answer now is not asked again. You can still answer earlier from the Your questions tab.`}
+      </p>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          skip.choose(true);
+        }}
+      >
+        Do not wait: answer the questions now
+      </Button>
+    </>
   );
 }
 
@@ -83,7 +115,18 @@ function DeepenFirst(props: { readonly open: number; readonly skip: SkipDeepen }
   );
 }
 
-function Next(props: YourTurnProps & { readonly skip: SkipDeepen }): JSX.Element {
+/** RF-646, P6-19: the note for a Deepen that is recommended or running, unless the user skipped it. */
+function Waiting(
+  props: YourTurnProps & { readonly skip: SkipDeepen },
+  open: number,
+): JSX.Element | undefined {
+  if (props.skip.skipped) return undefined;
+  if (deepenIsRunning(props)) return <DeepenRunning open={open} skip={props.skip} />;
+  return recommendsDeepen(props) ? <DeepenFirst open={open} skip={props.skip} /> : undefined;
+}
+
+/** What the panel says before the open questions are known; undefined once they are. */
+function Before(props: YourTurnProps): JSX.Element | undefined {
   const { answers } = props;
   if (props.failed) {
     return (
@@ -98,11 +141,17 @@ function Next(props: YourTurnProps & { readonly skip: SkipDeepen }): JSX.Element
     return <p>The open questions could not be read. The Your questions tab shows why.</p>;
   }
   if (answers.status !== 'ready') return <p>Loading the open questions.</p>;
+  return undefined;
+}
+
+function Next(props: YourTurnProps & { readonly skip: SkipDeepen }): JSX.Element {
+  const { answers } = props;
+  const before = Before(props);
+  if (before !== undefined || answers.status !== 'ready') return before ?? <></>;
   const open = answers.questions.filter(waitsForAnswer).length;
   if (open === 0) return <NoneWaiting answers={answers.questions} />;
-  if (recommendsDeepen(props) && !props.skip.skipped) {
-    return <DeepenFirst open={open} skip={props.skip} />;
-  }
+  const waiting = Waiting(props, open);
+  if (waiting !== undefined) return waiting;
   return (
     <>
       <p>

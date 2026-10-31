@@ -79,7 +79,7 @@ describe('GET /api/runs/:runId/answers', () => {
     expect(response.statusCode).toBe(200);
     expect(response.headers['cache-control']).toBe('no-store');
     expect(response.json()).toEqual({
-      ...{ deepens: 0, isDeepen: false },
+      ...{ deepens: 0, isDeepen: false, deepening: false },
       questions: [
         { ...stockQuestion, answer: '', state: 'Open', dependents: 0 },
         { ...priceQuestion, answer: '', state: 'Open', dependents: 0 },
