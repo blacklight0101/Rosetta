@@ -49,7 +49,9 @@ describe('saving the planning brief', () => {
     ]);
     expect(screen.queryByTestId('error-banner')).toBeNull();
   });
+});
 
+describe('saving the planning brief twice', () => {
   it('RF-605 two saves in a row move one step each and send the draft each time', async () => {
     const page = renderPlan();
     await openMigration();
