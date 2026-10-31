@@ -11,10 +11,11 @@ import type { Project } from '../projects/project.js';
 import {
   rolesNeedCloudConsent,
   rolesNeedPrivateConfirmation,
+  UNDERSTAND_ROLES,
   understandOptionsOf,
 } from '../understand/understand-options.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
-import type { RoleKeyDependencies } from '../runs/role-keys.js';
+import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.js';
 import type { ApprovedAmount } from '../understand/understand-options.js';
 
 // RF-003, RF-1108, RF-1105, RF-143, RF-132, RF-200: Start run is what `POST /api/projects/:id/runs` calls.
@@ -27,6 +28,12 @@ import type { ApprovedAmount } from '../understand/understand-options.js';
 
 /** The stages that can be started through the API: `scan` (P1-23), `understand` (P1-33) and `plan` (P3-08). */
 const STARTABLE_STAGES: readonly RunStage[] = ['scan', 'understand', 'plan'];
+
+/** RF-431: the roles whose keys a startable stage needs; a scan calls no model. */
+const MODEL_ROLES_OF: Partial<Record<RunStage, readonly AgentRole[]>> = {
+  understand: UNDERSTAND_ROLES,
+  plan: ['planner'],
+};
 
 export interface StartRunDependencies {
   readonly projects: ProjectRepository;
@@ -69,6 +76,7 @@ export type StartRunProblem =
   | typeof ERROR_CODES.planBriefMissing
   | typeof ERROR_CODES.planSourceMissing
   | typeof ERROR_CODES.projectNoSource
+  | typeof ERROR_CODES.providerKeyMissing
   | typeof ERROR_CODES.requestInvalid;
 
 export class StartRun {
@@ -95,12 +103,16 @@ export class StartRun {
    * RF-128, RF-152: an upload or workbook project reads what it holds, so a run needs it; no run is created without it. The
    * confirmations of the request are judged first, so the owner is asked for each thing once.
    */
-  private submit(
+  private async submit(
     input: Parameters<SubmitRun['execute']>[0],
   ): Promise<Result<SubmittedRun, StartRunProblem>> {
     const { project } = input;
     if (project.sourceKind !== 'github' && project.upload === undefined) {
-      return Promise.resolve(err(ERROR_CODES.projectNoSource));
+      return err(ERROR_CODES.projectNoSource);
+    }
+    // RF-431, EV-44: a role with no usable key would fail RST-2302 at $0; no run is queued.
+    if (await anyRoleWithoutKey(this.deps.roleKeys, project, MODEL_ROLES_OF[input.stage] ?? [])) {
+      return err(ERROR_CODES.providerKeyMissing);
     }
     return this.deps.submit.execute(input);
   }

@@ -57,6 +57,9 @@ const optionsSchema = z.object({
     .object({ parentRunId: z.string(), maxRounds: z.number().int(), coveragePass: z.boolean() })
     .optional(),
   retryOf: z.string().optional(),
+  approvedAmount: z
+    .object({ tokens: z.number().int().min(0), costMicros: z.number().int().min(0) })
+    .optional(),
 });
 
 /** The options as the manifest records them; `areas` only when the request sent it, as sent (empty kept). */
@@ -67,13 +70,16 @@ export function understandOptionsOf(request: {
   readonly withAnswers?: boolean | undefined;
   readonly deepen?: DeepenOptions | undefined;
   readonly retryOf?: string | undefined;
+  readonly approvedAmount?: ApprovedAmount | undefined;
 }): UnderstandOptions {
   const consent = { cloudConsent: request.cloudConsent === true };
   const priv = request.privateCodeConfirmed === true ? { privateCodeConfirmed: true } : {};
   const answers = request.withAnswers === true ? { withAnswers: true } : {};
   const deepen = request.deepen === undefined ? {} : { deepen: { ...request.deepen } };
   const retry = request.retryOf === undefined ? {} : { retryOf: request.retryOf };
-  const base = { ...consent, ...priv, ...answers, ...deepen, ...retry };
+  const approved =
+    request.approvedAmount === undefined ? {} : { approvedAmount: { ...request.approvedAmount } };
+  const base = { ...consent, ...priv, ...answers, ...deepen, ...retry, ...approved };
   return request.areas === undefined ? base : { areas: [...request.areas], ...base };
 }
 

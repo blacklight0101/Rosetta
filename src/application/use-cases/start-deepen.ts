@@ -12,10 +12,11 @@ import {
   readUnderstandOptions,
   rolesNeedCloudConsent,
   rolesNeedPrivateConfirmation,
+  UNDERSTAND_ROLES,
   understandOptionsOf,
 } from '../understand/understand-options.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
-import type { RoleKeyDependencies } from '../runs/role-keys.js';
+import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.js';
 
 // RF-209, RF-1105, RF-143, ADR-007, DEC-144, DEC-145: Start Deepen is what the owner's confirmation
 // on the estimate calls (`POST /api/runs/:runId/deepen`). It never starts by itself: nothing but
@@ -58,7 +59,8 @@ export type StartDeepenProblem =
   | typeof ERROR_CODES.requestInvalid
   | typeof ERROR_CODES.cloudConsentMissing
   | typeof ERROR_CODES.privateCodeNotConfirmed
-  | typeof ERROR_CODES.runStageNotAvailable;
+  | typeof ERROR_CODES.runStageNotAvailable
+  | typeof ERROR_CODES.providerKeyMissing;
 
 export class StartDeepen {
   private readonly deps: StartDeepenDependencies;
@@ -80,7 +82,7 @@ export class StartDeepen {
     const stored = await this.deps.manifests.read(scopeOf(run));
     if (project === undefined || stored === undefined) return err(ERROR_CODES.notFound);
     const cloudConsent = request.cloudConsent === true;
-    const refusal = this.consentRefusal(request, project);
+    const refusal = await this.refusalOf(request, project);
     if (refusal !== undefined) return err(refusal);
     const privateCodeConfirmed = request.privateCodeConfirmed === true;
     const { areas } = readUnderstandOptions(stored.options);
@@ -98,18 +100,23 @@ export class StartDeepen {
     });
   }
 
-  /** RF-143: no consent for a cloud provider; RF-132: no second confirmation for an upload. */
-  private consentRefusal(
+  /**
+   * RF-143: no consent for a cloud provider; RF-132: no second confirmation for an upload; RF-431: a
+   * role with no usable key, refused before the Deepen is queued.
+   */
+  private async refusalOf(
     request: StartDeepenRequest,
     project: Project,
-  ): StartDeepenProblem | undefined {
+  ): Promise<StartDeepenProblem | undefined> {
     const { ollamaHost } = this.deps;
     if (request.cloudConsent !== true && rolesNeedCloudConsent(project.settings, ollamaHost)) {
       return ERROR_CODES.cloudConsentMissing;
     }
     const needsPrivate = rolesNeedPrivateConfirmation(project, ollamaHost);
-    return needsPrivate && request.privateCodeConfirmed !== true
-      ? ERROR_CODES.privateCodeNotConfirmed
-      : undefined;
+    if (needsPrivate && request.privateCodeConfirmed !== true) {
+      return ERROR_CODES.privateCodeNotConfirmed;
+    }
+    const keyMissing = await anyRoleWithoutKey(this.deps.roleKeys, project, UNDERSTAND_ROLES);
+    return keyMissing ? ERROR_CODES.providerKeyMissing : undefined;
   }
 }

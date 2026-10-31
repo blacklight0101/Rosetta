@@ -157,7 +157,7 @@ export interface RunEstimate {
   /** Absent when the estimate is made without the account's caps (an evaluation). */
   readonly firstCalls?: FirstCalls;
   /** RF-430: the likely and the worst-case total of the whole journey, the figure the user approves. */
-  readonly journey?: JourneyEstimate;
+  readonly journey: JourneyEstimate;
 }
 
 /** RF-430: one total of the journey: tokens (input and output) and micro-dollars. */

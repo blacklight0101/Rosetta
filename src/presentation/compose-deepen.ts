@@ -20,6 +20,7 @@ import type { FileRunManifestStore } from '../infrastructure/files/file-run-mani
 import type { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import type { DeepenServices } from './web/deepen-routes.js';
+import type { RoleKeyDependencies } from '../application/runs/role-keys.js';
 
 // RF-006, RF-209: the use cases that go on from an ended understand run, behind the run routes:
 // Resume (the same run, after a stop) and Deepen (a new linked run, after it completed).
@@ -36,6 +37,8 @@ export interface DeepenParts {
   readonly priceTable: PriceTable;
   readonly models: ModelList;
   readonly ollamaHost: string | undefined;
+  /** RF-431: the roles' keys, checked before a Deepen or a resume is queued. */
+  readonly roleKeys: RoleKeyDependencies;
 }
 
 // RF-209
@@ -44,7 +47,7 @@ export function composeDeepen(parts: DeepenParts): DeepenServices {
   const taskResults = new FileTaskResults({ writer: parts.writer, masker: parts.masker });
   return {
     startDeepen: new StartDeepen({
-      ...{ projects, runs, manifests, submit: parts.submit },
+      ...{ projects, runs, manifests, submit: parts.submit, roleKeys: parts.roleKeys },
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),
     estimateDeepen: new EstimateDeepen({
@@ -60,7 +63,10 @@ export function composeDeepen(parts: DeepenParts): DeepenServices {
 
 /** RF-006: Resume, with what would make the resumed run fail again found first. */
 export function composeResume(
-  parts: Pick<DeepenParts, 'projects' | 'runs' | 'manifests' | 'scans' | 'writer' | 'masker'> & {
+  parts: Pick<
+    DeepenParts,
+    'projects' | 'runs' | 'manifests' | 'scans' | 'writer' | 'masker' | 'roleKeys'
+  > & {
     readonly queue: RunQueue;
     readonly clock: Clock;
     readonly ollamaHost: string | undefined;
@@ -68,7 +74,7 @@ export function composeResume(
 ): ResumeRun {
   const { projects, runs, manifests, queue, clock, scans, ollamaHost } = parts;
   return new ResumeRun({
-    ...{ projects, runs, manifests, queue, clock },
+    ...{ projects, runs, manifests, queue, clock, roleKeys: parts.roleKeys },
     problem: resumeProblemCheck({
       ...{ runs, scans },
       taskResults: new FileTaskResults({ writer: parts.writer, masker: parts.masker }),

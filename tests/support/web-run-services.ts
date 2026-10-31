@@ -1,3 +1,4 @@
+import { testRoleKeys } from './web-role-keys.js';
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
 import type { UploadStore } from '../../src/application/ports/upload-store.js';
@@ -239,6 +240,7 @@ export function runServices(
   outputs: RunOutputs,
 ): ServerOptions['runs'] {
   const { projects, keys, calls, logs, clock, answers } = stores;
+  const roleKeys = testRoleKeys(stores.users, keys); // RF-431
   return {
     getRun: new GetRun({ runs: runs.runs, queue: runs.queue, files: outputs.text }),
     ...pageReads(runs.runs, outputs.text),
@@ -253,7 +255,7 @@ export function runServices(
     buildReport: reportOf(runs, outputs, { answers, priorCards: stores.priorCards, clock }),
     ...answerAndJourney(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
-    startRun: new StartRun({ ...runs, projects, briefs: stores.briefs }),
+    startRun: new StartRun({ ...runs, projects, briefs: stores.briefs, roleKeys }),
     ...deepenServices(runs, { projects, keys }),
     suggestPlanOptions: planOptionsService({
       ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },
@@ -263,6 +265,7 @@ export function runServices(
     estimateRun: new EstimateRun({
       ...{ projects, runs: runs.runs, scans: new FixedScans(catalogAreas), keys },
       ...{ priceTable: estimatePrices, models: NO_LISTED_MODELS, reasoningModels: () => false },
+      roleKeys,
     }),
     ...route,
   };

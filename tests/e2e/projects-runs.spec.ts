@@ -96,3 +96,12 @@ test(
     await noSidewaysScroll(page);
   },
 );
+
+test('RF-430 the start button names the journey figure the user approves', async ({ page }) => {
+  await openScannedStartPage(page);
+
+  await expect(page.getByRole('button', { name: /^Start run · approve /u })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.getByTestId('journey-total')).toContainText('worst case');
+});

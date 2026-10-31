@@ -23,6 +23,10 @@ export interface StartGateInput {
   readonly noSource?: boolean;
   /** RF-150: a workbook project with no batch stored yet; no run can start on it. */
   readonly noWorkbooks?: boolean;
+  /** RF-431: the providers whose key is missing, named; empty or absent when every role has one. */
+  readonly keyMissing?: string;
+  /** RF-430: the figure the user approves, named on the button. */
+  readonly approval?: string;
 }
 
 export interface StartGate {
@@ -35,6 +39,9 @@ function understandReason(input: StartGateInput): string | undefined {
   if (input.estimate.status === 'loading') return 'Wait for the estimate.';
   if (input.estimate.status === 'failed') return 'The estimate could not be loaded.';
   if (input.chosenAreas === 0) return 'Choose at least one area.';
+  if ((input.keyMissing ?? '') !== '') {
+    return `The ${input.keyMissing ?? ''} key is missing: add your own key in Settings and keys.`;
+  }
   return undefined;
 }
 
@@ -43,6 +50,12 @@ function missingSource(input: StartGateInput): string | undefined {
   if (input.noSource === true) return 'Upload a zip first: this project has no source.';
   if (input.noWorkbooks === true) return 'Upload workbooks first: this project has no source.';
   return undefined;
+}
+
+/** RF-430: the button names the figure the user approves. */
+function approvalGate(approval: string | undefined): StartGate {
+  const label = approval === undefined ? 'Start run' : `Start run · approve ${approval}`;
+  return { label, reason: undefined };
 }
 
 export function startGate(input: StartGateInput): StartGate {
@@ -70,5 +83,5 @@ export function startGate(input: StartGateInput): StartGate {
       reason: 'Confirm the private code notice above to start the run',
     };
   }
-  return plain;
+  return approvalGate(input.approval);
 }

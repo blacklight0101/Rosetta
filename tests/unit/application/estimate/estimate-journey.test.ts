@@ -60,11 +60,11 @@ describe('RF-430 the journey total of the understand estimate', () => {
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
     const { journey, total } = outcome.value;
-    expect(journey?.basis).toBe('assumptions');
-    expect(journey?.deepenRounds).toBe(DEEPEN_ROUNDS.default);
+    expect(journey.basis).toBe('assumptions');
+    expect(journey.deepenRounds).toBe(DEEPEN_ROUNDS.default);
     const understandHigh = total.high.inputTokens + total.high.outputTokens;
-    expect(journey?.worstCase.tokens).toBeGreaterThan(understandHigh);
-    expect(journey?.likely.tokens).toBeLessThan(journey?.worstCase.tokens ?? 0);
+    expect(journey.worstCase.tokens).toBeGreaterThan(understandHigh);
+    expect(journey.likely.tokens).toBeLessThan(journey.worstCase.tokens);
   });
 
   it('RF-430 uses the measured totals of earlier runs of the same provider and model when there are any', async () => {
@@ -83,8 +83,8 @@ describe('RF-430 the journey total of the understand estimate', () => {
 
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
-    expect(outcome.value.journey?.basis).toBe('history');
-    expect(outcome.value.journey?.likely.tokens).toBe(1_000_000);
+    expect(outcome.value.journey.basis).toBe('history');
+    expect(outcome.value.journey.likely.tokens).toBe(1_000_000);
   });
 });
 

@@ -84,6 +84,13 @@ const startBody = z.strictObject({
   sourceRunId: z.string().min(1).max(64).optional(),
   /** RF-208, Q-43: `understand` reads again the failed areas of this run (its id) and holds its cards. */
   retryOf: z.string().min(1).max(64).optional(),
+  /** RF-430: the journey total the user approved on the start button. */
+  approvedAmount: z
+    .strictObject({
+      tokens: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+      costMicros: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+    })
+    .optional(),
 });
 
 /** Streams one part of a run as an attachment; the file name comes from the run key, cleaned. */
@@ -169,6 +176,21 @@ function registerGet(server: FastifyInstance, services: RunServices): void {
   );
 }
 
+/** The optional fields of the start body that were sent; an absent one is left out. */
+function sentOf(data: z.output<typeof startBody>) {
+  const { areas, cloudConsent, privateCodeConfirmed, withAnswers } = data;
+  const { sourceRunId, retryOf, approvedAmount } = data;
+  return {
+    ...(areas === undefined ? {} : { areas }),
+    ...(cloudConsent === undefined ? {} : { cloudConsent }),
+    ...(privateCodeConfirmed === undefined ? {} : { privateCodeConfirmed }),
+    ...(withAnswers === undefined ? {} : { withAnswers }),
+    ...(sourceRunId === undefined ? {} : { sourceRunId }),
+    ...(retryOf === undefined ? {} : { retryOf }),
+    ...(approvedAmount === undefined ? {} : { approvedAmount }),
+  };
+}
+
 function registerStart(server: FastifyInstance, services: RunServices): void {
   server.post<{ Params: { id: string } }>(
     '/api/projects/:id/runs',
@@ -176,18 +198,11 @@ function registerStart(server: FastifyInstance, services: RunServices): void {
     async (request, reply) => {
       const body = startBody.safeParse(request.body);
       if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
-      const { stage, areas, cloudConsent, privateCodeConfirmed, withAnswers } = body.data;
-      const { sourceRunId, retryOf } = body.data;
       const outcome = await services.startRun.execute({
         actor: signedInOf(request).actor,
         projectId: request.params.id,
-        stage,
-        ...(areas === undefined ? {} : { areas }),
-        ...(cloudConsent === undefined ? {} : { cloudConsent }),
-        ...(privateCodeConfirmed === undefined ? {} : { privateCodeConfirmed }),
-        ...(withAnswers === undefined ? {} : { withAnswers }),
-        ...(sourceRunId === undefined ? {} : { sourceRunId }),
-        ...(retryOf === undefined ? {} : { retryOf }),
+        stage: body.data.stage,
+        ...sentOf(body.data),
       });
       if (!outcome.ok) throw new RosettaError(outcome.error);
       const { run, position } = outcome.value;

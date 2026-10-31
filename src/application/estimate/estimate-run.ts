@@ -40,8 +40,7 @@ import { estimateRole } from './role-estimate.js';
 import { firstCallsOf } from './first-calls.js';
 import type { PlanCapDependencies } from './plan-caps.js';
 import { offeredAreas, offeredFor, screensOf, workbookAreaNames } from './estimate-areas.js';
-import type { CostTotals } from '../ports/cost-totals.js';
-import type { RoleKeyDependencies } from '../runs/role-keys.js';
+import { journeyOfEstimate, type JourneyDependencies } from './journey-estimate.js';
 
 // RF-425, ADR-007, DEC-13, DEC-54, DEC-107: the estimate before a run (`GET
 // /api/projects/:id/estimate`). From the code map of the project's latest completed scan, the areas
@@ -52,7 +51,7 @@ import type { RoleKeyDependencies } from '../runs/role-keys.js';
 // scenario is applied by the start page to the likely figure of this estimate (P2-08, DEC-97); the
 // high figure is the only one that covers the worst case of cache writes (P2-37).
 
-export interface EstimateRunDependencies {
+export interface EstimateRunDependencies extends JourneyDependencies {
   readonly projects: ProjectRepository;
   readonly runs: Pick<RunIndex, 'list'>;
   readonly scans: ScanResults;
@@ -66,10 +65,6 @@ export interface EstimateRunDependencies {
   readonly reasoningModels: ReasoningModels;
   /** The caps the first calls are checked against (RF-405); absent for an evaluation, which has no accounts. */
   readonly caps?: PlanCapDependencies;
-  /** RF-431: whether each role has a usable key; every role counts as served when absent. */
-  readonly roleKeys?: RoleKeyDependencies;
-  /** RF-430, RF-428: the measured totals of earlier runs; the fixed assumptions when absent. */
-  readonly history?: Pick<CostTotals, 'projectGroups'>;
 }
 
 export interface EstimateRunRequest {
@@ -212,6 +207,9 @@ export class EstimateRun {
         tokens: summariser.tokens,
       }),
     ]);
+    const total = sumPoints(roles.map((role) => role.points));
+    const sourceTokens = codeMap.areas.reduce((sum, area) => sum + area.estimatedTokens, 0);
+    const journey = await journeyOfEstimate(this.deps, project, { roles, total, sourceTokens });
     return ok({
       codeMap: {
         scannerVersion: codeMap.scannerVersion ?? null,
@@ -222,8 +220,8 @@ export class EstimateRun {
       currency: this.deps.priceTable.currency,
       areas: offeredAreas(offered, thirdParty),
       assumptions: { ...assumptions, summariserBatches: summariser.batches },
-      roles,
-      total: sumPoints(roles.map((role) => role.points)),
+      ...journey,
+      total,
       ...(await this.firstCalls(project, areas.length)),
     });
   }

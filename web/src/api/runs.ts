@@ -26,6 +26,8 @@ export interface StartRequest {
   readonly withAnswers?: boolean;
   /** `understand` only: the completed run whose failed areas `areas` reads again (RF-208, Q-43). */
   readonly retryOf?: string;
+  /** `understand` only: the journey total the user approved on the start button (RF-430). */
+  readonly approvedAmount?: { readonly tokens: number; readonly costMicros: number };
 }
 
 /**
