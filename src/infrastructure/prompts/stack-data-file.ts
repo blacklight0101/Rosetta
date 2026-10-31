@@ -77,7 +77,8 @@ const optionSchema = z.strictObject({
 
 const legacySchema = z.strictObject({
   name: z.string().trim().min(1).max(80),
-  languages: z.array(word).min(1).max(10),
+  languages: z.array(word).max(10).default([]),
+  extensions: z.array(word).max(10).default([]),
   layers: z.array(layer).max(7),
   endOfLife: z.boolean(),
 });

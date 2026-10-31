@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { stackLayers } from '../../../../src/domain/planning/planning-brief.js';
+import { legacyFactsOf } from '../../../../src/domain/planning/application-kind.js';
+import { webFormsFiles } from '../../../support/proposal-scans.js';
 import { stackOfferFor } from '../../../../src/domain/planning/stack-offer.js';
 import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 
@@ -7,7 +9,12 @@ import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 // technology may be kept.
 
 const stack = shippedCatalogue.stack;
-const dotnet = { kind: 'web', languages: ['csharp', 'aspnet'], workbook: false } as const;
+const dotnet = {
+  kind: 'web',
+  languages: ['csharp', 'aspnet'],
+  extensions: [],
+  workbook: false,
+} as const;
 
 describe('stackOfferFor', () => {
   it('RF-645 offers two proposals for each layer of a current .NET web stack, the first recommended', () => {
@@ -23,25 +30,48 @@ describe('stackOfferFor', () => {
   });
 
   it('DEC-203 does not offer keeping an end-of-life legacy technology', () => {
-    const offer = stackOfferFor({ ...dotnet, languages: ['vba'] }, stack);
+    const offer = stackOfferFor({ ...dotnet, extensions: ['xlsm'] }, stack);
     expect(offer.every((each) => !each.keepLegacy)).toBe(true);
   });
 
   it('DEC-203 limits the flag to the layers of the legacy technology', () => {
-    const offer = stackOfferFor({ ...dotnet, languages: ['wcf'] }, stack);
+    const offer = stackOfferFor({ ...dotnet, extensions: ['svc'] }, stack);
     expect(offer.find((each) => each.layer === 'backend-framework')?.keepLegacy).toBe(false);
     expect(offer.find((each) => each.layer === 'database')?.keepLegacy).toBe(true);
   });
 
   it('DEC-203 does not offer keeping the legacy technology for an Excel workbook', () => {
-    const offer = stackOfferFor({ kind: 'web', languages: [], workbook: true }, stack);
+    const offer = stackOfferFor(
+      { kind: 'web', languages: [], extensions: [], workbook: true },
+      stack,
+    );
     expect(offer.every((each) => !each.keepLegacy)).toBe(true);
     expect(offer.find((each) => each.layer === 'language-runtime')?.proposals).toHaveLength(2);
   });
 
   it('RF-609 lists a layer with no catalogue option with no proposal', () => {
-    const offer = stackOfferFor({ kind: 'keep', languages: [], workbook: false }, stack);
+    const offer = stackOfferFor(
+      { kind: 'keep', languages: [], extensions: [], workbook: false },
+      stack,
+    );
     expect(offer.every((each) => each.proposals.length === 0 && each.keepLegacy)).toBe(true);
+  });
+});
+
+describe('stackOfferFor: catalogue data (P7-29)', () => {
+  it('P7-29 second .NET testing proposal is a .NET tool, not a JavaScript one', () => {
+    const testing = stackOfferFor(dotnet, stack).find((each) => each.layer === 'testing');
+    expect(testing?.proposals.map((each) => each.choice)).toEqual(['xUnit', 'NUnit']);
+  });
+
+  it('DEC-203 a Web Forms repository scan gets no keep-legacy for the front end', () => {
+    const facts = legacyFactsOf(
+      { files: webFormsFiles, sqlStatements: [] },
+      stack.proposals.signals,
+    );
+    const offer = stackOfferFor({ kind: 'web', ...facts, workbook: false }, stack);
+    expect(offer.find((each) => each.layer === 'front-end')?.keepLegacy).toBe(false);
+    expect(offer.find((each) => each.layer === 'database')?.keepLegacy).toBe(true);
   });
 
   it('RF-609 offers the same first proposal a skipped layer takes', () => {

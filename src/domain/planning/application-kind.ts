@@ -16,6 +16,8 @@ export interface LegacyFacts {
   readonly detected?: { readonly kind: ApplicationKind; readonly examples: readonly string[] };
   /** The three languages with most lines. */
   readonly languages: readonly string[];
+  /** Every file extension of the code map, lower case, without the dot, sorted. */
+  readonly extensions: readonly string[];
   /** Whether the code reaches a database: a SQL statement or a SQL script. */
   readonly database: boolean;
 }
@@ -56,8 +58,8 @@ export function legacyFactsOf(map: Mapped, signals: readonly KindSignal[]): Lega
     const found = map.files.filter((file) => matches(signal, file)).map((file) => file.path);
     if (found.length > 0) {
       const examples = found.sort(byCodeUnit).slice(0, MAX_EXAMPLES);
-      return { detected: { kind: signal.kind, examples }, languages, database };
+      return { detected: { kind: signal.kind, examples }, languages, extensions: [], database };
     }
   }
-  return { languages, database };
+  return { languages, extensions: [], database };
 }

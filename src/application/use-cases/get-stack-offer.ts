@@ -31,7 +31,7 @@ export interface GetStackOfferRequest {
   readonly runId?: string;
 }
 
-const unknown: OfferInput = { kind: 'keep', languages: [], workbook: false };
+const unknown: OfferInput = { kind: 'keep', languages: [], extensions: [], workbook: false };
 
 export class GetStackOffer {
   private readonly deps: GetStackOfferDependencies;
@@ -49,7 +49,7 @@ export class GetStackOffer {
     if (project === undefined) return err(ERROR_CODES.notFound);
     if (project.sourceKind === 'workbook') {
       // A workbook has no application to read: the web defaults of the catalogue, no keep-legacy.
-      const input: OfferInput = { kind: 'web', languages: [], workbook: true };
+      const input: OfferInput = { kind: 'web', languages: [], extensions: [], workbook: true };
       return ok(stackOfferFor(input, this.deps.stack));
     }
     return ok(stackOfferFor(await this.inputOf(userId, request), this.deps.stack));
@@ -71,6 +71,7 @@ export class GetStackOffer {
       return {
         kind: facts.detected?.kind ?? 'web',
         languages: facts.languages,
+        extensions: facts.extensions,
         workbook: false,
       };
     } catch {

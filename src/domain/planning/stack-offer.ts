@@ -26,6 +26,8 @@ export interface OfferInput {
   readonly kind: ApplicationKind;
   /** The three languages with most lines. */
   readonly languages: readonly string[];
+  /** Every file extension of the code map (see `LegacyFacts`). */
+  readonly extensions: readonly string[];
   /** The source is Excel workbooks. */
   readonly workbook: boolean;
 }
