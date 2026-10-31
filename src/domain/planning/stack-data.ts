@@ -59,12 +59,28 @@ export interface StackOption {
   readonly why: string;
 }
 
+/**
+ * P7-29, DEC-203: a legacy technology the scan can name, and whether it is end of life. A layer
+ * whose legacy technology is end of life does not offer "Keep the legacy technology".
+ */
+export interface LegacyTechnology {
+  readonly name: string;
+  /** Language ids of the scan that show it. */
+  readonly languages: readonly string[];
+  /** Lower-case file extensions, without the dot, that show it anywhere in the code map. */
+  readonly extensions: readonly string[];
+  /** The layers it is the legacy technology of; empty: every layer. */
+  readonly layers: readonly string[];
+  readonly endOfLife: boolean;
+}
+
 export interface StackProposals {
   readonly signals: readonly KindSignal[];
   readonly options: readonly StackOption[];
+  readonly legacy: readonly LegacyTechnology[];
 }
 
-const noStackProposals: StackProposals = { signals: [], options: [] };
+const noStackProposals: StackProposals = { signals: [], options: [], legacy: [] };
 
 export interface StackData {
   /** The `v<n>` of `stack-rules.v<n>.yaml`; bump it when a rule is added, removed or changed. */

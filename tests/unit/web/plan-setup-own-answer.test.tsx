@@ -165,13 +165,12 @@ describe('the stack question', () => {
 
     await saved(page);
     const [body] = saves(page);
-    expect(body).toMatchObject({
-      chosen: { 'stack.database': 'b', 'stack.hosting': 'typed' },
-      stack: [
-        { layer: 'database', choice: 'database B', custom: false },
-        { layer: 'hosting', choice: 'Azure', custom: true },
-      ],
-    });
+    expect(body).toMatchObject({ chosen: { 'stack.database': 'b', 'stack.hosting': 'typed' } });
+    const sent = JSON.stringify(body);
+    expect(sent).toContain('"layer":"database","choice":"database B","custom":false');
+    expect(sent).toContain('"layer":"hosting","choice":"Azure","custom":true');
+    // P7-29: a layer left alone takes the planner's recommended option
+    expect(sent).toContain('"layer":"testing","choice":"testing A","custom":false');
   });
 });
 
