@@ -244,3 +244,30 @@ describe('answers.md and the answers a Deepen reads back', () => {
     ]);
   });
 });
+
+describe('answers.md and a mark-only answer', () => {
+  it('RF-645 a recommended mark with no other text does not fold the description into the answer', async () => {
+    const { writer, answers } = await setup();
+    const text = textOf(writer);
+    writer.files.set(
+      path,
+      text.replace(
+        /^- Options:.*$/mu,
+        '- Options: (Recommended) - Keep the list; No, hide it - Hide them',
+      ),
+    );
+
+    const [question] = await answers.questionsOf(project, run);
+
+    expect(question?.options?.[0]).toEqual({
+      answer: '',
+      description: 'Keep the list',
+      recommended: true,
+    });
+    expect(question?.options?.[1]).toEqual({
+      answer: 'No, hide it',
+      description: 'Hide them',
+      recommended: false,
+    });
+  });
+});

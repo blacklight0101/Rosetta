@@ -58,7 +58,7 @@ export function builderLines(tier: BuilderTier, method: BuildMethod): string[] {
     '',
     '1. Read every requirement and decision the card names. Derive behaviour only from the package documents. If they are silent or disagree, stop and report it under OPEN QUESTIONS; do not invent behaviour.',
     '2. Write the failing test for each scenario first, see it fail for the right reason, and commit it in a `test:` commit before the `feat:` or `fix:` commit that passes it.',
-    '3. Write the simplest code that passes, in the layer the architecture names. Then refactor with the tests green.',
+    '3. Write the simplest code that passes, where the architecture document puts it. Then refactor with the tests green.',
     '4. Run every gate the card and the conventions name, and update the documents the card lists.',
     '5. Report in the builder format of the protocol.',
     '',

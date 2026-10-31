@@ -169,7 +169,7 @@ describe.each(tools)('operations, agent files and links: $name', ({ name, method
   });
 
   it('RF-642 no escalation definition without a named escalation model', () => {
-    expect(Object.keys(run.files)).not.toContain('agents/escalation.md');
+    expect(Object.keys(run.files)).not.toContain('agents/builder-escalation.md');
   });
 });
 
@@ -213,6 +213,17 @@ describe('the agent files of Codex and the reading order', () => {
     const note = files['agents/README.md'] ?? '';
     for (const model of ['gpt-small', 'gpt-mid', 'gpt-large']) expect(note).toContain(model);
     expect(note).toMatch(/nothing here installs/iu);
+    const rowOf = (role: string): string =>
+      note.split('\n').find((line) => line.startsWith(`| \`${role}.md\``)) ?? '';
+    const tierModels: Record<string, string> = {
+      'builder-smallest': 'gpt-small',
+      'builder-middle': 'gpt-mid',
+      'builder-largest': 'gpt-large',
+      orchestrator: 'gpt-large',
+      verifier: 'gpt-mid',
+      'verifier-largest': 'gpt-large',
+    };
+    for (const [role, model] of Object.entries(tierModels)) expect(rowOf(role)).toContain(model);
   });
 
   it('RF-642 the role prompts read the package in the order AGENTS.md, orchestration.md, conventions.md, the card', async () => {
