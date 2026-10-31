@@ -124,8 +124,8 @@ export function measuredRunsOf(
 
 /** What the understand estimate reads besides its own figures (RF-430, RF-431). */
 export interface JourneyDependencies {
-  /** RF-431: whether each role has a usable key; every role counts as served when absent. */
-  readonly roleKeys?: RoleKeyDependencies;
+  /** RF-431: whether each role has a usable key. */
+  readonly roleKeys: RoleKeyDependencies;
   /** RF-430, RF-428: the measured totals of earlier runs; the fixed assumptions when absent. */
   readonly history?: Pick<CostTotals, 'projectGroups'>;
 }
@@ -144,14 +144,11 @@ export async function journeyOfEstimate(
   },
 ): Promise<{ readonly roles: readonly RoleEstimate[]; readonly journey: JourneyEstimate }> {
   const { roles, total, sourceTokens } = estimate;
-  const missing =
-    deps.roleKeys === undefined
-      ? []
-      : await rolesWithoutKey(
-          deps.roleKeys,
-          project,
-          roles.map((role) => role.role),
-        );
+  const missing = await rolesWithoutKey(
+    deps.roleKeys,
+    project,
+    roles.map((role) => role.role),
+  );
   const marked = roles.map((role) =>
     missing.includes(role.role) ? { ...role, keyMissing: true as const } : role,
   );

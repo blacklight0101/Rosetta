@@ -40,12 +40,11 @@ export async function rolesWithoutKey(
   return missing;
 }
 
-/** RF-431: whether a run of these roles would be refused for want of a key; never without the check. */
+/** RF-431: whether a run of these roles would be refused for want of a key. */
 export async function anyRoleWithoutKey(
-  deps: RoleKeyDependencies | undefined,
+  deps: RoleKeyDependencies,
   project: Project,
   roles: readonly AgentRole[],
 ): Promise<boolean> {
-  if (deps === undefined) return false;
   return (await rolesWithoutKey(deps, project, roles)).length > 0;
 }

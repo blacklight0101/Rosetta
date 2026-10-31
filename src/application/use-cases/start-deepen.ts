@@ -34,7 +34,7 @@ export interface StartDeepenDependencies {
   /** The host of the server's Ollama (`ROSETTA_OLLAMA_URL`); an Ollama elsewhere needs consent (RF-143). */
   readonly ollamaHost?: string;
   /** RF-431: whether each role of the run has a usable key; checked before the run is queued. */
-  readonly roleKeys?: RoleKeyDependencies;
+  readonly roleKeys: RoleKeyDependencies;
 }
 
 export interface StartDeepenRequest {

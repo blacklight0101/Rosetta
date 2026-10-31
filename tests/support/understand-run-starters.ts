@@ -1,3 +1,4 @@
+import { ALL_KEYS_SERVED } from './web-role-keys.js';
 import { expect, vi } from 'vitest';
 import type { Project } from '../../src/application/projects/project.js';
 import type { RunQueue } from '../../src/application/runs/run-queue.js';
@@ -73,6 +74,7 @@ export function submitOf(s: Stores, queue: RunQueue): SubmitRun {
 /** Resumes ended runs as the API does and waits for their end. */
 export function resumerOf(s: Stores, queue: RunQueue): Resumer {
   const resumeRun = new ResumeRun({
+    roleKeys: ALL_KEYS_SERVED,
     ...{ projects: s.projects, runs: s.runs, manifests: s.manifests, queue, clock: s.clock },
     problem: resumeProblemCheck({
       ...{ runs: s.runs, scans: scanResultsOf(s) },
@@ -90,6 +92,7 @@ export function resumerOf(s: Stores, queue: RunQueue): Resumer {
 /** RF-209: deepens completed runs as the confirmed Deepen does and waits for the new run's end. */
 export function deepenerOf(s: Stores, submit: SubmitRun): Deepener {
   const startDeepen = new StartDeepen({
+    roleKeys: ALL_KEYS_SERVED,
     ...{ projects: s.projects, runs: s.runs, manifests: s.manifests, submit },
   });
   const ended = waitUntilEnded(s);
@@ -104,6 +107,7 @@ export function deepenerOf(s: Stores, submit: SubmitRun): Deepener {
 /** Starts runs of the project as the API does and waits for their end. */
 export function starterOf(s: Stores, submit: SubmitRun, project: Project): Starter {
   const startRun = new StartRun({
+    roleKeys: ALL_KEYS_SERVED,
     ...{ projects: s.projects, runs: s.runs, briefs: new MemoryBriefStore(), submit },
   });
   const ended = waitUntilEnded(s);

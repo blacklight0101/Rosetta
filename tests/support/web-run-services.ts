@@ -248,7 +248,7 @@ export function runServices(
     stopRun: runs.stop,
     resumeRun: new ResumeRun({
       ...{ projects, runs: runs.runs, manifests: runs.manifests, queue: runs.queue, clock },
-      problem: () => Promise.resolve(undefined),
+      ...{ roleKeys, problem: () => Promise.resolve(undefined) },
     }),
     exportZip: new ExportZip({ runs: runs.runs, archives: outputs.archives }),
     readRunFile: new ReadRunFile({ runs: runs.runs, files: outputs.files }),
@@ -256,7 +256,7 @@ export function runServices(
     ...answerAndJourney(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
     startRun: new StartRun({ ...runs, projects, briefs: stores.briefs, roleKeys }),
-    ...deepenServices(runs, { projects, keys }),
+    ...deepenServices(runs, { projects, keys, roleKeys }),
     suggestPlanOptions: planOptionsService({
       ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },
       runs: runs.runs,

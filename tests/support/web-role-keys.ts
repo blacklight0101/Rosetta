@@ -16,3 +16,9 @@ export function testRoleKeys(
   const serverKeys = { openai: FAKE_SERVER_KEY, anthropic: FAKE_SERVER_KEY };
   return { users, keys: keySourceLookupOf({ keys, serverKeys }) };
 }
+
+/** RF-431: a key check under which every role has a key, for tests about something else. */
+export const ALL_KEYS_SERVED: RoleKeyDependencies = {
+  users: { findById: () => Promise.resolve(undefined) },
+  keys: { keySourceOf: () => Promise.resolve('user') },
+};
