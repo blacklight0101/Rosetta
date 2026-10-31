@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultedQuestions } from '../../../../src/domain/planning/brief-questions.js';
 import { modelForTier } from '../../../../src/domain/planning/build-method.js';
-import {
-  buildBrief,
-  sameBrief,
-  type BriefAnswers,
-} from '../../../../src/domain/planning/planning-brief.js';
+import { sameBrief } from '../../../../src/domain/planning/brief-freshness.js';
+import { buildBrief, type BriefAnswers } from '../../../../src/domain/planning/planning-brief.js';
 import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 
 // RF-612, RF-639, DEC-176 (Q-B): the agent tool and the model of each tier in the build method.
