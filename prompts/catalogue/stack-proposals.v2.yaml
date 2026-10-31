@@ -6,7 +6,7 @@
 # with most lines (an empty list matches any) is the proposal; `choice` is a technology of the layer in
 # stack-technologies. A kind or layer without an entry proposes nothing. Plan setup offers the first two
 # entries that fit (P7-29): the first is the recommended one and the one a skipped layer takes.
-# legacy: a technology the scan can name; `endOfLife` layers do not offer to keep it (DEC-203).
+# legacy: a technology the scan can name by a language id or by a file extension anywhere in the code map; `endOfLife` layers do not offer to keep it (DEC-203).
 signals:
   - kind: web
     artefacts: [page]
@@ -96,6 +96,11 @@ options:
     legacy: [csharp, vb, aspnet, razor]
     choice: 'xUnit'
     why: 'The usual test framework of .NET.'
+  - kind: web
+    layer: testing
+    legacy: [csharp, vb, aspnet, razor]
+    choice: 'NUnit'
+    why: 'A second .NET test framework, with attribute-driven and data-driven tests.'
   - kind: web
     layer: testing
     legacy: [python]
@@ -223,26 +228,32 @@ options:
     why: 'One image runs the same locally and on any container host.'
 legacy:
   - name: 'VBA'
-    languages: [vba]
+    languages: []
+    extensions: [xlsm, xltm, xlam]
     layers: []
     endOfLife: true
   - name: 'Visual Basic 6'
     languages: [vb6]
+    extensions: [vbp, frm]
     layers: []
     endOfLife: true
   - name: 'Classic ASP'
     languages: [asp]
+    extensions: [asp]
     layers: []
     endOfLife: true
   - name: 'ASP.NET Web Forms'
-    languages: [webforms]
+    languages: []
+    extensions: [aspx, ascx, master]
     layers: [backend-framework, front-end]
     endOfLife: true
   - name: '.NET Framework'
-    languages: [netframework]
+    languages: []
+    extensions: []
     layers: [language-runtime, hosting]
     endOfLife: true
   - name: 'WCF'
-    languages: [wcf]
+    languages: []
+    extensions: [svc]
     layers: [backend-framework]
     endOfLife: true

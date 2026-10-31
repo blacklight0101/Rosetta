@@ -136,6 +136,12 @@ technologies:
     traits: []
     description: A .NET test framework with constructor-per-test isolation.
   - layer: testing
+    name: NUnit
+    aliases:
+      - nunit
+    traits: []
+    description: A .NET test framework with attribute-driven, data-driven tests.
+  - layer: testing
     name: Vitest
     aliases:
       - vitest

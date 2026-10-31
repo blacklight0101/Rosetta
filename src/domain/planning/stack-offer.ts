@@ -49,12 +49,13 @@ export function matchingOptions(
   return found.filter((each, index) => found.findIndex((o) => o.choice === each.choice) === index);
 }
 
-function endOfLife(stack: StackData, layer: string, languages: readonly string[]): boolean {
+function endOfLife(stack: StackData, layer: string, input: OfferInput): boolean {
   return stack.proposals.legacy.some(
     (each) =>
       each.endOfLife &&
       (each.layers.length === 0 || each.layers.includes(layer)) &&
-      each.languages.some((id) => languages.includes(id)),
+      (each.languages.some((id) => input.languages.includes(id)) ||
+        each.extensions.some((extension) => input.extensions.includes(extension))),
   );
 }
 
@@ -66,6 +67,6 @@ export function stackOfferFor(input: OfferInput, stack: StackData): LayerOffer[]
     proposals: matchingOptions(stack, kind, layer, languages)
       .slice(0, MAX_PROPOSALS)
       .map((each) => ({ choice: each.choice, why: each.why })),
-    keepLegacy: !workbook && !endOfLife(stack, layer, languages),
+    keepLegacy: !workbook && !endOfLife(stack, layer, input),
   }));
 }

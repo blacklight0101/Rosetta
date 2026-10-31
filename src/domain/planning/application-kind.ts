@@ -35,6 +35,16 @@ function matches(signal: KindSignal, file: CodeMap['files'][number]): boolean {
   );
 }
 
+function extensionsOf(map: Mapped): string[] {
+  const found = new Set<string>();
+  for (const file of map.files) {
+    const name = file.path.slice(file.path.lastIndexOf('/') + 1).toLowerCase();
+    const dot = name.lastIndexOf('.');
+    if (dot >= 0) found.add(name.slice(dot + 1));
+  }
+  return [...found].sort(byCodeUnit);
+}
+
 function languagesOf(map: Mapped): string[] {
   const lines = new Map<string, number>();
   for (const file of map.files) {
@@ -54,12 +64,13 @@ export function legacyFactsOf(map: Mapped, signals: readonly KindSignal[]): Lega
     map.sqlStatements.length > 0 ||
     map.files.some((file) => file.artefactKinds.includes('database-script'));
   const languages = languagesOf(map);
+  const extensions = extensionsOf(map);
   for (const signal of signals) {
     const found = map.files.filter((file) => matches(signal, file)).map((file) => file.path);
     if (found.length > 0) {
       const examples = found.sort(byCodeUnit).slice(0, MAX_EXAMPLES);
-      return { detected: { kind: signal.kind, examples }, languages, extensions: [], database };
+      return { detected: { kind: signal.kind, examples }, languages, extensions, database };
     }
   }
-  return { languages, extensions: [], database };
+  return { languages, extensions, database };
 }
