@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import type { Catalogue, PlanOptions, StyleOption } from '../api/plan-schemas.js';
+import type { Catalogue, PlanOptions, StackOffer, StyleOption } from '../api/plan-schemas.js';
 import { chooseStyle, proposedOf, shownStyle, stylesOf } from '../lib/plan-setup/choices.js';
 import { isAnswered } from '../lib/plan-setup/draft.js';
 import { TYPED } from '../lib/plan-setup/own-answers.js';
@@ -16,6 +16,8 @@ import type { OptionsLoad } from './use-plan-options.js';
 
 export interface ArchitectureProps extends StepProps {
   readonly load: OptionsLoad;
+  /** P7-29: the catalogue's options of each stack layer, for the stack step. */
+  readonly offer?: StackOffer | undefined;
   readonly waitingForConsent: boolean;
   readonly askAgain: () => void;
 }

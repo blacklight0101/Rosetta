@@ -1,4 +1,4 @@
-import type { Catalogue, PlanOptions } from '../../api/plan-schemas.js';
+import type { Catalogue, PlanOptions, StackOffer } from '../../api/plan-schemas.js';
 import { STEP_IDS, questionsOf, STACK_LAYERS, STYLE_GROUP } from './steps.js';
 
 // RF-645, RF-605, DEC-178: the options of every Plan setup question, the way Claude Code asks: at
@@ -24,6 +24,8 @@ export const OPTION_QUESTIONS: readonly string[] = STEP_IDS.flatMap((step) => qu
 export interface OptionSources {
   readonly catalogue: Catalogue;
   readonly options: PlanOptions | undefined;
+  /** P7-29: the catalogue's proposals of each layer; absent while they load or when they failed. */
+  readonly offer?: StackOffer | undefined;
 }
 
 /** The title with its "(Recommended)" mark. */
@@ -147,24 +149,38 @@ function describedOption(said: string | undefined, index: number): string {
     : 'The other proposal for this layer, derived from the legacy stack.';
 }
 
-function stackOptions(layer: string, options: PlanOptions | undefined): QuestionOption[] {
-  const found = options?.stack.find((each) => each.layer === layer);
+const KEEP_LEGACY: QuestionOption = {
+  id: 'keep-legacy',
+  title: 'Keep the legacy technology',
+  description: 'This layer stays as it is until the migration reaches it.',
+  recommended: false,
+};
+
+/** P7-29: the two proposals of a layer: the planner's after the consent, else the catalogue's. */
+function proposalsOf(layer: string, sources: OptionSources): QuestionOption[] {
+  const found = sources.options?.stack.find((each) => each.layer === layer);
   const offered = found?.options ?? [];
-  const proposals = offered.map((choice, index) => ({
+  if (offered.length === 0) {
+    const catalogued = sources.offer?.layers.find((each) => each.layer === layer)?.proposals ?? [];
+    return catalogued.map((proposal, index) => ({
+      id: index === 0 ? 'a' : 'b',
+      title: proposal.choice,
+      description: proposal.why,
+      recommended: index === 0,
+    }));
+  }
+  return offered.map((choice, index) => ({
     id: index === 0 ? 'a' : 'b',
     title: choice,
     description: describedOption(found?.descriptions?.[index], index),
     recommended: index === 0,
   }));
-  return [
-    ...proposals,
-    {
-      id: 'keep-legacy',
-      title: 'Keep the legacy technology',
-      description: 'This layer stays as it is until the migration reaches it.',
-      recommended: false,
-    },
-  ];
+}
+
+/** DEC-203: the catalogue says whether the layer may keep its legacy technology (yes while unknown). */
+function stackOptions(layer: string, sources: OptionSources): QuestionOption[] {
+  const keep = sources.offer?.layers.find((each) => each.layer === layer)?.keepLegacy ?? true;
+  return [...proposalsOf(layer, sources), ...(keep ? [KEEP_LEGACY] : [])];
 }
 
 const METHOD: readonly QuestionOption[] = [
@@ -196,7 +212,7 @@ const withDefaultFirst = (options: readonly QuestionOption[]): QuestionOption[] 
 
 /** The options of one question, the recommended one first (empty for an unknown question). */
 export function questionOptions(id: string, sources: OptionSources): QuestionOption[] {
-  const { catalogue, options } = sources;
+  const { catalogue } = sources;
   if (id === 'principles') return principleOptions(catalogue);
   if (id === 'architecture') return architectureOptions(sources);
   if (id === 'migration') {
@@ -209,6 +225,6 @@ export function questionOptions(id: string, sources: OptionSources): QuestionOpt
   }
   if (id === 'buildMethod') return [...METHOD];
   const layer = STACK_LAYERS.find((each) => id === `stack.${each.id}`);
-  if (layer !== undefined) return withDefaultFirst(stackOptions(layer.id, options));
+  if (layer !== undefined) return withDefaultFirst(stackOptions(layer.id, sources));
   return withDefaultFirst(CONTEXT[id] ?? []);
 }

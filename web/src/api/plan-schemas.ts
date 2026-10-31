@@ -110,6 +110,20 @@ export const planOptionsSchema = z.object({
 });
 
 export type PlanOptions = z.output<typeof planOptionsSchema>;
+
+// P7-29, RF-609, RF-645, DEC-203: the catalogue's two proposals of each stack layer, and whether the
+// layer may keep its legacy technology; read without sending any code.
+export const stackOfferSchema = z.object({
+  layers: z.array(
+    z.object({
+      layer: z.string(),
+      proposals: z.array(z.object({ choice: z.string(), why: z.string() })),
+      keepLegacy: z.boolean(),
+    }),
+  ),
+});
+
+export type StackOffer = z.output<typeof stackOfferSchema>;
 export type StyleOption = z.output<typeof styleOption>;
 
 const figure = z.object({
