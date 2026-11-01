@@ -1,7 +1,7 @@
 import { planId, type PlanContent, type PlanTask } from './plan-content.js';
 import type { ModelTable } from './data-model.js';
 import { cutOverText } from './cut-over-cards.js';
-import { isMigrationCard } from './plan-coverage.js';
+import { isMigrationCard, withMigrationCard } from './plan-coverage.js';
 import type { PlanningBrief } from './planning-brief.js';
 
 // P5-42, P6-27, RF-610, RF-623, DEC-76, DEC-190: the fixed cards every plan carries (the data-access and
@@ -54,13 +54,18 @@ const skeleton: CardText = {
   probes: [],
 };
 
+const tablesOfMigrations =
+  'Given the tables of the migrations card, when the layer writes a row and reads it back, then every column comes back with the value that was written.';
+const tablesOfModel =
+  'Given the tables of the target data model, when the layer writes a row and reads it back, then every column comes back with the value that was written.';
+
 const access: CardText = {
   title: titles.access,
   invariant:
     'Every read and write of the target tables goes through the data-access layer, with values passed as parameters and never joined into a statement.',
   riskClass: 'data loss',
   acceptanceCriteria: [
-    'Given the tables of the migrations card, when the layer writes a row and reads it back, then every column comes back with the value that was written.',
+    tablesOfMigrations,
     'Given a value that holds quote characters or statement text, when the layer stores it, then it is stored as plain data and no other row changes.',
     'Given a write that fails halfway, when the layer reports the error, then none of the write is kept.',
   ],
@@ -70,6 +75,15 @@ const access: CardText = {
     'The database is not reachable => the layer reports a connection error and returns no partial result.',
   ],
 };
+
+/** P7-20: the first criterion names the migrations card only when the plan holds it. */
+function accessOf(hasMigrations: boolean): CardText {
+  const [, ...rest] = access.acceptanceCriteria;
+  return {
+    ...access,
+    acceptanceCriteria: [hasMigrations ? tablesOfMigrations : tablesOfModel, ...rest],
+  };
+}
 
 const harness: CardText = {
   title: titles.harness,
@@ -192,10 +206,20 @@ export function withFoundationCards(
   tables: readonly ModelTable[],
   hasData = true,
 ): PlanContent {
-  const tasks = content.tasks.map(unreserved);
-  if (content.phases.length === 0 || tasks.length === 0) return content;
-  if (!hasData) return withoutDataCards(content, tasks, strategy);
-  return withDataCards(content, tasks, strategy, tables);
+  if (content.phases.length === 0 || content.tasks.length === 0) return content;
+  if (!hasData) return withoutDataCards(content, content.tasks.map(unreserved), strategy);
+  // P7-20, EV-81: the data-access card waits for the migrations card, so the plan holds it whenever it has tables.
+  const migrated = content.tasks.some((task) => isMigrationCard(task))
+    ? content
+    : withMigrationCard(content, tables);
+  return withDataCards(migrated, migrated.tasks.map(unreserved), strategy, tables);
+}
+
+function accessCard(
+  hasMigrations: boolean,
+  fields: Pick<PlanTask, 'id' | 'phase' | 'dependsOn'>,
+): PlanTask {
+  return fixedCard(accessOf(hasMigrations), fields);
 }
 
 function withDataCards(
@@ -225,7 +249,7 @@ function withDataCards(
   const cards = [
     fixedCard(skeleton, { id: skeletonId, phase: 1, dependsOn: [] }),
     ...moved.slice(0, schemas),
-    fixedCard(access, { id: accessId, phase: 1, dependsOn: [skeletonId, ...schemaIds] }),
+    accessCard(schemas > 0, { id: accessId, phase: 1, dependsOn: [skeletonId, ...schemaIds] }),
     fixedCard(harness, { id: harnessId, phase: 1, dependsOn: [skeletonId, accessId] }),
     ...moved.slice(schemas),
     fixedCard(migrationText(tables), {
