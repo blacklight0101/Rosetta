@@ -49,6 +49,12 @@ test('RF-604 RF-610 RF-611 from a GitHub URL to a downloaded hand-off package th
   await expectNoSeriousViolations(page);
 
   const files = await writeAndDownload(page);
+  // RF-1015 (P7-25): the page of the finished plan run shows plan figures, not understand panels.
+  await expect(page.getByRole('tab', { name: /^Evidence/u })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: /^Your questions/u })).toHaveCount(0);
+  await page.getByRole('tab', { name: /^Planner calls/u }).click();
+  await expect(page.getByRole('list', { name: 'Planner calls' })).toContainText('Plan package');
+  await expect(page.getByTestId('plan-checks')).toContainText('checks.md');
 
   expect(packageFile(files, 'README.md')).toContain('](prd.md)');
   const decisions = decisionsOf(files);

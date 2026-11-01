@@ -24,6 +24,7 @@ export type RunEventType =
   | 'verify.claim.judged'
   | 'verify.judgement.ended'
   | 'usage.recorded'
+  | 'plan.call.started'
   | 'budget.warning'
   | 'budget.capReached'
   | 'budget.readersStopped'

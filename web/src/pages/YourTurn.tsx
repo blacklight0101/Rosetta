@@ -4,6 +4,7 @@ import { Button } from '../components/Button.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { endFactsOf } from '../lib/live-run/end-facts.js';
 import { PlanNext } from './PlanNext.js';
+import { PlanTurn } from './PlanTurn.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 import { DeepenAction } from './DeepenAction.js';
 import type { AnswersLoad } from './use-run-answers.js';
@@ -27,6 +28,8 @@ export interface YourTurnProps {
   readonly onAnswer: () => void;
   /** RF-614: the run and its project, to open Plan setup for this run. */
   readonly run: { readonly id: string; readonly projectId: string };
+  /** RF-1015: a plan run has its own next action and only plan figures. */
+  readonly stage?: string | undefined;
   /** RF-209: the id of the run, when it ended Completed and can be deepened. */
   readonly deepenRunId?: string | undefined;
 }
@@ -189,11 +192,30 @@ function questionsOpen(answers: AnswersLoad): boolean {
   return answers.status === 'ready' && answers.questions.some(waitsForAnswer);
 }
 
+/** RF-1015 (P7-25): the "Your turn" panel of a plan run: its own next action and plan figures only. */
+function PlanTurnPanel(props: YourTurnProps): JSX.Element {
+  const facts = endFactsOf(props.state);
+  return (
+    <section class="rst-card rst-p170-turn" aria-label="Your turn">
+      <h2 class="rst-live-section__title">Your turn</h2>
+      <PlanTurn
+        {...{ projectId: props.run.projectId, endState: props.state.ended?.endState }}
+        errorCode={props.state.ended?.errorCode}
+      />
+      <ul class="rst-p170-facts" aria-label="Run facts">
+        <Fact label="Cost" value={costLabel(props.costMicros)} />
+        <Fact label="Tokens" value={tokensLabel(facts.tokens)} />
+      </ul>
+    </section>
+  );
+}
+
 // RF-1015, RF-614
 export function YourTurn(props: YourTurnProps): JSX.Element {
   const facts = endFactsOf(props.state);
   const { run, state } = props;
   const skip = useSkipDeepen(run.id);
+  if (props.stage === 'plan') return <PlanTurnPanel {...props} />;
   const deepenFirst = recommendsDeepen(props) && !skip.skipped && questionsOpen(props.answers);
   return (
     <section class="rst-card rst-p170-turn" aria-label="Your turn">

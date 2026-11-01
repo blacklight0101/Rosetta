@@ -17,6 +17,8 @@ import { AgentsTab } from './AgentsTab.js';
 import { CardsTab } from './CardsTab.js';
 import { CodeMap } from './CodeMap.js';
 import { DeepenProgress } from './DeepenProgress.js';
+import { PlanCalls } from './PlanCalls.js';
+import { PlanProgress } from './PlanProgress.js';
 import { RetryNotice } from './RetryNotice.js';
 import { RunJourney } from './RunJourney.js';
 import { RunStepper } from './RunStepper.js';
@@ -42,7 +44,7 @@ export interface RunningBodyProps {
   readonly source: SourceState | undefined;
 }
 
-const tabIds = ['cards', 'agents', 'activity'] as const;
+const tabIds = ['cards', 'agents', 'activity', 'calls'] as const;
 type TabId = (typeof tabIds)[number];
 
 const tabOf = (id: string): TabId => tabIds.find((each) => each === id) ?? 'cards';
@@ -100,7 +102,14 @@ function noteOf(phase: RunPhase, state: RunState): string {
     : 'No agent is working at this moment.';
 }
 
-function tabsOf(state: RunState): readonly TabSpec[] {
+function tabsOf(state: RunState, stage: string): readonly TabSpec[] {
+  // RF-1015 (P7-25): a plan run has planner calls, not cards or agents.
+  if (stage === 'plan') {
+    return [
+      { id: 'calls', label: 'Planner calls', count: state.planCalls.length },
+      { id: 'activity', label: 'Activity', count: logCountOf(state.log) },
+    ];
+  }
   return [
     { id: 'cards', label: 'Cards so far', count: state.cards.length },
     { id: 'agents', label: 'All agents', count: state.agents.length },
@@ -124,12 +133,13 @@ function Details(props: DetailsProps): JSX.Element {
     <section ref={props.detailsRef} class="rst-card rst-running__details" aria-label="Run details">
       <Tabs
         label="Run details"
-        tabs={tabsOf(state)}
+        tabs={tabsOf(state, stage)}
         selected={tab}
         onSelect={(id) => {
           open(tabOf(id));
         }}
       >
+        {tab === 'calls' ? <PlanCalls state={state} /> : null}
         {tab === 'cards' ? (
           <CardsTab state={state} claims={state.claims} source={props.source} />
         ) : null}
@@ -170,10 +180,33 @@ function StepsOf(props: {
   return <RunJourney steps={journeyOf({ stage, phase, state, tiles })} />;
 }
 
+/** The spend of the run and, below it, the agents at work, or the planner of a plan run. */
+function Rail(props: RunningBodyProps & { readonly onOpenRoles: () => void }): JSX.Element {
+  const { run, state, phase, stage } = props;
+  const figures = tokenFiguresOf(state);
+  return (
+    <div class="rst-running__rail">
+      <SpendPanel
+        runId={run.id}
+        costMicros={props.costMicros}
+        tokens={figures.raw}
+        capTokens={figures.toward}
+        caps={state.caps}
+        onOpenRoles={props.onOpenRoles}
+      />
+      {stage === 'plan' ? (
+        <PlanProgress state={state} />
+      ) : (
+        <WorkingNow items={workingNowOf(state)} waitingNote={noteOf(phase, state)} />
+      )}
+    </div>
+  );
+}
+
 // RF-1015
 export function RunningBody(props: RunningBodyProps): JSX.Element {
   const { run, state, phase, stage } = props;
-  const [tab, setTab] = useState<TabId>('cards');
+  const [tab, setTab] = useState<TabId>(stage === 'plan' ? 'calls' : 'cards');
   const [area, setArea] = useState<string | undefined>();
   const detailsRef = useRef<HTMLElement>(null);
   const areas = useCodeAreas(run.projectId, stage);
@@ -183,7 +216,12 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
     setTab(id);
     setArea(only);
   };
-  const figures = tokenFiguresOf(state);
+  const openRoles = (): void => {
+    open(stage === 'plan' ? 'calls' : 'agents');
+    // P7-27: the section is always rendered, so it can be scrolled to at once.
+    const details = detailsRef.current;
+    if (typeof details?.scrollIntoView === 'function') details.scrollIntoView();
+  };
   return (
     <>
       <Facts state={state} source={props.source} />
@@ -200,22 +238,7 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
             }}
           />
         )}
-        <div class="rst-running__rail">
-          <SpendPanel
-            runId={run.id}
-            costMicros={props.costMicros}
-            tokens={figures.raw}
-            capTokens={figures.toward}
-            caps={state.caps}
-            onOpenRoles={() => {
-              open('agents');
-              // P7-27: the section is always rendered, so it can be scrolled to at once.
-              const details = detailsRef.current;
-              if (typeof details?.scrollIntoView === 'function') details.scrollIntoView();
-            }}
-          />
-          <WorkingNow items={workingNowOf(state)} waitingNote={noteOf(phase, state)} />
-        </div>
+        <Rail {...props} onOpenRoles={openRoles} />
       </div>
       <Details {...props} {...{ tab, area, open, coverage, detailsRef }} codeAreas={areas} />
     </>

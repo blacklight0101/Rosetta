@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/preact';
+import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { json } from './fake-api.js';
 import { ev, runEnded, startedData } from './live-run-fixtures.js';
@@ -42,9 +42,11 @@ it('RF-1015 a planner call that runs shows its name, the time since it started a
   connection.event(ev(4, 'plan.call.started', { call: 'prd' }, 'planner-prd'));
 
   const progress = await screen.findByTestId('plan-progress');
-  expect(progress.textContent).toContain('PRD');
-  expect(progress.textContent).toContain('0:08');
-  expect(progress.textContent).toContain('1,200 tokens so far');
+  await waitFor(() => {
+    expect(progress.textContent).toContain('PRD');
+    expect(progress.textContent).toContain('0:08');
+    expect(progress.textContent).toContain('1,200 tokens so far');
+  });
 });
 
 it('RF-1015 between two calls the page says which call comes next', async () => {
@@ -55,7 +57,9 @@ it('RF-1015 between two calls the page says which call comes next', async () => 
   connection.event(usage(3, 'planner-package', 900, 1000));
 
   const progress = await screen.findByTestId('plan-progress');
-  expect(progress.textContent).toContain('Next: PRD');
+  await waitFor(() => {
+    expect(progress.textContent).toContain('Next: PRD');
+  });
 });
 
 it('RF-1015 a running plan run has no Agents, Cards or Claims panel, and lists its planner calls', async () => {
@@ -72,9 +76,11 @@ it('RF-1015 a running plan run has no Agents, Cards or Claims panel, and lists i
   expect(screen.queryByRole('region', { name: 'Working now' })).toBeNull();
   fireEvent.click(calls);
   const panel = screen.getByRole('tabpanel');
-  expect(within(panel).getByText('Plan package')).toBeTruthy();
-  expect(panel.textContent).toContain('900');
-  expect(panel.textContent).toContain('$1.00');
+  await waitFor(() => {
+    expect(within(panel).getByText('Plan package')).toBeTruthy();
+    expect(panel.textContent).toContain('900');
+    expect(panel.textContent).toContain('$1.00');
+  });
 });
 
 const endedPlan = (endState: string) => ({
@@ -131,5 +137,8 @@ it('RF-627 a plan run written with gaps points to checks.md in its Your turn', a
   connection.event(ev(1, 'run.started', plan));
   connection.event(runEnded(2, 'Failed', 'RST-1806'));
 
-  await within(await screen.findByRole('region', { name: 'Your turn' })).findByText(/checks\.md/u);
+  const found = await within(await screen.findByRole('region', { name: 'Your turn' })).findByText(
+    /checks\.md/u,
+  );
+  expect(found).toBeTruthy();
 });
