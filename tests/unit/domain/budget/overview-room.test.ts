@@ -14,10 +14,17 @@ describe('leavesOverviewRoom', () => {
   });
 
   it('RF-264 lets a merge start while the run has used 96% or less of its token cap', () => {
-    expect(leavesOverviewRoom(spent(960_000n), 1_000_000n)).toBe(true);
+    expect(leavesOverviewRoom(spent(960_000n), { tokens: 1_000_000n, micros: 0n })).toBe(true);
   });
 
   it('RF-264 stops the merges once the run has used more than 96% of its token cap', () => {
-    expect(leavesOverviewRoom(spent(960_001n), 1_000_000n)).toBe(false);
+    expect(leavesOverviewRoom(spent(960_001n), { tokens: 1_000_000n, micros: 0n })).toBe(false);
+  });
+
+  it('RF-264 stops the merges at 96% of the cost cap or of the approved line, whichever is closer', () => {
+    const caps = { tokens: 10_000_000n, micros: 1_000_000n };
+
+    expect(leavesOverviewRoom({ tokens: 1n, micros: 960_000n }, caps)).toBe(true);
+    expect(leavesOverviewRoom({ tokens: 1n, micros: 960_001n }, caps)).toBe(false);
   });
 });

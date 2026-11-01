@@ -119,7 +119,10 @@ export class ReaderRoom {
 
   /** P7-26: whether the run token cap still has room for the overview after a merge call. */
   leavesOverview(): boolean {
-    return leavesOverviewRoom(this.sources.runSpend(), this.limits.runTokens);
+    return leavesOverviewRoom(this.sources.runSpend(), {
+      tokens: this.limits.runTokens,
+      micros: this.limits.runMicros,
+    });
   }
 
   /** DEC-193: whether the verifier was stopped only at its line of the run cap, not by a cap of its own. */

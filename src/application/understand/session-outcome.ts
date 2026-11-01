@@ -83,8 +83,9 @@ function failuresOutcome(end: SessionEnd): RunOutcome {
   return code === undefined ? { endState: 'Failed' } : { endState: 'Failed', errorCode: code };
 }
 
-/** P7-26: a capped run that wrote its overview alone ends as it did, with the areas still unread. */
-export function overviewOnlyOutcome(unread: number): RunOutcome {
+/** P7-26: a run that wrote its overview alone ends CapReached while it has areas unread or claims not judged. */
+export function overviewOnlyOutcome(unread: number, unjudged: number, capped = false): RunOutcome {
+  if (unread === 0 && unjudged === 0 && !capped) return { endState: 'Completed' };
   const left = unread > 0 ? { unreadAreas: unread } : {};
   return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached, ...left };
 }

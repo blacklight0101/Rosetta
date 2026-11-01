@@ -3,7 +3,7 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { reopenManifest } from '../../domain/runs/reopen-manifest.js';
 import type { RunManifest } from '../../domain/runs/run-manifest.js';
-import { RESUMABLE_END_STATES, type Run } from '../../domain/runs/run.js';
+import { OVERVIEW_END_STATES, RESUMABLE_END_STATES, type Run } from '../../domain/runs/run.js';
 import type { Clock } from '../ports/clock.js';
 import type { Project } from '../projects/project.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
@@ -119,7 +119,11 @@ export class ResumeRun {
     project: Project,
     stored: RunManifest,
   ): Promise<Run | undefined> {
-    const reopened = await this.deps.runs.reopen(userId, run.id, this.deps.clock.now().getTime());
+    const at = this.deps.clock.now().getTime();
+    const only = readUnderstandOptions(stored.options).overviewOnly === true;
+    const reopened = await this.deps.runs.reopen(
+      ...([userId, run.id, at, only ? OVERVIEW_END_STATES : undefined] as const),
+    );
     if (reopened === undefined) return undefined;
     const caps = capsOf(project.settings);
     const next = reopenManifest(stored, caps);
@@ -147,6 +151,6 @@ function withOverviewMark(manifest: RunManifest, overviewOnly: boolean): RunMani
 /** RF-006: only an understand run that stopped at a cap, failed or was interrupted has work left. */
 function canResume(run: Run, overviewOnly: boolean): boolean {
   const { endState } = run;
-  if (overviewOnly && endState !== 'CapReached') return false; // P7-26: only a capped run
-  return run.stage === 'understand' && endState !== null && RESUMABLE_END_STATES.includes(endState);
+  const states = overviewOnly ? OVERVIEW_END_STATES : RESUMABLE_END_STATES; // P7-26
+  return run.stage === 'understand' && endState !== null && states.includes(endState);
 }

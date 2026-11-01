@@ -90,7 +90,12 @@ export function PlanNext(props: PlanNextProps): JSX.Element | null {
       </p>
     );
   }
-  return <SetUp {...props} />;
+  return (
+    <>
+      <SetUp {...props} />
+      {props.writeOverview}
+    </>
+  );
 }
 
 function SetUp({ runId, projectId, questionsOpen }: PlanNextProps): JSX.Element {

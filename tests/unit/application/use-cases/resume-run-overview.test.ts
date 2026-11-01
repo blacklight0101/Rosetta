@@ -57,4 +57,12 @@ describe('ResumeRun for the overview alone', () => {
 
     expect(refused).toEqual({ ok: false, error: ERROR_CODES.runNotResumable });
   });
+
+  it('P7-26 queues the overview alone for a run that completed', async () => {
+    const { resume, run } = await setup('Completed');
+
+    const queued = await resume.execute({ actor: userAmy, runId: run.id, overviewOnly: true });
+
+    expect(queued.ok).toBe(true);
+  });
 });
