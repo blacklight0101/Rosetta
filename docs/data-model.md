@@ -1045,6 +1045,19 @@ the `Clock` port.
 | `failed_areas`                                                        | `integer`     | default 0, `CHECK (failed_areas >= 0)`; set with the end state: the areas of an understand run whose task gave no usable card (RF-208), so lists can say "Completed, 2 areas failed" without the run's events; migration `0011` |
 | `unread_areas`                                                        | `integer`     | default 0, `CHECK (unread_areas >= 0)`; set with the end state: the planned areas of a `CapReached` understand run that no reader started (P7-02, DEC-194), so lists can say "Partly read"; migration `0018`                    |
 
+**`journeys`** (RF-011, RF-435, ADR-027; migration `0020`)
+
+| Column                 | Type          | Rules                                                                                                              |
+| ---------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `project_id`           | `uuid`        | primary key; with `user_id` a foreign key to `projects (id, user_id)` `ON DELETE CASCADE`: one journey per project |
+| `user_id`              | `uuid`        | the project's owner; every read is scoped by it (RF-1105)                                                          |
+| `approved_tokens`      | `bigint`      | `CHECK (>= 0)`; the tokens of the worst-case journey total the owner approved (DEC-205)                            |
+| `approved_cost_micros` | `bigint`      | `CHECK (>= 0)`; the same in micro-dollars                                                                          |
+| `created_at`           | `timestamptz` | when Analyse was pressed; the steps of the journey are the project's understand and plan runs queued since then    |
+
+A new Analyse replaces the row. The journey's spend is the sum of the cost and tokens of its steps, read from `runs`, and
+what is left is the line every step runs under (RF-435).
+
 **`cost_ledger`** (RF-428, RF-1106)
 
 | Column                                                 | Type          | Rules                                                                                                                                                                                                                |
@@ -1187,7 +1200,7 @@ runner; `rosetta_app` may only read it, so the server can refuse a schema with a
 a transaction, recorded in `schema_version` with its checksum, by the one-off migrate step
 (`node dist/presentation/migrate.js`, DEC-140) before the server starts; the server only checks them. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`, `0012_cost_reservations_role`, `0013_cost_ledger_cache_writes`, `0014_project_source_kind`, `0015_project_upload_source`, `0016_project_workbook_source`, `0017_project_workbook_source_columns`, `0018_runs_unread_areas`, `0019_runs_awaiting_approval`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`, `0012_cost_reservations_role`, `0013_cost_ledger_cache_writes`, `0014_project_source_kind`, `0015_project_upload_source`, `0016_project_workbook_source`, `0017_project_workbook_source_columns`, `0018_runs_unread_areas`, `0019_runs_awaiting_approval`, `0020_journeys`), `0100..` later
 releases.
 
 **File schema versions**:
