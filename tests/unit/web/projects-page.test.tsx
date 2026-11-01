@@ -54,7 +54,7 @@ it('RF-010 lists the projects with branch, folder and a link to their settings',
   ).toBe('/projects/p-1/settings');
   expect(
     within(row).getByRole('link', { name: 'Start run for octo/demo' }).getAttribute('href'),
-  ).toBe('/projects/p-1/start');
+  ).toBe('/projects/p-1');
   const second = screen.getByText('acme/shop').closest('tr');
   expect(within(second ?? row).getByText('default branch')).not.toBeNull();
   expect(within(second ?? row).getByText('whole repository')).not.toBeNull();
@@ -110,7 +110,7 @@ it('RF-010 the same URL again opens the existing project and adds nothing', asyn
   create(demoUrl);
 
   await waitFor(() => {
-    expect(window.location.pathname).toBe('/projects/p-1/start');
+    expect(window.location.pathname).toBe('/projects/p-1');
   });
   expect(screen.getAllByRole('row')).toHaveLength(2);
 });

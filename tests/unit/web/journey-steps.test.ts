@@ -72,7 +72,7 @@ describe('journeyOf: the understand run', () => {
     expect(view.action).toEqual({
       kind: 'link',
       label: 'Start a run',
-      href: `/projects/${projectId}/start`,
+      href: `/projects/${projectId}`,
     });
   });
 
@@ -189,7 +189,7 @@ describe('journeyOf: a completed run with nothing to plan from', () => {
     expect(view.action).toEqual({
       kind: 'link',
       label: 'Start a new run',
-      href: `/projects/${projectId}/start`,
+      href: `/projects/${projectId}`,
     });
   });
 });

@@ -1,7 +1,15 @@
 import { fireEvent, screen } from '@testing-library/preact';
 import { afterEach, expect, it } from 'vitest';
 import { json } from './fake-api.js';
-import { estimatePath, localEstimate, runAnswer, runsPath } from './start-run-fixtures.js';
+import {
+  cloudEstimate,
+  estimatePath,
+  localEstimate,
+  projectPath,
+  projectWithCap,
+  runAnswer,
+  runsPath,
+} from './start-run-fixtures.js';
 import {
   consentLabel,
   input,
@@ -62,4 +70,16 @@ it('RF-436 Analyse sends no stage choice, no caps and saves no settings', async 
   const writes = calls.filter((call) => call.method !== 'GET');
   expect(writes.map((call) => call.method)).toEqual(['POST']);
   expect(JSON.stringify(writes[0]?.body)).not.toMatch(/maxCostMicros|maxTokens|parallelism/u);
+});
+
+it('RF-436 the meter shows the likely cost against the cap saved in the project settings', async () => {
+  renderStart({
+    [`GET ${projectPath}`]: json(200, projectWithCap(2_000_000)),
+    [`GET ${estimatePath}`]: json(200, cloudEstimate),
+  });
+  await ready();
+
+  // On server keys the meter is against the administrator's $0.50 run cap, lower than the $2.00 saved.
+  expect(screen.getByRole('meter').getAttribute('aria-valuenow')).toBe('78');
+  expect(screen.queryByLabelText('Run cap (USD)')).toBeNull();
 });

@@ -111,7 +111,6 @@ test(
       const before = await tokensOf(pill);
       await chooseAreas(page, ['Catalog', 'Database', 'Services']);
       await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
-      await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.50');
       await startAndOpenLiveRun(page);
 
       await expect(runStatus(page)).toContainText(/Cap reached|Partly read/u, { timeout: 90_000 });

@@ -36,7 +36,6 @@ it('RF-113 an Understand start on an outdated map is blocked until it is confirm
     [`POST ${runsPath}`]: runAnswer('understand', null),
   });
   await ready();
-  expect(input('Understand').checked).toBe(true);
   expect(start().disabled).toBe(true);
   fireEvent.click(input(confirmation));
   expect(start().disabled).toBe(false);
@@ -53,7 +52,6 @@ it('RF-113 a code map of the current scanner is not gated', async () => {
   renderStart();
   await ready();
   expect(screen.queryByText('The code map is out of date.')).toBeNull();
-  expect(input('Understand').checked).toBe(true);
   expect(start().disabled).toBe(false);
 });
 

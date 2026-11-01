@@ -26,7 +26,7 @@ describe('RF-1002 the head of the run page', () => {
 
       const link = screen.getByRole('link', { name: 'Start page' });
       const title = screen.getByRole('heading', { name: 'Live run' });
-      expect(link.getAttribute('href')).toBe('/projects/p-1/start');
+      expect(link.getAttribute('href')).toBe('/projects/p-1');
       expect(link.parentElement).toBe(title.parentElement);
       expect(link.closest('.rst-live-pause-actions')).toBeNull();
     },

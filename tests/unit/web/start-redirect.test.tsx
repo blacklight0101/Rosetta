@@ -7,6 +7,18 @@ import { matchRoute } from '../../../web/src/app/route-match.js';
 
 // RF-1022, DEC-204: the old start-page address leads to the project page.
 
+const session = {
+  user: { id: 'u-1', userName: 'ana', displayName: 'Ana', role: 'user', state: 'Active' },
+  csrfToken: 'csrf-1',
+};
+const signedIn: typeof fetch = () =>
+  Promise.resolve(
+    new Response(JSON.stringify(session), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }),
+  );
+
 afterEach(() => {
   window.history.pushState({}, '', '/');
 });
@@ -20,7 +32,7 @@ it('RF-1022 the project page is a route of its own', () => {
 
 it('RF-1022 the old start-page address is redirected to the project page', async () => {
   window.history.pushState({}, '', '/projects/p-7/start');
-  const fetchFn = vi.fn(() => Promise.resolve(new Response('{}', { status: 404 })));
+  const fetchFn = signedIn;
 
   render(<App client={createApiClient({ fetch: fetchFn })} routes={routes} assign={vi.fn()} />);
 
@@ -32,7 +44,7 @@ it('RF-1022 the old start-page address is redirected to the project page', async
 it('RF-1022 the redirect replaces the old address in the history', async () => {
   window.history.pushState({}, '', '/projects/p-8');
   window.history.pushState({}, '', '/projects/p-7/start');
-  const fetchFn = vi.fn(() => Promise.resolve(new Response('{}', { status: 404 })));
+  const fetchFn = signedIn;
 
   render(<App client={createApiClient({ fetch: fetchFn })} routes={routes} assign={vi.fn()} />);
 

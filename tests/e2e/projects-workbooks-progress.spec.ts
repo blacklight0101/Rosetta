@@ -126,7 +126,7 @@ test('RF-159 closing the page does not cancel the work: the project page shows i
   const projectId = await startUpload(page);
   await expect(page.getByTestId('processing')).toBeVisible();
 
-  await page.goto(`/projects/${projectId}/start`);
+  await page.goto(`/projects/${projectId}`);
   await expect(page.getByTestId('processing-detail')).toContainText('1,200 cells read');
   await page.reload();
   await expect(page.getByTestId('processing-detail')).toContainText('Workbook 2 of 2');

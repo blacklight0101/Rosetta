@@ -104,5 +104,5 @@ it('P1-175 encodes a project id in every link', () => {
   });
 
   const paths = groups.find((group) => group.id === 'project')?.items.map((i) => i.path);
-  expect(paths?.[0]).toBe('/projects/a%20b%2Fc/start');
+  expect(paths?.[0]).toBe('/projects/a%20b%2Fc');
 });

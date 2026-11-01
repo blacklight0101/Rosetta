@@ -55,7 +55,7 @@ function useCreation(props: NewProjectFormProps): Creation {
     }
     const { project, created } = result.value;
     if (!created) {
-      navigate(`/projects/${encodeURIComponent(project.id)}/start`);
+      navigate(`/projects/${encodeURIComponent(project.id)}`);
       return;
     }
     onUrl('');

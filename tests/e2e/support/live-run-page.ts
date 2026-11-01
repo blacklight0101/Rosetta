@@ -44,7 +44,7 @@ export async function openStartOf(page: Page, url: string): Promise<void> {
   await ensureProject(page, url);
   if (await startHeadingOf(page).isVisible()) return;
   const link = startLinkOf(page, url);
-  await expect(link).toHaveAttribute('href', /\/start$/u);
+  await expect(link).toHaveAttribute('href', /\/projects\/[^/]+$/u);
   await page.goto((await link.getAttribute('href')) ?? '/projects');
 }
 

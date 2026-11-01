@@ -4,7 +4,7 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import { StartRunForm } from './StartRunForm.js';
 import { useProject } from './use-project.js';
 
-// RF-1001, RF-1105, design-system.md section 14 (Start run): `/projects/:projectId/start`. Another
+// RF-1001, RF-1105, design-system.md section 14 (Start run): `/projects/:projectId`. Another
 // user's project answers 404 like an unknown one, and the page shows that error and no form.
 
 // RF-1001
