@@ -185,7 +185,7 @@ it('RF-1015 a failed run has no overview: the page says what failed and what to 
   expect(tab('Evidence').getAttribute('aria-selected')).toBe('true');
 });
 
-it('RF-1015 a run that is not an understand run has the evidence and activity tabs only', async () => {
+it('RF-1015 a plan run has the planner calls and activity tabs only (P7-25)', async () => {
   renderLive({
     [`GET ${runPath}`]: runRow({ stage: 'plan', queueState: 'Ended', endState: 'Completed' }),
     [`GET ${runPath}/answers`]: failure(404, 'RST-1000'),
@@ -196,7 +196,7 @@ it('RF-1015 a run that is not an understand run has the evidence and activity ta
     within(screen.getByRole('tablist', { name: 'Results' }))
       .getAllByRole('tab')
       .map((each) => each.textContent),
-  ).toEqual([expect.stringMatching(/^Evidence/u), expect.stringMatching(/^Activity/u)]);
+  ).toEqual([expect.stringMatching(/^Planner calls/u), expect.stringMatching(/^Activity/u)]);
 });
 
 it('RF-230 the Evidence tab lists the files as not read and an area the run was not asked to read apart', async () => {

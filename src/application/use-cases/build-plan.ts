@@ -41,6 +41,7 @@ import type { ScanResults } from '../ports/scan-results.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
+import { announcePlannerCall } from '../plan/plan-call-events.js';
 import { callIds } from '../runs/run-ids.js';
 import { resolvedSourceOf } from '../plan/resolved-source-of.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
@@ -133,6 +134,7 @@ export class BuildPlan implements RunExecutor {
     const call = {
       ...{ run, planner, prompt: prompts.plan, agentTaskId: 'planner-package', updates, signal },
       continuePrompt: prompts.continue,
+      onCallStarted: (id: string) => announcePlannerCall(execution.events, id),
       ...{ tags: () => this.deps.ids.dataBlockTag(), callId: callIds(run) },
       window: windowOfRole(planner, inputs.value.project.settings),
     };

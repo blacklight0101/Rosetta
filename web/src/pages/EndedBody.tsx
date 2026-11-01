@@ -6,17 +6,18 @@ import type { RunEstimate } from '../api/estimate-schemas.js';
 import { reportFilePath } from '../api/runs.js';
 import type { RunRow } from '../api/run-schemas.js';
 import { Link } from '../components/Link.js';
-import { Tabs, type TabSpec } from '../components/Tabs.js';
-import { logCountOf } from '../lib/live-run/log-count.js';
+import { Tabs } from '../components/Tabs.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { stepperOf } from '../lib/live-run/run-stepper.js';
+import { endedTabsOf } from './ended-tabs.js';
 import { ActivityTab } from './ActivityTab.js';
 import { AppOverview, sectionAnchor } from './AppOverview.js';
 import { DeepenProgress } from './DeepenProgress.js';
 import { EvidenceTab } from './EvidenceTab.js';
 import { UnderstandJourney } from './JourneyPlacement.js';
 import { FailedAreas } from './FailedAreas.js';
+import { PlanCalls } from './PlanCalls.js';
 import { RetryNotice } from './RetryNotice.js';
 
 import { RunAnswers } from './RunAnswers.js';
@@ -55,7 +56,7 @@ export interface EndedBodyProps {
   readonly onResumed: () => void;
 }
 
-const tabIds = ['overview', 'questions', 'evidence', 'activity'] as const;
+const tabIds = ['overview', 'questions', 'evidence', 'activity', 'calls'] as const;
 type TabId = (typeof tabIds)[number];
 
 const tabOf = (id: string): TabId => tabIds.find((each) => each === id) ?? 'evidence';
@@ -74,20 +75,6 @@ function useReportBuilt(run: RunRow): { readonly built: boolean; readonly onBuil
       setBuiltHere(true);
     },
   };
-}
-
-function tabsOf(props: {
-  readonly asks: boolean;
-  readonly open: number | undefined;
-  readonly state: RunState;
-}): readonly TabSpec[] {
-  const { asks, open, state } = props;
-  return [
-    ...(asks ? [{ id: 'overview', label: 'Overview' }] : []),
-    ...(asks ? [{ id: 'questions', label: 'Your questions', count: open }] : []),
-    { id: 'evidence', label: 'Evidence', count: state.cards.length },
-    { id: 'activity', label: 'Activity', count: logCountOf(state.log) },
-  ];
 }
 
 /** RF-1015: the replay is written with the report, so it is linked once the report exists. */
@@ -118,11 +105,12 @@ interface ResultsTab {
 }
 
 /** The tab that is open: the overview first for a run that asks, the evidence otherwise. */
-function useResultsTab(asks: boolean): ResultsTab {
-  const [chosen, setChosen] = useState<TabId>(asks ? 'overview' : 'evidence');
+function useResultsTab(asks: boolean, stage: string): ResultsTab {
+  const first = stage === 'plan' ? 'calls' : 'evidence';
+  const [chosen, setChosen] = useState<TabId>(asks ? 'overview' : first);
   const [anchor, setAnchor] = useState<string | undefined>();
   // The run may turn out to have failed after the page opened on the overview (its events replay).
-  const tab = asks || (chosen !== 'overview' && chosen !== 'questions') ? chosen : 'evidence';
+  const tab = asks || (chosen !== 'overview' && chosen !== 'questions') ? chosen : first;
   useEffect(() => {
     if (tab !== 'overview' || anchor === undefined) return;
     const target = document.getElementById(anchor);
@@ -175,6 +163,7 @@ function Panels(props: PanelsProps): JSX.Element | null {
       />
     );
   }
+  if (results.tab === 'calls') return <PlanCalls runId={run.id} state={shown} />;
   if (results.tab === 'evidence')
     return <EvidenceTab {...props} state={shown} source={reportSeen(props.source, props.built)} />;
   return (
@@ -260,7 +249,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
   const overview = useRunOverview(run.id, asks);
   const answers = useRunAnswers(run.id, asks);
   const understanding = useUnderstanding(run.id, asks);
-  const results = useResultsTab(asks);
+  const results = useResultsTab(asks, stage);
   const open = openQuestions(answers.load);
   const { focus, showQuestions } = useQuestionsFocus(() => {
     results.show('questions');
@@ -272,7 +261,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
         <section class="rst-card rst-p170-main" aria-label="Results">
           <Tabs
             label="Results"
-            tabs={tabsOf({ asks, open, state: shown })}
+            tabs={endedTabsOf({ stage, asks, open, state: shown })}
             selected={results.tab}
             onSelect={results.select}
           >

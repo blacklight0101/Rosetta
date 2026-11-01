@@ -1,4 +1,5 @@
 import { verifyDetail, waitsForJudgement } from './judgement-state.js';
+import { planStepDetail } from './plan-calls.js';
 import type { RunPhase } from './run-phase.js';
 import type { RunState } from './run-state.js';
 import { overviewOf } from './run-summary.js';
@@ -121,6 +122,11 @@ function readerSteps(state: RunState, phase: RunPhase): readonly Step[] {
 /** RF-627: a run that wrote the package and ended with this code found items no task card builds. */
 const PACKAGE_WITH_GAPS = 'RST-1806';
 
+/** RF-1015 (P7-25): the working call, or the next one, while the planner works. */
+function callsDetail(state: RunState, phase: RunPhase, calls: Progress): string | undefined {
+  return calls === 'working' && phase.kind === 'running' ? planStepDetail(state) : undefined;
+}
+
 /**
  * RF-1015 (Q-44): the steps of a plan run: the brief it reads, the planner calls, the package it
  * writes and the checks on the package. A package written with gaps (RST-1806) has its package done
@@ -139,7 +145,7 @@ function planSteps(state: RunState, phase: RunPhase): readonly Step[] {
   const checked: Progress = completed ? 'done' : afterwards(gaps);
   return [
     step('Brief', 'done'),
-    step('Planner calls', statusOf(calls, phase)),
+    step('Planner calls', statusOf(calls, phase), callsDetail(state, phase, calls)),
     step('Package', statusOf(written, phase)),
     step('Checks', gaps ? 'stopped' : statusOf(checked, phase), gaps ? 'gaps found' : undefined),
   ];

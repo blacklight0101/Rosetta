@@ -4,6 +4,7 @@ import { Button } from '../components/Button.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { endFactsOf } from '../lib/live-run/end-facts.js';
 import { PlanNext, type CapLeft } from './PlanNext.js';
+import { PlanTurn } from './PlanTurn.js';
 import { overviewEstimateText } from '../lib/live-run/overview-estimate.js';
 import { ResumeButton } from './ResumeButton.js';
 import type { OverviewLoad } from './use-run-overview.js';
@@ -30,6 +31,8 @@ export interface YourTurnProps {
   readonly onAnswer: () => void;
   /** RF-614: the run and its project, to open Plan setup for this run. */
   readonly run: { readonly id: string; readonly projectId: string };
+  /** RF-1015: a plan run has its own next action and only plan figures. */
+  readonly stage?: string | undefined;
   /** RF-209: the id of the run, when it ended Completed and can be deepened. */
   readonly deepenRunId?: string | undefined;
   /** P7-26: the overview of the run, for the "Write the overview" action of a capped run. */
@@ -195,6 +198,23 @@ function questionsOpen(answers: AnswersLoad): boolean {
   return answers.status === 'ready' && answers.questions.some(waitsForAnswer);
 }
 
+/** RF-1015 (P7-25): the "Your turn" panel of a plan run: its own next action and plan figures only. */
+function PlanTurnPanel(props: YourTurnProps): JSX.Element {
+  const facts = endFactsOf(props.state);
+  return (
+    <section class="rst-card rst-p170-turn" aria-label="Your turn">
+      <h2 class="rst-live-section__title">Your turn</h2>
+      <PlanTurn
+        {...{ projectId: props.run.projectId, runId: props.run.id, ended: props.state.ended }}
+      />
+      <ul class="rst-p170-facts" aria-label="Run facts">
+        <Fact label="Cost" value={costLabel(props.costMicros)} />
+        <Fact label="Tokens" value={tokensLabel(facts.tokens)} />
+      </ul>
+    </section>
+  );
+}
+
 type Facts = ReturnType<typeof endFactsOf>;
 
 /** P7-26: what a run that ended on its cap left undone. */
@@ -225,11 +245,19 @@ function WriteOverview(props: YourTurnProps & { readonly facts: Facts }): JSX.El
   );
 }
 
+/** P7-26: the Write the overview action, only when the overview is missing. */
+function writeOverviewOf(props: YourTurnProps, facts: Facts): JSX.Element | undefined {
+  return leftOf(props, facts).overviewMissing ? (
+    <WriteOverview {...props} facts={facts} />
+  ) : undefined;
+}
+
 // RF-1015, RF-614
 export function YourTurn(props: YourTurnProps): JSX.Element {
   const facts = endFactsOf(props.state);
   const { run, state } = props;
   const skip = useSkipDeepen(run.id);
+  if (props.stage === 'plan') return <PlanTurnPanel {...props} />;
   const deepenFirst = recommendsDeepen(props) && !skip.skipped && questionsOpen(props.answers);
   return (
     <section class="rst-card rst-p170-turn" aria-label="Your turn">
@@ -244,11 +272,7 @@ export function YourTurn(props: YourTurnProps): JSX.Element {
           {...{ endState: state.ended?.endState ?? '', supportedClaims: facts.supportedClaims }}
           questionsOpen={questionsOpen(props.answers) && !deepenFirst}
           left={leftOf(props, facts)}
-          writeOverview={
-            leftOf(props, facts).overviewMissing ? (
-              <WriteOverview {...props} facts={facts} />
-            ) : undefined
-          }
+          writeOverview={writeOverviewOf(props, facts)}
         />
       ) : null}
       <ul class="rst-p170-facts" aria-label="Run facts">

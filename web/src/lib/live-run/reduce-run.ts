@@ -21,6 +21,7 @@ import {
   onDeepenRoundStarted,
   onDeepenStarted,
 } from './deepen-events.js';
+import { onPlanCallStarted, onPlanUsage } from './plan-calls.js';
 import { onRetryStarted } from './retry-events.js';
 import { LOG_LIMIT } from './log-count.js';
 import { withLine } from './log-lines.js';
@@ -53,7 +54,8 @@ const handlers: Readonly<Record<string, Handler>> = {
   'agent.tool.called': onToolCalled,
   'agent.tool.result': onToolResult,
   'agent.ended': onAgentEnded,
-  'usage.recorded': onUsage,
+  'usage.recorded': (state, event) => onPlanUsage(onUsage(state, event), event),
+  'plan.call.started': onPlanCallStarted,
   'agent.card.proposed': (state, event) => onClaimsProposed(onCardProposed(state, event), event),
   'verify.citation.checked': onCitationChecked,
   'verify.claim.judged': onClaimJudged,
@@ -87,6 +89,7 @@ export function initialRunState(): RunState {
     log: [],
     roleCostMicros: {},
     roleTokens: {},
+    planCalls: [],
     deepen: undefined,
     retry: undefined,
     awaiting: undefined,

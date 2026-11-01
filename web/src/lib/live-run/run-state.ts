@@ -133,6 +133,20 @@ interface RoleTokens {
   readonly cachedInputTokens: number;
 }
 
+/** RF-1015 (P7-25): one planner call of a plan run, from its `plan.call.started` and usage events. */
+export interface PlanCallState {
+  readonly agentTaskId: string;
+  /** The document, for example `prd`; the task id without its `planner-` prefix. */
+  readonly call: string;
+  /** The start of the latest answer asked for; undefined until a start event arrives. */
+  readonly startedAt: string | undefined;
+  readonly running: boolean;
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  /** Undefined while no answer had a price. */
+  readonly costMicros: number | undefined;
+}
+
 /** RF-209: the cards a Deepen starts from, as counts. */
 interface DeepenSeeded {
   readonly cards: number;
@@ -205,6 +219,8 @@ export interface RunState {
   readonly roleCostMicros: Readonly<Record<string, number>>;
   /** The tokens of each role from its `usage.recorded` events (P1-96); empty for older runs. */
   readonly roleTokens: Readonly<Record<string, RoleTokens>>;
+  /** RF-1015: the planner calls of a plan run, in the order they started; empty for any other run. */
+  readonly planCalls: readonly PlanCallState[];
   /** RF-209: set only for a Deepen run. */
   readonly deepen: DeepenProgress | undefined;
   /** RF-208: set only for a run that retries the failed areas of another run. */
