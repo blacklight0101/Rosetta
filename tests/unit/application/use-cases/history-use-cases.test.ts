@@ -36,6 +36,25 @@ async function historySetup() {
   return { runs, folders, project, ended, listHistory };
 }
 
+describe('ListHistory: the queue', () => {
+  it('RF-1108 EV-80 gives a queued run its place in the server queue and every other run none', async () => {
+    const { runs, project, ended, listHistory } = await historySetup();
+    const ahead = sampleRun({ queueState: 'Queued', queuedAt: 1_000, userId: userBob.userId });
+    const mine = sampleRun({
+      ...{ userId: userAmy.userId, projectId: project.id, queueState: 'Queued', queuedAt: 2_000 },
+    });
+    const done = ended({ queuedAt: 500 });
+    for (const run of [ahead, mine, done]) await runs.insert(run);
+
+    const result = await listHistory.execute({
+      actor: { userId: userAmy.userId, role: 'user' },
+      projectId: project.id,
+    });
+
+    expect(result.ok && result.value.runs.map((each) => each.position)).toEqual([2, null]);
+  });
+});
+
 describe('ListHistory', () => {
   it('RF-1008 lists the runs of the project newest first, each with the size of its folder', async () => {
     const { runs, folders, project, ended, listHistory } = await historySetup();

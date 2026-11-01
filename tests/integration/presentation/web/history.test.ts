@@ -46,6 +46,7 @@ describe('GET /api/projects/:id/history runs', () => {
         sizeBytes: 5,
         failedAreas: 0,
         unreadAreas: 0,
+        position: null,
       },
       ...{ queuedAt: instant, startedAt: instant, endedAt: instant },
       totals: {

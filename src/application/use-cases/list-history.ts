@@ -16,6 +16,8 @@ export interface HistoryRun {
   readonly run: Run;
   /** The bytes the run folder holds; 0 when it has none (a run that never wrote one). */
   readonly sizeBytes: number;
+  /** EV-80: the place of a queued run in the server's queue, counted from 1; null for any other run. */
+  readonly position: number | null;
 }
 
 export interface RunHistory {
@@ -50,7 +52,7 @@ export class ListHistory {
     const listed: HistoryRun[] = [];
     for (const run of await runs.list(userId, project.id)) {
       const sizeBytes = await folders.size({ userId, projectId: project.id, runKey: run.runKey });
-      listed.push({ run, sizeBytes });
+      listed.push({ run, sizeBytes, position: null });
     }
     const sizeBytes = await folders.size({ userId, projectId: project.id });
     return ok({ project, runs: listed, sizeBytes });
