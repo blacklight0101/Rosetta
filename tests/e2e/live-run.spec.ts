@@ -275,7 +275,9 @@ test('RF-1006 a stream asked from an event number sends the stored events after 
 });
 
 // P1-131: the test server holds a server key for OpenAI only, so the provider without one is Anthropic.
-test('RF-1108 RST-2302 a run refused for a missing key shows the code, the message and where to fix it', async ({
+// RF-431 (P7-04): the estimate says the key is missing and Start stays disabled, so no run is queued
+// to fail; the start route's refusal (RST-2302) is covered by the integration tests.
+test('RF-431 RST-2302 a role without a usable key shows Key missing, where to fix it, and Start stays disabled', async ({
   page,
 }) => {
   await openStartPage(page);
@@ -287,13 +289,11 @@ test('RF-1108 RST-2302 a run refused for a missing key shows the code, the messa
   await page.getByRole('link', { name: 'Start a run' }).click();
   await page.getByLabel('I understand; send masked excerpts to Anthropic for this run').check();
 
-  await startAndOpenLiveRun(page);
-
-  const refusal = page.getByTestId('run-failure');
-  await expect(refusal).toContainText('RST-2302', { timeout: 30_000 });
-  await expect(refusal).toContainText('There is no API key you may use for this provider.');
-  await expect(refusal.getByRole('link', { name: 'Settings and keys' })).toBeVisible();
-  await expect(runStatus(page)).toContainText('Failed');
-  await transitionsDone(page);
+  const note = page.getByTestId('key-missing-note');
+  await expect(note).toContainText('Key missing', { timeout: 30_000 });
+  await expect(note).toContainText('RST-2302');
+  await expect(note.getByRole('link', { name: 'Settings and keys' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Start run/u })).toBeDisabled();
+  await expect(page.getByTestId('start-reason')).toContainText('key is missing');
   await expectNoSeriousViolations(page);
 });
