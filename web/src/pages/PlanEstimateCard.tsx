@@ -16,7 +16,7 @@ import { useWritePackage } from './use-write-package.js';
 
 // RF-613, RF-143, RF-427, design-system.md section 14 (Plan setup): the estimate of the planner
 // against the caps, what stops the run (no price, no key), a warning for a figure over a cap, and
-// "Write the package". The calls behind the figures are shown only when the estimate names them.
+// "Start the plan". The calls behind the figures are shown only when the estimate names them.
 
 export interface PlanEstimateCardProps {
   readonly projectId: string;
@@ -155,7 +155,7 @@ export function PlanEstimateCard(props: PlanEstimateCardProps): JSX.Element {
         {...(reason === undefined ? {} : { disabledReason: reason })}
         onClick={writing.write}
       >
-        {outOfDate ? 'Write the package again' : 'Write the package'}
+        {outOfDate ? 'Start the plan again' : 'Start the plan'}
       </Button>
     </section>
   );
