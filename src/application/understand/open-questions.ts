@@ -16,7 +16,7 @@ interface Group {
 }
 
 /** "Who uses these pages?" and "who uses these pages" are the same question; '' when no words. */
-export function questionWords(question: string): string {
+function questionWords(question: string): string {
   return question
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
