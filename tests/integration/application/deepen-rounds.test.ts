@@ -150,7 +150,8 @@ describe('RNF-004 the manifest of a Deepen run', UNDERSTAND_TIMEOUT, () => {
 
     const manifest = await h.manifestOf(deep);
 
-    expect(manifest.promptVersions['reader/reread.v4.md']?.version).toBe('v4');
+    expect(manifest.promptVersions['reader/reread.v5.md']?.version).toBe('v5');
+    expect(manifest.promptVersions['reader/reread.v4.md']).toBeUndefined();
     expect(manifest.promptVersions['reader/reread.v1.md']).toBeUndefined();
     expect(manifest.promptVersions['reader/reread.v2.md']).toBeUndefined();
     expect(manifest.promptVersions['reader/reread.v3.md']).toBeUndefined();

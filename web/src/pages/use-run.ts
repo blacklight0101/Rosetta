@@ -15,6 +15,9 @@ export type RunLoad =
   | { readonly status: 'failed'; readonly error: ApiFailure }
   | { readonly status: 'ready'; readonly run: RunRow };
 
+/** EV-80: how often a queued run is read again. */
+const QUEUE_POLL_MS = 15_000;
+
 // RF-1105
 export function useRun(runId: string, refreshKey: number): RunLoad {
   const { client } = useApp();
@@ -38,6 +41,17 @@ export function useRun(runId: string, refreshKey: number): RunLoad {
       abort.abort();
     };
   }, [client, runId]);
+  // EV-80: a queued run has no events, so its place is read again while it waits.
+  const queued = state.status === 'ready' && state.run.queueState === 'Queued';
+  useEffect(() => {
+    if (!queued) return undefined;
+    const timer = setInterval(() => {
+      refresh.current?.();
+    }, QUEUE_POLL_MS);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [queued]);
   useEffect(() => {
     if (previous.current === refreshKey) return;
     previous.current = refreshKey;

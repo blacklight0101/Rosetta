@@ -1,3 +1,4 @@
+import { queueSuffix } from '../live-run/queue-text.js';
 import type {
   JourneyFacts,
   JourneyRunFacts,
@@ -31,8 +32,10 @@ export function phaseOf(run: RunState): RunPhase {
   return run.endState === 'Completed' ? 'completed' : 'stopped';
 }
 
-export const workingText = (run: Pick<JourneyRunFacts, 'queueState'>): string =>
-  run.queueState === 'Queued' ? 'Waiting in the queue' : 'Running now';
+export const workingText = (run: Pick<JourneyRunFacts, 'queueState' | 'position'>): string => {
+  if (run.queueState !== 'Queued') return 'Running now';
+  return `Waiting in the queue${queueSuffix(run.position)}`;
+};
 
 /** How a run that stopped ended, with the code it ended with. */
 export function endText(

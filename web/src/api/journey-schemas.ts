@@ -17,6 +17,8 @@ const journeyRun = z.object({
   errorCode: z.string().nullable(),
   /** P7-02: the planned areas no reader started. */
   unreadAreas: count.optional(),
+  /** EV-80: the place of a queued run in the queue, counted from 1. */
+  position: z.number().int().positive().nullable().optional(),
 });
 
 export const journeySchema = z.object({

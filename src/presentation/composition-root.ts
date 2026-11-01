@@ -152,8 +152,8 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     ...{ pool, logger, clock, masker, templatesFolder, promptsFolder },
     ...(parts.batchTimers?.clock === undefined ? {} : { batchClock: parts.batchTimers.clock }),
     ...{ dataDir: environment.dataDir, priceTable: auth.priceTable, models: auth.models },
-    uploadMaxMb: environment.uploadMaxMb,
-    workbook: environment,
+    ...{ uploadMaxMb: environment.uploadMaxMb, workbook: environment },
+    ...{ githubToken: environment.githubToken, fetch: doubles?.fetch },
     serverKeys: serverKeyPresence(environment, doubles !== undefined),
   });
   const server = buildServer({
