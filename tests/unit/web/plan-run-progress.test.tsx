@@ -142,3 +142,51 @@ it('RF-627 a plan run written with gaps points to checks.md in its Your turn', a
   );
   expect(found).toBeTruthy();
 });
+
+const checks = json(200, {
+  sections: [
+    {
+      title: 'Plan coverage',
+      text: '2 items of 9 are built by no task card; the run is not complete.',
+    },
+    { title: 'Left out', text: 'Nothing was left out of the package.' },
+  ],
+});
+
+it('RF-1015 a written package lists its checks, as the server sends them, in the Planner calls tab', async () => {
+  const { stream } = renderLive({ ...endedPlan('Completed'), [`GET ${runPath}/checks`]: checks });
+  const connection = await stream.connection();
+  connection.event(ev(1, 'run.started', plan));
+  connection.event(runEnded(2, 'Completed'));
+
+  const panel = await screen.findByRole('tabpanel');
+  expect(await within(panel).findByRole('heading', { name: 'Plan coverage' })).toBeTruthy();
+  expect(panel.textContent).toContain('2 items of 9 are built by no task card');
+  expect(within(panel).getByRole('heading', { name: 'Left out' })).toBeTruthy();
+});
+
+it('RF-627 a plan run written with gaps lists what checks.md says in its Your turn', async () => {
+  const { stream } = renderLive({
+    ...endedPlan('Failed'),
+    [`GET /api/errors/RST-1806`]: json(200, { code: 'RST-1806', message: 'Gaps.', nextStep: '' }),
+    [`GET ${runPath}/checks`]: checks,
+  });
+  const connection = await stream.connection();
+  connection.event(ev(1, 'run.started', plan));
+  connection.event(runEnded(2, 'Failed', 'RST-1806'));
+
+  const found = await within(await screen.findByRole('region', { name: 'Your turn' })).findByText(
+    /2 items of 9 are built by no task card/u,
+  );
+  expect(found).toBeTruthy();
+});
+
+it('RF-1015 a plan run whose package is not written asks the server for no checks', async () => {
+  const { stream, calls } = renderLive(endedPlan('Failed'));
+  const connection = await stream.connection();
+  connection.event(ev(1, 'run.started', plan));
+  connection.event(runEnded(2, 'Failed', 'RST-1805'));
+
+  await screen.findByRole('tab', { name: /^Planner calls/u });
+  expect(calls.some((call) => call.path === `${runPath}/checks`)).toBe(false);
+});
