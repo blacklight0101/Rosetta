@@ -47,7 +47,7 @@ export function UnderstandJourney(
 }
 
 // RF-615
-export function PlanJourney(props: RunJourneyProps): JSX.Element | null {
+function PlanJourney(props: RunJourneyProps): JSX.Element | null {
   const { run, stage, phase } = props;
   if (stage !== 'plan') return null;
   return (
@@ -59,7 +59,7 @@ export function PlanJourney(props: RunJourneyProps): JSX.Element | null {
 }
 
 // RF-1020
-export function ScanJourney(props: RunJourneyProps): JSX.Element | null {
+function ScanJourney(props: RunJourneyProps): JSX.Element | null {
   const { run, stage, phase } = props;
   if (stage !== 'scan') return null;
   return (
