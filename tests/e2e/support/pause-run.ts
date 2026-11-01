@@ -52,8 +52,13 @@ export async function pauseFinishedRun(page: Page, runUuid: string, area: string
   const ended = totalsOf.parse(JSON.parse(events[endAt] ?? '{}'));
   const { totals } = ended.data;
   const spent = totals.inputTokens + totals.outputTokens + (totals.cachedInputTokens ?? 0);
-  const approved = { tokens: spent, costMicros: totals.costMicros };
-  const half = { tokens: Math.ceil(spent / 2), costMicros: Math.ceil(totals.costMicros / 2) };
+  // A call is reserved at its worst case, far above what the recorded run spent, so the approved
+  // amount leaves room for that reserve: Continue adds half of it and the left agent can run.
+  const approved = { tokens: spent + 4_000_000, costMicros: totals.costMicros + 2_000_000 };
+  const half = {
+    tokens: Math.ceil(approved.tokens / 2),
+    costMicros: Math.ceil(approved.costMicros / 2),
+  };
   const kept = events
     .slice(0, endAt)
     .map((text) => z.record(z.string(), z.unknown()).parse(JSON.parse(text)))
@@ -71,16 +76,7 @@ export async function pauseFinishedRun(page: Page, runUuid: string, area: string
   const numbered = kept.map((event, index) => JSON.stringify({ ...event, seq: index + 1 }));
   await writeFile(eventsFile, `${numbered.join('\n')}\n`, 'utf8');
 
-  const manifestFile = join(folder.dir, 'manifest.json');
-  const manifest = z
-    .looseObject({ options: z.looseObject({}) })
-    .parse(JSON.parse(await readFile(manifestFile, 'utf8')));
-  const options = { ...manifest.options, approvedAmount: approved };
-  await writeFile(
-    manifestFile,
-    `${JSON.stringify({ ...manifest, endedAt: null, endState: null, options }, null, 2)}\n`,
-    'utf8',
-  );
+  await recordApproval(join(folder.dir, 'manifest.json'), approved);
 
   await rewindRow(runUuid);
 }
@@ -102,4 +98,20 @@ async function rewindRow(runUuid: string): Promise<void> {
   } finally {
     await pool.end();
   }
+}
+
+/** The manifest says the run is not over and records the approved amount. */
+async function recordApproval(
+  manifestFile: string,
+  approved: { readonly tokens: number; readonly costMicros: number },
+): Promise<void> {
+  const manifest = z
+    .looseObject({ options: z.looseObject({}) })
+    .parse(JSON.parse(await readFile(manifestFile, 'utf8')));
+  const options = { ...manifest.options, approvedAmount: approved };
+  await writeFile(
+    manifestFile,
+    `${JSON.stringify({ ...manifest, endedAt: null, endState: null, options }, null, 2)}\n`,
+    'utf8',
+  );
 }
