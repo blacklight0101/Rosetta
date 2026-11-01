@@ -1,7 +1,7 @@
 import type { Catalogue, PlanOptions } from '../../api/plan-schemas.js';
-import { withAnswered, type Draft } from './draft.js';
+import { isAnswered, withAnswered, type Draft } from './draft.js';
 import { TYPED } from './own-answers.js';
-import { STYLE_GROUP } from './steps.js';
+import { STACK_LAYERS, STYLE_GROUP } from './steps.js';
 
 // RF-605, RF-608, RF-609: how a click on the page changes the draft. A choice records the question
 // as answered, so a save sends it; a question never touched keeps its default (DEC-80).
@@ -53,6 +53,23 @@ export function chooseLayer(
   if (choice.trim() === '') return { ...marked, stack: others };
   const entry = { layer, choice, custom, ...(offered.length === 0 ? {} : { offered }) };
   return withAnswered({ ...marked, stack: { ...others, [layer]: entry } }, [`stack.${layer}`]);
+}
+
+/**
+ * P7-29: after the consent a layer the person left unanswered takes the planner's recommended
+ * option, the first of its options. Without the planner's options the draft is returned as it is and
+ * the server takes the catalogue's recommendation for the layer.
+ */
+export function acceptedStack(draft: Draft, options: PlanOptions | undefined): Draft {
+  return STACK_LAYERS.reduce((next, { id }) => {
+    const offered = options?.stack.find((each) => each.layer === id)?.options ?? [];
+    const [first] = offered;
+    const question = `stack.${id}`;
+    if (first === undefined || isAnswered(next, question) || next.chosen[question] === TYPED) {
+      return next;
+    }
+    return chooseLayer(next, id, { choice: first, custom: false, offered, option: 'a' });
+  }, draft);
 }
 
 /** The principles kept, in catalogue order. */

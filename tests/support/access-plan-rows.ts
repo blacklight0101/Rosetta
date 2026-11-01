@@ -34,6 +34,18 @@ export const planRows: Readonly<Record<string, readonly Probe[]>> = {
   'HEAD /api/projects/:id/plan-source': [
     { method: 'HEAD', url: projectUrl('/plan-source'), expected: ownerOnly(409) },
   ],
+  // P7-29: the matrix project has no scan, so its owner gets the empty offer (200).
+  'GET /api/projects/:id/stack-offer': [
+    { method: 'GET', url: projectUrl('/stack-offer'), expected: ownerOnly(200) },
+    {
+      method: 'GET',
+      url: () => '/api/projects/not-a-uuid/stack-offer',
+      expected: active(401, 404),
+    },
+  ],
+  'HEAD /api/projects/:id/stack-offer': [
+    { method: 'HEAD', url: projectUrl('/stack-offer'), expected: ownerOnly(200) },
+  ],
   // RF-615: the journey of the matrix project (it has no run) is empty for its owner; a run id of no run is not found.
   'GET /api/projects/:id/journey': [
     { method: 'GET', url: projectUrl('/journey'), expected: ownerOnly(200) },

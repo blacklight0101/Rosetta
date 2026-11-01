@@ -109,7 +109,7 @@ describe('loadCatalogue refuses broken proposals (P5-39)', () => {
 
   it('P5-39 RF-609 refuses a proposal for a technology the layer table does not hold', async () => {
     await copyCatalogue();
-    const path = join(folder(), 'stack-proposals.v1.yaml');
+    const path = join(folder(), 'stack-proposals.v2.yaml');
     await writeFile(
       path,
       (await readFile(path, 'utf8')).replace("choice: 'Razor Pages'", "choice: 'Nowhere Pages'"),
@@ -122,7 +122,7 @@ describe('loadCatalogue refuses broken proposals (P5-39)', () => {
 
   it('P5-39 RF-609 refuses a catalogue without its proposals file', async () => {
     await copyCatalogue();
-    await rm(join(folder(), 'stack-proposals.v1.yaml'));
+    await rm(join(folder(), 'stack-proposals.v2.yaml'));
 
     expect(await failureOf(loadCatalogue(temp.path))).toMatchObject({
       code: ERROR_CODES.configurationInvalid,

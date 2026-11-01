@@ -7,6 +7,7 @@ import {
   type StackLayer,
 } from './planning-brief.js';
 import type { StackData } from './stack-data.js';
+import { matchingOptions } from './stack-offer.js';
 import { typedAnswers } from './typed-answers.js';
 
 // P5-39, DEC-172, RF-609, RF-610, DEC-80: what the plan proposes where the brief leaves a choice open. The
@@ -79,12 +80,7 @@ function layersOf(
   const answered = new Set(brief.stack.map((entry) => entry.layer));
   return stackLayers.flatMap((layer) => {
     if (answered.has(layer)) return [];
-    const option = stack.proposals.options.find(
-      (each) =>
-        each.kind === kind &&
-        each.layer === layer &&
-        (each.legacy.length === 0 || each.legacy.some((id) => facts.languages.includes(id))),
-    );
+    const [option] = matchingOptions(stack, kind, layer, facts.languages);
     return option === undefined ? [] : [{ layer, choice: option.choice, why: option.why }];
   });
 }

@@ -120,25 +120,17 @@ describe('stack step answers', () => {
     press('Save and continue');
 
     await screen.findByRole('heading', { name: /What should the roadmap know/u, level: 2 });
-    expect(saves(page)).toEqual([
-      {
-        stack: [
-          {
-            layer: 'database',
-            choice: 'database B',
-            custom: false,
-            offered: ['database A', 'database B'],
-          },
-          {
-            layer: 'hosting',
-            choice: 'On-premises Kubernetes',
-            custom: true,
-            offered: ['hosting A', 'hosting B'],
-          },
-        ],
-        chosen: { 'stack.database': 'b', 'stack.hosting': 'typed' },
-      },
-    ]);
+    // P7-29: the layers left alone take the planner's recommended (first) option.
+    const [body] = saves(page);
+    expect(body).toMatchObject({ chosen: { 'stack.database': 'b', 'stack.hosting': 'typed' } });
+    const stack = (body as { stack: { layer: string; choice: string; custom: boolean }[] }).stack;
+    expect(stack.find((each) => each.layer === 'database')).toMatchObject({ choice: 'database B' });
+    expect(stack.find((each) => each.layer === 'hosting')).toMatchObject({
+      ...{ choice: 'On-premises Kubernetes', custom: true },
+    });
+    expect(stack.find((each) => each.layer === 'testing')).toMatchObject({
+      ...{ choice: 'testing A', custom: false },
+    });
   });
 
   it('RF-609 leaves the layers unanswered when the options cannot be made', async () => {

@@ -5,6 +5,8 @@ import {
   planEstimateSchema,
   planOptionsSchema,
   planSourceSchema,
+  stackOfferSchema,
+  type StackOffer,
   type BriefView,
   type Catalogue,
   type PlanEstimate,
@@ -106,6 +108,21 @@ export function getPlanSource(
     method: 'GET',
     path: `${projectPath(projectId)}/plan-source${runQuery(sourceRunId)}`,
     schema: planSourceSchema,
+    signal,
+  });
+}
+
+// P7-29, RF-609, RF-645: the catalogue's options of each stack layer; no code is sent.
+export function getStackOffer(
+  client: ApiClient,
+  projectId: string,
+  sourceRunId: string | undefined,
+  signal: AbortSignal,
+): Promise<ApiResult<StackOffer>> {
+  return client.request({
+    method: 'GET',
+    path: `${projectPath(projectId)}/stack-offer${runQuery(sourceRunId)}`,
+    schema: stackOfferSchema,
     signal,
   });
 }

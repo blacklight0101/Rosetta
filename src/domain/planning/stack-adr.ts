@@ -77,12 +77,14 @@ export function stackOptions(
   if (offered.length === 0) {
     return [`${choice} (chosen): the options Rosetta offered were not recorded for this brief.`];
   }
-  const lines = offered.map((option) => {
+  // P7-29: the first option offered is the recommended one; the record says so beside the choice.
+  const lines = offered.map((option, index) => {
     const mark = sameOption(option, choice) ? ' (chosen)' : '';
     const { name, description } = splitOption(option);
     const known = technologiesNamed(technologies, layer, name)[0];
     const said = known?.description ?? (description === '' ? undefined : description);
-    return `${name}${mark}: ${said ?? 'Offered by Rosetta; the catalogue has no further description of it.'}`;
+    const first = index === 0 ? ' This was the recommended option.' : '';
+    return `${name}${mark}: ${said ?? 'Offered by Rosetta; the catalogue has no further description of it.'}${first}`;
   });
   return offered.some((option) => sameOption(option, choice))
     ? lines

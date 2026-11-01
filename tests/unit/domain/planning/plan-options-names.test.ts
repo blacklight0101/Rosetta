@@ -84,6 +84,20 @@ describe('the stack record of a pick', () => {
   });
 });
 
+describe('the recommended option in the stack record (P7-29)', () => {
+  it('RF-609 says which option was recommended beside the chosen one', () => {
+    const lines = stackOptions(shippedCatalogue.stack.technologies, {
+      layer: 'database',
+      choice: 'PostgreSQL',
+      offered: ['SQL Server', 'PostgreSQL'],
+    });
+
+    expect(lines[0]).toContain('This was the recommended option.');
+    expect(lines[1]).toContain('PostgreSQL (chosen)');
+    expect(lines[1]).not.toContain('recommended option');
+  });
+});
+
 describe('names that hold a dash (P7-10)', () => {
   it('RF-609 never splits the name of an option that came with its own description', () => {
     const draft = validDraft();
