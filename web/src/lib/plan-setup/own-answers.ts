@@ -17,7 +17,10 @@ export const OWN_NOTE = 'Recorded; the planner reads it as your own answer';
 export const DEFAULTED_NOTE = 'Recorded; the plan uses the default until you save the brief again';
 
 /** The questions whose typed answer is kept as text of its own; the others use their own field. */
-export const TEXT_QUESTIONS = ['principles', 'architecture', 'migration', 'buildMethod'] as const;
+export const TEXT_QUESTIONS = [
+  ...['principles', 'architecture', 'migration', 'buildMethod'],
+  ...['workbook.signIn', 'workbook.store', 'workbook.screens'],
+] as const;
 
 type Record2 = Readonly<Record<string, string>>;
 

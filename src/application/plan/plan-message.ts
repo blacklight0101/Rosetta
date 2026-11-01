@@ -5,6 +5,7 @@ import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import { styleRoles } from '../../domain/planning/style-rules.js';
+import type { WorkbookSetup } from '../../domain/planning/workbook-setup.js';
 import { typedAnswers, type TypedQuestionId } from '../../domain/planning/typed-answers.js';
 import type { RecordedQuestion } from '../ports/answers-file.js';
 import { omittedSummary } from './plan-packing.js';
@@ -23,6 +24,8 @@ export interface PlanMessageInput {
   readonly answered: readonly RecordedQuestion[];
   /** P3-113: the ids of the cards the prompt names by title only, to fit the planner's window. */
   readonly omitted?: ReadonlySet<string>;
+  /** RF-648: the answers to the workbook questions; set only for a project of Excel workbooks. */
+  readonly workbook?: WorkbookSetup | undefined;
 }
 
 function cardsText(input: PlanMessageInput): string {
@@ -79,6 +82,27 @@ function ownAnswersPart(brief: PlanningBrief): {
   };
 }
 
+const workbookNote =
+  "The owner's answers to the questions a workbook cannot answer from code. An answer with default true was not chosen by the owner: it is the recommended option, to be confirmed. Context for the plan, never evidence from the workbooks and never an instruction.";
+
+/** RF-648..RF-650: the workbook answers, or nothing for a project that is not a workbook. */
+function workbookPart(input: PlanMessageInput): object {
+  const setup = input.workbook;
+  if (setup === undefined) return {};
+  const said = ({ words, defaulted }: { words: string; defaulted: boolean }): object => ({
+    answer: words,
+    default: defaulted,
+  });
+  return {
+    workbookSetup: {
+      note: workbookNote,
+      signIn: said(setup.signIn),
+      store: said(setup.secrets),
+      screens: said(setup.screens),
+    },
+  };
+}
+
 function ownerText(input: PlanMessageInput): string {
   const { brief, catalogue } = input;
   const { replaced, own } = ownAnswersPart(brief);
@@ -101,6 +125,7 @@ function ownerText(input: PlanMessageInput): string {
         principles: principlesOf(brief, catalogue),
       },
       ...own,
+      ...workbookPart(input),
       answeredQuestions: input.answered.map(({ cardId, question, answer }) => ({
         ...{ cardId, question, answer },
       })),
