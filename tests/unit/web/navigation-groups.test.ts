@@ -12,7 +12,7 @@ const ids = (project: ProjectNav, role: 'admin' | 'user', path: string): string[
 
 it.each([
   ['/projects', none],
-  ['/projects/p-7/start', open],
+  ['/projects/p-7', open],
   ['/admin/audit', none],
   ['/settings', open],
 ] as const)('P1-175 an administrator sees main, project, admin in order on %s', (path, project) => {
@@ -21,7 +21,7 @@ it.each([
 
 it.each([
   ['/projects', none],
-  ['/projects/p-7/start', open],
+  ['/projects/p-7', open],
   ['/settings', open],
 ] as const)('P1-175 a user never gets the administration group on %s', (path, project) => {
   expect(ids(project, 'user', path)).toEqual(['main', 'project']);
@@ -39,7 +39,7 @@ it('P1-175 names the open project in the heading and links its pages', () => {
   expect(project?.label).toBe('Project: octo/demo');
   expect(project?.note).toBeUndefined();
   expect(project?.items.map((item) => item.path)).toEqual([
-    '/projects/p-7/start',
+    '/projects/p-7',
     '/projects/p-7/plan-setup',
     '/projects/p-7/history',
     '/projects/p-7/cost',
@@ -87,14 +87,12 @@ it('P1-175 has the project heading without a name until the name is known', () =
   const groups = buildNavigation({
     routes,
     role: 'user',
-    path: '/projects/p-7/start',
+    path: '/projects/p-7',
     project: { status: 'open', id: 'p-7' },
   });
 
   expect(groups.find((group) => group.id === 'project')?.label).toBe('Project');
-  expect(groups.find((group) => group.id === 'project')?.items[0]?.path).toBe(
-    '/projects/p-7/start',
-  );
+  expect(groups.find((group) => group.id === 'project')?.items[0]?.path).toBe('/projects/p-7');
 });
 
 it('P1-175 encodes a project id in every link', () => {

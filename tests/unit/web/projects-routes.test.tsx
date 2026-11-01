@@ -45,7 +45,7 @@ it('RF-002 matches the settings page of a project and lists it in the project na
     project: { status: 'open', id: 'p-7' },
   });
   expect(groups.find((group) => group.id === 'project')?.items).toEqual([
-    { path: '/projects/p-7/start', label: 'Start a run', current: false },
+    { path: '/projects/p-7', label: 'Project', current: false },
     // RF-428, P1-36: the cost page of the project.
     // RF-605, P3-08: Plan setup.
     { path: '/projects/p-7/plan-setup', label: 'Plan setup', current: false },
@@ -99,22 +99,22 @@ it('RF-002 gives a page the parameters of its route', async () => {
   expect(await screen.findByText('Project p-7')).not.toBeNull();
 });
 
-it('RF-1001 matches the start page of a project and lists it first in the project navigation', () => {
-  const match = matchRoute('/projects/p-7/start', routes);
+it('RF-1001 matches the project page and lists it first in the project navigation', () => {
+  const match = matchRoute('/projects/p-7', routes);
 
   expect(match).toMatchObject({
     params: { projectId: 'p-7' },
-    route: { access: 'user', chrome: 'shell', title: 'Start a run' },
+    route: { access: 'user', chrome: 'shell', title: 'Project' },
   });
   const groups = buildNavigation({
     routes,
     role: 'user',
-    path: '/projects/p-7/start',
+    path: '/projects/p-7',
     project: { status: 'open', id: 'p-7' },
   });
   expect(groups.find((group) => group.id === 'project')?.items[0]).toEqual({
-    path: '/projects/p-7/start',
-    label: 'Start a run',
+    path: '/projects/p-7',
+    label: 'Project',
     current: true,
   });
 });
