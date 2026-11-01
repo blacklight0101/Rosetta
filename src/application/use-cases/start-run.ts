@@ -7,6 +7,7 @@ import type { AgentRole } from '../ports/llm-provider.js';
 import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
+import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { planSourceRun } from '../plan/plan-source.js';
 import type { Project } from '../projects/project.js';
 import {
@@ -40,6 +41,8 @@ export interface StartRunDependencies {
   readonly projects: ProjectRepository;
   /** RF-614: a plan run's source run must be the user's, of the project and completed. */
   readonly runs: Pick<RunIndex, 'find' | 'list'>;
+  /** P7-38: a retry takes the cloud consent recorded in the manifest of the run it retries. */
+  readonly manifests: Pick<RunManifestStore, 'read'>;
   /** RST-1801: a plan run needs the brief the owner saved. */
   readonly briefs: Pick<PlanningBriefStore, 'read'>;
   readonly submit: SubmitRun;
