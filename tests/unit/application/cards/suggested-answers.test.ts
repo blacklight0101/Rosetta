@@ -214,7 +214,7 @@ describe('RF-645 cards of the earlier format and of other types', () => {
 
 describe('RF-645 the v3 card format and the v4 repair prompt', () => {
   it('RF-645 the example answer of card-format.v4 passes the schema with the answers required', async () => {
-    const format = await readFile('prompts/cards/card-format.v4.md', 'utf8');
+    const format = await readFile('prompts/cards/card-format.v5.md', 'utf8');
     const example = /```json\n([\s\S]*?)```/.exec(format)?.[1] ?? '';
 
     const read = parseCardsLenient(example, new Map(), required);
@@ -225,17 +225,17 @@ describe('RF-645 the v3 card format and the v4 repair prompt', () => {
   });
 
   it('RF-645 card-format.v4 asks for one recommended answer first and a qualified third, never filler', async () => {
-    const format = await readFile('prompts/cards/card-format.v4.md', 'utf8');
+    const format = await readFile('prompts/cards/card-format.v5.md', 'utf8');
 
     expect(format).toMatch(/exactly one answer has `recommended` true, and it is listed\s+first/iu);
     expect(format).toMatch(/applies when the question is skipped/iu);
-    expect(format).toMatch(/two natural answers/iu);
+    expect(format).toMatch(/same kind as the question/iu);
     expect(format).toMatch(/qualified/iu);
     expect(format).toMatch(/never filler/iu);
   });
 
   it('RNF-004 the v4 repair prompt keeps its one placeholder and explains suggestedAnswers', async () => {
-    const v4 = await readFile('prompts/cards/repair.v5.md', 'utf8');
+    const v4 = await readFile('prompts/cards/repair.v6.md', 'utf8');
     const problems = [{ path: 'cards.0.suggestedAnswers', message: 'Missing' }];
 
     expect(v4.match(/\{\{problems\}\}/g)).toHaveLength(1);
