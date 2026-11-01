@@ -124,9 +124,9 @@ function architectureOf(draft: Draft, plain: boolean): Pick<BriefAnswers, 'archi
     draft.recommended.length > 0 &&
     !ownIsEmpty(draft.chosen, draft.typed, 'architecture');
   if (!plain && !own) return {};
-  return {
-    architecture: { style: draft.style, recommended: draft.recommended, evidence: draft.evidence },
-  };
+  // A typed answer is not a choice of style: the style it carries is the one Rosetta recommended.
+  const style = own && !plain ? (draft.recommended[0] ?? draft.style) : draft.style;
+  return { architecture: { style, recommended: draft.recommended, evidence: draft.evidence } };
 }
 
 /** The draft with these questions recorded as answered. */
