@@ -125,7 +125,7 @@ export async function snapshotHashOfReport(page: Page): Promise<string> {
 
 /** RF-132: gives the reader role a cloud provider in Project settings and returns to the start page. */
 export async function giveReaderToOpenAi(page: Page): Promise<void> {
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByRole('button', { name: 'Save settings' }).click();

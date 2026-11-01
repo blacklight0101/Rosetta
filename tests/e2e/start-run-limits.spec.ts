@@ -27,7 +27,7 @@ test('RF-002 a settings save made from an older version is refused with RST-1007
   context,
 }) => {
   await openScannedStartPage(page);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Project settings', level: 1 })).toBeVisible();
   const second = await context.newPage();
   await second.goto(page.url());
@@ -86,7 +86,7 @@ test('DEC-108 the warning names what is left of the day, not the whole cap', asy
 }, info) => {
   await leaveOnlyThisInTheDay(accountFor('start-run', info.project.name).userName, 1n, 1_000_000n);
   await openScannedStartPage(page);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByRole('button', { name: 'Save settings' }).click();

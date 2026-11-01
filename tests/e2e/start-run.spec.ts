@@ -123,7 +123,7 @@ test('RF-143 a cloud reader needs the consent before Start and the notice names 
   page,
 }) => {
   await openStartPage(page);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByRole('button', { name: 'Save settings' }).click();
@@ -243,7 +243,7 @@ test('RF-1001 a run cap below the confirm threshold is refused in the settings; 
   // this run?" question instead. The cap ($0.20) is below the default threshold ($0.25), and the
   // lower threshold ($0.15) stays well above the likely cost.
   await openScannedStartPage(page);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByRole('button', { name: 'Save settings' }).click();
@@ -276,7 +276,7 @@ test('RF-1001 a run cap below the confirm threshold is refused in the settings; 
   const endOfRun = page.getByRole('button', { name: /^(Stop run|Cancel queued run)$/u });
   if (await endOfRun.isVisible()) await endOfRun.click();
   await expect(endOfRun).toHaveCount(0, { timeout: 60_000 });
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await expect(page.getByLabel('Run cost cap (USD)', { exact: true })).toHaveValue('0.20');
   await expect(threshold).toHaveValue('0.15');
 });

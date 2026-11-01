@@ -74,7 +74,7 @@ async function userPicksTheReader(page: Page, user: Credentials): Promise<void> 
   await openProjectStart(page, repositories.webforms);
   await runScan(page);
   await openProjectStart(page, repositories.webforms);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   // RF-250: the summariser is a role of the run like the reader; it is priced the same way.

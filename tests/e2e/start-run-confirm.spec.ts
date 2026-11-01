@@ -20,7 +20,7 @@ test.beforeEach(async ({ context }, info) => {
 /** The reader runs on OpenAI with the server's key, so the estimate has a cost. */
 async function openWithCloudReader(page: Page): Promise<void> {
   await openScannedStartPage(page);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   // RF-436: the cap and the threshold are the project settings'. A tiny threshold puts the likely
