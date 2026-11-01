@@ -38,6 +38,17 @@ describe('scheduled-release.yml trigger and permissions', () => {
     expect(at(document, 'jobs', job, 'environment')).toBeUndefined();
     expect(await workflowText('scheduled-release.yml')).not.toContain('secrets.');
   });
+
+  // P7-28 review: two delayed slots fired together could both list no Release yet and both dispatch.
+  // One concurrency group runs the slots one at a time, and a queued slot is never cancelled half-way.
+  it('P7-28 runs the slots one at a time in one group and never cancels a running slot', async () => {
+    const document = await scheduled();
+
+    expect(at(document, 'concurrency')).toEqual({
+      group: 'scheduled-release-${{ github.ref }}',
+      'cancel-in-progress': false,
+    });
+  });
 });
 
 let gh: FakeGh | undefined;
@@ -52,6 +63,8 @@ interface Run {
   readonly enabled?: string;
   readonly activeRuns?: string;
   readonly slot?: string;
+  /** The merge time of the head commit of main (ISO 8601, UTC). */
+  readonly committed?: string;
 }
 
 /** Runs the one step of the job against a fake gh; returns its code, the gh calls and the summary. */
@@ -60,6 +73,7 @@ async function run(options: Run = {}): Promise<{ code: number; calls: string[]; 
     mainSha: sha,
     hour: options.hour ?? '06',
     activeRuns: options.activeRuns ?? '0',
+    committed: options.committed ?? '2000-01-01T00:00:00Z',
   });
   const document = await scheduled();
   const [job = ''] = keysOf(at(document, 'jobs'));
@@ -105,8 +119,8 @@ describe('scheduled-release.yml Madrid hour', () => {
 });
 
 describe('scheduled-release.yml backup slots', () => {
-  it.each(['05', '08'])('DEC-175 a scheduled run at %s in Madrid starts nothing', async (hour) => {
-    const result = await run({ hour, slot: '7 6 * * *' });
+  it('DEC-175 a scheduled run at 05 in Madrid, before the window, starts nothing', async () => {
+    const result = await run({ hour: '05', slot: '7 6 * * *' });
 
     expect(result.code).toBe(0);
     expect(result.calls).toEqual([]);
@@ -131,6 +145,55 @@ describe('scheduled-release.yml backup slots', () => {
     expect(result.code).toBe(0);
     expect(result.calls).toEqual([]);
     expect(result.summary).toContain('ROSETTA_DEPLOY_ENABLED');
+  });
+});
+
+// P7-28: GitHub may start a slot after 07:59 Madrid (on 2026-10-29 it started them between 12:28 and
+// 13:53). Such a late slot deploys when the head commit of main was merged before 06:00 Madrid, so a
+// delayed schedule deploys late rather than not at all. The fake commit dates are far from the real
+// clock: 2000 is before any 06:00 cut-off and 2099 after it.
+describe('scheduled-release.yml late slot', () => {
+  it('P7-28 a slot that fires after 07:59 starts Release when main was merged before 06:00 that day', async () => {
+    const result = await run({ hour: '13', slot: '7 5 * * *', committed: '2000-01-01T00:00:00Z' });
+
+    expect(result.code).toBe(0);
+    expect(dispatched(result.calls)).toBe(true);
+    expect(result.summary).toContain('7 5 * * *');
+    expect(result.summary).toContain('minutes after its slot');
+  });
+
+  it('P7-28 a late slot reads the merge time of the head commit it checks', async () => {
+    const { calls } = await run({ hour: '13' });
+
+    expect(calls).toContain(
+      `api repos/blacklight0101/Rosetta/commits/${sha} --jq .commit.committer.date`,
+    );
+  });
+
+  it('P7-28 a late slot starts nothing when main was merged after 06:00 that day', async () => {
+    const result = await run({ hour: '13', committed: '2099-01-01T00:00:00Z' });
+
+    expect(result.code).toBe(0);
+    expect(dispatched(result.calls)).toBe(false);
+    expect(result.summary).toContain(sha);
+  });
+
+  it('P7-28 a second late slot starts nothing when a Release run of that commit already exists', async () => {
+    const result = await run({ hour: '13', activeRuns: '1' });
+
+    expect(result.code).toBe(0);
+    expect(dispatched(result.calls)).toBe(false);
+  });
+
+  it('P7-28 a run by hand after 07:59 starts Release without the merge-time check', async () => {
+    const result = await run({
+      event: 'workflow_dispatch',
+      hour: '13',
+      committed: '2099-01-01T00:00:00Z',
+    });
+
+    expect(dispatched(result.calls)).toBe(true);
+    expect(result.calls.some((call) => call.includes('commits/' + sha))).toBe(false);
   });
 });
 
@@ -161,6 +224,16 @@ describe('scheduled-release.yml once per head commit of main', () => {
     expect(result.code).toBe(0);
     expect(dispatched(result.calls)).toBe(false);
     expect(result.summary).toContain(sha);
+  });
+
+  // P7-28 review: a Release dispatched seconds earlier by another slot may not be listed as queued yet,
+  // so a run created in the last ten minutes on that commit counts too.
+  it('P7-28 also counts a Release of that commit created in the last ten minutes', async () => {
+    const { calls } = await run();
+    const list = calls.find((call) => call.startsWith('run list')) ?? '';
+
+    expect(list).toContain('headSha,status,conclusion,createdAt');
+    expect(list).toContain('.createdAt >= ');
   });
 
   it('DEC-175 starts Release again when every run of that commit failed or was cancelled', async () => {

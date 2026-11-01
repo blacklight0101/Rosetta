@@ -196,7 +196,8 @@ DEC-175, ADR-025. Teachers may sign in at any time, so nothing reaches productio
    squash or rebase: the deploy needs the merge commit, whose second parent is the `develop` commit staging deployed.
    For a version, the owner then tags that merge commit `vX.Y.Z` (section Release and image).
 4. At 06:07 Europe/Madrid the next morning (backups until 07:59), `scheduled-release.yml` starts Release on `main` (once per head commit
-   of `main`; only while `ROSETTA_DEPLOY_ENABLED` is `true`). Release rebuilds the image from `main` and deploys it
+   of `main`; only while `ROSETTA_DEPLOY_ENABLED` is `true`). A slot GitHub starts after 07:59 still starts Release when the
+   head commit of `main` was merged before 06:00 that day (P7-28, ADR-025); its step summary names the slot and its delay. Release rebuilds the image from `main` and deploys it
    (section Deploy) only when the ZAP baseline passed on the commit, its tree equals the tree of its `develop`
    parent, and `deploy (staging)` passed on that parent. While the repository variable `ROSETTA_STAGING_ENABLED` is not `true` (no staging app yet), the check is skipped with a warning in the job summary (`staging is not enabled; the staging check is skipped (DEC-175)`), so a squash commit on `main` deploys too; once it is `true` the check is enforced and only `skip-staging-check` overrides it.
 5. To deploy at once instead of at 06:07, once CI on `main` has passed the `zap-baseline` check:
