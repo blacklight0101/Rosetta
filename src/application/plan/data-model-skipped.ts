@@ -50,24 +50,13 @@ export interface OutOfScopeLine {
   readonly sources: readonly string[];
 }
 
-function wordsKey(text: string): string {
-  return ` ${text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/gu, ' ')
-    .trim()} `;
-}
-
-/** The line that drops the table: it names the table, or cites every card the table is built from. */
+/** The line that drops the table: it cites every card the table is built from (a name in its words is not enough). */
 function droppedBy(
   table: DraftTable,
   lines: readonly OutOfScopeLine[],
 ): OutOfScopeLine | undefined {
-  const name = wordsKey(table.name);
-  return lines.find(
-    (line) =>
-      (name.trim().length >= 3 && wordsKey(line.text).includes(name)) ||
-      (table.sources.length > 0 && table.sources.every((id) => line.sources.includes(id))),
-  );
+  if (table.sources.length === 0) return undefined;
+  return lines.find((line) => table.sources.every((id) => line.sources.includes(id)));
 }
 
 /**

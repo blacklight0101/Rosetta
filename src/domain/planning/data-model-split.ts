@@ -89,6 +89,11 @@ function biggest(group: readonly Member[]): Member {
   );
 }
 
+/** Ids can repeat across sites, so the discriminator joins the key (a table with a sheet of no suffix keeps its key). */
+function keyed(column: string, key: readonly string[]): string[] {
+  return key.length === 0 ? [] : [column, ...key];
+}
+
 function combined(stem: string, group: readonly Member[]) {
   const base = group.find(({ suffix }) => suffix === '');
   const taken = new Set(group.flatMap(({ table }) => [...columnKeys(table)]));
@@ -116,6 +121,8 @@ function combined(stem: string, group: readonly Member[]) {
     ...joined,
     name,
     columns: [...joined.columns, discriminator(column.name, base !== undefined)],
+    primaryKey: base === undefined ? keyed(column.name, joined.primaryKey) : joined.primaryKey,
+    primaryKey: base === undefined ? keyed(column.name, joined.primaryKey) : joined.primaryKey,
   };
   return { table, split: { table: name, column: column.name, values: listed } };
 }
