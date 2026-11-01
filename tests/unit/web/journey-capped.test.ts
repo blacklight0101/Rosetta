@@ -34,7 +34,7 @@ describe('journeyOf: an understand run that stopped at a cap with Supported clai
       projectId,
     );
 
-    expect(view.action).toMatchObject({ kind: 'link', label: 'Review the estimate' });
+    expect(view.action).toMatchObject({ kind: 'link', label: 'Start the plan' });
   });
 
   it('RST-1802 a run that stopped at a cap with no Supported claim keeps the plan steps locked', () => {

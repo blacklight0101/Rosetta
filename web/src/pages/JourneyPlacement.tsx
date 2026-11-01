@@ -30,8 +30,8 @@ function focusDeepen(): void {
 // RF-615
 export function UnderstandJourney(
   props: RunJourneyProps & {
-    readonly open: number | undefined;
-    readonly onAnswer: () => void;
+    readonly open?: number | undefined;
+    readonly onAnswer?: (() => void) | undefined;
   },
 ): JSX.Element | null {
   const { run, stage, phase, open } = props;

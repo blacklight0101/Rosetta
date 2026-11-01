@@ -41,7 +41,7 @@ it('RF-615 reads the facts of the run and draws the strip', async () => {
   await screen.findByRole('region', { name: 'Journey from code to package' });
 
   expect(page.calls.map((call) => `${call.method} ${call.path}`)).toEqual([`GET ${runPath}`]);
-  expect(region().textContent).toContain('Review the estimate');
+  expect(region().textContent).toContain('Start the plan');
 });
 
 it('RF-615 Plan setup opened from the project asks for the journey of the project', async () => {

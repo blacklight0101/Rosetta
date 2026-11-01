@@ -30,7 +30,7 @@ describe('RF-615 the journey after the brief is saved', () => {
   it('RF-615 the next action moves on to the estimate and no longer asks for the answer', () => {
     const view = journeyOf(facts({ source: skipped(1), briefSaved: true }), projectId);
 
-    expect(view.action).toEqual({ kind: 'link', label: 'Review the estimate', href: setUp });
+    expect(view.action).toEqual({ kind: 'link', label: 'Start the plan', href: setUp });
     expect(view.secondary).toBeUndefined();
     expect(step(view, 'estimate')).toMatchObject({ state: 'current', here: true });
   });

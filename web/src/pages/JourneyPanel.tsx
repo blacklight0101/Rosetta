@@ -24,6 +24,8 @@ export interface JourneyPanelProps {
   readonly onDeepen?: (() => void) | undefined;
   /** The path of the page the strip is on (Plan setup), so no action links to the page itself. */
   readonly pagePath?: string | undefined;
+  /** RF-1021: the page offers the Deepen of the source run in place (the project page). */
+  readonly deepenRunId?: string | undefined;
 }
 
 // RF-615

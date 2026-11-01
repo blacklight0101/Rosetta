@@ -30,6 +30,8 @@ export interface JourneyStripProps {
   readonly onDeepen?: (() => void) | undefined;
   /** The path of the page that holds the strip: a second action that opens this page is left out. */
   readonly pagePath?: string | undefined;
+  /** RF-1021: the understand run whose Deepen the page offers in place; none opens the run. */
+  readonly deepenRunId?: string | undefined;
 }
 
 const words: Readonly<Record<StepState, string>> = {
