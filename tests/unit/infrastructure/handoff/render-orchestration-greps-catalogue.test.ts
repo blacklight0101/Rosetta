@@ -146,6 +146,7 @@ describe('a stated rule with no pattern for the stack is checked by reading', ()
   it('DEC-190 no sentence about reading appears when no row is checked by reading', () => {
     const text = greps(packageOf(['TypeScript on Node.js'], security));
 
+    expect(text).not.toContain('A row whose pattern cell reads');
     expect(text).not.toContain('| checked by reading |');
   });
 });
