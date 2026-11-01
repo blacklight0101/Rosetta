@@ -4,9 +4,11 @@ import { join } from 'node:path';
 
 // DEC-175: a stand-in for the gh CLI and for date in workflow step tests (scheduled-release.yml and
 // the staging check of release.yml), as shell functions put before the step script. Every gh call
-// is logged; `api .../commits/main` answers the head SHA of main, `run list` answers the number of
-// matching Release runs, `api .../check-runs` answers a check conclusion, `workflow run` succeeds.
-// `date` answers the given hour and logs the TZ it was called with. Nothing reaches GitHub.
+// is logged; `api .../commits/main` answers the head SHA of main, `api .../commits/<sha>` with
+// `committer.date` answers the merge time of that commit, `run list` answers the number of matching
+// Release runs, `api .../check-runs` answers a check conclusion, `workflow run` succeeds. `date +%H`
+// answers the given hour and logs the TZ it was called with; every other date call is the real date,
+// so the step can compare instants. Nothing reaches GitHub.
 
 export interface FakeGh {
   /** The shell functions to put before the step script. */
@@ -31,20 +33,25 @@ export interface FakeGhOptions {
   readonly conclusion?: string;
   /** The hour `date +%H` answers. */
   readonly hour?: string;
+  /** The committer date (ISO 8601, UTC) the head commit of main answers. */
+  readonly committed?: string;
 }
 
 const prelude = [
   'gh() {',
   `  printf '%s\\n' "$*" >> "$FAKE_GH_LOG"`,
   '  case "$*" in',
+  `    *"committer.date"*) printf '%s\\n' "$FAKE_GH_COMMITTED" ;;`,
   `    *"commits/main"*) printf '%s\\n' "$FAKE_GH_MAIN_SHA" ;;`,
   `    *"run list"*) printf '%s\\n' "$FAKE_GH_ACTIVE" ;;`,
   `    *"check-runs"*) printf '%s\\n' "$FAKE_GH_CONCLUSION" ;;`,
   '  esac',
   '}',
   'date() {',
-  `  printf '%s\\n' "\${TZ:-}" >> "$FAKE_DATE_LOG"`,
-  `  printf '%s\\n' "$FAKE_HOUR"`,
+  '  case "$*" in',
+  `    *"+%H"*) printf '%s\\n' "\${TZ:-}" >> "$FAKE_DATE_LOG"; printf '%s\\n' "$FAKE_HOUR" ;;`,
+  '    *) command date "$@" ;;',
+  '  esac',
   '}',
 ].join('\n');
 
@@ -66,6 +73,7 @@ export async function fakeGh(options: FakeGhOptions = {}): Promise<FakeGh> {
       FAKE_GH_ACTIVE: options.activeRuns ?? '0',
       FAKE_GH_CONCLUSION: options.conclusion ?? 'success',
       FAKE_HOUR: options.hour ?? '06',
+      FAKE_GH_COMMITTED: options.committed ?? '2000-01-01T00:00:00Z',
     },
     calls: () => lines(log),
     zones: () => lines(dates),
