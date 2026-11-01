@@ -1,7 +1,7 @@
 import type { Card } from '../../domain/cards/card.js';
 import type { AnsweredQuestion } from '../ports/answers-file.js';
 import { markAnswered, withAnswersOf, type Rerun } from '../understand/answer-rerun.js';
-import { questionWords } from '../understand/open-questions.js';
+import { sameQuestion } from '../understand/open-questions.js';
 import type { ReaderTask } from '../understand/reader-tasks.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
 import { taskIdOf, withParentCards } from './deepen-tasks.js';
@@ -56,7 +56,7 @@ export function withDeepenAnswers(
 ): readonly ReaderTask[] {
   if (rerun === undefined) return tasks;
   const added = firstRound === undefined ? [] : answerTasks(tasks, rerun, firstRound);
-  return withAnswersOf([...tasks, ...added], rerun.plan);
+  return withAnswersOf([...tasks, ...added], rerun.plan, true);
 }
 
 /** The questions (`<run folder>/<card id>`, each once, in order) the tasks give to their readers. */
@@ -86,9 +86,9 @@ export function mergedIntoAnswered(
   fresh: readonly Card[],
   answered: readonly Pick<AnsweredQuestion, 'question'>[],
 ): readonly Card[] {
-  const asked = new Set(answered.map((each) => questionWords(each.question)));
-  return fresh.filter((card) => {
-    const words = questionWords(card.question ?? card.title);
-    return card.type === 'OQ' && words !== '' && asked.has(words);
-  });
+  return fresh.filter(
+    (card) =>
+      card.type === 'OQ' &&
+      answered.some((each) => sameQuestion(each.question, card.question ?? card.title)),
+  );
 }
