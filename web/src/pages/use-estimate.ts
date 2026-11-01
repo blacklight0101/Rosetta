@@ -52,25 +52,32 @@ function useScanned(projectId: string, version: number): boolean | undefined {
 // RF-425
 export function useEstimate(request: EstimateRequest): EstimateLoad {
   const { client } = useApp();
-  const [state, setState] = useState<EstimateLoad>({ status: 'loading' });
+  const [loaded, setState] = useState<{ key: string | undefined; load: EstimateLoad }>({
+    key: undefined,
+    load: { status: 'loading' },
+  });
   const { projectId, areas, version } = request;
   const scanned = useScanned(projectId, version);
   const key = areas?.join('\n');
   useEffect(() => {
     if (scanned === undefined || areas?.length === 0) return undefined;
     if (!scanned) {
-      setState({ status: 'none' });
+      setState({ key, load: { status: 'none' } });
       return undefined;
     }
     const abort = new AbortController();
-    setState((current) => (current.status === 'ready' ? current : { status: 'loading' }));
+    setState((current) =>
+      current.load.status === 'ready' ? current : { key: current.key, load: { status: 'loading' } },
+    );
     void getEstimate(client, projectId, areas, abort.signal).then((result) => {
-      if (!abort.signal.aborted) setState(loadOf(result));
+      if (!abort.signal.aborted) setState({ key, load: loadOf(result) });
     });
     return () => {
       abort.abort();
     };
     // `key` stands for `areas`: a new array with the same names is the same request.
   }, [client, projectId, key, version, scanned]);
-  return state;
+  // A figure for other areas than the ones asked for is not the one to approve (RF-432): it waits.
+  const waiting = loaded.load.status === 'ready' && loaded.key !== key && areas?.length !== 0;
+  return waiting ? { status: 'loading' } : loaded.load;
 }

@@ -224,12 +224,15 @@ export class RunUnderstand implements RunExecutor {
     const account = await this.deps.users.findById(run.userId);
     if (account === undefined) return stop(failed(ERROR_CODES.notFound));
     const sinks = await runProviderSinks(this.deps, execution, updates);
+    const options = readUnderstandOptions(manifest.options);
     const built = await this.deps.providers.build({
       account,
       run: { id: run.id, userId: run.userId, projectId: run.projectId, stage: 'understand' },
       settings: project.settings,
       roles: UNDERSTAND_ROLES,
-      cloudConsent: readUnderstandOptions(manifest.options).cloudConsent,
+      cloudConsent: options.cloudConsent,
+      // RF-432: the run pauses near the amount its owner approved.
+      approvedAmount: options.approvedAmount,
       sinks,
     });
     if (!built.ok) {

@@ -122,6 +122,11 @@ export const endedData = z.looseObject({
   totals: z.looseObject({ costMicros: micros.optional() }).optional(),
 });
 
+/** RF-432: `run.awaitingApproval`: the N that Continue (+N) offers, when the run approved an amount. */
+export const awaitingData = z.looseObject({
+  continueAmount: z.looseObject({ tokens: count, costMicros: micros }).optional(),
+});
+
 export const scanData = z.looseObject({ files: count, areas: count });
 
 /** `cards.merged` (RF-250): the cards a merge absorbed and the claims it renumbered, `from` the old id and `to` the new one. */

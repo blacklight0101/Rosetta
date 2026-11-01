@@ -1,6 +1,7 @@
+import { approvedJourneyOf, type JourneyLookup } from '../runs/approved-journey.js';
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
-import { err, type Result } from '../../domain/errors/result.js';
+import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { RunStage } from '../../domain/runs/run-states.js';
 import type { AgentRole } from '../ports/llm-provider.js';
 import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
@@ -46,6 +47,12 @@ export interface StartRunDependencies {
   readonly ollamaHost?: string;
   /** RF-431: whether each role of the run has a usable key; checked before the run is queued. */
   readonly roleKeys: RoleKeyDependencies;
+  /**
+   * RF-430, RF-432: the server's journey estimate. A start that names the figure it showed records
+   * the server's figures as the approved amount; the browser never sets it. Required: no wiring can
+   * leave the check out.
+   */
+  readonly journey: JourneyLookup;
 }
 
 export interface StartRunRequest {
@@ -77,7 +84,8 @@ export type StartRunProblem =
   | typeof ERROR_CODES.planSourceMissing
   | typeof ERROR_CODES.projectNoSource
   | typeof ERROR_CODES.providerKeyMissing
-  | typeof ERROR_CODES.requestInvalid;
+  | typeof ERROR_CODES.requestInvalid
+  | typeof ERROR_CODES.approvalChanged;
 
 export class StartRun {
   private readonly deps: StartRunDependencies;
@@ -171,6 +179,16 @@ export class StartRun {
     return retryable && (request.areas?.length ?? 0) > 0 ? undefined : ERROR_CODES.requestInvalid;
   }
 
+  /** RF-432: the server's figures for the shown one; none when the start showed none. */
+  private async approvedOf(
+    request: StartRunRequest,
+  ): Promise<Result<ApprovedAmount | undefined, typeof ERROR_CODES.approvalChanged>> {
+    const shown = request.approvedAmount;
+    if (shown === undefined) return ok(undefined);
+    const { actor, projectId, areas } = request;
+    return approvedJourneyOf(shown, await this.deps.journey({ actor, projectId, areas }));
+  }
+
   // RF-143, RF-132, RF-200
   private async understand(
     request: StartRunRequest,
@@ -180,9 +198,12 @@ export class StartRun {
     const retryProblem = await this.retryProblem(request, project);
     if (retryProblem !== undefined) return err(retryProblem);
     const needsPrivate = rolesNeedPrivateConfirmation(project, ollamaHost);
+    const approved = await this.approvedOf(request);
+    if (!approved.ok) return err(approved.error);
     const options = understandOptionsOf({
       ...request,
       privateCodeConfirmed: needsPrivate && request.privateCodeConfirmed === true,
+      approvedAmount: approved.value,
     });
     if (!options.cloudConsent && rolesNeedCloudConsent(project.settings, ollamaHost)) {
       return err(ERROR_CODES.cloudConsentMissing);

@@ -9,8 +9,12 @@ export type RunStage = (typeof RUN_STAGES)[number];
 export const RUN_END_STATES = ['Completed', 'CapReached', 'Failed', 'Interrupted'] as const;
 export type RunEndState = (typeof RUN_END_STATES)[number];
 
-/** `Queued` -> `Running` when a slot frees; `Running` -> `Ended`; `Queued` -> `Ended` when cancelled. */
-export const RUN_QUEUE_STATES = ['Queued', 'Running', 'Ended'] as const;
+/**
+ * `Queued` -> `Running` when a slot frees; `Running` -> `Ended`; `Queued` -> `Ended` when cancelled.
+ * RF-432, ADR-026: `Running` -> `AwaitingApproval` when the run nears its approved amount; it holds
+ * no slot; Continue makes it `Queued` again, Stop ends it `CapReached`.
+ */
+export const RUN_QUEUE_STATES = ['Queued', 'Running', 'AwaitingApproval', 'Ended'] as const;
 export type RunQueueState = (typeof RUN_QUEUE_STATES)[number];
 
 /** RF-201: the states of an agent task; `Planned` -> `Running` -> one of the other five. */

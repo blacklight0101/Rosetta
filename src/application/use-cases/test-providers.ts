@@ -102,6 +102,7 @@ export class TestProviders {
       settings,
       roles: [role],
       cloudConsent: true,
+      approvedAmount: undefined,
       sinks: {
         ...this.deps.unrecorded,
         costs: {

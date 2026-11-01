@@ -1,3 +1,4 @@
+import type { ApprovedAmount } from '../../domain/budget/approved-amount.js';
 import type { User } from '../../domain/accounts/user.js';
 import type { ErrorCode } from '../../domain/errors/codes.js';
 import type { Result } from '../../domain/errors/result.js';
@@ -65,6 +66,12 @@ export interface ProviderSetRequest {
   readonly roles: readonly AgentRole[];
   /** RF-143: the consent the run recorded when it was started; nothing in a request can grant it. */
   readonly cloudConsent: boolean;
+  /**
+   * RF-432, ADR-026: the amount the run's owner approved (the manifest's `approvedAmount`); the run
+   * pauses there. Required, so no caller can leave it out by accident: undefined only for a run
+   * that recorded none, whose project run caps then stay a hard stop.
+   */
+  readonly approvedAmount: ApprovedAmount | undefined;
   readonly sinks: ProviderSinks;
 }
 

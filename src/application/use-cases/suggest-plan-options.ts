@@ -128,6 +128,7 @@ export class SuggestPlanOptions {
       settings: project.settings,
       roles: ['planner'],
       cloudConsent: request.cloudConsent,
+      approvedAmount: undefined,
       sinks: {
         ...deps.callSinks({ userId: account.id, projectId: project.id }),
         costs: { addCall: () => Promise.resolve() },

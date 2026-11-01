@@ -25,7 +25,13 @@ import { onRetryStarted } from './retry-events.js';
 import { LOG_LIMIT } from './log-count.js';
 import { withLine } from './log-lines.js';
 import type { RunState } from './run-state.js';
-import { onRunEnded, onRunStarted, onScanCompleted, onSourceResolved } from './run-level-events.js';
+import {
+  onRunAwaitingApproval,
+  onRunEnded,
+  onRunStarted,
+  onScanCompleted,
+  onSourceResolved,
+} from './run-level-events.js';
 
 // RF-1002, RF-1003, RF-1004: folds the events of a run, in order, into what the page shows. An event
 // that was already applied (`seq` not above the last) changes nothing, so a replay after a
@@ -38,6 +44,8 @@ const handlers: Readonly<Record<string, Handler>> = {
   'run.started': onRunStarted,
   'source.resolved': onSourceResolved,
   'run.ended': onRunEnded,
+  // RF-432: the run waits for Continue or Stop.
+  'run.awaitingApproval': onRunAwaitingApproval,
   'scan.completed': onScanCompleted,
   'agent.planned': onPlanned,
   'agent.started': onStarted,
@@ -81,6 +89,7 @@ export function initialRunState(): RunState {
     roleTokens: {},
     deepen: undefined,
     retry: undefined,
+    awaiting: undefined,
     ended: undefined,
   };
 }

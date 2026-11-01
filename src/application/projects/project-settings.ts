@@ -37,8 +37,8 @@ const MIN_CONTEXT_TOKENS = 1024;
 const MAX_TEXT = 200;
 const MAX_IGNORE_RULES = 100_000;
 const MAX_LIST = 200;
-const MAX_RUN_COST_MICROS = 100_000_000;
-const MAX_RUN_TOKENS = 50_000_000;
+export const MAX_RUN_COST_MICROS = 100_000_000;
+export const MAX_RUN_TOKENS = 50_000_000;
 
 /** A whole number from zero up: caps, prices, token and byte limits. */
 const cap = z.number(invalid).int(invalid).min(0, negative);

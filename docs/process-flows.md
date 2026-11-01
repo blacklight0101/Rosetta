@@ -113,10 +113,14 @@ flowchart TB
   C -->|no| C1[Warning names the cap: lower the scope, raise the cap, or start anyway] --> D
   C -->|yes| D[Run starts]
   D --> E[Every call metered: tokens and cost per role, live meter in the page]
-  E --> F{Could the next call pass the cap?}
+  E --> F{Could the next call pass a cap or the approved amount?}
   F -->|no| E
   F -->|yes| G[Call not made, running agents stop, results so far saved]
-  G --> H[Run ends as cap reached, unchecked claims marked unverified]
+  G --> K{Which line?}
+  K -->|approved amount| P[Run waits for your approval and frees its slot]
+  P -->|Continue +N| Q[Approved amount raised, run queued again] --> E
+  P -->|Stop here| H
+  K -->|day, month, server or role cap| H[Run ends as cap reached, unchecked claims marked unverified]
   H --> I[Raise the cap and resume]
   I --> E
   E --> J[Run finishes: cost report, project and user totals updated]
@@ -124,7 +128,10 @@ flowchart TB
 
 The estimate only warns; the cap itself is never exceeded: the worst case of each call is reserved and checked
 before it is made, and every cent is kept in the
-project's cost ledger even after runs are deleted. Sources RF-006, RF-420..RF-428, RF-1003, RF-1010, RF-1106.
+project's cost ledger even after runs are deleted. A run started with an approved amount (RF-430) pauses there
+instead of ending and asks "Continue (+N)" or "Stop here"; the paused run holds no running slot and survives a
+restart, and the day, month, server and role caps stay hard limits (RF-432, ADR-026). Sources RF-006,
+RF-420..RF-428, RF-432, RF-1003, RF-1010, RF-1106.
 
 ## 5. Accounts and the teacher account
 

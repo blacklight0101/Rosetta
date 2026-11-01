@@ -37,7 +37,7 @@ export const stateLists = {
     'StoppedByCap',
   ],
   RunEndState: ['Completed', 'CapReached', 'Failed', 'Interrupted'],
-  RunQueueState: ['Queued', 'Running', 'Ended'],
+  RunQueueState: ['Queued', 'Running', 'AwaitingApproval', 'Ended'],
   /** P7-02, DEC-194: how a `CapReached` run that left areas unread is shown; not a domain state list. */
   RunPartlyRead: ['PartlyRead'],
   Role: ['admin', 'user'],
@@ -98,6 +98,8 @@ export const badgeSpecs: SpecTable = {
   RunQueueState: {
     Queued: badge('Queued', 'info', 'tint', 'clock'),
     Running: badge('Running', 'info', 'solid', 'live-dot'),
+    // RF-432: paused near the approved amount, waiting for Continue or Stop.
+    AwaitingApproval: badge('Waiting for your approval', 'warn', 'tint', 'pause-bars'),
     Ended: badge('Ended', 'neutral', 'tint', 'check'),
   },
   Role: { admin: tag('admin', 'brand'), user: tag('user') },

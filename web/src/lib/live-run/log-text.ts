@@ -82,6 +82,9 @@ const writers: Readonly<Record<string, Writer>> = {
     data['reason'] === 'share'
       ? 'Readers stopped: the run cap, less the part kept for the summary, or the reader cap is used up.'
       : `Readers stopped to leave room to judge the ${field(data, 'claimsWaiting')} claims written.`,
+  // RF-432
+  'run.awaitingApproval': () =>
+    'Waiting for your approval: the run reached the amount you approved.',
   'run.ended': (data) =>
     `${field(data, 'endState')}${data['errorCode'] === undefined ? '' : ` · ${field(data, 'errorCode')}`}`,
 };

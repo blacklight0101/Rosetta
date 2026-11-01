@@ -72,6 +72,19 @@ export async function cancelRun(client: ApiClient, runId: string): Promise<ApiRe
   return result.ok ? { ok: true, value: undefined } : result;
 }
 
+/**
+ * RF-432: Continue (+N) of a run waiting for its owner's approval; the server adds the N it offered
+ * to the approved amount and queues the run again.
+ */
+export async function continueRun(client: ApiClient, runId: string): Promise<ApiResult<undefined>> {
+  const result = await client.request({
+    method: 'POST',
+    path: `/api/runs/${encodeURIComponent(runId)}/continue`,
+    schema: z.looseObject({ id: z.string() }),
+  });
+  return result.ok ? { ok: true, value: undefined } : result;
+}
+
 /** Queues a run that stopped at a cap, failed or was interrupted again, as the same run (RF-006). */
 // RF-006
 export async function resumeRun(client: ApiClient, runId: string): Promise<ApiResult<undefined>> {

@@ -73,6 +73,12 @@ export interface CapInputs {
   readonly readerRunMicros?: bigint;
   readonly server: ServerCaps;
   readonly account: AccountCaps;
+  /**
+   * RF-432, ADR-026: the amount the user approved for the run. It replaces the project's run caps
+   * as the run's line, marked `approved`: the budget guard pauses the run there instead of ending
+   * it. The administrator's run cap, the day and month caps and the role caps stay hard (DEC-112).
+   */
+  readonly approved?: RunBudget;
 }
 
 function lower(left: bigint, right: bigint): bigint {
@@ -139,7 +145,7 @@ function scopeShareCaps(
 
 // RF-422, RF-423, RF-429, RF-1106
 export function capsFor(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
-  const keys = keyCaps(keySource, inputs);
+  const keys = approvedLines(keyCaps(keySource, approvedRun(inputs)), inputs.approved);
   const own = roleCaps(inputs.role);
   const shares: UsageCap[] = [];
   if (
@@ -154,6 +160,24 @@ export function capsFor(keySource: KeySource, inputs: CapInputs): readonly Usage
   const ownTokens = own.some((cap) => cap.kind === 'role-tokens');
   if (inputs.verifier === true && !ownTokens) shares.push(...claimCheckCaps(keys));
   return [...keys, ...own, ...shares];
+}
+
+/** RF-432: the inputs with the approved amount in place of the project's run caps. */
+function approvedRun(inputs: CapInputs): CapInputs {
+  return inputs.approved === undefined ? inputs : { ...inputs, run: inputs.approved };
+}
+
+/** RF-432: the run caps that come from the approved amount, marked so the guard pauses there. */
+function approvedLines(
+  keys: readonly UsageCap[],
+  approved: RunBudget | undefined,
+): readonly UsageCap[] {
+  if (approved === undefined) return keys;
+  return keys.map((cap) => {
+    const fromRun =
+      cap.kind === 'run-tokens' || (cap.kind === 'run-cost' && cap.source === 'project');
+    return fromRun ? { ...cap, source: 'approved' } : cap;
+  });
 }
 
 function keyCaps(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {

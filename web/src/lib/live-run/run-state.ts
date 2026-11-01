@@ -209,5 +209,12 @@ export interface RunState {
   readonly deepen: DeepenProgress | undefined;
   /** RF-208: set only for a run that retries the failed areas of another run. */
   readonly retry: RetryProgress | undefined;
+  /** RF-432: set while the run waits for its owner's approval (`run.awaitingApproval`). */
+  readonly awaiting: AwaitingState | undefined;
   readonly ended: EndedState | undefined;
+}
+
+/** RF-432: the N that Continue (+N) offers; undefined for a run that approved no amount. */
+export interface AwaitingState {
+  readonly continueAmount: { readonly tokens: number; readonly costMicros: number } | undefined;
 }

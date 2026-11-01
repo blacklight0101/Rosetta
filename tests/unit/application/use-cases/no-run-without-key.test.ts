@@ -1,3 +1,4 @@
+import { journeyOf, serverJourney } from '../../../support/journey-lookups.js';
 import { describe, expect, it } from 'vitest';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import { ResumeRun } from '../../../../src/application/use-cases/resume-run.js';
@@ -37,7 +38,14 @@ async function setup(settings: ProjectSettings, serverKeys: ServerKeys = {}) {
   const { runs, manifests, submit } = harness;
   return {
     ...{ harness, project },
-    startRun: new StartRun({ projects, runs, briefs: new MemoryBriefStore(), submit, roleKeys }),
+    startRun: new StartRun({
+      journey: journeyOf(serverJourney),
+      projects,
+      runs,
+      briefs: new MemoryBriefStore(),
+      submit,
+      roleKeys,
+    }),
     deepen: new StartDeepen({ projects, runs, manifests, submit, roleKeys }),
     resume: new ResumeRun({
       ...{ projects, runs, manifests, queue: harness.queue, clock: harness.clock, roleKeys },
@@ -136,7 +144,7 @@ describe('RF-430 the approved amount', () => {
       actor: userAmy,
       projectId: s.project.id,
       stage: 'understand',
-      approvedAmount: { tokens: 2_600_000, costMicros: 0 },
+      approvedAmount: { tokens: 3_900_000, costMicros: 0 },
     });
 
     expect(started.ok).toBe(true);
@@ -144,7 +152,21 @@ describe('RF-430 the approved amount', () => {
     const manifest = await s.harness.manifests.read(s.harness.scopeOf(started.value.run));
     expect(manifest?.options).toEqual({
       cloudConsent: false,
-      approvedAmount: { tokens: 2_600_000, costMicros: 0 },
+      approvedAmount: { tokens: 3_900_000, costMicros: 0 },
     });
+  });
+
+  it('RF-432 refuses a start whose shown figure is not the server estimate (RST-2310)', async () => {
+    const s = await setup(fakeRoles);
+
+    const started = await s.startRun.execute({
+      actor: userAmy,
+      projectId: s.project.id,
+      stage: 'understand',
+      approvedAmount: { tokens: 50_000_000, costMicros: 100_000_000 },
+    });
+
+    expect(started).toEqual({ ok: false, error: ERROR_CODES.approvalChanged });
+    expect(await s.harness.runs.list(userAmy.userId, s.project.id)).toEqual([]);
   });
 });

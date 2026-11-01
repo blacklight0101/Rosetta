@@ -1,3 +1,4 @@
+import { withinCeilings } from '../../application/runs/approved-journey.js';
 import { roleLimits } from '../../application/models/role-limits.js';
 import type { GuardedProviderFactoryOptions } from './provider-factory-options.js';
 import type { AgentRole, LlmProvider } from '../../application/ports/llm-provider.js';
@@ -271,8 +272,24 @@ export class GuardedProviderFactory implements ProviderSetFactory {
         dailyCapMicros: request.account.dailyCapMicros,
         ownDailyCapMicros: request.account.ownDailyCapMicros,
       },
+      // RF-432: the approved amount is the run's line; a call held to the ceiling has no run.
+      ...(isCeilinged(request) ? {} : approvedOf(request)),
     });
     if (!isCeilinged(request)) return caps;
     return caps.map((cap) => ({ kind: cap.kind, limit: providerTestCeiling(cap) }));
   }
+}
+
+/** RF-432: the run's approved amount as cap inputs; none when the run recorded none. */
+function approvedOf(request: ProviderSetRequest): {
+  readonly approved?: { readonly maxCostMicros: bigint; readonly maxTokens: bigint };
+} {
+  if (request.approvedAmount === undefined) return {};
+  const approvedAmount = withinCeilings(request.approvedAmount);
+  return {
+    approved: {
+      maxCostMicros: BigInt(approvedAmount.costMicros),
+      maxTokens: BigInt(approvedAmount.tokens),
+    },
+  };
 }

@@ -36,18 +36,18 @@ const gateInput = {
 };
 
 describe('RF-430 the approved figure on the start button', () => {
-  it('RF-430 names the likely journey total in dollars for a priced estimate, with the worst case beside it', () => {
+  it('RF-430 DEC-205 approves the worst-case journey total in dollars for a priced estimate', () => {
     const estimate = estimateWith([role({})]);
 
-    expect(approvalText(estimate)).toBe('$1.20');
+    expect(approvalText(estimate)).toBe('$4.10');
     expect(worstCaseText(estimate)).toBe('$4.10');
-    expect(approvedAmountOf(estimate)).toEqual({ tokens: 2_600_000, costMicros: 1_200_000 });
+    expect(approvedAmountOf(estimate)).toEqual({ tokens: 8_400_000, costMicros: 4_100_000 });
   });
 
   it('RF-430 names tokens for an estimate on local models only', () => {
     const estimate = estimateWith([role({ kind: 'ollama', provider: 'ollama', priced: false })]);
 
-    expect(approvalText(estimate)).toBe('2,600,000 tokens');
+    expect(approvalText(estimate)).toBe('8,400,000 tokens');
   });
 
   it('RF-430 the button label carries the approved figure', () => {
@@ -55,10 +55,10 @@ describe('RF-430 the approved figure on the start button', () => {
     const gate = startGate({
       ...gateInput,
       estimate: { status: 'ready', estimate },
-      approval: '$1.20',
+      approval: approvalText(estimate) ?? '',
     });
 
-    expect(gate).toEqual({ label: 'Start run · approve $1.20', reason: undefined });
+    expect(gate).toEqual({ label: 'Start run · approve $4.10', reason: undefined });
   });
 });
 

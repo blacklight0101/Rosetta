@@ -24,7 +24,9 @@ import { sampleProject } from './project-fixtures.js';
 import { queueOf, stores, type Stores } from './understand-run-services.js';
 import {
   deepenerOf,
+  continuerOf,
   resumerOf,
+  waitUntilEnded,
   starterOf,
   submitOf,
   type DeepenStart,
@@ -131,6 +133,10 @@ export interface UnderstandHarness {
    * run cannot be resumed.
    */
   resume(run: Run): Promise<Result<Run, string>>;
+  /** RF-432: Continue (+N) of a paused run, waiting until it ends or pauses again. */
+  continueRun(run: Run): Promise<Result<Run, string>>;
+  /** RF-432: Stop here of a paused run, waiting for its end. */
+  stopPaused(run: Run): Promise<Run>;
   /** RF-209: confirms a Deepen of a completed run as the Deepen button does and waits for its end. */
   deepen(run: Run, request?: DeepenStart): Promise<Result<Run, string>>;
   /** Saves new project settings, as the settings page does (for example raised caps). */
@@ -150,6 +156,20 @@ interface HarnessParts {
   readonly project: Project;
   readonly providers: UnderstandProviders;
   readonly dataDir: string;
+}
+
+/** RF-432: the answers to a paused run, Continue (+N) and Stop here. */
+function approvalOf(
+  s: Stores,
+  queue: RunQueue,
+): Pick<UnderstandHarness, 'continueRun' | 'stopPaused'> {
+  return {
+    continueRun: continuerOf(s, queue),
+    async stopPaused(run) {
+      await queue.stop(run.userId, run.id);
+      return waitUntilEnded(s)(run);
+    },
+  };
 }
 
 function harnessOf(parts: HarnessParts): UnderstandHarness {
@@ -176,6 +196,7 @@ function harnessOf(parts: HarnessParts): UnderstandHarness {
         cardIds,
       ),
     resume,
+    ...approvalOf(s, queue),
     deepen,
     async changeSettings(change) {
       const current = await s.projects.find(account.id, project.id);

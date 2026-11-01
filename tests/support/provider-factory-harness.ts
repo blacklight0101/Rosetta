@@ -232,6 +232,7 @@ export function factoryHarness(options: FactoryHarnessOptions = {}): FactoryHarn
       settings: templateSettings,
       roles: ['reader'],
       cloudConsent: false,
+      approvedAmount: undefined,
       sinks: run.sinks,
       ...overrides,
     }),

@@ -51,14 +51,38 @@ describe('POST /api/projects/:id/runs and the keys (RF-431)', () => {
     const response = await browser.request({
       method: 'POST',
       url: startUrl(project.id),
-      payload: { stage: 'understand', approvedAmount: { tokens: 2_600_000, costMicros: 0 } },
+      payload: { stage: 'understand', approvedAmount: { tokens: 3_900_000, costMicros: 0 } },
     });
 
     expect(response.statusCode).toBe(202);
     expect(test.runs.executor.started[0]?.manifest.options).toEqual({
       cloudConsent: false,
-      approvedAmount: { tokens: 2_600_000, costMicros: 0 },
+      approvedAmount: { tokens: 3_900_000, costMicros: 0 },
     });
+  });
+});
+
+describe('POST /api/projects/:id/runs and a crafted approved amount (RF-432)', () => {
+  it('RF-432 a crafted start cannot set the amount: a huge figure 409, a remainder 400', async () => {
+    const { test, project, browser } = await signedIn(true);
+    const send = (approvedAmount: Record<string, unknown>) =>
+      browser.request({
+        method: 'POST',
+        url: startUrl(project.id),
+        payload: { stage: 'understand', approvedAmount },
+      });
+
+    const huge = await send({ tokens: 9_000_000_000_000, costMicros: 9_000_000_000_000 });
+    const remainder = await send({
+      tokens: 3_900_000,
+      costMicros: 0,
+      remainder: { tokens: 9_000_000_000_000, costMicros: 9_000_000_000_000 },
+    });
+
+    expect(huge.statusCode).toBe(409);
+    expect(huge.json()).toMatchObject({ code: 'RST-2310' });
+    expect(remainder.statusCode).toBe(400);
+    expect(test.runs.executor.started).toEqual([]);
   });
 });
 

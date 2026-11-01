@@ -8,7 +8,9 @@ import type {
 } from '../../application/ports/run-index.js';
 import { inQueueOrder } from '../../domain/runs/queue-rules.js';
 import {
+  continueRun,
   endRun,
+  pauseRun,
   reopenRun,
   startRun,
   type AreaCounts,
@@ -112,6 +114,19 @@ export class MemoryRunIndex implements RunIndex {
     const run = this.runs.get(runId);
     const ended = run === undefined ? undefined : endRun(run, endState, at, counts);
     return Promise.resolve(this.keep(ended));
+  }
+
+  // RF-432
+  pause(runId: string, counts: AreaCounts = {}): Promise<Run | undefined> {
+    const run = this.runs.get(runId);
+    return Promise.resolve(this.keep(run === undefined ? undefined : pauseRun(run, counts)));
+  }
+
+  // RF-432
+  continueAwaiting(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {
+    const run = this.runs.get(runId);
+    const owned = run?.userId === userId ? run : undefined;
+    return Promise.resolve(this.keep(owned === undefined ? undefined : continueRun(owned, at)));
   }
 
   reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {

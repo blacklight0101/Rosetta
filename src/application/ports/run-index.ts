@@ -56,8 +56,9 @@ export interface RunIndex {
   /** `Queued` -> `Running`; undefined for an unknown run and for one that is not queued. */
   start(runId: string, at: EpochMs): Promise<Run | undefined>;
   /**
-   * `Running` -> `Ended`, or `Queued` -> `Ended` as `Interrupted`; the end state is set once.
-   * Undefined for an unknown run, one that has ended and a queued run ended any other way.
+   * `Running` -> `Ended`, `Queued` -> `Ended` as `Interrupted`, or `AwaitingApproval` -> `Ended` as
+   * `CapReached` or `Interrupted` (RF-432); the end state is set once. Undefined for an unknown run,
+   * one that has ended and a queued or paused run ended any other way.
    */
   end(
     runId: string,
@@ -65,6 +66,16 @@ export interface RunIndex {
     at: EpochMs,
     counts?: AreaCounts,
   ): Promise<Run | undefined>;
+  /**
+   * RF-432: `Running` -> `AwaitingApproval`, keeping the areas no reader started; undefined for an
+   * unknown run and one that is not running.
+   */
+  pause(runId: string, counts?: AreaCounts): Promise<Run | undefined>;
+  /**
+   * RF-432: `AwaitingApproval` -> `Queued` for the user's paused run, at the end of the queue;
+   * undefined for an unknown id, another user's run and a run that is not paused.
+   */
+  continueAwaiting(userId: string, runId: string, at: EpochMs): Promise<Run | undefined>;
   /**
    * RF-006: `Ended` -> `Queued` for the user's run that ended `CapReached`, `Failed` or `Interrupted`, at
    * the end of the queue; undefined for an unknown id, another user's run and any other run, so two

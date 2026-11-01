@@ -2,7 +2,7 @@ import type { JSX } from 'preact';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import { Glyph } from '../components/Glyph.js';
 import { Link } from '../components/Link.js';
-import { approvalText, missingKeyProviders, worstCaseText } from '../lib/journey-approval.js';
+import { likelyText, missingKeyProviders, worstCaseText } from '../lib/journey-approval.js';
 import { providerNames } from './provider-choices.js';
 
 // RF-1104, RF-1001, P1-107: a role that has no key of the user's own runs on the server's key. The
@@ -43,7 +43,7 @@ function KeyMissingNote({ estimate }: { readonly estimate: RunEstimate }): JSX.E
 // RF-430
 function JourneyNote({ estimate }: { readonly estimate: RunEstimate }): JSX.Element | null {
   const { journey } = estimate;
-  const likely = approvalText(estimate);
+  const likely = likelyText(estimate);
   const worst = worstCaseText(estimate);
   if (journey === undefined || likely === undefined || worst === undefined) return null;
   const basis =
@@ -52,7 +52,7 @@ function JourneyNote({ estimate }: { readonly estimate: RunEstimate }): JSX.Elem
       : 'From fixed assumptions: no earlier run of this model yet.';
   return (
     <p class="rst-settings__note" data-testid="journey-total">
-      {`The whole journey (understand with claim checking, ${String(journey.deepenRounds)} Deepen rounds and the plan): likely ${likely}, worst case ${worst}. ${basis}`}
+      {`The whole journey (understand with claim checking, ${String(journey.deepenRounds)} Deepen rounds and the plan): likely ${likely}, worst case ${worst}. Starting approves the worst case: the run asks before it goes past it. ${basis}`}
     </p>
   );
 }
