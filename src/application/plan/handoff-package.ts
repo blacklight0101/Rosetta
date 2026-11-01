@@ -5,6 +5,7 @@ import type { CopiedExample } from '../../domain/planning/copied-example.js';
 import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
 import type { RestatedDecision } from '../../domain/planning/brief-restated.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
+import type { AgentModelMaps } from '../../domain/planning/build-method.js';
 import type { GrepRules } from '../../domain/planning/grep-rules.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
 import type { StackClash } from '../../domain/planning/stack-rules.js';
@@ -122,6 +123,8 @@ export interface HandoffPackage {
   readonly leftOut: readonly LeftOutItem[];
   /** P6-28, RF-640: the hard-rule greps and language aliases of the catalogue the plan run used. */
   readonly grepRules: GrepRules;
+  /** P7-23, RF-639: the default model name of each tier for Claude Code and Codex, from the catalogue. */
+  readonly agentModels: AgentModelMaps;
   /** P5-43, RF-602: where the plan changed the meaning of its claims; checks.md lists it, the PRD marks proposed roles. */
   readonly meaning?: MeaningCheck | undefined;
 }

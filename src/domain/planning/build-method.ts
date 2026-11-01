@@ -10,7 +10,13 @@ type AgentTool =
 
 /** The tiers of the difficulty bands, smallest first (RF-639). */
 export const modelTiers = ['smallest', 'middle', 'largest'] as const;
-type ModelTier = (typeof modelTiers)[number];
+export type ModelTier = (typeof modelTiers)[number];
+
+/** The default model name of each tier for Claude Code and for Codex (P7-23, RF-639, from the catalogue). */
+export interface AgentModelMaps {
+  readonly claudeCode: Readonly<Record<ModelTier, string>>;
+  readonly codex: Readonly<Record<ModelTier, string>>;
+}
 
 interface BuildModels {
   readonly smallest?: string | undefined;
@@ -35,32 +41,19 @@ export interface BuildMethod {
 /** A local model builds only scripted cards of difficulty 1 and 2 (DEC-176 Q-F, RF-641): one ceiling for the check and the bands. */
 export const localModelCeiling = 2;
 
-/** The model aliases Claude Code gets when the team names none (RF-639). */
-const claudeCodeModels: Readonly<Record<ModelTier, string>> = {
-  smallest: 'haiku',
-  middle: 'sonnet',
-  largest: 'opus',
-};
-
-/** The model names Codex is offered when the team names none (P7-12, EV-64); the web page keeps the same map. */
-const codexModels: Readonly<Record<ModelTier, string>> = {
-  smallest: 'gpt-5-mini',
-  middle: 'gpt-5-codex',
-  largest: 'gpt-5',
-};
-
-/** The model map of a tool: one name per tier, or none for another tool (RF-639, P7-12). */
+/** The model map of a tool: one name per tier, or none for another tool (RF-639, P7-12, P7-23). */
 // RF-639
 export function modelMapOf(
   tool: AgentTool | undefined,
+  maps: AgentModelMaps,
 ): Readonly<Record<ModelTier, string>> | undefined {
-  if (tool?.kind === 'claude-code') return claudeCodeModels;
-  return tool?.kind === 'codex' ? codexModels : undefined;
+  if (tool?.kind === 'claude-code') return maps.claudeCode;
+  return tool?.kind === 'codex' ? maps.codex : undefined;
 }
 
-function modelsOf(given: BuildMethod): BuildModels | undefined {
+function modelsOf(given: BuildMethod, maps: AgentModelMaps): BuildModels | undefined {
   if (given.agentTool === undefined) return undefined;
-  const fallback: BuildModels = modelMapOf(given.agentTool) ?? {};
+  const fallback: BuildModels = modelMapOf(given.agentTool, maps) ?? {};
   const named = given.models ?? {};
   const models: Record<string, string> = {};
   for (const tier of modelTiers) {
@@ -80,9 +73,12 @@ function localOf(given: BuildMethod): LocalTiers | undefined {
 
 /** The build method to store: people building keep neither a tool nor a model. */
 // RF-639
-export function resolveBuildMethod(given: BuildMethod | undefined): BuildMethod {
+export function resolveBuildMethod(
+  given: BuildMethod | undefined,
+  maps: AgentModelMaps,
+): BuildMethod {
   if (given?.aiAssisted !== true) return { aiAssisted: false };
-  const models = modelsOf(given);
+  const models = modelsOf(given, maps);
   const local = localOf(given);
   return {
     aiAssisted: true,
@@ -114,3 +110,9 @@ export function isLocalTier(method: BuildMethod, tier: ModelTier): boolean {
 export function modelForTier(method: BuildMethod, tier: ModelTier): string | undefined {
   return method.aiAssisted ? method.models?.[tier] : undefined;
 }
+
+/** The maps of a catalogue with no names, for tests that build a catalogue by hand (P7-23). */
+export const noAgentModels: AgentModelMaps = {
+  claudeCode: { smallest: '', middle: '', largest: '' },
+  codex: { smallest: '', middle: '', largest: '' },
+};

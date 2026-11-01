@@ -156,7 +156,7 @@ function readmeFile(method: BuildMethod, roles: readonly Role[], esc: MarkdownEs
 /** Whether the package writes the `agents/` folder: only for Claude Code and Codex (Q-E, RF-642). */
 // RF-642, P6-30
 export function writesAgentFolder(given: BuildMethod | undefined): boolean {
-  const kind = resolveBuildMethod(given).agentTool?.kind;
+  const kind = given?.aiAssisted === true ? given.agentTool?.kind : undefined;
   return kind === 'claude-code' || kind === 'codex';
 }
 
@@ -171,7 +171,7 @@ export function agentFiles(
   masker: TextMasker,
 ): Record<string, string> {
   if (!writesAgentFolder(handoff.brief.buildMethod)) return {};
-  const method = resolveBuildMethod(handoff.brief.buildMethod);
+  const method = resolveBuildMethod(handoff.brief.buildMethod, handoff.agentModels);
   const kind = method.agentTool?.kind;
   if (kind !== 'claude-code' && kind !== 'codex') return {};
   const roles = rolesOf(method, kind === 'claude-code' && method.models?.escalation !== undefined);
