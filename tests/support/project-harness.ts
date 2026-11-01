@@ -1,6 +1,7 @@
 import type { Actor } from '../../src/domain/accounts/actor.js';
 import { NO_LISTED_MODELS, type ModelList } from '../../src/application/models/model-list.js';
 import type { DefaultRoles } from '../../src/application/projects/default-roles.js';
+import type { GitHubRefCheck } from '../../src/application/ports/github-ref-check.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
 import { GetProject } from '../../src/application/use-cases/get-project.js';
 import { ListProjects } from '../../src/application/use-cases/list-projects.js';
@@ -41,6 +42,7 @@ export interface ProjectHarness {
 export function projectHarness(
   defaultRoles: DefaultRoles = {},
   models: ModelList = NO_LISTED_MODELS,
+  refCheck?: GitHubRefCheck,
 ): ProjectHarness {
   const projects = new MemoryProjectRepository();
   const serverSettings = new MemoryServerSettings(defaultRoles);
@@ -62,6 +64,7 @@ export function projectHarness(
       template: templateSettings,
       ids,
       clock,
+      ...(refCheck === undefined ? {} : { refCheck }),
     }),
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),

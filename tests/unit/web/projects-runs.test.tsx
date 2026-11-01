@@ -83,8 +83,10 @@ it('RF-1108 a queued latest run shows its position in the row and the queue noti
   const notice = screen.getByTestId('queue-notice');
 
   expect(within(row).getByText('Queued')).not.toBeNull();
-  expect(row.textContent).toContain('position 2');
-  expect(notice.textContent).toContain('Your understand run of octo/demo is queued, position 2.');
+  expect(row.textContent).toContain('position 2, 1 run ahead');
+  expect(notice.textContent).toContain(
+    'Your understand run of octo/demo is queued, position 2, 1 run ahead.',
+  );
   expect(within(notice).getByRole('button', { name: /Cancel queued run/u })).not.toBeNull();
   expect(within(notice).getByRole('link', { name: 'Open the live run' }).getAttribute('href')).toBe(
     '/runs/r-9',

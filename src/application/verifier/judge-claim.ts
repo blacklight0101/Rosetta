@@ -17,6 +17,7 @@ import {
   type SkipLookup,
 } from './cited-lines.js';
 import { restatedAnswerReason, type OwnerAnswer } from './answer-restated-claim.js';
+import { earlierClaimReason } from './earlier-claim.js';
 import { maskedSourceReason } from './masked-source-claim.js';
 import { renderedFileReason } from './rendered-file-claim.js';
 import { screenRuleVerdict } from './screen-rule-check.js';
@@ -187,7 +188,8 @@ function ruleJudgement(
       : maskedSourceReason(claim, excerpts, parts.secretLines);
   // DEC-198: the claim restates an owner's answer on the lines its question was raised from.
   const restated = restatedAnswerReason(claim, parts.ownerAnswers ?? [], excerpts);
-  const rejected = masked ?? restated;
+  // EV-78: the claim refers to an earlier or rejected claim.
+  const rejected = masked ?? restated ?? earlierClaimReason(claim);
   if (rejected !== undefined) {
     return { kind: 'judged', status: 'Rejected', reason: rejected, withoutModel: true };
   }

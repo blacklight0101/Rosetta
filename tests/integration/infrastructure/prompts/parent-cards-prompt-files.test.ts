@@ -21,9 +21,9 @@ describe('the versions of the Deepen prompts', () => {
     const reread = await loadRereadPrompt('prompts');
     const parentCards = await loadParentCardsPrompt('prompts');
 
-    expect(reread).toMatchObject({ name: 'reader/reread.v4.md', version: 'v4' });
+    expect(reread).toMatchObject({ name: 'reader/reread.v5.md', version: 'v5' });
     expect(parentCards).toMatchObject({ name: 'reader/parent-cards.v2.md', version: 'v2' });
-    expect(reread.sha256).toBe(await sha256Of('prompts/reader/reread.v4.md'));
+    expect(reread.sha256).toBe(await sha256Of('prompts/reader/reread.v5.md'));
     expect(parentCards.sha256).toBe(await sha256Of('prompts/reader/parent-cards.v2.md'));
   });
 
@@ -36,6 +36,19 @@ describe('the versions of the Deepen prompts', () => {
     ],
   ])('RNF-004 the old version %s stays unchanged', async (name, sha256) => {
     expect((await loadPromptFile('prompts', name)).sha256).toBe(sha256);
+  });
+
+  it('RNF-004 the re-read v5 is not a copy of v4', async () => {
+    expect(await sha256Of('prompts/reader/reread.v5.md')).not.toBe(
+      await sha256Of('prompts/reader/reread.v4.md'),
+    );
+  });
+
+  it('EV-78 the re-read v5 says a new claim never refers to an earlier or rejected claim', async () => {
+    const { text } = await loadRereadPrompt('prompts');
+
+    expect(text).toMatch(/never refers? to an earlier or (?:a )?rejected claim/iu);
+    expect(text).toMatch(/states what the code does/iu);
   });
 
   it('RNF-004 the re-read v4 is not a copy of v3', async () => {

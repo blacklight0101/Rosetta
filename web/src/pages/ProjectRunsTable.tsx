@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { queueText } from '../lib/live-run/queue-text.js';
 import type { Project } from '../api/project-schemas.js';
 import type { LastRun, ProjectOverviewRow } from '../api/overview-schemas.js';
 import { FailedAreasNote } from '../components/FailedAreasNote.js';
@@ -38,7 +39,7 @@ function RunState({ run }: { readonly run: LastRun | null }): JSX.Element | null
     <>
       <StatusBadge list="RunQueueState" value={run.queueState} />
       {run.position === null ? null : (
-        <span class="rst-table__sub rst-p1105-note">position {run.position}</span>
+        <span class="rst-table__sub rst-p1105-note">{queueText(run.position)}</span>
       )}
     </>
   );

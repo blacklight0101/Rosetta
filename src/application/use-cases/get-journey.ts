@@ -3,6 +3,7 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
 import { isBriefOutOfDate } from '../../domain/planning/brief-freshness.js';
+import { queuePositions } from '../../domain/runs/queue-rules.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { Journey, JourneyHandoff, JourneyRun, JourneySource } from '../journey/journey.js';
 import { endCodeOf, planSourceKey } from '../journey/journey-lookup.js';
@@ -28,7 +29,7 @@ import { waitsForAnswer } from './question-states.js';
 
 export interface GetJourneyDependencies {
   readonly projects: ProjectRepository;
-  readonly runs: Pick<RunIndex, 'list'>;
+  readonly runs: Pick<RunIndex, 'list' | 'listQueued'>;
   readonly manifests: Pick<RunManifestStore, 'read'>;
   readonly history: Pick<RunEventHistory, 'read' | 'lastSeq'>;
   readonly briefs: Pick<PlanningBriefStore, 'read'>;
@@ -153,11 +154,18 @@ export class GetJourney {
     return new Map(plans.map((run, index) => [run.id, keys[index] ?? null]));
   }
 
+  /** EV-80: only a queued run has a place, counted over the server's queue. */
+  private async positionOf(run: Run): Promise<number | null> {
+    if (run.queueState !== 'Queued') return null;
+    return queuePositions(await this.deps.runs.listQueued()).get(run.id) ?? null;
+  }
+
   private async runFacts(run: Run): Promise<JourneyRun> {
     return {
       ...{ id: run.id, runKey: run.runKey, queueState: run.queueState, endState: run.endState },
       ...{ endedAt: run.endedAt, costMicros: run.totals.costMicros },
       unreadAreas: run.unreadAreas,
+      position: await this.positionOf(run),
       errorCode: await endCodeOf(this.deps.history, run),
     };
   }

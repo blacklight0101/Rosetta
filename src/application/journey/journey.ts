@@ -18,6 +18,8 @@ export interface JourneyRun {
   readonly errorCode: string | null;
   /** P7-02: the planned areas no reader started; a capped run with some is "Partly read". */
   readonly unreadAreas?: number;
+  /** EV-80: the place of a queued run in the queue, counted from 1; null for any other run. */
+  readonly position?: number | null;
 }
 
 /** The understand run the package is written from. */
