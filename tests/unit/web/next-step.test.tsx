@@ -56,7 +56,7 @@ it('RF-1021 keeps History and the project settings one click away', () => {
 });
 
 it('RF-1020 the project page leaves out an action that only opens the project page itself', () => {
-  const view = journeyOf(roadSigns['noRun'], projectId);
+  const view = journeyOf(facts({ source: null, briefSaved: false }), projectId);
 
   renderPage(
     <JourneyStrip
