@@ -42,7 +42,6 @@ async function saveSettings(page: Page): Promise<void> {
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByLabel('Summariser provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Summariser', 'gpt-5-nano');
-  await page.getByLabel('Reader max turns', { exact: true }).fill('1');
   await setOutputLimit(page, 'Reader', 256);
   await setOutputLimit(page, 'Summariser', 256);
   await page.getByLabel('Parallel readers', { exact: true }).fill('1');
