@@ -78,10 +78,19 @@ describe('the caps of a run with an approved amount', () => {
   };
   const approved = { maxCostMicros: 3_000_000n, maxTokens: 5_000_000n };
 
-  it('RF-432 replaces the project run caps with the approved amount, marked approved', () => {
+  it('RF-422 RF-432 an approved amount above the project run caps never lifts them', () => {
     expect(capsFor('user', { ...inputs, approved })).toEqual([
-      { kind: 'run-cost', limit: 3_000_000n, source: 'approved' },
-      { kind: 'run-tokens', limit: 5_000_000n, source: 'approved' },
+      { kind: 'run-cost', limit: 2_000_000n, source: 'project' },
+      { kind: 'run-tokens', limit: 2_000_000n },
+    ]);
+  });
+
+  it('RF-432 an approved amount below the project run caps is the line, marked approved', () => {
+    const below = { maxCostMicros: 1_000n, maxTokens: 500n };
+
+    expect(capsFor('user', { ...inputs, approved: below })).toEqual([
+      { kind: 'run-cost', limit: 1_000n, source: 'approved' },
+      { kind: 'run-tokens', limit: 500n, source: 'approved' },
     ]);
   });
 
@@ -90,7 +99,7 @@ describe('the caps of a run with an approved amount', () => {
 
     expect(caps).toEqual([
       { kind: 'run-cost', limit: 900_000n, source: 'administrator' },
-      { kind: 'run-tokens', limit: 5_000_000n, source: 'approved' },
+      { kind: 'run-tokens', limit: 2_000_000n },
       { kind: 'user-day', limit: 1_000_000n, source: 'administrator' },
       { kind: 'server-month', limit: 10_000_000n, source: 'administrator' },
     ]);

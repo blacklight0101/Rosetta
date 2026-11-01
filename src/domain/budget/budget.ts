@@ -74,9 +74,10 @@ export interface CapInputs {
   readonly server: ServerCaps;
   readonly account: AccountCaps;
   /**
-   * RF-432, ADR-026: the amount the user approved for the run. It replaces the project's run caps
-   * as the run's line, marked `approved`: the budget guard pauses the run there instead of ending
-   * it. The administrator's run cap, the day and month caps and the role caps stay hard (DEC-112).
+   * RF-432, ADR-026: the amount the user approved for the run. Where it is below a project run cap
+   * it is the run's line, marked `approved`: the budget guard pauses the run there instead of ending
+   * it. It never lifts a project run cap; the administrator's run cap, the day and month caps and the
+   * role caps stay hard (DEC-112).
    */
   readonly approved?: RunBudget;
 }
@@ -145,7 +146,7 @@ function scopeShareCaps(
 
 // RF-422, RF-423, RF-429, RF-1106
 export function capsFor(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
-  const keys = approvedLines(keyCaps(keySource, approvedRun(inputs)), inputs.approved);
+  const keys = approvedLines(keyCaps(keySource, approvedRun(inputs)), inputs);
   const own = roleCaps(inputs.role);
   const shares: UsageCap[] = [];
   if (
@@ -162,21 +163,33 @@ export function capsFor(keySource: KeySource, inputs: CapInputs): readonly Usage
   return [...keys, ...own, ...shares];
 }
 
-/** RF-432: the inputs with the approved amount in place of the project's run caps. */
+/** RF-432: the inputs with each project run cap lowered to the approved amount where it is lower. */
 function approvedRun(inputs: CapInputs): CapInputs {
-  return inputs.approved === undefined ? inputs : { ...inputs, run: inputs.approved };
+  const { approved, run } = inputs;
+  if (approved === undefined) return inputs;
+  return {
+    ...inputs,
+    run: {
+      maxCostMicros: lower(run.maxCostMicros, approved.maxCostMicros),
+      maxTokens: lower(run.maxTokens, approved.maxTokens),
+    },
+  };
 }
 
-/** RF-432: the run caps that come from the approved amount, marked so the guard pauses there. */
-function approvedLines(
-  keys: readonly UsageCap[],
-  approved: RunBudget | undefined,
-): readonly UsageCap[] {
+/**
+ * RF-432, RF-422: a run cap that the approved amount lowered is marked `approved`, so the guard
+ * pauses there; a project cap at or below the approved amount stays a hard stop (it is never lifted).
+ */
+function approvedLines(keys: readonly UsageCap[], inputs: CapInputs): readonly UsageCap[] {
+  const { approved, run } = inputs;
   if (approved === undefined) return keys;
   return keys.map((cap) => {
-    const fromRun =
-      cap.kind === 'run-tokens' || (cap.kind === 'run-cost' && cap.source === 'project');
-    return fromRun ? { ...cap, source: 'approved' } : cap;
+    const byTokens = cap.kind === 'run-tokens' && approved.maxTokens < run.maxTokens;
+    const byCost =
+      cap.kind === 'run-cost' &&
+      cap.source === 'project' &&
+      approved.maxCostMicros < run.maxCostMicros;
+    return byTokens || byCost ? { ...cap, source: 'approved' } : cap;
   });
 }
 
