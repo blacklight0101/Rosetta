@@ -4,7 +4,7 @@ import { dollars, isLocalModel, tokensText } from '../estimate-math.js';
 
 // RF-613, RF-143, RF-427, RF-1001: what Plan setup works out of the plan estimate. The planner is
 // the only role of `plan`. A missing price or a missing key stops the run before its first call, so
-// the page blocks "Write the package" with the server's own words; a figure over a cap is a warning
+// the page blocks "Start the plan" with the server's own words; a figure over a cap is a warning
 // because the budget guard stops the run cleanly at the cap. The page reads the figures generically:
 // the number of calls behind them is shown only when the server says it.
 

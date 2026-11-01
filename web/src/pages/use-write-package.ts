@@ -4,7 +4,7 @@ import { startPlanRun } from '../api/plan.js';
 import { useApp } from '../app/app-context.js';
 import { navigate } from '../app/router.js';
 
-// RF-604, RF-143, RF-614: "Write the package" starts the plan run of the project from its source run,
+// RF-604, RF-143, RF-614: "Start the plan" starts the plan run of the project from its source run,
 // with the consent of the planner when it needs one, and opens the live page of the run. A refusal stays on the page.
 
 // RF-604
