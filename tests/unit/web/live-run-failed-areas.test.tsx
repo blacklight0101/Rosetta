@@ -193,7 +193,9 @@ it('RF-208 a retry the project refuses for missing cloud consent shows why and a
   await waitFor(() => {
     expect(within(banner).getByTestId('error-banner').textContent).toContain('RST-1515');
   });
-  expect(await within(banner).findByRole('checkbox', { name: /send masked excerpts to/ })).toBeTruthy();
+  expect(
+    await within(banner).findByRole('checkbox', { name: /send masked excerpts to/ }),
+  ).toBeTruthy();
 });
 
 it('P7-38 a retry refused for missing consent shows the consent box beside the button and starts once ticked', async () => {
