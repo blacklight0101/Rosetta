@@ -1,0 +1,209 @@
+{
+  "tables": [
+    {
+      "name": "access_point_site_a",
+      "purpose": "Access points of site a.",
+      "sources": [
+        "ENT-001"
+      ],
+      "columns": [
+        {
+          "name": "ap_id",
+          "type": "int",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "ap id"
+          },
+          "risk": ""
+        },
+        {
+          "name": "label",
+          "type": "varchar(80)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "label"
+          },
+          "risk": ""
+        },
+        {
+          "name": "model",
+          "type": "varchar(60)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "model"
+          },
+          "risk": ""
+        },
+        {
+          "name": "install_date",
+          "type": "date",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "install date"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "ap_id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "access_point_site_b",
+      "purpose": "Access points of site b.",
+      "sources": [
+        "ENT-002"
+      ],
+      "columns": [
+        {
+          "name": "ap_id",
+          "type": "int",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "ap id"
+          },
+          "risk": ""
+        },
+        {
+          "name": "label",
+          "type": "varchar(80)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "label"
+          },
+          "risk": ""
+        },
+        {
+          "name": "model",
+          "type": "varchar(60)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "model"
+          },
+          "risk": ""
+        },
+        {
+          "name": "install_date",
+          "type": "date",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "install date"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "ap_id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "access_point_site_c",
+      "purpose": "Access points of site c.",
+      "sources": [
+        "ENT-003"
+      ],
+      "columns": [
+        {
+          "name": "ap_id",
+          "type": "int",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "ap id"
+          },
+          "risk": ""
+        },
+        {
+          "name": "label",
+          "type": "varchar(80)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "label"
+          },
+          "risk": ""
+        },
+        {
+          "name": "model",
+          "type": "varchar(60)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "model"
+          },
+          "risk": ""
+        },
+        {
+          "name": "install_date",
+          "type": "date",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "install date"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "ap_id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "tag_list",
+      "purpose": "Tags.",
+      "sources": [
+        "ENT-004"
+      ],
+      "columns": [
+        {
+          "name": "tag_id",
+          "type": "int",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-004.c1",
+            "field": "tag id"
+          },
+          "risk": ""
+        },
+        {
+          "name": "colour",
+          "type": "varchar(20)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-004.c1",
+            "field": "colour"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "tag_id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    }
+  ],
+  "dropped": []
+}

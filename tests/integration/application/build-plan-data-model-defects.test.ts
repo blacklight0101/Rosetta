@@ -9,6 +9,7 @@ import {
   catalogCards,
   invoiceCards,
   productSheetCards,
+  siteSheetCards,
   runCards,
   stockCards,
 } from '../../support/data-model-defect-cards.js';
@@ -120,5 +121,26 @@ describe('BuildPlan: the Invoice answer', () => {
     expect(section).toContain('`status`');
     expect(section).toContain('varchar(max)');
     expect(sectionOf(checks, 'Left out')).not.toContain('status');
+  });
+});
+
+describe('BuildPlan: per-site sheets', () => {
+  it('RF-623 writes one table with a site column for three per-site sheets and lists the merge', async () => {
+    const { model, checks } = await filesFor('data-model-site-sheets', siteSheetCards());
+
+    expect(tableNames(model)).toEqual(['access_point', 'tag_list']);
+    expect(model).toMatch(/\| site \|/u);
+    const section = sectionOf(checks, 'Data model');
+    for (const sheet of ['access_point_site_a', 'access_point_site_b', 'access_point_site_c']) {
+      expect(section).toContain(sheet);
+    }
+    expect(section).toContain('site');
+  });
+
+  it('RF-623 keeps the table with other columns apart', async () => {
+    const { model } = await filesFor('data-model-site-sheets', siteSheetCards());
+
+    expect(model).toContain('colour');
+    expect(model).not.toMatch(/tag_list[\s\S]*\| site \|[\s\S]*access_point/u);
   });
 });
