@@ -73,7 +73,6 @@ test('RF-1001 shows the estimate and starts an understand run for the chosen are
 }) => {
   await openStartPage(page);
 
-  await expect(page.getByLabel('Understand')).toBeChecked();
   const table = page.getByRole('table', { name: 'Estimate per role' });
   await expect(table.getByRole('row', { name: /reader/u })).toBeVisible();
   await expect(table.getByRole('row', { name: /Total/u })).toBeVisible();

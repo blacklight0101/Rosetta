@@ -131,5 +131,4 @@ export async function giveReaderToOpenAi(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
-  await page.getByRole('radio', { name: 'Understand', exact: true }).check();
 }

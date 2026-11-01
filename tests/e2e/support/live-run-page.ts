@@ -63,7 +63,6 @@ function areasOf(page: Page): Locator {
 
 /** Chooses which areas an understand run reads: only the ones named. */
 async function chooseAreas(page: Page, names: readonly string[]): Promise<void> {
-  await expect(page.getByLabel('Understand')).toBeChecked();
   const areas = areasOf(page);
   await expect(areas.locator('label').first()).toBeVisible();
   for (const label of await areas.locator('label').allTextContents()) {

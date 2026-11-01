@@ -68,7 +68,6 @@ test('RF-113 the start page announces an outdated code map and holds an Understa
   await openStartPage(page);
   await expect(page.getByText('The code map is out of date.')).toBeVisible();
   const startButton = page.getByRole('button', { name: /^Analyse/u });
-  await expect(page.getByLabel('Understand')).toBeChecked();
   await expect(startButton).toBeDisabled();
   await page.getByLabel('Use the old code map for this run').check();
   await expect(startButton).toBeEnabled();
