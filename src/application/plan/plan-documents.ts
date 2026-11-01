@@ -112,7 +112,10 @@ export async function planDocuments(
   ): PlannerCall => documentCall(sink, document, prompt, agentTaskId);
   const prd = await planPrd(callOf('prd', prompts.prd, 'planner-prd'), input, warn);
   const modelCall = callOf('dataModel', prompts.dataModel, 'planner-data-model');
-  const model = await planDataModel(modelCall, { cards: input.cards, brief: input.brief });
+  const model = await planDataModel(modelCall, {
+    ...{ cards: input.cards, brief: input.brief },
+    outOfScope: prd.outOfScope,
+  });
   for (const message of dataModelWarnings(model)) await warn(message);
   const flowsCall = callOf('flows', prompts.flows, 'planner-flows');
   const flows = await planFlows(flowsCall, input);

@@ -1,4 +1,8 @@
-import type { DataModelAssembly, MergedTable } from '../../domain/planning/data-model.js';
+import type {
+  DataModelAssembly,
+  MergedTable,
+  SplitTable,
+} from '../../domain/planning/data-model.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { DataModelProblem } from './data-model-answer.js';
@@ -24,6 +28,17 @@ function mergeNote(merge: MergedTable): DataModelProblem {
       : ` Columns with the same name apart from case or separators were united: ${merge.columns.join(', ')}.`;
   const reason = `Tables whose names differ only by plural, case or separators were merged into this one: ${names}.${twins}`;
   return { item: merge.kept, field: `table ${merge.kept}`, reason };
+}
+
+// P7-32
+function splitNote(split: SplitTable): DataModelProblem {
+  const listed = split.values
+    .map((each) =>
+      each.value === null ? `${each.sheet} (no value)` : `${each.sheet} = ${each.value}`,
+    )
+    .join(', ');
+  const reason = `Sheets with the same columns, one per site or copy, were made one table with the column ${split.column}; the data migration fills it from the sheet: ${listed}.`;
+  return { item: split.table, field: `table ${split.table}`, reason };
 }
 
 /** The model, whether it has a table, what the checks flag (all of kind `check`) and the tables copied. */
@@ -53,6 +68,7 @@ export function checkedModel(
     ? [
         ...copied.map((item) => ({ item, field: `table ${item}`, reason: copiedReason })),
         ...assembled.merged.map(mergeNote),
+        ...(model.splits ?? []).map(splitNote),
         ...typeProblems(model),
         ...keys.problems,
         ...facts.problems,

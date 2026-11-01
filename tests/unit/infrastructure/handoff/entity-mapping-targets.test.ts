@@ -99,3 +99,26 @@ describe('entity-mapping.md planner name', () => {
     expect(rowOf(text, 'Orders')).not.toContain('planner named');
   });
 });
+
+describe('entity-mapping.md sheets split by site', () => {
+  it('RF-623, P7-32 says which value of the column the rows of each sheet get', () => {
+    const base = packageWith([
+      { legacy: 'access_point_site_a', target: 'access_point', notes: '', sources: ['ENT-001'] },
+    ]);
+    const split = {
+      table: 'tbl_orders',
+      column: 'site',
+      values: [
+        { sheet: 'access_point_site_a', value: 'a', sources: ['ENT-001'] },
+        { sheet: 'access_point_site_b', value: 'b', sources: ['ENT-002'] },
+      ],
+    };
+    const text =
+      renderHandoff({ ...base, dataModel: { ...base.dataModel, splits: [split] } }, masker)[
+        'entity-mapping.md'
+      ] ?? '';
+
+    expect(rowOf(text, 'access_point_site_a')).toContain('site = a');
+    expect(rowOf(text, 'access_point_site_a')).not.toContain('site = b');
+  });
+});
