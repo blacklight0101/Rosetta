@@ -30,7 +30,7 @@ const totalsOf = z.looseObject({
   }),
 });
 const results = z.looseObject({
-  results: z.array(z.looseObject({ agentTaskId: z.string(), area: z.string() })),
+  tasks: z.array(z.looseObject({ agentTaskId: z.string(), area: z.string() })),
 });
 
 /** Puts the finished run of the page (its UUID) back to a pause that left `area` unread. */
@@ -38,11 +38,11 @@ export async function pauseFinishedRun(page: Page, runUuid: string, area: string
   const folder = await runFolderOf(page, runUuid);
   const resultsFile = join(folder.dir, 'task-results.json');
   const saved = results.parse(JSON.parse(await readFile(resultsFile, 'utf8')));
-  const left = saved.results.find((result) => result.area === area);
+  const left = saved.tasks.find((result) => result.area === area);
   if (left === undefined) throw new Error(`The run has no saved result for ${area}.`);
   await writeFile(
     resultsFile,
-    `${JSON.stringify({ ...saved, results: saved.results.filter((r) => r !== left) }, null, 2)}\n`,
+    `${JSON.stringify({ ...saved, tasks: saved.tasks.filter((r) => r !== left) }, null, 2)}\n`,
     'utf8',
   );
 
