@@ -31,7 +31,7 @@ const readerPromptNames = {
 const workbookPromptName = 'reader/workbook.v5.md';
 
 const answersPromptName = 'reader/answers.v2.md';
-const rereadPromptName = 'reader/reread.v4.md';
+const rereadPromptName = 'reader/reread.v5.md';
 const parentCardsPromptName = 'reader/parent-cards.v2.md';
 
 /** RF-260, RF-261: fragments of the card format, added only to areas the code map marks (Q-25). */

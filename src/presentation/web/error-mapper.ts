@@ -33,6 +33,7 @@ export interface ErrorReply {
 const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.requestInvalid]: 400,
   [ERROR_CODES.githubUrlInvalid]: 400,
+  [ERROR_CODES.githubRefNotFound]: 400,
   [ERROR_CODES.settingsInvalid]: 400,
   [ERROR_CODES.passwordTooShort]: 400,
   [ERROR_CODES.passwordTooCommon]: 400,

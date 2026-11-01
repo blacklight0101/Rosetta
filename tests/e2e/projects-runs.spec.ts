@@ -73,7 +73,9 @@ test('RF-1108 a queued run shows its position on the Projects page and Cancel en
   await openProjects(page);
 
   const notice = page.getByTestId('queue-notice');
-  await expect(notice).toContainText(/Your scan run of octo\/webforms is queued, position \d+\./u);
+  await expect(notice).toContainText(
+    /Your scan run of octo\/webforms is queued, position \d+, (?:no run|\d+ runs?) ahead\./u,
+  );
   await expect(projectRow(page)).toContainText('Queued');
   await expect(projectRow(page)).toContainText(/position \d+/u);
   await expectNoSeriousViolations(page);

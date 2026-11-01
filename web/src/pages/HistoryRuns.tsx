@@ -8,6 +8,7 @@ import { Link } from '../components/Link.js';
 import { RunEndBadge } from '../components/RunEndBadge.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
+import { queueText } from '../lib/live-run/queue-text.js';
 import { isResumable } from '../lib/live-run/resumable.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { secondsText } from './admin-format.js';
@@ -39,7 +40,12 @@ function StateBadge({ run }: { readonly run: HistoryRun }): JSX.Element {
       </>
     );
   }
-  return <StatusBadge list="RunQueueState" value={run.queueState} />;
+  return (
+    <>
+      <StatusBadge list="RunQueueState" value={run.queueState} />
+      {run.position === null ? null : <div class="rst-table__sub">{queueText(run.position)}</div>}
+    </>
+  );
 }
 
 function RunId({ run }: { readonly run: HistoryRun }): JSX.Element {

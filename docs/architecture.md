@@ -827,7 +827,7 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   differs (`RST-1308`), and writes nothing to the parent. Each round is planned by `planRound` (domain): the claims still
   `Unverified` or `Proposed` are judged; every `Rejected` claim with at least one first-party citation that was not
   re-read yet, was not written by this Deepen and has no `Supported` replacement yet (an earlier Deepen's, when a Deepen run is deepened in turn) is re-read once (one reader task per area over its cited first-party
-  files, system prompt `prompts/reader/reread.v4.md`, the rejected claims with the verifier's reasons as one data block
+  files, system prompt `prompts/reader/reread.v5.md`, the rejected claims with the verifier's reasons as one data block
   with the source `cards`; a claim whose verdict has `reasonKind: definedElsewhere` carries that field in the block, and
   the prompt then sends the reader to find the defining lines (a comment, an enum, a lookup table, a constant) with
   `grep` and `codemap_query` and to write the claim again citing both, P5-35; the task is an ordinary reader task of the
