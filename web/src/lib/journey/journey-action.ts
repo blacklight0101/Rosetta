@@ -35,11 +35,21 @@ export interface Next {
 
 const link = (label: string, href: string): JourneyLink => ({ kind: 'link', label, href });
 
+/** RF-432: a run that waits for approval is continued from its own page, which holds the approval. */
+function approvalOf(run: {
+  readonly id: string;
+  readonly queueState: string;
+}): JourneyAction | undefined {
+  return run.queueState === 'AwaitingApproval'
+    ? link('Review and continue', `/runs/${run.id}`)
+    : undefined;
+}
+
 function afterTheRun(c: Context, setUp: string): Next | undefined {
   const { source } = c;
   if (source === null) return undefined;
   const phase = phaseOf(source);
-  if (phase === 'working') return { action: undefined, here: 'understand' };
+  if (phase === 'working') return { action: approvalOf(source), here: 'understand' };
   if (phase === 'stopped') {
     const resume = { kind: 'resume', label: 'Resume this run', runId: source.id } as const;
     // P3-121: a run that stopped at a cap with Supported claims can be planned from; Resume stays
@@ -88,7 +98,7 @@ function afterThePlan(c: Context, setUp: string): Next {
   const { plan, facts } = c;
   if (plan === null) return { action: link('Start the plan', setUp), here: 'estimate' };
   const phase = phaseOf(plan);
-  if (phase === 'working') return { action: undefined, here: 'plan' };
+  if (phase === 'working') return { action: approvalOf(plan), here: 'plan' };
   if (phase === 'stopped') return { action: link('Try the plan again', setUp), here: 'plan' };
   if (facts.handoff?.outOfDate === true) {
     return { action: link('Review the new estimate', setUp), here: 'estimate' };

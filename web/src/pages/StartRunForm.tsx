@@ -100,6 +100,7 @@ function ProjectJourney({ form }: { readonly form: StartForm }): JSX.Element {
       refresh={form.scan.state.kind}
       pagePath={`/projects/${form.project.id}/start`}
       deepenInPlace
+      setupInPlace
     />
   );
 }

@@ -35,6 +35,8 @@ export interface JourneyStripProps {
   readonly deepenRunId?: string | undefined;
   /** RF-1021: the Questions and plan setup section, drawn in place of the answer and plan buttons. */
   readonly setup?: JSX.Element | undefined;
+  /** RF-646: the user chose not to Deepen, so the questions are asked now (the project page). */
+  readonly onSkipDeepen?: (() => void) | undefined;
 }
 
 const words: Readonly<Record<StepState, string>> = {
@@ -45,6 +47,8 @@ const words: Readonly<Record<StepState, string>> = {
   failed: 'Failed',
   'out-of-date': 'Out of date',
   gaps: 'With gaps',
+  awaiting: 'Waiting for approval',
+  skipped: 'Skipped',
 };
 
 const glyphs: Readonly<Record<StepState, GlyphName>> = {
@@ -55,6 +59,8 @@ const glyphs: Readonly<Record<StepState, GlyphName>> = {
   failed: 'cross',
   'out-of-date': 'warning-triangle',
   gaps: 'warning-triangle',
+  awaiting: 'pause-bars',
+  skipped: 'dashed-circle',
 };
 
 /** RF-627: the files and downloads of a step, plain links because they leave the app. */
@@ -128,12 +134,28 @@ function secondaryOf(view: JourneyView, pagePath: string | undefined): JourneyLi
   return secondary?.href.split('?')[0] === pagePath ? undefined : secondary;
 }
 
+/** RF-1021: the actions that answer the questions or set up and start the plan, which the page holds in place. */
+function setsUp(action: JourneyAction | undefined): boolean {
+  if (action?.kind === 'answer') return true;
+  return action?.kind === 'link' && action.href.includes('/plan-setup');
+}
+
 /** RF-1021: the next step in place. Deepen shows what it would read; any other action is a button. */
 function Next(props: JourneyStripProps): JSX.Element {
-  const { view, deepenRunId } = props;
+  const { view, deepenRunId, setup } = props;
   const { action } = view;
+  if (setup !== undefined && setsUp(action)) return setup;
   if (action?.kind === 'deepen' && deepenRunId !== undefined) {
-    return <DeepenAction runId={deepenRunId} recommended open />;
+    return (
+      <>
+        <DeepenAction runId={deepenRunId} recommended open />
+        {props.onSkipDeepen === undefined ? null : (
+          <Button variant="secondary" onClick={props.onSkipDeepen}>
+            Do not Deepen: answer the questions now
+          </Button>
+        )}
+      </>
+    );
   }
   const own = action?.kind === 'link' && action.href.split('?')[0] === props.pagePath;
   return (
@@ -162,7 +184,11 @@ export function JourneyStrip(props: JourneyStripProps): JSX.Element {
       <div class="rst-road__foot">
         <Next {...props} />
         <Action
-          action={secondaryOf(view, props.pagePath)}
+          action={
+            props.setup !== undefined && setsUp(view.action)
+              ? undefined
+              : secondaryOf(view, props.pagePath)
+          }
           variant="secondary"
           onResumed={props.onResumed}
           onAnswer={undefined}

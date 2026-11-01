@@ -23,6 +23,10 @@ import {
 /** `current` is the step that holds the next action; `upcoming` is open but not yet reached. */
 export type StepState =
   | ('done' | 'current' | 'upcoming' | 'locked' | 'failed' | 'out-of-date')
+  /** RF-1020, RF-432: the run paused near its approved amount and waits for the owner. */
+  | 'awaiting'
+  /** RF-1020: the questions were left on their defaults when the brief was saved. */
+  | 'skipped'
   /** RF-627: the package was written but some items are built by no task card. */
   | 'gaps';
 
@@ -78,6 +82,9 @@ const locked = (detail: string): Part => ({ state: 'locked', detail });
 function ofRun(run: JourneyRunFacts, completed: Part): Part {
   const phase = phaseOf(run);
   if (phase === 'completed') return completed;
+  if (phase === 'working' && run.queueState === 'AwaitingApproval') {
+    return { state: 'awaiting', detail: workingText(run), href: runPage(run) };
+  }
   if (phase === 'working')
     return { state: 'upcoming', detail: workingText(run), href: runPage(run) };
   return { state: 'failed', detail: endText(run), href: runPage(run) };
@@ -114,7 +121,7 @@ function questionsPart({ source, facts, skippedDeepen: skipped }: Context): Part
       open === 1
         ? '1 question left on its default'
         : `${String(open)} questions left on their defaults`;
-    return { state: 'done', detail: left, href };
+    return { state: 'skipped', detail: left, href };
   }
   // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by it.
   if (deepenRunning({ source, skippedDeepen: skipped })) {

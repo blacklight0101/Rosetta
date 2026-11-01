@@ -33,6 +33,8 @@ export function phaseOf(run: RunState): RunPhase {
 }
 
 export const workingText = (run: Pick<JourneyRunFacts, 'queueState' | 'position'>): string => {
+  if (run.queueState === 'AwaitingApproval')
+    return 'Paused near the approved amount: it waits for you';
   if (run.queueState !== 'Queued') return 'Running now';
   return `Waiting in the queue${queueSuffix(run.position)}`;
 };

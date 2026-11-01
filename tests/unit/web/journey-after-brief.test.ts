@@ -14,7 +14,7 @@ describe('RF-615 the journey after the brief is saved', () => {
     const view = journeyOf(facts({ source: skipped(1), briefSaved: true }), projectId);
 
     expect(step(view, 'questions')).toMatchObject({
-      state: 'done',
+      state: 'skipped',
       detail: '1 question left on its default',
       href: `/runs/${sourceId}`,
       here: false,
@@ -45,7 +45,7 @@ describe('RF-615 the journey after the brief is saved', () => {
       projectId,
     );
 
-    expect(step(view, 'questions').state).toBe('done');
+    expect(step(view, 'questions').state).toBe('skipped');
     expect(view.action).toMatchObject({ label: 'Open the package' });
   });
 

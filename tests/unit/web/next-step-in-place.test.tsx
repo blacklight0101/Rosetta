@@ -1,9 +1,10 @@
-import { screen, within } from '@testing-library/preact';
+import { fireEvent, screen, within } from '@testing-library/preact';
 import { afterEach, expect, it } from 'vitest';
 import { journeyOf } from '../../../web/src/lib/journey/journey-steps.js';
 import { JourneyStrip } from '../../../web/src/pages/JourneyStrip.js';
 import { json, renderPage } from './fake-api.js';
-import { facts, projectId, roadSigns } from './journey-fixtures.js';
+import { facts, projectId, roadSigns, source, sourceId } from './journey-fixtures.js';
+import { deepenEstimate } from './understanding-fixtures.js';
 import { base } from './plan-setup-helpers.js';
 import {
   catalogue,
@@ -76,4 +77,26 @@ it('RF-1021 the project page shows the questions and the plan setup in place and
 
   expect(window.location.pathname).toBe(`/projects/${projectId}/start`);
   expect(within(region()).queryByRole('button', { name: /^Answer / })).toBeNull();
+});
+
+it('RF-646 RF-1021 the project page lets the user skip Deepen and then holds the questions in place', async () => {
+  window.history.pushState({}, '', `/projects/${projectId}/start`);
+  renderStart({
+    [`GET /api/projects/${projectId}/journey`]: json(
+      200,
+      facts({ source: source({ deepens: 0, openQuestions: 2 }), briefSaved: false }),
+    ),
+    [`POST /api/runs/${sourceId}/deepen/estimate`]: deepenEstimate(),
+    'GET /api/plan/catalogue': json(200, catalogue),
+    [`GET ${base}/planning-brief`]: json(200, unsavedBrief),
+    [`POST ${base}/plan-options`]: json(200, planOptions),
+    [`GET ${base}/plan-estimate`]: json(200, planEstimate),
+    [`GET ${base}/plan-source`]: json(200, planSource),
+    'GET /api/runs/run-1/answers': json(200, { questions: [] }),
+  });
+
+  fireEvent.click(await screen.findByRole('button', { name: /^Do not Deepen/u }));
+
+  await screen.findByRole('region', { name: 'Questions and plan setup' });
+  expect(window.location.pathname).toBe(`/projects/${projectId}/start`);
 });

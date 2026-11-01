@@ -1,7 +1,9 @@
 import type { JSX } from 'preact';
+import { useState } from 'preact/hooks';
 import { navigate } from '../app/router.js';
 import { journeyOf } from '../lib/journey/journey-steps.js';
-import { JourneyStrip } from './JourneyStrip.js';
+import { JourneyStrip, type JourneyStripProps } from './JourneyStrip.js';
+import { PlanSetupInPlace } from './PlanSetupInPlace.js';
 import { useJourney } from './use-journey.js';
 import { useSkipDeepen } from './use-skip-deepen.js';
 
@@ -30,24 +32,50 @@ export interface JourneyPanelProps {
   readonly setupInPlace?: boolean | undefined;
 }
 
+/** RF-1021: what the project page does in place: Deepen, skipping it, and the questions and plan setup. */
+function inPlaceOf(
+  props: JourneyPanelProps,
+  sourceId: string | undefined,
+  on: { readonly skip: () => void; readonly saved: () => void },
+): Pick<JourneyStripProps, 'setup' | 'onSkipDeepen' | 'deepenRunId'> {
+  const setup =
+    props.setupInPlace === true ? (
+      <PlanSetupInPlace projectId={props.projectId} onSaved={on.saved} />
+    ) : undefined;
+  if (props.deepenInPlace !== true) return { setup };
+  return { setup, onSkipDeepen: on.skip, deepenRunId: sourceId };
+}
+
 // RF-615
 export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
   const { projectId, runId, refresh } = props;
-  const load = useJourney({ projectId, runId }, refresh);
-  const skip = useSkipDeepen(runId);
+  const [saved, setSaved] = useState(0);
+  const load = useJourney({ projectId, runId }, `${refresh}:${String(saved)}`);
+  // The project page names no run: the choice is kept for the source run the facts name.
+  const skip = useSkipDeepen(
+    runId ?? (load.status === 'ready' ? load.facts.source?.id : undefined),
+  );
   if (load.status === 'loading') return null;
   if (load.status === 'failed') {
     return <p class="rst-road-note">{`The journey could not be read (${load.error.code}).`}</p>;
   }
   const view = journeyOf(load.facts, projectId, skip.skipped);
   const source = load.facts.source;
+  const inPlace = inPlaceOf(props, source?.id, {
+    skip: () => {
+      skip.choose(true);
+    },
+    saved: () => {
+      setSaved((now) => now + 1);
+    },
+  });
   return (
     <JourneyStrip
       view={view}
       onAnswer={props.onAnswer}
       onDeepen={props.onDeepen}
       pagePath={props.pagePath}
-      deepenRunId={props.deepenInPlace === true ? source?.id : undefined}
+      {...inPlace}
       onResumed={
         props.onResumed ??
         (() => {
