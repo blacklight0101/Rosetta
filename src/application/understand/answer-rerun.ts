@@ -161,10 +161,11 @@ function answersTextOf(plan: RerunPlan, area: string): string | undefined {
 export function withAnswersOf(
   tasks: readonly ReaderTask[],
   plan: RerunPlan,
+  wholeProject = false,
 ): readonly ReaderTask[] {
   return tasks.map((task) => {
     const answers = answersTextOf(plan, task.area.name);
-    return answers === undefined ? task : { ...task, answers };
+    return answers === undefined || wholeProject ? task : { ...task, answers };
   });
 }
 

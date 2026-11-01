@@ -23,6 +23,12 @@ export function questionWords(question: string): string {
     .trim();
 }
 
+/** RF-646, Q-52, EV-57: whether two questions ask the same thing. */
+export function sameQuestion(a: string, b: string): boolean {
+  const first = questionWords(a);
+  return first !== '' && first === questionWords(b);
+}
+
 function keyOf(card: Card): string {
   const words = questionWords(card.question ?? card.title);
   return words === '' ? `card:${card.id}` : words;
