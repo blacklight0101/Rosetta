@@ -48,7 +48,7 @@ const hostedVerifierFrom = 3;
 
 /** P7-24: one warning for the package, not one per card, when a local verifier checks a card of difficulty 3 and above. */
 function localVerifierLines(handoff: HandoffPackage): string[] {
-  const method = resolveBuildMethod(handoff.brief.buildMethod);
+  const method = resolveBuildMethod(handoff.brief.buildMethod, handoff.agentModels);
   const ids = handoff.content.tasks
     .filter((task) => {
       const { rating, verifier } = difficultyOfTask(task, method);
