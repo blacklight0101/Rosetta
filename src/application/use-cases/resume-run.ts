@@ -81,7 +81,7 @@ export class ResumeRun {
     // One queue step: no dispatch can start the run from the old manifest, and the run is not
     // taken while this process is still writing its end. A second Resume finds the run queued.
     const reopened = await this.deps.queue.exclusive(run.id, () =>
-      this.reopen(userId, run, project, withOverviewMark(stored, overviewOnly)),
+      this.reopen(userId, run, project, withOverviewMark(stored, overviewOnly ? run : undefined)),
     );
     if (!reopened.ok || reopened.value === undefined) return err(ERROR_CODES.runNotResumable);
     const current = await runs.find(userId, run.id);
@@ -143,9 +143,22 @@ export class ResumeRun {
 }
 
 /** P7-26: the options of the reopened run, with the overview-only mark set or cleared. */
-function withOverviewMark(manifest: RunManifest, overviewOnly: boolean): RunManifest {
+function withOverviewMark(manifest: RunManifest, only: Run | undefined): RunManifest {
   const earlier = readUnderstandOptions(manifest.options);
-  return { ...manifest, options: { ...understandOptionsOf({ ...earlier, overviewOnly }) } };
+  const ended =
+    only?.endState === 'Completed' || only?.endState === 'CapReached'
+      ? { endState: only.endState, failedAreas: only.failedAreas, unreadAreas: only.unreadAreas }
+      : undefined;
+  return {
+    ...manifest,
+    options: {
+      ...understandOptionsOf({
+        ...earlier,
+        overviewOnly: only !== undefined,
+        overviewEnded: ended,
+      }),
+    },
+  };
 }
 
 /** RF-006: only an understand run that stopped at a cap, failed or was interrupted has work left. */

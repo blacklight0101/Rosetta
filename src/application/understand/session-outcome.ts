@@ -3,6 +3,7 @@ import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { AreaRead } from '../agent/agent-task-result.js';
 import type { OutputProblem } from '../cards/output-problem.js';
+import type { OverviewEnded } from './understand-options.js';
 import type { RunOutcome } from '../ports/run-executor.js';
 import { areaFailureOf, type TaskEndFacts } from './area-failure.js';
 
@@ -83,9 +84,18 @@ function failuresOutcome(end: SessionEnd): RunOutcome {
   return code === undefined ? { endState: 'Failed' } : { endState: 'Failed', errorCode: code };
 }
 
-/** P7-26: a run that wrote its overview alone ends CapReached while it has areas unread or claims not judged. */
-export function overviewOnlyOutcome(unread: number, unjudged: number, capped = false): RunOutcome {
-  if (unread === 0 && unjudged === 0 && !capped) return { endState: 'Completed' };
-  const left = unread > 0 ? { unreadAreas: unread } : {};
-  return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached, ...left };
+/**
+ * P7-26: a run that wrote its overview alone ends as it did before: a Completed run stays Completed
+ * with its failed areas; a CapReached run stays CapReached while it has areas unread or claims not
+ * judged (or the Deepen stopped at a cap), and completes when the overview was all that was left.
+ */
+export function overviewOnlyOutcome(
+  before: OverviewEnded,
+  left: { readonly unjudged: number; readonly capped?: boolean },
+): RunOutcome {
+  const failed = before.failedAreas > 0 ? { failedAreas: before.failedAreas } : {};
+  const open = before.unreadAreas > 0 || left.unjudged > 0 || left.capped === true;
+  if (before.endState === 'Completed' || !open) return { endState: 'Completed', ...failed };
+  const unread = before.unreadAreas > 0 ? { unreadAreas: before.unreadAreas } : {};
+  return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached, ...failed, ...unread };
 }

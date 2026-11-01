@@ -46,6 +46,15 @@ export interface UnderstandOptions {
   readonly approvedAmount?: ApprovedAmount;
   /** P7-26: run the overview step alone on the cards the run has. */
   readonly overviewOnly?: boolean;
+  /** P7-26: how the run ended before "Write the overview", so the run ends as it did. */
+  readonly overviewEnded?: OverviewEnded;
+}
+
+/** P7-26: the end state and the counts the run had when its overview alone was asked for. */
+export interface OverviewEnded {
+  readonly endState: 'Completed' | 'CapReached';
+  readonly failedAreas: number;
+  readonly unreadAreas: number;
 }
 
 const optionsSchema = z.object({
@@ -58,6 +67,13 @@ const optionsSchema = z.object({
     .optional(),
   retryOf: z.string().optional(),
   overviewOnly: z.boolean().optional(),
+  overviewEnded: z
+    .object({
+      endState: z.enum(['Completed', 'CapReached']),
+      failedAreas: z.number().int().min(0),
+      unreadAreas: z.number().int().min(0),
+    })
+    .optional(),
   approvedAmount: z
     .object({
       tokens: z.number().int().min(0),
@@ -79,6 +95,7 @@ export function understandOptionsOf(request: {
   readonly retryOf?: string | undefined;
   readonly approvedAmount?: ApprovedAmount | undefined;
   readonly overviewOnly?: boolean | undefined;
+  readonly overviewEnded?: OverviewEnded | undefined;
 }): UnderstandOptions {
   const consent = { cloudConsent: request.cloudConsent === true };
   const priv = request.privateCodeConfirmed === true ? { privateCodeConfirmed: true } : {};
@@ -88,7 +105,17 @@ export function understandOptionsOf(request: {
   const approved =
     request.approvedAmount === undefined ? {} : { approvedAmount: { ...request.approvedAmount } };
   const only = request.overviewOnly === true ? { overviewOnly: true } : {};
-  const base = { ...consent, ...priv, ...answers, ...deepen, ...retry, ...approved, ...only };
+  const ended = request.overviewEnded === undefined ? {} : { overviewEnded: request.overviewEnded };
+  const base = {
+    ...consent,
+    ...priv,
+    ...answers,
+    ...deepen,
+    ...retry,
+    ...approved,
+    ...only,
+    ...ended,
+  };
   return request.areas === undefined ? base : { areas: [...request.areas], ...base };
 }
 

@@ -2,6 +2,7 @@ import { runDeepenOverview, unjudgedIn } from '../deepen/deepen-overview.js';
 import type { DeepenParts } from '../deepen/deepen-parts.js';
 import type { RunOutcome } from '../ports/run-executor.js';
 import { overviewOnlyOutcome } from './session-outcome.js';
+import { endedBefore } from './overview-ended.js';
 import type { DeepenOptions } from './understand-options.js';
 import { UnderstandSession } from './understand-session.js';
 
@@ -23,5 +24,5 @@ export async function runOverviewOnly(
   await session.consolidate();
   await session.writeOverview();
   const cards = parts.kept.flatMap((result) => result.cards);
-  return overviewOnlyOutcome(parts.tasks.length, unjudgedIn(cards));
+  return overviewOnlyOutcome(endedBefore(parts), { unjudged: unjudgedIn(cards) });
 }
