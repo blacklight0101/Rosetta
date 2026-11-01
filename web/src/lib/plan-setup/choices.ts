@@ -114,3 +114,8 @@ export function typePrinciple(draft: Draft, text: string): Draft {
   }
   return typeOwn(draft, 'principles', text);
 }
+
+/** EV-73: a typed architecture answer keeps Rosetta's proposal; not implemented yet. */
+export function keepProposed(draft: Draft, options: PlanOptions | undefined): Draft {
+  return options === undefined ? draft : { ...draft };
+}
