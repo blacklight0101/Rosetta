@@ -17,6 +17,7 @@ import type { DefaultedQuestion } from '../../domain/planning/brief-questions.js
 import type { PlanContent } from '../../domain/planning/plan-content.js';
 import type { PrdContent } from '../../domain/planning/prd-content.js';
 import type { ExcludedClaim, SourceCard, SourceStop } from '../../domain/planning/plan-sources.js';
+import type { WorkbookSetup } from '../../domain/planning/workbook-setup.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { UploadFacts } from '../../domain/sources/upload-facts.js';
 import type { WorkbookFormulas } from '../../domain/planning/workbook-formulas.js';
@@ -105,6 +106,8 @@ export interface HandoffPackage {
   /** The cards with their `Supported` claims, in card order. */
   readonly sources: readonly SourceCard[];
   readonly excluded: readonly ExcludedClaim[];
+  /** RF-648: the sign-in, secrets store and screens answers; set only for a project of Excel workbooks. */
+  readonly workbook?: WorkbookSetup | undefined;
   readonly briefQuestions: readonly DefaultedQuestion[];
   /** P6-31, RF-645: the Plan setup options of a brief question that took its default, by question id. */
   readonly briefOptions?: Readonly<Record<string, readonly SuggestedOption[]>> | undefined;

@@ -7,6 +7,12 @@ import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
 import { copiedExamples, exampleSentencesOfAll } from '../../domain/planning/copied-example.js';
 import { settleJudgements } from '../../domain/planning/claim-judgement.js';
 import type { ApiContract } from '../../domain/planning/api-contract.js';
+import {
+  workbookOptionsFor,
+  workbookQuestions,
+  workbookSetup,
+  type WorkbookSetup,
+} from '../../domain/planning/workbook-setup.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
@@ -117,12 +123,14 @@ function sourceOf(
 function evidenceOf(
   sources: readonly SourceCard[],
   proposal: PlanProposal | undefined,
+  workbook: WorkbookSetup | undefined,
 ): {
   supported: ReadonlySet<string>;
   cards: readonly SourceCard[];
   proposal: PlanProposal | undefined;
+  workbook: WorkbookSetup | undefined;
 } {
-  return { supported: new Set(sources.map((card) => card.id)), cards: sources, proposal };
+  return { supported: new Set(sources.map((card) => card.id)), cards: sources, proposal, workbook };
 }
 
 /** RF-609, P5-39: the clashes of the stack and, when Rosetta made any, its proposals. */
@@ -152,6 +160,7 @@ function decidedOf(
   content: PlanContent,
   parts: {
     readonly brief: PlanningBrief;
+    readonly workbook: WorkbookSetup | undefined;
     readonly sources: readonly SourceCard[];
     readonly documents: Pick<PlannedDocuments, 'dataModel'> & {
       readonly proposal: PlanProposal | undefined;
@@ -164,7 +173,12 @@ function decidedOf(
   const withFixed = withPhaseClosingCards(
     withFoundationCards(content, brief.migration, tables, hasData(sources, tables)),
   );
-  const decided = decideOnce(withFixed, brief, catalogue, evidenceOf(sources, documents.proposal));
+  const decided = decideOnce(
+    withFixed,
+    brief,
+    catalogue,
+    evidenceOf(sources, documents.proposal, parts.workbook),
+  );
   // RF-645, DEC-184: the fixed cards follow an own answer, which is known by its record only now.
   return { ...decided, content: withOwnAnswerCards(decided.content, brief, decided.choices) };
 }
@@ -191,6 +205,22 @@ type PackageDocuments = PlannedDocuments &
     readonly proposal: PlanProposal | undefined;
   };
 
+/** The brief's open questions with their options, and the workbook answers when the source is one. */
+function briefPart(
+  brief: PlanningBrief,
+  catalogue: Catalogue,
+  workbook: WorkbookSetup | undefined,
+): Pick<HandoffPackage, 'briefQuestions' | 'briefOptions' | 'workbook'> {
+  return {
+    ...(workbook === undefined ? {} : { workbook }),
+    briefQuestions: [...defaultedQuestions(brief, catalogue), ...workbookQuestions(workbook)],
+    briefOptions: {
+      ...briefQuestionOptions(brief, catalogue),
+      ...workbookOptionsFor(brief, workbook),
+    },
+  };
+}
+
 // RF-601, RF-604
 export function handoffPackageOf(
   inputs: PlanInputs,
@@ -201,7 +231,8 @@ export function handoffPackageOf(
   const { prd, dataModel, flows, apiContract, ux } = documents;
   const { brief, sourceRun, project, cards, questions, upload } = inputs;
   const { cards: sources, overruled } = usableCards(cards, catalogue.claimVerbs);
-  const decided = decidedOf(content, { brief, sources, documents }, catalogue);
+  const workbook = project.sourceKind === 'workbook' ? workbookSetup(brief) : undefined;
+  const decided = decidedOf(content, { brief, workbook, sources, documents }, catalogue);
   const style = principleOf(catalogue, brief.architecture.style);
   const styleCheck = checkStyle(brief.architecture.style, decided.content.components);
   return {
@@ -222,8 +253,7 @@ export function handoffPackageOf(
     ...stackFindings(brief, apiContract, catalogue, documents.proposal),
     sources,
     excluded: excludedClaims(cards),
-    briefQuestions: defaultedQuestions(brief, catalogue),
-    briefOptions: briefQuestionOptions(brief, catalogue),
+    ...briefPart(brief, catalogue, workbook),
     openQuestions: openQuestionsOf(questions, cards),
     prd,
     dataModel,
