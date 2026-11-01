@@ -38,6 +38,17 @@ describe('scheduled-release.yml trigger and permissions', () => {
     expect(at(document, 'jobs', job, 'environment')).toBeUndefined();
     expect(await workflowText('scheduled-release.yml')).not.toContain('secrets.');
   });
+
+  // P7-28 review: two delayed slots fired together could both list no Release yet and both dispatch.
+  // One concurrency group runs the slots one at a time, and a queued slot is never cancelled half-way.
+  it('P7-28 runs the slots one at a time in one group and never cancels a running slot', async () => {
+    const document = await scheduled();
+
+    expect(at(document, 'concurrency')).toEqual({
+      group: 'scheduled-release',
+      'cancel-in-progress': false,
+    });
+  });
 });
 
 let gh: FakeGh | undefined;
@@ -213,6 +224,16 @@ describe('scheduled-release.yml once per head commit of main', () => {
     expect(result.code).toBe(0);
     expect(dispatched(result.calls)).toBe(false);
     expect(result.summary).toContain(sha);
+  });
+
+  // P7-28 review: a Release dispatched seconds earlier by another slot may not be listed as queued yet,
+  // so a run created in the last ten minutes on that commit counts too.
+  it('P7-28 also counts a Release of that commit created in the last ten minutes', async () => {
+    const { calls } = await run();
+    const list = calls.find((call) => call.startsWith('run list')) ?? '';
+
+    expect(list).toContain('headSha,status,conclusion,createdAt');
+    expect(list).toContain('.createdAt >= ');
   });
 
   it('DEC-175 starts Release again when every run of that commit failed or was cancelled', async () => {
