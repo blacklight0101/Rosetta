@@ -26,6 +26,34 @@ describe('RF-646 sameQuestion', () => {
   it('Q-52 case and marks still do not matter', () => {
     expect(sameQuestion('Who uses these pages?', 'who uses these pages')).toBe(true);
   });
+  it.each([
+    [
+      'Where is the production database connection string stored?',
+      'Where is the test database connection string stored?',
+    ],
+    [
+      'Who may approve the invoice payment request in the billing module?',
+      'Who may reject the invoice payment request in the billing module?',
+    ],
+    [
+      'What happens when the order total is above the credit limit set for a customer?',
+      'What happens when the order total is below the credit limit set for a customer?',
+    ],
+    [
+      'What is the tax rate applied to invoices issued in Spain?',
+      'What is the tax rate applied to invoices issued in Mexico?',
+    ],
+    [
+      'What happens when the payment gateway timeout occurs during checkout?',
+      'What happens when the payment gateway refund occurs during checkout?',
+    ],
+    [
+      'Which team owns the catalog service deployed to the main cluster?',
+      'Which team owns the basket service deployed to the main cluster?',
+    ],
+  ])('P7-09 one decisive word keeps two questions apart: %s', (first, second) => {
+    expect(sameQuestion(first, second)).toBe(false);
+  });
   it('a question that only shares a few words stays apart', () => {
     expect(sameQuestion('Who uses these pages?', 'Who approves invoices?')).toBe(false);
     expect(sameQuestion(invoiceAnswered, 'Where is the invoice stored?')).toBe(false);
