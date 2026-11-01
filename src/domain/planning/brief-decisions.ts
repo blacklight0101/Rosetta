@@ -22,7 +22,7 @@ import type { PlanProposal, StrategyFit } from './stack-proposal.js';
 // brief and the catalogue, the evidence is the cards the recommendation named (only those with a
 // supported claim), and a choice nobody made, which took its default, is `Proposed` and says so.
 
-interface PackageStack {
+export interface PackageStack {
   readonly layer: StackLayer;
   /** The layer in words, for example "language and runtime". */
   readonly name: string;
