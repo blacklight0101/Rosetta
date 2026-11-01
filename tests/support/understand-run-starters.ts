@@ -67,7 +67,7 @@ export function waitUntilEnded(s: Stores): (run: Run) => Promise<Run> {
 }
 
 export type Starter = (stage: 'scan' | 'understand', extra: UnderstandStart) => Promise<Run>;
-export type Resumer = (run: Run) => Promise<Result<Run, string>>;
+export type Resumer = (run: Run, overviewOnly?: boolean) => Promise<Result<Run, string>>;
 export type Deepener = (run: Run, request?: DeepenStart) => Promise<Result<Run, string>>;
 
 /** The owner of a run or a project, as a signed-in user. */
@@ -93,8 +93,11 @@ export function resumerOf(s: Stores, queue: RunQueue): Resumer {
     }),
   });
   const ended = waitUntilEnded(s);
-  return async (run) => {
-    const resumed = await resumeRun.execute({ actor: ownerOf(run.userId), runId: run.id });
+  return async (run, overviewOnly = false) => {
+    const resumed = await resumeRun.execute({
+      ...{ actor: ownerOf(run.userId), runId: run.id },
+      ...(overviewOnly ? { overviewOnly } : {}),
+    });
     if (!resumed.ok) return resumed;
     return { ok: true, value: await ended(resumed.value.run) };
   };
