@@ -96,14 +96,8 @@ const startBody = z.strictObject({
   sourceRunId: z.string().min(1).max(64).optional(),
   /** RF-208, Q-43: `understand` reads again the failed areas of this run (its id) and holds its cards. */
   retryOf: z.string().min(1).max(64).optional(),
-  /** RF-430: the journey total the user approved on the start button. */
-  approvedAmount: z
-    .strictObject({
-      ...amountShape,
-      /** RF-432: the worst case less the likely total, offered by Continue (+N). */
-      remainder: z.strictObject(amountShape).optional(),
-    })
-    .optional(),
+  /** RF-430, RF-432: the likely total the start button showed; the server checks it against its own. */
+  approvedAmount: z.strictObject(amountShape).optional(),
 });
 
 /** Streams one part of a run as an attachment; the file name comes from the run key, cleaned. */

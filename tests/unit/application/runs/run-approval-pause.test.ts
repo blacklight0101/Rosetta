@@ -181,3 +181,19 @@ describe('RF-432 a paused run and the server', () => {
     expect((await h.ended(run)).endState).toBe('CapReached');
   });
 });
+
+describe('RF-432 a crafted Continue', () => {
+  it('RF-432 a crafted Continue with a huge N adds only the offered remainder', async () => {
+    const h = createRunHarness();
+    const run = await pausedRun(h);
+    const huge = { tokens: Number.MAX_SAFE_INTEGER, costMicros: Number.MAX_SAFE_INTEGER };
+
+    await continuer(h).execute({ actor: userAmy, runId: run.id, extra: huge });
+
+    const manifest = await h.manifests.read(h.scopeOf(run));
+    expect(readUnderstandOptions(manifest?.options ?? {}).approvedAmount).toMatchObject({
+      tokens: 1_500,
+      costMicros: 2_900,
+    });
+  });
+});

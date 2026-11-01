@@ -1,3 +1,4 @@
+import { withinCeilings } from '../../application/runs/approved-journey.js';
 import { roleLimits } from '../../application/models/role-limits.js';
 import type { GuardedProviderFactoryOptions } from './provider-factory-options.js';
 import type { AgentRole, LlmProvider } from '../../application/ports/llm-provider.js';
@@ -283,8 +284,8 @@ export class GuardedProviderFactory implements ProviderSetFactory {
 function approvedOf(request: ProviderSetRequest): {
   readonly approved?: { readonly maxCostMicros: bigint; readonly maxTokens: bigint };
 } {
-  const { approvedAmount } = request;
-  if (approvedAmount === undefined) return {};
+  if (request.approvedAmount === undefined) return {};
+  const approvedAmount = withinCeilings(request.approvedAmount);
   return {
     approved: {
       maxCostMicros: BigInt(approvedAmount.costMicros),

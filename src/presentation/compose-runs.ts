@@ -1,3 +1,4 @@
+import { journeyLookupOf } from '../application/runs/approved-journey.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
@@ -157,15 +158,15 @@ function runServices(service: ServiceParts): RunServices {
   const ollamaHost = ollamaHostOf(parts.ollamaUrl);
   // RF-431: every start path checks the roles' keys before a run is queued.
   const roleKeys = { users: new PgUserRepository(parts.pool), keys: parts.keySources };
+  const estimateRun = composeEstimateRun(parts, { projects, runs, scans, roleKeys });
   return {
     startRun: new StartRun({
-      projects,
-      runs,
+      ...{ projects, runs, submit: submitRun, roleKeys },
+      journey: journeyLookupOf(estimateRun), // RF-432: the server sets the approved amount
       briefs: new FilePlanningBriefStore({ writer, masker: parts.masker }),
-      ...{ submit: submitRun, roleKeys },
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),
-    estimateRun: composeEstimateRun(parts, { projects, runs, scans, roleKeys }),
+    estimateRun,
     getRun: new GetRun({ runs, queue, files: new FileRunTextFiles(writer) }),
     getJourney: composeJourney({ ...service, priorCards: cards }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),

@@ -1,3 +1,4 @@
+import { noJourney } from '../../../support/journey-lookups.js';
 import { ALL_KEYS_SERVED } from '../../../support/web-role-keys.js';
 import { describe, expect, it } from 'vitest';
 import { MemoryBriefStore } from '../../../support/memory-brief-store.js';
@@ -19,6 +20,7 @@ async function setup(settings: ProjectSettings, ollamaHost?: string) {
   const project = sampleProject({ userId: userAmy.userId, settings });
   await projects.insertOrFind(project);
   const startRun = new StartRun({
+    journey: noJourney,
     roleKeys: ALL_KEYS_SERVED,
     projects,
     runs: harness.runs,

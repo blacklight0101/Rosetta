@@ -1,3 +1,4 @@
+import { noJourney } from './journey-lookups.js';
 import { ALL_KEYS_SERVED } from './web-role-keys.js';
 import type { UploadStore } from '../../src/application/ports/upload-store.js';
 import { noUploads } from './no-uploads.js';
@@ -230,7 +231,7 @@ function unconditionalChange(project: Project, settings: ProjectSettings): Setti
 // RF-003
 /** The start run's own stores: a brief store and a key check that serves every role. */
 function startDeps() {
-  return { briefs: new MemoryBriefStore(), roleKeys: ALL_KEYS_SERVED };
+  return { briefs: new MemoryBriefStore(), roleKeys: ALL_KEYS_SERVED, journey: noJourney };
 }
 
 export async function createScanRunHarness(

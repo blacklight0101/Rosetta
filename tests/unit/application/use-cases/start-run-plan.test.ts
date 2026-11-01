@@ -1,3 +1,4 @@
+import { noJourney } from '../../../support/journey-lookups.js';
 import { ALL_KEYS_SERVED } from '../../../support/web-role-keys.js';
 import { describe, expect, it } from 'vitest';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
@@ -22,6 +23,7 @@ async function setup(settings: ProjectSettings, options: { readonly brief?: bool
   if (options.brief !== false)
     await briefs.saveEmpty({ userId: project.userId, projectId: project.id });
   const startRun = new StartRun({
+    journey: noJourney,
     roleKeys: ALL_KEYS_SERVED,
     projects,
     runs: harness.runs,

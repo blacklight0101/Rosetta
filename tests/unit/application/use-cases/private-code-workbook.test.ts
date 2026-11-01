@@ -1,3 +1,4 @@
+import { noJourney } from '../../../support/journey-lookups.js';
 import { ALL_KEYS_SERVED } from '../../../support/web-role-keys.js';
 import { heldWorkbooks } from '../../../support/workbook-run-fixtures.js';
 import { describe, expect, it } from 'vitest';
@@ -45,7 +46,14 @@ async function setup(settings: ProjectSettings) {
   const { runs, manifests, submit } = harness;
   return {
     ...{ harness, project },
-    startRun: new StartRun({ roleKeys: ALL_KEYS_SERVED, projects, runs, briefs, submit }),
+    startRun: new StartRun({
+      journey: noJourney,
+      roleKeys: ALL_KEYS_SERVED,
+      projects,
+      runs,
+      briefs,
+      submit,
+    }),
     deepen: new StartDeepen({ roleKeys: ALL_KEYS_SERVED, projects, runs, manifests, submit }),
     resume: new ResumeRun({
       roleKeys: ALL_KEYS_SERVED,

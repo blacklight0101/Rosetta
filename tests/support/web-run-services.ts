@@ -1,3 +1,4 @@
+import { startRunOf } from './journey-lookups.js';
 import { testRoleKeys } from './web-role-keys.js';
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
@@ -35,7 +36,6 @@ import { ListHistory } from '../../src/application/use-cases/list-history.js';
 import { ListSnapshots } from '../../src/application/use-cases/list-snapshots.js';
 import { continueRunOf } from './continue-run-of.js';
 import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
-import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { ProviderSetFactory } from '../../src/application/ports/provider-set-factory.js';
 import type { UserRepository } from '../../src/application/ports/user-repository.js';
 import { FileRunCards } from '../../src/infrastructure/cards/file-run-cards.js';
@@ -257,7 +257,7 @@ export function runServices(
     buildReport: reportOf(runs, outputs, { answers, priorCards: stores.priorCards, clock }),
     ...answerAndJourney(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
-    startRun: new StartRun({ ...runs, projects, briefs: stores.briefs, roleKeys }),
+    startRun: startRunOf({ ...runs, projects, briefs: stores.briefs, roleKeys }),
     ...deepenServices(runs, { projects, keys, roleKeys }),
     suggestPlanOptions: planOptionsService({
       ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },

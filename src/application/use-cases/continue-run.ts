@@ -1,9 +1,6 @@
 import type { Actor } from '../../domain/accounts/actor.js';
-import {
-  continueAmountOf,
-  raiseApprovedAmount,
-  type Amount,
-} from '../../domain/budget/approved-amount.js';
+import type { Amount } from '../../domain/budget/approved-amount.js';
+import { continuedAmount } from '../runs/approved-journey.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Run } from '../../domain/runs/run.js';
@@ -88,10 +85,8 @@ function raisedManifest(manifest: RunManifest, extra: Amount | undefined): RunMa
       ? manifest.options
       : {
           ...manifest.options,
-          approvedAmount: raiseApprovedAmount(
-            approvedAmount,
-            extra ?? continueAmountOf(approvedAmount),
-          ),
+          // RF-432: N is at most the offered one; the sum stays within the ceilings.
+          approvedAmount: continuedAmount(approvedAmount, extra),
         };
   return { ...manifest, startedAt: null, options };
 }

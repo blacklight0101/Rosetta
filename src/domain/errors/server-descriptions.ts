@@ -177,6 +177,10 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     message: 'A Deepen starts only after you confirm its estimate.',
     nextStep: 'Look at the estimate for the rounds, then confirm to start the Deepen.',
   },
+  'RST-2310': {
+    message: 'The estimate changed since you saw it, so the run did not start.',
+    nextStep: 'Look at the new estimate on the start page, then start the run again.',
+  },
   'RST-2400': {
     message: 'A database migration file has an invalid name or a duplicate number.',
     nextStep: 'Name each file NNNN_snake_name.sql with a number used once, then start again.',

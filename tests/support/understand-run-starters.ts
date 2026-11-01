@@ -1,3 +1,4 @@
+import type { JourneyFigures } from '../../src/application/runs/approved-journey.js';
 import { ALL_KEYS_SERVED } from './web-role-keys.js';
 import { expect, vi } from 'vitest';
 import type { Project } from '../../src/application/projects/project.js';
@@ -139,19 +140,43 @@ export function deepenerOf(s: Stores, submit: SubmitRun): Deepener {
   };
 }
 
+function journeyFiguresOf(approved: ApprovedAmount): JourneyFigures {
+  const { tokens, costMicros, remainder = { tokens: 0, costMicros: 0 } } = approved;
+  const worstCase = {
+    tokens: tokens + remainder.tokens,
+    costMicros: costMicros + remainder.costMicros,
+  };
+  return { likely: { tokens, costMicros }, worstCase };
+}
+
 /** Starts runs of the project as the API does and waits for their end. */
 export function starterOf(s: Stores, submit: SubmitRun, project: Project): Starter {
+  // RF-432: the server's journey is the approved amount a test starts with (likely plus remainder).
+  let journey: JourneyFigures | undefined;
   const startRun = new StartRun({
     roleKeys: ALL_KEYS_SERVED,
+    journey: () => Promise.resolve(journey),
     ...{ projects: s.projects, runs: s.runs, briefs: new MemoryBriefStore(), submit },
   });
   const ended = waitUntilEnded(s);
-  return async (stage, extra) => {
+  return async (stage, start) => {
+    const { approvedAmount, ...extra } = start;
+    journey = approvedAmount === undefined ? undefined : journeyFiguresOf(approvedAmount);
+    const shown =
+      approvedAmount === undefined
+        ? {}
+        : {
+            approvedAmount: {
+              tokens: approvedAmount.tokens,
+              costMicros: approvedAmount.costMicros,
+            },
+          };
     const started = await startRun.execute({
       actor: ownerOf(project.userId),
       projectId: project.id,
       stage,
       ...extra,
+      ...shown,
     });
     expect(started, `the ${stage} run is accepted`).toMatchObject({ ok: true });
     if (!started.ok) throw new Error(`The ${stage} run was refused: ${started.error}`);

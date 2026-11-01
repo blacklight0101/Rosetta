@@ -41,14 +41,7 @@ describe('RF-430 the approved figure on the start button', () => {
 
     expect(approvalText(estimate)).toBe('$1.20');
     expect(worstCaseText(estimate)).toBe('$4.10');
-    expect(approvedAmountOf(estimate)).toMatchObject({ tokens: 2_600_000, costMicros: 1_200_000 });
-  });
-
-  it('RF-432 records the worst case less the likely total as the N that Continue (+N) offers', () => {
-    expect(approvedAmountOf(estimateWith([role({})]))?.remainder).toEqual({
-      tokens: 5_800_000,
-      costMicros: 2_900_000,
-    });
+    expect(approvedAmountOf(estimate)).toEqual({ tokens: 2_600_000, costMicros: 1_200_000 });
   });
 
   it('RF-430 names tokens for an estimate on local models only', () => {

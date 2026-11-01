@@ -9,21 +9,13 @@ import { dollars, isLocalEstimate, tokensText } from './estimate-math.js';
 export interface ApprovedAmount {
   readonly tokens: number;
   readonly costMicros: number;
-  /** RF-432: the worst case less the likely total, the N that Continue (+N) offers. */
-  readonly remainder?: { readonly tokens: number; readonly costMicros: number };
 }
 
 // RF-430
 export function approvedAmountOf(estimate: RunEstimate): ApprovedAmount | undefined {
   const { journey } = estimate;
   if (journey === undefined) return undefined;
-  const { likely, worstCase } = journey;
-  const costMicros = Number(likely.costMicros);
-  const remainder = {
-    tokens: Math.max(0, worstCase.tokens - likely.tokens),
-    costMicros: Math.max(0, Number(worstCase.costMicros) - costMicros),
-  };
-  return { tokens: likely.tokens, costMicros, remainder };
+  return { tokens: journey.likely.tokens, costMicros: Number(journey.likely.costMicros) };
 }
 
 function figureText(estimate: RunEstimate, figure: JourneyEstimate['likely']): string {
