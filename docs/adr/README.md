@@ -36,11 +36,11 @@ changed in part by a later decision; see the ADR's Notes).
 | [ADR-022](ADR-022-zip-extraction-with-yauzl.md)                    | Read uploaded zip archives with `yauzl`                                                                                                                                       | Proposed              | 2026-10-19 |
 | [ADR-023](ADR-023-workbook-reading-with-saxes-and-cfb.md)          | Read Excel workbooks with `yauzl`, `saxes` and `cfb`                                                                                                                          | Proposed              | 2026-10-19 |
 | [ADR-024](ADR-024-host-on-azure-container-apps-spain-central.md)   | Host the hosted deployment on Azure Container Apps in Spain Central (supersedes ADR-020)                                                                                      | Amended               | 2026-10-24 |
-| [ADR-025](ADR-025-develop-branch-staging-and-scheduled-release.md) | Integrate on develop, deploy it to staging, release main at 06:00 Madrid                                                                                                      | Accepted              | 2026-10-27 |
+| [ADR-025](ADR-025-develop-branch-staging-and-scheduled-release.md) | Integrate on develop, deploy it to staging, release main at 06:00 Madrid                                                                                                      | Amended               | 2026-10-27 |
 | [ADR-026](ADR-026-pause-and-ask-near-the-approved-amount.md)       | Pause a run near its approved amount and ask, instead of a hard stop                                                                                                          | Proposed              | 2026-10-29 |
 | [ADR-027](ADR-027-guided-journey-per-project.md)                   | Guide each project through one journey under one approved amount                                                                                                              | Accepted              | 2026-11-01 |
 
-**Totals**: 27 in total - Accepted 11, Proposed 4, Amended 11, Superseded 1.
+**Totals**: 27 in total - Accepted 10, Proposed 4, Amended 12, Superseded 1.
 
 ## Relationships
 
