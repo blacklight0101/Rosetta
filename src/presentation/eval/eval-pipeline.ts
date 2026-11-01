@@ -224,7 +224,7 @@ export function composePipeline(parts: PipelineParts): Pipeline {
     // The evaluation starts runs without a shown figure, so no journey is looked up (RF-432).
     startRun: new StartRun({
       journey: () => Promise.resolve(undefined),
-      ...{ projects, runs, submit, roleKeys },
+      ...{ projects, runs, manifests, submit, roleKeys },
       briefs: new FilePlanningBriefStore({ writer, masker }),
     }),
     estimateRun,

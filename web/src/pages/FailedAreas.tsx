@@ -1,19 +1,23 @@
 import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
 import type { ApiFailure } from '../api/client.js';
-import { startRun } from '../api/runs.js';
+import type { RoleEstimate } from '../api/estimate-schemas.js';
+import { getEstimate, startRun } from '../api/runs.js';
 import { useApp } from '../app/app-context.js';
 import { navigate } from '../app/router.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
-import { Link } from '../components/Link.js';
+import { cloudRoles } from '../lib/estimate-math.js';
 import { failedAreasOf } from '../lib/live-run/run-summary.js';
 import type { RunState } from '../lib/live-run/run-state.js';
+import { CloudNotice } from './CloudNotice.js';
 
-// RF-208, RF-1002, design-system.md section 14 (live run): a run in which some areas gave no usable
-// card is never shown as a plain success. Under the head of the page it says how many areas failed
-// and why, and offers "Retry failed areas": a new run of those areas alone. The retry asks for no
-// cloud consent of its own; a project that needs it is sent to the start page to give it.
+// RF-208, RF-1002, P7-38, design-system.md section 14 (live run): a run in which some areas gave no
+// usable card is never shown as a plain success. Under the head of the page it says how many areas
+// failed and why, and offers "Retry failed areas": a new run of those areas alone. A retry of a run
+// that had cloud consent inherits it on the server. When the server refuses it for missing consent
+// (RST-1515), the consent notice names the providers beside the button, and the retry starts once
+// it is ticked.
 
 const NO_CONSENT = 'RST-1515';
 
@@ -34,34 +38,53 @@ function retryTarget(endState: string | undefined, runId: string): string | unde
   return endState === 'Completed' ? runId : undefined;
 }
 
-function useRetry(projectId: string, areas: readonly string[], retryOf: string | undefined) {
+function useRetry(
+  projectId: string,
+  areas: readonly string[],
+  retryOf: string | undefined,
+  consent: boolean,
+) {
   const { client } = useApp();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiFailure | undefined>();
+  const [roles, setRoles] = useState<readonly RoleEstimate[]>([]);
   const retry = (): void => {
     setBusy(true);
     setError(undefined);
-    const request = { stage: 'understand', areas, cloudConsent: false } as const;
+    const request = { stage: 'understand', areas, cloudConsent: consent } as const;
     void startRun(client, projectId, {
       ...request,
       ...(retryOf === undefined ? {} : { retryOf }),
     }).then((result) => {
       setBusy(false);
-      if (result.ok) navigate(`/runs/${encodeURIComponent(result.value.id)}`);
-      else setError(result.error);
+      if (result.ok) {
+        navigate(`/runs/${encodeURIComponent(result.value.id)}`);
+        return;
+      }
+      setError(result.error);
+      if (result.error.code === NO_CONSENT) {
+        // P7-38: the providers the failed areas use, named in the consent notice.
+        void getEstimate(client, projectId, areas, new AbortController().signal).then(
+          (estimate) => {
+            if (estimate.ok) setRoles(cloudRoles(estimate.value));
+          },
+        );
+      }
     });
   };
-  return { busy, error, retry };
+  return { busy, error, roles, retry };
 }
 
 // RF-208
 export function FailedAreas({ state, projectId, runId }: FailedAreasProps): JSX.Element | null {
+  const [consent, setConsent] = useState(false);
   const failed = failedAreasOf(state);
   const endState = state.ended?.endState;
   const retry = useRetry(
     projectId,
     failed.map((each) => each.area),
     retryTarget(endState, runId),
+    consent,
   );
   if (endState === undefined || endState === 'Interrupted' || failed.length === 0) return null;
   return (
@@ -77,13 +100,18 @@ export function FailedAreas({ state, projectId, runId }: FailedAreasProps): JSX.
           </li>
         ))}
       </ul>
+      {retry.roles.length === 0 ? null : (
+        <CloudNotice
+          roles={retry.roles}
+          consent={consent}
+          error={undefined}
+          onConsent={setConsent}
+        />
+      )}
       <Button variant="primary" busy={retry.busy} onClick={retry.retry}>
         Retry failed areas
       </Button>
       {retry.error === undefined ? null : <ErrorBanner error={retry.error} />}
-      {retry.error?.code === NO_CONSENT ? (
-        <Link href={`/projects/${encodeURIComponent(projectId)}/start`}>Start page</Link>
-      ) : null}
     </section>
   );
 }

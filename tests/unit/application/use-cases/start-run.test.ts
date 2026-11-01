@@ -1,3 +1,4 @@
+import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
 import { noJourney } from '../../../support/journey-lookups.js';
 import { ALL_KEYS_SERVED } from '../../../support/web-role-keys.js';
 import { describe, expect, it } from 'vitest';
@@ -20,6 +21,7 @@ async function setup(settings: ProjectSettings, ollamaHost?: string) {
   const project = sampleProject({ userId: userAmy.userId, settings });
   await projects.insertOrFind(project);
   const startRun = new StartRun({
+    manifests: new MemoryRunManifestStore(),
     journey: noJourney,
     roleKeys: ALL_KEYS_SERVED,
     projects,
