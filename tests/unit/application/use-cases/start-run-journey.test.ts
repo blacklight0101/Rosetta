@@ -54,13 +54,6 @@ describe('the journey of a project', () => {
     expect(record?.createdAt).toBe(started.ok ? started.value.run.queuedAt : -1);
   });
 
-  it('RF-1105 another user finds no journey of the project', async () => {
-    const { project, journeys, analyse } = await setup();
-    await analyse();
-
-    expect(await journeys.find(userBob.userId, project.id)).toBeUndefined();
-  });
-
   it('RF-435 a later step with no figure of its own runs under what is left of the amount', async () => {
     const { harness, project, startRun, analyse } = await setup();
     const first = await analyse();
@@ -103,5 +96,24 @@ describe('the spend of a journey', () => {
 
     expect(journeySpend(record, runs)).toEqual({ tokens: 160, costMicros: 80 });
     expect(journeyRemaining(record, runs)).toEqual({ tokens: 0, costMicros: 0 });
+  });
+});
+
+describe('the journey of another user', () => {
+  it('RF-1105 another user finds no journey of the project', async () => {
+    const { project, journeys, analyse } = await setup();
+    await analyse();
+
+    expect(await journeys.find(userBob.userId, project.id)).toBeUndefined();
+    await expect(
+      journeys.save({
+        ...{ userId: userBob.userId, projectId: project.id, createdAt: 1 },
+        approved: { tokens: 1, costMicros: 1 },
+      }),
+    ).rejects.toMatchObject({ code: 'RST-2003' });
+    expect((await journeys.find(userAmy.userId, project.id))?.approved).toEqual({
+      tokens: worst.tokens,
+      costMicros: worst.costMicros,
+    });
   });
 });

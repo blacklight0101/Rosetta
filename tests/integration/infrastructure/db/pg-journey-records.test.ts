@@ -60,7 +60,7 @@ describe.skipIf(!hasTestDatabase)('PgJourneyRecords', () => {
         approved: { tokens: 1, costMicros: 1 },
         createdAt: 2_000,
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: 'RST-2003' });
     expect((await journeys.find(amy, project))?.approved).toEqual(approved);
   });
 

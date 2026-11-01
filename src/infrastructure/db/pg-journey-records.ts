@@ -7,7 +7,7 @@ import type { DatabasePool } from './pool.js';
 
 // RF-011, RF-1105, ADR-016, ADR-027: the journey of a project in PostgreSQL (data-model.md section
 // 4, `journeys`). Plain parameterised SQL; a read takes the owner's id, so another user's project
-// has none. A save replaces the project's row.
+// has none. A save replaces the project's row; another user's journey is never replaced (RST-2003).
 
 const FIND =
   'SELECT approved_tokens::text AS tokens, approved_cost_micros::text AS cost, created_at FROM journeys WHERE user_id = $1 AND project_id = $2';
@@ -48,16 +48,20 @@ export class PgJourneyRecords implements JourneyRecords {
   }
 
   async save(record: JourneyRecord): Promise<void> {
+    let written: number | null;
     try {
-      await this.pool.query(SAVE, [
+      const result = await this.pool.query(SAVE, [
         record.projectId,
         record.userId,
         record.approved.tokens,
         record.approved.costMicros,
         new Date(record.createdAt),
       ]);
+      written = result.rowCount;
     } catch (error) {
       throw queryFailed(error);
     }
+    // RF-1105: the upsert leaves another user's journey alone and writes no row; that is not found.
+    if (written !== 1) throw new RosettaError(ERROR_CODES.notFound);
   }
 }
