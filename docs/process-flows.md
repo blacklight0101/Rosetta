@@ -191,6 +191,30 @@ flowchart TB
 The package follows the choices the user made, not the model's guesses: anything left unanswered is listed with
 its default instead of being invented. Sources RF-601..RF-613.
 
+## 9. The guided journey of a project
+
+```mermaid
+flowchart TB
+  A[Add a source: upload or GitHub address] --> B[Free scan starts by itself]
+  B --> C[Project page: what was found and one estimate for the whole journey]
+  C --> D[Analyse: approve the worst case once]
+  D --> E[Understand and claim checking run, live page opens by itself]
+  E --> F{Near the approved amount?}
+  F -->|yes| G[Waiting for your approval: Continue +N or Stop here] --> E
+  F -->|no| H[Understand ends: the page offers the next step]
+  H --> I[Deepen: a button with its estimate, waits for your click]
+  I --> J[Questions and plan setup on one screen, recommended answers filled in]
+  H --> J
+  J --> K[Accept the recommended answers or change some]
+  K --> L[Start the plan: a button, waits for your click]
+  L --> M[Plan runs under the same approved amount, live page opens by itself]
+  M --> N[Package ready to download]
+```
+
+One approved amount covers every step; each step pauses and asks near it instead of asking for caps again, and
+the journey strip on every page shows where you are. Deepen and the plan are the two steps that wait for a click.
+Sources RF-011, RF-160, RF-432, RF-434..RF-436, RF-647, RF-1019..RF-1022.
+
 ## Later releases
 
 ### 8. Comparing providers on a second target (Release 2)

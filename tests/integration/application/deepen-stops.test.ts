@@ -58,7 +58,7 @@ describe('RF-209 a Deepen stopped by a cap', UNDERSTAND_TIMEOUT, () => {
       replaces: 'BR-001.c1',
     });
     const record = await deepenOf(h, deep);
-    expect(record.rounds.map((round) => round.complete)).toEqual([false, true]);
+    expect(record.rounds.map((round) => round.complete)).toEqual([true]);
     expect(record.stopReason).not.toBe('capReached');
   });
 });

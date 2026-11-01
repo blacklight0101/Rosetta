@@ -1,5 +1,6 @@
 import {
   endedDeepen,
+  nextRoundNumber,
   rereadIn,
   retriedAreasIn,
   withOutOfScope,
@@ -81,7 +82,7 @@ async function nextRound(
   if (isEmptyRound(plan) && !answered)
     return { progress: { state, record: listed }, stop: 'noProgress' };
   const before = snapshotOf(state, codeMap);
-  const round = record.rounds.length + 1;
+  const round = nextRoundNumber(record);
   await announceRoundStart(parts, { round, maxRounds: record.maxRounds, plan });
   const end = await runRound(parts, state, {
     ...{ plan, round },
