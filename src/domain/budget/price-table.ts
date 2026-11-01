@@ -37,6 +37,11 @@ export type PriceLookup =
 /** The provider kinds that run on this machine and cost nothing (RF-420). */
 const localKinds: ReadonlySet<string> = new Set(['ollama', 'fake']);
 
+/** RF-420, RF-433: the provider kind runs on this machine and costs nothing. */
+export function isLocalKind(kind: string): boolean {
+  return localKinds.has(kind);
+}
+
 /** The provider kinds that bill cache writes at their own price (docs/providers.md section 4.2). */
 export const cacheWriteKinds: ReadonlySet<string> = new Set(['anthropic']);
 
