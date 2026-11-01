@@ -140,13 +140,11 @@ export function deepenerOf(s: Stores, submit: SubmitRun): Deepener {
   };
 }
 
+/** DEC-205: the test's approved amount is the server's worst case; the likely total is half. */
 function journeyFiguresOf(approved: ApprovedAmount): JourneyFigures {
-  const { tokens, costMicros, remainder = { tokens: 0, costMicros: 0 } } = approved;
-  const worstCase = {
-    tokens: tokens + remainder.tokens,
-    costMicros: costMicros + remainder.costMicros,
-  };
-  return { likely: { tokens, costMicros }, worstCase };
+  const { tokens, costMicros } = approved;
+  const likely = { tokens: Math.floor(tokens / 2), costMicros: Math.floor(costMicros / 2) };
+  return { likely, worstCase: { tokens, costMicros } };
 }
 
 /** Starts runs of the project as the API does and waits for their end. */

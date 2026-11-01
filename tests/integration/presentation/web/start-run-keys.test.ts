@@ -51,17 +51,13 @@ describe('POST /api/projects/:id/runs and the keys (RF-431)', () => {
     const response = await browser.request({
       method: 'POST',
       url: startUrl(project.id),
-      payload: { stage: 'understand', approvedAmount: { tokens: 2_600_000, costMicros: 0 } },
+      payload: { stage: 'understand', approvedAmount: { tokens: 3_900_000, costMicros: 0 } },
     });
 
     expect(response.statusCode).toBe(202);
     expect(test.runs.executor.started[0]?.manifest.options).toEqual({
       cloudConsent: false,
-      approvedAmount: {
-        tokens: 2_600_000,
-        costMicros: 0,
-        remainder: { tokens: 1_300_000, costMicros: 0 },
-      },
+      approvedAmount: { tokens: 3_900_000, costMicros: 0 },
     });
   });
 });
@@ -78,7 +74,7 @@ describe('POST /api/projects/:id/runs and a crafted approved amount (RF-432)', (
 
     const huge = await send({ tokens: 9_000_000_000_000, costMicros: 9_000_000_000_000 });
     const remainder = await send({
-      tokens: 2_600_000,
+      tokens: 3_900_000,
       costMicros: 0,
       remainder: { tokens: 9_000_000_000_000, costMicros: 9_000_000_000_000 },
     });

@@ -12,8 +12,8 @@ import { MAX_RUN_COST_MICROS, MAX_RUN_TOKENS } from '../projects/project-setting
 // RF-430, RF-432, ADR-026, DEC-196: the server, never the browser, sets a run's approved amount.
 // At the start the server works the journey estimate out again; the figure the start button showed
 // is only the user's confirmation and must match it within a small tolerance, else the start is
-// refused (RST-2310) so the user sees the new figure. The stored amount is the server's likely total
-// and the remainder its worst case less that total. Continue (+N) never adds more than the offered N,
+// refused (RST-2310) so the user sees the new figure. The stored amount is the server's worst-case
+// total (DEC-205); Continue (+N) offers half of it and never adds more than the offered N,
 // and no approved amount ever passes the administrator's run ceilings.
 
 /** The likely and worst-case journey totals the server estimates now (RF-430). */
@@ -61,15 +61,12 @@ export function approvedJourneyOf(
   journey: JourneyFigures | undefined,
 ): Result<ApprovedAmount, typeof ERROR_CODES.approvalChanged> {
   if (journey === undefined) return err(ERROR_CODES.approvalChanged);
-  const { likely, worstCase } = journey;
-  if (!near(shown.tokens, likely.tokens) || !near(shown.costMicros, likely.costMicros)) {
+  // DEC-205: the run is approved, and pauses, at the worst-case total the start button showed.
+  const { worstCase } = journey;
+  if (!near(shown.tokens, worstCase.tokens) || !near(shown.costMicros, worstCase.costMicros)) {
     return err(ERROR_CODES.approvalChanged);
   }
-  const remainder = {
-    tokens: worstCase.tokens - likely.tokens,
-    costMicros: worstCase.costMicros - likely.costMicros,
-  };
-  return ok(withinCeilings({ ...likely, remainder }));
+  return ok(withinCeilings({ tokens: worstCase.tokens, costMicros: worstCase.costMicros }));
 }
 
 /** RF-432: the amount after Continue (+N): N at most the offered one, the sum within the ceilings. */

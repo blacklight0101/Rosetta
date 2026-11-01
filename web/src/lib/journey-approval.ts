@@ -2,8 +2,8 @@ import type { JourneyEstimate, RunEstimate } from '../api/estimate-schemas.js';
 import { dollars, isLocalEstimate, tokensText } from './estimate-math.js';
 
 // RF-430, RF-431, DEC-196: the journey total the user approves on the start button, and the roles
-// whose key is missing. The likely total is the approved amount the run records (P7-05 pauses near
-// it); the worst case is stated beside it.
+// whose key is missing. DEC-205: the worst case is the approved amount the run records and pauses at
+// (P7-05); the likely total is stated beside it.
 
 /** The amount the start request records as the run's approved amount. */
 export interface ApprovedAmount {
@@ -15,7 +15,8 @@ export interface ApprovedAmount {
 export function approvedAmountOf(estimate: RunEstimate): ApprovedAmount | undefined {
   const { journey } = estimate;
   if (journey === undefined) return undefined;
-  return { tokens: journey.likely.tokens, costMicros: Number(journey.likely.costMicros) };
+  // DEC-205: the run is approved at the worst case; it pauses there (RF-432).
+  return { tokens: journey.worstCase.tokens, costMicros: Number(journey.worstCase.costMicros) };
 }
 
 function figureText(estimate: RunEstimate, figure: JourneyEstimate['likely']): string {
@@ -25,6 +26,12 @@ function figureText(estimate: RunEstimate, figure: JourneyEstimate['likely']): s
 /** `$1.20` or `2,600,000 tokens`: the figure the start button names. */
 // RF-430
 export function approvalText(estimate: RunEstimate): string | undefined {
+  const { journey } = estimate;
+  return journey === undefined ? undefined : figureText(estimate, journey.worstCase);
+}
+
+/** The likely journey total, stated beside the approved worst case. */
+export function likelyText(estimate: RunEstimate): string | undefined {
   const { journey } = estimate;
   return journey === undefined ? undefined : figureText(estimate, journey.likely);
 }

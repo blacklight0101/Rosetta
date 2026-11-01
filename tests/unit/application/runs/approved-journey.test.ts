@@ -22,10 +22,10 @@ const huge = { tokens: Number.MAX_SAFE_INTEGER, costMicros: Number.MAX_SAFE_INTE
 const ceilings = { tokens: MAX_RUN_TOKENS, costMicros: MAX_RUN_COST_MICROS };
 
 describe('RF-432 the approved amount at the start', () => {
-  it('RF-432 records the server figures and its worst case less likely as the remainder', () => {
-    expect(approvedJourneyOf({ tokens: 1_010_000, costMicros: 2_030_000 }, journey)).toEqual({
+  it('RF-432 DEC-205 records the server worst-case total that the start button showed', () => {
+    expect(approvedJourneyOf({ tokens: 1_510_000, costMicros: 3_030_000 }, journey)).toEqual({
       ok: true,
-      value: { ...journey.likely, remainder: { tokens: 500_000, costMicros: 1_000_000 } },
+      value: journey.worstCase,
     });
   });
 
@@ -33,30 +33,24 @@ describe('RF-432 the approved amount at the start', () => {
     const refused = { ok: false, error: ERROR_CODES.approvalChanged };
 
     expect(approvedJourneyOf(huge, journey)).toEqual(refused);
-    expect(approvedJourneyOf({ tokens: 1_100_000, costMicros: 2_000_000 }, journey)).toEqual(
-      refused,
-    );
+    expect(approvedJourneyOf(journey.likely, journey)).toEqual(refused);
     expect(approvedJourneyOf(journey.likely, undefined)).toEqual(refused);
   });
 
   it('RF-432 holds a server estimate above the ceilings at the ceilings', () => {
     const big = { likely: huge, worstCase: huge };
 
-    expect(approvedJourneyOf(huge, big)).toEqual({
-      ok: true,
-      value: { ...ceilings, remainder: { tokens: 0, costMicros: 0 } },
-    });
+    expect(approvedJourneyOf(huge, big)).toEqual({ ok: true, value: ceilings });
   });
 });
 
 describe('RF-432 Continue (+N) on the server', () => {
   const approved = { ...journey.likely, remainder: { tokens: 500_000, costMicros: 1_000_000 } };
 
-  it('RF-432 a huge N adds only the offered remainder', () => {
-    expect(continuedAmount(approved, huge)).toEqual({
-      tokens: 1_500_000,
-      costMicros: 3_000_000,
-      remainder: approved.remainder,
+  it('RF-432 DEC-205 a huge N adds only the offered half of the approved amount', () => {
+    expect(continuedAmount(journey.worstCase, huge)).toEqual({
+      tokens: 2_250_000,
+      costMicros: 4_500_000,
     });
   });
 

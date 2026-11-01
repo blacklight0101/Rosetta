@@ -144,7 +144,7 @@ describe('RF-430 the approved amount', () => {
       actor: userAmy,
       projectId: s.project.id,
       stage: 'understand',
-      approvedAmount: { tokens: 2_600_000, costMicros: 0 },
+      approvedAmount: { tokens: 3_900_000, costMicros: 0 },
     });
 
     expect(started.ok).toBe(true);
@@ -152,11 +152,7 @@ describe('RF-430 the approved amount', () => {
     const manifest = await s.harness.manifests.read(s.harness.scopeOf(started.value.run));
     expect(manifest?.options).toEqual({
       cloudConsent: false,
-      approvedAmount: {
-        tokens: 2_600_000,
-        costMicros: 0,
-        remainder: { tokens: 1_300_000, costMicros: 0 },
-      },
+      approvedAmount: { tokens: 3_900_000, costMicros: 0 },
     });
   });
 

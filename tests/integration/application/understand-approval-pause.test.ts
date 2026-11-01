@@ -34,11 +34,8 @@ const roomy = understandSettings((settings) => ({
   ...verifierOutput(settings),
   budget: { ...settings.budget, run: { maxCostMicros: 50_000_000, maxTokens: 5_000_000 } },
 }));
-const approvedAmount = {
-  tokens: 228_000,
-  costMicros: 500_000,
-  remainder: { tokens: 5_000_000, costMicros: 50_000_000 },
-};
+// DEC-205: the worst-case journey total the owner approved.
+const approvedAmount = { tokens: 228_000, costMicros: 500_000 };
 
 const indexSchema = z.object({
   cards: z.array(z.object({ id: z.string(), claimCounts: z.record(z.string(), z.number()) })),
@@ -76,10 +73,15 @@ describe('RF-432 a run that reaches its approved amount', UNDERSTAND_TIMEOUT, ()
     expect(paused).toMatchObject({ queueState: 'AwaitingApproval', endState: null });
     expect((await h.runs.listRunning()).map((run) => run.id)).not.toContain(paused.id);
     expect((await indexOf(h, paused)).cards.map((card) => card.id)).toEqual(['BR-001']);
-    const continued = await h.continueRun(paused);
-    expect(continued.ok).toBe(true);
-    if (!continued.ok) return;
-    expect(continued.value).toMatchObject({ id: paused.id, endState: 'Completed' });
+    // Each Continue adds half the approved amount; the owner answers until the run is done.
+    let latest: Run = paused;
+    for (let answers = 0; answers < 8 && latest.queueState === 'AwaitingApproval'; answers += 1) {
+      const continued = await h.continueRun(latest);
+      expect(continued.ok).toBe(true);
+      if (!continued.ok) return;
+      latest = continued.value;
+    }
+    expect(latest).toMatchObject({ id: paused.id, endState: 'Completed' });
   });
 
   it('RF-432 Stop here gives the same saved result as a run that reached its cap', async () => {
