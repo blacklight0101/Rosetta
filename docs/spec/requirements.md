@@ -743,6 +743,7 @@ As a developer I want to send Rosetta back over what it did not confirm so that 
 - Given a Deepen run that ended, when I open it, then it can be deepened again as a new linked run; Deepen never starts by itself at the end of a run.
 - Given answered questions of the project (DEC-179), when a Deepen plans a reader task for an area, then the task gets the answered questions of that area as user context, labelled as such (RF-241); an answer is never evidence, so a claim written with its help still needs a code citation to be `Supported`, and the questions used are marked `Answered`.
 - Given a Deepen that raises an open question asking the same as an answered question of the project, when its results are written, then the new question is merged into the answered one and keeps the answer, and the answered question is not asked again (RF-646).
+- Given a Deepen that a cap or a Stop ended during round N, when it is resumed, then the resumed round is numbered from the complete rounds (`deepen.round.started {round: N, maxRounds}`, never N+1) and its record replaces the incomplete round N, keeping what that round had already read, written and spent (DEC-197).
   Verification: integration tests with recorded responses for each stop reason, and for a Deepen that uses answers and does not ask again; unit tests of the round planner and the stop rule.
   Changed 2026-10-29 by DEC-194: a Deepen may start from an understand run that ended `CapReached` with planned areas unread (shown as "Partly read") and plans those areas as gaps; a Deepen that leaves planned areas unread ends `CapReached`, not `Completed` (card P7-02). Changed 2026-10-29 by DEC-198: in round 1 every area that holds an answered question not used yet gets a reader task, so a picked and a typed answer reach the Deepen alike (card P7-07); the answers block carries no cited lines of the question, and a claim whose citations all fall in an answered question's context lines and that restates the answer is `Rejected` (card P7-08).
 
@@ -1090,8 +1091,12 @@ As a user I want a run that nears the amount I approved to pause and ask me so t
 As a user of a local model I want a run that costs nothing to go on without a token cap so that it is not stopped for tokens I do not pay for.
 
 - Given the project setting "No cap for local models" on (it is off by default) and a run whose every role is on a local provider, when the run reaches its token cap, then it goes on without pausing; every call is still metered.
-- Given a run with one role on a cloud provider, when it runs, then every cap and the pause of RF-432 apply.
-  Verification: integration tests with the fake provider marked local, with the setting on and off.
+- Given the setting on and a run whose every role is on a local provider, when the run reaches the amount its owner approved, then it does not pause (RF-432); the administrator ceilings of the run caps (50,000,000 tokens, $100) and the day, month and role caps stay hard limits (DEC-112), so such a run still ends `CapReached` at the ceiling.
+- Given the setting off (the default), when a run whose every role is on a local provider reaches its token cap or its approved amount, then it stops or pauses as any run does (RF-422, RF-432).
+- Given a run with one role on a cloud provider, when it runs, then every cap and the pause of RF-432 apply, whatever the setting.
+- Given the project settings page, when I tick "No cap for local models" and save, then the project stores `budget.noCapForLocalModels: true`; a project that never set it reads as off.
+  Verification: integration tests with the fake provider (a local kind), with the setting on and off; a unit test of the cloud role; a web test of the settings field.
+  Applied 2026-11-01 by P7-06: a local provider is one of the kinds the price table prices at zero (`ollama`, `fake`); DEC-197 does not lift the administrator ceilings, so they stay.
 
 **RF-434 One estimate and one Analyse button for the journey** - R1 - Must - Source DEC-196, DEC-204, DEC-205 - ADR-026, ADR-027
 As a user I want one estimate for the whole journey and one button so that I approve the spend once.

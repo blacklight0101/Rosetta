@@ -14,6 +14,7 @@ import {
 import { ownerLogger } from '../../application/runs/owner-logger.js';
 import { priceOverridesOf } from '../../application/projects/price-overrides.js';
 import { roleBudgetOf } from '../../application/projects/role-budget.js';
+import { runCapsFor, uncappedLocalRun } from '../../application/projects/local-run-caps.js';
 import type { ProviderSet, RoleProvider } from '../../application/providers/provider-set.js';
 import { capsFor, type ServerCaps } from '../../domain/budget/budget.js';
 import type { UsageCap } from '../../domain/budget/usage-cap.js';
@@ -257,7 +258,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     access: ProviderAccess,
     { server, scopeSpent, readerRunMicros }: ScopeCaps,
   ): readonly UsageCap[] {
-    const { run } = request.settings.budget;
+    const run = runCapsFor(request.settings);
     const caps = capsFor(access.keySource, {
       run: { maxCostMicros: BigInt(run.maxCostMicros), maxTokens: BigInt(run.maxTokens) },
       // RF-423: a call held to the ceiling belongs to no run, so a role's run caps do not apply to it.
@@ -273,7 +274,8 @@ export class GuardedProviderFactory implements ProviderSetFactory {
         ownDailyCapMicros: request.account.ownDailyCapMicros,
       },
       // RF-432: the approved amount is the run's line; a call held to the ceiling has no run.
-      ...(isCeilinged(request) ? {} : approvedOf(request)),
+      // RF-433: an all-local run with "No cap for local models" has no line to pause at.
+      ...(isCeilinged(request) || uncappedLocalRun(request.settings) ? {} : approvedOf(request)),
     });
     if (!isCeilinged(request)) return caps;
     return caps.map((cap) => ({ kind: cap.kind, limit: providerTestCeiling(cap) }));
