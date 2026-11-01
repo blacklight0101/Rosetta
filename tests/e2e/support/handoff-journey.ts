@@ -42,6 +42,7 @@ export async function writeAndDownload(page: Page): Promise<Readonly<Record<stri
     timeout: 30_000,
   });
   await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });
+  await expectPlanFigures(page);
   await expectNoSeriousViolations(page);
   const [download] = await Promise.all([
     page.waitForEvent('download'),
@@ -50,6 +51,15 @@ export async function writeAndDownload(page: Page): Promise<Readonly<Record<stri
   expect(download.suggestedFilename()).toMatch(/-plan-handoff\.zip$|handoff\.zip$/u);
   const path = await download.path();
   return filesOf(await readZip(await readFile(path)));
+}
+
+/** RF-1015 (P7-25): the page of a finished plan run shows plan figures, not understand panels. */
+async function expectPlanFigures(page: Page): Promise<void> {
+  await expect(page.getByRole('tab', { name: /^Evidence/u })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: /^Your questions/u })).toHaveCount(0);
+  await page.getByRole('tab', { name: /^Planner calls/u }).click();
+  await expect(page.getByRole('list', { name: 'Planner calls' })).toContainText('Plan package');
+  await expect(page.getByTestId('plan-checks')).toContainText('checks.md');
 }
 
 /** The text of a file of the package, wherever the zip puts its folder. */
