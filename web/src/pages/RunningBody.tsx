@@ -115,7 +115,7 @@ interface DetailsProps extends RunningBodyProps {
   readonly area: string | undefined;
   readonly open: (id: TabId, area?: string) => void;
   /** P7-27: the section the spend link scrolls to. */
-  readonly detailsRef: RefObject<HTMLElement>;
+  readonly detailsRef: RefObject<HTMLElement | null>;
 }
 
 function Details(props: DetailsProps): JSX.Element {
