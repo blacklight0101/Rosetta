@@ -5,7 +5,6 @@ import { expectNoSeriousViolations } from '../support/axe.js';
 import { tokensOf } from '../support/cost-run.js';
 import { openProjectStart, runScan, repositories, chooseAreas } from '../support/journey-pages.js';
 import { runStatus, startAndOpenLiveRun } from '../support/live-run-page.js';
-import { fixtureKeyEndingIn } from '../support/no-full-key.js';
 import { accountFor, type Credentials } from '../support/seed.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
@@ -19,7 +18,8 @@ import { chooseModel, setOutputLimit } from '../support/choose-model.js';
 // stops at the cap ("Cap reached"), keeps what was spent, and the header totals and the cost page
 // still show it (flow 4).
 
-const openAiKey = fixtureKeyEndingIn('journey', 'CAP1');
+const keptDay = '1';
+const lowDay = '0.002';
 
 async function adminCreatesUser(page: Page, admin: Credentials, user: Credentials): Promise<void> {
   await signInThroughPage(page, admin);
@@ -27,25 +27,24 @@ async function adminCreatesUser(page: Page, admin: Credentials, user: Credential
   await expect(page.getByRole('heading', { name: 'Users and caps', level: 1 })).toBeVisible();
   await createAccount(page, { ...user, mustChange: false });
   await expect(page.getByRole('status').filter({ hasText: 'Created account' })).toBeVisible();
-  const caps = page.getByRole('region', { name: 'Caps on server keys' });
-  await caps.getByLabel('Per run (USD)').fill('0.5');
-  await caps.getByLabel('Per user per day (USD)').fill('1');
-  await caps.getByLabel('Server per month (USD)').fill('10');
-  await caps.getByRole('button', { name: 'Save caps' }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Caps saved' })).toBeVisible();
+  await adminSavesCaps(page, lowDay);
   await expectNoSeriousViolations(page);
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/sign-in$/u);
 }
 
-async function userStoresKeyAndPricedReader(page: Page): Promise<void> {
-  await page.goto('/settings');
-  const row = page
-    .getByTestId('key-row')
-    .filter({ has: page.getByRole('heading', { name: 'OpenAI', level: 3, exact: true }) });
-  await row.getByLabel('API key').fill(openAiKey);
-  await row.getByRole('button', { name: 'Save key' }).click();
-  await expect(row).toContainText('CAP1');
+// ADR-026, DEC-112: the run's line is the approved amount, but the administrator's per-user day cap
+// stays hard, so the user's run (on the server key) stops at it. The cap is put back afterwards.
+async function adminSavesCaps(page: Page, day: string): Promise<void> {
+  const caps = page.getByRole('region', { name: 'Caps on server keys' });
+  await caps.getByLabel('Per run (USD)').fill('0.5');
+  await caps.getByLabel('Per user per day (USD)').fill(day);
+  await caps.getByLabel('Server per month (USD)').fill('10');
+  await caps.getByRole('button', { name: 'Save caps' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Caps saved' })).toBeVisible();
+}
+
+async function userPicksPricedReader(page: Page): Promise<void> {
   await openProjectStart(page, repositories.webforms);
   await runScan(page);
   await openProjectStart(page, repositories.webforms);
@@ -79,26 +78,35 @@ test(
     };
     await adminCreatesUser(page, accountFor('journey-admin', project), user);
 
-    await signInThroughPage(page, user);
-    await expect(page).toHaveURL(/\/projects$/u);
-    await userStoresKeyAndPricedReader(page);
-    const pill = page.getByTestId('header-totals');
-    const before = await tokensOf(pill);
-    await chooseAreas(page, ['Catalog', 'Database', 'Services']);
-    await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
-    await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.002');
-    await startAndOpenLiveRun(page);
+    try {
+      await signInThroughPage(page, user);
+      await expect(page).toHaveURL(/\/projects$/u);
+      await userPicksPricedReader(page);
+      const pill = page.getByTestId('header-totals');
+      const before = await tokensOf(pill);
+      await chooseAreas(page, ['Catalog', 'Database', 'Services']);
+      await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
+      await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.002');
+      await startAndOpenLiveRun(page);
 
-    await expect(runStatus(page)).toContainText(/Cap reached|Partly read/u, { timeout: 90_000 });
-    await transitionsDone(page);
-    await expectNoSeriousViolations(page);
-    await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
-    await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
-    await page.getByRole('link', { name: 'Start page' }).click();
-    await pill.getByRole('link', { name: /Your total/u }).click();
-    await expect(page.getByRole('heading', { name: 'Project cost', level: 1 })).toBeVisible();
-    await expect(page.getByRole('table', { name: 'By model' })).toContainText('gpt-5-nano');
-    await expect(page.getByRole('table', { name: 'By run' }).getByRole('link')).not.toHaveCount(0);
-    await expectNoSeriousViolations(page);
+      await expect(runStatus(page)).toContainText(/Cap reached|Partly read/u, { timeout: 90_000 });
+      await transitionsDone(page);
+      await expectNoSeriousViolations(page);
+      await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
+      await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
+      await page.getByRole('link', { name: 'Start page' }).click();
+      await pill.getByRole('link', { name: /Your total/u }).click();
+      await expect(page.getByRole('heading', { name: 'Project cost', level: 1 })).toBeVisible();
+      await expect(page.getByRole('table', { name: 'By model' })).toContainText('gpt-5-nano');
+      await expect(page.getByRole('table', { name: 'By run' }).getByRole('link')).not.toHaveCount(
+        0,
+      );
+      await expectNoSeriousViolations(page);
+    } finally {
+      await page.context().clearCookies();
+      await signInThroughPage(page, accountFor('journey-admin', project));
+      await page.getByRole('link', { name: 'Users and caps' }).click();
+      await adminSavesCaps(page, keptDay);
+    }
   },
 );
