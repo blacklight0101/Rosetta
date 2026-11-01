@@ -173,7 +173,6 @@ export function agentFiles(
   if (!writesAgentFolder(handoff.brief.buildMethod)) return {};
   const method = resolveBuildMethod(handoff.brief.buildMethod, handoff.agentModels);
   const kind = method.agentTool?.kind;
-  if (kind !== 'claude-code' && kind !== 'codex') return {};
   const roles = rolesOf(method, kind === 'claude-code' && method.models?.escalation !== undefined);
   const files: Record<string, string> = {
     [`${FOLDER}/README.md`]: readmeFile(method, roles, esc),

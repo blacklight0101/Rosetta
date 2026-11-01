@@ -18,10 +18,10 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 
 const readerPromptNames = {
   system: 'reader/area.v12.md',
-  cardFormat: 'cards/card-format.v3.md',
+  cardFormat: 'cards/card-format.v4.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
-  repair: 'cards/repair.v4.md',
+  repair: 'cards/repair.v5.md',
   continue: 'cards/continue.v1.md',
   readFirst: 'reader/read-first.v1.md',
   readMore: 'reader/read-more.v1.md',
@@ -31,7 +31,7 @@ const readerPromptNames = {
 const workbookPromptName = 'reader/workbook.v5.md';
 
 const answersPromptName = 'reader/answers.v2.md';
-const rereadPromptName = 'reader/reread.v4.md';
+const rereadPromptName = 'reader/reread.v5.md';
 const parentCardsPromptName = 'reader/parent-cards.v2.md';
 
 /** RF-260, RF-261: fragments of the card format, added only to areas the code map marks (Q-25). */

@@ -1,3 +1,4 @@
+import { isCapStop } from '../../domain/budget/cap-stop.js';
 import type { Card } from '../../domain/cards/card.js';
 import type { FileEntry } from '../../domain/code-map/file-entry.js';
 import type { Overview } from '../../domain/overview/overview.js';
@@ -59,6 +60,14 @@ function unreadOf(input: OverviewStepInput): UnreadFiles {
   return { files: filesNotRead, firstPartyTokens, firstPartyReadTokens };
 }
 
+/**
+ * P7-26: a run stopped by a cap still writes its overview; the budget guard decides whether the
+ * call fits. Only the owner's Stop (or a shutdown) keeps the overview from being asked.
+ */
+function signalOf(signal: AbortSignal): AbortSignal {
+  return signal.aborted && isCapStop(signal.reason) ? new AbortController().signal : signal;
+}
+
 // RF-264
 export function overviewStep(
   parts: OverviewStepParts,
@@ -70,7 +79,7 @@ export function overviewStep(
   const source = {
     ...parts,
     runId: execution.run.runKey,
-    signal: execution.signal,
+    signal: signalOf(execution.signal),
     mergePrompt: overviewPrompt,
   };
   return writeOverview(consolidationParts(source), {

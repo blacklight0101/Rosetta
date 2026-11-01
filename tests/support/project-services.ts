@@ -1,3 +1,4 @@
+import type { GitHubRefCheck } from '../../src/application/ports/github-ref-check.js';
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import { GetStackOffer } from '../../src/application/use-cases/get-stack-offer.js';
@@ -76,6 +77,8 @@ export interface UploadParts {
   readonly store: UploadStore;
   readonly staging: WorkbookStaging;
   readonly limitBytes: number;
+  /** EV-70: what GitHub says about the ref of a new project; none by default. */
+  readonly refCheck?: GitHubRefCheck;
 }
 
 /** The planner's prompts for the links of the task cards and for the items no card builds. */
@@ -127,7 +130,10 @@ export function projectServices(
   const template = templateSettings;
   const { briefs, answers, answerFiles, keys } = files;
   return {
-    createProject: new CreateProject({ projects, serverSettings, template, ids, clock }),
+    createProject: new CreateProject({
+      ...{ projects, serverSettings, template, ids, clock },
+      ...(upload.refCheck === undefined ? {} : { refCheck: upload.refCheck }),
+    }),
     ...uploadServices(parts, runs, upload),
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),

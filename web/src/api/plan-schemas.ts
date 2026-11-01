@@ -11,6 +11,12 @@ const bigIntText = z
   .regex(/^\d{1,18}$/u)
   .transform((text) => BigInt(text));
 
+/** One fixed Plan setup option as the server words it (P7-17: one source with the package). */
+const wordingSchema = z.object({
+  ...{ id: z.string(), title: z.string(), description: z.string(), value: z.string() },
+});
+export type Wording = z.output<typeof wordingSchema>;
+
 export const catalogueSchema = z.object({
   version: z.number(),
   entries: z.array(
@@ -20,6 +26,11 @@ export const catalogueSchema = z.object({
     }),
   ),
   migrations: z.array(z.object({ id: z.string(), title: z.string(), tradeOff: z.string() })),
+  wording: z.object({
+    context: z.record(z.string(), z.array(wordingSchema)),
+    method: z.array(wordingSchema),
+    keepLegacy: wordingSchema,
+  }),
 });
 
 export type Catalogue = z.output<typeof catalogueSchema>;

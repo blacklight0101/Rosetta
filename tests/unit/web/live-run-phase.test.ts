@@ -44,5 +44,5 @@ it('RF-1108 a run the row calls running is running once its events start and end
 
   expect(phaseOf(row('Running', null), started)).toEqual({ kind: 'running' });
   expect(phaseOf(row('Running', null), ended)).toEqual({ kind: 'ended', endState: 'Completed' });
-  expect(phaseOf(row('Queued', null), stateAfter())).toEqual({ kind: 'queued' });
+  expect(phaseOf(row('Queued', null), stateAfter())).toEqual({ kind: 'queued', position: null });
 });

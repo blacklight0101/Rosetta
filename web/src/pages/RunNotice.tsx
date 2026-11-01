@@ -4,6 +4,7 @@ import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Link } from '../components/Link.js';
 import { StatusBadge } from '../components/StatusBadge.js';
+import { queueText } from '../lib/live-run/queue-text.js';
 
 // RF-1108, RF-1001, design-system.md section 14 (queue notice): what the page says after Start. A
 // run that began is shown as started; a queued one shows its position and a Cancel button, and
@@ -53,8 +54,8 @@ function Body({ notice, busy, onCancel }: RunNoticeProps): JSX.Element {
       return (
         <>
           <p>
-            <StatusBadge list="RunQueueState" value="Queued" /> Waiting in the queue at position{' '}
-            {notice.position}. The run starts by itself when the server has a free slot.
+            <StatusBadge list="RunQueueState" value="Queued" /> Waiting in the queue at{' '}
+            {queueText(notice.position)}. The run starts by itself when the server has a free slot.
           </p>
           <LiveLink runId={notice.runId} />
           {notice.cancelError === undefined ? null : <ErrorBanner error={notice.cancelError} />}

@@ -40,7 +40,7 @@ const suggestedAnswerSchema = z.object({
 
 const suggestedAnswersSchema = z.array(suggestedAnswerSchema).max(cardLimits.maxSuggestedAnswers);
 
-const suggestedAnswersNeeded = `An OQ card needs three suggested answers in suggestedAnswers: each with answer, description and recommended, exactly one marked recommended and listed first, and citations when the code supports the answer.`;
+const suggestedAnswersNeeded = `An OQ card needs at least three suggested answers in suggestedAnswers: each with answer, description and recommended, exactly one marked recommended and listed first, and citations when the code supports the answer.`;
 
 type DetailField = 'question' | 'whyItMatters' | 'flow' | 'screen';
 

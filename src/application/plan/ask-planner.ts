@@ -41,6 +41,8 @@ export interface PlannerCall {
   /** The agent task the call is logged under: one per document the planner writes. */
   readonly agentTaskId: string;
   readonly updates: ManifestUpdates;
+  /** RF-1015: told before each provider call, with the agent task of the document being written. */
+  readonly onCallStarted?: (agentTaskId: string) => Promise<void>;
   readonly tags: () => string;
   /** One numbering for every call of the run (RF-408): both calls share one counter. */
   readonly callId: () => string;
@@ -90,6 +92,7 @@ export async function askPlannerWith(call: PlannerCall, message: string): Promis
 
 async function send(call: PlannerCall, messages: readonly LlmMessage[]): Promise<LlmResponse> {
   const { run, planner, signal } = call;
+  await call.onCallStarted?.(call.agentTaskId);
   const traceId = traceIdOf(run);
   const response = await planner.provider.complete({
     context: {

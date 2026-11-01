@@ -87,10 +87,15 @@ export async function continueRun(client: ApiClient, runId: string): Promise<Api
 
 /** Queues a run that stopped at a cap, failed or was interrupted again, as the same run (RF-006). */
 // RF-006
-export async function resumeRun(client: ApiClient, runId: string): Promise<ApiResult<undefined>> {
+export async function resumeRun(
+  client: ApiClient,
+  runId: string,
+  overviewOnly = false,
+): Promise<ApiResult<undefined>> {
   const result = await client.request({
     method: 'POST',
-    path: `/api/runs/${encodeURIComponent(runId)}/resume`,
+    // P7-26: the overview alone has its own path.
+    path: `/api/runs/${encodeURIComponent(runId)}/${overviewOnly ? 'overview' : 'resume'}`,
     schema: z.looseObject({ id: z.string() }),
   });
   return result.ok ? { ok: true, value: undefined } : result;

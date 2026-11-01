@@ -1,6 +1,8 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { methodWording } from '../../domain/planning/question-wording.js';
 import { ownAnswerLines } from './handoff-own-answers-markdown.js';
+import { suggestedAnswerLines } from './handoff-suggested-answers-markdown.js';
 
 // RF-612, RF-637, P6-11: what a package written for people building leaves out. Only a people build
 // says it; an agent build has these files and says nothing about them.
@@ -28,6 +30,15 @@ export function buildMethodQuestionLines(handoff: HandoffPackage, esc: MarkdownE
       '## Build method',
       '',
       ...own,
+      // P7-17: the three options, none recommended (DEC-184), under the answered section.
+      ...suggestedAnswerLines(
+        methodWording.map((option) => ({
+          ...{ answer: option.title, description: option.description },
+          ...{ recommended: false, citations: [] },
+        })),
+        esc,
+      ),
+      '',
       'Whether the team builds with AI agents is a whole-build question, so no card waits on it. Rosetta cannot read the answer as a choice of AI agents, so this package has no agent files, no model per card and no build protocol. A team that builds with agents can answer the question again to add them.',
       '',
     ];

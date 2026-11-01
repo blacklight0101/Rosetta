@@ -5,7 +5,7 @@ import type { AwaitingState, RunState } from './run-state.js';
 // ended; the run row says so for a run whose events have not arrived yet (a queued run has none).
 
 export type RunPhase =
-  | { readonly kind: 'queued' }
+  | { readonly kind: 'queued'; readonly position?: number | null }
   | { readonly kind: 'running' }
   /** RF-432: paused near the approved amount; `continueAmount` is the N Continue offers. */
   | { readonly kind: 'awaiting'; readonly continueAmount: AwaitingState['continueAmount'] }
@@ -22,6 +22,6 @@ export function phaseOf(row: RunRow, state: RunState): RunPhase {
     return { kind: 'awaiting', continueAmount: state.awaiting.continueAmount };
   if (row.queueState === 'AwaitingApproval') return { kind: 'awaiting', continueAmount: undefined };
   if (state.startedAt !== undefined) return { kind: 'running' };
-  if (row.queueState === 'Queued') return { kind: 'queued' };
+  if (row.queueState === 'Queued') return { kind: 'queued', position: row.position };
   return { kind: 'running' };
 }
