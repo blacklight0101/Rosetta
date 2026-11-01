@@ -5,6 +5,7 @@ import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import { styleRoles } from '../../domain/planning/style-rules.js';
+import type { WorkbookSetup } from '../../domain/planning/workbook-setup.js';
 import { typedAnswers, type TypedQuestionId } from '../../domain/planning/typed-answers.js';
 import type { RecordedQuestion } from '../ports/answers-file.js';
 import { omittedSummary } from './plan-packing.js';
@@ -23,6 +24,8 @@ export interface PlanMessageInput {
   readonly answered: readonly RecordedQuestion[];
   /** P3-113: the ids of the cards the prompt names by title only, to fit the planner's window. */
   readonly omitted?: ReadonlySet<string>;
+  /** RF-648: the answers to the workbook questions; set only for a project of Excel workbooks. */
+  readonly workbook?: WorkbookSetup | undefined;
 }
 
 function cardsText(input: PlanMessageInput): string {
