@@ -49,6 +49,7 @@ const settingsSchema = z.looseObject({
     run: z.looseObject({ maxCostMicros: z.number(), maxTokens: z.number() }),
     confirmAboveCostMicros: z.number(),
     allowUnpriced: z.boolean(),
+    noCapForLocalModels: z.boolean().optional(),
     prices: z.array(priceSettings).optional(),
     roles: z.record(z.string(), roleCapSettings).optional(),
   }),
