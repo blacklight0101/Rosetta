@@ -70,7 +70,7 @@ test('RF-006 RF-422 RF-301 RF-432 a run pauses at the amount approved, the owner
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
   await openRunTab(page, 'All agents');
-  await expect(agentPanel(page, 'Services')).not.toContainText('Done');
+  await expect(agentPanel(page, 'Services')).toHaveCount(0);
 
   await page.getByRole('button', { name: /^Continue/u }).click();
 
