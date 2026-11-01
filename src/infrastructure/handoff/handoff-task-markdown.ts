@@ -1,5 +1,6 @@
 import type { HandoffPackage, PackagePrinciple } from '../../application/plan/handoff-package.js';
 import {
+  isLocalTier,
   modelForTier,
   resolveBuildMethod,
   type BuildMethod,
@@ -64,11 +65,13 @@ function sizeLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper
   return [...lines, `Difficulty: ${String(rating)} (${tierText(method, tier, esc)})`, ''];
 }
 
-/** RF-639: the verifier tier of the card's band, written after its risk class. */
+/** RF-639: the verifier tier of the card's band, written after its risk class; RF-641 (P7-24): "runs locally" when local. */
 function verifierLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const method = resolveBuildMethod(handoff.brief.buildMethod);
   if (!method.aiAssisted) return [];
-  return [`Verifier: ${tierText(method, difficultyOfTask(task).verifier, esc)}`, ''];
+  const { verifier } = difficultyOfTask(task, method);
+  const local = isLocalTier(method, verifier) ? ', runs locally' : '';
+  return [`Verifier: ${tierText(method, verifier, esc)}${local}`, ''];
 }
 
 function technologyLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
