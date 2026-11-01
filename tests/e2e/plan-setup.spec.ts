@@ -151,6 +151,27 @@ test('RF-613 the plan estimate shows the planner against the caps and the packag
   await expectNoSeriousViolations(page);
 });
 
+test('RF-647 one click accepts the recommended answers and the plan waits for Start the plan', async ({
+  page,
+}) => {
+  await openStartPage(page);
+  await openPlanSetup(page);
+  const screen = page.getByRole('region', { name: 'Questions and plan setup' });
+  await expect(screen).toBeVisible();
+
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
+  );
+  await screen.getByRole('button', { name: 'Accept the recommended answers' }).click();
+  expect((await saved).ok()).toBe(true);
+
+  await expect(estimate(page)).toContainText(/(\$[\d.]+|[\d,]+ tokens) likely/u);
+  await expect(writeButton(page)).toBeEnabled();
+  await expect(page).toHaveURL(/\/plan-setup/u);
+  await expectNoSeriousViolations(page);
+});
+
 test('RF-605 after a package exists a changed answer says the package is out of date and offers to write it again', async ({
   page,
 }) => {

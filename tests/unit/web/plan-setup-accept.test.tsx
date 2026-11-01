@@ -103,9 +103,11 @@ describe('the questions and the plan setup on one screen', () => {
 
     const recorded = within(screenOf()).getByRole('region', { name: 'What I recorded' });
     expect(within(recorded).getAllByText('(default)').length).toBeGreaterThan(0);
-    expect(within(screenOf()).getByText(/recommended answers/iu)).not.toBeNull();
+    expect(within(screenOf()).getByText(/Every question below/u)).not.toBeNull();
   });
+});
 
+describe('one click on the questions screen', () => {
   it('RF-647 one click saves every question and the brief; the plan waits for Start the plan', async () => {
     const page = render();
     await ready();
@@ -146,7 +148,9 @@ describe('the questions and the plan setup on one screen', () => {
       chosen: 2,
     });
   });
+});
 
+describe('what one click keeps', () => {
   it('RF-647 an answer saved earlier is not written again', async () => {
     const page = render([
       question('OQ-001', { answer: 'Yes for OQ-001', chosen: '1' }),
@@ -162,7 +166,9 @@ describe('the questions and the plan setup on one screen', () => {
     });
     expect(answerPuts(page.calls)).toEqual([expect.objectContaining({ cardId: 'OQ-002' })]);
   });
+});
 
+describe('accepting with nothing to answer, and the button name', () => {
   it('RF-647 a run with no open questions still accepts the plan setup in one click', async () => {
     const page = renderPlan();
     await ready();
