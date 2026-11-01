@@ -33,7 +33,13 @@ export const catalogue = {
     { id: 'parallel-change', title: 'Parallel Change', tradeOff: 'Two ways at once.' },
     { id: 'full-rewrite', title: 'Full rewrite', tradeOff: 'Risky, clean.' },
   ],
-  wording: { context: contextWording, method: methodWording, keepLegacy: keepLegacyWording },
+  wording: {
+    context: Object.fromEntries(
+      Object.entries(contextWording).map(([id, options]) => [id, [...options]]),
+    ),
+    method: [...methodWording],
+    keepLegacy: keepLegacyWording,
+  },
 };
 
 const defaultBrief = {
