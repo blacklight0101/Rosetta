@@ -15,6 +15,7 @@ const offer: StackOffer = {
         { choice: 'PostgreSQL', why: 'Open source.' },
       ],
       keepLegacy: true,
+      vague: [],
     },
     {
       layer: 'hosting',
@@ -23,8 +24,9 @@ const offer: StackOffer = {
         { choice: 'Azure App Service', why: 'Managed.' },
       ],
       keepLegacy: false,
+      vague: [],
     },
-    { layer: 'testing', proposals: [], keepLegacy: true },
+    { layer: 'testing', proposals: [], keepLegacy: true, vague: [] },
   ],
 };
 

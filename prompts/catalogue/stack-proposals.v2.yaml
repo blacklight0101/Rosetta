@@ -257,3 +257,19 @@ legacy:
     extensions: [svc]
     layers: [backend-framework]
     endOfLife: true
+
+# vague: words a typed stack answer can consist of without naming a technology (P7-30, RF-609). A
+# platform (`languages` not empty) is offered the options of the layer whose `legacy` languages meet it;
+# a word of the empty-`languages` group ("default", "any") takes the options of the legacy languages the
+# scan found. A word that is an alias of a technology of the layer (".net" for the language) is specific.
+vague:
+  - words: ['.net', 'dotnet', '.net core', 'asp.net', 'asp.net core']
+    languages: [csharp, vb, aspnet, razor]
+  - words: ['java', 'jvm']
+    languages: [java, jsp]
+  - words: ['python']
+    languages: [python]
+  - words: ['node', 'nodejs', 'node.js', 'javascript']
+    languages: [javascript]
+  - words: ['default', 'defaults', 'any', 'anything', 'whatever', 'standard', 'tbd', 'none', 'n/a']
+    languages: []
