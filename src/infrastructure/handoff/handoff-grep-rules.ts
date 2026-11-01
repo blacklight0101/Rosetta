@@ -1,4 +1,5 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
+import type { PackageStack } from '../../domain/planning/brief-decisions.js';
 import { languageNamedBy, type GrepRule } from '../../domain/planning/grep-rules.js';
 
 // RF-640, P6-07, P6-28, DEC-190: the hard-rule greps of orchestration.md come from the package and
@@ -28,12 +29,26 @@ export interface GrepRow {
   readonly sources: readonly GrepSource[];
 }
 
-/** The ids of the languages the stack answers name, in the order of the catalogue file. */
+/** The ids of the languages the owner's stack answers name; a layer Rosetta proposed counts for none (P7-21). */
 export function stackLanguages(handoff: HandoffPackage): readonly string[] {
-  const answers = handoff.choices.stack.map((each) => each.choice);
+  const answers = handoff.choices.stack
+    .filter((each) => each.proposed !== true)
+    .map((each) => each.choice);
   return handoff.grepRules.languages
     .filter((language) => answers.some((answer) => languageNamedBy(language, answer)))
     .map((language) => language.id);
+}
+
+/** A layer Rosetta proposed whose language the owner named in no layer: its patterns are left out. */
+export function leftOutLayers(handoff: HandoffPackage): readonly PackageStack[] {
+  const owned = new Set(stackLanguages(handoff));
+  return handoff.choices.stack.filter(
+    (each) =>
+      each.proposed === true &&
+      handoff.grepRules.languages.some(
+        (language) => !owned.has(language.id) && languageNamedBy(language, each.choice),
+      ),
+  );
 }
 
 /** The `language-runtime` answers of the stack that name no language of the table, in stack order. */

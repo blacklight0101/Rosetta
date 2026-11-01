@@ -1,6 +1,12 @@
 import type { JSX } from 'preact';
 import type { Catalogue, PlanOptions, StackOffer, StyleOption } from '../api/plan-schemas.js';
-import { chooseStyle, proposedOf, shownStyle, stylesOf } from '../lib/plan-setup/choices.js';
+import {
+  chooseStyle,
+  keepProposed,
+  proposedOf,
+  shownStyle,
+  stylesOf,
+} from '../lib/plan-setup/choices.js';
 import { isAnswered } from '../lib/plan-setup/draft.js';
 import { TYPED } from '../lib/plan-setup/own-answers.js';
 import { PlanChoice } from './PlanChoice.js';
@@ -124,7 +130,9 @@ export function PlanArchitectureStep(props: ArchitectureProps): JSX.Element {
         question="architecture"
         group="architecture"
         draft={props.draft}
-        change={props.change}
+        change={(next) => {
+          props.change(keepProposed(next, options));
+        }}
         problem={props.problems['typed.architecture']}
       />
     </PlanStepCard>
