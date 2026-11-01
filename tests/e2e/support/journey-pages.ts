@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect } from './fixtures.js';
-import { openStartOf, runStatus, startAndOpenLiveRun } from './live-run-page.js';
+import { openScanRun, openStartOf } from './live-run-page.js';
 
 // P1-46: the steps the milestone journeys share, written as a person does them: through the
 // projects page, the start page and the live run page. Every repository is one the test server's
@@ -23,10 +23,8 @@ export async function openProjectStart(page: Page, url: string): Promise<void> {
 
 /** Starts a scan of the project open on the start page and waits for it to end complete. */
 export async function runScan(page: Page): Promise<string> {
-  await page.getByLabel('Scan only').check();
-  const path = await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
-  return path;
+  await openScanRun(page);
+  return new URL(page.url()).pathname;
 }
 
 /** Chooses which areas the understand run reads: only the named ones, or all when none is named. */

@@ -12,7 +12,7 @@ import {
   runAnswer,
   runsPath,
 } from './start-run-fixtures.js';
-import { consentLabel, input, ready, renderStart, start } from './start-run-helpers.js';
+import { consentLabel, input, ready, renderStart, start, opened } from './start-run-helpers.js';
 
 // RF-425 (second scenario), DEC-97, DEC-117, P2-08: an understand run whose likely cost is above
 // the confirm threshold shows its estimate and asks before it starts. The fixture project asks
@@ -58,7 +58,7 @@ it('RF-425 confirming starts the run once', async () => {
 
   fireEvent.click(screen.getByRole('button', { name: 'Confirm and start' }));
 
-  await screen.findByTestId('run-notice');
+  await opened();
   expect(starts(calls)).toBe(1);
   expect(screen.queryByRole('dialog')).toBeNull();
 });
@@ -82,7 +82,7 @@ it('RF-425 a likely cost exactly at the threshold starts without asking', async 
 
   fireEvent.click(start());
 
-  await screen.findByTestId('run-notice');
+  await opened();
   expect(starts(calls)).toBe(1);
   expect(screen.queryByRole('dialog')).toBeNull();
 });
@@ -126,19 +126,8 @@ it('RF-425 a run on local models costs nothing, so it never asks about dollars a
   expect(screen.queryByLabelText('Ask before a run estimated above (USD)')).toBeNull();
   fireEvent.click(start());
 
-  await screen.findByTestId('run-notice');
+  await opened();
   expect(starts(calls)).toBe(1);
-});
-
-it('RF-425 a scan has no estimate to confirm', async () => {
-  const { calls } = await cloudPage({ [`POST ${runsPath}`]: runAnswer('scan', null) });
-
-  fireEvent.click(input('Scan only'));
-  fireEvent.click(start());
-
-  await screen.findByTestId('run-notice');
-  expect(starts(calls)).toBe(1);
-  expect(screen.queryByRole('dialog')).toBeNull();
 });
 
 it('RF-425 RF-427 the figure asked about leaves out a model without a price and says so', async () => {

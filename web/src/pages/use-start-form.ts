@@ -16,6 +16,7 @@ import { useEstimateChoice, type EstimateChoice } from './use-estimate-choice.js
 import { useSpendLimits } from './use-spend-limits.js';
 import { useAnsweredCount } from './use-answered-count.js';
 import { useStartActions, type StartActions } from './use-start-actions.js';
+import { useAutoScan, type AutoScan } from './use-auto-scan.js';
 import { approvalText, approvedAmountOf, missingKeyProviders } from '../lib/journey-approval.js';
 
 // RF-1001, RF-143, DEC-108, DEC-117: the state of the start page: the stage, the address, the run
@@ -90,6 +91,8 @@ export interface StartForm {
   readonly warnings: readonly CapWarning[];
   readonly gate: StartGate;
   readonly actions: StartActions;
+  /** RF-160: the free scan that starts by itself when the project holds a source. */
+  readonly scan: AutoScan;
   /** The project as the page now knows it (a zip was stored in it). */
   readonly setProject: (project: Project) => void;
 }
@@ -239,12 +242,11 @@ export function useStartForm(loaded: Project): StartForm {
   const [refused, setRefused] = useState(false);
   const rerun = useRerun(loaded.id);
   const choice = useEstimateChoice(project.id);
-  const limits = useSpendLimits();
   const { estimate } = choice;
   const stage = estimate.status === 'none' ? 'scan' : chosenStage;
   const roles = stage === 'understand' ? consentRoles(estimate, refused) : [];
   const names = providerNames(roles.map((role) => role.provider));
-  const runCaps = runCapsOf({ stage, estimate, limits, typed: fields.capMicros });
+  const runCaps = runCapsOf({ stage, estimate, limits: useSpendLimits(), typed: fields.capMicros });
   const privateCode = usePrivateCode(project, roles.length > 0, (saved) => {
     setProject(saved);
     setRefused(false);
@@ -262,6 +264,7 @@ export function useStartForm(loaded: Project): StartForm {
     },
   });
   const libraryChosen = choice.areas.some((area) => area.checked && area.thirdParty);
+  const scan = useAutoScan(project, estimate.status === 'none', choice.reestimate);
   const gate = startGate({
     ...{ stage, estimate, consentNeeded: names, consentGiven: checked },
     ...{ privateNeeded: privateCode.needed, privateGiven: privateCode.checked },
@@ -273,7 +276,7 @@ export function useStartForm(loaded: Project): StartForm {
   });
   return {
     ...{ project, choice, stage, setStage, url, setUrl, ...fields, ...runCaps },
-    ...{ consent: { roles, names, checked, set: setChecked }, gate, actions, setProject },
+    ...{ consent: { roles, names, checked, set: setChecked }, gate, actions, setProject, scan },
     ...{ privateCode, rerun },
     library: { chosen: libraryChosen, ...confirmed.library },
     oldMap: { outdated: isOutdated(estimate), ...confirmed.oldMap },

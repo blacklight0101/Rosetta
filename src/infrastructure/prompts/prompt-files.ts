@@ -18,10 +18,10 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 
 const readerPromptNames = {
   system: 'reader/area.v12.md',
-  cardFormat: 'cards/card-format.v4.md',
+  cardFormat: 'cards/card-format.v5.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
-  repair: 'cards/repair.v5.md',
+  repair: 'cards/repair.v6.md',
   continue: 'cards/continue.v1.md',
   readFirst: 'reader/read-first.v1.md',
   readMore: 'reader/read-more.v1.md',

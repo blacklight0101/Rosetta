@@ -64,6 +64,7 @@ describe('release migrations', () => {
       '0017_project_workbook_source_columns.sql',
       '0018_runs_unread_areas.sql',
       '0019_runs_awaiting_approval.sql',
+      '0020_journeys.sql',
     ]);
   });
 

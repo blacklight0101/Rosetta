@@ -9,7 +9,12 @@ import { assembleDataModel } from '../../domain/planning/data-model-assembly.js'
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import { checkedModel, withoutKeptLeftOut } from './data-model-checked.js';
-import { withoutStorelessCards, withoutStorelessTables } from './data-model-skipped.js';
+import {
+  withoutOutOfScopeTables,
+  withoutStorelessCards,
+  withoutStorelessTables,
+  type OutOfScopeLine,
+} from './data-model-skipped.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { parseDataModelAnswer, type DataModelProblem } from './data-model-answer.js';
 import { dataModelMessage, packableCards } from './data-model-message.js';
@@ -28,6 +33,8 @@ export interface DataModelInput {
   /** The cards with their `Supported` claims. */
   readonly cards: readonly SourceCard[];
   readonly brief: PlanningBrief;
+  /** P7-32: the lines of the PRD "out of scope" section; a table one of them drops is not written. */
+  readonly outOfScope?: readonly OutOfScopeLine[];
 }
 
 /** The database layer of the brief, or null when the owner chose none. */
@@ -181,7 +188,8 @@ export async function planDataModel(
   const cutOffNote = all.cut ? cutOffMessage(limit) : '';
   const copied = copiedTables(all.failed, all.draft.tables);
   const kept = withoutStorelessTables(all.draft.tables, ids);
-  const draft = { ...all.draft, tables: [...kept, ...copied] };
+  const out = withoutOutOfScopeTables([...kept, ...copied], input.outOfScope ?? []);
+  const draft = { ...all.draft, tables: out.tables };
   let assembled = assembleDataModel(draft, legacy, database);
   if (assembled.model.tables.length === 0) {
     const fromClaims = legacyTablesOf(entities);
@@ -191,7 +199,7 @@ export async function planDataModel(
       database,
     );
   }
-  return checked(assembled, input, { all, cutOffNote, skipped });
+  return checked(assembled, input, { all, cutOffNote, skipped: [...skipped, ...out.skipped] });
 }
 
 /** The model once the checks have run, with what they flag and the tables copied (P3-120, P5-38). */

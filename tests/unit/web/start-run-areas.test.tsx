@@ -161,7 +161,7 @@ it('RF-1018 when every area is library code the list says so and Start is disabl
   expect(within(list()).queryAllByRole('checkbox')).toHaveLength(0);
   expect(screen.getByText(/No own-code area/u)).toBeTruthy();
   expect(foldedLine().textContent).toContain('2 library areas left out');
-  expect(screen.getByRole('button', { name: /^Start run/u }).hasAttribute('disabled')).toBe(true);
+  expect(screen.getByRole('button', { name: /^Analyse/u }).hasAttribute('disabled')).toBe(true);
 });
 
 it('RF-1018 120 areas are all in the list, which sits in a scrolling panel', async () => {

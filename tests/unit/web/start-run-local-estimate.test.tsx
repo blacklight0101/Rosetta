@@ -12,7 +12,7 @@ import {
   runsPath,
 } from './start-run-fixtures.js';
 import { projectWithTokenCap } from './start-run-limit-fixtures.js';
-import { describedText, input, ready, renderStart, start } from './start-run-helpers.js';
+import { describedText, input, ready, renderStart, start, opened } from './start-run-helpers.js';
 
 // RF-425 (Q-51, P3-79): the start page estimate for roles on a local model reads in tokens, with the
 // sentence about the cap in the unit of the cap it is compared with; priced roles keep dollars; a
@@ -150,7 +150,7 @@ it('P5-07 saving the token cap changes only maxTokens and leaves the dollar sett
   fireEvent.input(input('Run cap (tokens)'), { target: { value: '500000' } });
   fireEvent.click(start());
 
-  await screen.findByTestId('run-notice');
+  await opened();
   const put = calls.find((call) => call.method === 'PUT');
   const before = budgetOf(projectWithTokenCap(2_000_000));
   expect(budgetOf({ settings: put?.body })).toEqual({

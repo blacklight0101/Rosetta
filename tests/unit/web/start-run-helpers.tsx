@@ -1,4 +1,5 @@
-import { screen } from '@testing-library/preact';
+import { screen, waitFor } from '@testing-library/preact';
+import { expect } from 'vitest';
 import { StartRunPage } from '../../../web/src/pages/StartRunPage.js';
 import { json, renderPage, type Answer, type RenderedPage } from './fake-api.js';
 import {
@@ -30,7 +31,7 @@ export const priced: Readonly<Record<string, Answer>> = {
 export const consentLabel = 'I understand; send masked excerpts to OpenAI for this run';
 
 export const start = (): HTMLButtonElement => {
-  const button = screen.getByRole('button', { name: /^Start run/u });
+  const button = screen.getByRole('button', { name: /^Analyse/u });
   if (!(button instanceof HTMLButtonElement)) throw new Error('Start is not a button.');
   return button;
 };
@@ -49,4 +50,11 @@ export async function ready(): Promise<void> {
 export function describedText(element: HTMLElement): string {
   const ids = (element.getAttribute('aria-describedby') ?? '').split(' ');
   return ids.map((id) => document.getElementById(id)?.textContent ?? '').join(' ');
+}
+
+/** RF-1019: after Start the browser is on the live page of the run, with no "Open the live run" click. */
+export async function opened(runId = 'r-1'): Promise<void> {
+  await waitFor(() => {
+    expect(window.location.pathname).toBe(`/runs/${runId}`);
+  });
 }

@@ -54,12 +54,12 @@ function missingSource(input: StartGateInput): string | undefined {
 
 /** RF-430: the button names the figure the user approves. */
 function approvalGate(approval: string | undefined): StartGate {
-  const label = approval === undefined ? 'Start run' : `Start run · approve ${approval}`;
+  const label = approval === undefined ? 'Analyse' : `Analyse · approve ${approval}`;
   return { label, reason: undefined };
 }
 
 export function startGate(input: StartGateInput): StartGate {
-  const plain: StartGate = { label: 'Start run', reason: undefined };
+  const plain: StartGate = { label: 'Analyse', reason: undefined };
   const missing = missingSource(input);
   if (missing !== undefined) return { label: plain.label, reason: missing };
   if (input.stage === 'scan') return plain;
@@ -73,13 +73,13 @@ export function startGate(input: StartGateInput): StartGate {
   }
   if (input.consentNeeded !== '' && !input.consentGiven) {
     return {
-      label: `Start run (confirm the ${input.consentNeeded} notice)`,
+      label: `Analyse (confirm the ${input.consentNeeded} notice)`,
       reason: `Confirm the ${input.consentNeeded} notice above to start the run`,
     };
   }
   if (input.privateNeeded === true && input.privateGiven !== true) {
     return {
-      label: 'Start run (confirm the private code notice)',
+      label: 'Analyse (confirm the private code notice)',
       reason: 'Confirm the private code notice above to start the run',
     };
   }

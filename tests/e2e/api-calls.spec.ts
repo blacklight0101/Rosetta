@@ -1,12 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
-import {
-  openStartPage,
-  runStatus,
-  startAndOpenLiveRun,
-  startUnderstand,
-} from './support/live-run-page.js';
+import { openScanRun, openStartPage, startUnderstand } from './support/live-run-page.js';
 import { appendLogs, appendProblemCalls, runFolderOf } from './support/run-folder.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
@@ -53,9 +48,7 @@ test('RF-1011 the calls of a run appear in the panel as it works, and the summar
   test.setTimeout(120_000);
 
   await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-  await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await openScanRun(page);
   livePath = await startUnderstand(page, ['(root)', 'Catalog']);
 
   await page.getByRole('link', { name: 'API calls and logs' }).click();

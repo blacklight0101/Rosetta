@@ -3,6 +3,7 @@ import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { openScannedStartPage } from './support/cost-run.js';
 import { accountFor } from './support/seed.js';
+import { runStatus } from './support/live-run-page.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 import { chooseModel } from './support/choose-model.js';
@@ -15,7 +16,7 @@ import { chooseModel } from './support/choose-model.js';
 // share its project and its runs.
 
 const demoUrl = 'https://github.com/octo/demo';
-const startButton = { name: /^Start run/u } as const;
+const startButton = { name: /^Analyse/u } as const;
 const consent = 'I understand; send masked excerpts to OpenAI for this run';
 
 test.describe.configure({ mode: 'serial' });
@@ -44,7 +45,7 @@ function projectIdOf(page: Page): string {
   return id;
 }
 
-test('RF-1001 starts a scan from the page before there is a code map and passes axe', async ({
+test('RF-160 a project with no code map starts its scan by itself and passes axe', async ({
   page,
 }) => {
   const logged: string[] = [];
@@ -53,15 +54,10 @@ test('RF-1001 starts a scan from the page before there is a code map and passes 
   });
   await openStartPage(page);
 
-  await expect(page.getByText(/Run a scan first/u)).toBeVisible();
+  await expect(page.getByTestId('scan-running')).toBeVisible();
   // P3-68: no estimate is asked for before a scan, so the browser logs no 409.
   expect(logged).toEqual([]);
-  await expect(page.getByLabel('Understand')).toBeDisabled();
-  await expect(page.getByLabel('Scan only')).toBeChecked();
-  await expectNoSeriousViolations(page);
-  await page.getByRole('button', startButton).click();
-
-  await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
+  await expect(page.getByLabel('Scan only')).toHaveCount(0);
   await expectNoSeriousViolations(page);
   const estimate = `/api/projects/${projectIdOf(page)}/estimate`;
   // The estimate answers once the scan has completed and left its code map.
@@ -97,7 +93,7 @@ test('RF-1001 shows the estimate and starts an understand run for the chosen are
   await areas.first().check();
   await page.getByRole('button', startButton).click();
 
-  await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
+  await expect(page).toHaveURL(/\/runs\//u);
   await expectNoSeriousViolations(page);
 });
 
@@ -108,19 +104,20 @@ test('RF-1108 a second run waits in the queue, shows its position and can be can
   // user has at most one running run, so the second request really waits in the queue.
   await openStartPage(page);
   await page.getByRole('button', startButton).click();
-  await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
+  await expect(page).toHaveURL(/\/runs\//u);
   await openStartPage(page);
-  await page.getByLabel('Scan only').check();
 
   await page.getByRole('button', startButton).click();
 
-  const notice = page.getByTestId('run-notice');
-  await expect(notice).toContainText('Queued');
-  await expect(notice).toContainText(/position \d+/u);
+  // RF-1019: the queued run opens its live page, which says its place and can cancel it.
+  await expect(page).toHaveURL(/\/runs\//u);
+  await expect(runStatus(page)).toContainText('Queued');
+  await expect(page.getByText(/position \d+/u).first()).toBeVisible();
   await expectNoSeriousViolations(page);
-  await notice.getByRole('button', { name: 'Cancel queued run' }).click();
-  await expect(notice).toContainText('cancelled');
-  await expect(page.getByRole('button', startButton)).toBeEnabled();
+  await page.getByRole('button', { name: 'Cancel queued run' }).click();
+  await expect(page.getByRole('button', { name: 'Cancel queued run' })).toHaveCount(0, {
+    timeout: 30_000,
+  });
 });
 
 test('RF-143 a cloud reader needs the consent before Start and the notice names the provider', async ({
@@ -140,7 +137,7 @@ test('RF-143 a cloud reader needs the consent before Start and the notice names 
   await expect(page.getByRole('region', { name: /Your code is private/u })).toHaveCount(0);
   const start = page.getByRole('button', startButton);
   await expect(start).toBeDisabled();
-  await expect(start).toHaveText('Start run (confirm the OpenAI notice)');
+  await expect(start).toHaveText('Analyse (confirm the OpenAI notice)');
   await expectNoSeriousViolations(page);
   await page.getByLabel(consent).check();
   await expect(start).toBeEnabled();
@@ -148,7 +145,7 @@ test('RF-143 a cloud reader needs the consent before Start and the notice names 
   await expectNoSeriousViolations(page);
   await start.click();
 
-  await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
+  await expect(page).toHaveURL(/\/runs\//u);
 });
 
 test('RF-1001 a likely estimate above the run cap warns, names the cap and Start stays available', async ({
@@ -171,11 +168,10 @@ test('RF-1001 an invalid address is refused next to the field with its code and 
   page,
 }) => {
   await openStartPage(page);
-  await page.getByLabel('Scan only').check();
   const url = page.getByLabel('GitHub repository URL');
 
   await url.fill('https://example.com/octo/demo');
-  await page.getByRole('button', startButton).click();
+  await page.getByRole('button', { name: 'Resolve' }).click();
 
   await expect(page.getByTestId('field-error').filter({ hasText: 'RST-1900' })).toBeVisible();
   await expect(url).toHaveAttribute('aria-invalid', 'true');
@@ -260,11 +256,8 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
   await threshold.fill('0.15');
   await page.getByRole('button', startButton).click();
 
-  const notice = page.getByTestId('run-notice');
-  await expect(notice).toContainText(/Run started|Queued/u);
   // The run holds one of the server's run slots: stop it (or cancel it, when queued) and wait until
-  // it has ended, so no other test's run waits behind it.
-  await notice.getByRole('link', { name: 'Open the live run' }).click();
+  // it has ended, so no other test's run waits behind it. The live page opened by itself (RF-1019).
   await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
   const endOfRun = page.getByRole('button', { name: /^(Stop run|Cancel queued run)$/u });
   if (await endOfRun.isVisible()) await endOfRun.click();

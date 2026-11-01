@@ -3,7 +3,15 @@ import { expect, it } from 'vitest';
 import { failure, json } from './fake-api.js';
 import { projectOf } from './project-fixtures.js';
 import { projectPath, projectWithCap, runAnswer, runsPath } from './start-run-fixtures.js';
-import { consentLabel, input, priced, ready, renderStart, start } from './start-run-helpers.js';
+import {
+  consentLabel,
+  input,
+  priced,
+  ready,
+  renderStart,
+  start,
+  opened,
+} from './start-run-helpers.js';
 
 // RF-002, RF-1001 (P1-106): the start page saves a changed run cap from the settings it has just
 // read, naming their version, so a settings save made in another tab in between is refused instead
@@ -29,7 +37,7 @@ it('RF-002 saving the run cap names the version of the settings read just before
   fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
-  await screen.findByTestId('run-notice');
+  await opened();
   expect(calls.find((call) => call.method === 'PUT')?.ifMatch).toBe('"7"');
 });
 

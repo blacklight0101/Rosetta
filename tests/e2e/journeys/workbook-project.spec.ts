@@ -114,7 +114,7 @@ test('RF-157 the start page of a workbook project with a cloud role asks a secon
   await signIn(page, info.project.name);
   await openWorkbookStart(page, projectName);
   await giveReaderToOpenAi(page);
-  const start = page.getByRole('button', { name: /^Start run/u });
+  const start = page.getByRole('button', { name: /^Analyse/u });
   const cloud = page.getByLabel('I understand; send masked excerpts to OpenAI for this run');
   const own = page.getByLabel(
     `I understand that cell values, formulas and macros from ${projectName} will be sent to OpenAI`,
