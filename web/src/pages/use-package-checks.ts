@@ -7,7 +7,7 @@ import type { RunState } from '../lib/live-run/run-state.js';
 // for once the package exists: the run ended Completed, or with the gaps code RST-1806 (RF-627).
 
 /** The package is written: the run completed, or ended with items no task card builds. */
-export function packageWritten(ended: RunState['ended']): boolean {
+function packageWritten(ended: RunState['ended']): boolean {
   return ended?.endState === 'Completed' || ended?.errorCode === 'RST-1806';
 }
 
