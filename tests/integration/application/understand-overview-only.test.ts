@@ -96,3 +96,25 @@ describe('Write the overview on a run whose overview call was refused', UNDERSTA
     expect(h.providers.requests().at(-1)?.context.agentTaskId).toBe('summariser-overview');
   });
 });
+
+describe('Write the overview on a completed run with a failed area', UNDERSTAND_TIMEOUT, () => {
+  it('P7-26 keeps Completed and the one failed area, and re-reads nothing', async () => {
+    const h = await createUnderstandHarness({
+      dataDir: temp.path,
+      recording: 'understand-retry-fails.json',
+    });
+    await h.scan();
+    const run = await h.understand({ areas: ['Catalog', 'Services'] });
+    expect([run.endState, run.failedAreas]).toEqual(['Completed', 1]);
+    const calls = rolesOf(h).length;
+
+    const written = await h.resume(run, true);
+
+    if (!written.ok) throw new Error(written.error);
+    expect([written.value.endState, written.value.failedAreas]).toEqual(['Completed', 1]);
+    expect(written.value.unreadAreas).toBe(0);
+    expect(rolesOf(h).slice(calls)).not.toContain('reader');
+    const ended = (await h.eventsOf(run)).filter((event) => event.type === 'run.ended').at(-1);
+    expect(ended?.data).toMatchObject({ endState: 'Completed', failedAreas: 1 });
+  });
+});

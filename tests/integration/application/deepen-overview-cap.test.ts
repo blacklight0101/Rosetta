@@ -4,10 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { parseOverview } from '../../../src/application/overview/overview-file.js';
 import type { ProjectSettings } from '../../../src/application/projects/project-settings.js';
 import type { Run } from '../../../src/domain/runs/run.js';
-import { completedRun, deepenOf } from '../../support/deepen-run.js';
+import { deepenOf } from '../../support/deepen-run.js';
 import { useTempRoot } from '../../support/temp-root.js';
 import { UNDERSTAND_TIMEOUT } from '../../support/understand-full-run.js';
-import type { UnderstandHarness } from '../../support/understand-run-harness.js';
+import {
+  createUnderstandHarness,
+  type UnderstandHarness,
+} from '../../support/understand-run-harness.js';
 
 // RF-264, P7-26: a Deepen that ends on its cap still writes its overview step, and "Write the
 // overview" on it writes the overview alone: the Deepen is not resumed, no round starts.
@@ -26,13 +29,15 @@ async function overviewOf(h: UnderstandHarness, run: Run) {
 }
 
 async function capped() {
-  const { h, run } = await completedRun({
-    dataDir: temp.path,
-    recording: 'deepen-no-progress.json',
-    verifierRecording: 'verifier-deepen-supported.json',
+  // Three cards passed, so the overview is a call to the summariser, not a thin notice.
+  const h = await createUnderstandHarness({
+    ...{ dataDir: temp.path, recording: 'understand-overview.json' },
+    verifierRecording: 'verifier-all-supported.json',
   });
+  await h.scan();
+  const run = await h.understand();
   await h.changeSettings(runCap(500));
-  const deepen = await h.deepen(run, { coveragePass: false });
+  const deepen = await h.deepen(run);
   if (!deepen.ok) throw new Error(deepen.error);
   return { h, deep: deepen.value };
 }
@@ -44,7 +49,8 @@ describe('a Deepen that ends on its cap', UNDERSTAND_TIMEOUT, () => {
     expect(deep.endState).toBe('CapReached');
     const overview = await overviewOf(h, deep);
     expect(overview).toBeDefined();
-    expect(overview?.state).not.toBe('full');
+    expect(overview?.state).toBe('unavailable');
+    expect(overview?.notice).toContain('cap');
   });
 
   it('RF-264 P7-26 Write the overview does not resume the Deepen and writes the overview', async () => {
@@ -56,7 +62,11 @@ describe('a Deepen that ends on its cap', UNDERSTAND_TIMEOUT, () => {
 
     if (!written.ok) throw new Error(written.error);
     expect(written.value.endState).toBe('CapReached');
-    expect(await overviewOf(h, deep)).toBeDefined();
+    const asked = h.providers
+      .requests()
+      .slice(calls)
+      .map((r) => r.context.agentTaskId);
+    expect(asked).toContain('summariser-overview');
     const roles = h.providers
       .requests()
       .slice(calls)
