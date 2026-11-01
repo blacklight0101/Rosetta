@@ -60,7 +60,10 @@ that GitHub starts after 07:59 Madrid now goes on when the head commit of `main`
 day and no Release run of that commit is queued, running or succeeded; otherwise it does nothing, as before. The
 trigger was GitHub starting the slots late on 2026-10-29, between 12:28 and 13:53 Madrid, when the hour guard made
 them do nothing and production was deployed by hand. A slot GitHub never starts is not recovered by this change: the
-owner runs Release by hand on `main`. The step summary names the slot and its delay.
+owner runs Release by hand on `main`. The step summary names the slot and its delay. Review of the same card: the
+slots share one concurrency group and never cancel each other (`cancel-in-progress: false`), so two delayed slots
+cannot both check before the first dispatch, and a Release of that commit created in the last ten minutes counts as
+active even when it is not yet listed as queued.
 
 ## References
 

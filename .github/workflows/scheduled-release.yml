@@ -28,9 +28,11 @@ on:
 permissions:
   contents: read
 
+# One group for every slot: the slots run one at a time and a running slot is never cancelled, so a
+# slot cannot dispatch while another one is still checking (P7-28).
 concurrency:
-  group: scheduled-release-${{ github.ref }}
-  cancel-in-progress: true
+  group: scheduled-release
+  cancel-in-progress: false
 
 jobs:
   dispatch:
@@ -71,8 +73,11 @@ jobs:
             echo "::error::The head of main could not be read."
             exit 1
           fi
-          filter="[.[] | select(.headSha == \"$sha\" and (.status != \"completed\" or .conclusion == \"success\"))] | length"
-          active="$(gh run list --workflow release.yml --branch main --limit 100 --json headSha,status,conclusion --jq "$filter")"
+          # A Release dispatched seconds earlier may not be listed as queued yet, so one created in the
+          # last ten minutes on this commit counts as well (P7-28).
+          cutoff="$(date -u -d '-10 minutes' +%Y-%m-%dT%H:%M:%SZ)"
+          filter="[.[] | select(.headSha == \"$sha\" and (.status != \"completed\" or .conclusion == \"success\" or .createdAt >= \"$cutoff\"))] | length"
+          active="$(gh run list --workflow release.yml --branch main --limit 100 --json headSha,status,conclusion,createdAt --jq "$filter")"
           if [ "$active" != 0 ]; then
             note "Slot $SLOT, Madrid hour $hour: main is at $sha and a Release run of it is queued, running or succeeded; no Release is started."
             exit 0
