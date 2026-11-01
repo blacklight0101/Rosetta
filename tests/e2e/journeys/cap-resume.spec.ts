@@ -12,14 +12,15 @@ import { fixtureKeyEndingIn } from '../support/no-full-key.js';
 import { accountFor } from '../support/seed.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
-import { chooseModel, setOutputLimit } from '../support/choose-model.js';
+import { chooseModel } from '../support/choose-model.js';
+import { pauseFinishedRun } from '../support/pause-run.js';
 
 // RF-006, RF-422, RF-428, RF-432, RF-301, ADR-007, ADR-010, ADR-026, P2-13, P7-05: flow 4 to its end.
-// A run on a priced reader is approved at the server's worst-case journey total and pauses there
-// ("Waiting for your approval"), keeping what it did; the owner presses Continue and the same run
-// goes on with the agents that were left, ends Completed and every claim has its verdict. The
-// reader is the recorded webforms run (e2e-provider.ts). The small output limits make the worst
-// case smaller than what the recording reports, so the run reaches its line.
+// A run on a priced reader that is approved and paused ("Waiting for your approval") keeps what it
+// did; the owner presses Continue and the same run goes on with the agent that was left, ends
+// Completed and every claim has its verdict. The recorded webforms run (e2e-provider.ts) spends less
+// than its worst case and the ceilings cannot be lowered, so a finished run is put back to a pause
+// (pause-run.ts) before the owner answers.
 
 const openAiKey = fixtureKeyEndingIn('journey', 'CAP2');
 
@@ -42,8 +43,6 @@ async function saveSettings(page: Page): Promise<void> {
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByLabel('Summariser provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Summariser', 'gpt-5-nano');
-  await setOutputLimit(page, 'Reader', 256);
-  await setOutputLimit(page, 'Summariser', 256);
   await page.getByLabel('Parallel readers', { exact: true }).fill('1');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
@@ -62,15 +61,12 @@ test('RF-006 RF-422 RF-301 RF-432 a run pauses at the amount approved, the owner
   await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
   const live = await startAndOpenLiveRun(page);
 
-  await expect
-    .poll(
-      async () =>
-        (await page.getByTestId('approval-question').count()) > 0
-          ? 'asks'
-          : ((await runStatus(page).textContent()) ?? ''),
-      { timeout: 120_000 },
-    )
-    .toBe('asks');
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 180_000 });
+  const runUuid = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/u.exec(live)?.[0];
+  if (runUuid === undefined) throw new Error(`No run id in ${live}`);
+  await pauseFinishedRun(page, runUuid, 'Services');
+  await page.goto(live);
+  await expect(page.getByTestId('approval-question')).toBeVisible({ timeout: 30_000 });
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
   await openRunTab(page, 'Evidence');
