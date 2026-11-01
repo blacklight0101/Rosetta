@@ -48,7 +48,7 @@ async function userPicksPricedReader(page: Page): Promise<void> {
   await openProjectStart(page, repositories.webforms);
   await runScan(page);
   await openProjectStart(page, repositories.webforms);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   // RF-250: the summariser is a role of the run like the reader; it is priced the same way.
@@ -86,7 +86,6 @@ test(
       const before = await tokensOf(pill);
       await chooseAreas(page, ['Catalog', 'Database', 'Services']);
       await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
-      await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.002');
       await startAndOpenLiveRun(page);
 
       await expect(runStatus(page)).toContainText(/Cap reached|Partly read/u, { timeout: 90_000 });

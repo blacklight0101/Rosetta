@@ -40,7 +40,7 @@ async function openStartPage(page: Page): Promise<void> {
 }
 
 function projectIdOf(page: Page): string {
-  const id = /\/projects\/([^/]+)\/start$/u.exec(new URL(page.url()).pathname)?.[1];
+  const id = /\/projects\/([^/]+)$/u.exec(new URL(page.url()).pathname)?.[1];
   if (id === undefined) throw new Error(`Not a start page: ${page.url()}`);
   return id;
 }
@@ -73,7 +73,6 @@ test('RF-1001 shows the estimate and starts an understand run for the chosen are
 }) => {
   await openStartPage(page);
 
-  await expect(page.getByLabel('Understand')).toBeChecked();
   const table = page.getByRole('table', { name: 'Estimate per role' });
   await expect(table.getByRole('row', { name: /reader/u })).toBeVisible();
   await expect(table.getByRole('row', { name: /Total/u })).toBeVisible();
@@ -124,7 +123,7 @@ test('RF-143 a cloud reader needs the consent before Start and the notice names 
   page,
 }) => {
   await openStartPage(page);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByRole('button', { name: 'Save settings' }).click();
@@ -152,9 +151,14 @@ test('RF-1001 a likely estimate above the run cap warns, names the cap and Start
   page,
 }) => {
   await openStartPage(page);
+  // RF-436: the cap is the project settings'; the page warns against it and links to it.
+  await page.getByRole('link', { name: 'Change the caps in the project settings' }).click();
+  await page.getByLabel('Run cost cap (USD)', { exact: true }).fill('0.000001');
+  await page.getByLabel('Ask before a run estimated above (USD)', { exact: true }).fill('0.000001');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText('Settings saved.')).toBeVisible();
+  await page.getByRole('link', { name: 'Start a run' }).click();
   await page.getByLabel(consent).check();
-
-  await page.getByLabel('Run cap (USD)').fill('0.000001');
 
   const warning = page.getByTestId('cap-warning');
   await expect(warning).toContainText('run cap');
@@ -162,6 +166,13 @@ test('RF-1001 a likely estimate above the run cap warns, names the cap and Start
   await expect(page.getByRole('button', startButton)).toBeEnabled();
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
+
+  // The project keeps its settings between tests: put the default cap and threshold back.
+  await page.getByRole('link', { name: 'Change the caps in the project settings' }).click();
+  await page.getByLabel('Run cost cap (USD)', { exact: true }).fill('2.00');
+  await page.getByLabel('Ask before a run estimated above (USD)', { exact: true }).fill('0.25');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText('Settings saved.')).toBeVisible();
 });
 
 test('RF-1001 an invalid address is refused next to the field with its code and starts nothing', async ({
@@ -197,7 +208,7 @@ test('RF-1001 an address the account already has opens that project and makes no
   await page.getByLabel('GitHub repository URL').fill(webformsUrl);
   await page.getByRole('button', { name: 'Resolve' }).click();
 
-  await expect(page).not.toHaveURL(new RegExp(`/projects/${demoId}/start$`, 'u'));
+  await expect(page).not.toHaveURL(new RegExp(`/projects/${demoId}$`, 'u'));
   await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(webformsUrl);
   await expect(page.getByText('octo/webforms', { exact: true })).toBeVisible();
@@ -221,7 +232,7 @@ test('RF-425 an unknown estimate query parameter is refused with a message that 
   expect(answer.body).toContain('Unknown query parameter \\"areas[]\\"');
 });
 
-test('RF-1001 a run cap below the confirm threshold is refused before the request; a lower threshold lets it start', async ({
+test('RF-1001 a run cap below the confirm threshold is refused in the settings; a lower threshold lets the run start', async ({
   page,
 }) => {
   // The reader runs on OpenAI with the server's key. The test scans the project when it has no code
@@ -232,7 +243,7 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
   // this run?" question instead. The cap ($0.20) is below the default threshold ($0.25), and the
   // lower threshold ($0.15) stays well above the likely cost.
   await openScannedStartPage(page);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByRole('button', { name: 'Save settings' }).click();
@@ -241,20 +252,23 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
   await expect(page.getByTestId('server-key-note')).toContainText(
     "OpenAI runs on the server's key",
   );
-  await page.getByLabel(consent).check();
   const threshold = page.getByLabel('Ask before a run estimated above (USD)', { exact: true });
+  await page.getByRole('link', { name: 'Change the caps in the project settings' }).click();
   await expect(threshold).toHaveValue('0.25');
 
-  await page.getByLabel('Run cap (USD)').fill('0.20');
-  await page.getByRole('button', startButton).click();
-
+  // RF-436: the cap and the threshold are the project settings'; the threshold may not be above the cap.
+  await page.getByLabel('Run cost cap (USD)', { exact: true }).fill('0.20');
+  await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(threshold).toHaveAttribute('aria-invalid', 'true');
-  await expect(page.getByText(/must not be above the run cap/u)).toBeVisible();
-  await expect(page.getByTestId('run-notice')).toHaveCount(0);
+  await expect(page.getByText('Settings saved.')).toHaveCount(0);
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
   await threshold.fill('0.15');
-  await page.getByRole('button', startButton).click();
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText('Settings saved.')).toBeVisible();
+  await page.getByRole('link', { name: 'Start a run' }).click();
+  await page.getByLabel(consent).check();
+  await page.getByRole('button', { name: /^Analyse/u }).click();
 
   // The run holds one of the server's run slots: stop it (or cancel it, when queued) and wait until
   // it has ended, so no other test's run waits behind it. The live page opened by itself (RF-1019).
@@ -262,9 +276,7 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
   const endOfRun = page.getByRole('button', { name: /^(Stop run|Cancel queued run)$/u });
   if (await endOfRun.isVisible()) await endOfRun.click();
   await expect(endOfRun).toHaveCount(0, { timeout: 60_000 });
-  await page.getByRole('link', { name: 'Start page' }).click();
-  await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.20');
-  await expect(
-    page.getByLabel('Ask before a run estimated above (USD)', { exact: true }),
-  ).toHaveValue('0.15');
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
+  await expect(page.getByLabel('Run cost cap (USD)', { exact: true })).toHaveValue('0.20');
+  await expect(threshold).toHaveValue('0.15');
 });

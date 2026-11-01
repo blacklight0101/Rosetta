@@ -36,7 +36,7 @@ test('RF-1105 a second user finds nothing of the first one project or run', asyn
   const runPath = new URL(page.url()).pathname;
   await page.getByRole('navigation').getByRole('link', { name: 'Start a run' }).click();
   const startPath = new URL(page.url()).pathname;
-  const costPath = startPath.replace(/\/start$/u, '/cost');
+  const costPath = `${startPath}/cost`;
 
   const other = await otherUsersPage(browser, `second:${project}`);
   await signInThroughPage(other, accountFor('journey-other', project));

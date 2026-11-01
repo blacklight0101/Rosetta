@@ -173,9 +173,7 @@ test('RF-1018 choosing library areas shows what they add and Start waits for one
   await expectNoSeriousViolations(page);
 });
 
-test('RNF-010 long area names wrap inside the Stage and areas card at 1280 and 360 px', async ({
-  page,
-}) => {
+test('RNF-010 long area names wrap inside the Areas card at 1280 and 360 px', async ({ page }) => {
   const longPath = 'src/Services/Billing/Payments/Gateway/Providers/Adapters/Legacy/Mapping/Rules';
   const names = [
     `Scripts/${'VeryLongUnbrokenFolderName'.repeat(8)}`,

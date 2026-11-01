@@ -177,7 +177,7 @@ it('RF-150 the summary lists each workbook with its sheets, cells, formulas and 
   expect(summary.textContent).toContain('1 item left out');
   expect(text).toContain('Costs.xlsm: Macro module Module9 is locked and was not read.');
   expect(within(summary).getByRole('link', { name: 'Start a run' }).getAttribute('href')).toBe(
-    '/projects/p-9/start',
+    '/projects/p-9',
   );
 });
 

@@ -80,7 +80,7 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
           <h1 class="rst-page__title">Live run</h1>
           <span class="rst-mono rst-live-head__key">{props.runKey}</span>
           <span class="rst-live-head__stage">{props.stage}</span>
-          <Link href={`/projects/${encodeURIComponent(props.projectId)}/start`}>Start page</Link>
+          <Link href={`/projects/${encodeURIComponent(props.projectId)}`}>Start page</Link>
         </div>
         <span role="status" data-testid="run-status" class="rst-live-head__state">
           <Badge phase={phase} unreadAreas={props.unreadAreas} />
