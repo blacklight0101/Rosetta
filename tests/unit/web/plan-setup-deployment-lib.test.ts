@@ -99,6 +99,7 @@ describe('the defaulted list', () => {
 describe('what I recorded for the hosted question', () => {
   it('P6-26 says the application will be hosted or will not be', () => {
     expect(contextLine({ ...unanswered, deployment: 'hosted' })?.value).toContain('will be hosted');
+    expect(contextLine({ ...unanswered, deployment: 'hosted' })?.value).not.toContain('answered');
     expect(contextLine({ ...unanswered, deployment: 'not-hosted' })?.value).toContain(
       'will not be hosted',
     );

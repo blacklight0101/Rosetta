@@ -73,6 +73,7 @@ describe('a broken grep rules file', () => {
     ['a principle that is not in the catalogue', 'owasp-top-10', 'no-such-principle'],
     ['a pattern with a backtick', 'innerHTML', 'inner`HTML'],
     ['a pattern with a pipe', 'innerHTML', 'inner|HTML'],
+    ['a pattern with a format character', 'innerHTML', 'inner​HTML'],
     ['a pattern for a language that is not declared', 'dotnet:', 'cobol:'],
     ['a repeated language', 'id: python', 'id: php'],
     ['a risk class that does not exist', 'security boundary', 'war'],
