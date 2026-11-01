@@ -12,13 +12,22 @@ function table(name: string, sources: string[]): DraftTable {
 }
 
 describe('withoutOutOfScopeTables', () => {
-  it('RF-623 drops a table the line names, and lists it', () => {
+  it('RF-623 keeps a table a line only mentions in passing', () => {
     const { tables, skipped } = withoutOutOfScopeTables(
-      [table('spare_sheet', ['ENT-009']), table('access_point', ['ENT-001'])],
-      [{ text: 'The spare sheet is out of scope.', sources: [] }],
+      [table('access_point', ['ENT-001'])],
+      [{ text: 'Access point firmware upgrades are out of scope.', sources: ['FEAT-004'] }],
     );
 
     expect(tables.map((each) => each.name)).toEqual(['access_point']);
+    expect(skipped).toEqual([]);
+  });
+
+  it('RF-623 lists a table dropped because the line cites all its cards', () => {
+    const { skipped } = withoutOutOfScopeTables(
+      [table('spare_sheet', ['ENT-009'])],
+      [{ text: 'The spare sheet is out of scope.', sources: ['ENT-009'] }],
+    );
+
     expect(skipped[0]).toMatchObject({ item: 'spare_sheet', kind: 'check' });
   });
 

@@ -203,6 +203,27 @@
       "foreignKeys": [],
       "checks": [],
       "indexes": []
+    },
+    {
+      "name": "refund_log",
+      "purpose": "Refunds.",
+      "sources": [
+        "OQ-001"
+      ],
+      "columns": [
+        {
+          "name": "refund_id",
+          "type": "int",
+          "nullable": true,
+          "legacy": null,
+          "risk": ""
+        }
+      ],
+      "primaryKey": [],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
     }
   ],
   "dropped": []

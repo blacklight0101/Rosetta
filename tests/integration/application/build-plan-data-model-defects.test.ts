@@ -137,6 +137,12 @@ describe('BuildPlan: per-site sheets', () => {
     expect(section).toContain('site');
   });
 
+  it('RF-623 writes no table for a sheet the PRD out-of-scope section cites', async () => {
+    const { model } = await filesFor('data-model-site-sheets', siteSheetCards());
+
+    expect(model).not.toContain('refund_log');
+  });
+
   it('RF-623 keeps the table with other columns apart', async () => {
     const { model } = await filesFor('data-model-site-sheets', siteSheetCards());
 

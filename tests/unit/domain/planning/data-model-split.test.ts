@@ -123,3 +123,15 @@ describe('the record of a split', () => {
     ]);
   });
 });
+
+describe('the key of a split table', () => {
+  it('RF-623 puts the discriminator in the primary key, as an ids repeat across sites', () => {
+    const tables = tablesOf([
+      sheet('access_point_site_a', same, { primaryKey: ['ap_id'] }),
+      sheet('access_point_site_b', same, { primaryKey: ['ap_id'] }),
+    ]);
+
+    expect(tables[0]?.primaryKey).toEqual(['site', 'ap_id']);
+    expect(tables[0]?.columns.find((each) => each.name === 'site')?.nullable).toBe(false);
+  });
+});
