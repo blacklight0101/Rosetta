@@ -45,7 +45,7 @@ describe('scheduled-release.yml trigger and permissions', () => {
     const document = await scheduled();
 
     expect(at(document, 'concurrency')).toEqual({
-      group: 'scheduled-release',
+      group: 'scheduled-release-${{ github.ref }}',
       'cancel-in-progress': false,
     });
   });

@@ -208,8 +208,8 @@ describe('GitHub Actions workflows: limits', () => {
   // without its image, a deploy half done or a resource half made. azure-provision.yml has one
   // group for every branch (DEC-175): its production run (main) and its staging run (develop) both
   // converge the one shared PostgreSQL server, so they must never overlap.
-  it('RNF-001 every workflow has a concurrency group per branch (provision: one for all); all but the release, staging and provision workflows cancel superseded runs', async () => {
-    const queued = ['release.yml', 'azure-provision.yml', 'staging.yml'];
+  it('RNF-001 every workflow has a concurrency group per branch (provision: one for all); all but the release, scheduled release, staging and provision workflows cancel superseded runs', async () => {
+    const queued = ['release.yml', 'azure-provision.yml', 'staging.yml', 'scheduled-release.yml'];
     const found = await violations(({ name, lines }) => {
       const cancel = queued.includes(name) ? 'false' : 'true';
       const group = name === 'azure-provision.yml' ? 'azure-provision' : '.*github\\.ref.*';

@@ -31,7 +31,7 @@ permissions:
 # One group for every slot: the slots run one at a time and a running slot is never cancelled, so a
 # slot cannot dispatch while another one is still checking (P7-28).
 concurrency:
-  group: scheduled-release
+  group: scheduled-release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
