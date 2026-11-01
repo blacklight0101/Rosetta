@@ -27,6 +27,8 @@ const historyRunSchema = z.object({
   failedAreas: count.default(0),
   /** P7-02: the planned areas no reader started; a capped run with some reads "Partly read". */
   unreadAreas: count.default(0),
+  /** EV-80: the place of a queued run in the server's queue, counted from 1. */
+  position: z.number().int().positive().nullable().default(null),
 });
 
 export type HistoryRun = z.output<typeof historyRunSchema>;

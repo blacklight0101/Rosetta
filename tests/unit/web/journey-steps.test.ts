@@ -89,6 +89,16 @@ describe('journeyOf: the understand run', () => {
     expect(view.action).toBeUndefined();
   });
 
+  it('RF-1108 EV-80 a queued understand run says its place and how many runs are ahead', () => {
+    const queued = source({ queueState: 'Queued', endState: null, endedAt: null, position: 3 });
+
+    const view = journeyOf(facts({ source: queued, briefSaved: false }), projectId);
+
+    expect(step(view, 'understand')).toMatchObject({
+      detail: 'Waiting in the queue, position 3, 2 runs ahead',
+    });
+  });
+
   it('RF-615 a queued understand run says it waits in the queue', () => {
     const view = journeyOf(roadSigns['queued'] ?? facts(), projectId);
 

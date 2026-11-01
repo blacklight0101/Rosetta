@@ -1,4 +1,5 @@
 import type { Tile } from './code-map-tiles.js';
+import { queueSuffix } from './queue-text.js';
 import { JUDGEMENT_EXPLAINED, verifyDetail, waitsForJudgement } from './judgement-state.js';
 import type { RunPhase } from './run-phase.js';
 import type { AgentPanelState, RunState } from './run-state.js';
@@ -38,7 +39,9 @@ const plural = (count: number, one: string, many: string): string =>
 
 function mapStep(input: JourneyInput): Core {
   const { stage, phase, state, tiles } = input;
-  if (phase.kind === 'queued') return { status: 'later', detail: 'waiting in the queue' };
+  if (phase.kind === 'queued') {
+    return { status: 'later', detail: `waiting in the queue${queueSuffix(phase.position)}` };
+  }
   if (stage === 'scan') {
     if (state.scan === undefined)
       return { status: 'current', detail: `reading ${scanSubjectOfRun(state.source)}` };
