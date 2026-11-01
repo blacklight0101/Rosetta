@@ -130,3 +130,41 @@ describe('P7-12 round 2: risk class, verifier cell and a brief saved before the 
     expect(files['checks.md'] ?? '').not.toContain('no model is named');
   });
 });
+
+describe('P7-24 a local verifier says so, with a warning', () => {
+  // Invoice-shaped with a local middle tier: the smallest band is 1 to 5, its verifier is the middle tier.
+  const localVerifier: BuildMethod = { ...invoice, local: { middle: true } };
+  const warning = 'a local verifier is weaker than a hosted one';
+
+  it('RF-641 the Verifier line says runs locally when the verifier tier is local', () => {
+    const tasks = filesOf(localVerifier)['tasks.md'] ?? '';
+
+    expect(tasks).toContain('Verifier: middle tier, model: gpt-mid, runs locally');
+  });
+
+  it('RF-641 the Verifier line is unchanged when no tier runs locally', () => {
+    const tasks = filesOf({ ...invoice, local: undefined })['tasks.md'] ?? '';
+
+    expect(tasks).toMatch(/^Verifier: middle tier, model: gpt-mid$/mu);
+    expect(tasks).not.toContain('runs locally');
+  });
+
+  it('RF-641 agents/README.md says the middle verifier runs locally', () => {
+    const readme = filesOf(localVerifier)['agents/README.md'] ?? '';
+
+    expect(readme).toMatch(/`verifier\.md`[^\n]*gpt-mid, runs locally/u);
+  });
+
+  it('RF-641 checks.md lists one package warning for a local verifier of difficulty 3 and above', () => {
+    const checks = filesOf(localVerifier)['checks.md'] ?? '';
+
+    expect(checks.split(warning).length - 1).toBe(1);
+    expect(checks).toContain('hosted verifier for cards of difficulty 3 and above');
+  });
+
+  it('RF-641 checks.md has no local-verifier warning when no verifier runs locally', () => {
+    const checks = filesOf({ ...invoice, local: undefined })['checks.md'] ?? '';
+
+    expect(checks).not.toContain(warning);
+  });
+});
