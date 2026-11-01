@@ -1,3 +1,4 @@
+import { MemoryRunManifestStore } from '../../src/infrastructure/files/memory-run-manifest-store.js';
 import type { JourneyFigures } from '../../src/application/runs/approved-journey.js';
 import { ALL_KEYS_SERVED } from './web-role-keys.js';
 import { expect, vi } from 'vitest';
@@ -152,6 +153,7 @@ export function starterOf(s: Stores, submit: SubmitRun, project: Project): Start
   // RF-432: the server's journey is the approved amount a test starts with (likely plus remainder).
   let journey: JourneyFigures | undefined;
   const startRun = new StartRun({
+    manifests: new MemoryRunManifestStore(),
     roleKeys: ALL_KEYS_SERVED,
     journey: () => Promise.resolve(journey),
     ...{ projects: s.projects, runs: s.runs, briefs: new MemoryBriefStore(), submit },

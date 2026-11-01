@@ -7,14 +7,17 @@ import type { AgentRole } from '../ports/llm-provider.js';
 import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
+import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { planSourceRun } from '../plan/plan-source.js';
 import type { Project } from '../projects/project.js';
 import {
+  readUnderstandOptions,
   rolesNeedCloudConsent,
   rolesNeedPrivateConfirmation,
   UNDERSTAND_ROLES,
   understandOptionsOf,
 } from '../understand/understand-options.js';
+import { scopeOf } from '../runs/run-scope.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
 import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.js';
 import type { ApprovedAmount } from '../understand/understand-options.js';
@@ -40,6 +43,8 @@ export interface StartRunDependencies {
   readonly projects: ProjectRepository;
   /** RF-614: a plan run's source run must be the user's, of the project and completed. */
   readonly runs: Pick<RunIndex, 'find' | 'list'>;
+  /** P7-38: a retry takes the cloud consent recorded in the manifest of the run it retries. */
+  readonly manifests: Pick<RunManifestStore, 'read'>;
   /** RST-1801: a plan run needs the brief the owner saved. */
   readonly briefs: Pick<PlanningBriefStore, 'read'>;
   readonly submit: SubmitRun;
@@ -179,6 +184,22 @@ export class StartRun {
     return retryable && (request.areas?.length ?? 0) > 0 ? undefined : ERROR_CODES.requestInvalid;
   }
 
+  /**
+   * P7-38: a retry takes the cloud consent recorded in the manifest of the run it retries, read here
+   * and never from the browser's figure, which only counts where that run recorded none (the owner
+   * ticks the notice for this retry). A recorded consent is never removed by the browser.
+   */
+  private async consentOf(request: StartRunRequest): Promise<boolean> {
+    const ticked = request.cloudConsent === true;
+    if (request.retryOf === undefined) return ticked;
+    const parent = await this.deps.runs.find(request.actor.userId, request.retryOf);
+    if (parent === undefined) return ticked;
+    const manifest = await this.deps.manifests.read(scopeOf(parent));
+    const recorded =
+      manifest === undefined ? false : readUnderstandOptions(manifest.options).cloudConsent;
+    return recorded || ticked;
+  }
+
   /** RF-432: the server's figures for the shown one; none when the start showed none. */
   private async approvedOf(
     request: StartRunRequest,
@@ -202,6 +223,7 @@ export class StartRun {
     if (!approved.ok) return err(approved.error);
     const options = understandOptionsOf({
       ...request,
+      cloudConsent: await this.consentOf(request),
       privateCodeConfirmed: needsPrivate && request.privateCodeConfirmed === true,
       approvedAmount: approved.value,
     });

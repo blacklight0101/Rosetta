@@ -1,3 +1,4 @@
+import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
 import { journeyOf, serverJourney } from '../../../support/journey-lookups.js';
 import { describe, expect, it } from 'vitest';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
@@ -39,6 +40,7 @@ async function setup(settings: ProjectSettings, serverKeys: ServerKeys = {}) {
   return {
     ...{ harness, project },
     startRun: new StartRun({
+      manifests: new MemoryRunManifestStore(),
       journey: journeyOf(serverJourney),
       projects,
       runs,

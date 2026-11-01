@@ -1,3 +1,4 @@
+import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
 import { noJourney } from '../../../support/journey-lookups.js';
 import { ALL_KEYS_SERVED } from '../../../support/web-role-keys.js';
 import { heldWorkbooks } from '../../../support/workbook-run-fixtures.js';
@@ -47,6 +48,7 @@ async function setup(settings: ProjectSettings) {
   return {
     ...{ harness, project },
     startRun: new StartRun({
+      manifests: new MemoryRunManifestStore(),
       journey: noJourney,
       roleKeys: ALL_KEYS_SERVED,
       projects,

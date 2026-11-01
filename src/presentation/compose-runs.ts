@@ -161,7 +161,7 @@ function runServices(service: ServiceParts): RunServices {
   const estimateRun = composeEstimateRun(parts, { projects, runs, scans, roleKeys });
   return {
     startRun: new StartRun({
-      ...{ projects, runs, submit: submitRun, roleKeys },
+      ...{ projects, runs, manifests, submit: submitRun, roleKeys },
       journey: journeyLookupOf(estimateRun), // RF-432: the server sets the approved amount
       briefs: new FilePlanningBriefStore({ writer, masker: parts.masker }),
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
