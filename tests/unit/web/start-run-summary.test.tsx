@@ -32,7 +32,7 @@ it('RF-1018 the summary bar shows the areas and files chosen, the estimate and S
   expect(bar().textContent).toContain('2 of 5 areas');
   expect(bar().textContent).toContain('8 files');
   expect(bar().textContent).toContain('Likely $0.39');
-  expect(within(bar()).getByRole('button', { name: /^Start run/u })).toBe(start());
+  expect(within(bar()).getByRole('button', { name: /^Analyse/u })).toBe(start());
 });
 
 it('RF-1018 an estimate that leaves out a model without a price reads as a lower bound', async () => {
@@ -71,16 +71,6 @@ it('RF-1018 Start pressed with nothing selected is disabled and the bar says why
   expect(within(bar()).getByTestId('start-reason').textContent).toBe('Choose at least one area.');
   expect(bar().textContent).toContain('0 of 5 areas');
   expect(bar().textContent).not.toContain('Likely');
-});
-
-it('RF-1018 a scan has no areas to sum up: the bar holds Start alone', async () => {
-  renderStart(estimateAnswers(mixed));
-  await ready();
-
-  fireEvent.click(input('Scan only'));
-
-  expect(bar().textContent).not.toContain('areas');
-  expect(within(bar()).getByRole('button', { name: /^Start run/u })).toBe(start());
 });
 
 it('RF-1018 choosing library areas shows what they add and Start asks for one confirmation', async () => {

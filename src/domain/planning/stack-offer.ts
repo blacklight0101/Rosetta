@@ -1,5 +1,6 @@
 import { stackLayers, type ApplicationKind, type StackLayer } from './planning-brief.js';
-import type { StackData, StackOption } from './stack-data.js';
+import { vagueMatch } from './vague-choice.js';
+import type { StackData, StackOption, VagueWords } from './stack-data.js';
 
 // P7-29, RF-609, RF-645, DEC-172, DEC-203: what Plan setup offers for each stack layer before the
 // planner is asked, from the catalogue alone (no code leaves the machine). The two proposals are the
@@ -9,6 +10,7 @@ import type { StackData, StackOption } from './stack-data.js';
 // catalogue flags `endOfLife`.
 
 const MAX_PROPOSALS = 2;
+const MAX_PLATFORM_CHOICES = 4;
 
 interface OfferedProposal {
   readonly choice: string;
@@ -20,6 +22,11 @@ export interface LayerOffer {
   /** At most two, the recommended one first; empty when the catalogue has no option for the layer. */
   readonly proposals: readonly OfferedProposal[];
   readonly keepLegacy: boolean;
+  /** P7-30: for each group of vague words, the layer's options for that platform, the recommended first. */
+  readonly vague: readonly {
+    readonly words: readonly string[];
+    readonly proposals: readonly OfferedProposal[];
+  }[];
 }
 
 export interface OfferInput {
@@ -49,6 +56,16 @@ export function matchingOptions(
   return found.filter((each, index) => found.findIndex((o) => o.choice === each.choice) === index);
 }
 
+/** P7-30: the catalogue's options of the layer for a platform, the recommended one first. */
+export function platformOptions(
+  stack: StackData,
+  want: { kind: ApplicationKind; layer: string; platform: VagueWords; scanned: readonly string[] },
+): StackOption[] {
+  const { kind, layer, platform, scanned } = want;
+  const languages = platform.languages.length === 0 ? scanned : platform.languages;
+  return matchingOptions(stack, kind, layer, languages);
+}
+
 function endOfLife(stack: StackData, layer: string, input: OfferInput): boolean {
   return stack.proposals.legacy.some(
     (each) =>
@@ -68,5 +85,14 @@ export function stackOfferFor(input: OfferInput, stack: StackData): LayerOffer[]
       .slice(0, MAX_PROPOSALS)
       .map((each) => ({ choice: each.choice, why: each.why })),
     keepLegacy: !workbook && !endOfLife(stack, layer, input),
+    vague: stack.proposals.vague
+      .map((each) => ({
+        // A word that names a technology of the layer (".net" for the language) is specific there.
+        words: each.words.filter((word) => vagueMatch(stack, layer, word) !== undefined),
+        proposals: platformOptions(stack, { kind, layer, platform: each, scanned: languages })
+          .slice(0, MAX_PLATFORM_CHOICES)
+          .map((option) => ({ choice: option.choice, why: option.why })),
+      }))
+      .filter((each) => each.words.length > 0 && each.proposals.length > 0),
   }));
 }

@@ -36,7 +36,7 @@ const cutCard = cardObject({
 });
 
 async function promptsOf(cardFormatVersion: 'v2' | 'v3'): Promise<ReaderPrompts> {
-  const name = 'cards/repair.v5.md';
+  const name = 'cards/repair.v6.md';
   const text = await readFile(`prompts/${name}`, 'utf8');
   return {
     ...testReaderPrompts,

@@ -28,6 +28,7 @@ import { FileAnswersFile } from '../infrastructure/cards/answers-file.js';
 import { RosettaError } from '../domain/errors/rosetta-error.js';
 import { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
 import { composeEstimateRun } from './compose-estimate.js';
+import { PgJourneyRecords } from '../infrastructure/db/pg-journey-records.js';
 import { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { FanOutSink } from '../infrastructure/events/fan-out-sink.js';
@@ -150,7 +151,10 @@ function answerServices(
   return { stopRun: new StopRun({ queue: deps.queue }), continueRun: new ContinueRun(deps) };
 }
 
-/** The use cases behind the run routes (RF-003, RF-1006, RF-1108, RF-143). */
+/**
+ * The use cases behind the run routes (RF-003, RF-1006, RF-1108, RF-143). RF-432: the server sets the
+ * approved amount of a start; RF-011: the journey record keeps the one amount of all its steps.
+ */
 function runServices(service: ServiceParts): RunServices {
   const { parts, runs, log, broadcaster, projects, submitRun, queue, scans, answers } = service;
   const { writer, manifests, observability } = service;
@@ -162,7 +166,7 @@ function runServices(service: ServiceParts): RunServices {
   return {
     startRun: new StartRun({
       ...{ projects, runs, manifests, submit: submitRun, roleKeys },
-      journey: journeyLookupOf(estimateRun), // RF-432: the server sets the approved amount
+      ...{ journey: journeyLookupOf(estimateRun), journeys: new PgJourneyRecords(parts.pool) },
       briefs: new FilePlanningBriefStore({ writer, masker: parts.masker }),
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),

@@ -1,7 +1,7 @@
 import type { OutputProblem } from './output-problem.js';
 
 // RF-202, RNF-004: the words of the repair request live in a versioned prompt file
-// (`prompts/cards/repair.v5.md`); this fills in its one placeholder.
+// (`prompts/cards/repair.v6.md`); this fills in its one placeholder.
 
 const placeholder = '{{problems}}';
 

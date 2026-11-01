@@ -19,6 +19,7 @@ import {
   ready,
   renderStart,
   start,
+  opened,
 } from './start-run-helpers.js';
 
 // RF-1001, RF-425, RF-1104, DEC-117, P1-107: the start page polish. The meter says which models the
@@ -106,7 +107,7 @@ it('RF-1001 a lowered threshold is saved with the lowered cap before the run sta
   fireEvent.click(input(consentLabel));
   fireEvent.click(start());
 
-  await screen.findByTestId('run-notice');
+  await opened();
   const saved = calls.find((call) => call.method === 'PUT');
   expect(saved?.body).toMatchObject({
     budget: { run: { maxCostMicros: 100_000 }, confirmAboveCostMicros: 50_000 },

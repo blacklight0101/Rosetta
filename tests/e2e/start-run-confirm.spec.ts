@@ -10,7 +10,7 @@ import { chooseModel } from './support/choose-model.js';
 // likely cost is above the confirm threshold, and the whole question is answered with the keyboard.
 // The account is the one of the `start-run` kind, as the other start page specs use it.
 
-const startButton = { name: /^Start run/u } as const;
+const startButton = { name: /^Analyse/u } as const;
 const consent = 'I understand; send masked excerpts to OpenAI for this run';
 
 test.beforeEach(async ({ context }, info) => {
@@ -31,8 +31,6 @@ async function openWithCloudReader(page: Page): Promise<void> {
 
 /** Stops the run the notice names (or cancels it when queued) and waits until it has ended. */
 async function endTheRun(page: Page): Promise<void> {
-  const notice = page.getByTestId('run-notice');
-  await notice.getByRole('link', { name: 'Open the live run' }).click();
   await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
   const endOfRun = page.getByRole('button', { name: /^(Stop run|Cancel queued run)$/u });
   if (await endOfRun.isVisible()) await endOfRun.click();
@@ -85,7 +83,7 @@ test(
     await expect(page.getByRole('button', { name: 'Confirm and start' })).toBeFocused();
     await page.keyboard.press('Enter');
 
-    await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
+    await expect(page).toHaveURL(/\/runs\//u);
     await endTheRun(page);
   },
 );

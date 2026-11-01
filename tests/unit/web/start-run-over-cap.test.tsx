@@ -9,7 +9,7 @@ import {
   runsPath,
   type RoleBody,
 } from './start-run-fixtures.js';
-import { ready, renderStart, start } from './start-run-helpers.js';
+import { ready, renderStart, start, opened } from './start-run-helpers.js';
 
 // RF-429 (P3-111, EV-27): an understand run on local models whose likely tokens are above the run
 // token cap (2,000,000 in the fixture project) asks before it starts, and names the cap; one within
@@ -66,7 +66,7 @@ it('RF-429 confirming starts the run once; cancelling starts nothing', async () 
   await screen.findByRole('dialog', { name: /Start this run\?/u });
   fireEvent.click(screen.getByRole('button', { name: 'Confirm and start' }));
 
-  await screen.findByTestId('run-notice');
+  await opened();
   expect(starts(calls)).toBe(1);
 });
 
@@ -79,7 +79,7 @@ it('RF-429 a likely token count within the run token cap starts without asking',
 
   fireEvent.click(start());
 
-  await screen.findByTestId('run-notice');
+  await opened();
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(starts(calls)).toBe(1);
 });

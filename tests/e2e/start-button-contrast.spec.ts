@@ -4,7 +4,7 @@ import { openScannedStartPage } from './support/cost-run.js';
 import { accountFor } from './support/seed.js';
 import { signInThroughPage } from './support/sign-in-page.js';
 
-// RNF-010, P3-59: the contrast of the Start run button at every frame in which it can be pressed.
+// RNF-010, P3-59: the contrast of the Analyse button at every frame in which it can be pressed.
 // The button's text turns white the moment it is enabled while its background used to fade in from
 // the disabled grey, so for the length of the fade the page showed white text on a pale button
 // (contrast 1.16, seen by axe in the zip journey of CI run 39384719621). A moving colour is judged
@@ -38,7 +38,7 @@ const lowestContrastScript = `new Promise((resolve) => {
   const started = performance.now();
   const frame = () => {
     const button = Array.from(document.querySelectorAll('button')).find((each) =>
-      (each.textContent ?? '').startsWith('Start run'),
+      (each.textContent ?? '').startsWith('Analyse'),
     );
     if (button !== undefined && !button.disabled) {
       const style = getComputedStyle(button);
@@ -53,13 +53,13 @@ const lowestContrastScript = `new Promise((resolve) => {
   requestAnimationFrame(frame);
 })`;
 
-test('RNF-010 the Start run button keeps readable text on every frame while it becomes enabled', async ({
+test('RNF-010 the Analyse button keeps readable text on every frame while it becomes enabled', async ({
   page,
 }, info) => {
   await signInThroughPage(page, accountFor('journey-run', info.project.name));
   await expect(page).toHaveURL(/\/projects$/u);
   await openScannedStartPage(page);
-  const start = page.getByRole('button', { name: /^Start run/u });
+  const start = page.getByRole('button', { name: /^Analyse/u });
   // A page that has just loaded waits for its estimate with Start disabled; the answer is held back.
   let release: () => void = () => undefined;
   const held = new Promise<void>((resolve) => {

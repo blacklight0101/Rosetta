@@ -18,7 +18,7 @@ import { transitionsDone } from './support/transitions.js';
 // at desktop and phone widths. The estimate answer of the test server gets its areas replaced
 // (support/area-estimate.ts); the page, its CSS and the real server are the ones under test.
 
-const startButton = { name: /^Start run/u } as const;
+const startButton = { name: /^Analyse/u } as const;
 const widths = [1280, 360] as const;
 const group = { name: 'Areas from the code map' } as const;
 

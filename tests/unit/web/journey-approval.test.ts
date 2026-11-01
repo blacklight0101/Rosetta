@@ -58,7 +58,7 @@ describe('RF-430 the approved figure on the start button', () => {
       approval: approvalText(estimate) ?? '',
     });
 
-    expect(gate).toEqual({ label: 'Start run · approve $4.10', reason: undefined });
+    expect(gate).toEqual({ label: 'Analyse · approve $4.10', reason: undefined });
   });
 });
 

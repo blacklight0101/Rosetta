@@ -130,6 +130,15 @@ export const stackOfferSchema = z.object({
       layer: z.string(),
       proposals: z.array(z.object({ choice: z.string(), why: z.string() })),
       keepLegacy: z.boolean(),
+      // P7-30: the words that name only a platform, each with the layer's choices for it.
+      vague: z
+        .array(
+          z.object({
+            words: z.array(z.string()),
+            proposals: z.array(z.object({ choice: z.string(), why: z.string() })),
+          }),
+        )
+        .default([]),
     }),
   ),
 });

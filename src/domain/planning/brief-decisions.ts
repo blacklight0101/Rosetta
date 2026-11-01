@@ -1,5 +1,6 @@
 import type { ArchitectureStyle, Catalogue } from './catalogue.js';
 import { layerNames } from './brief-questions.js';
+import { judgedStyleId } from './judged-style.js';
 import { migrationStrategyInfo } from './migration-strategy.js';
 import {
   describingCards,
@@ -23,7 +24,7 @@ import { accessChoices, workbookDecisions } from './workbook-decisions.js';
 // brief and the catalogue, the evidence is the cards the recommendation named (only those with a
 // supported claim), and a choice nobody made, which took its default, is `Proposed` and says so.
 
-interface PackageStack {
+export interface PackageStack {
   readonly layer: StackLayer;
   /** The layer in words, for example "language and runtime". */
   readonly name: string;
@@ -82,6 +83,11 @@ function unique<T>(items: readonly T[]): T[] {
   return [...new Set(items)];
 }
 
+function judgedOf(brief: PlanningBrief, catalogue: Catalogue): ArchitectureStyle | undefined {
+  const id = judgedStyleId(brief, catalogue.styles);
+  return catalogue.styles.find((each) => each.id === id);
+}
+
 function styleDecision(
   brief: PlanningBrief,
   catalogue: Catalogue,
@@ -101,7 +107,11 @@ function styleDecision(
       : `Rosetta recommended ${recommended.map((each) => catalogue.styles.find((entry) => entry.id === each)?.title ?? each).join(' and ')} from the code map and the verified cards.`;
   const own = typedAnswers(brief).architecture;
   if (own !== undefined)
-    return ownStyleDecision({ brief, chosen, considered, sources, recommendation }, own, id);
+    return ownStyleDecision(
+      { brief, chosen: judgedOf(brief, catalogue) ?? chosen, considered, sources, recommendation },
+      own,
+      id,
+    );
   const unchosen = brief.defaulted.includes('architecture');
   return {
     id,
@@ -134,7 +144,7 @@ function ownStyleDecision(
     status: 'Accepted',
     context: `The new system needs an architecture style. The owner typed an answer instead of choosing one of the styles. ${recommendation}`,
     decision: `Follow the owner's own answer: ${own}`,
-    consequences: `The components of the target architecture follow the owner's answer. Rosetta's automatic dependency check knows only its catalogue, so it compares them with ${chosen.title}, the default style and ${checkReference('style')}. How to check that style: ${chosen.check}`,
+    consequences: `The components of the target architecture follow the owner's answer. Rosetta's automatic dependency check knows only its catalogue, so it compares them with ${chosen.title}, ${chosen.id === parts.brief.architecture.style ? 'the default style' : 'the catalogue style closest to the answer'} and ${checkReference('style')}. How to check that style: ${chosen.check}`,
     options: [...considered.map((each) => styleLine(each, false)), `Own answer (chosen): ${own}`],
     sources: [...sources],
   };

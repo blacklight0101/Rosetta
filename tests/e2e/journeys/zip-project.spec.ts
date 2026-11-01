@@ -89,7 +89,7 @@ test('RF-132 the start page of an uploaded project with a cloud role asks a seco
   await signIn(page, info.project.name);
   await openUploadedStart(page, projectName);
   await giveReaderToOpenAi(page);
-  const start = page.getByRole('button', { name: /^Start run/u });
+  const start = page.getByRole('button', { name: /^Analyse/u });
   const cloud = page.getByLabel('I understand; send masked excerpts to OpenAI for this run');
   const own = page.getByLabel(
     `I understand that my own code from ${projectName} will be sent to OpenAI`,
