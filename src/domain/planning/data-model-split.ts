@@ -122,7 +122,6 @@ function combined(stem: string, group: readonly Member[]) {
     name,
     columns: [...joined.columns, discriminator(column.name, base !== undefined)],
     primaryKey: base === undefined ? keyed(column.name, joined.primaryKey) : joined.primaryKey,
-    primaryKey: base === undefined ? keyed(column.name, joined.primaryKey) : joined.primaryKey,
   };
   return { table, split: { table: name, column: column.name, values: listed } };
 }
