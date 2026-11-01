@@ -9,7 +9,7 @@ import type { TextMasker } from '../guards/secret-masker.js';
 import { decisionLink, handoffFiles, sourceLinks } from './handoff-links.js';
 import { checkReference } from '../../domain/planning/typed-answers.js';
 import { hasOwnAnswer, ownAnswerLines, referenceLine } from './handoff-own-answers-markdown.js';
-import { followsStyle } from './handoff-style-markdown.js';
+import { referenceKind, followsStyle } from './handoff-style-markdown.js';
 
 // RF-601, RF-602, RF-603, ADR-013: the planning documents of the hand-off package: requirements,
 // target architecture, decision records and entity mapping (the roadmap and the task cards are in
@@ -47,7 +47,7 @@ function followingSentence(handoff: HandoffPackage, esc: MarkdownEscaper): strin
   const broken = `See [the package checks](${handoffFiles.checks}) and [the risks](${handoffFiles.risks}).`;
   if (hasOwnAnswer(handoff, 'architecture')) {
     // DEC-184: the style is not chosen; Rosetta's dependency check only compares with it.
-    const compares = `Rosetta's automatic dependency check compares the components below with the ${title} style${linked}, the default style and ${checkReference('style')}, not the chosen style`;
+    const compares = `Rosetta's automatic dependency check compares the components below with the ${title} style${linked}, ${referenceKind(handoff)} and ${checkReference('style')}, not the chosen style`;
     return followsStyle(handoff)
       ? `${compares}; they keep its rule. ${check}`
       : `${compares}, and at least one dependency breaks its rule. ${broken} ${check}`;

@@ -20,6 +20,7 @@ import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content
 import { addSecretRisks, type SecretRisks } from '../../domain/planning/secret-risks.js';
 import type { ScanFacts } from './plan-scan-facts.js';
 import { addStyleRisks, checkStyle } from '../../domain/planning/style-rules.js';
+import { judgedStyleId } from '../../domain/planning/judged-style.js';
 import { referenceTitle } from '../../domain/planning/typed-answers.js';
 import {
   excludedClaims,
@@ -233,8 +234,10 @@ export function handoffPackageOf(
   const { cards: sources, overruled } = usableCards(cards, catalogue.claimVerbs);
   const workbook = project.sourceKind === 'workbook' ? workbookSetup(brief) : undefined;
   const decided = decidedOf(content, { brief, workbook, sources, documents }, catalogue);
-  const style = principleOf(catalogue, brief.architecture.style);
-  const styleCheck = checkStyle(brief.architecture.style, decided.content.components);
+  // EV-73: an own answer that names a catalogue style is judged against that style.
+  const judged = judgedStyleId(brief, catalogue.styles);
+  const style = principleOf(catalogue, judged);
+  const styleCheck = checkStyle(judged, decided.content.components);
   return {
     repository: { url: project.sourceUrl, commitSha: sourceRun.commitSha },
     ...(upload === undefined ? {} : { upload }),

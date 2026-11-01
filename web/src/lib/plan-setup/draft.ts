@@ -118,6 +118,21 @@ export function isAnswered(draft: Draft, id: string): boolean {
   return draft.answered.includes(id);
 }
 
+/**
+ * The architecture answer a save sends: a chosen style, or (EV-73) the proposal a typed answer was
+ * typed next to; the typed text itself travels in `typed`.
+ */
+function architectureOf(draft: Draft, plain: boolean): Pick<BriefAnswers, 'architecture'> {
+  const own =
+    draft.chosen['architecture'] === TYPED &&
+    draft.recommended.length > 0 &&
+    !ownIsEmpty(draft.chosen, draft.typed, 'architecture');
+  if (!plain && !own) return {};
+  // A typed answer is not a choice of style: the style it carries is the one Rosetta recommended.
+  const style = own && !plain ? (draft.recommended[0] ?? draft.style) : draft.style;
+  return { architecture: { style, recommended: draft.recommended, evidence: draft.evidence } };
+}
+
 /** The draft with these questions recorded as answered. */
 export function withAnswered(draft: Draft, ids: readonly string[]): Draft {
   return { ...draft, answered: [...new Set([...draft.answered, ...ids])] };
@@ -174,15 +189,7 @@ export function answersOf(draft: Draft): BriefAnswers {
   };
   return {
     ...(answered('principles') ? { principles: draft.principles } : {}),
-    ...(plain('architecture')
-      ? {
-          architecture: {
-            style: draft.style,
-            recommended: draft.recommended,
-            evidence: draft.evidence,
-          },
-        }
-      : {}),
+    ...architectureOf(draft, plain('architecture')),
     ...(plain('migration') ? { migration: draft.migration } : {}),
     ...(stack.length === 0 ? {} : { stack }),
     ...(asked.length === 0 && !hosted
