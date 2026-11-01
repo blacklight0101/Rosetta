@@ -1326,7 +1326,7 @@ As a developer I want the plan to follow the understand run I just read so that 
 - Given an understand run that ended `CapReached` with at least one `Supported` claim, when I open Plan setup from it or from the project (which has no `Completed` run), then the page lists it as the source, names its end state with a note that it stopped at a cap, and the plan runs from its `Supported` claims; a run that ended `CapReached` with no `Supported` claim answers `RST-1802`, like one that ended `Failed` or `Interrupted` (DEC-166).
 - Given I press "Set up the plan", when Plan setup opens, then it names the source run (date, areas, Supported claims) and prefills the brief from that run's evidence (RF-608, RF-609) or shows my saved brief; the brief stays one per project.
 - Given I open Plan setup from the project instead of from a run, when it loads, then it uses the newest understand run that ended `Completed` and names it on the page; when the project has none, it uses the newest that ended `CapReached` with a `Supported` claim and says that it stopped at a cap (DEC-166).
-- Given a saved brief, when I continue, then the page shows the plan estimate against my caps (RF-613) and starts `plan` only when I press "Write the package"; the start page shows no plan cost before the brief exists.
+- Given a saved brief, when I continue, then the page shows the plan estimate against my caps (RF-613) and starts `plan` only when I press "Start the plan"; the start page shows no plan cost before the brief exists.
 - Given a plan run, when its manifest is read, then it records the source understand run, and the estimate and the package use that run's cards and the project's one question list only (RF-646, DEC-179).
   Verification: end-to-end test with the fake provider from a completed run to a package; integration test that the source run, not the newest run, feeds `plan`.
 
@@ -1623,7 +1623,8 @@ As a user I want the open questions and the plan setup on one screen with the re
 
 - Given a run with open questions (RF-646) and the plan setup questions (RF-614), when I open the screen, then it lists both, each filled in with its recommended answer (RF-645) and marked as recommended; the main button is "Accept the recommended answers".
 - Given a changed answer, when I save, then my answer is kept, `answers.md` and the planning brief are written as today (RF-615), and the screen shows the plan's estimate with a "Start the plan" button.
-- Given the saved brief, when the screen is shown, then the plan does not start until I press "Start the plan" (DEC-204).
+- Given the saved brief, when the screen is shown, then the plan does not start until I press "Start the plan" (DEC-204); the estimate card names that button "Start the plan" (it was "Write the package") and "Start the plan again" when the package is out of date.
+- Given an open question with suggested answers that has no saved answer, when the screen is shown, then its recommended option is chosen and marked "(Recommended)"; when I press "Accept the recommended answers", then each such question is saved on the option it shows (a changed option is saved as changed, a saved answer is not written again), the planning brief is written with the defaults for what was not answered, and a question that fails to save stops the click before the brief is written (P7-36).
   Verification: web tests; an end-to-end test where a run with three open questions reaches a saved brief in one screen and one click.
 
 ### 5.8 Milestone hand-in artefacts (RF-800..RF-899)
