@@ -74,7 +74,7 @@ describe('the repair prompt v3 and the question it carries', () => {
     const { repair } = await loadReaderPrompts('prompts');
     const old = await loadPromptFile('prompts', 'cards/repair.v2.md');
 
-    expect(repair).toMatchObject({ name: 'cards/repair.v4.md', version: 'v4' });
+    expect(repair).toMatchObject({ name: 'cards/repair.v5.md', version: 'v5' });
     expect(old.text).not.toMatch(/formulas\.md/u);
     expect(repair.text).toMatch(/formulas\.md/u);
   });

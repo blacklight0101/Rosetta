@@ -42,23 +42,27 @@ const windowsItems: readonly string[] = [
 const dotnetItem =
   'A build locked by a running preview is built in another configuration or after stopping the preview.';
 
-// DEC-190: until the brief has a platform field, a stack answer that names Windows or IIS counts as
-// Windows; "Windows Authentication" is an authentication mechanism, not a platform, so it is removed
-// before the test.
+// DEC-190, P7-17: until the brief has a platform field, a stack answer that names Windows or IIS counts
+// as Windows; "Windows Authentication", "Windows auth" and "Windows Integrated Authentication" are
+// authentication mechanisms, not a platform, so they are removed before the test.
 function platformIsWindows(handoff: HandoffPackage): boolean {
   return handoff.choices.stack.some((each) =>
-    /\b(?:windows|iis)\b/iu.test(each.choice.replace(/\bwindows\s+authentication\b/giu, '')),
+    /\b(?:windows|iis)\b/iu.test(
+      each.choice.replace(/\bwindows\s+(?:integrated\s+)?auth(?:entication)?\b/giu, ''),
+    ),
   );
 }
 
 // RF-644
 export const lessonsSection: SectionWriter = (handoff) => {
   const claude = handoff.brief.buildMethod.agentTool?.kind === 'claude-code';
+  // P7-17: on a Windows .NET stack the locked-build lesson is written once (the Windows one).
+  const windows = platformIsWindows(handoff);
   const items = [
     ...always,
     ...(claude ? [claudeCodeItem] : []),
-    ...(platformIsWindows(handoff) ? windowsItems : []),
-    ...(stackLanguages(handoff).includes('dotnet') ? [dotnetItem] : []),
+    ...(windows ? windowsItems : []),
+    ...(!windows && stackLanguages(handoff).includes('dotnet') ? [dotnetItem] : []),
   ];
   return [
     '## Lessons from running a build',

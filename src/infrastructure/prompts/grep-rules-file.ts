@@ -9,7 +9,7 @@ import { riskClasses } from '../../domain/planning/task-card-quality.js';
 // P6-28, RF-640, RNF-004, DEC-190: `grep-rules.v<n>.yaml` of the catalogue. Anything that does not
 // fit the shapes below is refused with RST-1000 rather than half read, so the hard-rule table never
 // runs on a broken file. A pattern is written in a code span of a table, so it holds no backtick,
-// pipe, line break or control character; it is kept as written (a trailing space counts).
+// pipe, line break, control or format character; it is kept as written (a trailing space counts).
 
 const anyLanguage = 'any';
 const id = z.string().regex(/^[a-z][a-z0-9-]{0,29}$/u);
@@ -18,7 +18,7 @@ const pattern = z
   .string()
   .min(1)
   .max(60)
-  .regex(/^[^`|\p{Cc}]+$/u);
+  .regex(/^[^`|\p{Cc}\p{Cf}]+$/u);
 const principleId = z.string().regex(/^[a-z0-9-]+$/u);
 
 const languageSchema = z.strictObject({ id, aliases: z.array(alias).min(1).max(30) });

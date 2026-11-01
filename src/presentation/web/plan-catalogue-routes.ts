@@ -1,12 +1,18 @@
 import type { FastifyInstance } from 'fastify';
 import type { Catalogue, CatalogueEntry } from '../../domain/planning/catalogue.js';
 import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.js';
+import {
+  contextWording,
+  keepLegacyWording,
+  methodWording,
+} from '../../domain/planning/question-wording.js';
 import { migrationStrategies } from '../../domain/planning/planning-brief.js';
 
 // RF-605, RF-606, RF-610: the catalogue Plan setup lists its questions from. GET /api/plan/catalogue
-// needs a session and answers `{ version, entries, migrations }`: every catalogue entry with its
+// needs a session and answers `{ version, entries, migrations, wording }`: every catalogue entry with its
 // group, title, one-line rule, why it matters, how to check it and whether a new brief switches it
-// on, and the three migration strategies, the default first, with their trade-off. The text is
+// on, the three migration strategies, the default first, with their trade-off, and the fixed wording of the
+// options (P7-17: the project-context answers, the build method, keep the legacy technology). The text is
 // Rosetta's own and is read once at start-up (RF-606).
 
 export interface PlanCatalogueServices {
@@ -36,6 +42,7 @@ export function registerPlanCatalogueRoutes(
       version: catalogue.version,
       entries: catalogue.entries.map(entryView),
       migrations: migrationViews(),
+      wording: { context: contextWording, method: methodWording, keepLegacy: keepLegacyWording },
     });
   });
 }
