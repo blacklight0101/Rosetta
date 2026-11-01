@@ -2,7 +2,7 @@
 // ahead of it. A wait estimate is not part of the requirement.
 
 /** For example `2 runs ahead`, `1 run ahead` or `no run ahead`. */
-export function aheadText(position: number): string {
+function aheadText(position: number): string {
   const ahead = position - 1;
   if (ahead <= 0) return 'no run ahead';
   return `${String(ahead)} ${ahead === 1 ? 'run' : 'runs'} ahead`;
