@@ -139,8 +139,8 @@ function stack(layer: string, brief: PlanningBrief, catalogue: Catalogue): Brief
 }
 
 /** P7-12, RF-639, RF-645: the tool's models for a blank tier, the tier's own first and recommended. */
-function modelOptions(tier: string, brief: PlanningBrief): BriefOption[] {
-  const map = modelMapOf(brief.buildMethod.agentTool);
+function modelOptions(tier: string, brief: PlanningBrief, catalogue: Catalogue): BriefOption[] {
+  const map = modelMapOf(brief.buildMethod.agentTool, catalogue.agentModels);
   const own = modelTiers.find((each) => each === tier);
   if (map === undefined || own === undefined) return [];
   const title = brief.buildMethod.agentTool?.kind === 'codex' ? 'Codex' : 'Claude Code';
@@ -166,7 +166,7 @@ function optionsOf(id: string, brief: PlanningBrief, catalogue: Catalogue): Brie
   if (id === 'migration') return migration();
   if (id === 'buildMethod') return [...METHOD];
   if (id.startsWith('buildMethod.models.'))
-    return modelOptions(id.slice('buildMethod.models.'.length), brief);
+    return modelOptions(id.slice('buildMethod.models.'.length), brief, catalogue);
   if (id.startsWith('stack.')) return stack(id.slice('stack.'.length), brief, catalogue);
   return [...(CONTEXT[id] ?? [])];
 }

@@ -1,5 +1,6 @@
 import { noClaimVerbs } from '../../../../src/domain/planning/claim-verbs.js';
 import { noGrepRules } from '../../../../src/domain/planning/grep-rules.js';
+import { noAgentModels } from '../../../../src/domain/planning/build-method.js';
 import { noStackData } from '../../../../src/domain/planning/stack-data.js';
 import { describe, expect, it } from 'vitest';
 import {
@@ -52,6 +53,7 @@ describe('defaultPrinciples', () => {
         stack: noStackData,
         claimVerbs: noClaimVerbs,
         grepRules: noGrepRules,
+        agentModels: noAgentModels,
       }),
     ).toEqual(['adrs', 'tdd']);
   });

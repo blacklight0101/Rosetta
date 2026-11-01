@@ -1,0 +1,11 @@
+# The model names offered for each tier when the team names none (P7-23, RF-639, RF-645, RNF-004).
+# RNF-004: part of the versioned catalogue; its name carries the version and the catalogue SHA-256 covers it.
+# One name per tier (smallest, middle, largest) for each tool: Claude Code takes model aliases, Codex model ids.
+claude-code:
+  smallest: haiku
+  middle: sonnet
+  largest: opus
+codex:
+  smallest: gpt-5-mini
+  middle: gpt-5-codex
+  largest: gpt-5
