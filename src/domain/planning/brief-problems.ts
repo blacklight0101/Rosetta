@@ -1,6 +1,7 @@
 import type { Catalogue } from './catalogue.js';
 import type { BriefAnswers } from './planning-brief.js';
 import { hasTypedText, typedQuestionIds } from './typed-answers.js';
+import { workbookQuestionIds } from './workbook-setup.js';
 
 // P7-18: the problems of a save, split out of planning-brief.ts (behaviour unchanged).
 
@@ -33,7 +34,7 @@ export function briefProblems(answers: BriefAnswers, catalogue: Catalogue): Brie
     problems.push({ field: 'stack', reason: 'A layer is listed twice.' });
   }
   for (const id of Object.keys(answers.typed ?? {})) {
-    if (!typedQuestionIds.some((each) => each === id)) {
+    if (![...typedQuestionIds, ...workbookQuestionIds].some((each) => each === id)) {
       problems.push({ field: `typed.${id}`, reason: 'This question takes no typed text.' });
     }
   }
