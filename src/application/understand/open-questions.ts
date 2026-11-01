@@ -38,7 +38,8 @@ function contentOf(words: string): ReadonlySet<string> {
  * RF-646, RF-243, Q-52, EV-57: whether two questions ask the same thing. The one rule of the four
  * places that compare questions. Equal normalised words always match; otherwise the questions open
  * with the same question word and their subject words (stop words and question words removed)
- * overlap highly: at least three shared, covering 80% of the shorter and 60% of both together.
+ * overlap highly: the subject words of one are all in the other, at least three, and 60% of both
+ * together (a word that only one question has may be the decisive one).
  */
 export function sameQuestion(a: string, b: string): boolean {
   const first = questionWords(a);
@@ -54,7 +55,9 @@ export function sameQuestion(a: string, b: string): boolean {
   const right = contentOf(second);
   const shared = [...left].filter((word) => right.has(word)).length;
   const union = left.size + right.size - shared;
-  return shared >= 3 && shared >= 0.8 * Math.min(left.size, right.size) && shared >= 0.6 * union;
+  // One question only adds words to the other: a word the other lacks may be the decisive one.
+  const subset = shared === Math.min(left.size, right.size);
+  return subset && shared >= 3 && shared >= 0.6 * union;
 }
 
 function keyOf(card: Card): string {
