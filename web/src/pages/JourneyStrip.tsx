@@ -12,6 +12,7 @@ import type {
   StepLink,
   StepState,
 } from '../lib/journey/journey-steps.js';
+import { DeepenAction } from './DeepenAction.js';
 import { ResumeButton } from './ResumeButton.js';
 
 // RF-615, RF-1015, RNF-010, design-system.md section 14 (journey strip): the seven steps from code to
@@ -125,7 +126,25 @@ function secondaryOf(view: JourneyView, pagePath: string | undefined): JourneyLi
   return secondary?.href.split('?')[0] === pagePath ? undefined : secondary;
 }
 
-// RF-615
+/** RF-1021: the next step in place. Deepen shows what it would read; any other action is a button. */
+function Next(props: JourneyStripProps): JSX.Element {
+  const { view, deepenRunId } = props;
+  const { action } = view;
+  if (action?.kind === 'deepen' && deepenRunId !== undefined) {
+    return <DeepenAction runId={deepenRunId} recommended open />;
+  }
+  const own = action?.kind === 'link' && action.href.split('?')[0] === props.pagePath;
+  return (
+    <Action
+      action={own ? undefined : action}
+      onResumed={props.onResumed}
+      onAnswer={props.onAnswer}
+      onDeepen={props.onDeepen}
+    />
+  );
+}
+
+// RF-615, RF-1020, RF-1021
 export function JourneyStrip(props: JourneyStripProps): JSX.Element {
   const { view } = props;
   return (
@@ -139,12 +158,7 @@ export function JourneyStrip(props: JourneyStripProps): JSX.Element {
         ))}
       </ol>
       <div class="rst-road__foot">
-        <Action
-          action={view.action}
-          onResumed={props.onResumed}
-          onAnswer={props.onAnswer}
-          onDeepen={props.onDeepen}
-        />
+        <Next {...props} />
         <Action
           action={secondaryOf(view, props.pagePath)}
           variant="secondary"
@@ -152,6 +166,11 @@ export function JourneyStrip(props: JourneyStripProps): JSX.Element {
           onAnswer={undefined}
         />
         <p class="rst-road__total">{`Total so far ${costLabel(view.totalCostMicros)}`}</p>
+        {view.left === undefined ? null : <p class="rst-road__left">{view.left}</p>}
+        <p class="rst-road__more">
+          <Link href={`/projects/${view.projectId}/history`}>History</Link>{' '}
+          <Link href={`/projects/${view.projectId}/settings`}>Project settings</Link>
+        </p>
       </div>
     </section>
   );

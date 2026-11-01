@@ -8,6 +8,7 @@ import { json, renderPage } from './fake-api.js';
 import { facts, projectId, roadSigns, source, sourceId } from './journey-fixtures.js';
 import { deepenEstimate } from './understanding-fixtures.js';
 import { runPath } from './live-run-helpers.js';
+import { renderStart } from './start-run-helpers.js';
 
 // RF-1020, RF-1021, RF-209, DEC-204: the journey strip is on the project page and on every run page;
 // when a step ends the strip offers the next one in place, with what is left of the approved amount;
@@ -104,7 +105,7 @@ it('RF-1020 RF-1021 a project page journey reads the facts of the project and dr
       runId={undefined}
       refresh="a"
       pagePath={`/projects/${projectId}/start`}
-      deepenRunId=""
+      deepenInPlace
     />,
     { [`GET ${projectPath}`]: json(200, { ...facts({ budget }) }) },
   );
@@ -130,4 +131,13 @@ it('RF-1020 the strip is also on the page of an understand run that is still wor
   await waitFor(() => {
     expect(region().textContent).toContain('Running now');
   });
+});
+
+it('RF-1020 the project page shows the journey strip with the amount left, and no link back to itself', async () => {
+  renderStart({ [`GET ${projectPath}`]: json(200, facts({ source: null, budget })) });
+
+  await screen.findByRole('region', { name: 'Journey from code to package' });
+
+  expect(region().textContent).toContain('$0.60 left of $1.00 approved');
+  expect(within(region()).queryByRole('button', { name: 'Start a run' })).toBeNull();
 });

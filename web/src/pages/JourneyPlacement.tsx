@@ -57,3 +57,26 @@ export function PlanJourney(props: RunJourneyProps): JSX.Element | null {
     />
   );
 }
+
+// RF-1020
+export function ScanJourney(props: RunJourneyProps): JSX.Element | null {
+  const { run, stage, phase } = props;
+  if (stage !== 'scan') return null;
+  return (
+    <JourneyPanel
+      {...{ projectId: run.projectId, runId: undefined, onResumed: props.onResumed }}
+      refresh={phaseKey(phase)}
+    />
+  );
+}
+
+/** RF-1020: the strip on a run page: scan and plan runs, and an understand run that is still working. */
+export function RunJourneys(props: RunJourneyProps): JSX.Element {
+  return (
+    <>
+      <PlanJourney {...props} />
+      <ScanJourney {...props} />
+      {props.phase.kind === 'ended' ? null : <UnderstandJourney {...props} />}
+    </>
+  );
+}

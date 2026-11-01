@@ -86,7 +86,7 @@ function questionsNext(c: Context, source: JourneySourceFacts, setUp: string): N
 
 function afterThePlan(c: Context, setUp: string): Next {
   const { plan, facts } = c;
-  if (plan === null) return { action: link('Review the estimate', setUp), here: 'estimate' };
+  if (plan === null) return { action: link('Start the plan', setUp), here: 'estimate' };
   const phase = phaseOf(plan);
   if (phase === 'working') return { action: undefined, here: 'plan' };
   if (phase === 'stopped') return { action: link('Try the plan again', setUp), here: 'plan' };

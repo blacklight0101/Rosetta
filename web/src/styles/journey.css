@@ -116,6 +116,17 @@
   gap: var(--rst-sp-3);
 }
 
+.rst-road__left,
+.rst-road__more {
+  margin: 0;
+  color: var(--rst-ink-soft);
+}
+
+.rst-road__more {
+  display: flex;
+  gap: var(--rst-sp-3);
+}
+
 .rst-road__total {
   margin: 0;
   font-variant-numeric: tabular-nums;

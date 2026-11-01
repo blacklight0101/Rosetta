@@ -25,7 +25,7 @@ export interface JourneyPanelProps {
   /** The path of the page the strip is on (Plan setup), so no action links to the page itself. */
   readonly pagePath?: string | undefined;
   /** RF-1021: the page offers the Deepen of the source run in place (the project page). */
-  readonly deepenRunId?: string | undefined;
+  readonly deepenInPlace?: boolean | undefined;
 }
 
 // RF-615
@@ -45,6 +45,7 @@ export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
       onAnswer={props.onAnswer}
       onDeepen={props.onDeepen}
       pagePath={props.pagePath}
+      deepenRunId={props.deepenInPlace === true ? source?.id : undefined}
       onResumed={
         props.onResumed ??
         (() => {

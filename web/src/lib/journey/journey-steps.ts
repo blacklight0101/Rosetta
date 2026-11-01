@@ -51,12 +51,15 @@ export type { JourneyAction, JourneyLink } from './journey-action.js';
 export type { StepKey } from './journey-context.js';
 
 export interface JourneyView {
+  readonly projectId: string;
   readonly steps: readonly JourneyStep[];
   /** The one next action; none while a run works. */
   readonly action: JourneyAction | undefined;
   /** DEC-154: the way to the brief while questions are open; none otherwise. */
   readonly secondary: JourneyLink | undefined;
   readonly totalCostMicros: number;
+  /** RF-1021: what is left of the amount approved for the journey; none without a journey record. */
+  readonly left: string | undefined;
 }
 
 type Draft = Omit<JourneyStep, 'here'>;
@@ -213,6 +216,13 @@ const parts: readonly (readonly [StepKey, string, (c: Context) => Part])[] = [
   ['package', 'Package', packagePart],
 ];
 
+/** RF-1021: "$0.60 left of $1.00 approved". */
+function leftText(facts: JourneyFacts): string | undefined {
+  const { budget } = facts;
+  if (budget === null || budget === undefined) return undefined;
+  return `${costLabel(budget.remainingMicros)} left of ${costLabel(budget.approvedMicros)} approved`;
+}
+
 /** A step that is open and holds the next action is the current one. */
 const stateOf = (part: Part, here: boolean): StepState =>
   here && part.state === 'upcoming' ? 'current' : part.state;
@@ -239,5 +249,12 @@ export function journeyOf(
     };
   });
   const spent = (source?.costMicros ?? 0) + (plan?.costMicros ?? 0);
-  return { steps, action: next.action, secondary: next.secondary, totalCostMicros: spent };
+  return {
+    projectId,
+    steps,
+    action: next.action,
+    secondary: next.secondary,
+    totalCostMicros: spent,
+    left: leftText(facts),
+  };
 }
