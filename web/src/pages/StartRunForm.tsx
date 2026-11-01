@@ -86,7 +86,7 @@ function ProjectJourney({ form }: { readonly form: StartForm }): JSX.Element {
       projectId={form.project.id}
       runId={undefined}
       refresh={form.scan.state.kind}
-      pagePath={`/projects/${form.project.id}/start`}
+      pagePath={`/projects/${form.project.id}`}
       deepenInPlace
       setupInPlace
     />

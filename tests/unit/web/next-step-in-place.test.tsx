@@ -62,7 +62,7 @@ it('RF-1021 a written package opens the package, with no setup in the way', () =
 });
 
 it('RF-1021 the project page shows the questions and the plan setup in place and stays on the page', async () => {
-  window.history.pushState({}, '', `/projects/${projectId}/start`);
+  window.history.pushState({}, '', `/projects/${projectId}`);
   renderStart({
     [`GET /api/projects/${projectId}/journey`]: json(200, roadSigns['asking']),
     'GET /api/plan/catalogue': json(200, catalogue),
@@ -75,12 +75,12 @@ it('RF-1021 the project page shows the questions and the plan setup in place and
 
   await screen.findByRole('region', { name: 'Questions and plan setup' });
 
-  expect(window.location.pathname).toBe(`/projects/${projectId}/start`);
+  expect(window.location.pathname).toBe(`/projects/${projectId}`);
   expect(within(region()).queryByRole('button', { name: /^Answer / })).toBeNull();
 });
 
 it('RF-646 RF-1021 the project page lets the user skip Deepen and then holds the questions in place', async () => {
-  window.history.pushState({}, '', `/projects/${projectId}/start`);
+  window.history.pushState({}, '', `/projects/${projectId}`);
   renderStart({
     [`GET /api/projects/${projectId}/journey`]: json(
       200,
@@ -98,5 +98,5 @@ it('RF-646 RF-1021 the project page lets the user skip Deepen and then holds the
   fireEvent.click(await screen.findByRole('button', { name: /^Do not Deepen/u }));
 
   await screen.findByRole('region', { name: 'Questions and plan setup' });
-  expect(window.location.pathname).toBe(`/projects/${projectId}/start`);
+  expect(window.location.pathname).toBe(`/projects/${projectId}`);
 });

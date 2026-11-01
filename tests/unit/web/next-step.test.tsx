@@ -59,11 +59,7 @@ it('RF-1020 the project page leaves out an action that only opens the project pa
   const view = journeyOf(facts({ source: null, briefSaved: false }), projectId);
 
   renderPage(
-    <JourneyStrip
-      view={view}
-      onResumed={() => undefined}
-      pagePath={`/projects/${projectId}/start`}
-    />,
+    <JourneyStrip view={view} onResumed={() => undefined} pagePath={`/projects/${projectId}`} />,
     {},
   );
 
@@ -104,7 +100,7 @@ it('RF-1020 RF-1021 a project page journey reads the facts of the project and dr
       projectId={projectId}
       runId={undefined}
       refresh="a"
-      pagePath={`/projects/${projectId}/start`}
+      pagePath={`/projects/${projectId}`}
       deepenInPlace
     />,
     { [`GET ${projectPath}`]: json(200, { ...facts({ budget }) }) },
