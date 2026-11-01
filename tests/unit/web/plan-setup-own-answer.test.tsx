@@ -132,7 +132,15 @@ describe('the architecture question: a typed answer', () => {
 
     await saved(page);
     expect(saves(page)).toEqual([
-      { chosen: { architecture: 'typed' }, typed: { architecture: 'Move one module a week.' } },
+      {
+        architecture: {
+          style: 'modular-monolith',
+          recommended: ['modular-monolith', 'hexagonal'],
+          evidence: ['BR-001'],
+        },
+        chosen: { architecture: 'typed' },
+        typed: { architecture: 'Move one module a week.' },
+      },
     ]);
   });
 });

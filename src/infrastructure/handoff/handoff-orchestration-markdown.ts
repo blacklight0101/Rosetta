@@ -4,6 +4,7 @@ import { escalationApprovedText } from '../../domain/planning/card-model-check.j
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import {
   grepRows,
+  leftOutLayers,
   stackLanguages,
   unlistedLanguages,
   type GrepRow,
@@ -172,6 +173,21 @@ function sourceText(sources: readonly GrepSource[], esc: MarkdownEscaper): strin
 
 /** P6-07: why some languages get no pattern; nothing when every language of the stack has its patterns. */
 function languageLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  return [...proposedLines(handoff, esc), ...unlistedLines(handoff, esc)];
+}
+
+/** P7-21: the proposed layers whose language adds no pattern, because the owner left the layer open. */
+function proposedLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const left = leftOutLayers(handoff);
+  if (left.length === 0) return [];
+  const named = left.map((each) => `${each.name} (${esc.inline(each.choice)})`).join(', ');
+  return [
+    `The patterns of these layers were left out because Rosetta proposed them and the owner left the layer open: ${named}. Add their patterns when the layer is chosen.`,
+    '',
+  ];
+}
+
+function unlistedLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const unlisted = unlistedLanguages(handoff);
   if (unlisted.length > 0) {
     return [
