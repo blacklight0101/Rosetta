@@ -11,7 +11,7 @@ export const runSchema = z.looseObject({
   projectId: z.string(),
   runId: z.string(),
   stage: z.string(),
-  queueState: z.enum(['Queued', 'Running', 'Ended']),
+  queueState: z.enum(['Queued', 'Running', 'AwaitingApproval', 'Ended']),
   endState: z.string().nullable(),
   commitSha: z.string().nullable(),
   /** When the run began; null while it waits in the queue (or if it was stopped there). */

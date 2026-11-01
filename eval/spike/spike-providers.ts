@@ -63,6 +63,7 @@ export function readerRequest(settings: ProjectSettings, runId: string): Provide
     settings,
     roles: ['reader'],
     cloudConsent: false,
+    approvedAmount: undefined,
     sinks: {
       ...unrecordedSinks(),
       costs: { addCall: () => Promise.resolve() },

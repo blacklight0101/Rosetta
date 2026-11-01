@@ -14,7 +14,7 @@ import { roleTotalsOf } from '../lib/live-run/run-summary.js';
 import { EndedBody } from './EndedBody.js';
 import { PlanJourney } from './JourneyPlacement.js';
 import { PauseUpdates } from './PauseUpdates.js';
-import { ResumeControl } from './ResumeControl.js';
+import { RunAnswerControls } from './ApprovalControl.js';
 import { RunStatusBar } from './RunStatusBar.js';
 import { RunningBody } from './RunningBody.js';
 import { usePauseUpdates } from './use-pause-updates.js';
@@ -127,7 +127,7 @@ export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps)
         unreadAreas={state.ended?.unreadAreas ?? run.unreadAreas}
         {...{ stopping: stop.stopping, busy: stop.busy, stopError: stop.error, onStop: stop.stop }}
         updatesNote={view.note}
-        resume={<ResumeControl {...{ phase, onResumed, runId: run.id, stage }} />}
+        resume={<RunAnswerControls {...{ phase, onResumed, runId: run.id, stage }} />}
         controls={
           view.paused || phase.kind === 'running' ? (
             <PauseUpdates paused={view.paused} waiting={view.waiting} onToggle={view.toggle} />

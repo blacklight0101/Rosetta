@@ -35,6 +35,7 @@ export type RunEventType =
   | 'retry.started'
   | 'question.answered'
   | 'question.skipped'
+  | 'run.awaitingApproval'
   | 'run.ended';
 
 /** The type of the last event of every run. */

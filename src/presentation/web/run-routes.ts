@@ -8,6 +8,7 @@ import type { ExportZip } from '../../application/use-cases/export-zip.js';
 import type { GetRun } from '../../application/use-cases/get-run.js';
 import type { StartRun } from '../../application/use-cases/start-run.js';
 import type { ResumeRun } from '../../application/use-cases/resume-run.js';
+import type { ContinueRun } from '../../application/use-cases/continue-run.js';
 import type { StopRun } from '../../application/use-cases/stop-run.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -46,6 +47,10 @@ import { runView } from './run-view.js';
 // - POST /api/runs/:runId/resume queues an understand run that stopped at a cap, failed or was
 //   interrupted again, as the same run (202 with the run and its position; RF-006); a run that cannot
 //   be resumed answers 409 (RST-2307), another user's run 404, a cloud run without consent 400.
+// - POST /api/runs/:runId/continue answers Continue (+N) for a run waiting for its owner's approval
+//   (RF-432): the approved amount grows by `extra` (the offered N when left out) and the run is
+//   queued again (202 with the run and its position); a run that is not paused answers 409,
+//   another user's run 404. Stop here is POST /stop, which ends a paused run `CapReached`.
 // - POST /api/runs/:runId/deepen and /deepen/estimate: the Deepen of a completed run (deepen-routes.ts, RF-209).
 // - GET and PUT /api/runs/:runId/answers: the run's open questions (answer-routes.ts, RF-1007).
 // - GET /api/runs/:runId/overview: the run's overview (overview-routes.ts, RF-264).
@@ -67,10 +72,17 @@ export interface RunServices
   readonly getRun: GetRun;
   readonly stopRun: StopRun;
   readonly resumeRun: ResumeRun;
+  readonly continueRun: ContinueRun;
   readonly exportZip: ExportZip;
 }
 
 const areaName = z.string().min(1).max(MAX_AREA_NAME);
+
+/** Tokens and micro-dollars of an approved amount (RF-430, RF-432). */
+const amountShape = {
+  tokens: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  costMicros: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+};
 
 /** RF-200, RF-143: the stage, and for understand the areas to read and the cloud consent. */
 const startBody = z.strictObject({
@@ -87,8 +99,9 @@ const startBody = z.strictObject({
   /** RF-430: the journey total the user approved on the start button. */
   approvedAmount: z
     .strictObject({
-      tokens: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
-      costMicros: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+      ...amountShape,
+      /** RF-432: the worst case less the likely total, offered by Continue (+N). */
+      remainder: z.strictObject(amountShape).optional(),
     })
     .optional(),
 });
@@ -152,6 +165,36 @@ function registerResume(server: FastifyInstance, services: RunServices): void {
       const outcome = await services.resumeRun.execute({
         actor: signedInOf(request).actor,
         runId: request.params.runId,
+      });
+      if (!outcome.ok) throw new RosettaError(outcome.error);
+      const { run, position } = outcome.value;
+      return reply.status(202).send({ ...runView(run), position: position ?? null });
+    },
+  );
+}
+
+/** RF-432: N of Continue (+N); at least one of its parts is above zero. */
+const continueBody = z
+  .strictObject({
+    extra: z
+      .strictObject(amountShape)
+      .refine((extra) => extra.tokens > 0 || extra.costMicros > 0)
+      .optional(),
+  })
+  .optional();
+
+function registerContinue(server: FastifyInstance, services: RunServices): void {
+  server.post<{ Params: { runId: string } }>(
+    '/api/runs/:runId/continue',
+    { config: { access: 'user' } },
+    async (request, reply) => {
+      const body = continueBody.safeParse(request.body ?? undefined);
+      if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
+      const extra = body.data?.extra;
+      const outcome = await services.continueRun.execute({
+        actor: signedInOf(request).actor,
+        runId: request.params.runId,
+        ...(extra === undefined ? {} : { extra }),
       });
       if (!outcome.ok) throw new RosettaError(outcome.error);
       const { run, position } = outcome.value;
@@ -224,6 +267,7 @@ export function registerRunRoutes(
   registerRunFileRoutes(server, services);
   registerStop(server, services);
   registerResume(server, services);
+  registerContinue(server, services);
   registerDeepenRoutes(server, services);
   registerStart(server, services);
   registerEstimateRoutes(server, services);

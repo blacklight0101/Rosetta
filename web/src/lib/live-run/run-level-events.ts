@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 import type { RunEvent } from '../../api/run-events.js';
-import { endedData, resolvedData, scanData, startedData } from './event-data.js';
+import { awaitingData, endedData, resolvedData, scanData, startedData } from './event-data.js';
 import type { RunState, SourceState } from './run-state.js';
 
 // RF-1002, RF-1003, RF-1004: what the events of the run itself change: where it started, which
@@ -45,7 +45,12 @@ function roleKindsOf(
 // RF-1003, RF-1004, RF-006: a run that starts after it ended was resumed, so it is not ended any more,
 // and its judgement step will run again (RF-1014: the claims a stop left unjudged wait for it).
 export function onRunStarted(state: RunState, event: RunEvent): RunState {
-  const restarted = { startedAt: event.at, ended: undefined, judgement: 'idle' } as const;
+  const restarted = {
+    startedAt: event.at,
+    ended: undefined,
+    awaiting: undefined,
+    judgement: 'idle',
+  } as const;
   const parsed = startedData.safeParse(event.data);
   if (!parsed.success) return { ...state, ...restarted };
   const { stage, source, caps, roles } = parsed.data;
@@ -81,6 +86,14 @@ export function onRunEnded(state: RunState, event: RunEvent): RunState {
   const { endState, errorCode, totals, failedAreas, unreadAreas } = parsed.data;
   const costMicros = totals?.costMicros;
   return { ...state, ended: { endState, errorCode, costMicros, failedAreas, unreadAreas } };
+}
+
+/** RF-432: the run paused near its approved amount; a later `run.started` (Continue) clears it. */
+// RF-432
+export function onRunAwaitingApproval(state: RunState, event: RunEvent): RunState {
+  const parsed = awaitingData.safeParse(event.data);
+  const continueAmount = parsed.success ? parsed.data.continueAmount : undefined;
+  return { ...state, awaiting: { continueAmount } };
 }
 
 /** The files and areas the scan found; an event that does not carry both changes nothing. */

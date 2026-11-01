@@ -267,6 +267,8 @@ export class BuildPlan implements RunExecutor {
       settings: inputs.project.settings,
       roles: ['planner'],
       cloudConsent: manifest.options['cloudConsent'] === true,
+      // RF-432: a plan run has no Continue; its project run caps stay a hard stop.
+      approvedAmount: undefined,
       sinks: await runProviderSinks(this.deps, execution, updates),
     });
     if (built.ok) return built.value.get('planner') ?? ERROR_CODES.providerUnavailable;

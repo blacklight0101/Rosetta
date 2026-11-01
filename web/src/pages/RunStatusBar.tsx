@@ -30,7 +30,10 @@ export interface RunStatusBarProps {
   readonly updatesNote?: string | undefined;
   /** Controls beside Stop run, for example Pause updates. */
   readonly controls?: ComponentChildren;
-  /** RF-006: the Resume button of an ended run that can be resumed, and why it may need a raised cap. */
+  /**
+   * RF-006: the Resume button of an ended run that can be resumed, and why it may need a raised cap;
+   * RF-432: Continue (+N) and Stop here of a run waiting for its owner's approval.
+   */
   readonly resume?: ComponentChildren;
 }
 
@@ -43,6 +46,9 @@ function Badge({
 }): JSX.Element {
   if (phase.kind === 'queued') return <StatusBadge list="RunQueueState" value="Queued" />;
   if (phase.kind === 'running') return <StatusBadge list="RunQueueState" value="Running" />;
+  if (phase.kind === 'awaiting') {
+    return <StatusBadge list="RunQueueState" value="AwaitingApproval" />;
+  }
   const endState = stateLists.RunEndState.find((each) => each === phase.endState);
   return endState === undefined ? (
     <StatusBadge list="RunQueueState" value="Ended" />
@@ -75,7 +81,8 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
         </span>
         <span class="rst-live-pause-actions">
           {props.controls}
-          {phase.kind === 'ended' ? (
+          {/* RF-432: a paused run is answered with Continue or Stop here (the resume slot). */}
+          {phase.kind === 'ended' || phase.kind === 'awaiting' ? (
             props.resume
           ) : (
             <Button

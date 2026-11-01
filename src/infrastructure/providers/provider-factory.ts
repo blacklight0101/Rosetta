@@ -271,8 +271,24 @@ export class GuardedProviderFactory implements ProviderSetFactory {
         dailyCapMicros: request.account.dailyCapMicros,
         ownDailyCapMicros: request.account.ownDailyCapMicros,
       },
+      // RF-432: the approved amount is the run's line; a call held to the ceiling has no run.
+      ...(isCeilinged(request) ? {} : approvedOf(request)),
     });
     if (!isCeilinged(request)) return caps;
     return caps.map((cap) => ({ kind: cap.kind, limit: providerTestCeiling(cap) }));
   }
+}
+
+/** RF-432: the run's approved amount as cap inputs; none when the run recorded none. */
+function approvedOf(request: ProviderSetRequest): {
+  readonly approved?: { readonly maxCostMicros: bigint; readonly maxTokens: bigint };
+} {
+  const { approvedAmount } = request;
+  if (approvedAmount === undefined) return {};
+  return {
+    approved: {
+      maxCostMicros: BigInt(approvedAmount.costMicros),
+      maxTokens: BigInt(approvedAmount.tokens),
+    },
+  };
 }

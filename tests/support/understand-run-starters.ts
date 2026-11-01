@@ -4,6 +4,8 @@ import type { Project } from '../../src/application/projects/project.js';
 import type { RunQueue } from '../../src/application/runs/run-queue.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
 import { resumeProblemCheck } from '../../src/application/understand/resume-problem.js';
+import { ContinueRun } from '../../src/application/use-cases/continue-run.js';
+import type { ApprovedAmount } from '../../src/domain/budget/approved-amount.js';
 import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
 import { StartDeepen } from '../../src/application/use-cases/start-deepen.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
@@ -27,6 +29,8 @@ export interface UnderstandStart {
   readonly withAnswers?: boolean;
   /** RF-208, Q-43: the run whose failed areas this run reads again (its id). */
   readonly retryOf?: string;
+  /** RF-432: the amount approved on the start button; the run pauses near it. */
+  readonly approvedAmount?: ApprovedAmount;
 }
 
 /** RF-209: what the owner confirms on the Deepen estimate; confirmed unless a test says not. */
@@ -44,9 +48,14 @@ export function waitUntilEnded(s: Stores): (run: Run) => Promise<Run> {
     await vi.waitFor(
       async () => {
         latest = await s.runs.find(run.userId, run.id);
-        if (latest?.queueState !== 'Ended') throw new Error('The run has not ended');
-        const events = await s.log.read(scopeOf(latest), 0);
-        if (events.at(-1)?.type !== 'run.ended') throw new Error('No run.ended yet');
+        // RF-432: a run waiting for approval has stopped too, until its owner answers.
+        const last =
+          latest?.queueState === 'AwaitingApproval' ? 'run.awaitingApproval' : 'run.ended';
+        if (latest?.queueState !== 'Ended' && last === 'run.ended') {
+          throw new Error('The run has not ended');
+        }
+        const events = latest === undefined ? [] : await s.log.read(scopeOf(latest), 0);
+        if (events.at(-1)?.type !== last) throw new Error(`No ${last} yet`);
       },
       { timeout: UNDERSTAND_RUN_WAIT, interval: 2 },
     );
@@ -86,6 +95,32 @@ export function resumerOf(s: Stores, queue: RunQueue): Resumer {
     const resumed = await resumeRun.execute({ actor: ownerOf(run.userId), runId: run.id });
     if (!resumed.ok) return resumed;
     return { ok: true, value: await ended(resumed.value.run) };
+  };
+}
+
+export type Continuer = (run: Run) => Promise<Result<Run, string>>;
+
+/** RF-432: answers Continue (+N) of a paused run as the API does and waits for it to stop again. */
+export function continuerOf(s: Stores, queue: RunQueue): Continuer {
+  const continueRun = new ContinueRun({
+    runs: s.runs,
+    manifests: s.manifests,
+    queue,
+    clock: s.clock,
+  });
+  const ended = waitUntilEnded(s);
+  return async (run) => {
+    const continued = await continueRun.execute({ actor: ownerOf(run.userId), runId: run.id });
+    if (!continued.ok) return continued;
+    // The paused run's last event stays `run.awaitingApproval` until it starts again.
+    await vi.waitFor(
+      async () => {
+        const events = await s.log.read(scopeOf(run), 0);
+        if (events.at(-1)?.type === 'run.awaitingApproval') throw new Error('Not started yet');
+      },
+      { timeout: UNDERSTAND_RUN_WAIT, interval: 2 },
+    );
+    return { ok: true, value: await ended(continued.value.run) };
   };
 }
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ApprovedAmount } from '../../domain/budget/approved-amount.js';
 import type { AgentRole } from '../ports/llm-provider.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
 import { needsCloudConsent } from '../providers/cloud-consent.js';
@@ -28,10 +29,7 @@ export interface DeepenOptions {
  * RF-430, RF-432, DEC-196: the journey total the user approved on the start button, recorded on the
  * run; the run pauses and asks near it (P7-05). Micro-dollars are a JSON number, as in the manifest.
  */
-export interface ApprovedAmount {
-  readonly tokens: number;
-  readonly costMicros: number;
-}
+export type { ApprovedAmount } from '../../domain/budget/approved-amount.js';
 
 export interface UnderstandOptions {
   readonly areas?: readonly string[];
@@ -58,7 +56,13 @@ const optionsSchema = z.object({
     .optional(),
   retryOf: z.string().optional(),
   approvedAmount: z
-    .object({ tokens: z.number().int().min(0), costMicros: z.number().int().min(0) })
+    .object({
+      tokens: z.number().int().min(0),
+      costMicros: z.number().int().min(0),
+      remainder: z
+        .object({ tokens: z.number().int().min(0), costMicros: z.number().int().min(0) })
+        .optional(),
+    })
     .optional(),
 });
 

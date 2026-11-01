@@ -33,6 +33,7 @@ import { DeleteSnapshot } from '../../src/application/use-cases/delete-snapshot.
 import { ListProjectOverview } from '../../src/application/use-cases/list-project-overview.js';
 import { ListHistory } from '../../src/application/use-cases/list-history.js';
 import { ListSnapshots } from '../../src/application/use-cases/list-snapshots.js';
+import { continueRunOf } from './continue-run-of.js';
 import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { ProviderSetFactory } from '../../src/application/ports/provider-set-factory.js';
@@ -246,6 +247,7 @@ export function runServices(
     ...pageReads(runs.runs, outputs.text),
     subscribeRunEvents: runs.subscribe,
     stopRun: runs.stop,
+    continueRun: continueRunOf(runs, clock),
     resumeRun: new ResumeRun({
       ...{ projects, runs: runs.runs, manifests: runs.manifests, queue: runs.queue, clock },
       ...{ roleKeys, problem: () => Promise.resolve(undefined) },

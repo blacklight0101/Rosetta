@@ -42,7 +42,14 @@ const START =
   "UPDATE runs SET queue_state = 'Running', started_at = $2 WHERE id = $1 AND queue_state = 'Queued'" +
   RETURNING;
 const END =
-  "UPDATE runs SET queue_state = 'Ended', end_state = $2::text, ended_at = $3, failed_areas = $4, unread_areas = $5 WHERE id = $1 AND (queue_state = 'Running' OR (queue_state = 'Queued' AND $2::text = 'Interrupted'))" +
+  "UPDATE runs SET queue_state = 'Ended', end_state = $2::text, ended_at = $3, failed_areas = $4, unread_areas = $5 WHERE id = $1 AND (queue_state = 'Running' OR (queue_state = 'Queued' AND $2::text = 'Interrupted') OR (queue_state = 'AwaitingApproval' AND $2::text IN ('CapReached', 'Interrupted')))" +
+  RETURNING;
+// RF-432: a running run pauses near its approved amount; Continue queues the owner's paused run again.
+const PAUSE =
+  "UPDATE runs SET queue_state = 'AwaitingApproval', unread_areas = $2 WHERE id = $1 AND queue_state = 'Running'" +
+  RETURNING;
+const CONTINUE =
+  "UPDATE runs SET queue_state = 'Queued', unread_areas = 0, queued_at = $3, started_at = NULL WHERE user_id = $1 AND id = $2 AND queue_state = 'AwaitingApproval'" +
   RETURNING;
 // RF-006: one conditional UPDATE, so two parallel resumes queue the run once.
 const REOPEN =
@@ -141,6 +148,15 @@ export class PgRunIndex implements RunIndex {
   ): Promise<Run | undefined> {
     const { failedAreas = 0, unreadAreas = 0 } = counts;
     return this.change(runId, END, [endState, new Date(at), failedAreas, unreadAreas]);
+  }
+
+  pause(runId: string, counts: AreaCounts = {}): Promise<Run | undefined> {
+    return this.change(runId, PAUSE, [counts.unreadAreas ?? 0]);
+  }
+
+  async continueAwaiting(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {
+    if (!UUID.test(userId) || !UUID.test(runId)) return undefined;
+    return this.one(CONTINUE, [userId, runId, new Date(at)]);
   }
 
   async reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {

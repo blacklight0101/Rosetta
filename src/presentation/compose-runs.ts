@@ -13,6 +13,10 @@ import { RecordAnswers } from '../application/use-cases/record-answers.js';
 import { ReopenQuestion } from '../application/use-cases/reopen-question.js';
 import { ReadRunFile } from '../application/use-cases/read-run-file.js';
 import { StartRun } from '../application/use-cases/start-run.js';
+import {
+  ContinueRun,
+  type ContinueRunDependencies,
+} from '../application/use-cases/continue-run.js';
 import { StopRun } from '../application/use-cases/stop-run.js';
 import { SubmitRun } from '../application/use-cases/submit-run.js';
 import { SubscribeRunEvents } from '../application/use-cases/subscribe-run-events.js';
@@ -138,6 +142,13 @@ interface ServiceParts {
   readonly observability: ObservabilityServices;
 }
 
+/** RF-1108, RF-432: Stop (also Stop here of a paused run) and Continue (+N). */
+function answerServices(
+  deps: ContinueRunDependencies & { readonly queue: RunQueue },
+): Pick<RunServices, 'stopRun' | 'continueRun'> {
+  return { stopRun: new StopRun({ queue: deps.queue }), continueRun: new ContinueRun(deps) };
+}
+
 /** The use cases behind the run routes (RF-003, RF-1006, RF-1108, RF-143). */
 function runServices(service: ServiceParts): RunServices {
   const { parts, runs, log, broadcaster, projects, submitRun, queue, scans, answers } = service;
@@ -158,7 +169,7 @@ function runServices(service: ServiceParts): RunServices {
     getRun: new GetRun({ runs, queue, files: new FileRunTextFiles(writer) }),
     getJourney: composeJourney({ ...service, priorCards: cards }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
-    stopRun: new StopRun({ queue }),
+    ...answerServices({ runs, manifests, queue, clock: parts.clock }),
     resumeRun: composeResume({
       ...{ projects, runs, manifests, queue, scans, writer },
       ...{ clock: parts.clock, masker: parts.masker, ollamaHost, roleKeys },
