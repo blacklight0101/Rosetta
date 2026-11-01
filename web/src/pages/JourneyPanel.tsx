@@ -26,6 +26,8 @@ export interface JourneyPanelProps {
   readonly pagePath?: string | undefined;
   /** RF-1021: the page offers the Deepen of the source run in place (the project page). */
   readonly deepenInPlace?: boolean | undefined;
+  /** RF-1021: answer the questions, set up and start the plan in place (the project page). */
+  readonly setupInPlace?: boolean | undefined;
 }
 
 // RF-615

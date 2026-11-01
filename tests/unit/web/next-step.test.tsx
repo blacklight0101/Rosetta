@@ -141,3 +141,31 @@ it('RF-1020 the project page shows the journey strip with the amount left, and n
   expect(region().textContent).toContain('$0.60 left of $1.00 approved');
   expect(within(region()).queryByRole('button', { name: 'Start a run' })).toBeNull();
 });
+
+const stateWord = (title: string): string | null | undefined =>
+  within(region())
+    .getAllByRole('listitem')
+    .find((each) => each.querySelector('.rst-road__title')?.textContent === title)
+    ?.querySelector('.rst-road__state')?.textContent;
+
+it('RF-1020 a run that waits for the owner to approve more is "Waiting for approval", in words and a glyph', () => {
+  const waiting = facts({
+    source: source({ queueState: 'AwaitingApproval', endState: null, endedAt: null }),
+    briefSaved: false,
+  });
+
+  renderPage(<JourneyStrip view={journeyOf(waiting, projectId)} onResumed={() => undefined} />, {});
+
+  expect(stateWord('Understand')).toBe('Waiting for approval');
+  expect(
+    within(region()).getAllByRole('listitem')[1]?.querySelector('.rst-road__mark svg'),
+  ).not.toBeNull();
+});
+
+it('RF-1020 questions left on their defaults after the brief is saved are "Skipped"', () => {
+  const left = facts({ source: source({ openQuestions: 2 }), briefSaved: true });
+
+  renderPage(<JourneyStrip view={journeyOf(left, projectId)} onResumed={() => undefined} />, {});
+
+  expect(stateWord('Questions')).toBe('Skipped');
+});

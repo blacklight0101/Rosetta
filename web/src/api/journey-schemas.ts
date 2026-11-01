@@ -9,7 +9,7 @@ const journeyRun = z.object({
   id: z.string(),
   /** The folder name of the run. */
   runKey: z.string(),
-  queueState: z.enum(['Queued', 'Running', 'Ended']),
+  queueState: z.enum(['Queued', 'Running', 'AwaitingApproval', 'Ended']),
   endState: z.string().nullable(),
   endedAt: z.string().nullable(),
   costMicros: count,

@@ -33,6 +33,8 @@ export interface JourneyStripProps {
   readonly pagePath?: string | undefined;
   /** RF-1021: the understand run whose Deepen the page offers in place; none opens the run. */
   readonly deepenRunId?: string | undefined;
+  /** RF-1021: the Questions and plan setup section, drawn in place of the answer and plan buttons. */
+  readonly setup?: JSX.Element | undefined;
 }
 
 const words: Readonly<Record<StepState, string>> = {
