@@ -83,6 +83,11 @@ const legacySchema = z.strictObject({
   endOfLife: z.boolean(),
 });
 
+const vagueSchema = z.strictObject({
+  words: z.array(word).min(1).max(20),
+  languages: z.array(word).max(10),
+});
+
 function invalid(name: string, problem: string, cause?: unknown): RosettaError {
   return new RosettaError(
     ERROR_CODES.configurationInvalid,
@@ -147,6 +152,7 @@ export function parseStackProposals(
     signals: z.array(z.unknown()).min(1).max(20),
     options: z.array(z.unknown()).min(1).max(200),
     legacy: z.array(z.unknown()).max(50).optional(),
+    vague: z.array(z.unknown()).max(20).optional(),
   });
   const document = shape.safeParse(documentOf(name, text));
   if (!document.success) throw invalid(name, 'must hold the lists signals and options');
@@ -159,5 +165,6 @@ export function parseStackProposals(
     );
     if (!known) throw invalid(name, 'proposes a technology the table of its layer does not hold');
   }
-  return { signals, options, legacy };
+  const vague = itemsOf(name, document.data.vague ?? [], vagueSchema);
+  return { signals, options, legacy, vague };
 }

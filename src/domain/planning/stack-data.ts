@@ -74,13 +74,21 @@ export interface LegacyTechnology {
   readonly endOfLife: boolean;
 }
 
+/** P7-30: words that name a platform or nothing; the options of the platform's languages are offered. */
+export interface VagueWords {
+  readonly words: readonly string[];
+  /** Language ids of the scan; empty: the languages of the code map decide. */
+  readonly languages: readonly string[];
+}
+
 export interface StackProposals {
+  readonly vague: readonly VagueWords[];
   readonly signals: readonly KindSignal[];
   readonly options: readonly StackOption[];
   readonly legacy: readonly LegacyTechnology[];
 }
 
-const noStackProposals: StackProposals = { signals: [], options: [], legacy: [] };
+const noStackProposals: StackProposals = { signals: [], options: [], legacy: [], vague: [] };
 
 export interface StackData {
   /** The `v<n>` of `stack-rules.v<n>.yaml`; bump it when a rule is added, removed or changed. */
