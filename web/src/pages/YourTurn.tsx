@@ -3,8 +3,11 @@ import { waitsForAnswer } from '../api/answers.js';
 import { Button } from '../components/Button.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { endFactsOf } from '../lib/live-run/end-facts.js';
-import { PlanNext } from './PlanNext.js';
+import { PlanNext, type CapLeft } from './PlanNext.js';
 import { PlanTurn } from './PlanTurn.js';
+import { overviewEstimateText } from '../lib/live-run/overview-estimate.js';
+import { ResumeButton } from './ResumeButton.js';
+import type { OverviewLoad } from './use-run-overview.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 import { DeepenAction } from './DeepenAction.js';
 import type { AnswersLoad } from './use-run-answers.js';
@@ -32,6 +35,9 @@ export interface YourTurnProps {
   readonly stage?: string | undefined;
   /** RF-209: the id of the run, when it ended Completed and can be deepened. */
   readonly deepenRunId?: string | undefined;
+  /** P7-26: the overview of the run, for the "Write the overview" action of a capped run. */
+  readonly overview?: OverviewLoad | undefined;
+  readonly onResumed?: (() => void) | undefined;
 }
 
 function plural(count: number, word: string): string {
@@ -209,6 +215,43 @@ function PlanTurnPanel(props: YourTurnProps): JSX.Element {
   );
 }
 
+type Facts = ReturnType<typeof endFactsOf>;
+
+/** P7-26: what a run that ended on its cap left undone. */
+function leftOf(props: YourTurnProps, facts: Facts): CapLeft {
+  const { overview } = props;
+  const read = overview?.status === 'ready';
+  const written = read && overview.overview?.state !== 'unavailable';
+  return {
+    unreadAreas: props.state.ended?.unreadAreas ?? 0,
+    unjudgedClaims: props.state.claims.filter((claim) => claim.status === 'Unverified').length,
+    overviewMissing: read && !written && facts.cards > 0,
+  };
+}
+
+/** P7-26: the action that writes the overview of a capped run whose overview call was refused. */
+function WriteOverview(props: YourTurnProps & { readonly facts: Facts }): JSX.Element {
+  const estimate = overviewEstimateText({ ...props.facts, costMicros: props.costMicros });
+  return (
+    <>
+      <p>{`Writing the overview costs ${estimate}.`}</p>
+      <ResumeButton
+        runId={props.run.id}
+        label="Write the overview"
+        overviewOnly
+        onResumed={props.onResumed ?? (() => undefined)}
+      />
+    </>
+  );
+}
+
+/** P7-26: the Write the overview action, only when the overview is missing. */
+function writeOverviewOf(props: YourTurnProps, facts: Facts): JSX.Element | undefined {
+  return leftOf(props, facts).overviewMissing ? (
+    <WriteOverview {...props} facts={facts} />
+  ) : undefined;
+}
+
 // RF-1015, RF-614
 export function YourTurn(props: YourTurnProps): JSX.Element {
   const facts = endFactsOf(props.state);
@@ -228,6 +271,8 @@ export function YourTurn(props: YourTurnProps): JSX.Element {
           {...{ runId: run.id, projectId: run.projectId }}
           {...{ endState: state.ended?.endState ?? '', supportedClaims: facts.supportedClaims }}
           questionsOpen={questionsOpen(props.answers) && !deepenFirst}
+          left={leftOf(props, facts)}
+          writeOverview={writeOverviewOf(props, facts)}
         />
       ) : null}
       <ul class="rst-p170-facts" aria-label="Run facts">

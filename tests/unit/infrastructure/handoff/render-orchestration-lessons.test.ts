@@ -142,6 +142,22 @@ describe('orchestration.md Windows keying (DEC-190)', () => {
     }
   });
 
+  it('P7-17 Windows auth and Windows Integrated Authentication are no platform', () => {
+    for (const choice of ['Windows auth on Linux', 'Windows Integrated Authentication']) {
+      const text = lessonsOf(claudeCode, [{ layer: 'hosting', choice }]);
+      for (const part of windowsParts) expect(text).not.toMatch(part);
+    }
+  });
+
+  it('P7-17 a Windows .NET stack gets one locked-build bullet, not two', () => {
+    const text = lessonsOf(claudeCode, [
+      { layer: 'hosting', choice: 'Windows Server' },
+      { layer: 'language-runtime', choice: 'C# on .NET 10' },
+    ]);
+    const locked = text.split('\n').filter((each) => /^- A build locked by/iu.test(each));
+    expect(locked).toHaveLength(1);
+  });
+
   it('RF-644 DEC-190 each Windows item states only its fact, in the trimmed wording', () => {
     const windows = lessonsOf(claudeCode, [{ layer: 'hosting', choice: 'Windows Server' }]);
     const bullets = windows.split('\n').filter((each) => each.startsWith('- '));

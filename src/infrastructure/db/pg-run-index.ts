@@ -159,9 +159,14 @@ export class PgRunIndex implements RunIndex {
     return this.one(CONTINUE, [userId, runId, new Date(at)]);
   }
 
-  async reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {
+  async reopen(
+    userId: string,
+    runId: string,
+    at: EpochMs,
+    states: readonly RunEndState[] = RESUMABLE_END_STATES,
+  ): Promise<Run | undefined> {
     if (!UUID.test(userId) || !UUID.test(runId)) return undefined;
-    return this.one(REOPEN, [userId, runId, new Date(at), RESUMABLE_END_STATES]);
+    return this.one(REOPEN, [userId, runId, new Date(at), states]);
   }
 
   recordSource(runId: string, source: RunSource): Promise<Run | undefined> {

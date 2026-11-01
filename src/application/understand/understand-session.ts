@@ -159,7 +159,7 @@ export class UnderstandSession {
     await this.markAnswered();
   }
 
-  private async writeOverview(): Promise<void> {
+  async writeOverview(): Promise<void> {
     const { latest, coverage, thirdParty } = this;
     this.overview = await overviewStep(this.parts, latest.cards, { coverage, thirdParty });
     await this.writeSet(latest.cards);
@@ -185,7 +185,7 @@ export class UnderstandSession {
   }
 
   /** RF-250: the duplicates of several areas become one card; the set is written again if any did. */
-  private async consolidate(): Promise<void> {
+  async consolidate(): Promise<void> {
     const state = { cards: this.latest.cards, areasWithoutCards: this.cards.areasWithoutCards() };
     const merged = await consolidateStep(this.parts, state);
     if (merged !== undefined) this.latest = { ...this.latest, cards: merged };

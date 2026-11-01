@@ -44,6 +44,7 @@ import { runView } from './run-view.js';
 //   running, 404 for another user's run id, an unknown id and a run without that folder.
 // - POST /api/runs/:runId/stop aborts a running run (202, it ends as Interrupted when its work
 //   stops) or cancels a queued one (200); a run that has ended answers 409.
+// - POST /api/runs/:runId/overview (P7-26) queues the same run to write its overview alone.
 // - POST /api/runs/:runId/resume queues an understand run that stopped at a cap, failed or was
 //   interrupted again, as the same run (202 with the run and its position; RF-006); a run that cannot
 //   be resumed answers 409 (RST-2307), another user's run 404, a cloud run without consent 400.
@@ -152,19 +153,26 @@ function registerStop(server: FastifyInstance, services: RunServices): void {
 }
 
 function registerResume(server: FastifyInstance, services: RunServices): void {
-  server.post<{ Params: { runId: string } }>(
-    '/api/runs/:runId/resume',
-    { config: { access: 'user' } },
-    async (request, reply) => {
-      const outcome = await services.resumeRun.execute({
-        actor: signedInOf(request).actor,
-        runId: request.params.runId,
-      });
-      if (!outcome.ok) throw new RosettaError(outcome.error);
-      const { run, position } = outcome.value;
-      return reply.status(202).send({ ...runView(run), position: position ?? null });
-    },
-  );
+  // P7-26: the same call with the overview alone to write.
+  for (const [path, overviewOnly] of [
+    ['/api/runs/:runId/resume', false],
+    ['/api/runs/:runId/overview', true],
+  ] as const) {
+    server.post<{ Params: { runId: string } }>(
+      path,
+      { config: { access: 'user' } },
+      async (request, reply) => {
+        const outcome = await services.resumeRun.execute({
+          actor: signedInOf(request).actor,
+          runId: request.params.runId,
+          ...(overviewOnly ? { overviewOnly } : {}),
+        });
+        if (!outcome.ok) throw new RosettaError(outcome.error);
+        const { run, position } = outcome.value;
+        return reply.status(202).send({ ...runView(run), position: position ?? null });
+      },
+    );
+  }
 }
 
 /** RF-432: N of Continue (+N); at least one of its parts is above zero. */

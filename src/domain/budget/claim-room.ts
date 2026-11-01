@@ -96,3 +96,21 @@ export function roomVerdict(facts: RoomFacts): RoomVerdict {
   if (!lineFits) return 'readers-full';
   return claims.unjudged > 0 && !judgingFits(facts) ? 'judging' : 'open';
 }
+
+/** RF-264, P7-26: the part of the run token cap the merges leave for the overview call. */
+export const OVERVIEW_SHARE_PERCENT = 4;
+
+/**
+ * RF-264, P7-26: whether a merge may still start, or the overview would be left without room. The
+ * reserve applies to whichever run limit is closest: the token cap and the cost cap (a cost cap of 0
+ * is not checked); the run caps in force are the approved line when the user approved an amount
+ * (P7-05), so that line counts too.
+ */
+export function leavesOverviewRoom(
+  run: Spend,
+  caps: { readonly tokens: bigint; readonly micros: bigint },
+): boolean {
+  const percent = BigInt(100 - OVERVIEW_SHARE_PERCENT);
+  const cost = caps.micros === 0n || within(run.micros, caps.micros, percent);
+  return within(run.tokens, caps.tokens, percent) && cost;
+}

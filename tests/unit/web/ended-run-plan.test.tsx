@@ -79,7 +79,7 @@ it('RST-1802 a run that ended CapReached with no Supported claim offers no plan'
   await openEnded({ judged: 'Rejected', endState: 'CapReached', questions: [] });
 
   await waitFor(() => {
-    expect(turn().textContent).toContain('Resume it');
+    expect(turn().textContent).toContain('stopped at its cap');
   });
   expect(within(turn()).queryByRole('button', { name: 'Set up the plan' })).toBeNull();
 });

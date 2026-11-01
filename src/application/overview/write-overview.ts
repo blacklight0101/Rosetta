@@ -47,8 +47,14 @@ async function log(
   });
 }
 
+/** P7-26: the answer of a call a cap refused. */
+const REFUSED_BY_CAP = Symbol('refusedByCap');
+
 /** The summariser's answer, or undefined when the call failed or the run stopped. */
-async function ask(parts: OverviewParts, cards: readonly Card[]): Promise<string | undefined> {
+async function ask(
+  parts: OverviewParts,
+  cards: readonly Card[],
+): Promise<string | typeof REFUSED_BY_CAP | undefined> {
   const { role, signal } = parts;
   try {
     const response = await parts.provider.complete({
@@ -68,6 +74,10 @@ async function ask(parts: OverviewParts, cards: readonly Card[]): Promise<string
     await parts.onAnswer(response);
     return response.text;
   } catch (error) {
+    if (error instanceof RosettaError && error.code === ERROR_CODES.budgetCapReached) {
+      await log(parts, 'warn', 'A cap refused the call for the overview.', error.code);
+      return REFUSED_BY_CAP;
+    }
     if (!signal.aborted) {
       const code = error instanceof RosettaError ? error.code : ERROR_CODES.providerCallFailed;
       await log(parts, 'warn', 'The summariser could not write the overview.', code);
@@ -99,8 +109,16 @@ const STOPPED =
   'The run stopped before the overview was written. Resume the run, or run it again, to get the overview; the cards written so far are in the specification.';
 const FAILED =
   'The overview could not be written: the summariser did not answer, or its answer was not usable. The cards and the specification are complete; run again to try once more.';
+const CAPPED =
+  'The run reached its cap before the overview could be written. Press "Write the overview" on the run page to write it from the cards the run has; the cards and the specification are complete.';
 const EMPTY =
   'The summariser wrote no statement that links a card, so the overview holds none. The cards and the specification are complete.';
+
+/** Why no overview was written: a cap refused the call, the run was stopped, or the call failed. */
+function noticeOf(output: typeof REFUSED_BY_CAP | undefined, signal: AbortSignal): string {
+  if (output === REFUSED_BY_CAP) return CAPPED;
+  return isStopped(signal) ? STOPPED : FAILED;
+}
 
 // RF-264
 export async function writeOverview(parts: OverviewParts, input: OverviewInput): Promise<Overview> {
@@ -116,8 +134,8 @@ export async function writeOverview(parts: OverviewParts, input: OverviewInput):
     return noticeOverview('thin', thinNotice(reach), notCovered);
   }
   const output = await ask(parts, eligible);
-  if (output === undefined) {
-    return noticeOverview('unavailable', isStopped(parts.signal) ? STOPPED : FAILED, notCovered);
+  if (typeof output !== 'string') {
+    return noticeOverview('unavailable', noticeOf(output, parts.signal), notCovered);
   }
   const draft = parseOverviewAnswer(output);
   if (draft === undefined) {

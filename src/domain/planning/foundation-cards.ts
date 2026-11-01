@@ -1,5 +1,6 @@
 import { planId, type PlanContent, type PlanTask } from './plan-content.js';
 import type { ModelTable } from './data-model.js';
+import { cutOverText } from './cut-over-cards.js';
 import { isMigrationCard } from './plan-coverage.js';
 import type { PlanningBrief } from './planning-brief.js';
 
@@ -112,59 +113,6 @@ function migrationText(tables: readonly ModelTable[]): CardText {
   };
 }
 
-const cutOverTexts: Readonly<Record<Strategy, CardText>> = {
-  'strangler-fig': {
-    title: titles.cutOver,
-    invariant:
-      'Each part of the legacy system goes live on the new system through the routing step before the next part starts, and the legacy system is switched off only after the last part.',
-    riskClass: 'data loss',
-    acceptanceCriteria: [
-      'Given the routing layer between the two systems, when a request for a part that went live arrives, then the routing step sends it to the new system.',
-      'Given a part that is not live yet, when a request for it arrives, then the routing step sends it to the legacy system.',
-      'Given a part that went live and failed its checks, when the routing rule is reverted, then requests for the part reach the legacy system again.',
-      'Given the last part is live, when the legacy system is switched off, then no request is routed to it.',
-    ],
-    probes: [
-      'A request for a part that is live => it is answered by the new system.',
-      'A request for a part not yet live => it is answered by the legacy system.',
-      'The routing rule of a part is reverted => the next request for the part is answered by the legacy system.',
-      'The legacy system is switched off while a part is still routed to it => the switch-off is refused.',
-    ],
-  },
-  'parallel-change': {
-    title: titles.cutOver,
-    invariant:
-      'Both ways work until the old one is removed, users are moved over before it goes, and every step can be undone.',
-    riskClass: 'data loss',
-    acceptanceCriteria: [
-      'Given the new way beside the old one, when a user uses either, then both give the same result.',
-      'Given users moved to the new way, when a problem is found, then they can be moved back to the old way.',
-      'Given every user is on the new way, when the old way is removed, then nothing calls it any more.',
-    ],
-    probes: [
-      'The same input on the old and the new way => both give the same result.',
-      'A user is moved back to the old way => the user keeps the data written on the new way.',
-      'The old way is removed while a caller still uses it => the removal is refused and names the caller.',
-    ],
-  },
-  rewrite: {
-    title: titles.cutOver,
-    invariant:
-      'Users move once: the legacy system is frozen, the data is migrated and checked, the new system goes live, and the legacy system stays available for a return.',
-    riskClass: 'data loss',
-    acceptanceCriteria: [
-      'Given the legacy system frozen for writes, when the final data migration runs, then the row counts of every target table equal those of its legacy table.',
-      'Given the row counts match, when the new system goes live, then users reach the new system only.',
-      'Given a failed check after going live, when the return is run, then users reach the legacy system with no data lost.',
-    ],
-    probes: [
-      'A write to the legacy system after the freeze => it is refused.',
-      'A row count that differs after the final run => the go-live is refused.',
-      'The return is run after a failed check => users reach the legacy system with the data written before the freeze.',
-    ],
-  },
-};
-
 function fixedCard(text: CardText, fields: Pick<PlanTask, 'id' | 'phase' | 'dependsOn'>): PlanTask {
   return {
     ...fields,
@@ -217,10 +165,13 @@ function withoutDataCards(
     fixedCard(skeleton, { id: skeletonId, phase: 1, dependsOn: [] }),
     fixedCard(harness, { id: harnessId, phase: 1, dependsOn: [skeletonId] }),
     ...moved,
-    fixedCard(cutOverTexts[strategy], {
-      ...{ id: planId('T', 3 + tasks.length), phase: content.phases.length },
-      dependsOn: [skeletonId, harnessId, ...moved.map((task) => task.id)],
-    }),
+    fixedCard(
+      { title: titles.cutOver, ...cutOverText(strategy, false) },
+      {
+        ...{ id: planId('T', 3 + tasks.length), phase: content.phases.length },
+        dependsOn: [skeletonId, harnessId, ...moved.map((task) => task.id)],
+      },
+    ),
   ];
   return withCards(content, cards, renamed);
 }
@@ -281,15 +232,18 @@ function withDataCards(
       ...{ id: migrationId, phase: last },
       dependsOn: [skeletonId, accessId, ...schemaIds],
     }),
-    fixedCard(cutOverTexts[strategy], {
-      ...{ id: planId('T', 5 + ordered.length), phase: last },
-      dependsOn: unique([
-        skeletonId,
-        migrationId,
-        harnessId,
-        ...moved.slice(schemas).map((task) => task.id),
-      ]),
-    }),
+    fixedCard(
+      { title: titles.cutOver, ...cutOverText(strategy, true) },
+      {
+        ...{ id: planId('T', 5 + ordered.length), phase: last },
+        dependsOn: unique([
+          skeletonId,
+          migrationId,
+          harnessId,
+          ...moved.slice(schemas).map((task) => task.id),
+        ]),
+      },
+    ),
   ];
   return withCards(content, cards, renamed);
 }

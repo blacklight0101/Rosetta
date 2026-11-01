@@ -1,4 +1,9 @@
 import { projectOf, templateSettings } from './project-fixtures.js';
+import {
+  contextWording,
+  keepLegacyWording,
+  methodWording,
+} from '../../../src/domain/planning/question-wording.js';
 
 // RF-605, RF-606, RF-608, RF-613: the answers the Plan setup page reads, as the server writes them.
 
@@ -28,6 +33,13 @@ export const catalogue = {
     { id: 'parallel-change', title: 'Parallel Change', tradeOff: 'Two ways at once.' },
     { id: 'full-rewrite', title: 'Full rewrite', tradeOff: 'Risky, clean.' },
   ],
+  wording: {
+    context: Object.fromEntries(
+      Object.entries(contextWording).map(([id, options]) => [id, [...options]]),
+    ),
+    method: [...methodWording],
+    keepLegacy: keepLegacyWording,
+  },
 };
 
 const defaultBrief = {
