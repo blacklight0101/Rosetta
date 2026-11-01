@@ -98,6 +98,35 @@ describe('BuildPlan: a WebForms application whose brief answers every layer', ()
   });
 });
 
+describe('BuildPlan: layers answered with only a platform', () => {
+  it('P7-30 a ".net" front end and back end and a "default" test tool are Proposed and listed', async () => {
+    const h = await seededApiPlan(dataDir, {
+      brief: {
+        stack: [
+          { layer: 'backend-framework', choice: '.net', custom: true },
+          { layer: 'front-end', choice: '.net', custom: true },
+          { layer: 'testing', choice: 'default', custom: true },
+        ],
+      },
+      harness: { scans: new ProposalScans(webFormsFiles) },
+    });
+    await h.seedScan();
+
+    const files = await h.handoffOf(await h.plan());
+
+    const records = decisionsOf(files).filter((text) => text.includes('Technology for the'));
+    expect(records).toHaveLength(7);
+    for (const layer of ['front end', 'back end', 'testing']) {
+      const record = records.find((text) => text.includes(`Technology for the ${layer} layer`));
+      expect(record).toContain('Proposed');
+      expect(record).toContain('Rosetta proposes');
+      expect(record).not.toMatch(/layer: (\.net|default)\b/u);
+    }
+    const questions = plain(files['open-questions.md']);
+    expect(questions).toContain('Proposed by Rosetta, not chosen by the owner: Razor Pages');
+  });
+});
+
 describe('BuildPlan: a desktop application with the default strangler fig', () => {
   it('RF-610 keeps the strangler fig and writes the shared-database seam record when the client uses a database', async () => {
     const h = await seededApiPlan(dataDir, {
