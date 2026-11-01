@@ -97,8 +97,11 @@ it('RF-1018 choosing library areas shows what they add and Start asks for one co
 
   expect(libraryNotice().textContent).toContain('2 library areas');
   expect(libraryNotice().textContent).toContain('100,000 tokens');
+  // RF-432: Start waits for the estimate of the areas now chosen, never the figure of other areas.
+  await waitFor(() => {
+    expect(start().title).toBe('Confirm the library areas, or choose own code only.');
+  });
   expect(start().disabled).toBe(true);
-  expect(start().title).toBe('Confirm the library areas, or choose own code only.');
   fireEvent.click(within(libraryNotice()).getByLabelText(confirmLabel));
   expect(start().disabled).toBe(false);
   fireEvent.click(start());
@@ -120,7 +123,9 @@ it('RF-1018 the confirmation is asked once: it stays given when the library choi
   fireEvent.click(input('jQuery#1'));
   fireEvent.click(input('Scripts#2'));
 
-  expect(start().disabled).toBe(false);
+  await waitFor(() => {
+    expect(start().disabled).toBe(false);
+  });
   expect(input(confirmLabel).checked).toBe(true);
 });
 
