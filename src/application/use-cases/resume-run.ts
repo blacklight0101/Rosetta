@@ -14,6 +14,7 @@ import type { RunQueue } from '../runs/run-queue.js';
 import { scopeOf } from '../runs/run-scope.js';
 import {
   readUnderstandOptions,
+  understandOptionsOf,
   rolesNeedCloudConsent,
   UNDERSTAND_ROLES,
   rolesNeedPrivateConfirmation,
@@ -63,12 +64,15 @@ export class ResumeRun {
   async execute(request: {
     readonly actor: Actor;
     readonly runId: string;
+    /** P7-26: run the overview step alone on the run's cards. */
+    readonly overviewOnly?: boolean;
   }): Promise<Result<SubmittedRun, ResumeProblem>> {
     const { runs, projects, manifests } = this.deps;
     const { userId } = request.actor;
     const run = await runs.find(userId, request.runId);
     if (run === undefined) return err(ERROR_CODES.notFound);
-    if (!canResume(run)) return err(ERROR_CODES.runNotResumable);
+    const overviewOnly = request.overviewOnly === true;
+    if (!canResume(run, overviewOnly)) return err(ERROR_CODES.runNotResumable);
     const project = await projects.find(userId, run.projectId);
     const stored = await manifests.read(scopeOf(run));
     if (project === undefined || stored === undefined) return err(ERROR_CODES.runNotResumable);
@@ -77,7 +81,7 @@ export class ResumeRun {
     // One queue step: no dispatch can start the run from the old manifest, and the run is not
     // taken while this process is still writing its end. A second Resume finds the run queued.
     const reopened = await this.deps.queue.exclusive(run.id, () =>
-      this.reopen(userId, run, project, stored),
+      this.reopen(userId, run, project, withOverviewMark(stored, overviewOnly)),
     );
     if (!reopened.ok || reopened.value === undefined) return err(ERROR_CODES.runNotResumable);
     const current = await runs.find(userId, run.id);
@@ -134,8 +138,15 @@ export class ResumeRun {
   }
 }
 
+/** P7-26: the options of the reopened run, with the overview-only mark set or cleared. */
+function withOverviewMark(manifest: RunManifest, overviewOnly: boolean): RunManifest {
+  const earlier = readUnderstandOptions(manifest.options);
+  return { ...manifest, options: { ...understandOptionsOf({ ...earlier, overviewOnly }) } };
+}
+
 /** RF-006: only an understand run that stopped at a cap, failed or was interrupted has work left. */
-function canResume(run: Run): boolean {
+function canResume(run: Run, overviewOnly: boolean): boolean {
   const { endState } = run;
+  if (overviewOnly && endState !== 'CapReached') return false; // P7-26: only a capped run
   return run.stage === 'understand' && endState !== null && RESUMABLE_END_STATES.includes(endState);
 }

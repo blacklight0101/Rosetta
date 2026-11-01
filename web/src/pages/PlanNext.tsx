@@ -18,27 +18,61 @@ export interface PlanNextProps {
   readonly supportedClaims: number;
   /** Questions are still open: Answer questions stays the main action. */
   readonly questionsOpen: boolean;
+  /** P7-26: what a capped run left. */
+  readonly left?: CapLeft;
+  /** P7-26: the "Write the overview" action, when the overview call was refused. */
+  readonly writeOverview?: JSX.Element | undefined;
+}
+
+/** P7-26: what a run that ended on its cap left undone. */
+export interface CapLeft {
+  readonly unreadAreas: number;
+  readonly unjudgedClaims: number;
+  readonly overviewMissing: boolean;
 }
 
 /** RF-614: Plan setup for this run, named by its id in the query string. */
 const planSetupPath = (projectId: string, runId: string): string =>
   `/projects/${encodeURIComponent(projectId)}/plan-setup?run=${encodeURIComponent(runId)}`;
 
+/** P7-26: what the run left, in words: areas not read, claims not judged, the overview. */
+function leftText(left: CapLeft | undefined): string {
+  const items = [
+    count(left?.unreadAreas, 'area', 'not read'),
+    count(left?.unjudgedClaims, 'claim', 'not judged'),
+    left?.overviewMissing === true ? 'the overview' : '',
+  ].filter((item) => item !== '');
+  return items.length === 0 ? 'nothing but the last checks' : items.join(', ');
+}
+
+function count(n: number | undefined, noun: string, what: string): string {
+  if (n === undefined || n === 0) return '';
+  return `${String(n)} ${noun}${n === 1 ? '' : 's'} ${what}`;
+}
+
+/** P7-26: a run that ended on its cap says what was left and what to do about it. */
+function Capped(props: PlanNextProps): JSX.Element {
+  const deepen = (props.left?.unreadAreas ?? 0) > 0;
+  const plan = props.supportedClaims > 0;
+  return (
+    <>
+      <p>
+        {`This run stopped at its cap. Left: ${leftText(props.left)}.`}
+        {deepen ? ' Deepen reads the areas that are left.' : ''}
+        {plan
+          ? ' You can set up the plan now: it uses only the Supported claims, and the package says the run stopped at a cap.'
+          : ''}
+      </p>
+      {props.writeOverview}
+      {plan ? <SetUp {...props} /> : null}
+    </>
+  );
+}
+
 // RF-614
 export function PlanNext(props: PlanNextProps): JSX.Element | null {
   const { endState } = props;
-  if (endState === 'CapReached' && props.supportedClaims > 0) {
-    return (
-      <>
-        <p>
-          This run stopped at a cap before it finished. Resume it with the Resume run button at the
-          top of the page to judge the rest, or set up the plan now: it uses only the Supported
-          claims, and the package says the run stopped at a cap.
-        </p>
-        <SetUp {...props} />
-      </>
-    );
-  }
+  if (endState === 'CapReached') return <Capped {...props} />;
   if (isResumable('understand', endState)) {
     return (
       <p>

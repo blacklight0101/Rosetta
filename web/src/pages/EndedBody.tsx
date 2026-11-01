@@ -195,6 +195,8 @@ interface RailProps {
   readonly answers: AnswersLoad;
   /** RF-209: the run can be deepened (it ended Completed); undefined otherwise. */
   readonly deepenRunId: string | undefined;
+  readonly overview: OverviewLoad;
+  readonly onResumed: () => void;
   readonly report: { readonly onBuilt: () => void };
   readonly onAnswer: () => void;
 }
@@ -284,6 +286,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
         <Rail
           {...{ run, stage, failed, asks }}
           answers={answers.load}
+          {...{ overview, onResumed: props.onResumed }}
           deepenRunId={asks && mayDeepen(state.ended, run) ? run.id : undefined}
           state={shown}
           costMicros={props.costMicros}

@@ -82,3 +82,9 @@ function failuresOutcome(end: SessionEnd): RunOutcome {
   const code = ends.find((each) => each.code !== undefined)?.code;
   return code === undefined ? { endState: 'Failed' } : { endState: 'Failed', errorCode: code };
 }
+
+/** P7-26: a capped run that wrote its overview alone ends as it did, with the areas still unread. */
+export function overviewOnlyOutcome(unread: number): RunOutcome {
+  const left = unread > 0 ? { unreadAreas: unread } : {};
+  return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached, ...left };
+}

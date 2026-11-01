@@ -1,4 +1,9 @@
-import { roomVerdict, type RoomFacts, type Spend } from '../../domain/budget/claim-room.js';
+import {
+  leavesOverviewRoom,
+  roomVerdict,
+  type RoomFacts,
+  type Spend,
+} from '../../domain/budget/claim-room.js';
 import type { Card } from '../../domain/cards/card.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -110,6 +115,11 @@ export class ReaderRoom {
     this.stopped = verdict === 'judging' ? 'judging' : 'share';
     await sources.announce(this.stopped, claims.unjudged);
     return false;
+  }
+
+  /** P7-26: whether the run token cap still has room for the overview after a merge call. */
+  leavesOverview(): boolean {
+    return leavesOverviewRoom(this.sources.runSpend(), this.limits.runTokens);
   }
 
   /** DEC-193: whether the verifier was stopped only at its line of the run cap, not by a cap of its own. */

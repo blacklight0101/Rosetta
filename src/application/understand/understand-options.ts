@@ -44,6 +44,8 @@ export interface UnderstandOptions {
   readonly retryOf?: string;
   /** RF-430: the amount the user approved at the start. */
   readonly approvedAmount?: ApprovedAmount;
+  /** P7-26: run the overview step alone on the cards the run has. */
+  readonly overviewOnly?: boolean;
 }
 
 const optionsSchema = z.object({
@@ -55,6 +57,7 @@ const optionsSchema = z.object({
     .object({ parentRunId: z.string(), maxRounds: z.number().int(), coveragePass: z.boolean() })
     .optional(),
   retryOf: z.string().optional(),
+  overviewOnly: z.boolean().optional(),
   approvedAmount: z
     .object({
       tokens: z.number().int().min(0),
@@ -75,6 +78,7 @@ export function understandOptionsOf(request: {
   readonly deepen?: DeepenOptions | undefined;
   readonly retryOf?: string | undefined;
   readonly approvedAmount?: ApprovedAmount | undefined;
+  readonly overviewOnly?: boolean | undefined;
 }): UnderstandOptions {
   const consent = { cloudConsent: request.cloudConsent === true };
   const priv = request.privateCodeConfirmed === true ? { privateCodeConfirmed: true } : {};
@@ -83,7 +87,8 @@ export function understandOptionsOf(request: {
   const retry = request.retryOf === undefined ? {} : { retryOf: request.retryOf };
   const approved =
     request.approvedAmount === undefined ? {} : { approvedAmount: { ...request.approvedAmount } };
-  const base = { ...consent, ...priv, ...answers, ...deepen, ...retry, ...approved };
+  const only = request.overviewOnly === true ? { overviewOnly: true } : {};
+  const base = { ...consent, ...priv, ...answers, ...deepen, ...retry, ...approved, ...only };
   return request.areas === undefined ? base : { areas: [...request.areas], ...base };
 }
 

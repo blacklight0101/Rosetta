@@ -159,7 +159,7 @@ export class UnderstandSession {
     await this.markAnswered();
   }
 
-  private async writeOverview(): Promise<void> {
+  async writeOverview(): Promise<void> {
     const { latest, coverage, thirdParty } = this;
     this.overview = await overviewStep(this.parts, latest.cards, { coverage, thirdParty });
     await this.writeSet(latest.cards);

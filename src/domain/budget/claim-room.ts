@@ -96,3 +96,11 @@ export function roomVerdict(facts: RoomFacts): RoomVerdict {
   if (!lineFits) return 'readers-full';
   return claims.unjudged > 0 && !judgingFits(facts) ? 'judging' : 'open';
 }
+
+/** RF-264, P7-26: the part of the run token cap the merges leave for the overview call. */
+export const OVERVIEW_SHARE_PERCENT = 4;
+
+/** RF-264, P7-26: whether a merge may still start, or the overview would be left without room. */
+export function leavesOverviewRoom(run: Spend, runTokens: bigint): boolean {
+  return within(run.tokens, runTokens, BigInt(100 - OVERVIEW_SHARE_PERCENT));
+}
