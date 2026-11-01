@@ -13,7 +13,7 @@ import { base, ready, renderPlan } from './plan-setup-helpers.js';
 import { projectOf } from './project-fixtures.js';
 
 // RF-132, RF-143, DEC-148: Plan setup asks the second confirmation for an uploaded project whose
-// planner is a cloud provider: it holds the options of the planner and "Write the package" until
+// planner is a cloud provider: it holds the options of the planner and "Start the plan" until
 // the box is ticked, sends it with both requests, and offers the switch to Ollama. A GitHub
 // project is never asked.
 
@@ -33,13 +33,13 @@ const saved = { [`GET ${base}/planning-brief`]: json(200, savedBrief) };
 const optionsCalls = (page: ReturnType<typeof renderPlan>): unknown[] =>
   page.calls.filter((call) => call.path === `${base}/plan-options`).map((call) => call.body);
 const write = (): HTMLButtonElement => {
-  const button = screen.getByRole('button', { name: /^Write the package/u });
+  const button = screen.getByRole('button', { name: /^Start the plan/u });
   if (!(button instanceof HTMLButtonElement)) throw new Error('Not a button.');
   return button;
 };
 
 describe('Plan setup and the private code of an upload', () => {
-  it('RF-132 shows the second notice and keeps Write the package off until both boxes are ticked', async () => {
+  it('RF-132 shows the second notice and keeps Start the plan off until both boxes are ticked', async () => {
     renderPlan({
       ...saved,
       [`GET ${base}`]: json(200, uploadCloud),

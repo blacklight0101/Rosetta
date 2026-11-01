@@ -48,7 +48,7 @@ describe('options with markup in their text', () => {
 });
 
 describe('a request in flight', () => {
-  it('RF-604 disables "Write the package" until the answer and starts one run only', async () => {
+  it('RF-604 disables "Start the plan" until the answer and starts one run only', async () => {
     const release = gate();
     const page = renderPlan({
       [`GET ${base}/planning-brief`]: json(200, savedBrief),
@@ -58,7 +58,7 @@ describe('a request in flight', () => {
       },
     });
     await ready();
-    const button = screen.getByRole('button', { name: /^Write the package/u });
+    const button = screen.getByRole('button', { name: /^Start the plan/u });
 
     fireEvent.click(button);
     fireEvent.click(button);

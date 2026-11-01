@@ -161,11 +161,11 @@ test('RF-605 after a package exists a changed answer says the package is out of 
   await page.getByRole('button', { name: 'Save and continue' }).click();
 
   await expect(page.getByText(/The package is out of date/u)).toBeVisible();
-  await expect(writeButton(page)).toHaveText('Write the package again');
+  await expect(writeButton(page)).toHaveText('Start the plan again');
   await expectNoSeriousViolations(page);
 });
 
-test('RF-604 Write the package starts the plan run and opens its live page', async ({ page }) => {
+test('RF-604 Start the plan starts the plan run and opens its live page', async ({ page }) => {
   await openStartPage(page);
   await openPlanSetup(page);
 
