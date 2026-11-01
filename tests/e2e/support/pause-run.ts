@@ -53,7 +53,7 @@ export async function pauseFinishedRun(page: Page, runUuid: string, area: string
   const { totals } = ended.data;
   const spent = totals.inputTokens + totals.outputTokens + (totals.cachedInputTokens ?? 0);
   const approved = { tokens: spent, costMicros: totals.costMicros };
-  const remainder = { tokens: spent * 2, costMicros: totals.costMicros * 2 + 1000 };
+  const half = { tokens: Math.ceil(spent / 2), costMicros: Math.ceil(totals.costMicros / 2) };
   const kept = events
     .slice(0, endAt)
     .map((text) => z.record(z.string(), z.unknown()).parse(JSON.parse(text)))
@@ -65,7 +65,7 @@ export async function pauseFinishedRun(page: Page, runUuid: string, area: string
       totals: ended.data.totals,
       unreadAreas: 1,
       approvedAmount: approved,
-      continueAmount: remainder,
+      continueAmount: half,
     },
   });
   const numbered = kept.map((event, index) => JSON.stringify({ ...event, seq: index + 1 }));
@@ -75,7 +75,7 @@ export async function pauseFinishedRun(page: Page, runUuid: string, area: string
   const manifest = z
     .looseObject({ options: z.looseObject({}) })
     .parse(JSON.parse(await readFile(manifestFile, 'utf8')));
-  const options = { ...manifest.options, approvedAmount: { ...approved, remainder } };
+  const options = { ...manifest.options, approvedAmount: approved };
   await writeFile(
     manifestFile,
     `${JSON.stringify({ ...manifest, endedAt: null, endState: null, options }, null, 2)}\n`,

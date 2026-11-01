@@ -69,7 +69,7 @@ test('RF-006 RF-422 RF-301 RF-432 a run pauses at the amount approved, the owner
   await expect(page.getByTestId('approval-question')).toBeVisible({ timeout: 30_000 });
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
-  await openRunTab(page, 'Evidence');
+  await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Services')).not.toContainText('Done');
 
   await page.getByRole('button', { name: /^Continue/u }).click();
