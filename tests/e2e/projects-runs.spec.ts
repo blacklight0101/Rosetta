@@ -58,7 +58,7 @@ test('RF-1108 a queued run shows its position on the Projects page and Cancel en
   page,
 }) => {
   const held = await startUnderstand(page, ['Controllers']);
-  await startUnderstand(page, ['Models']);
+  await startUnderstand(page, ['Catalog']);
   await expect(runStatus(page)).toContainText('Queued');
 
   await openProjects(page);

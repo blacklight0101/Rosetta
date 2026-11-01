@@ -102,6 +102,7 @@ export async function startAndOpenLiveRun(page: Page): Promise<string> {
  */
 export async function openScanRun(page: Page): Promise<void> {
   await expect(areasOf(page).locator('label').first()).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId('scan-running')).toHaveCount(0, { timeout: 60_000 });
   await page.getByRole('navigation').getByRole('link', { name: 'History' }).click();
   await page
     .getByRole('link', { name: /^View run .*-scan$/u })

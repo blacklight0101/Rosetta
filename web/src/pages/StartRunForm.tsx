@@ -146,7 +146,9 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
   const ref = useRef<HTMLDivElement>(null);
   useRefusalFocus(ref, actions.attempts);
   // RF-160: until the scan has finished there are no areas and no estimate, so only the scan shows.
-  if (form.choice.estimate.status === 'none') {
+  // RF-160: until the scan has finished (or while a replaced source is scanned again) only it shows.
+  const scanning = form.scan.state.kind === 'starting' || form.scan.state.kind === 'scanning';
+  if (form.choice.estimate.status === 'none' || scanning) {
     return (
       <div class="rst-start" ref={ref}>
         <div>
@@ -165,6 +167,7 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
         <p class="rst-settings__lead">{leadOf(form.project.sourceKind)}</p>
       </div>
       <SourceSection form={form} />
+      {form.scan.state.kind === 'failed' ? <ScanSection form={form} /> : null}
       <StaleCodeMapNotice form={form} />
       <Columns form={form} />
       {consent.roles.length === 0 ? null : (

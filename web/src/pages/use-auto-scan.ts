@@ -107,6 +107,21 @@ export function useAutoScan(project: Project, unscanned: boolean, onScanned: () 
   const told = useRef(onScanned);
   told.current = onScanned;
 
+  const scanAgain = (): void => {
+    forced.current = true;
+    setWanted(true);
+    setRound((current) => current + 1);
+  };
+  // RF-160: a source that replaces the one the project held is a new source, so it is scanned again.
+  const sourceKey =
+    project.source === null ? '' : `${project.source.fileName}|${project.source.uploadedAt}`;
+  const seen = useRef(sourceKey);
+  useEffect(() => {
+    const replaced = seen.current !== '' && sourceKey !== '' && seen.current !== sourceKey;
+    seen.current = sourceKey;
+    if (replaced) scanAgain();
+  }, [sourceKey]);
+
   useEffect(() => {
     if (!needsScan && !wanted) {
       setState({ kind: 'idle' });
@@ -121,12 +136,5 @@ export function useAutoScan(project: Project, unscanned: boolean, onScanned: () 
     return followScan({ client, projectId, ask, setState, done });
   }, [client, projectId, needsScan, wanted, round]);
 
-  return {
-    state,
-    scanAgain: () => {
-      forced.current = true;
-      setWanted(true);
-      setRound((current) => current + 1);
-    },
-  };
+  return { state, scanAgain };
 }

@@ -18,7 +18,7 @@ test(
     await signInAs(context, accountFor('start-run', info.project.name));
     await openScannedStartPage(page);
     const held = await startUnderstand(page, ['Controllers']);
-    await startUnderstand(page, ['Models']);
+    await startUnderstand(page, ['Catalog']);
     await expect(runStatus(page)).toContainText('Queued');
     await expect(page.getByText(/position 1/u).first()).toBeVisible();
 
