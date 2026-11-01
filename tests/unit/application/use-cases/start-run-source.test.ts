@@ -1,3 +1,4 @@
+import { ALL_KEYS_SERVED } from '../../../support/web-role-keys.js';
 import { describe, expect, it } from 'vitest';
 import { StartRun } from '../../../../src/application/use-cases/start-run.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
@@ -21,7 +22,13 @@ async function setup() {
   const project = sampleProject({ userId: userAmy.userId, settings: fakePlanner });
   await projects.insertOrFind(project);
   await briefs.saveEmpty({ userId: project.userId, projectId: project.id });
-  const startRun = new StartRun({ projects, runs: harness.runs, briefs, submit: harness.submit });
+  const startRun = new StartRun({
+    roleKeys: ALL_KEYS_SERVED,
+    projects,
+    runs: harness.runs,
+    briefs,
+    submit: harness.submit,
+  });
   const seed = async (overrides: Partial<Run>): Promise<Run> => {
     const run = sampleRun({
       ...{ userId: project.userId, projectId: project.id, stage: 'understand' },

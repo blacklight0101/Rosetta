@@ -12,14 +12,19 @@ import type { ServerKeys } from '../infrastructure/providers/provider-access.js'
 // RF-1106, DEC-107 (P3-91): the start caps of a run, and the key each role would use, read with the
 // same server keys as the provider factory (compose-providers.ts).
 
+/** RF-431, EV-44: an empty variable (`ANTHROPIC_API_KEY=`) is no key, so no run is queued on it. */
+export function serverKeyOf(value: string | undefined): string | undefined {
+  return value === undefined || value.trim() === '' ? undefined : value;
+}
+
 /** Whether a role would use the user's own key or the server's (RF-1104), for the start caps. */
 export function composeKeySources(
   pool: DatabasePool,
   environment: Pick<Environment, 'openaiApiKey' | 'anthropicApiKey'>,
 ): KeySourceLookup {
   const serverKeys: ServerKeys = {
-    openai: environment.openaiApiKey,
-    anthropic: environment.anthropicApiKey,
+    openai: serverKeyOf(environment.openaiApiKey),
+    anthropic: serverKeyOf(environment.anthropicApiKey),
   };
   return keySourceLookupOf({ keys: new PgProviderKeyRepository(pool), serverKeys });
 }

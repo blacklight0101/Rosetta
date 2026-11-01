@@ -4,6 +4,7 @@ import type { Project } from '../api/project-schemas.js';
 import { createProject, getProject, saveProjectSettings } from '../api/projects.js';
 import { problemFor } from '../api/problems.js';
 import { cancelRun, startRun, type RunStageChoice, type StartRequest } from '../api/runs.js';
+import type { ApprovedAmount } from '../lib/journey-approval.js';
 import { useApp } from '../app/app-context.js';
 import { navigate } from '../app/router.js';
 import { tokensOf } from '../lib/token-cap.js';
@@ -59,6 +60,8 @@ export interface ActionInputs {
   readonly likelyMicros: bigint | undefined;
   /** RF-429: the likely tokens of a local estimate, compared with the run token cap. */
   readonly likelyTokens: number | undefined;
+  /** RF-430: the journey total the button names, recorded on the run as its approved amount. */
+  readonly approvedAmount?: ApprovedAmount | undefined;
   /** Told the project with the settings the page just saved. */
   readonly onSaved: (project: Project) => void;
   readonly onConsentRefused: () => void;
@@ -98,7 +101,13 @@ function requestOf(inputs: ActionInputs): StartRequest {
     areas: inputs.areas,
     cloudConsent: inputs.consent,
   };
-  const confirmed = inputs.privateConfirmed ? { ...request, privateCodeConfirmed: true } : request;
+  const approved =
+    inputs.approvedAmount === undefined
+      ? request
+      : { ...request, approvedAmount: inputs.approvedAmount };
+  const confirmed = inputs.privateConfirmed
+    ? { ...approved, privateCodeConfirmed: true }
+    : approved;
   return inputs.withAnswers ? { ...confirmed, withAnswers: true } : confirmed;
 }
 

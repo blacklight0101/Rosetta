@@ -11,9 +11,12 @@ import type { Project } from '../projects/project.js';
 import {
   rolesNeedCloudConsent,
   rolesNeedPrivateConfirmation,
+  UNDERSTAND_ROLES,
   understandOptionsOf,
 } from '../understand/understand-options.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
+import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.js';
+import type { ApprovedAmount } from '../understand/understand-options.js';
 
 // RF-003, RF-1108, RF-1105, RF-143, RF-132, RF-200: Start run is what `POST /api/projects/:id/runs` calls.
 // It finds the signed-in user's project (another user's id and an unknown id answer the same) and
@@ -26,6 +29,12 @@ import type { SubmitRun, SubmittedRun } from './submit-run.js';
 /** The stages that can be started through the API: `scan` (P1-23), `understand` (P1-33) and `plan` (P3-08). */
 const STARTABLE_STAGES: readonly RunStage[] = ['scan', 'understand', 'plan'];
 
+/** RF-431: the roles whose keys a startable stage needs; a scan calls no model. */
+const MODEL_ROLES_OF: Partial<Record<RunStage, readonly AgentRole[]>> = {
+  understand: UNDERSTAND_ROLES,
+  plan: ['planner'],
+};
+
 export interface StartRunDependencies {
   readonly projects: ProjectRepository;
   /** RF-614: a plan run's source run must be the user's, of the project and completed. */
@@ -35,6 +44,8 @@ export interface StartRunDependencies {
   readonly submit: SubmitRun;
   /** The host of the server's Ollama (`ROSETTA_OLLAMA_URL`); an Ollama elsewhere needs consent (RF-143). */
   readonly ollamaHost?: string;
+  /** RF-431: whether each role of the run has a usable key; checked before the run is queued. */
+  readonly roleKeys: RoleKeyDependencies;
 }
 
 export interface StartRunRequest {
@@ -53,6 +64,8 @@ export interface StartRunRequest {
   readonly sourceRunId?: string;
   /** RF-208, Q-43: `understand` reads `areas` again for this run (its id) and holds its cards. */
   readonly retryOf?: string;
+  /** RF-430: the figure the user approved on the start button, recorded as the run's approved amount. */
+  readonly approvedAmount?: ApprovedAmount;
 }
 
 export type StartRunProblem =
@@ -63,6 +76,7 @@ export type StartRunProblem =
   | typeof ERROR_CODES.planBriefMissing
   | typeof ERROR_CODES.planSourceMissing
   | typeof ERROR_CODES.projectNoSource
+  | typeof ERROR_CODES.providerKeyMissing
   | typeof ERROR_CODES.requestInvalid;
 
 export class StartRun {
@@ -89,12 +103,16 @@ export class StartRun {
    * RF-128, RF-152: an upload or workbook project reads what it holds, so a run needs it; no run is created without it. The
    * confirmations of the request are judged first, so the owner is asked for each thing once.
    */
-  private submit(
+  private async submit(
     input: Parameters<SubmitRun['execute']>[0],
   ): Promise<Result<SubmittedRun, StartRunProblem>> {
     const { project } = input;
     if (project.sourceKind !== 'github' && project.upload === undefined) {
-      return Promise.resolve(err(ERROR_CODES.projectNoSource));
+      return err(ERROR_CODES.projectNoSource);
+    }
+    // RF-431, EV-44: a role with no usable key would fail RST-2302 at $0; no run is queued.
+    if (await anyRoleWithoutKey(this.deps.roleKeys, project, MODEL_ROLES_OF[input.stage] ?? [])) {
+      return err(ERROR_CODES.providerKeyMissing);
     }
     return this.deps.submit.execute(input);
   }

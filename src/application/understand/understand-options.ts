@@ -24,6 +24,15 @@ export interface DeepenOptions {
   readonly coveragePass: boolean;
 }
 
+/**
+ * RF-430, RF-432, DEC-196: the journey total the user approved on the start button, recorded on the
+ * run; the run pauses and asks near it (P7-05). Micro-dollars are a JSON number, as in the manifest.
+ */
+export interface ApprovedAmount {
+  readonly tokens: number;
+  readonly costMicros: number;
+}
+
 export interface UnderstandOptions {
   readonly areas?: readonly string[];
   readonly cloudConsent: boolean;
@@ -35,6 +44,8 @@ export interface UnderstandOptions {
   readonly deepen?: DeepenOptions;
   /** RF-208, Q-43: the id of the run whose failed areas this run reads again; its cards are held. */
   readonly retryOf?: string;
+  /** RF-430: the amount the user approved at the start. */
+  readonly approvedAmount?: ApprovedAmount;
 }
 
 const optionsSchema = z.object({
@@ -46,6 +57,9 @@ const optionsSchema = z.object({
     .object({ parentRunId: z.string(), maxRounds: z.number().int(), coveragePass: z.boolean() })
     .optional(),
   retryOf: z.string().optional(),
+  approvedAmount: z
+    .object({ tokens: z.number().int().min(0), costMicros: z.number().int().min(0) })
+    .optional(),
 });
 
 /** The options as the manifest records them; `areas` only when the request sent it, as sent (empty kept). */
@@ -56,13 +70,16 @@ export function understandOptionsOf(request: {
   readonly withAnswers?: boolean | undefined;
   readonly deepen?: DeepenOptions | undefined;
   readonly retryOf?: string | undefined;
+  readonly approvedAmount?: ApprovedAmount | undefined;
 }): UnderstandOptions {
   const consent = { cloudConsent: request.cloudConsent === true };
   const priv = request.privateCodeConfirmed === true ? { privateCodeConfirmed: true } : {};
   const answers = request.withAnswers === true ? { withAnswers: true } : {};
   const deepen = request.deepen === undefined ? {} : { deepen: { ...request.deepen } };
   const retry = request.retryOf === undefined ? {} : { retryOf: request.retryOf };
-  const base = { ...consent, ...priv, ...answers, ...deepen, ...retry };
+  const approved =
+    request.approvedAmount === undefined ? {} : { approvedAmount: { ...request.approvedAmount } };
+  const base = { ...consent, ...priv, ...answers, ...deepen, ...retry, ...approved };
   return request.areas === undefined ? base : { areas: [...request.areas], ...base };
 }
 

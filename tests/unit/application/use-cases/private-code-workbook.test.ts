@@ -1,3 +1,4 @@
+import { ALL_KEYS_SERVED } from '../../../support/web-role-keys.js';
 import { heldWorkbooks } from '../../../support/workbook-run-fixtures.js';
 import { describe, expect, it } from 'vitest';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
@@ -44,9 +45,10 @@ async function setup(settings: ProjectSettings) {
   const { runs, manifests, submit } = harness;
   return {
     ...{ harness, project },
-    startRun: new StartRun({ projects, runs, briefs, submit }),
-    deepen: new StartDeepen({ projects, runs, manifests, submit }),
+    startRun: new StartRun({ roleKeys: ALL_KEYS_SERVED, projects, runs, briefs, submit }),
+    deepen: new StartDeepen({ roleKeys: ALL_KEYS_SERVED, projects, runs, manifests, submit }),
     resume: new ResumeRun({
+      roleKeys: ALL_KEYS_SERVED,
       ...{ projects, runs, manifests, queue: harness.queue, clock: harness.clock },
       problem: () => Promise.resolve(undefined),
     }),

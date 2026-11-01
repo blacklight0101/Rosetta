@@ -1,3 +1,4 @@
+import { ALL_KEYS_SERVED } from '../../../support/web-role-keys.js';
 import { NO_LISTED_MODELS } from '../../../../src/application/models/model-list.js';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -52,6 +53,7 @@ it.each([undefined, 0, 1, 2, 3, 4])(
     const harness = createEstimateHarness();
     const project = await projectWithScan(harness, userAmy.userId, settingsFor({}));
     const estimate = new EstimateRun({
+      roleKeys: ALL_KEYS_SERVED,
       ...harness,
       priceTable: estimatePrices,
       models: NO_LISTED_MODELS,

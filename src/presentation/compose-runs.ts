@@ -1,3 +1,4 @@
+import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
@@ -143,26 +144,29 @@ function runServices(service: ServiceParts): RunServices {
   const { writer, manifests, observability } = service;
   const cards = keptPriorCards(writer);
   const ollamaHost = ollamaHostOf(parts.ollamaUrl);
+  // RF-431: every start path checks the roles' keys before a run is queued.
+  const roleKeys = { users: new PgUserRepository(parts.pool), keys: parts.keySources };
   return {
     startRun: new StartRun({
       projects,
       runs,
       briefs: new FilePlanningBriefStore({ writer, masker: parts.masker }),
-      submit: submitRun,
+      ...{ submit: submitRun, roleKeys },
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),
-    estimateRun: composeEstimateRun(parts, { projects, runs, scans }),
+    estimateRun: composeEstimateRun(parts, { projects, runs, scans, roleKeys }),
     getRun: new GetRun({ runs, queue, files: new FileRunTextFiles(writer) }),
     getJourney: composeJourney({ ...service, priorCards: cards }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
     stopRun: new StopRun({ queue }),
     resumeRun: composeResume({
       ...{ projects, runs, manifests, queue, scans, writer },
-      ...{ clock: parts.clock, masker: parts.masker, ollamaHost },
+      ...{ clock: parts.clock, masker: parts.masker, ollamaHost, roleKeys },
     }),
     ...composeDeepen({
       ...{ pool: parts.pool, projects, runs, manifests, scans, submit: submitRun, writer },
       ...{ masker: parts.masker, priceTable: parts.priceTable, models: parts.models, ollamaHost },
+      roleKeys,
     }),
     exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),
     readRunFile: new ReadRunFile({ runs, files: new NodeRunFileReader(parts.dataDir) }),

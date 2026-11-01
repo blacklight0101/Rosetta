@@ -16,6 +16,7 @@ import { useEstimateChoice, type EstimateChoice } from './use-estimate-choice.js
 import { useSpendLimits } from './use-spend-limits.js';
 import { useAnsweredCount } from './use-answered-count.js';
 import { useStartActions, type StartActions } from './use-start-actions.js';
+import { approvalText, approvedAmountOf, missingKeyProviders } from '../lib/journey-approval.js';
 
 // RF-1001, RF-143, DEC-108, DEC-117: the state of the start page: the stage, the address, the run
 // cap and the confirm threshold beside it, the cloud consent, and what follows from them (the
@@ -173,6 +174,18 @@ function likelihoodOf(estimate: EstimateLoad) {
   return { likelyMicros: likelyOf(estimate), likelyTokens: tokens, local: tokens !== undefined };
 }
 
+/** RF-430, RF-431: the approved figure of the journey and the providers whose key is missing. */
+function approvalOf(stage: RunStageChoice, estimate: EstimateLoad) {
+  const likely = likelihoodOf(estimate);
+  if (stage !== 'understand' || estimate.status !== 'ready') return { actions: likely, gate: {} };
+  const approval = approvalText(estimate.estimate);
+  const keyMissing = providerNames(missingKeyProviders(estimate.estimate));
+  return {
+    actions: { ...likely, approvedAmount: approvedAmountOf(estimate.estimate) },
+    gate: { keyMissing, ...(approval === undefined ? {} : { approval }) },
+  };
+}
+
 /** DEC-117: the run cap and the confirm threshold as the user types them, from the project's own. */
 function useLimitFields(project: Project) {
   const [capText, setCapText] = useState(microsToDollars(runCapOf(project).toString()));
@@ -237,11 +250,12 @@ export function useStartForm(loaded: Project): StartForm {
     setRefused(false);
     choice.reestimate();
   });
+  const approval = approvalOf(stage, estimate);
   const actions = useStartActions({
     ...{ project, stage, url, ...fields, areas: choice.chosen, consent: checked },
     privateConfirmed: privateCode.confirmed,
     withAnswers: rerun.answered > 0 && rerun.checked,
-    ...likelihoodOf(estimate),
+    ...approval.actions,
     onSaved: setProject,
     onConsentRefused: () => {
       setRefused(true);
@@ -250,18 +264,17 @@ export function useStartForm(loaded: Project): StartForm {
   const libraryChosen = choice.areas.some((area) => area.checked && area.thirdParty);
   const gate = startGate({
     ...{ stage, estimate, consentNeeded: names, consentGiven: checked },
-    privateNeeded: privateCode.needed,
-    privateGiven: privateCode.checked,
+    ...{ privateNeeded: privateCode.needed, privateGiven: privateCode.checked },
     chosenAreas: choice.chosen.length,
     oldMapUnconfirmed: isOutdated(estimate) && !confirmed.oldMap.confirmed,
     libraryUnconfirmed: libraryChosen && !confirmed.library.confirmed,
     ...noSourceOf(project),
+    ...approval.gate,
   });
   return {
     ...{ project, choice, stage, setStage, url, setUrl, ...fields, ...runCaps },
     ...{ consent: { roles, names, checked, set: setChecked }, gate, actions, setProject },
-    privateCode,
-    rerun,
+    ...{ privateCode, rerun },
     library: { chosen: libraryChosen, ...confirmed.library },
     oldMap: { outdated: isOutdated(estimate), ...confirmed.oldMap },
   };

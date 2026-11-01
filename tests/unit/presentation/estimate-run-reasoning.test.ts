@@ -1,3 +1,4 @@
+import { ALL_KEYS_SERVED } from '../../support/web-role-keys.js';
 import { NO_LISTED_MODELS } from '../../../src/application/models/model-list.js';
 import { z } from 'zod';
 import { describe, expect, it } from 'vitest';
@@ -34,6 +35,7 @@ function settingsWithEffort(effort?: 'medium'): ProjectSettings {
 async function viewOf(settings: ProjectSettings, marked: boolean) {
   const h = createEstimateHarness();
   const estimate = new EstimateRun({
+    roleKeys: ALL_KEYS_SERVED,
     ...{ projects: h.projects, runs: h.runs, scans: h.scans, keys: h.keys },
     priceTable: estimatePrices,
     models: NO_LISTED_MODELS,

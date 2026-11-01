@@ -36,6 +36,8 @@ export const roleEstimate = z.object({
   priced: z.boolean(),
   /** Q-58: the effort a reasoning model is asked for; absent for any other model. */
   reasoningEffort: z.string().optional(),
+  /** RF-431: no usable key for the role; a run would be refused. */
+  keyMissing: z.literal(true).optional(),
   ...range,
 });
 
@@ -64,6 +66,19 @@ const firstCalls = z.object({
   ),
 });
 
+/** RF-430: one total of the journey. */
+const journeyFigure = z.object({ tokens: z.number(), costMicros: micros });
+
+/** RF-430, DEC-196: the likely and the worst-case total of the whole journey. */
+const journey = z.object({
+  basis: z.enum(['history', 'assumptions']),
+  deepenRounds: z.number(),
+  likely: journeyFigure,
+  worstCase: journeyFigure,
+});
+
+export type JourneyEstimate = z.output<typeof journey>;
+
 export const estimateSchema = z.object({
   codeMap: z
     .object({
@@ -84,6 +99,7 @@ export const estimateSchema = z.object({
   roles: z.array(roleEstimate),
   total: z.object(range),
   firstCalls: firstCalls.optional(),
+  journey: journey.optional(),
 });
 
 export type RunEstimate = z.output<typeof estimateSchema>;

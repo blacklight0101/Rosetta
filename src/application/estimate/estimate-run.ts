@@ -6,9 +6,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Run } from '../../domain/runs/run.js';
 import { CURRENT_SCANNER_VERSION, type CodeMap } from '../../domain/code-map/code-map.js';
-import { areaHoldsWorkbook } from '../../domain/sources/workbook-folders.js';
-import { marksOf, surfaceOf } from '../../domain/code-map/area-surface.js';
-import type { Area } from '../../domain/code-map/area.js';
+import { marksOf } from '../../domain/code-map/area-surface.js';
 import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderKeyRepository } from '../ports/provider-key-repository.js';
@@ -16,7 +14,6 @@ import type { RunIndex } from '../ports/run-index.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { Project } from '../projects/project.js';
 import { plannedAreas } from '../understand/planned-areas.js';
-import { readingOrder } from '../understand/reader-order.js';
 import { planReaderTasks } from '../understand/reader-tasks.js';
 import {
   MERGE_ANSWER_TOKENS,
@@ -42,6 +39,8 @@ import type { ReasoningModels } from '../models/model-list.js';
 import { estimateRole } from './role-estimate.js';
 import { firstCallsOf } from './first-calls.js';
 import type { PlanCapDependencies } from './plan-caps.js';
+import { offeredAreas, offeredFor, screensOf, workbookAreaNames } from './estimate-areas.js';
+import { journeyOfEstimate, type JourneyDependencies } from './journey-estimate.js';
 
 // RF-425, ADR-007, DEC-13, DEC-54, DEC-107: the estimate before a run (`GET
 // /api/projects/:id/estimate`). From the code map of the project's latest completed scan, the areas
@@ -52,7 +51,7 @@ import type { PlanCapDependencies } from './plan-caps.js';
 // scenario is applied by the start page to the likely figure of this estimate (P2-08, DEC-97); the
 // high figure is the only one that covers the worst case of cache writes (P2-37).
 
-export interface EstimateRunDependencies {
+export interface EstimateRunDependencies extends JourneyDependencies {
   readonly projects: ProjectRepository;
   readonly runs: Pick<RunIndex, 'list'>;
   readonly scans: ScanResults;
@@ -122,14 +121,6 @@ export function withJudgements(
 }
 
 /**
- * RF-626: the screens of the areas, taken to be one SCRN card for each page file the code map marks
- * (the same marks as the reader prompt, Q-25); each card adds its claims as verifier calls.
- */
-function screensOf(areas: readonly Area[], codeMap: CodeMap): number {
-  return areas.reduce((total, area) => total + surfaceOf(area, codeMap).pages.length, 0);
-}
-
-/**
  * RF-250, RF-264, P2-35, Q-52: the summariser's tokens. The merge is its share of the readers' tokens, and
  * each batch of cards after the first resends the merge prompt and gives an answer; the overview
  * then reads the cards once more (the same input again) and writes the overview. The cards the merge
@@ -171,49 +162,11 @@ export function sumPoints(points: readonly ByScenario<EstimatePoint>[]): ByScena
   return { low: total('low'), likely: total('likely'), high: total('high') };
 }
 
-/** RF-155: the areas that hold a rendered workbook also resend the guidance and both formats. */
-function workbookAreaNames(
-  areas: readonly Area[],
-  folders: readonly string[] | undefined,
-): ReadonlySet<string> {
-  return new Set(areas.filter((area) => areaHoldsWorkbook(area, folders)).map((area) => area.name));
-}
-
 /** What the estimate reads of a scan: its code map, the workbook folders and the snapshot's name. */
 interface ScannedFacts {
   readonly codeMap: CodeMap;
   readonly workbookFolders: readonly string[] | undefined;
   readonly source: { readonly snapshotKey: string };
-}
-
-/**
- * P3-112: the areas the start page offers. One with no readable file (zero tokens) is left out. It
- * is filtered here, not in plannedAreas, so a run stored before this change still resumes.
- */
-function offeredAreas(
-  areas: readonly Area[],
-  thirdParty: ReadonlySet<string>,
-): RunEstimate['areas'] {
-  return areas
-    .filter((area) => area.estimatedTokens > 0)
-    .map(({ name, estimatedTokens, files }) => ({
-      ...{ name, estimatedTokens, files: files.length },
-      thirdParty: thirdParty.has(name),
-    }));
-}
-
-/**
- * P3-123: with no area list the figures are for the default (own code), but the list still offers
- * every area, because the start page builds its picker from it.
- */
-function offeredFor(
-  planned: readonly Area[],
-  covered: readonly Area[],
-  requested: readonly string[] | undefined,
-  thirdParty: ReadonlySet<string>,
-): readonly Area[] {
-  const ordered = readingOrder(planned, thirdParty); // RF-210: the readers' order
-  return (requested ?? []).length > 0 ? ordered.filter((area) => covered.includes(area)) : ordered;
 }
 
 export class EstimateRun {
@@ -254,6 +207,9 @@ export class EstimateRun {
         tokens: summariser.tokens,
       }),
     ]);
+    const total = sumPoints(roles.map((role) => role.points));
+    const sourceTokens = codeMap.areas.reduce((sum, area) => sum + area.estimatedTokens, 0);
+    const journey = await journeyOfEstimate(this.deps, project, { roles, total, sourceTokens });
     return ok({
       codeMap: {
         scannerVersion: codeMap.scannerVersion ?? null,
@@ -264,8 +220,8 @@ export class EstimateRun {
       currency: this.deps.priceTable.currency,
       areas: offeredAreas(offered, thirdParty),
       assumptions: { ...assumptions, summariserBatches: summariser.batches },
-      roles,
-      total: sumPoints(roles.map((role) => role.points)),
+      ...journey,
+      total,
       ...(await this.firstCalls(project, areas.length)),
     });
   }

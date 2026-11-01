@@ -15,10 +15,12 @@ import { scopeOf } from '../runs/run-scope.js';
 import {
   readUnderstandOptions,
   rolesNeedCloudConsent,
+  UNDERSTAND_ROLES,
   rolesNeedPrivateConfirmation,
 } from '../understand/understand-options.js';
 import type { ResumeProblemCheck } from '../understand/resume-problem.js';
 import type { SubmittedRun } from './submit-run.js';
+import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.js';
 
 // RF-006, RF-1105, RF-143, ADR-007, DEC-13, RNF-002: Resume run queues the user's ended understand
 // run again. It is the same run: the same row, folder and manifest. The manifest forgets the end
@@ -37,6 +39,8 @@ export interface ResumeRunDependencies {
   readonly problem: ResumeProblemCheck;
   /** The host of the server's Ollama (`ROSETTA_OLLAMA_URL`); an Ollama elsewhere needs consent (RF-143). */
   readonly ollamaHost?: string;
+  /** RF-431: whether each role of the run has a usable key; checked before the run is queued. */
+  readonly roleKeys: RoleKeyDependencies;
 }
 
 export type ResumeProblem =
@@ -45,7 +49,8 @@ export type ResumeProblem =
   | typeof ERROR_CODES.cloudConsentMissing
   | typeof ERROR_CODES.privateCodeNotConfirmed
   | typeof ERROR_CODES.resumeSourceChanged
-  | typeof ERROR_CODES.taskResultsUnreadable;
+  | typeof ERROR_CODES.taskResultsUnreadable
+  | typeof ERROR_CODES.providerKeyMissing;
 
 export class ResumeRun {
   private readonly deps: ResumeRunDependencies;
@@ -96,6 +101,10 @@ export class ResumeRun {
     // RF-132: the run of an uploaded project resumes only if it was started with the confirmation.
     if (privateCodeConfirmed !== true && rolesNeedPrivateConfirmation(project, ollamaHost)) {
       return ERROR_CODES.privateCodeNotConfirmed;
+    }
+    // RF-431: a resume whose roles have no usable key would fail again at $0.
+    if (await anyRoleWithoutKey(this.deps.roleKeys, project, UNDERSTAND_ROLES)) {
+      return ERROR_CODES.providerKeyMissing;
     }
     return this.deps.problem(run, stored);
   }

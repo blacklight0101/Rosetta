@@ -1047,6 +1047,7 @@ As a user I want to see what the whole journey is likely to cost, and what it ma
 - Given earlier runs of the same provider and model in the cost ledger (RF-428), when the estimate is made, then it scales their measured totals by the source size; with no history it uses the fixed assumptions and says so.
 - Given the estimate, when I start the run, then the start button shows the figure I approve and the run records it as its approved amount (RF-432).
   Verification: unit tests of the estimator with and without history; an end-to-end test of the start button.
+  Applied 2026-11-01 by P7-04: the history is the ledger rows of the project's understand and plan runs (a Deepen is an understand run) on the reader's provider and model, summed and scaled by the source size; the likely total is that sum and the worst case half as much again, never below the understand run's high figure. Without history a Deepen round counts as 50% (likely) and 100% (worst case) of the understand estimate and the plan as 10% and 20%, with the default rounds (DEC-204 keeps the figure for the journey's approval screen). The approved figure is the likely total; the run records it in its manifest options as `approvedAmount` (data-model.md section 3.6).
 
 **RF-431 No run without a usable key** - R1 - Must - Source DEC-196, EV-44 - ADR-007, ADR-015
 As a user I want to know before I start that a provider key is missing so that a run is never queued only to fail at $0.
@@ -1054,6 +1055,7 @@ As a user I want to know before I start that a provider key is missing so that a
 - Given a role whose provider needs a key and neither my key nor an allowed server key is set, when the understand estimate is shown, then that role says the key is missing.
 - Given such a role, when I start an understand run, a Deepen or a resume, then it is refused with RST-2302 and a plain message before it is queued, and no run is recorded.
   Verification: integration tests of the start routes; a unit test of the estimate.
+  Applied 2026-11-01 by P7-04: a plan run's planner is checked the same way; an empty server key variable (`ANTHROPIC_API_KEY=`) counts as no key (EV-44).
 
 **RF-432 Pause and ask near the approved amount** - R1 - Should - Source DEC-196 - ADR-007, ADR-026
 As a user I want a run that nears the amount I approved to pause and ask me so that I do not lose the run at a hard cap.

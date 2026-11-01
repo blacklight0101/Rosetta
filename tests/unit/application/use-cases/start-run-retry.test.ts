@@ -1,3 +1,4 @@
+import { ALL_KEYS_SERVED } from '../../../support/web-role-keys.js';
 import { describe, expect, it } from 'vitest';
 import { StartRun } from '../../../../src/application/use-cases/start-run.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
@@ -27,6 +28,7 @@ async function setup() {
   await projects.insertOrFind(project);
   await projects.insertOrFind(other);
   const startRun = new StartRun({
+    roleKeys: ALL_KEYS_SERVED,
     ...{ projects, runs: harness.runs, briefs: new MemoryBriefStore(), submit: harness.submit },
   });
   const seed = async (overrides: Partial<Run>): Promise<Run> => {
