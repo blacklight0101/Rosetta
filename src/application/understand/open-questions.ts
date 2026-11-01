@@ -23,10 +23,38 @@ export function questionWords(question: string): string {
     .trim();
 }
 
-/** RF-646, Q-52, EV-57: whether two questions ask the same thing. */
+const askWords = new Set(['what', 'where', 'who', 'whom', 'whose', 'when', 'why', 'how', 'which']);
+const stopWords = new Set(
+  `a an the is are was were be been being do does did can could should would will shall may might
+   must of in on at to for from by with within into as and or if it its this that these those there
+   their they them than then so such not no any all`.split(/\s+/u),
+);
+
+function contentOf(words: string): ReadonlySet<string> {
+  return new Set(words.split(' ').filter((word) => !stopWords.has(word) && !askWords.has(word)));
+}
+
+/**
+ * RF-646, RF-243, Q-52, EV-57: whether two questions ask the same thing. The one rule of the four
+ * places that compare questions. Equal normalised words always match; otherwise the questions open
+ * with the same question word and their subject words (stop words and question words removed)
+ * overlap highly: at least three shared, covering 80% of the shorter and 60% of both together.
+ */
 export function sameQuestion(a: string, b: string): boolean {
   const first = questionWords(a);
-  return first !== '' && first === questionWords(b);
+  const second = questionWords(b);
+  if (first === '' || second === '') return false;
+  if (first === second) return true;
+  const lead = (words: string): string => {
+    const word = words.split(' ')[0] ?? '';
+    return askWords.has(word) ? word : '';
+  };
+  if (lead(first) !== lead(second)) return false;
+  const left = contentOf(first);
+  const right = contentOf(second);
+  const shared = [...left].filter((word) => right.has(word)).length;
+  const union = left.size + right.size - shared;
+  return shared >= 3 && shared >= 0.8 * Math.min(left.size, right.size) && shared >= 0.6 * union;
 }
 
 function keyOf(card: Card): string {

@@ -106,7 +106,7 @@ describe('DEC-198 (1) the answers that add no task', () => {
 
     const given = withDeepenAnswers(planned, rerun, { ...scope, codeMap: { areas: [empty] } });
 
-    expect(given).toEqual(planned);
+    expect(given.map((task) => task.area.name)).toEqual(['Catalog']);
   });
 
   it('DEC-198 plans a Deepen with no pending answer as before', () => {

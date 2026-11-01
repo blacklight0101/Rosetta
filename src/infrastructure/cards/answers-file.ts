@@ -8,7 +8,7 @@ import type {
   RecordedQuestion,
 } from '../../application/ports/answers-file.js';
 import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
-import { questionWords } from '../../application/understand/open-questions.js';
+import { sameQuestion } from '../../application/understand/open-questions.js';
 import { KeyedQueue } from '../../application/support/keyed-queue.js';
 import { ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -40,20 +40,12 @@ function fileOf(project: ProjectRef): WorkspaceFile {
   return { userId: project.userId, path: `${projectPath(project.projectId)}/answers.md` };
 }
 
-/** RF-646, Q-52: two questions that ask the same have the same words, whatever the case and marks. */
-function askedBy(text: string): string {
-  const words = questionWords(text);
-  return words === '' ? text : words;
-}
-
-/** The questions the file already holds: as written, and by the words they ask. */
-function questionsIn(text: string): Set<string> {
-  return new Set(
-    linesOf(text).flatMap((line) => {
-      const found = heading.exec(line);
-      return found === null ? [] : [found[1] ?? '', askedBy(found[1] ?? '')];
-    }),
-  );
+/** The questions the file already holds, as written. */
+function questionsIn(text: string): string[] {
+  return linesOf(text).flatMap((line) => {
+    const found = heading.exec(line);
+    return found === null ? [] : [found[1] ?? ''];
+  });
 }
 
 /** P5-11: whether the run of the question already has a section under the question's card id. */
@@ -83,7 +75,7 @@ export class FileAnswersFile implements AnswersFile {
         const held =
           question.survivor === true
             ? hasId(existing, question)
-            : added.has(text) || known.has(text) || known.has(askedBy(text));
+            : added.has(text) || known.some((each) => each === text || sameQuestion(each, text));
         if (held) return [];
         added.add(text);
         return [this.section(question, text, end)];
