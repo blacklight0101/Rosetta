@@ -1,4 +1,8 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
+import {
+  isArchitectureStyleId,
+  type ArchitectureStyleId,
+} from '../../domain/planning/catalogue.js';
 import { brokenRuleReason, styleRoles } from '../../domain/planning/style-rules.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { checkReference } from '../../domain/planning/typed-answers.js';
@@ -47,13 +51,27 @@ function unknownLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   ];
 }
 
+/** EV-73: the style the roles and the check follow: the one the own answer names, else the brief's. */
+function roleStyleOf(handoff: HandoffPackage): ArchitectureStyleId {
+  return isArchitectureStyleId(handoff.style.id)
+    ? handoff.style.id
+    : handoff.brief.architecture.style;
+}
+
+/** DEC-184, EV-73: what the style the check compares with is called. */
+export function referenceKind(handoff: HandoffPackage): string {
+  return handoff.style.id === handoff.brief.architecture.style
+    ? 'the default style'
+    : 'the catalogue style closest to the answer';
+}
+
 // RF-608
 export function styleLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   if (handoff.content.components.length === 0) return [];
-  const roles = styleRoles[handoff.brief.architecture.style].join(', ');
+  const roles = styleRoles[roleStyleOf(handoff)].join(', ');
   // DEC-184: with an own answer the style is only the reference of the checks.
   const reference = hasOwnAnswer(handoff, 'architecture')
-    ? `, the default style, ${checkReference('style')},`
+    ? `, ${referenceKind(handoff)}, ${checkReference('style')},`
     : ',';
   return [
     '## Components against the style',

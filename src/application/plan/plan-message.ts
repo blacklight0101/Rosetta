@@ -4,6 +4,7 @@ import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
+import { judgedStyleId } from '../../domain/planning/judged-style.js';
 import { styleRoles } from '../../domain/planning/style-rules.js';
 import { typedAnswers, type TypedQuestionId } from '../../domain/planning/typed-answers.js';
 import type { RecordedQuestion } from '../ports/answers-file.js';
@@ -54,7 +55,7 @@ function principlesOf(brief: PlanningBrief, catalogue: Catalogue): object[] {
 
 /** The chosen style with its rule and the roles a component can have in it, so the components follow it (RF-608). */
 function styleOf(brief: PlanningBrief, catalogue: Catalogue): object {
-  const { style } = brief.architecture;
+  const style = judgedStyleId(brief, catalogue.styles);
   const entry = catalogue.entries.find((each) => each.id === style);
   return { id: style, title: entry?.title, rule: entry?.rule, roles: styleRoles[style] };
 }
