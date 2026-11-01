@@ -7,7 +7,7 @@ import type {
   RecordedQuestion,
 } from '../ports/answers-file.js';
 import type { PriorCards } from '../ports/prior-cards.js';
-import { questionWords } from '../understand/open-questions.js';
+import { sameQuestion } from '../understand/open-questions.js';
 import { consolidatedStates, type StatedQuestion } from '../use-cases/question-states.js';
 import { familyOf, type FamilyDependencies, type RunFamily } from './run-family.js';
 
@@ -72,14 +72,13 @@ async function entriesOf(
 
 /** The group a version joins: the one with its card id (a Deepen copies the cards) or its words. */
 function groupFor(groups: readonly Entry[][], entry: Entry): Entry[] | undefined {
-  const words = questionWords(entry.stated.question);
   return groups.find(
     (group) =>
       group.every((member) => member.runKey !== entry.runKey) &&
       group.some(
         (member) =>
           member.cardId === entry.cardId ||
-          (words !== '' && questionWords(member.stated.question) === words),
+          sameQuestion(member.stated.question, entry.stated.question),
       ),
   );
 }
