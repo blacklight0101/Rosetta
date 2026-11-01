@@ -24,7 +24,7 @@ function question(overrides: Record<string, unknown> = {}): Record<string, unkno
   return cardObject({
     type: 'OQ',
     title: 'Free shipping threshold',
-    question: 'Why is the free-shipping threshold 50?',
+    question: 'Is the free-shipping threshold of 50 set by the shop owner?',
     whyItMatters: 'The threshold decides which orders pay for shipping.',
     suggestedAnswers: threeAnswers,
     ...overrides,
@@ -76,6 +76,46 @@ describe('RF-645 suggested answers of an OQ card', () => {
 
   it('RF-645 an empty list is refused like a missing one', () => {
     expect(parsed(question({ suggestedAnswers: [] })).drafts).toEqual([]);
+  });
+});
+
+describe('EV-69 the third answer has the kind of the question', () => {
+  const who = 'Who uses the stock sheet?';
+  const whoAnswers = [
+    answer('The warehouse team', { recommended: true }),
+    answer('The shop owner'),
+    answer('Yes, but only some sheets'),
+  ];
+
+  it('EV-69 a who question with an answer starting with Yes is sent back for repair', () => {
+    const read = parsed(question({ question: who, suggestedAnswers: whoAnswers }));
+
+    expect(read.drafts).toEqual([]);
+    expect(read.problems[0]?.path).toBe('cards.0.suggestedAnswers');
+    expect(read.problems[0]?.message).toMatch(/not a yes\/no question/iu);
+  });
+
+  it.each(['Which', 'Where', 'What', 'Why', 'How'])(
+    'EV-69 a %s question refuses a No answer',
+    (word) => {
+      const answers = [answer('No', { recommended: true }), answer('B'), answer('C')];
+
+      const read = parsed(
+        question({ question: `${word} is the figure kept?`, suggestedAnswers: answers }),
+      );
+
+      expect(read.drafts).toEqual([]);
+    },
+  );
+
+  it('EV-69 a who question with answers of its own kind is kept', () => {
+    const own = [...whoAnswers.slice(0, 2), answer('Nobody, the sheet is archived')];
+
+    expect(parsed(question({ question: who, suggestedAnswers: own })).problems).toEqual([]);
+  });
+
+  it('EV-69 a yes/no question keeps a qualified Yes answer', () => {
+    expect(parsed(question()).problems).toEqual([]);
   });
 });
 
