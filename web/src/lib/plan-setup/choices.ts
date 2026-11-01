@@ -114,3 +114,16 @@ export function typePrinciple(draft: Draft, text: string): Draft {
   }
   return typeOwn(draft, 'principles', text);
 }
+
+/**
+ * EV-73: a typed architecture answer keeps Rosetta's proposal: the styles the planner proposed and the
+ * cards behind its recommended style, so the own-answer ADR can name the recommendation.
+ */
+export function keepProposed(draft: Draft, options: PlanOptions | undefined): Draft {
+  if (options === undefined || draft.chosen['architecture'] !== TYPED) return draft;
+  const recommended = proposedOf(options);
+  const evidence =
+    options.architecture.options.find((option) => option.style === options.architecture.recommended)
+      ?.evidence ?? [];
+  return { ...draft, recommended, evidence };
+}

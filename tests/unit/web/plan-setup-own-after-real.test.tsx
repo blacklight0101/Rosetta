@@ -15,7 +15,7 @@ async function openStep(name: string): Promise<void> {
 }
 
 describe('the architecture question: a real answer, then an own one', () => {
-  it('RF-645 P6-16 choosing a style and then typing an own answer sends no architecture', async () => {
+  it('RF-645 P6-16 choosing a style and then typing an own answer sends no chosen style, only the proposal', async () => {
     const page = renderPlan();
     await openStep('Architecture');
 
@@ -34,6 +34,11 @@ describe('the architecture question: a real answer, then an own one', () => {
     });
     expect(saves(page)).toEqual([
       {
+        architecture: {
+          style: 'modular-monolith',
+          recommended: ['modular-monolith', 'hexagonal'],
+          evidence: ['BR-001'],
+        },
         chosen: { architecture: 'typed' },
         typed: { architecture: 'Keep the portal and add an API beside it.' },
       },

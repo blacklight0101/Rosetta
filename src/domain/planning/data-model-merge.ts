@@ -24,7 +24,7 @@ function singular(word: string): string {
  * The name without case, separators or a plural ending: `Catalog_Brands` and `catalogbrand` agree.
  * A name with a part of one letter keeps its separators (`u_ser` is not `user`).
  */
-function keyOf(name: string): string {
+export function keyOf(name: string): string {
   const lower = name.toLowerCase();
   const parts = lower.split('_');
   return singular(parts.every((part) => part.length >= 2) ? parts.join('') : lower);
@@ -75,7 +75,10 @@ function followed(table: DraftTable, renames: ReadonlyMap<string, string>): Draf
   };
 }
 
-function united(first: DraftTable, others: readonly DraftTable[]) {
+export function united(
+  first: DraftTable,
+  others: readonly DraftTable[],
+): { table: DraftTable; twins: string[] } {
   const { columns, renames } = columnsOf(first, others);
   const rest = others.map((each) => followed(each, renames));
   const group = [first, ...rest];
@@ -110,7 +113,7 @@ function united(first: DraftTable, others: readonly DraftTable[]) {
   return { table, twins: [...renames.keys()] };
 }
 
-function repointed(key: ForeignKey, aliases: ReadonlyMap<string, string>): ForeignKey {
+export function repointed(key: ForeignKey, aliases: ReadonlyMap<string, string>): ForeignKey {
   const kept = aliases.get(key.references);
   return kept === undefined ? key : { ...key, references: kept };
 }
