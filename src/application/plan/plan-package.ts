@@ -234,6 +234,7 @@ export function handoffPackageOf(
     ...carried(documents, documents.secrets),
     copiedExamples: copiedIn(prd, decided.content, documents.examples),
     grepRules: catalogue.grepRules,
+    agentModels: catalogue.agentModels,
     meaning: meaningOf(decided.content, { ...documents, sources, overruled }, catalogue),
   };
 }

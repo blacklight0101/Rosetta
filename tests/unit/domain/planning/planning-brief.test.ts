@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { noClaimVerbs } from '../../../../src/domain/planning/claim-verbs.js';
 import { noGrepRules } from '../../../../src/domain/planning/grep-rules.js';
+import { noAgentModels } from '../../../../src/domain/planning/build-method.js';
 import { noStackData } from '../../../../src/domain/planning/stack-data.js';
 import type { Catalogue } from '../../../../src/domain/planning/catalogue.js';
 import { briefProblems } from '../../../../src/domain/planning/brief-problems.js';
@@ -27,6 +28,7 @@ const catalogue: Catalogue = {
   stack: noStackData,
   claimVerbs: noClaimVerbs,
   grepRules: noGrepRules,
+  agentModels: noAgentModels,
 };
 
 describe('buildBrief: no answers', () => {

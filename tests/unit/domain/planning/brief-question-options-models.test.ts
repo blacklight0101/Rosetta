@@ -30,7 +30,10 @@ describe('P7-12 the suggested answers of a blank tier-model question', () => {
   });
 
   it('RF-645 the tier own model is recommended and first, and only it is recommended', () => {
-    const resolved = resolveBuildMethod({ aiAssisted: true, agentTool: { kind: 'codex' } });
+    const resolved = resolveBuildMethod(
+      { aiAssisted: true, agentTool: { kind: 'codex' } },
+      shippedCatalogue.agentModels,
+    );
     for (const tier of ['smallest', 'middle', 'largest'] as const) {
       const options = optionsOf(codexBlank, `buildMethod.models.${tier}`);
 
@@ -73,27 +76,36 @@ describe('P7-12 the options of other tools and of named tiers', () => {
 
 describe('P7-12 a Codex brief with no typed names gets the offered names', () => {
   it('RF-639 resolves a model for each of the three tiers and none for the escalation', () => {
-    const method = resolveBuildMethod({ aiAssisted: true, agentTool: { kind: 'codex' } });
+    const method = resolveBuildMethod(
+      { aiAssisted: true, agentTool: { kind: 'codex' } },
+      shippedCatalogue.agentModels,
+    );
 
     expect(Object.keys(method.models ?? {}).sort()).toEqual(['largest', 'middle', 'smallest']);
   });
 
   it('RF-639 a typed name wins over the offered one', () => {
-    const method = resolveBuildMethod({
-      aiAssisted: true,
-      agentTool: { kind: 'codex' },
-      models: { middle: 'gpt-mid' },
-    });
+    const method = resolveBuildMethod(
+      {
+        aiAssisted: true,
+        agentTool: { kind: 'codex' },
+        models: { middle: 'gpt-mid' },
+      },
+      shippedCatalogue.agentModels,
+    );
 
     expect(method.models?.middle).toBe('gpt-mid');
     expect(method.models?.smallest).toBeDefined();
   });
 
   it('RF-639 another tool is still given no names', () => {
-    const method = resolveBuildMethod({
-      aiAssisted: true,
-      agentTool: { kind: 'other', name: 'Custom' },
-    });
+    const method = resolveBuildMethod(
+      {
+        aiAssisted: true,
+        agentTool: { kind: 'other', name: 'Custom' },
+      },
+      shippedCatalogue.agentModels,
+    );
 
     expect(method.models).toBeUndefined();
   });

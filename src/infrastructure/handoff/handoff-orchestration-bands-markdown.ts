@@ -51,7 +51,7 @@ function localLines(method: BuildMethod, bands: readonly DifficultyBand[]): stri
 
 // RF-640, RF-641
 export const bandsSection: SectionWriter = (handoff, esc) => {
-  const method = resolveBuildMethod(handoff.brief.buildMethod);
+  const method = resolveBuildMethod(handoff.brief.buildMethod, handoff.agentModels);
   const escalation = method.models?.escalation;
   const bands = bandsFor(method);
   return [

@@ -212,7 +212,7 @@ export function buildBrief(answers: BriefAnswers, catalogue: Catalogue): Unsaved
     ...(answers.application === undefined ? {} : { application: answers.application }),
     stack: [...(answers.stack ?? [])].sort((a, b) => layerOrder(a.layer) - layerOrder(b.layer)),
     context: contextOf(answers.context),
-    buildMethod: resolveBuildMethod(answers.buildMethod),
+    buildMethod: resolveBuildMethod(answers.buildMethod, catalogue.agentModels),
     defaulted: defaultedQuestions(answers),
     ...ownAnswersOf(answers),
   };

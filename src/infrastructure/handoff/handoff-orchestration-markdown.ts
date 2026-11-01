@@ -41,7 +41,10 @@ const rolesSection: SectionWriter = () => [
 
 // RF-640, RF-641, the owner's decision of 2026-10-29: the Status text exists only with a named escalation model.
 function thirdFailureLines(handoff: HandoffPackage): string[] {
-  if (resolveBuildMethod(handoff.brief.buildMethod).models?.escalation === undefined)
+  if (
+    resolveBuildMethod(handoff.brief.buildMethod, handoff.agentModels).models?.escalation ===
+    undefined
+  )
     return ['- Third failure: stop. The owner decides what happens next.'];
   return [
     `- Third failure: stop and ask the owner. Only with the owner's approval in chat, the orchestrator writes on the Status line of that card the text \`${escalationApprovedText}\` and uses the escalation model for it; without the approval the owner decides.`,
