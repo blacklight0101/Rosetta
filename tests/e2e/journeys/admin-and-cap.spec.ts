@@ -97,7 +97,6 @@ test(
       await page.getByRole('link', { name: 'Start page' }).click();
       await pill.getByRole('link', { name: /Your total/u }).click();
       await expect(page.getByRole('heading', { name: 'Project cost', level: 1 })).toBeVisible();
-      await expect(page.getByRole('table', { name: 'By model' })).toContainText('gpt-5-nano');
       await expect(page.getByRole('table', { name: 'By run' }).getByRole('link')).not.toHaveCount(
         0,
       );

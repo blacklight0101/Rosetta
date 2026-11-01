@@ -62,7 +62,15 @@ test('RF-006 RF-422 RF-301 RF-432 a run pauses at the amount approved, the owner
   await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
   const live = await startAndOpenLiveRun(page);
 
-  await expect(page.getByTestId('approval-question')).toBeVisible({ timeout: 120_000 });
+  await expect
+    .poll(
+      async () =>
+        (await page.getByTestId('approval-question').count()) > 0
+          ? 'asks'
+          : ((await runStatus(page).textContent()) ?? ''),
+      { timeout: 120_000 },
+    )
+    .toBe('asks');
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
   await openRunTab(page, 'Evidence');
