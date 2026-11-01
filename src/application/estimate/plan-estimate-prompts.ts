@@ -1,4 +1,5 @@
 import { apiScope, servableCards } from '../../domain/planning/api-contract.js';
+import { workbookSetup } from '../../domain/planning/workbook-setup.js';
 import { legacyClaimsOf } from '../../domain/planning/data-model.js';
 import { supportedCards, type SourceCard } from '../../domain/planning/plan-sources.js';
 import { flowCardsOf } from '../../domain/planning/target-flows.js';
@@ -230,9 +231,11 @@ export async function plannedPrompts(
   const guidance = await files.workbookGuidance?.(inputs);
   const supported = supportedCards(cards);
   const answered = questions.filter((question) => question.answer.trim() !== '');
+  const workbook =
+    inputs.project.sourceKind === 'workbook' ? { workbook: workbookSetup(brief) } : {};
   // The plan and the PRD send the same data blocks; each packs to the window with its own system prompt.
   const planRender = remembered((omitted: ReadonlySet<string>) =>
-    planMessage({ cards: supported, brief, catalogue, answered, omitted }, () => TAG),
+    planMessage({ cards: supported, brief, catalogue, answered, omitted, ...workbook }, () => TAG),
   );
   const planned = (kind: 'plan' | 'prd', file: PromptFile): PlannedCall =>
     packed(window, { kind, file }, supported, planRender);

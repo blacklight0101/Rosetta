@@ -9,6 +9,7 @@ import {
   type MethodDraft,
 } from './build-method.js';
 import { ownAnswersOf, ownIsEmpty, ownText, TEXT_QUESTIONS, TYPED } from './own-answers.js';
+import { WORKBOOK_IDS } from './workbook-questions.js';
 import { CONTEXT_FIELDS, STACK_LAYERS, STEP_IDS, questionsOf, type ContextField } from './steps.js';
 
 // RF-605, RF-611, DEC-80, data-model.md section 3.20: the answers on the page before they are saved.
@@ -80,7 +81,10 @@ export function draftOf(brief: Brief): Draft {
     deployment: context.deployment ?? '',
     ...methodDraftOf(brief.buildMethod, brief.defaulted),
     askedBefore: brief.savedAt !== null && brief.defaulted.includes('buildMethod'),
-    answered: QUESTION_IDS.filter((id) => !brief.defaulted.includes(id)),
+    answered: [
+      ...QUESTION_IDS.filter((id) => !brief.defaulted.includes(id)),
+      ...WORKBOOK_IDS.filter((id) => brief.chosen?.[id] !== undefined),
+    ],
     chosen: brief.chosen ?? {},
     typed: brief.typed ?? {},
     typedDefaulted: TEXT_QUESTIONS.filter(

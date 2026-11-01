@@ -14,6 +14,8 @@ export interface StepProps {
   readonly catalogue: Catalogue;
   readonly change: (next: Draft) => void;
   readonly problems: Readonly<Record<string, string>>;
+  /** RF-648: the project is Excel workbooks, so the context step asks the workbook questions. */
+  readonly workbook?: boolean | undefined;
 }
 
 const principlesOf = (catalogue: Catalogue): readonly CatalogueEntry[] =>
