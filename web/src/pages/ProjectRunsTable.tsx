@@ -51,7 +51,7 @@ function Actions({ row }: { readonly row: ProjectOverviewRow }): JSX.Element {
   const hidden = <span class="rst-visually-hidden"> for {project.name}</span>;
   return (
     <div class="rst-projects__actions">
-      <Link href={`/projects/${id}/start`} class="rst-button rst-button--primary">
+      <Link href={`/projects/${id}`} class="rst-button rst-button--primary">
         Start run{hidden}
       </Link>
       {lastRun?.queueState === 'Running' ? (

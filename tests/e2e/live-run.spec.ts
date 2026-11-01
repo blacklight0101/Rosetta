@@ -275,7 +275,7 @@ test('RF-1108 RF-431 RST-2302 a role without a usable key shows Key missing, whe
   page,
 }) => {
   await openStartPage(page);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('anthropic');
   await chooseModel(page, 'Reader', 'claude-haiku-4-5');
   await page.getByRole('button', { name: 'Save settings' }).click();

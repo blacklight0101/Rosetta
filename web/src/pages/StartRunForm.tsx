@@ -29,11 +29,8 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
   return (
     <div class="rst-start__columns">
       <StageAreasSection
-        stage={stage}
-        understandAvailable={estimate.status !== 'none'}
         areas={choice.areas}
         areasError={actions.refusals.areas}
-        onStage={form.setStage}
         onArea={choice.toggle}
         onChoose={choice.choose}
         libraryConfirmed={form.library.confirmed}
@@ -52,18 +49,9 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
         capsHref={`/projects/${form.project.id}/settings#caps`}
         onRetry={choice.reestimate}
         cap={{
-          text: form.capText,
           capMicros: form.capMicros,
           serverRunCap: form.serverRunCap,
           capTokens: form.capTokens,
-          tokens: { text: form.tokensText, onInput: form.setTokensText },
-          error: actions.refusals.cap,
-          onInput: form.setCapText,
-          threshold: {
-            text: form.thresholdText,
-            error: actions.refusals.threshold,
-            onInput: form.setThresholdText,
-          },
         }}
       />
     </div>

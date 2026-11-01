@@ -66,7 +66,7 @@ function afterTheRun(c: Context, setUp: string): Next | undefined {
   }
   if (source.supportedClaims === 0) {
     return {
-      action: link('Start a new run', `/projects/${c.projectId}/start`),
+      action: link('Start a new run', `/projects/${c.projectId}`),
       here: 'understand',
     };
   }
@@ -111,7 +111,7 @@ function afterThePlan(c: Context, setUp: string): Next {
 // RF-615
 export function nextOf(c: Context): Next {
   if (c.source === null || c.setUp === undefined) {
-    return { action: link('Start a run', `/projects/${c.projectId}/start`), here: 'scan' };
+    return { action: link('Start a run', `/projects/${c.projectId}`), here: 'scan' };
   }
   const early = afterTheRun(c, c.setUp);
   if (early !== undefined) return early;

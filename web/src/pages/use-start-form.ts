@@ -6,8 +6,6 @@ import { capWarnings, type CapWarning } from '../lib/cap-warnings.js';
 import { localLikelyTokens } from '../lib/start-confirmation.js';
 import { cloudRoles, isLocalEstimate, pricedTotal } from '../lib/estimate-math.js';
 import { administratorRunCapBinds, effectiveRunCapMicros, usesServerKeys } from '../lib/run-cap.js';
-import { tokensOf } from '../lib/token-cap.js';
-import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import { providerNames } from './provider-choices.js';
 import { startGate, type StartGate } from './start-gate.js';
 import { usePrivateCode, type PrivateCode } from './use-private-code.js';
@@ -58,12 +56,9 @@ export interface StartForm {
   readonly project: Project;
   readonly choice: EstimateChoice;
   readonly stage: RunStageChoice;
-  readonly setStage: (stage: RunStageChoice) => void;
   readonly url: string;
   readonly setUrl: (url: string) => void;
-  readonly capText: string;
-  readonly setCapText: (text: string) => void;
-  /** The typed cap of the project, as the user sees it in the field. */
+  /** RF-436: the run cap saved in the project settings, where it is changed. */
   readonly capMicros: bigint;
   /**
    * RF-1106, DEC-107: the cap a run starts with: the typed cap, or the administrator's run cap when
@@ -75,16 +70,12 @@ export interface StartForm {
     readonly administrator: bigint | undefined;
     readonly serverKeys: boolean;
   };
-  /** P5-07: the run token cap as typed, and the cap the page uses (the project's when it is not a count). */
-  readonly tokensText: string;
-  readonly setTokensText: (text: string) => void;
+  /** P5-07: the run token cap saved in the project settings. */
   readonly capTokens: number;
   /** P5-07: every role runs on a local model, so the page asks for a token cap, not dollars. */
   readonly local: boolean;
-  readonly thresholdText: string;
-  /** The threshold as typed, or the project's when it is not an amount. */
+  /** The confirm threshold saved in the project settings. */
   readonly thresholdMicros: bigint;
-  readonly setThresholdText: (text: string) => void;
   readonly consent: CloudConsent;
   /** RF-132: the second confirmation of an uploaded project whose roles use a cloud provider. */
   readonly privateCode: PrivateCode;
@@ -107,12 +98,6 @@ function consentRoles(estimate: EstimateLoad, refused: boolean): readonly RoleEs
 
 function runCapOf(project: Project): bigint {
   return BigInt(project.settings.budget.run.maxCostMicros);
-}
-
-/** An amount typed in dollars as micro-dollars; the project's own when it is not an amount. */
-function micros(text: string, saved: number): bigint {
-  const typed = dollarsToMicros(text, RUN_COST_MAX_MICROS);
-  return typed === undefined ? BigInt(saved) : BigInt(typed);
 }
 
 /** DEC-108: the cap warnings of an understand estimate that has loaded. */
@@ -189,20 +174,13 @@ function approvalOf(stage: RunStageChoice, estimate: EstimateLoad) {
   };
 }
 
-/** DEC-117: the run cap and the confirm threshold as the user types them, from the project's own. */
-function useLimitFields(project: Project) {
-  const [capText, setCapText] = useState(microsToDollars(runCapOf(project).toString()));
-  const [thresholdText, setThresholdText] = useState(
-    microsToDollars(String(project.settings.budget.confirmAboveCostMicros)),
-  );
-  const [tokensText, setTokensText] = useState(String(project.settings.budget.run.maxTokens));
+/** RF-436: the run cap, the confirm threshold and the token cap as the project settings hold them. */
+function limitsOf(project: Project) {
   const { budget } = project.settings;
-  const capMicros = micros(capText, budget.run.maxCostMicros);
-  const thresholdMicros = micros(thresholdText, budget.confirmAboveCostMicros);
-  const capTokens = tokensOf(tokensText) ?? budget.run.maxTokens;
   return {
-    ...{ capText, setCapText, thresholdText, setThresholdText, capMicros, thresholdMicros },
-    ...{ tokensText, setTokensText, capTokens },
+    capMicros: runCapOf(project),
+    thresholdMicros: BigInt(budget.confirmAboveCostMicros),
+    capTokens: budget.run.maxTokens,
   };
 }
 
@@ -234,16 +212,16 @@ function noSourceOf(project: Project): { noSource: boolean; noWorkbooks: boolean
 // RF-1001, RF-143, DEC-108
 export function useStartForm(loaded: Project): StartForm {
   const [project, setProject] = useState(loaded);
-  const [chosenStage, setStage] = useState<RunStageChoice>('understand');
   const [url, setUrl] = useState(project.sourceUrl);
-  const fields = useLimitFields(project);
+  const fields = limitsOf(project);
   const [checked, setChecked] = useState(false);
   const confirmed = useAreaConfirmations();
   const [refused, setRefused] = useState(false);
   const rerun = useRerun(loaded.id);
   const choice = useEstimateChoice(project.id);
   const { estimate } = choice;
-  const stage = estimate.status === 'none' ? 'scan' : chosenStage;
+  // RF-1022: the page asks for no stage; with no scan yet only a scan can start, else it is the journey.
+  const stage: RunStageChoice = estimate.status === 'none' ? 'scan' : 'understand';
   const roles = stage === 'understand' ? consentRoles(estimate, refused) : [];
   const names = providerNames(roles.map((role) => role.provider));
   const runCaps = runCapsOf({ stage, estimate, limits: useSpendLimits(), typed: fields.capMicros });
@@ -258,7 +236,6 @@ export function useStartForm(loaded: Project): StartForm {
     privateConfirmed: privateCode.confirmed,
     withAnswers: rerun.answered > 0 && rerun.checked,
     ...approval.actions,
-    onSaved: setProject,
     onConsentRefused: () => {
       setRefused(true);
     },
@@ -275,7 +252,7 @@ export function useStartForm(loaded: Project): StartForm {
     ...approval.gate,
   });
   return {
-    ...{ project, choice, stage, setStage, url, setUrl, ...fields, ...runCaps },
+    ...{ project, choice, stage, url, setUrl, ...fields, ...runCaps },
     ...{ consent: { roles, names, checked, set: setChecked }, gate, actions, setProject, scan },
     ...{ privateCode, rerun },
     library: { chosen: libraryChosen, ...confirmed.library },

@@ -2,7 +2,7 @@ import type { AnsweredQuestion, AnswersFile, ProjectRef } from '../ports/answers
 import type { PriorCard, PriorCards } from '../ports/prior-cards.js';
 import type { Card } from '../../domain/cards/card.js';
 import { compareCards, type CardChanges } from './card-changes.js';
-import { questionWords } from './open-questions.js';
+import { sameQuestion } from './open-questions.js';
 import type { ReaderTask } from './reader-tasks.js';
 
 // RF-241, RF-1007, DEC-15: the re-run with answers. The answered questions of the project's
@@ -66,11 +66,11 @@ export function askingTheSame(
   card: PriorCard,
   earlier: readonly PriorCard[],
 ): readonly PriorCard[] {
-  const words = questionWords(card.question ?? card.title);
+  const asked = card.question ?? card.title;
   return earlier.filter(
     (each) =>
       each.id === card.id ||
-      (each.type === 'OQ' && words !== '' && questionWords(each.question ?? each.title) === words),
+      (each.type === 'OQ' && sameQuestion(asked, each.question ?? each.title)),
   );
 }
 
@@ -146,8 +146,12 @@ export function onlyAreas(plan: RerunPlan, areas: readonly string[]): RerunPlan 
  * What the reader of the area is told: each question, its area and the answer, as owner facts. DEC-198:
  * not the lines the question was raised from, which a reader would cite for what the owner said.
  */
-function answersTextOf(plan: RerunPlan, area: string): string | undefined {
-  const questions = plan.pending.filter((question) => question.area === area);
+function answersTextOf(plan: RerunPlan, area: string, wholeProject: boolean): string | undefined {
+  const own = plan.pending.filter((question) => question.area === area);
+  // P7-09, RF-209: a Deepen reader hears the answers of the whole project, its own area first.
+  const questions = wholeProject
+    ? [...own, ...plan.pending.filter((question) => question.area !== area)]
+    : own;
   if (questions.length === 0) return undefined;
   return questions
     .map(
@@ -157,13 +161,14 @@ function answersTextOf(plan: RerunPlan, area: string): string | undefined {
     .join('\n\n');
 }
 
-/** The tasks with the answers of their area. */
+/** The tasks with the answers of their area, or of the whole project (P7-09, the Deepen). */
 export function withAnswersOf(
   tasks: readonly ReaderTask[],
   plan: RerunPlan,
+  wholeProject = false,
 ): readonly ReaderTask[] {
   return tasks.map((task) => {
-    const answers = answersTextOf(plan, task.area.name);
+    const answers = answersTextOf(plan, task.area.name, wholeProject);
     return answers === undefined ? task : { ...task, answers };
   });
 }

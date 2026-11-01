@@ -21,16 +21,14 @@ async function startAndFollow(page: Page): Promise<void> {
 /** Opens the start page of the account's project, after a scan when it has no code map yet. */
 export async function openScannedStartPage(page: Page): Promise<void> {
   await openStartPage(page);
-  const understand = page.getByLabel('Understand');
   const areas = page.getByRole('group', { name: 'Areas from the code map' }).locator('label');
   // RF-160: the scan starts by itself; the areas appear when it ends.
   await expect(areas.first()).toBeVisible({ timeout: 60_000 });
-  await expect(understand).toBeEnabled({ timeout: 15_000 });
+  await expect(page.getByRole('button', { name: /^Analyse/u })).toBeVisible({ timeout: 15_000 });
 }
 
 /** Starts an understand run of the Catalog area and follows the notice to the live page. */
 export async function startCatalogRun(page: Page): Promise<void> {
-  await page.getByLabel('Understand').check();
   const areas = page.getByRole('group', { name: 'Areas from the code map' });
   await expect(areas.locator('label').first()).toBeVisible();
   for (const label of await areas.locator('label').allTextContents()) {

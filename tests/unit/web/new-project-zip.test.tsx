@@ -80,7 +80,7 @@ it('RF-128 sends the zip to a new project of kind upload, with the CSRF token, a
   expect(summary.textContent).toContain('3.2 MB');
   expect(summary.textContent).toContain('12 entries left out');
   expect(screen.getByRole('link', { name: 'Start a run' }).getAttribute('href')).toBe(
-    '/projects/p-9/start',
+    '/projects/p-9',
   );
 });
 

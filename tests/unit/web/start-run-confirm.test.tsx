@@ -95,26 +95,6 @@ it('RF-425 a likely cost one micro-dollar above the threshold asks', async () =>
   expect(await screen.findByRole('dialog', { name: /Start this run\?/u })).not.toBeNull();
 });
 
-it('RF-425 the threshold typed on the page decides, before it is saved', async () => {
-  const { calls } = await cloudPage();
-
-  fireEvent.input(input('Ask before a run estimated above (USD)'), { target: { value: '0.50' } });
-  fireEvent.click(start());
-
-  await waitFor(() => {
-    expect(starts(calls)).toBe(1);
-  });
-  expect(screen.queryByRole('dialog')).toBeNull();
-});
-
-it('RF-425 a threshold of zero asks for any run that costs something, and not for one that costs nothing', async () => {
-  const paid = await cloudPage();
-  fireEvent.input(input('Ask before a run estimated above (USD)'), { target: { value: '0' } });
-  fireEvent.click(start());
-  expect(await screen.findByRole('dialog', { name: /Start this run\?/u })).not.toBeNull();
-  expect(starts(paid.calls)).toBe(0);
-});
-
 it('RF-425 a run on local models costs nothing, so it never asks about dollars and has no threshold field', async () => {
   const { calls } = renderStart({
     [`GET ${estimatePath}`]: json(200, localEstimate),

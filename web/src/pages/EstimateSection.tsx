@@ -3,33 +3,26 @@ import type { RunEstimate } from '../api/estimate-schemas.js';
 import type { Project } from '../api/project-schemas.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
-import { Field } from '../components/Field.js';
 import { Glyph } from '../components/Glyph.js';
 import { Link } from '../components/Link.js';
 import type { CapWarning } from '../lib/cap-warnings.js';
 import { scanSubjectOf } from '../lib/live-run/scan-subject.js';
 import { capComparison } from '../lib/cap-comparison.js';
-import { isLocalEstimate } from '../lib/estimate-math.js';
 import { effectiveRunCapMicros } from '../lib/run-cap.js';
 import type { EstimateLoad } from './use-estimate.js';
 import { EstimateTable } from './EstimateTable.js';
 import { ServerKeyNote } from './ServerKeyNote.js';
 import { ServerRunCapNote } from './ServerRunCapNote.js';
 
-// RF-425, RF-1001, DEC-71, DEC-108, DEC-117, design-system.md section 14 (Start run): the estimate
-// card. The run cap is editable here, with a meter of the likely cost against it and a marker at the
-// high estimate (a model without a price is named as left out of both); the confirm threshold
-// stands beside it, since it may not be above the cap. A warning names every cap the likely
+// RF-425, RF-1001, RF-436, DEC-71, DEC-108, DEC-117, design-system.md section 14: the estimate
+// card. The run cap is read-only here, with a meter of the likely cost against it and a marker at
+// the high estimate (a model without a price is named as left out of both); the cap and the confirm
+// threshold are changed in the project settings (RF-436). A warning names every cap the likely
 // estimate is over, and Start stays available. A role on the server's key says that the run may be
 // refused (ServerKeyNote.tsx).
 
-interface FieldError {
-  readonly code?: string;
-  readonly message: string;
-}
-
 interface CapField {
-  readonly text: string;
+  /** The run cap saved in the project settings. */
   readonly capMicros: bigint;
   /** RF-1106: the administrator's run cap on server keys, and whether the estimate uses them. */
   readonly serverRunCap: {
@@ -38,16 +31,6 @@ interface CapField {
   };
   /** `budget.run.maxTokens`: the cap an estimate of local models is compared with (Q-51). */
   readonly capTokens: number;
-  /** P5-07: the run token cap field of a local estimate, which has no dollar fields. */
-  readonly tokens: { readonly text: string; readonly onInput: (text: string) => void };
-  readonly error: FieldError | undefined;
-  readonly onInput: (text: string) => void;
-  /** `budget.confirmAboveCostMicros` in dollars, which may not be above the cap (DEC-117). */
-  readonly threshold: {
-    readonly text: string;
-    readonly error: FieldError | undefined;
-    readonly onInput: (text: string) => void;
-  };
 }
 
 export interface EstimateSectionProps {
@@ -125,61 +108,19 @@ function Warnings({
   );
 }
 
-/** P5-07: a run on local models costs nothing, so its one cap is the token cap, with its meter. */
-function TokenCapField(props: {
+/** RF-436: the meter of the likely cost against the project's cap, and the link to change it. */
+function CapFields(props: {
   readonly cap: CapField;
   readonly estimate: RunEstimate;
+  readonly capsHref: string;
 }): JSX.Element {
-  const { cap, estimate } = props;
   return (
     <div class="rst-start__cap">
-      <Field
-        kind="text"
-        id="run-cap-tokens"
-        label="Run cap (tokens)"
-        value={cap.tokens.text}
-        error={cap.error}
-        describedBy={hintId}
-        announce={false}
-        onInput={cap.tokens.onInput}
-      />
-      <CapMeter estimate={estimate} cap={cap} />
+      <CapMeter estimate={props.estimate} cap={props.cap} />
+      <p class="rst-settings__note">
+        <Link href={props.capsHref}>Change the caps in the project settings</Link>
+      </p>
     </div>
-  );
-}
-
-/** The run cap with its meter, and the confirm threshold beside it (DEC-117). */
-function CapFields(props: { readonly cap: CapField; readonly estimate: RunEstimate }): JSX.Element {
-  const { cap, estimate } = props;
-  if (isLocalEstimate(estimate)) return <TokenCapField cap={cap} estimate={estimate} />;
-  return (
-    <>
-      <div class="rst-start__cap">
-        <Field
-          kind="text"
-          id="run-cap"
-          label="Run cap (USD)"
-          value={cap.text}
-          error={cap.error}
-          describedBy={hintId}
-          announce={false}
-          onInput={cap.onInput}
-        />
-        <CapMeter estimate={estimate} cap={cap} />
-      </div>
-      <div class="rst-start__threshold">
-        <Field
-          kind="text"
-          id="confirm-above"
-          label="Ask before a run estimated above (USD)"
-          help="It may not be above the run cap; lower it with the cap."
-          value={cap.threshold.text}
-          error={cap.threshold.error}
-          announce={false}
-          onInput={cap.threshold.onInput}
-        />
-      </div>
-    </>
   );
 }
 
@@ -213,7 +154,7 @@ function Body(props: EstimateSectionProps & { readonly onRetry: () => void }): J
   if (estimate.status === 'none') return <p class="rst-settings__note">No estimate yet.</p>;
   return (
     <>
-      <CapFields cap={cap} estimate={estimate.estimate} />
+      <CapFields cap={cap} estimate={estimate.estimate} capsHref={props.capsHref} />
       <ServerRunCapNote
         serverKeys={cap.serverRunCap.serverKeys}
         administrator={cap.serverRunCap.administrator}

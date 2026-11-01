@@ -20,9 +20,13 @@ test.beforeEach(async ({ context }, info) => {
 /** The reader runs on OpenAI with the server's key, so the estimate has a cost. */
 async function openWithCloudReader(page: Page): Promise<void> {
   await openScannedStartPage(page);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
+  // RF-436: the cap and the threshold are the project settings'. A tiny threshold puts the likely
+  // cost above it whatever the demo project costs.
+  await page.getByLabel('Run cost cap (USD)', { exact: true }).fill('2.00');
+  await page.getByLabel('Ask before a run estimated above (USD)', { exact: true }).fill('0.000001');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
@@ -56,11 +60,6 @@ test(
   async ({ page }) => {
     test.setTimeout(90_000);
     await openWithCloudReader(page);
-    // A tiny threshold puts the likely cost above it whatever the demo project costs.
-    await page.getByLabel('Run cap (USD)').fill('2.00');
-    await page
-      .getByLabel('Ask before a run estimated above (USD)', { exact: true })
-      .fill('0.000001');
     const start = page.getByRole('button', startButton);
     await start.focus();
     await page.keyboard.press('Enter');

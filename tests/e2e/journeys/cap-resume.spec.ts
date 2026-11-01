@@ -38,7 +38,7 @@ async function storeKeyAndPickPricedModels(page: Page): Promise<void> {
 }
 
 async function saveSettings(page: Page): Promise<void> {
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByLabel('Summariser provider', { exact: true }).selectOption('openai');

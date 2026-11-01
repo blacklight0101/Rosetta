@@ -44,7 +44,7 @@ export async function openStartOf(page: Page, url: string): Promise<void> {
   await ensureProject(page, url);
   if (await startHeadingOf(page).isVisible()) return;
   const link = startLinkOf(page, url);
-  await expect(link).toHaveAttribute('href', /\/start$/u);
+  await expect(link).toHaveAttribute('href', /\/projects\/[^/]+$/u);
   await page.goto((await link.getAttribute('href')) ?? '/projects');
 }
 
@@ -63,7 +63,6 @@ function areasOf(page: Page): Locator {
 
 /** Chooses which areas an understand run reads: only the ones named. */
 async function chooseAreas(page: Page, names: readonly string[]): Promise<void> {
-  await expect(page.getByLabel('Understand')).toBeChecked();
   const areas = areasOf(page);
   await expect(areas.locator('label').first()).toBeVisible();
   for (const label of await areas.locator('label').allTextContents()) {

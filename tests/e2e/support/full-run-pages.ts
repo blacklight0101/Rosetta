@@ -20,7 +20,7 @@ export interface JourneyModels {
 
 /** Opens the settings of the webforms project from its start page and saves the models. */
 async function saveModels(page: Page, models: JourneyModels): Promise<void> {
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await chooseModel(page, 'Reader', models.reader);
   if (models.summariser !== undefined) {
     await chooseModel(page, 'Summariser', models.summariser);

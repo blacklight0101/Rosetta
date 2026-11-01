@@ -138,7 +138,7 @@ export function Summary(props: {
       <Skipped skipped={summary.skipped} />
       {projectId === undefined ? null : (
         <Link
-          href={`/projects/${encodeURIComponent(projectId)}/start`}
+          href={`/projects/${encodeURIComponent(projectId)}`}
           class="rst-button rst-button--primary"
         >
           Start a run
