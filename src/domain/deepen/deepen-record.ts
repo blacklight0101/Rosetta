@@ -87,6 +87,11 @@ export function withRound(record: DeepenRecord, round: DeepenRound): DeepenRecor
   return { ...record, rounds, roundsDone: rounds.filter((each) => each.complete).length };
 }
 
+/** RF-209: the number of the round a Deepen runs next. */
+export function nextRoundNumber(record: Pick<DeepenRecord, 'rounds'>): number {
+  return record.rounds.length + 1;
+}
+
 /** RF-209: the rejected claims a round plan left out of scope, each listed once. */
 export function withOutOfScope(
   record: DeepenRecord,

@@ -140,6 +140,8 @@ const budgetSchema = z
       confirmAboveCostMicros: cap,
       prices: z.array(priceSchema, invalid).max(MAX_LIST, invalid).optional(),
       allowUnpriced: flag,
+      /** RF-433, DEC-197: no token cap and no pause for a run on local providers only; off when left out. */
+      noCapForLocalModels: flag.optional(),
     },
     invalid,
   )
