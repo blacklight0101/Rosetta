@@ -1,7 +1,7 @@
 # ADR-025: Integrate on develop, deploy it to staging, release main at 06:00 Madrid
 
 **Date**: 2026-10-27
-**Status**: Accepted
+**Status**: Amended
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -54,6 +54,13 @@ into `main` with a merge commit; `scheduled-release.yml` starts Release on `main
   guarantees the same source, not the same bytes (base image updates between the two builds are possible).
 - A hotfix goes through `develop` too; a commit made only on `main` fails the tree check.
 - Scheduled runs can be delayed; a run that misses the 06 hour waits for the next morning.
+
+**Amended 2026-11-01 (P7-28).** The schedule is unchanged: 06:07 Madrid is the target, with backups until 07:59. A slot
+that GitHub starts after 07:59 Madrid now goes on when the head commit of `main` was merged before 06:00 Madrid that
+day and no Release run of that commit is queued, running or succeeded; otherwise it does nothing, as before. The
+trigger was GitHub starting the slots late on 2026-10-29, between 12:28 and 13:53 Madrid, when the hour guard made
+them do nothing and production was deployed by hand. A slot GitHub never starts is not recovered by this change: the
+owner runs Release by hand on `main`. The step summary names the slot and its delay.
 
 ## References
 

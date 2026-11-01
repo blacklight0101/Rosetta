@@ -3,11 +3,13 @@
 # 05:07 are the first slot (06:07 Madrid in summer and winter time respectively), and 05:37 and 06:07
 # are backups (GitHub may delay or drop a schedule, and it was dropped on 2026-10-28). Minutes 7 and
 # 37 keep off the busy full hour, when GitHub delays schedules most. The job goes on only when it is
-# the 06 or 07 hour in Madrid, or at any hour when started by hand. It starts Release (release.yml) on
-# main by workflow_dispatch, once per head commit of main: it does nothing when a Release run of that
-# commit is queued, running or succeeded, or while the repository variable ROSETTA_DEPLOY_ENABLED is
-# not 'true'. The step summary names the slot that started it. Release itself refuses a main whose
-# tree did not pass staging.
+# the 06 or 07 hour in Madrid, or at any hour when started by hand. A slot that GitHub starts late,
+# after 07:59 Madrid, goes on only when the head commit of main was merged before 06:00 Madrid that
+# day (P7-28), so a delayed schedule deploys late rather than not at all. It starts Release
+# (release.yml) on main by workflow_dispatch, once per head commit of main: it does nothing when a
+# Release run of that commit is queued, running or succeeded, or while the repository variable
+# ROSETTA_DEPLOY_ENABLED is not 'true'. The step summary names the slot that started it and its delay.
+# Release itself refuses a main whose tree did not pass staging.
 #
 # Scheduled workflows run from the default branch (develop), so this file exists on develop and on
 # main. It only dispatches: it reads no secret and uses no environment; the production environment
@@ -46,9 +48,18 @@ jobs:
             echo "- $1" >> "$GITHUB_STEP_SUMMARY"
           }
           hour="$(TZ=Europe/Madrid date +%H)"
-          if [ "$EVENT" != workflow_dispatch ] && [ "$hour" != 06 ] && [ "$hour" != 07 ]; then
-            note "Slot $SLOT: it is the $hour hour in Madrid, not 06 or 07; nothing to do (the first slot is 06:07 Madrid, backups run until 07:59)."
-            exit 0
+          late=false
+          if [ "$EVENT" != workflow_dispatch ]; then
+            case "$hour" in
+              06 | 07) ;;
+              *)
+                if [ "$((10#$hour))" -lt 8 ]; then
+                  note "Slot $SLOT: it is the $hour hour in Madrid, before the 06:07 window; nothing to do."
+                  exit 0
+                fi
+                late=true
+                ;;
+            esac
           fi
           if [ "$DEPLOY_ENABLED" != true ]; then
             note "The repository variable ROSETTA_DEPLOY_ENABLED is not true; no Release is started."
@@ -66,8 +77,23 @@ jobs:
             note "Slot $SLOT, Madrid hour $hour: main is at $sha and a Release run of it is queued, running or succeeded; no Release is started."
             exit 0
           fi
+          if [ "$late" = true ]; then
+            committed="$(gh api "repos/$GH_REPO/commits/$sha" --jq .commit.committer.date)"
+            today="$(TZ=Europe/Madrid date +%F)"
+            cutoff="$(TZ=Europe/Madrid date -d "$today 06:00" +%s)"
+            if [ "$(date -d "$committed" +%s)" -ge "$cutoff" ]; then
+              note "Slot $SLOT, Madrid hour $hour: main is at $sha, merged $committed (UTC), after 06:00 Madrid today; no Release is started (the 06:07 slot of tomorrow takes it)."
+              exit 0
+            fi
+          fi
+          delay=''
+          if [ "$EVENT" = schedule ]; then
+            read -r minute utc_hour _ <<< "$SLOT"
+            slot_at="$(date -u -d "$(date -u +%F) $(printf '%02d:%02d' "$((10#$utc_hour))" "$((10#$minute))"):00" +%s)"
+            delay=", $(( ($(date -u +%s) - slot_at) / 60 )) minutes after its slot"
+          fi
           gh workflow run release.yml --ref main
-          note "Slot $SLOT, Madrid hour $hour: started Release on main at $sha (it deploys to production once its checks pass)."
+          note "Slot $SLOT, Madrid hour $hour$delay: started Release on main at $sha (it deploys to production once its checks pass)."
         env:
           EVENT: ${{ github.event_name }}
           SLOT: ${{ github.event.schedule || 'by hand' }}

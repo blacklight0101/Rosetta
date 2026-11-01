@@ -327,7 +327,7 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
 - Staging and the scheduled release (DEC-175, ADR-025): `staging.yml` builds and scans the image of every push to
   `develop`, pushes `sha-<short>`, and deploys it to `ca-rosetta-staging` in the environment `staging` (migrate job,
   new image, `/healthz` after a cold start, smoke test), off until the repository variable `ROSETTA_STAGING_ENABLED`
-  is `true`. `scheduled-release.yml` runs at 04:07, 05:07, 05:37 and 06:07 UTC (the first slot is 06:07 Madrid, backups until 07:59), goes on only in the 06 and 07 hours of Europe/Madrid, and
+  is `true`. `scheduled-release.yml` runs at 04:07, 05:07, 05:37 and 06:07 UTC (the first slot is 06:07 Madrid, backups until 07:59), goes on only in the 06 and 07 hours of Europe/Madrid, or for a slot started after 07:59 when the head commit of `main` was merged before 06:00 that day (P7-28, ADR-025), and
   starts Release on `main` by `workflow_dispatch` once per head commit of `main` (nothing when a Release run of it is
   queued, running or succeeded, or while `ROSETTA_DEPLOY_ENABLED` is not `true`; the step summary names the slot that started it). Release rebuilds the image from the
   merge commit, and its deploy job refuses a commit whose tree differs from its second parent (the `develop` side) or
