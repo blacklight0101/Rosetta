@@ -131,6 +131,7 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
           problems={session.problems}
           load={session.options}
           offer={offer}
+          workbook={project.sourceKind === 'workbook'}
           waitingForConsent={session.waitingForConsent}
           askAgain={session.askAgain}
         />
