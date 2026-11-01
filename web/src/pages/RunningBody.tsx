@@ -1,5 +1,5 @@
-import type { JSX } from 'preact';
-import { useState } from 'preact/hooks';
+import type { JSX, RefObject } from 'preact';
+import { useRef, useState } from 'preact/hooks';
 import type { CoverageListing } from '../api/coverage.js';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import type { RunRow } from '../api/run-schemas.js';
@@ -114,12 +114,14 @@ interface DetailsProps extends RunningBodyProps {
   readonly tab: TabId;
   readonly area: string | undefined;
   readonly open: (id: TabId, area?: string) => void;
+  /** P7-27: the section the spend link scrolls to. */
+  readonly detailsRef: RefObject<HTMLElement | null>;
 }
 
 function Details(props: DetailsProps): JSX.Element {
   const { run, state, stage, tab, area, open } = props;
   return (
-    <section class="rst-card rst-running__details" aria-label="Run details">
+    <section ref={props.detailsRef} class="rst-card rst-running__details" aria-label="Run details">
       <Tabs
         label="Run details"
         tabs={tabsOf(state)}
@@ -173,6 +175,7 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
   const { run, state, phase, stage } = props;
   const [tab, setTab] = useState<TabId>('cards');
   const [area, setArea] = useState<string | undefined>();
+  const detailsRef = useRef<HTMLElement>(null);
   const areas = useCodeAreas(run.projectId, stage);
   const coverage = useRunCoverage(run.id, stage, endedAgents(state));
   const tiles = tilesOf(state, areas);
@@ -206,12 +209,15 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
             caps={state.caps}
             onOpenRoles={() => {
               open('agents');
+              // P7-27: the section is always rendered, so it can be scrolled to at once.
+              const details = detailsRef.current;
+              if (typeof details?.scrollIntoView === 'function') details.scrollIntoView();
             }}
           />
           <WorkingNow items={workingNowOf(state)} waitingNote={noteOf(phase, state)} />
         </div>
       </div>
-      <Details {...props} {...{ tab, area, open, coverage }} codeAreas={areas} />
+      <Details {...props} {...{ tab, area, open, coverage, detailsRef }} codeAreas={areas} />
     </>
   );
 }
