@@ -1,5 +1,6 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { RunRow } from '../../../web/src/api/run-schemas.js';
 import { applyEvent, initialRunState } from '../../../web/src/lib/live-run/reduce-run.js';
 import { phaseOf } from '../../../web/src/lib/live-run/run-phase.js';
 import { json } from './fake-api.js';
@@ -25,6 +26,16 @@ const answered = json(202, {
   queueState: 'Queued',
 });
 
+/** The run row as the page holds it (not the answer of the fake server). */
+function row(queueState: RunRow['queueState']): RunRow {
+  return {
+    ...{ id: runUuid, projectId: 'p-1', runId: runKey, stage: 'understand', queueState },
+    ...{ endState: null, commitSha: null, startedAt: null, position: null },
+    totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
+    ...{ reportBuilt: false, failedAreas: 0, unreadAreas: 0 },
+  };
+}
+
 describe('the phase of a paused run', () => {
   it('RF-432 is awaiting with the N to offer, until the run starts again', () => {
     const paused = [ev(1, 'run.started', startedData), awaiting(2)].reduce(
@@ -32,12 +43,12 @@ describe('the phase of a paused run', () => {
       initialRunState(),
     );
 
-    expect(phaseOf(pausedRow(), paused)).toEqual({
+    expect(phaseOf(row('AwaitingApproval'), paused)).toEqual({
       kind: 'awaiting',
       continueAmount: { tokens: 1_300_000, costMicros: 600_000 },
     });
     const again = applyEvent(paused, ev(3, 'run.started', startedData));
-    expect(phaseOf(runRow(), again)).toEqual({ kind: 'running' });
+    expect(phaseOf(row('Queued'), again)).toEqual({ kind: 'running' });
   });
 });
 

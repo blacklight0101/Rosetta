@@ -14,7 +14,7 @@ export const estimatePath = '/api/projects/p-1/estimate';
 
 interface RowOptions {
   readonly stage?: string;
-  readonly queueState?: 'Queued' | 'Running' | 'Ended';
+  readonly queueState?: 'Queued' | 'Running' | 'AwaitingApproval' | 'Ended';
   readonly endState?: string | null;
   readonly costMicros?: number;
   readonly reportBuilt?: boolean;
