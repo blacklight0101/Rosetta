@@ -12,7 +12,7 @@ import type {
 import type { Logger } from '../../application/ports/logger.js';
 import type { ProviderCallRecorder } from '../../application/ports/provider-call-recorder.js';
 import type { RunCostRecorder } from '../../application/runs/run-cost-record.js';
-import { capStopsRun } from '../../domain/budget/cap-stop.js';
+import { ApprovalPause, capStopsRun } from '../../domain/budget/cap-stop.js';
 import type { KeySource } from '../../domain/budget/price-table.js';
 import type { CapBreach, UsageCap, WorstCase } from '../../domain/budget/usage-cap.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -220,8 +220,9 @@ export class BudgetGuard implements LlmProvider {
     await this.books.report('The cap event could not be published.', request, () =>
       this.options.budgetEvents.capReached(reported),
     );
-    // RF-250: the summariser's step is optional; its refusal never stops the run (P2-35).
-    if (!roleStop && capStopsRun(request.context.role)) stopRun(refusal);
+    // RF-250: an optional step never stops the run (P2-35); RF-432: the approved line pauses it.
+    const reason = breach.source === 'approved' ? new ApprovalPause() : refusal;
+    if (!roleStop && capStopsRun(request.context.role)) stopRun(reason);
     throw refusal;
   }
 
