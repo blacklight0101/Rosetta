@@ -3,14 +3,12 @@ import type { ApiClient, ApiFailure } from '../api/client.js';
 import type { Project } from '../api/project-schemas.js';
 import { createProject, getProject, saveProjectSettings } from '../api/projects.js';
 import { problemFor } from '../api/problems.js';
-import { cancelRun, startRun, type RunStageChoice, type StartRequest } from '../api/runs.js';
+import { startRun, type RunStageChoice, type StartRequest } from '../api/runs.js';
 import type { ApprovedAmount } from '../lib/journey-approval.js';
 import { useApp } from '../app/app-context.js';
 import { navigate } from '../app/router.js';
 import { tokensOf } from '../lib/token-cap.js';
 import { dollarsToMicros, RUN_COST_MAX_MICROS } from '../lib/usd.js';
-import type { RunNoticeState } from './RunNotice.js';
-import { useQueuePosition } from './use-queue-position.js';
 import { useStartConfirmation, type StartConfirmation } from './use-start-confirmation.js';
 
 // RF-1001, RF-143, RF-132, RF-1108, DEC-117: what pressing Start does, in order. Another address than the
@@ -82,7 +80,6 @@ export interface StartActions {
   /** Counts the refusals shown, so the page can move focus to the first field that names one. */
   readonly attempts: number;
   readonly refusals: Refusals;
-  readonly notice: RunNoticeState | undefined;
   /** RF-425: the question before an expensive run, and its two answers. */
   readonly confirmation: {
     readonly asking: boolean;
@@ -91,7 +88,6 @@ export interface StartActions {
   };
   readonly submit: () => void;
   readonly resolve: () => void;
-  readonly cancel: () => void;
 }
 
 function requestOf(inputs: ActionInputs): StartRequest {
@@ -173,7 +169,6 @@ interface Steps {
   readonly inputs: ActionInputs;
   /** Keeps a refusal for its field and counts it; true, so the caller can stop. */
   readonly refuse: (refusals: Refusals) => boolean;
-  readonly show: (notice: RunNoticeState) => void;
   readonly confirmation: StartConfirmation;
 }
 
@@ -207,18 +202,14 @@ function refusalOf(error: ApiFailure): Refusals {
 }
 
 async function requestRun(steps: Steps): Promise<boolean> {
-  const { client, inputs, refuse, show } = steps;
+  const { client, inputs, refuse } = steps;
   const result = await startRun(client, inputs.project.id, requestOf(inputs));
   if (!result.ok) {
     if (result.error.code === NO_CONSENT) inputs.onConsentRefused();
     return refuse(refusalOf(result.error));
   }
-  const { id, position, stage } = result.value;
-  show(
-    position === null
-      ? { kind: 'started', stage, runId: id }
-      : { kind: 'queued', runId: id, position, cancelError: undefined },
-  );
+  // RF-1019: a started step opens its live page by itself; a queued one says its place there.
+  navigate(`/runs/${encodeURIComponent(result.value.id)}`);
   return false;
 }
 
@@ -253,15 +244,13 @@ export function useStartActions(inputs: ActionInputs): StartActions {
   const [busy, setBusy] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [refusals, setRefusals] = useState<Refusals>({});
-  const [notice, setNotice] = useState<RunNoticeState | undefined>();
-  useQueuePosition(notice, setNotice);
   const savedTokens = inputs.project.settings.budget.run.maxTokens;
   const confirmation = useStartConfirmation(inputs.likelyMicros, {
     likelyTokens: inputs.likelyTokens,
     capTokens: inputs.local ? (tokensOf(inputs.tokensText) ?? savedTokens) : savedTokens,
   });
   const steps: Steps = {
-    ...{ client, inputs, confirmation, show: setNotice },
+    ...{ client, inputs, confirmation },
     refuse: (next) => {
       setRefusals(next);
       setAttempts((current) => current + 1);
@@ -275,15 +264,8 @@ export function useStartActions(inputs: ActionInputs): StartActions {
     await step();
     setBusy(false);
   };
-  const cancel = async (): Promise<void> => {
-    if (notice?.kind !== 'queued') return;
-    setBusy(true);
-    const result = await cancelRun(client, notice.runId);
-    setBusy(false);
-    setNotice(result.ok ? { kind: 'cancelled' } : { ...notice, cancelError: result.error });
-  };
   return {
-    ...{ busy, attempts, refusals, notice },
+    ...{ busy, attempts, refusals },
     confirmation: {
       asking: confirmation.asking,
       confirm: () => {
@@ -294,6 +276,5 @@ export function useStartActions(inputs: ActionInputs): StartActions {
     },
     submit: () => void busyWith(() => press(steps)),
     resolve: () => void busyWith(() => resolveUrl(steps)),
-    cancel: () => void cancel(),
   };
 }

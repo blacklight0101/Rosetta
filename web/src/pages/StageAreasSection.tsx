@@ -57,14 +57,6 @@ function Stages(props: StageAreasProps): JSX.Element {
       <legend>Stage</legend>
       <div class="rst-start__choices">
         <StageChoice
-          id="stage-scan"
-          label="Scan only"
-          checked={stage === 'scan'}
-          onChange={() => {
-            onStage('scan');
-          }}
-        />
-        <StageChoice
           id="stage-understand"
           label="Understand"
           checked={stage === 'understand'}
@@ -80,11 +72,6 @@ function Stages(props: StageAreasProps): JSX.Element {
           disabled
         />
       </div>
-      {understandAvailable ? null : (
-        <p class="rst-settings__note">
-          Run a scan first: the areas and the estimate of an understand run come from its code map.
-        </p>
-      )}
     </fieldset>
   );
 }

@@ -6,7 +6,6 @@ import {
   estimatePath,
   limitsAnswer,
   localEstimate,
-  noCodeMap,
   ownKeyEstimate,
   projectPath,
   projectWithCap,
@@ -21,6 +20,7 @@ import {
   ready,
   renderStart,
   start,
+  opened,
 } from './start-run-helpers.js';
 
 // RF-1001, RF-143, RF-425, DEC-108, design-system.md section 14 (Start run): what the start page
@@ -121,26 +121,6 @@ it('RF-1001 with no area chosen Start is disabled and says why', async () => {
   expect(start().title).toBe('Choose at least one area.');
 });
 
-it('RF-1001 without a scan the understand stage is off, the scan is chosen and the reason is shown', async () => {
-  renderStart({ [`GET ${estimatePath}`]: noCodeMap });
-
-  await screen.findByText(/Run a scan first/u);
-
-  expect(input('Understand').disabled).toBe(true);
-  expect(input('Scan only').checked).toBe(true);
-  expect(start().disabled).toBe(false);
-  expect(screen.queryByRole('table', { name: 'Estimate per role' })).toBeNull();
-});
-
-it('RF-1001 with no code map the page shows the scan note and no run cap or threshold field', async () => {
-  renderStart({ [`GET ${estimatePath}`]: noCodeMap });
-
-  await screen.findByText(/A scan reads the repository/u);
-
-  expect(screen.queryByLabelText('Run cap (USD)')).toBeNull();
-  expect(screen.queryByLabelText('Ask before a run estimated above (USD)')).toBeNull();
-});
-
 it('RF-143 names the cloud provider and keeps Start off until the consent is given', async () => {
   const { calls } = renderStart({
     [`GET ${estimatePath}`]: json(200, cloudEstimate),
@@ -153,7 +133,7 @@ it('RF-143 names the cloud provider and keeps Start off until the consent is giv
   expect(notice?.textContent).toContain('reader');
   expect(start().disabled).toBe(true);
   expect(start().title).toBe('Confirm the OpenAI notice above to start the run');
-  expect(start().textContent).toBe('Start run (confirm the OpenAI notice)');
+  expect(start().textContent).toBe('Analyse (confirm the OpenAI notice)');
 
   fireEvent.click(input(consentLabel));
   expect(start().disabled).toBe(false);
@@ -161,22 +141,12 @@ it('RF-143 names the cloud provider and keeps Start off until the consent is giv
   // RF-425: the likely cost ($0.39) is above the project's $0.25 threshold, so the run is confirmed.
   fireEvent.click(await screen.findByRole('button', { name: 'Confirm and start' }));
 
-  await screen.findByTestId('run-notice');
+  await opened();
   expect(calls.at(-1)?.body).toEqual({
     stage: 'understand',
     areas: ['Catalog', 'Models'],
     cloudConsent: true,
   });
-});
-
-it('RF-143 a scan needs no consent even when the roles use a cloud provider', async () => {
-  renderStart({ [`GET ${estimatePath}`]: json(200, cloudEstimate) });
-  await ready();
-
-  fireEvent.click(input('Scan only'));
-
-  expect(screen.queryByText(/Code will leave this machine/u)).toBeNull();
-  expect(start().disabled).toBe(false);
 });
 
 it('RF-143 a refusal for the missing consent shows the notice with the code next to its checkbox', async () => {

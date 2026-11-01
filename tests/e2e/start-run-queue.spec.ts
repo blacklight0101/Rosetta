@@ -1,7 +1,7 @@
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { openScannedStartPage } from './support/cost-run.js';
-import { openStartPage, runStatus, startUnderstand } from './support/live-run-page.js';
+import { runStatus, startUnderstand } from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { queueTag } from './support/views.js';
@@ -12,18 +12,15 @@ import { queueTag } from './support/views.js';
 // server would otherwise put a run ahead of this one (position 2 or 3, #771).
 
 test(
-  'RF-1108 a queued run turns to started on the start page when the run before it ends',
+  'RF-1108 a queued run turns to started on its live page when the run before it ends',
   { tag: queueTag },
   async ({ page, context }, info) => {
     await signInAs(context, accountFor('start-run', info.project.name));
     await openScannedStartPage(page);
     const held = await startUnderstand(page, ['Controllers']);
-    await openStartPage(page);
-    await page.getByLabel('Scan only').check();
-    await page.getByRole('button', { name: /^Start run/u }).click();
-    const notice = page.getByTestId('run-notice');
-    await expect(notice).toContainText('Queued');
-    await expect(notice).toContainText('position 1');
+    await startUnderstand(page, ['Models']);
+    await expect(runStatus(page)).toContainText('Queued');
+    await expect(page.getByText(/position 1/u).first()).toBeVisible();
 
     const other = await context.newPage();
     await other.goto(held);
@@ -31,8 +28,8 @@ test(
     await expect(runStatus(other)).toContainText('Interrupted', { timeout: 30_000 });
     await other.close();
 
-    await expect(notice).toContainText('Run started', { timeout: 30_000 });
-    await expect(notice.getByRole('button', { name: 'Cancel queued run' })).toHaveCount(0);
+    await expect(runStatus(page)).not.toContainText('Queued', { timeout: 30_000 });
+    await expect(page.getByRole('button', { name: 'Cancel queued run' })).toHaveCount(0);
     await expectNoSeriousViolations(page);
   },
 );

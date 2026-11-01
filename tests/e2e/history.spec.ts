@@ -11,9 +11,9 @@ import {
 import {
   agentPanel,
   openRunTab,
+  openScanRun,
   openStartPage,
   runStatus,
-  startAndOpenLiveRun,
   startUnderstand,
 } from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
@@ -35,9 +35,7 @@ test('RF-1008 lists a finished run with its stage, commit, state and links, and 
   page,
 }) => {
   await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-  await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await openScanRun(page);
 
   await openHistory(page);
 

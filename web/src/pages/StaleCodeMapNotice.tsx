@@ -3,7 +3,7 @@ import { Button } from '../components/Button.js';
 import type { StartForm } from './use-start-form.js';
 
 // RF-113, DEC-136: a code map from an older scanner. A new scan is the first action; starting an
-// understand run on the old map needs the confirmation below. The notice goes once the stage is Scan.
+// understand run on the old map needs the confirmation below. Scan again starts the scan at once.
 export function StaleCodeMapNotice({ form }: { readonly form: StartForm }): JSX.Element | null {
   const { oldMap } = form;
   if (!oldMap.outdated || form.stage !== 'understand') return null;
@@ -16,7 +16,7 @@ export function StaleCodeMapNotice({ form }: { readonly form: StartForm }): JSX.
       </p>
       <Button
         onClick={() => {
-          form.setStage('scan');
+          form.scan.scanAgain();
         }}
       >
         Scan again

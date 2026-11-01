@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { expect, test } from './support/fixtures.js';
-import { openStartPage, runStatus, startAndOpenLiveRun } from './support/live-run-page.js';
+import { openScanRun, openStartPage } from './support/live-run-page.js';
 import { runScan } from './support/journey-pages.js';
 import { openPlanSetup } from './support/plan-setup-page.js';
 import { accountFor } from './support/seed.js';
@@ -78,9 +78,7 @@ test(
     test.setTimeout(120_000);
     await page.setViewportSize(phone);
     await openStartPage(page);
-    await page.getByLabel('Scan only').check();
-    await startAndOpenLiveRun(page);
-    await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+    await openScanRun(page);
     await addLongPath(page);
 
     await expect(page.getByText(longPath)).toBeVisible();

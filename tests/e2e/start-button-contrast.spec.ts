@@ -59,7 +59,7 @@ test('RNF-010 the Start run button keeps readable text on every frame while it b
   await signInThroughPage(page, accountFor('journey-run', info.project.name));
   await expect(page).toHaveURL(/\/projects$/u);
   await openScannedStartPage(page);
-  const start = page.getByRole('button', { name: /^Start run/u });
+  const start = page.getByRole('button', { name: /^Analyse/u });
   // A page that has just loaded waits for its estimate with Start disabled; the answer is held back.
   let release: () => void = () => undefined;
   const held = new Promise<void>((resolve) => {

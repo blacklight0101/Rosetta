@@ -9,11 +9,11 @@ import { EstimateSection } from './EstimateSection.js';
 import { RepositorySection } from './RepositorySection.js';
 import { UploadSourceSection } from './UploadSourceSection.js';
 import { WorkbookSourceSection } from './WorkbookSourceSection.js';
-import { RunNotice } from './RunNotice.js';
 import { localLikelyTokens } from '../lib/start-confirmation.js';
 import { StartConfirmDialog } from './StartConfirmDialog.js';
 import { StaleCodeMapNotice } from './StaleCodeMapNotice.js';
 import { StageAreasSection } from './StageAreasSection.js';
+import { ScanSection } from './ScanSection.js';
 import { SummaryBar } from './SummaryBar.js';
 import { useStartForm, type StartForm } from './use-start-form.js';
 
@@ -145,6 +145,19 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
   const { actions, consent } = form;
   const ref = useRef<HTMLDivElement>(null);
   useRefusalFocus(ref, actions.attempts);
+  // RF-160: until the scan has finished there are no areas and no estimate, so only the scan shows.
+  if (form.choice.estimate.status === 'none') {
+    return (
+      <div class="rst-start" ref={ref}>
+        <div>
+          <h1 class="rst-page__title">Start a run</h1>
+          <p class="rst-settings__lead">{leadOf(form.project.sourceKind)}</p>
+        </div>
+        <SourceSection form={form} />
+        <ScanSection form={form} />
+      </div>
+    );
+  }
   return (
     <div class="rst-start" ref={ref}>
       <div>
@@ -164,9 +177,6 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
       )}
       <PrivateCode form={form} />
       {actions.refusals.start === undefined ? null : <ErrorBanner error={actions.refusals.start} />}
-      {actions.notice === undefined ? null : (
-        <RunNotice notice={actions.notice} busy={actions.busy} onCancel={actions.cancel} />
-      )}
       <SummaryBar form={form} />
       <Confirmation form={form} />
     </div>
