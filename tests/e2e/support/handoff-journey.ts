@@ -59,7 +59,9 @@ async function expectPlanFigures(page: Page): Promise<void> {
   await expect(page.getByRole('tab', { name: /^Your questions/u })).toHaveCount(0);
   await page.getByRole('tab', { name: /^Planner calls/u }).click();
   await expect(page.getByRole('list', { name: 'Planner calls' })).toContainText('Plan package');
-  await expect(page.getByTestId('plan-checks')).toContainText('checks.md');
+  await expect(
+    page.getByRole('tabpanel').getByRole('heading', { name: 'Plan coverage' }),
+  ).toBeVisible();
 }
 
 /** The text of a file of the package, wherever the zip puts its folder. */

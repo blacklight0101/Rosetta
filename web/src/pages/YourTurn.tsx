@@ -199,8 +199,7 @@ function PlanTurnPanel(props: YourTurnProps): JSX.Element {
     <section class="rst-card rst-p170-turn" aria-label="Your turn">
       <h2 class="rst-live-section__title">Your turn</h2>
       <PlanTurn
-        {...{ projectId: props.run.projectId, endState: props.state.ended?.endState }}
-        errorCode={props.state.ended?.errorCode}
+        {...{ projectId: props.run.projectId, runId: props.run.id, ended: props.state.ended }}
       />
       <ul class="rst-p170-facts" aria-label="Run facts">
         <Fact label="Cost" value={costLabel(props.costMicros)} />

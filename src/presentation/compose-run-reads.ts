@@ -1,4 +1,5 @@
 import { ReadOverview } from '../application/use-cases/read-overview.js';
+import { ReadPackageChecks } from '../application/use-cases/read-package-checks.js';
 import { ReadRunCoverage } from '../application/use-cases/read-run-coverage.js';
 import type { RunIndex } from '../application/ports/run-index.js';
 import { FileRunTextFiles } from '../infrastructure/files/file-run-text-files.js';
@@ -14,5 +15,6 @@ export function composeRunReads(runs: RunIndex, writer: NodeOutputWriter): Overv
   return {
     readOverview: new ReadOverview({ runs, files }),
     readCoverage: new ReadRunCoverage({ runs, files }),
+    readChecks: new ReadPackageChecks({ runs, files }),
   };
 }

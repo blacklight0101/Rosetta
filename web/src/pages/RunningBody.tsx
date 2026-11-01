@@ -139,7 +139,7 @@ function Details(props: DetailsProps): JSX.Element {
           open(tabOf(id));
         }}
       >
-        {tab === 'calls' ? <PlanCalls state={state} /> : null}
+        {tab === 'calls' ? <PlanCalls runId={run.id} state={state} /> : null}
         {tab === 'cards' ? (
           <CardsTab state={state} claims={state.claims} source={props.source} />
         ) : null}

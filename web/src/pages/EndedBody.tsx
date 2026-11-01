@@ -163,7 +163,7 @@ function Panels(props: PanelsProps): JSX.Element | null {
       />
     );
   }
-  if (results.tab === 'calls') return <PlanCalls state={shown} />;
+  if (results.tab === 'calls') return <PlanCalls runId={run.id} state={shown} />;
   if (results.tab === 'evidence')
     return <EvidenceTab {...props} state={shown} source={reportSeen(props.source, props.built)} />;
   return (

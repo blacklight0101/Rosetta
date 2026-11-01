@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { callLabel } from '../lib/live-run/plan-calls.js';
+import { usePackageChecks } from './use-package-checks.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 
 // RF-1015, RF-1003 (P7-25): the plan figures of a plan run: the planner calls with their tokens and
@@ -19,8 +20,12 @@ function note(state: RunState): string {
 }
 
 // RF-1015
-export function PlanCalls(props: { readonly state: RunState }): JSX.Element {
+export function PlanCalls(props: {
+  readonly runId: string;
+  readonly state: RunState;
+}): JSX.Element {
   const { planCalls } = props.state;
+  const sections = usePackageChecks(props.runId, props.state.ended);
   return (
     <>
       {planCalls.length === 0 ? (
@@ -40,6 +45,12 @@ export function PlanCalls(props: { readonly state: RunState }): JSX.Element {
       <p class="rst-settings__note" data-testid="plan-checks">
         {note(props.state)}
       </p>
+      {(sections ?? []).map((section) => (
+        <section key={section.title} aria-label={section.title}>
+          <h3>{section.title}</h3>
+          <p class="rst-plan-check">{section.text}</p>
+        </section>
+      ))}
     </>
   );
 }
