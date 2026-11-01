@@ -6,9 +6,9 @@ import {
   expectNotCovered,
   openQuestion,
   openRunTab,
+  openScanRun,
   openStartPage,
   runStatus,
-  startAndOpenLiveRun,
   startUnderstand,
   typeOwnAnswerWithKeyboard,
   valueOf,
@@ -36,11 +36,7 @@ test('RF-1002 a scan run opens from the start notice, ends complete and offers i
   page,
 }) => {
   await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-
-  await startAndOpenLiveRun(page);
-
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await openScanRun(page);
   await expect(page.getByText('This run has no agents')).toBeVisible();
   await openRunTab(page, 'Activity');
   await expect(page.getByRole('log', { name: 'Event log' })).toContainText('scan.completed');
@@ -293,7 +289,7 @@ test('RF-1108 RF-431 RST-2302 a role without a usable key shows Key missing, whe
   await expect(note).toContainText('Key missing', { timeout: 30_000 });
   await expect(note).toContainText('RST-2302');
   await expect(note.getByRole('link', { name: 'Settings and keys' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Start run/u })).toBeDisabled();
+  await expect(page.getByRole('button', { name: /^Analyse/u })).toBeDisabled();
   await expect(page.getByTestId('start-reason')).toContainText('key is missing');
   await expectNoSeriousViolations(page);
 });

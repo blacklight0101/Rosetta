@@ -7,6 +7,8 @@ import { err, type Result } from '../../domain/errors/result.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
+import { stepAmountOf } from '../journey/journey-budget.js';
+import type { JourneyRecords } from '../ports/journey-records.js';
 import { scopeOf } from '../runs/run-scope.js';
 import {
   readUnderstandOptions,
@@ -28,7 +30,9 @@ import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.j
 
 export interface StartDeepenDependencies {
   readonly projects: Pick<ProjectRepository, 'find'>;
-  readonly runs: Pick<RunIndex, 'find'>;
+  readonly runs: Pick<RunIndex, 'find' | 'list'>;
+  /** RF-435: a Deepen runs under what is left of the journey's approved amount. */
+  readonly journeys?: JourneyRecords;
   readonly manifests: Pick<RunManifestStore, 'read'>;
   readonly submit: Pick<SubmitRun, 'execute'>;
   /** The host of the server's Ollama (`ROSETTA_OLLAMA_URL`); an Ollama elsewhere needs consent (RF-143). */
@@ -87,8 +91,12 @@ export class StartDeepen {
     const privateCodeConfirmed = request.privateCodeConfirmed === true;
     const { areas } = readUnderstandOptions(stored.options);
     const deepen = { parentRunId: run.id, maxRounds, coveragePass: request.coveragePass !== false };
+    const approvedAmount = await stepAmountOf(this.deps, {
+      userId: actor.userId,
+      projectId: project.id,
+    });
     const options = understandOptionsOf({
-      ...{ areas, cloudConsent, deepen },
+      ...{ areas, cloudConsent, deepen, approvedAmount },
       privateCodeConfirmed:
         privateCodeConfirmed && rolesNeedPrivateConfirmation(project, this.deps.ollamaHost),
     });

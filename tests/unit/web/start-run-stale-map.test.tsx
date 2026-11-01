@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
-import { expect, it } from 'vitest';
+import { afterEach, expect, it } from 'vitest';
 import { json } from './fake-api.js';
 import { estimatePath, localEstimate, runAnswer, runsPath } from './start-run-fixtures.js';
 import { input, ready, renderStart, start } from './start-run-helpers.js';
@@ -9,6 +9,10 @@ const outdated = (scannerVersion: number | null) =>
     ...localEstimate,
     codeMap: { scannerVersion, currentScannerVersion: 1, outdated: true },
   });
+
+afterEach(() => {
+  window.history.pushState({}, '', '/');
+});
 
 const confirmation = 'Use the old code map for this run';
 
@@ -21,7 +25,7 @@ it.each([0, null])(
     const buttons = screen.getAllByRole('button').map((button) => button.textContent);
     expect(buttons.indexOf('Scan again')).toBeGreaterThanOrEqual(0);
     expect(buttons.indexOf('Scan again')).toBeLessThan(
-      buttons.findIndex((text) => text.startsWith('Start run')),
+      buttons.findIndex((text) => text.startsWith('Analyse')),
     );
   },
 );
@@ -45,15 +49,6 @@ it('RF-113 an Understand start on an outdated map is blocked until it is confirm
   });
 });
 
-it('RF-113 Scan again switches to Scan only, which needs no confirmation, and hides the notice', async () => {
-  renderStart({ [`GET ${estimatePath}`]: outdated(0) });
-  await ready();
-  fireEvent.click(screen.getByRole('button', { name: 'Scan again' }));
-  expect(input('Scan only').checked).toBe(true);
-  expect(start().disabled).toBe(false);
-  expect(screen.queryByText('The code map is out of date.')).toBeNull();
-});
-
 it('RF-113 a code map of the current scanner is not gated', async () => {
   renderStart();
   await ready();
@@ -70,4 +65,19 @@ it('RF-113 an estimate that says nothing about the code map is not gated', async
   await ready();
   expect(screen.queryByText('The code map is out of date.')).toBeNull();
   expect(start().disabled).toBe(false);
+});
+
+it('RF-113 Scan again starts a new scan at once and the page stays', async () => {
+  const { calls } = renderStart({
+    [`GET ${estimatePath}`]: outdated(0),
+    [`POST ${runsPath}`]: runAnswer('scan', 1),
+  });
+  await ready();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Scan again' }));
+
+  await waitFor(() => {
+    expect(calls.some((call) => call.method === 'POST' && call.path === runsPath)).toBe(true);
+  });
+  expect(window.location.pathname).toBe('/');
 });

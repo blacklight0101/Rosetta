@@ -14,6 +14,7 @@ import { FileTaskResults } from '../infrastructure/cards/file-task-results.js';
 import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
 import type { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
 import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
+import { PgJourneyRecords } from '../infrastructure/db/pg-journey-records.js';
 import type { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import type { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-store.js';
@@ -48,6 +49,7 @@ export function composeDeepen(parts: DeepenParts): DeepenServices {
   return {
     startDeepen: new StartDeepen({
       ...{ projects, runs, manifests, submit: parts.submit, roleKeys: parts.roleKeys },
+      journeys: new PgJourneyRecords(parts.pool), // RF-435: a Deepen runs under the journey's amount
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),
     estimateDeepen: new EstimateDeepen({

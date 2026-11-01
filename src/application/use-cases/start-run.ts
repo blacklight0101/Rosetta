@@ -1,4 +1,6 @@
 import { approvedJourneyOf, type JourneyLookup } from '../runs/approved-journey.js';
+import { stepAmountOf } from '../journey/journey-budget.js';
+import type { JourneyRecords } from '../ports/journey-records.js';
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
@@ -58,6 +60,11 @@ export interface StartRunDependencies {
    * leave the check out.
    */
   readonly journey: JourneyLookup;
+  /**
+   * RF-011, RF-435, ADR-027: the project's journey. Pressing Analyse records it; a later step runs
+   * under what is left of its amount. Absent only where no journey is kept (evaluation tools).
+   */
+  readonly journeys?: JourneyRecords;
 }
 
 export interface StartRunRequest {
@@ -221,11 +228,12 @@ export class StartRun {
     const needsPrivate = rolesNeedPrivateConfirmation(project, ollamaHost);
     const approved = await this.approvedOf(request);
     if (!approved.ok) return err(approved.error);
+    const approvedAmount = approved.value ?? (await this.leftOf(request, project));
     const options = understandOptionsOf({
       ...request,
       cloudConsent: await this.consentOf(request),
       privateCodeConfirmed: needsPrivate && request.privateCodeConfirmed === true,
-      approvedAmount: approved.value,
+      approvedAmount,
     });
     if (!options.cloudConsent && rolesNeedCloudConsent(project.settings, ollamaHost)) {
       return err(ERROR_CODES.cloudConsentMissing);
@@ -235,11 +243,35 @@ export class StartRun {
       return err(ERROR_CODES.privateCodeNotConfirmed);
     }
     const { actor } = request;
-    return this.submit({
+    const submitted = await this.submit({
       actor,
       project,
       stage: 'understand',
       options: { ...options },
+    });
+    if (submitted.ok) await this.recordJourney(request, project, approved.value, submitted.value);
+    return submitted;
+  }
+
+  /** RF-435: a step with no figure of its own runs under what is left of the journey's amount. */
+  private leftOf(request: StartRunRequest, project: Project): Promise<ApprovedAmount | undefined> {
+    const owner = { userId: request.actor.userId, projectId: project.id };
+    return stepAmountOf({ journeys: this.deps.journeys, runs: this.deps.runs }, owner);
+  }
+
+  /** RF-011, DEC-204: pressing Analyse (a start that showed its figure) records the journey. */
+  private async recordJourney(
+    request: StartRunRequest,
+    project: Project,
+    approved: ApprovedAmount | undefined,
+    started: SubmittedRun,
+  ): Promise<void> {
+    if (approved === undefined) return;
+    await this.deps.journeys?.save({
+      userId: request.actor.userId,
+      projectId: project.id,
+      approved: { tokens: approved.tokens, costMicros: approved.costMicros },
+      createdAt: started.run.queuedAt,
     });
   }
 }

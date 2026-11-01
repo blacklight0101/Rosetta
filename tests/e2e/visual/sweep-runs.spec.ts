@@ -6,9 +6,9 @@ import { buildReport } from '../support/journey-pages.js';
 import {
   agentPanel,
   openRunTab,
+  openScanRun,
   openStartPage,
   runStatus,
-  startAndOpenLiveRun,
   startUnderstand,
 } from '../support/live-run-page.js';
 import { expectOptions, openPlanSetup, openStep } from '../support/plan-setup-page.js';
@@ -52,12 +52,10 @@ test(
     await expectPageInView(page);
 
     await openStartPage(page);
-    await expect(page.getByText(/Run a scan first/u)).toBeVisible();
+    await expect(page.getByTestId('scan-running')).toBeVisible();
     await expectPageInView(page);
 
-    await page.getByLabel('Scan only').check();
-    await startAndOpenLiveRun(page);
-    await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+    await openScanRun(page);
     await expect(page.getByText('This run has no agents')).toBeVisible();
     await expectPageInView(page);
   },

@@ -16,6 +16,7 @@ import {
   ready,
   renderStart,
   start,
+  opened,
 } from './start-run-helpers.js';
 import {
   allLocalRoles,
@@ -111,7 +112,7 @@ it('RF-132 the request carries both confirmations', async () => {
 
   fireEvent.click(start());
 
-  await screen.findByTestId('run-notice');
+  await opened();
   expect(calls.at(-1)?.body).toEqual({
     stage: 'understand',
     areas: ['Catalog', 'Models'],
@@ -129,16 +130,6 @@ it('RF-132 an uploaded project whose roles are all local shows neither confirmat
   expect(start().disabled).toBe(false);
 });
 
-it('RF-132 a scan of an uploaded project with cloud roles asks neither confirmation', async () => {
-  renderStart(uploadAnswers(oneCloudRole));
-  await ready();
-
-  fireEvent.click(input('Scan only'));
-
-  expect(screen.queryByRole('region', { name: noticeName })).toBeNull();
-  expect(start().disabled).toBe(false);
-});
-
 it('RF-132 a GitHub project with a cloud role shows no second notice and sends no such field', async () => {
   const { calls } = renderStart({
     [`GET ${estimatePath}`]: json(200, cloudEstimate),
@@ -151,7 +142,7 @@ it('RF-132 a GitHub project with a cloud role shows no second notice and sends n
   fireEvent.click(start());
   fireEvent.click(await screen.findByRole('button', { name: 'Confirm and start' }));
 
-  await screen.findByTestId('run-notice');
+  await opened();
   expect(calls.at(-1)?.body).toEqual({
     stage: 'understand',
     areas: ['Catalog', 'Models'],

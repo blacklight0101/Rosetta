@@ -4,9 +4,9 @@ import { expectNoSeriousViolations } from './support/axe.js';
 import {
   agentPanel,
   openRunTab,
+  openScanRun,
   openStartPage,
   runStatus,
-  startAndOpenLiveRun,
   startUnderstand,
 } from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
@@ -54,9 +54,7 @@ async function twoParallelReaders(page: Page): Promise<void> {
 /** A completed scan of the project: an understand run needs one. */
 async function scanProject(page: Page): Promise<void> {
   await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-  await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await openScanRun(page);
 }
 
 test('RF-1005 the coverage map of a running run fills in by area and by read share as files are read', async ({

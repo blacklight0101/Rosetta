@@ -6,7 +6,7 @@ import { expect } from './fixtures.js';
 // recorded understand run the test server replays.
 
 const webformsUrl = 'https://github.com/octo/webforms';
-const startButton = { name: /^Start run/u } as const;
+const startButton = { name: /^Analyse/u } as const;
 
 /** The start link of the project of a repository address on the projects page. */
 function startLinkOf(page: Page, url: string): Locator {
@@ -79,21 +79,37 @@ async function chooseAreas(page: Page, names: readonly string[]): Promise<void> 
 export async function pressStart(page: Page): Promise<void> {
   await page.getByRole('button', startButton).click();
   const question = page.getByRole('dialog', { name: 'Start this run?' });
-  const notice = page.getByTestId('run-notice');
-  await expect(question.or(notice)).toBeVisible();
+  const live = page.getByRole('heading', { name: 'Live run', level: 1 });
+  await expect(question.or(live)).toBeVisible();
   if (await question.isVisible()) {
     await page.getByRole('button', { name: 'Confirm and start' }).click();
   }
 }
 
-/** Presses Start and follows the link of the notice to the live page; returns its path. */
+/**
+ * Presses Analyse; the browser opens the live page of the run by itself (RF-1019), so there is no
+ * link to click. Returns the path of the live page.
+ */
 export async function startAndOpenLiveRun(page: Page): Promise<string> {
   await pressStart(page);
-  const notice = page.getByTestId('run-notice');
-  await expect(notice).toContainText(/Run started|Queued/u);
-  await notice.getByRole('link', { name: 'Open the live run' }).click();
   await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
   return new URL(page.url()).pathname;
+}
+
+/**
+ * RF-160: the free scan starts by itself when the project has a source. Waits until it ended and
+ * the areas are listed, then opens the live page of the scan run through the History page.
+ */
+export async function openScanRun(page: Page): Promise<void> {
+  await expect(areasOf(page).locator('label').first()).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId('scan-running')).toHaveCount(0, { timeout: 60_000 });
+  await page.getByRole('navigation').getByRole('link', { name: 'History' }).click();
+  await page
+    .getByRole('link', { name: /^View run .*-scan$/u })
+    .first()
+    .click();
+  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
 }
 
 /** Starts an understand run of the named areas and opens its live page. */

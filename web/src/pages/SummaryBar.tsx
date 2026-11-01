@@ -43,7 +43,6 @@ function Totals({ form }: { readonly form: StartForm }): JSX.Element | null {
 // RF-1018
 export function SummaryBar({ form }: { readonly form: StartForm }): JSX.Element {
   const { actions, gate, choice, stage } = form;
-  const waiting = actions.notice?.kind === 'queued' || actions.notice?.kind === 'started';
   const canEstimate = stage === 'understand' || choice.estimate.status === 'none';
   return (
     <section class="rst-start__bar" aria-label="Run summary">
@@ -57,16 +56,14 @@ export function SummaryBar({ form }: { readonly form: StartForm }): JSX.Element 
       </div>
       <div class="rst-start__actions">
         {canEstimate ? <Button onClick={choice.reestimate}>Re-estimate</Button> : null}
-        {waiting ? null : (
-          <Button
-            variant="primary"
-            busy={actions.busy}
-            {...(gate.reason === undefined ? {} : { disabledReason: gate.reason })}
-            onClick={actions.submit}
-          >
-            {gate.label}
-          </Button>
-        )}
+        <Button
+          variant="primary"
+          busy={actions.busy}
+          {...(gate.reason === undefined ? {} : { disabledReason: gate.reason })}
+          onClick={actions.submit}
+        >
+          {gate.label}
+        </Button>
       </div>
     </section>
   );
