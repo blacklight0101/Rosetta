@@ -121,7 +121,7 @@ describe('Plan setup uses the source run it names', () => {
 });
 
 describe('Plan setup starts the plan from the source run', () => {
-  it('RF-614 Write the package starts the plan run from the chosen run, only when pressed', async () => {
+  it('RF-614 Start the plan starts the plan run from the chosen run, only when pressed', async () => {
     window.history.pushState({}, '', '/projects/p-1/plan-setup?run=run-7');
     const page = renderPlan({
       ...savedAnswers,
@@ -131,7 +131,7 @@ describe('Plan setup starts the plan from the source run', () => {
     await ready();
     expect(page.calls.some((call) => call.path === `${base}/runs`)).toBe(false);
 
-    fireEvent.click(screen.getByRole('button', { name: /^Write the package/u }));
+    fireEvent.click(screen.getByRole('button', { name: /^Start the plan/u }));
 
     await waitFor(() => {
       expect(page.calls.find((call) => call.path === `${base}/runs`)?.body).toEqual({
@@ -163,7 +163,7 @@ describe('Plan setup when the source run cannot be used', () => {
     const region = await screen.findByRole('region', { name: 'Source run' });
     expect(within(region).getByTestId('error-banner').textContent).toContain('RST-1802');
     await waitFor(() => {
-      const button = screen.getByRole('button', { name: /^Write the package/u });
+      const button = screen.getByRole('button', { name: /^Start the plan/u });
       expect(button).toHaveProperty('disabled', true);
     });
   });
@@ -221,7 +221,7 @@ describe('Plan setup with a named run that cannot be used', () => {
     });
   };
 
-  it('RST-1802 keeps the named run id on the estimate and blocks Write the package', async () => {
+  it('RST-1802 keeps the named run id on the estimate and blocks Start the plan', async () => {
     const page = named();
     await screen.findByRole('region', { name: 'Source run' });
     await screen.findByRole('heading', { name: 'Plan setup', level: 1 });
@@ -229,7 +229,7 @@ describe('Plan setup with a named run that cannot be used', () => {
     await waitFor(() => {
       expect(pathsOf(page.calls)).toContain(`${base}/plan-estimate?run=run-7`);
     });
-    const button = screen.getByRole('button', { name: /^Write the package/u });
+    const button = screen.getByRole('button', { name: /^Start the plan/u });
     expect(button).toHaveProperty('disabled', true);
     fireEvent.click(button);
     expect(page.calls.some((call) => call.method === 'POST' && call.path === `${base}/runs`)).toBe(
