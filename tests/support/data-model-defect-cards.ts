@@ -99,3 +99,14 @@ export function runCards(cards: readonly SourceCard[]): Card[] {
     ),
   );
 }
+
+/** P7-32: three per-site sheets of the same columns and a tag list with other columns. */
+export function siteSheetCards(): SourceCard[] {
+  const columns = 'Columns ap id, label, model and install date, one row per access point.';
+  return [
+    card('ENT-001', 'ENT', 'Access point site A sheet', [columns]),
+    card('ENT-002', 'ENT', 'Access point site B sheet', [columns]),
+    card('ENT-003', 'ENT', 'Access point site C sheet', [columns]),
+    card('ENT-004', 'ENT', 'Tag list sheet', ['Columns tag id and colour, one row per tag.']),
+  ];
+}
