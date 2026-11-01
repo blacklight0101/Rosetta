@@ -25,7 +25,24 @@ function readsLikeDenylist(control: PlanControl): boolean {
   );
 }
 
-function approachLine(control: PlanControl): string {
+const signInWords = /\b(?:sign[\s-]?in|log[\s-]?in|authenticat\w*|password\w*)\b/iu;
+const secretWords = /\b(?:secrets?|credentials?|api keys?|connection strings?|tokens?)\b/iu;
+
+/**
+ * RF-648, RF-649: for a workbook, a control that works by "other" and is about signing in or about
+ * secrets names the owner's answer, which the code could not show.
+ */
+function workbookApproach(control: PlanControl, handoff: HandoffPackage): string | undefined {
+  const { workbook } = handoff;
+  if (workbook === undefined || control.approach !== 'other') return undefined;
+  const text = `${control.name} ${control.description}`;
+  if (signInWords.test(text)) return workbook.signIn.words;
+  return secretWords.test(text) ? workbook.secrets.words : undefined;
+}
+
+function approachLine(control: PlanControl, handoff: HandoffPackage, esc: MarkdownEscaper): string {
+  const owner = workbookApproach(control, handoff);
+  if (owner !== undefined) return `Approach: ${esc.inline(owner)}.`;
   return control.approach === 'denylist'
     ? 'Approach: denylist. It works by listing forbidden patterns.'
     : `Approach: ${control.approach}.`;
@@ -53,12 +70,16 @@ function guardLines(control: PlanControl, esc: MarkdownEscaper): string[] {
   ];
 }
 
-function controlLines(control: PlanControl, esc: MarkdownEscaper): string[] {
+function controlLines(
+  control: PlanControl,
+  handoff: HandoffPackage,
+  esc: MarkdownEscaper,
+): string[] {
   const decision = control.decision === '' ? 'none' : decisionLink(control.decision);
   return [
     `### ${esc.inline(control.name)}`,
     '',
-    approachLine(control),
+    approachLine(control, handoff, esc),
     '',
     esc.inline(control.description),
     '',
@@ -82,14 +103,30 @@ function practiceLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
   ];
 }
 
+/** RF-648, RF-649: the owner's sign-in and secrets store of a workbook, with their records. */
+function workbookLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const { workbook } = handoff;
+  if (workbook === undefined) return [];
+  const record = (id: string | undefined): string =>
+    id === undefined || id === '' ? '' : ` (decision ${decisionLink(id)})`;
+  const mark = (defaulted: boolean): string => (defaulted ? ' (default, to be confirmed)' : '');
+  return [
+    `Sign-in: ${esc.inline(workbook.signIn.words)}${mark(workbook.signIn.defaulted)}${record(handoff.choices.signIn)}`,
+    '',
+    `Secrets store: ${esc.inline(workbook.secrets.words)}${mark(workbook.secrets.defaulted)}${record(handoff.choices.secrets)}`,
+    '',
+  ];
+}
+
 /** The body of the security section, after its decision-records line. */
 // RF-622
 export function securityLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const { security } = handoff.content.technical;
   return [
+    ...workbookLines(handoff, esc),
     ...practiceLines(handoff, esc),
     ...(security.length === 0
       ? ['No security control was planned.', '']
-      : security.flatMap((control) => controlLines(control, esc))),
+      : security.flatMap((control) => controlLines(control, handoff, esc))),
   ];
 }

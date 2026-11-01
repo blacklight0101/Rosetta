@@ -40,7 +40,7 @@ describe('planMessage: the workbook answers', () => {
     const { owner } = messageOf({ chosen: { 'workbook.signIn': 'accounts' } }, true);
 
     expect(owner).toMatch(/"signIn": \{[^}]*"default": false/u);
-    expect(owner).toMatch(/"secretsStore": \{[^}]*"default": true/u);
+    expect(owner).toMatch(/"store": \{[^}]*"default": true/u);
   });
 
   it('RF-648 a project that is not a workbook sends exactly what it sent before', () => {

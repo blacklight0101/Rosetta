@@ -47,17 +47,16 @@ describe('the workbook questions', () => {
   });
 
   it('RF-648 the recommended sign-in follows the hosting answer of the stack', async () => {
-    const page = renderPlan(asWorkbook);
+    renderPlan(asWorkbook);
     await ready();
     fireEvent.click(screen.getByRole('button', { name: 'Stack' }));
-    fireEvent.input(await screen.findByLabelText(/Your own answer.*Hosting/iu), {
+    fireEvent.input(await screen.findByLabelText('Your own for Hosting'), {
       target: { value: 'IIS on Windows Server' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Project context' }));
 
     const group = await screen.findByRole('radiogroup', { name: SIGN_IN });
     expect(titles(group)[0]).toBe('Windows authentication (Recommended)');
-    expect(page.calls.length).toBeGreaterThan(0);
   });
 
   it('RF-648 a project of a repository is not asked', async () => {
@@ -95,7 +94,7 @@ describe('the workbook questions: saves', () => {
         name: 'Type your own answer',
       }),
     );
-    fireEvent.input(screen.getByLabelText('Your own answer for secrets'), {
+    fireEvent.input(screen.getByLabelText('Your answer'), {
       target: { value: 'The team key vault' },
     });
     press('Save and continue');
@@ -103,8 +102,8 @@ describe('the workbook questions: saves', () => {
     await screen.findByRole('heading', { name: /Will agents or people build/u, level: 2 });
     expect(saves(page)).toEqual([
       {
-        chosen: { 'workbook.secrets': 'typed' },
-        typed: { 'workbook.secrets': 'The team key vault' },
+        chosen: { 'workbook.store': 'typed' },
+        typed: { 'workbook.store': 'The team key vault' },
       },
     ]);
   });

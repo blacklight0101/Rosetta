@@ -7,6 +7,7 @@ import { MAX_TEXT } from '../lib/plan-setup/draft.js';
 import type { ContextField } from '../lib/plan-setup/steps.js';
 import { Field } from '../components/Field.js';
 import { PlanHostedQuestion } from './PlanHostedQuestion.js';
+import { PlanWorkbookQuestions } from './PlanWorkbookQuestions.js';
 import { PlanStepCard } from './PlanStepCard.js';
 import type { StepProps } from './PlanPrinciplesStep.js';
 
@@ -59,8 +60,27 @@ function withText(draft: Draft, field: ContextField, value: string): Draft {
   );
 }
 
+/** The hosted question and, for workbooks, the three workbook questions (RF-648). */
+function PlanContextExtras(props: Omit<StepProps, 'catalogue'>): JSX.Element {
+  const { draft, change, problems, workbook } = props;
+  return (
+    <>
+      <PlanHostedQuestion draft={draft} change={change} />
+      {workbook === true ? (
+        <PlanWorkbookQuestions draft={draft} change={change} problems={problems} />
+      ) : null}
+    </>
+  );
+}
+
 // RF-611
-export function PlanContextStep({ draft, catalogue, change, problems }: StepProps): JSX.Element {
+export function PlanContextStep({
+  draft,
+  catalogue,
+  change,
+  problems,
+  workbook,
+}: StepProps): JSX.Element {
   const set = (field: ContextField, value: string): void => {
     change(withText(draft, field, value));
   };
@@ -98,7 +118,7 @@ export function PlanContextStep({ draft, catalogue, change, problems }: StepProp
           </div>
         );
       })}
-      <PlanHostedQuestion draft={draft} change={change} />
+      <PlanContextExtras {...{ draft, change, problems, workbook }} />
     </PlanStepCard>
   );
 }

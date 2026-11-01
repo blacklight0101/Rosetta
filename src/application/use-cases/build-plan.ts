@@ -3,6 +3,7 @@ import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { ok } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { PlanAssembly } from '../../domain/planning/plan-content.js';
+import { workbookSetup } from '../../domain/planning/workbook-setup.js';
 import { methodPrinciples } from '../../domain/planning/task-method.js';
 import { recordManifestBrief } from '../../domain/runs/manifest-brief.js';
 import { recordManifestSourceRun } from '../../domain/runs/manifest-source-run.js';
@@ -136,7 +137,9 @@ export class BuildPlan implements RunExecutor {
       ...{ tags: () => this.deps.ids.dataBlockTag(), callId: callIds(run) },
       window: windowOfRole(planner, inputs.value.project.settings),
     };
-    const input = { cards: supported, brief, catalogue, answered };
+    const workbook =
+      inputs.value.project.sourceKind === 'workbook' ? { workbook: workbookSetup(brief) } : {};
+    const input = { cards: supported, brief, catalogue, answered, ...workbook };
     const output = await askPlanner(call, input);
     const draft = await draftAfterRepair(call, input, prompts.planRepair, readPlanAnswer(output));
     if (draft === undefined) {

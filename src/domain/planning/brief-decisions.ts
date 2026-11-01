@@ -14,6 +14,8 @@ import { planId, type PlanDecision } from './plan-content.js';
 import { migrationStrategies, type PlanningBrief, type StackLayer } from './planning-brief.js';
 import { checkReference, typedAnswers } from './typed-answers.js';
 import type { PlanProposal, StrategyFit } from './stack-proposal.js';
+import type { WorkbookSetup } from './workbook-setup.js';
+import { accessChoices, workbookDecisions } from './workbook-decisions.js';
 
 // RF-608, RF-609, RF-610, ADR-018, DEC-76, DEC-78: the choices of the planning brief as decision
 // records of the package: one for the architecture style, one for each stack layer the owner chose
@@ -40,6 +42,9 @@ export interface BriefChoices {
   readonly stack: readonly PackageStack[];
   /** P5-39: the record of the seam between the two systems; empty when there is none. */
   readonly seam?: string;
+  /** RF-648, RF-649: the records of the sign-in and the secrets store of a workbook; empty when none. */
+  readonly signIn?: string;
+  readonly secrets?: string;
 }
 
 /** What the records of the brief are written from (RF-609): the supported cards, in card order, and the task cards. */
@@ -54,6 +59,8 @@ export interface BriefEvidence {
   }[];
   /** P5-39: what Rosetta proposed, when it could. */
   readonly proposal?: PlanProposal | undefined;
+  /** RF-648, RF-649: the answers of a project of workbooks; absent for any other source. */
+  readonly workbook?: WorkbookSetup | undefined;
 }
 
 export interface BriefDecisions {
@@ -250,12 +257,14 @@ export function briefDecisions(
       ? migrationDecision(brief, nextId(), proposal?.fit)
       : ownMigrationDecision(brief, ownMigration, nextId());
   const seam = proposal?.fit.seam ? seamDecision(proposal.fit, nextId()) : undefined;
+  const access = workbookDecisions(evidence.workbook, nextId);
   return {
-    decisions: presentOnly([style, ...layers, migration, seam]),
+    decisions: presentOnly([style, ...layers, migration, seam, ...access]),
     choices: {
       style: style?.id ?? '',
       migration: migration.id,
       seam: seam?.id ?? '',
+      ...accessChoices(access),
       stack: brief.stack.map((entry, index) => ({
         ...{ layer: entry.layer, name: layerName(entry.layer), choice: entry.choice },
         ...(entry.proposed === true ? { proposed: true } : {}),

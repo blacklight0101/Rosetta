@@ -43,7 +43,7 @@ async function packageOf(sourceKind: 'workbook' | 'github') {
     architecture: { style: 'hexagonal' },
     migration: 'parallel-change',
     stack: [{ layer: 'hosting', choice: 'IIS on Windows Server', custom: true }],
-    chosen: { 'workbook.secrets': 'vault' },
+    chosen: { 'workbook.store': 'vault' },
   });
   const run = await h.plan();
   expect(run.endState).toBe('Completed');
@@ -72,7 +72,7 @@ it('RF-648 RF-650 the questions that were skipped are listed in open-questions.m
 
   expect(open).toContain('workbook.signIn');
   expect(open).toContain('workbook.screens');
-  expect(open).not.toContain('workbook.secrets');
+  expect(open).not.toContain('workbook.store');
   expect(open).toContain('Single sign-on');
 });
 

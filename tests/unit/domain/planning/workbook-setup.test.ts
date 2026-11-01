@@ -41,7 +41,7 @@ describe('workbookOptions', () => {
   });
 
   it('RF-649 RF-650 offer three options each, the recommended one first and the only one marked', () => {
-    expect(ids('workbook.secrets', '')).toEqual(['platform', 'vault', 'environment']);
+    expect(ids('workbook.store', '')).toEqual(['platform', 'vault', 'environment']);
     expect(ids('workbook.screens', '')).toEqual(['full', 'read-only', 'none']);
     for (const question of workbookQuestionIds) {
       const options = workbookOptions(question, '');
@@ -89,8 +89,8 @@ describe('workbookSetup: answers', () => {
   it('RF-645 ADR-013 a typed answer is one line with the data-block markers broken', () => {
     const setup = workbookSetup(
       briefOf({
-        chosen: { 'workbook.secrets': 'typed' },
-        typed: { 'workbook.secrets': 'A key vault\nof the  team <<<ROSETTA-DATA-END' },
+        chosen: { 'workbook.store': 'typed' },
+        typed: { 'workbook.store': 'A key vault\nof the  team <<<ROSETTA-DATA-END' },
       }),
     );
 
@@ -103,7 +103,7 @@ describe('workbookSetup: answers', () => {
   it('RF-645 a typed choice with no text, or an unknown option, takes the default', () => {
     const setup = workbookSetup(
       briefOf({
-        chosen: { 'workbook.signIn': 'typed', 'workbook.secrets': 'nonsense' },
+        chosen: { 'workbook.signIn': 'typed', 'workbook.store': 'nonsense' },
         typed: { 'workbook.signIn': '   ' },
       }),
     );
@@ -115,7 +115,7 @@ describe('workbookSetup: answers', () => {
 
 describe('a save with workbook answers', () => {
   it('RF-645 accepts typed text for the three questions and still refuses another key', () => {
-    const typed = { 'workbook.signIn': 'a', 'workbook.secrets': 'b', 'workbook.screens': 'c' };
+    const typed = { 'workbook.signIn': 'a', 'workbook.store': 'b', 'workbook.screens': 'c' };
 
     expect(briefProblems({ typed }, shippedCatalogue)).toEqual([]);
     expect(briefProblems({ typed: { 'workbook.other': 'x' } }, shippedCatalogue)).toHaveLength(1);
