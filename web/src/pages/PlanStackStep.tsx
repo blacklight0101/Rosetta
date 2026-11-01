@@ -34,7 +34,10 @@ interface LayerRowProps {
   readonly problem: string | undefined;
   /** RF-609: the catalogue has no option for the layer. */
   readonly noOption: boolean;
+  readonly offer?: StackOffer | undefined;
 }
+
+type PlatformChoices = ReturnType<typeof platformChoices>;
 
 /** RF-645: the option shown as chosen, read from the saved choice so an older brief shows it too. */
 function shownOption(picked: StackChoice | undefined, options: readonly QuestionOption[]): string {
@@ -88,10 +91,60 @@ function LayerOptions(props: LayerRowProps): JSX.Element {
   );
 }
 
+/** P7-30: the catalogue's choices for the platform a typed answer names, when it names only that. */
+function platformChoices(
+  offer: StackOffer | undefined,
+  layer: string,
+  typed: string,
+): readonly { readonly choice: string; readonly why: string }[] {
+  const text = typed
+    .trim()
+    .toLowerCase()
+    .replace(/[.!?,;:\s]+$/u, '');
+  const group = offer?.layers
+    .find((each) => each.layer === layer)
+    ?.vague.find((each) => each.words.includes(text));
+  return group?.proposals ?? [];
+}
+
+function PlatformHint(props: LayerRowProps & { readonly choices: PlatformChoices }): JSX.Element {
+  const { layer, draft, change, offered, options, choices } = props;
+  const typed = draft.stack[layer.id]?.choice ?? '';
+  return (
+    <div class="rst-plan-note" role="status">
+      <p>
+        {`"${typed.trim()}" names a platform, not a technology, so the package would treat ${layer.name} as open. Pick one:`}
+      </p>
+      {choices.map((each) => (
+        <button
+          key={each.choice}
+          type="button"
+          class="rst-button rst-button--secondary"
+          title={each.why}
+          onClick={() => {
+            const option = options.find((candidate) => candidate.title === each.choice)?.id;
+            const pick = {
+              choice: each.choice,
+              custom: false,
+              offered,
+              ...(option ? { option } : {}),
+            };
+            change(chooseLayer(draft, layer.id, pick));
+          }}
+        >
+          {each.choice}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function LayerRow(props: LayerRowProps): JSX.Element {
   const { layer, offered, draft, change, problem } = props;
   const picked = draft.stack[layer.id];
   const labelId = `stack-${layer.id}-name`;
+  const choices =
+    picked?.custom === true ? platformChoices(props.offer, layer.id, picked.choice) : [];
   return (
     <div class="rst-plan-layer" role="radiogroup" aria-labelledby={labelId}>
       <strong id={labelId} class="rst-plan-layer__name">
@@ -109,6 +162,9 @@ function LayerRow(props: LayerRowProps): JSX.Element {
           change(chooseLayer(draft, layer.id, { choice: text, custom: true, offered }));
         }}
       />
+      {picked?.custom === true && choices.length > 0 ? (
+        <PlatformHint {...props} choices={choices} />
+      ) : null}
     </div>
   );
 }
@@ -158,6 +214,7 @@ export function PlanStackStep(props: StackProps): JSX.Element {
             draft={draft}
             change={change}
             problem={problems[`stack.${layer.id}`]}
+            offer={props.offer}
           />
         ))}
       </div>

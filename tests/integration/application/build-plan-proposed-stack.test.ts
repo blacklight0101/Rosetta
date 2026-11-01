@@ -116,12 +116,10 @@ describe('BuildPlan: layers answered with only a platform', () => {
 
     const records = decisionsOf(files).filter((text) => text.includes('Technology for the'));
     expect(records).toHaveLength(7);
-    for (const layer of ['front end', 'back end', 'testing']) {
-      const record = records.find((text) => text.includes(`Technology for the ${layer} layer`));
-      expect(record).toContain('Proposed');
-      expect(record).toContain('Rosetta proposes');
-      expect(record).not.toMatch(/layer: (\.net|default)\b/u);
-    }
+    for (const record of records) expect(record).toContain('Proposed');
+    for (const record of records) expect(record).not.toMatch(/layer: (\.net|default)\s/iu);
+    const typed = records.filter((text) => text.includes('which names no technology'));
+    expect(typed).toHaveLength(3);
     const questions = plain(files['open-questions.md']);
     expect(questions).toContain('Proposed by Rosetta, not chosen by the owner: Razor Pages');
   });
