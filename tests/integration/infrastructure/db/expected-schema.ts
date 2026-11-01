@@ -78,6 +78,13 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'failed_areas int4',
     'unread_areas int4',
   ],
+  journeys: [
+    'project_id uuid',
+    'user_id uuid',
+    'approved_tokens int8',
+    'approved_cost_micros int8',
+    'created_at timestamptz',
+  ],
   cost_ledger: [
     'id int8',
     'at timestamptz',
@@ -162,6 +169,7 @@ export const readWriteTables: readonly string[] = [
   'provider_keys',
   'projects',
   'runs',
+  'journeys',
   'cost_reservations',
   'server_settings',
 ];
