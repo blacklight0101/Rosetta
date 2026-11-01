@@ -15,7 +15,7 @@ import { keptRunCards } from './kept-card-readers.js';
 
 export interface JourneyParts {
   readonly projects: ProjectRepository;
-  readonly runs: Pick<RunIndex, 'list'>;
+  readonly runs: Pick<RunIndex, 'list' | 'listQueued'>;
   readonly manifests: Pick<RunManifestStore, 'read'>;
   /** The event log of the runs. */
   readonly log: Pick<RunEventHistory, 'read' | 'lastSeq'>;
