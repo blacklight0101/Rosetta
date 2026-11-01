@@ -40,7 +40,22 @@ describe('a brief that marks the largest tier model as local', () => {
       (path) => local.files[path] !== plain.files[path],
     );
 
-    expect(changed.sort()).toEqual(['agents/README.md', 'checks.md', 'orchestration.md']);
+    expect(changed.sort()).toEqual([
+      'agents/README.md',
+      'checks.md',
+      'orchestration.md',
+      'tasks.md',
+    ]);
     expect(Object.keys(local.files).sort()).toEqual(Object.keys(plain.files).sort());
+  });
+
+  it('RF-641 P7-24 the Verifier line of a card whose verifier runs locally says so', () => {
+    const tasks = local.files['tasks.md'] ?? '';
+    const localVerifiers = tasks
+      .split('\n')
+      .filter((line) => /^Verifier: .*, runs locally$/u.test(line));
+
+    expect(localVerifiers.length).toBeGreaterThan(0);
+    expect(plain.files['tasks.md'] ?? '').not.toContain('runs locally');
   });
 });

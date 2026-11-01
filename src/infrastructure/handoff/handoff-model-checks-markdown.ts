@@ -43,11 +43,30 @@ function findingsOf(task: PlanTask, handoff: HandoffPackage): ModelFinding[] {
   });
 }
 
+/** P7-24: the difficulty from which a local verifier is weaker than the work it checks (RF-641). */
+const hostedVerifierFrom = 3;
+
+/** P7-24: one warning for the package, not one per card, when a local verifier checks a card of difficulty 3 and above. */
+function localVerifierLines(handoff: HandoffPackage): string[] {
+  const method = resolveBuildMethod(handoff.brief.buildMethod, handoff.agentModels);
+  const ids = handoff.content.tasks
+    .filter((task) => {
+      const { rating, verifier } = difficultyOfTask(task, method);
+      return rating >= hostedVerifierFrom && isLocalTier(method, verifier);
+    })
+    .map((task) => task.id);
+  if (ids.length === 0) return [];
+  return [
+    `- Verifier (warning): a local verifier is weaker than a hosted one; use a hosted verifier for cards of difficulty ${String(hostedVerifierFrom)} and above (${ids.join(', ')}).`,
+  ];
+}
+
 // RF-641
 export function modelCheckLines(handoff: HandoffPackage): string[] {
   if (!handoff.brief.buildMethod.aiAssisted) return [];
   const found = handoff.content.tasks.flatMap((task) => findingsOf(task, handoff));
-  if (found.length === 0) return [];
+  const verifier = localVerifierLines(handoff);
+  if (found.length === 0 && verifier.length === 0) return [];
   return [
     '## Model of each card',
     '',
@@ -57,6 +76,7 @@ export function modelCheckLines(handoff: HandoffPackage): string[] {
       (each) =>
         `- ${each.cardId}${each.severity === 'warning' ? ' (warning)' : ''}: ${reasons[each.kind]}`,
     ),
+    ...verifier,
     '',
   ];
 }
