@@ -48,4 +48,13 @@ export const deepenRows: Readonly<Record<string, readonly Probe[]>> = {
       expected: active(401, 404),
     },
   ],
+  // P7-26: the overview alone, for a run that ended at a cap; the seeded run completed (409).
+  'POST /api/runs/:runId/overview': [
+    {
+      method: 'POST',
+      url: (context) => `/api/runs/${context.endedRunId}/overview`,
+      expected: ownerOnly(409),
+    },
+    { method: 'POST', url: () => '/api/runs/not-a-uuid/overview', expected: active(401, 404) },
+  ],
 };
