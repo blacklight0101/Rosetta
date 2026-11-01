@@ -132,7 +132,7 @@ export interface UnderstandHarness {
    * Resumes an ended run as the Resume button does and waits for its end; the refusal when the
    * run cannot be resumed.
    */
-  resume(run: Run): Promise<Result<Run, string>>;
+  resume(run: Run, overviewOnly?: boolean): Promise<Result<Run, string>>;
   /** RF-432: Continue (+N) of a paused run, waiting until it ends or pauses again. */
   continueRun(run: Run): Promise<Result<Run, string>>;
   /** RF-432: Stop here of a paused run, waiting for its end. */

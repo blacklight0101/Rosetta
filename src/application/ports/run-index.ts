@@ -81,7 +81,12 @@ export interface RunIndex {
    * the end of the queue; undefined for an unknown id, another user's run and any other run, so two
    * parallel resumes queue it once.
    */
-  reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined>;
+  reopen(
+    userId: string,
+    runId: string,
+    at: EpochMs,
+    states?: readonly RunEndState[],
+  ): Promise<Run | undefined>;
   /** Records the pinned commit and the snapshot folder; undefined for an unknown or ended run. */
   recordSource(runId: string, source: RunSource): Promise<Run | undefined>;
   /** Replaces the running totals; undefined for an unknown or ended run. */

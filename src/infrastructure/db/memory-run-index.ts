@@ -129,10 +129,17 @@ export class MemoryRunIndex implements RunIndex {
     return Promise.resolve(this.keep(owned === undefined ? undefined : continueRun(owned, at)));
   }
 
-  reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {
+  reopen(
+    userId: string,
+    runId: string,
+    at: EpochMs,
+    states?: readonly RunEndState[],
+  ): Promise<Run | undefined> {
     const run = this.runs.get(runId);
     const owned = run?.userId === userId ? run : undefined;
-    return Promise.resolve(this.keep(owned === undefined ? undefined : reopenRun(owned, at)));
+    return Promise.resolve(
+      this.keep(owned === undefined ? undefined : reopenRun(owned, at, states)),
+    );
   }
 
   recordSource(runId: string, source: RunSource): Promise<Run | undefined> {

@@ -42,6 +42,7 @@ export async function mergeDuplicates(
   cards: readonly Card[],
 ): Promise<RunConsolidation | undefined> {
   const { execution, mergePrompt } = parts;
+  if (parts.room?.leavesOverview() === false) return undefined;
   const source = {
     ...parts,
     ...{ mergePrompt, runId: execution.run.runKey, signal: execution.signal },

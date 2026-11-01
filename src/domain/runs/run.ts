@@ -108,15 +108,22 @@ export function continueRun(run: Run, at: EpochMs): Result<Run, ContinueProblem>
 /** RF-006: the end states a resume can start from; a `Completed` run has nothing left to do. */
 export const RESUMABLE_END_STATES: readonly RunEndState[] = ['CapReached', 'Failed', 'Interrupted'];
 
+/** P7-26: the end states from which the overview alone can be written again. */
+export const OVERVIEW_END_STATES: readonly RunEndState[] = ['CapReached', 'Completed'];
+
 /**
  * RF-006: an ended run that stopped at a cap, failed or was interrupted queues again as the same
  * run (same folder, same manifest), its totals kept; the end state is cleared and set again when
  * it ends.
  */
 // RF-006
-export function reopenRun(run: Run, at: EpochMs): Result<Run, ReopenProblem> {
+export function reopenRun(
+  run: Run,
+  at: EpochMs,
+  states: readonly RunEndState[] = RESUMABLE_END_STATES,
+): Result<Run, ReopenProblem> {
   if (run.queueState !== 'Ended' || run.endState === null) return err('not-resumable');
-  if (!RESUMABLE_END_STATES.includes(run.endState)) return err('not-resumable');
+  if (!states.includes(run.endState)) return err('not-resumable');
   return ok({
     ...run,
     queueState: 'Queued',
