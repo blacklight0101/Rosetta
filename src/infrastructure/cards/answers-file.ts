@@ -40,6 +40,8 @@ export interface FileAnswersFileOptions {
 }
 
 const TITLE = '# Answers to open questions';
+/** P8-08: the heading before the questions past the cap; it is not a section. */
+const MORE_HEADING = '## More questions';
 
 function fileOf(project: ProjectRef): WorkspaceFile {
   return { userId: project.userId, path: `${projectPath(project.projectId)}/answers.md` };
@@ -92,6 +94,7 @@ export class FileAnswersFile implements AnswersFile {
       const merged: MergedQuestion[] = [];
       const { mark, body } = markOf(existing);
       const end = lastLineEndOf(body);
+      let moreShown = false;
       const sections = questions.flatMap((question) => {
         const text = this.line(question.question);
         if (question.survivor === true ? hasId(existing, question) : false) return [];
@@ -106,7 +109,11 @@ export class FileAnswersFile implements AnswersFile {
           return [];
         }
         added.set(text, question);
-        return [this.section(question, text, end)];
+        const own = this.section(question, text, end);
+        // P8-08: the first question past the cap is preceded by the "More questions" heading.
+        const starts = question.more === true && !moreShown;
+        if (starts) moreShown = true;
+        return starts ? [MORE_HEADING, own] : [own];
       });
       if (sections.length === 0) return merged;
       const head = body.trimEnd() === '' ? TITLE : body.trimEnd();

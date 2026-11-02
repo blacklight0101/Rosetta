@@ -58,10 +58,15 @@ export function checkReference(kind: ReferenceKind): string {
 }
 
 /** The title of the default style or strategy, named as the default and its check's reference when an own answer exists. */
-export function referenceTitle(brief: TypedSource, id: TypedQuestionId, title: string): string {
+export function referenceTitle(
+  brief: TypedSource,
+  id: TypedQuestionId,
+  title: string,
+  named?: string,
+): string {
   if (typedAnswers(brief)[id] === undefined) return title;
   const kind: ReferenceKind = id === 'migration' ? 'strategy' : 'style';
-  return `${title} (the default ${kind}, ${checkReference(kind)})`;
+  return `${title} (${named ?? `the default ${kind}`}, ${checkReference(kind)})`;
 }
 
 /** Whether a save carries a typed text for the question (used to leave `defaulted`). */

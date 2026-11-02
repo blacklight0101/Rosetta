@@ -67,10 +67,10 @@ describe('assemblePlan: more cards left out (Q-54)', () => {
     expect(left).toMatchObject([{ position: 1, field: 'acceptanceCriteria' }]);
   });
 
-  it('RF-627 Q-54 names requirements for a card that implements none, given SDD', () => {
+  it('RF-627 P8-02 leaves a card that implements none to derive one from what it builds, given SDD', () => {
     const left = leftOutOf([draftTask({ requirements: [9] })], specified);
 
-    expect(left).toMatchObject([{ position: 1, field: 'requirements' }]);
+    expect(left).toEqual([]);
   });
 
   it('RF-627 Q-54 lists no card when every card is written, and holds no text of a card', () => {

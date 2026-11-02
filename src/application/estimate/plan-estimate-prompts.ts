@@ -4,6 +4,8 @@ import { legacyClaimsOf } from '../../domain/planning/data-model.js';
 import { supportedCards, type SourceCard } from '../../domain/planning/plan-sources.js';
 import { flowCardsOf } from '../../domain/planning/target-flows.js';
 import { screenCardsOf } from '../../domain/planning/target-ux.js';
+import type { ArchitectureStyleId } from '../../domain/planning/catalogue.js';
+import { judgedStyleId } from '../../domain/planning/judged-style.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { apiContractMessage } from '../plan/api-contract-message.js';
@@ -144,10 +146,11 @@ function dataModelCalls(
 /** The calls after the plan and the PRD, each only when the run would make it. */
 function documentCalls(
   supported: ReturnType<typeof supportedCards>,
-  brief: PlanInputs['brief'],
+  owner: { readonly brief: PlanInputs['brief']; readonly style: ArchitectureStyleId },
   files: DocumentFiles,
   window: PlanWindow | undefined,
 ): PlannedCall[] {
+  const { brief, style } = owner;
   const flowCards = flowCardsOf(supported);
   const screenCards = screenCardsOf(supported);
   // RF-625: the plan's components are not known yet; the block is sized at the plan answer's limits.
@@ -166,7 +169,7 @@ function documentCalls(
           window,
           { kind: 'apiContract', file: files.apiContract },
           servableCards(supported),
-          (omitted) => apiContractMessage({ cards: supported, brief, omitted }, () => TAG),
+          (omitted) => apiContractMessage({ cards: supported, brief, style, omitted }, () => TAG),
         )
       : undefined,
     screenCards.length === 0
@@ -174,7 +177,7 @@ function documentCalls(
       : whole(
           'ux',
           files.ux,
-          uxMessage({ screenCards, brief }, () => TAG),
+          uxMessage({ screenCards, brief, style }, () => TAG),
         ),
   ];
   return calls.flatMap((call) => (call === undefined ? [] : [call]));
@@ -242,7 +245,12 @@ export async function plannedPrompts(
   const calls: PlannedCall[] = [
     planned('plan', withWorkbookGuidance(plan, guidance)),
     planned('prd', prd),
-    ...documentCalls(supported, brief, { dataModel, flows, apiContract, ux }, window),
+    ...documentCalls(
+      supported,
+      { brief, style: judgedStyleId(brief, catalogue.styles) },
+      { dataModel, flows, apiContract, ux },
+      window,
+    ),
     ...closingCalls({ coverage, gap, repair }),
   ];
   return { calls, supportedCards: supported.length, answeredQuestions: answered.length };

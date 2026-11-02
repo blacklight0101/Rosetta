@@ -6,7 +6,7 @@
 # with most lines (an empty list matches any) is the proposal; `choice` is a technology of the layer in
 # stack-technologies. A kind or layer without an entry proposes nothing. Plan setup offers the first two
 # entries that fit (P7-29): the first is the recommended one and the one a skipped layer takes.
-# legacy: a technology the scan can name by a language id or by a file extension anywhere in the code map; `endOfLife` layers do not offer to keep it (DEC-203).
+# legacy: a technology the scan can name by a language id, a file extension or a file name (`files`, P8-14) anywhere in the code map (`minSignals` of them, none of `unless`); `endOfLife` layers do not offer to keep it (DEC-203).
 signals:
   - kind: web
     artefacts: [page]
@@ -38,6 +38,11 @@ options:
     why: 'The legacy code is Python.'
   - kind: web
     layer: language-runtime
+    legacy: [javascript]
+    choice: 'TypeScript on Node.js'
+    why: 'The legacy code is JavaScript, so the team keeps its runtime and adds types.'
+  - kind: web
+    layer: language-runtime
     legacy: []
     choice: 'TypeScript on Node.js'
     why: 'No legacy language has a closer match; one typed language serves both ends.'
@@ -58,6 +63,11 @@ options:
     why: 'A typed Python framework for HTTP APIs, the nearest to the legacy language.'
   - kind: web
     layer: backend-framework
+    legacy: [javascript]
+    choice: 'Fastify'
+    why: 'A Node.js framework, the nearest to a legacy JavaScript server.'
+  - kind: web
+    layer: backend-framework
     legacy: []
     choice: 'Fastify'
     why: 'A small Node.js framework that serves pages or an API.'
@@ -66,6 +76,11 @@ options:
     legacy: [csharp, vb, aspnet, razor]
     choice: 'Razor Pages'
     why: 'Server-rendered pages keep the page-per-screen shape of the legacy application.'
+  - kind: web
+    layer: front-end
+    legacy: [javascript]
+    choice: 'React'
+    why: 'The legacy front end is JavaScript; React keeps one language across the browser code.'
   - kind: web
     layer: front-end
     legacy: []
@@ -92,6 +107,16 @@ options:
     choice: 'Entity Framework Core'
     why: 'Maps tables to classes and tracks changes, so new code needs less SQL.'
   - kind: web
+    layer: data-access
+    legacy: [javascript]
+    choice: 'Prisma'
+    why: 'A typed client for Node.js over SQL tables, with migrations.'
+  - kind: web
+    layer: data-access
+    legacy: [javascript]
+    choice: 'Knex.js'
+    why: 'A SQL query builder for Node.js; plain queries with little hidden behaviour.'
+  - kind: web
     layer: testing
     legacy: [csharp, vb, aspnet, razor]
     choice: 'xUnit'
@@ -106,6 +131,11 @@ options:
     legacy: [python]
     choice: 'pytest'
     why: 'The usual test runner of Python.'
+  - kind: web
+    layer: testing
+    legacy: [javascript]
+    choice: 'Vitest'
+    why: 'A test runner for TypeScript and JavaScript projects.'
   - kind: web
     layer: testing
     legacy: []
@@ -249,7 +279,10 @@ legacy:
     endOfLife: true
   - name: '.NET Framework'
     languages: []
-    extensions: []
+    extensions: [asax, edmx]
+    files: [packages.config, assemblyinfo.cs, web.config]
+    minSignals: 2
+    unless: [global.json, appsettings.json]
     layers: [language-runtime, hosting]
     endOfLife: true
   - name: 'WCF'

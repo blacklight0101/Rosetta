@@ -8,7 +8,7 @@ import type { Run } from '../../domain/runs/run.js';
 import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
 import { readPlanAnswer } from '../plan/plan-answer.js';
 import { draftAfterRepair } from '../plan/plan-repair.js';
-import { checkedAssembly } from '../plan/plan-assembly.js';
+import { repairedAssembly } from '../plan/plan-assembly.js';
 import { planLinks } from '../plan/plan-links.js';
 import { windowOfRole } from '../plan/plan-window.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
@@ -82,6 +82,9 @@ const namesItsCause = new Set<ErrorCode>([
 ]);
 
 const failed = (errorCode: ErrorCode): RunOutcome => ({ endState: 'Failed', errorCode });
+/** RST-1803 after the one repair round of the sources (P8-02). */
+const NO_SUPPORTED_REQUIREMENT = 'The planner answer named no requirement with a supported card.';
+
 export class BuildPlan implements RunExecutor {
   private readonly deps: BuildPlanDependencies;
 
@@ -142,13 +145,13 @@ export class BuildPlan implements RunExecutor {
       const message = 'The planner answer could not be read: no JSON object in it reads as a plan.';
       return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
     }
-    const assembly = await checkedAssembly(this.deps.logger, run, draft, {
+    const assembly = await repairedAssembly(this.deps.logger, run, draft, {
       supported: supported.map((card) => card.id),
       specificationDriven: brief.principles.includes(methodPrinciples.sdd),
+      repair: { call, input, prompt: prompts.planRepair },
     });
     if (assembly === undefined) {
-      const message = 'The planner answer named no requirement with a supported card.';
-      return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
+      return this.fail(run, ERROR_CODES.plannerAnswerInvalid, NO_SUPPORTED_REQUIREMENT);
     }
     return this.finish({
       ...{ run, call, input, assembly, files, proposal },

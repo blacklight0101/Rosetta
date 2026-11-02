@@ -121,6 +121,19 @@ describe('a save with workbook answers', () => {
     expect(briefProblems({ typed: { 'workbook.other': 'x' } }, shippedCatalogue)).toHaveLength(1);
   });
 
+  it('P8-09 RF-648 refuses the workbook keys for a project that is not a workbook', () => {
+    const answers = { chosen: { 'workbook.signIn': 'sso' }, typed: { 'workbook.store': 'x' } };
+
+    for (const kind of ['github', 'zip']) {
+      expect(briefProblems(answers, shippedCatalogue, kind).map((each) => each.field)).toEqual([
+        'chosen.workbook.signIn',
+        'typed.workbook.store',
+      ]);
+    }
+    expect(briefProblems(answers, shippedCatalogue, 'workbook')).toEqual([]);
+    expect(briefProblems(answers, shippedCatalogue)).toEqual([]);
+  });
+
   it('RF-648 never lists the questions as defaulted, so a repository brief is unchanged', () => {
     const brief = briefOf({ chosen: { 'workbook.signIn': 'windows' } });
 

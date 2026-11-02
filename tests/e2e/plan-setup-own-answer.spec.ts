@@ -67,7 +67,7 @@ test('RF-645 the option cards and the typed answer work from the keyboard, and t
   await expect(field).toHaveValue('Keep the old site until the last module moves.');
 
   await openStep(page, 'Stack');
-  await expect(page.getByRole('radiogroup').first().getByRole('radio')).toHaveCount(4, {
+  await expect(page.getByRole('radiogroup').first().getByRole('radio')).toHaveCount(3, {
     timeout: 20_000,
   });
   await expectNoSeriousViolations(page);

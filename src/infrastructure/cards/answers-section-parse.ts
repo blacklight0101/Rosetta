@@ -199,6 +199,8 @@ export function sectionsOf(lines: readonly string[]): Section[] {
       });
       return;
     }
+    // P8-08: the heading before the questions past the cap belongs to no section.
+    if (line.trim() === '## More questions') return;
     const section = sections.at(-1);
     if (section === undefined || line.trim() === '') return;
     section.lastLine = index;

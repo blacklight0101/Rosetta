@@ -3,7 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { loadRecording } from '../../../src/infrastructure/providers/fake/recording.js';
-import { createPlanHarness } from '../../support/plan-harness.js';
+import { FilePlanningBriefStore } from '../../../src/infrastructure/files/file-planning-brief-store.js';
+import { createPlanHarness, type PlanHarness } from '../../support/plan-harness.js';
 import { planCards, planQuestions } from '../../support/plan-cards.js';
 
 // RF-648, RF-649, RF-650, DEC-150: a recorded plan over workbooks writes a package that names the
@@ -20,7 +21,12 @@ afterEach(async () => {
   await rm(dataDir, { recursive: true, force: true });
 });
 
-async function packageOf(sourceKind: 'workbook' | 'github') {
+async function packageOf(
+  sourceKind: 'workbook' | 'github',
+  answers: Partial<Parameters<PlanHarness['saveBrief']>[0]> = {
+    chosen: { 'workbook.store': 'vault' },
+  },
+) {
   const recording = await loadRecording(
     join('tests', 'recordings', 'fake', 'planner-package.json'),
   );
@@ -43,15 +49,15 @@ async function packageOf(sourceKind: 'workbook' | 'github') {
     architecture: { style: 'hexagonal' },
     migration: 'parallel-change',
     stack: [{ layer: 'hosting', choice: 'IIS on Windows Server', custom: true }],
-    chosen: { 'workbook.store': 'vault' },
+    ...answers,
   });
   const run = await h.plan();
   expect(run.endState).toBe('Completed');
-  return h.handoffOf(run);
+  return { files: await h.handoffOf(run), h, run };
 }
 
 it('RF-648 RF-649 RF-650 a workbook package names the sign-in, the store and the screens per table', async () => {
-  const files = await packageOf('workbook');
+  const { files } = await packageOf('workbook');
 
   const trd = files['trd.md'] ?? '';
   expect(trd).toContain('Sign-in: Windows authentication');
@@ -68,7 +74,7 @@ it('RF-648 RF-649 RF-650 a workbook package names the sign-in, the store and the
 });
 
 it('RF-648 RF-650 the questions that were skipped are listed in open-questions.md with their options', async () => {
-  const open = (await packageOf('workbook'))['open-questions.md'] ?? '';
+  const open = (await packageOf('workbook')).files['open-questions.md'] ?? '';
 
   expect(open).toContain('workbook.signIn');
   expect(open).toContain('workbook.screens');
@@ -77,11 +83,30 @@ it('RF-648 RF-650 the questions that were skipped are listed in open-questions.m
 });
 
 it('RF-648 a plan over a repository is without the questions, the records and the screen sets', async () => {
-  const files = await packageOf('github');
+  const { files } = await packageOf('github');
 
   const everything = Object.values(files).join('\n');
   expect(everything).not.toContain('workbook.');
   expect(everything).not.toContain('Sign-in:');
   expect(everything).not.toContain('Secrets store:');
   expect(files['flows/README.md']).not.toContain('Sign in with');
+});
+
+it('P8-09 RF-649 RNF-003 a secret typed into the secrets-store answer is masked in the brief, the planner message and the package', async () => {
+  const secret = 'sk-' + 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
+  const { files, h } = await packageOf('workbook', {
+    chosen: { 'workbook.store': 'typed' },
+    typed: { 'workbook.store': `Keep it in a file, the key is ${secret}` },
+  });
+
+  const ref = { userId: h.project.userId, projectId: h.project.id };
+  const brief = JSON.stringify(await new FilePlanningBriefStore(h.s).read(ref));
+  expect(brief).not.toContain(secret);
+  expect(brief).toContain('[MASKED');
+  const sent = JSON.stringify(h.providers.requests());
+  expect(h.providers.requests().length).toBeGreaterThan(0);
+  expect(sent).toContain('workbookSetup');
+  expect(sent).not.toContain(secret);
+  expect(Object.values(files).join(' ')).not.toContain(secret);
+  expect(files['trd.md']).toContain('Secrets store: Keep it in a file');
 });

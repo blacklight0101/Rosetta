@@ -33,8 +33,11 @@ async function openStartPage(page: Page): Promise<void> {
   if (await empty.isVisible()) {
     await page.getByLabel('GitHub repository URL').fill(demoUrl);
     await page.getByRole('button', { name: 'Create project' }).click();
+    // P8-10: the new project opens its page by itself.
+    await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
+  } else {
+    await link.click();
   }
-  await link.click();
   await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(demoUrl);
 }
@@ -200,6 +203,9 @@ test('RF-1001 an address the account already has opens that project and makes no
   if ((await webforms.count()) === 0) {
     await page.getByLabel('GitHub repository URL').fill(webformsUrl);
     await page.getByRole('button', { name: 'Create project' }).click();
+    // P8-10: the new project opens its page; the list is read again for the link.
+    await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
+    await page.goto('/projects');
     await expect(webforms).toBeVisible();
   }
   await openStartPage(page);

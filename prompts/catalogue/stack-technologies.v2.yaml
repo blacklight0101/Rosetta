@@ -129,6 +129,18 @@ technologies:
       - ado.net
     traits: []
     description: The low-level .NET database API; most code, no hidden behaviour.
+  - layer: data-access
+    name: Prisma
+    aliases:
+      - prisma
+    traits: []
+    description: A typed database client for Node.js with schema migrations.
+  - layer: data-access
+    name: Knex.js
+    aliases:
+      - knex
+    traits: []
+    description: A SQL query builder for Node.js; plain queries with little hidden behaviour.
   - layer: testing
     name: xUnit
     aliases:

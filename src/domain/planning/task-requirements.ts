@@ -27,11 +27,12 @@ export function taskRequirements(
 
 /** The notes about the kept cards (in order, so T-001...) that have no requirement under SDD. */
 export function taskRequirementNotes(
-  kept: readonly { readonly requirements: readonly string[] }[],
+  kept: readonly { readonly requirements: readonly string[]; readonly derives?: number }[],
   specified: boolean,
 ): RequirementNote[] {
+  // P8-02: a card that waits to derive its requirements is noted once that is done, not here.
   return kept.flatMap((each, index): RequirementNote[] =>
-    specified && each.requirements.length === 0
+    specified && each.requirements.length === 0 && each.derives === undefined
       ? [{ kind: 'none', task: `T-${String(index + 1).padStart(3, '0')}` }]
       : [],
   );

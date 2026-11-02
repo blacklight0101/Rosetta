@@ -49,6 +49,12 @@ export class TaskLog {
     return this.warn(task, text);
   }
 
+  /** P8-08: the suggestion of a cited line pushed the agent's last suggested answer out of the cap. */
+  suggestionCut(task: ReaderTask, question: string): Promise<void> {
+    const text = `The reader of area "${task.area.name}" gave "${question}" more suggested answers than fit; the last was left out for the suggestion of the cited line.`;
+    return this.warn(task, text);
+  }
+
   failure(task: ReaderTask, error: unknown): Promise<void> {
     const code = error instanceof RosettaError ? error.code : ERROR_CODES.providerCallFailed;
     return this.logger.log({

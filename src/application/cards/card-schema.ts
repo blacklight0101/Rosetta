@@ -12,6 +12,7 @@ import {
   MIN_SUGGESTED_ANSWERS,
   isOpenQuestion,
   sameKindAnswerRefusal,
+  spacedWords,
   startsWithYesOrNo,
 } from '../../domain/cards/suggested-answer.js';
 import { flowSchema, screenSchema, stepSchemaFields } from './flow-screen-schema.js';
@@ -37,8 +38,8 @@ export const agentClaimSchema = z.object({
 
 /** RF-645, DEC-178: one suggested answer; its citation is optional because the code may not support it. */
 const suggestedAnswerSchema = z.object({
-  answer: text(cardLimits.maxAnswerChars),
-  description: text(cardLimits.maxQuestionChars),
+  answer: text(cardLimits.maxAnswerChars).transform(spacedWords),
+  description: text(cardLimits.maxQuestionChars).transform(spacedWords),
   recommended: z.boolean().default(false),
   citations: z.array(citation).max(cardLimits.maxCitations).default([]),
 });

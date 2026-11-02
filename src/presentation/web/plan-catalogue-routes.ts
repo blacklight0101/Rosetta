@@ -6,6 +6,7 @@ import {
   keepLegacyWording,
   methodWording,
 } from '../../domain/planning/question-wording.js';
+import { workbookWording } from '../../domain/planning/workbook-setup.js';
 import { migrationStrategies } from '../../domain/planning/planning-brief.js';
 
 // RF-605, RF-606, RF-610: the catalogue Plan setup lists its questions from. GET /api/plan/catalogue
@@ -42,7 +43,10 @@ export function registerPlanCatalogueRoutes(
       version: catalogue.version,
       entries: catalogue.entries.map(entryView),
       migrations: migrationViews(),
-      wording: { context: contextWording, method: methodWording, keepLegacy: keepLegacyWording },
+      wording: {
+        ...{ context: contextWording, method: methodWording, keepLegacy: keepLegacyWording },
+        workbook: workbookWording,
+      },
     });
   });
 }

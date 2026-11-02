@@ -12,6 +12,8 @@ import type { PhaseNote, RequirementNote } from './requirement-notes.js';
 import { assembleJudgements, type ClaimJudgement } from './claim-judgement.js';
 import { leftOutOf, type LeftOutCard } from './left-out-card.js';
 import { keptTasks } from './kept-tasks.js';
+import { sourceFaults } from './source-faults.js';
+import { supportedSources } from './source-ids.js';
 import { planNotes, taskRequirementNotes } from './task-requirements.js';
 import type { GuardKind, RiskClass } from './task-card-quality.js';
 import { assembleTechnical, type TechnicalContent } from './technical-content.js';
@@ -65,6 +67,12 @@ export interface PlanTask {
   readonly builds: readonly string[];
   /** P5-41: criteria (position, from 1) the planner says contradict a claim the card keeps. */
   readonly contradicts?: readonly Contradiction[];
+  /**
+   * P8-02, RF-607: under SDD a package card that named no requirement of the plan waits for its
+   * requirements to be taken from what it builds; its position in the plan answer, from 1. Set only
+   * between the assembly and the links of the cards (plan-links.ts), never in a package.
+   */
+  readonly derives?: number;
 }
 
 interface Contradiction {
@@ -100,6 +108,13 @@ export interface PlanAssembly {
   readonly leftOut: readonly LeftOutCard[];
   /** P3-126: the items of the other lists that could not be read, by list, position and field. */
   readonly unreadable: readonly UnreadableItem[];
+  /** P8-02: the positions (from 1) of the draft requirements left out for naming no supported card. */
+  readonly unsourced: readonly number[];
+  /**
+   * P8-02: under SDD, the positions (from 1) of the draft tasks whose requirement positions all name
+   * requirements that were left out, so they implement none of the plan's.
+   */
+  readonly orphaned: readonly number[];
   /** How many items the draft had that the package leaves out. */
   readonly dropped: {
     readonly requirements: number;
@@ -118,8 +133,9 @@ function unique<T>(items: readonly T[]): T[] {
   return [...new Set(items)];
 }
 
+/** P8-02: the supported cards of a `sources` list; a claim id counts as its card. */
 function knownSources(sources: readonly string[], supported: ReadonlySet<string>): string[] {
-  return unique(sources.filter((id) => supported.has(id)));
+  return supportedSources(sources, supported);
 }
 
 interface Requirements {
@@ -162,7 +178,7 @@ function tasksOf(
       declared: task.dependsOn.flatMap((position) => at.get(position) ?? []),
     })),
   );
-  const tasks = kept.map(({ task, riskClass, requirements, files }, index) => {
+  const tasks = kept.map(({ task, riskClass, requirements, files, derives }, index) => {
     const { title, phase, acceptanceCriteria, invariant, adds, probes } = task;
     return {
       ...{ id: planId('T', index + 1), title, phase, requirements, acceptanceCriteria },
@@ -170,6 +186,7 @@ function tasksOf(
       identifiers: identifiers[index] ?? [],
       dependsOn: (dependencies[index] ?? []).map((on) => planId('T', on + 1)),
       builds: [],
+      ...(derives === undefined ? {} : { derives }),
       ...(task.contradicts === undefined || task.contradicts.length === 0
         ? {}
         : { contradicts: task.contradicts }),
@@ -238,6 +255,7 @@ export function assemblePlan(
   return {
     leftOut: leftOutOf(draft, leftOut),
     unreadable: draft.unreadableItems ?? [],
+    ...sourceFaults(draft, requirements.idAt, specified),
     content: {
       summary: draft.summary,
       requirements: requirements.kept,
