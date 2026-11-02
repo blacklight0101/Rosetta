@@ -172,7 +172,7 @@ function decidedOf(
   const { brief, sources, documents } = parts;
   const { tables } = documents.dataModel;
   const withFixed = withPhaseClosingCards(
-    withFoundationCards(content, brief.migration, tables, hasData(sources, tables)),
+    withFoundationCards(content, brief.migration, tables, hasData(tables)),
   );
   const decided = decideOnce(
     withFixed,

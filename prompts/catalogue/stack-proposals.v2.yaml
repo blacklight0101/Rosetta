@@ -6,7 +6,7 @@
 # with most lines (an empty list matches any) is the proposal; `choice` is a technology of the layer in
 # stack-technologies. A kind or layer without an entry proposes nothing. Plan setup offers the first two
 # entries that fit (P7-29): the first is the recommended one and the one a skipped layer takes.
-# legacy: a technology the scan can name by a language id, a file extension or a file name (`files`, P8-14) anywhere in the code map; `endOfLife` layers do not offer to keep it (DEC-203).
+# legacy: a technology the scan can name by a language id, a file extension or a file name (`files`, P8-14) anywhere in the code map (`minSignals` of them, none of `unless`); `endOfLife` layers do not offer to keep it (DEC-203).
 signals:
   - kind: web
     artefacts: [page]
@@ -250,7 +250,9 @@ legacy:
   - name: '.NET Framework'
     languages: []
     extensions: [asax, edmx]
-    files: [packages.config]
+    files: [packages.config, assemblyinfo.cs]
+    minSignals: 2
+    unless: [global.json, appsettings.json]
     layers: [language-runtime, hosting]
     endOfLife: true
   - name: 'WCF'
