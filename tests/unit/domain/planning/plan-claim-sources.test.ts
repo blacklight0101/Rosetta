@@ -72,6 +72,19 @@ describe('assemblePlan: claim ids in sources (P8-02)', () => {
     expect(content.requirements).toMatchObject([{ title: 'Order' }]);
     expect(dropped.requirements).toBe(1);
   });
+
+  it('P8-02 RF-604 a lookalike id or a claim of an unsupported card maps to no card', () => {
+    const requirements = [
+      { title: 'Order', statement: 'Place an order.', sources: ['FEAT-001'] },
+      { title: 'Lookalike', statement: 'No card.', sources: ['ENT-0021', 'ENT-0011.c2'] },
+      { title: 'Unsupported', statement: 'No card.', sources: ['ENT-002.c4', 'ENT-002'] },
+    ];
+
+    const { content, dropped } = assemblePlan(draft({ requirements }), supported);
+
+    expect(content.requirements).toEqual([expect.objectContaining({ title: 'Order' })]);
+    expect(dropped.requirements).toBe(2);
+  });
 });
 
 describe('assemblePlan: a card with no requirement under SDD (P8-02)', () => {
