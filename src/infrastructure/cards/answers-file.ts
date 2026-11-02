@@ -5,6 +5,7 @@ import type {
   OpenQuestion,
   ProjectRef,
   MergeEdit,
+  MergedQuestion,
   RecordedQuestion,
 } from '../../application/ports/answers-file.js';
 import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
@@ -14,9 +15,14 @@ import { ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { projectPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import { lastLineEndOf, linesOf, markOf, optionsLineOf } from './answers-section-parse.js';
+import { lastLineEndOf, markOf, optionsLineOf } from './answers-section-parse.js';
 import { withMerges } from './answers-merge.js';
-import { answeredQuestionsOf, questionsOfRun, withAnswers } from './answers-sections.js';
+import {
+  answeredQuestionsOf,
+  heldQuestions,
+  questionsOfRun,
+  withAnswers,
+} from './answers-sections.js';
 
 // RF-240, DEC-98, data-model.md section 3.16: the project's `answers.md`. A run adds one section per
 // open question it found that the file does not hold yet (matched by the question text), after the
@@ -34,18 +40,30 @@ export interface FileAnswersFileOptions {
 }
 
 const TITLE = '# Answers to open questions';
-const heading = /^## \S+ - (.*)$/u;
 
 function fileOf(project: ProjectRef): WorkspaceFile {
   return { userId: project.userId, path: `${projectPath(project.projectId)}/answers.md` };
 }
 
-/** The questions the file already holds, as written. */
-function questionsIn(text: string): string[] {
-  return linesOf(text).flatMap((line) => {
-    const found = heading.exec(line);
-    return found === null ? [] : [found[1] ?? ''];
-  });
+/** EV-57: the question a new one is merged into (the same words added earlier in the batch, else one the file holds). */
+function mergeTarget(
+  text: string,
+  seen: {
+    readonly added: ReadonlyMap<string, OpenQuestion>;
+    readonly held: ReturnType<typeof heldQuestions>;
+  },
+): Pick<MergedQuestion, 'keptCardId' | 'keptQuestion' | 'keptRunKey'> | undefined {
+  const same = (each: string): boolean => each === text || sameQuestion(each, text);
+  const earlier = seen.added.get(text);
+  if (earlier !== undefined)
+    return {
+      keptCardId: earlier.cardId,
+      keptQuestion: earlier.question,
+      keptRunKey: earlier.runKey,
+    };
+  const kept = seen.held.find((each) => same(each.question));
+  if (kept === undefined) return undefined;
+  return { keptCardId: kept.cardId, keptQuestion: kept.question, keptRunKey: kept.runKey };
 }
 
 /** P5-11: whether the run of the question already has a section under the question's card id. */
@@ -62,27 +80,38 @@ export class FileAnswersFile implements AnswersFile {
   }
 
   // RF-240
-  addQuestions(project: ProjectRef, questions: readonly OpenQuestion[]): Promise<void> {
+  addQuestions(
+    project: ProjectRef,
+    questions: readonly OpenQuestion[],
+  ): Promise<readonly MergedQuestion[]> {
     const file = fileOf(project);
     return this.queue.run(`${file.userId}/${file.path}`, async () => {
       const existing = await this.read(file);
-      const known = questionsIn(existing);
-      const added = new Set<string>();
+      const held = heldQuestions(existing);
+      const added = new Map<string, OpenQuestion>();
+      const merged: MergedQuestion[] = [];
       const { mark, body } = markOf(existing);
       const end = lastLineEndOf(body);
       const sections = questions.flatMap((question) => {
         const text = this.line(question.question);
-        const held =
-          question.survivor === true
-            ? hasId(existing, question)
-            : added.has(text) || known.some((each) => each === text || sameQuestion(each, text));
-        if (held) return [];
-        added.add(text);
+        if (question.survivor === true ? hasId(existing, question) : false) return [];
+        const same = question.survivor === true ? undefined : mergeTarget(text, { added, held });
+        if (same !== undefined) {
+          merged.push({
+            ...same,
+            mergedCardId: question.cardId,
+            mergedQuestion: text,
+            mergedRunKey: question.runKey,
+          });
+          return [];
+        }
+        added.set(text, question);
         return [this.section(question, text, end)];
       });
-      if (sections.length === 0) return;
+      if (sections.length === 0) return merged;
       const head = body.trimEnd() === '' ? TITLE : body.trimEnd();
       await this.write(file, `${mark}${[head, ...sections].join(end + end)}${end}`);
+      return merged;
     });
   }
 

@@ -1,9 +1,15 @@
 import type { Card } from '../../domain/cards/card.js';
 import type { AnsweredQuestion } from '../ports/answers-file.js';
-import { markAnswered, withAnswersOf, type Rerun } from '../understand/answer-rerun.js';
+import {
+  answersCapNote,
+  markAnswered,
+  withAnswersOf,
+  type Rerun,
+} from '../understand/answer-rerun.js';
 import { sameQuestion } from '../understand/open-questions.js';
 import type { ReaderTask } from '../understand/reader-tasks.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
+import type { DeepenParts } from './deepen-parts.js';
 import { taskIdOf, withParentCards } from './deepen-tasks.js';
 
 // RF-209, RF-241, RF-646, DEC-179, ADR-013: the answers of the project in a Deepen. Every reader task
@@ -91,4 +97,15 @@ export function mergedIntoAnswered(
       card.type === 'OQ' &&
       answered.some((each) => sameQuestion(each.question, card.question ?? card.title)),
   );
+}
+
+/** EV-57, P8-05: the run log names the size cap when it cut the answers given to the readers. */
+export async function logAnswersCap(parts: DeepenParts): Promise<void> {
+  const note = parts.rerun === undefined ? undefined : answersCapNote(parts.rerun.plan);
+  if (note === undefined) return;
+  const { run } = parts.execution;
+  await parts.logger.log({
+    ...{ level: 'info', logger: 'understand', runId: run.runKey, userId: run.userId },
+    message: note,
+  });
 }
