@@ -25,6 +25,8 @@ export interface OpenQuestion {
    * when another section holds the same text, unless the run already has one under this id.
    */
   readonly survivor?: boolean;
+  /** P8-08: past the questions an owner can read at once; the file lists it under "More questions". */
+  readonly more?: boolean;
   /** RF-645: the suggested answers of the card, the recommended one first; absent on an older card. */
   readonly options?: readonly SuggestedOption[] | undefined;
 }
