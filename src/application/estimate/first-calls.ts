@@ -51,7 +51,7 @@ export async function firstCallsOf(
     deps,
     project,
     { keySource: priced.keySource, points: { low: point, likely: point, high: point } },
-    'reader',
+    { role: 'reader' },
   );
   const admin = priced.keySource === 'server' ? (await deps.serverSettings.caps()).runMicros : null;
   return {

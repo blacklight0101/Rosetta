@@ -15,6 +15,7 @@ import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
+import { FilePlannerAnswers } from '../infrastructure/files/file-planner-answers.js';
 import { FilePlanningBriefStore } from '../infrastructure/files/file-planning-brief-store.js';
 import { runPath } from '../infrastructure/files/workspace-paths.js';
 import { JsonlEgressLog } from '../infrastructure/guards/jsonl-egress-log.js';
@@ -94,6 +95,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
     costTotals: new PgCostTotals(pool),
     costReports: new FileCostReportWriter({ writer, masker }),
     handoff: packageHandoffWriter(writer),
+    plannerAnswers: new FilePlannerAnswers({ writer, masker }),
     catalogue: () => loadCatalogue(promptsFolder),
     prompt: () => loadPlannerPrompt(promptsFolder),
     prdPrompt: () => loadPrdPrompt(promptsFolder),

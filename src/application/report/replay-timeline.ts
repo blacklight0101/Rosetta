@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { formatUsd, microUsd } from '../../domain/budget/money.js';
 import type { RunEvent } from '../../domain/runs/run-event.js';
 import { mergedStep, withMergedClaimIds } from './claim-id-moves.js';
+import { runStepHandlers } from './planner-call-step.js';
 import { questionHandlers } from './question-steps.js';
-import { readersStoppedStep } from './readers-stopped-step.js';
 import type { ReplayAgent, ReplayKind, ReplayModel, ReplayStep } from './replay-model.js';
 
 // RF-506, data-model.md section 3.9: the steps, agents and running cost of a run, built from its
@@ -176,7 +176,7 @@ const closingHandlers: Readonly<Record<string, Handler>> = {
       text: `${v.scope}: spent ${dollars(v.spentMicros)} of ${dollars(v.capMicros)}`,
     }),
   ),
-  'budget.readersStopped': readersStoppedStep,
+  ...runStepHandlers,
   'cards.merged': mergedStep,
   ...questionHandlers,
   'run.ended': reading(z.object({ endState: text }), (v) => ({

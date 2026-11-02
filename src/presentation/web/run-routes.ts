@@ -35,7 +35,7 @@ import { runView } from './run-view.js';
 //   project it also needs `privateCodeConfirmed: true`, else 400 (RST-1521, RF-132).
 // - GET and POST /api/projects/:id/estimate give the estimate of an understand run (estimate-routes.ts).
 // - GET /api/runs/:runId gives the run as the start answered it (stage, queue and end state, project,
-//   totals so far), `reportBuilt`, whether its report exists (P1-130), and `position`, the place of a
+//   totals so far), `reportBuilt`, whether its report exists (P1-130), and `cloudConsent` and `sourceRunId` (the consent the run recorded and, for a plan run, the understand run it was made from, P8-11), and `position`, the place of a
 //   queued run in the queue counted from 1 (null for any other run; the start page polls it,
 //   P1-106): the live run page reads it for a run that has no event yet. Another user's run id answers 404 like an unknown one.
 // - GET /api/runs/:runId/events streams the run's events as server-sent events (run-event-routes.ts).
@@ -215,8 +215,10 @@ function registerGet(server: FastifyInstance, services: RunServices): void {
         runId: request.params.runId,
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
-      const { run, reportBuilt, position } = outcome.value;
-      return reply.status(200).send({ ...runView(run), reportBuilt, position });
+      const { run, reportBuilt, position, cloudConsent, sourceRunId } = outcome.value;
+      return reply
+        .status(200)
+        .send({ ...runView(run), reportBuilt, position, cloudConsent, sourceRunId });
     },
   );
 }

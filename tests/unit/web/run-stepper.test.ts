@@ -67,16 +67,10 @@ const scanned = ev(4, 'scan.completed', {
   mapLevels: { coarse: 30, symbols: 6 },
 });
 
-it('RF-1002 lists Snapshot, Scan, Understand, Verify and Report in that order', () => {
+it('RF-1002 P8-11 lists Snapshot, Scan, Understand and Verify in that order, with no Report step', () => {
   const steps = stepperOf(row('understand'), stateAfter(), { kind: 'queued' });
 
-  expect(steps.map((step) => step.name)).toEqual([
-    'Snapshot',
-    'Scan',
-    'Understand',
-    'Verify',
-    'Report',
-  ]);
+  expect(steps.map((step) => step.name)).toEqual(['Snapshot', 'Scan', 'Understand', 'Verify']);
 });
 
 it('RF-1002 a queued run has every step waiting', () => {
@@ -85,7 +79,6 @@ it('RF-1002 a queued run has every step waiting', () => {
     'Scan:waiting',
     'Understand:waiting',
     'Verify:waiting',
-    'Report:waiting',
   ]);
 });
 
@@ -95,14 +88,12 @@ it('RF-1002 a scan that has started works on the snapshot, then on the scan', ()
     'Scan:waiting',
     'Understand:waiting',
     'Verify:waiting',
-    'Report:waiting',
   ]);
   expect(words('scan', [started('scan'), resolved])).toEqual([
     'Snapshot:done',
     'Scan:current',
     'Understand:waiting',
     'Verify:waiting',
-    'Report:waiting',
   ]);
 });
 
@@ -118,7 +109,6 @@ it('RF-1002 a finished scan shows its files and areas and leaves the other stage
     'Scan:done',
     'Understand:waiting',
     'Verify:waiting',
-    'Report:waiting',
   ]);
   expect(steps[1]?.detail).toBe('36 files, 4 areas');
 });
@@ -129,7 +119,6 @@ it('RF-1002 an understand run starts on a scan that is already done and works on
     'Scan:done',
     'Understand:current',
     'Verify:waiting',
-    'Report:waiting',
   ]);
 });
 
@@ -155,7 +144,6 @@ it('RF-1002 RF-1004 Understand counts the agents done of the agents planned and 
     'Scan:done',
     'Understand:current',
     'Verify:current',
-    'Report:waiting',
   ]);
   expect(steps[2]?.detail).toBe('1 of 3 agents done');
   expect(steps[3]?.detail).toBe('2 of 3 citations checked, 1 waiting for judgement');
@@ -179,7 +167,6 @@ it('RF-1002 Verify becomes the current step once every agent has ended', () => {
     'Scan:done',
     'Understand:done',
     'Verify:current',
-    'Report:waiting',
   ]);
   expect(steps[2]?.detail).toBe('1 of 1 agents done');
   expect(steps[3]?.detail).toBe('1 of 2 citations checked, 1 waiting for judgement');
@@ -200,11 +187,10 @@ it('RF-1002 a completed understand run has every step done but the report, which
     'Scan:done',
     'Understand:done',
     'Verify:done',
-    'Report:waiting',
   ]);
 });
 
-it('RF-1002 RF-504 the Report step is done once a report exists for the run, and waits without one', () => {
+it('RF-1002 RF-504 P8-11 the Report step appears, done, once a report exists, and is not shown without one', () => {
   const events = [started('understand'), planned(2, 'a1', 'Catalog'), runEnded(3, 'Completed')];
   const state = stateAfter(...events);
   const ended = row('understand', 'Ended');
@@ -212,7 +198,7 @@ it('RF-1002 RF-504 the Report step is done once a report exists for the run, and
   const without = stepperOf(ended, state, phaseOf(ended, state));
   const built = stepperOf({ ...ended, reportBuilt: true }, state, phaseOf(ended, state));
 
-  expect(without.at(-1)).toMatchObject({ name: 'Report', status: 'waiting' });
+  expect(without.map((step) => step.name)).not.toContain('Report');
   expect(built.at(-1)).toMatchObject({ name: 'Report', status: 'done' });
   expect(built.filter((step) => step.status === 'current')).toEqual([]);
 });
@@ -236,7 +222,6 @@ it('RF-1002 a run that was stopped has no current step and keeps the steps it ne
     'Scan:done',
     'Understand:stopped',
     'Verify:waiting',
-    'Report:waiting',
   ]);
   expect(steps[2]?.detail).toBe('1 of 2 agents done');
 });

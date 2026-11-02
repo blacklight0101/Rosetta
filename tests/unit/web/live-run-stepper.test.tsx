@@ -30,7 +30,7 @@ const step = (name: string): HTMLElement => {
   return found;
 };
 
-it('RF-1002 a finished run has the report step waiting and no step current', async () => {
+it('RF-1002 P8-11 a finished run has no report step and no step current', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
 
@@ -45,7 +45,7 @@ it('RF-1002 a finished run has the report step waiting and no step current', asy
     expect(step('Verify').textContent).toContain('done');
   });
   expect(step('Understand').textContent).toContain('1 of 1 agents done');
-  expect(step('Report').textContent).toContain('waiting');
+  expect(within(pipeline()).queryByText(/^Report/u)).toBeNull();
   expect(pipeline().querySelectorAll('[aria-current]')).toHaveLength(0);
 });
 
@@ -77,7 +77,7 @@ async function endedRun(row: Response, answers: Parameters<typeof renderLive>[0]
   return page;
 }
 
-it('RF-1002 RF-504 the Report step of an ended run turns done as soon as the report is built from the page', async () => {
+it('RF-1002 RF-504 P8-11 the Report step of an ended run appears done as soon as the report is built from the page', async () => {
   await endedRun(runRow({ queueState: 'Ended', endState: 'Completed' }), {
     [`POST ${runPath}/report`]: json(200, { files: ['report/report.html', 'report/report.md'] }),
   });
@@ -85,7 +85,7 @@ it('RF-1002 RF-504 the Report step of an ended run turns done as soon as the rep
   await waitFor(() => {
     expect(build.hasAttribute('disabled')).toBe(false);
   });
-  expect(step('Report').textContent).toContain('waiting');
+  expect(within(pipeline()).queryByText(/^Report/u)).toBeNull();
 
   fireEvent.click(build);
 
@@ -95,7 +95,7 @@ it('RF-1002 RF-504 the Report step of an ended run turns done as soon as the rep
   expect(step('Report').getAttribute('data-state')).toBe('done');
 });
 
-it('RF-1002 RF-504 the Report step stays waiting when the build is refused', async () => {
+it('RF-1002 RF-504 P8-11 no Report step shows when the build is refused', async () => {
   await endedRun(runRow({ queueState: 'Ended', endState: 'Completed' }), {
     [`POST ${runPath}/report`]: failure(409, 'RST-1700'),
   });
@@ -107,7 +107,7 @@ it('RF-1002 RF-504 the Report step stays waiting when the build is refused', asy
   fireEvent.click(build);
 
   await screen.findByRole('alert');
-  expect(step('Report').textContent).toContain('waiting');
+  expect(within(pipeline()).queryByText(/^Report/u)).toBeNull();
 });
 
 it('RF-1002 RF-504 the Report step of a run whose report was built earlier is done on load', async () => {
