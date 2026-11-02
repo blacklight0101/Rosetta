@@ -321,7 +321,10 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
   `sbom` (tags only) and `deploy`, which stays skipped until the repository variable `ROSETTA_DEPLOY_ENABLED` is
   `true` and runs in the GitHub environment `production` (its secrets and variables: `docs/runbooks/deploy.md`). The
   hosted resources are created by `.github/workflows/azure-provision.yml` (P1-184, ADR-024), run only by hand, with
-  the input `target` `production` (from `main`) or `staging` (from `develop`, DEC-175). The deploy jobs of
+  the input `target` `production` (from `main`) or `staging` (from `develop`, DEC-175). After the smoke test passes,
+  the production deploy comments on the open issue "Production deploys" (created when missing) and mentions the
+  owner, so GitHub emails them for every production update (RF-1304; the job's only write scope besides OIDC is
+  `issues`, and a failed comment never fails the deploy). The deploy jobs of
   `release.yml` and `staging.yml` and the provision job log in to Azure with OIDC and are the only places a workflow
   reads secrets.
 - Staging and the scheduled release (DEC-175, ADR-025): `staging.yml` builds and scans the image of every push to

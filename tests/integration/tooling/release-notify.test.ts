@@ -17,16 +17,17 @@ const image = 'ghcr.io/blacklight0101/rosetta';
 /** Runs the notification step against a fake gh that lists `issues` (number<TAB>title, one per line). */
 async function notify(issues: string): Promise<{ code: number; calls: string[] }> {
   const script = stepScript(await release(), 'deploy', 'Tell the owner');
+  // The step calls gh inside $(...), so the calls go to a file that outlives the subshells.
   const prelude = `
-calls=''
+calls_file="$(mktemp)"
 gh() {
-  calls="$calls|$*"
+  printf '|%s' "$*" >> "$calls_file"
   case "$1 $2" in
     'issue list') printf '%s' "$FAKE_ISSUES" ;;
     'issue create') echo 'https://github.com/blacklight0101/Rosetta/issues/77' ;;
   esac
 }
-trap 'echo "CALLS$calls"' EXIT`;
+trap 'echo "CALLS$(cat "$calls_file")"; rm -f "$calls_file"' EXIT`;
   const env = {
     FAKE_ISSUES: issues,
     GH_TOKEN: 'token',
