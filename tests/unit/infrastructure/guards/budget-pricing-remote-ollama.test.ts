@@ -18,7 +18,11 @@ const local: BudgetPricing = {
   allowUnpriced: false,
   ollamaHost: 'localhost',
 };
-const remote: BudgetPricing = { ...local, ollamaHost: 'ollama.example.org' };
+const remote: BudgetPricing = {
+  ...local,
+  ollamaHost: 'ollama.example.org',
+  cloudConsent: true,
+};
 const query = { kind: 'ollama', keySource: 'none' } as const;
 
 function refusalOf(call: () => unknown): RosettaError | undefined {
@@ -52,6 +56,14 @@ describe('RF-433 pricing a call to Ollama', () => {
     expect(refusal?.message).toContain('not on this machine');
   });
 
+  it('RF-143 leaves a remote Ollama call without consent to the egress guard (RST-1515)', () => {
+    const { price } = priceCall({ ...remote, cloudConsent: false }, query, 'gemma4:e4b');
+
+    expect(price).toBeUndefined();
+  });
+});
+
+describe('RF-433 pricing a call to a remote Ollama host', () => {
   it('RF-433 prices a remote Ollama model that the table lists, like a cloud model', () => {
     const priced: BudgetPricing = {
       ...remote,

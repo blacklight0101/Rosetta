@@ -27,6 +27,8 @@ export interface BudgetPricing {
   readonly allowUnpriced: boolean;
   /** P8-04, RF-433: the host of the Ollama server; one that is not this machine is priced like a cloud provider. */
   readonly ollamaHost?: string | undefined;
+  /** RF-143: the run's consent; without it a remote Ollama is refused by the egress guard first (RST-1515). */
+  readonly cloudConsent?: boolean | undefined;
 }
 
 export interface PricingQuery {
@@ -85,7 +87,9 @@ export function priceCall(pricing: BudgetPricing, query: PricingQuery, model: st
     lookupQueryOf(pricing, query, model),
   );
   if (lookup.kind === 'priced') return { price: lookup.price, version: lookup.version };
-  if (query.keySource === 'user' && pricing.allowUnpriced) {
+  const awaitsConsent =
+    isRemoteOllama(query.kind, pricing.ollamaHost) && pricing.cloudConsent !== true;
+  if (awaitsConsent || (query.keySource === 'user' && pricing.allowUnpriced)) {
     return { price: undefined, version: pricing.table.version };
   }
   throw new RosettaError(

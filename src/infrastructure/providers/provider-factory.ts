@@ -204,6 +204,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       overrides: priceOverridesOf(request.settings),
       allowUnpriced: budget.allowUnpriced,
       ollamaHost: this.ollamaHost(),
+      cloudConsent: request.cloudConsent,
     };
   }
 
