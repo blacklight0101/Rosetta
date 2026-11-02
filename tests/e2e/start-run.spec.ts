@@ -203,6 +203,9 @@ test('RF-1001 an address the account already has opens that project and makes no
   if ((await webforms.count()) === 0) {
     await page.getByLabel('GitHub repository URL').fill(webformsUrl);
     await page.getByRole('button', { name: 'Create project' }).click();
+    // P8-10: the new project opens its page; the list is read again for the link.
+    await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
+    await page.goto('/projects');
     await expect(webforms).toBeVisible();
   }
   await openStartPage(page);

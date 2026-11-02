@@ -51,6 +51,7 @@ test('RF-1105 a second user finds nothing of the first one project or run', asyn
   expect(files?.status()).toBe(404);
   await other.goto('/projects');
   await ensureProject(other, repositories.demo);
+  await other.goto('/projects');
   await expect(other.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
   await other.context().close();
 
