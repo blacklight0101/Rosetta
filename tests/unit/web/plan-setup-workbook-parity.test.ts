@@ -4,6 +4,7 @@ import {
   workbookQuestionIds,
   workbookWording,
 } from '../../../src/domain/planning/workbook-setup.js';
+import { catalogue } from './plan-setup-fixtures.js';
 import { workbookOptions as pageOptions } from '../../../web/src/lib/plan-setup/workbook-questions.js';
 
 // RF-648, RF-649, RF-650, P8-09: the page keeps no copy of the options; it reads the wording the
@@ -15,7 +16,7 @@ describe('the workbook options of the domain and of Plan setup', () => {
     'RF-648 RF-649 RF-650 are the same for the hosting %j',
     (hosting) => {
       for (const question of workbookQuestionIds) {
-        expect(pageOptions(workbookWording, question, hosting)).toEqual(
+        expect(pageOptions(catalogue.wording.workbook, question, hosting)).toEqual(
           domainOptions(question, hosting),
         );
       }

@@ -40,7 +40,13 @@ export const catalogue = {
     ),
     method: [...methodWording],
     keepLegacy: keepLegacyWording,
-    workbook: workbookWording,
+    workbook: {
+      questions: [...workbookWording.questions],
+      options: Object.fromEntries(
+        Object.entries(workbookWording.options).map(([id, options]) => [id, [...options]]),
+      ),
+      windowsHost: workbookWording.windowsHost,
+    },
   },
 };
 
