@@ -7,11 +7,7 @@ import {
 import { settleDerivedRequirements } from '../../domain/planning/derived-requirements.js';
 import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
 import { addGapTasks } from '../../domain/planning/plan-gap.js';
-import {
-  sourcesWithModules,
-  withModuleLinks,
-  type ModuleReason,
-} from '../../domain/planning/module-coverage.js';
+import { sourcesWithModules, type ModuleReason } from '../../domain/planning/module-coverage.js';
 import { titlePhases } from '../../domain/planning/phase-titles.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
@@ -221,8 +217,7 @@ function settled(linked: PlannedCoverage, documents: CoverageDocuments): Settled
   const derived = settleDerivedRequirements(linked.content, documents);
   if (derived.content === linked.content) return { covered: linked, warnings: [], leftOut: [] };
   const { leftOut } = derived;
-  // P8-06: checked again for the deployment files of the cards that stay.
-  const content = withModuleLinks(derived.content, documents.modules);
+  const { content } = derived;
   const covered = { ...linked, content, report: coverageOf(linked.report.items, content.tasks) };
   const rows = leftOut.map(({ position, field, reason }: LeftOutCard) => ({
     ...{ area: 'Task cards', item: String(position), field, reason },

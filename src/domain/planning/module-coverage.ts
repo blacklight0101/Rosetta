@@ -1,6 +1,4 @@
-import { isDeploymentPath } from './deployment-paths.js';
-import type { PlanContent, PlanTask } from './plan-content.js';
-import { isMigrationCard, type CoverageDocuments, type CoverageItem } from './plan-coverage.js';
+import type { CoverageDocuments, CoverageItem } from './plan-coverage.js';
 import { sourcesOfItems, type Sources } from './requirement-alignment.js';
 import type { SourceModules } from './source-modules.js';
 
@@ -9,9 +7,10 @@ import type { SourceModules } from './source-modules.js';
 // deployment material is the one item `deployment:source`. A task card touches a module only when
 // the planner links it by its id: a requirement's source cards are no proof, since a small model
 // lists every requirement on every card (the recorded Ollama eShop plan) and a merged card describes
-// several apps at once, so in doubt the module is asked for in the gap round. A card touches the
-// deployment material when the planner links it or when one of the files it expects to change is
-// deployment material (a Dockerfile, a Kubernetes folder, a CI file). A module no card touches goes to the gap round and, if still untouched, is named in
+// several apps at once, so in doubt the module is asked for in the gap round. The deployment
+// material is the same: only the planner's link by id covers it, since a card that writes the new
+// repository's own CI file or Dockerfile does not port the legacy Kubernetes or Service Fabric
+// deployment. A module no card touches goes to the gap round and, if still untouched, is named in
 // checks.md with the reason; it never fails the run, unlike the items of the documents.
 
 /** Why a module or the deployment material has no task card, written by Rosetta. */
@@ -73,31 +72,4 @@ export function sourcesWithModules(documents: CoverageDocuments): Sources {
   const all = new Map(sourcesOfItems(documents));
   for (const [id, cards] of moduleSources(documents.modules)) all.set(id, cards);
   return all;
-}
-
-/** The deployment item when one of these expected files is deployment material, else none. */
-// P8-06, RF-601
-export function deploymentOf(files: readonly string[]): string[] {
-  return files.some(isDeploymentPath) ? [DEPLOYMENT_ITEM] : [];
-}
-
-/** The deployment item when the card expects to change a deployment file; a module is linked only by the planner. */
-function touched(task: PlanTask, modules: SourceModules): string[] {
-  // The migrations card is written by code and ships nothing.
-  if (isMigrationCard(task) || modules.deployment === undefined) return [];
-  return deploymentOf(task.files);
-}
-
-/** The plan with each card that changes deployment files building the deployment item; the same plan when none is new. */
-// P8-06, RF-601
-export function withModuleLinks(
-  content: PlanContent,
-  modules: SourceModules | undefined,
-): PlanContent {
-  if (modules === undefined) return content;
-  const tasks = content.tasks.map((task) => {
-    const added = touched(task, modules).filter((id) => !task.builds.includes(id));
-    return added.length === 0 ? task : { ...task, builds: [...task.builds, ...added] };
-  });
-  return tasks.every((task, at) => task === content.tasks[at]) ? content : { ...content, tasks };
 }

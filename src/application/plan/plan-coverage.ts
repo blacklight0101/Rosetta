@@ -7,7 +7,7 @@ import {
   type CoverageDocuments,
   type CoverageReport,
 } from '../../domain/planning/plan-coverage.js';
-import { moduleItems, withModuleLinks } from '../../domain/planning/module-coverage.js';
+import { moduleItems } from '../../domain/planning/module-coverage.js';
 import { alignRequirements } from '../../domain/planning/requirement-alignment.js';
 import { withRequirementFeatures } from '../../domain/planning/requirement-features.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
@@ -46,9 +46,7 @@ export interface PlannedCoverage {
  */
 // RF-627
 export function checkedPlan(content: PlanContent, documents: CoverageDocuments): PlanContent {
-  const aligned = withRequirementFeatures(alignRequirements(content, documents), documents);
-  // P8-06: a card that changes deployment files builds the deployment item.
-  return withModuleLinks(aligned, documents.modules);
+  return withRequirementFeatures(alignRequirements(content, documents), documents);
 }
 
 // RF-627, RF-623

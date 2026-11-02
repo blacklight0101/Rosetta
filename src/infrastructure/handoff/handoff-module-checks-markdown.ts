@@ -42,10 +42,36 @@ function untouchedRows(handoff: HandoffPackage, modules: SourceModules): Row[] {
   return rows.filter((row) => open.has(row.id) || over.has(row.id));
 }
 
-// P8-06, RF-601
-export function moduleCheckLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  const { modules } = handoff;
-  if (modules === undefined) return [];
+const notCounted: Readonly<Record<string, string>> = {
+  test: 'A test project: it checks the system and is no part to port.',
+  vendored: 'Vendored third-party code: the new system takes the library from its package source.',
+  ci: 'A CI file: it may only build and test, so it is not counted as legacy deployment; check whether it deploys.',
+};
+
+/** P8-06: the manifest folders kept out of the modules and the CI files, never dropped in silence. */
+function notCountedLines(modules: SourceModules, esc: MarkdownEscaper): string[] {
+  const rows = [
+    ...(modules.notModules ?? []).map((each) => [each.path, notCounted[each.reason] ?? '']),
+    ...(modules.ciFiles ?? []).map((path) => [path, notCounted['ci'] ?? '']),
+  ];
+  if (rows.length === 0) return [];
+  return [
+    '## Folders and files not counted as modules',
+    '',
+    'These hold a project or package manifest, or a CI file, but the plan counts them neither as a module nor as deployment material; the owner decides whether one needs a card.',
+    '',
+    '| Path | Why not counted |',
+    '|---|---|',
+    ...rows.map(([path = '', why = '']) => `| ${esc.inline(path)} | ${why} |`),
+    '',
+  ];
+}
+
+function untouchedLines(
+  handoff: HandoffPackage,
+  modules: SourceModules,
+  esc: MarkdownEscaper,
+): string[] {
   const count = modules.modules.length + modules.overCap.length;
   if (count === 0 && modules.deployment === undefined) return [];
   const rows = untouchedRows(handoff, modules);
@@ -61,7 +87,7 @@ export function moduleCheckLines(handoff: HandoffPackage, esc: MarkdownEscaper):
   return [
     '## Modules with no task card',
     '',
-    'A module is a folder of the source that holds a project or package manifest; the deployment material is its Dockerfiles, Kubernetes and Service Fabric folders, compose, publish and CI files. A task card touches a module when it builds it by its id, and the deployment material also when it changes a deployment file. No task card touches these, so the package plans no work for them; the owner decides whether a card must port or retire each.',
+    'A module is a folder of the source that holds a project or package manifest; the deployment material is its Dockerfiles, compose and publish files and its Kubernetes, Helm and Service Fabric folders. A task card touches a module, or the deployment material, only when it builds it by its id. No task card touches these, so the package plans no work for them; the owner decides whether a card must port or retire each.',
     '',
     '| Module | Languages | Files | Why no card |',
     '|---|---|---|---|',
@@ -71,4 +97,11 @@ export function moduleCheckLines(handoff: HandoffPackage, esc: MarkdownEscaper):
     ),
     '',
   ];
+}
+
+// P8-06, RF-601
+export function moduleCheckLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const { modules } = handoff;
+  if (modules === undefined) return [];
+  return [...untouchedLines(handoff, modules, esc), ...notCountedLines(modules, esc)];
 }

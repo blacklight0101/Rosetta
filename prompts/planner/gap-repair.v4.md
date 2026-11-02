@@ -11,7 +11,7 @@ A data block ends only at the closing line that carries the same tag as its open
 - When the plan is specification-driven (SDD), every card names at least one requirement: take the requirement whose title covers what the card builds, and leave the list empty only when none applies.
 - `requirements` counts the requirements of the plan block from 1. A number in `dependsOn` counts the cards of this new answer from 1 and names only an earlier card of this answer; a `T-` id names a card of the plan block.
 - Every other field keeps the form the first instructions gave: `title`, `phase` (a number), `invariant`, `acceptanceCriteria` (Given, When, Then), `riskClass`, `adds`, `probes`, `files`, `builds` (ids exactly as given in the first block).
-- A `module` item of the first block is a part of the legacy code (a web application, a desktop client, a service) that still has no card: write a card that ports or retires it, with `builds` naming the module id exactly. The `deployment` item gets one card that writes the build, container and CI files of the new system, never one card per file.
+- A `module` item of the first block is a part of the legacy code (a web application, a desktop client, a service) that still has no card: write a card that ports or retires it, with `builds` naming the module id exactly. The `deployment` item gets one card that replaces how the legacy system is deployed (container, orchestration and hosting of the new system), with `builds` naming `deployment:source` exactly, never one card per file.
 - Write only the cards for the items in the first block. Do not write again a card that was kept and is shown in the plan block.
 
 ## Answer

@@ -1,6 +1,7 @@
 import { byCodeUnit } from '../code-map/code-unit-order.js';
 import type { FileEntry } from '../code-map/file-entry.js';
-import { deploymentRootOf } from './deployment-paths.js';
+import { deploymentRootOf, isCiFile } from './deployment-paths.js';
+import { isTestManifest, notModuleReason, type NotModule } from './module-folder-rules.js';
 import type { SourceCard } from './plan-sources.js';
 
 // P8-06, RF-601, EV-32: the modules of the analysed source, read from its scan by code. A module is
@@ -48,9 +49,9 @@ export interface SourceModules {
   /** The modules over the cap, by path; checks.md names them. */
   readonly overCap: readonly SourceModule[];
   readonly deployment?: DeploymentMaterial;
-  /** P8-06: the manifest folders that are test projects or vendored code (skeleton). */
-  readonly notModules?: readonly { readonly path: string; readonly reason: 'test' | 'vendored' }[];
-  /** P8-06: the CI files (skeleton). */
+  /** P8-06: the manifest folders that are test projects or vendored code, named in checks.md. */
+  readonly notModules?: readonly NotModule[];
+  /** P8-06: the CI files, which may only build and test, so they are named and not counted. */
   readonly ciFiles?: readonly string[];
 }
 
@@ -74,23 +75,54 @@ function newTally(): Tally {
   return { manifests: new Set(), lines: new Map(), files: 0, cards: new Set() };
 }
 
-/** The module folders: every folder with a manifest that is not deployment material, deepest first. */
-function moduleFolders(files: readonly FileEntry[]): Map<string, Tally> {
-  const folders = new Map<string, Tally>();
+interface Folders {
+  /** Every folder with a manifest, test and vendored ones included. */
+  readonly manifests: ReadonlySet<string>;
+  /** The module folders, deepest first. */
+  readonly modules: Map<string, Tally>;
+  readonly notModules: NotModule[];
+}
+
+function manifestNames(files: readonly FileEntry[]): Map<string, FileEntry[]> {
+  const folders = new Map<string, FileEntry[]>();
   for (const file of files) {
-    if (!file.artefactKinds.includes('manifest') || deploymentRootOf(file.path) !== undefined) {
+    if (!file.artefactKinds.includes('manifest')) continue;
+    const folder = folderOf(file.path);
+    folders.set(folder, [...(folders.get(folder) ?? []), file]);
+  }
+  return folders;
+}
+
+/**
+ * The module folders: every folder with a manifest that is no test project, no vendored code and
+ * not inside deployment material. A test or vendored folder is kept apart with its reason.
+ */
+function moduleFolders(files: readonly FileEntry[]): Folders {
+  const named = manifestNames(files);
+  const manifests = new Set(named.keys());
+  const modules = new Map<string, Tally>();
+  const notModules: NotModule[] = [];
+  for (const [folder, entries] of named) {
+    const names = entries.map((each) => each.path.slice(each.path.lastIndexOf('/') + 1));
+    const vendored = entries.some((each) => each.vendored === true);
+    const reason =
+      notModuleReason(folder, vendored) ?? (names.some(isTestManifest) ? 'test' : undefined);
+    if (reason !== undefined) {
+      notModules.push({ path: folder, reason });
       continue;
     }
-    const folder = folderOf(file.path);
-    const tally = folders.get(folder) ?? newTally();
-    tally.manifests.add(file.path.slice(file.path.lastIndexOf('/') + 1));
-    folders.set(folder, tally);
+    if (entries.some((each) => deploymentRootOf(each.path, manifests) !== undefined)) continue;
+    const tally = newTally();
+    for (const name of names) tally.manifests.add(name);
+    modules.set(folder, tally);
   }
-  const deepestFirst = [...folders].sort((a, b) => b[0].length - a[0].length);
-  return new Map(deepestFirst);
+  const deepestFirst = [...modules].sort((a, b) => b[0].length - a[0].length);
+  notModules.sort((a, b) => byCodeUnit(a.path, b.path));
+  return { manifests, modules: new Map(deepestFirst), notModules };
 }
 
 interface Owners {
+  readonly manifests: ReadonlySet<string>;
   readonly modules: Map<string, Tally>;
   readonly deployment: Tally;
   readonly deploymentPaths: Set<string>;
@@ -98,7 +130,7 @@ interface Owners {
 
 /** Where a path belongs: `deployment`, a module folder, or nowhere. */
 function ownerOf(path: string, owners: Owners): Tally | undefined {
-  const root = deploymentRootOf(path);
+  const root = deploymentRootOf(path, owners.manifests);
   if (root !== undefined) {
     owners.deploymentPaths.add(root);
     return owners.deployment;
@@ -167,8 +199,9 @@ export function sourceModules(
   files: readonly FileEntry[],
   cards: readonly SourceCard[],
 ): SourceModules {
+  const folders = moduleFolders(files);
   const owners: Owners = {
-    modules: moduleFolders(files),
+    ...{ manifests: folders.manifests, modules: folders.modules },
     deployment: newTally(),
     deploymentPaths: new Set(),
   };
@@ -183,5 +216,11 @@ export function sourceModules(
     modules: all.filter((each) => sent.has(each.path)).sort(byPath),
     overCap: all.filter((each) => !sent.has(each.path)).sort(byPath),
     ...(deployment === undefined ? {} : { deployment }),
+    notModules: folders.notModules,
+    ciFiles: files
+      .map((each) => each.path)
+      .filter(isCiFile)
+      .sort(byCodeUnit)
+      .slice(0, MAX_DEPLOYMENT_PATHS),
   };
 }
