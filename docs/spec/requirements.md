@@ -1820,7 +1820,7 @@ As a user I want the page to offer the next step when a step ends so that I do n
 
 - Given a step that ended, when its page is shown, then a next-step panel offers the next action in place, with its estimate and what is left of the approved amount: "Deepen" with what it would read, "Answer questions" when the run has open questions (RF-647), "Set up the plan", then "Start the plan".
 - Given a finished understand, when the panel is shown, then Deepen is a button and never starts by itself, and the plan is a button that never starts by itself after the plan setup (DEC-204); the order of Deepen and the questions follows RF-646 and RF-1017.
-- Given any journey page, when it is shown, then History and the project settings are one click away (links under the strip).
+- Given any journey page, when it is shown, then Past runs and the project settings are one click away (links under the strip).
 - Given a project with an approved journey amount (RF-435), when the strip is shown, then it says what is left of that amount, for example "$0.60 left of $1.00 approved"; a project with no journey record shows no amount.
 - Given the project page, a scan run page and an understand run page that is still working, when they open, then each shows the strip (RF-1020); Deepen is offered on the project page with its estimate shown at once and starts only on the click and the confirmation (DEC-204).
 - Given a finished understand, when I go on, then Deepen, the questions, the plan setup and the plan are each reached from the page they follow, with no visit to another page.

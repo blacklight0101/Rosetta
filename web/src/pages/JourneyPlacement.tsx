@@ -70,13 +70,20 @@ function ScanJourney(props: RunJourneyProps): JSX.Element | null {
   );
 }
 
-/** RF-1020: the strip on a run page: scan and plan runs, and an understand run that is still working. */
+/** RF-1020: the strip above the body of a scan run page and a plan run page. */
 export function RunJourneys(props: RunJourneyProps): JSX.Element {
   return (
     <>
       <PlanJourney {...props} />
       <ScanJourney {...props} />
-      {props.phase.kind === 'ended' ? null : <UnderstandJourney {...props} />}
     </>
   );
+}
+
+/**
+ * RF-1020: the strip of an understand run that is still working, drawn after the tabs so that the
+ * late read of its facts never moves the controls above it.
+ */
+export function WorkingJourney(props: RunJourneyProps): JSX.Element | null {
+  return props.phase.kind === 'ended' ? null : <UnderstandJourney {...props} />;
 }

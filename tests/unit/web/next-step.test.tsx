@@ -48,8 +48,8 @@ it('RF-1021 says nothing about an amount when the project has no journey record'
 it('RF-1021 keeps History and the project settings one click away', () => {
   renderPage(<JourneyStrip view={journeyOf(facts(), projectId)} onResumed={() => undefined} />, {});
 
-  const history = within(region()).getByRole('link', { name: 'History' });
-  const settings = within(region()).getByRole('link', { name: 'Project settings' });
+  const history = within(region()).getByRole('link', { name: 'Past runs' });
+  const settings = within(region()).getByRole('link', { name: 'Settings for this project' });
 
   expect(history.getAttribute('href')).toBe(`/projects/${projectId}/history`);
   expect(settings.getAttribute('href')).toBe(`/projects/${projectId}/settings`);

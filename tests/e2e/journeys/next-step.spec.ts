@@ -29,8 +29,8 @@ test('RF-1020 RF-1021 from a finished understand to a downloaded package without
   const projectPage = page.url();
   const strip = page.getByRole('region', { name: 'Journey from code to package' });
   await expect(strip).toBeVisible();
-  await expect(strip.getByRole('link', { name: 'History' })).toBeVisible();
-  await expect(strip.getByRole('link', { name: 'Project settings', exact: true })).toBeVisible();
+  await expect(strip.getByRole('link', { name: 'Past runs' })).toBeVisible();
+  await expect(strip.getByRole('link', { name: 'Settings for this project' })).toBeVisible();
 
   // Deepen is offered in place and never starts by itself; the user goes on to the questions.
   const skip = strip.getByRole('button', { name: /^Do not Deepen/u });

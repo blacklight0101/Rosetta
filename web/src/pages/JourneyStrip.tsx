@@ -196,8 +196,8 @@ export function JourneyStrip(props: JourneyStripProps): JSX.Element {
         <p class="rst-road__total">{`Total so far ${costLabel(view.totalCostMicros)}`}</p>
         {view.left === undefined ? null : <p class="rst-road__left">{view.left}</p>}
         <p class="rst-road__more">
-          <Link href={`/projects/${view.projectId}/history`}>History</Link>{' '}
-          <Link href={`/projects/${view.projectId}/settings`}>Project settings</Link>
+          <Link href={`/projects/${view.projectId}/history`}>Past runs</Link>{' '}
+          <Link href={`/projects/${view.projectId}/settings`}>Settings for this project</Link>
         </p>
       </div>
     </section>

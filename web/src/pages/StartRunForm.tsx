@@ -16,6 +16,7 @@ import { StageAreasSection } from './StageAreasSection.js';
 import { ScanSection } from './ScanSection.js';
 import { SummaryBar } from './SummaryBar.js';
 import { JourneyPanel } from './JourneyPanel.js';
+import { PlanSetupInPlace } from './PlanSetupInPlace.js';
 import { useStartForm, type StartForm } from './use-start-form.js';
 
 // RF-1001, RF-143, RF-132, RF-425, RF-1108, RF-1018, DEC-108, design-system.md section 14 (Start run): the
@@ -88,7 +89,7 @@ function ProjectJourney({ form }: { readonly form: StartForm }): JSX.Element {
       refresh={form.scan.state.kind}
       pagePath={`/projects/${form.project.id}`}
       deepenInPlace
-      setupInPlace
+      setupInPlace={(onSaved) => <PlanSetupInPlace projectId={form.project.id} onSaved={onSaved} />}
     />
   );
 }

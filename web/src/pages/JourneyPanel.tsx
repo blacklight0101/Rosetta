@@ -3,7 +3,6 @@ import { useState } from 'preact/hooks';
 import { navigate } from '../app/router.js';
 import { journeyOf } from '../lib/journey/journey-steps.js';
 import { JourneyStrip, type JourneyStripProps } from './JourneyStrip.js';
-import { PlanSetupInPlace } from './PlanSetupInPlace.js';
 import { useJourney } from './use-journey.js';
 import { useSkipDeepen } from './use-skip-deepen.js';
 
@@ -28,8 +27,8 @@ export interface JourneyPanelProps {
   readonly pagePath?: string | undefined;
   /** RF-1021: the page offers the Deepen of the source run in place (the project page). */
   readonly deepenInPlace?: boolean | undefined;
-  /** RF-1021: answer the questions, set up and start the plan in place (the project page). */
-  readonly setupInPlace?: boolean | undefined;
+  /** RF-1021: draws the questions and plan setup in place (the project page); told when the brief is saved. */
+  readonly setupInPlace?: ((onSaved: () => void) => JSX.Element) | undefined;
 }
 
 /** RF-1021: what the project page does in place: Deepen, skipping it, and the questions and plan setup. */
@@ -38,10 +37,7 @@ function inPlaceOf(
   sourceId: string | undefined,
   on: { readonly skip: () => void; readonly saved: () => void },
 ): Pick<JourneyStripProps, 'setup' | 'onSkipDeepen' | 'deepenRunId'> {
-  const setup =
-    props.setupInPlace === true ? (
-      <PlanSetupInPlace projectId={props.projectId} onSaved={on.saved} />
-    ) : undefined;
+  const setup = props.setupInPlace?.(on.saved);
   if (props.deepenInPlace !== true) return { setup };
   return { setup, onSkipDeepen: on.skip, deepenRunId: sourceId };
 }

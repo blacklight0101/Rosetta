@@ -83,7 +83,9 @@ test('RF-615 RF-006 an understand run that was stopped locks the plan steps and 
 
   await expect(page).toHaveURL(live);
   await expect(runStatus(page)).toContainText('Running', { timeout: 30_000 });
-  await expect(journey(page)).toHaveCount(0);
+  // RF-1020: the strip is on every run page, also while the run works.
+  await expect(journey(page)).toBeVisible();
+  await expect(stepOf(page, 'Understand')).toContainText('Running now');
 });
 
 test('RF-615 RF-614 a failed plan leaves the earlier steps as they were and Try the plan again opens a new estimate', async ({

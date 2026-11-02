@@ -12,7 +12,7 @@ import { runIsLocal } from '../lib/live-run/run-local.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { roleTotalsOf } from '../lib/live-run/run-summary.js';
 import { EndedBody } from './EndedBody.js';
-import { RunJourneys } from './JourneyPlacement.js';
+import { RunJourneys, WorkingJourney } from './JourneyPlacement.js';
 import { PauseUpdates } from './PauseUpdates.js';
 import { RunAnswerControls } from './ApprovalControl.js';
 import { RunStatusBar } from './RunStatusBar.js';
@@ -151,6 +151,7 @@ export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps)
           source={sourceOf(state, run)}
         />
       )}
+      <WorkingJourney {...{ run, stage, phase, onResumed }} />
     </div>
   );
 }
