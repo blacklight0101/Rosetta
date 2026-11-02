@@ -116,7 +116,7 @@ const sourceTabs = [
 
 /** EV-87, P8-10: opens the page of a project whose zip or workbooks are stored; the scan starts there. */
 function useOpenWhenStored(onStored: () => void) {
-  const made = useRef<Project | undefined>();
+  const made = useRef<Project | undefined>(undefined);
   const open = (project: Project | undefined): void => {
     const target = project ?? made.current;
     onStored();
