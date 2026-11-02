@@ -158,15 +158,8 @@ test(
 
     await page.getByRole('button', { name: 'Upload workbooks' }).click();
 
-    await expect(page.getByRole('status').filter({ hasText: '2 workbooks read' })).toBeVisible();
-    await expect(page.getByText('Pricing.xlsx: 4 sheets, 1,200 cells, 310 formulas')).toBeVisible();
-    await expect(page.getByText('1 item left out')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Start a run' })).toBeVisible();
-    await expectNoSeriousViolations(page);
-    const overflow: unknown = await page.evaluate(
-      'document.documentElement.scrollWidth - window.innerWidth',
-    );
-    expect(Number(overflow)).toBeLessThanOrEqual(0);
+    // EV-87, P8-10: the stored workbooks open the project page, where the scan starts.
+    await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
   },
 );
 

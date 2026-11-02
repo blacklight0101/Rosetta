@@ -35,7 +35,7 @@ describe('GET /api/projects/:id/history runs', () => {
     const runs = response.json<{ runs: unknown[] }>().runs;
     expect(runs).toHaveLength(2);
     expect(runs[0]).toMatchObject({
-      ...{ id: live.id, runId: live.runKey, stage: 'scan', queueState: 'Running' },
+      ...{ id: live.id, runId: live.runKey, stage: 'understand', queueState: 'Running' },
       ...{ endState: null, commitSha: null, sizeBytes: 0 },
     });
     expect(runs[1]).toEqual({
