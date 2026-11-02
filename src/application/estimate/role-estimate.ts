@@ -8,6 +8,7 @@ import type { ProviderKeyRepository } from '../ports/provider-key-repository.js'
 import { priceOverridesOf } from '../projects/price-overrides.js';
 import { DEFAULT_REASONING_EFFORT, type ProjectSettings } from '../projects/project-settings.js';
 import type { Project } from '../projects/project.js';
+import { isRemoteOllama } from '../providers/cloud-consent.js';
 import { keyProviderOf } from '../providers/key-choice.js';
 import type {
   ByScenario,
@@ -30,6 +31,8 @@ export interface RolePricing {
   readonly priceTable: PriceTable;
   /** Q-58: the models the shipped list marks as reasoning models; none when left out. */
   readonly reasoningModels?: ReasoningModels;
+  /** P8-04, RF-433: the host of the Ollama server; an Ollama server that is not this machine is not local. */
+  readonly ollamaHost?: string | undefined;
 }
 
 export interface RoleTokens {
@@ -107,6 +110,7 @@ export async function priceOfRole(
     provider: config.kind,
     model,
     keySource,
+    remote: isRemoteOllama(config.kind, pricing.ollamaHost),
   });
   return { setting, name, model, config, keySource, lookup };
 }
