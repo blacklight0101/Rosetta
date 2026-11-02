@@ -10,6 +10,7 @@ import { applyColumnFacts } from './data-model-column-facts.js';
 import { typeProblems, withCanonicalTypes } from './data-model-database.js';
 import { fitLengths, unconfirmedTypes } from './data-model-type-fit.js';
 import { keepLegacyKeys } from './data-model-legacy-keys.js';
+import { genericTables } from './data-model-generic.js';
 import { missingNamed } from './data-model-named.js';
 
 // RF-623, P3-120, P5-38, P7-13: the model once the planner's draft is assembled: the legacy keys
@@ -37,7 +38,7 @@ function splitNote(split: SplitTable): DataModelProblem {
       each.value === null ? `${each.sheet} (no value)` : `${each.sheet} = ${each.value}`,
     )
     .join(', ');
-  const reason = `Sheets with the same columns, one per site or copy, were made one table with the column ${split.column}; the data migration fills it from the sheet: ${listed}.`;
+  const reason = `Sheets with the same columns, one per site or copy, were made one table with the column ${split.column}; the data migration fills it from the sheet: ${listed}. The same id may repeat across sheets, so the key includes ${split.column} (a unique index when a sheet has no value, where NULL counts as one value).`;
   return { item: split.table, field: `table ${split.table}`, reason };
 }
 
@@ -69,6 +70,7 @@ export function checkedModel(
         ...copied.map((item) => ({ item, field: `table ${item}`, reason: copiedReason })),
         ...assembled.merged.map(mergeNote),
         ...(model.splits ?? []).map(splitNote),
+        ...genericTables(model),
         ...typeProblems(model),
         ...keys.problems,
         ...facts.problems,

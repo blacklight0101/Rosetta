@@ -94,6 +94,27 @@ function keyed(column: string, key: readonly string[]): string[] {
   return key.length === 0 ? [] : [column, ...key];
 }
 
+/**
+ * P8-07: with no base sheet the discriminator joins the primary key. A base sheet leaves it empty
+ * (NULL), which a primary key refuses, so the key becomes a unique index on the discriminator and
+ * the key, where NULL counts as one value; the same id may repeat across sites.
+ */
+function keysOf(joined: DraftTable, column: string, hasBase: boolean) {
+  if (!hasBase) return { primaryKey: keyed(column, joined.primaryKey) };
+  if (joined.primaryKey.length === 0) return { primaryKey: joined.primaryKey };
+  return {
+    primaryKey: [],
+    indexes: [
+      ...joined.indexes,
+      {
+        columns: keyed(column, joined.primaryKey),
+        unique: true,
+        reason: 'The same id may repeat across sites.',
+      },
+    ],
+  };
+}
+
 function combined(stem: string, group: readonly Member[]) {
   const base = group.find(({ suffix }) => suffix === '');
   const taken = new Set(group.flatMap(({ table }) => [...columnKeys(table)]));
@@ -121,7 +142,7 @@ function combined(stem: string, group: readonly Member[]) {
     ...joined,
     name,
     columns: [...joined.columns, discriminator(column.name, base !== undefined)],
-    primaryKey: base === undefined ? keyed(column.name, joined.primaryKey) : joined.primaryKey,
+    ...keysOf(joined, column.name, base !== undefined),
   };
   return { table, split: { table: name, column: column.name, values: listed } };
 }

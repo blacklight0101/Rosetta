@@ -20,8 +20,12 @@ function sheet(name: string, columns: readonly string[], rest: Partial<DraftTabl
   };
 }
 
+const claimsOf = (drafts: readonly DraftTable[]) =>
+  drafts.flatMap((each) =>
+    each.sources.map((cardId) => ({ cardId, claimId: `${cardId}.c1`, text: 'Columns.' })),
+  );
 const tablesOf = (drafts: readonly DraftTable[]) =>
-  assembleDataModel({ tables: drafts, dropped: [] }, [], null).model.tables;
+  assembleDataModel({ tables: drafts, dropped: [] }, claimsOf(drafts), null).model.tables;
 const namesOf = (drafts: readonly DraftTable[]) => tablesOf(drafts).map((each) => each.name);
 
 const stock = ['item_id', 'warehouse', 'quantity', 'reserved'];
