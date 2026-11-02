@@ -47,14 +47,14 @@ describe('RF-646 P7-09 a question raised again in other words is not asked again
 });
 
 describe('EV-57 P8-05 the Deepen lists the merge in its events', () => {
-  it('EV-57 publishes question.merged with the kept question, the merged one and its run', async () => {
+  it('RF-646 RF-243 EV-57 publishes question.merged with the kept question, the merged one and its run', async () => {
     const { h, deep } = shared.current();
 
     const merged = (await h.eventsOf(deep)).filter((each) => each.type === 'question.merged');
     expect(merged).toHaveLength(1);
     expect(merged[0]?.data).toMatchObject({
       keptCardId: 'OQ-001',
-      mergedCardId: 'OQ-002',
+      mergedCardId: 'OQ-001',
       mergedRunKey: deep.runKey,
     });
   });

@@ -142,23 +142,50 @@ export function onlyAreas(plan: RerunPlan, areas: readonly string[]): RerunPlan 
   return { ...plan, pending: plan.pending.filter((question) => areas.includes(question.area)) };
 }
 
+/** EV-57, P8-05: the most characters of answered questions a Deepen reader is given. */
+const MAX_ANSWER_CHARS = 12_000;
+
+function blockOf(each: RerunPlan['pending'][number]): string {
+  return `Question ${each.cardId} (Area: ${each.area}): ${each.question}\nOwner's answer: ${each.answer}`;
+}
+
+/**
+ * The answered questions a Deepen reader hears: its own area first, then the others, newest run
+ * first (a run key starts with its date), cut where the size cap is reached; the first is always kept.
+ */
+function cappedQuestions(plan: RerunPlan, area: string | undefined) {
+  const own = plan.pending.filter((question) => question.area === area);
+  const others = plan.pending
+    .filter((question) => question.area !== area)
+    .sort((left, right) => right.runKey.localeCompare(left.runKey));
+  const kept: RerunPlan['pending'][number][] = [];
+  let size = 0;
+  for (const question of [...own, ...others]) {
+    size += blockOf(question).length + 2;
+    if (kept.length > 0 && size > MAX_ANSWER_CHARS) break;
+    kept.push(question);
+  }
+  return { kept, total: plan.pending.length };
+}
+
+/** EV-57, P8-05: the run-log line that names the cap, or nothing when every answered question fits. */
+export function answersCapNote(plan: RerunPlan): string | undefined {
+  const { kept, total } = cappedQuestions(plan, undefined);
+  if (kept.length === total) return undefined;
+  return `The answered questions given to each Deepen reader are capped at ${String(MAX_ANSWER_CHARS)} characters, own area first, newest run first: ${String(total - kept.length)} of ${String(total)} left out.`;
+}
+
 /**
  * What the reader of the area is told: each question, its area and the answer, as owner facts. DEC-198:
  * not the lines the question was raised from, which a reader would cite for what the owner said.
  */
 function answersTextOf(plan: RerunPlan, area: string, wholeProject: boolean): string | undefined {
-  const own = plan.pending.filter((question) => question.area === area);
-  // P7-09, RF-209: a Deepen reader hears the answers of the whole project, its own area first.
+  // P7-09, RF-209: a Deepen reader hears the answers of the whole project, its own area first, capped.
   const questions = wholeProject
-    ? [...own, ...plan.pending.filter((question) => question.area !== area)]
-    : own;
+    ? cappedQuestions(plan, area).kept
+    : plan.pending.filter((question) => question.area === area);
   if (questions.length === 0) return undefined;
-  return questions
-    .map(
-      (each) =>
-        `Question ${each.cardId} (Area: ${each.area}): ${each.question}\nOwner's answer: ${each.answer}`,
-    )
-    .join('\n\n');
+  return questions.map(blockOf).join('\n\n');
 }
 
 /** The tasks with the answers of their area, or of the whole project (P7-09, the Deepen). */
@@ -196,9 +223,4 @@ export function changesOf(
   cards: readonly Card[],
 ): { readonly changes?: CardChanges } {
   return rerun === undefined ? {} : { changes: compareCards(cards, rerun.plan.baseline) };
-}
-
-/** RF-209, EV-57: the log line that names the size cap on the answers given to a Deepen reader. */
-export function answersCapNote(plan: RerunPlan): string | undefined {
-  return plan.pending.length < 0 ? 'never' : undefined;
 }

@@ -17,7 +17,7 @@ const ollamaAgain =
 const haikuAnswered = 'Which roles can approve refunds?';
 const haikuAgain = 'Which roles may approve the refund requests?';
 
-describe('EV-57 P8-05 sameQuestion on the pairs of the evaluation', () => {
+describe('RF-646 EV-57 P8-05 sameQuestion on the pairs of the evaluation', () => {
   it('merges the Ollama shape: an opener before the same question word', () => {
     expect(sameQuestion(ollamaAnswered, ollamaAgain)).toBe(true);
   });
@@ -59,7 +59,7 @@ function cardsOf(...questions: string[]) {
   return built.value;
 }
 
-describe('EV-57 P8-05 one run asks a near-repeat once, by the shared rule', () => {
+describe('RF-243 EV-57 P8-05 one run asks a near-repeat once, by the shared rule', () => {
   it('groups the two Ollama-shaped questions of a run into one', () => {
     const cards = cardsOf(ollamaAnswered, ollamaAgain, 'Who owns the nightly export job?');
     expect(openQuestionsOf(cards, 'r1').map((each) => each.cardId)).toEqual(['OQ-001', 'OQ-003']);

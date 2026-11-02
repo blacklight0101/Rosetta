@@ -1,5 +1,6 @@
 import type { Card } from '../../domain/cards/card.js';
 import { formatCitation } from '../../domain/cards/citation.js';
+import { sameQuestion } from './same-question.js';
 import type { OpenQuestion, SuggestedOption } from '../ports/answers-file.js';
 
 // RF-243, RF-240, DEC-136: the open questions of a run as `answers.md` gets them. The same
@@ -15,55 +16,7 @@ interface Group {
   readonly dependents: number;
 }
 
-/** "Who uses these pages?" and "who uses these pages" are the same question; '' when no words. */
-function questionWords(question: string): string {
-  return question
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim();
-}
-
-const askWords = new Set(['what', 'where', 'who', 'whom', 'whose', 'when', 'why', 'how', 'which']);
-const stopWords = new Set(
-  `a an the is are was were be been being do does did can could should would will shall may might
-   must of in on at to for from by with within into as and or if it its this that these those there
-   their they them than then so such not no any all`.split(/\s+/u),
-);
-
-function contentOf(words: string): ReadonlySet<string> {
-  return new Set(words.split(' ').filter((word) => !stopWords.has(word) && !askWords.has(word)));
-}
-
-/**
- * RF-646, RF-243, Q-52, EV-57: whether two questions ask the same thing. The one rule of the four
- * places that compare questions. Equal normalised words always match; otherwise the questions open
- * with the same question word and their subject words (stop words and question words removed)
- * overlap highly: the subject words of one are all in the other, at least three, and 60% of both
- * together (a word that only one question has may be the decisive one).
- */
-export function sameQuestion(a: string, b: string): boolean {
-  const first = questionWords(a);
-  const second = questionWords(b);
-  if (first === '' || second === '') return false;
-  if (first === second) return true;
-  const lead = (words: string): string => {
-    const word = words.split(' ')[0] ?? '';
-    return askWords.has(word) ? word : '';
-  };
-  if (lead(first) !== lead(second)) return false;
-  const left = contentOf(first);
-  const right = contentOf(second);
-  const shared = [...left].filter((word) => right.has(word)).length;
-  const union = left.size + right.size - shared;
-  // One question only adds words to the other: a word the other lacks may be the decisive one.
-  const subset = shared === Math.min(left.size, right.size);
-  return subset && shared >= 3 && shared >= 0.6 * union;
-}
-
-function keyOf(card: Card): string {
-  const words = questionWords(card.question ?? card.title);
-  return words === '' ? `card:${card.id}` : words;
-}
+export { sameQuestion };
 
 function citedPaths(cards: readonly Card[]): ReadonlySet<string> {
   return new Set(
@@ -78,12 +31,25 @@ function dependentsOf(group: readonly Card[], others: readonly Card[]): number {
   ).length;
 }
 
+/** EV-57: the questions of a run that ask the same, by the shared rule; the first of each is kept. */
+function clustersOf(questions: readonly Card[]): readonly (readonly Card[])[] {
+  const clusters: Card[][] = [];
+  for (const card of questions) {
+    const asked = card.question ?? card.title;
+    const found = clusters.find((cluster) => {
+      const head = cluster[0];
+      return head !== undefined && sameQuestion(head.question ?? head.title, asked);
+    });
+    if (found === undefined) clusters.push([card]);
+    else found.push(card);
+  }
+  return clusters;
+}
+
 function groupsOf(cards: readonly Card[]): readonly Group[] {
   const questions = cards.filter((card) => card.type === 'OQ');
   const others = cards.filter((card) => card.type !== 'OQ');
-  const byKey = new Map<string, Card[]>();
-  for (const card of questions) byKey.set(keyOf(card), [...(byKey.get(keyOf(card)) ?? []), card]);
-  return [...byKey.values()].map((group) => ({
+  return clustersOf(questions).map((group) => ({
     cards: group,
     area: group[0]?.area ?? '',
     dependents: dependentsOf(group, others),
@@ -170,5 +136,13 @@ export function mergedQuestionsOf(
   cards: readonly Card[],
   runKey: string,
 ): readonly MergedQuestion[] {
-  return Array.from({ length: Math.min(0, cards.length + runKey.length) });
+  return clustersOf(cards.filter((card) => card.type === 'OQ')).flatMap(([kept, ...rest]) =>
+    kept === undefined
+      ? []
+      : rest.map((card) => ({
+          ...{ keptCardId: kept.id, keptQuestion: kept.question ?? kept.title, keptRunKey: runKey },
+          ...{ mergedCardId: card.id, mergedQuestion: card.question ?? card.title },
+          mergedRunKey: runKey,
+        })),
+  );
 }
