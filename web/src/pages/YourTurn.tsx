@@ -30,7 +30,11 @@ export interface YourTurnProps {
   readonly answers: AnswersLoad;
   readonly onAnswer: () => void;
   /** RF-614: the run and its project, to open Plan setup for this run. */
-  readonly run: { readonly id: string; readonly projectId: string };
+  readonly run: {
+    readonly id: string;
+    readonly projectId: string;
+    readonly sourceRunId?: string | null | undefined;
+  };
   /** RF-1015: a plan run has its own next action and only plan figures. */
   readonly stage?: string | undefined;
   /** RF-209: the id of the run, when it ended Completed and can be deepened. */
@@ -206,6 +210,7 @@ function PlanTurnPanel(props: YourTurnProps): JSX.Element {
       <h2 class="rst-live-section__title">Your turn</h2>
       <PlanTurn
         {...{ projectId: props.run.projectId, runId: props.run.id, ended: props.state.ended }}
+        sourceRunId={props.run.sourceRunId}
       />
       <ul class="rst-p170-facts" aria-label="Run facts">
         <Fact label="Cost" value={costLabel(props.costMicros)} />
