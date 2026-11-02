@@ -25,6 +25,10 @@ export const runSchema = z.looseObject({
     cachedInputTokens: count,
   }),
   reportBuilt: z.boolean().default(false),
+  /** P7-38: the cloud consent the run recorded; a retry of it inherits that consent. */
+  cloudConsent: z.boolean().optional(),
+  /** P7-25: for a plan run, the understand run it was made from. */
+  sourceRunId: z.string().nullable().optional(),
   /** RF-208: the areas of the run that gave no usable card. */
   failedAreas: count.default(0),
   /** P7-02: the planned areas no reader started. */

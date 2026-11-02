@@ -6,10 +6,11 @@ import type { ApiClient, ApiResult } from './client.js';
 
 const checksSchema = z.looseObject({
   sections: z.array(z.looseObject({ title: z.string(), text: z.string() })),
+  /** P8-11: the server cut the text at its limit. */
+  truncated: z.boolean().default(false),
 });
 
 export type PackageChecks = z.output<typeof checksSchema>;
-export type CheckSection = PackageChecks['sections'][number];
 
 // RF-1015
 export function getPackageChecks(

@@ -84,10 +84,13 @@ export function PlanNext(props: PlanNextProps): JSX.Element | null {
   if (endState !== 'Completed') return null;
   if (props.supportedClaims === 0) {
     return (
-      <p>
-        This run has no Supported claim, so there is nothing to plan from. Check its evidence, or
-        start a new run on more areas.
-      </p>
+      <>
+        <p>
+          This run has no Supported claim, so there is nothing to plan from. Check its evidence, or
+          start a new run on more areas.
+        </p>
+        {props.writeOverview}
+      </>
     );
   }
   return (

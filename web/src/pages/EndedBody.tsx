@@ -229,7 +229,10 @@ function Header(
       {state.ended?.errorCode === undefined ? null : (
         <RunFailure code={state.ended.errorCode} stage={stage} />
       )}
-      <FailedAreas state={shown} projectId={run.projectId} runId={run.id} />
+      <FailedAreas
+        {...{ state: shown, projectId: run.projectId, runId: run.id }}
+        consentRecorded={run.cloudConsent === true}
+      />
       {shown.retry === undefined ? null : <RetryNotice retry={shown.retry} />}
       {shown.deepen === undefined ? null : <DeepenProgress progress={shown.deepen} />}
       <UnderstandJourney

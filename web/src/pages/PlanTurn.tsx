@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { ChecksCut } from './ChecksCut.js';
 import { usePackageChecks } from './use-package-checks.js';
 import { navigate } from '../app/router.js';
 import type { RunState } from '../lib/live-run/run-state.js';
@@ -12,13 +13,23 @@ import { Button } from '../components/Button.js';
 export interface PlanTurnProps {
   readonly projectId: string;
   readonly runId: string;
+  /** P8-11: the understand run the plan was made from; Plan setup opens for it. */
+  readonly sourceRunId?: string | null | undefined;
   readonly ended: RunState['ended'];
+}
+
+/** P8-11: Plan setup for the understand run the plan was made from, when it is known. */
+function planSetupPath(projectId: string, sourceRunId: string | null | undefined): string {
+  const base = `/projects/${encodeURIComponent(projectId)}/plan-setup`;
+  return sourceRunId === null || sourceRunId === undefined
+    ? base
+    : `${base}?run=${encodeURIComponent(sourceRunId)}`;
 }
 
 // RF-1015
 export function PlanTurn(props: PlanTurnProps): JSX.Element {
   const { endState, errorCode } = props.ended ?? {};
-  const sections = usePackageChecks(props.runId, props.ended);
+  const checks = usePackageChecks(props.runId, props.ended);
   if (endState === 'Completed' && errorCode === undefined) {
     return (
       <p>The plan is written. Download the package below; checks.md in it lists what to review.</p>
@@ -32,17 +43,18 @@ export function PlanTurn(props: PlanTurnProps): JSX.Element {
     <>
       <p>{text}</p>
       {errorCode === 'RST-1806'
-        ? (sections ?? []).map((section) => (
+        ? (checks?.sections ?? []).map((section) => (
             <section key={section.title} aria-label={section.title}>
               <h3>{section.title}</h3>
               <p class="rst-plan-check">{section.text}</p>
             </section>
           ))
         : null}
+      <ChecksCut cut={errorCode === 'RST-1806' && checks?.truncated === true} />
       <Button
         variant="primary"
         onClick={() => {
-          navigate(`/projects/${encodeURIComponent(props.projectId)}/plan-setup`);
+          navigate(planSetupPath(props.projectId, props.sourceRunId));
         }}
       >
         Try the plan again
