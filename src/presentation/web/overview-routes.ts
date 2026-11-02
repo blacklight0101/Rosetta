@@ -66,7 +66,7 @@ function registerChecksRoute(server: FastifyInstance, services: OverviewServices
         runId: request.params.runId,
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
-      return reply.header('cache-control', 'no-store').send({ sections: outcome.value });
+      return reply.header('cache-control', 'no-store').send({ ...outcome.value });
     },
   );
 }

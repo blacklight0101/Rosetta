@@ -39,6 +39,7 @@ import { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
 import { PgServerSettings } from '../infrastructure/db/pg-server-settings.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
+import { PgJourneyRecords } from '../infrastructure/db/pg-journey-records.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { FilePlanningBriefStore } from '../infrastructure/files/file-planning-brief-store.js';
 import { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js';
@@ -255,6 +256,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       catalogue: () => Promise.resolve(catalogue),
       ...plannerPrompts(parts.promptsFolder),
       workbookGuidance: workbookGuidanceOf(parts, runs, writer),
+      journeys: new PgJourneyRecords(pool), // RF-435, P8-01: the plan's line is the journey's remainder
       ollamaHost: parts.ollamaHost,
     }),
     catalogue,

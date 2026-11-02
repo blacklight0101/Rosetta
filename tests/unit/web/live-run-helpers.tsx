@@ -19,8 +19,18 @@ interface RowOptions {
   readonly costMicros?: number;
   readonly reportBuilt?: boolean;
   readonly failedAreas?: number;
+  /** P8-11: the cloud consent the run recorded in its manifest. */
+  readonly cloudConsent?: boolean;
+  /** P8-11: the understand run a plan run was made from. */
+  readonly sourceRunId?: string | null;
   readonly position?: number | null;
 }
+
+/** P8-11: the cloud consent and the source run the run row carries. */
+const recorded = (options: RowOptions) => ({
+  cloudConsent: options.cloudConsent ?? false,
+  sourceRunId: options.sourceRunId ?? null,
+});
 
 /** What `GET /api/runs/:runId` answers. */
 export function runRow(options: RowOptions = {}): Response {
@@ -40,6 +50,7 @@ export function runRow(options: RowOptions = {}): Response {
     totals: { costMicros, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
     reportBuilt,
     failedAreas,
+    ...recorded(options),
     position,
   });
 }

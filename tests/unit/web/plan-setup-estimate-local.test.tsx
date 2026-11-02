@@ -62,7 +62,7 @@ describe('RF-613 the plan estimate with a local model', () => {
     renderPlan(answers('ollama', { zero: true, caps: [costCap(false), tokenCap(true)] }));
     await ready();
 
-    expect(card().textContent).not.toContain('could pass');
+    expect(card().textContent).not.toContain('does not fit');
     expect(card().textContent).not.toContain('$0.00');
   });
 
@@ -71,7 +71,7 @@ describe('RF-613 the plan estimate with a local model', () => {
     await ready();
 
     expect(card().textContent).toContain(
-      'The high estimate (90,000 tokens) could pass the Run token cap (100,000 tokens).',
+      'The high estimate (90,000 tokens) does not fit the run token cap (100,000 tokens left)',
     );
   });
 });
@@ -89,7 +89,7 @@ describe('RF-427 the plan estimate with a priced model', () => {
     await ready();
 
     expect(card().textContent).toContain(
-      'The high estimate ($0.40) could pass the Run cost cap ($2.00).',
+      'The high estimate ($0.40) does not fit the run cap ($2.00 left)',
     );
   });
 
@@ -98,9 +98,9 @@ describe('RF-427 the plan estimate with a priced model', () => {
     await ready();
 
     expect(card().textContent).toContain(
-      'The high estimate (90,000 tokens) could pass the Run token cap (100,000 tokens).',
+      'The high estimate (90,000 tokens) does not fit the run token cap (100,000 tokens left)',
     );
-    expect(card().textContent).not.toContain('($0.40) could pass the Run token cap');
+    expect(card().textContent).not.toContain('($0.40) does not fit the run token cap');
   });
 });
 

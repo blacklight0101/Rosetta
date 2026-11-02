@@ -16,6 +16,7 @@ import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import { loadCatalogue } from '../../src/infrastructure/prompts/catalogue-files.js';
 import { loadPlanOptionsPrompt } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
+import { MemoryJourneyRecords } from '../../src/infrastructure/db/memory-journey-records.js';
 import { sampleAccount } from './account-fixtures.js';
 import { FixedScans, areaOf } from './estimate-harness.js';
 import { MemoryOutputWriter } from './memory-output-writer.js';
@@ -53,6 +54,8 @@ export interface SuggestOptionsOptions {
   readonly signals?: SuggestPlanOptionsDependencies['signals'];
   /** False seeds no finished scan run. */
   readonly scan?: boolean;
+  /** RF-435, P8-01: the approved amount of the project's journey; no journey by default. */
+  readonly journey?: { readonly tokens: number; readonly costMicros: number };
 }
 
 const fakePlanner = { planner: { provider: 'fake', model: 'fake-planner' } } as const;
@@ -86,7 +89,15 @@ export async function createSuggestOptionsHarness(
       sampleRun({ projectId: project.id, userId: account.id, stage: 'scan', ...done }),
     );
   }
+  const journeys = new MemoryJourneyRecords();
+  if (options.journey !== undefined) {
+    await journeys.save({
+      ...{ userId: account.id, projectId: project.id, createdAt: Number.MAX_SAFE_INTEGER },
+      approved: options.journey,
+    });
+  }
   const suggest = new SuggestPlanOptions({
+    journeys,
     ...{ projects, runs, users, ids: new SequenceIdGenerator(), logger: factory.logger },
     cards: new FileRunCards(files),
     scans: new FixedScans([areaOf('Orders', 1000)]),

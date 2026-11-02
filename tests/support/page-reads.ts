@@ -1,5 +1,7 @@
 import type { RunIndex } from '../../src/application/ports/run-index.js';
 import type { RunTextFiles } from '../../src/application/ports/run-text-files.js';
+import type { RunManifestStore } from '../../src/application/ports/run-manifest-store.js';
+import { GetRun, type QueuePositions } from '../../src/application/use-cases/get-run.js';
 import { ReadOverview } from '../../src/application/use-cases/read-overview.js';
 import { ReadPackageChecks } from '../../src/application/use-cases/read-package-checks.js';
 import { ReadRunCoverage } from '../../src/application/use-cases/read-run-coverage.js';
@@ -18,4 +20,16 @@ export function pageReads(
     readCoverage: new ReadRunCoverage({ runs, files }),
     readChecks: new ReadPackageChecks({ runs, files }),
   };
+}
+
+/** P8-11: Get run over the harness, reading the cloud consent and source run of the manifests. */
+export function getRunOf(
+  runs: {
+    readonly runs: RunIndex;
+    readonly queue: QueuePositions;
+    readonly manifests: RunManifestStore;
+  },
+  files: RunTextFiles,
+): GetRun {
+  return new GetRun({ runs: runs.runs, queue: runs.queue, files, manifests: runs.manifests });
 }
