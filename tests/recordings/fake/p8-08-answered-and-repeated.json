@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "RF-243, RF-646, EV-09, EV-89, P8-08: a run on Catalog and Services whose Catalog reader raises a question the cited Web.config answers (dropped), two questions about the same cited range (merged) and one genuine question. Written by hand for the fake provider; no real provider was called.",
+  "description": "RF-243, RF-646, EV-09, EV-89, P8-08: a run on Catalog and Services whose Catalog reader raises a question the cited Web.config answers (kept, with the line as a suggestion), two questions about the same cited range (merged) and one genuine question. Written by hand for the fake provider; no real provider was called.",
   "calls": [
     {
       "attempts": [

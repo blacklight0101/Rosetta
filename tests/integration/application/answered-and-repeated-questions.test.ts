@@ -5,9 +5,9 @@ import { completedRun } from '../../support/deepen-run.js';
 import { useSharedValue } from '../../support/understand-full-run.js';
 
 // RF-243, RF-646, EV-09, EV-89, P8-08: a reader raises a question the cited Web.config answers, two
-// questions about the same cited range and one genuine question. The first is dropped and logged
-// with its citation, the pair is one question, and answers.md lists two. Synthetic recording; no
-// real provider is called.
+// questions about the same cited range and one genuine question. The first is kept with the line as
+// its recommended suggestion, the pair is one question, and answers.md lists three. Synthetic
+// recording; no real provider is called.
 
 const shared = useSharedValue('rosetta-p8-08-', async (dataDir) => {
   const { h, run } = await completedRun({
@@ -18,14 +18,13 @@ const shared = useSharedValue('rosetta-p8-08-', async (dataDir) => {
   return { h, run, text };
 });
 
-describe('EV-09 a question the cited lines answer is not asked', () => {
-  it('RF-243 drops the connection string question and logs its citation', () => {
-    const { h, text } = shared.current();
+describe('EV-09 a question the cited lines answer gets the line as a suggestion', () => {
+  it('RF-243 keeps the connection string question and offers Web.config:7 first', () => {
+    const { text } = shared.current();
 
-    expect(text).not.toContain('connection string');
-    const logged = h.logger.entries.map((each) => each.message).join('\n');
-    expect(logged).toContain('What is the connection string of the shop database?');
-    expect(logged).toContain('Web.config:6-8');
+    expect(text).toContain('What is the connection string of the shop database?');
+    expect(text).toContain('(Recommended) Server=localhost,Database=Shop,Integrated Security=true');
+    expect(text).toContain('Web.config:7');
   });
 });
 
@@ -33,7 +32,7 @@ describe('EV-89 two questions about one cited range are one question', () => {
   it('RF-646 lists the pair once, with the genuine question', () => {
     const { text } = shared.current();
 
-    expect(text.match(/^## OQ-/gmu)).toHaveLength(2);
+    expect(text.match(/^## OQ-/gmu)).toHaveLength(3);
     expect(text).toContain('name label');
     expect(text).toContain('Which currency does the shop show prices in?');
   });

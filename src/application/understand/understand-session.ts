@@ -35,6 +35,7 @@ import { runPool } from './task-pool.js';
 import { taskResultOf } from './task-result-of.js';
 import { finishedDrafts } from '../cards/finished-drafts.js';
 import { withoutAnsweredQuestions } from './answered-questions.js';
+import { withSourceSuggestions } from './source-suggestions.js';
 import { withoutThirdPartyQuestions } from './third-party-questions.js';
 import { runReaderTaskWithRetry } from './task-retry.js';
 
@@ -127,7 +128,9 @@ export class UnderstandSession {
       const asked = await withoutThirdPartyQuestions(this.log, this.thirdParty, task, result);
       // RF-243, P5-02: a question the lines it cites already answer is not asked.
       const { reader } = this.parts.scanned;
-      const quiet = await withoutAnsweredQuestions(this.log, reader, task, asked);
+      const answered = await withoutAnsweredQuestions(this.log, reader, task, asked);
+      // P8-08: a connection string, publish or source question stays and gets the line as a suggestion.
+      const quiet = await withSourceSuggestions(reader, answered);
       const outcome = await finishedDrafts(this.parts, task.agentTaskId, quiet);
       const failure = areaFailureOf(outcome);
       const cards = outcome.drafts;
