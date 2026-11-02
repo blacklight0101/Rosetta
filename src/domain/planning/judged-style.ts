@@ -37,7 +37,7 @@ function stem(word: string): string {
 function wordsOf(text: string): string[] {
   return text
     .toLowerCase()
-    .replace(/['’]/gu, '')
+    .replace(/\b(anything|everything|all|any|anyone|everyone|nothing|none)\s+but\b/giu, '$1 except')
     .split(/[^\p{L}\p{N}-]+/u)
     .map((word) => word.replace(/^-+|-+$/gu, ''))
     .filter((word) => word !== '');
@@ -46,6 +46,7 @@ function wordsOf(text: string): string[] {
 /** The clauses of a text: a sentence end, a comma, a semicolon or a "but" ends the reach of a negation. */
 function clausesOf(text: string): string[][] {
   return text
+    .replace(/\b(anything|everything|all|any|anyone|everyone|nothing|none)\s+but\b/giu, '$1 except')
     .split(/[.,;:!?\n]+|\b(?:but|however|yet|although|though|whereas|while)\b/iu)
     .map(wordsOf)
     .filter((words) => words.length > 0);
@@ -61,44 +62,32 @@ function namesOf(style: NamedStyle): string[][] {
     wordsOf(name),
     wordsOf(name.replaceAll('-', ' ')),
   ]);
-  const own = spelled.filter((words, index) => index < 2 || words.length > 1);
   const alias = (aliases[style.id] ?? []).map((word) => [word]);
-  return [...own, ...alias].filter((words) => words.length > 0).map((words) => words.map(stem));
+  return [...spelled, ...alias].filter((words) => words.length > 0).map((words) => words.map(stem));
 }
 
-const negators = new Set(
-  ['not', 'no', 'non', 'never', 'nothing', 'none', 'without', 'sin', 'ni', 'neither', 'nor'].concat(
-    ['dont', 'doesnt', 'didnt', 'isnt', 'arent', 'wasnt', 'werent', 'wont', 'cant', 'cannot'],
-    ['avoid', 'avoiding', 'avoided', 'replace', 'replaced', 'replacing', 'drop', 'dropped'],
-    ['dropping', 'abandon', 'abandoned', 'ditch', 'ditched', 'ditching', 'retire', 'retired'],
-  ),
-);
-const negatingBefore = ['away from', 'instead of', 'rather than'];
-const negatingAfter = ['no longer', 'anymore', 'any more', 'not anymore'];
+/**
+ * The only words that may stand beside a style name for the clause to count as choosing it. Any other
+ * word ("not", "bad", "tired", "were", "separation") makes the clause say something else, so it picks
+ * nothing: a wrong pick is worse than none, and the recommendation applies.
+ */
+const affirmative = new Set([
+  ...['use', 'uses', 'using', 'used', 'we', 'i', 'our', 'want', 'wants', 'would', 'like', 'will'],
+  ...['go', 'going', 'with', 'choose', 'chose', 'prefer', 'please', 'pls', 'maybe', 'lets', 'let'],
+  ...['keep', 'stay', 'a', 'an', 'the', 'architecture', 'style', 'approach', 'pattern', 'design'],
+  ...['to', 'be', 'should', 'adopt', 'take', 'pick', 'select', 'yes', 'ok', 'okay', 'so', 'then'],
+  ...['just', 'simply', 'probably'],
+]);
 
 /** True when the words at `at` are the phrase, as whole (stemmed) words. */
 function phraseAt(words: readonly string[], at: number, phrase: readonly string[]): boolean {
   return phrase.every((word, offset) => stem(words[at + offset] ?? '') === word);
 }
 
-const hasPhrase = (words: readonly string[], phrases: readonly string[]): boolean =>
-  phrases.some((phrase) => {
-    const parts = phrase.split(' ');
-    return words.some((_, at) => parts.every((part, offset) => words[at + offset] === part));
-  });
-
-/**
- * "do not use layered", "isnt layered", "layered no longer", "moved away from layered": the clause that
- * names the style negates or abandons it. When in doubt the style is refused: a wrong pick is worse
- * than none.
- */
-function refusedIn(words: readonly string[], at: number, length: number): boolean {
-  const before = words.slice(0, at);
-  const after = words.slice(at + length);
-  return (
-    before.some((word) => negators.has(word)) ||
-    hasPhrase(before, negatingBefore) ||
-    hasPhrase(after, negatingAfter)
+/** The clause is the style name and only affirmative filler. */
+function choosesAt(words: readonly string[], at: number, length: number): boolean {
+  return words.every(
+    (word, index) => (index >= at && index < at + length) || affirmative.has(word),
   );
 }
 
@@ -106,7 +95,7 @@ function namedIn(clauses: readonly (readonly string[])[], style: NamedStyle): bo
   const names = namesOf(style);
   return clauses.some((words) =>
     names.some((phrase) =>
-      words.some((_, at) => phraseAt(words, at, phrase) && !refusedIn(words, at, phrase.length)),
+      words.some((_, at) => phraseAt(words, at, phrase) && choosesAt(words, at, phrase.length)),
     ),
   );
 }
@@ -126,8 +115,8 @@ export function namedStyleId(
 
 /**
  * The style the dependency check and the component roles follow. The owner's text names a style when
- * the style's own words stand in it, whole words only ("clean separation" names none), and not after
- * a refusal ("not layered" names none); then the style Rosetta recommended, then the default.
+ * a clause of it is the style's name and only affirmative filler ("we want layered"; "clean separation",
+ * "not layered" and "layered is bad" name none); then the style Rosetta recommended, then the default.
  */
 export function judgedStyleId(
   brief: JudgedSource,

@@ -27,7 +27,7 @@ describe('judgedStyleId with a typed architecture', () => {
   it('P8-09 names a style by its whole words', () => {
     expect(judgedStyleId(briefFor('We want a modular monolith.'), styles)).toBe('modular-monolith');
     expect(judgedStyleId(briefFor('Ports and adapters, with tests'), styles)).toBe('hexagonal');
-    expect(judgedStyleId(briefFor('Clean Architecture with a twist'), styles)).toBe('clean');
+    expect(judgedStyleId(briefFor('Go with Clean Architecture'), styles)).toBe('clean');
   });
 
   it('P8-09 "clean separation" is not Clean Architecture and picks nothing', () => {
@@ -45,39 +45,65 @@ describe('judgedStyleId with a typed architecture', () => {
   });
 });
 
-describe('judgedStyleId: refusals and spellings (P8-09)', () => {
-  it.each([
-    'we do not use layered',
-    "don't use layered",
-    'we dont want layered',
-    'isnt layered',
-    'nothing layered',
-    'sin layered',
-    'layered no longer',
-    'layered anymore',
-    'we moved away from layered',
-    'we replaced layered with cells',
-    'dropped layered last year',
-    'instead of layered',
-  ])('names no style in %j', (text) => {
+const refused = [
+  'we do not use layered',
+  "don't use layered",
+  'we dont want layered',
+  'isnt layered',
+  'nothing layered',
+  'sin layered',
+  'layered no longer',
+  'layered anymore',
+  'we moved away from layered',
+  'we replaced layered with cells',
+  'dropped layered last year',
+  'instead of layered',
+  'layered is no good',
+  'layered is not what we want',
+  'layered is bad',
+  'layered did not work',
+  'anything but layered',
+  'anything except layered',
+  'other than layered',
+  'we dislike layered',
+  'we hate layered',
+  'we reject layered',
+  'we stopped using layered',
+  'we left layered behind',
+  'tired of layered',
+  'layered with no shared kernel',
+  'a pre-layered design',
+  'layered or hexagonal',
+  'three layers',
+  'several microservices',
+];
+
+const chosen = [
+  ['layered', 'layered'],
+  ['Layered please', 'layered'],
+  ['we want layered', 'layered'],
+  ['go with clean architecture', 'clean'],
+  ['layered, no exceptions', 'layered'],
+  ['not layered but event-driven', 'event-driven'],
+  ['not layered, event-driven', 'event-driven'],
+  ['we were on layered but want clean', 'clean'],
+  ['we are not happy with microservices, so layered', 'layered'],
+  ["we don't like slow builds but use layered", 'layered'],
+  ['microservice', 'microservices'],
+  ['Microservices', 'microservices'],
+  ['the layers', 'layered'],
+  ['event driven', 'event-driven'],
+  ['Event-driven', 'event-driven'],
+  ['Ports and adapters', 'hexagonal'],
+] as const;
+
+describe('judgedStyleId: only a plain clause chooses a style (P8-09)', () => {
+  it.each(refused)('names no style in %j', (text) => {
     expect(namedStyleId(briefFor(text), styles)).toBeUndefined();
   });
 
-  it('still names a style in another clause, or when the negation is about something else', () => {
-    expect(namedStyleId(briefFor('not layered, event-driven'), styles)).toBe('event-driven');
-    expect(namedStyleId(briefFor("we don't like slow builds but use layered"), styles)).toBe(
-      'layered',
-    );
-    expect(namedStyleId(briefFor('layered with no shared kernel'), styles)).toBe('layered');
-  });
-
-  it('does not match inside a hyphen compound, and matches plurals and spellings', () => {
-    expect(namedStyleId(briefFor('a pre-layered design'), styles)).toBeUndefined();
-    expect(namedStyleId(briefFor('one microservice per team'), styles)).toBe('microservices');
-    expect(namedStyleId(briefFor('several microservices'), styles)).toBe('microservices');
-    expect(namedStyleId(briefFor('three layers'), styles)).toBe('layered');
-    expect(namedStyleId(briefFor('event driven'), styles)).toBe('event-driven');
-    expect(namedStyleId(briefFor('Event-driven'), styles)).toBe('event-driven');
+  it.each(chosen)('names the style of %j', (text, id) => {
+    expect(namedStyleId(briefFor(text), styles)).toBe(id);
   });
 });
 
