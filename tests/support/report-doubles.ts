@@ -62,8 +62,8 @@ export class QuestionsByRun implements AnswersFile {
     this.questions = questions;
   }
 
-  addQuestions(): Promise<void> {
-    return Promise.resolve();
+  addQuestions(): Promise<readonly never[]> {
+    return Promise.resolve([]);
   }
 
   questionsOf(_project: ProjectRef, runKey: string): Promise<readonly RecordedQuestion[]> {
