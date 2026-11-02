@@ -3,7 +3,7 @@ import { chooseOption } from '../lib/plan-setup/choices.js';
 import type { Draft } from '../lib/plan-setup/draft.js';
 import { TYPED } from '../lib/plan-setup/own-answers.js';
 import { optionTitle } from '../lib/plan-setup/question-options.js';
-import { WORKBOOK_QUESTIONS, workbookOptions } from '../lib/plan-setup/workbook-questions.js';
+import { workbookOptions, type WorkbookWording } from '../lib/plan-setup/workbook-questions.js';
 import { PlanChoice } from './PlanChoice.js';
 import { PlanOwnChoice } from './PlanOwnChoice.js';
 
@@ -14,18 +14,20 @@ import { PlanOwnChoice } from './PlanOwnChoice.js';
 
 export interface PlanWorkbookQuestionsProps {
   readonly draft: Draft;
+  /** P8-09: the questions and options as the server words them. */
+  readonly wording: WorkbookWording;
   readonly change: (next: Draft) => void;
   readonly problems: Readonly<Record<string, string>>;
 }
 
 // RF-648
 export function PlanWorkbookQuestions(props: PlanWorkbookQuestionsProps): JSX.Element {
-  const { draft, change, problems } = props;
+  const { draft, change, problems, wording } = props;
   const hosting = draft.stack['hosting']?.choice ?? '';
   return (
     <>
-      {WORKBOOK_QUESTIONS.map(({ id, label }) => {
-        const options = workbookOptions(id, hosting);
+      {wording.questions.map(({ id, label }) => {
+        const options = workbookOptions(wording, id, hosting);
         const group = `choice-${id}`;
         const shown = draft.chosen[id] ?? options.find((option) => option.recommended)?.id;
         return (

@@ -30,6 +30,15 @@ export const catalogueSchema = z.object({
     context: z.record(z.string(), z.array(wordingSchema)),
     method: z.array(wordingSchema),
     keepLegacy: wordingSchema,
+    /** P8-09: the three questions of a project of workbooks, served so the page keeps no copy. */
+    workbook: z.object({
+      questions: z.array(z.object({ id: z.string(), label: z.string() })),
+      options: z.record(
+        z.string(),
+        z.array(z.object({ id: z.string(), title: z.string(), description: z.string() })),
+      ),
+      windowsHost: z.string(),
+    }),
   }),
 });
 

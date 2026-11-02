@@ -67,6 +67,37 @@ describe('trd.md of a workbook package', () => {
   });
 });
 
+describe('trd.md: the relabelling needs the title of the control (P8-09)', () => {
+  function sectionWith(controls: ReturnType<typeof control>[]): string {
+    const base = workbookPackage();
+    const technical = { ...base.content.technical, security: controls };
+    const trd = files({ ...base, content: { ...base.content, technical } })['trd.md'] ?? '';
+    return trd.slice(trd.indexOf('## Security and data protection'));
+  }
+
+  it('RF-648 RF-649 a CSRF token, password hashing and a description that only mentions signing in stay "other"', () => {
+    const section = sectionWith([
+      control('CSRF token', 'Every form carries a token the server checks.'),
+      control('Password hashing', 'Stored passwords are hashed with a slow function.'),
+      control('Session lifetime', 'A staff member must sign in again after a day.'),
+    ]);
+
+    expect(section.match(/Approach: other\./gu)).toHaveLength(3);
+    expect(section).not.toContain('Approach: Single sign-on');
+    expect(section).not.toContain('Approach: The secret store');
+  });
+
+  it('RF-648 RF-649 a control titled for signing in or for the secrets store takes the answers', () => {
+    const section = sectionWith([
+      control('Sign-in', 'Only staff reach the registers.'),
+      control('Connection strings', 'They are kept out of the code.'),
+    ]);
+
+    expect(section).toContain('Approach: Single sign-on.');
+    expect(section).toContain('Approach: The secret store of the hosting platform.');
+  });
+});
+
 describe('ux/ and flows/ of a workbook package', () => {
   it('RF-650 ux lists one screen set per table with its fields', () => {
     const ux = files(workbookPackage())['ux/README.md'] ?? '';

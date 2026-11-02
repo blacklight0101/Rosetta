@@ -4,6 +4,7 @@ import {
   keepLegacyWording,
   methodWording,
 } from '../../../src/domain/planning/question-wording.js';
+import { workbookWording } from '../../../src/domain/planning/workbook-setup.js';
 
 // RF-605, RF-606, RF-608, RF-613: the answers the Plan setup page reads, as the server writes them.
 
@@ -39,6 +40,7 @@ export const catalogue = {
     ),
     method: [...methodWording],
     keepLegacy: keepLegacyWording,
+    workbook: workbookWording,
   },
 };
 

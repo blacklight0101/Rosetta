@@ -1,6 +1,7 @@
 import { formatCitation } from '../../domain/cards/citation.js';
 import { renderDataBlock } from '../../domain/egress/data-block.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
+import type { ArchitectureStyleId } from '../../domain/planning/catalogue.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 
 // RF-626, RF-145, ADR-013: what the planner is given to plan the screens. Two data blocks, each
@@ -12,6 +13,8 @@ export interface UxMessageInput {
   /** The verified `SCRN` cards with their supported claims. */
   readonly screenCards: readonly SourceCard[];
   readonly brief: PlanningBrief;
+  /** P8-09: the style the components are judged against (an own answer may name another than the brief's). */
+  readonly style: ArchitectureStyleId;
 }
 
 /** The screen as the planner sees it: what the verifier supported, never an unchecked field (ADR-005). */
@@ -35,13 +38,9 @@ function cardsText(cards: readonly SourceCard[]): string {
   return JSON.stringify({ screenCards }, null, 2);
 }
 
-function ownerText(brief: PlanningBrief): string {
+function ownerText(brief: PlanningBrief, style: ArchitectureStyleId): string {
   const frontEnd = brief.stack.find((entry) => entry.layer === 'front-end')?.choice ?? null;
-  return JSON.stringify(
-    { targetStack: { frontEnd }, architectureStyle: brief.architecture.style },
-    null,
-    2,
-  );
+  return JSON.stringify({ targetStack: { frontEnd }, architectureStyle: style }, null, 2);
 }
 
 /** The user message: the cards block, then the owner's block, each with a tag of its own. */
@@ -52,7 +51,7 @@ export function uxMessage(input: UxMessageInput, tags: () => string): string {
     tags(),
   );
   const owner = renderDataBlock(
-    { source: 'owner_answers', excerpts: [], text: ownerText(input.brief) },
+    { source: 'owner_answers', excerpts: [], text: ownerText(input.brief, input.style) },
     tags(),
   );
   return `${cards}\n\n${owner}`;

@@ -1,6 +1,6 @@
 import type { ArchitectureStyle, Catalogue } from './catalogue.js';
 import { layerNames } from './brief-questions.js';
-import { judgedStyleId } from './judged-style.js';
+import { judgedStyleId, styleReferenceKind } from './judged-style.js';
 import { migrationStrategyInfo } from './migration-strategy.js';
 import {
   describingCards,
@@ -108,7 +108,14 @@ function styleDecision(
   const own = typedAnswers(brief).architecture;
   if (own !== undefined)
     return ownStyleDecision(
-      { brief, chosen: judgedOf(brief, catalogue) ?? chosen, considered, sources, recommendation },
+      {
+        brief,
+        chosen: judgedOf(brief, catalogue) ?? chosen,
+        considered,
+        sources,
+        recommendation,
+        reference: styleReferenceKind(brief, judgedOf(brief, catalogue) ?? chosen),
+      },
       own,
       id,
     );
@@ -133,6 +140,7 @@ function ownStyleDecision(
     readonly considered: readonly ArchitectureStyle[];
     readonly sources: readonly string[];
     readonly recommendation: string;
+    readonly reference: string;
   },
   own: string,
   id: string,
@@ -144,7 +152,7 @@ function ownStyleDecision(
     status: 'Accepted',
     context: `The new system needs an architecture style. The owner typed an answer instead of choosing one of the styles. ${recommendation}`,
     decision: `Follow the owner's own answer: ${own}`,
-    consequences: `The components of the target architecture follow the owner's answer. Rosetta's automatic dependency check knows only its catalogue, so it compares them with ${chosen.title}, ${chosen.id === parts.brief.architecture.style ? 'the default style' : 'the catalogue style closest to the answer'} and ${checkReference('style')}. How to check that style: ${chosen.check}`,
+    consequences: `The components of the target architecture follow the owner's answer. Rosetta's automatic dependency check knows only its catalogue, so it compares them with ${chosen.title}, ${parts.reference} and ${checkReference('style')}. How to check that style: ${chosen.check}`,
     options: [...considered.map((each) => styleLine(each, false)), `Own answer (chosen): ${own}`],
     sources: [...sources],
   };
