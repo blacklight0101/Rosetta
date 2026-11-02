@@ -2029,7 +2029,7 @@ As the product owner I want Rosetta running on a server so that my teachers can 
 - Given a new image version, when it is deployed, then migrations run first (RF-1302) and the previous image tag stays available for rollback.
 - Given the deployment, when it is live, then `docs/runbooks/deploy.md` describes how to deploy, roll back, back up and restore it.
 - Given a production deploy, when its smoke test has passed, then the release workflow adds a comment to the open issue "Production deploys" (creating it when there is none) that mentions the owner and names the image tag, the commit, the public URL and the run, so GitHub emails the owner; a failure to comment never fails a deploy that is already live.
-  Verification: manual deployment; smoke test on the public URL (health, landing page, sign-in); `tests/integration/tooling/release-workflow.test.ts` (the notification step).
+  Verification: manual deployment; smoke test on the public URL (health, landing page, sign-in); `tests/integration/tooling/release-notify.test.ts` (the notification step).
 
 **RF-1305 Configuration from the environment** - R1 (M1) - Must - Source DEC-61 - ADR-014
 
