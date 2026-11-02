@@ -84,7 +84,9 @@ describe('the run queue and one run per user', () => {
       expect(h.executor.startedKeys).toEqual([first.runKey, second.runKey]);
     });
   });
+});
 
+describe('the run queue owner-stop signal', () => {
   it('P8-12 aborts the owner-stop signal on Stop even after a cap has aborted the run signal', async () => {
     const h = createRunHarness({ maxRunning: 1 });
     const run = await h.start(userAmy);
@@ -98,6 +100,37 @@ describe('the run queue and one run per user', () => {
     await h.queue.stop(userAmy.userId, run.id);
 
     expect(beforeStop).toBe(false);
+    expect(execution?.ownerStop?.aborted).toBe(true);
+  });
+
+  it('P8-12 removes the owner-stop signal when the run ends', async () => {
+    const h = createRunHarness({ maxRunning: 1 });
+    const run = await h.start(userAmy);
+    await vi.waitFor(() => {
+      expect(h.executor.started).toHaveLength(1);
+    });
+    const stops = (h.queue as unknown as { ownerStops: Map<string, AbortController> }).ownerStops;
+    const during = stops.has(run.id);
+
+    h.executor.settle(run.id, { endState: 'Completed' });
+    await h.ended(run);
+
+    expect(during).toBe(true);
+    expect(stops.has(run.id)).toBe(false);
+  });
+
+  it('P8-12 aborts the owner-stop signal on shutdown', async () => {
+    const h = createRunHarness({ maxRunning: 1 });
+    await h.start(userAmy);
+    await vi.waitFor(() => {
+      expect(h.executor.started).toHaveLength(1);
+    });
+    const execution = h.executor.started[0];
+
+    const closing = h.queue.shutDown();
+    h.executor.settle(execution?.run.id ?? '', { endState: 'Interrupted' });
+    await closing;
+
     expect(execution?.ownerStop?.aborted).toBe(true);
   });
 });

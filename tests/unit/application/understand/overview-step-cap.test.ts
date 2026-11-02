@@ -99,3 +99,33 @@ describe('overviewStep after a cap and then the owner Stop', () => {
     expect(overview.state).toBe('unavailable');
   });
 });
+
+describe('overviewStep with an owner Stop in flight', () => {
+  it('P8-12 cancels an overview call that is in flight when the owner presses Stop', async () => {
+    const capped = new AbortController();
+    capped.abort(new RosettaError(ERROR_CODES.budgetCapReached));
+    const owner = new AbortController();
+    let started: () => void = () => undefined;
+    const inFlight = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    const provider = new Answers(() => answer(goodOverviewAnswer));
+    provider.complete = (request: LlmRequest) => {
+      provider.requests.push(request);
+      started();
+      return new Promise((_resolve, reject) => {
+        request.signal.addEventListener('abort', () => {
+          reject(new DOMException('aborted', 'AbortError'));
+        });
+      });
+    };
+    const written = run(capped.signal, provider, owner.signal);
+
+    await inFlight;
+    owner.abort();
+    const overview = await written;
+
+    expect(provider.requests[0]?.signal.aborted).toBe(true);
+    expect(overview.state).toBe('unavailable');
+  });
+});
