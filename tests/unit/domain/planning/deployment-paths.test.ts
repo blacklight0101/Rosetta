@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { deploymentRootOf, isCiFile } from '../../../../src/domain/planning/deployment-paths.js';
+import {
+  chartFolderOf,
+  deploymentRootOf,
+  isCiFile,
+} from '../../../../src/domain/planning/deployment-paths.js';
 
 // P8-06, RF-601: deployment material read from the path alone, by exact anchored names; a folder
 // with a manifest is a module, never deployment; a CI file is named apart, not counted.
@@ -66,4 +70,16 @@ describe('isCiFile', () => {
       expect(isCiFile(path)).toBe(false);
     },
   );
+});
+
+describe('Helm charts by their Chart.yaml', () => {
+  it('RF-601 everything under a chart folder ships, whatever the folder is called', () => {
+    const charts = new Set([chartFolderOf('mychart/Chart.yaml') ?? '']);
+
+    expect(deploymentRootOf('mychart/templates/d.yaml', new Set(), charts)).toBe('mychart');
+    expect(deploymentRootOf('mychart/values.yaml', new Set(), charts)).toBe('mychart');
+    expect(deploymentRootOf('other/values.yaml', new Set(), charts)).toBeUndefined();
+    expect(chartFolderOf('charts/web/Chart.yaml')).toBe('charts/web');
+    expect(chartFolderOf('charts/web/values.yaml')).toBeUndefined();
+  });
 });

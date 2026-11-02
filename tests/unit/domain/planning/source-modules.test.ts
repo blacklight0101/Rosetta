@@ -72,7 +72,9 @@ describe('sourceModules: edge cases', () => {
   it('RF-601 a scan with no manifest and no deployment file has no module', () => {
     const found = sourceModules([entry('src/a.cs', 10)], []);
 
-    expect(found).toEqual({ modules: [], overCap: [], notModules: [], ciFiles: [] });
+    expect(found).toMatchObject({ modules: [], overCap: [], notModules: [], ciFiles: [] });
+    expect(found.deployment).toBeUndefined();
+    expect(found.deploymentLike ?? []).toEqual([]);
   });
 
   it('RF-601 a manifest at the root is the module `.`, and a nested one takes its own files', () => {
@@ -166,5 +168,81 @@ describe('sourceModules: CI files', () => {
 
     expect(found.deployment).toBeUndefined();
     expect(found.ciFiles).toEqual(['.github/workflows/test.yml']);
+  });
+});
+
+describe('sourceModules: one-word test projects (P8-06 delta verifier)', () => {
+  const manifest = { artefactKinds: ['manifest' as const] };
+
+  it('RF-601 a test project named by a test word or a CamelCase Tests suffix is no module', () => {
+    const files = [
+      entry('IntegrationTests/IntegrationTests.csproj', 1, manifest),
+      entry('UnitTests/UnitTests.csproj', 1, manifest),
+      entry('OrderServiceTests/OrderServiceTests.csproj', 1, manifest),
+      entry('src/Api/ApiSpecs.csproj', 1, manifest),
+      entry('Contest.Web/Contest.Web.csproj', 1, manifest),
+      entry('Attestation/Attestation.csproj', 1, manifest),
+      entry('TestHarness.App/TestHarness.App.csproj', 1, manifest),
+    ];
+
+    const found = sourceModules(files, []);
+
+    expect(found.modules.map((each) => each.path)).toEqual([
+      'Attestation',
+      'Contest.Web',
+      'TestHarness.App',
+    ]);
+    expect(found.notModules?.map((each) => each.path)).toEqual([
+      'IntegrationTests',
+      'OrderServiceTests',
+      'UnitTests',
+      'src/Api',
+    ]);
+  });
+});
+
+describe('sourceModules: Helm charts and deploy folders (P8-06 delta verifier)', () => {
+  const manifest = { artefactKinds: ['manifest' as const] };
+
+  it('RF-601 a Helm chart is deployment by its Chart.yaml, whatever its folder is called', () => {
+    const files = [
+      entry('mychart/Chart.yaml', 1),
+      entry('mychart/values.yaml', 1),
+      entry('mychart/templates/d.yaml', 1),
+      entry('charts/web/Chart.yaml', 1),
+      entry('charts/web/templates/d.yaml', 1),
+    ];
+
+    const found = sourceModules(files, []);
+
+    expect(found.deployment?.paths).toEqual(['charts/web', 'mychart']);
+    expect(found.deployment?.files).toBe(5);
+    expect(found.deploymentLike).toEqual([]);
+  });
+
+  it('RF-601 a deploy folder with a package.json and no code is deployment, with code a named module', () => {
+    const scripts = [entry('deploy/package.json', 1, manifest), entry('deploy/run.sh', 1)];
+    const coded = [entry('deployment/package.json', 1, manifest), entry('deployment/index.js', 1)];
+
+    const plain = sourceModules(scripts, []);
+    const withCode = sourceModules(coded, []);
+
+    expect(plain.modules).toEqual([]);
+    expect(plain.deployment?.paths).toEqual(['deploy']);
+    expect(withCode.modules.map((each) => each.path)).toEqual(['deployment']);
+    expect(withCode.deployModules).toEqual(['deployment']);
+  });
+
+  it('RF-601 a deployment-like file counted nowhere is named, never lost in silence', () => {
+    const files = [
+      entry('App/App.csproj', 1, manifest),
+      entry('App/deploy/settings.yaml', 1),
+      entry('infra/main.tf', 1),
+      entry('App/Program.cs', 1),
+    ];
+
+    const found = sourceModules(files, []);
+
+    expect(found.deploymentLike).toEqual(['App/deploy/settings.yaml', 'infra/main.tf']);
   });
 });

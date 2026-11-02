@@ -77,3 +77,23 @@ describe('checks.md: the modules of the source', () => {
     expect(found).toContain('| .github/workflows/test.yml | A CI file');
   });
 });
+
+describe('checks.md: the paths not counted, capped', () => {
+  it('RF-601 lists 20 CI files and an "and N more" row, and names deployment-like files and deploy modules', () => {
+    const ciFiles = Array.from({ length: 25 }, (_, at) => `.github/workflows/w${String(at)}.yml`);
+    const listed = {
+      ...{ modules: [], overCap: [], ciFiles },
+      deploymentLike: ['infra/main.tf'],
+      deployModules: ['deployment'],
+    };
+
+    const checks = plain(checksOf({ modules: listed }));
+
+    const found = checks.split(/^## /mu).find((part) => part.startsWith('Folders and files')) ?? '';
+    expect(found).toContain('| .github/workflows/w19.yml | A CI file');
+    expect(found).not.toContain('w20.yml');
+    expect(found).toContain('| and 5 more CI files | A CI file');
+    expect(found).toContain('| infra/main.tf | It looks like deployment');
+    expect(found).toContain('| deployment | A deploy folder with a package manifest and code');
+  });
+});

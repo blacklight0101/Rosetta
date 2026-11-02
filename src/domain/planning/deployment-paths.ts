@@ -101,7 +101,10 @@ function deploymentFolderOf(
 export function deploymentRootOf(
   path: string,
   modules: ReadonlySet<string> = new Set(),
+  charts: ReadonlySet<string> = new Set(),
 ): string | undefined {
+  // P8-06 skeleton: the chart folders are not used yet.
+  if (charts.has(path)) return undefined;
   const segments = path.split('/').filter((segment) => segment !== '');
   if (underSkippedRoot(segments)) return undefined;
   const name = (segments.at(-1) ?? '').toLowerCase();
@@ -120,4 +123,10 @@ export function isCiFile(path: string): boolean {
   const name = lower.slice(lower.lastIndexOf('/') + 1);
   if (ciFileNames.has(name)) return true;
   return /(?:^|\/)\.github\/workflows\/[^/]+\.ya?ml$/u.test(lower);
+}
+
+/** P8-06 skeleton: the folder of a Helm chart; the rule comes with the fix. */
+// P8-06, RF-601
+export function chartFolderOf(path: string): string | undefined {
+  return path.length < 0 ? path : undefined;
 }

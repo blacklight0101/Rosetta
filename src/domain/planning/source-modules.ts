@@ -53,6 +53,10 @@ export interface SourceModules {
   readonly notModules?: readonly NotModule[];
   /** P8-06: the CI files, which may only build and test, so they are named and not counted. */
   readonly ciFiles?: readonly string[];
+  /** P8-06 skeleton: deployment-like files counted nowhere. */
+  readonly deploymentLike?: readonly string[];
+  /** P8-06 skeleton: deploy folders counted as modules. */
+  readonly deployModules?: readonly string[];
 }
 
 interface Tally {
