@@ -11,12 +11,12 @@ import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
 import { fixtureZip, uploadFromNewProject } from '../support/zip-journey.js';
 
-// RF-432, RF-435, RF-434, DEC-206, P8-03, EV-84: the pause is real. A journey approved at 110% of
+// RF-432, RF-435, RF-434, DEC-206, P8-03, EV-84: the pause is real. A journey approved at 120% of
 // the real spend of its first run (the recorded run of the fake provider) cannot pay for a second
 // understand step: that step takes what is left of the journey as its line, pauses at it
 // ("Waiting for your approval"), Continue (+N) lets it go on, and Stop here ends it "Cap reached".
 // The second step is started through the run-start API, which keeps its stage parameter for the
-// evaluation tools (ADR-027); the journey amount is the row Analyse writes, set to 110% of the spend.
+// evaluation tools (ADR-027); the journey amount is the row Analyse writes, set to 120% of the spend.
 
 const runUuidOf = (url: string): string => {
   const found = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/u.exec(url);
@@ -35,13 +35,13 @@ async function analyse(page: Page): Promise<string> {
   return runUuidOf(page.url());
 }
 
-/** Approves the journey at 110% of the first run's spend, starts a second step and opens it. */
+/** Approves the journey at 120% of the first run's spend, starts a second step and opens it. */
 async function pausedSecondStep(page: Page): Promise<void> {
   const first = await analyse(page);
   const spent = await spentTokensOf(first);
   expect(spent).toBeGreaterThan(0);
   expect(
-    await approveJourneyAt(first, { tokens: Math.ceil(spent * 2.1), costMicros: 5_000_000 }),
+    await approveJourneyAt(first, { tokens: Math.ceil(spent * 2.2), costMicros: 5_000_000 }),
   ).toBe(1);
 
   const session = z

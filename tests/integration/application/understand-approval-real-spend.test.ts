@@ -9,16 +9,24 @@ import {
   type UnderstandHarness,
 } from '../../support/understand-run-harness.js';
 
-// RF-432, RF-435, DEC-206, P8-03, EV-84: a run approved at 110% of the spend of the same recorded
+// RF-432, RF-435, DEC-206, P8-03, EV-84: a run approved at 120% of the spend of the same recorded
 // run (the fake provider) pauses at that line instead of running past it; Continue (+N) adds half
 // of the approved amount, and Stop here ends the run `CapReached`.
 
 const temp = useTempRoot('rosetta-understand-real-spend-');
 const areas = ['Catalog', 'Services'];
 
+// Output limits as the hosted models offer them: the last calls reserve their whole output.
+const LARGE_OUTPUT = 64_000;
+
 const roomy = understandSettings((settings) => ({
   ...settings,
-  roles: { ...settings.roles, verifier: { ...settings.roles.verifier, maxOutputTokens: 32_768 } },
+  roles: {
+    ...settings.roles,
+    reader: { ...settings.roles.reader, maxOutputTokens: LARGE_OUTPUT },
+    verifier: { ...settings.roles.verifier, maxOutputTokens: LARGE_OUTPUT },
+    summariser: { ...settings.roles.summariser, maxOutputTokens: LARGE_OUTPUT },
+  },
   budget: { ...settings.budget, run: { maxCostMicros: 50_000_000, maxTokens: 5_000_000 } },
 }));
 
@@ -35,10 +43,10 @@ async function harnessWith(settings: ProjectSettings): Promise<UnderstandHarness
 
 const spentOf = (run: Run): number => run.totals.inputTokens + run.totals.outputTokens;
 
-/** The paused run, its line (110% of the recorded run's spend) and the harness it paused in. */
+/** The paused run, its line (120% of the recorded run's spend) and the harness it paused in. */
 async function pausedAttenPercentOver() {
   const measured = await (await harnessWith(roomy)).understand({ areas });
-  const line = Math.ceil(spentOf(measured) * 1.1);
+  const line = Math.ceil(spentOf(measured) * 1.2);
   const h = await harnessWith(roomy);
   const paused = await h.understand({
     areas,
@@ -47,7 +55,7 @@ async function pausedAttenPercentOver() {
   return { h, paused, line, measured };
 }
 
-describe('RF-432 a run approved at 110% of the real spend', UNDERSTAND_TIMEOUT, () => {
+describe('RF-432 a run approved at 120% of the real spend', UNDERSTAND_TIMEOUT, () => {
   it('RF-432 P8-03 pauses at the line, before it has spent more than it was approved', async () => {
     const { paused, line, measured } = await pausedAttenPercentOver();
 
