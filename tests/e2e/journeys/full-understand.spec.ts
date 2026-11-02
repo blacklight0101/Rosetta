@@ -51,9 +51,9 @@ async function chooseNotToDeepen(page: Page): Promise<void> {
   const turn = page.getByRole('region', { name: 'Your turn' });
   await expect(turn.getByTestId('deepen-first')).toContainText('Deepen this run first');
   await expect(turn.getByTestId('deepen-first')).toContainText('uses the answers given before it');
-  await expect(
-    journeyOf(page).getByRole('button', { name: 'Deepen this run first' }),
-  ).toBeVisible();
+  await expect(journeyOf(page).getByRole('button', { name: /Deepen/u })).toHaveCount(0);
+  await expect(journeyOf(page)).toContainText('use the Deepen button in Your turn');
+  await expect(page.getByRole('button', { name: /^Deepen this run/u })).toHaveCount(1);
   await expect(turn.getByRole('button', { name: /^Answer / })).toHaveCount(0);
   await turn.getByRole('button', { name: 'Do not Deepen: answer the questions now' }).click();
   await expect(turn.getByTestId('deepen-first')).toHaveCount(0);
