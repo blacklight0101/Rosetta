@@ -1,9 +1,9 @@
 import { gapRequirementNotes, gapRequirements } from './gap-requirements.js';
 import type { LeftOutCard } from './left-out-card.js';
+import { sourcesWithModules } from './module-coverage.js';
 import { planId, type PlanContent, type PlanTask } from './plan-content.js';
 import type { CoverageDocuments } from './plan-coverage.js';
 import type { RequirementNote } from './requirement-notes.js';
-import { sourcesOfItems } from './requirement-alignment.js';
 
 // P8-02, RF-607, RF-627, ADR-018: under SDD a package card that named no requirement of the plan
 // is kept until its cards are linked to the items they build, and then takes its requirements from
@@ -89,7 +89,7 @@ export function settleDerivedRequirements(
   documents: CoverageDocuments,
 ): SettledRequirements {
   if (!content.tasks.some((task) => task.derives !== undefined)) return { content, leftOut: [] };
-  const itemSources = sourcesOfItems(documents);
+  const itemSources = sourcesWithModules(documents);
   const gone = new Set<string>();
   const leftOut: LeftOutCard[] = [];
   const notes: RequirementNote[] = [];

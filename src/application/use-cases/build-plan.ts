@@ -15,6 +15,7 @@ import type { PlanMessageInput } from '../plan/plan-message.js';
 import { planDocuments } from '../plan/plan-documents.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
 import { planScanFacts } from '../plan/plan-scan-facts.js';
+import { planSourceModules } from '../plan/plan-source-modules.js';
 import type { PlanSecretDependencies } from '../plan/plan-secrets.js';
 import { planProposal } from '../plan/plan-proposal.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
@@ -178,15 +179,18 @@ export class BuildPlan implements RunExecutor {
     };
     const gapping = { ...linking, prompt: prompts.gap, agentTaskId: 'planner-gap' };
     const specificationDriven = inputs.brief.principles.includes(methodPrinciples.sdd);
+    // P8-06: the modules of the scan are covered by the task cards like the documents' items.
+    const modules = await planSourceModules(deps, inputs, input.cards);
     const links = await planLinks(
       { coverage: linking, gap: gapping, repairPrompt: prompts.gapRepair, specificationDriven },
-      { content: assembly.content, documents },
+      { content: assembly.content, documents: { ...documents, modules } },
     );
     const covered = links.planned;
     for (const message of links.warnings) await warn(message);
     const facts = await planScanFacts(deps, inputs, prompts.secretRisk.text);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
-      ...{ ...documents, ...facts, examples, proposal },
+      ...{ ...documents, ...facts, examples, proposal, modules },
+      moduleReasons: links.moduleReasons,
       leftOut: [
         ...leftOutItems({ ...assembly, dataModelProblems: documents.dataModelProblems }),
         ...links.leftOut,

@@ -39,3 +39,5 @@ licence. No real provider was called. The text of the answers describes the synt
 `tests/fixtures/repos/`, which were also written for this repository. Each file says so in its `description` field.
 
 Nothing here comes from the owner's employer (DEC-03).
+
+`planner-gap-eshop-modules.json` is a synthetic answer to the gap call of the recorded eShopModernizing plans once the modules of the scan are items (P8-06, EV-32): one card ports the two WebForms apps, one the two WinForms clients, and one writes the deployment; the other modules get no card, so `checks.md` names them with the reason. No employer text.

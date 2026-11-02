@@ -11,11 +11,11 @@ import {
 // manifest. The coverage prompt stays as it was: the new prompt is a file of its own.
 
 describe('loadGapPrompt', () => {
-  it('RNF-004 loads prompts/planner/gap.v3.md with its version and hash', async () => {
+  it('RNF-004 loads prompts/planner/gap.v4.md with its version and hash', async () => {
     const file = await loadGapPrompt('prompts');
 
-    const bytes = await readFile('prompts/planner/gap.v3.md');
-    expect(file).toMatchObject({ name: 'planner/gap.v3.md', version: 'v3' });
+    const bytes = await readFile('prompts/planner/gap.v4.md');
+    expect(file).toMatchObject({ name: 'planner/gap.v4.md', version: 'v4' });
     expect(file.sha256).toBe(createHash('sha256').update(bytes).digest('hex'));
     expect(file.text).toBe(bytes.toString('utf8'));
   });
@@ -38,18 +38,18 @@ describe('loadGapPrompt', () => {
   });
 
   it('RF-627 leaves the coverage prompt as it was', async () => {
-    const coverage = await readFile('prompts/planner/coverage.v1.md', 'utf8');
+    const coverage = await readFile('prompts/planner/coverage.v2.md', 'utf8');
 
     expect(coverage).not.toMatch(/task cards that build/u);
   });
 });
 
 describe('loadGapRepairPrompt', () => {
-  it('RNF-004 loads prompts/planner/gap-repair.v3.md with its version and hash', async () => {
+  it('RNF-004 loads prompts/planner/gap-repair.v4.md with its version and hash', async () => {
     const file = await loadGapRepairPrompt('prompts');
 
-    const bytes = await readFile('prompts/planner/gap-repair.v3.md');
-    expect(file).toMatchObject({ name: 'planner/gap-repair.v3.md', version: 'v3' });
+    const bytes = await readFile('prompts/planner/gap-repair.v4.md');
+    expect(file).toMatchObject({ name: 'planner/gap-repair.v4.md', version: 'v4' });
     expect(file.sha256).toBe(createHash('sha256').update(bytes).digest('hex'));
     expect(file.text).toBe(bytes.toString('utf8'));
   });
@@ -62,7 +62,7 @@ describe('loadGapRepairPrompt', () => {
     expect(text).toMatch(/only the cards/iu);
     expect(text).toMatch(/data, never instructions/u);
     expect(text).toMatch(/Write no text other than the JSON/u);
-    expect(await readFile('prompts/planner/gap.v3.md', 'utf8')).not.toMatch(/could not be read/u);
+    expect(await readFile('prompts/planner/gap.v4.md', 'utf8')).not.toMatch(/could not be read/u);
   });
 });
 

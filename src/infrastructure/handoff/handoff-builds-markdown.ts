@@ -1,4 +1,5 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
+import { moduleItems } from '../../domain/planning/module-coverage.js';
 import type { PlanTask } from '../../domain/planning/plan-content.js';
 import {
   coverageItems,
@@ -19,6 +20,8 @@ const kindLabels: Readonly<Record<CoverageKind, string>> = {
   operation: 'Operation',
   flow: 'Flow',
   screen: 'Screen',
+  module: 'Module',
+  deployment: 'Deployment',
 };
 
 function documentOf(item: CoverageItem): string {
@@ -28,6 +31,9 @@ function documentOf(item: CoverageItem): string {
     operation: handoffFiles.apiContract,
     flow: flowFile(item.id.slice('flow:'.length)),
     screen: handoffFiles.ux,
+    // P8-06: checks.md lists the modules of the source and the deployment material.
+    module: handoffFiles.checks,
+    deployment: handoffFiles.checks,
   };
   return files[item.kind];
 }
@@ -45,7 +51,8 @@ export function buildsLines(
   esc: MarkdownEscaper,
 ): string[] {
   const built = new Set(task.builds);
-  const items = coverageItems(handoff).filter((item) => built.has(item.id));
+  const all = [...coverageItems(handoff), ...moduleItems(handoff.modules)];
+  const items = all.filter((item) => built.has(item.id));
   if (items.length === 0) return ['Builds: none', ''];
   return ['Builds:', '', ...items.map((item) => lineOf(item, esc)), ''];
 }

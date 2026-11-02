@@ -204,6 +204,9 @@ type PackageDocuments = PlannedDocuments &
     readonly examples: readonly string[];
     /** P5-39: what Rosetta proposed for the kind, the open stack layers and the strategy. */
     readonly proposal: PlanProposal | undefined;
+    /** P8-06: the modules of the scan and why each untouched one has no task card. */
+    readonly modules?: HandoffPackage['modules'];
+    readonly moduleReasons?: HandoffPackage['moduleReasons'];
   };
 
 /** The brief's open questions with their options, and the workbook answers when the source is one. */
@@ -279,5 +282,7 @@ export function handoffPackageOf(
     grepRules: catalogue.grepRules,
     agentModels: catalogue.agentModels,
     meaning: meaningOf(decided.content, { ...documents, sources, overruled }, catalogue),
+    ...(documents.modules === undefined ? {} : { modules: documents.modules }),
+    ...(documents.moduleReasons === undefined ? {} : { moduleReasons: documents.moduleReasons }),
   };
 }
