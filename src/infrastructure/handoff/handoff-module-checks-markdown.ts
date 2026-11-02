@@ -60,10 +60,17 @@ function rowsOf(paths: readonly string[], why: string, kind: string): string[][]
   return more > 0 ? [...listed, [`and ${String(more)} more ${kind}`, why]] : listed;
 }
 
+function notModulesOf(modules: SourceModules, reason: string): string[] {
+  return (modules.notModules ?? [])
+    .filter((each) => each.reason === reason)
+    .map((each) => each.path);
+}
+
 /** P8-06: the folders and files counted neither as a module nor as deployment, never dropped in silence. */
 function notCountedLines(modules: SourceModules, esc: MarkdownEscaper): string[] {
   const rows = [
-    ...(modules.notModules ?? []).map((each) => [each.path, notCounted[each.reason] ?? '']),
+    ...rowsOf(notModulesOf(modules, 'test'), notCounted['test'] ?? '', 'test projects'),
+    ...rowsOf(notModulesOf(modules, 'vendored'), notCounted['vendored'] ?? '', 'vendored folders'),
     ...rowsOf(modules.deployModules ?? [], notCounted['deployModule'] ?? '', 'deploy folders'),
     ...rowsOf(modules.ciFiles ?? [], notCounted['ci'] ?? '', 'CI files'),
     ...rowsOf(modules.deploymentLike ?? [], notCounted['like'] ?? '', 'deployment-like files'),
