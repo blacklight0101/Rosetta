@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 17      | 1         | 13         | 3         | 0                  | 2       | 11      | 4      | 6          | 0         |
-| **Total**                    | **507** | **119**   | **349**    | **39**    | **0**              | **228** | **255** | **24** | **268**    | **0**     |
+| P8 Evaluation fixes, round 2 | 18      | 1         | 14         | 3         | 0                  | 2       | 12      | 4      | 6          | 0         |
+| **Total**                    | **508** | **119**   | **350**    | **39**    | **0**              | **228** | **256** | **24** | **268**    | **0**     |
 
 ## Conventions for every card
 
@@ -7235,7 +7235,7 @@ never edit the same file; Depends on carries the order where they would.
 - **Size**: L
 - **Depends on**: P7-34, P7-25, P7-26
 - **Gate**: owner (DEC-204)
-- **Status**: Todo
+- **Status**: Done (#1119)
 - **Reads**: `web/src/pages/RunningBody.tsx`, `EndedBody.tsx`, `PlanNext.tsx`, the journey strip of the plan run ("Journey from code to package"), the Deepen start, the history page, RF-209, RF-1002, RF-1015, ADR-027.
 - **Do**: red tests first.
   - The journey strip shows on the project page and on every run page: each step with its state and cost, the current one marked, each one a link.
@@ -7299,7 +7299,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: L
 - **Depends on**: none
 - **Gate**: owner (Phase 8 held; DEC-204, DEC-205)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/use-cases/build-plan.ts` (`plannerOf` 262-285; `approvedAmount: undefined` at 276 with the comment "a plan run has no Continue"), `src/application/use-cases/suggest-plan-options.ts` (131), `src/application/journey/journey-budget.ts` (`stepAmountOf` 16-30), `src/application/use-cases/start-deepen.ts` (94-99, the pattern to copy), `src/application/use-cases/start-run.ts` (the plan branch; `leftOf` 255-260), `src/application/runs/run-lifecycle.ts` (125-140, how a run reads its approved amount), `src/application/use-cases/continue-run.ts` (82-90), `src/application/understand/understand-options.ts` (46, 77, 96-106), `src/infrastructure/providers/provider-factory.ts` (`approvedOf` 286-297, 261-278), `src/infrastructure/guards/budget-guard.ts` (`ApprovalPause` 223-224), `src/application/estimate/estimate-plan.ts` (`execute` 121-162), `src/application/estimate/plan-estimate-prompts.ts` (`plannedPrompts` 212-248, data-model batches 121-143), `src/application/estimate/plan-caps.ts` (`planCaps` 56-98), `src/application/estimate/journey-estimate.ts` (`PLAN_PERCENT` 24), `web/src/pages/PlanEstimateCard.tsx`, `web/src/pages/PlanNext.tsx`, `docs/adr/ADR-026-pause-and-ask-near-the-approved-amount.md`, RF-432, RF-433, RF-435, RF-613, ADR-007, ADR-027. Evidence, EV-82 (Critical): Haiku, eShop, the 371-card Deepen, project defaults ($0.50 and 2,000,000 tokens per run): `p7-haiku-eshop-plan-try1/20261102-025520-plan/events.jsonl` seq 25 `budget.capReached {scope: run-cost, capSource: project, capMicros: 500000, spentMicros: 490542}` after 9 of 14 planner calls, `run.ended CapReached RST-1600`, no package, $0.49 lost; the plan estimate of that project had `withinCaps {low: true, likely: true, high: false}` (`p7-state-haiku-eshop.json`, plan.planEstimate). The same project's understand ($0.665, 6.4M tokens) and Deepen ($0.765) ran far past the same caps under the journey amount. P7-37 follow-up: no card owned the plan run under the journey amount after P7-34 and P7-37 (RF-435 says every step).
 - **Do**: add the Given to RF-432/RF-435/RF-613 first; red tests first.
   - A plan run started from the journey (and Plan setup's options call) takes the approved amount that is left of the journey (`stepAmountOf`), records it in its manifest and builds the planner with it, so the budget guard pauses at the approved line like understand and Deepen (ApprovalPause, RF-432) instead of ending `CapReached` at the project run cap. A project with no journey (a run started by the evaluation tools) keeps the project run cap as a hard stop.
@@ -7316,7 +7316,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (Phase 8 held; DEC-176)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/planning/plan-content.ts` (`knownSources` 121-123, `requirementsOf` 131-145, `entitiesOf` 193-200, `assemblePlan` 219-262), `src/application/plan/plan-assembly.ts` (`checkedAssembly` 12-50, the warning at 39), `src/application/use-cases/build-plan.ts` (the RST-1803 branch at 146-158 and the repair at 142), `src/application/plan/plan-repair.ts` (`draftAfterRepair`), `src/application/plan/plan-answer.ts` (`ids` 46, `requirementItem` 107), `src/application/plan/plan-links.ts` (`gapRound`, `repairable`), `src/domain/planning/requirement-alignment.ts` (`sourcesOfItems` 18-42), `src/domain/planning/gap-requirements.ts`, `prompts/planner/package.v11.md` (lines 43, 53, 62, 164, 181), `prompts/planner/plan-repair.v1.md`, RF-601, RF-604, RF-627, ADR-018, DEC-176. Evidence, EV-83 (Major): Haiku AM plan try 1 (`p7-haiku-am-plan-try1/.../transcripts/planner-package.jsonl`): 14 requirements with `"sources": ["ENT-002.c4", "SCRN-002.c28"]` (claim ids), try 2 wrote card ids (`"FEAT-005", "SCRN-002"`) and passed; the log reads "14 requirement(s), 6 task card(s) ... left out" and the run failed RST-1803 at $0.011. Ollama eShop plan try 1: "24 requirement(s) ... 6 task card(s) left out", RST-1806 with 8 of 44 items unbuilt (`p7-ollama-eshop-plan-try1/.../handoff/checks.md:6-18`). Not repeatable on a retry. Related: EV-67 (new variants).
 - **Do**: add the Given to RF-604 first; red tests first.
   - A `sources` entry written as a claim id (`ENT-002.c4`) counts as its card id (`ENT-002`) when that card is supported; the same for the entity mappings and the other `sources` lists. Entries that map to nothing are still dropped and listed.
@@ -7333,7 +7333,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: L
 - **Depends on**: P8-01
 - **Gate**: owner (Phase 8 held; changes the choice of DEC-205)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/estimate/journey-estimate.ts` (`journeyEstimateOf` 82-103, `HISTORY_WORST_PERCENT` 26), `src/application/runs/approved-journey.ts` (`ceiled` 40-47, `withinCeilings` 49-57, `approvedJourneyOf` 59-71), `src/application/projects/project-settings.ts` (`MAX_RUN_COST_MICROS` and `MAX_RUN_TOKENS` 40-41, the project ceilings of $100 and 50M tokens), `src/application/runs/run-start-caps.ts` (49-52, the administrator caps), `src/application/use-cases/start-run.ts` (`approvedOf` 211-218, `leftOf` 255-260), `src/application/journey/journey-budget.ts`, `src/application/use-cases/get-journey.ts`, `src/infrastructure/guards/budget-guard.ts` (213-230), `web/src/pages/ServerKeyNote.tsx` (55), `web/src/pages/EstimateSection.tsx` (60-75), `docs/adr/ADR-026-pause-and-ask-near-the-approved-amount.md`, RF-430, RF-432, RF-434, RF-435, DEC-205. Evidence, EV-84 (Major): Haiku eShop `journey.worstCase` $314.17 / 375.9M tokens (first estimate) and $74.80 / 89.5M (second), against administrator ceilings of $4 per run and $10 per user-day and an actual spend of $2.59; Asset Manager $7.35, Invoice $1.32; Ollama eShop 186.5M tokens against 14.3M spent (`tools/p7-estimate-*.json`, state files `approved`). The approved amount is clamped only to the project constants, so the pause never triggers. EV-85 (Minor): the start page says "The run stops before any call that could pass the cap" and "Starting approves the worst case: the run asks before it goes past it", while the 2,000,000-token project cap is not applied to understand or Deepen (Haiku eShop understand ran 6.4M tokens). P7-34 follow-ups: concurrent queued steps get the same remainder (`leftOf` has no reservation, so the total can exceed the approved amount); a zero remainder gives an approved amount of `{0,0}` (pauses at once) instead of a refusal; re-pressing Analyse resets the journey spend.
 - **Do**: the owner decides first (a new DEC row with its default: show the likely figure and the lower of the worst case and the administrator ceilings, approve that); red tests first.
   - The worst case a user approves is bounded by the administrator run and day ceilings and by what the run's reservations can reach, and the estimate shows the likely figure and the ceiling beside it; a basis that moves between estimates (RST-2310) says why.
@@ -7350,7 +7350,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: none
 - **Gate**: owner (Phase 8 held; DEC-197, DEC-112)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/budget/price-table.ts` (`localKinds` 38-43), `src/application/projects/local-run-caps.ts` (`uncappedLocalRun` 17-23, `runCapsFor` 30-35), `src/infrastructure/providers/provider-factory.ts` (255-280), `src/application/runs/run-start-caps.ts` (49-52), `src/application/estimate/plan-caps.ts` (62-66), `src/application/estimate/deepen-estimate.ts`, `src/application/use-cases/start-run.ts` (`rolesNeedPrivateConfirmation`, the `ollamaHost` option), `docs/providers.md`, RF-420, RF-433, ADR-007. Evidence (P7-06 verifier, #1094): an `ollama` provider pointed at a remote paid host counts as local, so its runs would be uncapped; `run.started`, the Deepen estimate and `plan-caps` still show the project cap for an uncapped all-local run (display only); no integration test drives an all-local run to CapReached at the administrator ceiling.
 - **Do**: add the Given to RF-433 first; red tests first.
   - A provider of kind `ollama` counts as local only when its host is this machine or the configured local Ollama host; a remote host is priced and capped like a cloud provider (or refused with a plain message when it has no price).
@@ -7366,7 +7366,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (Phase 8 held; the owner chose the merge report on 2026-11-01)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/understand/open-questions.ts` (`questionWords` 19-24, `sameQuestion` 44-61, `keyOf` 63, the grouping at 85), `src/application/deepen/deepen-answers.ts` (`mergedIntoAnswered` 87-96), `src/application/answers/project-questions.ts` (81), `src/application/understand/answer-rerun.ts` (73), `src/infrastructure/cards/answers-file.ts` (78), `src/application/understand/consolidated-questions.ts` (`survivorsOf` 31, `consolidatedQuestions` 124), `src/application/report/build-report-model.ts`, `src/application/report/question-steps.ts`, `tests/unit/application/understand/` (the open-question tests), RF-243, RF-646, Q-52. Evidence, EV-57 (still present, less often; Major): Ollama eShop OQ-018 repeats the answered OQ-005 (word overlap 0.67); Haiku eShop OQ-071 repeats the answered OQ-043 (0.83) (`tools/p7-q-*-deepen.json`). P7-09 follow-ups: the run report should list every pair `sameQuestion` merged, so that a wrong merge (a subset that only adds a decisive qualifier such as "archived orders") can be spotted (owner chose the default on 2026-11-01); `keyOf` still groups by exact words within a run (a fifth comparison site off the shared rule); the Deepen reader gets all answered questions of the project, uncapped; the test pairs are synthetic and cover only the two EV-57 shapes, with no distinct-but-similar pair.
 - **Do**: red tests first, from the two real pairs of the evaluation (word-for-word, with the answers removed of names) and from three distinct-but-similar pairs that must not merge.
   - `sameQuestion` merges the two real pairs and keeps the distinct ones apart; the thresholds and the stop-word list are documented in one place; `keyOf` uses the rule.
@@ -7382,7 +7382,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: L
 - **Depends on**: P8-02
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/planning/plan-coverage.ts` (`coverageItems` 72-95, `linkTasks` 96-115, `coverageOf` 116-127), `src/domain/planning/coverage-checks.ts` (`requirementsBuiltByNoCard` 15, `sourceCardsWithNoRequirement` 43), `src/application/plan/plan-coverage.ts` (`checkedPlan` 47, `coverageWarnings` 76), `src/domain/planning/foundation-cards.ts` (the foundation cards, 211-215), `src/domain/planning/phase-closing-cards.ts`, `src/domain/planning/plan-gap.ts`, `prompts/planner/coverage.v1.md`, `prompts/planner/gap.v3.md`, `src/application/plan/plan-scan-facts.ts`, `src/application/plan/coverage-message.ts`, RF-601, RF-607, RF-627. Evidence, EV-32 (still present; Major): the eShop package has no task card for 3 or 4 of its 6 modules: Ollama about 2 of 6, Haiku about 3 of 6; the WebForms app, the WinForms client, and the Service Fabric, Kubernetes and Docker deployment have no card (`_eval/packages/eshop/p7-*-handoff.zip`, `tasks.md` and `checks.md`).
 - **Do**: add the Given to RF-601/RF-607 first; red tests first, from the scan of eShopModernizing and the two recorded plans.
   - The scan's modules (project files, deployment folders and their languages) become coverage items; a module that no task card touches is a gap card or a named entry in `checks.md` ("Modules with no task card"), under both SDD and not.
@@ -7398,7 +7398,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/planning/brief-restated.ts` (`decideOnce` 190-230), `src/domain/planning/restated-subject.ts` (`restatedBySubject` 130, `addsNothing` 74, `saysTyped` 88), `src/domain/planning/restated-words.ts`, `src/domain/planning/data-model-merge.ts` (`keyOf` 27, `united` 78, `mergedDrafts` 122), `src/domain/planning/data-model-split.ts` (the merged key 110-125), `src/domain/planning/data-model-tables.ts`, `src/domain/planning/data-model-legacy-tables.ts`, `src/application/plan/data-model-checked.ts` (`checkedModel` 53), `src/application/plan/data-model-synonyms.ts`, `src/application/plan/data-model-placeholders.ts`, `src/application/plan/plan-data-model.ts`, `prompts/planner/data-model.v5.md`, RF-608, RF-623. Evidence: EV-60 (present on Ollama, fixed on Haiku; Minor): Ollama Invoice ADR-001 restates ADR-004, Ollama AM ADR-002 restates ADR-011, Ollama eShop ADR-001..003 restate ADR-005 and ADR-013. EV-31/EV-40 (present on Ollama eShop; Minor): `data-model.md` has `catalog_item_stock` beside `catalog_items_stock`, `catalog_type_entity` and `container_group_outputs`; Haiku eShop has `catalog` beside `catalog_item`; Ollama AM is still one table. P7-32 follow-ups: the merged table keeps the first sheet's primary key and the same id may repeat across sites (a unique index on the discriminator and the key, NULL as one value, is the open choice); no integration test of the out-of-scope wiring (`planDocuments` to `planDataModel`).
 - **Do**: red tests first, from the recorded answers of the three Ollama runs.
   - A planner decision whose subject and words say what an earlier decision or the brief already decides is left out and listed in `checks.md`, including the phrasing of a small model.
@@ -7414,7 +7414,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-05
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/understand/answered-questions.ts` (`refusalOf` 8-28), `src/domain/cards/open-question-answered.ts` (`nameAnsweredByCitedLines`), `src/application/understand/third-party-questions.ts`, `src/application/understand/consolidated-questions.ts` (`consolidatedQuestions` 124), `src/application/understand/open-questions.ts` (`sameQuestion` 44), `src/domain/cards/suggested-answer.ts` (`No one` at 25), `prompts/reader/reread.v4.md`, `src/application/verifier/judge-claim.ts` (`ruleJudgement`), RF-243, RF-646. Evidence: EV-09 (still present): Ollama eShop OQ-008 and OQ-013 ask for the connection string and the publish parameters, which the source defines; Haiku Invoice OQ-003 and OQ-004 ask about the VBA source that is in the upload. EV-89 (Minor): a typo in a suggested answer ("A fixedbusiness rule of 50%", Haiku Invoice OQ-002); two questions about the same VBA source in one Deepen (OQ-003 and OQ-004); the Azure services question twice (Haiku eShop); 73 questions for one app (`tools/p7-q-haiku-inv-understand.json`, `p7-q-haiku-inv-deepen.json`, `p7-q-haiku-eshop-deepen.json`). P7-21 note: `suggested-answer.ts` refuses "No one ..." for a Who question and does not cover "In which" or "For whom".
 - **Do**: red tests first, from the listed questions.
   - A question about a name, value or file that the cited lines or the upload define is dropped and logged with its citation, by the same rule as `nameAnsweredByCitedLines`, extended to a connection string, a publish parameter and an upload's own source.
@@ -7430,7 +7430,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/planning/judged-style.ts` (`judgedStyleId` 29-40, `shortTitle` 24), `src/domain/planning/brief-decisions.ts` (the typed-style decision at 140-150), `src/infrastructure/handoff/handoff-truthful-checks-markdown.ts` (57), `src/application/plan/api-contract-message.ts` (55), `src/application/plan/ux-message.ts` (41), `src/domain/planning/stack-proposal.ts` (`stackLayers` loop 92-110, 80), `prompts/catalogue/stack-proposals.v2.yaml` (272), `src/infrastructure/handoff/handoff-trd-security.ts` (`signInWords` 28, `secretWords` 29), `src/domain/planning/brief-problems.ts` (37), `src/domain/planning/workbook-setup.ts` (20), `src/application/plan/plan-message.ts` (88), `web/src/lib/plan-setup/workbook-questions.ts`, `src/domain/planning/question-wording.ts`, `web/src/pages/PlanMethodStep.tsx` (52-70), RF-609, RF-645, RF-648..RF-650. Evidence, EV-73 (not verified through the web): via the API with the P6 body, Haiku Invoice `decisions/ADR-006.md:7` still reads "Rosetta made no recommendation"; the web path to the Plan setup save was not driven. Follow-up notes: P7-21 `judged-style.ts` matches substrings ("clean separation" picks Clean Architecture, "not layered" picks Layered); three handoff writers still use the default brief style, not `judgedStyleId`; the wording "closest to the answer" is wrong when the fallback is Rosetta's recommended style; P7-30 a vague answer stays a decided choice when the catalogue has no option for the layer or the kind is keep, and `node` and `javascript` have no catalogue options; P7-31 `signInWords` and `secretWords` may relabel unrelated controls (CSRF token, password hashing), no test masks a secret typed into `workbook.store`, `brief-problems.ts` accepts `workbook.*` keys for repository and zip briefs, and the options list of the workbook questions is hand-copied beside `question-wording.ts`.
 - **Do**: red tests first; drive the web path to the Plan setup save of a typed architecture with an end-to-end test.
   - A typed architecture keeps Rosetta's recommendation in its decision record; the three writers use `judgedStyleId`; matching is by whole words; the wording is true for both fallbacks.
@@ -7446,7 +7446,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (Phase 8 held; DEC-204)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web/src/pages/NewProjectForm.tsx` (`useCreation` 40-66, the `navigate` at 58), `web/src/pages/ZipUploadForm.tsx` (`ZipUploadForm` 143), `web/src/pages/WorkbookUploadForm.tsx`, `web/src/pages/ProjectsPage.tsx` (the form at 69, `add`), `web/src/pages/use-auto-scan.ts` (`scanAgain` 110, the source key 116-122, the card P7-34), `src/presentation/web/workbook-batch-routes.ts` (`registerState`, `/current` 112-125), `web/src/api/workbook-upload.ts` (206), `src/application/use-cases/create-project.ts` (`execute`, the `refCheck` before the find-or-insert), `src/application/runs/` (the queue and the scan stage), `src/application/use-cases/start-run.ts` (the scan branch), RF-010, RF-120, RF-160, RF-1001, RF-1108. Evidence: EV-87 (Minor): the Projects page "Upload zip" neither opens the project nor starts the scan; the user clicks "Start run" in the list, then Analyse (4 clicks plus the file; `_eval/shots/p7/journey-ollama/04a-after-upload-list.png`, URL stays `/projects`). EV-88 (Minor): every project page load logs a 404 for `GET /api/projects/:id/source/batches/current` when no batch exists (`tools/p7-ui.mjs`). EV-91 (Minor): a free scan waits in the user's single queue behind a long paid run, with no hint why (Haiku scratch project scan about 60 s; the Haiku Invoice scan sat `Queued` behind the AM Deepen). P7-22 follow-up: `create-project.ts` runs the ref check before the find-or-insert, so re-creating an existing project makes a needless GitHub call. P7-34 follow-ups: the automatic rescan after a replaced source has no unit test and, when one is already queued or running, stacks a second; no Given/When/Then for it in RF-160.
 - **Do**: add the Givens to RF-010, RF-160 and RF-1108 first; red tests first.
   - A created project (address, zip or workbooks) opens its page and starts the scan, as P7-34 describes; an address that exists opens the existing project without calling GitHub.
@@ -7462,7 +7462,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P7-35
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web/src/lib/live-run/run-stepper.ts` (`stepperOf` 154-173, the `Report` step at 157), `web/src/pages/RunStepper.tsx`, `web/src/pages/DeepenAction.tsx` (190-230, "Deepen this run"), `web/src/pages/YourTurn.tsx` (113), `web/src/pages/JourneyPlacement.tsx` (22), `src/domain/errors/codes.ts` (`privateCodeNotConfirmed` 88), `src/presentation/web/run-routes.ts` (35), `src/application/use-cases/suggest-plan-options.ts`, `web/src/pages/FailedAreas.tsx` (`useRetry`, the RST-1515 branch), `web/src/api/runs.ts`, `web/src/pages/PlanTurn.tsx` (29-48, "Try the plan again"), `web/src/pages/PlanNext.tsx` (the Completed branch), `src/application/plan/check-sections.ts`, `src/application/use-cases/read-package-checks.ts` (25), `src/application/understand/overview-step.ts`, RF-1002, RF-1015, RF-1108. Evidence: EV-90 (Minor): the finished understand run page shows "Report (waiting)" for ever and two buttons that both start a Deepen ("Deepen this run first" in the strip, "Deepen this run" in "Your turn"; `_eval/shots/p7/journey-ollama/08-understand-ended.txt`). EV-86 (Minor): Plan setup's options call refuses with a run's wording: "Start the run again and tick the private code confirmation" (RST-1521; `p7-haiku-am-plan.log` line 1). P7-38 follow-up: the consent box beside "Retry failed areas" shows only after a first RST-1515, so when the estimate call then fails no box shows and the old start-page link is gone. P7-25 follow-ups: "Try the plan again" opens Plan setup without the source run id; the end-to-end step `expectPlanFigures` covers only the ended page; the checks route sends the whole section text with no size cap and `ReadPackageChecks` has no direct test. P7-26 follow-up: `PlanNext.tsx` Completed branch with 0 Supported claims returns before the overview button, with no web test of the Completed branch.
 - **Do**: add the Givens to RF-1002 and RF-1015 first; red tests first.
   - The Report step is not shown when no report is requested; the strip and "Your turn" offer one Deepen button.
@@ -7479,7 +7479,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: none
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/budget/claim-room.ts` (`leavesOverviewRoom` 109, the 4% share), `src/application/understand/overview-step.ts` (`signalOf` 67, 82), `src/application/understand/overview-ended.ts` (`UNKNOWN` 7, 12), `src/application/use-cases/continue-run.ts` (the stored `overviewOnly` option), `src/application/understand/understand-options.ts`, `src/application/report/replay-timeline.ts`, `tests/unit/application/understand/` (the overview tests), RF-264. Evidence (P7-26 verifier, #1098): `leavesOverviewRoom` checks tokens only, not the run cost cap, and the 4% share is untested against a real overview call; `signalOf` gives an unabortable signal after a cap stop, so the owner's Stop cannot cancel the overview call; the stored `overviewOnly` option survives the run end and `ContinueRun` could reuse it; a manifest without `overviewEnded` (queued by an older build) reads as `CapReached` with 0 counts; no test for a run re-opened twice or for the prior-end record cleared on a normal Resume; `unjudgedIn` counts Proposed while `YourTurn.leftOf` counts only Unverified; the access-deepen-rows comment is stale and there is no 202 case for the overview route.
 - **Do**: red tests first.
   - `leavesOverviewRoom` checks the run cost cap as well as tokens; the overview call can be cancelled by Stop; `overviewOnly` is cleared at the run end; a missing `overviewEnded` reads as unknown, not `CapReached`.
@@ -7495,7 +7495,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (Phase 8 held; ADR-025)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `.github/workflows/scheduled-release.yml` (concurrency 31-35, `hour` 52, the cut-off 74-82), `.github/workflows/release.yml`, `tests/integration/tooling/scheduled-release-workflow.test.ts` (the Madrid-hour tests around 140-187), `docs/runbooks/deploy.md`, `docs/adr/ADR-025-develop-branch-staging-and-scheduled-release.md`, the release requirements in `docs/spec/requirements.md`. Evidence (P7-28 verifier, #1108): the cut-off trusts `commit.committer.date` (consider the PR `merged_at` if non-owner pushes to main ever become possible); `hour` and `today` come from two date calls (a midnight race); no boundary or DST test for 06:00 Madrid; a failed or cancelled Release of a sha is re-dispatched by each later slot, now also late ones; two simultaneous delayed slots can double-dispatch before the first run is listed, and `release.yml` queues (cancel-in-progress false), so it would deploy twice; GitHub keeps one pending run per concurrency group, so with 3 or more delayed slots a middle one is replaced (harmless); the ten-minute `createdAt` window also suppresses a retry of a Release that failed within 10 minutes on the same sha. Decisions made by the builder: the summer 06:07 UTC slot (08:07 Madrid) takes the late path; "that day" is the Madrid day of the run.
 - **Do**: red tests first, with the workflow's shell run against recorded `gh` output.
   - One date call gives the hour and the day; the double-dispatch is closed (the dispatch checks the listed runs again after taking the concurrency slot, or Release itself refuses a second run of one sha); a failed Release within 10 minutes is retried by the next slot.
@@ -7510,7 +7510,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: none
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/planning/foundation-cards.ts` (`withFoundationCards`, 211-215), `src/domain/planning/plan-coverage.ts` (`withMigrationCard` 166, `isMigrationCard` 128), `tests/integration/application/build-plan-migrations-card.test.ts` (73-91, 114-129), `src/application/verifier/earlier-claim.ts` (`namesClaimId` 9 and the "first/original/rejected claim" pattern), `tests/support/read-counter.ts` (`countHandle` 54-80, the P7-18 read counter), `src/domain/deepen/deepen-record.ts` (173-180) and `src/domain/runs/run.ts` (the P7-02 unread-area count), `src/domain/planning/legacy-stack.ts` (the P7-29 .NET Framework detection), DEC-202 in `docs/decision-log.md`, RF-610, RF-210. Evidence: P7-20 (#1109): the root cause of the lost migrations card (the Haiku eShop plans `ff6ffae1` and `e5638a9b`, commit e5638a9b) was never identified, and `build-plan-migrations-card.test.ts:73-91` passes without the fix because `planCoverage` adds the card whenever tables and tasks exist; the second test checks the structure only, not the unchanged `tasks.md` text; arch and knip were not run by the builder. P7-18: the read counter does not count the callback form of `fs.readFile`. P7-02: an area with zero tokens is counted as unread; older Deepen records; the e2e cap tests accept either label. P7-29: .NET Framework detection needs the project file. P7-22: `earlier-claim.ts` "first/original/rejected claim" can match domain text (a claims application); tighten the pattern. DEC-202: its "Where applied" column names P6-33 but the late-attach item was in P7-16.
 - **Do**: red tests first (the migrations test must fail without the fix).
   - Reproduce the lost migrations card from the recorded plan answers of the two runs; fix the cause, then pin it; check the unchanged `tasks.md` text.
@@ -7565,3 +7565,21 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the evaluation report and the follow-up cards it calls for.
 - **Done when**: the owner has read the report.
 - **Refs**: RNF-006, RNF-012; evaluation of 2026-11-02 (P7-19).
+
+### P8-18 - Merges take minutes, not half an hour: CI throughput and the merge queue
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P8-17
+- **Gate**: owner (asked for on 2026-11-02; changes CI and branch protection)
+- **Status**: Todo
+- **Evidence** (2026-11-02, Phase 8): about 5 merges took over 3 hours. One CI run is 17 jobs; the longest job takes 11 min (tests windows-latest), e2e shards 7-8 min, yet a run took 25-40 min wall clock because jobs waited for runners: each push to an open PR starts a full run, superseded runs held runners, and the orchestrator's merge script updated each PR from develop and waited for a fresh full run before merging (the rulesets do not require an up-to-date branch), so merges were strictly serial (~30 min each). On 2026-11-02 the script switched to merging a PR at once when GitHub reports it clean. A flaky e2e spec (`live-run-controls.spec.ts`, fixed in #1146) cost about five extra full runs.
+- **Do**: measure first (queue time vs job time per run over the last 50 runs, with `gh run view --json jobs`), then pick and apply the changes that cut wall time without losing coverage, each with the number it saves:
+  - A merge queue (GitHub merge queue on develop, `merge_group` trigger) instead of "update branch, wait, merge": PRs batch, and the full suite runs once per batch.
+  - Lighter PR runs: Windows test shards, ZAP and compose smoke on the merge queue and develop only; path filters so a docs-only PR skips the test and e2e jobs (the `changes` job already exists).
+  - Cancel a PR's in-progress run on a new push (keep RNF-001's queued list for release, scheduled release, staging and provision).
+  - Flaky tests: retry an e2e test once in CI and report a test that passed on retry as flaky (a summary line), so one flake does not cost a full run.
+  - Caches: Playwright browsers, the built web bundle and the image layers, if they are not cached yet.
+- **Delivers**: the workflow changes, the RNF-001 and workflow tests updated, a short note in `docs/runbooks/` with before/after numbers; any ruleset or merge-queue setting is written as a step for the owner (the builder does not change repository settings).
+- **Done when**: a PR's CI finishes in under 15 min wall clock when runners are free; a batch of three passed PRs merges in one queue run; no coverage is lost on develop; CI green.
+- **Refs**: RNF-001, RNF-005, ADR-025; owner request of 2026-11-02.; GitHub issue #1152

@@ -196,7 +196,7 @@ function withoutDataCards(
  * waits for the skeleton and the data access (the migrations card for the skeleton only, since the
  * data access waits for it); the cut-over waits for all the others. A plan with no phase or no task
  * is returned as it is. A planner card that has the title of a fixed card is renamed, never taken for one.
- * P6-27: with `hasData` false (no `ENT` claim and no table) the plan gets the skeleton, the harness and
+ * P6-27, P8-14: with `hasData` false (the data model has no table; an `ENT` claim alone does not count) the plan gets the skeleton, the harness and
  * the cut-over card only.
  */
 // P5-42, P6-27
