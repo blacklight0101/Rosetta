@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import { separateFrontEnd } from '../../support/api-plan-harness.js';
-import { gapRecordingOf } from '../../support/gap-plan-harness.js';
+import { gapRecordingOfAll } from '../../support/gap-plan-harness.js';
 import { plain } from '../../support/plan-method-harness.js';
 import { FixtureScans, scanOf } from '../../support/scan-shape-fixtures.js';
 import { artefactKindsOf } from '../../../src/infrastructure/scan/universal/artefact-rules.js';
@@ -26,6 +26,8 @@ const listed = scanOf({
   'src/Desk.WinForms/MainForm.cs': '// x',
   'deploy/k8s/orders.yaml': 'kind: Deployment',
   'src/Orders/Dockerfile': 'FROM x',
+  'tests/Orders.Tests/Orders.Tests.csproj': '<Project />',
+  '.github/workflows/test.yml': 'on: push',
 });
 
 // The scan tags each file with its artefact kinds (a `.csproj` is a manifest), as the real scan does.
@@ -77,15 +79,22 @@ const portCards = JSON.stringify({
       probes: [],
       files: ['Dockerfile', '.github/workflows/ci.yml'],
       dependsOn: [],
-      builds: [],
+      builds: ['deployment:source'],
     },
   ],
 });
 
-async function plannedWith(gap: string | undefined, principles?: readonly string[]) {
+/** P8-06: the same answer whose deployment card names no item and only writes new CI files. */
+const unlinkedDeployment = portCards.replace('"builds":["deployment:source"]', '"builds":[]');
+
+async function plannedWith(
+  gap: string | readonly string[] | undefined,
+  principles?: readonly string[],
+) {
+  const answers = typeof gap === 'string' ? [gap] : gap;
   const harness = {
     scans: new FixtureScans(scan),
-    ...(gap === undefined ? {} : { gapRecording: gapRecordingOf(gap) }),
+    ...(answers === undefined ? {} : { gapRecording: gapRecordingOfAll(...answers) }),
   };
   const h = await seededUxPlan(temp.path, { harness });
   if (principles !== undefined) await h.saveBrief({ ...separateFrontEnd, principles });
@@ -135,7 +144,7 @@ describe.each([
   ['under SDD', ['sdd']],
   ['without SDD', ['kiss']],
 ])('BuildPlan: the gap cards for the modules, %s', (_, principles) => {
-  it('RF-607 keeps the module card, links the deployment card by its files, and names only the module left', async () => {
+  it('RF-607 keeps the module card and the deployment card that builds it by id, and names only the module left', async () => {
     const { run, files } = await plannedWith(portCards, principles);
 
     expect(run.endState).toBe('Completed');
@@ -146,5 +155,29 @@ describe.each([
     const tasks = plain(files['tasks.md']);
     expect(tasks).toContain('[Module](checks.md) src/Admin.WebForms');
     expect(tasks).toContain('[Deployment](checks.md) source: Deployment material');
+  });
+});
+
+describe('BuildPlan: what does not count as a module or as the legacy deployment', () => {
+  it('RF-601 a card that only writes new CI and Docker files leaves the legacy deployment named in checks.md', async () => {
+    expect(unlinkedDeployment).not.toBe(portCards);
+
+    const { run, files } = await plannedWith([unlinkedDeployment, '{"tasks": []}'], ['sdd']);
+
+    expect(run.endState).toBe('Completed');
+    const section = modulesSection(files['checks.md']);
+    expect(section).toContain('Deployment material: deploy, src/Orders/Dockerfile');
+    expect(section).not.toContain('Admin.WebForms');
+  });
+
+  it('RF-601 a test project and a test-only CI workflow are named as not counted, never dropped', async () => {
+    const { files } = await plannedWith(undefined);
+
+    const checks = plain(files['checks.md']);
+    const notCounted =
+      checks.split(/^## /mu).find((part) => part.startsWith('Folders and files')) ?? '';
+    expect(notCounted).toContain('| tests/Orders.Tests | A test project');
+    expect(notCounted).toContain('| .github/workflows/test.yml | A CI file');
+    expect(modulesSection(files['checks.md'])).not.toContain('Orders.Tests');
   });
 });

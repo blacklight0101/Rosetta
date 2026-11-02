@@ -48,6 +48,10 @@ export interface SourceModules {
   /** The modules over the cap, by path; checks.md names them. */
   readonly overCap: readonly SourceModule[];
   readonly deployment?: DeploymentMaterial;
+  /** P8-06: the manifest folders that are test projects or vendored code (skeleton). */
+  readonly notModules?: readonly { readonly path: string; readonly reason: 'test' | 'vendored' }[];
+  /** P8-06: the CI files (skeleton). */
+  readonly ciFiles?: readonly string[];
 }
 
 interface Tally {

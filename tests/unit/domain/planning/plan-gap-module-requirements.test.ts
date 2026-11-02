@@ -61,13 +61,13 @@ describe('addGapTasks: module cards under SDD (P8-06)', () => {
     expect(result.leftOut.map((each) => each.field)).toEqual(['requirements']);
   });
 
-  it('RF-601 a gap card that changes deployment files builds the deployment item, named or not', () => {
-    const draft = { ...gapDraft([]), files: ['Dockerfile', 'src/app/'] };
+  it('RF-601 a gap card that only changes new CI and Docker files builds no legacy deployment', () => {
+    const draft = { ...gapDraft([]), files: ['Dockerfile', '.github/workflows/ci.yml'] };
 
     const result = addGapTasks(planOf(twoTasks()), [draft], gaps, sdd);
 
-    expect(result.leftOut).toEqual([]);
-    expect(result.content.tasks[2]?.builds).toEqual([DEPLOYMENT_ITEM]);
+    expect(result.leftOut.map((each) => each.field)).toEqual(['builds']);
+    expect(result.content.tasks).toHaveLength(2);
   });
 
   it('RF-601 without SDD a module card is kept with no requirement and no note', () => {

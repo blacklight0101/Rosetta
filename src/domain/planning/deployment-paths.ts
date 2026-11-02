@@ -51,7 +51,12 @@ function isDeploymentFile(segment: string): boolean {
  * file name is; undefined for any other path. Paths are relative with forward slashes.
  */
 // P8-06, RF-601
-export function deploymentRootOf(path: string): string | undefined {
+export function deploymentRootOf(
+  path: string,
+  modules: ReadonlySet<string> = new Set(),
+): string | undefined {
+  // P8-06 skeleton: the module folders are not used yet.
+  if (modules.has(path)) return undefined;
   const segments = path.split('/').filter((segment) => segment !== '');
   const workflows = segments.findIndex(
     (segment, at) => segment === '.github' && segments[at + 1] === 'workflows',
@@ -73,4 +78,10 @@ export function deploymentRootOf(path: string): string | undefined {
 // P8-06, RF-601
 export function isDeploymentPath(path: string): boolean {
   return deploymentRootOf(path) !== undefined;
+}
+
+/** P8-06: a CI file (skeleton; the rule comes with the fix). */
+// P8-06, RF-601
+export function isCiFile(path: string): boolean {
+  return path.length < 0;
 }

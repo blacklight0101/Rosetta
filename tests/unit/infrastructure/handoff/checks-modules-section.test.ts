@@ -4,6 +4,7 @@ import type { SourceModules } from '../../../../src/domain/planning/source-modul
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
 import { handoffOf } from '../../../support/handoff-package-fixture.js';
+import { plain } from '../../../support/plan-method-harness.js';
 
 // P8-06, RF-601, EV-32: checks.md names every module of the source and the deployment material
 // that no task card touches, with the reason; when each has a card it says so.
@@ -54,5 +55,25 @@ describe('checks.md: the modules of the source', () => {
       'Every module of the source (1) and its deployment material is touched by at least one task card.',
     );
     expect(section(plain)).toBe('');
+  });
+
+  it('RF-601 names the test, vendored and CI paths it does not count, never dropping them in silence', () => {
+    const notModules = [
+      { path: 'App.Tests', reason: 'test' as const },
+      { path: 'vendor/x', reason: 'vendored' as const },
+    ];
+    const listed = {
+      modules: [],
+      overCap: [],
+      notModules,
+      ciFiles: ['.github/workflows/test.yml'],
+    };
+
+    const checks = plain(checksOf({ modules: listed }));
+
+    const found = checks.split(/^## /mu).find((part) => part.startsWith('Folders and files')) ?? '';
+    expect(found).toContain('| App.Tests | A test project');
+    expect(found).toContain('| vendor/x | Vendored third-party code');
+    expect(found).toContain('| .github/workflows/test.yml | A CI file');
   });
 });

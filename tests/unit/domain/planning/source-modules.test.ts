@@ -72,7 +72,7 @@ describe('sourceModules: edge cases', () => {
   it('RF-601 a scan with no manifest and no deployment file has no module', () => {
     const found = sourceModules([entry('src/a.cs', 10)], []);
 
-    expect(found).toEqual({ modules: [], overCap: [] });
+    expect(found).toEqual({ modules: [], overCap: [], notModules: [], ciFiles: [] });
   });
 
   it('RF-601 a manifest at the root is the module `.`, and a nested one takes its own files', () => {
@@ -104,5 +104,67 @@ describe('sourceModules: edge cases', () => {
     expect(found.overCap.map((each) => each.path)).toEqual([
       `m${String(MAX_MODULES).padStart(3, '0')}`,
     ]);
+  });
+});
+
+describe('sourceModules: what is not a module (P8-06 verifier counter-examples)', () => {
+  const manifest = { artefactKinds: ['manifest' as const] };
+
+  it('RF-601 test projects and vendored manifests are no modules and are named with the reason', () => {
+    const files = [
+      entry('App/App.csproj', 1, manifest),
+      entry('App/Program.cs', 1),
+      entry('App.Tests/App.Tests.csproj', 1, manifest),
+      entry('src/Shop/Shop.UnitTests.csproj', 1, manifest),
+      entry('tests/unit/package.json', 1, manifest),
+      entry('vendor/x/composer.json', 1, manifest),
+      entry('wwwroot/lib/jquery/package.json', 1, manifest),
+      entry('third/pkg/package.json', 1, { ...manifest, vendored: true }),
+    ];
+
+    const found = sourceModules(files, []);
+
+    expect(found.modules.map((each) => each.path)).toEqual(['App']);
+    expect(found.notModules).toEqual([
+      { path: 'App.Tests', reason: 'test' },
+      { path: 'src/Shop', reason: 'test' },
+      { path: 'tests/unit', reason: 'test' },
+      { path: 'third/pkg', reason: 'vendored' },
+      { path: 'vendor/x', reason: 'vendored' },
+      { path: 'wwwroot/lib/jquery', reason: 'vendored' },
+    ]);
+  });
+
+  it('RF-601 a module named like a deployment word stays a module with its files', () => {
+    const files = [
+      entry('HelmetService/HelmetService.csproj', 1, manifest),
+      entry('HelmetService/Helmet.cs', 1),
+      entry('KubernetesClient/KubernetesClient.csproj', 1, manifest),
+      entry('Foo.ServiceFabric/Foo.csproj', 1, manifest),
+      entry('Foo.ServiceFabric/Service.cs', 1),
+      entry('Foo.ServiceFabric/Models/Deployment/Plan.cs', 1),
+    ];
+
+    const found = sourceModules(files, []);
+
+    expect(found.modules.map((each) => [each.path, each.files])).toEqual([
+      ['Foo.ServiceFabric', 3],
+      ['HelmetService', 2],
+      ['KubernetesClient', 1],
+    ]);
+    expect(found.deployment).toBeUndefined();
+  });
+});
+
+describe('sourceModules: CI files', () => {
+  const manifest = { artefactKinds: ['manifest' as const] };
+
+  it('RF-601 a CI workflow that may only run tests is no deployment and is named apart', () => {
+    const files = [entry('App/App.csproj', 1, manifest), entry('.github/workflows/test.yml', 1)];
+
+    const found = sourceModules(files, []);
+
+    expect(found.deployment).toBeUndefined();
+    expect(found.ciFiles).toEqual(['.github/workflows/test.yml']);
   });
 });
