@@ -27,7 +27,7 @@ function singular(word: string): string {
 export function keyOf(name: string): string {
   const lower = name.toLowerCase();
   const parts = lower.split('_');
-  return singular(parts.every((part) => part.length >= 2) ? parts.join('') : lower);
+  return parts.every((part) => part.length >= 2) ? parts.map(singular).join('') : singular(lower);
 }
 
 function unique<T>(items: readonly T[], keyed: (item: T) => string): T[] {
