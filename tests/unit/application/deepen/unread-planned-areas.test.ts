@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { unreadPlannedAreas } from '../../../../src/application/deepen/deepen-state.js';
+import {
+  plannedAreasOf,
+  unreadPlannedAreas,
+} from '../../../../src/application/deepen/deepen-state.js';
 import { endText } from '../../../../web/src/lib/journey/journey-context.js';
 import type { Area } from '../../../../src/domain/code-map/area.js';
 import { entry } from '../../../support/code-map-builders.js';
@@ -40,6 +43,33 @@ describe('unreadPlannedAreas', () => {
 
   it('P7-02 counts nothing for a run without a recorded plan', () => {
     expect(unreadPlannedAreas({ results: [] }, undefined, { areas, files })).toBe(0);
+  });
+});
+
+describe('plannedAreasOf', () => {
+  const tasks = [
+    { agentTaskId: 'reader-001', role: 'reader', area: 'src' },
+    { agentTaskId: 'verifier-001', role: 'verifier', area: 'src' },
+    { agentTaskId: 'reader-002', role: 'reader', area: 'lib' },
+  ];
+
+  it('P8-14 P7-02 takes the plan a Deepen record carried on from the run it improved', () => {
+    const manifest = { agentTasks: tasks, deepen: { plannedAreas: ['src', 'lib', 'docs'] } };
+
+    expect(plannedAreasOf(manifest as unknown as Parameters<typeof plannedAreasOf>[0])).toEqual([
+      'src',
+      'lib',
+      'docs',
+    ]);
+  });
+
+  it('P8-14 P7-02 an older Deepen record, written without a plan, falls back to its reader tasks', () => {
+    const manifest = { agentTasks: tasks, deepen: { rounds: [] } };
+
+    expect(plannedAreasOf(manifest as unknown as Parameters<typeof plannedAreasOf>[0])).toEqual([
+      'src',
+      'lib',
+    ]);
   });
 });
 

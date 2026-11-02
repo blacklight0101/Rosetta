@@ -1,9 +1,9 @@
 import type { AreaCoverage } from '../../domain/cards/area-coverage.js';
 import type { Card } from '../../domain/cards/card.js';
 import { unionCoverage } from '../../domain/cards/coverage-union.js';
-import type { Area } from '../../domain/code-map/area.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
-import { isThirdPartyFile, thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
+import { hasReadableFile } from '../../domain/code-map/readable-area.js';
+import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
 import {
   readFirstPartyFiles,
   understandingMeasures,
@@ -44,17 +44,12 @@ export function unreadPlannedAreas(
   const started = new Set(coverageEntriesOf(state).map((entry) => entry.area));
   const library = thirdPartyAreaNames(codeMap);
   const files = new Map(codeMap.files.map((file) => [file.path, file]));
-  const readable = (area: Pick<Area, 'files'>): boolean =>
-    area.files.some((path) => {
-      const file = files.get(path);
-      return file !== undefined && file.estimatedTokens > 0 && !isThirdPartyFile(file);
-    });
   return codeMap.areas.filter(
     (area) =>
       (planned ?? []).includes(area.name) &&
       !started.has(area.name) &&
       !library.has(area.name) &&
-      readable(area),
+      hasReadableFile(area, files),
   ).length;
 }
 

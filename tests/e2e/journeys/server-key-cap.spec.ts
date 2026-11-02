@@ -113,7 +113,7 @@ test(
       await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
       await startAndOpenLiveRun(page);
 
-      await expect(runStatus(page)).toContainText(/Cap reached|Partly read/u, { timeout: 90_000 });
+      await expect(runStatus(page)).toContainText(/Partly read/u, { timeout: 90_000 });
       await transitionsDone(page);
       await expectNoSeriousViolations(page);
       await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
