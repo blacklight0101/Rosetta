@@ -1,16 +1,12 @@
-import { readFile } from 'node:fs/promises';
-import { afterEach, describe, expect, it } from 'vitest';
-import { fakeGh, type FakeGh } from '../../support/fake-gh.js';
+import { describe, expect, it } from 'vitest';
 import { workflowText } from '../../support/workflow-files.js';
-import { at, keysOf, runStep, stepScript, workflowDocument } from '../../support/workflow-yaml.js';
+import { dispatched, run, scheduled, sha } from '../../support/scheduled-release-step.js';
+import { at, keysOf } from '../../support/workflow-yaml.js';
 
 // DEC-175, ADR-025: .github/workflows/scheduled-release.yml. Production deploys at 06:00
 // Europe/Madrid the morning after main changed, never on merge: two daily schedules (one of them is
 // 06:00 in Madrid, by summer or winter time) start Release on main by workflow_dispatch, once per
 // head commit of main. The step runs against a fake gh and date; nothing reaches GitHub.
-
-const scheduled = (): Promise<unknown> => workflowDocument('scheduled-release.yml');
-const sha = '0123456789abcdef0123456789abcdef01234567';
 
 describe('scheduled-release.yml trigger and permissions', () => {
   it('DEC-175 runs at 04:07, 05:07, 05:37 and 06:07 UTC (off the busy full hour) and by hand', async () => {
@@ -51,56 +47,13 @@ describe('scheduled-release.yml trigger and permissions', () => {
   });
 });
 
-let gh: FakeGh | undefined;
-afterEach(async () => {
-  await gh?.dispose();
-  gh = undefined;
-});
-
-interface Run {
-  readonly event?: string;
-  readonly hour?: string;
-  readonly enabled?: string;
-  readonly activeRuns?: string;
-  readonly slot?: string;
-  /** The merge time of the head commit of main (ISO 8601, UTC). */
-  readonly committed?: string;
-}
-
-/** Runs the one step of the job against a fake gh; returns its code, the gh calls and the summary. */
-async function run(options: Run = {}): Promise<{ code: number; calls: string[]; summary: string }> {
-  gh = await fakeGh({
-    mainSha: sha,
-    hour: options.hour ?? '06',
-    activeRuns: options.activeRuns ?? '0',
-    committed: options.committed ?? '2000-01-01T00:00:00Z',
-  });
-  const document = await scheduled();
-  const [job = ''] = keysOf(at(document, 'jobs'));
-  const summaryFile = `${gh.folder}/summary.md`;
-  const env = {
-    ...gh.env,
-    EVENT: options.event ?? 'schedule',
-    DEPLOY_ENABLED: options.enabled ?? 'true',
-    SLOT: options.slot ?? '7 5 * * *',
-    GH_REPO: 'blacklight0101/Rosetta',
-    GITHUB_STEP_SUMMARY: summaryFile,
-  };
-  const { code } = await runStep(stepScript(document, job, 'Release'), env, gh.prelude);
-  const summary = await readFile(summaryFile, 'utf8').catch(() => '');
-  return { code, calls: await gh.calls(), summary };
-}
-
-const dispatched = (calls: string[]): boolean =>
-  calls.includes('workflow run release.yml --ref main');
-
 describe('scheduled-release.yml Madrid hour', () => {
   it('DEC-175 a scheduled run at 06 in Madrid starts Release on main, asking date for Europe/Madrid', async () => {
     const result = await run({ hour: '06' });
 
     expect(result.code).toBe(0);
     expect(dispatched(result.calls)).toBe(true);
-    expect(await gh?.zones()).toEqual(['Europe/Madrid']);
+    expect(result.zones).toEqual(['Europe/Madrid']);
     expect(result.summary).toContain(sha);
   });
 
@@ -226,14 +179,15 @@ describe('scheduled-release.yml once per head commit of main', () => {
     expect(result.summary).toContain(sha);
   });
 
-  // P7-28 review: a Release dispatched seconds earlier by another slot may not be listed as queued yet,
-  // so a run created in the last ten minutes on that commit counts too.
-  it('P7-28 also counts a Release of that commit created in the last ten minutes', async () => {
+  // P8-13: a run created in the last ten minutes used to count as active even when it had failed, which
+  // stopped the next slot from retrying it. The check counts only queued, running or successful runs.
+  it('P8-13 counts no Release run by its age, so a Release that failed minutes ago is retried', async () => {
     const { calls } = await run();
     const list = calls.find((call) => call.startsWith('run list')) ?? '';
 
-    expect(list).toContain('headSha,status,conclusion,createdAt');
-    expect(list).toContain('.createdAt >= ');
+    expect(list).toContain('headSha,status,conclusion');
+    expect(list).not.toContain('createdAt');
+    expect(list).not.toContain('.createdAt');
   });
 
   it('DEC-175 starts Release again when every run of that commit failed or was cancelled', async () => {
