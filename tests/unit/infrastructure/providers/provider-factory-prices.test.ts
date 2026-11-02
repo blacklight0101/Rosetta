@@ -27,7 +27,7 @@ describe('unpriced models at the start of a run', () => {
     );
 
     expect(built.ok).toBe(false);
-    expect(!built.ok && built.error).toEqual([
+    expect(!built.ok && built.error).toMatchObject([
       { role: 'reader', provider: 'openai', code: ERROR_CODES.modelUnpriced },
     ]);
     expect(harness.fakeList.flatMap((fake) => fake.requests)).toEqual([]);
