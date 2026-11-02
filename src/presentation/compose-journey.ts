@@ -1,4 +1,5 @@
 import type { AnswersFile } from '../application/ports/answers-file.js';
+import { PgJourneyRecords } from '../infrastructure/db/pg-journey-records.js';
 import type { PriorCards } from '../application/ports/prior-cards.js';
 import type { ProjectRepository } from '../application/ports/project-repository.js';
 import type { RunEventHistory } from '../application/ports/run-events.js';
@@ -22,7 +23,10 @@ export interface JourneyParts {
   readonly answers: Pick<AnswersFile, 'questionsOf'>;
   readonly priorCards: PriorCards;
   readonly writer: OutputWriter;
-  readonly parts: { readonly masker: TextMasker };
+  readonly parts: {
+    readonly masker: TextMasker;
+    readonly pool: ConstructorParameters<typeof PgJourneyRecords>[0];
+  };
 }
 
 // RF-615
@@ -32,5 +36,7 @@ export function composeJourney(parts: JourneyParts): GetJourney {
   return new GetJourney({
     ...{ projects, runs, manifests, history: log, answers, priorCards, briefs },
     cards: keptRunCards(writer),
+    // RF-1021: the amount left of the journey record.
+    journeys: new PgJourneyRecords(parts.parts.pool),
   });
 }

@@ -199,9 +199,11 @@ export function DeepenAction(props: {
   readonly runId: string;
   /** RF-646: Deepen is the recommended next action (answers given now will be used by it). */
   readonly recommended?: boolean;
+  /** RF-1021: the panel with the estimate is open at once (the project page); nothing starts. */
+  readonly open?: boolean;
 }): JSX.Element {
   const { runId } = props;
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(props.open === true);
   if (open) {
     return (
       <Panel

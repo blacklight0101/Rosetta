@@ -272,7 +272,7 @@ describe('journeyOf: questions, brief and estimate (2)', () => {
       detail: 'Starts when you write the package',
     });
     expect(step(view, 'package')).toMatchObject({ state: 'locked', detail: 'Written by the plan' });
-    expect(view.action).toEqual({ kind: 'link', label: 'Review the estimate', href: setUp });
+    expect(view.action).toEqual({ kind: 'link', label: 'Start the plan', href: setUp });
   });
 });
 

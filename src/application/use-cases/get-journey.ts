@@ -5,8 +5,16 @@ import { supportedCards } from '../../domain/planning/plan-sources.js';
 import { isBriefOutOfDate } from '../../domain/planning/brief-freshness.js';
 import { queuePositions } from '../../domain/runs/queue-rules.js';
 import type { Run } from '../../domain/runs/run.js';
-import type { Journey, JourneyHandoff, JourneyRun, JourneySource } from '../journey/journey.js';
+import type {
+  Journey,
+  JourneyBudget,
+  JourneyHandoff,
+  JourneyRun,
+  JourneySource,
+} from '../journey/journey.js';
 import { endCodeOf, planSourceKey } from '../journey/journey-lookup.js';
+import { journeyRemaining } from '../../domain/journey/journey-record.js';
+import type { JourneyRecords } from '../ports/journey-records.js';
 import type { AnswersFile } from '../ports/answers-file.js';
 import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
 import type { PriorCards } from '../ports/prior-cards.js';
@@ -36,6 +44,8 @@ export interface GetJourneyDependencies {
   readonly cards: RunCards;
   readonly answers: Pick<AnswersFile, 'questionsOf'>;
   readonly priorCards: PriorCards;
+  /** RF-1021: the journey record of the project; without it no amount is reported. */
+  readonly journeys?: Pick<JourneyRecords, 'find'> | undefined;
 }
 
 export interface GetJourneyRequest {
@@ -114,7 +124,8 @@ export class GetJourney {
     const sources = await this.sourcesOfPlanRuns(list);
     const brief = await this.deps.briefs.read({ userId, projectId });
     const scan = list.find((run) => run.stage === 'scan' && isCompleted(run));
-    const base = { scanRunId: scan?.id ?? null, briefSaved: brief !== undefined };
+    const budget = await this.budgetOf(userId, projectId, list);
+    const base = { scanRunId: scan?.id ?? null, briefSaved: brief !== undefined, budget };
     const source = chooseSource(list, named, sources);
     if (source === undefined) return ok({ ...base, source: null, plan: null, handoff: null });
     const plan = list.find((run) => run.stage === 'plan' && sources.get(run.id) === source.runKey);
@@ -144,6 +155,23 @@ export class GetJourney {
       }
     }
     return null;
+  }
+
+  /** RF-1021: what the owner approved for the journey and what is left of it. */
+  private async budgetOf(
+    userId: string,
+    projectId: string,
+    list: readonly Run[],
+  ): Promise<JourneyBudget | null> {
+    const record = await this.deps.journeys?.find(userId, projectId);
+    if (record === undefined) return null;
+    const left = journeyRemaining(record, list);
+    return {
+      approvedMicros: record.approved.costMicros,
+      remainingMicros: left.costMicros,
+      approvedTokens: record.approved.tokens,
+      remainingTokens: left.tokens,
+    };
   }
 
   private async sourcesOfPlanRuns(list: readonly Run[]): Promise<PlanSources> {

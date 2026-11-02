@@ -23,6 +23,10 @@ import {
 /** `current` is the step that holds the next action; `upcoming` is open but not yet reached. */
 export type StepState =
   | ('done' | 'current' | 'upcoming' | 'locked' | 'failed' | 'out-of-date')
+  /** RF-1020, RF-432: the run paused near its approved amount and waits for the owner. */
+  | 'awaiting'
+  /** RF-1020: the questions were left on their defaults when the brief was saved. */
+  | 'skipped'
   /** RF-627: the package was written but some items are built by no task card. */
   | 'gaps';
 
@@ -51,12 +55,15 @@ export type { JourneyAction, JourneyLink } from './journey-action.js';
 export type { StepKey } from './journey-context.js';
 
 export interface JourneyView {
+  readonly projectId: string;
   readonly steps: readonly JourneyStep[];
   /** The one next action; none while a run works. */
   readonly action: JourneyAction | undefined;
   /** DEC-154: the way to the brief while questions are open; none otherwise. */
   readonly secondary: JourneyLink | undefined;
   readonly totalCostMicros: number;
+  /** RF-1021: what is left of the amount approved for the journey; none without a journey record. */
+  readonly left: string | undefined;
 }
 
 type Draft = Omit<JourneyStep, 'here'>;
@@ -75,6 +82,9 @@ const locked = (detail: string): Part => ({ state: 'locked', detail });
 function ofRun(run: JourneyRunFacts, completed: Part): Part {
   const phase = phaseOf(run);
   if (phase === 'completed') return completed;
+  if (phase === 'working' && run.queueState === 'AwaitingApproval') {
+    return { state: 'awaiting', detail: workingText(run), href: runPage(run) };
+  }
   if (phase === 'working')
     return { state: 'upcoming', detail: workingText(run), href: runPage(run) };
   return { state: 'failed', detail: endText(run), href: runPage(run) };
@@ -111,7 +121,7 @@ function questionsPart({ source, facts, skippedDeepen: skipped }: Context): Part
       open === 1
         ? '1 question left on its default'
         : `${String(open)} questions left on their defaults`;
-    return { state: 'done', detail: left, href };
+    return { state: 'skipped', detail: left, href };
   }
   // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by it.
   if (deepenRunning({ source, skippedDeepen: skipped })) {
@@ -213,6 +223,13 @@ const parts: readonly (readonly [StepKey, string, (c: Context) => Part])[] = [
   ['package', 'Package', packagePart],
 ];
 
+/** RF-1021: "$0.60 left of $1.00 approved". */
+function leftText(facts: JourneyFacts): string | undefined {
+  const { budget } = facts;
+  if (budget === null || budget === undefined) return undefined;
+  return `${costLabel(budget.remainingMicros)} left of ${costLabel(budget.approvedMicros)} approved`;
+}
+
 /** A step that is open and holds the next action is the current one. */
 const stateOf = (part: Part, here: boolean): StepState =>
   here && part.state === 'upcoming' ? 'current' : part.state;
@@ -239,5 +256,12 @@ export function journeyOf(
     };
   });
   const spent = (source?.costMicros ?? 0) + (plan?.costMicros ?? 0);
-  return { steps, action: next.action, secondary: next.secondary, totalCostMicros: spent };
+  return {
+    projectId,
+    steps,
+    action: next.action,
+    secondary: next.secondary,
+    totalCostMicros: spent,
+    left: leftText(facts),
+  };
 }

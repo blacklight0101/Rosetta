@@ -15,6 +15,8 @@ import { StaleCodeMapNotice } from './StaleCodeMapNotice.js';
 import { StageAreasSection } from './StageAreasSection.js';
 import { ScanSection } from './ScanSection.js';
 import { SummaryBar } from './SummaryBar.js';
+import { JourneyPanel } from './JourneyPanel.js';
+import { PlanSetupInPlace } from './PlanSetupInPlace.js';
 import { useStartForm, type StartForm } from './use-start-form.js';
 
 // RF-1001, RF-143, RF-132, RF-425, RF-1108, RF-1018, DEC-108, design-system.md section 14 (Start run): the
@@ -74,6 +76,20 @@ function Confirmation({ form }: { readonly form: StartForm }): JSX.Element | nul
       busy={actions.busy}
       onConfirm={actions.confirmation.confirm}
       onCancel={actions.confirmation.cancel}
+    />
+  );
+}
+
+/** RF-1020, RF-1021: the journey strip of the project page, with the next step in place. */
+function ProjectJourney({ form }: { readonly form: StartForm }): JSX.Element {
+  return (
+    <JourneyPanel
+      projectId={form.project.id}
+      runId={undefined}
+      refresh={form.scan.state.kind}
+      pagePath={`/projects/${form.project.id}`}
+      deepenInPlace
+      setupInPlace={(onSaved) => <PlanSetupInPlace projectId={form.project.id} onSaved={onSaved} />}
     />
   );
 }
@@ -143,6 +159,7 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
           <h1 class="rst-page__title">Start a run</h1>
           <p class="rst-settings__lead">{leadOf(form.project.sourceKind)}</p>
         </div>
+        <ProjectJourney form={form} />
         <SourceSection form={form} />
         <ScanSection form={form} />
       </div>
@@ -154,6 +171,7 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
         <h1 class="rst-page__title">Start a run</h1>
         <p class="rst-settings__lead">{leadOf(form.project.sourceKind)}</p>
       </div>
+      <ProjectJourney form={form} />
       <SourceSection form={form} />
       {form.scan.state.kind === 'failed' ? <ScanSection form={form} /> : null}
       <StaleCodeMapNotice form={form} />
