@@ -15,7 +15,7 @@ import { chooseModel, setOutputLimit } from '../support/choose-model.js';
 // user and saves the caps (the same figures as admin-users.spec.ts, so the server's month stays
 // under the banner the cost specs expect); the user signs in, stores a key, points the reader at a
 // priced model and starts a run whose cap is smaller than two calls at their worst case. The run
-// stops at the cap ("Cap reached"), keeps what was spent, and the header totals and the cost page
+// stops at the cap ("Partly read": the readers' room stops the readers before any call is refused, P7-02), keeps what was spent, and the header totals and the cost page
 // still show it (flow 4).
 
 const keptDay = '1';
@@ -88,7 +88,7 @@ test(
       await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
       await startAndOpenLiveRun(page);
 
-      await expect(runStatus(page)).toContainText(/Cap reached|Partly read/u, { timeout: 90_000 });
+      await expect(runStatus(page)).toContainText(/Partly read/u, { timeout: 90_000 });
       await transitionsDone(page);
       await expectNoSeriousViolations(page);
       await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
