@@ -249,7 +249,7 @@ legacy:
     endOfLife: true
   - name: '.NET Framework'
     languages: []
-    extensions: [asax, edmx]
+    extensions: []
     files: [packages.config, assemblyinfo.cs]
     minSignals: 2
     unless: [global.json, appsettings.json]

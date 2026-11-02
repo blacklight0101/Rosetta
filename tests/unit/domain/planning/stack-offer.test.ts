@@ -91,8 +91,7 @@ describe('stackOfferFor: .NET Framework (P8-14)', () => {
   it('P8-14 DEC-203 does not offer keeping .NET Framework for the runtime and hosting layers it names', () => {
     const framework = {
       ...dotnet,
-      extensions: ['asax'],
-      fileNames: ['packages.config', 'web.csproj', 'web.sln'],
+      fileNames: ['packages.config', 'assemblyinfo.cs', 'web.csproj', 'web.sln'],
     };
     const offer = stackOfferFor(framework, stack);
     expect(offer.find((each) => each.layer === 'language-runtime')?.keepLegacy).toBe(false);
@@ -103,6 +102,18 @@ describe('stackOfferFor: .NET Framework (P8-14)', () => {
   it('P8-14 DEC-203 a leftover packages.config alone does not show .NET Framework', () => {
     const leftover = { ...dotnet, fileNames: ['packages.config', 'web.csproj', 'program.cs'] };
     expect(stackOfferFor(leftover, stack).every((each) => each.keepLegacy)).toBe(true);
+  });
+
+  it('P8-14 DEC-203 a Web Forms project with packages.config and Global.asax keeps the option', () => {
+    const webForms = {
+      ...dotnet,
+      extensions: ['aspx', 'asax'],
+      fileNames: ['packages.config', 'global.asax', 'default.aspx'],
+    };
+    expect(stackOfferFor(webForms, stack).every((each) => each.keepLegacy)).toBe(false);
+    expect(
+      stackOfferFor(webForms, stack).find((each) => each.layer === 'language-runtime')?.keepLegacy,
+    ).toBe(true);
   });
 
   it('P8-14 DEC-203 two signals show .NET Framework unless an SDK project marker is there', () => {
