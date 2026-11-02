@@ -15,7 +15,8 @@ import { planPromptVersions, type PlanFiles } from './plan-prompts.js';
 import { resolvedSourceOf } from './resolved-source-of.js';
 
 // RNF-004: what a plan run records in its manifest before its first call: the brief, the source
-// run, the catalogue, the prompt versions, the resolved source and the code map it plans from.
+// run, the catalogue, the prompt versions, the resolved source and the code map it plans from; and
+// (RF-432, P8-01) the text of those inputs that its kept planner answers are bound to.
 
 // RNF-004
 export async function recordPlanSources(
@@ -38,4 +39,14 @@ export async function recordPlanSources(
   const codemapHash = source?.codemapHash ?? null;
   if (codemapHash !== null)
     await updates.update((manifest) => recordManifestCodeMap(manifest, codemapHash));
+}
+
+/** RF-432: the text the fingerprint of a plan run's inputs is taken from. */
+export function planInputsText(inputs: PlanInputs, files: PlanFiles): string {
+  const { brief, questions, cards, project, sourceRun } = inputs;
+  const { version, sha256 } = files.catalogue;
+  return JSON.stringify({
+    ...{ brief, questions, cards, settings: project.settings, sourceRun: sourceRun.id },
+    ...{ catalogue: { version, sha256 }, prompts: planPromptVersions(files) },
+  });
 }

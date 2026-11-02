@@ -29,13 +29,9 @@ import type { ScanResults } from '../ports/scan-results.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
-import { recordPlanSources } from '../plan/plan-record.js';
+import { planInputsText, recordPlanSources } from '../plan/plan-record.js';
 import { announcePlannerCall } from '../plan/plan-call-events.js';
-import {
-  openAnswerBook,
-  planInputsText,
-  type PlannerAnswerDependencies,
-} from '../plan/planner-answer-book.js';
+import { openAnswerBook, type PlannerAnswerDependencies } from '../plan/planner-answer-book.js';
 import { readUnderstandOptions } from '../understand/understand-options.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
 import { writeCostReport } from '../runs/run-cost-report.js';

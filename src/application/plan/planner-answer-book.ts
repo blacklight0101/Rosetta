@@ -3,8 +3,6 @@ import type { Logger } from '../ports/logger.js';
 import type { AnswerProgress, KeptAnswers, PlannerAnswers } from '../ports/planner-answers.js';
 import type { RunScope } from '../ports/run-events.js';
 import { scopeOf } from '../runs/run-scope.js';
-import type { PlanInputs } from './plan-inputs.js';
-import { planPromptVersions, type PlanFiles } from './plan-prompts.js';
 
 // RF-432, RF-006, RF-408, P8-01: the answers of one plan run, as the run goes. A plan run asks its
 // calls in the same order each time, so the n-th call of an agent task is the same call after a
@@ -112,16 +110,6 @@ export class PlannerAnswerBook {
   private save(): void {
     this.writes = this.writes.then(() => this.store.write(this.scope, this.kept));
   }
-}
-
-/** RF-432: the text the fingerprint of a plan run's inputs is taken from. */
-export function planInputsText(inputs: PlanInputs, files: PlanFiles): string {
-  const { brief, questions, cards, project, sourceRun } = inputs;
-  const { version, sha256 } = files.catalogue;
-  return JSON.stringify({
-    ...{ brief, questions, cards, settings: project.settings, sourceRun: sourceRun.id },
-    ...{ catalogue: { version, sha256 }, prompts: planPromptVersions(files) },
-  });
 }
 
 export interface PlannerAnswerDependencies {
