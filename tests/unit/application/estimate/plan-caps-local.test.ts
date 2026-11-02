@@ -45,7 +45,7 @@ async function runTokensCap(settings: ProjectSettings, ollamaHost?: string): Pro
     dependencies(ollamaHost),
     project,
     { keySource: 'none', points: { low: point, likely: point, high: point } },
-    'planner',
+    { role: 'planner' },
   );
   const cap = caps.find((one) => one.kind === 'run-tokens');
   if (cap === undefined) throw new Error('the plan caps list no run token cap');

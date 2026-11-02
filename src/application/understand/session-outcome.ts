@@ -90,9 +90,11 @@ function failuresOutcome(end: SessionEnd): RunOutcome {
  * judged (or the Deepen stopped at a cap), and completes when the overview was all that was left.
  */
 export function overviewOnlyOutcome(
-  before: OverviewEnded,
+  recorded: OverviewEnded | undefined,
   left: { readonly unjudged: number; readonly capped?: boolean },
 ): RunOutcome {
+  // P8-12: no record (a manifest queued by an older build) is unknown, not a cap with zero counts.
+  const before = recorded ?? { endState: undefined, failedAreas: 0, unreadAreas: 0 };
   const failed = before.failedAreas > 0 ? { failedAreas: before.failedAreas } : {};
   const open = before.unreadAreas > 0 || left.unjudged > 0 || left.capped === true;
   if (before.endState === 'Completed' || !open) return { endState: 'Completed', ...failed };

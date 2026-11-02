@@ -65,6 +65,13 @@ slots share one concurrency group and never cancel each other (`cancel-in-progre
 cannot both check before the first dispatch, and a Release of that commit created in the last ten minutes counts as
 active even when it is not yet listed as queued.
 
+**Amended 2026-11-02 (P8-13).** The ten-minute rule is replaced: it also stopped the next slot from retrying a Release of the
+commit that had failed within ten minutes. Now only a queued, running or succeeded Release of the head commit stops a
+start, so a failed or cancelled one is started again by the next slot. The double dispatch is closed another way: after
+dispatching, the slot waits (up to a minute) until its run is listed, and the next slot in the concurrency group starts
+only then. The Madrid hour and day come from one date call, and the 05:59, 06:00 and 07:59 edges are tested on a summer
+day, a winter day and both DST change days.
+
 ## References
 
 - DEC-175 (this decision), DEC-96 (orchestrator merges), DEC-104 (deploy from `main`), DEC-171.

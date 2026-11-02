@@ -41,6 +41,24 @@ describe('the manifest of a run', () => {
   });
 });
 
+describe('the options of a run that ends', () => {
+  it('P8-12 clears the overview-only mark and the earlier end when the run ends', async () => {
+    const h = createRunHarness();
+    const run = await h.start(userAmy);
+    const scope = h.scopeOf(run);
+    const stored = await h.manifests.read(scope);
+    if (stored === undefined) throw new Error('No manifest');
+    const ended = { endState: 'CapReached', failedAreas: 0, unreadAreas: 1 };
+    const options = { cloudConsent: true, overviewOnly: true, overviewEnded: ended };
+    await h.manifests.write(scope, { ...stored, options });
+
+    h.executor.settle(run.id, { endState: 'Completed' });
+    await h.ended(run);
+
+    expect((await h.manifests.read(scope))?.options).toEqual({ cloudConsent: true });
+  });
+});
+
 describe('the source of a run', () => {
   it('RF-126 records the commit and the snapshot of the source once it is resolved', async () => {
     const h = createRunHarness();
