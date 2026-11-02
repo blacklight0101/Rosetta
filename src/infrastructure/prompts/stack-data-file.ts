@@ -79,6 +79,9 @@ const legacySchema = z.strictObject({
   name: z.string().trim().min(1).max(80),
   languages: z.array(word).max(10).default([]),
   extensions: z.array(word).max(10).default([]),
+  files: z.array(word).max(10).default([]),
+  minSignals: z.number().int().min(1).max(5).default(1),
+  unless: z.array(word).max(10).default([]),
   layers: z.array(layer).max(7),
   endOfLife: z.boolean(),
 });

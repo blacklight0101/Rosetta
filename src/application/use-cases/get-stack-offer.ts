@@ -72,6 +72,7 @@ export class GetStackOffer {
         kind: facts.detected?.kind ?? 'web',
         languages: facts.languages,
         extensions: facts.extensions,
+        fileNames: facts.fileNames,
         workbook: false,
       };
     } catch {

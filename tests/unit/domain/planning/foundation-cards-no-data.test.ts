@@ -15,10 +15,6 @@ import { planTask } from '../../../support/task-card-fixtures.js';
 // card only. No card depends on a card that was dropped, and the ids stay in one sequence.
 
 const tables = targetModel().tables;
-const claims = [
-  { claimId: 'ENT-001.c1', text: 'A table.', citations: [], status: 'Supported' },
-] as const;
-const entity = { type: 'ENT', claims } as const;
 const dropped = [foundationTitles.access, foundationTitles.migration];
 
 function dataless(
@@ -30,23 +26,11 @@ function dataless(
 
 describe('hasData', () => {
   it('P6-27 a run with a table has data', () => {
-    expect(hasData([], tables)).toBe(true);
+    expect(hasData(tables)).toBe(true);
   });
 
-  it('P6-27 a run with an ENT card that holds a claim has data even before a table exists', () => {
-    expect(hasData([entity], [])).toBe(true);
-  });
-
-  it('P6-27 a run with no table and no ENT claim has none, whatever its other cards say', () => {
-    expect(
-      hasData(
-        [
-          { type: 'FEAT', claims },
-          { type: 'ENT', claims: [] },
-        ],
-        [],
-      ),
-    ).toBe(false);
+  it('P8-14 P6-27 a run with an ENT claim and no table has none: the migrations card needs a table', () => {
+    expect(hasData([])).toBe(false);
   });
 });
 

@@ -1,4 +1,5 @@
 import type { CodeMap } from '../../domain/code-map/code-map.js';
+import { hasReadableFile } from '../../domain/code-map/readable-area.js';
 import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
 import type { RunCoverage } from './run-coverage.js';
 import type { ReaderTask } from './reader-tasks.js';
@@ -23,5 +24,7 @@ export function recordUnread(
   const skipped = tasks.filter((task) => !ends.has(task.agentTaskId));
   for (const task of skipped) coverage.recordNotRead(task, scanned.codeMap);
   const library = thirdPartyAreaNames(scanned.codeMap);
-  return skipped.filter((task) => !library.has(task.area.name)).length;
+  const files = new Map(scanned.codeMap.files.map((file) => [file.path, file]));
+  return skipped.filter((task) => !library.has(task.area.name) && hasReadableFile(task.area, files))
+    .length;
 }

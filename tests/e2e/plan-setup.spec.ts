@@ -84,7 +84,10 @@ test('RF-609 the stack step has two options for each of the seven layers and a f
 
   const layers = page.getByRole('radiogroup');
   await expect(layers).toHaveCount(7);
-  await expect(layers.first().getByRole('radio')).toHaveCount(4, { timeout: 20_000 });
+  // DEC-203: the demo is .NET Framework (end of life), so its language layer does not offer keeping it;
+  // the database layer is not end of life and still has the two proposals, keep and your own.
+  await expect(layers.first().getByRole('radio')).toHaveCount(3, { timeout: 20_000 });
+  await expect(layers.nth(3).getByRole('radio')).toHaveCount(4);
   await expect(page.getByLabel('Your own for Hosting')).toBeVisible();
   await layers.nth(3).getByRole('radio').last().check();
   await expectNoSeriousViolations(page);

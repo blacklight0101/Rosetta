@@ -1,6 +1,6 @@
 import { stackLayers, type ApplicationKind, type StackLayer } from './planning-brief.js';
 import { vagueMatch } from './vague-choice.js';
-import type { StackData, StackOption, VagueWords } from './stack-data.js';
+import type { LegacyTechnology, StackData, StackOption, VagueWords } from './stack-data.js';
 
 // P7-29, RF-609, RF-645, DEC-172, DEC-203: what Plan setup offers for each stack layer before the
 // planner is asked, from the catalogue alone (no code leaves the machine). The two proposals are the
@@ -35,6 +35,8 @@ export interface OfferInput {
   readonly languages: readonly string[];
   /** Every file extension of the code map (see `LegacyFacts`). */
   readonly extensions: readonly string[];
+  /** P8-14: the lower-case base names of the files of the code map (see `LegacyFacts`). */
+  readonly fileNames?: readonly string[];
   /** The source is Excel workbooks. */
   readonly workbook: boolean;
 }
@@ -66,13 +68,28 @@ export function platformOptions(
   return matchingOptions(stack, kind, layer, languages);
 }
 
+/** P8-14: the signals of a legacy technology the code map shows, each counted once. */
+function signalsOf(each: LegacyTechnology, input: OfferInput): number {
+  const names = input.fileNames ?? [];
+  return (
+    each.languages.filter((id) => input.languages.includes(id)).length +
+    each.extensions.filter((extension) => input.extensions.includes(extension)).length +
+    each.files.filter((name) => names.includes(name)).length
+  );
+}
+
+function shown(each: LegacyTechnology, input: OfferInput): boolean {
+  const names = input.fileNames ?? [];
+  if (each.unless.some((name) => names.includes(name))) return false;
+  return signalsOf(each, input) >= each.minSignals;
+}
+
 function endOfLife(stack: StackData, layer: string, input: OfferInput): boolean {
   return stack.proposals.legacy.some(
     (each) =>
       each.endOfLife &&
       (each.layers.length === 0 || each.layers.includes(layer)) &&
-      (each.languages.some((id) => input.languages.includes(id)) ||
-        each.extensions.some((extension) => input.extensions.includes(extension))),
+      shown(each, input),
   );
 }
 
