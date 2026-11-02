@@ -88,15 +88,13 @@ describe('twin tables, keys and few shared columns', () => {
 describe('the key of a merged table', () => {
   const same = ['ap_id', 'label', 'model', 'install_date'];
 
-  it('RF-623 keeps ids that repeat across sites apart when one sheet has no suffix', () => {
+  it('RF-623 puts a non-null site in the primary key when one sheet has no suffix', () => {
     const [table] = tablesOf([
       sheet('phone_inventory', same, { primaryKey: ['ap_id'] }),
       sheet('phone_inventory_site_a', same, { primaryKey: ['ap_id'] }),
     ]);
 
-    expect(table?.primaryKey).toEqual([]);
-    expect(table?.indexes).toContainEqual(
-      expect.objectContaining({ columns: ['site', 'ap_id'], unique: true }),
-    );
+    expect(table?.primaryKey).toEqual(['site', 'ap_id']);
+    expect(table?.columns.find((each) => each.name === 'site')?.nullable).toBe(false);
   });
 });

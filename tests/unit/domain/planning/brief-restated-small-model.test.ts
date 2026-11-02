@@ -90,3 +90,35 @@ describe('decideOnce: a text that gives a reason after the choice', () => {
     ).toEqual([]);
   });
 });
+
+describe('decideOnce: a reason that adds a component', () => {
+  it('RF-608 keeps a text whose "which" clause adds an event bus and a cache', () => {
+    expect(
+      restatedTitles(layered, [
+        decision(
+          'Architecture Style Adoption',
+          'Adopt layered, which includes an event bus and a Redis cache.',
+        ),
+      ]),
+    ).toEqual([]);
+  });
+
+  it('RF-608 keeps a text whose "ensuring" clause adds a command bus', () => {
+    expect(
+      restatedTitles(layered, [
+        decision(
+          'Architecture Style Adoption',
+          'Use layered architecture, ensuring every write goes through a CQRS command bus.',
+        ),
+      ]),
+    ).toEqual([]);
+  });
+
+  it('RF-608 keeps a title that adopts the style when the text adds a saga orchestrator', () => {
+    expect(
+      restatedTitles(layered, [
+        decision('Adopt a Layered Approach', 'Long workflows run in a saga orchestrator.'),
+      ]),
+    ).toEqual([]);
+  });
+});

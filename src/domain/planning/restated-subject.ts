@@ -33,10 +33,21 @@ const reasonWords = new Set([
   ...['because', 'since', 'which', 'whereas', 'ensuring', 'ensure', 'allowing', 'enabling'],
 ]);
 
-/** The words of a decision text up to its reason: "adopt layered because it is simple" is "adopt layered". */
+/** Words that bring a part into a clause: after one of them the reason adds a pattern, tool or component. */
+const bringsIn = new Set([
+  ...['include', 'includes', 'including', 'with', 'via', 'through', 'using', 'plus', 'adding'],
+  ...['add', 'adds', 'contains', 'containing', 'run', 'runs', 'uses', 'such', 'like'],
+]);
+
+/**
+ * The words of a decision text up to its reason: "adopt layered because it is simple" is "adopt
+ * layered". A reason that brings in a part ("which includes an event bus") is a decision of its
+ * own, so the text is not cut and adds that part.
+ */
 function beforeReason(words: Words): Words {
   const at = words.findIndex((word) => reasonWords.has(word));
-  return at < 0 ? words : words.slice(0, at);
+  if (at < 0) return words;
+  return words.slice(at).some((word) => bringsIn.has(word)) ? words : words.slice(0, at);
 }
 
 const subjectWords: Readonly<Record<Subject, readonly string[]>> = {
@@ -149,15 +160,22 @@ export function restatedBySubject(title: string, text: string, names: BriefNames
 
 /**
  * P8-07, EV-60: a title that begins with a choosing verb and only names the style or the strategy of
- * the brief ("Adopt a Layered Approach") says it again. A word that is not a name or filler keeps it.
+ * the brief ("Adopt a Layered Approach") says it again, unless the title or the text adds a word that
+ * is not a name or filler.
  */
-export function namingChoice(title: string, names: BriefNames): 'style' | 'migration' | undefined {
+export function namingChoice(
+  title: string,
+  text: string,
+  names: BriefNames,
+): 'style' | 'migration' | undefined {
   const words = wordsOf(title);
   if (!choosingVerbs.includes(words[0] ?? '')) return undefined;
   const subjects = ['style', 'migration'] as const;
+  const body = beforeReason(wordsOf(text));
   return subjects.find(
     (subject) =>
       names[subject].some((phrase) => hasPhrase(words, phrase)) &&
-      addsNothing(words, names[subject], false),
+      addsNothing(words, names[subject], false) &&
+      (body.length === 0 || addsNothing(body, names[subject], false)),
   );
 }

@@ -159,7 +159,7 @@ function restates(
   if (sayingTyped(decision.title, brief.typedStyle, brief.style)) return { kind: 'style' };
   if (sayingTyped(decision.title, brief.typedMigration, brief.migration))
     return { kind: 'migration' };
-  const naming = namingChoice(decision.title, brief);
+  const naming = namingChoice(decision.title, decision.decision, brief);
   if (naming !== undefined) return { kind: naming };
   const found = restatedBySubject(decision.title, decision.decision, brief);
   if (found === undefined) return undefined;

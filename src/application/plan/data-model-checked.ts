@@ -33,12 +33,8 @@ function mergeNote(merge: MergedTable): DataModelProblem {
 
 // P7-32
 function splitNote(split: SplitTable): DataModelProblem {
-  const listed = split.values
-    .map((each) =>
-      each.value === null ? `${each.sheet} (no value)` : `${each.sheet} = ${each.value}`,
-    )
-    .join(', ');
-  const reason = `Sheets with the same columns, one per site or copy, were made one table with the column ${split.column}; the data migration fills it from the sheet: ${listed}. The same id may repeat across sheets, so the key includes ${split.column} (a unique index when a sheet has no value, where NULL counts as one value).`;
+  const listed = split.values.map((each) => `${each.sheet} = ${each.value ?? 'base'}`).join(', ');
+  const reason = `Sheets with the same columns, one per site or copy, were made one table with the column ${split.column}; the data migration fills it from the sheet: ${listed}. The same id may repeat across sheets, so the key includes ${split.column}. A sheet with no suffix gets the value base, so the column is never empty and the primary key works on every database.`;
   return { item: split.table, field: `table ${split.table}`, reason };
 }
 
