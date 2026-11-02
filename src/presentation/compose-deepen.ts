@@ -58,6 +58,7 @@ export function composeDeepen(parts: DeepenParts): DeepenServices {
       keys: new PgProviderKeyRepository(parts.pool),
       answers: new FileAnswersFile({ writer: parts.writer, masker: parts.masker }),
       priorCards: new FilePriorCards(parts.writer),
+      ollamaHost,
     }),
     readUnderstanding: new ReadUnderstanding({ runs, scans, taskResults, manifests }),
   };
