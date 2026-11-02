@@ -14,13 +14,13 @@ import {
   type WorkbookSetup,
 } from '../../domain/planning/workbook-setup.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
-import type { Catalogue } from '../../domain/planning/catalogue.js';
+import type { ArchitectureStyleId, Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
 import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content.js';
 import { addSecretRisks, type SecretRisks } from '../../domain/planning/secret-risks.js';
 import type { ScanFacts } from './plan-scan-facts.js';
 import { addStyleRisks, checkStyle } from '../../domain/planning/style-rules.js';
-import { judgedStyleId } from '../../domain/planning/judged-style.js';
+import { judgedStyleId, styleReferenceKind } from '../../domain/planning/judged-style.js';
 import { referenceTitle } from '../../domain/planning/typed-answers.js';
 import {
   excludedClaims,
@@ -225,6 +225,16 @@ function briefPart(
   };
 }
 
+/** The style's title, named as the reference of the dependency check when an own answer exists. */
+function referenceStyleTitle(
+  brief: PlanningBrief,
+  style: PackagePrinciple,
+  judged: ArchitectureStyleId,
+): string {
+  const named = styleReferenceKind(brief, { id: judged, title: style.title });
+  return referenceTitle(brief, 'architecture', style.title, named);
+}
+
 // RF-601, RF-604
 export function handoffPackageOf(
   inputs: PlanInputs,
@@ -250,7 +260,7 @@ export function handoffPackageOf(
     principles: brief.principles.map((id) => principleOf(catalogue, id)),
     content: contentOf(decided.content, {
       styleCheck,
-      style: { ...style, title: referenceTitle(brief, 'architecture', style.title) },
+      style: { ...style, title: referenceStyleTitle(brief, style, judged) },
       questions,
       secrets: documents.secrets,
     }),

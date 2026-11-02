@@ -75,3 +75,55 @@ describe('stackOfferFor: the choices for a vague typed answer (P7-30)', () => {
     expect(frontEnd.vague?.some((each) => each.words.includes('java'))).toBe(true);
   });
 });
+
+const nodeFacts = (): ReturnType<typeof legacyFactsOf> => ({
+  ...legacyFactsOf({ files: [], sqlStatements: [] }, stack.proposals.signals),
+  languages: ['javascript'],
+});
+
+describe('proposeFor: a vague answer with no catalogue option stays open (P8-09)', () => {
+  it('RF-609 "node" and "javascript" have catalogue options for the layers of a web application', () => {
+    const made = proposeFor(
+      briefOf({
+        stack: [typed('backend-framework', 'node'), typed('front-end', 'javascript')],
+      }),
+      nodeFacts(),
+      stack,
+    );
+
+    expect(made.brief.stack.find((each) => each.layer === 'backend-framework')?.choice).toBe(
+      'Fastify',
+    );
+    expect(made.brief.stack.find((each) => each.layer === 'front-end')?.choice).toBe('React');
+    expect(made.brief.stack.find((each) => each.layer === 'data-access')?.choice).toBe('Prisma');
+  });
+
+  it('RF-609 a vague answer for a layer the kind has no option for is shown as open with the scan named', () => {
+    const made = proposeFor(
+      briefOf({ application: 'desktop', stack: [typed('backend-framework', 'node')] }),
+      nodeFacts(),
+      stack,
+    );
+    const entry = made.brief.stack.find((each) => each.layer === 'backend-framework');
+    const layer = made.proposal.layers.find((each) => each.layer === 'backend-framework');
+
+    expect(entry).toMatchObject({ choice: 'node', proposed: true });
+    expect(layer?.why).toContain('The scan found javascript.');
+    expect(layer?.why).toContain('no option for this layer of a desktop application');
+    expect(made.brief.defaulted).toContain('stack.backend-framework');
+  });
+
+  it('RF-609 a vague answer for a kept application is open too, and a specific one is not', () => {
+    const made = proposeFor(
+      briefOf({
+        application: 'keep',
+        stack: [typed('front-end', 'default'), typed('testing', 'Vitest')],
+      }),
+      nodeFacts(),
+      stack,
+    );
+
+    expect(made.brief.stack.find((each) => each.layer === 'front-end')?.proposed).toBe(true);
+    expect(made.brief.stack.find((each) => each.layer === 'testing')?.proposed).toBeUndefined();
+  });
+});

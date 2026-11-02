@@ -3,6 +3,7 @@ import {
   isArchitectureStyleId,
   type ArchitectureStyleId,
 } from '../../domain/planning/catalogue.js';
+import { styleReferenceKind } from '../../domain/planning/judged-style.js';
 import { brokenRuleReason, styleRoles } from '../../domain/planning/style-rules.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { checkReference } from '../../domain/planning/typed-answers.js';
@@ -60,9 +61,10 @@ function roleStyleOf(handoff: HandoffPackage): ArchitectureStyleId {
 
 /** DEC-184, EV-73: what the style the check compares with is called. */
 export function referenceKind(handoff: HandoffPackage): string {
-  return handoff.style.id === handoff.brief.architecture.style
-    ? 'the default style'
-    : 'the catalogue style closest to the answer';
+  return styleReferenceKind(handoff.brief, {
+    id: roleStyleOf(handoff),
+    title: handoff.style.title,
+  });
 }
 
 // RF-608

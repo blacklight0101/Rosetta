@@ -29,6 +29,11 @@ const catalogueBody = z.object({
     context: z.record(z.string(), z.array(z.object({ id: z.string(), title: z.string() }))),
     method: z.array(z.object({ id: z.string(), title: z.string() })),
     keepLegacy: z.object({ id: z.string(), title: z.string() }),
+    workbook: z.object({
+      questions: z.array(z.object({ id: z.string(), label: z.string() })),
+      options: z.record(z.string(), z.array(z.object({ id: z.string(), title: z.string() }))),
+      windowsHost: z.string(),
+    }),
   }),
 });
 
@@ -102,6 +107,16 @@ describe('GET /api/plan/catalogue: migrations and access', () => {
     ]);
     expect(wording.context['context.teamSize']?.[0]).toMatchObject({ id: 'open' });
     expect(wording.keepLegacy.title).toBe('Keep the legacy technology');
+    expect(wording.workbook.questions.map((each) => each.id)).toEqual([
+      'workbook.signIn',
+      'workbook.store',
+      'workbook.screens',
+    ]);
+    expect(wording.workbook.options['workbook.signIn']?.map((each) => each.id)).toEqual([
+      'windows',
+      'sso',
+      'accounts',
+    ]);
   });
 
   it('RF-1009 needs a session', async () => {

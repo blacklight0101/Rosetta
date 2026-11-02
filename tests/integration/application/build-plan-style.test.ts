@@ -199,7 +199,7 @@ describe('RF-608 DEC-184 with an own architecture answer the style is only the c
 });
 
 describe('EV-73 an own architecture answer that names a catalogue style is judged against it', () => {
-  const own = { typed: { architecture: 'Modular monolith with a separate reporting module' } };
+  const own = { typed: { architecture: 'We want a modular monolith' } };
   const modules = [
     part('Orders', 'module', ['Kernel']),
     part('Reporting', 'module', ['Kernel']),

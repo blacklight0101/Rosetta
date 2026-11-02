@@ -84,41 +84,30 @@ test('RF-134 states the limit and the steps, and refuses a file above it before 
   await expectNoSeriousViolations(page);
 });
 
-test(
-  'RF-128 uploads a zip, shows what was kept and lists the project as a zip',
-  { tag: '@phone' },
-  async ({ page }) => {
-    await page.route('**/api/projects', async (route: Route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({ status: 201, json: { ...project, source: null } });
-      } else await route.continue();
+test('RF-128 uploads a zip and opens the project page', { tag: '@phone' }, async ({ page }) => {
+  await page.route('**/api/projects', async (route: Route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 201, json: { ...project, source: null } });
+    } else await route.continue();
+  });
+  await page.route('**/api/projects/p-zip/source', async (route: Route) => {
+    await route.fulfill({
+      status: 201,
+      json: { files: 70, size: 3_200_000, skipped: 12, snapshotHash: 'a'.repeat(64) },
     });
-    await page.route('**/api/projects/p-zip/source', async (route: Route) => {
-      await route.fulfill({
-        status: 201,
-        json: { files: 70, size: 3_200_000, skipped: 12, snapshotHash: 'a'.repeat(64) },
-      });
-    });
-    await page.getByLabel('Zip file').setInputFiles({
-      name: 'OrderDesk.zip',
-      mimeType: 'application/zip',
-      buffer: zip,
-    });
-    await expect(page.getByLabel('Project name')).toHaveValue('OrderDesk');
+  });
+  await page.getByLabel('Zip file').setInputFiles({
+    name: 'OrderDesk.zip',
+    mimeType: 'application/zip',
+    buffer: zip,
+  });
+  await expect(page.getByLabel('Project name')).toHaveValue('OrderDesk');
 
-    await page.getByRole('button', { name: 'Upload zip' }).click();
+  await page.getByRole('button', { name: 'Upload zip' }).click();
 
-    await expect(page.getByRole('status').filter({ hasText: '70 files kept' })).toContainText(
-      '12 entries left out',
-    );
-    await expect(page.getByRole('link', { name: 'Start a run' })).toBeVisible();
-    await expectNoSeriousViolations(page);
-    const overflow: unknown = await page.evaluate(
-      'document.documentElement.scrollWidth - window.innerWidth',
-    );
-    expect(Number(overflow)).toBeLessThanOrEqual(0);
-  },
-);
+  // EV-87, P8-10: the stored zip opens the project page, where the scan starts.
+  await expect(page).toHaveURL(/\/projects\/p-zip$/u);
+});
 
 test('RF-128 a refused upload shows its message and offers Upload again', async ({ page }) => {
   await page.route('**/api/projects', async (route: Route) => {

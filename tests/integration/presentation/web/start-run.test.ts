@@ -56,7 +56,7 @@ describe('POST /api/projects/:id/runs', () => {
     expect(test.runs.executor.started).toHaveLength(1);
   });
 
-  it('RF-1108 answers a second run of the same user as queued, with its position', async () => {
+  it('RF-1108 EV-91 starts a second scan of the same user beside the first, not queued', async () => {
     const { amy, project } = await setup();
     await amy.request({ method: 'POST', url: startUrl(project.id), payload: { stage: 'scan' } });
 
@@ -67,7 +67,7 @@ describe('POST /api/projects/:id/runs', () => {
     });
 
     expect(response.statusCode).toBe(202);
-    expect(response.json()).toMatchObject({ queueState: 'Queued', position: 1 });
+    expect(response.json()).toMatchObject({ queueState: 'Running', position: null });
   });
 });
 

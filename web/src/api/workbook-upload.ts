@@ -93,7 +93,8 @@ const refusalSchema = errorBodySchema.extend({ status: z.number().int() });
  */
 export interface BatchStateOf<T> {
   readonly batchId: string;
-  readonly phase: 'open' | 'processing' | 'stored' | 'refused';
+  /** `none`: the project holds no batch (EV-88); the batch id is then empty. */
+  readonly phase: 'none' | 'open' | 'processing' | 'stored' | 'refused';
   readonly files: number;
   readonly elapsedMs: number;
   readonly progress?: WorkbookProgress | undefined;
@@ -105,8 +106,8 @@ export type BatchState = BatchStateOf<WorkbookSummary>;
 
 export function stateSchemaOf<T>(summary: z.ZodType<T>): z.ZodType<BatchStateOf<T>> {
   return z.object({
-    batchId: z.string().min(1),
-    phase: z.enum(['open', 'processing', 'stored', 'refused']),
+    batchId: z.string(),
+    phase: z.enum(['none', 'open', 'processing', 'stored', 'refused']),
     files: count,
     elapsedMs: count,
     progress: progressSchema.optional(),

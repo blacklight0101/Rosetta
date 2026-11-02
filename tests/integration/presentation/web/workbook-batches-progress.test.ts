@@ -141,10 +141,13 @@ describe('the state routes and who may read them', () => {
     const unknown = await batchState(amy, { ...target, batchId: 'no-such-batch' });
     const none = await currentBatch(amy, empty);
 
-    for (const answer of [foreign, foreignCurrent, unknown, none]) {
+    for (const answer of [foreign, foreignCurrent, unknown]) {
       expect(answer.statusCode).toBe(404);
       expect(answer.json()).toMatchObject({ code: ERROR_CODES.notFound });
     }
+    // EV-88, P8-10: a project that never held a batch answers 200, so a page load logs no 404.
+    expect(none.statusCode).toBe(200);
+    expect(none.json()).toEqual({ batchId: '', phase: 'none', files: 0, elapsedMs: 0 });
   });
 
   it('RF-1009 asks for a session', async () => {

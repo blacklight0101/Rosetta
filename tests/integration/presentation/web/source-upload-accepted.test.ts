@@ -163,7 +163,8 @@ describe('PUT source with workbooks, other callers', () => {
 
     expect(answer.statusCode).toBe(201);
     expect(answer.json()).toMatchObject({ files: 7, snapshotHash: uploads.hash });
-    expect(current.statusCode).toBe(404);
+    expect(current.statusCode).toBe(200);
+    expect(current.json()).toMatchObject({ phase: 'none' });
   });
 
   it('RF-1009 the progress route of the old synchronous upload is gone', async () => {

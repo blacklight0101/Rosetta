@@ -46,7 +46,7 @@ async function queueOne(test: HistoryHarness): Promise<Run> {
   const outcome = await test.test.runs.submit.execute({
     actor,
     project,
-    stage: 'scan',
+    stage: 'understand',
     options: {},
   });
   if (!outcome.ok) throw new Error('The run was not accepted');
@@ -72,7 +72,7 @@ describe('GET /api/projects/overview rows', () => {
       unknownCostCalls: 0,
     });
     expect(rows[0]?.lastRun).toMatchObject({
-      ...{ id: live.id, runId: live.runKey, stage: 'scan' },
+      ...{ id: live.id, runId: live.runKey, stage: 'understand' },
       ...{ queueState: 'Running', endState: null, position: null },
     });
   });

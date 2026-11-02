@@ -61,13 +61,18 @@ function withText(draft: Draft, field: ContextField, value: string): Draft {
 }
 
 /** The hosted question and, for workbooks, the three workbook questions (RF-648). */
-function PlanContextExtras(props: Omit<StepProps, 'catalogue'>): JSX.Element {
-  const { draft, change, problems, workbook } = props;
+function PlanContextExtras(props: StepProps): JSX.Element {
+  const { draft, change, problems, workbook, catalogue } = props;
   return (
     <>
       <PlanHostedQuestion draft={draft} change={change} />
       {workbook === true ? (
-        <PlanWorkbookQuestions draft={draft} change={change} problems={problems} />
+        <PlanWorkbookQuestions
+          draft={draft}
+          change={change}
+          problems={problems}
+          wording={catalogue.wording.workbook}
+        />
       ) : null}
     </>
   );
@@ -118,7 +123,7 @@ export function PlanContextStep({
           </div>
         );
       })}
-      <PlanContextExtras {...{ draft, change, problems, workbook }} />
+      <PlanContextExtras {...{ draft, catalogue, change, problems, workbook }} />
     </PlanStepCard>
   );
 }

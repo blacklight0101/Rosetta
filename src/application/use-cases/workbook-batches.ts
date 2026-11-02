@@ -190,7 +190,10 @@ export class WorkbookBatches {
     const { actor, projectId } = request;
     const project = await this.deps.projects.find(actor.userId, projectId);
     const batch = this.batches.get(projectId);
-    if (project === undefined || batch?.userId !== actor.userId) return err(ERROR_CODES.notFound);
+    if (project === undefined) return err(ERROR_CODES.notFound);
+    // EV-88, P8-10: a project of the user that holds no batch answers `none`, so a page load logs no 404.
+    if (batch === undefined) return ok({ batchId: '', phase: 'none', files: 0, elapsedMs: 0 });
+    if (batch.userId !== actor.userId) return err(ERROR_CODES.notFound);
     return ok(stateOf(batch, this.deps.clock.now().getTime()));
   }
 
