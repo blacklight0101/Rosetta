@@ -28,3 +28,10 @@ export function endpointOf(
   const path = url.pathname === '/' ? '' : url.pathname.replace(/\/+$/u, '');
   return ok({ baseUrl: `${url.origin}${path}`, host: url.hostname });
 }
+
+/** RF-143, RF-433: the host of the server's Ollama address; none when it is unset or unreadable. */
+export function ollamaHostOfUrl(text: string | undefined): string | undefined {
+  if (text === undefined) return undefined;
+  const endpoint = endpointOf(text);
+  return endpoint.ok ? endpoint.value.host : undefined;
+}

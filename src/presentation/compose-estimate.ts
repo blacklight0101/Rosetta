@@ -12,6 +12,7 @@ import type { PgProjectRepository } from '../infrastructure/db/pg-project-reposi
 import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
 import type { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
+import { ollamaHostOf } from './compose-understand.js';
 
 // Architecture section 2 (composition root), RF-425, Q-57: the estimate before an understand run.
 // It prices the roles with the shipped price table and states the limits of the shipped model list.
@@ -23,6 +24,8 @@ export interface EstimateParts {
   /** Q-58: the models the shipped list marks as reasoning models; the estimate names their effort. */
   readonly reasoningModels: ReasoningModels;
   readonly clock: Clock;
+  /** RF-433: the Ollama address; a server that is not this machine is not local. */
+  readonly ollamaUrl?: string | undefined;
 }
 
 // RF-425
@@ -36,6 +39,7 @@ export function composeEstimateRun(
     readonly roleKeys: RoleKeyDependencies;
   },
 ): EstimateRun {
+  const ollamaHost = ollamaHostOf(parts.ollamaUrl);
   return new EstimateRun({
     ...stores,
     // RF-430: the measured totals of earlier runs (RF-428).
@@ -44,12 +48,14 @@ export function composeEstimateRun(
     priceTable: parts.priceTable,
     models: parts.models,
     reasoningModels: parts.reasoningModels,
+    ollamaHost,
     // RF-405: the caps the first calls are checked against.
     caps: {
       users: new PgUserRepository(parts.pool),
       serverSettings: new PgServerSettings(parts.pool),
       usage: new PgAccountUsage(parts.pool),
       clock: parts.clock,
+      ollamaHost,
     },
   });
 }
