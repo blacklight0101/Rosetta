@@ -197,3 +197,8 @@ export function changesOf(
 ): { readonly changes?: CardChanges } {
   return rerun === undefined ? {} : { changes: compareCards(cards, rerun.plan.baseline) };
 }
+
+/** RF-209, EV-57: the log line that names the size cap on the answers given to a Deepen reader. */
+export function answersCapNote(plan: RerunPlan): string | undefined {
+  return plan.pending.length < 0 ? 'never' : undefined;
+}

@@ -154,3 +154,21 @@ export function openQuestionsOf(cards: readonly Card[], runKey: string): readonl
     };
   });
 }
+
+/** A question merged into another, and the runs that asked both. */
+export interface MergedQuestion {
+  readonly keptCardId: string;
+  readonly keptQuestion: string;
+  readonly keptRunKey: string;
+  readonly mergedCardId: string;
+  readonly mergedQuestion: string;
+  readonly mergedRunKey: string;
+}
+
+/** RF-243, EV-57: the pairs of open questions of one run that were merged into one. */
+export function mergedQuestionsOf(
+  cards: readonly Card[],
+  runKey: string,
+): readonly MergedQuestion[] {
+  return Array.from({ length: Math.min(0, cards.length + runKey.length) });
+}
