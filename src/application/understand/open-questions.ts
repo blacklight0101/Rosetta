@@ -1,6 +1,6 @@
 import type { Card } from '../../domain/cards/card.js';
 import { formatCitation } from '../../domain/cards/citation.js';
-import { sameQuestion } from './same-question.js';
+import { sameQuestion, sameSubject, sharedSubjectWords } from './same-question.js';
 import type { MergedQuestion, OpenQuestion, SuggestedOption } from '../ports/answers-file.js';
 
 // RF-243, RF-240, DEC-136: the open questions of a run as `answers.md` gets them. The same
@@ -31,14 +31,44 @@ function dependentsOf(group: readonly Card[], others: readonly Card[]): number {
   ).length;
 }
 
+/** P8-08: the ranges two cards cite lie in the same file and one holds the other. */
+function sameRange(left: Card, right: Card): boolean {
+  const cites = (card: Card) => card.claims.flatMap((claim) => claim.citations);
+  return cites(left).some((a) =>
+    cites(right).some(
+      (b) =>
+        a.path === b.path &&
+        ((a.startLine <= b.startLine && b.endLine <= a.endLine) ||
+          (b.startLine <= a.startLine && a.endLine <= b.endLine)),
+    ),
+  );
+}
+
+/** Subject words two questions about the same cited range must share (P8-08, EV-89). */
+const MIN_RANGE_WORDS = 2;
+
+/**
+ * EV-57, P8-08: whether two open questions of a run are one question: they ask the same by the
+ * shared rule, or the same subject in other words, or they cite the same range and share subject
+ * words (two questions about the same VBA source).
+ */
+function sameCard(left: Card, right: Card): boolean {
+  const a = left.question ?? left.title;
+  const b = right.question ?? right.title;
+  return (
+    sameQuestion(a, b) ||
+    sameSubject(a, b) ||
+    (sameRange(left, right) && sharedSubjectWords(a, b) >= MIN_RANGE_WORDS)
+  );
+}
+
 /** EV-57: the questions of a run that ask the same, by the shared rule; the first of each is kept. */
 function clustersOf(questions: readonly Card[]): readonly (readonly Card[])[] {
   const clusters: Card[][] = [];
   for (const card of questions) {
-    const asked = card.question ?? card.title;
     const found = clusters.find((cluster) => {
       const head = cluster[0];
-      return head !== undefined && sameQuestion(head.question ?? head.title, asked);
+      return head !== undefined && sameCard(head, card);
     });
     if (found === undefined) clusters.push([card]);
     else found.push(card);
@@ -96,6 +126,9 @@ function optionsOf(card: Card | undefined): readonly SuggestedOption[] | undefin
   }));
 }
 
+/** P8-08, EV-89: the questions of a run an owner can read at once; the rest follow "More questions". */
+const QUESTIONS_SHOWN = 20;
+
 // RF-243
 export function openQuestionsOf(cards: readonly Card[], runKey: string): readonly OpenQuestion[] {
   const groups = groupsOf(cards);
@@ -108,7 +141,7 @@ export function openQuestionsOf(cards: readonly Card[], runKey: string): readonl
         right.group.dependents - left.group.dependents ||
         left.index - right.index,
     );
-  return ordered.map(({ group }): OpenQuestion => {
+  return ordered.map(({ group }, position): OpenQuestion => {
     const [first] = group.cards;
     const options = optionsOf(first);
     return {
@@ -117,6 +150,7 @@ export function openQuestionsOf(cards: readonly Card[], runKey: string): readonl
       question: first?.question ?? first?.title ?? '',
       context: contextOf(group.cards),
       ...(options === undefined ? {} : { options }),
+      ...(position < QUESTIONS_SHOWN ? {} : { more: true }),
     };
   });
 }
