@@ -37,6 +37,7 @@ function stem(word: string): string {
 function wordsOf(text: string): string[] {
   return text
     .toLowerCase()
+    .replace(/['’]/gu, '')
     .replace(/\b(anything|everything|all|any|anyone|everyone|nothing|none)\s+but\b/giu, '$1 except')
     .split(/[^\p{L}\p{N}-]+/u)
     .map((word) => word.replace(/^-+|-+$/gu, ''))
@@ -70,6 +71,17 @@ const affirmative = new Set([
   ...['just', 'simply'],
 ]);
 
+/** After the style name only these may follow: a politeness, or a word that belongs to the name ("layered design"). */
+const afterName = new Set([
+  'please',
+  'pls',
+  'architecture',
+  'style',
+  'approach',
+  'pattern',
+  'design',
+]);
+
 /** The length of the style name that starts at `at`, or 0. */
 function nameLengthAt(words: readonly string[], at: number, names: readonly string[][]): number {
   const found = names.filter((phrase) =>
@@ -80,7 +92,8 @@ function nameLengthAt(words: readonly string[], at: number, names: readonly stri
 
 /**
  * The catalogue style the owner's typed architecture text names, or undefined. The whole answer is
- * judged: it names a style only when every word of it is the name of one style or affirmative filler.
+ * judged: it names a style only when it is the name of one style, with affirmative filler before it
+ * and only a politeness or a word of the name after it ("let layered go" and "layered?!" name none).
  * Any other word ("not", "bad", "separation", "replaced"), wherever it stands, or a second style makes
  * it name none: a wrong pick is worse than none, and the recommendation applies instead.
  */
@@ -89,7 +102,7 @@ export function namedStyleId(
   styles: readonly NamedStyle[],
 ): ArchitectureStyleId | undefined {
   const own = typedAnswers(brief).architecture;
-  if (own === undefined) return undefined;
+  if (own === undefined || /[?!]/u.test(own)) return undefined;
   const words = wordsOf(own);
   const names = styles.map((style) => ({ id: style.id, names: namesOf(style) }));
   const named = new Set<ArchitectureStyleId>();
@@ -99,7 +112,8 @@ export function namedStyleId(
       .map((style) => ({ id: style.id, length: nameLengthAt(words, at, style.names) }))
       .filter((hit) => hit.length > 0);
     const longest = Math.max(0, ...hits.map((hit) => hit.length));
-    if (longest === 0 && !affirmative.has(words[at] ?? '')) return undefined;
+    const word = words[at] ?? '';
+    if (longest === 0 && !(named.size === 0 ? affirmative : afterName).has(word)) return undefined;
     hits.filter((hit) => hit.length === longest).forEach((hit) => named.add(hit.id));
     at += Math.max(1, longest);
   }

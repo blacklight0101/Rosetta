@@ -46,6 +46,11 @@ describe('judgedStyleId with a typed architecture', () => {
 });
 
 const refused = [
+  'let layered go',
+  'layered should go',
+  'we should let layered go',
+  'layered to go',
+  'layered?!',
   'layered, no exceptions',
   'not layered but event-driven',
   'not layered, event-driven',
@@ -91,6 +96,8 @@ const refused = [
 ];
 
 const chosen = [
+  ["let's go with layered", 'layered'],
+  ['we should use layered', 'layered'],
   ['layered', 'layered'],
   ['Layered please', 'layered'],
   ['we want layered', 'layered'],
