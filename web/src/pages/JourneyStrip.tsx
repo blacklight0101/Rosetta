@@ -113,13 +113,15 @@ function Action(props: {
     return <ResumeButton runId={action.runId} label={action.label} onResumed={props.onResumed} />;
   }
   const answersHere = action.kind === 'answer' && onAnswer !== undefined;
-  const deepensHere = action.kind === 'deepen' && onDeepen !== undefined;
+  // P8-11 (EV-90): the run page has the Deepen button in "Your turn"; the strip points to it in words.
+  if (action.kind === 'deepen' && onDeepen !== undefined) {
+    return <p class="rst-journey__note">Deepen first: use the Deepen button in Your turn.</p>;
+  }
   return (
     <Button
       variant={props.variant ?? 'primary'}
       onClick={() => {
         if (answersHere) onAnswer();
-        else if (deepensHere) onDeepen();
         else navigate(action.href);
       }}
     >
