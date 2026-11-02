@@ -1,3 +1,4 @@
+import { kindAnsweredByCitedLines } from './open-question-answered-kinds.js';
 import { plainWords } from './open-question.js';
 
 // RF-243, P5-02, EV-09: an open question that asks what a header, a column or a module means or does,
@@ -103,6 +104,9 @@ function defines(cited: string, name: string): boolean {
 export function nameAnsweredByCitedLines(question: string, cited: string): string | undefined {
   const lower = plainWords(question).toLowerCase();
   if (intent.test(lower)) return undefined;
+  // P8-08: a connection string, publish parameters or the upload's own source
+  const kind = kindAnsweredByCitedLines(question, cited);
+  if (kind !== undefined) return kind;
   if (!asksMeaning.some((shape) => shape.test(lower))) return undefined;
   if (condition.test(lower.replace(/\b(?:used|stand)\s+for\b/gu, ''))) return undefined;
   return namesIn(question).find((name) => defines(cited, name));

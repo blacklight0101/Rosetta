@@ -66,3 +66,37 @@ export function sameQuestion(a: string, b: string): boolean {
   const subset = shared === Math.min(left.size, right.size);
   return subset && shared >= MIN_SHARED_WORDS && shared >= MIN_OVERLAP * union;
 }
+
+/**
+ * How many subject words two questions share when the words of one are all in the other (the
+ * question words may differ); 0 when each has a word the other lacks, which may be the decisive one.
+ */
+export function sharedSubjectWords(a: string, b: string): number {
+  const left = contentOf(questionWords(a));
+  const right = contentOf(questionWords(b));
+  const shared = [...left].filter((word) => right.has(word)).length;
+  return shared === Math.min(left.size, right.size) ? shared : 0;
+}
+
+/** "What" and "which" ask for the thing of any question; the other words ask for one kind of thing. */
+const generalAsk = new Set(['', 'what', 'which']);
+
+/**
+ * P8-08, EV-89: whether two questions of one run ask about the same subject in other words. Like
+ * `sameQuestion`, but the question words differ and both are "what" or "which"
+ * ("Which Azure services does the shop use?", "What Azure services does the shop depend on?"). A
+ * who, when, why or how question never merges with another kind. The report lists every merge.
+ */
+export function sameSubject(a: string, b: string): boolean {
+  const first = questionWords(a);
+  const second = questionWords(b);
+  if (first === '' || second === '') return false;
+  const asks = [askOf(first), askOf(second)];
+  // The same question word is the business of `sameQuestion`, which also guards a swapped word.
+  if (asks[0] === asks[1] || !asks.every((each) => generalAsk.has(each))) return false;
+  const left = contentOf(first);
+  const right = contentOf(second);
+  const shared = [...left].filter((word) => right.has(word)).length;
+  const union = left.size + right.size - shared;
+  return shared >= MIN_SHARED_WORDS && shared >= MIN_OVERLAP * union;
+}

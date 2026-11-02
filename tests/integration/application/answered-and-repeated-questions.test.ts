@@ -34,7 +34,7 @@ describe('EV-89 two questions about one cited range are one question', () => {
     const { text } = shared.current();
 
     expect(text.match(/^## OQ-/gmu)).toHaveLength(2);
-    expect(text).toContain('fixed name label');
+    expect(text).toContain('name label');
     expect(text).toContain('Which currency does the shop show prices in?');
   });
 
