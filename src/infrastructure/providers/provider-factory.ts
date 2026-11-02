@@ -47,10 +47,16 @@ export type { GuardedProviderFactoryOptions } from './provider-factory-options.j
 function runCapsOf(caps: readonly UsageCap[]): {
   readonly tokens: bigint;
   readonly micros: bigint;
+  readonly approved?: boolean;
 } {
   const limit = (kind: UsageCap['kind']): bigint =>
     caps.find((cap) => cap.kind === kind)?.limit ?? 0n;
-  return { tokens: limit('run-tokens'), micros: limit('run-cost') };
+  const approved = caps.some((cap) => cap.kind === 'run-tokens' && cap.source === 'approved');
+  return {
+    tokens: limit('run-tokens'),
+    micros: limit('run-cost'),
+    ...(approved ? { approved } : {}),
+  };
 }
 
 type ProviderConfig = ProjectSettings['providers'][string];

@@ -124,6 +124,7 @@ describe('a step that finds nothing left of the amount', () => {
   it('RF-434 P8-03 pressing Analyse again starts a new approval: the spend of the steps counts from zero', async () => {
     const { harness, project, journeys, analyse } = await spentEverything();
 
+    harness.clock.advance(1_000);
     const again = await analyse();
 
     expect(again.ok).toBe(true);

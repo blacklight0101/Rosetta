@@ -70,7 +70,7 @@ function CapMeter(props: { readonly estimate: RunEstimate; readonly cap: CapFiel
         <div class="rst-cap-meter__mark" style={{ insetInlineStart: `${String(mark)}%` }} />
       </div>
       <p id={hintId} class="rst-settings__note">
-        {shown.sentence} The run stops before any call that could pass the cap.
+        {shown.sentence}
       </p>
     </div>
   );

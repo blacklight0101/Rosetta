@@ -13,7 +13,8 @@ import { MAX_RUN_COST_MICROS, MAX_RUN_TOKENS } from '../projects/project-setting
 // At the start the server works the journey estimate out again; the figure the start button showed
 // is only the user's confirmation and must match it within a small tolerance, else the start is
 // refused (RST-2310) so the user sees the new figure. The stored amount is the server's worst-case
-// total (DEC-205); Continue (+N) offers half of it and never adds more than the offered N,
+// total or, lower, the administrator ceilings (DEC-206); Continue (+N) offers half of it and never
+// adds more than the offered N,
 // and no approved amount ever passes the administrator's run ceilings.
 
 /** The likely and worst-case journey totals the server estimates now (RF-430). */
@@ -63,12 +64,12 @@ export function approvedJourneyOf(
   journey: JourneyFigures | undefined,
 ): Result<ApprovedAmount, typeof ERROR_CODES.approvalChanged> {
   if (journey === undefined) return err(ERROR_CODES.approvalChanged);
-  // DEC-205: the run is approved, and pauses, at the worst-case total the start button showed.
-  const { worstCase } = journey;
-  if (!near(shown.tokens, worstCase.tokens) || !near(shown.costMicros, worstCase.costMicros)) {
+  // DEC-206: the run is approved, and pauses, at the lower of the worst case and the ceilings.
+  const line = journey.approvable ?? journey.worstCase;
+  if (!near(shown.tokens, line.tokens) || !near(shown.costMicros, line.costMicros)) {
     return err(ERROR_CODES.approvalChanged);
   }
-  return ok(withinCeilings({ tokens: worstCase.tokens, costMicros: worstCase.costMicros }));
+  return ok(withinCeilings({ tokens: line.tokens, costMicros: line.costMicros }));
 }
 
 /** RF-432: the amount after Continue (+N): N at most the offered one, the sum within the ceilings. */
@@ -90,17 +91,28 @@ export function continuedAmount(
 
 /** RF-430: the journey figures of the server's run estimate (EstimateRun); none without a journey. */
 export function journeyLookupOf(estimates: {
-  execute(
-    request: Parameters<JourneyLookup>[0],
-  ): Promise<
-    Result<{ readonly journey?: { readonly likely: Figure; readonly worstCase: Figure } }, unknown>
+  execute(request: Parameters<JourneyLookup>[0]): Promise<
+    Result<
+      {
+        readonly journey?: {
+          readonly likely: Figure;
+          readonly worstCase: Figure;
+          readonly approvable: Figure;
+        };
+      },
+      unknown
+    >
   >;
 }): JourneyLookup {
   return async (request) => {
     const estimate = await estimates.execute(request);
     const journey = estimate.ok ? estimate.value.journey : undefined;
     if (journey === undefined) return undefined;
-    return { likely: amountOf(journey.likely), worstCase: amountOf(journey.worstCase) };
+    return {
+      likely: amountOf(journey.likely),
+      worstCase: amountOf(journey.worstCase),
+      approvable: amountOf(journey.approvable),
+    };
   };
 }
 

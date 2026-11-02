@@ -64,6 +64,8 @@ export function estimateView(estimate: RunEstimate): Record<string, unknown> {
       ...{ basis: estimate.journey.basis, deepenRounds: estimate.journey.deepenRounds },
       likely: journeyFigureView(estimate.journey.likely),
       worstCase: journeyFigureView(estimate.journey.worstCase),
+      approvable: journeyFigureView(estimate.journey.approvable),
+      ceilingApplied: estimate.journey.ceilingApplied,
     },
     ...(estimate.firstCalls === undefined
       ? {}

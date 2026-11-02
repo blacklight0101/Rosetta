@@ -2,8 +2,9 @@ import type { JourneyEstimate, RunEstimate } from '../api/estimate-schemas.js';
 import { dollars, isLocalEstimate, tokensText } from './estimate-math.js';
 
 // RF-430, RF-431, DEC-196: the journey total the user approves on the start button, and the roles
-// whose key is missing. DEC-205: the worst case is the approved amount the run records and pauses at
-// (P7-05); the likely total is stated beside it.
+// whose key is missing. DEC-206: the approved amount the run records and pauses at is the lower of
+// the worst case and the administrator ceilings (replacing DEC-205's worst case); the likely total
+// is stated beside it.
 
 /** The amount the start request records as the run's approved amount. */
 export interface ApprovedAmount {
@@ -15,8 +16,9 @@ export interface ApprovedAmount {
 export function approvedAmountOf(estimate: RunEstimate): ApprovedAmount | undefined {
   const { journey } = estimate;
   if (journey === undefined) return undefined;
-  // DEC-205: the run is approved at the worst case; it pauses there (RF-432).
-  return { tokens: journey.worstCase.tokens, costMicros: Number(journey.worstCase.costMicros) };
+  // DEC-206: the run is approved at the lower of the worst case and the ceilings (RF-432).
+  const { approvable } = journey;
+  return { tokens: approvable.tokens, costMicros: Number(approvable.costMicros) };
 }
 
 function figureText(estimate: RunEstimate, figure: JourneyEstimate['likely']): string {
@@ -27,7 +29,7 @@ function figureText(estimate: RunEstimate, figure: JourneyEstimate['likely']): s
 // RF-430
 export function approvalText(estimate: RunEstimate): string | undefined {
   const { journey } = estimate;
-  return journey === undefined ? undefined : figureText(estimate, journey.worstCase);
+  return journey === undefined ? undefined : figureText(estimate, journey.approvable);
 }
 
 /** The likely journey total, stated beside the approved worst case. */
@@ -49,13 +51,19 @@ export function missingKeyProviders(estimate: Pick<RunEstimate, 'roles'>): reado
 }
 
 /** DEC-206: says that a ceiling lowered the approvable figure; undefined when none did. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function ceilingNoteText(_estimate: RunEstimate): string | undefined {
-  return undefined;
+export function ceilingNoteText(estimate: RunEstimate): string | undefined {
+  const { journey } = estimate;
+  if (journey?.ceilingApplied !== true) return undefined;
+  const worst = worstCaseText(estimate);
+  const approvable = approvalText(estimate);
+  return `The worst case of ${worst ?? ''} is above what a run can reach under the administrator ceilings, so you approve ${approvable ?? ''}.`;
 }
 
 /** DEC-206, RST-2310: says why the figure moved when the basis of the estimate changed. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function basisMovedText(_before: RunEstimate, _after: RunEstimate): string | undefined {
-  return undefined;
+export function basisMovedText(before: RunEstimate, after: RunEstimate): string | undefined {
+  const [was, now] = [before.journey?.basis, after.journey?.basis];
+  if (was === undefined || now === undefined || was === now) return undefined;
+  return now === 'history'
+    ? 'The figures changed: they now come from the measured totals of earlier runs of this model, not from the fixed assumptions.'
+    : 'The figures changed: they now come from the fixed assumptions, because no earlier run of this model is counted.';
 }

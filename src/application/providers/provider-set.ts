@@ -20,7 +20,12 @@ export interface RoleProvider {
   readonly temperature?: number;
   readonly keySource: KeySource;
   /** P5-20: the run token and cost caps in force for the role (the administrator's included). */
-  readonly runCaps?: { readonly tokens: bigint; readonly micros: bigint };
+  readonly runCaps?: {
+    readonly tokens: bigint;
+    readonly micros: bigint;
+    /** P8-03, RF-432: the run cap is the amount its owner approved, so the run pauses at it. */
+    readonly approved?: boolean;
+  };
 }
 
 /** The roles a run asked for, each with its provider. */
