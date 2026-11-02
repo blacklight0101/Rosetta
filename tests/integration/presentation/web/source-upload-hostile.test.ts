@@ -42,7 +42,8 @@ describe('PUT /api/projects/:id/source with an unsafe workbook path in the zip',
 
     expect(answer.statusCode).toBe(400);
     expect(answer.json()).toMatchObject({ code: ERROR_CODES.zipEntryPathUnsafe });
-    expect(current.statusCode).toBe(404);
+    expect(current.statusCode).toBe(200);
+    expect(current.json()).toMatchObject({ phase: 'none' });
     expect(await sourcesEntries(root.path)).toEqual([]);
   });
 });

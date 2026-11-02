@@ -235,7 +235,7 @@ describe('WorkbookBatches.state and current', () => {
     }
   });
 
-  it('RF-159 finds the batch of the project without its id: open, at work and ended', async () => {
+  it('RF-159 EV-88 finds the batch of the project without its id: none, open, at work and ended', async () => {
     const test = await batchCase();
     const none = await test.useCase.current({ actor: amy, projectId: test.project.id });
     const batchId = await withFile(test);
@@ -247,7 +247,10 @@ describe('WorkbookBatches.state and current', () => {
     await waitForPhase(test, batchId, 'stored');
     const ended = await test.useCase.current({ actor: amy, projectId: test.project.id });
 
-    expect(none).toEqual({ ok: false, error: ERROR_CODES.notFound });
+    expect(none).toEqual({
+      ok: true,
+      value: { batchId: '', phase: 'none', files: 0, elapsedMs: 0 },
+    });
     expect(open.ok && [open.value.batchId, open.value.phase]).toEqual([batchId, 'open']);
     expect(working.ok && working.value.phase).toBe('processing');
     expect(ended.ok && ended.value.phase).toBe('stored');
