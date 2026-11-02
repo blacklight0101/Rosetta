@@ -92,7 +92,7 @@ En cada segmento, **Tiempo** indica cuántos segundos ocupa la narración (estim
 
 **Narración:** Con la evidencia verificada, preparo el plan. Elijo los principios, como SOLID o pruebas primero, el estilo de arquitectura, la estrategia de migración y el stack. Lo que no respondo queda como pregunta abierta, con su valor por defecto. Rosetta estima el coste del planner y escribe el paquete.
 
-**Pantalla:** **Plan setup**: pestañas Principles, Architecture, Migration, Stack, Project context, Build method; el resumen **What I recorded** y la estimación; pulsar **Write the package**. Después la ejecución Plan terminada.
+**Pantalla:** **Plan setup**: pestañas Principles, Architecture, Migration, Stack, Project context, Build method; el resumen **What I recorded** y la estimación; pulsar **Start the plan** (P7-36, was **Write the package**). Después la ejecución Plan terminada.
 
 **Tiempo:** narración ~20 s; resto (imagen o clip): 10 s.
 

@@ -1875,7 +1875,7 @@ As a user I want the page to offer the next step when a step ends so that I do n
 As a user I want a start page without technical choices so that I do not decide stages or caps.
 
 - Given the start page, when it opens, then it holds no stage choice and no per-run caps, models or parallelism; they are removed, not hidden behind an option (DEC-204).
-- Given the old start-page address, when I open it, then I am redirected to the project page.
+- Given the old start-page address, when I open it, then I am redirected to the project page. The start page itself is removed and this redirect is all that remains of it (P7-37, P8-15 closing the P7-33 note).
 - Given the areas, when the journey is estimated, then the project's own code is read as in RF-1018, and the choice of areas stays on the project page before Analyse.
   Verification: web tests of the page and the redirect; an end-to-end test of the journey from the project page.
 
