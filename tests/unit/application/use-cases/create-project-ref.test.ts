@@ -69,3 +69,18 @@ describe('CreateProject checks the ref', () => {
     expect(refs.asked).toEqual([]);
   });
 });
+
+describe('CreateProject finds an existing project first', () => {
+  it('RF-010 P8-10 an address that exists opens the existing project without asking GitHub', async () => {
+    const refs = new StubRefCheck('found');
+    const test = projectHarness({}, undefined, refs);
+    const first = await test.createProject.execute({ actor: amy, url: `${repository}/tree/main` });
+    refs.asked.length = 0;
+
+    const again = await test.createProject.execute({ actor: amy, url: `${repository}/tree/main` });
+
+    expect(first).toMatchObject({ ok: true, value: { created: true } });
+    expect(again).toMatchObject({ ok: true, value: { created: false } });
+    expect(refs.asked).toEqual([]);
+  });
+});

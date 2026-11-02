@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { json } from './fake-api.js';
-import { savedBrief, unsavedBrief } from './plan-setup-fixtures.js';
+import { catalogue, savedBrief, unsavedBrief } from './plan-setup-fixtures.js';
 import { base, press, ready, renderPlan, saves, stepName } from './plan-setup-helpers.js';
 
 // RF-612, RF-639, DEC-176 (Q-A, Q-B): the build method step asks plainly, says what each answer
@@ -32,6 +32,22 @@ const briefWith = (patch: Record<string, unknown>, from: BriefView = unsavedBrie
 
 const namingClaudeCode = briefWith({
   context: { ...unsavedBrief.brief.context, experience: 'Claude Code' },
+});
+
+describe('the build method titles (P8-09)', () => {
+  it('RF-612 P8-09 the cards carry the titles the server words, not a copy of them', async () => {
+    const wording = {
+      ...catalogue.wording,
+      method: catalogue.wording.method.map((each) =>
+        each.id === 'people' ? { ...each, title: 'Humans will build' } : each,
+      ),
+    };
+    renderPlan({ 'GET /api/plan/catalogue': json(200, { ...catalogue, wording }) });
+    await openMethod();
+
+    expect(screen.getByRole('radio', { name: /^Humans will build/u })).toBeTruthy();
+    expect(screen.queryByRole('radio', { name: /^People will build/u })).toBeNull();
+  });
 });
 
 describe('the build method question', () => {

@@ -11,12 +11,24 @@ import { screenCard, shopScreens } from '../../../support/ux-fixtures.js';
 
 function message(cards = shopScreens(), frontEnd: string | null = 'React'): string {
   const ids = new SequenceIdGenerator();
-  return uxMessage({ screenCards: cards, brief: briefWithFrontEnd(frontEnd) }, () =>
-    ids.dataBlockTag(),
+  return uxMessage(
+    { screenCards: cards, brief: briefWithFrontEnd(frontEnd), style: 'layered' },
+    () => ids.dataBlockTag(),
   );
 }
 
 describe('uxMessage', () => {
+  it('P8-09 EV-73 names the style the components are judged against', () => {
+    expect(message()).toContain('"architectureStyle": "layered"');
+    const ids = new SequenceIdGenerator();
+    const text = uxMessage(
+      { screenCards: shopScreens(), brief: briefWithFrontEnd('React'), style: 'clean' },
+      () => ids.dataBlockTag(),
+    );
+
+    expect(text).toContain('"architectureStyle": "clean"');
+  });
+
   it('RF-145 holds two well-formed data blocks, each with a tag of its own, and nothing outside', () => {
     const scan = scanDataBlocks(message());
 

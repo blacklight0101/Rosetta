@@ -47,7 +47,7 @@ async function newestScan(
 interface Follow {
   readonly client: ReturnType<typeof useApp>['client'];
   readonly projectId: string;
-  /** Start a new scan at once, instead of looking at the history first. */
+  /** P8-10: start a new scan, but only after the history shows none queued or running (it is watched then). */
   readonly ask: boolean;
   readonly setState: (state: ScanState) => void;
   readonly done: () => void;
@@ -57,6 +57,7 @@ interface Follow {
 function followScan({ client, projectId, ask, setState, done }: Follow): () => void {
   const abort = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let asking = ask;
   const again = (): void => {
     timer = setTimeout(() => void watch(), POLL_MS);
   };
@@ -71,10 +72,18 @@ function followScan({ client, projectId, ask, setState, done }: Follow): () => v
     const found = await newestScan(client, projectId, abort.signal);
     if (abort.signal.aborted) return;
     const scan = found.ok ? found.value : undefined;
+    // No scan yet, or one asked for (a replaced source, Scan again) after the last one ended or when
+    // the history cannot be read: start one. A history that cannot be read is otherwise read again.
+    const startNow = found.ok
+      ? scan === undefined || (asking && scan.queueState === 'Ended')
+      : asking;
+    if (startNow) {
+      asking = false;
+      await launch();
+      return;
+    }
     if (scan === undefined) {
-      // No scan yet: start one; a history that could not be read is read again.
-      if (found.ok) await launch();
-      else again();
+      again();
       return;
     }
     if (scan.queueState === 'Ended') {
@@ -84,10 +93,11 @@ function followScan({ client, projectId, ask, setState, done }: Follow): () => v
       } else setState({ kind: 'failed', error: undefined });
       return;
     }
+    asking = false;
     setState({ kind: 'scanning', position: scan.position });
     again();
   };
-  void (ask ? launch() : watch());
+  void watch();
   return () => {
     abort.abort();
     clearTimeout(timer);

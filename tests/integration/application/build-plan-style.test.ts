@@ -122,14 +122,14 @@ describe('RF-608 a component without a known role is listed', () => {
 });
 
 describe('RF-608 RNF-004 the planner is asked for the role', () => {
-  it('RF-608 RNF-004 the planner prompt the run loads is package.v11.md at version v11', async () => {
+  it('RF-608 RNF-004 the planner prompt the run loads is package.v12.md at version v12', async () => {
     const file = await loadPlannerPrompt('prompts');
 
-    expect(file).toMatchObject({ name: 'planner/package.v11.md', version: 'v11' });
+    expect(file).toMatchObject({ name: 'planner/package.v12.md', version: 'v12' });
   });
 
-  it('RF-608 package.v11.md asks for the role and its example answer carries one', async () => {
-    const prompt = await readFile('prompts/planner/package.v11.md', 'utf8');
+  it('RF-608 package.v12.md asks for the role and its example answer carries one', async () => {
+    const prompt = await readFile('prompts/planner/package.v12.md', 'utf8');
     const example = filledExampleOf(prompt);
 
     expect(prompt).toContain('role');
@@ -199,7 +199,7 @@ describe('RF-608 DEC-184 with an own architecture answer the style is only the c
 });
 
 describe('EV-73 an own architecture answer that names a catalogue style is judged against it', () => {
-  const own = { typed: { architecture: 'Modular monolith with a separate reporting module' } };
+  const own = { typed: { architecture: 'We want a modular monolith' } };
   const modules = [
     part('Orders', 'module', ['Kernel']),
     part('Reporting', 'module', ['Kernel']),

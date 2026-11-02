@@ -49,7 +49,7 @@ describe('BuildPlan: the run manifest', () => {
         .update(await readFile(`prompts/planner/${name}`))
         .digest('hex');
     expect(manifest.promptVersions).toEqual({
-      'planner/package.v11.md': { version: 'v11', sha256: await sha('package.v11.md') },
+      'planner/package.v12.md': { version: 'v12', sha256: await sha('package.v12.md') },
       'planner/continue.v1.md': { version: 'v1', sha256: await sha('continue.v1.md') },
       'planner/prd.v4.md': { version: 'v4', sha256: await sha('prd.v4.md') },
       'planner/data-model.v5.md': { version: 'v5', sha256: await sha('data-model.v5.md') },
@@ -59,7 +59,7 @@ describe('BuildPlan: the run manifest', () => {
       'planner/coverage.v1.md': { version: 'v1', sha256: await sha('coverage.v1.md') },
       'planner/gap.v3.md': { version: 'v3', sha256: await sha('gap.v3.md') },
       'planner/gap-repair.v3.md': { version: 'v3', sha256: await sha('gap-repair.v3.md') },
-      'planner/plan-repair.v1.md': { version: 'v1', sha256: await sha('plan-repair.v1.md') },
+      'planner/plan-repair.v2.md': { version: 'v2', sha256: await sha('plan-repair.v2.md') },
       'shared/secret-risk.v1.md': {
         version: 'v1',
         sha256: await sha('../shared/secret-risk.v1.md'),

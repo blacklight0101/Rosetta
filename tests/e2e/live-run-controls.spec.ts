@@ -37,9 +37,17 @@ const runMeter = (page: Page): Locator =>
 async function boxOf(
   locator: Locator,
 ): Promise<{ x: number; y: number; width: number; height: number }> {
-  const box = await locator.boundingBox();
-  if (box === null) throw new Error('The element has no box.');
-  return box;
+  // The box in page coordinates: a scroll between two reads must not count as a move.
+  await expect(locator).toBeVisible();
+  return locator.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: rect.x + window.scrollX,
+      y: rect.y + window.scrollY,
+      width: rect.width,
+      height: rect.height,
+    };
+  });
 }
 
 const pauseCount = (page: Page): Locator => page.getByTestId('pause-count');

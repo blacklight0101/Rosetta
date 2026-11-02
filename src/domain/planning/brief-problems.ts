@@ -18,7 +18,11 @@ function isPrinciple(catalogue: Catalogue, id: string): boolean {
 
 /** What is wrong with the answers of a save: an unknown principle, a repeated layer or entry, a typed build method with agents. */
 // RF-605
-export function briefProblems(answers: BriefAnswers, catalogue: Catalogue): BriefProblem[] {
+export function briefProblems(
+  answers: BriefAnswers,
+  catalogue: Catalogue,
+  sourceKind?: string,
+): BriefProblem[] {
   const problems: BriefProblem[] = [];
   const principles = answers.principles ?? [];
   principles.forEach((id, index) => {
@@ -38,7 +42,32 @@ export function briefProblems(answers: BriefAnswers, catalogue: Catalogue): Brie
       problems.push({ field: `typed.${id}`, reason: 'This question takes no typed text.' });
     }
   }
-  return [...problems, ...typedBuildMethodProblems(answers)];
+  return [
+    ...problems,
+    ...workbookKeyProblems(answers, sourceKind),
+    ...typedBuildMethodProblems(answers),
+  ];
+}
+
+// P8-09, RF-648: the workbook questions are asked only of a project of workbooks; any other
+// project refuses their keys, so a repository or zip brief never holds an answer nobody was asked.
+function workbookKeyProblems(
+  answers: BriefAnswers,
+  sourceKind: string | undefined,
+): BriefProblem[] {
+  if (sourceKind === undefined || sourceKind === 'workbook') return [];
+  const asked = (id: string): boolean => workbookQuestionIds.some((each) => each === id);
+  return [
+    ...Object.keys(answers.chosen ?? {})
+      .filter(asked)
+      .map((id) => `chosen.${id}`),
+    ...Object.keys(answers.typed ?? {})
+      .filter(asked)
+      .map((id) => `typed.${id}`),
+  ].map((field) => ({
+    field,
+    reason: 'This question is asked only of a project of Excel workbooks.',
+  }));
 }
 
 // DEC-187 (4): a typed build method is not an agent build; Rosetta does not read free text as a choice.

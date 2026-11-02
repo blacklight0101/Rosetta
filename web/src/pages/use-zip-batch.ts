@@ -35,7 +35,8 @@ function useResume(existing: Project | undefined, idle: boolean, follow: Follow)
     void readStateOf(client, { projectId: existing.id }, reading.signal, uploadSummarySchema).then(
       (read) => {
         if (!read.ok || reading.signal.aborted || !idleNow.current) return;
-        if (read.value.phase !== 'open') follow(existing, read.value);
+        if (read.value.phase !== 'open' && read.value.phase !== 'none')
+          follow(existing, read.value);
       },
     );
     return () => {

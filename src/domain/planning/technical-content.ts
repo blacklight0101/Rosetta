@@ -1,3 +1,4 @@
+import { supportedSources } from './source-ids.js';
 // RF-622, ADR-005, ADR-018, DEC-135: the technical part of the planner's draft and of the package.
 
 export const securityApproaches = ['allowlist', 'denylist', 'other'] as const;
@@ -70,10 +71,6 @@ export interface TechnicalAssembly {
   readonly dropped: number;
 }
 
-function unique<T>(items: readonly T[]): T[] {
-  return [...new Set(items)];
-}
-
 // RF-622, ADR-005: the draft's technical part checked. An integration stays only for a supported
 // card, once (the first answer counts); a security control or a target stays only with a
 // supported source card; a decision position names the record of the draft's decision at that
@@ -95,7 +92,7 @@ export function assembleTechnical(
     items: readonly T[],
   ): (T & { readonly sources: readonly string[] })[] =>
     items.flatMap((item) => {
-      const sources = unique(item.sources.filter((id) => supported.has(id)));
+      const sources = supportedSources(item.sources, supported);
       return sources.length === 0 ? [] : [{ ...item, sources }];
     });
   const security = withSources(draft.security).map((item) => ({

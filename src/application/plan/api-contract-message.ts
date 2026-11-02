@@ -3,6 +3,7 @@ import { renderDataBlock } from '../../domain/egress/data-block.js';
 import { servableCards } from '../../domain/planning/api-contract.js';
 import { omittedSummary } from './plan-packing.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
+import type { ArchitectureStyleId } from '../../domain/planning/catalogue.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 
 // RF-624, RF-145, ADR-013: what the planner is given to write the API contract. Two data blocks, each
@@ -15,6 +16,8 @@ import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 export interface ApiContractMessageInput {
   readonly cards: readonly SourceCard[];
   readonly brief: PlanningBrief;
+  /** P8-09: the style the components are judged against (an own answer may name another than the brief's). */
+  readonly style: ArchitectureStyleId;
   /** P3-113: the ids of the `FEAT` and `FLOW` cards the prompt names by title only, to fit the planner's window. */
   readonly omitted?: ReadonlySet<string>;
 }
@@ -44,7 +47,7 @@ function cardsText(cards: readonly SourceCard[], omitted: ReadonlySet<string>): 
 ${summary}`;
 }
 
-function ownerText(brief: PlanningBrief): string {
+function ownerText(brief: PlanningBrief, style: ArchitectureStyleId): string {
   const choice = (layer: string): string | null =>
     brief.stack.find((entry) => entry.layer === layer)?.choice ?? null;
   const targetStack = {
@@ -52,7 +55,7 @@ function ownerText(brief: PlanningBrief): string {
     backEnd: choice('backend-framework'),
     database: choice('database'),
   };
-  return JSON.stringify({ targetStack, architectureStyle: brief.architecture.style }, null, 2);
+  return JSON.stringify({ targetStack, architectureStyle: style }, null, 2);
 }
 
 /** The user message: the cards block, then the owner's block, each with a tag of its own. */
@@ -67,7 +70,7 @@ export function apiContractMessage(input: ApiContractMessageInput, tags: () => s
     tags(),
   );
   const owner = renderDataBlock(
-    { source: 'owner_answers', excerpts: [], text: ownerText(input.brief) },
+    { source: 'owner_answers', excerpts: [], text: ownerText(input.brief, input.style) },
     tags(),
   );
   return `${cards}\n\n${owner}`;

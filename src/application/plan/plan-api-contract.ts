@@ -8,6 +8,7 @@ import {
 import { assembleApiContract } from '../../domain/planning/api-contract-assembly.js';
 import type { TargetDataModel } from '../../domain/planning/data-model.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
+import type { ArchitectureStyleId } from '../../domain/planning/catalogue.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { parseApiContractAnswer } from './api-contract-answer.js';
@@ -27,6 +28,8 @@ export interface ApiContractInput {
   readonly brief: PlanningBrief;
   /** The checked target data model the schemas and the operation bodies come from. */
   readonly dataModel: TargetDataModel;
+  /** P8-09: the style the components are judged against. */
+  readonly style: ArchitectureStyleId;
 }
 
 export interface PlannedApiContract {
@@ -45,16 +48,16 @@ export async function planApiContract(
   call: PlannerCall,
   input: ApiContractInput,
 ): Promise<PlannedApiContract> {
-  const { cards, brief, dataModel } = input;
+  const { cards, brief, dataModel, style } = input;
   const scope = apiScope(cards, brief);
   if (!scope.ask) {
     const contract = noApiContract(scope.reason);
     return { contract, asked: false, readable: true, leftOut: nothingLeftOut };
   }
   const omitted = omittedFor(call, servableCards(cards), (each) =>
-    apiContractMessage({ cards, brief, omitted: each }, () => MEASURING_TAG),
+    apiContractMessage({ cards, brief, style, omitted: each }, () => MEASURING_TAG),
   );
-  const message = apiContractMessage({ cards, brief, omitted }, call.tags);
+  const message = apiContractMessage({ cards, brief, style, omitted }, call.tags);
   const output = await askPlannerWith(call, message);
   const servable = servableCards(cards).map((card) => card.id);
   const assembly = assembleApiContract(parseApiContractAnswer(output), servable, dataModel);

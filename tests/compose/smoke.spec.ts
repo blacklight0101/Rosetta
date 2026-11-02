@@ -64,6 +64,9 @@ test('RF-010 creates the demo project', async () => {
   await page.getByLabel('GitHub repository URL').fill(demoUrl);
   await page.getByRole('button', { name: 'Create project' }).click();
 
+  // P8-10: a new project opens its page; the list shows it afterwards.
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
+  await page.goto('/projects');
   await expect(page.getByRole('row').filter({ hasText: 'octo/demo' })).toBeVisible();
 });
 

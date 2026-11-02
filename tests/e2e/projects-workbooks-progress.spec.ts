@@ -111,11 +111,9 @@ test('RF-159 shows the steps, the workbook and sheet, the cells and the time, th
   await expect(said).toHaveCount(0);
 
   script.scripted = false;
-  await expect(page.getByRole('status').filter({ hasText: '2 workbooks read' })).toBeVisible({
-    timeout: 15_000,
-  });
+  // EV-87, P8-10: stored workbooks open the project page.
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u, { timeout: 15_000 });
   await expect(panel).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Start a run' })).toBeVisible();
 });
 
 test('RF-159 closing the page does not cancel the work: the project page shows its progress after a reload and then the summary', async ({
@@ -136,9 +134,8 @@ test('RF-159 closing the page does not cancel the work: the project page shows i
   await expectNoSeriousViolations(page);
 
   script.scripted = false;
-  await expect(page.getByRole('status').filter({ hasText: '2 workbooks read' })).toBeVisible({
-    timeout: 15_000,
-  });
+  // EV-87, P8-10: stored workbooks open the project page.
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u, { timeout: 15_000 });
   await expect(
     page.getByText(/Pricing\.xlsm.*Discounts\.xlsx|Excel, 2 workbooks/u).first(),
   ).toBeVisible();
@@ -166,10 +163,11 @@ test('RF-159 Cancel by keyboard shows the real outcome: nothing published when i
 
   expect([204, 409]).toContain(status);
   const stored = status === 409;
-  const outcome = stored
-    ? page.getByRole('status').filter({ hasText: '2 workbooks read' })
-    : page.getByRole('alert').filter({ hasText: 'Nothing was published' });
-  await expect(outcome).toBeVisible({ timeout: 15_000 });
+  if (stored) await expect(page).toHaveURL(/\/projects\/[^/]+$/u, { timeout: 15_000 });
+  else {
+    const alert = page.getByRole('alert').filter({ hasText: 'Nothing was published' });
+    await expect(alert).toBeVisible({ timeout: 15_000 });
+  }
   await expect(page.getByText('Nothing was published')).toHaveCount(stored ? 0 : 1);
   await expect(page.getByTestId('processing')).toHaveCount(0);
   const shown = await page.request.get(`/api/projects/${projectId}`);
@@ -207,9 +205,8 @@ test('RF-159 Cancel of a batch the server has already stored answers 409 and the
   script.scripted = false;
 
   expect(status).toBe(409);
-  await expect(page.getByRole('status').filter({ hasText: '2 workbooks read' })).toBeVisible({
-    timeout: 15_000,
-  });
+  // EV-87, P8-10: stored workbooks open the project page.
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u, { timeout: 15_000 });
   await expect(page.getByText('Nothing was published')).toHaveCount(0);
   await expect(page.getByTestId('processing')).toHaveCount(0);
   const shown = await page.request.get(`/api/projects/${projectId}`);

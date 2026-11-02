@@ -126,6 +126,24 @@ export function workbookOptions(question: WorkbookQuestionId, hosting: string): 
   ];
 }
 
+const questionText: Readonly<Record<WorkbookQuestionId, string>> = {
+  'workbook.signIn': 'How will people sign in to the new application?',
+  'workbook.store': 'Where will the new application keep its secrets?',
+  'workbook.screens': 'Should each register get screens?',
+};
+
+/**
+ * P8-09: the wording of the three questions as the server serves it with the catalogue (the web code
+ * imports nothing from src, so Plan setup reads these instead of keeping a copy). The options are in
+ * their base order; the sign-in recommends `windows` for a hosting answer that matches `windowsHost`
+ * (case-insensitive) and `sso` otherwise, the other questions their first option.
+ */
+export const workbookWording = {
+  questions: workbookQuestionIds.map((id) => ({ id, label: questionText[id] })),
+  options: OPTIONS,
+  windowsHost: WINDOWS_HOST.source,
+} as const;
+
 /** The hosting layer's answer of the brief, empty when there is none. */
 function hostingOf(brief: PlanningBrief): string {
   return brief.stack.find((entry) => entry.layer === 'hosting')?.choice ?? '';
@@ -153,12 +171,6 @@ export function workbookSetup(brief: PlanningBrief): WorkbookSetup {
     screens: answerOf(brief, 'workbook.screens'),
   };
 }
-
-const questionText: Readonly<Record<WorkbookQuestionId, string>> = {
-  'workbook.signIn': 'How will people sign in to the new application?',
-  'workbook.store': 'Where will the new application keep its secrets?',
-  'workbook.screens': 'Should each register get screens?',
-};
 
 const answerOf2 = (setup: WorkbookSetup, id: WorkbookQuestionId): WorkbookAnswer =>
   id === 'workbook.signIn' ? setup.signIn : id === 'workbook.store' ? setup.secrets : setup.screens;
