@@ -171,8 +171,7 @@ export function CapsForm(props: {
           {message}
         </p>
         <p class="rst-settings__note">
-          A call is refused before it is made when its worst case would cross any cap. A step of a
-          journey runs under the amount approved on Analyse, which replaces the project run cap.
+          A call is refused before it is made when its worst case would cross any cap.
         </p>
       </form>
     </section>

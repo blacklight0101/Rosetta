@@ -2,8 +2,8 @@ import type { EpochMs } from '../accounts/user.js';
 import type { Amount } from '../budget/approved-amount.js';
 import type { Run } from '../runs/run.js';
 
-// RF-011, RF-435, ADR-027, DEC-196, DEC-205: the journey of a project. It records the one amount
-// the owner approved (the worst-case total of the journey estimate) and when. Its steps are the
+// RF-011, RF-435, ADR-027, DEC-196, DEC-206: the journey of a project. It records the one amount
+// the owner approved (the lower of the worst-case total and the administrator ceilings) and when. Its steps are the
 // project's understand and plan runs queued since then; its spend is their cost and tokens, and
 // what is left is the line every step runs under. A scan is free and never counts.
 

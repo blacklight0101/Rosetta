@@ -71,12 +71,24 @@ test('RF-432 RF-435 a step approved near the real spend pauses at the line and C
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
 
-  await page.getByRole('button', { name: /^Continue/u }).click();
-
+  // Each Continue adds N (half of the line): the question goes away and the same run resumes; it asks
+  // again until the run has what it needs and completes.
+  const status = runStatus(page);
   const question = page.getByTestId('approval-question');
-  await expect(question.or(runStatus(page).getByText(/Completed|Cap reached/u))).toBeVisible({
-    timeout: 180_000,
-  });
+  let answers = 0;
+  for (
+    ;
+    answers < 8 && (await status.innerText()).includes('Waiting for your approval');
+    answers += 1
+  ) {
+    await page.getByRole('button', { name: /^Continue/u }).click();
+    await expect(question).toHaveCount(0, { timeout: 60_000 });
+    const asksAgain = async (): Promise<boolean> =>
+      (await question.count()) > 0 || (await status.innerText()).includes('Completed');
+    await expect.poll(asksAgain, { timeout: 180_000 }).toBe(true);
+  }
+  expect(answers).toBeGreaterThan(0);
+  await expect(status).toContainText('Completed');
 });
 
 test('RF-432 RF-435 Stop here ends a paused step at its cap', async ({ page }, info) => {
@@ -87,6 +99,6 @@ test('RF-432 RF-435 Stop here ends a paused step at its cap', async ({ page }, i
 
   await page.getByRole('button', { name: 'Stop here' }).click();
 
-  await expect(runStatus(page)).toContainText(/Cap reached|Partly read/u, { timeout: 60_000 });
+  await expect(runStatus(page)).toHaveText('Partly read', { timeout: 60_000 });
   await expect(page.getByTestId('approval-question')).toHaveCount(0);
 });

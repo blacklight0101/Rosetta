@@ -32,7 +32,7 @@ export function approvalText(estimate: RunEstimate): string | undefined {
   return journey === undefined ? undefined : figureText(estimate, journey.approvable);
 }
 
-/** The likely journey total, stated beside the approved worst case. */
+/** The likely journey total, stated beside the approved figure. */
 export function likelyText(estimate: RunEstimate): string | undefined {
   const { journey } = estimate;
   return journey === undefined ? undefined : figureText(estimate, journey.likely);

@@ -46,7 +46,7 @@ const gateInput = {
 };
 
 describe('RF-430 the approved figure on the start button', () => {
-  it('RF-430 DEC-205 approves the worst-case journey total in dollars for a priced estimate', () => {
+  it('RF-430 DEC-206 approves the journey figure in dollars for a priced estimate', () => {
     const estimate = estimateWith([role({})]);
 
     expect(approvalText(estimate)).toBe('$4.10');

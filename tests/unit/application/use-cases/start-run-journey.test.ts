@@ -135,6 +135,26 @@ describe('a step that finds nothing left of the amount', () => {
   });
 });
 
+describe('steps started at the same moment', () => {
+  it('RF-435 P8-03 two starts that read the same free line do not both get it', async () => {
+    const { harness, project, startRun, analyse } = await setup();
+    const first = await analyse();
+    if (!first.ok) throw new Error('Analyse was refused.');
+    await harness.runs.recordTotals(first.value.run.id, {
+      ...{ costMicros: 0, inputTokens: 1_000_000, outputTokens: 0 },
+      cachedInputTokens: 0,
+    });
+    await harness.runs.end(first.value.run.id, 'Completed', first.value.run.queuedAt + 1);
+    const start = () =>
+      startRun.execute({ ...{ actor: userAmy, projectId: project.id, stage: 'understand' } });
+
+    const both = await Promise.all([start(), start()]);
+
+    expect(both.filter((each) => each.ok)).toHaveLength(1);
+    expect(both.filter((each) => !each.ok)).toEqual([{ ok: false, error: 'RST-2311' }]);
+  });
+});
+
 describe('a plan run of a journey', () => {
   const plan = { stage: 'plan', cloudConsent: true } as const;
 

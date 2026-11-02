@@ -7,6 +7,7 @@ import { err, type Result } from '../../domain/errors/result.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
+import { withProjectLock } from '../journey/journey-lock.js';
 import { stepAmountChecked } from '../journey/journey-budget.js';
 import type { JourneyRecords } from '../ports/journey-records.js';
 import { scopeOf } from '../runs/run-scope.js';
@@ -82,6 +83,14 @@ export class StartDeepen {
 
   // RF-209, RF-1105
   async execute(request: StartDeepenRequest): Promise<Result<SubmittedRun, StartDeepenProblem>> {
+    const run = await this.deps.runs.find(request.actor.userId, request.runId);
+    // P8-03: the free line of the journey is read and used by one start at a time.
+    return withProjectLock(run?.projectId ?? request.runId, () => this.start(request));
+  }
+
+  private async start(
+    request: StartDeepenRequest,
+  ): Promise<Result<SubmittedRun, StartDeepenProblem>> {
     const { actor } = request;
     const run = await this.deps.runs.find(actor.userId, request.runId);
     if (run === undefined) return err(ERROR_CODES.notFound);
