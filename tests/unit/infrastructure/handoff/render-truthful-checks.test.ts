@@ -54,6 +54,25 @@ describe('checks.md: flows against the style', () => {
     );
   });
 
+  it('P8-09 EV-73 judges the flows against the style the own answer names, not the brief default', () => {
+    const base = handoffOf('Plain text.');
+    const flows: HandoffPackage['flows'] = {
+      flows: [
+        {
+          ...{ cardId: 'FLOW-005', title: 'Delete', trigger: 't', outcome: 'o' },
+          steps: [step('FLOW-005.c1', 'Pages'), step('FLOW-005.c2', 'Store')],
+        },
+      ],
+      outOfScope: [],
+    };
+    const content = { ...base.content, components: layeredComponents(base.content) };
+    const hexagonal = { ...base.style, id: 'hexagonal', title: 'Hexagonal (ports and adapters)' };
+
+    const checks = checksOf({ content, flows, style: hexagonal });
+
+    expect(checks).not.toContain('a layer may call only the layer directly below it');
+  });
+
   it('RF-608 P5-40 a package whose flows follow the style has no such section', () => {
     expect(checksOf({})).not.toContain('## Flows against the style');
   });

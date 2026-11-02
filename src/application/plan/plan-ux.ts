@@ -7,6 +7,7 @@ import {
   type TargetUx,
   type UxLeftOut,
 } from '../../domain/planning/target-ux.js';
+import type { ArchitectureStyleId } from '../../domain/planning/catalogue.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { parseUxAnswer } from './ux-answer.js';
 import { uxMessage } from './ux-message.js';
@@ -23,6 +24,8 @@ export interface UxInput {
   /** The cards with their `Supported` claims. */
   readonly cards: readonly SourceCard[];
   readonly brief: PlanningBrief;
+  /** P8-09: the style the components are judged against. */
+  readonly style: ArchitectureStyleId;
 }
 
 export interface PlannedUx {
@@ -42,7 +45,7 @@ export async function planUx(call: PlannerCall, input: UxInput): Promise<Planned
   if (screenCards.length === 0) {
     return { ux: noUx, asked: false, readable: true, leftOut: nothingLeftOut };
   }
-  const message = uxMessage({ screenCards, brief: input.brief }, call.tags);
+  const message = uxMessage({ screenCards, brief: input.brief, style: input.style }, call.tags);
   const draft = parseUxAnswer(await askPlannerWith(call, message));
   const assembly = assembleUx(draft, screenCards);
   return { ux: assembly.ux, asked: true, readable: draft !== undefined, leftOut: assembly.leftOut };

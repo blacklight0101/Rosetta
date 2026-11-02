@@ -25,19 +25,21 @@ function readsLikeDenylist(control: PlanControl): boolean {
   );
 }
 
-const signInWords = /\b(?:sign[\s-]?in|log[\s-]?in|authenticat\w*|password\w*)\b/iu;
-const secretWords = /\b(?:secrets?|credentials?|api keys?|connection strings?|tokens?)\b/iu;
+// P8-09: matched against the control's own title only, and not against a word that names another
+// control ("CSRF token", "password hashing" are not the sign-in or the secrets store).
+const signInWords = /\b(?:sign[\s-]?in|log[\s-]?in|authenticat\w*)\b/iu;
+const secretWords = /\b(?:secrets?|credentials?|api keys?|connection strings?)\b/iu;
 
 /**
- * RF-648, RF-649: for a workbook, a control that works by "other" and is about signing in or about
- * secrets names the owner's answer, which the code could not show.
+ * RF-648, RF-649: for a workbook, a control that works by "other" and whose title is about signing in or
+ * about secrets names the owner's answer, which the code could not show.
  */
 function workbookApproach(control: PlanControl, handoff: HandoffPackage): string | undefined {
   const { workbook } = handoff;
   if (workbook === undefined || control.approach !== 'other') return undefined;
-  const text = `${control.name} ${control.description}`;
-  if (signInWords.test(text)) return workbook.signIn.words;
-  return secretWords.test(text) ? workbook.secrets.words : undefined;
+  const title = control.name;
+  if (signInWords.test(title)) return workbook.signIn.words;
+  return secretWords.test(title) ? workbook.secrets.words : undefined;
 }
 
 function approachLine(control: PlanControl, handoff: HandoffPackage, esc: MarkdownEscaper): string {
