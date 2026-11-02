@@ -54,7 +54,7 @@ describe('EV-57 P8-05 the Deepen lists the merge in its events', () => {
     expect(merged).toHaveLength(1);
     expect(merged[0]?.data).toMatchObject({
       keptCardId: 'OQ-001',
-      mergedCardId: 'OQ-001',
+      mergedCardId: 'OQ-002',
       mergedRunKey: deep.runKey,
     });
   });

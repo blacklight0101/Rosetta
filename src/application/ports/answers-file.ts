@@ -1,4 +1,5 @@
 import type { Result } from '../../domain/errors/result.js';
+import type { MergedQuestion } from '../understand/open-questions.js';
 
 // RF-240, RF-1007, DEC-98, data-model.md section 3.16: the project's `answers.md`, one section per
 // open question. A run adds the open questions it found; a question already in the file keeps its
@@ -84,9 +85,13 @@ export interface ProjectRef {
 export interface AnswersFile {
   /**
    * Adds the questions not yet in the project's file (by their text; a `survivor` by its id in its run);
-   * rejects with the writer's code.
+   * rejects with the writer's code. Answers the questions it left out because the file held one that
+   * asks the same (EV-57), each with the question it was merged into, so the run can report them.
    */
-  addQuestions(project: ProjectRef, questions: readonly OpenQuestion[]): Promise<void>;
+  addQuestions(
+    project: ProjectRef,
+    questions: readonly OpenQuestion[],
+  ): Promise<readonly MergedQuestion[]>;
   /** RF-1007: the questions the run with that folder name added, in file order. */
   questionsOf(project: ProjectRef, runKey: string): Promise<readonly RecordedQuestion[]>;
   /** RF-241: the questions with an answer, of every run, in file order. */

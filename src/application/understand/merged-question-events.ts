@@ -46,8 +46,9 @@ export async function addRunQuestions(
   await publishRunMerges(parts.execution.events, cards, run.runKey);
   const questions = openQuestionsOf(cards, run.runKey);
   if (questions.length === 0) return;
-  await parts.deps.answers.addQuestions(
+  const merged = await parts.deps.answers.addQuestions(
     { userId: run.userId, projectId: run.projectId },
     questions,
   );
+  await publishMergedQuestions(parts.execution.events, merged);
 }

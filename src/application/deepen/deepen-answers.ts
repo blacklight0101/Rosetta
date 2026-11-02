@@ -6,7 +6,7 @@ import {
   withAnswersOf,
   type Rerun,
 } from '../understand/answer-rerun.js';
-import { sameQuestion, type MergedQuestion } from '../understand/open-questions.js';
+import { sameQuestion } from '../understand/open-questions.js';
 import type { ReaderTask } from '../understand/reader-tasks.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
 import type { DeepenParts } from './deepen-parts.js';
@@ -97,25 +97,6 @@ export function mergedIntoAnswered(
       card.type === 'OQ' &&
       answered.some((each) => sameQuestion(each.question, card.question ?? card.title)),
   );
-}
-
-/** EV-57, P8-05: each merged card with the answered question it was merged into, for the report. */
-export function mergedPairsOf(
-  fresh: readonly Card[],
-  answered: readonly Pick<AnsweredQuestion, 'question' | 'cardId' | 'runKey'>[],
-  runKey: string,
-): readonly MergedQuestion[] {
-  return mergedIntoAnswered(fresh, answered).flatMap((card) => {
-    const kept = answered.find((each) => sameQuestion(each.question, card.question ?? card.title));
-    if (kept === undefined) return [];
-    return [
-      {
-        ...{ keptCardId: kept.cardId, keptQuestion: kept.question, keptRunKey: kept.runKey },
-        ...{ mergedCardId: card.id, mergedQuestion: card.question ?? card.title },
-        mergedRunKey: runKey,
-      },
-    ];
-  });
 }
 
 /** EV-57, P8-05: the run log names the size cap when it cut the answers given to the readers. */
