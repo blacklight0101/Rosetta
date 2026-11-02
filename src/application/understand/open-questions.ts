@@ -1,7 +1,7 @@
 import type { Card } from '../../domain/cards/card.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import { sameQuestion } from './same-question.js';
-import type { OpenQuestion, SuggestedOption } from '../ports/answers-file.js';
+import type { MergedQuestion, OpenQuestion, SuggestedOption } from '../ports/answers-file.js';
 
 // RF-243, RF-240, DEC-136: the open questions of a run as `answers.md` gets them. The same
 // question asked by several areas, or twice in one (Q-52), is one question that keeps every citation; the questions are
@@ -119,16 +119,6 @@ export function openQuestionsOf(cards: readonly Card[], runKey: string): readonl
       ...(options === undefined ? {} : { options }),
     };
   });
-}
-
-/** A question merged into another, and the runs that asked both. */
-export interface MergedQuestion {
-  readonly keptCardId: string;
-  readonly keptQuestion: string;
-  readonly keptRunKey: string;
-  readonly mergedCardId: string;
-  readonly mergedQuestion: string;
-  readonly mergedRunKey: string;
 }
 
 /** RF-243, EV-57: the pairs of open questions of one run that were merged into one. */

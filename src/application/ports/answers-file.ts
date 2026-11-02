@@ -1,5 +1,4 @@
 import type { Result } from '../../domain/errors/result.js';
-import type { MergedQuestion } from '../understand/open-questions.js';
 
 // RF-240, RF-1007, DEC-98, data-model.md section 3.16: the project's `answers.md`, one section per
 // open question. A run adds the open questions it found; a question already in the file keeps its
@@ -114,4 +113,14 @@ export interface AnswersFile {
    * a section the file does not hold is skipped; no section is deleted.
    */
   keepMerge(project: ProjectRef, edits: readonly MergeEdit[]): Promise<void>;
+}
+
+/** A question merged into another, and the runs that asked both. */
+export interface MergedQuestion {
+  readonly keptCardId: string;
+  readonly keptQuestion: string;
+  readonly keptRunKey: string;
+  readonly mergedCardId: string;
+  readonly mergedQuestion: string;
+  readonly mergedRunKey: string;
 }

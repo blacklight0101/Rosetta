@@ -5,9 +5,9 @@ import type {
   OpenQuestion,
   ProjectRef,
   MergeEdit,
+  MergedQuestion,
   RecordedQuestion,
 } from '../../application/ports/answers-file.js';
-import type { MergedQuestion } from '../../application/understand/open-questions.js';
 import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
 import { sameQuestion } from '../../application/understand/open-questions.js';
 import { KeyedQueue } from '../../application/support/keyed-queue.js';

@@ -1,6 +1,6 @@
 import type { Card } from '../../domain/cards/card.js';
-import type { AnswersFile } from '../ports/answers-file.js';
-import { mergedQuestionsOf, openQuestionsOf, type MergedQuestion } from './open-questions.js';
+import type { AnswersFile, MergedQuestion } from '../ports/answers-file.js';
+import { mergedQuestionsOf, openQuestionsOf } from './open-questions.js';
 
 // RF-243, RF-646, EV-57, P8-05: an event for each question `sameQuestion` merged into another, so the
 // report can list the pairs and a wrong merge can be spotted.
