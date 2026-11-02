@@ -47,6 +47,8 @@ export class RunQueue {
   private readonly deps: RunQueueDependencies;
   private readonly steps = new KeyedQueue();
   private readonly controllers = new Map<string, AbortController>();
+  /** P8-12: aborted only by the owner's Stop or a shutdown, never by a cap, so a step after a cap can be stopped. */
+  private readonly ownerStops = new Map<string, AbortController>();
   private readonly inFlight = new Set<Promise<void>>();
   private closing = false;
 
@@ -109,6 +111,7 @@ export class RunQueue {
       if (run.queueState === 'Ended') return err('already-ended');
       const controller = this.controllers.get(run.id);
       if (run.queueState === 'Running' && controller !== undefined) {
+        this.ownerStops.get(run.id)?.abort();
         controller.abort();
         return ok({ kind: 'stopping', run });
       }
@@ -143,6 +146,7 @@ export class RunQueue {
   // RNF-002
   async shutDown(): Promise<void> {
     this.closing = true;
+    for (const owner of this.ownerStops.values()) owner.abort();
     for (const controller of this.controllers.values()) controller.abort();
     await this.steps.run(STEP, () => Promise.resolve());
     await Promise.allSettled([...this.inFlight]);
@@ -178,6 +182,7 @@ export class RunQueue {
   private async launch(run: Run, executor: RunExecutor): Promise<void> {
     const controller = new AbortController();
     this.controllers.set(run.id, controller);
+    this.ownerStops.set(run.id, new AbortController());
     let started: StartedRun | undefined;
     try {
       started = await this.deps.lifecycle.begin(run);
@@ -187,6 +192,7 @@ export class RunQueue {
     }
     if (started === undefined) {
       this.controllers.delete(run.id);
+      this.ownerStops.delete(run.id);
       return;
     }
     const finished = this.execute(started, executor, controller).finally(() => {
@@ -206,6 +212,7 @@ export class RunQueue {
     const pause = isApprovalPause(controller.signal.reason) && outcome.endState === 'CapReached';
     if (!pause || !(await this.pauseQuietly(run, outcome))) await this.endQuietly(run, outcome);
     this.controllers.delete(run.id);
+    this.ownerStops.delete(run.id);
     await this.dispatch().catch((error: unknown) =>
       this.report(run, 'could not start the next run', error),
     );
@@ -245,6 +252,7 @@ export class RunQueue {
       manifest: started.manifest,
       events: started.events,
       signal: controller.signal,
+      ownerStop: this.ownerStops.get(run.id)?.signal,
       stop: (reason) => {
         controller.abort(reason);
       },

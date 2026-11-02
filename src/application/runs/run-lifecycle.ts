@@ -156,7 +156,7 @@ export class RunLifecycle {
     const scope = scopeOf(run);
     const stored = await this.deps.manifests.read(scope);
     if (stored === undefined) return undefined;
-    const ended = endManifest(stored, endState, endedAt);
+    const ended = endManifest(withoutOverviewPass(stored), endState, endedAt);
     if (!ended.ok) return stored;
     await this.deps.manifests.write(scope, ended.value);
     return ended.value;
@@ -200,4 +200,15 @@ function endData(
     ...(failedAreas === undefined ? {} : { failedAreas }),
     ...(unreadAreas === undefined ? {} : { unreadAreas }),
   };
+}
+
+/**
+ * P8-12: the overview-only mark and the record of the earlier end belong to one queued pass; once
+ * the run has ended, nothing (Continue, a plain Resume) can reuse them.
+ */
+function withoutOverviewPass(manifest: RunManifest): RunManifest {
+  const kept = Object.entries(manifest.options).filter(
+    ([key]) => key !== 'overviewOnly' && key !== 'overviewEnded',
+  );
+  return { ...manifest, options: Object.fromEntries(kept) };
 }

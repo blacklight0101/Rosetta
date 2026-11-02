@@ -74,6 +74,19 @@ describe('POST /api/runs/:runId/resume', () => {
   });
 });
 
+describe('POST /api/runs/:runId/overview', () => {
+  it('P8-12 queues the capped run to write its overview alone and answers 202', async () => {
+    const { test, amy, ended } = await setup();
+    const id = await ended('understand', 'CapReached');
+
+    const response = await amy.request({ method: 'POST', url: `/api/runs/${id}/overview` });
+
+    expect(response.statusCode).toBe(202);
+    expect(response.json()).toMatchObject({ id, queueState: 'Running', endState: null });
+    expect(test.runs.executor.started).toHaveLength(2);
+  });
+});
+
 describe('POST /api/runs/:runId/resume, refusals', () => {
   it('RF-006 answers 409 for a run that is already running again', async () => {
     const { amy, ended } = await setup();

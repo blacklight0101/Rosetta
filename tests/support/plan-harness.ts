@@ -1,6 +1,5 @@
 import { join } from 'node:path';
 import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
-import { vi } from 'vitest';
 import type { AnswerEntry } from '../../src/application/ports/answers-file.js';
 import type { ScanResults } from '../../src/application/ports/scan-results.js';
 import { ERROR_CODES } from '../../src/domain/errors/codes.js';
@@ -10,6 +9,8 @@ import { RunQueue } from '../../src/application/runs/run-queue.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
 import type { PlanEstimate } from '../../src/application/estimate/plan-estimate-types.js';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
+import { continuerOf, waitUntilEnded, type Continuer } from './understand-run-starters.js';
+import { FilePlannerAnswers } from '../../src/infrastructure/files/file-planner-answers.js';
 import { BuildPlan } from '../../src/application/use-cases/build-plan.js';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import type { Project } from '../../src/application/projects/project.js';
@@ -72,8 +73,10 @@ export interface PlanHarness {
   saveBrief(answers: BriefAnswers): Promise<void>;
   /** Seeds a scan run that ended `Completed` on the snapshot the understand run read. */
   seedScan(overrides?: Partial<Run>): Promise<Run>;
-  /** Starts a plan run with these options as the queue does and waits for its end. */
+  /** Starts a plan run with these options as the queue does and waits for its end or its pause. */
   plan(options?: Readonly<Record<string, unknown>>): Promise<Run>;
+  /** RF-432: Continue (+N) of a paused plan run; waits for its next end or pause. */
+  continueRun: Continuer;
   /** The plan estimate of the project, as the plan page shows it before the run starts. */
   estimate(sourceRunId?: string): Promise<PlanEstimate>;
   /** Stops every running run, as the owner's stop does. */
@@ -127,6 +130,7 @@ export function planExecutor(
     costTotals: new MemoryCostTotals(),
     costReports: new FileCostReportWriter({ writer, masker }),
     handoff: new FileHandoffWriter({ writer, masker }),
+    plannerAnswers: new FilePlannerAnswers({ writer, masker }),
     catalogue: () => Promise.resolve(shippedCatalogue),
     prompt: () => loadPlannerPrompt('prompts'),
     prdPrompt: () => loadPrdPrompt('prompts'),
@@ -160,21 +164,6 @@ function queueOf(s: Stores, providers: UnderstandProviders, scans: ScanResults):
     executors: { plan: planExecutor(s, providers, scans) },
     maxRunning: 1,
   });
-}
-
-async function ended(s: Stores, run: Run): Promise<Run> {
-  let latest: Run | undefined;
-  await vi.waitFor(
-    async () => {
-      latest = await s.runs.find(run.userId, run.id);
-      if (latest?.queueState !== 'Ended') throw new Error('The run has not ended');
-      const events = await s.log.read(scopeOf(latest), 0);
-      if (events.at(-1)?.type !== 'run.ended') throw new Error('No run.ended yet');
-    },
-    { timeout: 30_000, interval: 2 },
-  );
-  if (latest === undefined) throw new Error('The run vanished');
-  return latest;
 }
 
 /** The user and the project of the plan runs; the planner is the fake model. */
@@ -236,8 +225,9 @@ function harnessOf(parts: HarnessParts): PlanHarness {
     async plan(options = {}) {
       const submitted = await submit.execute({ actor, project, stage: 'plan', options });
       if (!submitted.ok) throw new Error(`The plan run was refused: ${submitted.error}`);
-      return ended(s, submitted.value.run);
+      return waitUntilEnded(s)(submitted.value.run);
     },
+    continueRun: continuerOf(s, queue),
     async manifestOf(run) {
       const manifest = await s.manifests.read(scopeOf(run));
       if (manifest === undefined) throw new Error('The run has no manifest');

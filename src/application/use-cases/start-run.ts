@@ -171,6 +171,7 @@ export class StartRun {
     const options = {
       ...{ cloudConsent, ...(needsPrivate ? { privateCodeConfirmed: true } : {}) },
       ...(sourceRunId === undefined ? {} : { sourceRunId }),
+      ...(await this.planLineOf(request, project)),
     };
     return this.submit({ actor, project, stage: 'plan', options });
   }
@@ -251,6 +252,18 @@ export class StartRun {
     });
     if (submitted.ok) await this.recordJourney(request, project, approved.value, submitted.value);
     return submitted;
+  }
+
+  /**
+   * RF-435, RF-432, P8-01: a plan of a journey runs under what is left of its approved amount and
+   * pauses there; a project with no journey records none and keeps its run caps as a hard stop.
+   */
+  private async planLineOf(
+    request: StartRunRequest,
+    project: Project,
+  ): Promise<{ readonly approvedAmount?: ApprovedAmount }> {
+    const approvedAmount = await this.leftOf(request, project);
+    return approvedAmount === undefined ? {} : { approvedAmount: { ...approvedAmount } };
   }
 
   /** RF-435: a step with no figure of its own runs under what is left of the journey's amount. */

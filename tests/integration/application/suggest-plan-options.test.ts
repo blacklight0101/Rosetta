@@ -31,6 +31,17 @@ function ask(h: SuggestOptionsHarness, cloudConsent = false) {
   return h.suggest.execute({ actor: h.actor, projectId: h.project.id, cloudConsent });
 }
 
+describe('SuggestPlanOptions: the journey amount', () => {
+  it('RF-435 P8-01 the options call runs under what is left of the journey amount, not the project run cap', async () => {
+    const h = await harness({ journey: { tokens: 1, costMicros: 1 } });
+
+    const result = await ask(h);
+
+    expect(result).toEqual({ ok: false, error: ERROR_CODES.budgetCapReached });
+    expect(h.factory.ledger.entries.filter((entry) => entry.costMicros > 0n)).toEqual([]);
+  });
+});
+
 describe('SuggestPlanOptions: the options', () => {
   it('RF-608 RF-609 gives two styles with evidence, one recommended, and two options for every layer', async () => {
     const h = await harness();

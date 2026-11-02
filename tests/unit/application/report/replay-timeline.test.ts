@@ -216,3 +216,18 @@ describe('buildReplay judgement step', () => {
     ]);
   });
 });
+
+describe('buildReplay for a plan run', () => {
+  it('P8-12 shows each planner call as a step', () => {
+    const planned = buildReplay(replayDemoRunKey, [
+      event(1, 'plan.call.started', { call: 'trd' }, 'planner-trd'),
+    ]);
+
+    expect(planned.steps).toHaveLength(1);
+    expect(planned.steps[0]).toMatchObject({
+      kind: 'agent',
+      label: 'Planner call',
+      text: 'Planner call trd started',
+    });
+  });
+});

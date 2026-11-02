@@ -6,6 +6,8 @@ import type { PromptFile } from '../agent/prompt-file.js';
 import type { LlmMessage, LlmResponse } from '../ports/llm-provider.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
+import type { AnswerProgress } from '../ports/planner-answers.js';
+import type { PlannerAnswerBook } from './planner-answer-book.js';
 import { traceIdOf } from '../runs/run-ids.js';
 import {
   cutOffMessage,
@@ -49,6 +51,8 @@ export interface PlannerCall {
   readonly signal: AbortSignal;
   /** P3-113: the planner's window and output limit; the cards are packed to it. Unknown: nothing is packed. */
   readonly window?: PlanWindow | undefined;
+  /** RF-432, P8-01: the answers the run already paid for; a kept one is not asked for again. */
+  readonly answers?: PlannerAnswerBook | undefined;
 }
 
 // RF-604
@@ -58,27 +62,54 @@ export function askPlanner(call: PlannerCall, input: PlanMessageInput): Promise<
 }
 
 /** RF-623: a call with a user message the caller built (the data model has its own input). */
-// RF-623, RF-604
-export async function askPlannerWith(call: PlannerCall, message: string): Promise<string> {
+// RF-623, RF-604, RF-432
+export function askPlannerWith(call: PlannerCall, message: string): Promise<string> {
+  const { answers } = call;
+  if (answers === undefined) return askedWith(call, message);
+  return answers.answerOf(call.agentTaskId, (progress, keep) =>
+    askedWith(call, message, { progress, keep }),
+  );
+}
+
+/** RF-432: the part of a cut-off answer paid for already, and where each new part is kept. */
+interface Resume {
+  readonly progress: AnswerProgress | undefined;
+  readonly keep: (progress: AnswerProgress) => Promise<void>;
+}
+
+/** The model is shown the answer up to its last complete JSON boundary and writes the rest. */
+async function continuation(
+  call: PlannerCall,
+  messages: LlmMessage[],
+  text: string,
+): Promise<{ readonly response: LlmResponse; readonly text: string }> {
+  const shown = resumePoint(text);
+  messages.splice(
+    1,
+    messages.length,
+    { role: 'assistant', content: shown },
+    { role: 'user', content: call.continuePrompt.text.trimEnd() },
+  );
+  const response = await send(call, messages);
+  const joined = joinNoting(shown, response.text);
+  if (joined.replaced) await call.onReplaced?.(replacedMessage);
+  return { response, text: joined.text };
+}
+
+async function askedWith(call: PlannerCall, message: string, resume?: Resume): Promise<string> {
   const limit = call.planner.maxOutputTokens;
   const messages: LlmMessage[] = [{ role: 'user', content: message }];
-  let response = await send(call, messages);
-  let text = response.text;
-  let continued = 0;
+  const kept = resume?.progress;
+  // RF-432: a continued run goes on from the last segment it paid for.
+  let { response, text } =
+    kept === undefined
+      ? await send(call, messages).then((first) => ({ response: first, text: first.text }))
+      : await continuation(call, messages, kept.text);
+  let continued = kept === undefined ? 0 : kept.continued + 1;
   for (; continued < maxPlannerContinuations; continued += 1) {
     if (!isCutOff(text, { ...response.usage, finishReason: response.finishReason }, limit)) break;
-    // The model is shown the answer up to its last complete JSON boundary and writes the rest.
-    text = resumePoint(text);
-    messages.splice(
-      1,
-      messages.length,
-      { role: 'assistant', content: text },
-      { role: 'user', content: call.continuePrompt.text.trimEnd() },
-    );
-    response = await send(call, messages);
-    const joined = joinNoting(text, response.text);
-    text = joined.text;
-    if (joined.replaced) await call.onReplaced?.(replacedMessage);
+    await resume?.keep({ text, continued });
+    ({ response, text } = await continuation(call, messages, text));
   }
   const end = { ...response.usage, finishReason: response.finishReason };
   if (!endsCutOff(text, end, limit, continued)) return text;
