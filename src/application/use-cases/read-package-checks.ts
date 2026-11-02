@@ -23,6 +23,21 @@ export interface PackageChecks {
   readonly truncated: boolean;
 }
 
+/** The sections kept within the limit; a section that does not fit whole is cut, the rest are dropped. */
+function cappedChecks(sections: readonly CheckSection[]): PackageChecks {
+  const kept: CheckSection[] = [];
+  let room = CHECKS_TEXT_LIMIT;
+  for (const section of sections) {
+    if (section.text.length > room) {
+      if (room > 0) kept.push({ title: section.title, text: section.text.slice(0, room) });
+      return { sections: kept, truncated: true };
+    }
+    kept.push(section);
+    room -= section.text.length;
+  }
+  return { sections: kept, truncated: false };
+}
+
 export class ReadPackageChecks {
   private readonly deps: ReadPackageChecksDependencies;
 
@@ -38,6 +53,6 @@ export class ReadPackageChecks {
     const run = await this.deps.runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
     const text = await this.deps.files.read(scopeOf(run), 'handoff/checks.md');
-    return ok({ sections: text === undefined ? [] : checkSectionsOf(text), truncated: false });
+    return ok(cappedChecks(text === undefined ? [] : checkSectionsOf(text)));
   }
 }

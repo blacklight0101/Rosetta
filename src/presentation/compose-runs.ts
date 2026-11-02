@@ -171,7 +171,7 @@ function runServices(service: ServiceParts): RunServices {
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),
     estimateRun,
-    getRun: new GetRun({ runs, queue, files: new FileRunTextFiles(writer) }),
+    getRun: new GetRun({ runs, queue, manifests, files: new FileRunTextFiles(writer) }),
     getJourney: composeJourney({ ...service, priorCards: cards }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
     ...answerServices({ runs, manifests, queue, clock: parts.clock }),

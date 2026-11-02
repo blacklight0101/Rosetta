@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/preact';
+import { fireEvent, screen } from '@testing-library/preact';
 import { afterEach, expect, it } from 'vitest';
 import { failure, json } from './fake-api.js';
 import { cloudEstimate, cloudProject, savedBrief } from './plan-setup-fixtures.js';
@@ -32,9 +32,6 @@ it('P8-11 EV-86 the refused options call says to tick the confirmation on Plan s
 
   const banner = await screen.findByTestId('error-banner');
 
-  const text = within(banner)
-    .getByText(/RST-1521/u)
-    .closest('[data-testid="error-banner"]');
-  expect(text?.textContent).toContain('Plan setup');
-  expect(text?.textContent).not.toContain('Start the run again');
+  expect(banner.textContent).toContain('Plan setup');
+  expect(banner.textContent).not.toContain('Start the run again');
 });

@@ -4,6 +4,7 @@ import type { Run } from '../../domain/runs/run.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { RunTextFiles } from '../ports/run-text-files.js';
+import { readUnderstandOptions } from '../understand/understand-options.js';
 import { scopeOf } from '../runs/run-scope.js';
 
 // RF-1002, RF-504, RF-1105: Get run gives the live run page what the event stream does not carry:
@@ -58,7 +59,18 @@ export class GetRun {
     const run = await this.deps.runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
     const [reportBuilt, position] = await Promise.all([this.reportBuilt(run), this.position(run)]);
-    return ok({ run, reportBuilt, position, cloudConsent: false, sourceRunId: null });
+    return ok({ run, reportBuilt, position, ...(await this.recorded(run)) });
+  }
+
+  /** P7-38, P7-25: what the manifest recorded; none when there is no manifest store or file. */
+  private async recorded(run: Run): Promise<Pick<RunDetail, 'cloudConsent' | 'sourceRunId'>> {
+    const manifest = await this.deps.manifests?.read(scopeOf(run));
+    if (manifest === undefined) return { cloudConsent: false, sourceRunId: null };
+    const source: unknown = manifest.options['sourceRunId'];
+    return {
+      cloudConsent: readUnderstandOptions(manifest.options).cloudConsent,
+      sourceRunId: typeof source === 'string' ? source : null,
+    };
   }
 
   /** Only a queued run has a place; the queue is not asked about any other. */

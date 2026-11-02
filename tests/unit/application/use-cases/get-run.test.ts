@@ -29,6 +29,14 @@ class ReportFolders implements RunTextFiles {
   }
 }
 
+/** P8-11: what a run with no manifest records. */
+const plain = { cloudConsent: false, sourceRunId: null } as const;
+
+const found = (run: Run, reportBuilt: boolean, position: number | null) => ({
+  ok: true,
+  value: { run, reportBuilt, position, ...plain },
+});
+
 const endedRun = (runKey: string): Run =>
   sampleRun({ userId: userAmy.userId, runKey, queueState: 'Ended', endState: 'Completed' });
 
@@ -64,7 +72,7 @@ describe('GetRun', () => {
 
     const outcome = await getRun.execute({ actor: userAmy, runId: run.id });
 
-    expect(outcome).toEqual({ ok: true, value: { run, reportBuilt: true, position: null } });
+    expect(outcome).toEqual(found(run, true, null));
   });
 
   it('RF-1002 says the report is not built for an ended run without one', async () => {
@@ -73,7 +81,7 @@ describe('GetRun', () => {
 
     const outcome = await getRun.execute({ actor: userAmy, runId: run.id });
 
-    expect(outcome).toEqual({ ok: true, value: { run, reportBuilt: false, position: null } });
+    expect(outcome).toEqual(found(run, false, null));
   });
 
   it('RF-504 does not look for a report of a run that has not ended, which cannot have one', async () => {
@@ -83,7 +91,7 @@ describe('GetRun', () => {
 
     const outcome = await getRun.execute({ actor: userAmy, runId: run.id });
 
-    expect(outcome).toEqual({ ok: true, value: { run, reportBuilt: false, position: null } });
+    expect(outcome).toEqual(found(run, false, null));
     expect(files.asked).toEqual([]);
   });
 
@@ -108,7 +116,7 @@ describe('GetRun: the place in the queue', () => {
 
     const outcome = await getRun.execute({ actor: userAmy, runId: run.id });
 
-    expect(outcome).toEqual({ ok: true, value: { run, reportBuilt: false, position: 3 } });
+    expect(outcome).toEqual(found(run, false, 3));
   });
 
   it('RF-1108 gives a queued run that the queue no longer holds no place', async () => {

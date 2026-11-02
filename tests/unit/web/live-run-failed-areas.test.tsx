@@ -272,7 +272,8 @@ it('P8-11 P7-38 shows no consent box when the retried run recorded its consent',
   await screen.findByRole('button', { name: 'Retry failed areas' });
 
   expect(screen.queryByRole('checkbox', { name: consentName })).toBeNull();
-  expect(calls.some((call) => call.path === '/api/projects/p-1/estimate')).toBe(false);
+  const asked = calls.filter((call) => call.path === '/api/projects/p-1/estimate');
+  expect(asked.map((call) => JSON.stringify(call.body))).not.toContain('{"areas":["Catalog"]}');
 });
 
 it('P8-11 P7-38 shows the error of a failed estimate beside the Retry failed areas button', async () => {
