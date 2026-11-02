@@ -69,6 +69,8 @@ export interface LegacyTechnology {
   readonly languages: readonly string[];
   /** Lower-case file extensions, without the dot, that show it anywhere in the code map. */
   readonly extensions: readonly string[];
+  /** P8-14: lower-case file names (no folder) that show it, for a technology without an extension. */
+  readonly files: readonly string[];
   /** The layers it is the legacy technology of; empty: every layer. */
   readonly layers: readonly string[];
   readonly endOfLife: boolean;

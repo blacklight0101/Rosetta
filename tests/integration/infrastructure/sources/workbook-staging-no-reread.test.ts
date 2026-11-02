@@ -25,6 +25,21 @@ vi.mock('node:fs', async (importOriginal) => {
     ...actual,
     createReadStream: (...args: Parameters<typeof actual.createReadStream>) =>
       countStream(actual.createReadStream(...args), args[0]),
+    // P8-14, P7-18: the callback form is noted when it calls back with the bytes it read.
+    readFile: (...args: unknown[]): unknown => {
+      const last = args.at(-1);
+      if (typeof last !== 'function') {
+        const direct: unknown = Reflect.apply(actual.readFile, actual, args);
+        return direct;
+      }
+      const noted = (error: unknown, bytes?: string | Uint8Array): unknown => {
+        if (error === null && bytes !== undefined) noteRead(args[0], byteLength(bytes));
+        const done: unknown = Reflect.apply(last, undefined, [error, bytes]);
+        return done;
+      };
+      const called: unknown = Reflect.apply(actual.readFile, actual, [...args.slice(0, -1), noted]);
+      return called;
+    },
     readFileSync: (...args: Parameters<typeof actual.readFileSync>) => {
       // eslint-disable-next-line n/no-sync -- the wrapped call itself.
       const bytes = actual.readFileSync(...args);

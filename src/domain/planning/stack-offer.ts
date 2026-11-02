@@ -35,6 +35,8 @@ export interface OfferInput {
   readonly languages: readonly string[];
   /** Every file extension of the code map (see `LegacyFacts`). */
   readonly extensions: readonly string[];
+  /** P8-14: the lower-case base names of the files of the code map (see `LegacyFacts`). */
+  readonly fileNames?: readonly string[];
   /** The source is Excel workbooks. */
   readonly workbook: boolean;
 }
@@ -72,7 +74,8 @@ function endOfLife(stack: StackData, layer: string, input: OfferInput): boolean 
       each.endOfLife &&
       (each.layers.length === 0 || each.layers.includes(layer)) &&
       (each.languages.some((id) => input.languages.includes(id)) ||
-        each.extensions.some((extension) => input.extensions.includes(extension))),
+        each.extensions.some((extension) => input.extensions.includes(extension)) ||
+        each.files.some((name) => (input.fileNames ?? []).includes(name))),
   );
 }
 
