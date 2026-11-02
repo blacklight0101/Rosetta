@@ -254,7 +254,7 @@ export function composeRuns(parts: RunParts): RunComposition {
     history: log,
     clock,
     logger,
-    startCaps: composeStartCaps(pool, projects, parts.keySources),
+    startCaps: composeStartCaps(pool, projects, parts.keySources, ollamaHostOf(parts.ollamaUrl)),
   });
   const scan = composeScan({ ...parts, writer, manifests, projects });
   const answers = new FileAnswersFile({ writer, masker });

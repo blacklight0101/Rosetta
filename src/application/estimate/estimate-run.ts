@@ -65,6 +65,8 @@ export interface EstimateRunDependencies extends JourneyDependencies {
   readonly reasoningModels: ReasoningModels;
   /** The caps the first calls are checked against (RF-405); absent for an evaluation, which has no accounts. */
   readonly caps?: PlanCapDependencies;
+  /** P8-04, RF-433: the host of the Ollama server; an Ollama server that is not this machine is not local. */
+  readonly ollamaHost?: string | undefined;
 }
 
 export interface EstimateRunRequest {

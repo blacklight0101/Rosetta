@@ -1,4 +1,3 @@
-import { withinCeilings } from '../../application/runs/approved-journey.js';
 import { roleLimits } from '../../application/models/role-limits.js';
 import type { GuardedProviderFactoryOptions } from './provider-factory-options.js';
 import type { AgentRole, LlmProvider } from '../../application/ports/llm-provider.js';
@@ -28,10 +27,11 @@ import {
 } from '../guards/budget-pricing.js';
 import { guardedProvider } from './guarded-provider.js';
 import { resolveAccess, type ProviderAccess } from './provider-access.js';
+import { ollamaHostOfUrl } from './provider-endpoint.js';
 import { withRoleEffort, type EffortNote } from './reasoning-effort-provider.js';
 import { toolRoleProblem } from './tool-role-problem.js';
 import { reservationLifetimeMs } from './reservation-lifetime.js';
-import { isCeilinged, providerTestCeiling } from './provider-ceiling.js';
+import { approvedOf, isCeilinged, providerTestCeiling } from './provider-ceiling.js';
 import { scopeStartOf, type ScopeStart } from './scope-spend.js';
 
 // Architecture sections 2 and 7, ADR-003, ADR-006, ADR-007, ADR-015, RF-405, RF-1104, RF-002: the
@@ -186,10 +186,15 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       return undefined;
     } catch (error) {
       if (error instanceof RosettaError && error.code === ERROR_CODES.modelUnpriced) {
-        return { message: incompleteOverrideMessage(pricing, query, model) };
+        return { message: incompleteOverrideMessage(pricing, query, model) ?? error.message };
       }
       throw error;
     }
+  }
+
+  /** RF-143, RF-433: the host of the server's Ollama address; none when unset or unreadable. */
+  private ollamaHost(): string | undefined {
+    return ollamaHostOfUrl(this.options.ollamaUrl);
   }
 
   private pricingOf(request: ProviderSetRequest): BudgetPricing {
@@ -198,6 +203,8 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       table: this.options.priceTable,
       overrides: priceOverridesOf(request.settings),
       allowUnpriced: budget.allowUnpriced,
+      ollamaHost: this.ollamaHost(),
+      cloudConsent: request.cloudConsent,
     };
   }
 
@@ -258,7 +265,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     access: ProviderAccess,
     { server, scopeSpent, readerRunMicros }: ScopeCaps,
   ): readonly UsageCap[] {
-    const run = runCapsFor(request.settings);
+    const run = runCapsFor(request.settings, this.ollamaHost());
     const caps = capsFor(access.keySource, {
       run: { maxCostMicros: BigInt(run.maxCostMicros), maxTokens: BigInt(run.maxTokens) },
       // RF-423: a call held to the ceiling belongs to no run, so a role's run caps do not apply to it.
@@ -275,23 +282,11 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       },
       // RF-432: the approved amount is the run's line; a call held to the ceiling has no run.
       // RF-433: an all-local run with "No cap for local models" has no line to pause at.
-      ...(isCeilinged(request) || uncappedLocalRun(request.settings) ? {} : approvedOf(request)),
+      ...(isCeilinged(request) || uncappedLocalRun(request.settings, this.ollamaHost())
+        ? {}
+        : approvedOf(request)),
     });
     if (!isCeilinged(request)) return caps;
     return caps.map((cap) => ({ kind: cap.kind, limit: providerTestCeiling(cap) }));
   }
-}
-
-/** RF-432: the run's approved amount as cap inputs; none when the run recorded none. */
-function approvedOf(request: ProviderSetRequest): {
-  readonly approved?: { readonly maxCostMicros: bigint; readonly maxTokens: bigint };
-} {
-  if (request.approvedAmount === undefined) return {};
-  const approvedAmount = withinCeilings(request.approvedAmount);
-  return {
-    approved: {
-      maxCostMicros: BigInt(approvedAmount.costMicros),
-      maxTokens: BigInt(approvedAmount.tokens),
-    },
-  };
 }
