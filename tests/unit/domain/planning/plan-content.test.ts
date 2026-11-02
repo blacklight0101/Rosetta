@@ -100,7 +100,7 @@ describe('assemblePlan: the other parts', () => {
 describe('assemblePlan: specification-driven', () => {
   const specified = { specificationDriven: true };
 
-  it('RF-607 leaves out a task that implements no requirement, and numbers the others again', () => {
+  it('RF-607 P8-02 keeps a task that implements no requirement until it derives one from what it builds', () => {
     const base = draft();
     const withBare = {
       ...base,
@@ -114,9 +114,11 @@ describe('assemblePlan: specification-driven', () => {
     const { content, dropped } = assemblePlan(withBare, supported, specified);
 
     expect(content.tasks).toMatchObject([
-      { id: 'T-001', title: 'Orders', requirements: ['REQ-001'] },
+      { id: 'T-001', title: 'Bare', requirements: [] },
+      { id: 'T-002', title: 'Unknown', requirements: [] },
+      { id: 'T-003', title: 'Orders', requirements: ['REQ-001'] },
     ]);
-    expect(dropped.tasks).toBe(2);
+    expect(dropped.tasks).toBe(0);
   });
 
   it('RF-607 without SDD the same task is written with no requirement', () => {

@@ -80,14 +80,15 @@ describe('a package card whose requirement ids resolve to nothing (P7-15)', () =
     ],
   };
 
-  it('RF-607 P7-15 is kept with a note; a card that named nothing is still left out', () => {
+  it('RF-607 P7-15 P8-02 is kept with a note; a card that named nothing waits to derive one', () => {
     const draft = parsePlanAnswer(JSON.stringify(answer));
     if (draft === undefined) throw new Error('the answer must read');
 
     const plan = assemblePlan(draft, new Set(['FEAT-001']), { specificationDriven: true });
 
-    expect(plan.content.tasks.map((each) => each.title)).toEqual(['Orders']);
-    expect(plan.leftOut.map((each) => [each.position, each.field])).toEqual([[2, 'requirements']]);
+    expect(plan.content.tasks.map((each) => each.title)).toEqual(['Orders', 'Plain']);
+    expect(plan.content.tasks[1]).toMatchObject({ requirements: [], derives: 2 });
+    expect(plan.leftOut).toEqual([]);
     expect(plan.content.requirementNotes).toEqual(
       expect.arrayContaining([expect.objectContaining({ kind: 'none', task: 'T-001' })]),
     );
