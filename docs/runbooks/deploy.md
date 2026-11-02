@@ -18,6 +18,7 @@ the HTTPS redirect of the app, the ZAP baseline in CI and the RNF-017 script are
 | Provisioning workflow      | `.github/workflows/azure-provision.yml`                      | `tests/integration/tooling/azure-provision-workflow.test.ts`                          |
 | Release and deploy         | `.github/workflows/release.yml`                              | `tests/integration/tooling/release-workflow.test.ts`, `release-staging-check.test.ts` |
 | Staging deploy             | `.github/workflows/staging.yml`                              | `tests/integration/tooling/staging-workflow.test.ts`                                  |
+| Owner email on each deploy | step `Tell the owner the deploy is live` of `release.yml`    | `tests/integration/tooling/release-notify.test.ts`                                    |
 | Release at 06:07 Madrid    | `.github/workflows/scheduled-release.yml`                    | `tests/integration/tooling/scheduled-release-workflow.test.ts`                        |
 | Smoke script               | `scripts/smoke.mjs`                                          | `tests/integration/scripts/smoke.test.ts`; the `compose-smoke` job of CI              |
 | HTTP to HTTPS redirect     | `src/presentation/web/https-redirect.ts`                     | `tests/integration/presentation/web/https-redirect.test.ts`                           |
