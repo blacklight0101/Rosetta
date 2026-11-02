@@ -35,3 +35,31 @@ it('P7-26 names what a capped run left and offers the overview, not the Resume b
   expect(text).not.toContain('appears once it completes');
   expect(screen.getByRole('button', { name: 'Write the overview' })).toBeTruthy();
 });
+
+// RF-614, P7-26, P8-11: the Completed branch.
+it('P8-11 a Completed run with a Supported claim offers Set up the plan and the overview action', () => {
+  render(
+    <PlanNext
+      {...{ runId: 'r-1', projectId: 'p-1', endState: 'Completed', supportedClaims: 2 }}
+      questionsOpen={false}
+      writeOverview={<button type="button">Write the overview</button>}
+    />,
+  );
+
+  expect(screen.getByRole('button', { name: 'Set up the plan' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Write the overview' })).toBeTruthy();
+});
+
+it('P8-11 a Completed run with no Supported claim says so and still offers the overview action', () => {
+  render(
+    <PlanNext
+      {...{ runId: 'r-1', projectId: 'p-1', endState: 'Completed', supportedClaims: 0 }}
+      questionsOpen={false}
+      writeOverview={<button type="button">Write the overview</button>}
+    />,
+  );
+
+  expect(document.body.textContent).toContain('no Supported claim');
+  expect(screen.queryByRole('button', { name: 'Set up the plan' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Write the overview' })).toBeTruthy();
+});
