@@ -12,6 +12,7 @@ import type {
   StepLink,
   StepState,
 } from '../lib/journey/journey-steps.js';
+import { DeepenAction } from './DeepenAction.js';
 import { ResumeButton } from './ResumeButton.js';
 
 // RF-615, RF-1015, RNF-010, design-system.md section 14 (journey strip): the seven steps from code to
@@ -30,6 +31,12 @@ export interface JourneyStripProps {
   readonly onDeepen?: (() => void) | undefined;
   /** The path of the page that holds the strip: a second action that opens this page is left out. */
   readonly pagePath?: string | undefined;
+  /** RF-1021: the understand run whose Deepen the page offers in place; none opens the run. */
+  readonly deepenRunId?: string | undefined;
+  /** RF-1021: the Questions and plan setup section, drawn in place of the answer and plan buttons. */
+  readonly setup?: JSX.Element | undefined;
+  /** RF-646: the user chose not to Deepen, so the questions are asked now (the project page). */
+  readonly onSkipDeepen?: (() => void) | undefined;
 }
 
 const words: Readonly<Record<StepState, string>> = {
@@ -40,6 +47,8 @@ const words: Readonly<Record<StepState, string>> = {
   failed: 'Failed',
   'out-of-date': 'Out of date',
   gaps: 'With gaps',
+  awaiting: 'Waiting for approval',
+  skipped: 'Skipped',
 };
 
 const glyphs: Readonly<Record<StepState, GlyphName>> = {
@@ -50,6 +59,8 @@ const glyphs: Readonly<Record<StepState, GlyphName>> = {
   failed: 'cross',
   'out-of-date': 'warning-triangle',
   gaps: 'warning-triangle',
+  awaiting: 'pause-bars',
+  skipped: 'dashed-circle',
 };
 
 /** RF-627: the files and downloads of a step, plain links because they leave the app. */
@@ -123,7 +134,41 @@ function secondaryOf(view: JourneyView, pagePath: string | undefined): JourneyLi
   return secondary?.href.split('?')[0] === pagePath ? undefined : secondary;
 }
 
-// RF-615
+/** RF-1021: the actions that answer the questions or set up and start the plan, which the page holds in place. */
+function setsUp(action: JourneyAction | undefined): boolean {
+  if (action?.kind === 'answer') return true;
+  return action?.kind === 'link' && action.href.includes('/plan-setup');
+}
+
+/** RF-1021: the next step in place. Deepen shows what it would read; any other action is a button. */
+function Next(props: JourneyStripProps): JSX.Element {
+  const { view, deepenRunId, setup } = props;
+  const { action } = view;
+  if (setup !== undefined && setsUp(action)) return setup;
+  if (action?.kind === 'deepen' && deepenRunId !== undefined) {
+    return (
+      <>
+        <DeepenAction runId={deepenRunId} recommended open />
+        {props.onSkipDeepen === undefined ? null : (
+          <Button variant="secondary" onClick={props.onSkipDeepen}>
+            Do not Deepen: answer the questions now
+          </Button>
+        )}
+      </>
+    );
+  }
+  const own = action?.kind === 'link' && action.href.split('?')[0] === props.pagePath;
+  return (
+    <Action
+      action={own ? undefined : action}
+      onResumed={props.onResumed}
+      onAnswer={props.onAnswer}
+      onDeepen={props.onDeepen}
+    />
+  );
+}
+
+// RF-615, RF-1020, RF-1021
 export function JourneyStrip(props: JourneyStripProps): JSX.Element {
   const { view } = props;
   return (
@@ -137,19 +182,23 @@ export function JourneyStrip(props: JourneyStripProps): JSX.Element {
         ))}
       </ol>
       <div class="rst-road__foot">
+        <Next {...props} />
         <Action
-          action={view.action}
-          onResumed={props.onResumed}
-          onAnswer={props.onAnswer}
-          onDeepen={props.onDeepen}
-        />
-        <Action
-          action={secondaryOf(view, props.pagePath)}
+          action={
+            props.setup !== undefined && setsUp(view.action)
+              ? undefined
+              : secondaryOf(view, props.pagePath)
+          }
           variant="secondary"
           onResumed={props.onResumed}
           onAnswer={undefined}
         />
         <p class="rst-road__total">{`Total so far ${costLabel(view.totalCostMicros)}`}</p>
+        {view.left === undefined ? null : <p class="rst-road__left">{view.left}</p>}
+        <p class="rst-road__more">
+          <Link href={`/projects/${view.projectId}/history`}>Past runs</Link>{' '}
+          <Link href={`/projects/${view.projectId}/settings`}>Settings for this project</Link>
+        </p>
       </div>
     </section>
   );

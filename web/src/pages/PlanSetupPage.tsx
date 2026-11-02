@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { useEffect } from 'preact/hooks';
 import type { ApiFailure } from '../api/client.js';
 import type { BriefView, Catalogue, PlanSource } from '../api/plan-schemas.js';
 import type { Project } from '../api/project-schemas.js';
@@ -61,6 +62,10 @@ interface BodyProps {
   readonly source: PlanSource | undefined;
   readonly sourceError: ApiFailure | undefined;
   readonly sourceRunId: string | undefined;
+  /** RF-1021: drawn inside the project page's journey strip, which has its own title and strip. */
+  readonly embedded?: boolean;
+  /** RF-1021: called when the brief was saved, so the strip reads the journey again. */
+  readonly onSaved?: () => void;
 }
 
 /** RF-143, RF-132: the notice of the cloud planner and, for an upload, the private-code notice. */
@@ -108,18 +113,44 @@ function Actions({ session }: { readonly session: PlanSession }): JSX.Element {
   );
 }
 
-function PlanSetupBody(props: BodyProps): JSX.Element {
+/** RF-1021: tells the project page that the brief was saved, so its strip reads the journey again. */
+function useSavedNotice(version: number, onSaved: (() => void) | undefined): void {
+  useEffect(() => {
+    if (version > 0) onSaved?.();
+  }, [version]);
+}
+
+/** The title, the source run and the journey strip of the Plan setup page. */
+function Top(props: {
+  readonly projectId: string;
+  readonly sourceRunId: string | undefined;
+  readonly source: PlanSource | undefined;
+  readonly sourceError: ApiFailure | undefined;
+  readonly version: number;
+}): JSX.Element {
+  const { projectId, sourceRunId } = props;
+  return (
+    <>
+      <Head source={props.source} error={props.sourceError} />
+      <JourneyPanel
+        {...{ projectId, runId: sourceRunId }}
+        refresh={String(props.version)}
+        pagePath={`/projects/${projectId}/plan-setup`}
+      />
+    </>
+  );
+}
+
+export function PlanSetupBody(props: BodyProps): JSX.Element {
   const { projectId, catalogue, view, project, source, sourceError, sourceRunId } = props;
   const session = usePlanSession({ projectId, sourceRunId }, view, project);
   const offer = useStackOffer(projectId, sourceRunId);
+  useSavedNotice(session.savedVersion, props.onSaved);
   return (
     <div class="rst-plan">
-      <Head source={source} error={sourceError} />
-      <JourneyPanel
-        {...{ projectId, runId: sourceRunId }}
-        refresh={String(session.savedVersion)}
-        pagePath={`/projects/${projectId}/plan-setup`}
-      />
+      {props.embedded === true ? null : (
+        <Top {...{ projectId, sourceRunId, source, sourceError }} version={session.savedVersion} />
+      )}
       {session.outOfDate ? <OutOfDate /> : null}
       <PlanQuestionsSetup runId={sourceRunId} session={session} catalogue={catalogue} />
       <PlanSteps current={session.step} onOpen={session.goTo} />
