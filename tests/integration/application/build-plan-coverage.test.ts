@@ -37,7 +37,7 @@ describe('BuildPlan: the coverage call is sent', () => {
     ]) {
       expect(message).toContain(sent);
     }
-    expect(request?.system).toBe(await readFile('prompts/planner/coverage.v1.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/coverage.v2.md', 'utf8'));
     expect(request?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-coverage' });
     const all = [...h.providers.requests(), ...h.providers.coverageRequests()];
     expect(new Set(all.map((each) => each.context.callId)).size).toBe(7);
@@ -48,7 +48,7 @@ describe('BuildPlan: the coverage call is sent', () => {
 
     const manifest = await h.manifestOf(await h.plan());
 
-    expect(Object.keys(manifest.promptVersions)).toContain('planner/coverage.v1.md');
+    expect(Object.keys(manifest.promptVersions)).toContain('planner/coverage.v2.md');
   });
 });
 

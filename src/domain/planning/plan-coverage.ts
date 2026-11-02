@@ -3,6 +3,7 @@ import type { ApiContract } from './api-contract.js';
 import type { ModelTable, TargetDataModel } from './data-model.js';
 import { planId, type PlanContent, type PlanTask } from './plan-content.js';
 import type { PrdContent } from './prd-content.js';
+import type { SourceModules } from './source-modules.js';
 import type { TargetFlows } from './target-flows.js';
 import type { TargetUx } from './target-ux.js';
 
@@ -16,7 +17,18 @@ import type { TargetUx } from './target-ux.js';
 // table (RF-623), so the data model never reaches the package without work that builds it.
 
 /** The kinds of item, in the order the checks list them. */
-const coverageKinds = ['feature', 'table', 'operation', 'flow', 'screen'] as const;
+const coverageKinds = [
+  'feature',
+  'table',
+  'operation',
+  'flow',
+  'screen',
+  'module',
+  'deployment',
+] as const;
+
+/** P8-06: the kinds of the source's own parts; one no card touches is named, never a failure. */
+const sourceKinds: ReadonlySet<string> = new Set(['module', 'deployment']);
 
 export type CoverageKind = (typeof coverageKinds)[number];
 
@@ -36,6 +48,8 @@ export interface CoverageDocuments {
   readonly flows: TargetFlows;
   readonly apiContract: ApiContract;
   readonly ux: TargetUx;
+  /** P8-06: the modules and deployment material of the scan; absent when no scan can be read. */
+  readonly modules?: SourceModules | undefined;
 }
 
 /** What the planner says a task builds; `task` is the task's position, from 1. */
@@ -50,8 +64,10 @@ export interface CoverageDraft {
 
 export interface CoverageReport {
   readonly items: readonly CoverageItem[];
-  /** In kind order, then by id in code-unit order. */
+  /** The items of the documents no card builds, in kind order, then by id in code-unit order. */
   readonly uncovered: readonly CoverageItem[];
+  /** P8-06: the modules and the deployment material no card touches, in the same order. */
+  readonly modules: readonly CoverageItem[];
 }
 
 function item(kind: CoverageKind, key: string, name: string, detail: string): CoverageItem {
@@ -118,8 +134,9 @@ export function coverageOf(
   tasks: readonly PlanTask[],
 ): CoverageReport {
   const built = new Set(tasks.flatMap((task) => task.builds));
-  const uncovered = items.filter((each) => !built.has(each.id)).sort(byKindThenId);
-  return { items, uncovered };
+  const open = items.filter((each) => !built.has(each.id)).sort(byKindThenId);
+  const uncovered = open.filter((each) => !sourceKinds.has(each.kind));
+  return { items, uncovered, modules: open.filter((each) => sourceKinds.has(each.kind)) };
 }
 
 const MIGRATION_TITLE = 'Write the database migrations in the chosen stack';

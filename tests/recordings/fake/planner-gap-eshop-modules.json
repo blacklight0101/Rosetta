@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "description": "P8-06, EV-32: a synthetic answer to the gap call of the recorded eShopModernizing plans (Haiku and Ollama, evaluation of 2026-11-02) once the modules of the scan are items: one card ports the two WebForms apps, one the two WinForms clients and one writes the deployment; the MVC apps, the WCF services and the utilities library get no card, so checks.md names them with the reason. Synthetic; no employer text.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "{\n  \"tasks\": [\n    {\n      \"title\": \"Port the WebForms catalog pages\",\n      \"phase\": 1,\n      \"requirements\": [],\n      \"invariant\": \"Every screen of the legacy part keeps its behaviour in the new system.\",\n      \"acceptanceCriteria\": [\n        \"Given a catalog of 3 items, when a user opens the list of the ported part, then the 3 items are shown with their name and price.\"\n      ],\n      \"riskClass\": \"none\",\n      \"adds\": [],\n      \"probes\": [],\n      \"files\": [\n        \"src/Catalog.Pages/\",\n        \"tests/Catalog.Pages/\"\n      ],\n      \"dependsOn\": [\n        \"T-002\"\n      ],\n      \"builds\": [\n        \"module:eShopLegacyWebFormsSolution/src/eShopLegacyWebForms\",\n        \"module:eShopModernizedWebFormsSolution/src/eShopModernizedWebForms\"\n      ]\n    },\n    {\n      \"title\": \"Port the WinForms desktop client to the new front end\",\n      \"phase\": 1,\n      \"requirements\": [],\n      \"invariant\": \"Every screen of the legacy part keeps its behaviour in the new system.\",\n      \"acceptanceCriteria\": [\n        \"Given a catalog of 3 items, when a user opens the list of the ported part, then the 3 items are shown with their name and price.\"\n      ],\n      \"riskClass\": \"none\",\n      \"adds\": [],\n      \"probes\": [],\n      \"files\": [\n        \"src/Desk/\",\n        \"tests/Desk/\"\n      ],\n      \"dependsOn\": [\n        \"T-002\"\n      ],\n      \"builds\": [\n        \"module:eShopLegacyNTier/src/eShopWinForms\",\n        \"module:eShopModernizedNTier/src/eShopWinForms\"\n      ]\n    },\n    {\n      \"title\": \"Build, package and ship the new system in containers\",\n      \"phase\": 1,\n      \"requirements\": [],\n      \"invariant\": \"Every change is built, tested and packaged the same way, and a failing build ships nothing.\",\n      \"acceptanceCriteria\": [\n        \"Given a catalog of 3 items, when a user opens the list of the ported part, then the 3 items are shown with their name and price.\"\n      ],\n      \"riskClass\": \"none\",\n      \"adds\": [],\n      \"probes\": [],\n      \"files\": [\n        \"Dockerfile\",\n        \"deploy/k8s/\",\n        \".github/workflows/ci.yml\"\n      ],\n      \"dependsOn\": [\n        \"T-002\"\n      ],\n      \"builds\": [\n        \"deployment:source\"\n      ]\n    }\n  ]\n}",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 300,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-8",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

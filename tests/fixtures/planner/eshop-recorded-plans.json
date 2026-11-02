@@ -1,0 +1,1786 @@
+{
+ "description": "P8-06, EV-32: the task cards (title, requirements, expected files), the requirements (source cards) and the cited paths of those source cards of the two recorded eShopModernizing plans of the evaluation of 2026-11-02 (Haiku and Ollama, p7-*-handoff.zip).",
+ "haiku": {
+  "requirements": [
+   {
+    "id": "REQ-001",
+    "sources": [
+     "FEAT-006",
+     "FEAT-058",
+     "FEAT-070"
+    ]
+   },
+   {
+    "id": "REQ-002",
+    "sources": [
+     "FEAT-007",
+     "FEAT-059",
+     "BR-019"
+    ]
+   },
+   {
+    "id": "REQ-003",
+    "sources": [
+     "FEAT-008",
+     "BR-020",
+     "FLOW-002"
+    ]
+   },
+   {
+    "id": "REQ-004",
+    "sources": [
+     "FEAT-008",
+     "BR-019",
+     "BR-020"
+    ]
+   },
+   {
+    "id": "REQ-005",
+    "sources": [
+     "FEAT-062",
+     "FLOW-001",
+     "FEAT-008"
+    ]
+   },
+   {
+    "id": "REQ-006",
+    "sources": [
+     "BR-020"
+    ]
+   },
+   {
+    "id": "REQ-007",
+    "sources": [
+     "BR-007",
+     "BR-065",
+     "ENT-003"
+    ]
+   },
+   {
+    "id": "REQ-008",
+    "sources": [
+     "BR-007",
+     "ENT-003"
+    ]
+   },
+   {
+    "id": "REQ-009",
+    "sources": [
+     "ENT-003",
+     "BR-065"
+    ]
+   },
+   {
+    "id": "REQ-010",
+    "sources": [
+     "FEAT-008",
+     "FEAT-072",
+     "ENT-001"
+    ]
+   },
+   {
+    "id": "REQ-011",
+    "sources": [
+     "FEAT-006",
+     "BR-068",
+     "FEAT-074"
+    ]
+   },
+   {
+    "id": "REQ-012",
+    "sources": [
+     "FEAT-010",
+     "BR-004"
+    ]
+   },
+   {
+    "id": "REQ-013",
+    "sources": [
+     "FEAT-063",
+     "BR-079",
+     "FEAT-094"
+    ]
+   },
+   {
+    "id": "REQ-014",
+    "sources": [
+     "BR-013",
+     "SCRN-003"
+    ]
+   },
+   {
+    "id": "REQ-015",
+    "sources": [
+     "FEAT-011"
+    ]
+   },
+   {
+    "id": "REQ-016",
+    "sources": [
+     "BR-060",
+     "FEAT-060",
+     "FEAT-061",
+     "FEAT-062"
+    ]
+   },
+   {
+    "id": "REQ-017",
+    "sources": [
+     "FEAT-064",
+     "BR-053",
+     "FEAT-077"
+    ]
+   },
+   {
+    "id": "REQ-018",
+    "sources": [
+     "BR-056",
+     "FEAT-077",
+     "FEAT-018"
+    ]
+   },
+   {
+    "id": "REQ-019",
+    "sources": [
+     "BR-054",
+     "BR-055",
+     "BR-062"
+    ]
+   },
+   {
+    "id": "REQ-020",
+    "sources": [
+     "FEAT-036",
+     "BR-042",
+     "BR-043",
+     "BR-006"
+    ]
+   },
+   {
+    "id": "REQ-021",
+    "sources": [
+     "BR-085",
+     "FEAT-066",
+     "ENT-011"
+    ]
+   },
+   {
+    "id": "REQ-022",
+    "sources": [
+     "BR-022",
+     "BR-064",
+     "ENT-024"
+    ]
+   },
+   {
+    "id": "REQ-023",
+    "sources": [
+     "OQ-044",
+     "FEAT-081",
+     "FEAT-080",
+     "ENT-014"
+    ]
+   },
+   {
+    "id": "REQ-024",
+    "sources": [
+     "BR-029",
+     "BR-072",
+     "FEAT-042"
+    ]
+   },
+   {
+    "id": "REQ-025",
+    "sources": [
+     "BR-032",
+     "FEAT-079"
+    ]
+   },
+   {
+    "id": "REQ-026",
+    "sources": [
+     "FEAT-045",
+     "FEAT-080"
+    ]
+   },
+   {
+    "id": "REQ-027",
+    "sources": [
+     "BR-095"
+    ]
+   },
+   {
+    "id": "REQ-028",
+    "sources": [
+     "FEAT-018",
+     "BR-028",
+     "FEAT-077"
+    ]
+   },
+   {
+    "id": "REQ-029",
+    "sources": [
+     "FEAT-078",
+     "FEAT-018",
+     "SCRN-011"
+    ]
+   }
+  ],
+  "tasks": [
+   {
+    "id": "T-001",
+    "title": "Set up the solution skeleton and continuous integration in the chosen stack",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-002",
+    "title": "Write the database migrations in the chosen stack",
+    "requirements": [
+     "REQ-007",
+     "REQ-008",
+     "REQ-009",
+     "REQ-010",
+     "REQ-023"
+    ],
+    "files": []
+   },
+   {
+    "id": "T-003",
+    "title": "Build the data-access layer on the chosen database",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-004",
+    "title": "Build the approval-test harness that runs the legacy behaviour",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-005",
+    "title": "Catalog list and detail pages",
+    "requirements": [
+     "REQ-001",
+     "REQ-002",
+     "REQ-007",
+     "REQ-008",
+     "REQ-009",
+     "REQ-011"
+    ],
+    "files": [
+     "src/Catalog/",
+     "tests/Catalog/"
+    ]
+   },
+   {
+    "id": "T-006",
+    "title": "Catalog item create, edit and delete",
+    "requirements": [
+     "REQ-003",
+     "REQ-004",
+     "REQ-005",
+     "REQ-006",
+     "REQ-010",
+     "REQ-014",
+     "REQ-016"
+    ],
+    "files": [
+     "src/Catalog/",
+     "tests/Catalog/"
+    ]
+   },
+   {
+    "id": "T-007",
+    "title": "Brand and type lists and item rules",
+    "requirements": [
+     "REQ-010",
+     "REQ-015",
+     "REQ-025"
+    ],
+    "files": [
+     "src/Catalog/",
+     "tests/Catalog/"
+    ]
+   },
+   {
+    "id": "T-008",
+    "title": "Picture serving and upload checks",
+    "requirements": [
+     "REQ-012",
+     "REQ-013"
+    ],
+    "files": [
+     "src/Pictures/",
+     "tests/Pictures/"
+    ]
+   },
+   {
+    "id": "T-009",
+    "title": "Shipment and stock by date",
+    "requirements": [
+     "REQ-023",
+     "REQ-026"
+    ],
+    "files": [
+     "src/Stock/",
+     "tests/Stock/"
+    ]
+   },
+   {
+    "id": "T-010",
+    "title": "Discount price and banner",
+    "requirements": [
+     "REQ-024"
+    ],
+    "files": [
+     "src/Discounts/",
+     "tests/Discounts/"
+    ]
+   },
+   {
+    "id": "T-011",
+    "title": "Sign-in and session footer",
+    "requirements": [
+     "REQ-017",
+     "REQ-018",
+     "REQ-019",
+     "REQ-028",
+     "REQ-029"
+    ],
+    "files": [
+     "src/Auth/",
+     "tests/Auth/"
+    ]
+   },
+   {
+    "id": "T-012",
+    "title": "Seed the catalog database on first creation from CSV files",
+    "requirements": [
+     "REQ-020",
+     "REQ-021"
+    ],
+    "files": [
+     "src/seed/",
+     "data/seed/",
+     "tests/seed/"
+    ]
+   },
+   {
+    "id": "T-013",
+    "title": "Contact page with company address, phone and support and marketing e-mail links",
+    "requirements": [
+     "REQ-028"
+    ],
+    "files": [
+     "src/views/contact/",
+     "tests/contact/"
+    ]
+   },
+   {
+    "id": "T-014",
+    "title": "Migrate the legacy data into the target tables with a row-count check",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-015",
+    "title": "Cut over from the legacy system to the new system",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-016",
+    "title": "Review the security of the cards at risk",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-017",
+    "title": "Verify phase 1 against its requirements",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-018",
+    "title": "Verify phase 2 against its requirements",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-019",
+    "title": "Verify phase 3 against its requirements",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-020",
+    "title": "Verify phase 4 against its requirements",
+    "requirements": [],
+    "files": []
+   }
+  ],
+  "cards": [
+   {
+    "id": "BR-004",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs"
+    ]
+   },
+   {
+    "id": "BR-006",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs"
+    ]
+   },
+   {
+    "id": "BR-007",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Models/Config/CatalogItemConfig.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItem.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx"
+    ]
+   },
+   {
+    "id": "BR-013",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml",
+     "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Create.cshtml",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.designer.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx.designer.cs"
+    ]
+   },
+   {
+    "id": "BR-019",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "BR-020",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "BR-022",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItemHiLoGenerator.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/Infrastructure/CatalogDBInitializer.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/Infrastructure/dbo.catalog_hilo.Sequence.sql",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItemHiLoGenerator.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/Infrastructure/dbo.catalog_hilo.Sequence.sql"
+    ]
+   },
+   {
+    "id": "BR-028",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Shared/\\_Layout.cshtml",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/\\_ViewStart.cshtml"
+    ]
+   },
+   {
+    "id": "BR-029",
+    "paths": [
+     "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+     "eShopLegacyNTier/src/eShopWCFService/Models/DiscountItem.cs",
+     "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs"
+    ]
+   },
+   {
+    "id": "BR-032",
+    "paths": [
+     "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "BR-042",
+    "paths": [
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/Infrastructure/CatalogDBInitializer.cs"
+    ]
+   },
+   {
+    "id": "BR-043",
+    "paths": [
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/Infrastructure/PreconfiguredData.cs"
+    ]
+   },
+   {
+    "id": "BR-053",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Startup.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Web.config"
+    ]
+   },
+   {
+    "id": "BR-054",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Global.asax.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/log4Net.xml"
+    ]
+   },
+   {
+    "id": "BR-055",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Global.asax.cs"
+    ]
+   },
+   {
+    "id": "BR-056",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Global.asax.cs"
+    ]
+   },
+   {
+    "id": "BR-060",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "BR-062",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Filters/ActionTracerFilter.cs"
+    ]
+   },
+   {
+    "id": "BR-064",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItemHiLoGenerator.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/dbo.catalog_hilo.Sequence.sql",
+     "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs",
+     "eShopModernizedNTier/src/eShopWCFService/Models/CatalogItem.cs",
+     "eShopModernizedNTier/src/eShopWCFService/Models/CatalogItemHiLoGenerator.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItemHiLoGenerator.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/Infrastructure/CatalogDBInitializer.cs"
+    ]
+   },
+   {
+    "id": "BR-065",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs"
+    ]
+   },
+   {
+    "id": "BR-068",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ImageAzureStorage.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ImageMockStorage.cs"
+    ]
+   },
+   {
+    "id": "BR-072",
+    "paths": [
+     "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs",
+     "eShopModernizedNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+     "eShopModernizedNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+     "eShopModernizedNTier/src/eShopWinForms/Views/CatalogView.cs"
+    ]
+   },
+   {
+    "id": "BR-079",
+    "paths": [
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs"
+    ]
+   },
+   {
+    "id": "BR-085",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/Infrastructure/CatalogDBInitializer.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/Infrastructure/CatalogDBInitializer.cs"
+    ]
+   },
+   {
+    "id": "BR-095",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "ENT-001",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Models/CatalogBrand.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Models/CatalogType.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Models/Config/CatalogBrandConfig.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Models/Config/CatalogTypeConfig.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Models/Infrastructure/PreconfiguredData.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogBrand.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogDBContext.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogType.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogServiceMock.cs",
+     "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogBrand.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogType.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogBrand.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogDBContext.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/CatalogServiceMock.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ImageAzureStorage.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/Infrastructure/CatalogDBInitializer.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/CatalogServiceMock.cs"
+    ]
+   },
+   {
+    "id": "ENT-003",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Models/Config/CatalogItemConfig.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Models/Infrastructure/PreconfiguredData.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogDBContext.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItem.cs",
+     "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+     "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs",
+     "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItemHiLoGenerator.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/Infrastructure/CatalogDBInitializer.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogDBContext.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItem.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/CatalogItemHiLoGenerator.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogDBContext.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/CatalogItem.cs"
+    ]
+   },
+   {
+    "id": "ENT-011",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Setup/CatalogBrands.csv",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Setup/CatalogItems.csv",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Setup/CatalogTypes.csv",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Setup/CatalogItems.csv",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Setup/CatalogBrands.csv",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Setup/CatalogItems.csv",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Setup/CatalogTypes.csv",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Setup/CatalogItems.csv"
+    ]
+   },
+   {
+    "id": "ENT-014",
+    "paths": [
+     "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+     "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs"
+    ]
+   },
+   {
+    "id": "ENT-024",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/dbo.catalog_brand_hilo.Sequence.sql",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/dbo.catalog_hilo.Sequence.sql",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/dbo.catalog_type_hilo.Sequence.sql",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/Infrastructure/dbo.catalog_brand_hilo.Sequence.sql",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/Infrastructure/dbo.catalog_hilo.Sequence.sql",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models/Infrastructure/dbo.catalog_type_hilo.Sequence.sql"
+    ]
+   },
+   {
+    "id": "FEAT-006",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Services/CatalogService.cs",
+     "eShopLegacyMVCSolution/eShopPorted/Services/CatalogServiceMock.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogServiceMock.cs"
+    ]
+   },
+   {
+    "id": "FEAT-007",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "FEAT-008",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "FEAT-010",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/PicController.cs"
+    ]
+   },
+   {
+    "id": "FEAT-011",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Controllers/Api/BrandsController.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/WebApi/BrandsController.cs"
+    ]
+   },
+   {
+    "id": "FEAT-018",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Views/Shared/Error.cshtml",
+     "eShopLegacyMVCSolution/eShopPorted/Views/Shared/\\_Layout.cshtml",
+     "eShopLegacyMVCSolution/eShopPorted/Views/\\_ViewStart.cshtml"
+    ]
+   },
+   {
+    "id": "FEAT-036",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/Infrastructure/CatalogDBInitializer.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/Infrastructure/PreconfiguredData.cs"
+    ]
+   },
+   {
+    "id": "FEAT-042",
+    "paths": [
+     "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs"
+    ]
+   },
+   {
+    "id": "FEAT-045",
+    "paths": [
+     "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs"
+    ]
+   },
+   {
+    "id": "FEAT-058",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "FEAT-059",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "FEAT-060",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "FEAT-061",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "FEAT-062",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "FEAT-063",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/PicController.cs"
+    ]
+   },
+   {
+    "id": "FEAT-064",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Controllers/AccountController.cs"
+    ]
+   },
+   {
+    "id": "FEAT-066",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs"
+    ]
+   },
+   {
+    "id": "FEAT-070",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/CatalogService.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/CatalogServiceMock.cs"
+    ]
+   },
+   {
+    "id": "FEAT-072",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/CatalogService.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/CatalogServiceMock.cs"
+    ]
+   },
+   {
+    "id": "FEAT-074",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ImageAzureStorage.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ImageMockStorage.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/ImageAzureStorage.cs"
+    ]
+   },
+   {
+    "id": "FEAT-077",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Shared/\\_Layout.cshtml",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Shared/\\_LoginPartial.cshtml",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/\\_ViewStart.cshtml",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Site.Master",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Site.Master.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Site.Master.designer.cs"
+    ]
+   },
+   {
+    "id": "FEAT-078",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Shared/Error.cshtml"
+    ]
+   },
+   {
+    "id": "FEAT-079",
+    "paths": [
+     "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs",
+     "eShopModernizedNTier/src/eShopWCFService/CatalogServiceMock.cs",
+     "eShopModernizedNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+     "eShopModernizedNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+     "eShopModernizedNTier/src/eShopWinForms/Views/CatalogView.cs"
+    ]
+   },
+   {
+    "id": "FEAT-080",
+    "paths": [
+     "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs",
+     "eShopModernizedNTier/src/eShopWCFService/CatalogServiceMock.cs",
+     "eShopModernizedNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+     "eShopModernizedNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+     "eShopModernizedNTier/src/eShopWinForms/Views/CatalogView.cs"
+    ]
+   },
+   {
+    "id": "FEAT-081",
+    "paths": [
+     "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs",
+     "eShopModernizedNTier/src/eShopWCFService/CatalogServiceMock.cs",
+     "eShopModernizedNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+     "eShopModernizedNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+     "eShopModernizedNTier/src/eShopWinForms/Views/CatalogView.cs"
+    ]
+   },
+   {
+    "id": "FEAT-094",
+    "paths": [
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.designer.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.designer.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs"
+    ]
+   },
+   {
+    "id": "FLOW-001",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "FLOW-002",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs"
+    ]
+   },
+   {
+    "id": "OQ-044",
+    "paths": [
+     "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs"
+    ]
+   },
+   {
+    "id": "SCRN-003",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Edit.cshtml"
+    ]
+   },
+   {
+    "id": "SCRN-011",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Shared/Error.cshtml"
+    ]
+   }
+  ]
+ },
+ "ollama": {
+  "requirements": [
+   {
+    "id": "REQ-001",
+    "sources": [
+     "BR-049",
+     "FEAT-062",
+     "FEAT-063",
+     "FEAT-151",
+     "FEAT-165",
+     "FLOW-001",
+     "FEAT-092",
+     "FEAT-018",
+     "FEAT-095",
+     "SCRN-016",
+     "SCRN-024",
+     "SCRN-010"
+    ]
+   },
+   {
+    "id": "REQ-002",
+    "sources": [
+     "BR-049",
+     "FEAT-062",
+     "FEAT-151",
+     "FEAT-065",
+     "BR-082"
+    ]
+   },
+   {
+    "id": "REQ-003",
+    "sources": [
+     "BR-049",
+     "FEAT-062",
+     "FEAT-067",
+     "FEAT-114",
+     "INT-019"
+    ]
+   },
+   {
+    "id": "REQ-004",
+    "sources": [
+     "BR-049",
+     "FEAT-066",
+     "INT-019"
+    ]
+   },
+   {
+    "id": "REQ-005",
+    "sources": [
+     "BR-049",
+     "FEAT-062",
+     "FEAT-063",
+     "SCRN-028",
+     "SCRN-029",
+     "SCRN-038"
+    ]
+   },
+   {
+    "id": "REQ-006",
+    "sources": [
+     "BR-049",
+     "FEAT-062",
+     "FEAT-063",
+     "SCRN-018",
+     "SCRN-029",
+     "SCRN-038"
+    ]
+   },
+   {
+    "id": "REQ-007",
+    "sources": [
+     "BR-049",
+     "FEAT-062",
+     "FEAT-063",
+     "FLOW-013",
+     "SCRN-030",
+     "SCRN-039"
+    ]
+   },
+   {
+    "id": "REQ-008",
+    "sources": [
+     "BR-049",
+     "BR-082",
+     "FEAT-106",
+     "INT-067",
+     "SCRN-028",
+     "SCRN-038"
+    ]
+   },
+   {
+    "id": "REQ-009",
+    "sources": [
+     "BR-049",
+     "BR-100"
+    ]
+   },
+   {
+    "id": "REQ-010",
+    "sources": [
+     "BR-049",
+     "BR-100"
+    ]
+   },
+   {
+    "id": "REQ-011",
+    "sources": [
+     "BR-049",
+     "BR-100"
+    ]
+   },
+   {
+    "id": "REQ-012",
+    "sources": [
+     "BR-052"
+    ]
+   },
+   {
+    "id": "REQ-013",
+    "sources": [
+     "BR-055"
+    ]
+   },
+   {
+    "id": "REQ-014",
+    "sources": [
+     "BR-055",
+     "SCRN-007",
+     "SCRN-028",
+     "SCRN-029",
+     "SCRN-038"
+    ]
+   },
+   {
+    "id": "REQ-015",
+    "sources": [
+     "BR-055",
+     "SCRN-007",
+     "SCRN-028",
+     "SCRN-029",
+     "SCRN-038"
+    ]
+   },
+   {
+    "id": "REQ-016",
+    "sources": [
+     "BR-055"
+    ]
+   },
+   {
+    "id": "REQ-017",
+    "sources": [
+     "BR-087"
+    ]
+   },
+   {
+    "id": "REQ-018",
+    "sources": [
+     "BR-018",
+     "BR-088"
+    ]
+   },
+   {
+    "id": "REQ-019",
+    "sources": [
+     "BR-033"
+    ]
+   },
+   {
+    "id": "REQ-020",
+    "sources": [
+     "BR-033"
+    ]
+   },
+   {
+    "id": "REQ-021",
+    "sources": [
+     "INT-001"
+    ]
+   },
+   {
+    "id": "REQ-022",
+    "sources": [
+     "INT-002"
+    ]
+   },
+   {
+    "id": "REQ-023",
+    "sources": [
+     "INT-003"
+    ]
+   },
+   {
+    "id": "REQ-024",
+    "sources": [
+     "INT-018",
+     "INT-100"
+    ]
+   },
+   {
+    "id": "REQ-025",
+    "sources": [
+     "BR-013"
+    ]
+   },
+   {
+    "id": "REQ-026",
+    "sources": [
+     "BR-002"
+    ]
+   },
+   {
+    "id": "REQ-027",
+    "sources": [
+     "BR-099"
+    ]
+   },
+   {
+    "id": "REQ-028",
+    "sources": [
+     "BR-089",
+     "BR-125"
+    ]
+   },
+   {
+    "id": "REQ-029",
+    "sources": [
+     "BR-090"
+    ]
+   },
+   {
+    "id": "REQ-030",
+    "sources": [
+     "BR-110"
+    ]
+   },
+   {
+    "id": "REQ-031",
+    "sources": [
+     "BR-049",
+     "BR-100"
+    ]
+   },
+   {
+    "id": "REQ-032",
+    "sources": [
+     "INT-067"
+    ]
+   },
+   {
+    "id": "REQ-033",
+    "sources": [
+     "OQ-011"
+    ]
+   }
+  ],
+  "tasks": [
+   {
+    "id": "T-001",
+    "title": "Set up the solution skeleton and continuous integration in the chosen stack",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-002",
+    "title": "Write the database migrations in the chosen stack",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-003",
+    "title": "Build the data-access layer on the chosen database",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-004",
+    "title": "Build the approval-test harness that runs the legacy behaviour",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-005",
+    "title": "Implement Catalog Item retrieval by ID",
+    "requirements": [
+     "REQ-001",
+     "REQ-003",
+     "REQ-005",
+     "REQ-006",
+     "REQ-007"
+    ],
+    "files": [
+     "src/data-access/CatalogRepository.cs",
+     "src/business/CatalogService.cs"
+    ]
+   },
+   {
+    "id": "T-006",
+    "title": "Implement Paginated Catalog Listing",
+    "requirements": [
+     "REQ-001",
+     "REQ-002",
+     "REQ-003",
+     "REQ-005",
+     "REQ-006",
+     "REQ-007"
+    ],
+    "files": [
+     "src/business/CatalogService.cs",
+     "src/data-access/CatalogRepository.cs"
+    ]
+   },
+   {
+    "id": "T-007",
+    "title": "Implement Catalog Item Creation",
+    "requirements": [
+     "REQ-001",
+     "REQ-002",
+     "REQ-003",
+     "REQ-005",
+     "REQ-006",
+     "REQ-007",
+     "REQ-008",
+     "REQ-014",
+     "REQ-015"
+    ],
+    "files": [
+     "src/business/CatalogService.cs",
+     "src/data-access/CatalogRepository.cs"
+    ]
+   },
+   {
+    "id": "T-008",
+    "title": "Implement Catalog Item Update",
+    "requirements": [
+     "REQ-001",
+     "REQ-002",
+     "REQ-003",
+     "REQ-004",
+     "REQ-005",
+     "REQ-006",
+     "REQ-007"
+    ],
+    "files": [
+     "src/business/CatalogService.cs",
+     "src/data-access/CatalogRepository.cs"
+    ]
+   },
+   {
+    "id": "T-009",
+    "title": "Implement Catalog Item Deletion",
+    "requirements": [
+     "REQ-001",
+     "REQ-002",
+     "REQ-003",
+     "REQ-005",
+     "REQ-006",
+     "REQ-007"
+    ],
+    "files": [
+     "src/business/CatalogService.cs",
+     "src/data-access/CatalogRepository.cs"
+    ]
+   },
+   {
+    "id": "T-010",
+    "title": "Implement Image URL Generation and Management",
+    "requirements": [
+     "REQ-001",
+     "REQ-005",
+     "REQ-006",
+     "REQ-007",
+     "REQ-009",
+     "REQ-010",
+     "REQ-011"
+    ],
+    "files": [
+     "src/services/ImageService.cs",
+     "src/data-access/ImageStorageAdapter.cs"
+    ]
+   },
+   {
+    "id": "T-011",
+    "title": "Implement Catalog View Filtering and Display",
+    "requirements": [
+     "REQ-001",
+     "REQ-002",
+     "REQ-003",
+     "REQ-004",
+     "REQ-005",
+     "REQ-006",
+     "REQ-007"
+    ],
+    "files": [
+     "src/presentation/CatalogView.cshtml",
+     "src/business/CatalogService.cs"
+    ]
+   },
+   {
+    "id": "T-012",
+    "title": "Implement Catalog Item Delete Confirmation",
+    "requirements": [
+     "REQ-001",
+     "REQ-002",
+     "REQ-003",
+     "REQ-005",
+     "REQ-006",
+     "REQ-007"
+    ],
+    "files": [
+     "src/presentation/Catalog/Delete.cshtml",
+     "src/business/CatalogService.cs"
+    ]
+   },
+   {
+    "id": "T-013",
+    "title": "Implement the catalog item view displaying a list of items with pagination controls",
+    "requirements": [
+     "REQ-001"
+    ],
+    "files": [
+     "src/views/CatalogIndex.cshtml"
+    ]
+   },
+   {
+    "id": "T-014",
+    "title": "Implement the flow to create a new catalog item",
+    "requirements": [
+     "REQ-005"
+    ],
+    "files": [
+     "src/flows/CatalogCreation.cs",
+     "src/views/CatalogCreate.cshtml"
+    ]
+   },
+   {
+    "id": "T-015",
+    "title": "Implement the flow to view details of a specific product item",
+    "requirements": [
+     "REQ-002"
+    ],
+    "files": [
+     "src/flows/ProductDetailView.cs",
+     "src/views/ProductDetail.cshtml"
+    ]
+   },
+   {
+    "id": "T-016",
+    "title": "Implement the flow to save changes made to an existing catalog item",
+    "requirements": [
+     "REQ-006"
+    ],
+    "files": [
+     "src/flows/CatalogEditFlow.cs",
+     "src/views/CatalogEdit.cshtml"
+    ]
+   },
+   {
+    "id": "T-017",
+    "title": "Implement the initialization and seeding of core catalog data",
+    "requirements": [
+     "REQ-017"
+    ],
+    "files": [
+     "src/data/SeedDataInitializer.cs"
+    ]
+   },
+   {
+    "id": "T-018",
+    "title": "Implement the application view switching mechanism based on device type",
+    "requirements": [
+     "REQ-026"
+    ],
+    "files": [
+     "src/core/ViewRouter.cs"
+    ]
+   },
+   {
+    "id": "T-019",
+    "title": "Implement the general site information screen",
+    "requirements": [],
+    "files": [
+     "src/views/SiteInfo.cshtml"
+    ]
+   },
+   {
+    "id": "T-020",
+    "title": "Implement the standardized error display screen",
+    "requirements": [],
+    "files": [
+     "src/views/ErrorPage.cshtml",
+     "src/middleware/ExceptionHandler.cs"
+    ]
+   },
+   {
+    "id": "T-021",
+    "title": "Migrate the legacy data into the target tables with a row-count check",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-022",
+    "title": "Cut over from the legacy system to the new system",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-023",
+    "title": "Review the security of the cards at risk",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-024",
+    "title": "Verify phase 1 against its requirements",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-025",
+    "title": "Verify phase 2 against its requirements",
+    "requirements": [],
+    "files": []
+   },
+   {
+    "id": "T-026",
+    "title": "Verify phase 3 against its requirements",
+    "requirements": [],
+    "files": []
+   }
+  ],
+  "cards": [
+   {
+    "id": "BR-002",
+    "paths": [
+     "README.md"
+    ]
+   },
+   {
+    "id": "BR-013",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Services/CatalogService.cs"
+    ]
+   },
+   {
+    "id": "BR-018",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs"
+    ]
+   },
+   {
+    "id": "BR-033",
+    "paths": [
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master.cs"
+    ]
+   },
+   {
+    "id": "BR-049",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ICatalogService.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/IImageService.cs"
+    ]
+   },
+   {
+    "id": "BR-052",
+    "paths": [
+     "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs"
+    ]
+   },
+   {
+    "id": "BR-055",
+    "paths": [
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.cs"
+    ]
+   },
+   {
+    "id": "BR-082",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/IImageService.cs"
+    ]
+   },
+   {
+    "id": "BR-087",
+    "paths": [
+     "eShopModernizedNTier/src/eShopWCFService/Models/Infrastructure/CatalogDBInitializer.cs",
+     "eShopModernizedNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs"
+    ]
+   },
+   {
+    "id": "BR-088",
+    "paths": [
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.config"
+    ]
+   },
+   {
+    "id": "BR-089",
+    "paths": [
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/log4Net.xml"
+    ]
+   },
+   {
+    "id": "BR-090",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.Debug.config",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.Release.config"
+    ]
+   },
+   {
+    "id": "BR-099",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/CatalogService.cs"
+    ]
+   },
+   {
+    "id": "BR-100",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/IImageService.cs"
+    ]
+   },
+   {
+    "id": "BR-110",
+    "paths": [
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/log4Net.xml"
+    ]
+   },
+   {
+    "id": "BR-125",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/log4Net.xml"
+    ]
+   },
+   {
+    "id": "FEAT-018",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Services/CatalogService.cs",
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/ICatalogService.cs",
+     "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+     "eShopLegacyNTier/src/eShopWCFService/CatalogServiceMock.cs",
+     "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/ICatalogService.cs"
+    ]
+   },
+   {
+    "id": "FEAT-062",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/CatalogService.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ICatalogService.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/CatalogService.cs",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services/ICatalogService.cs"
+    ]
+   },
+   {
+    "id": "FEAT-063",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/CatalogServiceMock.cs",
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ImageMockStorage.cs"
+    ]
+   },
+   {
+    "id": "FEAT-065",
+    "paths": [
+     "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services/CatalogService.cs",
+     "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs"
+    ]
+   },
+   {
+    "id": "FEAT-066",
+    "paths": [
+     "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs"
+    ]
+   },
+   {
+    "id": "FEAT-067",
+    "paths": [
+     "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs"
+    ]
+   },
+   {
+    "id": "FEAT-092",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Services/CatalogService.cs"
+    ]
+   },
+   {
+    "id": "FEAT-095",
+    "paths": [
+     "eShopLegacyMVCSolution/eShopPorted/Services/CatalogService.cs"
+    ]
+   },
+   {
+    "id": "FEAT-106",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ImageMockStorage.cs"
+    ]
+   },
+   {
+    "id": "FEAT-114",
+    "paths": [
+     "eShopModernizedNTier/src/eShopWCFService/CatalogServiceClient.cs",
+     "eShopModernizedNTier/src/eShopWCFService/ICatalogService.cs"
+    ]
+   },
+   {
+    "id": "FEAT-151",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/CatalogService.cs"
+    ]
+   },
+   {
+    "id": "FEAT-165",
+    "paths": [
+     "eShopLegacyNTier/src/eShopWinForms/Controllers/ICatalogView.cs"
+    ]
+   },
+   {
+    "id": "FLOW-001",
+    "paths": [
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx"
+    ]
+   },
+   {
+    "id": "FLOW-013",
+    "paths": [
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx.cs"
+    ]
+   },
+   {
+    "id": "INT-001",
+    "paths": [
+     "winforms-wcf.md"
+    ]
+   },
+   {
+    "id": "INT-002",
+    "paths": [
+     "docker-compose.yml",
+     "winforms-wcf.md"
+    ]
+   },
+   {
+    "id": "INT-003",
+    "paths": [
+     "winforms-wcf.md"
+    ]
+   },
+   {
+    "id": "INT-018",
+    "paths": [
+     "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+     "eShopLegacyNTier/src/eShopWCFService/CatalogServiceClient.cs",
+     "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs",
+     "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs"
+    ]
+   },
+   {
+    "id": "INT-019",
+    "paths": [
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/CatalogService.cs",
+     "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/eShopLegacyWebForms.csproj"
+    ]
+   },
+   {
+    "id": "INT-067",
+    "paths": [
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs"
+    ]
+   },
+   {
+    "id": "INT-100",
+    "paths": [
+     "eShopModernizedNTier/src/eShopWCFService/ICatalogService.cs"
+    ]
+   },
+   {
+    "id": "OQ-011",
+    "paths": [
+     "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-CD-deployment.yml",
+     "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-deployment.yml"
+    ]
+   },
+   {
+    "id": "SCRN-007",
+    "paths": [
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx",
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.cs"
+    ]
+   },
+   {
+    "id": "SCRN-010",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml"
+    ]
+   },
+   {
+    "id": "SCRN-016",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml"
+    ]
+   },
+   {
+    "id": "SCRN-018",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Edit.cshtml"
+    ]
+   },
+   {
+    "id": "SCRN-024",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml"
+    ]
+   },
+   {
+    "id": "SCRN-028",
+    "paths": [
+     "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx"
+    ]
+   },
+   {
+    "id": "SCRN-029",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Create.cshtml"
+    ]
+   },
+   {
+    "id": "SCRN-030",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Delete.cshtml"
+    ]
+   },
+   {
+    "id": "SCRN-038",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Create.cshtml"
+    ]
+   },
+   {
+    "id": "SCRN-039",
+    "paths": [
+     "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Delete.cshtml"
+    ]
+   }
+  ]
+ }
+}
