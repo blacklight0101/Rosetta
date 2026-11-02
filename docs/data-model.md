@@ -430,17 +430,24 @@ writes. It is absent for a run whose summariser step answered nothing. `merges` 
 
 ### 3.7c `planner-answers.json`
 
-|         |                                                                                                                                     |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Purpose | the planner answers a `plan` run paid for, so a plan that paused at its approved amount does not pay for them again (RF-432, P8-01) |
-| Writer  | `BuildPlan` through `PlannerAnswers`, rewritten after every planner call that returned a complete answer                            |
-| Readers | `BuildPlan` when the run starts again after Continue (+N)                                                                           |
+|         |                                                                                                                                             |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Purpose | the planner answers a `plan` run paid for, so a plan that paused at its approved amount does not pay for them again (RF-432, P8-01)         |
+| Writer  | `BuildPlan` through `PlannerAnswers`, rewritten after every complete answer, every paid segment of a cut-off answer and every call id taken |
+| Readers | `BuildPlan` when the run starts again after Continue (+N)                                                                                   |
 
-`{ schemaVersion: 1, answers }`, where `answers` maps a key to the text of the answer. The key is the agent task of the call and
-its place among that task's calls, `<agentTaskId>#<n>` (for example `planner-package#1`, `planner-data-model#2`): a plan run asks its
-calls in the same order each time, so after a pause the n-th call of a task is the same call. A kept answer is handed back without a
-model call; a call that was refused or cut short keeps nothing. The file is masked like every file Rosetta writes. A file that is
-missing or is not a version 1 file reads as empty: the run then asks again and never trusts an answer it cannot read.
+`{ schemaVersion: 2, inputsSha256, callsTaken, answers, progress }`. `inputsSha256` is the SHA-256 of the run's inputs as the planner
+sees them: the brief, the questions with their answers, the cards of the source run, the project settings, the source run, the
+catalogue version and the prompt versions. `answers` maps a key to the text of a complete answer; the key is the agent task of the
+call and its place among that task's calls, `<agentTaskId>#<n>` (for example `planner-package#1`, `planner-data-model#2`): a plan
+run asks its calls in the same order each time, so after a pause the n-th call of a task is the same call. `progress` holds, by the
+same key, the paid part of an answer cut off at the output limit (`{ text, continued }`) whose continuation was not made yet; a
+continued run goes on from it. `callsTaken` is the number of call ids (`<runKey>#<n>`, RF-408) the run has taken, so a continued
+run numbers its calls on and no two calls of a run share an id. When the run starts again, a kept answer is handed back without a
+model call only when `inputsSha256` matches the inputs now; when the brief, an answer, a card or a setting changed during the
+pause, every kept answer is dropped, a warning says so in the run's log and the planner is asked again (the ids still go on). A call
+that was refused keeps nothing. The file is masked like every file Rosetta writes. A file that is missing or is not a version 2
+file reads as empty: the run then asks again and never trusts an answer it cannot read.
 
 ### 3.8 `spec.md`, `data-model.md`, `coverage.json`, `coverage.md`
 

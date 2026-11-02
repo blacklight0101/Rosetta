@@ -31,9 +31,12 @@ import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import { recordPlanSources } from '../plan/plan-record.js';
 import { announcePlannerCall } from '../plan/plan-call-events.js';
-import { openAnswerBook, type PlannerAnswerDependencies } from '../plan/planner-answer-book.js';
+import {
+  openAnswerBook,
+  planInputsText,
+  type PlannerAnswerDependencies,
+} from '../plan/planner-answer-book.js';
 import { readUnderstandOptions } from '../understand/understand-options.js';
-import { callIds } from '../runs/run-ids.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
 import { writeCostReport } from '../runs/run-cost-report.js';
 import { scopeOf } from '../runs/run-scope.js';
@@ -126,13 +129,13 @@ export class BuildPlan implements RunExecutor {
     const { cards, brief, questions } = inputs.value;
     const supported = usableCards(cards, catalogue.claimVerbs).cards;
     const answered = questions.filter((question) => question.answer.trim() !== '');
+    const answers = await openAnswerBook(this.deps, run, planInputsText(inputs.value, files));
     const call = {
       ...{ run, planner, prompt: prompts.plan, agentTaskId: 'planner-package', updates, signal },
       continuePrompt: prompts.continue,
       onCallStarted: (id: string) => announcePlannerCall(execution.events, id),
-      ...{ tags: () => this.deps.ids.dataBlockTag(), callId: callIds(run) },
-      window: windowOfRole(planner, inputs.value.project.settings),
-      answers: await openAnswerBook(this.deps, run),
+      ...{ tags: () => this.deps.ids.dataBlockTag(), callId: answers.callIds(run) },
+      ...{ window: windowOfRole(planner, inputs.value.project.settings), answers },
     };
     const workbook =
       inputs.value.project.sourceKind === 'workbook' ? { workbook: workbookSetup(brief) } : {};

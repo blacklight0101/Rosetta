@@ -3,7 +3,10 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ProjectSettings } from '../../../src/application/projects/project-settings.js';
 import type { Run } from '../../../src/domain/runs/run.js';
-import { loadRecording } from '../../../src/infrastructure/providers/fake/recording.js';
+import {
+  loadRecording,
+  type Recording,
+} from '../../../src/infrastructure/providers/fake/recording.js';
 import { MemoryJourneyRecords } from '../../../src/infrastructure/db/memory-journey-records.js';
 import { planEstimateOf } from '../../support/plan-estimate-of.js';
 import { createPlanHarness, type PlanHarness } from '../../support/plan-harness.js';
@@ -22,10 +25,10 @@ const temp = useTempRoot('rosetta-plan-approval-');
 async function seededHarness(
   folder: string,
   change: (settings: ProjectSettings) => ProjectSettings = (settings) => settings,
+  asked: (calls: Recording['calls']) => Recording['calls'] = (calls) => calls,
 ): Promise<PlanHarness> {
-  const recording = await loadRecording(
-    join('tests', 'recordings', 'fake', 'planner-package.json'),
-  );
+  const recorded = await loadRecording(join('tests', 'recordings', 'fake', 'planner-package.json'));
+  const recording = { ...recorded, calls: asked(recorded.calls) };
   const h = await createPlanHarness(join(temp.path, folder), recording, {
     cloudPlanner: true,
     settings: change,
@@ -92,8 +95,42 @@ describe('RF-432 a plan run that reaches its approved amount', () => {
     const spent = h.providers.ledger.entries.reduce((sum, each) => sum + each.costMicros, 0n);
     expect(spent).toBe(base.total);
     expect(Object.keys(await h.handoffOf(done))).toContain('README.md');
+    // RF-408: the continued run numbers its calls on, so no two calls of the run share an id.
+    const ids = h.providers.ledger.reservations.map((each) => each.reservation.callId);
+    expect(new Set(ids).size).toBe(ids.length);
   });
+});
 
+describe('RF-432 a plan run whose inputs change during the pause', () => {
+  it('RF-432 P8-01 a brief edited during the pause drops the kept answers, so Continue uses none of them', async () => {
+    const base = await baseline();
+    // The fake planner replays its calls in order: the plan and the PRD are recorded twice, for the
+    // attempt before the pause and for the one after the edit.
+    const h = await seededHarness('edited', undefined, (calls) => [...calls.slice(0, 2), ...calls]);
+    const approvedAmount = { tokens: 40_000_000, costMicros: base.line };
+    const paused = await h.plan({ cloudConsent: true, approvedAmount });
+    expect(paused.queueState).toBe('AwaitingApproval');
+
+    await h.saveBrief({ migration: 'strangler-fig' });
+    const done = await continued(h, paused);
+
+    expect(done).toMatchObject({ id: paused.id, endState: 'Completed' });
+    // The plan and the PRD are asked again from the edited brief; nothing paid before is reused.
+    const tasks = h.providers.requests().map((each) => each.context.agentTaskId);
+    expect(tasks.filter((task) => task === 'planner-package')).toHaveLength(2);
+    expect(tasks.filter((task) => task === 'planner-prd')).toHaveLength(2);
+    expect(h.s.logger.entries).toContainEqual(
+      expect.objectContaining({
+        level: 'warn',
+        message: expect.stringContaining('changed while the run was paused') as unknown,
+      }),
+    );
+    const manifest = await h.manifestOf(done);
+    expect(JSON.stringify(manifest)).toContain('strangler-fig');
+  });
+});
+
+describe('RF-435 the line of a plan run', () => {
   it('RF-435 EV-82 a project run cap the plan passes does not end the run while the journey amount allows it', async () => {
     const base = await baseline();
     const h = await seededHarness('journey', cappedRun(base.line));
