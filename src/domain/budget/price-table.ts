@@ -23,6 +23,8 @@ export interface PriceQuery {
   readonly provider: string;
   readonly model: string;
   readonly keySource: KeySource;
+  /** RF-433: the provider is a server that is not this machine, so no local kind is free (P8-04). */
+  readonly remote?: boolean;
 }
 
 export type PriceLookup =
@@ -77,7 +79,7 @@ export function lookupPrice(
   }
   const shipped = table.prices.find(matches);
   if (shipped !== undefined) return { kind: 'priced', price: shipped, version: table.version };
-  if (localKinds.has(query.provider)) {
+  if (localKinds.has(query.provider) && query.remote !== true) {
     return { kind: 'priced', price: freePrice(query), version: table.version };
   }
   return { kind: 'unpriced' };

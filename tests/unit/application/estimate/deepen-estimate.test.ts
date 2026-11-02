@@ -84,7 +84,7 @@ function cloudWithCap(maxTokens?: number): ProjectSettings {
   return { ...settings, budget: { ...settings.budget, run } };
 }
 
-async function harnessOf(settings: ProjectSettings, run: Partial<Run> = {}) {
+async function harnessOf(settings: ProjectSettings, run: Partial<Run> = {}, ollamaHost?: string) {
   const projects = new MemoryProjectRepository();
   const runs = new MemoryRunIndex();
   const project = await projectWithScan({ projects, runs }, userAmy.userId, settings);
@@ -106,12 +106,13 @@ async function harnessOf(settings: ProjectSettings, run: Partial<Run> = {}) {
     priceTable: estimatePrices,
     models: NO_LISTED_MODELS,
     ...noAnswers,
+    ...(ollamaHost === undefined ? {} : { ollamaHost }),
   });
   return { estimate, runs, understand };
 }
 
-async function estimateOf(settings: ProjectSettings, maxRounds?: number) {
-  const { estimate, understand } = await harnessOf(settings);
+async function estimateOf(settings: ProjectSettings, maxRounds?: number, ollamaHost?: string) {
+  const { estimate, understand } = await harnessOf(settings, {}, ollamaHost);
   const outcome = await estimate.execute({ actor: userAmy, runId: understand.id, maxRounds });
   if (!outcome.ok) throw new Error(`The estimate was refused with ${outcome.error}`);
   return outcome.value;
@@ -199,5 +200,48 @@ describe('RF-209 an estimate the server refuses', () => {
       error: ERROR_CODES.requestInvalid,
     });
     expect(await runs.list(userAmy.userId, understand.projectId)).toHaveLength(2);
+  });
+});
+
+// P8-04, RF-433: the estimate shows the cap the guard holds the run to.
+describe('RF-433 the cap the Deepen estimate shows for a run on local providers', () => {
+  function localWithCap(noCapForLocalModels: boolean): ProjectSettings {
+    const settings = settingsFor({
+      reader: { provider: 'ollama', model: 'gemma4:e4b' },
+      verifier: { provider: 'ollama', model: 'gemma4:e4b' },
+      summariser: { provider: 'ollama', model: 'gemma4:e4b' },
+      planner: { provider: 'ollama', model: 'gemma4:e4b' },
+    });
+    const run = { maxCostMicros: 500_000, maxTokens: 2_000_000 };
+    return { ...settings, budget: { ...settings.budget, run, noCapForLocalModels } };
+  }
+  const ceilings = { maxCostMicros: 100_000_000, maxTokens: 50_000_000 };
+
+  it('RF-433 shows the administrator ceiling when the setting is on and the host is this machine', async () => {
+    const estimate = await estimateOf(localWithCap(true), undefined, 'localhost');
+
+    expect(estimate.cap).toEqual(ceilings);
+  });
+
+  it('RF-433 shows the project cap when the setting is off', async () => {
+    const estimate = await estimateOf(localWithCap(false), undefined, 'localhost');
+
+    expect(estimate.cap).toEqual({ maxCostMicros: 500_000, maxTokens: 2_000_000 });
+  });
+
+  it('RF-433 shows the project cap, and no price, for Ollama at a remote host', async () => {
+    const estimate = await estimateOf(localWithCap(true), undefined, 'ollama.example.org');
+
+    expect(estimate.cap).toEqual({ maxCostMicros: 500_000, maxTokens: 2_000_000 });
+    expect(estimate.roles.every((role) => !role.priced)).toBe(true);
+  });
+
+  it('RF-433 compares the figures with the ceiling it shows', async () => {
+    const small = { ...localWithCap(true), budget: { ...localWithCap(true).budget } };
+    small.budget.run = { maxCostMicros: 500_000, maxTokens: 1_000 };
+
+    const estimate = await estimateOf(small, undefined, 'localhost');
+
+    expect(estimate.overCap).toEqual({ round: false, allRounds: false });
   });
 });

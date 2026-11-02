@@ -17,6 +17,7 @@ import type { ReportCardDetail } from './card-detail.js';
 import type { ReportDiagram } from './report-diagrams.js';
 import { parseOverview } from '../overview/overview-file.js';
 import { buildReplay } from './replay-timeline.js';
+import { mergedQuestionsIn } from './question-steps.js';
 import { sourceKindOf } from '../../domain/sources/source-kind.js';
 
 // RF-504, RF-506: what the report of a finished run says, from the run row, the manifest (when the
@@ -92,6 +93,7 @@ export function buildReportModel(inputs: ReportInputs): ReportModel {
     cost: inputs.cost,
     projectTotals: inputs.projectTotals,
     questions: inputs.questions,
+    mergedQuestions: mergedQuestionsIn(inputs.events),
     cardDetails: inputs.cardDetails,
     diagrams: inputs.diagrams,
     downloads: inputs.downloads,

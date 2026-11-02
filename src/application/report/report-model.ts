@@ -114,6 +114,19 @@ export interface ReportQuestion {
   readonly answer: string;
 }
 
+/** RF-243, RF-646, EV-57: a question `sameQuestion` merged into another, with the run that asked it. */
+export interface ReportMergedQuestion {
+  readonly keptCardId: string;
+  /** Model text: untrusted. */
+  readonly keptQuestion: string;
+  readonly keptRunKey: string;
+  readonly mergedCardId: string;
+  /** Model text: untrusted. */
+  readonly mergedQuestion: string;
+  /** The run that asked the merged question. */
+  readonly mergedRunKey: string;
+}
+
 /** RF-505: the file names of the zips the report links, written beside it in the `report/` folder. */
 export interface ReportDownloadNames {
   /** The zip of the whole run folder. */
@@ -171,6 +184,8 @@ export interface ReportModel {
   readonly projectTotals: ReportProjectTotals | null;
   /** RF-500: the open questions the run raised, in file order. */
   readonly questions: readonly ReportQuestion[];
+  /** RF-243, RF-646, EV-57: the pairs of questions the run merged, for a check that no merge was wrong. */
+  readonly mergedQuestions?: readonly ReportMergedQuestion[] | undefined;
   /** RF-502: the cards that have a page, with their claims, citations and cited lines. */
   readonly cardDetails: readonly ReportCardDetail[];
   /** RF-508: the Mermaid diagrams of the run's documents, drawn on the diagrams page; none when it has none. */
