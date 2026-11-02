@@ -3,6 +3,7 @@ import type { RoleProvider } from '../../../../src/application/providers/provide
 import type { ProviderSetRequest } from '../../../../src/application/ports/provider-set-factory.js';
 import type { LlmRequest, LlmResponse } from '../../../../src/application/ports/llm-provider.js';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
+import type { PriceTable } from '../../../../src/domain/budget/price-table.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { reservationLifetimeMs } from '../../../../src/infrastructure/providers/reservation-lifetime.js';
 import { failureOf } from '../../../support/failure-of.js';
@@ -120,10 +121,30 @@ describe('cloud consent and the one parsed URL', () => {
   );
 });
 
+// P8-04, RF-433: an Ollama server that is not this machine is priced like a cloud provider, so the
+// consent tests below give its model a price.
+const remoteOllamaPrices: PriceTable = {
+  version: '2026-11-02',
+  currency: 'USD',
+  prices: [
+    {
+      provider: 'ollama',
+      model: 'gemma4:e4b',
+      inputPerMillionMicros: 100_000n,
+      outputPerMillionMicros: 200_000n,
+      cachedInputPerMillionMicros: 10_000n,
+      currency: 'USD',
+    },
+  ],
+};
+
+const remoteSetUp = (ollamaUrl: string, change: Partial<ProviderSetRequest> = {}) =>
+  setUp({ ollamaUrl, priceTable: remoteOllamaPrices }, { settings: ollamaSettings, ...change });
+
 describe('cloud consent: local and remote Ollama', () => {
   it('DEC-118 an Ollama server on another host needs the consent like a cloud provider', async () => {
     const ollamaUrl = 'http://gpu-box.example:11434';
-    const { harness, reader } = await setUp({ ollamaUrl }, { settings: ollamaSettings });
+    const { harness, reader } = await remoteSetUp(ollamaUrl);
 
     const failure = await failureOf(complete(reader, callFor('reader', 'gemma4:e4b')));
 
@@ -133,7 +154,7 @@ describe('cloud consent: local and remote Ollama', () => {
 
   it('RF-143 http://localhost@evil.example connects to evil.example and is judged as evil.example', async () => {
     const ollamaUrl = 'http://localhost@evil.example:11434';
-    const { harness, reader } = await setUp({ ollamaUrl }, { settings: ollamaSettings });
+    const { harness, reader } = await remoteSetUp(ollamaUrl);
 
     const failure = await failureOf(complete(reader, callFor('reader', 'gemma4:e4b')));
 
@@ -144,10 +165,7 @@ describe('cloud consent: local and remote Ollama', () => {
 
   it('RF-408 the call log names the host the adapter connects to', async () => {
     const ollamaUrl = 'http://localhost@evil.example:11434';
-    const { harness, reader } = await setUp(
-      { ollamaUrl },
-      { settings: ollamaSettings, cloudConsent: true },
-    );
+    const { harness, reader } = await remoteSetUp(ollamaUrl, { cloudConsent: true });
 
     await complete(reader, callFor('reader', 'gemma4:e4b'));
 

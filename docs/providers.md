@@ -31,6 +31,7 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
   must come from one parsed URL (`new URL(ROSETTA_OLLAMA_URL).hostname`, so `http://localhost@evil.com` gives
   `evil.com`); the provider factory (`provider-endpoint.ts`) builds both from that one parse and tests it. The guard masks every message part, writes `egress.log.jsonl` and
   refuses repository content outside its data blocks (RF-141, RF-142, RF-145, architecture section 7).
+- The budget guard prices an `ollama` call at zero only when that same host is this machine (RF-433, P8-04): the price lookup gives the zero price to `fake` and to Ollama on this machine, and to no other host. An Ollama server anywhere else is priced like a cloud provider (a model of the price table keeps its price) and a model without a price is refused with `RST-1601` and the message that the Ollama server is not on this machine. "No cap for local models" never applies to such a run. `runCapsFor` in `src/application/projects/local-run-caps.ts` gives the run caps for the guard, the start event, the Deepen estimate and the plan caps alike.
 - `FakeProvider.requests` keeps every request the fake received, so a test can prove what was (and was not) sent.
 - Every adapter passes the contract suite `tests/contracts/llm-provider.contract.ts`: its test arranges recordings so
   that each scenario of the suite (`text`, `tool-call`, `retry-then-text`, `permanent-failure`) answers with the
