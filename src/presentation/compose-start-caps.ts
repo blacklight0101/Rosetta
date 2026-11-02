@@ -34,8 +34,10 @@ export function composeStartCaps(
   pool: DatabasePool,
   projects: ProjectRepository,
   keys: KeySourceLookup,
+  ollamaHost?: string,
 ): StartCaps {
   return new StartCaps({
+    ...(ollamaHost === undefined ? {} : { ollamaHost }),
     projects,
     users: new PgUserRepository(pool),
     serverSettings: new PgServerSettings(pool),

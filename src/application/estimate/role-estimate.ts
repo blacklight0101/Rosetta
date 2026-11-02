@@ -8,6 +8,7 @@ import type { ProviderKeyRepository } from '../ports/provider-key-repository.js'
 import { priceOverridesOf } from '../projects/price-overrides.js';
 import { DEFAULT_REASONING_EFFORT, type ProjectSettings } from '../projects/project-settings.js';
 import type { Project } from '../projects/project.js';
+import { isRemoteOllama } from '../providers/cloud-consent.js';
 import { keyProviderOf } from '../providers/key-choice.js';
 import type {
   ByScenario,
@@ -109,6 +110,7 @@ export async function priceOfRole(
     provider: config.kind,
     model,
     keySource,
+    remote: isRemoteOllama(config.kind, pricing.ollamaHost),
   });
   return { setting, name, model, config, keySource, lookup };
 }

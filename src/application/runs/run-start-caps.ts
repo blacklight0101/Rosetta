@@ -6,6 +6,7 @@ import type { RunManifest } from '../../domain/runs/run-manifest.js';
 import type { KeySourceLookup } from '../ports/key-source-lookup.js';
 import type { ServerSettings } from '../ports/server-settings.js';
 import type { UserRepository } from '../ports/user-repository.js';
+import { runCapsFor, uncappedLocalRun } from '../projects/local-run-caps.js';
 import type { Project } from '../projects/project.js';
 import { UNDERSTAND_ROLES } from '../understand/understand-options.js';
 
@@ -45,18 +46,20 @@ export class StartCaps {
     const account = await users.findById(run.userId);
     if (project === undefined || account === undefined) return undefined;
     const keySources = await this.keySourcesOf(run, manifest, project, account.serverKeysAllowed);
-    const { budget } = project.settings;
-    return runStartCapsOf(keySources, {
-      run: {
-        maxCostMicros: BigInt(budget.run.maxCostMicros),
-        maxTokens: BigInt(budget.run.maxTokens),
-      },
+    // RF-433, P8-04: an uncapped local run is held to the administrator ceiling, and says so.
+    const { settings } = project;
+    const uncapped =
+      ROLES_OF_STAGE[run.stage] !== undefined && uncappedLocalRun(settings, this.deps.ollamaHost);
+    const caps = uncapped ? runCapsFor(settings, this.deps.ollamaHost) : settings.budget.run;
+    const started = runStartCapsOf(keySources, {
+      run: { maxCostMicros: BigInt(caps.maxCostMicros), maxTokens: BigInt(caps.maxTokens) },
       server: await serverSettings.caps(),
       account: {
         dailyCapMicros: account.dailyCapMicros,
         ownDailyCapMicros: account.ownDailyCapMicros,
       },
     });
+    return uncapped ? { ...started, run: { ...started.run, source: 'administrator' } } : started;
   }
 
   /** The key source of each model role of the stage that the manifest records (RF-1104). */

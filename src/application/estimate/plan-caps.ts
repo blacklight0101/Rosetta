@@ -11,6 +11,7 @@ import type { Clock } from '../ports/clock.js';
 import type { ServerSettings } from '../ports/server-settings.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { Project } from '../projects/project.js';
+import { runCapsFor } from '../projects/local-run-caps.js';
 import { roleBudgetOf } from '../projects/role-budget.js';
 import type { ByScenario, EstimatePoint, RoleEstimate, Scenario } from './estimate-types.js';
 import type { PlanCap } from './plan-estimate-types.js';
@@ -63,7 +64,8 @@ export async function planCaps(
 ): Promise<{ readonly caps: readonly PlanCap[]; readonly withinCaps: ByScenario<boolean> }> {
   const { settings } = project;
   const account = await deps.users.findById(project.userId);
-  const { run } = settings.budget;
+  // RF-433, P8-04: the cap the guard holds the run to, the ceiling for an uncapped local run.
+  const run = runCapsFor(settings, deps.ollamaHost);
   const caps = capsFor(call.keySource, {
     run: { maxCostMicros: BigInt(run.maxCostMicros), maxTokens: BigInt(run.maxTokens) },
     role: roleBudgetOf(settings, role),
