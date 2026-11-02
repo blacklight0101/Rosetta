@@ -20,7 +20,7 @@ import { changesOf, markAnswered, type Rerun } from './answer-rerun.js';
 import { cardNoteOf, coverageNoteOf } from './area-notes.js';
 import { judgementPartsOf, runJudgementStep, type JudgementContext } from './claim-judgement.js';
 import { endsWithoutRoomStops } from './reader-room.js';
-import { openQuestionsOf } from './open-questions.js';
+import { addRunQuestions } from './merged-question-events.js';
 import { overviewStep } from './overview-step.js';
 import { consolidateStep } from './session-consolidation.js';
 import { recordTaskState, type ReaderTaskContext } from './reader-task.js';
@@ -177,11 +177,7 @@ export class UnderstandSession {
   }
 
   private async addQuestions(): Promise<void> {
-    const { deps, execution } = this.parts;
-    const { run } = execution;
-    const questions = openQuestionsOf(this.latest.cards, run.runKey);
-    if (questions.length === 0) return;
-    await deps.answers.addQuestions({ userId: run.userId, projectId: run.projectId }, questions);
+    await addRunQuestions(this.parts, this.latest.cards);
   }
 
   /** RF-250: the duplicates of several areas become one card; the set is written again if any did. */

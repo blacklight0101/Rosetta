@@ -84,9 +84,13 @@ export interface ProjectRef {
 export interface AnswersFile {
   /**
    * Adds the questions not yet in the project's file (by their text; a `survivor` by its id in its run);
-   * rejects with the writer's code.
+   * rejects with the writer's code. Answers the questions it left out because the file held one that
+   * asks the same (EV-57), each with the question it was merged into, so the run can report them.
    */
-  addQuestions(project: ProjectRef, questions: readonly OpenQuestion[]): Promise<void>;
+  addQuestions(
+    project: ProjectRef,
+    questions: readonly OpenQuestion[],
+  ): Promise<readonly MergedQuestion[]>;
   /** RF-1007: the questions the run with that folder name added, in file order. */
   questionsOf(project: ProjectRef, runKey: string): Promise<readonly RecordedQuestion[]>;
   /** RF-241: the questions with an answer, of every run, in file order. */
@@ -109,4 +113,14 @@ export interface AnswersFile {
    * a section the file does not hold is skipped; no section is deleted.
    */
   keepMerge(project: ProjectRef, edits: readonly MergeEdit[]): Promise<void>;
+}
+
+/** A question merged into another, and the runs that asked both. */
+export interface MergedQuestion {
+  readonly keptCardId: string;
+  readonly keptQuestion: string;
+  readonly keptRunKey: string;
+  readonly mergedCardId: string;
+  readonly mergedQuestion: string;
+  readonly mergedRunKey: string;
 }
