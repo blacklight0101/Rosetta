@@ -11,12 +11,13 @@ import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
 import { fixtureZip, uploadFromNewProject } from '../support/zip-journey.js';
 
-// RF-432, RF-435, RF-434, DEC-206, P8-03, EV-84: the pause is real. A journey approved at 120% of
-// the real spend of its first run (the recorded run of the fake provider) cannot pay for a second
-// understand step: that step takes what is left of the journey as its line, pauses at it
-// ("Waiting for your approval"), Continue (+N) lets it go on, and Stop here ends it "Cap reached".
-// The second step is started through the run-start API, which keeps its stage parameter for the
-// evaluation tools (ADR-027); the journey amount is the row Analyse writes, set to 120% of the spend.
+// RF-432, RF-435, RF-434, DEC-206, P8-03, EV-84: the pause is real. After the first run (Analyse, the
+// recorded run of the fake provider, default settings) a second understand step is measured in an
+// unconstrained pass; the same step is then approved at exactly 120% of its own spend. It takes what
+// is left of the journey as its line and pauses at it ("Waiting for your approval"); Continue (+N)
+// lets it go on and Stop here ends it "Partly read". The steps are started through the run-start API,
+// which keeps its stage parameter for the evaluation tools (ADR-027); the journey amount is the row
+// Analyse writes, set from the measured spend.
 
 const runUuidOf = (url: string): string => {
   const found = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/u.exec(url);
@@ -35,27 +36,39 @@ async function analyse(page: Page): Promise<string> {
   return runUuidOf(page.url());
 }
 
-/** Approves the journey at 120% of the first run's spend, starts a second step and opens it. */
-async function pausedSecondStep(page: Page): Promise<void> {
-  const first = await analyse(page);
-  const spent = await spentTokensOf(first);
-  expect(spent).toBeGreaterThan(0);
-  expect(
-    await approveJourneyAt(first, { tokens: Math.ceil(spent * 2.2), costMicros: 5_000_000 }),
-  ).toBe(1);
-
+/** Starts a second understand step of the project through the run-start API; returns its run id. */
+async function startStep(page: Page, projectId: string): Promise<string> {
   const session = z
     .object({ csrfToken: z.string() })
     .parse(await (await page.context().request.get('/api/session')).json());
-  const started = await page
-    .context()
-    .request.post(`/api/projects/${await projectOf(first)}/runs`, {
-      data: { stage: 'understand', areas: ['Catalog'] },
-      headers: { origin: e2eOrigin(), 'x-csrf-token': session.csrfToken },
-    });
+  const started = await page.context().request.post(`/api/projects/${projectId}/runs`, {
+    data: { stage: 'understand', areas: ['Catalog'] },
+    headers: { origin: e2eOrigin(), 'x-csrf-token': session.csrfToken },
+  });
   expect(started.status()).toBe(202);
-  const second = z.object({ id: z.string() }).parse(await started.json());
-  await page.goto(`/runs/${second.id}`);
+  return z.object({ id: z.string() }).parse(await started.json()).id;
+}
+
+/**
+ * Measures the spend of a step in an unconstrained pass (the same step, replayed deterministically),
+ * then approves the journey so that exactly 120% of that spend is left, starts the same step again
+ * and opens it paused.
+ */
+async function pausedSecondStep(page: Page): Promise<void> {
+  const first = await analyse(page);
+  const projectId = await projectOf(first);
+  const firstSpent = await spentTokensOf(first);
+  expect(firstSpent).toBeGreaterThan(0);
+  expect(await approveJourneyAt(first, { tokens: firstSpent * 20, costMicros: 5_000_000 })).toBe(1);
+  const measuredRun = await startStep(page, projectId);
+  await page.goto(`/runs/${measuredRun}`);
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 180_000 });
+  const stepSpent = await spentTokensOf(measuredRun);
+  expect(stepSpent).toBeGreaterThan(0);
+
+  const line = Math.ceil(stepSpent * 1.2);
+  await approveJourneyAt(first, { tokens: firstSpent + stepSpent + line, costMicros: 5_000_000 });
+  await page.goto(`/runs/${await startStep(page, projectId)}`);
 
   await expect(page.getByTestId('approval-question')).toBeVisible({ timeout: 180_000 });
   await expect(runStatus(page)).toContainText('Waiting for your approval');

@@ -4,9 +4,9 @@ import { e2ePort } from './server-config.js';
 
 // RF-435, RF-432, P8-03: the amount a journey was approved at, and the tokens a run spent, read and
 // set in the database of the end-to-end server. The recorded run spends far less than any estimate
-// the server can make, so the journey is approved so that 120% of that real spend is left (a row the Analyse
-// button would write if its estimate were that low); the next step then runs a real call under what
-// is left. Nothing in the product is overridden.
+// the server can make, so the journey amount is set from the measured spend of a step (a row the
+// Analyse button would write if its estimate were that low); the next step then runs real calls
+// under what is left. Nothing in the product is overridden.
 
 async function withPool<T>(use: (query: ReturnType<typeof createPool>) => Promise<T>): Promise<T> {
   const pool = createPool({
