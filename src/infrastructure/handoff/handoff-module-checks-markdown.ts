@@ -46,19 +46,33 @@ const notCounted: Readonly<Record<string, string>> = {
   test: 'A test project: it checks the system and is no part to port.',
   vendored: 'Vendored third-party code: the new system takes the library from its package source.',
   ci: 'A CI file: it may only build and test, so it is not counted as legacy deployment; check whether it deploys.',
+  like: 'It looks like deployment (infrastructure, Docker, Helm or deploy files) but lies in no deployment folder, so it is counted nowhere; check whether it ships the system.',
+  deployModule:
+    'A deploy folder with a package manifest and code: it is counted as a module, not as deployment; check whether its deployment needs a card.',
 };
 
-/** P8-06: the manifest folders kept out of the modules and the CI files, never dropped in silence. */
+/** The most paths of one kind listed; the rest are counted in an "and N more" row. */
+const MAX_LISTED = 20;
+
+function rowsOf(paths: readonly string[], why: string, kind: string): string[][] {
+  const listed = paths.slice(0, MAX_LISTED).map((path) => [path, why]);
+  const more = paths.length - listed.length;
+  return more > 0 ? [...listed, [`and ${String(more)} more ${kind}`, why]] : listed;
+}
+
+/** P8-06: the folders and files counted neither as a module nor as deployment, never dropped in silence. */
 function notCountedLines(modules: SourceModules, esc: MarkdownEscaper): string[] {
   const rows = [
     ...(modules.notModules ?? []).map((each) => [each.path, notCounted[each.reason] ?? '']),
-    ...(modules.ciFiles ?? []).map((path) => [path, notCounted['ci'] ?? '']),
+    ...rowsOf(modules.deployModules ?? [], notCounted['deployModule'] ?? '', 'deploy folders'),
+    ...rowsOf(modules.ciFiles ?? [], notCounted['ci'] ?? '', 'CI files'),
+    ...rowsOf(modules.deploymentLike ?? [], notCounted['like'] ?? '', 'deployment-like files'),
   ];
   if (rows.length === 0) return [];
   return [
     '## Folders and files not counted as modules',
     '',
-    'These hold a project or package manifest, or a CI file, but the plan counts them neither as a module nor as deployment material; the owner decides whether one needs a card.',
+    'These hold a project or package manifest, a CI file or a file that looks like deployment, but the plan does not count them as modules or as deployment material the way it counts the others; the owner decides whether one needs a card.',
     '',
     '| Path | Why not counted |',
     '|---|---|',
