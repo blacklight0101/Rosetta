@@ -75,6 +75,8 @@ const journey = z.object({
   deepenRounds: z.number(),
   likely: journeyFigure,
   worstCase: journeyFigure,
+  approvable: journeyFigure,
+  ceilingApplied: z.boolean(),
 });
 
 export type JourneyEstimate = z.output<typeof journey>;

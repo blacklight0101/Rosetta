@@ -4,6 +4,7 @@ import {
   type RoomFacts,
   type Spend,
 } from '../../domain/budget/claim-room.js';
+import { ApprovalPause } from '../../domain/budget/cap-stop.js';
 import type { Card } from '../../domain/cards/card.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -31,6 +32,11 @@ export interface ReaderRoomSources {
   /** DEC-193: whether the role's calls were refused only at its reserve line of the run cap. */
   readonly stoppedAtLine: (role: 'verifier') => boolean;
   readonly announce: (reason: ReadersStop, claims: number) => Promise<void>;
+  /**
+   * P8-03, RF-432: set when the run cap is the owner's approved amount. A stop of the readers then
+   * pauses the run and asks, as a refused call does, instead of ending it `CapReached`.
+   */
+  readonly pause?: () => void;
 }
 
 /** The claims waiting for the verifier, and those it has judged (a rule's verdict is no judgement). */
@@ -114,6 +120,7 @@ export class ReaderRoom {
     if (verdict === 'open') return true;
     this.stopped = verdict === 'judging' ? 'judging' : 'share';
     await sources.announce(this.stopped, claims.unjudged);
+    sources.pause?.();
     return false;
   }
 
@@ -164,7 +171,7 @@ export type RoomBudget = Pick<RunBudgetEvents, 'roleSpend' | 'runSpend' | 'stopp
 export function withRoom<
   P extends { readonly settings: ProjectSettings; readonly role: RoleProvider },
 >(
-  execution: Pick<RunExecution, 'events'>,
+  execution: Pick<RunExecution, 'events' | 'stop'>,
   parts: P,
   budget: RoomBudget,
 ): P & { readonly room: ReaderRoom } {
@@ -173,7 +180,7 @@ export function withRoom<
 
 /** The room check of an understand run, reading the run's spend by role and speaking through its events. */
 function readerRoomOf(
-  execution: Pick<RunExecution, 'events'>,
+  execution: Pick<RunExecution, 'events' | 'stop'>,
   parts: {
     readonly budget: RoomBudget;
     readonly settings: ProjectSettings;
@@ -186,6 +193,13 @@ function readerRoomOf(
     stoppedAtLine: (role: 'verifier') => parts.budget.stoppedAtLine(role),
     announce: (reason: ReadersStop, claims: number) =>
       announceReadersStopped(execution, reason, claims),
+    ...(parts.role.runCaps?.approved === true
+      ? {
+          pause: () => {
+            execution.stop(new ApprovalPause());
+          },
+        }
+      : {}),
   };
   return new ReaderRoom(sources, roomLimitsOf(parts.settings, parts.role));
 }

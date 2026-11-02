@@ -90,11 +90,11 @@ test(
   },
 );
 
-test('RF-430 the start button names the journey figure the user approves', async ({ page }) => {
+test('RF-430 the start button names the figure the user approves', async ({ page }) => {
   await openScannedStartPage(page);
 
   await expect(page.getByRole('button', { name: /^Analyse · approve /u })).toBeVisible({
     timeout: 15_000,
   });
-  await expect(page.getByTestId('journey-total')).toContainText('worst case');
+  await expect(page.getByTestId('journey-total')).toContainText('Analyse approves');
 });

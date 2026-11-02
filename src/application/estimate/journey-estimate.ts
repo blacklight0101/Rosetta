@@ -1,6 +1,10 @@
+import type { KeySource } from '../../domain/budget/price-table.js';
 import { DEEPEN_ROUNDS } from '../../domain/deepen/stop-rule.js';
 import type { CostTotals, LedgerGroup } from '../ports/cost-totals.js';
 import type { Project } from '../projects/project.js';
+import type { ServerSettings } from '../ports/server-settings.js';
+import type { UserRepository } from '../ports/user-repository.js';
+import { approvableOf, ceilingsOf, RUN_CEILINGS } from './journey-ceiling.js';
 import { rolesWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.js';
 import type {
   ByScenario,
@@ -85,7 +89,14 @@ export function journeyEstimateOf(inputs: JourneyInputs): JourneyEstimate {
   if (history.length > 0) {
     const likely = measuredTotal(history, sourceTokens);
     const worstCase = larger(scaled(likely, HISTORY_WORST_PERCENT), understandHigh);
-    return { basis: 'history', deepenRounds, likely, worstCase };
+    return {
+      basis: 'history',
+      deepenRounds,
+      likely,
+      worstCase,
+      approvable: worstCase,
+      ceilingApplied: false,
+    };
   }
   const journeyPercent = (scenario: 'likely' | 'high'): number =>
     100 + deepenRounds * DEEPEN_ROUND_PERCENT[scenario] + PLAN_PERCENT[scenario];
@@ -94,6 +105,8 @@ export function journeyEstimateOf(inputs: JourneyInputs): JourneyEstimate {
     deepenRounds,
     likely: scaled(figureOf(understand.likely), journeyPercent('likely')),
     worstCase: scaled(understandHigh, journeyPercent('high')),
+    approvable: scaled(understandHigh, journeyPercent('high')),
+    ceilingApplied: false,
   };
 }
 
@@ -122,12 +135,39 @@ export function measuredRunsOf(
   return [...runs.values()];
 }
 
+/** DEC-206: the estimate with its approvable figure held to the ceilings that bind the run. */
+async function boundedJourney(
+  deps: JourneyDependencies,
+  run: { readonly project: Project; readonly keySources: readonly KeySource[] },
+  estimate: JourneyEstimate,
+): Promise<JourneyEstimate> {
+  const { caps } = deps;
+  const account = caps === undefined ? undefined : await caps.users.findById(run.project.userId);
+  const ceilings =
+    caps === undefined
+      ? RUN_CEILINGS
+      : ceilingsOf({
+          keySources: run.keySources,
+          server: await caps.serverSettings.caps(),
+          account: {
+            dailyCapMicros: account?.dailyCapMicros ?? null,
+            ownDailyCapMicros: account?.ownDailyCapMicros ?? null,
+          },
+        });
+  return { ...estimate, ...approvableOf(estimate.worstCase, ceilings) };
+}
+
 /** What the understand estimate reads besides its own figures (RF-430, RF-431). */
 export interface JourneyDependencies {
   /** RF-431: whether each role has a usable key. */
   readonly roleKeys: RoleKeyDependencies;
   /** RF-430, RF-428: the measured totals of earlier runs; the fixed assumptions when absent. */
   readonly history?: Pick<CostTotals, 'projectGroups'>;
+  /** DEC-206: the administrator caps and the account that lower the figure the user approves. */
+  readonly caps?: {
+    readonly users: Pick<UserRepository, 'findById'>;
+    readonly serverSettings: Pick<ServerSettings, 'caps'>;
+  };
 }
 
 /**
@@ -164,6 +204,10 @@ export async function journeyOfEstimate(
   const deepenRounds = DEEPEN_ROUNDS.default;
   return {
     roles: marked,
-    journey: journeyEstimateOf({ understand: total, sourceTokens, deepenRounds, history }),
+    journey: await boundedJourney(
+      deps,
+      { project, keySources: roles.map((role) => role.keySource) },
+      journeyEstimateOf({ understand: total, sourceTokens, deepenRounds, history }),
+    ),
   };
 }

@@ -92,6 +92,7 @@ export type E2eAccountKind =
   | 'journey-admin'
   | 'journey-server'
   | 'one-analyse'
+  | 'approval-pause'
   | 'sweep'
   | 'sweep-admin'
   | 'sweep-force'
@@ -127,6 +128,7 @@ const accountKinds: readonly E2eAccountKind[] = [
   'journey-admin',
   'journey-server',
   'one-analyse',
+  'approval-pause',
   'sweep',
   'sweep-admin',
   'sweep-force',

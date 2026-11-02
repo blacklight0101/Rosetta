@@ -7,7 +7,8 @@ import { err, type Result } from '../../domain/errors/result.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
-import { stepAmountOf } from '../journey/journey-budget.js';
+import { withProjectLock } from '../journey/journey-lock.js';
+import { stepAmountChecked } from '../journey/journey-budget.js';
 import type { JourneyRecords } from '../ports/journey-records.js';
 import { scopeOf } from '../runs/run-scope.js';
 import {
@@ -64,7 +65,14 @@ export type StartDeepenProblem =
   | typeof ERROR_CODES.cloudConsentMissing
   | typeof ERROR_CODES.privateCodeNotConfirmed
   | typeof ERROR_CODES.runStageNotAvailable
-  | typeof ERROR_CODES.providerKeyMissing;
+  | typeof ERROR_CODES.providerKeyMissing
+  | typeof ERROR_CODES.journeyAmountUsed;
+
+/** RF-209: the rounds asked for, the default when none; undefined when the number is not allowed. */
+function roundLimitOf(request: StartDeepenRequest): number | undefined {
+  const maxRounds = request.maxRounds ?? DEEPEN_ROUNDS.default;
+  return isAllowedRoundLimit(maxRounds) ? maxRounds : undefined;
+}
 
 export class StartDeepen {
   private readonly deps: StartDeepenDependencies;
@@ -75,13 +83,21 @@ export class StartDeepen {
 
   // RF-209, RF-1105
   async execute(request: StartDeepenRequest): Promise<Result<SubmittedRun, StartDeepenProblem>> {
+    const run = await this.deps.runs.find(request.actor.userId, request.runId);
+    // P8-03: the free line of the journey is read and used by one start at a time.
+    return withProjectLock(run?.projectId ?? request.runId, () => this.start(request));
+  }
+
+  private async start(
+    request: StartDeepenRequest,
+  ): Promise<Result<SubmittedRun, StartDeepenProblem>> {
     const { actor } = request;
     const run = await this.deps.runs.find(actor.userId, request.runId);
     if (run === undefined) return err(ERROR_CODES.notFound);
     if (!canDeepen(run)) return err(ERROR_CODES.runNotDeepenable);
     if (!request.confirmed) return err(ERROR_CODES.deepenNotConfirmed);
-    const maxRounds = request.maxRounds ?? DEEPEN_ROUNDS.default;
-    if (!isAllowedRoundLimit(maxRounds)) return err(ERROR_CODES.requestInvalid);
+    const maxRounds = roundLimitOf(request);
+    if (maxRounds === undefined) return err(ERROR_CODES.requestInvalid);
     const project = await this.deps.projects.find(actor.userId, run.projectId);
     const stored = await this.deps.manifests.read(scopeOf(run));
     if (project === undefined || stored === undefined) return err(ERROR_CODES.notFound);
@@ -91,10 +107,13 @@ export class StartDeepen {
     const privateCodeConfirmed = request.privateCodeConfirmed === true;
     const { areas } = readUnderstandOptions(stored.options);
     const deepen = { parentRunId: run.id, maxRounds, coveragePass: request.coveragePass !== false };
-    const approvedAmount = await stepAmountOf(this.deps, {
+    // P8-03: nothing is left of the journey's amount; no run is queued.
+    const line = await stepAmountChecked(this.deps, {
       userId: actor.userId,
       projectId: project.id,
     });
+    if (!line.ok) return err(line.error);
+    const approvedAmount = line.value;
     const options = understandOptionsOf({
       ...{ areas, cloudConsent, deepen, approvedAmount },
       privateCodeConfirmed:

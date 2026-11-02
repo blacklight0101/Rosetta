@@ -31,6 +31,7 @@ import { ollamaHostOfUrl } from './provider-endpoint.js';
 import { withRoleEffort, type EffortNote } from './reasoning-effort-provider.js';
 import { toolRoleProblem } from './tool-role-problem.js';
 import { reservationLifetimeMs } from './reservation-lifetime.js';
+import { runCapsOf } from './run-caps.js';
 import { approvedOf, isCeilinged, providerTestCeiling } from './provider-ceiling.js';
 import { scopeStartOf, type ScopeStart } from './scope-spend.js';
 
@@ -42,16 +43,6 @@ import { scopeStartOf, type ScopeStart } from './scope-spend.js';
 // its key, RF-427) is a problem naming the provider; nothing has been called by then.
 
 export type { GuardedProviderFactoryOptions } from './provider-factory-options.js';
-
-/** P5-20: the run caps among a role's caps, for the readers' room check. */
-function runCapsOf(caps: readonly UsageCap[]): {
-  readonly tokens: bigint;
-  readonly micros: bigint;
-} {
-  const limit = (kind: UsageCap['kind']): bigint =>
-    caps.find((cap) => cap.kind === kind)?.limit ?? 0n;
-  return { tokens: limit('run-tokens'), micros: limit('run-cost') };
-}
 
 type ProviderConfig = ProjectSettings['providers'][string];
 interface WrapParts {
