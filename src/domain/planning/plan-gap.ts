@@ -11,6 +11,7 @@ import {
   gapRequirements,
   type GapRequirements,
 } from './gap-requirements.js';
+import { deploymentOf } from './module-coverage.js';
 import type { Sources } from './requirement-alignment.js';
 import type { RiskClass } from './task-card-quality.js';
 
@@ -24,6 +25,7 @@ import type { RiskClass } from './task-card-quality.js';
 // own cards (RF-634) over the whole plan. The cards that were there are not changed. P7-14: under
 // SDD a card with no requirement gets the ones behind what it builds, or is kept with a note when no
 // requirement covers its items (gap-requirements.ts); only a card with nothing to derive is refused.
+// P8-06: a card whose expected files are deployment material builds the deployment item.
 
 /** A task card the planner wrote for the gaps: a draft task without needs, and the ids it builds. */
 export interface GapDraft extends Omit<DraftTask, 'needs' | 'dependsOn'> {
@@ -109,7 +111,8 @@ function keptDrafts(
   drafts.forEach((draft, index) => {
     const position = options.positions?.[index] ?? index + 1;
     const { riskClass } = draft;
-    const named = new Set(draft.builds);
+    // P8-06: a card that changes deployment files builds the deployment item, named or not.
+    const named = new Set([...draft.builds, ...deploymentOf(draft.files)]);
     const builds = uncovered.filter((each) => named.has(each.id)).map((each) => each.id);
     const cited = citingRequirements(content, draft.requirementCards ?? []);
     const listed = unique([

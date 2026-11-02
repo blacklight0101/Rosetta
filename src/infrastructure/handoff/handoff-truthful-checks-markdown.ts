@@ -7,6 +7,7 @@ import {
 import { checkFlowStyle } from '../../domain/planning/flow-style.js';
 import { brokenRuleReason } from '../../domain/planning/style-rules.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { moduleCheckLines } from './handoff-module-checks-markdown.js';
 
 // RF-627, RF-608, P5-40: the checks of checks.md that count what the package claims beyond the
 // items: requirements no card lists, Must screens lost to the screen cap, source features no
@@ -94,6 +95,7 @@ export function truthfulCheckLines(handoff: HandoffPackage, esc: MarkdownEscaper
     ...requirementLines(handoff, esc),
     ...screenLines(handoff, esc),
     ...orphanLines(handoff, esc),
+    ...moduleCheckLines(handoff, esc),
     ...flowLines(handoff, esc),
     ...phaseLines(handoff, esc),
   ];

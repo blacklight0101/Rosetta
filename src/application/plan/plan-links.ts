@@ -7,12 +7,17 @@ import {
 import { settleDerivedRequirements } from '../../domain/planning/derived-requirements.js';
 import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
 import { addGapTasks } from '../../domain/planning/plan-gap.js';
-import { sourcesOfItems } from '../../domain/planning/requirement-alignment.js';
+import {
+  sourcesWithModules,
+  withModuleLinks,
+  type ModuleReason,
+} from '../../domain/planning/module-coverage.js';
 import { titlePhases } from '../../domain/planning/phase-titles.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { gapMessage } from './gap-message.js';
 import { parseGapAnswer, type GapAnswer, type GapProblem } from './gap-answer.js';
+import { moduleReasons } from './module-reasons.js';
 import { gapRepairMessage, type GapRepair } from './gap-repair-message.js';
 import { entryWarnings, gapLeftOutItems } from './gap-round-notes.js';
 import type { HandoffPackage } from './handoff-package.js';
@@ -46,6 +51,8 @@ export interface PlannedLinks {
   readonly leftOut: HandoffPackage['leftOut'];
   /** Why the extra call was not served; the plan is then the one the calls before it left. */
   readonly refusal?: RosettaError;
+  /** P8-06: why each module or the deployment material has no task card, for checks.md. */
+  readonly moduleReasons: readonly ModuleReason[];
 }
 
 export interface LinkCalls {
@@ -78,6 +85,11 @@ interface RoundOptions {
   readonly repair?: GapRepair;
 }
 
+/** P8-06: what a gap round asks for: the items no card builds, then the modules no card touches. */
+function gapItems(report: PlannedCoverage['report']): CoverageItem[] {
+  return [...report.uncovered, ...report.modules];
+}
+
 /** One call for the items still uncovered, its cards added to the plan; the repair lists problems. */
 async function gapRound(
   call: PlannerCall,
@@ -85,18 +97,20 @@ async function gapRound(
   options: RoundOptions,
 ): Promise<Round> {
   const { content, report } = planned;
-  const input = { items: report.uncovered, content };
+  // P8-06: the modules no card touches are asked for with the items no card builds.
+  const open = gapItems(report);
+  const input = { items: open, content };
   const { repair, specificationDriven, documents } = options;
   const message =
     repair === undefined
       ? gapMessage(input, call.tags)
       : gapRepairMessage(input, repair, call.tags);
-  const only = report.uncovered.length === 1 ? report.uncovered[0]?.id : undefined;
+  const only = open.length === 1 ? open[0]?.id : undefined;
   const answer = parseGapAnswer(await askPlannerWith(call, message), only);
   const positions = answer?.positions;
-  const taken = addGapTasks(content, answer?.drafts ?? [], report.uncovered, {
+  const taken = addGapTasks(content, answer?.drafts ?? [], open, {
     ...{ specificationDriven, ...(positions === undefined ? {} : { positions }) },
-    itemSources: sourcesOfItems(documents),
+    itemSources: sourcesWithModules(documents),
   });
   const grown = checkedPlan(taken.content, documents);
   const closed = { ...planned, content: grown, report: coverageOf(report.items, grown.tasks) };
@@ -151,18 +165,20 @@ async function planGap(
   calls: LinkCalls,
   covered: PlannedCoverage,
   documents: CoverageDocuments,
-): Promise<PlannedLinks> {
+): Promise<Gapped> {
   const { specificationDriven } = calls;
-  if (covered.report.uncovered.length === 0 || covered.content.phases.length === 0) {
-    return { planned: covered, warnings: [], leftOut: [] };
+  if (gapItems(covered.report).length === 0 || covered.content.phases.length === 0) {
+    return { planned: covered, warnings: [], leftOut: [], problems: [] };
   }
   const first = await gapRound(calls.gap, covered, { specificationDriven, documents });
   const warnings = roundWarnings(first, 'gap answer', UNREADABLE_GAP);
   const leftOut = roundLeftOut(first, 'Gap answer');
   // RF-627: once the first round covered every item there is nothing for a repair to build.
-  const open = first.planned.report.uncovered;
+  const open = gapItems(first.planned.report);
   const problems = open.length === 0 ? [] : repairable(first.problems, open);
-  if (problems.length === 0) return { planned: first.planned, warnings, leftOut };
+  if (problems.length === 0) {
+    return { planned: first.planned, warnings, leftOut, problems: first.problems };
+  }
   const repair = { prompt: calls.repairPrompt, problems };
   try {
     const second = await gapRound(calls.gap, first.planned, {
@@ -172,16 +188,23 @@ async function planGap(
     });
     const again = roundWarnings(second, 'gap repair answer', UNREADABLE_REPAIR);
     const repaired = [...leftOut, ...roundLeftOut(second, 'Gap repair answer')];
-    return { planned: second.planned, warnings: [...warnings, ...again], leftOut: repaired };
+    const all = [...first.problems, ...second.problems];
+    const planned = second.planned;
+    return { planned, warnings: [...warnings, ...again], leftOut: repaired, problems: all };
   } catch (error) {
     if (calls.gap.signal.aborted || !(error instanceof RosettaError)) throw error;
-    return { planned: first.planned, warnings, leftOut, refusal: error };
+    return { planned: first.planned, warnings, leftOut, refusal: error, problems: first.problems };
   }
 }
 
 /** P5-40: the phases named after the cards they hold, once the last card has joined the plan. */
 function titled(planned: PlannedCoverage): PlannedCoverage {
   return { ...planned, content: titlePhases(planned.content) };
+}
+
+/** The links after the gap rounds, with every card those rounds left out (P8-06 reasons). */
+interface Gapped extends Omit<PlannedLinks, 'moduleReasons'> {
+  readonly problems: readonly GapProblem[];
 }
 
 interface Settled {
@@ -195,8 +218,11 @@ interface Settled {
  * from what it builds; one with nothing to derive is left out, logged and listed in checks.md.
  */
 function settled(linked: PlannedCoverage, documents: CoverageDocuments): Settled {
-  const { content, leftOut } = settleDerivedRequirements(linked.content, documents);
-  if (content === linked.content) return { covered: linked, warnings: [], leftOut: [] };
+  const derived = settleDerivedRequirements(linked.content, documents);
+  if (derived.content === linked.content) return { covered: linked, warnings: [], leftOut: [] };
+  const { leftOut } = derived;
+  // P8-06: checked again for the deployment files of the cards that stay.
+  const content = withModuleLinks(derived.content, documents.modules);
   const covered = { ...linked, content, report: coverageOf(linked.report.items, content.tasks) };
   const rows = leftOut.map(({ position, field, reason }: LeftOutCard) => ({
     ...{ area: 'Task cards', item: String(position), field, reason },
@@ -208,23 +234,29 @@ function settled(linked: PlannedCoverage, documents: CoverageDocuments): Settled
   return { covered, warnings, leftOut: rows };
 }
 
-// Q-45, Q-54, RF-627
+// Q-45, Q-54, RF-627, P8-06
 export async function planLinks(calls: LinkCalls, input: CoverageInput): Promise<PlannedLinks> {
   const linked = await planCoverage(calls.coverage, input);
   const { covered, warnings, leftOut } = settled(linked, input.documents);
+  const asked = covered.content.phases.length > 0;
+  const { modules } = input.documents;
   try {
-    const gap = await planGap(calls, covered, input.documents);
+    const { problems, ...gap } = await planGap(calls, covered, input.documents);
     const planned = titled(gap.planned);
+    const rounds = { asked, refused: gap.refusal !== undefined, problems };
     return {
       ...gap,
       planned,
       warnings: [...warnings, ...gap.warnings, ...coverageWarnings(planned)],
       leftOut: [...leftOut, ...gap.leftOut],
+      moduleReasons: moduleReasons(planned.report.modules, rounds, modules),
     };
   } catch (error) {
     if (calls.gap.signal.aborted || !(error instanceof RosettaError)) throw error;
     const planned = titled(covered);
     const all = [...warnings, ...coverageWarnings(planned)];
-    return { planned, warnings: all, leftOut, refusal: error };
+    const rounds = { asked, refused: true, problems: [] };
+    const reasons = moduleReasons(planned.report.modules, rounds, modules);
+    return { planned, warnings: all, leftOut, refusal: error, moduleReasons: reasons };
   }
 }
