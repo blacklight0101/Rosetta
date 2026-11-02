@@ -84,3 +84,21 @@ describe('stackOfferFor: catalogue data (P7-29)', () => {
     );
   });
 });
+
+describe('stackOfferFor: .NET Framework (P8-14)', () => {
+  // P8-14, P7-29: .NET Framework has no file extension of its own; its project files and solution
+  // give it away by the files they list (packages.config, Global.asax), so the code map's file names count.
+  it('P8-14 DEC-203 does not offer keeping .NET Framework for the runtime and hosting layers it names', () => {
+    const framework = { ...dotnet, fileNames: ['packages.config', 'web.csproj', 'web.sln'] };
+    const offer = stackOfferFor(framework, stack);
+    expect(offer.find((each) => each.layer === 'language-runtime')?.keepLegacy).toBe(false);
+    expect(offer.find((each) => each.layer === 'hosting')?.keepLegacy).toBe(false);
+    expect(offer.find((each) => each.layer === 'database')?.keepLegacy).toBe(true);
+  });
+
+  it('P8-14 DEC-203 keeps the option for a project file and solution that do not show .NET Framework', () => {
+    const modern = { ...dotnet, fileNames: ['web.csproj', 'web.sln', 'program.cs'] };
+    const offer = stackOfferFor(modern, stack);
+    expect(offer.every((each) => each.keepLegacy)).toBe(true);
+  });
+});

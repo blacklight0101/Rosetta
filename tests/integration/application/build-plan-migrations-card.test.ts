@@ -128,3 +128,22 @@ describe('BuildPlan: the fixed data-access card (P7-20)', () => {
     expect(cards[2]?.depends).toContain('T-002');
   });
 });
+
+describe('BuildPlan: the migrations card in tasks.md (P8-14)', () => {
+  it('P8-14 the migrations card is one card and the data-access text is the same in tasks.md', async () => {
+    const h = await createPlanHarness(dataDir, await shopRecording());
+    await h.understandRun({ cards: [...planCards(), customerCard()], questions: planQuestions });
+    await h.saveBrief(briefAnswers);
+
+    const cards = cardsOf(await tasksOf(h));
+
+    const migrations = cards.filter((card) => card.title.includes(migrationsTitle));
+    const access = cards.find((card) => card.title.includes('data-access'));
+    expect(migrations).toHaveLength(1);
+    expect(migrations[0]?.body).toContain('the 5 tables of the target data model');
+    expect(access?.body).toContain(
+      'Given the tables of the migrations card, when the layer writes a row and reads it back',
+    );
+    expect(access?.depends).toEqual([cards[0]?.id, migrations[0]?.id]);
+  });
+});

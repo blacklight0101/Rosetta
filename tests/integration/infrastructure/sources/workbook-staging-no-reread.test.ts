@@ -118,6 +118,27 @@ describe('the read counter', () => {
   });
 });
 
+describe('the read counter: callbacks', () => {
+  it('P8-14 P7-18 counts the callback form of fs.readFile', async () => {
+    const { dataDir } = await folders();
+    const path = join(dataDir, 'callback.bin');
+    const content = Buffer.alloc(2000, 3);
+    await writeFile(path, content);
+    const { readFile } = await import('node:fs');
+    clearReads();
+
+    const bytes = await new Promise<Buffer>((resolve, reject) => {
+      readFile(path, (error, data) => {
+        if (error === null) resolve(data);
+        else reject(error);
+      });
+    });
+
+    expect(bytes.length).toBe(content.length);
+    expect(readsByPath.get(path)).toBe(content.length);
+  });
+});
+
 describe('workbook batch, files read after they are written', () => {
   it('RF-152 reads no uploaded file and no rendered file again to hash it', async () => {
     const { staging, dataDir } = await folders();
