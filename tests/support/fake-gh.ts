@@ -60,13 +60,15 @@ const prelude = [
   '  esac',
   '}',
   'sleep() { :; }',
+  // Git Bash on Windows has no zoneinfo, so Europe/Madrid is its POSIX rule (the EU rule, the same instants).
+  `tzdate() { if [ "\${TZ:-}" = Europe/Madrid ]; then TZ='CET-1CEST,M3.5.0,M10.5.0/3' command date "$@"; else command date "$@"; fi; }`,
   'date() {',
   '  case "$*" in',
   `    *"%F %H"*) printf '%s\\n' "\${TZ:-}" >> "$FAKE_DATE_LOG"`,
-  `      if [ -n "$FAKE_NOW" ]; then command date -d "$FAKE_NOW" "$@"; else printf '%s %s\\n' "$(command date +%F)" "$FAKE_HOUR"; fi ;;`,
+  `      if [ -n "$FAKE_NOW" ]; then tzdate -d "$FAKE_NOW" "$@"; else printf '%s %s\\n' "$(tzdate +%F)" "$FAKE_HOUR"; fi ;;`,
   `    *"+%H"*) printf '%s\\n' "\${TZ:-}" >> "$FAKE_DATE_LOG"; printf '%s\\n' "$FAKE_HOUR" ;;`,
-  '    *" -d "*) command date "$@" ;;',
-  `    *) if [ -n "$FAKE_NOW" ]; then command date -d "$FAKE_NOW" "$@"; else command date "$@"; fi ;;`,
+  '    *" -d "*) tzdate "$@" ;;',
+  `    *) if [ -n "$FAKE_NOW" ]; then tzdate -d "$FAKE_NOW" "$@"; else tzdate "$@"; fi ;;`,
   '  esac',
   '}',
 ].join('\n');
