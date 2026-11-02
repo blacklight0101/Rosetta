@@ -177,4 +177,8 @@ export interface JourneyEstimate {
   readonly deepenRounds: number;
   readonly likely: JourneyFigure;
   readonly worstCase: JourneyFigure;
+  /** DEC-206: the lower of the worst case and the administrator ceilings; what the user approves. */
+  readonly approvable: JourneyFigure;
+  /** DEC-206: a ceiling, not the worst case, set the approvable figure. */
+  readonly ceilingApplied: boolean;
 }

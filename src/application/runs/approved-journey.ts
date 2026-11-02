@@ -20,6 +20,8 @@ import { MAX_RUN_COST_MICROS, MAX_RUN_TOKENS } from '../projects/project-setting
 export interface JourneyFigures {
   readonly likely: Amount;
   readonly worstCase: Amount;
+  /** DEC-206: the lower of the worst case and the ceilings; absent, the worst case. */
+  readonly approvable?: Amount;
 }
 
 /** RF-430: the server's journey estimate for a start; undefined when it has none. */

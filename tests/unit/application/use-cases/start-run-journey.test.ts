@@ -64,6 +64,7 @@ describe('the journey of a project', () => {
       ...{ costMicros: 0, inputTokens: 1_000_000, outputTokens: 400_000 },
       cachedInputTokens: 0,
     });
+    await harness.runs.end(first.value.run.id, 'Completed', first.value.run.queuedAt + 1);
 
     const next = await startRun.execute({
       ...{ actor: userAmy, projectId: project.id, stage: 'understand' },
@@ -79,6 +80,60 @@ describe('the journey of a project', () => {
   });
 });
 
+async function spentEverything() {
+  const set = await setup();
+  const first = await set.analyse();
+  if (!first.ok) throw new Error('Analyse was refused.');
+  await set.harness.runs.recordTotals(first.value.run.id, {
+    ...{ costMicros: 0, inputTokens: worst.tokens, outputTokens: 0 },
+    cachedInputTokens: 0,
+  });
+  await set.harness.runs.end(first.value.run.id, 'CapReached', first.value.run.queuedAt + 1);
+  return set;
+}
+
+describe('a step that finds nothing left of the amount', () => {
+  it('RF-435 P8-03 a step started while another still holds the whole line is refused with RST-2311 before it is queued', async () => {
+    const { harness, project, startRun, analyse } = await setup();
+    const first = await analyse();
+    if (!first.ok) throw new Error('Analyse was refused.');
+    const before = (await harness.runs.list(userAmy.userId, project.id)).length;
+
+    const next = await startRun.execute({
+      ...{ actor: userAmy, projectId: project.id, stage: 'understand' },
+    });
+
+    expect(next).toEqual({ ok: false, error: 'RST-2311' });
+    expect((await harness.runs.list(userAmy.userId, project.id)).length).toBe(before);
+  });
+
+  it('RF-435 P8-03 a step started after the whole amount was spent is refused with RST-2311, a plan too', async () => {
+    const { project, startRun } = await spentEverything();
+
+    const understand = await startRun.execute({
+      ...{ actor: userAmy, projectId: project.id, stage: 'understand' },
+    });
+    const plan = await startRun.execute({
+      ...{ actor: userAmy, projectId: project.id, stage: 'plan', cloudConsent: true },
+    });
+
+    expect(understand).toEqual({ ok: false, error: 'RST-2311' });
+    expect(plan).toEqual({ ok: false, error: 'RST-2311' });
+  });
+
+  it('RF-434 P8-03 pressing Analyse again starts a new approval: the spend of the steps counts from zero', async () => {
+    const { harness, project, journeys, analyse } = await spentEverything();
+
+    const again = await analyse();
+
+    expect(again.ok).toBe(true);
+    const record = await journeys.find(userAmy.userId, project.id);
+    if (record === undefined) throw new Error('No journey.');
+    const spent = journeySpend(record, await harness.runs.list(userAmy.userId, project.id));
+    expect(spent.tokens).toBe(0);
+  });
+});
+
 describe('a plan run of a journey', () => {
   const plan = { stage: 'plan', cloudConsent: true } as const;
 
@@ -90,6 +145,7 @@ describe('a plan run of a journey', () => {
       ...{ costMicros: 0, inputTokens: 2_000_000, outputTokens: 500_000 },
       cachedInputTokens: 0,
     });
+    await harness.runs.end(first.value.run.id, 'Completed', first.value.run.queuedAt + 1);
 
     const started = await startRun.execute({ actor: userAmy, projectId: project.id, ...plan });
 

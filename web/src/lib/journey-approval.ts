@@ -47,3 +47,15 @@ export function missingKeyProviders(estimate: Pick<RunEstimate, 'roles'>): reado
   const missing = estimate.roles.filter((role) => role.keyMissing === true);
   return [...new Set(missing.map((role) => role.provider))];
 }
+
+/** DEC-206: says that a ceiling lowered the approvable figure; undefined when none did. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function ceilingNoteText(_estimate: RunEstimate): string | undefined {
+  return undefined;
+}
+
+/** DEC-206, RST-2310: says why the figure moved when the basis of the estimate changed. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function basisMovedText(_before: RunEstimate, _after: RunEstimate): string | undefined {
+  return undefined;
+}

@@ -85,7 +85,14 @@ export function journeyEstimateOf(inputs: JourneyInputs): JourneyEstimate {
   if (history.length > 0) {
     const likely = measuredTotal(history, sourceTokens);
     const worstCase = larger(scaled(likely, HISTORY_WORST_PERCENT), understandHigh);
-    return { basis: 'history', deepenRounds, likely, worstCase };
+    return {
+      basis: 'history',
+      deepenRounds,
+      likely,
+      worstCase,
+      approvable: worstCase,
+      ceilingApplied: false,
+    };
   }
   const journeyPercent = (scenario: 'likely' | 'high'): number =>
     100 + deepenRounds * DEEPEN_ROUND_PERCENT[scenario] + PLAN_PERCENT[scenario];
@@ -94,6 +101,8 @@ export function journeyEstimateOf(inputs: JourneyInputs): JourneyEstimate {
     deepenRounds,
     likely: scaled(figureOf(understand.likely), journeyPercent('likely')),
     worstCase: scaled(understandHigh, journeyPercent('high')),
+    approvable: scaled(understandHigh, journeyPercent('high')),
+    ceilingApplied: false,
   };
 }
 

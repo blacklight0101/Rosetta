@@ -3,6 +3,9 @@ import { EstimateRun } from '../../../../src/application/estimate/estimate-run.j
 import { NO_LISTED_MODELS } from '../../../../src/application/models/model-list.js';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import { DEEPEN_ROUNDS } from '../../../../src/domain/deepen/stop-rule.js';
+import { MemoryAccountUsage } from '../../../../src/infrastructure/db/memory-account-usage.js';
+import { FixedClock } from '../../../support/fixed-clock.js';
+import { MemoryServerSettings } from '../../../../src/infrastructure/db/memory-server-settings.js';
 import { MemoryCostTotals } from '../../../../src/infrastructure/db/memory-cost-totals.js';
 import { MemoryProjectRepository } from '../../../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryProviderKeyRepository } from '../../../../src/infrastructure/db/memory-provider-key-repository.js';
@@ -33,7 +36,7 @@ const local = settingsFor({
   summariser: { provider: 'ollama', model: 'gemma4:e4b' },
 });
 
-async function setup(settings: ProjectSettings) {
+async function setup(settings: ProjectSettings, serverKeys: { openai?: string } = {}) {
   const projects = new MemoryProjectRepository();
   const runs = new MemoryRunIndex();
   const users = new MemoryUserRepository();
@@ -43,8 +46,12 @@ async function setup(settings: ProjectSettings) {
   const estimate = new EstimateRun({
     ...{ projects, runs, scans: new FixedScans(catalogAreas), keys },
     ...{ priceTable: estimatePrices, models: NO_LISTED_MODELS, reasoningModels: () => false },
-    roleKeys: { users, keys: keySourceLookupOf({ keys, serverKeys: {} }) },
+    roleKeys: { users, keys: keySourceLookupOf({ keys, serverKeys }) },
     history,
+    caps: {
+      ...{ users, serverSettings: new MemoryServerSettings({}) },
+      ...{ usage: new MemoryAccountUsage(), clock: new FixedClock('2026-11-02T10:00:00.000Z') },
+    },
   });
   const project = await projectWithScan({ projects, runs }, userAmy.userId, settings);
   const run = () => estimate.execute({ actor: userAmy, projectId: project.id });
@@ -108,5 +115,34 @@ describe('RF-431 the estimate shows a missing key', () => {
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
     expect(outcome.value.roles.every((role) => role.keyMissing === undefined)).toBe(true);
+  });
+});
+
+describe('RF-430 DEC-206 EV-84 the journey figure the user approves stays under the ceilings', () => {
+  it('RF-430 on the server key the approvable figure is at most the administrator run cap, the worst case is shown beside it', async () => {
+    const { run } = await setup(cloud, { openai: 'server-key' });
+
+    const outcome = await run();
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const { journey } = outcome.value;
+    expect(journey.worstCase.costMicros).toBeGreaterThan(500_000n);
+    expect(journey.approvable.costMicros).toBe(500_000n);
+    expect(journey.ceilingApplied).toBe(true);
+    expect(journey.approvable.tokens).toBeLessThanOrEqual(50_000_000);
+  });
+
+  it('RF-430 a local model: the tokens are held to the run ceiling of 50,000,000', async () => {
+    const { run } = await setup(local);
+
+    const outcome = await run();
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.value.journey.approvable.tokens).toBeLessThanOrEqual(50_000_000);
+    expect(outcome.value.journey.approvable.tokens).toBeLessThanOrEqual(
+      outcome.value.journey.worstCase.tokens,
+    );
   });
 });
