@@ -4,6 +4,8 @@ import {
   type CoverageDocuments,
   type CoverageItem,
 } from '../../domain/planning/plan-coverage.js';
+import { settleDerivedRequirements } from '../../domain/planning/derived-requirements.js';
+import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
 import { addGapTasks } from '../../domain/planning/plan-gap.js';
 import { sourcesOfItems } from '../../domain/planning/requirement-alignment.js';
 import { titlePhases } from '../../domain/planning/phase-titles.js';
@@ -182,16 +184,47 @@ function titled(planned: PlannedCoverage): PlannedCoverage {
   return { ...planned, content: titlePhases(planned.content) };
 }
 
+interface Settled {
+  readonly covered: PlannedCoverage;
+  readonly warnings: readonly string[];
+  readonly leftOut: HandoffPackage['leftOut'];
+}
+
+/**
+ * P8-02, RF-607: once the cards are linked, a package card that named no requirement takes them
+ * from what it builds; one with nothing to derive is left out, logged and listed in checks.md.
+ */
+function settled(linked: PlannedCoverage, documents: CoverageDocuments): Settled {
+  const { content, leftOut } = settleDerivedRequirements(linked.content, documents);
+  if (content === linked.content) return { covered: linked, warnings: [], leftOut: [] };
+  const covered = { ...linked, content, report: coverageOf(linked.report.items, content.tasks) };
+  const rows = leftOut.map(({ position, field, reason }: LeftOutCard) => ({
+    ...{ area: 'Task cards', item: String(position), field, reason },
+  }));
+  const warnings = leftOut.map(
+    ({ position, field, reason }) =>
+      `Task card at position ${String(position)} of the plan answer was left out (the field "${field}"). ${reason}`,
+  );
+  return { covered, warnings, leftOut: rows };
+}
+
 // Q-45, Q-54, RF-627
 export async function planLinks(calls: LinkCalls, input: CoverageInput): Promise<PlannedLinks> {
-  const covered = await planCoverage(calls.coverage, input);
+  const linked = await planCoverage(calls.coverage, input);
+  const { covered, warnings, leftOut } = settled(linked, input.documents);
   try {
     const gap = await planGap(calls, covered, input.documents);
     const planned = titled(gap.planned);
-    return { ...gap, planned, warnings: [...gap.warnings, ...coverageWarnings(planned)] };
+    return {
+      ...gap,
+      planned,
+      warnings: [...warnings, ...gap.warnings, ...coverageWarnings(planned)],
+      leftOut: [...leftOut, ...gap.leftOut],
+    };
   } catch (error) {
     if (calls.gap.signal.aborted || !(error instanceof RosettaError)) throw error;
     const planned = titled(covered);
-    return { planned, warnings: coverageWarnings(planned), leftOut: [], refusal: error };
+    const all = [...warnings, ...coverageWarnings(planned)];
+    return { planned, warnings: all, leftOut, refusal: error };
   }
 }

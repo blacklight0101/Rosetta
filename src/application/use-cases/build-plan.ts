@@ -16,7 +16,7 @@ import type { Run } from '../../domain/runs/run.js';
 import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
 import { readPlanAnswer } from '../plan/plan-answer.js';
 import { draftAfterRepair } from '../plan/plan-repair.js';
-import { checkedAssembly } from '../plan/plan-assembly.js';
+import { repairedAssembly } from '../plan/plan-assembly.js';
 import { planLinks } from '../plan/plan-links.js';
 import { windowOfRole } from '../plan/plan-window.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
@@ -148,9 +148,10 @@ export class BuildPlan implements RunExecutor {
       const message = 'The planner answer could not be read: no JSON object in it reads as a plan.';
       return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
     }
-    const assembly = await checkedAssembly(this.deps.logger, run, draft, {
+    const assembly = await repairedAssembly(this.deps.logger, run, draft, {
       supported: supported.map((card) => card.id),
       specificationDriven: brief.principles.includes(methodPrinciples.sdd),
+      repair: { call, input, prompt: prompts.planRepair },
     });
     if (assembly === undefined) {
       const message = 'The planner answer named no requirement with a supported card.';

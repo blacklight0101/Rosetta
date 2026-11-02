@@ -1,6 +1,6 @@
 import { hasPhrase, isVersion, wordsOf } from './restated-words.js';
 
-// RF-608, RF-609, RF-610, DEC-187: a backstop for what the planner prompt (package.v11) already asks
+// RF-608, RF-609, RF-610, DEC-187: a backstop for what the planner prompt (package.v12) already asks
 // it not to write. A decision whose title only names a subject of the brief ("Architecture Style
 // Adoption", "Migration Order Focus", "Technology Stack Selection") restates the brief when its
 // decision text only repeats what the brief records: the names of the choice, or the content words
