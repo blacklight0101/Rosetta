@@ -14,6 +14,11 @@ describe('a claim that refers to an earlier claim', () => {
     'This replaces the earlier draft: the service logs the error.',
     'The rejected claim said the total is rounded up, which is wrong: it is rounded down.',
     'Contrary to the first claim, the method does not retry.',
+    'The earlier claim is not accurate: the method retries twice.',
+    'The previous claim overstated the number of retries.',
+    'The first claim does not hold; the method never retries.',
+    'The earlier claim was incorrectly described as a table.',
+    'The prior claim is inaccurate about the key.',
   ])('EV-78 is rejected, with the reason: %s', (text) => {
     const reason = earlierClaimReason({ text });
 
@@ -32,6 +37,10 @@ describe('a claim that refers to an earlier claim', () => {
     'A rejected claim is returned to the claimant with the reason code from the RejectionReason table.',
     'The claims application keeps the original claim and each previous claim in the ClaimHistory table.',
     'An earlier claim on the same policy raises the premium by the rate stored in the Rates table.',
+    'The first claim of a policy holder is stated in the ClaimHistory table.',
+    'A rejected claim is paid instead through the appeal queue.',
+    'An original claim is corrected by an adjuster through the review screen.',
+    'The clerk said the original claim is filed in the Claims table.',
     'Prior claims are summed by the ClaimTotals view before the payout is calculated.',
   ])('EV-78 is left to the verifier: %s', (text) => {
     expect(earlierClaimReason({ text })).toBeUndefined();

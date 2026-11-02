@@ -147,3 +147,24 @@ describe('BuildPlan: the migrations card in tasks.md (P8-14)', () => {
     expect(access?.depends).toEqual([cards[0]?.id, migrations[0]?.id]);
   });
 });
+
+describe('BuildPlan: entities that store nothing (P8-14)', () => {
+  // P8-14, EV-81: every ENT card is a view model, so the data model has no table. The plan used to keep
+  // the data-access card (an ENT claim existed) with no migrations card to wait for; the rule is now one:
+  // the data cards exist when the data model has a table, and the migrations card is one of them.
+  it('P8-14 EV-81 entity cards that store nothing give no data-access card and no dangling dependency', async () => {
+    const h = await createPlanHarness(dataDir, await loadRecording(recordingPath));
+    const viewModels = planCards().map((card) =>
+      card.type === 'ENT' ? { ...card, title: 'Order view model' } : card,
+    );
+    await h.understandRun({ cards: viewModels, questions: planQuestions });
+    await h.saveBrief(briefAnswers);
+
+    const cards = cardsOf(await tasksOf(h));
+
+    expect(cards.some((card) => card.title.includes(migrationsTitle))).toBe(false);
+    expect(cards.some((card) => card.title.includes('data-access'))).toBe(false);
+    expect(cards.some((card) => card.title.includes('Migrate the legacy data'))).toBe(false);
+    expectResolved(cards);
+  });
+});
