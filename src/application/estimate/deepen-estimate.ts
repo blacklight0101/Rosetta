@@ -19,6 +19,7 @@ import type { ProviderKeyRepository } from '../ports/provider-key-repository.js'
 import type { RunIndex } from '../ports/run-index.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { TaskResults } from '../ports/task-results.js';
+import { runCapsFor } from '../projects/local-run-caps.js';
 import type { ReaderTask } from '../understand/reader-tasks.js';
 import { scopeOf } from '../runs/run-scope.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
@@ -58,6 +59,8 @@ export interface DeepenEstimateDependencies {
   /** DEC-179: the answers of the project the Deepen gives to its readers. */
   readonly answers: Pick<AnswersFile, 'answeredQuestions'>;
   readonly priorCards: PriorCards;
+  /** P8-04, RF-433: the host of the Ollama server; an Ollama server that is not this machine is not local. */
+  readonly ollamaHost?: string | undefined;
 }
 
 export interface DeepenEstimateRequest {
@@ -192,7 +195,8 @@ export class EstimateDeepen {
     const round = sumPoints(roles.map((role) => role.points));
     // A working ceiling, not a proven maximum (see the comment at the top of the file).
     const allRounds = times(round, maxRounds);
-    const { run: cap } = project.settings.budget;
+    // RF-433, P8-04: the cap the guard holds the run to, the ceiling for an uncapped local run.
+    const cap = runCapsFor(project.settings, this.deps.ollamaHost);
     return ok({
       ...{
         priceTableVersion: this.deps.priceTable.version,

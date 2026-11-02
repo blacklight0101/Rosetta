@@ -103,6 +103,8 @@ export interface ProjectParts {
   /** The folder with `catalogue/` (RF-606), checked at start-up. */
   readonly promptsFolder: string;
   readonly dataDir: string;
+  /** RF-433: the host of the Ollama address; one that is not this machine is not local. */
+  readonly ollamaHost?: string | undefined;
   /** `ROSETTA_UPLOAD_MAX_MB` (RF-129). */
   readonly uploadMaxMb: number;
   /** `ROSETTA_WORKBOOK_MAX_FILES`, `_MAX_SHEETS` and `_MAX_CELLS` (RF-151). */
@@ -255,6 +257,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       ...plannerPrompts(parts.promptsFolder),
       workbookGuidance: workbookGuidanceOf(parts, runs, writer),
       journeys: new PgJourneyRecords(pool), // RF-435, P8-01: the plan's line is the journey's remainder
+      ollamaHost: parts.ollamaHost,
     }),
     catalogue,
     getPlanSource: new GetPlanSource({ projects, runs, cards: keptRunCards(writer) }),

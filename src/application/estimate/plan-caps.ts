@@ -11,6 +11,7 @@ import type { Clock } from '../ports/clock.js';
 import type { ServerSettings } from '../ports/server-settings.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { Project } from '../projects/project.js';
+import { runCapsFor, uncappedLocalRun } from '../projects/local-run-caps.js';
 import { roleBudgetOf } from '../projects/role-budget.js';
 import type { ByScenario, EstimatePoint, RoleEstimate, Scenario } from './estimate-types.js';
 import type { PlanCap } from './plan-estimate-types.js';
@@ -28,6 +29,8 @@ export interface PlanCapDependencies {
   readonly serverSettings: Pick<ServerSettings, 'caps'>;
   readonly usage: Pick<AccountUsage, 'userDay' | 'serverMonth'>;
   readonly clock: Clock;
+  /** P8-04, RF-433: the host of the Ollama server; an Ollama server that is not this machine is not local. */
+  readonly ollamaHost?: string | undefined;
 }
 
 function usd(totals: readonly CurrencyTotal[]): bigint {
@@ -56,7 +59,8 @@ async function spentOf(deps: PlanCapDependencies, userId: string): Promise<CapSp
 
 /**
  * RF-435, P8-01: a step of a journey runs under what is left of the approved amount, which
- * replaces the project run caps as the run's line, as the provider factory builds it.
+ * replaces the project run caps as the run's line, as the provider factory builds it; an
+ * uncapped local run (RF-433) has no line to pause at.
  */
 function approvedLineOf(approved: ApprovedAmount | undefined) {
   if (approved === undefined) return {};
@@ -77,7 +81,8 @@ export async function planCaps(
   const { settings } = project;
   const { role = 'planner', approved } = line;
   const account = await deps.users.findById(project.userId);
-  const { run } = settings.budget;
+  // RF-433, P8-04: the cap the guard holds the run to, the ceiling for an uncapped local run.
+  const run = runCapsFor(settings, deps.ollamaHost);
   const caps = capsFor(call.keySource, {
     run: { maxCostMicros: BigInt(run.maxCostMicros), maxTokens: BigInt(run.maxTokens) },
     role: roleBudgetOf(settings, role),
@@ -86,7 +91,7 @@ export async function planCaps(
       dailyCapMicros: account?.dailyCapMicros ?? null,
       ownDailyCapMicros: account?.ownDailyCapMicros ?? null,
     },
-    ...approvedLineOf(approved),
+    ...(uncappedLocalRun(settings, deps.ollamaHost) ? {} : approvedLineOf(approved)),
   });
   const spent = await spentOf(deps, project.userId);
   const fitsUnder = (cap: (typeof caps)[number], scenario: Scenario): boolean =>
