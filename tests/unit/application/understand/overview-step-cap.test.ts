@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { LlmRequest } from '../../../../src/application/ports/llm-provider.js';
 import { overviewStep } from '../../../../src/application/understand/overview-step.js';
 import { RunCoverage } from '../../../../src/application/understand/run-coverage.js';
 import { ManifestUpdates } from '../../../../src/application/runs/manifest-updates.js';
@@ -14,7 +15,16 @@ import { SequenceIdGenerator } from '../../../support/sequence-id-generator.js';
 
 // RF-264, P7-26: a run stopped by a cap (not by the user) still asks for its overview.
 
-function run(signal: AbortSignal, provider: Answers) {
+const fixed = {
+  overviewPrompt: { name: 'summariser/overview.v1.md', version: 'v1', sha256: 'ab', text: 'x' },
+  scanned: {
+    codeMap: { areas: [], files: [], symbols: [] },
+    source: { snapshotKey: 'upload__x@aaaaaaaaaaaaaaaa' },
+  },
+  allTasks: [],
+} as const;
+
+function run(signal: AbortSignal, provider: Answers, ownerStop?: AbortSignal) {
   const parts = {
     ...{ logger: new RecordingLogger(), ids: new SequenceIdGenerator() },
     ...{ traceId: 'a'.repeat(32), nextCallId: () => 'c#1' },
@@ -23,13 +33,8 @@ function run(signal: AbortSignal, provider: Answers) {
       ...{ model: 'm', maxOutputTokens: 900, keySource: 'user' as const },
     },
     updates: new ManifestUpdates(new MemoryRunManifestStore(), scopeFor()),
-    execution: { run: sampleRun({ stage: 'understand' }), signal },
-    overviewPrompt: { name: 'summariser/overview.v1.md', version: 'v1', sha256: 'ab', text: 'x' },
-    scanned: {
-      codeMap: { areas: [], files: [], symbols: [] },
-      source: { snapshotKey: 'upload__x@aaaaaaaaaaaaaaaa' },
-    },
-    allTasks: [],
+    execution: { run: sampleRun({ stage: 'understand' }), signal, ownerStop },
+    ...fixed,
   } as const;
   return overviewStep(parts, overviewCards(), {
     coverage: new RunCoverage([]),
@@ -55,6 +60,40 @@ describe('overviewStep after a stop', () => {
     const provider = new Answers(() => answer(goodOverviewAnswer));
 
     const overview = await run(stopped.signal, provider);
+
+    expect(provider.requests).toHaveLength(0);
+    expect(overview.state).toBe('unavailable');
+  });
+});
+
+describe('overviewStep after a cap and then the owner Stop', () => {
+  it('P8-12 cancels the overview call when the owner presses Stop after the cap stop', async () => {
+    const capped = new AbortController();
+    capped.abort(new RosettaError(ERROR_CODES.budgetCapReached));
+    const owner = new AbortController();
+    const abortedAtCall: boolean[] = [];
+    const provider = new Answers(() => answer(goodOverviewAnswer));
+    const complete = provider.complete.bind(provider);
+    provider.complete = (request: LlmRequest) => {
+      abortedAtCall.push(request.signal.aborted);
+      return complete(request);
+    };
+    await run(capped.signal, provider, owner.signal);
+    owner.abort();
+
+    expect(provider.requests).toHaveLength(1);
+    expect(abortedAtCall).toEqual([false]);
+    expect(provider.requests[0]?.signal.aborted).toBe(true);
+  });
+
+  it('P8-12 writes no overview when the owner stopped after the cap, before the call', async () => {
+    const capped = new AbortController();
+    capped.abort(new RosettaError(ERROR_CODES.budgetCapReached));
+    const owner = new AbortController();
+    owner.abort();
+    const provider = new Answers(() => answer(goodOverviewAnswer));
+
+    const overview = await run(capped.signal, provider, owner.signal);
 
     expect(provider.requests).toHaveLength(0);
     expect(overview.state).toBe('unavailable');

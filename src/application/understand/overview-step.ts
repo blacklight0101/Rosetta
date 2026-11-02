@@ -21,7 +21,7 @@ import type { RunCoverage } from './run-coverage.js';
 
 /** What the step takes from the session's parts: the summariser and what it needs to be asked. */
 interface OverviewStepParts extends Omit<ConsolidationSource, 'runId' | 'signal' | 'mergePrompt'> {
-  readonly execution: Pick<RunExecution, 'run' | 'signal'>;
+  readonly execution: Pick<RunExecution, 'run' | 'signal' | 'ownerStop'>;
   readonly overviewPrompt: PromptFile;
   readonly scanned: PlannedFrom & { readonly codeMap: { readonly files: readonly FileEntry[] } };
   readonly allTasks: readonly ReaderTask[];
@@ -61,11 +61,15 @@ function unreadOf(input: OverviewStepInput): UnreadFiles {
 }
 
 /**
- * P7-26: a run stopped by a cap still writes its overview; the budget guard decides whether the
- * call fits. Only the owner's Stop (or a shutdown) keeps the overview from being asked.
+ * P7-26, P8-12: a run stopped by a cap still writes its overview; the budget guard decides whether
+ * the call fits. The run's signal is aborted by then, so the call listens to the owner's Stop alone
+ * and can be cancelled by it; the owner's Stop (or a shutdown) before the cap keeps the overview
+ * from being asked.
  */
-function signalOf(signal: AbortSignal): AbortSignal {
-  return signal.aborted && isCapStop(signal.reason) ? new AbortController().signal : signal;
+function signalOf(execution: Pick<RunExecution, 'signal' | 'ownerStop'>): AbortSignal {
+  const { signal, ownerStop } = execution;
+  if (!(signal.aborted && isCapStop(signal.reason))) return signal;
+  return ownerStop ?? new AbortController().signal;
 }
 
 // RF-264
@@ -79,7 +83,7 @@ export function overviewStep(
   const source = {
     ...parts,
     runId: execution.run.runKey,
-    signal: signalOf(execution.signal),
+    signal: signalOf(execution),
     mergePrompt: overviewPrompt,
   };
   return writeOverview(consolidationParts(source), {
