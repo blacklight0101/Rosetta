@@ -43,15 +43,6 @@ function wordsOf(text: string): string[] {
     .filter((word) => word !== '');
 }
 
-/** The clauses of a text: a sentence end, a comma, a semicolon or a "but" ends the reach of a negation. */
-function clausesOf(text: string): string[][] {
-  return text
-    .replace(/\b(anything|everything|all|any|anyone|everyone|nothing|none)\s+but\b/giu, '$1 except')
-    .split(/[.,;:!?\n]+|\b(?:but|however|yet|although|though|whereas|while)\b/iu)
-    .map(wordsOf)
-    .filter((words) => words.length > 0);
-}
-
 /** Words other than the title an owner uses for one style ("layers" for layered). */
 const aliases: Readonly<Record<string, readonly string[]>> = { layered: ['layer'] };
 
@@ -72,50 +63,53 @@ function namesOf(style: NamedStyle): string[][] {
  * nothing: a wrong pick is worse than none, and the recommendation applies.
  */
 const affirmative = new Set([
-  ...['use', 'uses', 'using', 'used', 'we', 'i', 'our', 'want', 'wants', 'would', 'like', 'will'],
-  ...['go', 'going', 'with', 'choose', 'chose', 'prefer', 'please', 'pls', 'maybe', 'lets', 'let'],
+  ...['use', 'uses', 'using', 'we', 'i', 'our', 'want', 'wants', 'would', 'like', 'will'],
+  ...['go', 'going', 'with', 'choose', 'prefer', 'please', 'pls', 'lets', 'let'],
   ...['keep', 'stay', 'a', 'an', 'the', 'architecture', 'style', 'approach', 'pattern', 'design'],
   ...['to', 'be', 'should', 'adopt', 'take', 'pick', 'select', 'yes', 'ok', 'okay', 'so', 'then'],
-  ...['just', 'simply', 'probably'],
+  ...['just', 'simply'],
 ]);
 
-/** True when the words at `at` are the phrase, as whole (stemmed) words. */
-function phraseAt(words: readonly string[], at: number, phrase: readonly string[]): boolean {
-  return phrase.every((word, offset) => stem(words[at + offset] ?? '') === word);
-}
-
-/** The clause is the style name and only affirmative filler. */
-function choosesAt(words: readonly string[], at: number, length: number): boolean {
-  return words.every(
-    (word, index) => (index >= at && index < at + length) || affirmative.has(word),
+/** The length of the style name that starts at `at`, or 0. */
+function nameLengthAt(words: readonly string[], at: number, names: readonly string[][]): number {
+  const found = names.filter((phrase) =>
+    phrase.every((word, offset) => stem(words[at + offset] ?? '') === word),
   );
+  return Math.max(0, ...found.map((phrase) => phrase.length));
 }
 
-function namedIn(clauses: readonly (readonly string[])[], style: NamedStyle): boolean {
-  const names = namesOf(style);
-  return clauses.some((words) =>
-    names.some((phrase) =>
-      words.some((_, at) => phraseAt(words, at, phrase) && choosesAt(words, at, phrase.length)),
-    ),
-  );
-}
-
-/** The catalogue style the owner's typed architecture text names, or undefined when it names none. */
+/**
+ * The catalogue style the owner's typed architecture text names, or undefined. The whole answer is
+ * judged: it names a style only when every word of it is the name of one style or affirmative filler.
+ * Any other word ("not", "bad", "separation", "replaced"), wherever it stands, or a second style makes
+ * it name none: a wrong pick is worse than none, and the recommendation applies instead.
+ */
 export function namedStyleId(
   brief: JudgedSource,
   styles: readonly NamedStyle[],
 ): ArchitectureStyleId | undefined {
   const own = typedAnswers(brief).architecture;
   if (own === undefined) return undefined;
-  const clauses = clausesOf(own);
-  return [...styles]
-    .sort((a, b) => shortTitle(b.title).length - shortTitle(a.title).length)
-    .find((style) => namedIn(clauses, style))?.id;
+  const words = wordsOf(own);
+  const names = styles.map((style) => ({ id: style.id, names: namesOf(style) }));
+  const named = new Set<ArchitectureStyleId>();
+  let at = 0;
+  while (at < words.length) {
+    const hits = names
+      .map((style) => ({ id: style.id, length: nameLengthAt(words, at, style.names) }))
+      .filter((hit) => hit.length > 0);
+    const longest = Math.max(0, ...hits.map((hit) => hit.length));
+    if (longest === 0 && !affirmative.has(words[at] ?? '')) return undefined;
+    hits.filter((hit) => hit.length === longest).forEach((hit) => named.add(hit.id));
+    at += Math.max(1, longest);
+  }
+  const [only] = named;
+  return named.size === 1 ? only : undefined;
 }
 
 /**
  * The style the dependency check and the component roles follow. The owner's text names a style when
- * a clause of it is the style's name and only affirmative filler ("we want layered"; "clean separation",
+ * the whole answer is one style's name and only affirmative filler ("we want layered"; "clean separation",
  * "not layered" and "layered is bad" name none); then the style Rosetta recommended, then the default.
  */
 export function judgedStyleId(

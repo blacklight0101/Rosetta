@@ -26,7 +26,7 @@ function briefFor(text: string, recommended?: BriefAnswers['architecture']) {
 describe('judgedStyleId with a typed architecture', () => {
   it('P8-09 names a style by its whole words', () => {
     expect(judgedStyleId(briefFor('We want a modular monolith.'), styles)).toBe('modular-monolith');
-    expect(judgedStyleId(briefFor('Ports and adapters, with tests'), styles)).toBe('hexagonal');
+    expect(judgedStyleId(briefFor('Ports and adapters'), styles)).toBe('hexagonal');
     expect(judgedStyleId(briefFor('Go with Clean Architecture'), styles)).toBe('clean');
   });
 
@@ -41,11 +41,23 @@ describe('judgedStyleId with a typed architecture', () => {
     expect(namedStyleId(briefFor('We are not layered at all'), styles)).toBeUndefined();
     expect(namedStyleId(briefFor('instead of microservices'), styles)).toBeUndefined();
     expect(namedStyleId(briefFor('multilayered cells'), styles)).toBeUndefined();
-    expect(namedStyleId(briefFor('not layered but event-driven'), styles)).toBe('event-driven');
+    expect(namedStyleId(briefFor('not layered but event-driven'), styles)).toBeUndefined();
   });
 });
 
 const refused = [
+  'layered, no exceptions',
+  'not layered but event-driven',
+  'not layered, event-driven',
+  'we were on layered but want clean',
+  'we are not happy with microservices, so layered',
+  "we don't like slow builds but use layered",
+  'layered? no',
+  'go with layered... not',
+  'layered;no',
+  'I want layered ... not really',
+  'layered, to be replaced',
+  'layered and hexagonal',
   'we do not use layered',
   "don't use layered",
   'we dont want layered',
@@ -83,12 +95,6 @@ const chosen = [
   ['Layered please', 'layered'],
   ['we want layered', 'layered'],
   ['go with clean architecture', 'clean'],
-  ['layered, no exceptions', 'layered'],
-  ['not layered but event-driven', 'event-driven'],
-  ['not layered, event-driven', 'event-driven'],
-  ['we were on layered but want clean', 'clean'],
-  ['we are not happy with microservices, so layered', 'layered'],
-  ["we don't like slow builds but use layered", 'layered'],
   ['microservice', 'microservices'],
   ['Microservices', 'microservices'],
   ['the layers', 'layered'],
@@ -97,7 +103,7 @@ const chosen = [
   ['Ports and adapters', 'hexagonal'],
 ] as const;
 
-describe('judgedStyleId: only a plain clause chooses a style (P8-09)', () => {
+describe('judgedStyleId: only a plain answer chooses a style (P8-09)', () => {
   it.each(refused)('names no style in %j', (text) => {
     expect(namedStyleId(briefFor(text), styles)).toBeUndefined();
   });
