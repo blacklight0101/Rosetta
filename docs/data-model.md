@@ -1075,7 +1075,7 @@ the `Clock` port.
 | ---------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `project_id`           | `uuid`        | primary key; with `user_id` a foreign key to `projects (id, user_id)` `ON DELETE CASCADE`: one journey per project |
 | `user_id`              | `uuid`        | the project's owner; every read is scoped by it (RF-1105)                                                          |
-| `approved_tokens`      | `bigint`      | `CHECK (>= 0)`; the tokens of the worst-case journey total the owner approved (DEC-205)                            |
+| `approved_tokens`      | `bigint`      | `CHECK (>= 0)`; the tokens of the approved amount: the lower of the worst case and the ceilings (DEC-206)          |
 | `approved_cost_micros` | `bigint`      | `CHECK (>= 0)`; the same in micro-dollars                                                                          |
 | `created_at`           | `timestamptz` | when Analyse was pressed; the steps of the journey are the project's understand and plan runs queued since then    |
 
