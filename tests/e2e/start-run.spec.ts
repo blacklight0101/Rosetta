@@ -1,4 +1,3 @@
-import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { openScannedStartPage } from './support/cost-run.js';
@@ -7,6 +6,7 @@ import { runStatus } from './support/live-run-page.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 import { chooseModel } from './support/choose-model.js';
+import { openStartPage, projectIdOf } from './support/start-run-page.js';
 
 // RF-1001, RF-143, RF-425, RF-1108, DEC-108, P1-34: the start page of a project, driven against
 // the test server (fake GitHub for octo/demo, the answering provider for every model call). A scan
@@ -15,7 +15,6 @@ import { chooseModel } from './support/choose-model.js';
 // the real queue, shows its position and is cancelled by its id. The account belongs to the project (seed.ts); the steps run in order because they
 // share its project and its runs.
 
-const demoUrl = 'https://github.com/octo/demo';
 const startButton = { name: /^Analyse/u } as const;
 const consent = 'I understand; send masked excerpts to OpenAI for this run';
 
@@ -24,29 +23,6 @@ test.describe.configure({ mode: 'serial' });
 test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('start-run', info.project.name));
 });
-
-async function openStartPage(page: Page): Promise<void> {
-  await page.goto('/projects');
-  const link = page.getByRole('link', { name: 'Start run for octo/demo' });
-  const empty = page.getByText('No projects yet');
-  await expect(link.or(empty)).toBeVisible();
-  if (await empty.isVisible()) {
-    await page.getByLabel('GitHub repository URL').fill(demoUrl);
-    await page.getByRole('button', { name: 'Create project' }).click();
-    // P8-10: the new project opens its page by itself.
-    await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
-  } else {
-    await link.click();
-  }
-  await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
-  await expect(page.getByLabel('GitHub repository URL')).toHaveValue(demoUrl);
-}
-
-function projectIdOf(page: Page): string {
-  const id = /\/projects\/([^/]+)$/u.exec(new URL(page.url()).pathname)?.[1];
-  if (id === undefined) throw new Error(`Not a start page: ${page.url()}`);
-  return id;
-}
 
 test('RF-160 a project with no code map starts its scan by itself and passes axe', async ({
   page,
@@ -80,6 +56,9 @@ test('RF-1001 shows the estimate and starts an understand run for the chosen are
   await expect(table.getByRole('row', { name: /reader/u })).toBeVisible();
   await expect(table.getByRole('row', { name: /Total/u })).toBeVisible();
   await expect(page.getByText(/Code will leave this machine/u)).toHaveCount(0);
+  // P8-16, RF-1022, DEC-204: the page holds no stage choice (the picker moved away in P7-37).
+  await expect(page.getByRole('radio')).toHaveCount(0);
+  await expect(page.getByRole('group', { name: /stage/iu })).toHaveCount(0);
   // P3-79, Q-51: the roles are local, so the estimate is in tokens against the token cap.
   await expect(table).not.toContainText('$');
   await expect(page.getByRole('meter')).toHaveAccessibleDescription(
@@ -154,28 +133,37 @@ test('RF-1001 a likely estimate above the run cap warns, names the cap and Start
   page,
 }) => {
   await openStartPage(page);
+  const projectId = projectIdOf(page);
   // RF-436: the cap is the project settings'; the page warns against it and links to it.
   await page.getByRole('link', { name: 'Change the caps in the project settings' }).click();
-  await page.getByLabel('Run cost cap (USD)', { exact: true }).fill('0.000001');
-  await page.getByLabel('Ask before a run estimated above (USD)', { exact: true }).fill('0.000001');
-  await page.getByRole('button', { name: 'Save settings' }).click();
-  await expect(page.getByText('Settings saved.')).toBeVisible();
-  await page.getByRole('link', { name: 'Start a run' }).click();
-  await page.getByLabel(consent).check();
+  const cap = page.getByLabel('Run cost cap (USD)', { exact: true });
+  const threshold = page.getByLabel('Ask before a run estimated above (USD)', { exact: true });
+  // P8-16: read what the project has now and put exactly that back in finally, also when an
+  // assertion below fails, so a failure does not leave the tiny cap to the tests after it.
+  const originalCap = await cap.inputValue();
+  const originalThreshold = await threshold.inputValue();
+  try {
+    await cap.fill('0.000001');
+    await threshold.fill('0.000001');
+    await page.getByRole('button', { name: 'Save settings' }).click();
+    await expect(page.getByText('Settings saved.')).toBeVisible();
+    await page.getByRole('link', { name: 'Start a run' }).click();
+    await page.getByLabel(consent).check();
 
-  const warning = page.getByTestId('cap-warning');
-  await expect(warning).toContainText('run cap');
-  await expect(warning).toContainText('$0.000001');
-  await expect(page.getByRole('button', startButton)).toBeEnabled();
-  await transitionsDone(page);
-  await expectNoSeriousViolations(page);
-
-  // The project keeps its settings between tests: put the default cap and threshold back.
-  await page.getByRole('link', { name: 'Change the caps in the project settings' }).click();
-  await page.getByLabel('Run cost cap (USD)', { exact: true }).fill('2.00');
-  await page.getByLabel('Ask before a run estimated above (USD)', { exact: true }).fill('0.25');
-  await page.getByRole('button', { name: 'Save settings' }).click();
-  await expect(page.getByText('Settings saved.')).toBeVisible();
+    const warning = page.getByTestId('cap-warning');
+    await expect(warning).toContainText('run cap');
+    await expect(warning).toContainText('$0.000001');
+    await expect(page.getByRole('button', startButton)).toBeEnabled();
+    await transitionsDone(page);
+    await expectNoSeriousViolations(page);
+  } finally {
+    // The project keeps its settings between tests.
+    await page.goto(`/projects/${projectId}/settings`);
+    await cap.fill(originalCap);
+    await threshold.fill(originalThreshold);
+    await page.getByRole('button', { name: 'Save settings' }).click();
+    await expect(page.getByText('Settings saved.')).toBeVisible();
+  }
 });
 
 test('RF-1001 an invalid address is refused next to the field with its code and starts nothing', async ({
@@ -184,8 +172,17 @@ test('RF-1001 an invalid address is refused next to the field with its code and 
   await openStartPage(page);
   const url = page.getByLabel('GitHub repository URL');
 
-  await url.fill('https://example.com/octo/demo');
+  // P8-16 (the RF-1001 flake of shard 3/3): say which step failed. The typed address must still be
+  // in the field when Resolve is pressed, and the server's answer to it is the 400 with the code.
+  const bad = 'https://example.com/octo/demo';
+  await url.fill(bad);
+  await expect(url).toHaveValue(bad);
+  const answered = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url().endsWith('/api/projects'),
+  );
   await page.getByRole('button', { name: 'Resolve' }).click();
+  expect((await answered).status()).toBe(400);
 
   await expect(page.getByTestId('field-error').filter({ hasText: 'RST-1900' })).toBeVisible();
   await expect(url).toHaveAttribute('aria-invalid', 'true');

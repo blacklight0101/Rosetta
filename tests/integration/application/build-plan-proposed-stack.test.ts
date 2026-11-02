@@ -122,6 +122,13 @@ describe('BuildPlan: layers answered with only a platform', () => {
     expect(typed).toHaveLength(3);
     const questions = plain(files['open-questions.md']);
     expect(questions).toContain('Proposed by Rosetta, not chosen by the owner: Razor Pages');
+    // P8-16: the API contract call gets the proposed front end, not the platform word typed.
+    const contractCall = h.providers
+      .requests()
+      .map((request) => request.messages.map((each) => each.content).join(' '))
+      .find((text) => text.includes('"frontEnd"'));
+    expect(contractCall).toContain('"frontEnd": "Razor Pages"');
+    expect(contractCall).not.toContain('"frontEnd": ".net"');
   });
 });
 

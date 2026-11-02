@@ -41,6 +41,13 @@ describe('POST /api/projects/:id/runs with a stage', () => {
 
     expect(response.statusCode).toBe(202);
     expect(response.json<{ stage: string }>().stage).toBe('scan');
+    // P8-16: the stored run is a scan of this project, not only an answer that says so.
+    const stored = await amy.request({
+      method: 'GET',
+      url: `/api/runs/${response.json<{ id: string }>().id}`,
+    });
+    expect(stored.statusCode).toBe(200);
+    expect(stored.json()).toMatchObject({ stage: 'scan', projectId: project.id });
   });
 
   it('RF-436 starts a single understand run on the named areas', async () => {
@@ -54,6 +61,37 @@ describe('POST /api/projects/:id/runs with a stage', () => {
 
     expect(response.statusCode).toBe(202);
     expect(response.json<{ stage: string }>().stage).toBe('understand');
+    const stored = await amy.request({
+      method: 'GET',
+      url: `/api/runs/${response.json<{ id: string }>().id}`,
+    });
+    expect(stored.json()).toMatchObject({ stage: 'understand', projectId: project.id });
+  });
+});
+
+describe('POST /api/projects/:id/runs refusals', () => {
+  it('RF-436 P8-16 a stage that does not exist is refused and starts nothing', async () => {
+    const { amy, project } = await setup();
+
+    const response = await amy.request({
+      method: 'POST',
+      url: url(project.id),
+      payload: { stage: 'deploy' },
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('RF-436 DEC-204 P8-16 a per-run cap in the request is refused: the caps are the project settings', async () => {
+    const { amy, project } = await setup();
+
+    const response = await amy.request({
+      method: 'POST',
+      url: url(project.id),
+      payload: { stage: 'scan', budget: { run: { maxTokens: 1 } } },
+    });
+
+    expect(response.statusCode).toBe(400);
   });
 
   it("RF-436 the same ownership check applies: another user's project answers 404", async () => {
