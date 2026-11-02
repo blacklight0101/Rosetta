@@ -133,7 +133,7 @@ test(
     await expectPageInView(page);
 
     await openStep(page, 'Stack');
-    await expect(page.getByRole('radiogroup').first().getByRole('radio')).toHaveCount(4, {
+    await expect(page.getByRole('radiogroup').first().getByRole('radio')).toHaveCount(3, {
       timeout: 20_000,
     });
     await expectPageInView(page);

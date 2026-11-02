@@ -104,16 +104,16 @@ describe('stackOfferFor: .NET Framework (P8-14)', () => {
     expect(stackOfferFor(leftover, stack).every((each) => each.keepLegacy)).toBe(true);
   });
 
-  it('P8-14 DEC-203 a Web Forms project with packages.config and Global.asax keeps the option', () => {
+  it('P8-14 DEC-203 a Web Forms project with packages.config and Global.asax is .NET Framework', () => {
     const webForms = {
       ...dotnet,
       extensions: ['aspx', 'asax'],
       fileNames: ['packages.config', 'global.asax', 'default.aspx'],
     };
-    expect(stackOfferFor(webForms, stack).every((each) => each.keepLegacy)).toBe(false);
-    expect(
-      stackOfferFor(webForms, stack).find((each) => each.layer === 'language-runtime')?.keepLegacy,
-    ).toBe(true);
+    const offer = stackOfferFor(webForms, stack);
+    expect(offer.find((each) => each.layer === 'language-runtime')?.keepLegacy).toBe(false);
+    expect(offer.find((each) => each.layer === 'hosting')?.keepLegacy).toBe(false);
+    expect(offer.find((each) => each.layer === 'database')?.keepLegacy).toBe(true);
   });
 
   it('P8-14 DEC-203 two signals show .NET Framework unless an SDK project marker is there', () => {

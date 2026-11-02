@@ -249,8 +249,8 @@ legacy:
     endOfLife: true
   - name: '.NET Framework'
     languages: []
-    extensions: []
-    files: [packages.config, assemblyinfo.cs]
+    extensions: [asax, edmx]
+    files: [packages.config, assemblyinfo.cs, web.config]
     minSignals: 2
     unless: [global.json, appsettings.json]
     layers: [language-runtime, hosting]
