@@ -59,4 +59,13 @@ export interface Journey {
   /** The newest plan run written from the source run. */
   readonly plan: JourneyRun | null;
   readonly handoff: JourneyHandoff | null;
+  /** RF-1021, RF-435: the approved amount of the project's journey and what is left; null with no journey record. */
+  readonly budget: JourneyBudget | null;
+}
+
+export interface JourneyBudget {
+  readonly approvedMicros: number;
+  readonly remainingMicros: number;
+  readonly approvedTokens: number;
+  readonly remainingTokens: number;
 }

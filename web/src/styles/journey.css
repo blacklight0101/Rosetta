@@ -74,6 +74,7 @@
   color: var(--rst-danger-ink);
 }
 
+.rst-road__step--awaiting .rst-road__state,
 .rst-road__step--out-of-date .rst-road__state,
 .rst-road__step--gaps .rst-road__state {
   background: var(--rst-warn-bg);
@@ -113,6 +114,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: var(--rst-sp-3);
+}
+
+.rst-road__left,
+.rst-road__more {
+  margin: 0;
+  color: var(--rst-ink-soft);
+}
+
+.rst-road__more {
+  display: flex;
   gap: var(--rst-sp-3);
 }
 

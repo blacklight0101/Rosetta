@@ -1,3 +1,4 @@
+import type { JourneyRecords } from '../../src/application/ports/journey-records.js';
 import type { RunManifestStore } from '../../src/application/ports/run-manifest-store.js';
 import type { Project } from '../../src/application/projects/project.js';
 import { GetJourney } from '../../src/application/use-cases/get-journey.js';
@@ -40,7 +41,10 @@ export interface JourneyWorld {
   readonly answers: FileAnswersFile;
 }
 
-export async function setup(readManifests?: Pick<RunManifestStore, 'read'>): Promise<JourneyWorld> {
+export async function setup(
+  readManifests?: Pick<RunManifestStore, 'read'>,
+  journeys?: Pick<JourneyRecords, 'find'>,
+): Promise<JourneyWorld> {
   const project = sampleProject({ userId: account.id });
   const projects = new MemoryProjectRepository();
   await projects.insertOrFind(project);
@@ -65,6 +69,7 @@ export async function setup(readManifests?: Pick<RunManifestStore, 'read'>): Pro
     cards: new FileRunCards(files),
     answers,
     priorCards,
+    journeys,
   });
   return { project, parts, seed, journey, priorCards, answers };
 }

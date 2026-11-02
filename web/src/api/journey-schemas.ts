@@ -9,7 +9,7 @@ const journeyRun = z.object({
   id: z.string(),
   /** The folder name of the run. */
   runKey: z.string(),
-  queueState: z.enum(['Queued', 'Running', 'Ended']),
+  queueState: z.enum(['Queued', 'Running', 'AwaitingApproval', 'Ended']),
   endState: z.string().nullable(),
   endedAt: z.string().nullable(),
   costMicros: count,
@@ -41,6 +41,16 @@ export const journeySchema = z.object({
   handoff: z
     .object({ runId: z.string(), runKey: z.string(), outOfDate: z.boolean(), gaps: z.boolean() })
     .nullable(),
+  /** RF-1021, RF-435: the amount the owner approved for the journey and what is left of it. */
+  budget: z
+    .object({
+      approvedMicros: count,
+      remainingMicros: count,
+      approvedTokens: count,
+      remainingTokens: count,
+    })
+    .nullable()
+    .optional(),
 });
 
 export type JourneyFacts = z.output<typeof journeySchema>;

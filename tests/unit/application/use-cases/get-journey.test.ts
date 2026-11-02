@@ -17,7 +17,14 @@ describe('GetJourney: the understand run', () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { source: null, scanRunId: null, briefSaved: false, plan: null, handoff: null },
+      value: {
+        source: null,
+        scanRunId: null,
+        briefSaved: false,
+        budget: null,
+        plan: null,
+        handoff: null,
+      },
     });
   });
 

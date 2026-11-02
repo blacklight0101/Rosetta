@@ -30,8 +30,8 @@ function focusDeepen(): void {
 // RF-615
 export function UnderstandJourney(
   props: RunJourneyProps & {
-    readonly open: number | undefined;
-    readonly onAnswer: () => void;
+    readonly open?: number | undefined;
+    readonly onAnswer?: (() => void) | undefined;
   },
 ): JSX.Element | null {
   const { run, stage, phase, open } = props;
@@ -47,7 +47,7 @@ export function UnderstandJourney(
 }
 
 // RF-615
-export function PlanJourney(props: RunJourneyProps): JSX.Element | null {
+function PlanJourney(props: RunJourneyProps): JSX.Element | null {
   const { run, stage, phase } = props;
   if (stage !== 'plan') return null;
   return (
@@ -56,4 +56,34 @@ export function PlanJourney(props: RunJourneyProps): JSX.Element | null {
       refresh={phaseKey(phase)}
     />
   );
+}
+
+// RF-1020
+function ScanJourney(props: RunJourneyProps): JSX.Element | null {
+  const { run, stage, phase } = props;
+  if (stage !== 'scan') return null;
+  return (
+    <JourneyPanel
+      {...{ projectId: run.projectId, runId: undefined, onResumed: props.onResumed }}
+      refresh={phaseKey(phase)}
+    />
+  );
+}
+
+/** RF-1020: the strip above the body of a scan run page and a plan run page. */
+export function RunJourneys(props: RunJourneyProps): JSX.Element {
+  return (
+    <>
+      <PlanJourney {...props} />
+      <ScanJourney {...props} />
+    </>
+  );
+}
+
+/**
+ * RF-1020: the strip of an understand run that is still working, drawn after the tabs so that the
+ * late read of its facts never moves the controls above it.
+ */
+export function WorkingJourney(props: RunJourneyProps): JSX.Element | null {
+  return props.phase.kind === 'ended' ? null : <UnderstandJourney {...props} />;
 }
