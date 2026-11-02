@@ -31,6 +31,8 @@ const kinds = new Set([
 const unclear = 'source_sheet';
 const minShared = 3;
 const minStem = 3;
+/** P8-07: the value of the discriminator for the sheet with no suffix; a key column cannot be NULL. */
+const baseValue = 'base';
 
 interface Member {
   readonly table: DraftTable;
@@ -71,8 +73,8 @@ function valueOf(suffix: string, kind: string | undefined): string {
   return rest === '' ? suffix : rest;
 }
 
-function discriminator(name: string, nullable: boolean): DraftColumn {
-  return { name, type: 'varchar(100)', nullable, legacy: null, risk: '' };
+function discriminator(name: string): DraftColumn {
+  return { name, type: 'varchar(100)', nullable: false, legacy: null, risk: '' };
 }
 
 /** The discriminator column name and the kind it names, or undefined when no name is free. */
@@ -110,18 +112,21 @@ function combined(stem: string, group: readonly Member[]) {
   const name = base?.table.name ?? stem;
   const values = group.map(({ table, suffix }) => ({
     sheet: table.name,
-    value: suffix === '' ? null : valueOf(suffix, column.kind),
+    value: suffix === '' ? baseValue : valueOf(suffix, column.kind),
     sources: table.sources,
   }));
   const distinct = new Set(values.map((each) => each.value)).size === values.length;
   const listed = distinct
     ? values
-    : values.map((each, at) => ({ ...each, value: group[at]?.suffix ?? each.value }));
+    : values.map((each, at) => {
+        const suffix = group[at]?.suffix ?? '';
+        return { ...each, value: suffix === '' ? each.value : suffix };
+      });
   const table: DraftTable = {
     ...joined,
     name,
-    columns: [...joined.columns, discriminator(column.name, base !== undefined)],
-    primaryKey: base === undefined ? keyed(column.name, joined.primaryKey) : joined.primaryKey,
+    columns: [...joined.columns, discriminator(column.name)],
+    primaryKey: keyed(column.name, joined.primaryKey),
   };
   return { table, split: { table: name, column: column.name, values: listed } };
 }

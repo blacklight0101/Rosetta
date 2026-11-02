@@ -46,14 +46,14 @@ describe('sheets split by site or copy', () => {
     ]);
   });
 
-  it('RF-623 keeps the name of a sheet with no suffix and leaves its site empty', () => {
+  it('RF-623 keeps the name of a sheet with no suffix and gives its site the value base', () => {
     const tables = tablesOf([
       sheet('phone_inventory', same),
       sheet('phone_inventory_site_a', same),
     ]);
 
     expect(tables.map((each) => each.name)).toEqual(['phone_inventory']);
-    expect(tables[0]?.columns.find((each) => each.name === 'site')?.nullable).toBe(true);
+    expect(tables[0]?.columns.find((each) => each.name === 'site')?.nullable).toBe(false);
   });
 
   it('RF-623 names the column source_sheet when the suffix is no known kind', () => {
@@ -116,7 +116,7 @@ describe('the record of a split', () => {
         table: 'phone_inventory',
         column: 'site',
         values: [
-          { sheet: 'phone_inventory', value: null, sources: ['ENT-phone_inventory'] },
+          { sheet: 'phone_inventory', value: 'base', sources: ['ENT-phone_inventory'] },
           { sheet: 'phone_inventory_site_a', value: 'a', sources: ['ENT-phone_inventory_site_a'] },
         ],
       },
