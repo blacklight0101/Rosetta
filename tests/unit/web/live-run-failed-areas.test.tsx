@@ -12,7 +12,7 @@ import {
   startedData,
   stateAfter,
 } from './live-run-fixtures.js';
-import { renderLive, runUuid } from './live-run-helpers.js';
+import { renderLive, runPath, runRow, runUuid } from './live-run-helpers.js';
 
 // RF-208, RF-1002: a run in which some areas gave no usable card is never shown as a plain success;
 // the page says how many failed and why, and offers Retry failed areas: a new run of those areas.
@@ -240,4 +240,54 @@ it('RF-208 two clicks on Retry failed areas start one run, not two', async () =>
     expect(window.location.pathname).toBe('/runs/run-2');
   });
   expect(calls.filter((call) => call.path === startPath)).toHaveLength(1);
+});
+
+const consentName = /send masked excerpts to/u;
+
+it('P8-11 P7-38 shows the consent box from the start when the retried run recorded no consent', async () => {
+  const { stream, calls } = renderLive({
+    'POST /api/projects/p-1/estimate': json(200, cloudEstimate),
+  });
+  const connection = await stream.connection();
+  for (const event of twoAreas) connection.event(event);
+  connection.event(runEnded(7, 'Completed', undefined, 1));
+
+  const box = await screen.findByRole('checkbox', { name: consentName });
+
+  expect(
+    within(screen.getByTestId('failed-areas')).getByRole('checkbox', { name: consentName }),
+  ).toBe(box);
+  expect(calls.some((call) => call.path === startPath)).toBe(false);
+});
+
+it('P8-11 P7-38 shows no consent box when the retried run recorded its consent', async () => {
+  const { stream, calls } = renderLive({
+    [`GET ${runPath}`]: runRow({ cloudConsent: true }),
+    'POST /api/projects/p-1/estimate': json(200, cloudEstimate),
+  });
+  const connection = await stream.connection();
+  for (const event of twoAreas) connection.event(event);
+  connection.event(runEnded(7, 'Completed', undefined, 1));
+
+  await screen.findByRole('button', { name: 'Retry failed areas' });
+
+  expect(screen.queryByRole('checkbox', { name: consentName })).toBeNull();
+  expect(calls.some((call) => call.path === '/api/projects/p-1/estimate')).toBe(false);
+});
+
+it('P8-11 P7-38 shows the error of a failed estimate beside the Retry failed areas button', async () => {
+  const { stream } = renderLive({
+    'POST /api/projects/p-1/estimate': failure(502, 'RST-1700'),
+    [`POST ${startPath}`]: failure(400, 'RST-1515'),
+  });
+  const connection = await stream.connection();
+  for (const event of twoAreas) connection.event(event);
+  connection.event(runEnded(7, 'Completed', undefined, 1));
+
+  const banner = await screen.findByTestId('failed-areas');
+
+  await waitFor(() => {
+    expect(within(banner).getByTestId('error-banner').textContent).toContain('RST-1700');
+  });
+  expect(within(banner).getByRole('button', { name: 'Retry failed areas' })).toBeTruthy();
 });

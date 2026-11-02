@@ -12,6 +12,8 @@ import { Button } from '../components/Button.js';
 export interface PlanTurnProps {
   readonly projectId: string;
   readonly runId: string;
+  /** P8-11: the understand run the plan was made from; Plan setup opens for it. */
+  readonly sourceRunId?: string | null | undefined;
   readonly ended: RunState['ended'];
 }
 

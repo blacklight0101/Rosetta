@@ -2,6 +2,7 @@ import type { Actor } from '../../domain/accounts/actor.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { RunIndex } from '../ports/run-index.js';
+import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { RunTextFiles } from '../ports/run-text-files.js';
 import { scopeOf } from '../runs/run-scope.js';
 
@@ -23,6 +24,8 @@ export interface GetRunDependencies {
   readonly queue: QueuePositions;
   /** Where the run folder is looked at for `report/report.md`. */
   readonly files: RunTextFiles;
+  /** P8-11: where the cloud consent and the source run of the run are read; none reads neither. */
+  readonly manifests?: RunManifestStore;
 }
 
 export interface RunDetail {
@@ -31,6 +34,10 @@ export interface RunDetail {
   readonly reportBuilt: boolean;
   /** The place of a queued run in the server's queue, counted from 1; null for any other run. */
   readonly position: number | null;
+  /** P7-38: the cloud consent the run recorded in its manifest. */
+  readonly cloudConsent: boolean;
+  /** P7-25: for a plan run, the understand run it was made from. */
+  readonly sourceRunId: string | null;
 }
 
 /** The file of `report/` that tells a report was built; the writer always writes it. */
@@ -51,7 +58,7 @@ export class GetRun {
     const run = await this.deps.runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
     const [reportBuilt, position] = await Promise.all([this.reportBuilt(run), this.position(run)]);
-    return ok({ run, reportBuilt, position });
+    return ok({ run, reportBuilt, position, cloudConsent: false, sourceRunId: null });
   }
 
   /** Only a queued run has a place; the queue is not asked about any other. */

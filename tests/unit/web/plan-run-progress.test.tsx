@@ -190,3 +190,37 @@ it('RF-1015 a plan run whose package is not written asks the server for no check
   await screen.findByRole('tab', { name: /^Planner calls/u });
   expect(calls.some((call) => call.path === `${runPath}/checks`)).toBe(false);
 });
+
+it('P8-11 a package whose checks were cut says so under the sections it shows', async () => {
+  const cut = json(200, {
+    sections: [{ title: 'Plan coverage', text: 'The first part.' }],
+    truncated: true,
+  });
+  const { stream } = renderLive({ ...endedPlan('Completed'), [`GET ${runPath}/checks`]: cut });
+  const connection = await stream.connection();
+  connection.event(ev(1, 'run.started', plan));
+  connection.event(runEnded(2, 'Completed'));
+
+  const panel = await screen.findByRole('tabpanel');
+  await within(panel).findByRole('heading', { name: 'Plan coverage' });
+  expect(within(panel).getByTestId('checks-cut').textContent).toContain('checks.md');
+});
+
+it('P8-11 Try the plan again opens Plan setup for the understand run the plan was made from', async () => {
+  const { stream } = renderLive({
+    [`GET ${runPath}`]: runRow({
+      stage: 'plan',
+      queueState: 'Ended',
+      endState: 'Failed',
+      sourceRunId: 'run-9',
+    }),
+  });
+  const connection = await stream.connection();
+  connection.event(ev(1, 'run.started', plan));
+  connection.event(runEnded(2, 'Failed', 'RST-1805'));
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Try the plan again' }));
+
+  expect(window.location.pathname).toBe('/projects/p-1/plan-setup');
+  expect(window.location.search).toBe('?run=run-9');
+});

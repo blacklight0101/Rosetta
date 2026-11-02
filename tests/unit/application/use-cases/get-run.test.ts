@@ -4,7 +4,9 @@ import type { RunTextFiles } from '../../../../src/application/ports/run-text-fi
 import { GetRun, type QueuePositions } from '../../../../src/application/use-cases/get-run.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
 import { MemoryRunIndex } from '../../../../src/infrastructure/db/memory-run-index.js';
-import { runningRun, sampleRun } from '../../../support/run-fixtures.js';
+import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
+import { scopeOf } from '../../../../src/application/runs/run-scope.js';
+import { runningRun, sampleManifest, sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy, userBob } from '../../../support/run-harness.js';
 
 // RF-1002, RF-504, RF-1105 (P1-130): Get run gives the live run page the run and whether its report
@@ -137,5 +139,37 @@ describe('GetRun: the place in the queue', () => {
     await getRun.execute({ actor: userBob, runId: run.id });
 
     expect(queue.asked).toEqual([]);
+  });
+});
+
+// P8-11 (P7-38, P7-25): the run row also carries the cloud consent the run recorded and, for a plan
+// run, the understand run it was made from, so the page can show the consent box at once and "Try the
+// plan again" can keep the source run.
+describe('GetRun and the manifest options', () => {
+  async function detailWith(options: Record<string, unknown> | undefined) {
+    const run = endedRun('2026-10-12T10-00-00Z-understand');
+    const runs = new MemoryRunIndex();
+    await runs.insert(run);
+    const manifests = new MemoryRunManifestStore();
+    if (options !== undefined) {
+      await manifests.write(scopeOf(run), sampleManifest({ options }));
+    }
+    const outcome = await new GetRun({
+      ...{ runs, queue: new FakeQueue(), files: new ReportFolders(), manifests },
+    }).execute({ actor: userAmy, runId: run.id });
+    if (!outcome.ok) throw new Error('not found');
+    return outcome.value;
+  }
+
+  it('P8-11 gives the consent and the source run the manifest records', async () => {
+    const detail = await detailWith({ cloudConsent: true, sourceRunId: 'run-9' });
+
+    expect(detail).toMatchObject({ cloudConsent: true, sourceRunId: 'run-9' });
+  });
+
+  it('P8-11 reads no consent and no source run from a run without a manifest', async () => {
+    const detail = await detailWith(undefined);
+
+    expect(detail).toMatchObject({ cloudConsent: false, sourceRunId: null });
   });
 });
