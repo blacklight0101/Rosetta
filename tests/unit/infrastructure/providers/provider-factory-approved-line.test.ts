@@ -48,7 +48,7 @@ describe('RF-432 the run cap the readers are held to', () => {
     expect(runCaps?.approved).toBeUndefined();
   });
 
-  it('RF-432 P8-03 is approved when the administrator cap only equals the approved cost, as the guard pauses there', async () => {
+  it('RF-432 P8-03 is not approved when the administrator cap only equals the approved cost: that cap is the hard stop', async () => {
     const caps = {
       runMicros: 2_000_000n,
       userDayMicros: 90_000_000n,
@@ -57,6 +57,6 @@ describe('RF-432 the run cap the readers are held to', () => {
 
     const runCaps = await readerCaps({ serverKeys: { openai: serverKeyText }, caps });
 
-    expect(runCaps?.approved).toBe(true);
+    expect(runCaps?.approved).toBeUndefined();
   });
 });
