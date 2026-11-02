@@ -28,11 +28,13 @@ async function setup() {
   const project = sampleProject({ userId: userAmy.userId, settings: fake });
   await projects.insertOrFind(project);
   const journeys = new MemoryJourneyRecords();
+  const briefs = new MemoryBriefStore();
+  await briefs.saveEmpty({ userId: userAmy.userId, projectId: project.id });
   const startRun = new StartRun({
     journey: journeyOf(serverJourney),
     roleKeys: ALL_KEYS_SERVED,
     ...{ projects, journeys, runs: harness.runs, manifests: harness.manifests },
-    ...{ briefs: new MemoryBriefStore(), submit: harness.submit },
+    ...{ briefs, submit: harness.submit },
   });
   const analyse = () =>
     startRun.execute({
@@ -74,6 +76,41 @@ describe('the journey of a project', () => {
       tokens: worst.tokens - 1_400_000,
       costMicros: 0,
     });
+  });
+});
+
+describe('a plan run of a journey', () => {
+  const plan = { stage: 'plan', cloudConsent: true } as const;
+
+  it('RF-435 RF-432 a plan run takes what is left of the amount, recorded in its manifest', async () => {
+    const { harness, project, startRun, analyse } = await setup();
+    const first = await analyse();
+    if (!first.ok) throw new Error('Analyse was refused.');
+    await harness.runs.recordTotals(first.value.run.id, {
+      ...{ costMicros: 0, inputTokens: 2_000_000, outputTokens: 500_000 },
+      cachedInputTokens: 0,
+    });
+
+    const started = await startRun.execute({ actor: userAmy, projectId: project.id, ...plan });
+
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const manifest = await harness.manifests.read(harness.scopeOf(started.value.run));
+    expect(manifest?.options['approvedAmount']).toEqual({
+      tokens: worst.tokens - 2_500_000,
+      costMicros: 0,
+    });
+  });
+
+  it('RF-432 a plan run of a project with no journey records no amount: its run caps stay a hard stop', async () => {
+    const { harness, project, startRun } = await setup();
+
+    const started = await startRun.execute({ actor: userAmy, projectId: project.id, ...plan });
+
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const manifest = await harness.manifests.read(harness.scopeOf(started.value.run));
+    expect(manifest?.options).not.toHaveProperty('approvedAmount');
   });
 });
 
