@@ -229,7 +229,10 @@ function leftOf(props: YourTurnProps, facts: Facts): CapLeft {
   const written = read && overview.overview?.state !== 'unavailable';
   return {
     unreadAreas: props.state.ended?.unreadAreas ?? 0,
-    unjudgedClaims: props.state.claims.filter((claim) => claim.status === 'Unverified').length,
+    // P8-12: one definition with the server's `unjudgedIn`: a claim a cap left Unverified or never judged.
+    unjudgedClaims: props.state.claims.filter(
+      (claim) => claim.status === 'Unverified' || claim.status === 'Proposed',
+    ).length,
     overviewMissing: read && !written && facts.cards > 0,
   };
 }

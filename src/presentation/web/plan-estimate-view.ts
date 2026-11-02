@@ -27,13 +27,14 @@ export function planEstimateView(estimate: PlanEstimate): Record<string, unknown
   const { keyAvailable } = estimate;
   return {
     ...{ priceTableVersion, currency, assumptions, withinCaps, keyAvailable },
+    runLine: estimate.runLine,
     planner: {
       ...{ role: planner.role, provider: planner.provider, kind: planner.kind },
       ...{ model: planner.model, keySource: planner.keySource, priced: planner.priced },
       ...rangeView(planner.points),
     },
     caps: estimate.caps.map((cap) => ({
-      ...{ kind: cap.kind, unit: cap.unit, fits: cap.fits },
+      ...{ kind: cap.kind, unit: cap.unit, fits: cap.fits, approved: cap.approved },
       limit: cap.limit.toString(),
       spent: cap.spent.toString(),
       remaining: cap.remaining.toString(),

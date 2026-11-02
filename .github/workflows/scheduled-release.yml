@@ -9,7 +9,9 @@
 # (release.yml) on main by workflow_dispatch, once per head commit of main: it does nothing when a
 # Release run of that commit is queued, running or succeeded, or while the repository variable
 # ROSETTA_DEPLOY_ENABLED is not 'true'. The step summary names the slot that started it and its delay.
-# Release itself refuses a main whose tree did not pass staging.
+# A failed or cancelled Release of the commit is started again by the next slot (P8-13); the slot waits
+# until its run is listed, so two delayed slots in the group start Release once. Release itself refuses
+# a main whose tree did not pass staging.
 #
 # Scheduled workflows run from the default branch (develop), so this file exists on develop and on
 # main. It only dispatches: it reads no secret and uses no environment; the production environment
@@ -49,7 +51,10 @@ jobs:
             echo "$1"
             echo "- $1" >> "$GITHUB_STEP_SUMMARY"
           }
-          hour="$(TZ=Europe/Madrid date +%H)"
+          # One date call gives the hour and the day, so a slot started at midnight cannot mix two days (P8-13).
+          madrid_now="$(TZ=Europe/Madrid date '+%F %H')"
+          today="${madrid_now% *}"
+          hour="${madrid_now#* }"
           late=false
           if [ "$EVENT" != workflow_dispatch ]; then
             case "$hour" in
@@ -73,18 +78,17 @@ jobs:
             echo "::error::The head of main could not be read."
             exit 1
           fi
-          # A Release dispatched seconds earlier may not be listed as queued yet, so one created in the
-          # last ten minutes on this commit counts as well (P7-28).
-          cutoff="$(date -u -d '-10 minutes' +%Y-%m-%dT%H:%M:%SZ)"
-          filter="[.[] | select(.headSha == \"$sha\" and (.status != \"completed\" or .conclusion == \"success\" or .createdAt >= \"$cutoff\"))] | length"
-          active="$(gh run list --workflow release.yml --branch main --limit 100 --json headSha,status,conclusion,createdAt --jq "$filter")"
+          # Only a Release of this commit that is queued, running or succeeded stops a start. A failed or
+          # cancelled one does not, however young, so the next slot retries it (P8-13). A run started a moment
+          # ago by another slot is listed before that slot ends: it waits for it below (concurrency group).
+          filter="[.[] | select(.headSha == \"$sha\" and (.status != \"completed\" or .conclusion == \"success\"))] | length"
+          active="$(gh run list --workflow release.yml --branch main --limit 100 --json headSha,status,conclusion --jq "$filter")"
           if [ "$active" != 0 ]; then
             note "Slot $SLOT, Madrid hour $hour: main is at $sha and a Release run of it is queued, running or succeeded; no Release is started."
             exit 0
           fi
           if [ "$late" = true ]; then
             committed="$(gh api "repos/$GH_REPO/commits/$sha" --jq .commit.committer.date)"
-            today="$(TZ=Europe/Madrid date +%F)"
             cutoff="$(TZ=Europe/Madrid date -d "$today 06:00" +%s)"
             if [ "$(date -d "$committed" +%s)" -ge "$cutoff" ]; then
               note "Slot $SLOT, Madrid hour $hour: main is at $sha, merged $committed (UTC), after 06:00 Madrid today; no Release is started (the 06:07 slot of tomorrow takes it)."
@@ -97,8 +101,19 @@ jobs:
             slot_at="$(date -u -d "$(date -u +%F) $(printf '%02d:%02d' "$((10#$utc_hour))" "$((10#$minute))"):00" +%s)"
             delay=", $(( ($(date -u +%s) - slot_at) / 60 )) minutes after its slot"
           fi
+          started="$(date -u -d '-1 minutes' +%Y-%m-%dT%H:%M:%SZ)"
           gh workflow run release.yml --ref main
           note "Slot $SLOT, Madrid hour $hour$delay: started Release on main at $sha (it deploys to production once its checks pass)."
+          # GitHub may list the new run only seconds later. The next slot in the group starts when this step
+          # ends, so wait until the run is listed (up to a minute); otherwise it could dispatch a second one,
+          # and release.yml queues, so it would deploy twice (P8-13).
+          seen="[.[] | select(.headSha == \"$sha\" and .createdAt >= \"$started\")] | length"
+          for _ in 1 2 3 4 5 6; do
+            listed="$(gh run list --workflow release.yml --branch main --limit 100 --json headSha,createdAt --jq "$seen")"
+            [ "$listed" != 0 ] && exit 0
+            sleep 10
+          done
+          note "The Release run of $sha was not listed after a minute; the next slot may see it late."
         env:
           EVENT: ${{ github.event_name }}
           SLOT: ${{ github.event.schedule || 'by hand' }}

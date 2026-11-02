@@ -65,4 +65,20 @@ describe('ResumeRun for the overview alone', () => {
 
     expect(queued.ok).toBe(true);
   });
+
+  it('P8-12 writes the overview of a run re-opened twice, and each pass ends clearing the mark', async () => {
+    const { harness, resume, run } = await setup('CapReached');
+    const as = { actor: userAmy, runId: run.id, overviewOnly: true };
+
+    await resume.execute(as);
+    harness.executor.settle(run.id, { endState: 'CapReached' });
+    await settledRun(harness, run);
+    const afterFirst = await harness.manifests.read(harness.scopeOf(run));
+    const second = await resume.execute(as);
+    const marked = await harness.manifests.read(harness.scopeOf(run));
+
+    expect(afterFirst?.options).not.toHaveProperty('overviewOnly');
+    expect(second.ok).toBe(true);
+    expect(marked?.options).toMatchObject({ overviewOnly: true });
+  });
 });

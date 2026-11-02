@@ -8,6 +8,7 @@ import type { ProviderSetFactory } from '../application/ports/provider-set-facto
 import type { RunIndex } from '../application/ports/run-index.js';
 import type { ScanResults } from '../application/ports/scan-results.js';
 import { SuggestPlanOptions } from '../application/use-cases/suggest-plan-options.js';
+import { PgJourneyRecords } from '../infrastructure/db/pg-journey-records.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
@@ -53,5 +54,6 @@ export function composePlanOptions(parts: PlanOptionsParts): SuggestPlanOptions 
     ids: new TimestampIdGenerator(clock),
     signals: new SystemTimeoutSignals(),
     ...(parts.ollamaHost === undefined ? {} : { ollamaHost: parts.ollamaHost }),
+    journeys: new PgJourneyRecords(pool), // RF-435, P8-01: the call runs under the journey's remainder
   });
 }

@@ -167,6 +167,8 @@ const byScenario = <T extends z.ZodType>(schema: T) =>
 const planCap = z.object({
   kind: z.string(),
   unit: z.enum(['micros', 'tokens']),
+  /** RF-435, P8-01: the run's line is what is left of the journey's approved amount. */
+  approved: z.boolean().default(false),
   limit: bigIntText,
   spent: bigIntText,
   remaining: bigIntText,
@@ -186,6 +188,8 @@ export const planEstimateSchema = z.object({
   /** Read generically: the calls of the run and the numbers behind the figures vary by release. */
   assumptions: z.looseObject({ calls: z.number().optional() }),
   caps: z.array(planCap),
+  /** RF-435, P8-01: the run's own line: the journey's remainder (it pauses) or the project run caps. */
+  runLine: z.enum(['journey', 'project']).default('project'),
   withinCaps: byScenario(z.boolean()),
 });
 

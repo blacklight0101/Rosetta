@@ -146,9 +146,25 @@ test('RF-613 the plan estimate shows the planner against the caps and the packag
   await openPlanSetup(page);
 
   await expect(estimate(page)).toContainText(/(\$[\d.]+|[\d,]+ tokens) likely/u);
-  await expect(estimate(page)).toContainText('Run cost cap');
+  // P8-01: Analyse recorded the journey, so the run's line is what is left of its amount.
+  await expect(estimate(page)).toContainText('Approved tokens left');
   await expect(writeButton(page)).toBeEnabled();
   await expectNoSeriousViolations(page);
+});
+
+test('RF-435 RF-432 P8-01 the plan estimate says the plan runs under what is left of the journey amount, not the project run caps', async ({
+  page,
+}) => {
+  await openStartPage(page);
+
+  await openPlanSetup(page);
+
+  // Analyse recorded the journey, so the plan run's line is its remainder and it pauses there.
+  await expect(page.getByTestId('plan-run-line')).toHaveText(
+    /under what is left of the amount you approved for the journey, not under the project run caps: it pauses and asks/u,
+  );
+  await expect(estimate(page)).toContainText(/Approved (amount|tokens) left/u);
+  await expect(estimate(page)).not.toContainText(/\bfits\b/u);
 });
 
 test('RF-647 one click accepts the recommended answers and the plan waits for Start the plan', async ({
