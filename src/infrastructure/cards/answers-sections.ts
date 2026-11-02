@@ -104,3 +104,13 @@ export function withAnswers(
   }
   return ok(joinText(split, inserts));
 }
+
+/** EV-57: every section of the file with the run its card line names ('' when none). */
+export function heldQuestions(
+  text: string,
+): readonly { readonly cardId: string; readonly question: string; readonly runKey: string }[] {
+  return sectionsOf(linesOf(text)).map((section) => ({
+    ...{ cardId: section.cardId, question: recorded(section).question },
+    runKey: runOf(section) ?? '',
+  }));
+}

@@ -36,6 +36,7 @@ export type RunEventType =
   | 'retry.started'
   | 'question.answered'
   | 'question.skipped'
+  | 'question.merged'
   | 'run.awaitingApproval'
   | 'run.ended';
 

@@ -54,6 +54,48 @@ function summaryOf(questions: readonly ReportQuestion[]): string {
   return `${plural(questions.length, 'question')}: ${String(answered)} answered, ${String(open)} open.`;
 }
 
+/** RF-243, RF-646, EV-57: the pairs of questions merged into one, each with the run that asked it. */
+function MergedQuestions(props: { readonly model: ReportModel }): ComponentChild {
+  const pairs = props.model.mergedQuestions ?? [];
+  if (pairs.length === 0) return null;
+  return h(
+    'section',
+    null,
+    h('h2', null, 'Merged questions'),
+    h('p', null, 'Each question below asked the same as an earlier one and was merged into it.'),
+    h(
+      'ol',
+      { id: 'merged-questions', class: 'questions' },
+      pairs.map((pair) =>
+        h(
+          'li',
+          { class: 'question' },
+          h(
+            'p',
+            null,
+            'Kept ',
+            h(CardId, { cardId: pair.keptCardId }),
+            ' (run ',
+            pair.keptRunKey,
+            '): ',
+          ),
+          h('p', null, h(ModelText, { text: pair.keptQuestion })),
+          h(
+            'p',
+            null,
+            'Merged ',
+            h(CardId, { cardId: pair.mergedCardId }),
+            ' (run ',
+            pair.mergedRunKey,
+            '): ',
+          ),
+          h('p', null, h(ModelText, { text: pair.mergedQuestion })),
+        ),
+      ),
+    ),
+  );
+}
+
 function Questions(props: { readonly model: ReportModel }): ComponentChild {
   const { questions } = props.model;
   if (questions.length === 0) {
@@ -62,6 +104,7 @@ function Questions(props: { readonly model: ReportModel }): ComponentChild {
       null,
       h('h1', null, 'Open questions'),
       h('p', null, 'This run raised no open questions.'),
+      h(MergedQuestions, { model: props.model }),
     );
   }
   return h(
@@ -74,6 +117,7 @@ function Questions(props: { readonly model: ReportModel }): ComponentChild {
       { id: 'questions', class: 'questions' },
       questions.map((question) => h(Question, { question })),
     ),
+    h(MergedQuestions, { model: props.model }),
   );
 }
 

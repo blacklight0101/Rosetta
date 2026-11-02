@@ -7,6 +7,7 @@ import { err, ok } from '../../domain/errors/result.js';
 import type { Overview } from '../../domain/overview/overview.js';
 import type { RunConsolidation } from '../consolidate/consolidate-run.js';
 import { scopeOf } from '../runs/run-scope.js';
+import { publishMergedQuestions, publishRunMerges } from '../understand/merged-question-events.js';
 import { mergedIntoAnswered } from './deepen-answers.js';
 import { openQuestionsOf } from '../understand/open-questions.js';
 import { overviewStep } from '../understand/overview-step.js';
@@ -66,11 +67,13 @@ export async function writeOutputs(
 export async function addQuestions(parts: DeepenParts, cards: readonly Card[]): Promise<void> {
   const { run } = parts.execution;
   const questions = openQuestionsOf(cards, run.runKey);
+  await publishRunMerges(parts.execution.events, cards, run.runKey);
   if (questions.length === 0) return;
-  await parts.deps.answers.addQuestions(
+  const merged = await parts.deps.answers.addQuestions(
     { userId: run.userId, projectId: run.projectId },
     questions,
   );
+  await publishMergedQuestions(parts.execution.events, merged);
 }
 
 /**
