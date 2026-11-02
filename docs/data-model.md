@@ -428,6 +428,20 @@ kept cards (a merge that no longer applies is dropped), so the card that survive
 that is absent from `types` or that has a card whose id is not in its `cardIds`. The file is masked like every file Rosetta
 writes. It is absent for a run whose summariser step answered nothing. `merges` also holds the merges made by code with no model call: cards of one area, type and title (P3-106), `SCRN` cards of one page (one route in one area, or a routeless card whose own files are the other card's, never through a file shared by pages, P5-32) and cards of one type and title in several areas that cite a specific file in common (not one cited by cards of other titles) or name the same external host in a URL (`INT` cards too, P5-32). The shape is unchanged; a resume makes them again like any other recorded merge.
 
+### 3.7c `planner-answers.json`
+
+|         |                                                                                                                                     |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Purpose | the planner answers a `plan` run paid for, so a plan that paused at its approved amount does not pay for them again (RF-432, P8-01) |
+| Writer  | `BuildPlan` through `PlannerAnswers`, rewritten after every planner call that returned a complete answer                            |
+| Readers | `BuildPlan` when the run starts again after Continue (+N)                                                                           |
+
+`{ schemaVersion: 1, answers }`, where `answers` maps a key to the text of the answer. The key is the agent task of the call and
+its place among that task's calls, `<agentTaskId>#<n>` (for example `planner-package#1`, `planner-data-model#2`): a plan run asks its
+calls in the same order each time, so after a pause the n-th call of a task is the same call. A kept answer is handed back without a
+model call; a call that was refused or cut short keeps nothing. The file is masked like every file Rosetta writes. A file that is
+missing or is not a version 1 file reads as empty: the run then asks again and never trusts an answer it cannot read.
+
 ### 3.8 `spec.md`, `data-model.md`, `coverage.json`, `coverage.md`
 
 - `spec.md`: opens with `## Overview`, the overview of 3.8a (once the run has one), and, when the run has cards, `## Verification summary` (RF-303, P2-03): `Supported share: <n> of <m> claims (<p>%).` and a table with one row per area, in the order of the run, and a last row `All areas`, whose columns are the claims of each status (`Proposed`, `CitationInvalid`, `Supported`, `Rejected`, `Unverified`, in the order of the vocabulary), their total and the supported share. The share is the `Supported` claims over the claims of every status, so a rejected, invalid or unverified claim lowers it; it is `n/a` for an area or a run without claims. The same section is in `report/report.md` and `report/report.html` (computed from the claim counts of `cards/index.json`, by `src/domain/cards/verification-summary.ts`).

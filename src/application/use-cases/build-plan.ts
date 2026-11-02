@@ -31,7 +31,8 @@ import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import { recordPlanSources } from '../plan/plan-record.js';
 import { announcePlannerCall } from '../plan/plan-call-events.js';
-import type { PlannerAnswerDependencies } from '../plan/planner-answer-book.js';
+import { openAnswerBook, type PlannerAnswerDependencies } from '../plan/planner-answer-book.js';
+import { readUnderstandOptions } from '../understand/understand-options.js';
 import { callIds } from '../runs/run-ids.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
 import { writeCostReport } from '../runs/run-cost-report.js';
@@ -131,6 +132,7 @@ export class BuildPlan implements RunExecutor {
       onCallStarted: (id: string) => announcePlannerCall(execution.events, id),
       ...{ tags: () => this.deps.ids.dataBlockTag(), callId: callIds(run) },
       window: windowOfRole(planner, inputs.value.project.settings),
+      answers: await openAnswerBook(this.deps, run),
     };
     const workbook =
       inputs.value.project.sourceKind === 'workbook' ? { workbook: workbookSetup(brief) } : {};
@@ -240,8 +242,8 @@ export class BuildPlan implements RunExecutor {
       settings: inputs.project.settings,
       roles: ['planner'],
       cloudConsent: manifest.options['cloudConsent'] === true,
-      // RF-432: a plan run has no Continue; its project run caps stay a hard stop.
-      approvedAmount: undefined,
+      // RF-432, RF-435, P8-01: the journey's remainder, or none (the project run caps stay hard).
+      approvedAmount: readUnderstandOptions(manifest.options).approvedAmount,
       sinks: await runProviderSinks(this.deps, execution, updates),
     });
     if (built.ok) return built.value.get('planner') ?? ERROR_CODES.providerUnavailable;

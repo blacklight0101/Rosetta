@@ -58,6 +58,11 @@ interface PlanAssumptions {
 export interface PlanCap {
   readonly kind: UsageCap['kind'];
   readonly unit: 'micros' | 'tokens';
+  /**
+   * RF-435, P8-01: the run's line is what is left of the journey's approved amount, in place of
+   * the project run cap: the run pauses and asks there (RF-432) instead of ending.
+   */
+  readonly approved: boolean;
   readonly limit: bigint;
   readonly spent: bigint;
   /** Never below zero. */
@@ -78,6 +83,11 @@ export interface PlanEstimate {
   readonly keyAvailable: boolean;
   readonly assumptions: PlanAssumptions;
   readonly caps: readonly PlanCap[];
+  /**
+   * RF-435, P8-01: which line the run's own caps are: `journey` (what is left of the approved
+   * amount; the run pauses there) or `project` (the project run caps; the run ends there).
+   */
+  readonly runLine: 'journey' | 'project';
   /**
    * Whether the figure of the scenario fits under every cap. `high` is the budget guard's worst
    * case: when it does not fit, the guard may refuse the call and the run ends `CapReached`.

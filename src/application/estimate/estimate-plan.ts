@@ -5,6 +5,7 @@ import type { ModelList } from '../models/model-list.js';
 import { roleLimits } from '../models/role-limits.js';
 import type { Project } from '../projects/project.js';
 import type { JourneyRecords } from '../ports/journey-records.js';
+import { stepAmountOf } from '../journey/journey-budget.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { planInputs, type PlanInputDependencies } from '../plan/plan-inputs.js';
 import { maxPlannerContinuations } from '../plan/plan-continuation.js';
@@ -54,7 +55,7 @@ export interface EstimatePlanDependencies
     PlanPromptFiles {
   /** RF-646: finds the Deepens linked to the source run, whose questions are the same list. */
   readonly manifests?: Pick<RunManifestStore, 'read'>;
-  /** RF-435, P8-01: the project's journey (not read yet). */
+  /** RF-435, P8-01: the project's journey, whose remainder is the plan run's line. */
   readonly journeys?: JourneyRecords | undefined;
 }
 
@@ -135,7 +136,9 @@ export class EstimatePlan {
     );
     const planner = calls.map((call) => call.role).reduce(sumRoles);
     const promptTokens = calls.reduce((sum, call) => sum + call.promptTokens, 0);
-    const { caps, withinCaps } = await planCaps(this.deps, project, planner);
+    // RF-435, P8-01: the same line the run gets at its start (start-run.ts): the journey's remainder.
+    const approved = await stepAmountOf(this.deps, ref);
+    const { caps, withinCaps } = await planCaps(this.deps, project, planner, { approved });
     return ok({
       priceTableVersion: this.deps.priceTable.version,
       currency: this.deps.priceTable.currency,
@@ -157,8 +160,7 @@ export class EstimatePlan {
           answeredQuestions: planned.answeredQuestions,
         },
       },
-      caps,
-      withinCaps,
+      ...{ caps, withinCaps, runLine: approved === undefined ? 'project' : 'journey' },
     });
   }
 }

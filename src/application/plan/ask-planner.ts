@@ -6,6 +6,7 @@ import type { PromptFile } from '../agent/prompt-file.js';
 import type { LlmMessage, LlmResponse } from '../ports/llm-provider.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
+import type { PlannerAnswerBook } from './planner-answer-book.js';
 import { traceIdOf } from '../runs/run-ids.js';
 import {
   cutOffMessage,
@@ -49,6 +50,8 @@ export interface PlannerCall {
   readonly signal: AbortSignal;
   /** P3-113: the planner's window and output limit; the cards are packed to it. Unknown: nothing is packed. */
   readonly window?: PlanWindow | undefined;
+  /** RF-432, P8-01: the answers the run already paid for; a kept one is not asked for again. */
+  readonly answers?: PlannerAnswerBook | undefined;
 }
 
 // RF-604
@@ -58,8 +61,14 @@ export function askPlanner(call: PlannerCall, input: PlanMessageInput): Promise<
 }
 
 /** RF-623: a call with a user message the caller built (the data model has its own input). */
-// RF-623, RF-604
-export async function askPlannerWith(call: PlannerCall, message: string): Promise<string> {
+// RF-623, RF-604, RF-432
+export function askPlannerWith(call: PlannerCall, message: string): Promise<string> {
+  const { answers } = call;
+  if (answers === undefined) return askedWith(call, message);
+  return answers.answerOf(call.agentTaskId, () => askedWith(call, message));
+}
+
+async function askedWith(call: PlannerCall, message: string): Promise<string> {
   const limit = call.planner.maxOutputTokens;
   const messages: LlmMessage[] = [{ role: 'user', content: message }];
   let response = await send(call, messages);

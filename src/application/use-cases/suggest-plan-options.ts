@@ -13,6 +13,7 @@ import type { PromptFile } from '../agent/prompt-file.js';
 import { recommendPlanOptions, type PlanOptionsInput } from '../planning/recommend-plan-options.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { JourneyRecords } from '../ports/journey-records.js';
+import { stepAmountOf } from '../journey/journey-budget.js';
 import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { CallSinks, ProviderSetFactory } from '../ports/provider-set-factory.js';
@@ -53,7 +54,7 @@ export interface SuggestPlanOptionsDependencies {
   readonly prompt: () => Promise<PromptFile>;
   readonly ids: Pick<IdGenerator, 'uuid' | 'dataBlockTag'>;
   readonly logger: Logger;
-  /** RF-435, P8-01: the project's journey (not read yet). */
+  /** RF-435, P8-01: the journey whose remainder the options call runs under; none: project caps. */
   readonly journeys?: JourneyRecords | undefined;
   /** A call that has not answered by then is cancelled. */
   readonly signals: TimeoutSignals;
@@ -131,7 +132,8 @@ export class SuggestPlanOptions {
       settings: project.settings,
       roles: ['planner'],
       cloudConsent: request.cloudConsent,
-      approvedAmount: undefined,
+      // RF-435, P8-01: the call runs under what is left of the journey's approved amount.
+      approvedAmount: await stepAmountOf(deps, { userId: account.id, projectId: project.id }),
       sinks: {
         ...deps.callSinks({ userId: account.id, projectId: project.id }),
         costs: { addCall: () => Promise.resolve() },
