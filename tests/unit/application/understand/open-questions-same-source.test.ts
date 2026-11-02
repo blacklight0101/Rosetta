@@ -44,7 +44,7 @@ describe('P8-08 questions of one run that ask about the same source', () => {
   it('EV-89 merges the same subject asked with another question word', () => {
     const cards = cardsOf(
       question('Which Azure services does the shop use?', 'Shop/Startup.cs', 3, 9),
-      question('What Azure services does the shop depend on?', 'Shop/Config.cs', 1, 5),
+      question('What Azure services does the shop use today?', 'Shop/Config.cs', 1, 5),
     );
 
     expect(openQuestionsOf(cards, 'run-1')).toHaveLength(1);
@@ -64,6 +64,15 @@ describe('P8-08 questions of one run that ask about the same source', () => {
       question('Who approves the invoice discount rules?', macro, 1, 9),
       question('When are the invoice discount rules reviewed?', 'Invoice/Other.bas', 1, 9),
     );
+
+    expect(openQuestionsOf(cards, 'run-1')).toHaveLength(2);
+  });
+
+  it.each([
+    ['Which Azure services does the export use?', 'What Azure services does the import use?'],
+    ['Which columns does the Orders table have?', 'What columns does the Customers table have?'],
+  ])('EV-89 keeps "%s" and "%s" apart, in one range too', (first, second) => {
+    const cards = cardsOf(question(first, macro, 1, 40), question(second, macro, 1, 40));
 
     expect(openQuestionsOf(cards, 'run-1')).toHaveLength(2);
   });

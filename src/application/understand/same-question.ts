@@ -98,5 +98,7 @@ export function sameSubject(a: string, b: string): boolean {
   const right = contentOf(second);
   const shared = [...left].filter((word) => right.has(word)).length;
   const union = left.size + right.size - shared;
-  return shared >= MIN_SHARED_WORDS && shared >= MIN_OVERLAP * union;
+  // a word only one question has may be the decisive one (export and import, Orders and Customers)
+  const subset = shared === Math.min(left.size, right.size);
+  return subset && shared >= MIN_SHARED_WORDS && shared >= MIN_OVERLAP * union;
 }
