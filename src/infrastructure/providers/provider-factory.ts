@@ -1,3 +1,4 @@
+import { withinCeilings } from '../../application/runs/approved-journey.js';
 import { roleLimits } from '../../application/models/role-limits.js';
 import type { GuardedProviderFactoryOptions } from './provider-factory-options.js';
 import type { AgentRole, LlmProvider } from '../../application/ports/llm-provider.js';
@@ -13,6 +14,7 @@ import {
 import { ownerLogger } from '../../application/runs/owner-logger.js';
 import { priceOverridesOf } from '../../application/projects/price-overrides.js';
 import { roleBudgetOf } from '../../application/projects/role-budget.js';
+import { runCapsFor, uncappedLocalRun } from '../../application/projects/local-run-caps.js';
 import type { ProviderSet, RoleProvider } from '../../application/providers/provider-set.js';
 import { capsFor, type ServerCaps } from '../../domain/budget/budget.js';
 import type { UsageCap } from '../../domain/budget/usage-cap.js';
@@ -256,12 +258,13 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     access: ProviderAccess,
     { server, scopeSpent, readerRunMicros }: ScopeCaps,
   ): readonly UsageCap[] {
-    const { run } = request.settings.budget;
+    const run = runCapsFor(request.settings);
     const caps = capsFor(access.keySource, {
       run: { maxCostMicros: BigInt(run.maxCostMicros), maxTokens: BigInt(run.maxTokens) },
       // RF-423: a call held to the ceiling belongs to no run, so a role's run caps do not apply to it.
       ...(isCeilinged(request) ? {} : { role: roleBudgetOf(request.settings, role) }),
-      // RF-429: readers and verifier stop at a share of the run caps; the summariser keeps the rest.
+      // RF-429, DEC-193: the readers stop at their share, the verifier at the run cap less the
+      // summariser's part, which the summariser keeps.
       reader: role === 'reader' && !isCeilinged(request),
       verifier: role === 'verifier' && !isCeilinged(request),
       ...(scopeSpent === undefined ? {} : { scopeSpent, readerRunMicros }),
@@ -270,8 +273,25 @@ export class GuardedProviderFactory implements ProviderSetFactory {
         dailyCapMicros: request.account.dailyCapMicros,
         ownDailyCapMicros: request.account.ownDailyCapMicros,
       },
+      // RF-432: the approved amount is the run's line; a call held to the ceiling has no run.
+      // RF-433: an all-local run with "No cap for local models" has no line to pause at.
+      ...(isCeilinged(request) || uncappedLocalRun(request.settings) ? {} : approvedOf(request)),
     });
     if (!isCeilinged(request)) return caps;
     return caps.map((cap) => ({ kind: cap.kind, limit: providerTestCeiling(cap) }));
   }
+}
+
+/** RF-432: the run's approved amount as cap inputs; none when the run recorded none. */
+function approvedOf(request: ProviderSetRequest): {
+  readonly approved?: { readonly maxCostMicros: bigint; readonly maxTokens: bigint };
+} {
+  if (request.approvedAmount === undefined) return {};
+  const approvedAmount = withinCeilings(request.approvedAmount);
+  return {
+    approved: {
+      maxCostMicros: BigInt(approvedAmount.costMicros),
+      maxTokens: BigInt(approvedAmount.tokens),
+    },
+  };
 }

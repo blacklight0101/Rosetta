@@ -1,8 +1,13 @@
+import { MemoryRunManifestStore } from '../../src/infrastructure/files/memory-run-manifest-store.js';
+import type { JourneyFigures } from '../../src/application/runs/approved-journey.js';
+import { ALL_KEYS_SERVED } from './web-role-keys.js';
 import { expect, vi } from 'vitest';
 import type { Project } from '../../src/application/projects/project.js';
 import type { RunQueue } from '../../src/application/runs/run-queue.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
 import { resumeProblemCheck } from '../../src/application/understand/resume-problem.js';
+import { ContinueRun } from '../../src/application/use-cases/continue-run.js';
+import type { ApprovedAmount } from '../../src/domain/budget/approved-amount.js';
 import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
 import { StartDeepen } from '../../src/application/use-cases/start-deepen.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
@@ -26,6 +31,8 @@ export interface UnderstandStart {
   readonly withAnswers?: boolean;
   /** RF-208, Q-43: the run whose failed areas this run reads again (its id). */
   readonly retryOf?: string;
+  /** RF-432: the amount approved on the start button; the run pauses near it. */
+  readonly approvedAmount?: ApprovedAmount;
 }
 
 /** RF-209: what the owner confirms on the Deepen estimate; confirmed unless a test says not. */
@@ -43,9 +50,14 @@ export function waitUntilEnded(s: Stores): (run: Run) => Promise<Run> {
     await vi.waitFor(
       async () => {
         latest = await s.runs.find(run.userId, run.id);
-        if (latest?.queueState !== 'Ended') throw new Error('The run has not ended');
-        const events = await s.log.read(scopeOf(latest), 0);
-        if (events.at(-1)?.type !== 'run.ended') throw new Error('No run.ended yet');
+        // RF-432: a run waiting for approval has stopped too, until its owner answers.
+        const last =
+          latest?.queueState === 'AwaitingApproval' ? 'run.awaitingApproval' : 'run.ended';
+        if (latest?.queueState !== 'Ended' && last === 'run.ended') {
+          throw new Error('The run has not ended');
+        }
+        const events = latest === undefined ? [] : await s.log.read(scopeOf(latest), 0);
+        if (events.at(-1)?.type !== last) throw new Error(`No ${last} yet`);
       },
       { timeout: UNDERSTAND_RUN_WAIT, interval: 2 },
     );
@@ -55,7 +67,7 @@ export function waitUntilEnded(s: Stores): (run: Run) => Promise<Run> {
 }
 
 export type Starter = (stage: 'scan' | 'understand', extra: UnderstandStart) => Promise<Run>;
-export type Resumer = (run: Run) => Promise<Result<Run, string>>;
+export type Resumer = (run: Run, overviewOnly?: boolean) => Promise<Result<Run, string>>;
 export type Deepener = (run: Run, request?: DeepenStart) => Promise<Result<Run, string>>;
 
 /** The owner of a run or a project, as a signed-in user. */
@@ -73,6 +85,7 @@ export function submitOf(s: Stores, queue: RunQueue): SubmitRun {
 /** Resumes ended runs as the API does and waits for their end. */
 export function resumerOf(s: Stores, queue: RunQueue): Resumer {
   const resumeRun = new ResumeRun({
+    roleKeys: ALL_KEYS_SERVED,
     ...{ projects: s.projects, runs: s.runs, manifests: s.manifests, queue, clock: s.clock },
     problem: resumeProblemCheck({
       ...{ runs: s.runs, scans: scanResultsOf(s) },
@@ -80,16 +93,46 @@ export function resumerOf(s: Stores, queue: RunQueue): Resumer {
     }),
   });
   const ended = waitUntilEnded(s);
-  return async (run) => {
-    const resumed = await resumeRun.execute({ actor: ownerOf(run.userId), runId: run.id });
+  return async (run, overviewOnly = false) => {
+    const resumed = await resumeRun.execute({
+      ...{ actor: ownerOf(run.userId), runId: run.id },
+      ...(overviewOnly ? { overviewOnly } : {}),
+    });
     if (!resumed.ok) return resumed;
     return { ok: true, value: await ended(resumed.value.run) };
+  };
+}
+
+export type Continuer = (run: Run) => Promise<Result<Run, string>>;
+
+/** RF-432: answers Continue (+N) of a paused run as the API does and waits for it to stop again. */
+export function continuerOf(s: Stores, queue: RunQueue): Continuer {
+  const continueRun = new ContinueRun({
+    runs: s.runs,
+    manifests: s.manifests,
+    queue,
+    clock: s.clock,
+  });
+  const ended = waitUntilEnded(s);
+  return async (run) => {
+    const continued = await continueRun.execute({ actor: ownerOf(run.userId), runId: run.id });
+    if (!continued.ok) return continued;
+    // The paused run's last event stays `run.awaitingApproval` until it starts again.
+    await vi.waitFor(
+      async () => {
+        const events = await s.log.read(scopeOf(run), 0);
+        if (events.at(-1)?.type === 'run.awaitingApproval') throw new Error('Not started yet');
+      },
+      { timeout: UNDERSTAND_RUN_WAIT, interval: 2 },
+    );
+    return { ok: true, value: await ended(continued.value.run) };
   };
 }
 
 /** RF-209: deepens completed runs as the confirmed Deepen does and waits for the new run's end. */
 export function deepenerOf(s: Stores, submit: SubmitRun): Deepener {
   const startDeepen = new StartDeepen({
+    roleKeys: ALL_KEYS_SERVED,
     ...{ projects: s.projects, runs: s.runs, manifests: s.manifests, submit },
   });
   const ended = waitUntilEnded(s);
@@ -101,18 +144,42 @@ export function deepenerOf(s: Stores, submit: SubmitRun): Deepener {
   };
 }
 
+/** DEC-205: the test's approved amount is the server's worst case; the likely total is half. */
+function journeyFiguresOf(approved: ApprovedAmount): JourneyFigures {
+  const { tokens, costMicros } = approved;
+  const likely = { tokens: Math.floor(tokens / 2), costMicros: Math.floor(costMicros / 2) };
+  return { likely, worstCase: { tokens, costMicros } };
+}
+
 /** Starts runs of the project as the API does and waits for their end. */
 export function starterOf(s: Stores, submit: SubmitRun, project: Project): Starter {
+  // RF-432: the server's journey is the approved amount a test starts with (likely plus remainder).
+  let journey: JourneyFigures | undefined;
   const startRun = new StartRun({
+    manifests: new MemoryRunManifestStore(),
+    roleKeys: ALL_KEYS_SERVED,
+    journey: () => Promise.resolve(journey),
     ...{ projects: s.projects, runs: s.runs, briefs: new MemoryBriefStore(), submit },
   });
   const ended = waitUntilEnded(s);
-  return async (stage, extra) => {
+  return async (stage, start) => {
+    const { approvedAmount, ...extra } = start;
+    journey = approvedAmount === undefined ? undefined : journeyFiguresOf(approvedAmount);
+    const shown =
+      approvedAmount === undefined
+        ? {}
+        : {
+            approvedAmount: {
+              tokens: approvedAmount.tokens,
+              costMicros: approvedAmount.costMicros,
+            },
+          };
     const started = await startRun.execute({
       actor: ownerOf(project.userId),
       projectId: project.id,
       stage,
       ...extra,
+      ...shown,
     });
     expect(started, `the ${stage} run is accepted`).toMatchObject({ ok: true });
     if (!started.ok) throw new Error(`The ${stage} run was refused: ${started.error}`);

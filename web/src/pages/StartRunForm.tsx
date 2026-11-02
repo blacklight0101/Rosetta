@@ -9,11 +9,11 @@ import { EstimateSection } from './EstimateSection.js';
 import { RepositorySection } from './RepositorySection.js';
 import { UploadSourceSection } from './UploadSourceSection.js';
 import { WorkbookSourceSection } from './WorkbookSourceSection.js';
-import { RunNotice } from './RunNotice.js';
 import { localLikelyTokens } from '../lib/start-confirmation.js';
 import { StartConfirmDialog } from './StartConfirmDialog.js';
 import { StaleCodeMapNotice } from './StaleCodeMapNotice.js';
 import { StageAreasSection } from './StageAreasSection.js';
+import { ScanSection } from './ScanSection.js';
 import { SummaryBar } from './SummaryBar.js';
 import { useStartForm, type StartForm } from './use-start-form.js';
 
@@ -28,11 +28,8 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
   return (
     <div class="rst-start__columns">
       <StageAreasSection
-        stage={stage}
-        understandAvailable={estimate.status !== 'none'}
         areas={choice.areas}
         areasError={actions.refusals.areas}
-        onStage={form.setStage}
         onArea={choice.toggle}
         onChoose={choice.choose}
         libraryConfirmed={form.library.confirmed}
@@ -51,18 +48,9 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
         capsHref={`/projects/${form.project.id}/settings#caps`}
         onRetry={choice.reestimate}
         cap={{
-          text: form.capText,
           capMicros: form.capMicros,
           serverRunCap: form.serverRunCap,
           capTokens: form.capTokens,
-          tokens: { text: form.tokensText, onInput: form.setTokensText },
-          error: actions.refusals.cap,
-          onInput: form.setCapText,
-          threshold: {
-            text: form.thresholdText,
-            error: actions.refusals.threshold,
-            onInput: form.setThresholdText,
-          },
         }}
       />
     </div>
@@ -145,6 +133,21 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
   const { actions, consent } = form;
   const ref = useRef<HTMLDivElement>(null);
   useRefusalFocus(ref, actions.attempts);
+  // RF-160: until the scan has finished there are no areas and no estimate, so only the scan shows.
+  // RF-160: until the scan has finished (or while a replaced source is scanned again) only it shows.
+  const scanning = form.scan.state.kind === 'starting' || form.scan.state.kind === 'scanning';
+  if (form.choice.estimate.status === 'none' || scanning) {
+    return (
+      <div class="rst-start" ref={ref}>
+        <div>
+          <h1 class="rst-page__title">Start a run</h1>
+          <p class="rst-settings__lead">{leadOf(form.project.sourceKind)}</p>
+        </div>
+        <SourceSection form={form} />
+        <ScanSection form={form} />
+      </div>
+    );
+  }
   return (
     <div class="rst-start" ref={ref}>
       <div>
@@ -152,6 +155,7 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
         <p class="rst-settings__lead">{leadOf(form.project.sourceKind)}</p>
       </div>
       <SourceSection form={form} />
+      {form.scan.state.kind === 'failed' ? <ScanSection form={form} /> : null}
       <StaleCodeMapNotice form={form} />
       <Columns form={form} />
       {consent.roles.length === 0 ? null : (
@@ -164,9 +168,6 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
       )}
       <PrivateCode form={form} />
       {actions.refusals.start === undefined ? null : <ErrorBanner error={actions.refusals.start} />}
-      {actions.notice === undefined ? null : (
-        <RunNotice notice={actions.notice} busy={actions.busy} onCancel={actions.cancel} />
-      )}
       <SummaryBar form={form} />
       <Confirmation form={form} />
     </div>

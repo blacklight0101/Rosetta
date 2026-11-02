@@ -4,8 +4,10 @@ import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
+import { RunEndBadge } from '../components/RunEndBadge.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
+import { queueText } from '../lib/live-run/queue-text.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 
 // RF-1002, RF-1003, RF-1108, design-system.md section 14 (live run): the head of the page: the run's
@@ -19,6 +21,8 @@ export interface RunStatusBarProps {
   readonly phase: RunPhase;
   /** RF-208: the areas of the run that gave no usable card, shown next to an ended state. */
   readonly failedAreas?: number;
+  /** P7-02: the planned areas no reader started, for "Partly read". */
+  readonly unreadAreas?: number;
   readonly stopping: boolean;
   readonly busy: boolean;
   readonly stopError: ApiFailure | undefined;
@@ -27,18 +31,42 @@ export interface RunStatusBarProps {
   readonly updatesNote?: string | undefined;
   /** Controls beside Stop run, for example Pause updates. */
   readonly controls?: ComponentChildren;
-  /** RF-006: the Resume button of an ended run that can be resumed, and why it may need a raised cap. */
+  /**
+   * RF-006: the Resume button of an ended run that can be resumed, and why it may need a raised cap;
+   * RF-432: Continue (+N) and Stop here of a run waiting for its owner's approval.
+   */
   readonly resume?: ComponentChildren;
 }
 
-function Badge({ phase }: { readonly phase: RunPhase }): JSX.Element {
+function Badge({
+  phase,
+  unreadAreas,
+}: {
+  readonly phase: RunPhase;
+  readonly unreadAreas?: number | undefined;
+}): JSX.Element {
   if (phase.kind === 'queued') return <StatusBadge list="RunQueueState" value="Queued" />;
   if (phase.kind === 'running') return <StatusBadge list="RunQueueState" value="Running" />;
+  if (phase.kind === 'awaiting') {
+    return <StatusBadge list="RunQueueState" value="AwaitingApproval" />;
+  }
   const endState = stateLists.RunEndState.find((each) => each === phase.endState);
   return endState === undefined ? (
     <StatusBadge list="RunQueueState" value="Ended" />
   ) : (
-    <StatusBadge list="RunEndState" value={endState} />
+    <RunEndBadge endState={endState} unreadAreas={unreadAreas} />
+  );
+}
+
+/** EV-80: the place of a queued run and the runs ahead of it. */
+function QueuePlace({ phase }: { readonly phase: RunPhase }): JSX.Element | null {
+  if (phase.kind !== 'queued' || phase.position === null || phase.position === undefined) {
+    return null;
+  }
+  return (
+    <span class="rst-live-head__note" data-testid="queue-position">
+      {queueText(phase.position)}
+    </span>
   );
 }
 
@@ -52,10 +80,11 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
           <h1 class="rst-page__title">Live run</h1>
           <span class="rst-mono rst-live-head__key">{props.runKey}</span>
           <span class="rst-live-head__stage">{props.stage}</span>
-          <Link href={`/projects/${encodeURIComponent(props.projectId)}/start`}>Start page</Link>
+          <Link href={`/projects/${encodeURIComponent(props.projectId)}`}>Start page</Link>
         </div>
         <span role="status" data-testid="run-status" class="rst-live-head__state">
-          <Badge phase={phase} />
+          <Badge phase={phase} unreadAreas={props.unreadAreas} />
+          <QueuePlace phase={phase} />
           {phase.kind === 'ended' ? (
             <FailedAreasNote count={props.failedAreas ?? 0} class="rst-live-head__note" />
           ) : null}
@@ -66,7 +95,8 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
         </span>
         <span class="rst-live-pause-actions">
           {props.controls}
-          {phase.kind === 'ended' ? (
+          {/* RF-432: a paused run is answered with Continue or Stop here (the resume slot). */}
+          {phase.kind === 'ended' || phase.kind === 'awaiting' ? (
             props.resume
           ) : (
             <Button

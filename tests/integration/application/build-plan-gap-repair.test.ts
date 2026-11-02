@@ -24,7 +24,7 @@ const temp = useTempRoot('rosetta-gap-repair-');
 
 const gappedPlan = (gap: Parameters<typeof gappedPlanIn>[1]) => gappedPlanIn(temp.path, gap);
 
-const unreadable = card(sentinel, rest, { requirements: [{ position: '3' }] });
+const unreadable = card(sentinel, rest, { requirements: { position: '3' } });
 const fixed = card('The journey and its screens', rest, { requirements: [{ position: 3 }] });
 
 describe('BuildPlan: the recorded answer of a small model that writes positions as objects', () => {
@@ -63,11 +63,11 @@ describe('BuildPlan: a card that cannot be read is logged', () => {
   const broken = (title: string, requirements: unknown, builds: string[]) =>
     card(title, builds, { requirements });
 
-  it('Q-54 { "position": "3" } and { "id": 3 } are refused, and the log names the position and the field', async () => {
+  it('Q-54 P7-15 a requirements field that is no list leaves the card out, and the log names the position and the field', async () => {
     const answer = answerOf(
       card('Operations', operations),
-      broken(sentinel, [{ position: '3' }], ['flow:FLOW-001']),
-      broken(`${sentinel}-2`, [{ id: 3 }], ['screen:SCRN-001', 'screen:SCRN-003']),
+      broken(sentinel, { position: '3' }, ['flow:FLOW-001']),
+      broken(`${sentinel}-2`, { id: 3 }, ['screen:SCRN-001', 'screen:SCRN-003']),
     );
     const h = await gappedPlan(gapRecordingOfAll(answer, '{"tasks": []}'));
 
@@ -85,7 +85,7 @@ describe('BuildPlan: a card that cannot be read is logged', () => {
   it('Q-54 ADR-013 the log holds no text of the answer, in any entry', async () => {
     const answer = answerOf(card('Operations', operations), {
       ...card(sentinel, ['flow:FLOW-001']),
-      requirements: [{ id: sentinel }],
+      requirements: { id: sentinel },
     });
     const h = await gappedPlan(gapRecordingOfAll(answer, '{"tasks": []}'));
 
@@ -139,9 +139,9 @@ describe('BuildPlan: the repair attempt', () => {
       expect(message).not.toContain(`"id": "${done}"`);
     }
     expect(message).toContain('"title": "Operations"');
-    const repairPrompt = await readFile('prompts/planner/gap-repair.v2.md', 'utf8');
+    const repairPrompt = await readFile('prompts/planner/gap-repair.v3.md', 'utf8');
     expect(message).toContain(repairPrompt.trim().split('\n')[0]);
-    expect(repair?.system).toBe(await readFile('prompts/planner/gap.v2.md', 'utf8'));
+    expect(repair?.system).toBe(await readFile('prompts/planner/gap.v3.md', 'utf8'));
     expect(repair?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-gap' });
     expect(message).not.toContain(sentinel);
   });
@@ -161,7 +161,7 @@ describe('BuildPlan: the repair attempt is a call like the others', () => {
     ];
     expect(new Set(all.map((each) => each.context.callId)).size).toBe(9);
     expect(Object.keys(manifest.promptVersions)).toEqual(
-      expect.arrayContaining(['planner/gap.v2.md', 'planner/gap-repair.v2.md']),
+      expect.arrayContaining(['planner/gap.v3.md', 'planner/gap-repair.v3.md']),
     );
   });
 });
@@ -169,7 +169,7 @@ describe('BuildPlan: the repair attempt is a call like the others', () => {
 describe('BuildPlan: a repair that does not fix the answer', () => {
   it('Q-54 RST-1806 a repair that still fails reports the gaps as before, and asks no third time', async () => {
     const first = answerOf(card('Operations', operations), unreadable);
-    const again = answerOf(card(`${sentinel}-again`, rest, { requirements: [{ id: 3 }] }));
+    const again = answerOf(card(`${sentinel}-again`, rest, { requirements: { id: 3 } }));
     const h = await gappedPlan(gapRecordingOfAll(first, again));
 
     const run = await h.plan();
@@ -202,8 +202,10 @@ describe('BuildPlan: a repair that does not fix the answer', () => {
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     expect(warned.map((entry) => entry.message).join(' ')).toContain('could not be read');
   });
+});
 
-  it('Q-54 the repair cards under SDD still need a requirement', async () => {
+describe('BuildPlan: a repair card under SDD (P7-14)', () => {
+  it('Q-54 P7-14 a repair card under SDD with no requirement to derive is kept, and checks.md notes its items', async () => {
     const first = answerOf(card('Operations', operations), unreadable);
     const bare = card('The journey', rest, { requirements: [] });
     const h = await gappedPlan(gapRecordingOfAll(first, answerOf(bare)));
@@ -211,8 +213,10 @@ describe('BuildPlan: a repair that does not fix the answer', () => {
 
     const run = await h.plan();
 
-    expect(run.endState).toBe('Failed');
-    expect(plain((await h.handoffOf(run))['tasks.md'])).not.toContain('The journey');
+    expect(run.endState).toBe('Completed');
+    const written = await h.handoffOf(run);
+    expect(plain(written['tasks.md'])).toContain('The journey');
+    expect(plain(written['checks.md'])).toMatch(/builds flow:FLOW-001, but no requirement cites/u);
   });
 });
 
@@ -220,7 +224,7 @@ describe('BuildPlan: when no repair is asked', () => {
   it('Q-54 a left-out card that names no gap asks for no repair', async () => {
     const answer = answerOf(
       card('Everything', [...operations, ...rest]),
-      card('Nothing', ['feature:F-001', 'operation:ghost'], { requirements: [{ id: 1 }] }),
+      card('Nothing', ['feature:F-001', 'operation:ghost'], { requirements: { id: 1 } }),
     );
     const h = await gappedPlan(gapRecordingOfAll(answer));
 
@@ -233,7 +237,7 @@ describe('BuildPlan: when no repair is asked', () => {
   it('Q-54 a left-out card that names a gap another card builds asks for no repair', async () => {
     const answer = answerOf(
       card('Everything', [...operations, ...rest]),
-      card('Again', ['flow:FLOW-001'], { requirements: [{ id: 1 }] }),
+      card('Again', ['flow:FLOW-001'], { requirements: { id: 1 } }),
     );
     const h = await gappedPlan(gapRecordingOfAll(answer));
 

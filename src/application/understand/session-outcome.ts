@@ -3,6 +3,7 @@ import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { AreaRead } from '../agent/agent-task-result.js';
 import type { OutputProblem } from '../cards/output-problem.js';
+import type { OverviewEnded } from './understand-options.js';
 import type { RunOutcome } from '../ports/run-executor.js';
 import { areaFailureOf, type TaskEndFacts } from './area-failure.js';
 
@@ -35,6 +36,17 @@ interface SessionEnd {
   readonly resumed: boolean;
   /** P5-20: the readers stopped because their own share of a cap had no room left (RF-429). */
   readonly readersFull?: boolean;
+  /** P7-02: planned areas (not of third-party code) no reader started. */
+  readonly unreadAreas?: number;
+}
+
+/** RF-423, P7-02: a role cap, the readers' share or planned areas left unread end the run short. */
+function stoppedShort(end: SessionEnd, unreadAreas: number): boolean {
+  return (
+    end.readersFull === true ||
+    unreadAreas > 0 ||
+    end.ends.some((each) => each.state === 'StoppedByCap')
+  );
 }
 
 /**
@@ -48,12 +60,20 @@ interface SessionEnd {
  */
 // RF-1108, RF-208
 export function sessionOutcome(end: SessionEnd): RunOutcome {
-  if (end.aborted) return { endState: 'Interrupted' };
+  // P7-02, DEC-194: planned areas no reader started; the run did not read what it was asked to.
+  const count = end.unreadAreas ?? 0;
+  const unread = count > 0 ? { unreadAreas: count } : {};
+  if (end.aborted) return { endState: 'Interrupted', ...unread };
   if (end.outputFailure !== undefined) return { endState: 'Failed', errorCode: end.outputFailure };
-  const { ends } = end;
-  if (end.readersFull === true || ends.some((each) => each.state === 'StoppedByCap')) {
-    return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
+  if (stoppedShort(end, count)) {
+    return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached, ...unread };
   }
+  return failuresOutcome(end);
+}
+
+/** RF-208, RF-006: how a run that was not stopped short ends, from the areas that gave no card. */
+function failuresOutcome(end: SessionEnd): RunOutcome {
+  const { ends } = end;
   const failed = ends.filter((each) => areaFailureOf(each) !== undefined);
   if (failed.length === 0) return { endState: 'Completed' };
   // RF-006: a resume that kept finished tasks did not fail as a whole.
@@ -62,4 +82,20 @@ export function sessionOutcome(end: SessionEnd): RunOutcome {
   }
   const code = ends.find((each) => each.code !== undefined)?.code;
   return code === undefined ? { endState: 'Failed' } : { endState: 'Failed', errorCode: code };
+}
+
+/**
+ * P7-26: a run that wrote its overview alone ends as it did before: a Completed run stays Completed
+ * with its failed areas; a CapReached run stays CapReached while it has areas unread or claims not
+ * judged (or the Deepen stopped at a cap), and completes when the overview was all that was left.
+ */
+export function overviewOnlyOutcome(
+  before: OverviewEnded,
+  left: { readonly unjudged: number; readonly capped?: boolean },
+): RunOutcome {
+  const failed = before.failedAreas > 0 ? { failedAreas: before.failedAreas } : {};
+  const open = before.unreadAreas > 0 || left.unjudged > 0 || left.capped === true;
+  if (before.endState === 'Completed' || !open) return { endState: 'Completed', ...failed };
+  const unread = before.unreadAreas > 0 ? { unreadAreas: before.unreadAreas } : {};
+  return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached, ...failed, ...unread };
 }

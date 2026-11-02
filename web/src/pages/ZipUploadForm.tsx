@@ -58,7 +58,7 @@ function Summary(props: {
       </p>
       {upload.project === undefined ? null : (
         <Link
-          href={`/projects/${encodeURIComponent(upload.project.id)}/start`}
+          href={`/projects/${encodeURIComponent(upload.project.id)}`}
           class="rst-button rst-button--primary"
         >
           Start a run
@@ -76,6 +76,7 @@ function Outcome({ upload }: { readonly upload: ZipUpload }): JSX.Element | null
         progress={processing?.progress}
         elapsedMs={processing?.elapsedMs ?? 0}
         onCancel={upload.cancel}
+        stopping={upload.stopping}
       />
     );
   }

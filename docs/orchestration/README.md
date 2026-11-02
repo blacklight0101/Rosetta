@@ -132,9 +132,10 @@ when **all** of these hold, and checks each one again right before the merge:
 3. The branch is up to date with `develop`. When `develop` moved, the orchestrator rebases the branch onto `develop`
    (`git rebase origin/develop` in the card's worktree), pushes with `--force-with-lease` to the **task branch only**,
    waits for CI again, and asks the same verifier to confirm the verdict when the rebase touched files of the card.
-4. The pull request does not change `docs/spec/`, `docs/adr/`, `docs/decision-log.md`, `docs/rfc/` or `CLAUDE.md`.
-   A pull request that does gets the label `needs-owner`, the card is set `Blocked (needs-owner - see #<pr>)`, and
-   only the owner merges it. Documentation pull requests outside a card (`docs/<topic>`) are `needs-owner`, except a
+4. The pull request does not change `CLAUDE.md`. A pull request that does gets the label `needs-owner`, the card is
+   set `Blocked (needs-owner - see #<pr>)`, and only the owner merges it. A task-card pull request that changes
+   `docs/spec/`, `docs/adr/`, `docs/decision-log.md` or `docs/rfc/` is merged under rules 1-3 like any other card
+   (DEC-199). Documentation pull requests outside a card (`docs/<topic>`) are `needs-owner`, except a
    `docs/build-status` pull request that changes only Status lines, follow-up cards and the totals of `tasks.md` and
    lines of `handoff.md`; it needs no verifier and is merged once CI is green.
 5. The merge is `gh pr merge <pr> --squash --delete-branch` with the pull request title as the squash title, and the

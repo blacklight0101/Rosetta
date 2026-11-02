@@ -3,6 +3,7 @@ import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { ok } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { PlanAssembly } from '../../domain/planning/plan-content.js';
+import { workbookSetup } from '../../domain/planning/workbook-setup.js';
 import { methodPrinciples } from '../../domain/planning/task-method.js';
 import { recordManifestBrief } from '../../domain/runs/manifest-brief.js';
 import { recordManifestSourceRun } from '../../domain/runs/manifest-source-run.js';
@@ -31,7 +32,8 @@ import {
   type PlanFiles,
   type PlanPromptSources,
 } from '../plan/plan-prompts.js';
-import { handoffPackageOf, leftOutItems } from '../plan/plan-package.js';
+import { leftOutItems } from '../plan/plan-left-out.js';
+import { handoffPackageOf } from '../plan/plan-package.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
 import type { HandoffWriter } from '../ports/handoff-writer.js';
 import type { IdGenerator } from '../ports/id-generator.js';
@@ -40,6 +42,7 @@ import type { ScanResults } from '../ports/scan-results.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
+import { announcePlannerCall } from '../plan/plan-call-events.js';
 import { callIds } from '../runs/run-ids.js';
 import { resolvedSourceOf } from '../plan/resolved-source-of.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
@@ -132,10 +135,13 @@ export class BuildPlan implements RunExecutor {
     const call = {
       ...{ run, planner, prompt: prompts.plan, agentTaskId: 'planner-package', updates, signal },
       continuePrompt: prompts.continue,
+      onCallStarted: (id: string) => announcePlannerCall(execution.events, id),
       ...{ tags: () => this.deps.ids.dataBlockTag(), callId: callIds(run) },
       window: windowOfRole(planner, inputs.value.project.settings),
     };
-    const input = { cards: supported, brief, catalogue, answered };
+    const workbook =
+      inputs.value.project.sourceKind === 'workbook' ? { workbook: workbookSetup(brief) } : {};
+    const input = { cards: supported, brief, catalogue, answered, ...workbook };
     const output = await askPlanner(call, input);
     const draft = await draftAfterRepair(call, input, prompts.planRepair, readPlanAnswer(output));
     if (draft === undefined) {
@@ -184,7 +190,10 @@ export class BuildPlan implements RunExecutor {
     const facts = await planScanFacts(deps, inputs, prompts.secretRisk.text);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
       ...{ ...documents, ...facts, examples, proposal },
-      leftOut: leftOutItems({ ...assembly, dataModelProblems: documents.dataModelProblems }),
+      leftOut: [
+        ...leftOutItems({ ...assembly, dataModelProblems: documents.dataModelProblems }),
+        ...links.leftOut,
+      ],
     });
     await this.deps.handoff.write(scopeOf(run), handoff);
     // Q-45: the extra call was refused or failed; the package of the first call stays as it is.
@@ -263,6 +272,8 @@ export class BuildPlan implements RunExecutor {
       settings: inputs.project.settings,
       roles: ['planner'],
       cloudConsent: manifest.options['cloudConsent'] === true,
+      // RF-432: a plan run has no Continue; its project run caps stay a hard stop.
+      approvedAmount: undefined,
       sinks: await runProviderSinks(this.deps, execution, updates),
     });
     if (built.ok) return built.value.get('planner') ?? ERROR_CODES.providerUnavailable;

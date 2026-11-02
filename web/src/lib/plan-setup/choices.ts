@@ -1,7 +1,7 @@
 import type { Catalogue, PlanOptions } from '../../api/plan-schemas.js';
-import { withAnswered, type Draft } from './draft.js';
+import { isAnswered, withAnswered, type Draft } from './draft.js';
 import { TYPED } from './own-answers.js';
-import { STYLE_GROUP } from './steps.js';
+import { STACK_LAYERS, STYLE_GROUP } from './steps.js';
 
 // RF-605, RF-608, RF-609: how a click on the page changes the draft. A choice records the question
 // as answered, so a save sends it; a question never touched keeps its default (DEC-80).
@@ -55,6 +55,23 @@ export function chooseLayer(
   return withAnswered({ ...marked, stack: { ...others, [layer]: entry } }, [`stack.${layer}`]);
 }
 
+/**
+ * P7-29: after the consent a layer the person left unanswered takes the planner's recommended
+ * option, the first of its options. Without the planner's options the draft is returned as it is and
+ * the server takes the catalogue's recommendation for the layer.
+ */
+export function acceptedStack(draft: Draft, options: PlanOptions | undefined): Draft {
+  return STACK_LAYERS.reduce((next, { id }) => {
+    const offered = options?.stack.find((each) => each.layer === id)?.options ?? [];
+    const [first] = offered;
+    const question = `stack.${id}`;
+    if (first === undefined || isAnswered(next, question) || next.chosen[question] === TYPED) {
+      return next;
+    }
+    return chooseLayer(next, id, { choice: first, custom: false, offered, option: 'a' });
+  }, draft);
+}
+
 /** The principles kept, in catalogue order. */
 export function togglePrinciple(
   draft: Draft,
@@ -96,4 +113,17 @@ export function typePrinciple(draft: Draft, text: string): Draft {
     return { ...chosen(draft, 'principles', ''), typed };
   }
   return typeOwn(draft, 'principles', text);
+}
+
+/**
+ * EV-73: a typed architecture answer keeps Rosetta's proposal: the styles the planner proposed and the
+ * cards behind its recommended style, so the own-answer ADR can name the recommendation.
+ */
+export function keepProposed(draft: Draft, options: PlanOptions | undefined): Draft {
+  if (options === undefined || draft.chosen['architecture'] !== TYPED) return draft;
+  const recommended = proposedOf(options);
+  const evidence =
+    options.architecture.options.find((option) => option.style === options.architecture.recommended)
+      ?.evidence ?? [];
+  return { ...draft, recommended, evidence };
 }

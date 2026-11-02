@@ -1,5 +1,5 @@
-import { isCapStop } from '../../domain/budget/cap-stop.js';
-import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
+import { isApprovalPause } from '../../domain/budget/cap-stop.js';
+import type { ErrorCode } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { queuePositions, runsToStart } from '../../domain/runs/queue-rules.js';
@@ -10,7 +10,8 @@ import type { Logger } from '../ports/logger.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { RunIndex } from '../ports/run-index.js';
 import { KeyedQueue } from '../support/keyed-queue.js';
-import type { EndDetail, RunLifecycle, StartedRun } from './run-lifecycle.js';
+import type { RunLifecycle, StartedRun } from './run-lifecycle.js';
+import { endDetailOf, failureOf, pausedEnd, stoppedOutcome } from './run-outcomes.js';
 
 // RF-1108, RF-003, RNF-002, DEC-61, DEC-112: the run queue of this server process (one instance
 // assumed). Queued runs start in queue order while fewer than `maxRunning` run and their user has
@@ -41,32 +42,6 @@ export interface StopOutcome {
 export type StopProblem = 'not-found' | 'already-ended';
 
 const STEP = 'queue';
-
-/**
- * RF-422, RNF-002: a run stopped by a cap ends `CapReached` whatever the executor reports; any other
- * stop is not a failure, so the executor's abort error must not turn it into `Failed`.
- */
-function stoppedOutcome(signal: AbortSignal, outcome: RunOutcome): RunOutcome {
-  if (!signal.aborted) return outcome;
-  if (isCapStop(signal.reason)) {
-    return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
-  }
-  return outcome.endState === 'Failed' ? { endState: 'Interrupted' } : outcome;
-}
-
-/** The parts of the outcome `run.ended` carries besides the end state (RF-208). */
-function endDetailOf(outcome: RunOutcome): EndDetail {
-  const { errorCode, failedAreas } = outcome;
-  return {
-    ...(errorCode === undefined ? {} : { errorCode }),
-    ...(failedAreas === undefined ? {} : { failedAreas }),
-  };
-}
-
-function failureOf(error: unknown): RunOutcome {
-  const errorCode = error instanceof RosettaError ? error.code : ERROR_CODES.unexpected;
-  return { endState: 'Failed', errorCode };
-}
 
 export class RunQueue {
   private readonly deps: RunQueueDependencies;
@@ -122,7 +97,10 @@ export class RunQueue {
     return queuePositions(await this.deps.runs.listQueued()).get(runId);
   }
 
-  /** Aborts a running run of the user, or cancels a queued one as `Interrupted`. */
+  /**
+   * Aborts a running run of the user, cancels a queued one as `Interrupted`, or ends a paused one
+   * `CapReached` (RF-432).
+   */
   // RF-1108, RF-1105, RNF-002
   stop(userId: string, runId: string): Promise<Result<StopOutcome, StopProblem>> {
     return this.steps.run(STEP, async () => {
@@ -134,7 +112,11 @@ export class RunQueue {
         controller.abort();
         return ok({ kind: 'stopping', run });
       }
-      const ended = await this.deps.lifecycle.finish(run, 'Interrupted');
+      // RF-432: Stop here ends a paused run as a cap would have: `CapReached`, its work kept.
+      const ended =
+        run.queueState === 'AwaitingApproval'
+          ? await this.deps.lifecycle.finish(run, 'CapReached', pausedEnd(run))
+          : await this.deps.lifecycle.finish(run, 'Interrupted');
       return ok({ kind: 'cancelled', run: ended ?? run });
     });
   }
@@ -219,11 +201,28 @@ export class RunQueue {
     controller: AbortController,
   ): Promise<void> {
     const { run } = started;
-    await this.endQuietly(run, await this.outcomeOf(started, executor, controller));
+    const outcome = await this.outcomeOf(started, executor, controller);
+    // RF-432, ADR-026: a run stopped at its approved amount waits for its owner, without a slot.
+    const pause = isApprovalPause(controller.signal.reason) && outcome.endState === 'CapReached';
+    if (!pause || !(await this.pauseQuietly(run, outcome))) await this.endQuietly(run, outcome);
     this.controllers.delete(run.id);
     await this.dispatch().catch((error: unknown) =>
       this.report(run, 'could not start the next run', error),
     );
+  }
+
+  /**
+   * RF-432: records the pause; false when it could not be recorded, and the run then ends
+   * `CapReached` as at a hard cap (fail closed: it never goes on without an answer).
+   */
+  private async pauseQuietly(run: Run, outcome: RunOutcome): Promise<boolean> {
+    try {
+      const counts = outcome.unreadAreas === undefined ? {} : { unreadAreas: outcome.unreadAreas };
+      return (await this.deps.lifecycle.pause(run, counts)) !== undefined;
+    } catch (error) {
+      await this.report(run, 'could not pause', error);
+      return false;
+    }
   }
 
   /** Records the end of a run; a failure is logged, because the run row is the record that counts. */

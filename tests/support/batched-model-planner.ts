@@ -30,6 +30,8 @@ export interface Script {
   readonly poison?: string | undefined;
   /** Every answer is whole but not JSON. */
   readonly garbage?: boolean | undefined;
+  /** Every answer is this text (P7-13: a recorded answer of the failing kind). */
+  readonly answer?: string | undefined;
 }
 
 function idsIn(message: string): string[] {
@@ -50,6 +52,7 @@ function tableFor(id: string): unknown {
 }
 
 function answerFor(script: Script, ids: readonly string[]): { text: string; cut: boolean } {
+  if (script.answer !== undefined) return { text: script.answer, cut: false };
   if (script.garbage === true) return { text: 'not json at all', cut: false };
   const cut = ids.length > script.maxEntities || ids.includes(script.poison ?? '-');
   const whole = JSON.stringify({ tables: ids.map(tableFor), dropped: [] });
@@ -80,7 +83,7 @@ export function scriptedPlanner(script: Script): { call: PlannerCall; requests: 
       ...{ provider, name: 'fake', kind: 'fake', model: 'm', maxOutputTokens: 4_096 },
       keySource: 'user',
     },
-    prompt: { name: 'planner/data-model.v4.md', version: 'v4', sha256: 'b'.repeat(64), text: 'x' },
+    prompt: { name: 'planner/data-model.v5.md', version: 'v5', sha256: 'b'.repeat(64), text: 'x' },
     continuePrompt: {
       name: 'planner/continue.v1.md',
       version: 'v1',

@@ -51,6 +51,14 @@ function reserveText(data: Readonly<Record<string, unknown>>): string {
   );
 }
 
+/** RF-429, DEC-193: the verifier's line of the run token cap, below the part kept for the summary. */
+function claimCheckText(data: Readonly<Record<string, unknown>>): string {
+  return (
+    `The claim checks stopped at ${tokens(data['capTokens'])}, the run cap less the part kept for the summary. ` +
+    'Raise the run cap in the project settings to check the claims left.'
+  );
+}
+
 function roleText(data: Readonly<Record<string, unknown>>): string {
   if (data['capSource'] === 'reserve') return reserveText(data);
   const role = typeof data['role'] === 'string' ? data['role'] : 'a';
@@ -68,6 +76,7 @@ export function capReachedText(data: Readonly<Record<string, unknown>>): string 
     case 'run-cost':
       return runCostText(data);
     case 'run-tokens':
+      if (data['capSource'] === 'reserve') return claimCheckText(data);
       return `The run token cap of ${tokens(data['capTokens'])} was reached. Raise it in the project settings to run further.`;
     case 'role-cost':
     case 'role-tokens':

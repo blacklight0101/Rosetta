@@ -1,0 +1,275 @@
+# What Rosetta proposes for a stack layer the owner left open, and how it tells the kind of application.
+# P5-39, RF-609, RNF-004: part of the versioned catalogue; its name carries the version and the catalogue SHA-256 covers it.
+# signals: the first group with a match decides the kind (so a page beats a form file). A file matches by
+# artefact kind, by extension or by the end of its lower-case name.
+# options: per kind and layer the first entry whose `legacy` languages appear among the three languages
+# with most lines (an empty list matches any) is the proposal; `choice` is a technology of the layer in
+# stack-technologies. A kind or layer without an entry proposes nothing. Plan setup offers the first two
+# entries that fit (P7-29): the first is the recommended one and the one a skipped layer takes.
+# legacy: a technology the scan can name by a language id or by a file extension anywhere in the code map; `endOfLife` layers do not offer to keep it (DEC-203).
+signals:
+  - kind: web
+    artefacts: [page]
+    extensions: [razor, aspx, cshtml, jsp, php]
+    suffixes: []
+  - kind: desktop
+    artefacts: []
+    extensions: [xaml, fxml]
+    suffixes: [.designer.cs, .designer.vb]
+  - kind: service
+    artefacts: [controller]
+    extensions: [svc, asmx]
+    suffixes: []
+options:
+  - kind: web
+    layer: language-runtime
+    legacy: [csharp, vb, aspnet, razor]
+    choice: 'C# on .NET'
+    why: 'The legacy code is .NET, so the team keeps its language and libraries.'
+  - kind: web
+    layer: language-runtime
+    legacy: [java, jsp]
+    choice: 'Java'
+    why: 'The legacy code runs on the JVM.'
+  - kind: web
+    layer: language-runtime
+    legacy: [python]
+    choice: 'Python'
+    why: 'The legacy code is Python.'
+  - kind: web
+    layer: language-runtime
+    legacy: []
+    choice: 'TypeScript on Node.js'
+    why: 'No legacy language has a closer match; one typed language serves both ends.'
+  - kind: web
+    layer: backend-framework
+    legacy: [csharp, vb, aspnet, razor]
+    choice: 'ASP.NET Core Razor Pages'
+    why: 'Page-based ASP.NET Core is the nearest match to WebForms and MVC pages and needs no separate API.'
+  - kind: web
+    layer: backend-framework
+    legacy: [csharp, vb, aspnet, razor]
+    choice: 'ASP.NET Core MVC'
+    why: 'Controllers and views keep the structure of a legacy MVC application.'
+  - kind: web
+    layer: backend-framework
+    legacy: [python]
+    choice: 'FastAPI'
+    why: 'A typed Python framework for HTTP APIs, the nearest to the legacy language.'
+  - kind: web
+    layer: backend-framework
+    legacy: []
+    choice: 'Fastify'
+    why: 'A small Node.js framework that serves pages or an API.'
+  - kind: web
+    layer: front-end
+    legacy: [csharp, vb, aspnet, razor]
+    choice: 'Razor Pages'
+    why: 'Server-rendered pages keep the page-per-screen shape of the legacy application.'
+  - kind: web
+    layer: front-end
+    legacy: []
+    choice: 'React'
+    why: 'A common browser component library for a new web front end.'
+  - kind: web
+    layer: database
+    legacy: [csharp, vb, aspnet, razor]
+    choice: 'SQL Server'
+    why: 'The legacy .NET estate usually keeps its SQL Server schema, so the data moves without conversion.'
+  - kind: web
+    layer: database
+    legacy: []
+    choice: 'PostgreSQL'
+    why: 'An open-source relational database with strong standards support.'
+  - kind: web
+    layer: data-access
+    legacy: [csharp, vb, aspnet, razor]
+    choice: 'Dapper'
+    why: 'A thin mapper over plain SQL keeps each legacy query and stored procedure visible.'
+  - kind: web
+    layer: data-access
+    legacy: [csharp, vb, aspnet, razor]
+    choice: 'Entity Framework Core'
+    why: 'Maps tables to classes and tracks changes, so new code needs less SQL.'
+  - kind: web
+    layer: testing
+    legacy: [csharp, vb, aspnet, razor]
+    choice: 'xUnit'
+    why: 'The usual test framework of .NET.'
+  - kind: web
+    layer: testing
+    legacy: [csharp, vb, aspnet, razor]
+    choice: 'NUnit'
+    why: 'A second .NET test framework, with attribute-driven and data-driven tests.'
+  - kind: web
+    layer: testing
+    legacy: [python]
+    choice: 'pytest'
+    why: 'The usual test runner of Python.'
+  - kind: web
+    layer: testing
+    legacy: []
+    choice: 'Vitest'
+    why: 'A fast test runner for TypeScript.'
+  - kind: web
+    layer: hosting
+    legacy: [aspnet, razor]
+    choice: 'IIS'
+    why: 'A legacy ASP.NET site already runs on IIS, so the deployment stays as it is.'
+  - kind: web
+    layer: hosting
+    legacy: []
+    choice: 'Docker containers'
+    why: 'One image runs the same locally and on any container host.'
+  - kind: web
+    layer: language-runtime
+    legacy: []
+    choice: 'C# on .NET'
+    why: 'A typed runtime with a mature web stack and one language for the whole application.'
+  - kind: web
+    layer: front-end
+    legacy: []
+    choice: 'Angular'
+    why: 'A full browser framework with routing and forms built in.'
+  - kind: web
+    layer: hosting
+    legacy: []
+    choice: 'Azure App Service'
+    why: 'A managed host, so there is no server to patch.'
+  - kind: desktop
+    layer: language-runtime
+    legacy: []
+    choice: 'C# on .NET'
+    why: 'A desktop client on current .NET keeps the language of most legacy desktop code.'
+  - kind: desktop
+    layer: front-end
+    legacy: []
+    choice: 'Windows Forms on .NET'
+    why: 'A desktop client stays a desktop client; forms port with the least change.'
+  - kind: desktop
+    layer: front-end
+    legacy: []
+    choice: 'WPF'
+    why: 'A richer desktop UI than forms, at the cost of a new UI model.'
+  - kind: desktop
+    layer: database
+    legacy: []
+    choice: 'SQL Server'
+    why: 'The legacy client talks to the database directly, so the schema stays as it is.'
+  - kind: desktop
+    layer: database
+    legacy: []
+    choice: 'PostgreSQL'
+    why: 'An open-source database for a client that moves its data.'
+  - kind: desktop
+    layer: data-access
+    legacy: []
+    choice: 'Dapper'
+    why: 'A thin mapper over plain SQL keeps each legacy query visible.'
+  - kind: desktop
+    layer: data-access
+    legacy: []
+    choice: 'Entity Framework Core'
+    why: 'Maps tables to classes, so a client needs less SQL.'
+  - kind: desktop
+    layer: testing
+    legacy: []
+    choice: 'xUnit'
+    why: 'The usual test framework of .NET.'
+  - kind: desktop
+    layer: hosting
+    legacy: []
+    choice: 'MSIX installer'
+    why: 'A desktop client is installed and updated, not hosted.'
+  - kind: service
+    layer: language-runtime
+    legacy: []
+    choice: 'C# on .NET'
+    why: 'A typed runtime with a mature HTTP stack.'
+  - kind: service
+    layer: backend-framework
+    legacy: []
+    choice: 'ASP.NET Core Web API'
+    why: 'Controller-based HTTP APIs with model binding and validation.'
+  - kind: service
+    layer: backend-framework
+    legacy: []
+    choice: 'ASP.NET Core Minimal APIs'
+    why: 'Small endpoints with little ceremony for a thin service.'
+  - kind: service
+    layer: database
+    legacy: []
+    choice: 'SQL Server'
+    why: 'The service keeps the schema its callers already depend on.'
+  - kind: service
+    layer: database
+    legacy: []
+    choice: 'PostgreSQL'
+    why: 'An open-source database for a service that moves its data.'
+  - kind: service
+    layer: data-access
+    legacy: []
+    choice: 'Dapper'
+    why: 'A thin mapper over plain SQL keeps each legacy query visible.'
+  - kind: service
+    layer: data-access
+    legacy: []
+    choice: 'Entity Framework Core'
+    why: 'Maps tables to classes, so a service needs less SQL.'
+  - kind: service
+    layer: testing
+    legacy: []
+    choice: 'xUnit'
+    why: 'The usual test framework of .NET.'
+  - kind: service
+    layer: hosting
+    legacy: []
+    choice: 'Docker containers'
+    why: 'One image runs the same locally and on any container host.'
+legacy:
+  - name: 'VBA'
+    languages: []
+    extensions: [xlsm, xltm, xlam]
+    layers: []
+    endOfLife: true
+  - name: 'Visual Basic 6'
+    languages: [vb6]
+    extensions: [vbp, frm]
+    layers: []
+    endOfLife: true
+  - name: 'Classic ASP'
+    languages: [asp]
+    extensions: [asp]
+    layers: []
+    endOfLife: true
+  - name: 'ASP.NET Web Forms'
+    languages: []
+    extensions: [aspx, ascx, master]
+    layers: [backend-framework, front-end]
+    endOfLife: true
+  - name: '.NET Framework'
+    languages: []
+    extensions: []
+    layers: [language-runtime, hosting]
+    endOfLife: true
+  - name: 'WCF'
+    languages: []
+    extensions: [svc]
+    layers: [backend-framework]
+    endOfLife: true
+
+# vague: words a typed stack answer can consist of without naming a technology (P7-30, RF-609). A
+# platform (`languages` not empty) is offered the options of the layer whose `legacy` languages meet it;
+# a word of the empty-`languages` group ("default", "any") takes the options of the legacy languages the
+# scan found. A word that is an alias of a technology of the layer (".net" for the language) is specific.
+vague:
+  - words: ['.net', 'dotnet', '.net core', 'asp.net', 'asp.net core']
+    languages: [csharp, vb, aspnet, razor]
+  - words: ['java', 'jvm']
+    languages: [java, jsp]
+  - words: ['python']
+    languages: [python]
+  - words: ['node', 'nodejs', 'node.js', 'javascript']
+    languages: [javascript]
+  - words: ['default', 'defaults', 'any', 'anything', 'whatever', 'standard', 'tbd', 'none', 'n/a']
+    languages: []

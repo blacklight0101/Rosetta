@@ -5,6 +5,7 @@ import type { CopiedExample } from '../../domain/planning/copied-example.js';
 import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
 import type { RestatedDecision } from '../../domain/planning/brief-restated.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
+import type { AgentModelMaps } from '../../domain/planning/build-method.js';
 import type { GrepRules } from '../../domain/planning/grep-rules.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
 import type { StackClash } from '../../domain/planning/stack-rules.js';
@@ -16,6 +17,7 @@ import type { DefaultedQuestion } from '../../domain/planning/brief-questions.js
 import type { PlanContent } from '../../domain/planning/plan-content.js';
 import type { PrdContent } from '../../domain/planning/prd-content.js';
 import type { ExcludedClaim, SourceCard, SourceStop } from '../../domain/planning/plan-sources.js';
+import type { WorkbookSetup } from '../../domain/planning/workbook-setup.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { UploadFacts } from '../../domain/sources/upload-facts.js';
 import type { WorkbookFormulas } from '../../domain/planning/workbook-formulas.js';
@@ -63,6 +65,8 @@ interface LeftOutItem {
   readonly item: string;
   readonly field: string;
   readonly reason: string;
+  /** P7-13: `check` for a part of the data model the package keeps; checks.md lists it apart from "Left out". */
+  readonly kind?: 'check' | undefined;
 }
 
 export interface HandoffPackage {
@@ -102,6 +106,8 @@ export interface HandoffPackage {
   /** The cards with their `Supported` claims, in card order. */
   readonly sources: readonly SourceCard[];
   readonly excluded: readonly ExcludedClaim[];
+  /** RF-648: the sign-in, secrets store and screens answers; set only for a project of Excel workbooks. */
+  readonly workbook?: WorkbookSetup | undefined;
   readonly briefQuestions: readonly DefaultedQuestion[];
   /** P6-31, RF-645: the Plan setup options of a brief question that took its default, by question id. */
   readonly briefOptions?: Readonly<Record<string, readonly SuggestedOption[]>> | undefined;
@@ -120,6 +126,8 @@ export interface HandoffPackage {
   readonly leftOut: readonly LeftOutItem[];
   /** P6-28, RF-640: the hard-rule greps and language aliases of the catalogue the plan run used. */
   readonly grepRules: GrepRules;
+  /** P7-23, RF-639: the default model name of each tier for Claude Code and Codex, from the catalogue. */
+  readonly agentModels: AgentModelMaps;
   /** P5-43, RF-602: where the plan changed the meaning of its claims; checks.md lists it, the PRD marks proposed roles. */
   readonly meaning?: MeaningCheck | undefined;
 }

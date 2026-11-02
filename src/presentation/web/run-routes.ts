@@ -8,6 +8,7 @@ import type { ExportZip } from '../../application/use-cases/export-zip.js';
 import type { GetRun } from '../../application/use-cases/get-run.js';
 import type { StartRun } from '../../application/use-cases/start-run.js';
 import type { ResumeRun } from '../../application/use-cases/resume-run.js';
+import type { ContinueRun } from '../../application/use-cases/continue-run.js';
 import type { StopRun } from '../../application/use-cases/stop-run.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -43,9 +44,14 @@ import { runView } from './run-view.js';
 //   running, 404 for another user's run id, an unknown id and a run without that folder.
 // - POST /api/runs/:runId/stop aborts a running run (202, it ends as Interrupted when its work
 //   stops) or cancels a queued one (200); a run that has ended answers 409.
+// - POST /api/runs/:runId/overview (P7-26) queues the same run to write its overview alone.
 // - POST /api/runs/:runId/resume queues an understand run that stopped at a cap, failed or was
 //   interrupted again, as the same run (202 with the run and its position; RF-006); a run that cannot
 //   be resumed answers 409 (RST-2307), another user's run 404, a cloud run without consent 400.
+// - POST /api/runs/:runId/continue answers Continue (+N) for a run waiting for its owner's approval
+//   (RF-432): the approved amount grows by `extra` (the offered N when left out) and the run is
+//   queued again (202 with the run and its position); a run that is not paused answers 409,
+//   another user's run 404. Stop here is POST /stop, which ends a paused run `CapReached`.
 // - POST /api/runs/:runId/deepen and /deepen/estimate: the Deepen of a completed run (deepen-routes.ts, RF-209).
 // - GET and PUT /api/runs/:runId/answers: the run's open questions (answer-routes.ts, RF-1007).
 // - GET /api/runs/:runId/overview: the run's overview (overview-routes.ts, RF-264).
@@ -67,10 +73,17 @@ export interface RunServices
   readonly getRun: GetRun;
   readonly stopRun: StopRun;
   readonly resumeRun: ResumeRun;
+  readonly continueRun: ContinueRun;
   readonly exportZip: ExportZip;
 }
 
 const areaName = z.string().min(1).max(MAX_AREA_NAME);
+
+/** Tokens and micro-dollars of an approved amount (RF-430, RF-432). */
+const amountShape = {
+  tokens: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  costMicros: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+};
 
 /** RF-200, RF-143: the stage, and for understand the areas to read and the cloud consent. */
 const startBody = z.strictObject({
@@ -84,6 +97,8 @@ const startBody = z.strictObject({
   sourceRunId: z.string().min(1).max(64).optional(),
   /** RF-208, Q-43: `understand` reads again the failed areas of this run (its id) and holds its cards. */
   retryOf: z.string().min(1).max(64).optional(),
+  /** RF-430, RF-432: the likely total the start button showed; the server checks it against its own. */
+  approvedAmount: z.strictObject(amountShape).optional(),
 });
 
 /** Streams one part of a run as an attachment; the file name comes from the run key, cleaned. */
@@ -138,13 +153,50 @@ function registerStop(server: FastifyInstance, services: RunServices): void {
 }
 
 function registerResume(server: FastifyInstance, services: RunServices): void {
+  // P7-26: the same call with the overview alone to write.
+  for (const [path, overviewOnly] of [
+    ['/api/runs/:runId/resume', false],
+    ['/api/runs/:runId/overview', true],
+  ] as const) {
+    server.post<{ Params: { runId: string } }>(
+      path,
+      { config: { access: 'user' } },
+      async (request, reply) => {
+        const outcome = await services.resumeRun.execute({
+          actor: signedInOf(request).actor,
+          runId: request.params.runId,
+          ...(overviewOnly ? { overviewOnly } : {}),
+        });
+        if (!outcome.ok) throw new RosettaError(outcome.error);
+        const { run, position } = outcome.value;
+        return reply.status(202).send({ ...runView(run), position: position ?? null });
+      },
+    );
+  }
+}
+
+/** RF-432: N of Continue (+N); at least one of its parts is above zero. */
+const continueBody = z
+  .strictObject({
+    extra: z
+      .strictObject(amountShape)
+      .refine((extra) => extra.tokens > 0 || extra.costMicros > 0)
+      .optional(),
+  })
+  .optional();
+
+function registerContinue(server: FastifyInstance, services: RunServices): void {
   server.post<{ Params: { runId: string } }>(
-    '/api/runs/:runId/resume',
+    '/api/runs/:runId/continue',
     { config: { access: 'user' } },
     async (request, reply) => {
-      const outcome = await services.resumeRun.execute({
+      const body = continueBody.safeParse(request.body ?? undefined);
+      if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
+      const extra = body.data?.extra;
+      const outcome = await services.continueRun.execute({
         actor: signedInOf(request).actor,
         runId: request.params.runId,
+        ...(extra === undefined ? {} : { extra }),
       });
       if (!outcome.ok) throw new RosettaError(outcome.error);
       const { run, position } = outcome.value;
@@ -169,6 +221,21 @@ function registerGet(server: FastifyInstance, services: RunServices): void {
   );
 }
 
+/** The optional fields of the start body that were sent; an absent one is left out. */
+function sentOf(data: z.output<typeof startBody>) {
+  const { areas, cloudConsent, privateCodeConfirmed, withAnswers } = data;
+  const { sourceRunId, retryOf, approvedAmount } = data;
+  return {
+    ...(areas === undefined ? {} : { areas }),
+    ...(cloudConsent === undefined ? {} : { cloudConsent }),
+    ...(privateCodeConfirmed === undefined ? {} : { privateCodeConfirmed }),
+    ...(withAnswers === undefined ? {} : { withAnswers }),
+    ...(sourceRunId === undefined ? {} : { sourceRunId }),
+    ...(retryOf === undefined ? {} : { retryOf }),
+    ...(approvedAmount === undefined ? {} : { approvedAmount }),
+  };
+}
+
 function registerStart(server: FastifyInstance, services: RunServices): void {
   server.post<{ Params: { id: string } }>(
     '/api/projects/:id/runs',
@@ -176,18 +243,11 @@ function registerStart(server: FastifyInstance, services: RunServices): void {
     async (request, reply) => {
       const body = startBody.safeParse(request.body);
       if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
-      const { stage, areas, cloudConsent, privateCodeConfirmed, withAnswers } = body.data;
-      const { sourceRunId, retryOf } = body.data;
       const outcome = await services.startRun.execute({
         actor: signedInOf(request).actor,
         projectId: request.params.id,
-        stage,
-        ...(areas === undefined ? {} : { areas }),
-        ...(cloudConsent === undefined ? {} : { cloudConsent }),
-        ...(privateCodeConfirmed === undefined ? {} : { privateCodeConfirmed }),
-        ...(withAnswers === undefined ? {} : { withAnswers }),
-        ...(sourceRunId === undefined ? {} : { sourceRunId }),
-        ...(retryOf === undefined ? {} : { retryOf }),
+        stage: body.data.stage,
+        ...sentOf(body.data),
       });
       if (!outcome.ok) throw new RosettaError(outcome.error);
       const { run, position } = outcome.value;
@@ -209,6 +269,7 @@ export function registerRunRoutes(
   registerRunFileRoutes(server, services);
   registerStop(server, services);
   registerResume(server, services);
+  registerContinue(server, services);
   registerDeepenRoutes(server, services);
   registerStart(server, services);
   registerEstimateRoutes(server, services);

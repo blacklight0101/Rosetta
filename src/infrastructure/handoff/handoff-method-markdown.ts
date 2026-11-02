@@ -1,6 +1,6 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.js';
-import { difficultyBands } from '../../domain/planning/task-method.js';
+import { bandsFor } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import {
   hasOwnAnswer,
@@ -89,8 +89,8 @@ export function conventionsMarkdown(handoff: HandoffPackage, esc: MarkdownEscape
   ].join('\n');
 }
 
-function bandLines(): string[] {
-  return difficultyBands.map(
+function bandLines(handoff: HandoffPackage): string[] {
+  return bandsFor(handoff.brief.buildMethod).map(
     (band) =>
       `- Difficulty ${String(band.from)} to ${String(band.to)}: the ${band.tier} model tier.`,
   );
@@ -192,7 +192,7 @@ function indexLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
 }
 
 /** The rules kept in this file; the build protocol is in `orchestration.md` (P6-07, RF-636). */
-function longRuleLines(): string[] {
+function longRuleLines(handoff: HandoffPackage): string[] {
   return [
     longRulesHeading,
     '',
@@ -202,7 +202,7 @@ function longRuleLines(): string[] {
     '',
     'Every task card has a difficulty from 1 to 10. Give the card to the model tier of its band:',
     '',
-    ...bandLines(),
+    ...bandLines(handoff),
     '',
     ...qualityRuleLines(),
     ...behaviourRuleLines(),
@@ -213,5 +213,5 @@ function longRuleLines(): string[] {
 
 // RF-612, RF-640
 export function agentsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
-  return [...indexLines(handoff, esc), ...longRuleLines()].join('\n');
+  return [...indexLines(handoff, esc), ...longRuleLines(handoff)].join('\n');
 }

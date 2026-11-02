@@ -33,6 +33,7 @@ export interface ErrorReply {
 const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.requestInvalid]: 400,
   [ERROR_CODES.githubUrlInvalid]: 400,
+  [ERROR_CODES.githubRefNotFound]: 400,
   [ERROR_CODES.settingsInvalid]: 400,
   [ERROR_CODES.passwordTooShort]: 400,
   [ERROR_CODES.passwordTooCommon]: 400,
@@ -47,6 +48,7 @@ const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.privateCodeNotConfirmed]: 400,
   [ERROR_CODES.areaUnknown]: 400,
   [ERROR_CODES.deepenNotConfirmed]: 400,
+  [ERROR_CODES.approvalChanged]: 409,
   // RF-128, RF-129: an upload that cannot be taken. The zip rules are the sender's to fix (400); the
   // size, the time and the free space are the request's (413, 408, 507); a second upload or a run
   // on a project with no source is a conflict.

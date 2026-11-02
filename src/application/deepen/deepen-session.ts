@@ -1,5 +1,6 @@
 import {
   endedDeepen,
+  nextRoundNumber,
   rereadIn,
   retriedAreasIn,
   withOutOfScope,
@@ -24,7 +25,7 @@ import {
   announceRoundStart,
   announceStop,
 } from './deepen-events.js';
-import { markUsedAnswers } from './deepen-answers.js';
+import { hasAnswerTasks, markUsedAnswers } from './deepen-answers.js';
 import { claimsOfThisRun } from './deepen-room.js';
 import { mergeDuplicates } from './deepen-consolidation.js';
 import {
@@ -43,6 +44,7 @@ import {
   coverageEntriesOf,
   measuresOf,
   snapshotOf,
+  unreadPlannedAreas,
   withCards,
   type DeepenState,
 } from './deepen-state.js';
@@ -71,12 +73,16 @@ async function nextRound(
     ...{ reread: rereadIn(record), writtenHere: writtenIn(record) },
     retriedAreas: retriedAreasIn(record),
     coveragePass: record.coveragePass,
+    ...{ plannedAreas: record.plannedAreas, areas: codeMap.areas },
     objects: objectsInCoverage(codeMap, coverageEntriesOf(state)),
   });
   const listed = withOutOfScope(record, plan.outOfScope);
-  if (isEmptyRound(plan)) return { progress: { state, record: listed }, stop: 'noProgress' };
+  // DEC-198 (1): in round 1 an answer not used yet is work, though the plan has none.
+  const answered = record.rounds.length === 0 && hasAnswerTasks(parts.rerun, codeMap);
+  if (isEmptyRound(plan) && !answered)
+    return { progress: { state, record: listed }, stop: 'noProgress' };
   const before = snapshotOf(state, codeMap);
-  const round = record.rounds.length + 1;
+  const round = nextRoundNumber(record);
   await announceRoundStart(parts, { round, maxRounds: record.maxRounds, plan });
   const end = await runRound(parts, state, {
     ...{ plan, round },
@@ -118,9 +124,14 @@ async function finish(
   await saveRecord(parts, endedDeepen(record, ended, measuresOf(final, parts.scanned.codeMap)));
   await announceStop(parts, record, ended);
   if (ended === 'stopped') return { endState: 'Interrupted' };
-  if (stop === 'capReached')
-    return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
-  return { endState: 'Completed' };
+  return outcomeOf(stop, unreadPlannedAreas(final, record.plannedAreas, parts.scanned.codeMap));
+}
+
+/** P7-02, DEC-194: planned areas no reader reached leave the Deepen partly read, whatever stopped it. */
+function outcomeOf(stop: DeepenStopReason, unread: number): RunOutcome {
+  if (stop !== 'capReached' && unread === 0) return { endState: 'Completed' };
+  const unreadAreas = unread > 0 ? { unreadAreas: unread } : {};
+  return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached, ...unreadAreas };
 }
 
 async function refused(parts: DeepenParts, code: ErrorCode): Promise<RunOutcome> {

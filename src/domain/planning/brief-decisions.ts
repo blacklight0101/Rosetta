@@ -1,5 +1,6 @@
 import type { ArchitectureStyle, Catalogue } from './catalogue.js';
 import { layerNames } from './brief-questions.js';
+import { judgedStyleId } from './judged-style.js';
 import { migrationStrategyInfo } from './migration-strategy.js';
 import {
   describingCards,
@@ -14,6 +15,8 @@ import { planId, type PlanDecision } from './plan-content.js';
 import { migrationStrategies, type PlanningBrief, type StackLayer } from './planning-brief.js';
 import { checkReference, typedAnswers } from './typed-answers.js';
 import type { PlanProposal, StrategyFit } from './stack-proposal.js';
+import type { WorkbookSetup } from './workbook-setup.js';
+import { accessChoices, workbookDecisions } from './workbook-decisions.js';
 
 // RF-608, RF-609, RF-610, ADR-018, DEC-76, DEC-78: the choices of the planning brief as decision
 // records of the package: one for the architecture style, one for each stack layer the owner chose
@@ -21,7 +24,7 @@ import type { PlanProposal, StrategyFit } from './stack-proposal.js';
 // brief and the catalogue, the evidence is the cards the recommendation named (only those with a
 // supported claim), and a choice nobody made, which took its default, is `Proposed` and says so.
 
-interface PackageStack {
+export interface PackageStack {
   readonly layer: StackLayer;
   /** The layer in words, for example "language and runtime". */
   readonly name: string;
@@ -40,6 +43,9 @@ export interface BriefChoices {
   readonly stack: readonly PackageStack[];
   /** P5-39: the record of the seam between the two systems; empty when there is none. */
   readonly seam?: string;
+  /** RF-648, RF-649: the records of the sign-in and the secrets store of a workbook; empty when none. */
+  readonly signIn?: string;
+  readonly secrets?: string;
 }
 
 /** What the records of the brief are written from (RF-609): the supported cards, in card order, and the task cards. */
@@ -54,6 +60,8 @@ export interface BriefEvidence {
   }[];
   /** P5-39: what Rosetta proposed, when it could. */
   readonly proposal?: PlanProposal | undefined;
+  /** RF-648, RF-649: the answers of a project of workbooks; absent for any other source. */
+  readonly workbook?: WorkbookSetup | undefined;
 }
 
 export interface BriefDecisions {
@@ -75,6 +83,11 @@ function unique<T>(items: readonly T[]): T[] {
   return [...new Set(items)];
 }
 
+function judgedOf(brief: PlanningBrief, catalogue: Catalogue): ArchitectureStyle | undefined {
+  const id = judgedStyleId(brief, catalogue.styles);
+  return catalogue.styles.find((each) => each.id === id);
+}
+
 function styleDecision(
   brief: PlanningBrief,
   catalogue: Catalogue,
@@ -94,7 +107,11 @@ function styleDecision(
       : `Rosetta recommended ${recommended.map((each) => catalogue.styles.find((entry) => entry.id === each)?.title ?? each).join(' and ')} from the code map and the verified cards.`;
   const own = typedAnswers(brief).architecture;
   if (own !== undefined)
-    return ownStyleDecision({ brief, chosen, considered, sources, recommendation }, own, id);
+    return ownStyleDecision(
+      { brief, chosen: judgedOf(brief, catalogue) ?? chosen, considered, sources, recommendation },
+      own,
+      id,
+    );
   const unchosen = brief.defaulted.includes('architecture');
   return {
     id,
@@ -127,7 +144,7 @@ function ownStyleDecision(
     status: 'Accepted',
     context: `The new system needs an architecture style. The owner typed an answer instead of choosing one of the styles. ${recommendation}`,
     decision: `Follow the owner's own answer: ${own}`,
-    consequences: `The components of the target architecture follow the owner's answer. Rosetta's automatic dependency check knows only its catalogue, so it compares them with ${chosen.title}, the default style and ${checkReference('style')}. How to check that style: ${chosen.check}`,
+    consequences: `The components of the target architecture follow the owner's answer. Rosetta's automatic dependency check knows only its catalogue, so it compares them with ${chosen.title}, ${chosen.id === parts.brief.architecture.style ? 'the default style' : 'the catalogue style closest to the answer'} and ${checkReference('style')}. How to check that style: ${chosen.check}`,
     options: [...considered.map((each) => styleLine(each, false)), `Own answer (chosen): ${own}`],
     sources: [...sources],
   };
@@ -250,12 +267,14 @@ export function briefDecisions(
       ? migrationDecision(brief, nextId(), proposal?.fit)
       : ownMigrationDecision(brief, ownMigration, nextId());
   const seam = proposal?.fit.seam ? seamDecision(proposal.fit, nextId()) : undefined;
+  const access = workbookDecisions(evidence.workbook, nextId);
   return {
-    decisions: presentOnly([style, ...layers, migration, seam]),
+    decisions: presentOnly([style, ...layers, migration, seam, ...access]),
     choices: {
       style: style?.id ?? '',
       migration: migration.id,
       seam: seam?.id ?? '',
+      ...accessChoices(access),
       stack: brief.stack.map((entry, index) => ({
         ...{ layer: entry.layer, name: layerName(entry.layer), choice: entry.choice },
         ...(entry.proposed === true ? { proposed: true } : {}),

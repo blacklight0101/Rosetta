@@ -1,3 +1,4 @@
+import { queueSuffix } from '../live-run/queue-text.js';
 import type {
   JourneyFacts,
   JourneyRunFacts,
@@ -31,12 +32,18 @@ export function phaseOf(run: RunState): RunPhase {
   return run.endState === 'Completed' ? 'completed' : 'stopped';
 }
 
-export const workingText = (run: Pick<JourneyRunFacts, 'queueState'>): string =>
-  run.queueState === 'Queued' ? 'Waiting in the queue' : 'Running now';
+export const workingText = (run: Pick<JourneyRunFacts, 'queueState' | 'position'>): string => {
+  if (run.queueState !== 'Queued') return 'Running now';
+  return `Waiting in the queue${queueSuffix(run.position)}`;
+};
 
 /** How a run that stopped ended, with the code it ended with. */
-export function endText(run: Pick<JourneyRunFacts, 'endState' | 'errorCode'>): string {
+export function endText(
+  run: Pick<JourneyRunFacts, 'endState' | 'errorCode' | 'unreadAreas'>,
+): string {
   const code = run.errorCode === null ? '' : ` (${run.errorCode})`;
+  // P7-02: a capped run that left areas unread reads "Partly read".
+  if (run.endState === 'CapReached' && (run.unreadAreas ?? 0) > 0) return `Partly read${code}`;
   if (run.endState === 'CapReached') return `Stopped at its cap${code}`;
   return run.endState === 'Failed' ? `Failed${code}` : `Interrupted${code}`;
 }
@@ -71,5 +78,14 @@ export function plannableAtCap(
 export function deepenFirst(c: Pick<Context, 'source' | 'skippedDeepen'>): boolean {
   const { source } = c;
   if (source === null || c.skippedDeepen) return false;
-  return phaseOf(source) === 'completed' && !source.isDeepen && source.deepens === 0;
+  return (
+    phaseOf(source) === 'completed' && !source.isDeepen && source.deepens === 0 && !source.deepening
+  );
+}
+
+/** P6-19, RF-646: a Deepen is queued or running, so the questions wait for it unless the user skipped it. */
+export function deepenRunning(c: Pick<Context, 'source' | 'skippedDeepen'>): boolean {
+  const { source } = c;
+  if (source === null || c.skippedDeepen) return false;
+  return phaseOf(source) === 'completed' && !source.isDeepen && source.deepening;
 }

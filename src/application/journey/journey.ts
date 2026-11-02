@@ -16,6 +16,10 @@ export interface JourneyRun {
   readonly costMicros: number;
   /** The `RST` code the run ended with; null when it ended without one or has not ended. */
   readonly errorCode: string | null;
+  /** P7-02: the planned areas no reader started; a capped run with some is "Partly read". */
+  readonly unreadAreas?: number;
+  /** EV-80: the place of a queued run in the queue, counted from 1; null for any other run. */
+  readonly position?: number | null;
 }
 
 /** The understand run the package is written from. */
@@ -28,6 +32,8 @@ export interface JourneySource extends JourneyRun {
   readonly deepens: number;
   /** RF-646: the run is itself a Deepen. */
   readonly isDeepen: boolean;
+  /** P6-33: a Deepen linked to the run's first understand run is queued or running. */
+  readonly deepening: boolean;
 }
 
 /**

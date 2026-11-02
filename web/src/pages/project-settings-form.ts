@@ -1,5 +1,6 @@
 import type { PriceSettings, ProjectSettings, ProviderSettings } from '../api/project-schemas.js';
-import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
+import { microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
+import { FieldReader, type LocalProblem } from './field-reader.js';
 import {
   contextDraftOf,
   contextPath,
@@ -49,6 +50,8 @@ export interface SettingsDraft {
   /** Dollars. */
   readonly confirmAbove: string;
   readonly allowUnpriced: boolean;
+  /** RF-433: off when the project never set it. */
+  readonly noCapForLocalModels: boolean;
   readonly prices: readonly PriceDraft[];
   readonly maxFileBytes: string;
   readonly areaTokenBudget: string;
@@ -57,11 +60,7 @@ export interface SettingsDraft {
   readonly ignoreRules: string;
 }
 
-/** A field whose text is not a number; the path is the one the server uses for that field. */
-export interface LocalProblem {
-  readonly field: string;
-  readonly message: string;
-}
+export type { LocalProblem } from './field-reader.js';
 
 export type SettingsResult =
   | { readonly ok: true; readonly settings: ProjectSettings }
@@ -107,6 +106,7 @@ export function draftOf(settings: ProjectSettings): SettingsDraft {
     runTokens: String(budget.run.maxTokens),
     confirmAbove: dollarsOf(budget.confirmAboveCostMicros),
     allowUnpriced: budget.allowUnpriced,
+    noCapForLocalModels: budget.noCapForLocalModels === true,
     prices: (budget.prices ?? []).map(priceDraft),
     maxFileBytes: String(scan.maxFileBytes),
     areaTokenBudget: String(scan.areaTokenBudget),
@@ -131,6 +131,7 @@ const singleFields = [
   'budget.run.maxTokens',
   'budget.confirmAboveCostMicros',
   'budget.allowUnpriced',
+  'budget.noCapForLocalModels',
   'scan.maxFileBytes',
   'scan.areaTokenBudget',
   'scan.excerptMaxLines',
@@ -149,36 +150,6 @@ export function shownFields(draft: SettingsDraft): ReadonlySet<string> {
     for (const name of priceFields) fields.add(`budget.prices.${String(index)}.${name}`);
   }
   return fields;
-}
-
-const notWhole = 'Enter a whole number, for example 4096.';
-const notDollars = 'Enter an amount in dollars, for example 2.50.';
-
-/** Reads the fields one by one and remembers the ones that are not numbers. */
-class FieldReader {
-  readonly problems: LocalProblem[] = [];
-
-  /** A whole number; zero (and a problem) when the text is not one. */
-  whole(field: string, text: string): number {
-    const trimmed = text.trim();
-    const value = /^-?\d+$/u.test(trimmed) ? Number(trimmed) : Number.NaN;
-    if (Number.isSafeInteger(value)) return value;
-    this.problems.push({ field, message: notWhole });
-    return 0;
-  }
-
-  /** A whole number or nothing: an empty field is left out of the document. */
-  optionalWhole(field: string, text: string): number | undefined {
-    return text.trim() === '' ? undefined : this.whole(field, text);
-  }
-
-  /** Dollars as micro-dollars; zero (and a problem) when the text is not an amount that fits. */
-  micros(field: string, text: string, maxMicros?: bigint): number {
-    const value = Number(dollarsToMicros(text, maxMicros) ?? Number.NaN);
-    if (Number.isSafeInteger(value)) return value;
-    this.problems.push({ field, message: notDollars });
-    return 0;
-  }
 }
 
 type RoleSettings = ProjectSettings['roles'][RoleName];
@@ -247,6 +218,8 @@ function budgetOf(
       RUN_COST_MAX_MICROS,
     ),
     allowUnpriced: draft.allowUnpriced,
+    // RF-433: left out when off, so a project that never set it keeps its document as it was.
+    noCapForLocalModels: draft.noCapForLocalModels ? true : undefined,
     prices: prices.length === 0 ? undefined : prices,
   };
 }

@@ -2,6 +2,7 @@ import type {
   ByScenario,
   EstimatePoint,
   FirstCalls,
+  JourneyFigure,
   RunEstimate,
 } from '../../application/estimate/estimate-types.js';
 
@@ -40,7 +41,12 @@ function firstCallsView(firstCalls: FirstCalls): Record<string, unknown> {
   };
 }
 
-// RF-425
+/** RF-430: a journey total; micro-dollars as a decimal string. */
+function journeyFigureView(figure: JourneyFigure): Record<string, unknown> {
+  return { tokens: figure.tokens, costMicros: figure.costMicros.toString() };
+}
+
+// RF-425, RF-430, RF-431
 export function estimateView(estimate: RunEstimate): Record<string, unknown> {
   const { priceTableVersion, currency, areas, assumptions } = estimate;
   return {
@@ -50,9 +56,15 @@ export function estimateView(estimate: RunEstimate): Record<string, unknown> {
       ...{ role: role.role, provider: role.provider, kind: role.kind, model: role.model },
       ...{ keySource: role.keySource, priced: role.priced },
       ...(role.reasoningEffort === undefined ? {} : { reasoningEffort: role.reasoningEffort }),
+      ...(role.keyMissing === true ? { keyMissing: true } : {}),
       ...rangeView(role.points),
     })),
     total: rangeView(estimate.total),
+    journey: {
+      ...{ basis: estimate.journey.basis, deepenRounds: estimate.journey.deepenRounds },
+      likely: journeyFigureView(estimate.journey.likely),
+      worstCase: journeyFigureView(estimate.journey.worstCase),
+    },
     ...(estimate.firstCalls === undefined
       ? {}
       : { firstCalls: firstCallsView(estimate.firstCalls) }),

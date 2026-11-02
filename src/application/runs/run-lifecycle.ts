@@ -14,6 +14,8 @@ import type { RunEventHistory, RunEventSink } from '../ports/run-events.js';
 import type { ResolvedSource } from '../ports/run-executor.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
+import { continueAmountOf } from '../../domain/budget/approved-amount.js';
+import { readUnderstandOptions } from '../understand/understand-options.js';
 import { RunEventPublisher } from './run-event-publisher.js';
 import { scopeOf } from './run-scope.js';
 import { startCapsDataOf, type StartCaps } from './run-start-caps.js';
@@ -100,12 +102,7 @@ export class RunLifecycle {
   // RF-003, RNF-002
   async finish(run: Run, endState: RunEndState, detail: EndDetail = {}): Promise<Run | undefined> {
     const now = this.deps.clock.now();
-    const ended = await this.deps.runs.end(
-      run.id,
-      endState,
-      now.getTime(),
-      detail.failedAreas ?? 0,
-    );
+    const ended = await this.deps.runs.end(run.id, endState, now.getTime(), detail);
     if (ended === undefined) return undefined;
     const manifest = await this.attempt(ended, 'the manifest', () =>
       this.endManifestOf(ended, endState, now.toISOString()),
@@ -115,6 +112,35 @@ export class RunLifecycle {
       await events.emit('run.ended', endData(ended, endState, manifest, detail));
     });
     return ended;
+  }
+
+  /**
+   * RF-432, ADR-026: `Running` -> `AwaitingApproval` once, then `run.awaitingApproval` with the
+   * approved amount and the N that Continue offers. Undefined when the run was not running. The
+   * manifest keeps no end: its tasks already ended `StoppedByCap` and saved their work.
+   */
+  // RF-432
+  async pause(run: Run, detail: Pick<EndDetail, 'unreadAreas'> = {}): Promise<Run | undefined> {
+    const counts = detail.unreadAreas === undefined ? {} : { unreadAreas: detail.unreadAreas };
+    const paused = await this.deps.runs.pause(run.id, counts);
+    if (paused === undefined) return undefined;
+    await this.attempt(paused, 'run.awaitingApproval', async () => {
+      const stored = await this.deps.manifests.read(scopeOf(paused));
+      const approved =
+        stored === undefined ? undefined : readUnderstandOptions(stored.options).approvedAmount;
+      const events = await RunEventPublisher.open({ scope: scopeOf(paused), ...this.eventParts() });
+      await events.emit('run.awaitingApproval', {
+        totals: paused.totals,
+        unreadAreas: paused.unreadAreas,
+        ...(approved === undefined
+          ? {}
+          : {
+              approvedAmount: { tokens: approved.tokens, costMicros: approved.costMicros },
+              continueAmount: continueAmountOf(approved),
+            }),
+      });
+    });
+    return paused;
   }
 
   private eventParts(): Pick<RunLifecycleDependencies, 'sink' | 'history' | 'clock'> {
@@ -143,7 +169,7 @@ export class RunLifecycle {
       await this.deps.logger.log({
         level: 'error',
         logger: 'runs',
-        message: `Could not record ${what} of the ended run ${run.runKey}.`,
+        message: `Could not record ${what} of the run ${run.runKey}.`,
         runId: run.runKey,
         userId: run.userId,
         ...(error instanceof RosettaError ? { code: error.code } : {}),
@@ -157,6 +183,7 @@ export class RunLifecycle {
 export interface EndDetail {
   readonly errorCode?: ErrorCode;
   readonly failedAreas?: number;
+  readonly unreadAreas?: number;
 }
 
 function endData(
@@ -165,11 +192,12 @@ function endData(
   manifest: RunManifest | undefined,
   detail: EndDetail,
 ): Record<string, unknown> {
-  const { errorCode, failedAreas } = detail;
+  const { errorCode, failedAreas, unreadAreas } = detail;
   return {
     endState,
     totals: { ...manifest?.totals, ...run.totals, calls: manifest?.totals.calls ?? 0 },
     ...(errorCode === undefined ? {} : { errorCode }),
     ...(failedAreas === undefined ? {} : { failedAreas }),
+    ...(unreadAreas === undefined ? {} : { unreadAreas }),
   };
 }

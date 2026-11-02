@@ -57,8 +57,8 @@ function setup(pieces: readonly Piece[], onCutOff?: PlannerCall['onCutOff']) {
       keySource: 'user',
     },
     prompt: {
-      name: 'planner/package.v10.md',
-      version: 'v10',
+      name: 'planner/package.v11.md',
+      version: 'v11',
       sha256: 'b'.repeat(64),
       text: 'plan',
     },

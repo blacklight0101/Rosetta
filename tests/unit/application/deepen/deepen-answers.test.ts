@@ -73,17 +73,18 @@ describe('RF-209 the answers a Deepen task is given', () => {
 
     const given = withDeepenAnswers(tasks, rerun);
 
-    expect(given).toEqual(withAnswersOf(tasks, rerun.plan));
+    expect(given).toEqual(withAnswersOf(tasks, rerun.plan, true));
     expect(given[0]?.answers).toContain("Owner's answer: Staff only.");
     expect(given[0]?.answers).toContain("Owner's answer: Never.");
     expect(given[1]?.answers).toBe(given[0]?.answers);
-    expect(given[2]?.answers).toContain('Question OQ-003: Question of OQ-003?');
+    expect(given[2]?.answers).toContain('Question OQ-003 (Area: Services): Question of OQ-003?');
   });
 
-  it('RF-209 gives a task of an area with no answered question nothing, and keeps its other data', () => {
+  it('P7-09 gives a task of an area with no answered question the answers of the project, and keeps its other data', () => {
     const given = withDeepenAnswers(tasks, rerunOf());
 
-    expect(given[3]).toEqual(tasks[3]);
+    expect(given[3]).toEqual({ ...tasks[3], answers: given[0]?.answers });
+    expect(given[3]?.answers).toContain('Question OQ-003 (Area: Services)');
     expect(given[0]?.rejected).toBe('{"rejected":[]}');
   });
 

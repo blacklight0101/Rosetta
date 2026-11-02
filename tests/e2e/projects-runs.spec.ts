@@ -2,12 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { openScannedStartPage } from './support/cost-run.js';
-import {
-  openStartPage,
-  runStatus,
-  startAndOpenLiveRun,
-  startUnderstand,
-} from './support/live-run-page.js';
+import { openScanRun, openStartPage, runStatus, startUnderstand } from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 
@@ -46,9 +41,7 @@ test('RF-1008 a completed scan shows as the last run with its state and the proj
   page,
 }) => {
   await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-  await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await openScanRun(page);
 
   await openProjects(page);
 
@@ -65,15 +58,15 @@ test('RF-1108 a queued run shows its position on the Projects page and Cancel en
   page,
 }) => {
   const held = await startUnderstand(page, ['Controllers']);
-  await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-  await page.getByRole('button', { name: /^Start run/u }).click();
-  await expect(page.getByTestId('run-notice')).toContainText('Queued');
+  await startUnderstand(page, ['Catalog']);
+  await expect(runStatus(page)).toContainText('Queued');
 
   await openProjects(page);
 
   const notice = page.getByTestId('queue-notice');
-  await expect(notice).toContainText(/Your scan run of octo\/webforms is queued, position \d+\./u);
+  await expect(notice).toContainText(
+    /Your understand run of octo\/webforms is queued, position \d+, (?:no run|\d+ runs?) ahead\./u,
+  );
   await expect(projectRow(page)).toContainText('Queued');
   await expect(projectRow(page)).toContainText(/position \d+/u);
   await expectNoSeriousViolations(page);
@@ -96,3 +89,12 @@ test(
     await noSidewaysScroll(page);
   },
 );
+
+test('RF-430 the start button names the journey figure the user approves', async ({ page }) => {
+  await openScannedStartPage(page);
+
+  await expect(page.getByRole('button', { name: /^Analyse · approve /u })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.getByTestId('journey-total')).toContainText('worst case');
+});

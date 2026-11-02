@@ -18,10 +18,10 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 
 const readerPromptNames = {
   system: 'reader/area.v12.md',
-  cardFormat: 'cards/card-format.v3.md',
+  cardFormat: 'cards/card-format.v5.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
-  repair: 'cards/repair.v4.md',
+  repair: 'cards/repair.v6.md',
   continue: 'cards/continue.v1.md',
   readFirst: 'reader/read-first.v1.md',
   readMore: 'reader/read-more.v1.md',
@@ -30,8 +30,8 @@ const readerPromptNames = {
 /** RF-155: added only to areas that hold a rendered workbook. */
 const workbookPromptName = 'reader/workbook.v5.md';
 
-const answersPromptName = 'reader/answers.v1.md';
-const rereadPromptName = 'reader/reread.v4.md';
+const answersPromptName = 'reader/answers.v2.md';
+const rereadPromptName = 'reader/reread.v5.md';
 const parentCardsPromptName = 'reader/parent-cards.v2.md';
 
 /** RF-260, RF-261: fragments of the card format, added only to areas the code map marks (Q-25). */
@@ -85,14 +85,14 @@ export function loadOverviewPrompt(promptsFolder: string): Promise<PromptFile> {
 /** The planner's prompt for the architecture and stack options (RF-608, RF-609), checked and hashed. */
 // RNF-004
 export async function loadPlanOptionsPrompt(promptsFolder: string): Promise<PromptFile> {
-  const file = await loadPromptFile(promptsFolder, 'planner/options.v1.md');
+  const file = await loadPromptFile(promptsFolder, 'planner/options.v2.md');
   return requirePlaceholder(file, STYLES_PLACEHOLDER);
 }
 
 /** The planner's prompt for the hand-off package (RF-604), checked and hashed. */
 // RNF-004
 export function loadPlannerPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/package.v10.md');
+  return loadPromptFile(promptsFolder, 'planner/package.v11.md');
 }
 
 /**
@@ -127,7 +127,7 @@ export function loadPrdPrompt(promptsFolder: string): Promise<PromptFile> {
 /** The planner's prompt for the target data model (RF-623), checked and hashed. */
 // RNF-004
 export function loadDataModelPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/data-model.v4.md');
+  return loadPromptFile(promptsFolder, 'planner/data-model.v5.md');
 }
 
 /** The planner's prompt for the target flows (RF-625), checked and hashed. */
@@ -157,13 +157,13 @@ export function loadCoveragePrompt(promptsFolder: string): Promise<PromptFile> {
 /** The planner's prompt for the task cards of the items no card builds (Q-45), checked and hashed. */
 // RNF-004
 export function loadGapPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/gap.v2.md');
+  return loadPromptFile(promptsFolder, 'planner/gap.v3.md');
 }
 
 /** The planner's prompt for the one repair attempt of the gap call (Q-54), checked and hashed. */
 // RNF-004
 export function loadGapRepairPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/gap-repair.v2.md');
+  return loadPromptFile(promptsFolder, 'planner/gap-repair.v3.md');
 }
 
 /**

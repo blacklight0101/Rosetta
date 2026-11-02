@@ -22,5 +22,6 @@ export function runView(run: Run): Record<string, unknown> {
     commitSha: run.commitSha,
     totals: run.totals,
     failedAreas: run.failedAreas,
+    unreadAreas: run.unreadAreas,
   };
 }

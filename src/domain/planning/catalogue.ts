@@ -1,4 +1,5 @@
 import type { ClaimVerbs } from './claim-verbs.js';
+import type { AgentModelMaps } from './build-method.js';
 import type { GrepRules } from './grep-rules.js';
 import type { StackData } from './stack-data.js';
 
@@ -68,6 +69,8 @@ export interface Catalogue {
   readonly claimVerbs: ClaimVerbs;
   /** P6-28: the hard-rule greps of orchestration.md, with the aliases that name each language. */
   readonly grepRules: GrepRules;
+  /** P7-23, RF-639: the default model name of each tier for Claude Code and Codex, from its file. */
+  readonly agentModels: AgentModelMaps;
 }
 
 export function isArchitectureStyleId(id: string): id is ArchitectureStyleId {

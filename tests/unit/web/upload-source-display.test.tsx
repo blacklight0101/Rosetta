@@ -105,7 +105,7 @@ it('RF-128 the start page of an upload with no source says so, offers Upload aga
 
   expect(await screen.findByText(/has no source. Upload a zip to start/u)).not.toBeNull();
   expect(screen.getByLabelText('Zip file')).not.toBeNull();
-  const start = screen.getByRole('button', { name: /^Start run/u });
+  const start = screen.getByRole('button', { name: /^Analyse/u });
   expect(start.hasAttribute('disabled')).toBe(true);
   expect(start.getAttribute('title')).toBe('Upload a zip first: this project has no source.');
 });

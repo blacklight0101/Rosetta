@@ -21,11 +21,18 @@ import {
   onDeepenRoundStarted,
   onDeepenStarted,
 } from './deepen-events.js';
+import { onPlanCallStarted, onPlanUsage } from './plan-calls.js';
 import { onRetryStarted } from './retry-events.js';
 import { LOG_LIMIT } from './log-count.js';
 import { withLine } from './log-lines.js';
 import type { RunState } from './run-state.js';
-import { onRunEnded, onRunStarted, onScanCompleted, onSourceResolved } from './run-level-events.js';
+import {
+  onRunAwaitingApproval,
+  onRunEnded,
+  onRunStarted,
+  onScanCompleted,
+  onSourceResolved,
+} from './run-level-events.js';
 
 // RF-1002, RF-1003, RF-1004: folds the events of a run, in order, into what the page shows. An event
 // that was already applied (`seq` not above the last) changes nothing, so a replay after a
@@ -38,6 +45,8 @@ const handlers: Readonly<Record<string, Handler>> = {
   'run.started': onRunStarted,
   'source.resolved': onSourceResolved,
   'run.ended': onRunEnded,
+  // RF-432: the run waits for Continue or Stop.
+  'run.awaitingApproval': onRunAwaitingApproval,
   'scan.completed': onScanCompleted,
   'agent.planned': onPlanned,
   'agent.started': onStarted,
@@ -45,7 +54,8 @@ const handlers: Readonly<Record<string, Handler>> = {
   'agent.tool.called': onToolCalled,
   'agent.tool.result': onToolResult,
   'agent.ended': onAgentEnded,
-  'usage.recorded': onUsage,
+  'usage.recorded': (state, event) => onPlanUsage(onUsage(state, event), event),
+  'plan.call.started': onPlanCallStarted,
   'agent.card.proposed': (state, event) => onClaimsProposed(onCardProposed(state, event), event),
   'verify.citation.checked': onCitationChecked,
   'verify.claim.judged': onClaimJudged,
@@ -79,8 +89,10 @@ export function initialRunState(): RunState {
     log: [],
     roleCostMicros: {},
     roleTokens: {},
+    planCalls: [],
     deepen: undefined,
     retry: undefined,
+    awaiting: undefined,
     ended: undefined,
   };
 }

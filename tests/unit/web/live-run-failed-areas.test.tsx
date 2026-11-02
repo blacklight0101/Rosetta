@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it, vi } from 'vitest';
 import { failedAreasOf } from '../../../web/src/lib/live-run/run-summary.js';
 import { failure, json } from './fake-api.js';
+import { estimateOf, roleOf } from './start-run-fixtures.js';
 import {
   agentEnded,
   cardProposed,
@@ -32,6 +33,18 @@ const started = json(202, {
   queueState: 'Queued',
   position: null,
 });
+
+/** P7-38: the estimate of the failed areas names a cloud provider, so the retry needs consent. */
+const cloudEstimate = estimateOf([
+  roleOf({
+    role: 'reader',
+    provider: 'anthropic',
+    kind: 'anthropic',
+    model: 'cloud-model',
+    keySource: 'server',
+    costs: ['0', '0', '0'],
+  }),
+]);
 
 const twoAreas = [
   ev(1, 'run.started', startedData),
@@ -165,8 +178,11 @@ it('RF-208 Retry failed areas starts a new run of the failed areas only and open
   });
 });
 
-it('RF-208 a retry the project refuses for missing cloud consent shows why and points to the start page', async () => {
-  const { stream } = renderLive({ [`POST ${startPath}`]: failure(400, 'RST-1515') });
+it('RF-208 a retry the project refuses for missing cloud consent shows why and asks for the consent', async () => {
+  const { stream } = renderLive({
+    'POST /api/projects/p-1/estimate': json(200, cloudEstimate),
+    [`POST ${startPath}`]: failure(400, 'RST-1515'),
+  });
   const connection = await stream.connection();
   for (const event of twoAreas) connection.event(event);
   connection.event(runEnded(7, 'Completed', undefined, 1));
@@ -177,9 +193,37 @@ it('RF-208 a retry the project refuses for missing cloud consent shows why and p
   await waitFor(() => {
     expect(within(banner).getByTestId('error-banner').textContent).toContain('RST-1515');
   });
-  expect(within(banner).getByRole('link', { name: 'Start page' }).getAttribute('href')).toBe(
-    '/projects/p-1/start',
-  );
+  expect(
+    await within(banner).findByRole('checkbox', { name: /send masked excerpts to/ }),
+  ).toBeTruthy();
+});
+
+it('P7-38 a retry refused for missing consent shows the consent box beside the button and starts once ticked', async () => {
+  const { stream, calls } = renderLive({
+    'POST /api/projects/p-1/estimate': json(200, cloudEstimate),
+    [`POST ${startPath}`]: (call) =>
+      (call.body as { cloudConsent?: boolean }).cloudConsent === true
+        ? started
+        : failure(400, 'RST-1515'),
+  });
+  const connection = await stream.connection();
+  for (const event of twoAreas) connection.event(event);
+  connection.event(runEnded(7, 'Completed', undefined, 1));
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Retry failed areas' }));
+
+  const box = await screen.findByRole('checkbox', { name: /send masked excerpts to/ });
+  const banner = screen.getByTestId('failed-areas');
+  expect(within(banner).getByRole('checkbox', { name: /send masked excerpts to/ })).toBe(box);
+  fireEvent.click(box);
+  fireEvent.click(screen.getByRole('button', { name: 'Retry failed areas' }));
+
+  await waitFor(() => {
+    expect(window.location.pathname).toBe('/runs/run-2');
+  });
+  expect(calls.filter((call) => call.path === startPath).at(-1)).toMatchObject({
+    body: { ...retryBody, cloudConsent: true },
+  });
 });
 
 it('RF-208 two clicks on Retry failed areas start one run, not two', async () => {

@@ -44,6 +44,7 @@ export const deepenRecordSchema = z.object({
   parentRunKey: text,
   maxRounds: count,
   coveragePass: z.boolean(),
+  plannedAreas: z.array(text).optional(),
   roundsDone: count,
   stopReason: z.enum(DEEPEN_STOP_REASONS).nullable(),
   outOfScope: z.array(z.object({ claimId: text, reason: text })),

@@ -24,6 +24,7 @@
   ],
   "2": [
     "tests/e2e/start-run-queue.spec.ts",
+    "tests/e2e/journeys/one-analyse.spec.ts",
     "tests/e2e/admin-audit.spec.ts",
     "tests/e2e/admin-models.spec.ts",
     "tests/e2e/admin-users.spec.ts",

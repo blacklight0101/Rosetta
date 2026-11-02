@@ -8,7 +8,7 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Run } from '../../domain/runs/run.js';
 import { MERGE_ANSWER_TOKENS, MERGE_PROMPT_TOKENS } from '../consolidate/merge-request.js';
-import { answersGivenTo } from '../deepen/deepen-answers.js';
+import { answersGivenTo, withDeepenAnswers } from '../deepen/deepen-answers.js';
 import { roundTasks } from '../deepen/deepen-tasks.js';
 import { latestScan } from '../deepen/latest-scan.js';
 import type { ModelList } from '../models/model-list.js';
@@ -21,6 +21,8 @@ import type { ScanResults } from '../ports/scan-results.js';
 import type { TaskResults } from '../ports/task-results.js';
 import type { ReaderTask } from '../understand/reader-tasks.js';
 import { scopeOf } from '../runs/run-scope.js';
+import type { RunManifestStore } from '../ports/run-manifest-store.js';
+import { plannedAreasOf } from '../deepen/deepen-state.js';
 import { planRerun } from '../understand/answer-rerun.js';
 import { assumptionsOf } from './estimate-assumptions.js';
 import { shareTokens, sumPoints, withJudgements } from './estimate-run.js';
@@ -47,6 +49,8 @@ export interface DeepenEstimateDependencies {
   readonly runs: Pick<RunIndex, 'find' | 'list'>;
   readonly scans: ScanResults;
   readonly taskResults: Pick<TaskResults, 'read'>;
+  /** P7-02: reads the run's manifest for the areas it planned; without it no area counts as unstarted. */
+  readonly manifests?: Pick<RunManifestStore, 'read'>;
   readonly keys: Pick<ProviderKeyRepository, 'find'>;
   readonly priceTable: PriceTable;
   /** The shipped model list: the context window and output limit of each model (Q-57). */
@@ -170,8 +174,7 @@ export class EstimateDeepen {
     const coveragePass = request.coveragePass !== false;
     const plan = await this.planOf(run, codeMap, coveragePass);
     const assumptions = assumptionsOf(project.settings, this.deps.models);
-    const tasks = roundTasks(plan, codeMap, 1);
-    const answers = await this.answersOf(run, codeMap, tasks);
+    const { tasks, answers } = await this.tasksOf(run, codeMap, plan);
     const reader = readerTokens(
       tasks.map((task) => task.area),
       assumptions,
@@ -201,28 +204,36 @@ export class EstimateDeepen {
     });
   }
 
-  /** DEC-179: how many answered questions of the project the tasks of the first round are given. */
-  private async answersOf(
+  /**
+   * DEC-179, DEC-198: the tasks of the first round, with the one every area holding an answer not used
+   * yet gets, and how many answered questions of the project they are given.
+   */
+  private async tasksOf(
     run: Run,
     codeMap: CodeMap,
-    tasks: readonly ReaderTask[],
-  ): Promise<number> {
+    plan: RoundPlan,
+  ): Promise<{ readonly tasks: readonly ReaderTask[]; readonly answers: number }> {
     const deps = { answers: this.deps.answers, cards: this.deps.priorCards };
     const project = { userId: run.userId, projectId: run.projectId };
     const names = codeMap.areas.map((area) => area.name);
-    const plan = await planRerun(deps, project, names, { includeAnswered: true });
-    return answersGivenTo(tasks, { deps, plan }).length;
+    const rerun = { deps, plan: await planRerun(deps, project, names, { includeAnswered: true }) };
+    const planned = roundTasks(plan, codeMap, 1);
+    const tasks = withDeepenAnswers(planned, rerun, { codeMap, firstNumber: planned.length + 1 });
+    return { tasks, answers: answersGivenTo(tasks, rerun).length };
   }
 
   /** RF-209: the first round of a Deepen of the run, as its results stand. */
   private async planOf(run: Run, codeMap: CodeMap, coveragePass: boolean): Promise<RoundPlan> {
     const results = await this.deps.taskResults.read(scopeOf(run));
+    const manifest = await this.deps.manifests?.read(scopeOf(run));
+    const plannedAreas = manifest === undefined ? [] : plannedAreasOf(manifest);
     return planRound({
       cards: results.flatMap((result) => result.cards),
       coverage: results.map((result) => result.coverage),
       files: codeMap.files,
       ...{ reread: new Set<string>(), writtenHere: new Set<string>(), coveragePass },
       retriedAreas: new Set<string>(),
+      ...{ plannedAreas, areas: codeMap.areas },
     });
   }
 }

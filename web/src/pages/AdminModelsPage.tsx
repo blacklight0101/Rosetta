@@ -105,6 +105,7 @@ function useEditing(saved: DefaultRoles): Editing {
     setFailure(undefined);
     setMessage('');
     setMissing(parsed.missing);
+    const sentText = context.text;
     const size = context.read(usesOllama(draft), limit);
     if (parsed.missing.length > 0 || !size.ok) {
       setRefusals((count) => count + 1);
@@ -121,8 +122,9 @@ function useEditing(saved: DefaultRoles): Editing {
       setRefusals((count) => count + 1);
       return;
     }
-    setDraft(draftOf(result.value));
-    context.reset(result.value.ollamaContextTokens);
+    // P6-33: an edit made while the save was on its way stays; the answer replaces only the draft sent.
+    setDraft((current) => (current === draft ? draftOf(result.value) : current));
+    context.reset(result.value.ollamaContextTokens, sentText);
     setApplied(result.value);
     setMessage('Default models saved.');
   };

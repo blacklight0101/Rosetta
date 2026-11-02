@@ -11,6 +11,12 @@ const bigIntText = z
   .regex(/^\d{1,18}$/u)
   .transform((text) => BigInt(text));
 
+/** One fixed Plan setup option as the server words it (P7-17: one source with the package). */
+const wordingSchema = z.object({
+  ...{ id: z.string(), title: z.string(), description: z.string(), value: z.string() },
+});
+export type Wording = z.output<typeof wordingSchema>;
+
 export const catalogueSchema = z.object({
   version: z.number(),
   entries: z.array(
@@ -20,6 +26,11 @@ export const catalogueSchema = z.object({
     }),
   ),
   migrations: z.array(z.object({ id: z.string(), title: z.string(), tradeOff: z.string() })),
+  wording: z.object({
+    context: z.record(z.string(), z.array(wordingSchema)),
+    method: z.array(wordingSchema),
+    keepLegacy: wordingSchema,
+  }),
 });
 
 export type Catalogue = z.output<typeof catalogueSchema>;
@@ -99,10 +110,40 @@ const styleOption = z.object({
 
 export const planOptionsSchema = z.object({
   architecture: z.object({ recommended: z.string(), options: z.array(styleOption) }),
-  stack: z.array(z.object({ layer: z.string(), options: z.array(z.string()) })),
+  stack: z.array(
+    z.object({
+      layer: z.string(),
+      options: z.array(z.string()),
+      /** P7-10: what each option is for, in the same order; absent from an older answer. */
+      descriptions: z.array(z.string()).optional(),
+    }),
+  ),
 });
 
 export type PlanOptions = z.output<typeof planOptionsSchema>;
+
+// P7-29, RF-609, RF-645, DEC-203: the catalogue's two proposals of each stack layer, and whether the
+// layer may keep its legacy technology; read without sending any code.
+export const stackOfferSchema = z.object({
+  layers: z.array(
+    z.object({
+      layer: z.string(),
+      proposals: z.array(z.object({ choice: z.string(), why: z.string() })),
+      keepLegacy: z.boolean(),
+      // P7-30: the words that name only a platform, each with the layer's choices for it.
+      vague: z
+        .array(
+          z.object({
+            words: z.array(z.string()),
+            proposals: z.array(z.object({ choice: z.string(), why: z.string() })),
+          }),
+        )
+        .default([]),
+    }),
+  ),
+});
+
+export type StackOffer = z.output<typeof stackOfferSchema>;
 export type StyleOption = z.output<typeof styleOption>;
 
 const figure = z.object({

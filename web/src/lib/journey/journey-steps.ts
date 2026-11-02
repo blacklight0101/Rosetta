@@ -4,6 +4,7 @@ import { costLabel } from '../live-run/format.js';
 import { nextOf, type JourneyAction, type JourneyLink } from './journey-action.js';
 import {
   deepenFirst,
+  deepenRunning,
   endText,
   lockReason,
   phaseOf,
@@ -113,6 +114,10 @@ function questionsPart({ source, facts, skippedDeepen: skipped }: Context): Part
     return { state: 'done', detail: left, href };
   }
   // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by it.
+  if (deepenRunning({ source, skippedDeepen: skipped })) {
+    const detail = `${plural(open, 'open question')}, asked after the Deepen that is running`;
+    return { state: 'upcoming', detail, href };
+  }
   if (deepenFirst({ source, skippedDeepen: skipped })) {
     const detail = `${plural(open, 'open question')}, asked after the last Deepen: answers given now will be used by it`;
     return { state: 'upcoming', detail, href };

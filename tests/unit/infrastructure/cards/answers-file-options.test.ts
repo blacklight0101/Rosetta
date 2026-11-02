@@ -225,3 +225,49 @@ async function writeParseWrite(parsed: NonNullable<OpenQuestion['options']>): Pr
   await answers.addQuestions(project, [{ ...withOptions(), options: parsed }]);
   return textOf(writer);
 }
+
+// RF-209, RF-241, DEC-198, EV-58: a picked option is read back like a typed answer, so the loss of a
+// picked answer in a Deepen is not in the file.
+describe('answers.md and the answers a Deepen reads back', () => {
+  it('EV-58 reads a picked option back with the text of the option, like a typed answer', async () => {
+    const { answers } = await setup();
+    await answers.recordAnswers(project, run, [
+      { cardId: 'OQ-001', answer: 'ignored', chosen: 2 },
+      { cardId: 'OQ-002', answer: 'Only for staff.' },
+    ]);
+
+    const read = await answers.answeredQuestions(project);
+
+    expect(read.map(({ cardId, answer }) => ({ cardId, answer }))).toEqual([
+      { cardId: 'OQ-001', answer: 'No, hide it' },
+      { cardId: 'OQ-002', answer: 'Only for staff.' },
+    ]);
+  });
+});
+
+describe('answers.md and a mark-only answer', () => {
+  it('RF-645 a recommended mark with no other text does not fold the description into the answer', async () => {
+    const { writer, answers } = await setup();
+    const text = textOf(writer);
+    writer.files.set(
+      path,
+      text.replace(
+        /^- Options:.*$/mu,
+        '- Options: (Recommended) - Keep the list; No, hide it - Hide them',
+      ),
+    );
+
+    const [question] = await answers.questionsOf(project, run);
+
+    expect(question?.options?.[0]).toEqual({
+      answer: '',
+      description: 'Keep the list',
+      recommended: true,
+    });
+    expect(question?.options?.[1]).toEqual({
+      answer: 'No, hide it',
+      description: 'Hide them',
+      recommended: false,
+    });
+  });
+});

@@ -11,11 +11,11 @@ import {
 import { base, ready, renderPlan } from './plan-setup-helpers.js';
 
 // RF-613, RF-143, RF-427, RF-605: the estimate of the plan run against the caps, what stops
-// "Write the package", and the start of the run.
+// "Start the plan", and the start of the run.
 
 const savedAnswers = { [`GET ${base}/planning-brief`]: json(200, savedBrief) };
 const write = (): HTMLButtonElement => {
-  const button = screen.getByRole('button', { name: /^Write the package/u });
+  const button = screen.getByRole('button', { name: /^Start the plan/u });
   if (!(button instanceof HTMLButtonElement)) throw new Error('Not a button.');
   return button;
 };
@@ -197,6 +197,6 @@ describe('write the package with consent', () => {
     await ready();
 
     expect(screen.getByText(/package is out of date/u)).not.toBeNull();
-    expect(screen.getByRole('button', { name: /^Write the package again/u })).not.toBeNull();
+    expect(screen.getByRole('button', { name: /^Start the plan again/u })).not.toBeNull();
   });
 });

@@ -6,7 +6,6 @@ import {
   estimatePath,
   limitsAnswer,
   localEstimate,
-  noCodeMap,
   ownKeyEstimate,
   projectPath,
   projectWithCap,
@@ -21,6 +20,7 @@ import {
   ready,
   renderStart,
   start,
+  opened,
 } from './start-run-helpers.js';
 
 // RF-1001, RF-143, RF-425, DEC-108, design-system.md section 14 (Start run): what the start page
@@ -32,7 +32,7 @@ afterEach(() => {
   window.history.pushState({}, '', '/');
 });
 
-it('RF-1001 shows the repository, the stages, the areas and the estimate of an understand run', async () => {
+it('RF-1001 shows the repository, the areas and the estimate of an understand run', async () => {
   renderStart();
 
   await ready();
@@ -40,7 +40,6 @@ it('RF-1001 shows the repository, the stages, the areas and the estimate of an u
   expect(screen.getByRole('heading', { name: 'Start a run', level: 1 })).not.toBeNull();
   expect(input('GitHub repository URL').value).toBe('https://github.com/octo/demo');
   expect(screen.getByText('src/legacy')).not.toBeNull();
-  expect(input('Understand').checked).toBe(true);
   expect(input('Catalog').checked).toBe(true);
   expect(input('Models').checked).toBe(true);
   expect(start().disabled).toBe(false);
@@ -121,26 +120,6 @@ it('RF-1001 with no area chosen Start is disabled and says why', async () => {
   expect(start().title).toBe('Choose at least one area.');
 });
 
-it('RF-1001 without a scan the understand stage is off, the scan is chosen and the reason is shown', async () => {
-  renderStart({ [`GET ${estimatePath}`]: noCodeMap });
-
-  await screen.findByText(/Run a scan first/u);
-
-  expect(input('Understand').disabled).toBe(true);
-  expect(input('Scan only').checked).toBe(true);
-  expect(start().disabled).toBe(false);
-  expect(screen.queryByRole('table', { name: 'Estimate per role' })).toBeNull();
-});
-
-it('RF-1001 with no code map the page shows the scan note and no run cap or threshold field', async () => {
-  renderStart({ [`GET ${estimatePath}`]: noCodeMap });
-
-  await screen.findByText(/A scan reads the repository/u);
-
-  expect(screen.queryByLabelText('Run cap (USD)')).toBeNull();
-  expect(screen.queryByLabelText('Ask before a run estimated above (USD)')).toBeNull();
-});
-
 it('RF-143 names the cloud provider and keeps Start off until the consent is given', async () => {
   const { calls } = renderStart({
     [`GET ${estimatePath}`]: json(200, cloudEstimate),
@@ -153,7 +132,7 @@ it('RF-143 names the cloud provider and keeps Start off until the consent is giv
   expect(notice?.textContent).toContain('reader');
   expect(start().disabled).toBe(true);
   expect(start().title).toBe('Confirm the OpenAI notice above to start the run');
-  expect(start().textContent).toBe('Start run (confirm the OpenAI notice)');
+  expect(start().textContent).toBe('Analyse (confirm the OpenAI notice)');
 
   fireEvent.click(input(consentLabel));
   expect(start().disabled).toBe(false);
@@ -161,22 +140,12 @@ it('RF-143 names the cloud provider and keeps Start off until the consent is giv
   // RF-425: the likely cost ($0.39) is above the project's $0.25 threshold, so the run is confirmed.
   fireEvent.click(await screen.findByRole('button', { name: 'Confirm and start' }));
 
-  await screen.findByTestId('run-notice');
+  await opened();
   expect(calls.at(-1)?.body).toEqual({
     stage: 'understand',
     areas: ['Catalog', 'Models'],
     cloudConsent: true,
   });
-});
-
-it('RF-143 a scan needs no consent even when the roles use a cloud provider', async () => {
-  renderStart({ [`GET ${estimatePath}`]: json(200, cloudEstimate) });
-  await ready();
-
-  fireEvent.click(input('Scan only'));
-
-  expect(screen.queryByText(/Code will leave this machine/u)).toBeNull();
-  expect(start().disabled).toBe(false);
 });
 
 it('RF-143 a refusal for the missing consent shows the notice with the code next to its checkbox', async () => {
@@ -204,25 +173,8 @@ it('RF-1001 a likely estimate above the run cap warns, names the cap and keeps S
   expect(warning.textContent).toContain('run cap');
   expect(warning.textContent).toContain('$0.25');
   expect(warning.textContent).toContain('$0.14');
-  expect(input('Run cap (USD)').value).toBe('0.25');
   fireEvent.click(input(consentLabel));
   expect(start().disabled).toBe(false);
-});
-
-it('RF-1001 the warning follows the cap field and the meter shows the likely cost against it', async () => {
-  renderStart({
-    [`GET ${projectPath}`]: json(200, projectWithCap(2_000_000)),
-    [`GET ${estimatePath}`]: json(200, cloudEstimate),
-  });
-  await ready();
-
-  expect(screen.queryByTestId('cap-warning')).toBeNull();
-  // RF-1106 (P3-91): on server keys the meter is against the administrator's $0.50 run cap, lower than the $2.00 typed.
-  expect(screen.getByRole('meter').getAttribute('aria-valuenow')).toBe('78');
-  fireEvent.input(input('Run cap (USD)'), { target: { value: '0.30' } });
-
-  expect(screen.getByTestId('cap-warning').textContent).toContain('$0.09');
-  expect(screen.getByRole('meter').getAttribute('aria-valuenow')).toBe('100');
 });
 
 it('RF-1001 a likely cost above the daily cap on the own keys warns and names that cap', async () => {
@@ -245,18 +197,6 @@ it('RF-425 an estimate that cannot be read shows its error and Start stays off f
   expect(start().disabled).toBe(true);
 });
 
-it('DEC-117 a typed cap above 100 USD does not replace the cap the warning compares with', async () => {
-  renderStart({
-    [`GET ${projectPath}`]: json(200, projectWithCap(10_000)),
-    [`GET ${estimatePath}`]: json(200, cloudEstimate),
-  });
-  await ready();
-
-  fireEvent.input(input('Run cap (USD)'), { target: { value: '150' } });
-
-  expect(screen.getByTestId('cap-warning').textContent).toContain('$0.01');
-});
-
 // P5-07: a local-only estimate names tokens in its cap meter, never a dollar sentence.
 it('P5-07 a local-only estimate says its likely cost in tokens, not in dollars', async () => {
   renderStart({ [`GET ${estimatePath}`]: json(200, localEstimate) });
@@ -265,12 +205,4 @@ it('P5-07 a local-only estimate says its likely cost in tokens, not in dollars',
   const estimate = document.querySelector<HTMLElement>('[aria-labelledby="estimate-heading"]');
   expect(estimate?.textContent).toContain('tokens');
   expect(estimate?.textContent ?? '').not.toMatch(/Likely $/u);
-});
-
-it('P5-07 a mixed estimate keeps the run cap in dollars', async () => {
-  renderStart({ [`GET ${estimatePath}`]: json(200, cloudEstimate) });
-  await ready();
-
-  expect(input('Run cap (USD)')).not.toBeNull();
-  expect(input('Ask before a run estimated above (USD)')).not.toBeNull();
 });

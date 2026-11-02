@@ -81,7 +81,7 @@ describe('BuildPlan: what the data model call is sent', () => {
     for (const left of ['keeps the card number', 'Checkout creates', 'Staff export']) {
       expect(message).not.toContain(left);
     }
-    expect(request?.system).toBe(await readFile('prompts/planner/data-model.v4.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/data-model.v5.md', 'utf8'));
     expect(request?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-data-model' });
     const callIds = h.providers.requests().map((each) => each.context.callId);
     expect(new Set(callIds).size).toBe(3);
@@ -244,7 +244,7 @@ describe('BuildPlan: an unusable data model answer', () => {
     expect(files['tasks.md'] ?? '').toContain('Write the database migrations in the chosen stack');
     const checks = files['checks.md'] ?? '';
     expect(checks).toContain('### Data model');
-    expect(checks).toContain('- range_note: the field "table entry columns 3".');
+    expect(checks).toContain('- `range_note`: the field "table entry columns 3".');
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     const messages = warned.map((entry) => entry.message).join(' ');
     expect(messages).toContain('dropped parts that failed their schema');

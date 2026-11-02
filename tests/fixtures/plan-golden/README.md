@@ -7,7 +7,8 @@ understand run of the plan tests (`tests/support/plan-cards.ts`, two `ENT` cards
 cards could be dropped, and `build-plan-golden-package.test.ts` compares a fresh package with them, so a plan with a
 data model keeps its package byte for byte. When a change meant to alter the package lands, the file is written
 again from the test support (`tests/support/package-hashes.ts`) in the same change, and the change says why. The hashes were regenerated after P6-31 changed `open-questions.md`;
-only its entries changed.
+only its entries changed. They were regenerated again after P7-11 wrote the name of a left-out part of `checks.md` as a code span; only `checks.md` changed.
+They were regenerated again after P7-13 added the "Data model" section to `checks.md`: the recorded answer has one column typed "to confirm" (`note` of `customer_order`, a type that is not a type name), which `checks.md` now lists in that section; only `checks.md` changed, in each of the three strategies, and every other file keeps its hash. They were regenerated again after P7-17 gave the principles their own intro ("the defaults first") in `open-questions.md`; only `open-questions.md` changed, in each of the three strategies. P7-12 (local tiers and the Codex model map) changed no hash: the golden plans build with the default build method, which has no local tier and no Codex tool, and the band table, `agents/README.md`, `tasks.md` and `open-questions.md` change only for those two cases.
 
 ## Provenance (RNF-009)
 

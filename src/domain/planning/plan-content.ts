@@ -1,22 +1,18 @@
-import {
-  allocateIdentifiers,
-  dependenciesOf,
-  listedFiles,
-  type AllocatedIdentifier,
-} from './parallel-cards.js';
+import { allocateIdentifiers, dependenciesOf, type AllocatedIdentifier } from './parallel-cards.js';
 import type {
   DraftComponent,
   DraftDecision,
   DraftEntity,
   DraftRequirement,
   DraftRisk,
-  DraftTask,
   PlanDraft,
   UnreadableItem,
 } from './plan-draft.js';
-import { unknownPositions, type PhaseNote, type RequirementNote } from './requirement-notes.js';
+import type { PhaseNote, RequirementNote } from './requirement-notes.js';
 import { assembleJudgements, type ClaimJudgement } from './claim-judgement.js';
-import { draftFault, leftOutOf, noRequirement, type LeftOutCard } from './left-out-card.js';
+import { leftOutOf, type LeftOutCard } from './left-out-card.js';
+import { keptTasks } from './kept-tasks.js';
+import { planNotes, taskRequirementNotes } from './task-requirements.js';
 import type { GuardKind, RiskClass } from './task-card-quality.js';
 import { assembleTechnical, type TechnicalContent } from './technical-content.js';
 
@@ -148,45 +144,16 @@ function requirementsOf(
   return { kept, idAt };
 }
 
-interface KeptTask {
-  readonly position: number;
-  readonly task: DraftTask;
-  readonly riskClass: RiskClass;
-  readonly requirements: string[];
-  readonly files: string[];
-}
-
-/** The draft tasks that are cards of the plan, and by position and field the ones that are not. */
-function keptTasks(
-  drafts: readonly DraftTask[],
-  phases: number,
-  idAt: ReadonlyMap<number, string>,
-  specified: boolean,
-): { readonly kept: KeptTask[]; readonly leftOut: LeftOutCard[] } {
-  const kept: KeptTask[] = [];
-  const leftOut: LeftOutCard[] = [];
-  drafts.forEach((task, index) => {
-    const position = index + 1;
-    const { riskClass } = task;
-    const fault = draftFault(task, phases);
-    const requirements = unique(task.requirements.flatMap((at) => idAt.get(at) ?? []));
-    const missing = specified && requirements.length === 0 ? noRequirement : undefined;
-    if (fault !== undefined || riskClass === undefined || missing !== undefined) {
-      const left = fault ?? missing;
-      if (left !== undefined) leftOut.push({ position, ...left });
-      return;
-    }
-    kept.push({ position, task, riskClass, requirements, files: listedFiles(task.files) });
-  });
-  return { kept, leftOut };
-}
-
 function tasksOf(
   draft: PlanDraft,
   idAt: ReadonlyMap<number, string>,
   specified: boolean,
-): { readonly tasks: PlanTask[]; readonly leftOut: LeftOutCard[] } {
-  const { kept, leftOut } = keptTasks(draft.tasks, draft.phases.length, idAt, specified);
+): {
+  readonly tasks: PlanTask[];
+  readonly leftOut: LeftOutCard[];
+  readonly notes: RequirementNote[];
+} {
+  const { kept, leftOut } = keptTasks(draft, idAt, specified);
   const identifiers = allocateIdentifiers(kept.map((each) => each.task.needs));
   const at = new Map(kept.map((each, index) => [each.position, index]));
   const dependencies = dependenciesOf(
@@ -208,7 +175,8 @@ function tasksOf(
         : { contradicts: task.contradicts }),
     };
   });
-  return { tasks, leftOut };
+  const notes = taskRequirementNotes(kept, specified);
+  return { tasks, leftOut, notes };
 }
 
 function componentsOf(drafts: readonly DraftComponent[]): DraftComponent[] {
@@ -256,8 +224,8 @@ export function assemblePlan(
   const requirements = requirementsOf(draft.requirements, supported);
   const entities = entitiesOf(draft.entities, supported);
   const specified = options.specificationDriven === true;
-  const { tasks, leftOut } = tasksOf(draft, requirements.idAt, specified);
-  const notes = unknownPositions(draft.tasks, draft.requirements.length);
+  const { tasks, leftOut, notes: unbacked } = tasksOf(draft, requirements.idAt, specified);
+  const notes = planNotes(draft, unbacked);
   const withSources = <T extends { readonly sources: readonly string[] }>(item: T): T => ({
     ...item,
     sources: knownSources(item.sources, supported),

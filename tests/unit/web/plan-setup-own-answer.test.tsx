@@ -132,7 +132,15 @@ describe('the architecture question: a typed answer', () => {
 
     await saved(page);
     expect(saves(page)).toEqual([
-      { chosen: { architecture: 'typed' }, typed: { architecture: 'Move one module a week.' } },
+      {
+        architecture: {
+          style: 'modular-monolith',
+          recommended: ['modular-monolith', 'hexagonal'],
+          evidence: ['BR-001'],
+        },
+        chosen: { architecture: 'typed' },
+        typed: { architecture: 'Move one module a week.' },
+      },
     ]);
   });
 });
@@ -165,13 +173,12 @@ describe('the stack question', () => {
 
     await saved(page);
     const [body] = saves(page);
-    expect(body).toMatchObject({
-      chosen: { 'stack.database': 'b', 'stack.hosting': 'typed' },
-      stack: [
-        { layer: 'database', choice: 'database B', custom: false },
-        { layer: 'hosting', choice: 'Azure', custom: true },
-      ],
-    });
+    expect(body).toMatchObject({ chosen: { 'stack.database': 'b', 'stack.hosting': 'typed' } });
+    const sent = JSON.stringify(body);
+    expect(sent).toContain('"layer":"database","choice":"database B","custom":false');
+    expect(sent).toContain('"layer":"hosting","choice":"Azure","custom":true');
+    // P7-29: a layer left alone takes the planner's recommended option
+    expect(sent).toContain('"layer":"testing","choice":"testing A","custom":false');
   });
 });
 

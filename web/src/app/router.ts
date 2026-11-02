@@ -13,6 +13,12 @@ export function navigate(path: string): void {
   window.dispatchEvent(new Event(changeEvent));
 }
 
+/** Goes to a path of this application in place of the current history entry (a redirect). */
+export function replace(path: string): void {
+  window.history.replaceState({}, '', path);
+  window.dispatchEvent(new Event(changeEvent));
+}
+
 /** The current path and query string; the component renders again when it changes. */
 export function useLocation(): string {
   const [location, setLocation] = useState(here);

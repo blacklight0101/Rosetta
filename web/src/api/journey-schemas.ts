@@ -15,6 +15,10 @@ const journeyRun = z.object({
   costMicros: count,
   /** The `RST` code the run ended with, if any. */
   errorCode: z.string().nullable(),
+  /** P7-02: the planned areas no reader started. */
+  unreadAreas: count.optional(),
+  /** EV-80: the place of a queued run in the queue, counted from 1. */
+  position: z.number().int().positive().nullable().optional(),
 });
 
 export const journeySchema = z.object({
@@ -26,6 +30,8 @@ export const journeySchema = z.object({
       /** RF-646: the Deepens linked to the run's first understand run. */
       deepens: count.default(0),
       isDeepen: z.boolean().default(false),
+      /** P6-33: a Deepen of the run is queued or running. */
+      deepening: z.boolean().default(false),
     })
     .nullable(),
   scanRunId: z.string().nullable(),

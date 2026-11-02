@@ -28,6 +28,7 @@ import type { ReaderTask } from './reader-tasks.js';
 import { readerParallelism } from './reader-settings.js';
 import { cardsOf, RunCards } from './run-cards.js';
 import { RunCoverage, TaskReads } from './run-coverage.js';
+import { recordUnread } from './unread-areas.js';
 import { failedOutcome, sessionOutcome, type TaskOutcome } from './session-outcome.js';
 import { TaskLog } from './task-log.js';
 import { runPool } from './task-pool.js';
@@ -77,6 +78,7 @@ export class UnderstandSession {
   private readonly thirdParty: ReadonlySet<string>;
   private latest: CheckedCards;
   private outputFailure: ErrorCode | undefined;
+  private unread = 0; // P7-02: planned own-code areas no reader started
   private overview: Overview | undefined;
 
   constructor(parts: UnderstandSessionParts) {
@@ -124,12 +126,8 @@ export class UnderstandSession {
       );
       const asked = await withoutThirdPartyQuestions(this.log, this.thirdParty, task, result);
       // RF-243, P5-02: a question the lines it cites already answer is not asked.
-      const quiet = await withoutAnsweredQuestions(
-        this.log,
-        this.parts.scanned.reader,
-        task,
-        asked,
-      );
+      const { reader } = this.parts.scanned;
+      const quiet = await withoutAnsweredQuestions(this.log, reader, task, asked);
       const outcome = await finishedDrafts(this.parts, task.agentTaskId, quiet);
       const failure = areaFailureOf(outcome);
       const cards = outcome.drafts;
@@ -150,6 +148,8 @@ export class UnderstandSession {
    */
   // RF-203, DEC-98, RF-250
   async finish(): Promise<void> {
+    this.unread = recordUnread(this.parts, this.coverage, this.ends);
+    await this.writeCoverage();
     await this.announce(true);
     await this.leaveUnjudged();
     await this.addQuestions();
@@ -159,7 +159,7 @@ export class UnderstandSession {
     await this.markAnswered();
   }
 
-  private async writeOverview(): Promise<void> {
+  async writeOverview(): Promise<void> {
     const { latest, coverage, thirdParty } = this;
     this.overview = await overviewStep(this.parts, latest.cards, { coverage, thirdParty });
     await this.writeSet(latest.cards);
@@ -185,7 +185,7 @@ export class UnderstandSession {
   }
 
   /** RF-250: the duplicates of several areas become one card; the set is written again if any did. */
-  private async consolidate(): Promise<void> {
+  async consolidate(): Promise<void> {
     const state = { cards: this.latest.cards, areasWithoutCards: this.cards.areasWithoutCards() };
     const merged = await consolidateStep(this.parts, state);
     if (merged !== undefined) this.latest = { ...this.latest, cards: merged };
@@ -206,13 +206,13 @@ export class UnderstandSession {
   /** How the run ends, from how its tasks ended (`session-outcome.ts`). */
   outcome(): RunOutcome {
     const { execution, kept } = this.parts;
-    const ends = endsWithoutRoomStops(this.ends, this.parts.room);
     return sessionOutcome({
       aborted: execution.signal.aborted,
       outputFailure: this.outputFailure,
-      ends,
+      ends: endsWithoutRoomStops(this.ends, this.parts.room),
       resumed: kept.length > 0,
       readersFull: this.parts.room?.reason === 'share',
+      unreadAreas: this.unread,
     });
   }
 

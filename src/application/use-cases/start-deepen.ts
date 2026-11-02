@@ -7,14 +7,18 @@ import { err, type Result } from '../../domain/errors/result.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
+import { stepAmountOf } from '../journey/journey-budget.js';
+import type { JourneyRecords } from '../ports/journey-records.js';
 import { scopeOf } from '../runs/run-scope.js';
 import {
   readUnderstandOptions,
   rolesNeedCloudConsent,
   rolesNeedPrivateConfirmation,
+  UNDERSTAND_ROLES,
   understandOptionsOf,
 } from '../understand/understand-options.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
+import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.js';
 
 // RF-209, RF-1105, RF-143, ADR-007, DEC-144, DEC-145: Start Deepen is what the owner's confirmation
 // on the estimate calls (`POST /api/runs/:runId/deepen`). It never starts by itself: nothing but
@@ -26,11 +30,15 @@ import type { SubmitRun, SubmittedRun } from './submit-run.js';
 
 export interface StartDeepenDependencies {
   readonly projects: Pick<ProjectRepository, 'find'>;
-  readonly runs: Pick<RunIndex, 'find'>;
+  readonly runs: Pick<RunIndex, 'find' | 'list'>;
+  /** RF-435: a Deepen runs under what is left of the journey's approved amount. */
+  readonly journeys?: JourneyRecords;
   readonly manifests: Pick<RunManifestStore, 'read'>;
   readonly submit: Pick<SubmitRun, 'execute'>;
   /** The host of the server's Ollama (`ROSETTA_OLLAMA_URL`); an Ollama elsewhere needs consent (RF-143). */
   readonly ollamaHost?: string;
+  /** RF-431: whether each role of the run has a usable key; checked before the run is queued. */
+  readonly roleKeys: RoleKeyDependencies;
 }
 
 export interface StartDeepenRequest {
@@ -55,7 +63,8 @@ export type StartDeepenProblem =
   | typeof ERROR_CODES.requestInvalid
   | typeof ERROR_CODES.cloudConsentMissing
   | typeof ERROR_CODES.privateCodeNotConfirmed
-  | typeof ERROR_CODES.runStageNotAvailable;
+  | typeof ERROR_CODES.runStageNotAvailable
+  | typeof ERROR_CODES.providerKeyMissing;
 
 export class StartDeepen {
   private readonly deps: StartDeepenDependencies;
@@ -77,13 +86,17 @@ export class StartDeepen {
     const stored = await this.deps.manifests.read(scopeOf(run));
     if (project === undefined || stored === undefined) return err(ERROR_CODES.notFound);
     const cloudConsent = request.cloudConsent === true;
-    const refusal = this.consentRefusal(request, project);
+    const refusal = await this.refusalOf(request, project);
     if (refusal !== undefined) return err(refusal);
     const privateCodeConfirmed = request.privateCodeConfirmed === true;
     const { areas } = readUnderstandOptions(stored.options);
     const deepen = { parentRunId: run.id, maxRounds, coveragePass: request.coveragePass !== false };
+    const approvedAmount = await stepAmountOf(this.deps, {
+      userId: actor.userId,
+      projectId: project.id,
+    });
     const options = understandOptionsOf({
-      ...{ areas, cloudConsent, deepen },
+      ...{ areas, cloudConsent, deepen, approvedAmount },
       privateCodeConfirmed:
         privateCodeConfirmed && rolesNeedPrivateConfirmation(project, this.deps.ollamaHost),
     });
@@ -95,18 +108,23 @@ export class StartDeepen {
     });
   }
 
-  /** RF-143: no consent for a cloud provider; RF-132: no second confirmation for an upload. */
-  private consentRefusal(
+  /**
+   * RF-143: no consent for a cloud provider; RF-132: no second confirmation for an upload; RF-431: a
+   * role with no usable key, refused before the Deepen is queued.
+   */
+  private async refusalOf(
     request: StartDeepenRequest,
     project: Project,
-  ): StartDeepenProblem | undefined {
+  ): Promise<StartDeepenProblem | undefined> {
     const { ollamaHost } = this.deps;
     if (request.cloudConsent !== true && rolesNeedCloudConsent(project.settings, ollamaHost)) {
       return ERROR_CODES.cloudConsentMissing;
     }
     const needsPrivate = rolesNeedPrivateConfirmation(project, ollamaHost);
-    return needsPrivate && request.privateCodeConfirmed !== true
-      ? ERROR_CODES.privateCodeNotConfirmed
-      : undefined;
+    if (needsPrivate && request.privateCodeConfirmed !== true) {
+      return ERROR_CODES.privateCodeNotConfirmed;
+    }
+    const keyMissing = await anyRoleWithoutKey(this.deps.roleKeys, project, UNDERSTAND_ROLES);
+    return keyMissing ? ERROR_CODES.providerKeyMissing : undefined;
   }
 }

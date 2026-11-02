@@ -140,6 +140,7 @@ async function modelOf(
   const built = await guarded.factory.build({
     ...{ account, run, settings, roles: ['verifier'], sinks },
     cloudConsent: true,
+    approvedAmount: undefined,
   });
   const chosen = built.ok ? built.value.get('verifier') : undefined;
   if (!built.ok || chosen === undefined) {

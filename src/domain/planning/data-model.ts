@@ -108,11 +108,34 @@ export interface DroppedField {
   readonly byPlanner: boolean;
 }
 
+/** P7-32: tables of one sheet per site or copy made one table with a column holding the suffix. */
+export interface SplitTable {
+  readonly table: string;
+  /** The discriminator column: `site`, or `source_sheet` when the kind of suffix is unclear. */
+  readonly column: string;
+  /** The legacy sheet (the name the draft gave it), its value in the column (null for none) and its cards. */
+  readonly values: readonly {
+    readonly sheet: string;
+    readonly value: string | null;
+    readonly sources: readonly string[];
+  }[];
+}
+
 export interface TargetDataModel {
+  /** P7-32: the tables made from sheets split by site or copy. */
+  readonly splits?: readonly SplitTable[];
   /** The database layer of the planning brief; null when the brief names none. */
   readonly database: string | null;
   readonly tables: readonly ModelTable[];
   readonly dropped: readonly DroppedField[];
+}
+
+/** P7-13: the table kept and the names of the tables merged into it. */
+export interface MergedTable {
+  /** P7-13: the names of the columns of the merged tables united into a column of the table kept. */
+  readonly columns?: readonly string[];
+  readonly kept: string;
+  readonly merged: readonly string[];
 }
 
 /** How many items of the draft the model leaves out, for the log. */
@@ -126,6 +149,8 @@ export interface LeftOut {
 export interface DataModelAssembly {
   readonly model: TargetDataModel;
   readonly leftOut: LeftOut;
+  /** P7-13: the tables merged because their names differ only by plural, case or separators. */
+  readonly merged: readonly MergedTable[];
 }
 
 /** The supported claims of the `ENT` cards, in card and claim order. */

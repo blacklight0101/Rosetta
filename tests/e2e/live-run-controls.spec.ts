@@ -5,9 +5,9 @@ import { openScannedStartPage } from './support/cost-run.js';
 import {
   agentPanel,
   openRunTab,
+  openScanRun,
   openStartPage,
   runStatus,
-  startAndOpenLiveRun,
   startUnderstand,
   valueOf,
 } from './support/live-run-page.js';
@@ -56,11 +56,7 @@ test('RF-1002 the stepper of a scan run goes from the snapshot to the scan with 
   page,
 }) => {
   await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-
-  await startAndOpenLiveRun(page);
-
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await openScanRun(page);
   await expect(pipeline(page)).toBeVisible();
   await expect(step(page, 'Scan')).toContainText(/\d+ files, \d+ areas/u);
   await expect(step(page, 'Snapshot')).toContainText('done');
@@ -77,9 +73,7 @@ test('RF-1002 RF-504 the Report step of an ended run waits until the report is b
   page,
 }) => {
   await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-  await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await openScanRun(page);
   const build = page.getByRole('button', { name: 'Build report' });
   await expect(build).toBeEnabled();
   await expect(step(page, 'Report')).toContainText('waiting');

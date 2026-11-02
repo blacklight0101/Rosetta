@@ -23,8 +23,14 @@ interface StyleOption {
 
 interface LayerOptions {
   readonly layer: StackLayer;
+  /** The names of the two options, as the brief records a pick (EV-65). */
   readonly options: readonly [string, string];
+  /** What each option is for, in the same order; empty when the planner gave none. */
+  readonly descriptions: readonly [string, string];
 }
+
+/** An option of a layer as the planner wrote it: a name and a description, or one line with both. */
+type DraftOption = string | { readonly name: string; readonly description?: string | undefined };
 
 export interface PlanOptions {
   readonly architecture: {
@@ -47,7 +53,7 @@ export interface OptionsDraft {
       readonly evidence: readonly string[];
     }[];
   };
-  readonly stack: readonly { readonly layer: string; readonly options: readonly string[] }[];
+  readonly stack: readonly { readonly layer: string; readonly options: readonly DraftOption[] }[];
 }
 
 /** Model-written text in a message: quoted and cut short. */
@@ -123,18 +129,51 @@ function architectureOf(
   return ok({ recommended: ordered[0].style, options: ordered });
 }
 
-/** The first two different options (compared without case), each bounded; fewer is no answer. */
-function twoOptions(texts: readonly string[]): [string, string] | undefined {
+const MAX_DESCRIPTION_CHARS = 300;
+const dashes = /\s[-\u2013\u2014]\s/u;
+
+/** EV-53, EV-65: a long option such as "SQL Server 2019 - Keeping compatible RDBMS" is a name and a description. */
+// RF-609
+export function splitOption(text: string): { readonly name: string; readonly description: string } {
+  const line = text.trim();
+  const at = line.search(dashes);
+  const name = at < 0 ? '' : line.slice(0, at).trim();
+  if (name === '') return { name: line.slice(0, MAX_OPTION_CHARS).trim(), description: '' };
+  const description = line.slice(at).replace(dashes, '').trim();
+  return {
+    name: name.slice(0, MAX_OPTION_CHARS).trim(),
+    description: description.slice(0, MAX_DESCRIPTION_CHARS).trim(),
+  };
+}
+
+function readOption(option: DraftOption): { readonly name: string; readonly description: string } {
+  if (typeof option === 'string') return splitOption(option);
+  // options.v2 gives the name and the description apart, so a dash inside the name stays.
+  const name = option.name.trim().slice(0, MAX_OPTION_CHARS).trim();
+  return {
+    name,
+    description: (option.description ?? '').trim().slice(0, MAX_DESCRIPTION_CHARS).trim(),
+  };
+}
+
+/** The first two options with different names (compared without case), each bounded; fewer is no answer. */
+function twoOptions(
+  drafts: readonly DraftOption[],
+): { names: [string, string]; descriptions: [string, string] } | undefined {
   const seen = new Set<string>();
-  const kept: string[] = [];
-  for (const text of texts) {
-    const option = text.trim().slice(0, MAX_OPTION_CHARS).trim();
-    if (option === '' || seen.has(option.toLowerCase())) continue;
-    seen.add(option.toLowerCase());
+  const kept: { readonly name: string; readonly description: string }[] = [];
+  for (const draft of drafts) {
+    const option = readOption(draft);
+    if (option.name === '' || seen.has(option.name.toLowerCase())) continue;
+    seen.add(option.name.toLowerCase());
     kept.push(option);
   }
   const [first, second] = kept;
-  return first === undefined || second === undefined ? undefined : [first, second];
+  if (first === undefined || second === undefined) return undefined;
+  return {
+    names: [first.name, second.name],
+    descriptions: [first.description, second.description],
+  };
 }
 
 type Stack = Result<LayerOptions[], string[]>;
@@ -149,7 +188,7 @@ function stackOf(draft: OptionsDraft['stack']): Stack {
     if (given.length === 0) problems.push(`The layer ${layer} has no options.`);
     else if (options === undefined)
       problems.push(`The layer ${layer} needs two different options.`);
-    else layers.push({ layer, options });
+    else layers.push({ layer, options: options.names, descriptions: options.descriptions });
   }
   return problems.length > 0 ? err(problems) : ok(layers);
 }

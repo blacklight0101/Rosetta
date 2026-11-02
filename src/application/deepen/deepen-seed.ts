@@ -3,7 +3,7 @@ import type { DeepenRecord } from '../../domain/deepen/deepen-record.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { scopeOf } from '../runs/run-scope.js';
-import { measuresOf, type DeepenState } from './deepen-state.js';
+import { measuresOf, plannedAreasOf, type DeepenState } from './deepen-state.js';
 import type { DeepenParts } from './deepen-parts.js';
 
 // RF-209, RF-006, RNF-004: where a Deepen run starts. A new one copies the task results of the
@@ -32,10 +32,12 @@ export async function seedDeepen(parts: DeepenParts): Promise<Result<DeepenSeed,
   if (results.length === 0) return err(ERROR_CODES.taskResultsUnreadable);
   const state = { results };
   const stored = execution.manifest.deepen;
+  // P7-02: the areas the understand run planned, so one no reader started is read as a gap.
+  const plannedAreas = plannedAreasOf(parentManifest);
   const record =
     stored === undefined
       ? newDeepenRecord(
-          { ...request, parentRunKey: parent.runKey },
+          { ...request, parentRunKey: parent.runKey, plannedAreas },
           measuresOf(state, scanned.codeMap),
         )
       : reopenedDeepen(stored);

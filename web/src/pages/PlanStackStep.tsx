@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import type { PlanOptions, StackChoice } from '../api/plan-schemas.js';
+import type { PlanOptions, StackChoice, StackOffer } from '../api/plan-schemas.js';
 import { chooseLayer, chosen } from '../lib/plan-setup/choices.js';
 import { MAX_CHOICE, withAnswered, type Draft } from '../lib/plan-setup/draft.js';
 import { TYPED } from '../lib/plan-setup/own-answers.js';
@@ -20,6 +20,7 @@ import type { OptionsLoad } from './use-plan-options.js';
 
 export interface StackProps extends StepProps {
   readonly load: OptionsLoad;
+  readonly offer?: StackOffer | undefined;
   readonly waitingForConsent: boolean;
   readonly askAgain: () => void;
 }
@@ -31,7 +32,12 @@ interface LayerRowProps {
   readonly draft: Draft;
   readonly change: (next: Draft) => void;
   readonly problem: string | undefined;
+  /** RF-609: the catalogue has no option for the layer. */
+  readonly noOption: boolean;
+  readonly offer?: StackOffer | undefined;
 }
+
+type PlatformChoices = ReturnType<typeof platformChoices>;
 
 /** RF-645: the option shown as chosen, read from the saved choice so an older brief shows it too. */
 function shownOption(picked: StackChoice | undefined, options: readonly QuestionOption[]): string {
@@ -47,6 +53,11 @@ function LayerOptions(props: LayerRowProps): JSX.Element {
   const shown = draft.chosen[question] === TYPED ? TYPED : shownOption(picked, options);
   return (
     <div class="rst-plan-layer__options">
+      {props.noOption ? (
+        <p class="rst-plan-note">
+          The catalogue has no option for this layer, so only the choices below are offered.
+        </p>
+      ) : null}
       {options.map((option) => (
         <label key={option.id} class="rst-plan-layer__option">
           <input
@@ -80,10 +91,60 @@ function LayerOptions(props: LayerRowProps): JSX.Element {
   );
 }
 
+/** P7-30: the catalogue's choices for the platform a typed answer names, when it names only that. */
+function platformChoices(
+  offer: StackOffer | undefined,
+  layer: string,
+  typed: string,
+): readonly { readonly choice: string; readonly why: string }[] {
+  const text = typed
+    .trim()
+    .toLowerCase()
+    .replace(/[.!?,;:\s]+$/u, '');
+  const group = offer?.layers
+    .find((each) => each.layer === layer)
+    ?.vague.find((each) => each.words.includes(text));
+  return group?.proposals ?? [];
+}
+
+function PlatformHint(props: LayerRowProps & { readonly choices: PlatformChoices }): JSX.Element {
+  const { layer, draft, change, offered, options, choices } = props;
+  const typed = draft.stack[layer.id]?.choice ?? '';
+  return (
+    <div class="rst-plan-note" role="status">
+      <p>
+        {`"${typed.trim()}" names a platform, not a technology, so the package would treat ${layer.name} as open. Pick one:`}
+      </p>
+      {choices.map((each) => (
+        <button
+          key={each.choice}
+          type="button"
+          class="rst-button rst-button--secondary"
+          title={each.why}
+          onClick={() => {
+            const option = options.find((candidate) => candidate.title === each.choice)?.id;
+            const pick = {
+              choice: each.choice,
+              custom: false,
+              offered,
+              ...(option ? { option } : {}),
+            };
+            change(chooseLayer(draft, layer.id, pick));
+          }}
+        >
+          {each.choice}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function LayerRow(props: LayerRowProps): JSX.Element {
   const { layer, offered, draft, change, problem } = props;
   const picked = draft.stack[layer.id];
   const labelId = `stack-${layer.id}-name`;
+  const choices =
+    picked?.custom === true ? platformChoices(props.offer, layer.id, picked.choice) : [];
   return (
     <div class="rst-plan-layer" role="radiogroup" aria-labelledby={labelId}>
       <strong id={labelId} class="rst-plan-layer__name">
@@ -101,12 +162,23 @@ function LayerRow(props: LayerRowProps): JSX.Element {
           change(chooseLayer(draft, layer.id, { choice: text, custom: true, offered }));
         }}
       />
+      {picked?.custom === true && choices.length > 0 ? (
+        <PlatformHint {...props} choices={choices} />
+      ) : null}
     </div>
   );
 }
 
-const offeredOf = (options: PlanOptions | undefined, layer: string): readonly string[] =>
-  options?.stack.find((each) => each.layer === layer)?.options ?? [];
+/** The proposals shown for the layer, the recommended first: the planner's, else the catalogue's. */
+function offeredOf(
+  options: PlanOptions | undefined,
+  offer: StackOffer | undefined,
+  layer: string,
+): readonly string[] {
+  const planned = options?.stack.find((each) => each.layer === layer)?.options ?? [];
+  if (planned.length > 0) return planned;
+  return offer?.layers.find((each) => each.layer === layer)?.proposals.map((p) => p.choice) ?? [];
+}
 
 // RF-609
 export function PlanStackStep(props: StackProps): JSX.Element {
@@ -115,7 +187,7 @@ export function PlanStackStep(props: StackProps): JSX.Element {
   return (
     <PlanStepCard
       step="stack"
-      defaultText="Default: nothing chosen; each layer you skip is listed as an open question."
+      defaultText="Default: the recommended option of each layer; a layer you skip takes it."
     >
       <PlanOptionsNotice
         load={load}
@@ -124,18 +196,25 @@ export function PlanStackStep(props: StackProps): JSX.Element {
       />
       <div class="rst-plan-layers">
         <p class="rst-plan-layers__head" aria-hidden="true">
-          The first proposal is the closest to the legacy code and the other is the second proposal;
-          you can also keep the legacy technology or type your own.
+          The recommended proposal comes first, then the second proposal; you can also keep the
+          legacy technology (not offered for a workbook or an end-of-life technology) or type your
+          own.
         </p>
         {STACK_LAYERS.map((layer) => (
           <LayerRow
             key={layer.id}
             layer={layer}
-            options={questionOptions(`stack.${layer.id}`, { catalogue: props.catalogue, options })}
-            offered={offeredOf(options, layer.id)}
+            options={questionOptions(`stack.${layer.id}`, {
+              ...{ catalogue: props.catalogue, options, offer: props.offer },
+            })}
+            offered={offeredOf(options, props.offer, layer.id)}
+            noOption={
+              props.offer !== undefined && offeredOf(options, props.offer, layer.id).length === 0
+            }
             draft={draft}
             change={change}
             problem={problems[`stack.${layer.id}`]}
+            offer={props.offer}
           />
         ))}
       </div>

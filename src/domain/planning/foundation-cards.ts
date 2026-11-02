@@ -1,6 +1,7 @@
 import { planId, type PlanContent, type PlanTask } from './plan-content.js';
 import type { ModelTable } from './data-model.js';
-import { isMigrationCard } from './plan-coverage.js';
+import { cutOverText } from './cut-over-cards.js';
+import { isMigrationCard, withMigrationCard } from './plan-coverage.js';
 import type { PlanningBrief } from './planning-brief.js';
 
 // P5-42, P6-27, RF-610, RF-623, DEC-76, DEC-190: the fixed cards every plan carries (the data-access and
@@ -53,13 +54,18 @@ const skeleton: CardText = {
   probes: [],
 };
 
+const tablesOfMigrations =
+  'Given the tables of the migrations card, when the layer writes a row and reads it back, then every column comes back with the value that was written.';
+const tablesOfModel =
+  'Given the tables of the target data model, when the layer writes a row and reads it back, then every column comes back with the value that was written.';
+
 const access: CardText = {
   title: titles.access,
   invariant:
     'Every read and write of the target tables goes through the data-access layer, with values passed as parameters and never joined into a statement.',
   riskClass: 'data loss',
   acceptanceCriteria: [
-    'Given the tables of the migrations card, when the layer writes a row and reads it back, then every column comes back with the value that was written.',
+    tablesOfMigrations,
     'Given a value that holds quote characters or statement text, when the layer stores it, then it is stored as plain data and no other row changes.',
     'Given a write that fails halfway, when the layer reports the error, then none of the write is kept.',
   ],
@@ -69,6 +75,15 @@ const access: CardText = {
     'The database is not reachable => the layer reports a connection error and returns no partial result.',
   ],
 };
+
+/** P7-20: the first criterion names the migrations card only when the plan holds it. */
+function accessOf(hasMigrations: boolean): CardText {
+  const [, ...rest] = access.acceptanceCriteria;
+  return {
+    ...access,
+    acceptanceCriteria: [hasMigrations ? tablesOfMigrations : tablesOfModel, ...rest],
+  };
+}
 
 const harness: CardText = {
   title: titles.harness,
@@ -112,59 +127,6 @@ function migrationText(tables: readonly ModelTable[]): CardText {
   };
 }
 
-const cutOverTexts: Readonly<Record<Strategy, CardText>> = {
-  'strangler-fig': {
-    title: titles.cutOver,
-    invariant:
-      'Each part of the legacy system goes live on the new system through the routing step before the next part starts, and the legacy system is switched off only after the last part.',
-    riskClass: 'data loss',
-    acceptanceCriteria: [
-      'Given the routing layer between the two systems, when a request for a part that went live arrives, then the routing step sends it to the new system.',
-      'Given a part that is not live yet, when a request for it arrives, then the routing step sends it to the legacy system.',
-      'Given a part that went live and failed its checks, when the routing rule is reverted, then requests for the part reach the legacy system again.',
-      'Given the last part is live, when the legacy system is switched off, then no request is routed to it.',
-    ],
-    probes: [
-      'A request for a part that is live => it is answered by the new system.',
-      'A request for a part not yet live => it is answered by the legacy system.',
-      'The routing rule of a part is reverted => the next request for the part is answered by the legacy system.',
-      'The legacy system is switched off while a part is still routed to it => the switch-off is refused.',
-    ],
-  },
-  'parallel-change': {
-    title: titles.cutOver,
-    invariant:
-      'Both ways work until the old one is removed, users are moved over before it goes, and every step can be undone.',
-    riskClass: 'data loss',
-    acceptanceCriteria: [
-      'Given the new way beside the old one, when a user uses either, then both give the same result.',
-      'Given users moved to the new way, when a problem is found, then they can be moved back to the old way.',
-      'Given every user is on the new way, when the old way is removed, then nothing calls it any more.',
-    ],
-    probes: [
-      'The same input on the old and the new way => both give the same result.',
-      'A user is moved back to the old way => the user keeps the data written on the new way.',
-      'The old way is removed while a caller still uses it => the removal is refused and names the caller.',
-    ],
-  },
-  rewrite: {
-    title: titles.cutOver,
-    invariant:
-      'Users move once: the legacy system is frozen, the data is migrated and checked, the new system goes live, and the legacy system stays available for a return.',
-    riskClass: 'data loss',
-    acceptanceCriteria: [
-      'Given the legacy system frozen for writes, when the final data migration runs, then the row counts of every target table equal those of its legacy table.',
-      'Given the row counts match, when the new system goes live, then users reach the new system only.',
-      'Given a failed check after going live, when the return is run, then users reach the legacy system with no data lost.',
-    ],
-    probes: [
-      'A write to the legacy system after the freeze => it is refused.',
-      'A row count that differs after the final run => the go-live is refused.',
-      'The return is run after a failed check => users reach the legacy system with the data written before the freeze.',
-    ],
-  },
-};
-
 function fixedCard(text: CardText, fields: Pick<PlanTask, 'id' | 'phase' | 'dependsOn'>): PlanTask {
   return {
     ...fields,
@@ -188,7 +150,9 @@ function withCards(
   renamed: ReadonlyMap<string, string>,
 ): PlanContent {
   const notes = content.requirementNotes?.map((note) =>
-    note.kind === 'position' ? note : { ...note, task: renamed.get(note.task) ?? note.task },
+    note.kind === 'position' || note.kind === 'entries'
+      ? note
+      : { ...note, task: renamed.get(note.task) ?? note.task },
   );
   return { ...content, tasks: cards, ...(notes === undefined ? {} : { requirementNotes: notes }) };
 }
@@ -215,10 +179,13 @@ function withoutDataCards(
     fixedCard(skeleton, { id: skeletonId, phase: 1, dependsOn: [] }),
     fixedCard(harness, { id: harnessId, phase: 1, dependsOn: [skeletonId] }),
     ...moved,
-    fixedCard(cutOverTexts[strategy], {
-      ...{ id: planId('T', 3 + tasks.length), phase: content.phases.length },
-      dependsOn: [skeletonId, harnessId, ...moved.map((task) => task.id)],
-    }),
+    fixedCard(
+      { title: titles.cutOver, ...cutOverText(strategy, false) },
+      {
+        ...{ id: planId('T', 3 + tasks.length), phase: content.phases.length },
+        dependsOn: [skeletonId, harnessId, ...moved.map((task) => task.id)],
+      },
+    ),
   ];
   return withCards(content, cards, renamed);
 }
@@ -239,10 +206,20 @@ export function withFoundationCards(
   tables: readonly ModelTable[],
   hasData = true,
 ): PlanContent {
-  const tasks = content.tasks.map(unreserved);
-  if (content.phases.length === 0 || tasks.length === 0) return content;
-  if (!hasData) return withoutDataCards(content, tasks, strategy);
-  return withDataCards(content, tasks, strategy, tables);
+  if (content.phases.length === 0 || content.tasks.length === 0) return content;
+  if (!hasData) return withoutDataCards(content, content.tasks.map(unreserved), strategy);
+  // P7-20, EV-81: the data-access card waits for the migrations card, so the plan holds it whenever it has tables.
+  const migrated = content.tasks.some((task) => isMigrationCard(task))
+    ? content
+    : withMigrationCard(content, tables);
+  return withDataCards(migrated, migrated.tasks.map(unreserved), strategy, tables);
+}
+
+function accessCard(
+  hasMigrations: boolean,
+  fields: Pick<PlanTask, 'id' | 'phase' | 'dependsOn'>,
+): PlanTask {
+  return fixedCard(accessOf(hasMigrations), fields);
 }
 
 function withDataCards(
@@ -272,22 +249,25 @@ function withDataCards(
   const cards = [
     fixedCard(skeleton, { id: skeletonId, phase: 1, dependsOn: [] }),
     ...moved.slice(0, schemas),
-    fixedCard(access, { id: accessId, phase: 1, dependsOn: [skeletonId, ...schemaIds] }),
+    accessCard(schemas > 0, { id: accessId, phase: 1, dependsOn: [skeletonId, ...schemaIds] }),
     fixedCard(harness, { id: harnessId, phase: 1, dependsOn: [skeletonId, accessId] }),
     ...moved.slice(schemas),
     fixedCard(migrationText(tables), {
       ...{ id: migrationId, phase: last },
       dependsOn: [skeletonId, accessId, ...schemaIds],
     }),
-    fixedCard(cutOverTexts[strategy], {
-      ...{ id: planId('T', 5 + ordered.length), phase: last },
-      dependsOn: unique([
-        skeletonId,
-        migrationId,
-        harnessId,
-        ...moved.slice(schemas).map((task) => task.id),
-      ]),
-    }),
+    fixedCard(
+      { title: titles.cutOver, ...cutOverText(strategy, true) },
+      {
+        ...{ id: planId('T', 5 + ordered.length), phase: last },
+        dependsOn: unique([
+          skeletonId,
+          migrationId,
+          harnessId,
+          ...moved.slice(schemas).map((task) => task.id),
+        ]),
+      },
+    ),
   ];
   return withCards(content, cards, renamed);
 }

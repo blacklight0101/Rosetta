@@ -1,3 +1,6 @@
+import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
+import { noJourney } from '../../../support/journey-lookups.js';
+import { ALL_KEYS_SERVED } from '../../../support/web-role-keys.js';
 import { heldZip } from '../../../support/upload-run-fixtures.js';
 import { describe, expect, it } from 'vitest';
 import { MemoryBriefStore } from '../../../support/memory-brief-store.js';
@@ -31,6 +34,9 @@ async function setup(settings: ProjectSettings, kind: SourceKind = 'upload', oll
   const briefs = new MemoryBriefStore();
   await briefs.saveEmpty({ userId: project.userId, projectId: project.id });
   const startRun = new StartRun({
+    manifests: new MemoryRunManifestStore(),
+    journey: noJourney,
+    roleKeys: ALL_KEYS_SERVED,
     projects,
     runs: harness.runs,
     briefs,

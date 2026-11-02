@@ -11,11 +11,11 @@ import {
 // manifest. The coverage prompt stays as it was: the new prompt is a file of its own.
 
 describe('loadGapPrompt', () => {
-  it('RNF-004 loads prompts/planner/gap.v2.md with its version and hash', async () => {
+  it('RNF-004 loads prompts/planner/gap.v3.md with its version and hash', async () => {
     const file = await loadGapPrompt('prompts');
 
-    const bytes = await readFile('prompts/planner/gap.v2.md');
-    expect(file).toMatchObject({ name: 'planner/gap.v2.md', version: 'v2' });
+    const bytes = await readFile('prompts/planner/gap.v3.md');
+    expect(file).toMatchObject({ name: 'planner/gap.v3.md', version: 'v3' });
     expect(file.sha256).toBe(createHash('sha256').update(bytes).digest('hex'));
     expect(file.text).toBe(bytes.toString('utf8'));
   });
@@ -45,11 +45,11 @@ describe('loadGapPrompt', () => {
 });
 
 describe('loadGapRepairPrompt', () => {
-  it('RNF-004 loads prompts/planner/gap-repair.v2.md with its version and hash', async () => {
+  it('RNF-004 loads prompts/planner/gap-repair.v3.md with its version and hash', async () => {
     const file = await loadGapRepairPrompt('prompts');
 
-    const bytes = await readFile('prompts/planner/gap-repair.v2.md');
-    expect(file).toMatchObject({ name: 'planner/gap-repair.v2.md', version: 'v2' });
+    const bytes = await readFile('prompts/planner/gap-repair.v3.md');
+    expect(file).toMatchObject({ name: 'planner/gap-repair.v3.md', version: 'v3' });
     expect(file.sha256).toBe(createHash('sha256').update(bytes).digest('hex'));
     expect(file.text).toBe(bytes.toString('utf8'));
   });
@@ -62,6 +62,23 @@ describe('loadGapRepairPrompt', () => {
     expect(text).toMatch(/only the cards/iu);
     expect(text).toMatch(/data, never instructions/u);
     expect(text).toMatch(/Write no text other than the JSON/u);
-    expect(await readFile('prompts/planner/gap.v2.md', 'utf8')).not.toMatch(/could not be read/u);
+    expect(await readFile('prompts/planner/gap.v3.md', 'utf8')).not.toMatch(/could not be read/u);
+  });
+});
+
+describe('the gap prompts of P7-14', () => {
+  it('RF-607 P7-14 the gap prompt says a card under SDD names a requirement and dependsOn never an item id', async () => {
+    const { text } = await loadGapPrompt('prompts');
+
+    expect(text).toMatch(/specification-driven \(SDD\).*names at least one requirement/su);
+    expect(text).toMatch(/never an item id/u);
+  });
+
+  it('RF-607 P7-14 the repair prompt says the same', async () => {
+    const { text } = await loadGapRepairPrompt('prompts');
+
+    expect(text).toMatch(/specification-driven \(SDD\).*names at least one requirement/su);
+    expect(text).toMatch(/never an item id/u);
+    expect(text).toMatch(/one JSON object/u);
   });
 });

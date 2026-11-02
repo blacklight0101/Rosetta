@@ -7,7 +7,16 @@ import type {
   SnapshotUsage,
 } from '../../application/ports/run-index.js';
 import { inQueueOrder } from '../../domain/runs/queue-rules.js';
-import { endRun, reopenRun, startRun, type Run, type RunTotals } from '../../domain/runs/run.js';
+import {
+  continueRun,
+  endRun,
+  pauseRun,
+  reopenRun,
+  startRun,
+  type AreaCounts,
+  type Run,
+  type RunTotals,
+} from '../../domain/runs/run.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
 
 // Architecture section 7, RF-1108, RF-1105: the run rows in memory, for unit tests. Passes the
@@ -100,17 +109,37 @@ export class MemoryRunIndex implements RunIndex {
     runId: string,
     endState: RunEndState,
     at: EpochMs,
-    failedAreas = 0,
+    counts: AreaCounts = {},
   ): Promise<Run | undefined> {
     const run = this.runs.get(runId);
-    const ended = run === undefined ? undefined : endRun(run, endState, at, failedAreas);
+    const ended = run === undefined ? undefined : endRun(run, endState, at, counts);
     return Promise.resolve(this.keep(ended));
   }
 
-  reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {
+  // RF-432
+  pause(runId: string, counts: AreaCounts = {}): Promise<Run | undefined> {
+    const run = this.runs.get(runId);
+    return Promise.resolve(this.keep(run === undefined ? undefined : pauseRun(run, counts)));
+  }
+
+  // RF-432
+  continueAwaiting(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {
     const run = this.runs.get(runId);
     const owned = run?.userId === userId ? run : undefined;
-    return Promise.resolve(this.keep(owned === undefined ? undefined : reopenRun(owned, at)));
+    return Promise.resolve(this.keep(owned === undefined ? undefined : continueRun(owned, at)));
+  }
+
+  reopen(
+    userId: string,
+    runId: string,
+    at: EpochMs,
+    states?: readonly RunEndState[],
+  ): Promise<Run | undefined> {
+    const run = this.runs.get(runId);
+    const owned = run?.userId === userId ? run : undefined;
+    return Promise.resolve(
+      this.keep(owned === undefined ? undefined : reopenRun(owned, at, states)),
+    );
   }
 
   recordSource(runId: string, source: RunSource): Promise<Run | undefined> {

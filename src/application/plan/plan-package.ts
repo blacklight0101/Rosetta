@@ -7,6 +7,12 @@ import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
 import { copiedExamples, exampleSentencesOfAll } from '../../domain/planning/copied-example.js';
 import { settleJudgements } from '../../domain/planning/claim-judgement.js';
 import type { ApiContract } from '../../domain/planning/api-contract.js';
+import {
+  workbookOptionsFor,
+  workbookQuestions,
+  workbookSetup,
+  type WorkbookSetup,
+} from '../../domain/planning/workbook-setup.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
@@ -14,6 +20,7 @@ import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content
 import { addSecretRisks, type SecretRisks } from '../../domain/planning/secret-risks.js';
 import type { ScanFacts } from './plan-scan-facts.js';
 import { addStyleRisks, checkStyle } from '../../domain/planning/style-rules.js';
+import { judgedStyleId } from '../../domain/planning/judged-style.js';
 import { referenceTitle } from '../../domain/planning/typed-answers.js';
 import {
   excludedClaims,
@@ -21,13 +28,11 @@ import {
   type SourceCard,
 } from '../../domain/planning/plan-sources.js';
 import type { Run } from '../../domain/runs/run.js';
-import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
-import type { UnreadableItem } from '../../domain/planning/plan-draft.js';
 import { hasData } from '../../domain/planning/data-presence.js';
 import { withFoundationCards } from '../../domain/planning/foundation-cards.js';
 import { withOwnAnswerCards } from '../../domain/planning/own-answer-cards.js';
 import { withPhaseClosingCards } from '../../domain/planning/phase-closing-cards.js';
-import { placeOf } from './plan-repair.js';
+import { unreadSecretItems } from './plan-left-out.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
 import type { PlannedDocuments } from './plan-documents.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
@@ -95,51 +100,6 @@ function settledJudgements(
   return { judgements: settleJudgements(content.judgements, answered) };
 }
 
-/** P3-101: the task cards the answer left out, by position, for checks.md. */
-function taskCardItems(cards: readonly LeftOutCard[]): HandoffPackage['leftOut'] {
-  return cards.map((each) => ({
-    area: 'Task cards',
-    item: String(each.position),
-    field: each.field,
-    reason: each.reason,
-  }));
-}
-
-/** P3-126: the items of the other lists of the answer that could not be read, for checks.md. */
-function unreadableItems(items: readonly UnreadableItem[]): HandoffPackage['leftOut'] {
-  return items.map((each) => ({
-    area: 'Plan answer',
-    item: placeOf(each),
-    field: each.field,
-    reason: each.reason,
-  }));
-}
-
-/** P3-101, P3-102, P3-126: every part of the plan the package leaves out, for checks.md. */
-export function leftOutItems(documents: {
-  readonly leftOut: readonly LeftOutCard[];
-  readonly unreadable: readonly UnreadableItem[];
-  readonly dataModelProblems: PlannedDocuments['dataModelProblems'];
-}): HandoffPackage['leftOut'] {
-  return [
-    ...taskCardItems(documents.leftOut),
-    ...unreadableItems(documents.unreadable),
-    ...dataModelItems(documents.dataModelProblems),
-  ];
-}
-
-/** P3-102: the data-model parts the parser dropped, for checks.md (area "Data model"). */
-function dataModelItems(
-  problems: PlannedDocuments['dataModelProblems'],
-): HandoffPackage['leftOut'] {
-  return problems.map((each) => ({
-    area: 'Data model',
-    item: each.item,
-    field: each.field,
-    reason: each.reason,
-  }));
-}
-
 /** P3-117: the sentences of the PRD and the plan that copy an example of a planner prompt. */
 function copiedIn(
   prd: PrdContent,
@@ -164,12 +124,14 @@ function sourceOf(
 function evidenceOf(
   sources: readonly SourceCard[],
   proposal: PlanProposal | undefined,
+  workbook: WorkbookSetup | undefined,
 ): {
   supported: ReadonlySet<string>;
   cards: readonly SourceCard[];
   proposal: PlanProposal | undefined;
+  workbook: WorkbookSetup | undefined;
 } {
-  return { supported: new Set(sources.map((card) => card.id)), cards: sources, proposal };
+  return { supported: new Set(sources.map((card) => card.id)), cards: sources, proposal, workbook };
 }
 
 /** RF-609, P5-39: the clashes of the stack and, when Rosetta made any, its proposals. */
@@ -194,25 +156,12 @@ function carried(
   return { workbookFormulas, incomplete, leftOut: [...leftOut, ...unreadSecretItems(secrets)] };
 }
 
-/** P5-34: a scan that could not be read is not "no plain-text secret"; checks.md says so. */
-function unreadSecretItems(secrets: SecretRisks): HandoffPackage['leftOut'] {
-  if (secrets.unread !== true) return [];
-  return [
-    {
-      area: 'Risks',
-      item: 'Plain-text secrets',
-      field: 'scan',
-      reason:
-        'The scan could not be read, so the risks do not list the files that hold a plain-text secret. None was found and none was ruled out.',
-    },
-  ];
-}
-
 /** P5-42, P6-10, P6-21, P6-27: the plan with its fixed (no data cards when the run found no data) and phase-closing cards, with the brief's choices decided once over it. */
 function decidedOf(
   content: PlanContent,
   parts: {
     readonly brief: PlanningBrief;
+    readonly workbook: WorkbookSetup | undefined;
     readonly sources: readonly SourceCard[];
     readonly documents: Pick<PlannedDocuments, 'dataModel'> & {
       readonly proposal: PlanProposal | undefined;
@@ -225,7 +174,12 @@ function decidedOf(
   const withFixed = withPhaseClosingCards(
     withFoundationCards(content, brief.migration, tables, hasData(sources, tables)),
   );
-  const decided = decideOnce(withFixed, brief, catalogue, evidenceOf(sources, documents.proposal));
+  const decided = decideOnce(
+    withFixed,
+    brief,
+    catalogue,
+    evidenceOf(sources, documents.proposal, parts.workbook),
+  );
   // RF-645, DEC-184: the fixed cards follow an own answer, which is known by its record only now.
   return { ...decided, content: withOwnAnswerCards(decided.content, brief, decided.choices) };
 }
@@ -252,6 +206,22 @@ type PackageDocuments = PlannedDocuments &
     readonly proposal: PlanProposal | undefined;
   };
 
+/** The brief's open questions with their options, and the workbook answers when the source is one. */
+function briefPart(
+  brief: PlanningBrief,
+  catalogue: Catalogue,
+  workbook: WorkbookSetup | undefined,
+): Pick<HandoffPackage, 'briefQuestions' | 'briefOptions' | 'workbook'> {
+  return {
+    ...(workbook === undefined ? {} : { workbook }),
+    briefQuestions: [...defaultedQuestions(brief, catalogue), ...workbookQuestions(workbook)],
+    briefOptions: {
+      ...briefQuestionOptions(brief, catalogue),
+      ...workbookOptionsFor(brief, workbook),
+    },
+  };
+}
+
 // RF-601, RF-604
 export function handoffPackageOf(
   inputs: PlanInputs,
@@ -262,9 +232,12 @@ export function handoffPackageOf(
   const { prd, dataModel, flows, apiContract, ux } = documents;
   const { brief, sourceRun, project, cards, questions, upload } = inputs;
   const { cards: sources, overruled } = usableCards(cards, catalogue.claimVerbs);
-  const decided = decidedOf(content, { brief, sources, documents }, catalogue);
-  const style = principleOf(catalogue, brief.architecture.style);
-  const styleCheck = checkStyle(brief.architecture.style, decided.content.components);
+  const workbook = project.sourceKind === 'workbook' ? workbookSetup(brief) : undefined;
+  const decided = decidedOf(content, { brief, workbook, sources, documents }, catalogue);
+  // EV-73: an own answer that names a catalogue style is judged against that style.
+  const judged = judgedStyleId(brief, catalogue.styles);
+  const style = principleOf(catalogue, judged);
+  const styleCheck = checkStyle(judged, decided.content.components);
   return {
     repository: { url: project.sourceUrl, commitSha: sourceRun.commitSha },
     ...(upload === undefined ? {} : { upload }),
@@ -283,8 +256,7 @@ export function handoffPackageOf(
     ...stackFindings(brief, apiContract, catalogue, documents.proposal),
     sources,
     excluded: excludedClaims(cards),
-    briefQuestions: defaultedQuestions(brief, catalogue),
-    briefOptions: briefQuestionOptions(brief, catalogue),
+    ...briefPart(brief, catalogue, workbook),
     openQuestions: openQuestionsOf(questions, cards),
     prd,
     dataModel,
@@ -295,6 +267,7 @@ export function handoffPackageOf(
     ...carried(documents, documents.secrets),
     copiedExamples: copiedIn(prd, decided.content, documents.examples),
     grepRules: catalogue.grepRules,
+    agentModels: catalogue.agentModels,
     meaning: meaningOf(decided.content, { ...documents, sources, overruled }, catalogue),
   };
 }

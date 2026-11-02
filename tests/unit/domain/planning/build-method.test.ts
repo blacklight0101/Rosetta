@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultedQuestions } from '../../../../src/domain/planning/brief-questions.js';
 import { modelForTier } from '../../../../src/domain/planning/build-method.js';
-import {
-  buildBrief,
-  sameBrief,
-  type BriefAnswers,
-} from '../../../../src/domain/planning/planning-brief.js';
+import { sameBrief } from '../../../../src/domain/planning/brief-freshness.js';
+import { buildBrief, type BriefAnswers } from '../../../../src/domain/planning/planning-brief.js';
 import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 
 // RF-612, RF-639, DEC-176 (Q-B): the agent tool and the model of each tier in the build method.
@@ -33,10 +30,8 @@ describe('buildBrief: agent tool and models', () => {
     expect(built.defaulted).toEqual(expect.arrayContaining(tierIds));
   });
 
-  it.each([
-    ['codex', { kind: 'codex' }],
-    ['another tool', { kind: 'other', name: 'Aider' }],
-  ] as const)('RF-639 %s has no default model names', (_name, agentTool) => {
+  it('RF-639 another tool has no default model names', () => {
+    const agentTool = { kind: 'other', name: 'Aider' } as const;
     const built = brief({ aiAssisted: true, agentTool });
 
     expect(built.buildMethod).toEqual({ aiAssisted: true, agentTool });
@@ -46,7 +41,7 @@ describe('buildBrief: agent tool and models', () => {
   it('RF-639 a tier with no model name stays unnamed while the others keep theirs', () => {
     const built = brief({
       aiAssisted: true,
-      agentTool: { kind: 'codex' },
+      agentTool: { kind: 'other', name: 'Aider' },
       models: { smallest: 'mini', largest: 'max' },
     });
 
@@ -136,10 +131,19 @@ describe('defaultedQuestions: agent tool and models', () => {
     expect(middle?.answer).toContain('sonnet');
   });
 
-  it('RF-639 says a Codex tier with no model shows the tier alone and is listed in checks.md', () => {
+  it('RF-639 P7-12 names the Codex default of a tier', () => {
     const largest = questionsOf({ aiAssisted: true, agentTool: { kind: 'codex' } }).find(
       (question) => question.id === 'buildMethod.models.largest',
     );
+
+    expect(largest?.answer).toBe('The Codex default: gpt-5.');
+  });
+
+  it('RF-639 says a tier of another tool with no model shows the tier alone and is listed in checks.md', () => {
+    const largest = questionsOf({
+      aiAssisted: true,
+      agentTool: { kind: 'other', name: 'Aider' },
+    }).find((question) => question.id === 'buildMethod.models.largest');
 
     expect(largest?.answer).toMatch(/tier alone/i);
     expect(largest?.answer).toContain('checks.md');

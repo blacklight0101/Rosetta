@@ -26,7 +26,32 @@ export type RequirementNote =
       readonly task: string;
       readonly requirement: string;
       readonly kept: number;
-    };
+    }
+  /**
+   * P7-14, RF-607: under SDD the gap card `task` builds `item`, but no requirement cites a source
+   * card behind it; the card is kept without a requirement and the item needs one.
+   */
+  | { readonly kind: 'unbacked'; readonly task: string; readonly item: string }
+  /**
+   * P7-15: the package card at position `card` of the answer was kept although `mapped` entries of
+   * its list `field` were read as the requirements citing a source card id and `dropped` were dropped.
+   */
+  | {
+      readonly kind: 'entries';
+      readonly card: number;
+      readonly field: string;
+      readonly mapped: number;
+      readonly dropped: number;
+    }
+  /** P7-15: the same for the requirement ids and card ids of the gap card `task`. */
+  | {
+      readonly kind: 'cited';
+      readonly task: string;
+      readonly mapped: number;
+      readonly dropped: number;
+    }
+  /** P7-15, RF-607: under SDD the card 	ask named only ids that resolve to nothing; it is kept. */
+  | { readonly kind: 'none'; readonly task: string };
 
 /** The requirement positions the draft tasks name that are outside the list of `count` requirements. */
 // RF-627

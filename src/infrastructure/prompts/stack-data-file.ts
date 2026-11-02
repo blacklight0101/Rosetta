@@ -7,6 +7,7 @@ import { keepLegacyDefault } from '../../domain/planning/legacy-default.js';
 import { stackLayers } from '../../domain/planning/planning-brief.js';
 import type {
   KindSignal,
+  LegacyTechnology,
   StackOption,
   StackProposals,
   StackRule,
@@ -74,6 +75,19 @@ const optionSchema = z.strictObject({
     .refine((text) => !text.includes('\n'), 'must be one line'),
 });
 
+const legacySchema = z.strictObject({
+  name: z.string().trim().min(1).max(80),
+  languages: z.array(word).max(10).default([]),
+  extensions: z.array(word).max(10).default([]),
+  layers: z.array(layer).max(7),
+  endOfLife: z.boolean(),
+});
+
+const vagueSchema = z.strictObject({
+  words: z.array(word).min(1).max(20),
+  languages: z.array(word).max(10),
+});
+
 function invalid(name: string, problem: string, cause?: unknown): RosettaError {
   return new RosettaError(
     ERROR_CODES.configurationInvalid,
@@ -137,16 +151,20 @@ export function parseStackProposals(
   const shape = z.strictObject({
     signals: z.array(z.unknown()).min(1).max(20),
     options: z.array(z.unknown()).min(1).max(200),
+    legacy: z.array(z.unknown()).max(50).optional(),
+    vague: z.array(z.unknown()).max(20).optional(),
   });
   const document = shape.safeParse(documentOf(name, text));
   if (!document.success) throw invalid(name, 'must hold the lists signals and options');
   const signals: KindSignal[] = itemsOf(name, document.data.signals, signalSchema);
   const options: StackOption[] = itemsOf(name, document.data.options, optionSchema);
+  const legacy: LegacyTechnology[] = itemsOf(name, document.data.legacy ?? [], legacySchema);
   for (const option of options) {
     const known = technologies.some(
       (tech) => tech.layer === option.layer && tech.name === option.choice,
     );
     if (!known) throw invalid(name, 'proposes a technology the table of its layer does not hold');
   }
-  return { signals, options };
+  const vague = itemsOf(name, document.data.vague ?? [], vagueSchema);
+  return { signals, options, legacy, vague };
 }

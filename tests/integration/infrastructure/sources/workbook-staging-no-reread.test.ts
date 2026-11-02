@@ -19,7 +19,8 @@ import {
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof Fs>();
-  const { countStream, noteRead, byteLength } = await import('../../../support/read-counter.js');
+  const { countStream, noteRead, byteLength, notePathOfFd, forgetFd, noteFdRead } =
+    await import('../../../support/read-counter.js');
   return {
     ...actual,
     createReadStream: (...args: Parameters<typeof actual.createReadStream>) =>
@@ -28,6 +29,23 @@ vi.mock('node:fs', async (importOriginal) => {
       // eslint-disable-next-line n/no-sync -- the wrapped call itself.
       const bytes = actual.readFileSync(...args);
       noteRead(args[0], byteLength(bytes));
+      return bytes;
+    },
+    openSync: (...args: Parameters<typeof actual.openSync>) => {
+      // eslint-disable-next-line n/no-sync -- the wrapped call itself.
+      const fd = actual.openSync(...args);
+      notePathOfFd(fd, args[0]);
+      return fd;
+    },
+    closeSync: (fd: number) => {
+      forgetFd(fd);
+      // eslint-disable-next-line n/no-sync -- the wrapped call itself.
+      actual.closeSync(fd);
+    },
+    readSync: (...args: Parameters<typeof actual.readSync>) => {
+      // eslint-disable-next-line n/no-sync -- the wrapped call itself.
+      const bytes = actual.readSync(...args);
+      noteFdRead(args[0], bytes);
       return bytes;
     },
   };
@@ -62,17 +80,31 @@ describe('the read counter', () => {
     const path = join(dataDir, 'probe.bin');
     const content = Buffer.alloc(3000, 7);
     await writeFile(path, content);
-    const { createReadStream, readFileSync } = await import('node:fs');
+    const { closeSync, createReadStream, openSync, readFileSync, readSync } =
+      await import('node:fs');
     const { open } = await import('node:fs/promises');
 
     const chunks: Buffer[] = [];
-    for await (const chunk of createReadStream(path)) chunks.push(chunk as Buffer);
+    const stream: AsyncIterable<Buffer> = createReadStream(path);
+    for await (const chunk of stream) chunks.push(chunk);
     expect(Buffer.concat(chunks).equals(content)).toBe(true);
     expect(readsByPath.get(path)).toBe(content.length);
     clearReads();
 
     // eslint-disable-next-line n/no-sync -- the counter covers the sync API too.
     readFileSync(path);
+    expect(readsByPath.get(path)).toBe(content.length);
+    clearReads();
+
+    // eslint-disable-next-line n/no-sync -- the counter covers the sync descriptor API too.
+    const fd = openSync(path, 'r');
+    try {
+      // eslint-disable-next-line n/no-sync -- the counter covers the sync descriptor API too.
+      readSync(fd, Buffer.alloc(content.length), 0, content.length, 0);
+    } finally {
+      // eslint-disable-next-line n/no-sync -- the counter covers the sync descriptor API too.
+      closeSync(fd);
+    }
     expect(readsByPath.get(path)).toBe(content.length);
     clearReads();
 

@@ -1,3 +1,5 @@
+import { startRunOf } from './journey-lookups.js';
+import { testRoleKeys } from './web-role-keys.js';
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
 import type { UploadStore } from '../../src/application/ports/upload-store.js';
@@ -32,8 +34,8 @@ import { DeleteSnapshot } from '../../src/application/use-cases/delete-snapshot.
 import { ListProjectOverview } from '../../src/application/use-cases/list-project-overview.js';
 import { ListHistory } from '../../src/application/use-cases/list-history.js';
 import { ListSnapshots } from '../../src/application/use-cases/list-snapshots.js';
+import { continueRunOf } from './continue-run-of.js';
 import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
-import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { ProviderSetFactory } from '../../src/application/ports/provider-set-factory.js';
 import type { UserRepository } from '../../src/application/ports/user-repository.js';
 import { FileRunCards } from '../../src/infrastructure/cards/file-run-cards.js';
@@ -239,22 +241,24 @@ export function runServices(
   outputs: RunOutputs,
 ): ServerOptions['runs'] {
   const { projects, keys, calls, logs, clock, answers } = stores;
+  const roleKeys = testRoleKeys(stores.users, keys); // RF-431
   return {
     getRun: new GetRun({ runs: runs.runs, queue: runs.queue, files: outputs.text }),
     ...pageReads(runs.runs, outputs.text),
     subscribeRunEvents: runs.subscribe,
     stopRun: runs.stop,
+    continueRun: continueRunOf(runs, clock),
     resumeRun: new ResumeRun({
       ...{ projects, runs: runs.runs, manifests: runs.manifests, queue: runs.queue, clock },
-      problem: () => Promise.resolve(undefined),
+      ...{ roleKeys, problem: () => Promise.resolve(undefined) },
     }),
     exportZip: new ExportZip({ runs: runs.runs, archives: outputs.archives }),
     readRunFile: new ReadRunFile({ runs: runs.runs, files: outputs.files }),
     buildReport: reportOf(runs, outputs, { answers, priorCards: stores.priorCards, clock }),
     ...answerAndJourney(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
-    startRun: new StartRun({ ...runs, projects, briefs: stores.briefs }),
-    ...deepenServices(runs, { projects, keys }),
+    startRun: startRunOf({ ...runs, projects, briefs: stores.briefs, roleKeys }),
+    ...deepenServices(runs, { projects, keys, roleKeys }),
     suggestPlanOptions: planOptionsService({
       ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },
       runs: runs.runs,
@@ -263,6 +267,7 @@ export function runServices(
     estimateRun: new EstimateRun({
       ...{ projects, runs: runs.runs, scans: new FixedScans(catalogAreas), keys },
       ...{ priceTable: estimatePrices, models: NO_LISTED_MODELS, reasoningModels: () => false },
+      roleKeys,
     }),
     ...route,
   };

@@ -91,6 +91,7 @@ export type E2eAccountKind =
   | 'journey-language'
   | 'journey-admin'
   | 'journey-server'
+  | 'one-analyse'
   | 'sweep'
   | 'sweep-admin'
   | 'sweep-force'
@@ -125,6 +126,7 @@ const accountKinds: readonly E2eAccountKind[] = [
   'journey-language',
   'journey-admin',
   'journey-server',
+  'one-analyse',
   'sweep',
   'sweep-admin',
   'sweep-force',

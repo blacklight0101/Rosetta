@@ -14,12 +14,14 @@ import { FileTaskResults } from '../infrastructure/cards/file-task-results.js';
 import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
 import type { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
 import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
+import { PgJourneyRecords } from '../infrastructure/db/pg-journey-records.js';
 import type { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import type { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-store.js';
 import type { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import type { DeepenServices } from './web/deepen-routes.js';
+import type { RoleKeyDependencies } from '../application/runs/role-keys.js';
 
 // RF-006, RF-209: the use cases that go on from an ended understand run, behind the run routes:
 // Resume (the same run, after a stop) and Deepen (a new linked run, after it completed).
@@ -36,6 +38,8 @@ export interface DeepenParts {
   readonly priceTable: PriceTable;
   readonly models: ModelList;
   readonly ollamaHost: string | undefined;
+  /** RF-431: the roles' keys, checked before a Deepen or a resume is queued. */
+  readonly roleKeys: RoleKeyDependencies;
 }
 
 // RF-209
@@ -44,12 +48,13 @@ export function composeDeepen(parts: DeepenParts): DeepenServices {
   const taskResults = new FileTaskResults({ writer: parts.writer, masker: parts.masker });
   return {
     startDeepen: new StartDeepen({
-      ...{ projects, runs, manifests, submit: parts.submit },
+      ...{ projects, runs, manifests, submit: parts.submit, roleKeys: parts.roleKeys },
+      journeys: new PgJourneyRecords(parts.pool), // RF-435: a Deepen runs under the journey's amount
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),
     estimateDeepen: new EstimateDeepen({
       ...{ projects, runs, scans, priceTable: parts.priceTable, models: parts.models },
-      taskResults,
+      ...{ taskResults, manifests },
       keys: new PgProviderKeyRepository(parts.pool),
       answers: new FileAnswersFile({ writer: parts.writer, masker: parts.masker }),
       priorCards: new FilePriorCards(parts.writer),
@@ -60,7 +65,10 @@ export function composeDeepen(parts: DeepenParts): DeepenServices {
 
 /** RF-006: Resume, with what would make the resumed run fail again found first. */
 export function composeResume(
-  parts: Pick<DeepenParts, 'projects' | 'runs' | 'manifests' | 'scans' | 'writer' | 'masker'> & {
+  parts: Pick<
+    DeepenParts,
+    'projects' | 'runs' | 'manifests' | 'scans' | 'writer' | 'masker' | 'roleKeys'
+  > & {
     readonly queue: RunQueue;
     readonly clock: Clock;
     readonly ollamaHost: string | undefined;
@@ -68,7 +76,7 @@ export function composeResume(
 ): ResumeRun {
   const { projects, runs, manifests, queue, clock, scans, ollamaHost } = parts;
   return new ResumeRun({
-    ...{ projects, runs, manifests, queue, clock },
+    ...{ projects, runs, manifests, queue, clock, roleKeys: parts.roleKeys },
     problem: resumeProblemCheck({
       ...{ runs, scans },
       taskResults: new FileTaskResults({ writer: parts.writer, masker: parts.masker }),

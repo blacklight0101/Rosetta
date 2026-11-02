@@ -56,9 +56,15 @@ describe('role caps of the provider factory', () => {
       ]),
     );
     expect(verifierHeld?.reservation.role).toBe('verifier');
-    expect(kindsOf(verifierHeld?.caps ?? [])).toEqual(['role-tokens']);
+    // RF-429, DEC-193: the verifier has no role share; it is held to the run cap less the summariser part.
+    expect(kindsOf(verifierHeld?.caps ?? [])).toEqual([]);
+    expect(verifierHeld?.caps.filter((cap) => cap.source === 'reserve')).toEqual([
+      { kind: 'run-tokens', limit: 1_800_000n, source: 'reserve' },
+    ]);
   });
+});
 
+describe('role caps of the provider factory, one role at a time', () => {
   it('RF-423 a role cap of zero stops that role before any call, and the other role still answers', async () => {
     const settings = withRoleCaps({ reader: { maxCostMicros: 0, maxTokens: 0 } });
     const { harness, reader, verifier } = await setUp(settings);
@@ -72,12 +78,12 @@ describe('role caps of the provider factory', () => {
     expect(harness.stops).toEqual([]);
   });
 
-  it('RF-423 without role caps in the settings only the readers share of the run tokens applies (RF-429)', async () => {
+  it('RF-423 RF-429 DEC-193 without role caps in the settings a reader has no role cap and no share of the run tokens', async () => {
     const { harness, reader } = await setUp(base);
 
     await reader.complete(callFor('reader', 'contract-model', 1));
 
-    expect(kindsOf(harness.ledger.reservations[0]?.caps ?? [])).toEqual(['role-tokens']);
+    expect(kindsOf(harness.ledger.reservations[0]?.caps ?? [])).toEqual([]);
   });
 
   it('RF-407 a provider test belongs to no run, so no role cap applies to it', async () => {
@@ -99,7 +105,6 @@ describe('role caps of zero', () => {
     const [held] = harness.ledger.reservations;
     expect(held?.caps.filter((cap) => cap.kind.startsWith('role'))).toEqual([
       { kind: 'role-cost', limit: 0n },
-      { kind: 'role-tokens', limit: 1_400_000n, source: 'reserve' },
     ]);
     expect(harness.ledger.entries).toEqual([]);
   });

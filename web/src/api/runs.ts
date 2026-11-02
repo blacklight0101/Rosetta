@@ -26,6 +26,8 @@ export interface StartRequest {
   readonly withAnswers?: boolean;
   /** `understand` only: the completed run whose failed areas `areas` reads again (RF-208, Q-43). */
   readonly retryOf?: string;
+  /** `understand` only: the journey total the user approved on the start button (RF-430). */
+  readonly approvedAmount?: { readonly tokens: number; readonly costMicros: number };
 }
 
 /**
@@ -70,12 +72,30 @@ export async function cancelRun(client: ApiClient, runId: string): Promise<ApiRe
   return result.ok ? { ok: true, value: undefined } : result;
 }
 
-/** Queues a run that stopped at a cap, failed or was interrupted again, as the same run (RF-006). */
-// RF-006
-export async function resumeRun(client: ApiClient, runId: string): Promise<ApiResult<undefined>> {
+/**
+ * RF-432: Continue (+N) of a run waiting for its owner's approval; the server adds the N it offered
+ * to the approved amount and queues the run again.
+ */
+export async function continueRun(client: ApiClient, runId: string): Promise<ApiResult<undefined>> {
   const result = await client.request({
     method: 'POST',
-    path: `/api/runs/${encodeURIComponent(runId)}/resume`,
+    path: `/api/runs/${encodeURIComponent(runId)}/continue`,
+    schema: z.looseObject({ id: z.string() }),
+  });
+  return result.ok ? { ok: true, value: undefined } : result;
+}
+
+/** Queues a run that stopped at a cap, failed or was interrupted again, as the same run (RF-006). */
+// RF-006
+export async function resumeRun(
+  client: ApiClient,
+  runId: string,
+  overviewOnly = false,
+): Promise<ApiResult<undefined>> {
+  const result = await client.request({
+    method: 'POST',
+    // P7-26: the overview alone has its own path.
+    path: `/api/runs/${encodeURIComponent(runId)}/${overviewOnly ? 'overview' : 'resume'}`,
     schema: z.looseObject({ id: z.string() }),
   });
   return result.ok ? { ok: true, value: undefined } : result;

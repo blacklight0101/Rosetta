@@ -31,7 +31,8 @@ export interface PlanSetupActions {
   readonly back: () => void;
   /** Saves the draft, or `accepted`: the draft with the choice the page showed taken as the answer. */
   readonly saveAndContinue: (accepted?: Draft) => void;
-  readonly useDefaults: () => void;
+  /** `accepted` is the draft with the recommended options the page showed taken (P7-29). */
+  readonly useDefaults: (accepted?: Draft) => void;
 }
 
 const lastStep = STEP_IDS.length - 1;
@@ -101,6 +102,6 @@ export function usePlanSetup(
       setIndex(Math.max(0, index - 1));
     },
     saveAndContinue: (accepted) => void save('next', accepted ?? draft, draft),
-    useDefaults: () => void save('finish', draft, draft),
+    useDefaults: (accepted) => void save('finish', accepted ?? draft, draft),
   };
 }

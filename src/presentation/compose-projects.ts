@@ -5,6 +5,12 @@ import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ServerKeyPresence } from '../application/ports/server-key-presence.js';
 import { CreateProject } from '../application/use-cases/create-project.js';
+import { GitHubApi } from '../infrastructure/github/github-api.js';
+import {
+  GitHubHttpClient,
+  type FetchFunction,
+} from '../infrastructure/github/github-http-client.js';
+import { GitHubRefChecker } from '../infrastructure/github/github-ref-checker.js';
 import { GetAccountTotals } from '../application/use-cases/get-account-totals.js';
 import { GetCaps } from '../application/use-cases/get-caps.js';
 import { GetProject } from '../application/use-cases/get-project.js';
@@ -12,6 +18,10 @@ import { GetProjectCost } from '../application/use-cases/get-project-cost.js';
 import { ListProjects } from '../application/use-cases/list-projects.js';
 import { OpenWorkspace } from '../application/use-cases/open-workspace.js';
 import { GetPlanSource } from '../application/use-cases/get-plan-source.js';
+import {
+  GetStackOffer,
+  type GetStackOfferDependencies,
+} from '../application/use-cases/get-stack-offer.js';
 import { GetPlanningBrief } from '../application/use-cases/get-planning-brief.js';
 import { SavePlanningBrief } from '../application/use-cases/save-planning-brief.js';
 import { StoreUpload } from '../application/use-cases/store-upload.js';
@@ -104,7 +114,14 @@ export interface ProjectParts {
   readonly models: ModelList;
   /** Which providers the server holds a key for; the plan estimate says when a call has none. */
   readonly serverKeys: ServerKeyPresence;
+  /** `GITHUB_TOKEN`, which the ref check at create sends when set (EV-70). */
+  readonly githubToken?: string | undefined;
+  /** The fetch the ref check uses; a test gives the fake GitHub's. */
+  readonly fetch?: FetchFunction | undefined;
 }
+
+/** EV-70: a short wait, because the person is waiting on the Create button. */
+const REF_CHECK_TIMEOUT_MS = 5000;
 
 /**
  * The use cases behind PUT /api/projects/:id/source (RF-128, RF-129) and the workbook batch routes
@@ -162,6 +179,43 @@ function workbookGuidanceOf(parts: ProjectParts, runs: RunIndex, writer: NodeOut
   return (inputs: PlanInputs) => workbookGuidanceFor(deps, inputs);
 }
 
+/** P7-29: the catalogue's options of each stack layer, read without sending any code. */
+function stackOfferOf(
+  parts: ProjectParts,
+  deps: Pick<GetStackOfferDependencies, 'projects' | 'runs' | 'stack'> & {
+    readonly writer: NodeOutputWriter;
+  },
+): GetStackOffer {
+  const { projects, runs, stack, writer } = deps;
+  const { dataDir, logger, masker } = parts;
+  const manifests = new FileRunManifestStore({ writer, masker });
+  const scans = composeScanResults({ ...{ dataDir, writer, logger }, manifests });
+  return new GetStackOffer({ projects, runs, stack, scans });
+}
+
+async function createProjectOf(
+  parts: ProjectParts,
+  projects: PgProjectRepository,
+  serverSettings: PgServerSettings,
+): Promise<CreateProject> {
+  const { clock } = parts;
+  return new CreateProject({
+    ...{ projects, serverSettings, clock, refCheck: refCheckOf(parts) },
+    template: await loadProjectTemplate(parts.templatesFolder),
+    ids: new TimestampIdGenerator(clock),
+  });
+}
+
+function refCheckOf(parts: ProjectParts): GitHubRefChecker {
+  const { logger, githubToken, fetch } = parts;
+  const client = new GitHubHttpClient({
+    ...(fetch === undefined ? {} : { fetch }),
+    token: githubToken,
+    logger,
+  });
+  return new GitHubRefChecker(new GitHubApi(client, REF_CHECK_TIMEOUT_MS));
+}
+
 // RF-010; `estimatePlan` (RF-613) is the estimate before a plan run, against the caps the budget guard checks.
 export async function composeProjects(parts: ProjectParts): Promise<ProjectServices> {
   const { pool, logger, clock, masker } = parts;
@@ -174,13 +228,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
   const writer = new NodeOutputWriter({ dataDir: parts.dataDir, logger });
   const briefs = new FilePlanningBriefStore({ writer, masker });
   return {
-    createProject: new CreateProject({
-      projects,
-      serverSettings: settings,
-      template: await loadProjectTemplate(parts.templatesFolder),
-      ids: new TimestampIdGenerator(clock),
-      clock,
-    }),
+    createProject: await createProjectOf(parts, projects, settings),
     ...uploadsOf(parts, projects, runs),
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
@@ -208,7 +256,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
     }),
     catalogue,
     getPlanSource: new GetPlanSource({ projects, runs, cards: keptRunCards(writer) }),
-    // RF-428, RF-1010: the cost page and the totals pill.
+    getStackOffer: stackOfferOf(parts, { projects, runs, writer, stack: catalogue.stack }),
     getProjectCost: new GetProjectCost({ projects, costs }),
     getAccountTotals: new GetAccountTotals({ costs, caps }),
   };

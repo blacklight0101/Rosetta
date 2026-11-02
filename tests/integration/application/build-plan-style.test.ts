@@ -122,14 +122,14 @@ describe('RF-608 a component without a known role is listed', () => {
 });
 
 describe('RF-608 RNF-004 the planner is asked for the role', () => {
-  it('RF-608 RNF-004 the planner prompt the run loads is package.v10.md at version v10', async () => {
+  it('RF-608 RNF-004 the planner prompt the run loads is package.v11.md at version v11', async () => {
     const file = await loadPlannerPrompt('prompts');
 
-    expect(file).toMatchObject({ name: 'planner/package.v10.md', version: 'v10' });
+    expect(file).toMatchObject({ name: 'planner/package.v11.md', version: 'v11' });
   });
 
-  it('RF-608 package.v10.md asks for the role and its example answer carries one', async () => {
-    const prompt = await readFile('prompts/planner/package.v10.md', 'utf8');
+  it('RF-608 package.v11.md asks for the role and its example answer carries one', async () => {
+    const prompt = await readFile('prompts/planner/package.v11.md', 'utf8');
     const example = filledExampleOf(prompt);
 
     expect(prompt).toContain('role');
@@ -195,5 +195,34 @@ describe('RF-608 DEC-184 with an own architecture answer the style is only the c
     expect(architecture).toMatch(
       /not the chosen style, and at least one dependency breaks its rule/u,
     );
+  });
+});
+
+describe('EV-73 an own architecture answer that names a catalogue style is judged against it', () => {
+  const own = { typed: { architecture: 'Modular monolith with a separate reporting module' } };
+  const modules = [
+    part('Orders', 'module', ['Kernel']),
+    part('Reporting', 'module', ['Kernel']),
+    part('Kernel', 'shared kernel'),
+  ];
+
+  it('EV-73 modules are not left without a role and the reference is the named style, not Layered', async () => {
+    const files = await packageOf(own, recordingWith(modules));
+
+    const checks = plain(files['checks.md']);
+    expect(checks).not.toContain('no role of the style');
+    expect(checks).toContain('Modular monolith');
+    const architecture = plain(files['architecture.md']);
+    expect(architecture).toContain('compares the components below with the Modular monolith style');
+    expect(architecture).not.toContain('Layered');
+  });
+
+  it('EV-73 an answer that names no catalogue style keeps Layered as the reference', async () => {
+    const files = await packageOf(
+      { typed: { architecture: 'Cells, one per region.' } },
+      recordingWith([part('Pages', 'presentation')]),
+    );
+
+    expect(plain(files['architecture.md'])).toContain('with the Layered (N-tier) style');
   });
 });

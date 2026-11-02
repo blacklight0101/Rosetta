@@ -9,7 +9,8 @@ import { PlanConsentNotice } from './PlanConsentNotice.js';
 import { PrivateCodeNotice } from './PrivateCodeNotice.js';
 import { providerLabel } from './provider-choices.js';
 import { PlanEstimateCard } from './PlanEstimateCard.js';
-import { PlanRecorded } from './PlanRecorded.js';
+import { PlanQuestionsSetup } from './PlanQuestionsSetup.js';
+import { useStackOffer } from './use-stack-offer.js';
 import { PlanStepBody } from './PlanStepBody.js';
 import { PlanStepButtons } from './PlanStepButtons.js';
 import { PlanSourcePanel } from './PlanSourcePanel.js';
@@ -20,7 +21,7 @@ import { usePlanSetupLoad } from './use-plan-setup-load.js';
 // RF-605, RF-608, RF-609, RF-613, RF-614, design-system.md section 14 (Plan setup): `/projects/:projectId/
 // plan-setup`, the interview Rosetta runs before it plans. Six steps, each question with its
 // default and the reason it matters; the options of the architecture and the stack come from the
-// planner; "What I recorded" and the estimate sit under the step; "Write the package" starts `plan`.
+// planner; "What I recorded" and the estimate sit under the step; "Start the plan" starts `plan` (DEC-204).
 
 const lead =
   'Rosetta writes the hand-off package from these choices. Every question has a default; answer what you know and the rest is listed as an open question in the package.';
@@ -31,7 +32,7 @@ function OutOfDate(): JSX.Element {
       <p class="rst-callout__message">
         The package is out of date: the brief changed after it was written.
       </p>
-      <p class="rst-callout__next-step">Write the package again to use your latest answers.</p>
+      <p class="rst-callout__next-step">Start the plan again to use your latest answers.</p>
     </section>
   );
 }
@@ -110,6 +111,7 @@ function Actions({ session }: { readonly session: PlanSession }): JSX.Element {
 function PlanSetupBody(props: BodyProps): JSX.Element {
   const { projectId, catalogue, view, project, source, sourceError, sourceRunId } = props;
   const session = usePlanSession({ projectId, sourceRunId }, view, project);
+  const offer = useStackOffer(projectId, sourceRunId);
   return (
     <div class="rst-plan">
       <Head source={source} error={sourceError} />
@@ -119,6 +121,7 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
         pagePath={`/projects/${projectId}/plan-setup`}
       />
       {session.outOfDate ? <OutOfDate /> : null}
+      <PlanQuestionsSetup runId={sourceRunId} session={session} catalogue={catalogue} />
       <PlanSteps current={session.step} onOpen={session.goTo} />
       <section class="rst-plan-card">
         <PlanStepBody
@@ -128,13 +131,14 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
           change={session.change}
           problems={session.problems}
           load={session.options}
+          offer={offer}
+          workbook={project.sourceKind === 'workbook'}
           waitingForConsent={session.waitingForConsent}
           askAgain={session.askAgain}
         />
         <Actions session={session} />
       </section>
       <Consents session={session} />
-      <PlanRecorded draft={session.draft} catalogue={catalogue} />
       <PlanEstimateCard
         projectId={projectId}
         sourceRunId={sourceRunId}

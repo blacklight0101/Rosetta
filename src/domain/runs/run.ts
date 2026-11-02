@@ -36,11 +36,22 @@ export interface Run {
   readonly totals: RunTotals;
   /** RF-208: the areas of an understand run that gave no usable card; 0 for any other run. */
   readonly failedAreas: number;
+  /** P7-02: the planned areas of an understand run that no reader started (shown as "Partly read"); 0 for any other run. */
+  readonly unreadAreas: number;
+}
+
+/** RF-208, P7-02: the area counts an understand run ends with. */
+export interface AreaCounts {
+  readonly failedAreas?: number;
+  readonly unreadAreas?: number;
 }
 
 export type StartProblem = 'not-queued';
 export type ReopenProblem = 'not-resumable';
-export type EndProblem = 'already-ended' | 'queued-run-can-only-be-interrupted';
+export type EndProblem =
+  'already-ended' | 'queued-run-can-only-be-interrupted' | 'awaiting-run-can-only-be-stopped';
+export type PauseProblem = 'not-running';
+export type ContinueProblem = 'not-awaiting-approval';
 
 // RF-1108
 export function startRun(run: Run, at: EpochMs): Result<Run, StartProblem> {
@@ -53,17 +64,52 @@ export function endRun(
   run: Run,
   endState: RunEndState,
   at: EpochMs,
-  failedAreas = 0,
+  counts: AreaCounts = {},
 ): Result<Run, EndProblem> {
   if (run.queueState === 'Ended') return err('already-ended');
   if (run.queueState === 'Queued' && endState !== 'Interrupted') {
     return err('queued-run-can-only-be-interrupted');
   }
-  return ok({ ...run, queueState: 'Ended', endState, endedAt: at, failedAreas });
+  // RF-432: Stop here ends a paused run `CapReached`; a cancel or a removal ends it `Interrupted`.
+  if (
+    run.queueState === 'AwaitingApproval' &&
+    endState !== 'CapReached' &&
+    endState !== 'Interrupted'
+  ) {
+    return err('awaiting-run-can-only-be-stopped');
+  }
+  return ok({
+    ...run,
+    queueState: 'Ended',
+    endState,
+    endedAt: at,
+    failedAreas: counts.failedAreas ?? 0,
+    unreadAreas: counts.unreadAreas ?? 0,
+  });
+}
+
+/**
+ * RF-432, ADR-026: a running run that neared its approved amount waits for its owner's answer. It
+ * keeps its record, its totals and the areas no reader started; it holds no running slot.
+ */
+// RF-432
+export function pauseRun(run: Run, counts: AreaCounts = {}): Result<Run, PauseProblem> {
+  if (run.queueState !== 'Running') return err('not-running');
+  return ok({ ...run, queueState: 'AwaitingApproval', unreadAreas: counts.unreadAreas ?? 0 });
+}
+
+/** RF-432, RF-006: Continue queues the paused run again at the end of the queue, as a resume does. */
+// RF-432
+export function continueRun(run: Run, at: EpochMs): Result<Run, ContinueProblem> {
+  if (run.queueState !== 'AwaitingApproval') return err('not-awaiting-approval');
+  return ok({ ...run, queueState: 'Queued', unreadAreas: 0, queuedAt: at, startedAt: null });
 }
 
 /** RF-006: the end states a resume can start from; a `Completed` run has nothing left to do. */
 export const RESUMABLE_END_STATES: readonly RunEndState[] = ['CapReached', 'Failed', 'Interrupted'];
+
+/** P7-26: the end states from which the overview alone can be written again. */
+export const OVERVIEW_END_STATES: readonly RunEndState[] = ['CapReached', 'Completed'];
 
 /**
  * RF-006: an ended run that stopped at a cap, failed or was interrupted queues again as the same
@@ -71,14 +117,19 @@ export const RESUMABLE_END_STATES: readonly RunEndState[] = ['CapReached', 'Fail
  * it ends.
  */
 // RF-006
-export function reopenRun(run: Run, at: EpochMs): Result<Run, ReopenProblem> {
+export function reopenRun(
+  run: Run,
+  at: EpochMs,
+  states: readonly RunEndState[] = RESUMABLE_END_STATES,
+): Result<Run, ReopenProblem> {
   if (run.queueState !== 'Ended' || run.endState === null) return err('not-resumable');
-  if (!RESUMABLE_END_STATES.includes(run.endState)) return err('not-resumable');
+  if (!states.includes(run.endState)) return err('not-resumable');
   return ok({
     ...run,
     queueState: 'Queued',
     endState: null,
     failedAreas: 0,
+    unreadAreas: 0,
     queuedAt: at,
     startedAt: null,
     endedAt: null,

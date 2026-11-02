@@ -1,3 +1,5 @@
+import { journeyLookupOf } from '../application/runs/approved-journey.js';
+import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
@@ -12,6 +14,10 @@ import { RecordAnswers } from '../application/use-cases/record-answers.js';
 import { ReopenQuestion } from '../application/use-cases/reopen-question.js';
 import { ReadRunFile } from '../application/use-cases/read-run-file.js';
 import { StartRun } from '../application/use-cases/start-run.js';
+import {
+  ContinueRun,
+  type ContinueRunDependencies,
+} from '../application/use-cases/continue-run.js';
 import { StopRun } from '../application/use-cases/stop-run.js';
 import { SubmitRun } from '../application/use-cases/submit-run.js';
 import { SubscribeRunEvents } from '../application/use-cases/subscribe-run-events.js';
@@ -22,6 +28,7 @@ import { FileAnswersFile } from '../infrastructure/cards/answers-file.js';
 import { RosettaError } from '../domain/errors/rosetta-error.js';
 import { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
 import { composeEstimateRun } from './compose-estimate.js';
+import { PgJourneyRecords } from '../infrastructure/db/pg-journey-records.js';
 import { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { FanOutSink } from '../infrastructure/events/fan-out-sink.js';
@@ -137,32 +144,45 @@ interface ServiceParts {
   readonly observability: ObservabilityServices;
 }
 
-/** The use cases behind the run routes (RF-003, RF-1006, RF-1108, RF-143). */
+/** RF-1108, RF-432: Stop (also Stop here of a paused run) and Continue (+N). */
+function answerServices(
+  deps: ContinueRunDependencies & { readonly queue: RunQueue },
+): Pick<RunServices, 'stopRun' | 'continueRun'> {
+  return { stopRun: new StopRun({ queue: deps.queue }), continueRun: new ContinueRun(deps) };
+}
+
+/**
+ * The use cases behind the run routes (RF-003, RF-1006, RF-1108, RF-143). RF-432: the server sets the
+ * approved amount of a start; RF-011: the journey record keeps the one amount of all its steps.
+ */
 function runServices(service: ServiceParts): RunServices {
   const { parts, runs, log, broadcaster, projects, submitRun, queue, scans, answers } = service;
   const { writer, manifests, observability } = service;
   const cards = keptPriorCards(writer);
   const ollamaHost = ollamaHostOf(parts.ollamaUrl);
+  // RF-431: every start path checks the roles' keys before a run is queued.
+  const roleKeys = { users: new PgUserRepository(parts.pool), keys: parts.keySources };
+  const estimateRun = composeEstimateRun(parts, { projects, runs, scans, roleKeys });
   return {
     startRun: new StartRun({
-      projects,
-      runs,
+      ...{ projects, runs, manifests, submit: submitRun, roleKeys },
+      ...{ journey: journeyLookupOf(estimateRun), journeys: new PgJourneyRecords(parts.pool) },
       briefs: new FilePlanningBriefStore({ writer, masker: parts.masker }),
-      submit: submitRun,
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),
-    estimateRun: composeEstimateRun(parts, { projects, runs, scans }),
+    estimateRun,
     getRun: new GetRun({ runs, queue, files: new FileRunTextFiles(writer) }),
     getJourney: composeJourney({ ...service, priorCards: cards }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
-    stopRun: new StopRun({ queue }),
+    ...answerServices({ runs, manifests, queue, clock: parts.clock }),
     resumeRun: composeResume({
       ...{ projects, runs, manifests, queue, scans, writer },
-      ...{ clock: parts.clock, masker: parts.masker, ollamaHost },
+      ...{ clock: parts.clock, masker: parts.masker, ollamaHost, roleKeys },
     }),
     ...composeDeepen({
       ...{ pool: parts.pool, projects, runs, manifests, scans, submit: submitRun, writer },
       ...{ masker: parts.masker, priceTable: parts.priceTable, models: parts.models, ollamaHost },
+      roleKeys,
     }),
     exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),
     readRunFile: new ReadRunFile({ runs, files: new NodeRunFileReader(parts.dataDir) }),
