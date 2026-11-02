@@ -7235,7 +7235,7 @@ never edit the same file; Depends on carries the order where they would.
 - **Size**: L
 - **Depends on**: P7-34, P7-25, P7-26
 - **Gate**: owner (DEC-204)
-- **Status**: Todo
+- **Status**: Done (#1119)
 - **Reads**: `web/src/pages/RunningBody.tsx`, `EndedBody.tsx`, `PlanNext.tsx`, the journey strip of the plan run ("Journey from code to package"), the Deepen start, the history page, RF-209, RF-1002, RF-1015, ADR-027.
 - **Do**: red tests first.
   - The journey strip shows on the project page and on every run page: each step with its state and cost, the current one marked, each one a link.
