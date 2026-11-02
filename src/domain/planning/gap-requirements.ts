@@ -1,3 +1,4 @@
+import { isModuleItem } from './module-coverage.js';
 import type { PlanContent } from './plan-content.js';
 import type { RequirementNote } from './requirement-notes.js';
 import type { Sources } from './requirement-alignment.js';
@@ -8,7 +9,8 @@ import type { Sources } from './requirement-alignment.js';
 // taken from what it builds: every requirement that cites a source card behind one of its items.
 // When its items have source cards but no requirement cites one, the card is kept without a
 // requirement and each item is noted for checks.md as one that needs a requirement. Only a card
-// whose items have no source card at all, so nothing to derive, is refused.
+// whose items have no source card at all, so nothing to derive, is refused, unless it builds a module of
+// the source or its deployment material (P8-06): that card is kept with the items noted.
 
 export interface GapRequirements {
   readonly requirements: readonly string[];
@@ -29,7 +31,8 @@ export function gapRequirements(
   const as = { requirements: listed, derived: [], unbacked: [] };
   if (options.specificationDriven !== true || listed.length > 0) return as;
   const behind = new Set(builds.flatMap((id) => [...(options.itemSources?.get(id) ?? [])]));
-  if (behind.size === 0) return undefined;
+  // P8-06: a module the understand run did not read has no source card; its card is kept.
+  if (behind.size === 0 && !builds.some(isModuleItem)) return undefined;
   const derived = content.requirements
     .filter((each) => each.sources.some((card) => behind.has(card)))
     .map((each) => each.id);

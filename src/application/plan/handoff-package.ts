@@ -7,6 +7,8 @@ import type { RestatedDecision } from '../../domain/planning/brief-restated.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
 import type { AgentModelMaps } from '../../domain/planning/build-method.js';
 import type { GrepRules } from '../../domain/planning/grep-rules.js';
+import type { ModuleReason } from '../../domain/planning/module-coverage.js';
+import type { SourceModules } from '../../domain/planning/source-modules.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
 import type { StackClash } from '../../domain/planning/stack-rules.js';
 import type { StyleCheck } from '../../domain/planning/style-rules.js';
@@ -130,4 +132,8 @@ export interface HandoffPackage {
   readonly agentModels: AgentModelMaps;
   /** P5-43, RF-602: where the plan changed the meaning of its claims; checks.md lists it, the PRD marks proposed roles. */
   readonly meaning?: MeaningCheck | undefined;
+  /** P8-06, RF-601: the modules and deployment material of the scan; absent when no scan was read. */
+  readonly modules?: SourceModules | undefined;
+  /** P8-06: why each module or the deployment material has no task card, for checks.md. */
+  readonly moduleReasons?: readonly ModuleReason[] | undefined;
 }

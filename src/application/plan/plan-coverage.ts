@@ -7,6 +7,7 @@ import {
   type CoverageDocuments,
   type CoverageReport,
 } from '../../domain/planning/plan-coverage.js';
+import { moduleItems } from '../../domain/planning/module-coverage.js';
 import { alignRequirements } from '../../domain/planning/requirement-alignment.js';
 import { withRequirementFeatures } from '../../domain/planning/requirement-features.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
@@ -53,7 +54,8 @@ export async function planCoverage(
   call: PlannerCall,
   input: CoverageInput,
 ): Promise<PlannedCoverage> {
-  const items = coverageItems(input.documents);
+  // P8-06: the modules of the source and its deployment material are items as well.
+  const items = [...coverageItems(input.documents), ...moduleItems(input.documents.modules)];
   const { tasks } = input.content;
   if (items.length === 0 || tasks.length === 0) {
     return {
@@ -80,6 +82,13 @@ export function coverageWarnings(planned: PlannedCoverage): string[] {
           'The planner answer for the task card links could not be read; no task card links an item.',
         ]
       : [];
+  const modules = planned.report.modules.length;
+  const untouched =
+    modules === 0
+      ? []
+      : [
+          `${String(modules)} module(s) of the source or its deployment material are touched by no task card; checks.md names each with the reason.`,
+        ];
   const count = planned.report.uncovered.length;
   const gap =
     count === 0
@@ -87,5 +96,5 @@ export function coverageWarnings(planned: PlannedCoverage): string[] {
       : [
           `${String(count)} item(s) of the package are built by no task card; they are listed in checks.md and the run is not complete.`,
         ];
-  return [...unreadable, ...gap];
+  return [...unreadable, ...gap, ...untouched];
 }

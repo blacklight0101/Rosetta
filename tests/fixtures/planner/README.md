@@ -27,3 +27,7 @@ Hand-written data-model answers of the failing kind, shaped like the defects of 
 ## data-model-site-sheets.json (P7-32)
 
 A hand-written data-model answer for synthetic cards (`siteSheetCards` in `tests/support/data-model-defect-cards.ts`): three per-site sheets of the same four columns (`access_point_site_a`, `_b`, `_c`) and a `tag_list` table with other columns. It describes no real application, workbook or organisation, and copies no text from anywhere.
+
+## eshop-modules-scan.json and eshop-recorded-plans.json (P8-06)
+
+`eshop-modules-scan.json` is the file list of the scan of the public repository `dotnet-architecture/eShopModernizing` (MIT licence, Microsoft) at commit `63bc9ec4414d7e281dc9f9d7bdcf70030950457d`: each file's path, language, line count and artefact kinds, and no file content. `eshop-recorded-plans.json` holds, for the two recorded eShop plans of the evaluation of 2026-11-02 (Haiku and Ollama, EV-32), the task cards with their requirements and expected files, the requirements with their source cards, and the paths those source cards cite; the titles were written by the models from that public repository. No employer text.
