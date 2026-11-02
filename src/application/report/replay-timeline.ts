@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { formatUsd, microUsd } from '../../domain/budget/money.js';
 import type { RunEvent } from '../../domain/runs/run-event.js';
 import { mergedStep, withMergedClaimIds } from './claim-id-moves.js';
-import { answeredStep, skippedStep } from './question-steps.js';
+import { questionHandlers } from './question-steps.js';
 import { readersStoppedStep } from './readers-stopped-step.js';
 import type { ReplayAgent, ReplayKind, ReplayModel, ReplayStep } from './replay-model.js';
 
@@ -178,8 +178,7 @@ const closingHandlers: Readonly<Record<string, Handler>> = {
   ),
   'budget.readersStopped': readersStoppedStep,
   'cards.merged': mergedStep,
-  'question.answered': answeredStep,
-  'question.skipped': skippedStep,
+  ...questionHandlers,
   'run.ended': reading(z.object({ endState: text }), (v) => ({
     kind: 'run',
     label: 'Run ended',

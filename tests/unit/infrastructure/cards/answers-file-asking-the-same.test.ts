@@ -69,3 +69,24 @@ describe('answers.md and a question asked again in other words', () => {
     expect(writer.files.get(path)?.match(/^## /gmu)).toHaveLength(2);
   });
 });
+
+describe('EV-57 P8-05 the merges of answers.md', () => {
+  it('answers each merge with the held question and the run that asked it', async () => {
+    const { answers } = setup();
+    expect(await answers.addQuestions(project, [question()])).toEqual([]);
+
+    const merged = await answers.addQuestions(project, [
+      question({ ...later, question: 'is a CATALOG item with zero stock still shown' }),
+      question({ cardId: 'OQ-008', runKey: later.runKey, question: 'Who may cancel an order?' }),
+    ]);
+
+    expect(merged).toEqual([
+      {
+        ...{ keptCardId: 'OQ-001', keptRunKey: '20261012-100000-understand' },
+        ...{ keptQuestion: 'Is a catalog item with zero stock still shown?' },
+        ...{ mergedCardId: 'OQ-007', mergedRunKey: later.runKey },
+        mergedQuestion: 'is a CATALOG item with zero stock still shown',
+      },
+    ]);
+  });
+});

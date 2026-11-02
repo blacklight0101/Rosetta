@@ -25,7 +25,7 @@ import {
   announceRoundStart,
   announceStop,
 } from './deepen-events.js';
-import { hasAnswerTasks, markUsedAnswers } from './deepen-answers.js';
+import { hasAnswerTasks, logAnswersCap, markUsedAnswers } from './deepen-answers.js';
 import { claimsOfThisRun } from './deepen-room.js';
 import { mergeDuplicates } from './deepen-consolidation.js';
 import {
@@ -84,6 +84,7 @@ async function nextRound(
   const before = snapshotOf(state, codeMap);
   const round = nextRoundNumber(record);
   await announceRoundStart(parts, { round, maxRounds: record.maxRounds, plan });
+  if (round === 1) await logAnswersCap(parts);
   const end = await runRound(parts, state, {
     ...{ plan, round },
     ownClaims: claimsOfThisRun(record, []),
