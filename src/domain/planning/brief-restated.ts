@@ -3,7 +3,12 @@ import { briefDecisions, type BriefChoices, type BriefEvidence } from './brief-d
 import { layerNames } from './brief-questions.js';
 import { migrationStrategyInfo } from './migration-strategy.js';
 import { hasPhrase, isVersion, wordsOf } from './restated-words.js';
-import { restatedBySubject, sayingTyped, type BriefNames } from './restated-subject.js';
+import {
+  namingChoice,
+  restatedBySubject,
+  sayingTyped,
+  type BriefNames,
+} from './restated-subject.js';
 import { typedAnswers } from './typed-answers.js';
 import type { ClaimJudgement } from './claim-judgement.js';
 import { planId, type PlanContent, type PlanDecision } from './plan-content.js';
@@ -154,6 +159,8 @@ function restates(
   if (sayingTyped(decision.title, brief.typedStyle, brief.style)) return { kind: 'style' };
   if (sayingTyped(decision.title, brief.typedMigration, brief.migration))
     return { kind: 'migration' };
+  const naming = namingChoice(decision.title, decision.decision, brief);
+  if (naming !== undefined) return { kind: naming };
   const found = restatedBySubject(decision.title, decision.decision, brief);
   if (found === undefined) return undefined;
   return layerOf(found.layer, { kind: found.subject === 'style' ? 'style' : 'migration' });
