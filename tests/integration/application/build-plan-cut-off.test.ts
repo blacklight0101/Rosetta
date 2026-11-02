@@ -131,7 +131,7 @@ describe('BuildPlan: what a cut-off answer is not', () => {
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
-    expect(h.providers.requests()).toHaveLength(2);
+    expect(h.providers.requests()).toHaveLength(3);
     expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1803' }));
     expect(h.s.logger.entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1805' }));
   });
@@ -143,7 +143,7 @@ describe('BuildPlan: what a cut-off answer is not', () => {
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
-    expect(h.providers.requests()).toHaveLength(1);
+    expect(h.providers.requests()).toHaveLength(2);
     expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1803' }));
   });
 });
