@@ -96,9 +96,10 @@ test(
       await page.getByRole('link', { name: 'Start page' }).click();
       await pill.getByRole('link', { name: /Your total/u }).click();
       await expect(page.getByRole('heading', { name: 'Project cost', level: 1 })).toBeVisible();
-      await expect(page.getByRole('table', { name: 'By model' }).getByRole('row')).not.toHaveCount(
-        1,
-      );
+      // P8-16: a row for the model the spend was metered on, not just any row.
+      await expect(
+        page.getByRole('table', { name: 'By model' }).getByRole('row', { name: /gpt-5-nano/u }),
+      ).not.toHaveCount(0);
       await expect(page.getByRole('table', { name: 'By run' }).getByRole('link')).not.toHaveCount(
         0,
       );

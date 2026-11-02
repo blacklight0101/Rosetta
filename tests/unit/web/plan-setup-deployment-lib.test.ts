@@ -99,7 +99,13 @@ describe('the defaulted list', () => {
 describe('what I recorded for the hosted question', () => {
   it('P6-26 says the application will be hosted or will not be', () => {
     expect(contextLine({ ...unanswered, deployment: 'hosted' })?.value).toContain('will be hosted');
-    expect(contextLine({ ...unanswered, deployment: 'hosted' })?.value).not.toContain('answered');
+    // P8-16: with no other answer the line is the hosting words alone, not "0 of 5 answered; ...".
+    expect(contextLine({ ...unanswered, deployment: 'hosted' })?.value).toBe(
+      'the new application will be hosted',
+    );
+    expect(contextLine({ ...unanswered, deployment: 'not-hosted' })?.value).toBe(
+      'the new application will not be hosted',
+    );
     expect(contextLine({ ...unanswered, deployment: 'not-hosted' })?.value).toContain(
       'will not be hosted',
     );

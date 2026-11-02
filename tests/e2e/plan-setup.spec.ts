@@ -14,6 +14,7 @@ import {
 } from './support/plan-setup-page.js';
 import { accountFor } from './support/seed.js';
 import { leaveAPackage } from './support/seed-plan.js';
+import { seededQuestions, seedThreeOpenQuestions } from './support/seed-questions.js';
 import { signInAs } from './support/sign-in.js';
 
 // RF-605, RF-606, RF-608, RF-609, RF-610, RF-611, RF-612, RF-613, DEC-72, DEC-86: the Plan setup page,
@@ -25,6 +26,8 @@ import { signInAs } from './support/sign-in.js';
 test.describe.configure({ mode: 'serial' });
 
 let account = '';
+/** The UUID of the understand run of the first test, which the one-click test gives its questions. */
+let understandRun = '';
 
 test.beforeEach(async ({ context }, info) => {
   const credentials = accountFor('plan', info.project.name);
@@ -38,6 +41,7 @@ test('RF-605 after an understand run Plan setup asks six groups of questions, ea
   // A scan, then an understand run: longer than the default 30 s.
   test.setTimeout(180_000);
   await understandCatalog(page);
+  understandRun = new URL(page.url()).pathname.split('/').at(-1) ?? '';
   await openStartPage(page);
 
   await openPlanSetup(page);
@@ -173,17 +177,36 @@ test('RF-435 RF-432 P8-01 the plan estimate says the plan runs under what is lef
 test('RF-647 one click accepts the recommended answers and the plan waits for Start the plan', async ({
   page,
 }) => {
+  expect(understandRun).not.toBe('');
+  await openStartPage(page);
+  // P8-16: the recorded run asks nothing, so the run gets the three open questions of the case.
+  await seedThreeOpenQuestions(page, understandRun);
   await openStartPage(page);
   await openPlanSetup(page);
   const screen = page.getByRole('region', { name: 'Questions and plan setup' });
   await expect(screen).toBeVisible();
+  const questions = screen.getByTestId('open-question');
+  await expect(questions).toHaveCount(seededQuestions.length);
 
   const saved = page.waitForResponse(
     (response) =>
       response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
   );
+  const answered: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() === 'PUT' && request.url().endsWith('/answers')) {
+      answered.push(request.postData() ?? '');
+    }
+  });
   await screen.getByRole('button', { name: 'Accept the recommended answers' }).click();
   expect((await saved).ok()).toBe(true);
+
+  // One click answered all three questions, each on its recommended option.
+  expect(answered).toHaveLength(seededQuestions.length);
+  for (const [index, body] of answered.entries()) {
+    expect(body).toContain(`OQ-00${String(index + 1)}`);
+    expect(body).toContain('"chosen":1');
+  }
 
   await expect(estimate(page)).toContainText(/(\$[\d.]+|[\d,]+ tokens) likely/u);
   await expect(writeButton(page)).toBeEnabled();
