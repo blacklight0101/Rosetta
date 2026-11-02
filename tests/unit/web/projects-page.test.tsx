@@ -88,16 +88,16 @@ it('RF-010 creates a project from the URL with the CSRF token and lists it', asy
 
   create(demoUrl);
 
-  await screen.findByText('octo/demo');
+  // EV-87, P8-10: the new project opens its page, where the free scan starts (RF-160).
+  await waitFor(() => {
+    expect(window.location.pathname).toBe('/projects/p-1');
+  });
   expect(calls.at(-1)).toEqual({
     method: 'POST',
     path: '/api/projects',
     csrf: 'csrf-0',
     body: { url: demoUrl },
   });
-  expect(screen.getByRole('status').textContent).toContain('Created octo/demo');
-  expect(urlField().value).toBe('');
-  expect(screen.getAllByRole('row')).toHaveLength(3);
 });
 
 it('RF-010 the same URL again opens the existing project and adds nothing', async () => {

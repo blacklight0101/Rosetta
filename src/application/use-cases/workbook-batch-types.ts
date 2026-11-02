@@ -43,10 +43,13 @@ export interface WorkbookBatchSummary {
 /** RF-159: where a batch is. The last two are its outcomes, kept for a while for the page to read. */
 export type BatchPhase = 'open' | 'processing' | 'stored' | 'refused';
 
+/** EV-88: what the batch of a project answers when it holds none (a state, not a 404). */
+type CurrentPhase = BatchPhase | 'none';
+
 /** RF-159, DEC-183: what the page asks for every second while a batch is processed. */
 export interface BatchState {
   readonly batchId: string;
-  readonly phase: BatchPhase;
+  readonly phase: CurrentPhase;
   /** The workbooks the batch holds. */
   readonly files: number;
   /** Since the finish was accepted, until the work ended; 0 while the batch is open. */

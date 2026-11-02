@@ -55,8 +55,8 @@ describe('the run queue and one run per user', () => {
   it('RF-1108 keeps a user to one running run even when slots are free', async () => {
     const h = createRunHarness({ maxRunning: 3 });
 
-    const first = await h.start(userAmy);
-    const second = await h.start(userAmy);
+    const first = await h.start(userAmy, 'understand');
+    const second = await h.start(userAmy, 'understand');
 
     expect(h.executor.startedKeys).toEqual([first.runKey]);
     expect(await h.queue.positionOf(second.id)).toBe(1);
@@ -64,9 +64,9 @@ describe('the run queue and one run per user', () => {
 
   it('RF-1108 lets the next user go ahead of a user whose second run has to wait', async () => {
     const h = createRunHarness({ maxRunning: 2 });
-    const amyFirst = await h.start(userAmy);
-    const amySecond = await h.start(userAmy);
-    const bobRun = await h.start(userBob);
+    const amyFirst = await h.start(userAmy, 'understand');
+    const amySecond = await h.start(userAmy, 'understand');
+    const bobRun = await h.start(userBob, 'understand');
 
     expect(h.executor.startedKeys).toEqual([amyFirst.runKey, bobRun.runKey]);
     expect(await h.queue.positionOf(amySecond.id)).toBe(1);
@@ -74,8 +74,8 @@ describe('the run queue and one run per user', () => {
 
   it('RF-1108 starts the same user next run once the first one has ended', async () => {
     const h = createRunHarness({ maxRunning: 2 });
-    const first = await h.start(userAmy);
-    const second = await h.start(userAmy);
+    const first = await h.start(userAmy, 'understand');
+    const second = await h.start(userAmy, 'understand');
 
     h.executor.settle(first.id, { endState: 'Completed' });
     await h.ended(first);
@@ -83,6 +83,36 @@ describe('the run queue and one run per user', () => {
     await vi.waitFor(() => {
       expect(h.executor.startedKeys).toEqual([first.runKey, second.runKey]);
     });
+  });
+});
+
+describe('the run queue and the free scan', () => {
+  it('RF-1108 EV-91 starts a scan while a paid run of the same user is running', async () => {
+    const h = createRunHarness({ maxRunning: 2 });
+    const paid = await h.start(userAmy, 'understand');
+
+    const scan = await h.start(userAmy, 'scan');
+
+    expect(h.executor.startedKeys).toEqual([paid.runKey, scan.runKey]);
+    expect(await h.queue.positionOf(scan.id)).toBeUndefined();
+  });
+
+  it('RF-1108 EV-91 a running scan does not hold back the next paid run of the user', async () => {
+    const h = createRunHarness({ maxRunning: 2 });
+    const scan = await h.start(userAmy, 'scan');
+
+    const paid = await h.start(userAmy, 'understand');
+
+    expect(h.executor.startedKeys).toEqual([scan.runKey, paid.runKey]);
+  });
+
+  it('RF-1108 EV-91 still keeps a user to one running paid run', async () => {
+    const h = createRunHarness({ maxRunning: 3 });
+    const first = await h.start(userAmy, 'understand');
+    const second = await h.start(userAmy, 'understand');
+
+    expect(h.executor.startedKeys).toEqual([first.runKey]);
+    expect(await h.queue.positionOf(second.id)).toBe(1);
   });
 });
 

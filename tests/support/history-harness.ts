@@ -40,9 +40,9 @@ export async function createHistoryHarness(): Promise<HistoryHarness> {
   const userId = amyUser.account.id;
   const project = await test.projects.find(userId, projectId);
   if (project === undefined) throw new Error('The project was not stored');
-  const submit = async (): Promise<Run> => {
+  const submit = async (stage: 'scan' | 'understand' = 'scan'): Promise<Run> => {
     const actor = actorOf(amyUser.account);
-    const outcome = await test.runs.submit.execute({ actor, project, stage: 'scan', options: {} });
+    const outcome = await test.runs.submit.execute({ actor, project, stage, options: {} });
     if (!outcome.ok) throw new Error('The run was not accepted');
     return outcome.value.run;
   };
@@ -58,7 +58,8 @@ export async function createHistoryHarness(): Promise<HistoryHarness> {
   test.runs.executor.settle(first.id, { endState: 'Completed' });
   const done = await test.runs.ended(first);
   test.clock.advance(60_000);
-  const live = await submit();
+  // A paid run: a scan is outside the user's one-run rule (EV-91), so only this one makes the next wait.
+  const live = await submit('understand');
   await vi.waitFor(
     () => {
       if (test.runs.executor.started.length < 2) throw new Error('The second run has not started');

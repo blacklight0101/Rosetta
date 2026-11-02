@@ -67,14 +67,14 @@ export const workbookRows: Readonly<Record<string, readonly Probe[]>> = {
     {
       method: 'GET',
       url: (context: Context) => `${batches(context)}/current`,
-      expected: ownerOnly(404),
+      expected: ownerOnly(200),
     },
   ],
   'HEAD /api/projects/:id/source/batches/current': [
     {
       method: 'HEAD',
       url: (context: Context) => `${batches(context)}/current`,
-      expected: ownerOnly(404),
+      expected: ownerOnly(200),
     },
   ],
   'HEAD /api/projects/:id/source/batches/:batchId': [

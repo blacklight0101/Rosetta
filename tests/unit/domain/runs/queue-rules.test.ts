@@ -29,8 +29,8 @@ describe('runsToStart', () => {
   });
 
   it('RF-1108 starts at most one run per user and lets the next user go ahead', () => {
-    const amyFirst = sampleRun({ userId: amy });
-    const amySecond = sampleRun({ userId: amy });
+    const amyFirst = sampleRun({ userId: amy, stage: 'understand' });
+    const amySecond = sampleRun({ userId: amy, stage: 'understand' });
     const bobRun = sampleRun({ userId: bob });
 
     const chosen = runsToStart([amyFirst, amySecond, bobRun], [], 3);
@@ -39,8 +39,8 @@ describe('runsToStart', () => {
   });
 
   it('RF-1108 does not start a second run of a user who already has one running', () => {
-    const running = runningRun({ userId: amy });
-    const waiting = sampleRun({ userId: amy });
+    const running = runningRun({ userId: amy, stage: 'understand' });
+    const waiting = sampleRun({ userId: amy, stage: 'understand' });
     const other = sampleRun({ userId: bob });
 
     expect(runsToStart([waiting, other], [running], 3)).toEqual([other]);
@@ -77,5 +77,28 @@ describe('queuePositions', () => {
     const positions = queuePositions([third, first, second]);
 
     expect([first, second, third].map((run) => positions.get(run.id))).toEqual([1, 2, 3]);
+  });
+});
+
+describe('runsToStart and the free scan', () => {
+  it('RF-1108 EV-91 starts a scan of a user whose paid run is running', () => {
+    const running = runningRun({ userId: amy, stage: 'understand' });
+    const scan = sampleRun({ userId: amy, stage: 'scan' });
+
+    expect(runsToStart([scan], [running], 2)).toEqual([scan]);
+  });
+
+  it('RF-1108 EV-91 a running scan does not make its user busy for a paid run', () => {
+    const running = runningRun({ userId: amy, stage: 'scan' });
+    const paid = sampleRun({ userId: amy, stage: 'understand' });
+
+    expect(runsToStart([paid], [running], 2)).toEqual([paid]);
+  });
+
+  it('RF-1108 EV-91 a scan still counts against the limit of running runs', () => {
+    const running = runningRun({ userId: amy, stage: 'understand' });
+    const scan = sampleRun({ userId: amy, stage: 'scan' });
+
+    expect(runsToStart([scan], [running], 1)).toEqual([]);
   });
 });

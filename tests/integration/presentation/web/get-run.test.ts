@@ -29,8 +29,8 @@ async function setup(): Promise<Setup> {
   current = test;
   const amyUser = await addUser(test, { userName: 'amy' });
   const bobUser = await addUser(test, { userName: 'bob' });
-  const running = await test.runs.start(actorOf(amyUser.account));
-  const queued = await test.runs.start(actorOf(amyUser.account));
+  const running = await test.runs.start(actorOf(amyUser.account), 'understand');
+  const queued = await test.runs.start(actorOf(amyUser.account), 'understand');
   return {
     test,
     amy: await signedInBrowser(test.server, amyUser),
@@ -53,7 +53,7 @@ describe('GET /api/runs/:runId', () => {
       id: running.id,
       projectId: running.projectId,
       runId: running.runKey,
-      stage: 'scan',
+      stage: 'understand',
       queueState: 'Running',
       endState: null,
       totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },

@@ -31,7 +31,7 @@ test('RF-1105 a second user finds nothing of the first one project or run', asyn
   await signInThroughPage(page, accountFor('journey-owner', project));
   await page.getByLabel('GitHub repository URL').fill(repositories.demo);
   await page.getByRole('button', { name: 'Create project' }).click();
-  await page.getByRole('link', { name: 'Start run for octo/demo' }).click();
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
   await openScanRun(page);
   const runPath = new URL(page.url()).pathname;
   await page.getByRole('navigation').getByRole('link', { name: 'Start a run' }).click();
@@ -51,6 +51,7 @@ test('RF-1105 a second user finds nothing of the first one project or run', asyn
   expect(files?.status()).toBe(404);
   await other.goto('/projects');
   await ensureProject(other, repositories.demo);
+  await other.goto('/projects');
   await expect(other.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
   await other.context().close();
 
