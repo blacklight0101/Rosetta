@@ -154,7 +154,7 @@ function failedAreasTests(name: string, fresh: FreshRuns): void {
     await index.start(withFailures.id, 5_000);
     await index.start(without.id, 5_000);
 
-    const ended = await index.end(withFailures.id, 'Completed', 9_000, 3);
+    const ended = await index.end(withFailures.id, 'Completed', 9_000, { failedAreas: 3 });
     const plain = await index.end(without.id, 'Completed', 9_000);
 
     expect(ended?.failedAreas).toBe(3);

@@ -8,12 +8,15 @@ import { legacyTablesOf } from '../../domain/planning/data-model-legacy-tables.j
 import { assembleDataModel } from '../../domain/planning/data-model-assembly.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
+import { checkedModel, withoutKeptLeftOut } from './data-model-checked.js';
+import {
+  withoutOutOfScopeTables,
+  withoutStorelessCards,
+  withoutStorelessTables,
+  type OutOfScopeLine,
+} from './data-model-skipped.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { parseDataModelAnswer, type DataModelProblem } from './data-model-answer.js';
-import { applyColumnFacts } from './data-model-column-facts.js';
-import { keepLegacyKeys } from './data-model-legacy-keys.js';
-import { typeProblems } from './data-model-database.js';
-import { missingNamed } from './data-model-named.js';
 import { dataModelMessage, packableCards } from './data-model-message.js';
 import { MEASURING_TAG, omittedFor } from './plan-call-packing.js';
 import { cutOffMessage } from './plan-continuation.js';
@@ -30,6 +33,8 @@ export interface DataModelInput {
   /** The cards with their `Supported` claims. */
   readonly cards: readonly SourceCard[];
   readonly brief: PlanningBrief;
+  /** P7-32: the lines of the PRD "out of scope" section; a table one of them drops is not written. */
+  readonly outOfScope?: readonly OutOfScopeLine[];
 }
 
 /** The database layer of the brief, or null when the owner chose none. */
@@ -52,9 +57,6 @@ export interface PlannedDataModel {
   /** RST-1805: the cause and the setting when a batch that fell back stayed cut off; empty for none. */
   readonly cutOffNote: string;
 }
-
-const copiedReason =
-  'The planner answer for this table failed after a retry, so its names, columns, types and keys are copied from the legacy claims; confirm them.';
 
 const emptyDraft = { tables: [], dropped: [] } as const;
 
@@ -160,17 +162,19 @@ function namedAfterCards(cards: readonly SourceCard[]): DraftTable[] {
 // RF-623
 export async function planDataModel(
   call: PlannerCall,
-  input: DataModelInput,
+  given: DataModelInput,
 ): Promise<PlannedDataModel> {
+  const { cards, skipped, ids } = withoutStorelessCards(given.cards);
+  const input = { ...given, cards };
   const database = databaseOf(input.brief);
   const legacy = legacyClaimsOf(input.cards);
   if (legacy.length === 0)
     return {
       assembly: assembleDataModel(emptyDraft, legacy, database),
       readable: true,
-      problems: [],
+      problems: skipped,
       answered: false,
-      flagged: 0,
+      flagged: skipped.length,
       copied: [],
       cutOffNote: '',
     };
@@ -183,7 +187,9 @@ export async function planDataModel(
   const all = joined(parts);
   const cutOffNote = all.cut ? cutOffMessage(limit) : '';
   const copied = copiedTables(all.failed, all.draft.tables);
-  const draft = { ...all.draft, tables: [...all.draft.tables, ...copied] };
+  const kept = withoutStorelessTables(all.draft.tables, ids);
+  const out = withoutOutOfScopeTables([...kept, ...copied], input.outOfScope ?? []);
+  const draft = { ...all.draft, tables: out.tables };
   let assembled = assembleDataModel(draft, legacy, database);
   if (assembled.model.tables.length === 0) {
     const fromClaims = legacyTablesOf(entities);
@@ -193,40 +199,26 @@ export async function planDataModel(
       database,
     );
   }
-  return checked(assembled, input, all, cutOffNote);
+  return checked(assembled, input, { all, cutOffNote, skipped: [...skipped, ...out.skipped] });
 }
 
-/** The model once the legacy keys are kept, with what the checks flag and the tables copied (P3-120, P5-38). */
+/** The model once the checks have run, with what they flag and the tables copied (P3-120, P5-38). */
 function checked(
   assembled: DataModelAssembly,
   input: DataModelInput,
-  all: Batched,
-  cutOffNote: string,
+  rest: { all: Batched; cutOffNote: string; skipped: readonly DataModelProblem[] },
 ): PlannedDataModel {
-  const keys = keepLegacyKeys(assembled.model, input.cards, input.brief);
-  const facts = applyColumnFacts(keys.model, input.cards);
-  const assembly = { ...assembled, model: facts.model };
-  const readable = assembly.model.tables.length > 0;
-  // P3-120: what the checks flag is listed in checks.md; an unusable answer has nothing to check.
-  const copiedNames = assembly.model.tables
-    .filter((table) => table.copiedFromLegacy === true)
-    .map((table) => table.name);
-  const flagged = readable
-    ? [
-        ...copiedNames.map((item) => ({ item, field: `table ${item}`, reason: copiedReason })),
-        ...typeProblems(assembly.model),
-        ...keys.problems,
-        ...facts.problems,
-        ...missingNamed(assembly.model, input.cards),
-      ]
-    : [];
+  const { all, cutOffNote, skipped } = rest;
+  const model = checkedModel(assembled, input.cards, input.brief);
+  const { assembly, readable, copied } = model;
+  const flagged = [...skipped, ...model.flagged];
   return {
     assembly,
     readable,
-    problems: [...all.problems, ...flagged],
+    problems: [...withoutKeptLeftOut(all.problems, assembly), ...flagged],
     flagged: flagged.length,
     answered: all.answered,
-    copied: copiedNames,
+    copied,
     cutOffNote,
   };
 }

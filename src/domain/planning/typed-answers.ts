@@ -25,7 +25,7 @@ export function typedText(text: string | undefined): string {
   return (text ?? '')
     .replace(
       // eslint-disable-next-line no-control-regex -- control characters are what this removes
-      /[\s\u0000-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]+/gu,
+      /[\s\u0000-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]+/gu,
       ' ',
     )
     .trim();
@@ -58,10 +58,15 @@ export function checkReference(kind: ReferenceKind): string {
 }
 
 /** The title of the default style or strategy, named as the default and its check's reference when an own answer exists. */
-export function referenceTitle(brief: TypedSource, id: TypedQuestionId, title: string): string {
+export function referenceTitle(
+  brief: TypedSource,
+  id: TypedQuestionId,
+  title: string,
+  named?: string,
+): string {
   if (typedAnswers(brief)[id] === undefined) return title;
   const kind: ReferenceKind = id === 'migration' ? 'strategy' : 'style';
-  return `${title} (the default ${kind}, ${checkReference(kind)})`;
+  return `${title} (${named ?? `the default ${kind}`}, ${checkReference(kind)})`;
 }
 
 /** Whether a save carries a typed text for the question (used to leave `defaulted`). */

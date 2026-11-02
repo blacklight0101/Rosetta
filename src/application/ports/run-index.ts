@@ -1,6 +1,6 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
 import type { Result } from '../../domain/errors/result.js';
-import type { Run, RunTotals } from '../../domain/runs/run.js';
+import type { AreaCounts, Run, RunTotals } from '../../domain/runs/run.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
 
 // Architecture section 7, data-model.md section 4 (`runs`), RF-1108, RF-1105: the run rows. The
@@ -56,21 +56,37 @@ export interface RunIndex {
   /** `Queued` -> `Running`; undefined for an unknown run and for one that is not queued. */
   start(runId: string, at: EpochMs): Promise<Run | undefined>;
   /**
-   * `Running` -> `Ended`, or `Queued` -> `Ended` as `Interrupted`; the end state is set once.
-   * Undefined for an unknown run, one that has ended and a queued run ended any other way.
+   * `Running` -> `Ended`, `Queued` -> `Ended` as `Interrupted`, or `AwaitingApproval` -> `Ended` as
+   * `CapReached` or `Interrupted` (RF-432); the end state is set once. Undefined for an unknown run,
+   * one that has ended and a queued or paused run ended any other way.
    */
   end(
     runId: string,
     endState: RunEndState,
     at: EpochMs,
-    failedAreas?: number,
+    counts?: AreaCounts,
   ): Promise<Run | undefined>;
+  /**
+   * RF-432: `Running` -> `AwaitingApproval`, keeping the areas no reader started; undefined for an
+   * unknown run and one that is not running.
+   */
+  pause(runId: string, counts?: AreaCounts): Promise<Run | undefined>;
+  /**
+   * RF-432: `AwaitingApproval` -> `Queued` for the user's paused run, at the end of the queue;
+   * undefined for an unknown id, another user's run and a run that is not paused.
+   */
+  continueAwaiting(userId: string, runId: string, at: EpochMs): Promise<Run | undefined>;
   /**
    * RF-006: `Ended` -> `Queued` for the user's run that ended `CapReached`, `Failed` or `Interrupted`, at
    * the end of the queue; undefined for an unknown id, another user's run and any other run, so two
    * parallel resumes queue it once.
    */
-  reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined>;
+  reopen(
+    userId: string,
+    runId: string,
+    at: EpochMs,
+    states?: readonly RunEndState[],
+  ): Promise<Run | undefined>;
   /** Records the pinned commit and the snapshot folder; undefined for an unknown or ended run. */
   recordSource(runId: string, source: RunSource): Promise<Run | undefined>;
   /** Replaces the running totals; undefined for an unknown or ended run. */

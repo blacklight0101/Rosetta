@@ -41,6 +41,25 @@ describe('briefQuestionOptions', () => {
     expect(of('migration').find((o) => o.recommended)?.answer).toBe('Strangler Fig');
     expect(of('architecture').find((o) => o.recommended)?.answer).toBe('Layered (N-tier)');
   });
+});
+
+describe('briefQuestionOptions order', () => {
+  it('RF-645 P6-17 the recommended options are listed first, in the order of the catalogue', () => {
+    const last = shippedCatalogue.styles.find((style) => style.id === 'microservices');
+    const moved = briefQuestionOptions(
+      { ...brief, architecture: { ...brief.architecture, style: 'microservices' } },
+      shippedCatalogue,
+    );
+    const styles = moved['architecture'] ?? [];
+
+    expect(styles[0]).toMatchObject({ answer: last?.title, recommended: true });
+    expect(styles.filter((option) => option.recommended)).toHaveLength(1);
+    expect(styles.slice(1).map((option) => option.answer)).toEqual(
+      shippedCatalogue.styles.filter((style) => style !== last).map((style) => style.title),
+    );
+    const flags = of('principles').map((option) => option.recommended);
+    expect(flags).toEqual([...flags].sort((a, b) => Number(b) - Number(a)));
+  });
 
   it('RF-645 a stack layer offers the legacy technology as an option', () => {
     expect(of('stack.database').map((option) => option.answer)).toContain(

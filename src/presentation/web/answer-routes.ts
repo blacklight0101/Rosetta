@@ -67,11 +67,16 @@ const answersBody = z.strictObject({
 
 function questionsView(
   questions: readonly StatedQuestion[],
-  family?: { readonly deepens: number; readonly isDeepen: boolean },
+  family?: {
+    readonly deepens: number;
+    readonly isDeepen: boolean;
+    readonly deepening: boolean;
+  },
 ): {
   readonly questions: readonly StatedQuestion[];
   readonly deepens?: number;
   readonly isDeepen?: boolean;
+  readonly deepening?: boolean;
 } {
   return {
     questions: questions.map(
@@ -136,10 +141,10 @@ export function registerAnswerRoutes(server: FastifyInstance, services: AnswerSe
         runId: request.params.runId,
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
-      const { deepens, isDeepen } = outcome.value;
+      const { deepens, isDeepen, deepening } = outcome.value;
       return reply
         .header('cache-control', 'no-store')
-        .send(questionsView(outcome.value.questions, { deepens, isDeepen }));
+        .send(questionsView(outcome.value.questions, { deepens, isDeepen, deepening }));
     },
   );
   server.put<{ Params: { runId: string } }>(

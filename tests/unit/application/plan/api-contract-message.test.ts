@@ -14,7 +14,10 @@ function tagsOf(): () => string {
 }
 
 function message(): string {
-  return apiContractMessage({ cards: apiCards(), brief: briefWithFrontEnd('React') }, tagsOf());
+  return apiContractMessage(
+    { cards: apiCards(), brief: briefWithFrontEnd('React'), style: 'layered' },
+    tagsOf(),
+  );
 }
 
 describe('apiContractMessage', () => {
@@ -61,11 +64,25 @@ describe('apiContractMessage: what is left out and how it is wrapped', () => {
     ];
 
     const text = apiContractMessage(
-      { cards: [{ ...feature, claims }, ...rest], brief: briefWithFrontEnd('React') },
+      {
+        cards: [{ ...feature, claims }, ...rest],
+        brief: briefWithFrontEnd('React'),
+        style: 'hexagonal',
+      },
       tagsOf(),
     );
 
     expect(text).not.toContain('Rejected text.');
+  });
+
+  it('P8-09 EV-73 names the style the components are judged against, not the brief default', () => {
+    expect(message()).toContain('"architectureStyle": "layered"');
+    expect(
+      apiContractMessage(
+        { cards: apiCards(), brief: briefWithFrontEnd('React'), style: 'hexagonal' },
+        tagsOf(),
+      ),
+    ).toContain('"architectureStyle": "hexagonal"');
   });
 
   it('RF-145 puts the cards and the owner choices in two data blocks with different tags', () => {

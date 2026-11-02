@@ -1,5 +1,9 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
-import { modelForTier, resolveBuildMethod } from '../../domain/planning/build-method.js';
+import {
+  isLocalTier,
+  modelForTier,
+  resolveBuildMethod,
+} from '../../domain/planning/build-method.js';
 import type { BuildMethod } from '../../domain/planning/build-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { renderYamlHeader } from '../cards/yaml-header.js';
@@ -36,12 +40,12 @@ interface Role {
   readonly tools?: string;
 }
 
-const builderRole = (tier: BuilderTier): Role => ({
+const builderRole = (tier: BuilderTier, method: BuildMethod): Role => ({
   file: `builder-${tier}.md`,
   title: `Builder (${tier} tier)`,
   what: `builds the cards of the ${tier} tier`,
   description: `Builder for the task cards of the ${tier} tier. Implements exactly one card from tasks.md on its own branch, test first, and reports in the fixed format.`,
-  body: builderLines(tier),
+  body: builderLines(tier, method),
   model: tier,
 });
 
@@ -75,12 +79,12 @@ const escalationRole: Role = {
   model: 'escalation',
 };
 
-function rolesOf(escalation: boolean): Role[] {
+function rolesOf(method: BuildMethod, escalation: boolean): Role[] {
   return [
     orchestratorRole,
-    builderRole('smallest'),
-    builderRole('middle'),
-    builderRole('largest'),
+    builderRole('smallest', method),
+    builderRole('middle', method),
+    builderRole('largest', method),
     verifierRole('middle'),
     verifierRole('largest'),
     ...(escalation ? [escalationRole] : []),
@@ -127,7 +131,9 @@ function noteLines(method: BuildMethod): string[] {
 function readmeFile(method: BuildMethod, roles: readonly Role[], esc: MarkdownEscaper): string {
   const rows = roles.map((role) => {
     const model = modelOf(method, role);
-    return `| \`${role.file}\` | ${role.title} ${role.what} | ${model === undefined ? 'not named' : esc.inline(model)} |`;
+    const name = model === undefined ? 'not named' : esc.inline(model);
+    const local = role.model !== 'escalation' && isLocalTier(method, role.model);
+    return `| \`${role.file}\` | ${role.title} ${role.what} | ${local ? `${name}, runs locally` : name} |`;
   });
   const escalation = roles.some((role) => role.model === 'escalation')
     ? [
@@ -150,7 +156,7 @@ function readmeFile(method: BuildMethod, roles: readonly Role[], esc: MarkdownEs
 /** Whether the package writes the `agents/` folder: only for Claude Code and Codex (Q-E, RF-642). */
 // RF-642, P6-30
 export function writesAgentFolder(given: BuildMethod | undefined): boolean {
-  const kind = resolveBuildMethod(given).agentTool?.kind;
+  const kind = given?.aiAssisted === true ? given.agentTool?.kind : undefined;
   return kind === 'claude-code' || kind === 'codex';
 }
 
@@ -165,10 +171,9 @@ export function agentFiles(
   masker: TextMasker,
 ): Record<string, string> {
   if (!writesAgentFolder(handoff.brief.buildMethod)) return {};
-  const method = resolveBuildMethod(handoff.brief.buildMethod);
+  const method = resolveBuildMethod(handoff.brief.buildMethod, handoff.agentModels);
   const kind = method.agentTool?.kind;
-  if (kind !== 'claude-code' && kind !== 'codex') return {};
-  const roles = rolesOf(kind === 'claude-code' && method.models?.escalation !== undefined);
+  const roles = rolesOf(method, kind === 'claude-code' && method.models?.escalation !== undefined);
   const files: Record<string, string> = {
     [`${FOLDER}/README.md`]: readmeFile(method, roles, esc),
   };

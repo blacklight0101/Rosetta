@@ -1,3 +1,5 @@
+import type { RoleKeyDependencies } from '../../src/application/runs/role-keys.js';
+import { ALL_KEYS_SERVED } from './web-role-keys.js';
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import { EstimateDeepen } from '../../src/application/estimate/deepen-estimate.js';
 import type { TaskResult } from '../../src/application/ports/task-results.js';
@@ -17,6 +19,8 @@ export function deepenServices(
   stores: {
     readonly projects: MemoryProjectRepository;
     readonly keys: MemoryProviderKeyRepository;
+    /** RF-431: the key check; every role served when absent. */
+    readonly roleKeys?: RoleKeyDependencies;
   },
   results: readonly TaskResult[] = [],
 ): DeepenServices {
@@ -24,6 +28,7 @@ export function deepenServices(
   const taskResults = { read: () => Promise.resolve(results) };
   return {
     startDeepen: new StartDeepen({
+      roleKeys: stores.roleKeys ?? ALL_KEYS_SERVED,
       ...{ projects, runs: runs.runs, manifests: runs.manifests, submit: runs.submit },
     }),
     estimateDeepen: new EstimateDeepen({

@@ -1,4 +1,5 @@
 import type { ApiContract } from '../../domain/planning/api-contract.js';
+import { judgedStyleId } from '../../domain/planning/judged-style.js';
 import type { TargetDataModel } from '../../domain/planning/data-model.js';
 import type { DraftComponent } from '../../domain/planning/plan-draft.js';
 import { assemblePrd, emptyPrd, type PrdContent } from '../../domain/planning/prd-content.js';
@@ -112,17 +113,23 @@ export async function planDocuments(
   ): PlannerCall => documentCall(sink, document, prompt, agentTaskId);
   const prd = await planPrd(callOf('prd', prompts.prd, 'planner-prd'), input, warn);
   const modelCall = callOf('dataModel', prompts.dataModel, 'planner-data-model');
-  const model = await planDataModel(modelCall, { cards: input.cards, brief: input.brief });
+  const model = await planDataModel(modelCall, {
+    ...{ cards: input.cards, brief: input.brief },
+    outOfScope: prd.outOfScope,
+  });
   for (const message of dataModelWarnings(model)) await warn(message);
   const flowsCall = callOf('flows', prompts.flows, 'planner-flows');
   const flows = await planFlows(flowsCall, input);
   for (const message of flowsWarnings(flows)) await warn(message);
   const apiCall = callOf('apiContract', prompts.apiContract, 'planner-api-contract');
   const dataModel = model.assembly.model;
-  const api = await planApiContract(apiCall, { cards: input.cards, brief: input.brief, dataModel });
+  const style = judgedStyleId(input.brief, input.catalogue.styles);
+  const api = await planApiContract(apiCall, {
+    ...{ cards: input.cards, brief: input.brief, dataModel, style },
+  });
   for (const message of apiContractWarnings(api)) await warn(message);
   const uxCall = callOf('ux', prompts.ux, 'planner-ux');
-  const ux = await planUx(uxCall, { cards: input.cards, brief: input.brief });
+  const ux = await planUx(uxCall, { cards: input.cards, brief: input.brief, style });
   for (const message of uxWarnings(ux)) await warn(message);
   return {
     prd,

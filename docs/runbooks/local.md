@@ -250,6 +250,15 @@ that names the cell values, formulas and macros of the project and each provider
 page and shows beside it the workbook, the sheet and the cells of the cited lines; the report names the workbooks, the
 upload date and the snapshot hash instead of a repository and commit. No citation links outside Rosetta (RF-156).
 
+## Evaluation runs and single stages
+
+The web pages start the whole journey and never send a stage or caps (RF-1022, DEC-204). The caps, the models and the parallelism
+are the project's settings (RF-436), and the approved amount of the journey is its one limit. The run-start API keeps its `stage`
+parameter for the evaluation tools and the administrator: `POST /api/projects/:id/runs` with `{ "stage": "scan" }` or
+`{ "stage": "understand", "areas": [...], "cloudConsent": false }` starts that single stage under the same checks (ownership,
+the egress guard, the queue and the caps of the project settings). Set the caps of an evaluation in the project's settings first.
+The old address `/projects/:id/start` redirects to `/projects/:id`.
+
 ## Troubleshooting
 
 | Symptom                                                                   | Likely cause and fix                                                                                                                                                                    |

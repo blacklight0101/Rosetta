@@ -1,3 +1,5 @@
+import type { RoleKeyDependencies } from '../../application/runs/role-keys.js';
+import { keySourceLookupOf } from '../../infrastructure/providers/key-source-lookup.js';
 import { EstimateRun } from '../../application/estimate/estimate-run.js';
 import { FilePlanningBriefStore } from '../../infrastructure/files/file-planning-brief-store.js';
 import type { Clock } from '../../application/ports/clock.js';
@@ -170,6 +172,14 @@ function understandOf(parts: PipelineParts, s: Stores): RunUnderstand {
 }
 
 // RNF-006
+/** RF-431: the evaluation's runs are refused before the queue when no server key serves a role. */
+function evalRoleKeys(s: Stores, parts: PipelineParts): RoleKeyDependencies {
+  return {
+    users: s.users,
+    keys: keySourceLookupOf({ keys: s.keys, serverKeys: parts.serverKeys }),
+  };
+}
+
 export function composePipeline(parts: PipelineParts): Pipeline {
   const { clock, logger, masker, ids } = parts;
   const s = storesOf(parts);
@@ -200,9 +210,9 @@ export function composePipeline(parts: PipelineParts): Pipeline {
     ...{ runs, manifests, queue, clock, ids, rosettaVersion },
     models: parts.models,
   });
-  const keys = s.keys;
+  const roleKeys = evalRoleKeys(s, parts);
   const estimateRun = new EstimateRun({
-    ...{ projects, runs, keys, scans: s.scans },
+    ...{ projects, runs, keys: s.keys, scans: s.scans, roleKeys },
     ...{ priceTable: parts.priceTable, models: parts.models },
     // The evaluation shows no start page, so no role names its effort.
     reasoningModels: () => false,
@@ -211,11 +221,11 @@ export function composePipeline(parts: PipelineParts): Pipeline {
     ...s,
     watcher,
     queue,
+    // The evaluation starts runs without a shown figure, so no journey is looked up (RF-432).
     startRun: new StartRun({
-      projects,
-      runs,
+      journey: () => Promise.resolve(undefined),
+      ...{ projects, runs, manifests, submit, roleKeys },
       briefs: new FilePlanningBriefStore({ writer, masker }),
-      submit,
     }),
     estimateRun,
   };

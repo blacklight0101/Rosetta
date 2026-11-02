@@ -21,6 +21,7 @@ const row = (queueState: RunRow['queueState'], endState: string | null): RunRow 
   totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
   reportBuilt: false,
   failedAreas: 0,
+  unreadAreas: 0,
 });
 
 it('RF-1015 an ended run stays ended while its events replay and after they are all in', () => {
@@ -43,5 +44,5 @@ it('RF-1108 a run the row calls running is running once its events start and end
 
   expect(phaseOf(row('Running', null), started)).toEqual({ kind: 'running' });
   expect(phaseOf(row('Running', null), ended)).toEqual({ kind: 'ended', endState: 'Completed' });
-  expect(phaseOf(row('Queued', null), stateAfter())).toEqual({ kind: 'queued' });
+  expect(phaseOf(row('Queued', null), stateAfter())).toEqual({ kind: 'queued', position: null });
 });

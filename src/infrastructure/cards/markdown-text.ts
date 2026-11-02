@@ -113,6 +113,23 @@ export interface MarkdownEscaper {
   label(text: string): string;
   /** A validated source URL, written as the plain URL; anything else is escaped as text. */
   url(text: string): string;
+  /**
+   * P7-11: a name (a column, a position) as one code span, so a name such as `sa_password` followed
+   * by `:` is not read as a setting with a value by the last mask of the file.
+   */
+  code(text: string): string;
+}
+
+/**
+ * One line of text as a code span: its fence is one backtick longer than the longest run inside, and
+ * a text that starts or ends with a backtick gets a blank on each side (CommonMark).
+ */
+function codeSpan(text: string): string {
+  const line = text.replace(/\s+/g, ' ').trim();
+  const longest = Math.max(0, ...(line.match(/`+/g) ?? []).map((run) => run.length));
+  const fence = '`'.repeat(longest + 1);
+  const pad = line.startsWith('`') || line.endsWith('`') ? ' ' : '';
+  return `${fence}${pad}${line}${pad}${fence}`;
 }
 
 /** A URL of the characters a validated `https` repository address holds, nothing else. */
@@ -128,5 +145,6 @@ export function markdownEscaper(masker: TextMasker): MarkdownEscaper {
       const value = masked(text);
       return plainUrl.test(value) ? value : escapeInline(value);
     },
+    code: (text) => codeSpan(masked(text)),
   };
 }

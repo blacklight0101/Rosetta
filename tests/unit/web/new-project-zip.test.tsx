@@ -80,8 +80,12 @@ it('RF-128 sends the zip to a new project of kind upload, with the CSRF token, a
   expect(summary.textContent).toContain('3.2 MB');
   expect(summary.textContent).toContain('12 entries left out');
   expect(screen.getByRole('link', { name: 'Start a run' }).getAttribute('href')).toBe(
-    '/projects/p-9/start',
+    '/projects/p-9',
   );
+  // EV-87, P8-10: the stored zip opens the project page, where the scan starts.
+  await waitFor(() => {
+    expect(window.location.pathname).toBe('/projects/p-9');
+  });
 });
 
 it('RF-128 the project name is editable and the edited name is the one created', async () => {

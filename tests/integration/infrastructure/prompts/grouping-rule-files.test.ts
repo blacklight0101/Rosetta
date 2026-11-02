@@ -73,8 +73,8 @@ describe('the versions of the reader prompts', () => {
 
     expect(prompts.system).toMatchObject({ name: 'reader/area.v12.md', version: 'v12' });
     expect(prompts.workbook).toMatchObject({ name: 'reader/workbook.v5.md', version: 'v5' });
-    // P3-67: the re-read default moved on to v3, which keeps the rule (parent-cards-prompt-files.test.ts).
-    expect(reread).toMatchObject({ name: 'reader/reread.v4.md', version: 'v4' });
+    // P7-22: the re-read default moved on to v5, which keeps the rule (parent-cards-prompt-files.test.ts).
+    expect(reread).toMatchObject({ name: 'reader/reread.v5.md', version: 'v5' });
   });
 
   it.each(oldVersions)(

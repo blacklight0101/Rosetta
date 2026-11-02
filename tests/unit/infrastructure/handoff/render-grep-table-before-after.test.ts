@@ -40,8 +40,6 @@ describe('the grep table before and after the catalogue file', () => {
       const expected = before[key];
       const actual = withoutAdditions(after[key] ?? '');
 
-      // A section that held only reading rows has no table left; it then reads as the old one-line
-      // statement or an empty table, which the next test covers.
       expect(actual).toBe(expected);
     },
   );

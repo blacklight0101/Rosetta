@@ -22,6 +22,7 @@ function row(queueState: RunRow['queueState']): RunRow {
     totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
     reportBuilt: false,
     failedAreas: 0,
+    unreadAreas: 0,
   };
 }
 
@@ -90,5 +91,38 @@ describe('RF-1015 the stepper of a plan run (2)', () => {
     for (const name of ['Snapshot', 'Scan', 'Understand', 'Verify', 'Report']) {
       expect(names).not.toContain(name);
     }
+  });
+});
+
+// P7-25: while a planner call runs, the planner step says which call it is; between calls it says
+// which call comes next.
+function details(events: readonly ReturnType<typeof ev>[]): (string | undefined)[] {
+  const state = stateAfter(...events);
+  const run = row('Running');
+  return stepperOf(run, state, phaseOf(run, state)).map((step) => step.detail);
+}
+
+describe('P7-25 the planner step names the working call', () => {
+  it('RF-1015 names the call that runs', () => {
+    const call = ev(2, 'plan.call.started', { call: 'prd' }, 'planner-prd');
+    expect(details([started, call])[1]).toBe('PRD running');
+  });
+
+  it('RF-1015 names the call that comes next once a call has been answered', () => {
+    const events = [
+      started,
+      ev(2, 'plan.call.started', { call: 'package' }, 'planner-package'),
+      ev(
+        3,
+        'usage.recorded',
+        { role: 'planner', tokens: { inputTokens: 5, outputTokens: 5 } },
+        'planner-package',
+      ),
+    ];
+    expect(details(events)[1]).toBe('next: PRD');
+  });
+
+  it('RF-1015 names the first call before any call has started', () => {
+    expect(details([started])[1]).toBe('next: Plan package');
   });
 });

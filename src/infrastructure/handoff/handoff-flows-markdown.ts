@@ -5,6 +5,7 @@ import { fenced } from '../cards/flow-diagram-section.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { handoffFiles, idLink } from './handoff-links.js';
+import { workbookJourneyLines } from './handoff-workbook-markdown.js';
 
 // RF-625, RF-602, RF-603, ADR-013, Q-27: `flows/` of the hand-off package: an index of the main
 // journeys (each linking its file and its legacy `FLOW` card) with the journeys out of scope and
@@ -54,6 +55,7 @@ export function flowsIndexMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper
           ),
         ]),
     '',
+    ...workbookJourneyLines(handoff, esc),
   ].join('\n');
 }
 

@@ -2,12 +2,7 @@ import { access } from 'node:fs/promises';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { confirmation, plantSnapshot } from './support/history-page.js';
-import {
-  openStartPage,
-  runStatus,
-  startAndOpenLiveRun,
-  startUnderstand,
-} from './support/live-run-page.js';
+import { openScanRun, openStartPage, runStatus, startUnderstand } from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
@@ -56,9 +51,7 @@ test('RF-1012 disables Delete for the snapshot that a run in progress uses, with
   page,
 }) => {
   await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-  await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await openScanRun(page);
   await startUnderstand(page, ['Catalog', 'Controllers']);
   const live = page.url();
 

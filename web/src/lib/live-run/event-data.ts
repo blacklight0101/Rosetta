@@ -117,7 +117,14 @@ export const endedData = z.looseObject({
   errorCode: text.optional(),
   /** RF-208: areas of a completed run that gave no usable card. */
   failedAreas: count.optional(),
+  /** P7-02: planned areas of a capped run that no reader started. */
+  unreadAreas: count.optional(),
   totals: z.looseObject({ costMicros: micros.optional() }).optional(),
+});
+
+/** RF-432: `run.awaitingApproval`: the N that Continue (+N) offers, when the run approved an amount. */
+export const awaitingData = z.looseObject({
+  continueAmount: z.looseObject({ tokens: count, costMicros: micros }).optional(),
 });
 
 export const scanData = z.looseObject({ files: count, areas: count });

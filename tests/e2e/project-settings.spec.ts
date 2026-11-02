@@ -22,6 +22,9 @@ async function openSettings(page: Page): Promise<void> {
   if (await empty.isVisible()) {
     await page.getByLabel('GitHub repository URL').fill(demoUrl);
     await page.getByRole('button', { name: 'Create project' }).click();
+    // P8-10: the new project opens its page; the list is read again for the link.
+    await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
+    await page.goto('/projects');
   }
   await link.click();
   await expect(page.getByRole('heading', { name: 'Project settings' })).toBeVisible();

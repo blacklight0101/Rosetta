@@ -33,7 +33,11 @@ export function briefOptionLines(handoff: HandoffPackage, esc: MarkdownEscaper):
   const { briefOptions } = handoff;
   if (briefOptions === undefined) return [];
   return handoff.briefQuestions.flatMap((question) => {
-    const lines = suggestedAnswerLines(briefOptions[question.id], esc);
+    const lines = suggestedAnswerLines(
+      briefOptions[question.id],
+      esc,
+      question.id === 'principles',
+    );
     return lines.length === 0
       ? []
       : [`- ${esc.inline(question.question)} (${esc.inline(question.id)})`, ...lines, ''];

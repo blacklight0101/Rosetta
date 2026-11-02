@@ -35,12 +35,19 @@ describe('GET /api/projects/:id/history runs', () => {
     const runs = response.json<{ runs: unknown[] }>().runs;
     expect(runs).toHaveLength(2);
     expect(runs[0]).toMatchObject({
-      ...{ id: live.id, runId: live.runKey, stage: 'scan', queueState: 'Running' },
+      ...{ id: live.id, runId: live.runKey, stage: 'understand', queueState: 'Running' },
       ...{ endState: null, commitSha: null, sizeBytes: 0 },
     });
     expect(runs[1]).toEqual({
       ...{ id: done.id, runId: done.runKey, stage: 'scan', queueState: 'Ended' },
-      ...{ endState: 'Completed', commitSha: completedCommit, sizeBytes: 5, failedAreas: 0 },
+      ...{
+        endState: 'Completed',
+        commitSha: completedCommit,
+        sizeBytes: 5,
+        failedAreas: 0,
+        unreadAreas: 0,
+        position: null,
+      },
       ...{ queuedAt: instant, startedAt: instant, endedAt: instant },
       totals: {
         ...{ costMicros: 1_310_000, inputTokens: 400_000 },

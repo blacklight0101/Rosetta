@@ -19,7 +19,7 @@ test.beforeEach(async ({ context, page }, info) => {
   await page.goto('/projects');
   // A new project stays on the list; the same address again opens the existing project (RF-010).
   // The account of a worker is kept between tests, so the project may exist already.
-  const startPath = /\/projects\/[^/]+\/start$/u;
+  const startPath = /\/projects\/[^/]+$/u;
   await page.getByLabel('GitHub repository URL').fill(demoUrl);
   await page.getByRole('button', { name: 'Create project' }).click();
   await expect(

@@ -1,3 +1,4 @@
+import { ALL_KEYS_SERVED } from './web-role-keys.js';
 import {
   EstimateRun,
   type EstimateRunDependencies,
@@ -206,6 +207,7 @@ function harnessOver(
   const runs = new MemoryRunIndex();
   const keys = new MemoryProviderKeyRepository();
   const estimate = new EstimateRun({
+    roleKeys: ALL_KEYS_SERVED,
     ...{ projects, runs, scans, keys, priceTable, models },
     reasoningModels: () => false,
     ...(capDeps === undefined ? {} : { caps: capDeps }),

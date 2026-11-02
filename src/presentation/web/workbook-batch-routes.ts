@@ -19,6 +19,8 @@ import { chunksOf, declaredBytesOf, discard, fileNameOf } from './upload-body.js
 //   a refusal has the status, code, message, next step and files of the error it would have been.
 // - GET    /api/projects/:id/source/batches/current              the same for the batch of the project,
 //   for a page that was reloaded; the outcome stays 30 minutes after the work ended.
+//   A project that holds no batch answers 200 `{ batchId: '', phase: 'none', files: 0, elapsedMs: 0 }`,
+//   not 404, so a page load logs no failing request (EV-88, P8-10).
 // - DELETE /api/projects/:id/source/batches/:batchId             cancels the batch: 204, so a user
 //   who chose other files does not wait 30 minutes for the batch to expire. A batch whose work already
 //   ended (stored or refused) is not cancelled: 409 with its state.

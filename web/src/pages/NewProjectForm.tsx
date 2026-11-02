@@ -55,12 +55,14 @@ function useCreation(props: NewProjectFormProps): Creation {
     }
     const { project, created } = result.value;
     if (!created) {
-      navigate(`/projects/${encodeURIComponent(project.id)}/start`);
+      navigate(`/projects/${encodeURIComponent(project.id)}`);
       return;
     }
     onUrl('');
     setMessage(`Created ${project.name}.`);
     onCreated(project);
+    // EV-87, P8-10: the new project opens its page, where the free scan starts (RF-160).
+    navigate(`/projects/${encodeURIComponent(project.id)}`);
   };
   return { busy, failure, message, submit };
 }
@@ -112,12 +114,40 @@ const sourceTabs = [
   { id: 'workbooks', label: 'Excel workbooks' },
 ] as const;
 
+/** EV-87, P8-10: opens the page of a project whose zip or workbooks are stored; the scan starts there. */
+function useOpenWhenStored(onStored: () => void) {
+  const made = useRef<Project | undefined>(undefined);
+  const open = (project: Project | undefined): void => {
+    const target = project ?? made.current;
+    onStored();
+    if (target !== undefined) navigate(`/projects/${encodeURIComponent(target.id)}`);
+  };
+  return {
+    created: (project: Project): void => {
+      made.current = project;
+    },
+    stored: open,
+  };
+}
+
 function SourceForm(props: NewProjectFormProps & { readonly selected: string }): JSX.Element {
+  const opening = useOpenWhenStored(props.onStored);
+  const onCreated = (project: Project): void => {
+    opening.created(project);
+    props.onCreated(project);
+  };
   if (props.selected === 'upload') {
-    return <ZipUploadForm onCreated={props.onCreated} onStored={props.onStored} />;
+    return <ZipUploadForm onCreated={onCreated} onStored={opening.stored} />;
   }
   if (props.selected === 'workbooks') {
-    return <WorkbookUploadForm onCreated={props.onCreated} onStored={props.onStored} />;
+    return (
+      <WorkbookUploadForm
+        onCreated={onCreated}
+        onStored={() => {
+          opening.stored(undefined);
+        }}
+      />
+    );
   }
   return <GithubProjectForm {...props} />;
 }

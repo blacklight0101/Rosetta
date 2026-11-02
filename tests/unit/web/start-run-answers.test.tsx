@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { afterEach, expect, it } from 'vitest';
 import { failure, json } from './fake-api.js';
 import { projectPath, runAnswer, runsPath } from './start-run-fixtures.js';
-import { input, ready, renderStart, start } from './start-run-helpers.js';
+import { ready, renderStart, start, opened } from './start-run-helpers.js';
 
 // RF-241, RF-1001: the start page offers "Re-run with answers" when the project has answered
 // questions that are still Open, and an understand run started with it sends `withAnswers: true`.
@@ -37,16 +37,6 @@ it('RF-241 does not offer it when the count cannot be read', async () => {
   expect(screen.queryByLabelText(new RegExp(label, 'u'))).toBeNull();
 });
 
-it('RF-241 does not offer it for a scan', async () => {
-  renderStart({ [`GET ${answeredPath}`]: json(200, { count: 1 }) });
-  await ready();
-  await screen.findByLabelText(new RegExp(label, 'u'));
-
-  fireEvent.click(input('Scan only'));
-
-  expect(screen.queryByLabelText(new RegExp(label, 'u'))).toBeNull();
-});
-
 it('RF-241 starts the run with withAnswers when the option is ticked', async () => {
   const { calls } = renderStart({
     [`GET ${answeredPath}`]: json(200, { count: 1 }),
@@ -57,7 +47,7 @@ it('RF-241 starts the run with withAnswers when the option is ticked', async () 
   fireEvent.click(await screen.findByLabelText(new RegExp(label, 'u')));
   fireEvent.click(start());
 
-  await screen.findByTestId('run-notice');
+  await opened();
   expect(calls.at(-1)?.body).toEqual({
     stage: 'understand',
     areas: ['Catalog', 'Models'],

@@ -1,5 +1,6 @@
 import type { ServerKeyPresence } from '../application/ports/server-key-presence.js';
 import type { Environment } from '../infrastructure/config/environment.js';
+import { serverKeyOf } from './compose-start-caps.js';
 
 // Architecture section 2 (composition root), RF-1104: which providers the server holds a key for,
 // from its environment variables. Only the fact that a key is set leaves this function. In test
@@ -13,8 +14,8 @@ export function serverKeyPresence(
   return {
     has: (provider) => {
       if (testDoubles) return true;
-      if (provider === 'openai') return environment.openaiApiKey !== undefined;
-      if (provider === 'anthropic') return environment.anthropicApiKey !== undefined;
+      if (provider === 'openai') return serverKeyOf(environment.openaiApiKey) !== undefined;
+      if (provider === 'anthropic') return serverKeyOf(environment.anthropicApiKey) !== undefined;
       return false;
     },
   };

@@ -3,7 +3,7 @@ import { afterEach, expect, it } from 'vitest';
 import { json, type Answer } from './fake-api.js';
 import { projectOf } from './project-fixtures.js';
 import { estimatePath, projectPath, runAnswer, runsPath } from './start-run-fixtures.js';
-import { consentLabel, input, ready, renderStart, start } from './start-run-helpers.js';
+import { consentLabel, input, ready, renderStart, start, opened } from './start-run-helpers.js';
 import {
   allLocalRoles,
   oneCloudRole,
@@ -89,7 +89,7 @@ it('RF-157 the request carries both confirmations', async () => {
 
   fireEvent.click(start());
 
-  await screen.findByTestId('run-notice');
+  await opened();
   expect(calls.at(-1)?.body).toMatchObject({ cloudConsent: true, privateCodeConfirmed: true });
 });
 

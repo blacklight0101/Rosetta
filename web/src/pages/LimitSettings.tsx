@@ -65,7 +65,7 @@ function CapNumbers({ editor, errorFor }: SectionProps): JSX.Element {
 
 // RF-422, RF-423 (the role caps as a notice, P2-26)
 export function CapSettings(props: SectionProps & { readonly roles: RoleCaps }): JSX.Element {
-  const { editor, errorFor, roles } = props;
+  const { editor, roles } = props;
   const limits = useSpendLimits();
   const typed = dollarsToMicros(editor.draft.runCost, RUN_COST_MAX_MICROS);
   return (
@@ -74,7 +74,9 @@ export function CapSettings(props: SectionProps & { readonly roles: RoleCaps }):
         Caps
       </h2>
       <p class="rst-settings__note">
-        A run stops cleanly when it reaches either cap. Amounts are in US dollars.
+        These caps stop a run that is not part of a journey. A step of a journey runs under the
+        amount approved on Analyse, which replaces the run cap here; the administrator caps and the
+        day and month caps still stop a run for good. Amounts are in US dollars.
       </p>
       <CapNumbers {...props} />
       <ServerRunCapNote
@@ -88,6 +90,15 @@ export function CapSettings(props: SectionProps & { readonly roles: RoleCaps }):
         runCost={editor.draft.runCost}
         runTokens={editor.draft.runTokens}
       />
+      <CapChoices {...props} />
+    </section>
+  );
+}
+
+// RF-427, RF-433: the two choices about which runs the caps hold.
+function CapChoices({ editor, errorFor }: SectionProps): JSX.Element {
+  return (
+    <>
       <Field
         kind="checkbox"
         id="cap-allow-unpriced"
@@ -100,7 +111,19 @@ export function CapSettings(props: SectionProps & { readonly roles: RoleCaps }):
           editor.change({ allowUnpriced });
         }}
       />
-    </section>
+      <Field
+        kind="checkbox"
+        id="cap-no-local-cap"
+        label="No cap for local models"
+        checked={editor.draft.noCapForLocalModels}
+        help="A run whose every role is on a local model costs nothing, so it has no token cap and does not pause to ask. The administrator's ceilings still apply. A run with one cloud role keeps every cap."
+        error={errorFor('budget.noCapForLocalModels')}
+        announce={false}
+        onChange={(noCapForLocalModels) => {
+          editor.change({ noCapForLocalModels });
+        }}
+      />
+    </>
   );
 }
 

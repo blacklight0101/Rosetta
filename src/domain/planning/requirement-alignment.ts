@@ -12,10 +12,10 @@ import type { RequirementNote } from './requirement-notes.js';
 // builds) has no other card to go to, so it is never taken off (DEC-160). A card that builds nothing, and an item with no source card,
 // change nothing; the last requirement of a card is never taken off. Every change is a note.
 
-type Sources = ReadonlyMap<string, ReadonlySet<string>>;
+export type Sources = ReadonlyMap<string, ReadonlySet<string>>;
 
 /** The source cards behind each item id, the first item of an id winning like the coverage items do. */
-function sourcesOfItems(documents: CoverageDocuments): Sources {
+export function sourcesOfItems(documents: CoverageDocuments): Sources {
   const { prd, dataModel, flows, apiContract, ux } = documents;
   const operations = apiContract.kind === 'openapi' ? apiContract.operations : [];
   const entries: [string, readonly string[]][] = [

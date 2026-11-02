@@ -23,6 +23,8 @@ export interface PriceQuery {
   readonly provider: string;
   readonly model: string;
   readonly keySource: KeySource;
+  /** RF-433: the provider is a server that is not this machine, so no local kind is free (P8-04). */
+  readonly remote?: boolean;
 }
 
 export type PriceLookup =
@@ -36,6 +38,11 @@ export type PriceLookup =
 
 /** The provider kinds that run on this machine and cost nothing (RF-420). */
 const localKinds: ReadonlySet<string> = new Set(['ollama', 'fake']);
+
+/** RF-420, RF-433: the provider kind runs on this machine and costs nothing. */
+export function isLocalKind(kind: string): boolean {
+  return localKinds.has(kind);
+}
 
 /** The provider kinds that bill cache writes at their own price (docs/providers.md section 4.2). */
 export const cacheWriteKinds: ReadonlySet<string> = new Set(['anthropic']);
@@ -72,7 +79,7 @@ export function lookupPrice(
   }
   const shipped = table.prices.find(matches);
   if (shipped !== undefined) return { kind: 'priced', price: shipped, version: table.version };
-  if (localKinds.has(query.provider)) {
+  if (localKinds.has(query.provider) && query.remote !== true) {
     return { kind: 'priced', price: freePrice(query), version: table.version };
   }
   return { kind: 'unpriced' };

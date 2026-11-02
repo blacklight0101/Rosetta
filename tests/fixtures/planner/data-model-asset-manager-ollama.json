@@ -1,0 +1,51 @@
+{
+  "tables": [
+    {
+      "name": "product_master",
+      "purpose": "Keeps the product catalogue.",
+      "sources": [
+        "ENT-001"
+      ],
+      "columns": [
+        {
+          "name": "product_id",
+          "type": "varchar(20)",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "Product ID"
+          },
+          "risk": ""
+        },
+        {
+          "name": "metrics_to_derive_status",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c2",
+            "field": "Metrics used to derive the product status"
+          },
+          "risk": ""
+        },
+        {
+          "name": "valuation_lookup_range",
+          "type": "text",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-001.c3",
+            "field": "Range D:N contains data referenced for valuation lookups"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "product_id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    }
+  ],
+  "dropped": []
+}

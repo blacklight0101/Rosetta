@@ -15,7 +15,7 @@ export interface PlanStepBodyProps extends ArchitectureProps {
 
 // RF-605
 export function PlanStepBody(props: PlanStepBodyProps): JSX.Element {
-  const { step, load, waitingForConsent, askAgain, ...common } = props;
+  const { step, load, waitingForConsent, askAgain, offer, ...common } = props;
   const plain: StepProps = common;
   const asked = { load, waitingForConsent, askAgain };
   switch (step) {
@@ -26,7 +26,7 @@ export function PlanStepBody(props: PlanStepBodyProps): JSX.Element {
     case 'migration':
       return <PlanMigrationStep {...plain} />;
     case 'stack':
-      return <PlanStackStep {...plain} {...asked} />;
+      return <PlanStackStep {...plain} {...asked} offer={offer} />;
     case 'context':
       return <PlanContextStep {...plain} />;
     case 'method':

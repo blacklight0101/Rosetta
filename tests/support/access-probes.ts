@@ -145,6 +145,14 @@ const overviewRoutes: Readonly<Record<string, readonly Probe[]>> = {
   ],
 };
 
+/** RF-1015, RF-1105: the checks of the package a plan run wrote answer only its owner. */
+const checksRoutes: Readonly<Record<string, readonly Probe[]>> = {
+  'GET /api/runs/:runId/checks': [
+    { method: 'GET', url: runUrl('/checks', (c) => c.endedRunId), expected: ownerOnly(200) },
+    { method: 'GET', url: () => '/api/runs/not-a-uuid/checks', expected: active(401, 404) },
+  ],
+};
+
 /** RF-230, RF-1105: the files read per area of a run answer only its owner. */
 const coverageRoutes: Readonly<Record<string, readonly Probe[]>> = {
   'GET /api/runs/:runId/coverage': [
@@ -252,6 +260,7 @@ export const outputRoutes: Readonly<Record<string, readonly Probe[]>> = {
   ...answerRoutes,
   ...overviewRoutes,
   ...coverageRoutes,
+  ...checksRoutes,
   ...observabilityRoutes,
   ...historyRoutes,
 };

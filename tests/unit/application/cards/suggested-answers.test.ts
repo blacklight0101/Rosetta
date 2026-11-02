@@ -24,7 +24,7 @@ function question(overrides: Record<string, unknown> = {}): Record<string, unkno
   return cardObject({
     type: 'OQ',
     title: 'Free shipping threshold',
-    question: 'Why is the free-shipping threshold 50?',
+    question: 'Is the free-shipping threshold of 50 set by the shop owner?',
     whyItMatters: 'The threshold decides which orders pay for shipping.',
     suggestedAnswers: threeAnswers,
     ...overrides,
@@ -76,6 +76,46 @@ describe('RF-645 suggested answers of an OQ card', () => {
 
   it('RF-645 an empty list is refused like a missing one', () => {
     expect(parsed(question({ suggestedAnswers: [] })).drafts).toEqual([]);
+  });
+});
+
+describe('EV-69 the third answer has the kind of the question', () => {
+  const who = 'Who uses the stock sheet?';
+  const whoAnswers = [
+    answer('The warehouse team', { recommended: true }),
+    answer('The shop owner'),
+    answer('Yes, but only some sheets'),
+  ];
+
+  it('EV-69 a who question with an answer starting with Yes is sent back for repair', () => {
+    const read = parsed(question({ question: who, suggestedAnswers: whoAnswers }));
+
+    expect(read.drafts).toEqual([]);
+    expect(read.problems[0]?.path).toBe('cards.0.suggestedAnswers');
+    expect(read.problems[0]?.message).toMatch(/not a yes\/no question/iu);
+  });
+
+  it.each(['Which', 'Where', 'What', 'Why', 'How'])(
+    'EV-69 a %s question refuses a No answer',
+    (word) => {
+      const answers = [answer('No', { recommended: true }), answer('B'), answer('C')];
+
+      const read = parsed(
+        question({ question: `${word} is the figure kept?`, suggestedAnswers: answers }),
+      );
+
+      expect(read.drafts).toEqual([]);
+    },
+  );
+
+  it('EV-69 a who question with answers of its own kind is kept', () => {
+    const own = [...whoAnswers.slice(0, 2), answer('Nobody, the sheet is archived')];
+
+    expect(parsed(question({ question: who, suggestedAnswers: own })).problems).toEqual([]);
+  });
+
+  it('EV-69 a yes/no question keeps a qualified Yes answer', () => {
+    expect(parsed(question()).problems).toEqual([]);
   });
 });
 
@@ -173,8 +213,8 @@ describe('RF-645 cards of the earlier format and of other types', () => {
 });
 
 describe('RF-645 the v3 card format and the v4 repair prompt', () => {
-  it('RF-645 the example answer of card-format.v3 passes the schema with the answers required', async () => {
-    const format = await readFile('prompts/cards/card-format.v3.md', 'utf8');
+  it('RF-645 the example answer of card-format.v4 passes the schema with the answers required', async () => {
+    const format = await readFile('prompts/cards/card-format.v5.md', 'utf8');
     const example = /```json\n([\s\S]*?)```/.exec(format)?.[1] ?? '';
 
     const read = parseCardsLenient(example, new Map(), required);
@@ -184,18 +224,18 @@ describe('RF-645 the v3 card format and the v4 repair prompt', () => {
     expect(read.drafts[1]?.suggestedAnswers).toHaveLength(3);
   });
 
-  it('RF-645 card-format.v3 asks for one recommended answer first and a qualified third, never filler', async () => {
-    const format = await readFile('prompts/cards/card-format.v3.md', 'utf8');
+  it('RF-645 card-format.v4 asks for one recommended answer first and a qualified third, never filler', async () => {
+    const format = await readFile('prompts/cards/card-format.v5.md', 'utf8');
 
     expect(format).toMatch(/exactly one answer has `recommended` true, and it is listed\s+first/iu);
     expect(format).toMatch(/applies when the question is skipped/iu);
-    expect(format).toMatch(/two natural answers/iu);
+    expect(format).toMatch(/same kind as the question/iu);
     expect(format).toMatch(/qualified/iu);
     expect(format).toMatch(/never filler/iu);
   });
 
   it('RNF-004 the v4 repair prompt keeps its one placeholder and explains suggestedAnswers', async () => {
-    const v4 = await readFile('prompts/cards/repair.v4.md', 'utf8');
+    const v4 = await readFile('prompts/cards/repair.v6.md', 'utf8');
     const problems = [{ path: 'cards.0.suggestedAnswers', message: 'Missing' }];
 
     expect(v4.match(/\{\{problems\}\}/g)).toHaveLength(1);

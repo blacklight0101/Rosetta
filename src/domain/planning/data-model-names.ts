@@ -5,7 +5,7 @@
 // and the invariant they protect is "a type cell is a type name, never a statement".
 
 const identifier = /^[A-Za-z_][A-Za-z0-9_]{0,62}$/u;
-const typeName = /^[A-Za-z][A-Za-z ]{0,38}(?:\(\d{1,5}(?:,\d{1,3})?\))?(?:\[\])?$/u;
+const typeName = /^[A-Za-z][A-Za-z ]{0,38}(?:\((?:\d{1,5}(?:,\d{1,3})?|max)\))?(?:\[\])?$/iu;
 const statementWords =
   /\b(?:create|alter|drop|insert|update|delete|select|grant|revoke|truncate|table|index|exec|execute)\b/iu;
 

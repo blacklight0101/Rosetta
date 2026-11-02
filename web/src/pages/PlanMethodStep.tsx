@@ -41,6 +41,8 @@ function Why({ draft }: { readonly draft: Draft }): JSX.Element | null {
 }
 
 interface ChoicesProps {
+  /** P8-09: the title of each option as the server words it (one source with the package). */
+  readonly titles: Readonly<Record<string, string>>;
   readonly draft: Draft;
   readonly shown: Draft;
   readonly change: (next: Draft) => void;
@@ -69,7 +71,14 @@ const CARDS = [
   },
 ] as const;
 
-function MethodChoices({ draft, shown, change, choose, problem }: ChoicesProps): JSX.Element {
+function MethodChoices({
+  titles,
+  draft,
+  shown,
+  change,
+  choose,
+  problem,
+}: ChoicesProps): JSX.Element {
   const kept = draft.chosen['buildMethod'];
   const answered = shown.answered.includes('buildMethod') || shown !== draft;
   const on = (aiAssisted: boolean, option: string): boolean =>
@@ -87,7 +96,7 @@ function MethodChoices({ draft, shown, change, choose, problem }: ChoicesProps):
           key={card.option}
           id={`build-method-${card.option}`}
           group="build-method"
-          title={card.title}
+          title={titles[card.option] ?? card.title}
           checked={on(card.aiAssisted, card.option)}
           onChoose={() => {
             choose({ ...shown, aiAssisted: card.aiAssisted }, card.option);
@@ -108,7 +117,8 @@ function MethodChoices({ draft, shown, change, choose, problem }: ChoicesProps):
 }
 
 // RF-612
-export function PlanMethodStep({ draft, change, problems }: StepProps): JSX.Element {
+export function PlanMethodStep({ draft, catalogue, change, problems }: StepProps): JSX.Element {
+  const titles = Object.fromEntries(catalogue.wording.method.map((each) => [each.id, each.title]));
   const shown = shownMethod(draft);
   const kept = draft.chosen['buildMethod'];
   const choose = (next: Draft, option = kept ?? ''): void => {
@@ -123,6 +133,7 @@ export function PlanMethodStep({ draft, change, problems }: StepProps): JSX.Elem
     >
       <Why draft={draft} />
       <MethodChoices
+        titles={titles}
         draft={draft}
         shown={shown}
         change={change}

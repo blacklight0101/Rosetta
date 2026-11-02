@@ -49,6 +49,7 @@ import type { ManualScheduler } from './manual-scheduler.js';
 import { capServices } from './cap-services.js';
 import { FakeUploadStore } from './fake-upload-store.js';
 import { FakeWorkbookStaging } from './fake-workbook-staging.js';
+import type { GitHubRefCheck } from '../../src/application/ports/github-ref-check.js';
 import { projectServices, type UploadParts } from './project-services.js';
 import { historyServices, runServices, type RunOutputGiven } from './web-run-services.js';
 import {
@@ -138,6 +139,8 @@ export interface TestServerOptions
   readonly workbookStaging?: WorkbookStaging;
   /** RF-1011: a data folder makes the calls and logs routes the composition root's, over its logs. */
   readonly logDir?: string;
+  /** EV-70: what GitHub says about the ref of a new project; none by default. */
+  readonly refCheck?: GitHubRefCheck;
 }
 
 interface AuthParts {
@@ -232,7 +235,12 @@ function fileDoubles(parts: {
 function uploadPartsOf(options: TestServerOptions): UploadParts {
   const { uploads = new FakeUploadStore(), uploadMaxMb = DEFAULT_TEST_UPLOAD_MB } = options;
   const { workbookStaging = new FakeWorkbookStaging() } = options;
-  return { store: uploads, staging: workbookStaging, limitBytes: uploadMaxMb * BYTES_PER_MB };
+  const limitBytes = uploadMaxMb * BYTES_PER_MB;
+  const { refCheck } = options;
+  return {
+    ...{ store: uploads, staging: workbookStaging, limitBytes },
+    ...(refCheck === undefined ? {} : { refCheck }),
+  };
 }
 
 /**

@@ -8,11 +8,11 @@ import { loadCoveragePrompt } from '../../../../src/infrastructure/prompts/promp
 // the planner that the tasks and items are data and that it links by id and invents nothing.
 
 describe('loadCoveragePrompt', () => {
-  it('RNF-004 loads prompts/planner/coverage.v1.md with its version and hash', async () => {
+  it('RNF-004 loads prompts/planner/coverage.v2.md with its version and hash', async () => {
     const file = await loadCoveragePrompt('prompts');
 
-    const bytes = await readFile('prompts/planner/coverage.v1.md');
-    expect(file).toMatchObject({ name: 'planner/coverage.v1.md', version: 'v1' });
+    const bytes = await readFile('prompts/planner/coverage.v2.md');
+    expect(file).toMatchObject({ name: 'planner/coverage.v2.md', version: 'v2' });
     expect(file.sha256).toBe(createHash('sha256').update(bytes).digest('hex'));
     expect(file.text).toBe(bytes.toString('utf8'));
   });

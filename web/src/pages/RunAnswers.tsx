@@ -8,6 +8,7 @@ import { RenderedText } from '../components/RenderedText.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { AnswerInput } from './AnswerChoices.js';
 import { sectionAnchor } from './AppOverview.js';
+import { Earlier, Reasons } from './QuestionReasons.js';
 import { useAnswerSave, type AnswerSave } from './use-answer-save.js';
 import { useFocusFirst, type FocusRequest } from './use-focus-first-question.js';
 import { useQuestionPlaces } from './use-question-places.js';
@@ -38,7 +39,15 @@ export interface RunAnswersProps {
   readonly overview?: OverviewLoad;
   /** Called when the link to the overview section a question concerns is followed. */
   readonly onConcern?: (section: keyof typeof sectionTitles) => void;
+  /**
+   * RF-647: when set, an open question with suggested answers starts on its recommended one, and
+   * each such question lists its save here so one click can save them all.
+   */
+  readonly accept?: AcceptRegistry;
 }
+
+/** RF-647: the save of each open question that starts on its recommended answer, by card id. */
+export type AcceptRegistry = Map<string, () => Promise<boolean>>;
 
 type Questions = readonly OpenQuestionRow[];
 
@@ -110,60 +119,10 @@ function Concerns(props: {
   );
 }
 
-// RF-1017
-function dependsText(dependents: number): string {
-  if (dependents === 0) return 'No other item depends on it.';
-  return `Affects ${String(dependents)} ${dependents === 1 ? 'item' : 'items'} of the specification.`;
-}
-
-/** RF-1017: where the question comes from, what hangs on it and what a skipped question does. */
-function Reasons({ question }: { readonly question: OpenQuestionRow }): JSX.Element {
-  return (
-    <>
-      <p class="rst-p139-question__context" data-testid="question-why">
-        <span class="rst-p170-label">Why the code cannot say:</span>{' '}
-        <RenderedText text={question.context} />
-      </p>
-      <p class="rst-p139-question__context" data-testid="question-depends">
-        {dependsText(question.dependents)}
-      </p>
-      <p class="rst-p139-question__context" data-testid="question-default">
-        If you skip it: the question stays open in answers.md and the next run does not use it.
-      </p>
-    </>
-  );
-}
-
 /** DEC-154: Open, Answer saved (an answer in answers.md that no run has read yet) or Answered. */
 function shownState(question: OpenQuestionRow): 'Open' | 'Answer saved' | 'Answered' {
   if (question.state === 'Answered') return 'Answered';
   return waitsForAnswer(question) ? 'Open' : 'Answer saved';
-}
-
-/** RF-646: a question raised in several runs says so; the older answers it replaced are kept and shown. */
-function Earlier({ question }: { readonly question: OpenQuestionRow }): JSX.Element | null {
-  const runs = question.runs?.length ?? 0;
-  const history = question.history ?? [];
-  if (runs < 2 && history.length === 0) return null;
-  return (
-    <div class="rst-p139-question__context" data-testid="question-earlier">
-      {runs < 2 ? null : (
-        <p>{`Asked in ${String(runs)} runs of this project; it is listed once.`}</p>
-      )}
-      {history.length === 0 ? null : (
-        <>
-          <p>Earlier answers, kept in answers.md:</p>
-          <ul>
-            {history.map((each) => (
-              <li key={[each.runKey, each.answer].join('\n')}>
-                <RenderedText text={each.answer} />
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
-  );
 }
 
 function QuestionItem(props: {
@@ -172,9 +131,17 @@ function QuestionItem(props: {
   readonly apply: (questions: Questions) => void;
   readonly section?: keyof typeof sectionTitles | undefined;
   readonly onConcern: RunAnswersProps['onConcern'];
+  readonly accept: AcceptRegistry | undefined;
 }): JSX.Element {
-  const { question } = props;
-  const save = useAnswerSave(props.runId, question, props.apply);
+  const { question, accept } = props;
+  const save = useAnswerSave(props.runId, question, props.apply, accept !== undefined);
+  if (accept !== undefined) {
+    if (waitsForAnswer(question) && question.options !== undefined) {
+      accept.set(question.cardId, save.submit);
+    } else {
+      accept.delete(question.cardId);
+    }
+  }
   return (
     <li class="rst-p139-question" data-testid="open-question">
       <div class="rst-p139-question__head">
@@ -203,6 +170,7 @@ interface ListProps {
     readonly section: keyof typeof sectionTitles;
   }[];
   readonly onConcern: RunAnswersProps['onConcern'];
+  readonly accept: AcceptRegistry | undefined;
 }
 
 function Items(props: ListProps & { readonly shown: Questions }): JSX.Element {
@@ -216,6 +184,7 @@ function Items(props: ListProps & { readonly shown: Questions }): JSX.Element {
           apply={props.apply}
           section={props.links.find((link) => link.cardId === question.cardId)?.section}
           onConcern={props.onConcern}
+          accept={props.accept}
         />
       ))}
     </ol>
@@ -257,7 +226,7 @@ function QuestionLists(props: ListProps): JSX.Element {
   );
 }
 
-function Body({ runId, answers, overview, onConcern }: RunAnswersProps): JSX.Element {
+function Body({ runId, answers, overview, onConcern, accept }: RunAnswersProps): JSX.Element {
   const links = overview?.status === 'ready' ? (overview.overview?.questions ?? []) : [];
   const { load, apply } = answers;
   if (load.status === 'waiting') {
@@ -274,7 +243,9 @@ function Body({ runId, answers, overview, onConcern }: RunAnswersProps): JSX.Ele
   if (load.questions.length === 0) {
     return <p class="rst-settings__note">This run added no open questions.</p>;
   }
-  return <QuestionLists {...{ runId, apply, links, onConcern }} questions={load.questions} />;
+  return (
+    <QuestionLists {...{ runId, apply, links, onConcern, accept }} questions={load.questions} />
+  );
 }
 
 // RF-1007

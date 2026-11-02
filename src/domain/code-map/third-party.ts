@@ -18,7 +18,7 @@ import type { FileEntry } from './file-entry.js';
 // - the Microsoft Web Forms scripts of `Scripts/WebForms/` (`MSAjax/`, `WebForms.js`, ...), and
 //   the Visual Studio `Scripts/_references.js`;
 // - (P3-112) the same library names under a `Content` folder, Font Awesome included, and the
-//   generated JSON of a `.kube/schema` folder;
+//   generated files of a `.kube/schema` folder, whatever their extension (DEC-195);
 // - (P5-17) Bootstrap's `grid`, `reboot` and `utilities` CSS modules, with their variants:
 //   `bootstrap-grid.css`, `bootstrap-reboot.min.css.map`; `bootstrap-grid-custom.css` is not;
 // - a file the scan flagged `vendored` after reading it: a header that names a known library with
@@ -90,10 +90,10 @@ function averageLineIsLong(file: FileEntry): boolean {
   );
 }
 
-/** A generated schema: any `.json` file under a `.kube/schema` folder. */
-function isKubeSchema(folders: readonly string[], name: string): boolean {
+/** A generated schema: any file under a `.kube/schema` folder, whatever its extension (DEC-195). */
+function isKubeSchema(folders: readonly string[]): boolean {
   const index = folders.indexOf('.kube');
-  return index >= 0 && folders[index + 1] === 'schema' && /.json$/iu.test(name);
+  return index >= 0 && folders[index + 1] === 'schema';
 }
 
 function byFolder(path: readonly string[], name: string): boolean {
@@ -101,7 +101,7 @@ function byFolder(path: readonly string[], name: string): boolean {
   if (folders.some((folder) => VENDOR_FOLDERS.has(folder)) && SCRIPT_OR_STYLE.test(name)) {
     return true;
   }
-  if (isWebFormsScript(folders, name) || isKubeSchema(folders, name)) return true;
+  if (isWebFormsScript(folders, name) || isKubeSchema(folders)) return true;
   if (folders.includes('scripts') && name === '_references.js') return true;
   return folders.some((folder) => LIBRARY_FOLDERS.has(folder)) && isLibraryName(name);
 }

@@ -26,6 +26,7 @@ const baseAnswers: Readonly<Record<string, Answer>> = {
   [`POST ${base}/plan-options`]: json(200, planOptions),
   [`GET ${base}/plan-estimate`]: json(200, planEstimate),
   [`GET ${base}/plan-source`]: json(200, planSource),
+  'GET /api/runs/run-1/answers': json(200, { questions: [] }),
 };
 
 export const renderPlan = (answers: Readonly<Record<string, Answer>> = {}): RenderedPage =>

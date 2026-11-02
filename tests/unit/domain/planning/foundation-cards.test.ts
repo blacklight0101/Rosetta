@@ -124,3 +124,41 @@ describe('withFoundationCards: the fixed cards as a whole', () => {
     expect(tasks.some((task) => task.title === `${first} (planner card)`)).toBe(true);
   });
 });
+
+// P7-20, EV-81, DEC-190: the data-access card never depends on a migrations card that is not there.
+describe('withFoundationCards without a migrations card (P7-20)', () => {
+  const migrationsTitle = 'Write the database migrations in the chosen stack';
+  const accessOf = <T extends { readonly title: string }>(tasks: readonly T[]): T | undefined =>
+    tasks.find((task) => task.title.includes('data-access'));
+
+  it('P7-20 a plan with tables and no migrations card gets one, and the data access waits for it', () => {
+    const tasks = withFoundationCards(planOf(twoTasks(), 3), 'strangler-fig', tables).tasks;
+    const migrations = tasks.find((task) => task.title === migrationsTitle);
+    const access = accessOf(tasks);
+
+    expect(migrations).toBeDefined();
+    expect(access?.dependsOn).toContain(migrations?.id);
+    expect(access?.acceptanceCriteria[0]).toMatch(/tables of the migrations card/u);
+  });
+
+  it('P7-20 a plan with data and no table names the target data model, not a migrations card', () => {
+    const tasks = withFoundationCards(planOf(twoTasks(), 3), 'strangler-fig', []).tasks;
+    const access = accessOf(tasks);
+
+    expect(tasks.some((task) => task.title === migrationsTitle)).toBe(false);
+    expect(access?.acceptanceCriteria.join(' ')).not.toMatch(/migrations card/u);
+    expect(access?.acceptanceCriteria[0]).toMatch(/tables of the target data model/u);
+    for (const task of tasks) {
+      for (const on of task.dependsOn) expect(tasks.some((each) => each.id === on)).toBe(true);
+    }
+  });
+
+  it('P7-20 a plan with no data has no data-access card and no card depends on a missing one', () => {
+    const tasks = withFoundationCards(planOf(twoTasks(), 3), 'strangler-fig', [], false).tasks;
+
+    expect(accessOf(tasks)).toBeUndefined();
+    for (const task of tasks) {
+      for (const on of task.dependsOn) expect(tasks.some((each) => each.id === on)).toBe(true);
+    }
+  });
+});

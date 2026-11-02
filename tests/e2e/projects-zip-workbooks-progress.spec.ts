@@ -86,8 +86,6 @@ async function phaseOf(page: Page, url: string): Promise<unknown> {
   return typeof body === 'object' && body !== null ? Reflect.get(body, 'phase') : undefined;
 }
 
-const kept = (page: Page) => page.getByRole('status').filter({ hasText: 'files kept' });
-
 test.beforeEach(async ({ context, page }, info) => {
   await signInAs(context, accountFor('projects', info.project.name));
   await page.goto('/projects');
@@ -112,9 +110,9 @@ test('RF-159 shows the steps, the workbook and sheet and the cells of a zip that
   await expectNoSeriousViolations(page);
 
   script.scripted = false;
-  await expect(kept(page)).toBeVisible({ timeout: 15_000 });
+  // EV-87, P8-10: the stored zip opens the project page.
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u, { timeout: 15_000 });
   await expect(panel).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Start a run' })).toBeVisible();
 });
 
 test('DEC-188 closing the page does not cancel the work: the project page shows its progress after a reload and then the summary', async ({
@@ -125,7 +123,7 @@ test('DEC-188 closing the page does not cancel the work: the project page shows 
   const projectId = await startUpload(page);
   await expect(page.getByTestId('processing')).toBeVisible();
 
-  await page.goto(`/projects/${projectId}/start`);
+  await page.goto(`/projects/${projectId}`);
   await expect(page.getByTestId('processing-detail')).toContainText('1,200 cells read');
   await page.reload();
   await expect(page.getByTestId('processing-detail')).toContainText('Workbook 2 of 2');
@@ -135,7 +133,8 @@ test('DEC-188 closing the page does not cancel the work: the project page shows 
   await expectNoSeriousViolations(page);
 
   script.scripted = false;
-  await expect(kept(page)).toBeVisible({ timeout: 15_000 });
+  // EV-87, P8-10: the stored zip opens the project page.
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u, { timeout: 15_000 });
 });
 
 test('DEC-188 a Cancel after the zip was stored answers 409, keeps the source and shows the summary', async ({
@@ -156,7 +155,8 @@ test('DEC-188 a Cancel after the zip was stored answers 409, keeps the source an
   script.scripted = false;
 
   expect(status).toBe(409);
-  await expect(kept(page)).toBeVisible({ timeout: 15_000 });
+  // EV-87, P8-10: the stored zip opens the project page.
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u, { timeout: 15_000 });
   await expect(page.getByText('Nothing was published')).toHaveCount(0);
   const shown = await page.request.get(`/api/projects/${projectId}`);
   expect(await shown.json()).toMatchObject({ source: { workbooks: 2 } });

@@ -122,6 +122,8 @@ interface EndedState {
   readonly costMicros: number | undefined;
   /** RF-208: how many areas gave no usable card; undefined for a run that does not say. */
   readonly failedAreas: number | undefined;
+  /** P7-02: how many planned areas no reader started; undefined for a run that does not say. */
+  readonly unreadAreas: number | undefined;
 }
 
 interface RoleTokens {
@@ -129,6 +131,20 @@ interface RoleTokens {
   readonly outputTokens: number;
   /** The part of the input read from the provider's cache (P5-16); it counts a tenth toward the cap. */
   readonly cachedInputTokens: number;
+}
+
+/** RF-1015 (P7-25): one planner call of a plan run, from its `plan.call.started` and usage events. */
+export interface PlanCallState {
+  readonly agentTaskId: string;
+  /** The document, for example `prd`; the task id without its `planner-` prefix. */
+  readonly call: string;
+  /** The start of the latest answer asked for; undefined until a start event arrives. */
+  readonly startedAt: string | undefined;
+  readonly running: boolean;
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  /** Undefined while no answer had a price. */
+  readonly costMicros: number | undefined;
 }
 
 /** RF-209: the cards a Deepen starts from, as counts. */
@@ -203,9 +219,18 @@ export interface RunState {
   readonly roleCostMicros: Readonly<Record<string, number>>;
   /** The tokens of each role from its `usage.recorded` events (P1-96); empty for older runs. */
   readonly roleTokens: Readonly<Record<string, RoleTokens>>;
+  /** RF-1015: the planner calls of a plan run, in the order they started; empty for any other run. */
+  readonly planCalls: readonly PlanCallState[];
   /** RF-209: set only for a Deepen run. */
   readonly deepen: DeepenProgress | undefined;
   /** RF-208: set only for a run that retries the failed areas of another run. */
   readonly retry: RetryProgress | undefined;
+  /** RF-432: set while the run waits for its owner's approval (`run.awaitingApproval`). */
+  readonly awaiting: AwaitingState | undefined;
   readonly ended: EndedState | undefined;
+}
+
+/** RF-432: the N that Continue (+N) offers; undefined for a run that approved no amount. */
+export interface AwaitingState {
+  readonly continueAmount: { readonly tokens: number; readonly costMicros: number } | undefined;
 }

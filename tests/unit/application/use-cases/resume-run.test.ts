@@ -1,3 +1,4 @@
+import { ALL_KEYS_SERVED } from '../../../support/web-role-keys.js';
 import { describe, expect, it, vi } from 'vitest';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import type { RunManifestStore } from '../../../../src/application/ports/run-manifest-store.js';
@@ -29,6 +30,7 @@ async function setup(settings: ProjectSettings = fakeReader, problemOf = noProbl
   await projects.insertOrFind(project);
   const resume = (manifests: RunManifestStore = harness.manifests) =>
     new ResumeRun({
+      roleKeys: ALL_KEYS_SERVED,
       projects,
       runs: harness.runs,
       manifests,

@@ -1,8 +1,10 @@
 import type { JSX } from 'preact';
+import { queueText } from '../lib/live-run/queue-text.js';
 import type { Project } from '../api/project-schemas.js';
 import type { LastRun, ProjectOverviewRow } from '../api/overview-schemas.js';
 import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
+import { RunEndBadge } from '../components/RunEndBadge.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { sourceLabel } from '../lib/source-label.js';
 import { tokensText, totalCostText } from '../lib/cost-text.js';
@@ -27,7 +29,7 @@ function RunState({ run }: { readonly run: LastRun | null }): JSX.Element | null
   if (run.queueState === 'Ended' && run.endState !== null) {
     return (
       <>
-        <StatusBadge list="RunEndState" value={run.endState} />
+        <RunEndBadge endState={run.endState} unreadAreas={run.unreadAreas} />
         <FailedAreasNote count={run.failedAreas} />
         {mayHaveMeasures(run) ? <RunMeasures runId={run.id} /> : null}
       </>
@@ -37,7 +39,7 @@ function RunState({ run }: { readonly run: LastRun | null }): JSX.Element | null
     <>
       <StatusBadge list="RunQueueState" value={run.queueState} />
       {run.position === null ? null : (
-        <span class="rst-table__sub rst-p1105-note">position {run.position}</span>
+        <span class="rst-table__sub rst-p1105-note">{queueText(run.position)}</span>
       )}
     </>
   );
@@ -49,7 +51,7 @@ function Actions({ row }: { readonly row: ProjectOverviewRow }): JSX.Element {
   const hidden = <span class="rst-visually-hidden"> for {project.name}</span>;
   return (
     <div class="rst-projects__actions">
-      <Link href={`/projects/${id}/start`} class="rst-button rst-button--primary">
+      <Link href={`/projects/${id}`} class="rst-button rst-button--primary">
         Start run{hidden}
       </Link>
       {lastRun?.queueState === 'Running' ? (

@@ -22,3 +22,8 @@ assemble.
 Provenance (RNF-009): the answer is the assistant message of the run `p2-eshop-plan2` (planner package, local model);
 the source it was planned from is the eShopModernizing project under the MIT licence (its LICENSE file). No real user,
 provider key or run record is kept here.
+
+
+`eshop-card-ids.json` is the planner answer of the eShop plan a9700a80 (evaluation of 2026-10-29, EV-67, run `p6-ollama-eshop-plan`, planner package, local model), trimmed to the title, statement and sources of its 13 requirements, its three phases and its seven task cards, unchanged. Cards 2-5 write source card ids as requirements; cards 6 and 7 write only ids no requirement cites. The integration test `plan-answer-card-ids-replay.test.ts` expects all seven cards to be kept (P7-15).
+
+Provenance (RNF-009): the assistant message of that run; the source is the eShopModernizing project under the MIT licence. No real user, provider key or run record is kept here.

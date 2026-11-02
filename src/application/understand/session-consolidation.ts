@@ -21,6 +21,8 @@ export interface ConsolidationStep extends Omit<ConsolidationSource, 'runId' | '
   readonly execution: RunExecution;
   readonly source: CardSource;
   readonly rerun?: Rerun | undefined;
+  /** P7-26: the merges stop where the overview call would be left without room. */
+  readonly room?: { readonly leavesOverview: () => boolean } | undefined;
 }
 
 /** The cards after the step, or undefined when no merge stands and the cards are as they were. */
@@ -30,6 +32,7 @@ export async function consolidateStep(
   state: { readonly cards: readonly Card[]; readonly areasWithoutCards: readonly string[] },
 ): Promise<readonly Card[] | undefined> {
   const { deps, execution, source } = step;
+  if (step.room?.leavesOverview() === false) return undefined;
   const scope = scopeOf(execution.run);
   const parts = consolidationParts({
     ...step,

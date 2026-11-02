@@ -1,19 +1,29 @@
+import { approvedJourneyOf, type JourneyLookup } from '../runs/approved-journey.js';
+import { withProjectLock } from '../journey/journey-lock.js';
+import { recordJourney, stepAmountChecked } from '../journey/journey-budget.js';
+import type { JourneyRecords } from '../ports/journey-records.js';
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
-import { err, type Result } from '../../domain/errors/result.js';
+import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { RunStage } from '../../domain/runs/run-states.js';
 import type { AgentRole } from '../ports/llm-provider.js';
 import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
+import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { planSourceRun } from '../plan/plan-source.js';
 import type { Project } from '../projects/project.js';
 import {
+  readUnderstandOptions,
   rolesNeedCloudConsent,
   rolesNeedPrivateConfirmation,
+  UNDERSTAND_ROLES,
   understandOptionsOf,
 } from '../understand/understand-options.js';
+import { scopeOf } from '../runs/run-scope.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
+import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.js';
+import type { ApprovedAmount } from '../understand/understand-options.js';
 
 // RF-003, RF-1108, RF-1105, RF-143, RF-132, RF-200: Start run is what `POST /api/projects/:id/runs` calls.
 // It finds the signed-in user's project (another user's id and an unknown id answer the same) and
@@ -26,15 +36,36 @@ import type { SubmitRun, SubmittedRun } from './submit-run.js';
 /** The stages that can be started through the API: `scan` (P1-23), `understand` (P1-33) and `plan` (P3-08). */
 const STARTABLE_STAGES: readonly RunStage[] = ['scan', 'understand', 'plan'];
 
+/** RF-431: the roles whose keys a startable stage needs; a scan calls no model. */
+const MODEL_ROLES_OF: Partial<Record<RunStage, readonly AgentRole[]>> = {
+  understand: UNDERSTAND_ROLES,
+  plan: ['planner'],
+};
+
 export interface StartRunDependencies {
   readonly projects: ProjectRepository;
   /** RF-614: a plan run's source run must be the user's, of the project and completed. */
   readonly runs: Pick<RunIndex, 'find' | 'list'>;
+  /** P7-38: a retry takes the cloud consent recorded in the manifest of the run it retries. */
+  readonly manifests: Pick<RunManifestStore, 'read'>;
   /** RST-1801: a plan run needs the brief the owner saved. */
   readonly briefs: Pick<PlanningBriefStore, 'read'>;
   readonly submit: SubmitRun;
   /** The host of the server's Ollama (`ROSETTA_OLLAMA_URL`); an Ollama elsewhere needs consent (RF-143). */
   readonly ollamaHost?: string;
+  /** RF-431: whether each role of the run has a usable key; checked before the run is queued. */
+  readonly roleKeys: RoleKeyDependencies;
+  /**
+   * RF-430, RF-432: the server's journey estimate. A start that names the figure it showed records
+   * the server's figures as the approved amount; the browser never sets it. Required: no wiring can
+   * leave the check out.
+   */
+  readonly journey: JourneyLookup;
+  /**
+   * RF-011, RF-435, ADR-027: the project's journey. Pressing Analyse records it; a later step runs
+   * under what is left of its amount. Absent only where no journey is kept (evaluation tools).
+   */
+  readonly journeys?: JourneyRecords;
 }
 
 export interface StartRunRequest {
@@ -53,6 +84,8 @@ export interface StartRunRequest {
   readonly sourceRunId?: string;
   /** RF-208, Q-43: `understand` reads `areas` again for this run (its id) and holds its cards. */
   readonly retryOf?: string;
+  /** RF-430: the figure the user approved on the start button, recorded as the run's approved amount. */
+  readonly approvedAmount?: ApprovedAmount;
 }
 
 export type StartRunProblem =
@@ -63,7 +96,10 @@ export type StartRunProblem =
   | typeof ERROR_CODES.planBriefMissing
   | typeof ERROR_CODES.planSourceMissing
   | typeof ERROR_CODES.projectNoSource
-  | typeof ERROR_CODES.requestInvalid;
+  | typeof ERROR_CODES.providerKeyMissing
+  | typeof ERROR_CODES.requestInvalid
+  | typeof ERROR_CODES.approvalChanged
+  | typeof ERROR_CODES.journeyAmountUsed;
 
 export class StartRun {
   private readonly deps: StartRunDependencies;
@@ -78,8 +114,9 @@ export class StartRun {
     const project = await this.deps.projects.find(actor.userId, projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
     if (!STARTABLE_STAGES.includes(stage)) return err(ERROR_CODES.runStageNotAvailable);
-    if (stage === 'understand') return this.understand(request, project);
-    if (stage === 'plan') return this.plan(request, project);
+    const lock = <T>(step: () => Promise<T>) => withProjectLock(project.id, step);
+    if (stage === 'understand') return lock(() => this.understand(request, project));
+    if (stage === 'plan') return lock(() => this.plan(request, project));
     // The scan settings of this moment are the run's: an edit while it waits does not change it.
     const options = { scanSettings: project.settings.scan };
     return this.submit({ actor, project, stage, options });
@@ -89,12 +126,16 @@ export class StartRun {
    * RF-128, RF-152: an upload or workbook project reads what it holds, so a run needs it; no run is created without it. The
    * confirmations of the request are judged first, so the owner is asked for each thing once.
    */
-  private submit(
+  private async submit(
     input: Parameters<SubmitRun['execute']>[0],
   ): Promise<Result<SubmittedRun, StartRunProblem>> {
     const { project } = input;
     if (project.sourceKind !== 'github' && project.upload === undefined) {
-      return Promise.resolve(err(ERROR_CODES.projectNoSource));
+      return err(ERROR_CODES.projectNoSource);
+    }
+    // RF-431, EV-44: a role with no usable key would fail RST-2302 at $0; no run is queued.
+    if (await anyRoleWithoutKey(this.deps.roleKeys, project, MODEL_ROLES_OF[input.stage] ?? [])) {
+      return err(ERROR_CODES.providerKeyMissing);
     }
     return this.deps.submit.execute(input);
   }
@@ -107,18 +148,13 @@ export class StartRun {
     project: Project,
   ): Promise<Result<SubmittedRun, StartRunProblem>> {
     // RST-1801: no run is created for a project whose owner has saved no brief.
-    const brief = await this.deps.briefs.read({
-      userId: request.actor.userId,
-      projectId: project.id,
-    });
+    const owner = { userId: request.actor.userId, projectId: project.id };
+    const brief = await this.deps.briefs.read(owner);
     if (brief === undefined) return err(ERROR_CODES.planBriefMissing);
     // RF-614, RST-1802, RF-1105: a named source run is checked before any run exists.
     const { actor, sourceRunId } = request;
-    if (sourceRunId !== undefined) {
-      const owner = { userId: actor.userId, projectId: project.id };
-      const source = await planSourceRun(this.deps.runs, owner, sourceRunId);
-      if (!source.ok) return err(source.error);
-    }
+    const problem = await this.sourceProblemOf(request, project);
+    if (problem !== undefined) return err(problem);
     const cloudConsent = request.cloudConsent === true;
     const roles: readonly AgentRole[] = ['planner'];
     if (!cloudConsent && rolesNeedCloudConsent(project.settings, this.deps.ollamaHost, roles)) {
@@ -130,11 +166,26 @@ export class StartRun {
     if (needsPrivate && request.privateCodeConfirmed !== true) {
       return err(ERROR_CODES.privateCodeNotConfirmed);
     }
+    const planLine = await this.planLineOf(request, project);
+    if (!planLine.ok) return err(planLine.error);
     const options = {
       ...{ cloudConsent, ...(needsPrivate ? { privateCodeConfirmed: true } : {}) },
       ...(sourceRunId === undefined ? {} : { sourceRunId }),
+      ...planLine.value,
     };
     return this.submit({ actor, project, stage: 'plan', options });
+  }
+
+  /** RF-614, RST-1802: why the named source run of a plan cannot be used; undefined when it can. */
+  private async sourceProblemOf(
+    request: StartRunRequest,
+    project: Project,
+  ): Promise<StartRunProblem | undefined> {
+    const { sourceRunId } = request;
+    if (sourceRunId === undefined) return undefined;
+    const owner = { userId: request.actor.userId, projectId: project.id };
+    const found = await planSourceRun(this.deps.runs, owner, sourceRunId);
+    return found.ok ? undefined : found.error;
   }
 
   /**
@@ -153,6 +204,32 @@ export class StartRun {
     return retryable && (request.areas?.length ?? 0) > 0 ? undefined : ERROR_CODES.requestInvalid;
   }
 
+  /**
+   * P7-38: a retry takes the cloud consent recorded in the manifest of the run it retries, read here
+   * and never from the browser's figure, which only counts where that run recorded none (the owner
+   * ticks the notice for this retry). A recorded consent is never removed by the browser.
+   */
+  private async consentOf(request: StartRunRequest): Promise<boolean> {
+    const ticked = request.cloudConsent === true;
+    if (request.retryOf === undefined) return ticked;
+    const parent = await this.deps.runs.find(request.actor.userId, request.retryOf);
+    if (parent === undefined) return ticked;
+    const manifest = await this.deps.manifests.read(scopeOf(parent));
+    const recorded =
+      manifest === undefined ? false : readUnderstandOptions(manifest.options).cloudConsent;
+    return recorded || ticked;
+  }
+
+  /** RF-432: the server's figures for the shown one; none when the start showed none. */
+  private async approvedOf(
+    request: StartRunRequest,
+  ): Promise<Result<ApprovedAmount | undefined, typeof ERROR_CODES.approvalChanged>> {
+    const shown = request.approvedAmount;
+    if (shown === undefined) return ok(undefined);
+    const { actor, projectId, areas } = request;
+    return approvedJourneyOf(shown, await this.deps.journey({ actor, projectId, areas }));
+  }
+
   // RF-143, RF-132, RF-200
   private async understand(
     request: StartRunRequest,
@@ -162,9 +239,16 @@ export class StartRun {
     const retryProblem = await this.retryProblem(request, project);
     if (retryProblem !== undefined) return err(retryProblem);
     const needsPrivate = rolesNeedPrivateConfirmation(project, ollamaHost);
+    const approved = await this.approvedOf(request);
+    if (!approved.ok) return err(approved.error);
+    const line = await this.leftOf(request, project, approved.value);
+    if (!line.ok) return err(line.error);
+    const approvedAmount = line.value;
     const options = understandOptionsOf({
       ...request,
+      cloudConsent: await this.consentOf(request),
       privateCodeConfirmed: needsPrivate && request.privateCodeConfirmed === true,
+      approvedAmount,
     });
     if (!options.cloudConsent && rolesNeedCloudConsent(project.settings, ollamaHost)) {
       return err(ERROR_CODES.cloudConsentMissing);
@@ -174,11 +258,43 @@ export class StartRun {
       return err(ERROR_CODES.privateCodeNotConfirmed);
     }
     const { actor } = request;
-    return this.submit({
+    const submitted = await this.submit({
       actor,
       project,
       stage: 'understand',
       options: { ...options },
     });
+    const owner = { userId: actor.userId, projectId: project.id };
+    if (submitted.ok) {
+      await recordJourney(this.deps.journeys, owner, approved.value, submitted.value.run.queuedAt);
+    }
+    return submitted;
+  }
+
+  /**
+   * RF-435, RF-432, P8-01: a plan of a journey runs under what is left of its approved amount and
+   * pauses there; a project with no journey records none and keeps its run caps as a hard stop.
+   */
+  private async planLineOf(
+    request: StartRunRequest,
+    project: Project,
+  ): Promise<
+    Result<{ readonly approvedAmount?: ApprovedAmount }, typeof ERROR_CODES.journeyAmountUsed>
+  > {
+    const left = await this.leftOf(request, project);
+    if (!left.ok) return left;
+    return ok(left.value === undefined ? {} : { approvedAmount: { ...left.value } });
+  }
+
+  /** RF-435: a step with no figure of its own runs under what is left of the journey's amount. */
+  private async leftOf(
+    request: StartRunRequest,
+    project: Project,
+    shown?: ApprovedAmount,
+  ): Promise<Result<ApprovedAmount | undefined, typeof ERROR_CODES.journeyAmountUsed>> {
+    if (shown !== undefined) return ok(shown);
+    const owner = { userId: request.actor.userId, projectId: project.id };
+    const { journeys, runs, manifests } = this.deps;
+    return stepAmountChecked({ journeys, runs, manifests }, owner);
   }
 }

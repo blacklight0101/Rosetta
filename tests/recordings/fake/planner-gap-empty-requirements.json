@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "description": "P7-14: shaped like the Haiku Invoice plan 8ff8e480. Under SDD the gap answer gives two cards with \"requirements\": [], one building operations a requirement covers and one building a journey and screens no requirement cites. Synthetic; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"tasks\": [\n    {\n      \"title\": \"Order operations\",\n      \"phase\": 1,\n      \"requirements\": [],\n      \"invariant\": \"An order posted is an order stored.\",\n      \"acceptanceCriteria\": [\n        \"Given a basket of 60, when it is posted, then the order is stored.\"\n      ],\n      \"riskClass\": \"none\",\n      \"adds\": [],\n      \"probes\": [],\n      \"files\": [\n        \"src/api/orders/\"\n      ],\n      \"dependsOn\": [\n        \"T-001\"\n      ],\n      \"builds\": [\n        \"operation:placeOrder\",\n        \"operation:getOrder\",\n        \"operation:listOrders\",\n        \"operation:signIn\",\n        \"operation:listCustomers\",\n        \"feature:F-002\"\n      ]\n    },\n    {\n      \"title\": \"Menu navigation between the journey and its screens\",\n      \"phase\": 1,\n      \"requirements\": [],\n      \"invariant\": \"An order posted is an order stored.\",\n      \"acceptanceCriteria\": [\n        \"Given a basket of 60, when it is posted, then the order is stored.\"\n      ],\n      \"riskClass\": \"none\",\n      \"adds\": [],\n      \"probes\": [],\n      \"files\": [\n        \"src/menu/\"\n      ],\n      \"dependsOn\": [\n        \"T-002\"\n      ],\n      \"builds\": [\n        \"flow:FLOW-001\",\n        \"screen:SCRN-001\",\n        \"screen:SCRN-003\"\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 300,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-8",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

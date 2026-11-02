@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { useEffect, useRef } from 'preact/hooks';
 import type { WorkbookProgress } from '../api/workbook-upload.js';
 import { Button } from '../components/Button.js';
 
@@ -33,18 +34,44 @@ function detailText(progress: WorkbookProgress | undefined): string {
   return `${where}${sheets}. ${count(progress.cells)} cells read.`;
 }
 
+const CANCEL_ID = 'rst-processing-cancel';
+
+/**
+ * RNF-010: a disabled button drops the keyboard focus to the page. While a Cancel waits, the focus moves
+ * from the button to the status line, which says what is going on; when the button comes back the focus
+ * goes back to it. A focus that was somewhere else is left alone.
+ */
+function useStoppingFocus(stopping: boolean): {
+  readonly status: { current: HTMLParagraphElement | null };
+} {
+  const status = useRef<HTMLParagraphElement | null>(null);
+  const was = useRef(false);
+  useEffect(() => {
+    const target = status.current;
+    if (stopping && !was.current && document.activeElement?.id === CANCEL_ID) target?.focus();
+    if (!stopping && was.current && document.activeElement === target) {
+      document.getElementById(CANCEL_ID)?.focus();
+    }
+    was.current = stopping;
+  }, [stopping]);
+  return { status };
+}
+
 export interface ProcessingProgressProps {
   readonly progress: WorkbookProgress | undefined;
   readonly elapsedMs: number;
   /** Stops the work; absent where the work cannot be stopped from the page. */
   readonly onCancel?: (() => void) | undefined;
+  /** The Cancel request is waiting for the work to end: the button reads "Stopping..." and is disabled. */
+  readonly stopping?: boolean | undefined;
 }
 
 // RF-159
 export function ProcessingProgress(props: ProcessingProgressProps): JSX.Element {
-  const { progress, elapsedMs, onCancel } = props;
+  const { progress, elapsedMs, onCancel, stopping = false } = props;
   const at = STEPS.findIndex((entry) => entry.step === progress?.step);
   const current = STEPS[Math.max(at, 0)];
+  const { status } = useStoppingFocus(stopping);
   return (
     <section class="rst-wb__progress" aria-label="Reading the workbooks" data-testid="processing">
       <ol class="rst-wb__steps">
@@ -61,12 +88,12 @@ export function ProcessingProgress(props: ProcessingProgressProps): JSX.Element 
       <p class="rst-wb__detail" data-testid="processing-detail">
         {detailText(progress)} <span class="rst-mono">{clockText(elapsedMs)}</span> elapsed.
       </p>
-      <p class="rst-visually-hidden" role="status" aria-live="polite">
-        {current?.saying}
+      <p class="rst-visually-hidden" role="status" aria-live="polite" tabIndex={-1} ref={status}>
+        {stopping ? 'Stopping the work.' : current?.saying}
       </p>
       {onCancel === undefined ? null : (
-        <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+        <Button id={CANCEL_ID} type="button" variant="secondary" busy={stopping} onClick={onCancel}>
+          {stopping ? 'Stopping\u2026' : 'Cancel'}
         </Button>
       )}
     </section>

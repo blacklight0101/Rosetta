@@ -16,6 +16,8 @@ import {
   type EvidenceLimits,
   type SkipLookup,
 } from './cited-lines.js';
+import { restatedAnswerReason, type OwnerAnswer } from './answer-restated-claim.js';
+import { earlierClaimReason } from './earlier-claim.js';
 import { maskedSourceReason } from './masked-source-claim.js';
 import { renderedFileReason } from './rendered-file-claim.js';
 import { screenRuleVerdict } from './screen-rule-check.js';
@@ -70,6 +72,8 @@ export interface ClaimJudgeParts {
   readonly workbookFolders?: readonly string[] | undefined;
   /** P5-34: which cited lines hold a value Rosetta masks; a claim that it is masked in the source is rejected. */
   readonly secretLines?: SecretLines | undefined;
+  /** DEC-198: the answers given to the task of the claim's area; a claim that restates one is rejected. */
+  readonly ownerAnswers?: readonly OwnerAnswer[] | undefined;
   /** Records the model version of each answer (RNF-004). */
   readonly onAnswer?: (response: LlmResponse) => Promise<void>;
   /** P5-15: told by the step that a cap or a stop ended it, so a claim still waiting sends no call. */
@@ -182,8 +186,12 @@ function ruleJudgement(
     parts.secretLines === undefined
       ? undefined
       : maskedSourceReason(claim, excerpts, parts.secretLines);
-  if (masked !== undefined) {
-    return { kind: 'judged', status: 'Rejected', reason: masked, withoutModel: true };
+  // DEC-198: the claim restates an owner's answer on the lines its question was raised from.
+  const restated = restatedAnswerReason(claim, parts.ownerAnswers ?? [], excerpts);
+  // EV-78: the claim refers to an earlier or rejected claim.
+  const rejected = masked ?? restated ?? earlierClaimReason(claim);
+  if (rejected !== undefined) {
+    return { kind: 'judged', status: 'Rejected', reason: rejected, withoutModel: true };
   }
   // P3-122, P5-31: a derived field or route claim the cited lines decide.
   const rule = screenRuleVerdict(claim, excerpts);

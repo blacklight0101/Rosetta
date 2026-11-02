@@ -12,6 +12,10 @@ const intro =
 const introNone =
   'Suggested answers, none recommended; the team may answer otherwise or type its own:';
 
+// P7-17: the principles are many defaults, not one recommended answer, so they have their own intro.
+const introDefaults =
+  'Suggested answers, the defaults first; the team may answer otherwise or type its own:';
+
 /** The recommended answer first, the others in the order given. */
 function recommendedFirst(options: readonly SuggestedOption[]): readonly SuggestedOption[] {
   return [
@@ -24,10 +28,12 @@ function recommendedFirst(options: readonly SuggestedOption[]): readonly Suggest
 export function suggestedAnswerLines(
   options: readonly SuggestedOption[] | undefined,
   esc: MarkdownEscaper,
+  principles = false,
 ): string[] {
   if (options === undefined || options.length === 0) return [];
+  const opening = options.some((option) => option.recommended) ? intro : introNone;
   return [
-    `  ${options.some((option) => option.recommended) ? intro : introNone}`,
+    `  ${principles ? introDefaults : opening}`,
     '',
     ...recommendedFirst(options).map(
       (option, index) =>

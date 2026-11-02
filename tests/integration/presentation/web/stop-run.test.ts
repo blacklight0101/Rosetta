@@ -29,8 +29,8 @@ async function setup(): Promise<Setup> {
   current = test;
   const amyUser = await addUser(test, { userName: 'amy' });
   const bobUser = await addUser(test, { userName: 'bob' });
-  const running = await test.runs.start(actorOf(amyUser.account));
-  const queued = await test.runs.start(actorOf(amyUser.account));
+  const running = await test.runs.start(actorOf(amyUser.account), 'understand');
+  const queued = await test.runs.start(actorOf(amyUser.account), 'understand');
   return {
     test,
     amy: await signedInBrowser(test.server, amyUser),
@@ -52,7 +52,11 @@ describe('POST /api/runs/:runId/stop', () => {
     const response = await amy.request({ method: 'POST', url: stopUrl(running) });
 
     expect(response.statusCode).toBe(202);
-    expect(response.json()).toMatchObject({ id: running.id, stage: 'scan', stopRequested: true });
+    expect(response.json()).toMatchObject({
+      id: running.id,
+      stage: 'understand',
+      stopRequested: true,
+    });
     expect(response.body).not.toContain('userId');
     expect((await test.runs.ended(running)).endState).toBe('Interrupted');
   });

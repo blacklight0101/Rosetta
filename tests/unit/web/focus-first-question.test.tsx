@@ -27,6 +27,7 @@ const open = (...numbers: readonly number[]): AnswersLoad => ({
   questions: numbers.map((n) => row(n)),
   deepens: 1,
   isDeepen: false,
+  deepening: false,
 });
 
 function LateField(props: { readonly id: string; readonly after: number }): JSX.Element | null {
@@ -81,6 +82,7 @@ it('RF-615 finishes the request at once when no question waits for an answer', (
     questions: [row(1, 'Staff only.')],
     deepens: 1,
     isDeepen: false,
+    deepening: false,
   };
   render(<Harness load={answered} request={wanted(done)} fieldAfter={0} />);
 

@@ -14,6 +14,7 @@ import {
 } from './support/plan-setup-page.js';
 import { accountFor } from './support/seed.js';
 import { leaveAPackage } from './support/seed-plan.js';
+import { seededQuestions, seedThreeOpenQuestions } from './support/seed-questions.js';
 import { signInAs } from './support/sign-in.js';
 
 // RF-605, RF-606, RF-608, RF-609, RF-610, RF-611, RF-612, RF-613, DEC-72, DEC-86: the Plan setup page,
@@ -25,6 +26,8 @@ import { signInAs } from './support/sign-in.js';
 test.describe.configure({ mode: 'serial' });
 
 let account = '';
+/** The UUID of the understand run of the first test, which the one-click test gives its questions. */
+let understandRun = '';
 
 test.beforeEach(async ({ context }, info) => {
   const credentials = accountFor('plan', info.project.name);
@@ -38,6 +41,7 @@ test('RF-605 after an understand run Plan setup asks six groups of questions, ea
   // A scan, then an understand run: longer than the default 30 s.
   test.setTimeout(180_000);
   await understandCatalog(page);
+  understandRun = new URL(page.url()).pathname.split('/').at(-1) ?? '';
   await openStartPage(page);
 
   await openPlanSetup(page);
@@ -84,7 +88,10 @@ test('RF-609 the stack step has two options for each of the seven layers and a f
 
   const layers = page.getByRole('radiogroup');
   await expect(layers).toHaveCount(7);
-  await expect(layers.first().getByRole('radio')).toHaveCount(4, { timeout: 20_000 });
+  // DEC-203: the demo is .NET Framework (end of life), so its language layer does not offer keeping it;
+  // the database layer is not end of life and still has the two proposals, keep and your own.
+  await expect(layers.first().getByRole('radio')).toHaveCount(3, { timeout: 20_000 });
+  await expect(layers.nth(3).getByRole('radio')).toHaveCount(4);
   await expect(page.getByLabel('Your own for Hosting')).toBeVisible();
   await layers.nth(3).getByRole('radio').last().check();
   await expectNoSeriousViolations(page);
@@ -146,8 +153,64 @@ test('RF-613 the plan estimate shows the planner against the caps and the packag
   await openPlanSetup(page);
 
   await expect(estimate(page)).toContainText(/(\$[\d.]+|[\d,]+ tokens) likely/u);
-  await expect(estimate(page)).toContainText('Run cost cap');
+  // P8-01: Analyse recorded the journey, so the run's line is what is left of its amount.
+  await expect(estimate(page)).toContainText('Approved tokens left');
   await expect(writeButton(page)).toBeEnabled();
+  await expectNoSeriousViolations(page);
+});
+
+test('RF-435 RF-432 P8-01 the plan estimate says the plan runs under what is left of the journey amount, not the project run caps', async ({
+  page,
+}) => {
+  await openStartPage(page);
+
+  await openPlanSetup(page);
+
+  // Analyse recorded the journey, so the plan run's line is its remainder and it pauses there.
+  await expect(page.getByTestId('plan-run-line')).toHaveText(
+    /under what is left of the amount you approved for the journey, not under the project run caps: it pauses and asks/u,
+  );
+  await expect(estimate(page)).toContainText(/Approved (amount|tokens) left/u);
+  await expect(estimate(page)).not.toContainText(/\bfits\b/u);
+});
+
+test('RF-647 one click accepts the recommended answers and the plan waits for Start the plan', async ({
+  page,
+}) => {
+  expect(understandRun).not.toBe('');
+  await openStartPage(page);
+  // P8-16: the recorded run asks nothing, so the run gets the three open questions of the case.
+  await seedThreeOpenQuestions(page, understandRun);
+  await openStartPage(page);
+  await openPlanSetup(page);
+  const screen = page.getByRole('region', { name: 'Questions and plan setup' });
+  await expect(screen).toBeVisible();
+  const questions = screen.getByTestId('open-question');
+  await expect(questions).toHaveCount(seededQuestions.length);
+
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
+  );
+  const answered: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() === 'PUT' && request.url().endsWith('/answers')) {
+      answered.push(request.postData() ?? '');
+    }
+  });
+  await screen.getByRole('button', { name: 'Accept the recommended answers' }).click();
+  expect((await saved).ok()).toBe(true);
+
+  // One click answered all three questions, each on its recommended option.
+  expect(answered).toHaveLength(seededQuestions.length);
+  for (const [index, body] of answered.entries()) {
+    expect(body).toContain(`OQ-00${String(index + 1)}`);
+    expect(body).toContain('"chosen":1');
+  }
+
+  await expect(estimate(page)).toContainText(/(\$[\d.]+|[\d,]+ tokens) likely/u);
+  await expect(writeButton(page)).toBeEnabled();
+  await expect(page).toHaveURL(/\/plan-setup/u);
   await expectNoSeriousViolations(page);
 });
 
@@ -161,11 +224,11 @@ test('RF-605 after a package exists a changed answer says the package is out of 
   await page.getByRole('button', { name: 'Save and continue' }).click();
 
   await expect(page.getByText(/The package is out of date/u)).toBeVisible();
-  await expect(writeButton(page)).toHaveText('Write the package again');
+  await expect(writeButton(page)).toHaveText('Start the plan again');
   await expectNoSeriousViolations(page);
 });
 
-test('RF-604 Write the package starts the plan run and opens its live page', async ({ page }) => {
+test('RF-604 Start the plan starts the plan run and opens its live page', async ({ page }) => {
   await openStartPage(page);
   await openPlanSetup(page);
 

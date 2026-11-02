@@ -71,7 +71,7 @@ describe('orchestration.md part 2', () => {
   it('RF-640 the band table uses the models the brief names and marks an unnamed tier', () => {
     const named = textOf({
       aiAssisted: true,
-      agentTool: { kind: 'codex' },
+      agentTool: { kind: 'other', name: 'Aider' },
       models: { smallest: 'small-x', largest: 'big-x' },
     });
 

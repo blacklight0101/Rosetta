@@ -58,6 +58,9 @@ export interface TaskCoverageEnd {
   readonly note?: string | undefined;
 }
 
+/** RF-206, P7-02: the note of an area no reader started. */
+const NOT_READ = 'not read';
+
 /** The coverage of the ended tasks of a run, in area order (never in the order they ended). */
 export class RunCoverage {
   private readonly tasks: readonly ReaderTask[];
@@ -80,6 +83,12 @@ export class RunCoverage {
     const surface = end.cards === undefined ? {} : { surface: surfaceCoverage(marks, end.cards) };
     const note = end.note === undefined ? {} : { note: end.note };
     this.ended.set(task.agentTaskId, { ...coverage, ...failure, ...surface, ...note });
+  }
+
+  /** P7-02: a planned area no reader started: every file listed, none read, noted `not read`. */
+  recordNotRead(task: ReaderTask, codeMap: Pick<CodeMap, 'files' | 'symbols'>): void {
+    const coverage = areaCoverage(task.area, codeMap.files, []);
+    this.ended.set(task.agentTaskId, { ...coverage, note: NOT_READ });
   }
 
   /** RF-006: the coverage a task of the run's earlier session left, kept as it was. */

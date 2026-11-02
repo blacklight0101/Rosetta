@@ -32,7 +32,7 @@ it('RF-1018 the summary bar shows the areas and files chosen, the estimate and S
   expect(bar().textContent).toContain('2 of 5 areas');
   expect(bar().textContent).toContain('8 files');
   expect(bar().textContent).toContain('Likely $0.39');
-  expect(within(bar()).getByRole('button', { name: /^Start run/u })).toBe(start());
+  expect(within(bar()).getByRole('button', { name: /^Analyse/u })).toBe(start());
 });
 
 it('RF-1018 an estimate that leaves out a model without a price reads as a lower bound', async () => {
@@ -73,16 +73,6 @@ it('RF-1018 Start pressed with nothing selected is disabled and the bar says why
   expect(bar().textContent).not.toContain('Likely');
 });
 
-it('RF-1018 a scan has no areas to sum up: the bar holds Start alone', async () => {
-  renderStart(estimateAnswers(mixed));
-  await ready();
-
-  fireEvent.click(input('Scan only'));
-
-  expect(bar().textContent).not.toContain('areas');
-  expect(within(bar()).getByRole('button', { name: /^Start run/u })).toBe(start());
-});
-
 it('RF-1018 choosing library areas shows what they add and Start asks for one confirmation', async () => {
   const { calls } = renderStart({
     ...estimateAnswers(mixed),
@@ -97,8 +87,11 @@ it('RF-1018 choosing library areas shows what they add and Start asks for one co
 
   expect(libraryNotice().textContent).toContain('2 library areas');
   expect(libraryNotice().textContent).toContain('100,000 tokens');
+  // RF-432: Start waits for the estimate of the areas now chosen, never the figure of other areas.
+  await waitFor(() => {
+    expect(start().title).toBe('Confirm the library areas, or choose own code only.');
+  });
   expect(start().disabled).toBe(true);
-  expect(start().title).toBe('Confirm the library areas, or choose own code only.');
   fireEvent.click(within(libraryNotice()).getByLabelText(confirmLabel));
   expect(start().disabled).toBe(false);
   fireEvent.click(start());
@@ -120,7 +113,9 @@ it('RF-1018 the confirmation is asked once: it stays given when the library choi
   fireEvent.click(input('jQuery#1'));
   fireEvent.click(input('Scripts#2'));
 
-  expect(start().disabled).toBe(false);
+  await waitFor(() => {
+    expect(start().disabled).toBe(false);
+  });
   expect(input(confirmLabel).checked).toBe(true);
 });
 

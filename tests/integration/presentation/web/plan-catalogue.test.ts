@@ -25,6 +25,16 @@ const catalogueBody = z.object({
   version: z.number(),
   entries: z.array(entry),
   migrations: z.array(z.object({ id: z.string(), title: z.string(), tradeOff: z.string() })),
+  wording: z.object({
+    context: z.record(z.string(), z.array(z.object({ id: z.string(), title: z.string() }))),
+    method: z.array(z.object({ id: z.string(), title: z.string() })),
+    keepLegacy: z.object({ id: z.string(), title: z.string() }),
+    workbook: z.object({
+      questions: z.array(z.object({ id: z.string(), label: z.string() })),
+      options: z.record(z.string(), z.array(z.object({ id: z.string(), title: z.string() }))),
+      windowsHost: z.string(),
+    }),
+  }),
 });
 
 async function open() {
@@ -82,6 +92,31 @@ describe('GET /api/plan/catalogue: migrations and access', () => {
     expect(migrations.map((each) => each.id)).toEqual([...migrationStrategies]);
     expect(migrations[0]).toMatchObject({ title: 'Strangler Fig' });
     for (const each of migrations) expect(each.tradeOff.length).toBeGreaterThan(20);
+  });
+
+  it('RF-645 P7-17 serves the one wording of the fixed options, no build method recommended', async () => {
+    const amy = await open();
+
+    const response = await amy.request({ method: 'GET', url: '/api/plan/catalogue' });
+
+    const { wording } = catalogueBody.parse(response.json());
+    expect(wording.method.map((each) => each.title)).toEqual([
+      'Agents will build',
+      'People will build',
+      'Agents build, people review each change',
+    ]);
+    expect(wording.context['context.teamSize']?.[0]).toMatchObject({ id: 'open' });
+    expect(wording.keepLegacy.title).toBe('Keep the legacy technology');
+    expect(wording.workbook.questions.map((each) => each.id)).toEqual([
+      'workbook.signIn',
+      'workbook.store',
+      'workbook.screens',
+    ]);
+    expect(wording.workbook.options['workbook.signIn']?.map((each) => each.id)).toEqual([
+      'windows',
+      'sso',
+      'accounts',
+    ]);
   });
 
   it('RF-1009 needs a session', async () => {

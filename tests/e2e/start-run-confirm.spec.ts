@@ -10,7 +10,7 @@ import { chooseModel } from './support/choose-model.js';
 // likely cost is above the confirm threshold, and the whole question is answered with the keyboard.
 // The account is the one of the `start-run` kind, as the other start page specs use it.
 
-const startButton = { name: /^Start run/u } as const;
+const startButton = { name: /^Analyse/u } as const;
 const consent = 'I understand; send masked excerpts to OpenAI for this run';
 
 test.beforeEach(async ({ context }, info) => {
@@ -20,9 +20,13 @@ test.beforeEach(async ({ context }, info) => {
 /** The reader runs on OpenAI with the server's key, so the estimate has a cost. */
 async function openWithCloudReader(page: Page): Promise<void> {
   await openScannedStartPage(page);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
+  // RF-436: the cap and the threshold are the project settings'. A tiny threshold puts the likely
+  // cost above it whatever the demo project costs.
+  await page.getByLabel('Run cost cap (USD)', { exact: true }).fill('2.00');
+  await page.getByLabel('Ask before a run estimated above (USD)', { exact: true }).fill('0.000001');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
@@ -31,8 +35,6 @@ async function openWithCloudReader(page: Page): Promise<void> {
 
 /** Stops the run the notice names (or cancels it when queued) and waits until it has ended. */
 async function endTheRun(page: Page): Promise<void> {
-  const notice = page.getByTestId('run-notice');
-  await notice.getByRole('link', { name: 'Open the live run' }).click();
   await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
   const endOfRun = page.getByRole('button', { name: /^(Stop run|Cancel queued run)$/u });
   if (await endOfRun.isVisible()) await endOfRun.click();
@@ -58,11 +60,6 @@ test(
   async ({ page }) => {
     test.setTimeout(90_000);
     await openWithCloudReader(page);
-    // A tiny threshold puts the likely cost above it whatever the demo project costs.
-    await page.getByLabel('Run cap (USD)').fill('2.00');
-    await page
-      .getByLabel('Ask before a run estimated above (USD)', { exact: true })
-      .fill('0.000001');
     const start = page.getByRole('button', startButton);
     await start.focus();
     await page.keyboard.press('Enter');
@@ -85,7 +82,7 @@ test(
     await expect(page.getByRole('button', { name: 'Confirm and start' })).toBeFocused();
     await page.keyboard.press('Enter');
 
-    await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
+    await expect(page).toHaveURL(/\/runs\//u);
     await endTheRun(page);
   },
 );

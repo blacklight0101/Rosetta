@@ -77,7 +77,7 @@ describe('an understand run with the answers option', () => {
     const spec = await readFile(join(h.runFolder(second), 'spec.md'), 'utf8');
     expect(spec).toMatch(/## New cards\n\n- BR-001 Items with zero stock stay listed/u);
     expect(spec).toMatch(/## Changed cards\n\n- FEAT-001 Home page lists the catalog/u);
-    expect((await h.manifestOf(second)).promptVersions['reader/answers.v1.md']).toBeDefined();
+    expect((await h.manifestOf(second)).promptVersions['reader/answers.v2.md']).toBeDefined();
     expect((await h.manifestOf(second)).options).toMatchObject({ withAnswers: true });
   });
 });

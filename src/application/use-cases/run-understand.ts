@@ -37,6 +37,7 @@ import { resumeSourceProblem } from '../understand/resume-state.js';
 import { announceRetry, scheduleTasks } from '../understand/retry-plan.js';
 import { recordRunTexts, type RunTextSources } from '../understand/run-texts.js';
 import type { Prepared, RolesWithBudget } from '../understand/run-understand-types.js';
+import { runOverviewOnly } from '../understand/overview-only.js';
 import { UnderstandSession } from '../understand/understand-session.js';
 import { runProviderSinks } from '../understand/run-sinks.js';
 import { withRoom } from '../understand/reader-room.js';
@@ -130,8 +131,9 @@ export class RunUnderstand implements RunExecutor {
       traceId: traceIdOf(execution.run),
       ids: this.deps.ids,
     };
-    const { deepen } = readUnderstandOptions(execution.manifest.options); // RF-209, RF-429
+    const { deepen, overviewOnly } = readUnderstandOptions(execution.manifest.options); // RF-209, RF-429
     const withTheRoom = withRoom(execution, parts, roles.value.budget);
+    if (overviewOnly === true) return runOverviewOnly(parts, deepen); // P7-26
     if (deepen !== undefined) return runDeepen({ ...withTheRoom, request: deepen });
     if (prepared.value.retry !== undefined) await announceRetry(execution, prepared.value.retry);
     const session = new UnderstandSession(withTheRoom);
@@ -224,12 +226,15 @@ export class RunUnderstand implements RunExecutor {
     const account = await this.deps.users.findById(run.userId);
     if (account === undefined) return stop(failed(ERROR_CODES.notFound));
     const sinks = await runProviderSinks(this.deps, execution, updates);
+    const options = readUnderstandOptions(manifest.options);
     const built = await this.deps.providers.build({
       account,
       run: { id: run.id, userId: run.userId, projectId: run.projectId, stage: 'understand' },
       settings: project.settings,
       roles: UNDERSTAND_ROLES,
-      cloudConsent: readUnderstandOptions(manifest.options).cloudConsent,
+      cloudConsent: options.cloudConsent,
+      // RF-432: the run pauses near the amount its owner approved.
+      approvedAmount: options.approvedAmount,
       sinks,
     });
     if (!built.ok) {

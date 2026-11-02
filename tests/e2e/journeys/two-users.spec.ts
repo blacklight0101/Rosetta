@@ -3,7 +3,7 @@ import { expect, test } from '../support/fixtures.js';
 import { expectNoSeriousViolations } from '../support/axe.js';
 import { clientAddressFor } from '../support/client-address.js';
 import { repositories } from '../support/journey-pages.js';
-import { ensureProject, startAndOpenLiveRun } from '../support/live-run-page.js';
+import { ensureProject, openScanRun } from '../support/live-run-page.js';
 import { accountFor } from '../support/seed.js';
 import { e2eOrigin } from '../support/server-config.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
@@ -31,13 +31,12 @@ test('RF-1105 a second user finds nothing of the first one project or run', asyn
   await signInThroughPage(page, accountFor('journey-owner', project));
   await page.getByLabel('GitHub repository URL').fill(repositories.demo);
   await page.getByRole('button', { name: 'Create project' }).click();
-  await page.getByRole('link', { name: 'Start run for octo/demo' }).click();
-  await page.getByLabel('Scan only').check();
-  const runPath = await startAndOpenLiveRun(page);
-  await expect(page.getByTestId('run-status')).toContainText('Completed', { timeout: 60_000 });
-  await page.goBack();
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
+  await openScanRun(page);
+  const runPath = new URL(page.url()).pathname;
+  await page.getByRole('navigation').getByRole('link', { name: 'Start a run' }).click();
   const startPath = new URL(page.url()).pathname;
-  const costPath = startPath.replace(/\/start$/u, '/cost');
+  const costPath = `${startPath}/cost`;
 
   const other = await otherUsersPage(browser, `second:${project}`);
   await signInThroughPage(other, accountFor('journey-other', project));
@@ -52,6 +51,7 @@ test('RF-1105 a second user finds nothing of the first one project or run', asyn
   expect(files?.status()).toBe(404);
   await other.goto('/projects');
   await ensureProject(other, repositories.demo);
+  await other.goto('/projects');
   await expect(other.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
   await other.context().close();
 

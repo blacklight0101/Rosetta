@@ -50,8 +50,8 @@ describe('RF-646 one list across an understand run and its Deepens', () => {
   it('RF-646 says whether the run has Deepens and whether it is one', async () => {
     const world = await askedTwice('', '');
 
-    expect(await world.list(0)).toMatchObject({ deepens: 1, isDeepen: false });
-    expect(await world.list(1)).toMatchObject({ deepens: 1, isDeepen: true });
+    expect(await world.list(0)).toMatchObject({ deepens: 1, isDeepen: false, deepening: false });
+    expect(await world.list(1)).toMatchObject({ deepens: 1, isDeepen: true, deepening: false });
   });
 
   it('RF-646 counts a Deepen only once it has ended, so the questions wait for it', async () => {
@@ -60,8 +60,8 @@ describe('RF-646 one list across an understand run and its Deepens', () => {
       { deepens: 0, cards: [oq('OQ-001', cancel)], sections: [], running: true },
     ]);
 
-    expect(await world.list(0)).toMatchObject({ deepens: 0, isDeepen: false });
-    expect(await world.journey(0)).toMatchObject({ deepens: 0, isDeepen: false });
+    expect(await world.list(0)).toMatchObject({ deepens: 0, isDeepen: false, deepening: true });
+    expect(await world.journey(0)).toMatchObject({ deepens: 0, isDeepen: false, deepening: true });
   });
 
   it('RF-646 RF-1007 merges by the merge record of the cards: a survivor answered under a merged-away id', async () => {

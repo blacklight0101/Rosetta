@@ -1,12 +1,21 @@
+import { modelMapOf, modelTiers } from './build-method.js';
 import type { Catalogue } from './catalogue.js';
 import { migrationStrategies } from './planning-brief.js';
 import type { PlanningBrief } from './planning-brief.js';
 import { migrationStrategyInfo } from './migration-strategy.js';
+import {
+  contextWording,
+  keepLegacyWording,
+  methodWording,
+  OPEN_OPTION_ID,
+  type WordedOption,
+} from './question-wording.js';
 
 // RF-637, RF-645, DEC-178, DEC-184, DEC-189, P6-31: the Plan setup options of each brief question
 // that took its default, so the open questions of the package list them as suggested answers. The
 // wording follows web/src/lib/plan-setup/question-options.ts, which the page shows; the default
-// is the recommended option, and the build method has no recommended option (DEC-184).
+// is the recommended option, and the build method has no recommended option (DEC-184). A tier-model
+// question that took its default offers the model map of the brief's tool (P7-12, EV-77).
 
 export interface BriefOption {
   readonly answer: string;
@@ -14,79 +23,18 @@ export interface BriefOption {
   readonly recommended: boolean;
 }
 
-const KEEP_LEGACY: BriefOption = {
-  answer: 'Keep the legacy technology',
-  description: 'This layer stays as it is until the migration reaches it.',
-  recommended: false,
-};
-
 const pick = (answer: string, description: string, recommended = false): BriefOption => ({
   answer,
   description,
   recommended,
 });
 
-const open = (what: string): BriefOption =>
-  pick(
-    'Leave it open',
-    `Nothing is assumed about ${what}; the package lists it as an open question.`,
-    true,
-  );
+/** The wording of the fixed options (question-wording.ts): the same text the page shows. */
+const worded = (option: WordedOption): BriefOption =>
+  pick(option.title, option.description, option.id === OPEN_OPTION_ID);
 
-const CONTEXT: Readonly<Record<string, readonly BriefOption[]>> = {
-  'context.teamSize': [
-    open('the team size'),
-    pick('One person', 'The roadmap is sized for one builder, so phases are small and serial.'),
-    pick('A small team of 4', 'The roadmap lets about four people work in parallel.'),
-    pick(
-      'A large team of 10',
-      'The roadmap runs several tracks at once, at more coordination cost.',
-    ),
-  ],
-  'context.experience': [
-    open('the team experience'),
-    pick('New to the target stack', 'The roadmap adds learning time and starts with small cards.'),
-    pick('Mixed experience', 'The roadmap pairs newer people with experienced ones.'),
-    pick('Experienced with the target stack', 'The roadmap assumes no ramp-up time.'),
-  ],
-  'context.deadline': [
-    open('a deadline'),
-    pick('No fixed deadline', 'The roadmap orders phases by risk, with no date pressure.'),
-    pick('Within six months', 'The roadmap cuts scope to the essential flows first.'),
-    pick('Within a year', 'The roadmap has room for every phase, one after another.'),
-  ],
-  'context.keepIntegrations': [
-    open('integrations'),
-    pick('Every integration stays', 'Every integration the code shows is kept as it is.'),
-    pick('No integration has to stay', 'Integrations may be redesigned with the new system.'),
-  ],
-  'context.dataMigration': [
-    open('the data migration'),
-    pick(
-      'Move all data once, at cut-over',
-      'One migration at the end; simple, with a short freeze.',
-    ),
-    pick(
-      'Move data with each phase',
-      'Data moves with the part of the system that uses it; no freeze.',
-    ),
-  ],
-};
-
-const METHOD: readonly BriefOption[] = [
-  pick(
-    'Agents will build',
-    'The package adds the agent working method and the model of each task card.',
-  ),
-  pick(
-    'People will build',
-    'The package is the plan and the specification, without the agent method.',
-  ),
-  pick(
-    'Agents build, people review each change',
-    'Agents build every card and people review each change; the package is the same as for Agents will build.',
-  ),
-];
+const KEEP_LEGACY: BriefOption = worded(keepLegacyWording);
+const METHOD: readonly BriefOption[] = methodWording.map(worded);
 
 const recommendedFirst = (list: readonly BriefOption[]): BriefOption[] => [
   ...list.filter((option) => option.recommended),
@@ -136,13 +84,37 @@ function stack(layer: string, brief: PlanningBrief, catalogue: Catalogue): Brief
   ];
 }
 
+/** P7-12, RF-639, RF-645: the tool's models for a blank tier, the tier's own first and recommended. */
+function modelOptions(tier: string, brief: PlanningBrief, catalogue: Catalogue): BriefOption[] {
+  const map = modelMapOf(brief.buildMethod.agentTool, catalogue.agentModels);
+  const own = modelTiers.find((each) => each === tier);
+  if (map === undefined || own === undefined) return [];
+  const title = brief.buildMethod.agentTool?.kind === 'codex' ? 'Codex' : 'Claude Code';
+  return recommendedFirst(
+    modelTiers.map((each) =>
+      each === own
+        ? pick(
+            map[each],
+            `The ${each} tier model of ${title}; this tier uses it until you name another.`,
+            true,
+          )
+        : pick(
+            map[each],
+            `The ${each} tier model of ${title}, for a team that builds this tier with it.`,
+          ),
+    ),
+  );
+}
+
 function optionsOf(id: string, brief: PlanningBrief, catalogue: Catalogue): BriefOption[] {
   if (id === 'principles') return principles(catalogue);
   if (id === 'architecture') return architecture(brief, catalogue);
   if (id === 'migration') return migration();
   if (id === 'buildMethod') return [...METHOD];
+  if (id.startsWith('buildMethod.models.'))
+    return modelOptions(id.slice('buildMethod.models.'.length), brief, catalogue);
   if (id.startsWith('stack.')) return stack(id.slice('stack.'.length), brief, catalogue);
-  return [...(CONTEXT[id] ?? [])];
+  return (contextWording[id] ?? []).map(worded);
 }
 
 /** The options of every question the brief left at its default, by question id; none for an unknown id. */

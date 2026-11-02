@@ -10,6 +10,7 @@ import {
   type Catalogue,
   type CatalogueEntry,
 } from '../../domain/planning/catalogue.js';
+import type { AgentModelMaps } from '../../domain/planning/build-method.js';
 import type { ClaimVerbs } from '../../domain/planning/claim-verbs.js';
 import type { GrepRules } from '../../domain/planning/grep-rules.js';
 import type { StackData } from '../../domain/planning/stack-data.js';
@@ -17,6 +18,7 @@ import { parseCatalogueEntry, parseCatalogueReadme } from './catalogue-entry-fil
 import { parseStackProposals, parseStackRules, parseStackTechnologies } from './stack-data-file.js';
 import { parseClaimVerbs } from './claim-verbs-file.js';
 import { parseGrepRules } from './grep-rules-file.js';
+import { parseAgentModels } from './agent-models-file.js';
 
 // RF-606, DEC-84, RNF-004: the catalogue folder `prompts/catalogue/`. Every file is named
 // `<id>.v<n>.md`; `readme.v<n>.md` declares the catalogue version and credits the master (DEC-85),
@@ -35,6 +37,7 @@ const rulesStem = 'stack-rules';
 const proposalsStem = 'stack-proposals';
 const verbsStem = 'claim-verbs';
 const grepsStem = 'grep-rules';
+const agentModelsStem = 'agent-models';
 
 interface CatalogueFile {
   readonly name: string;
@@ -67,7 +70,14 @@ async function readCatalogueFiles(folder: string): Promise<CatalogueFile[]> {
   );
 }
 
-const dataStems = [technologiesStem, rulesStem, proposalsStem, verbsStem, grepsStem];
+const dataStems = [
+  technologiesStem,
+  rulesStem,
+  proposalsStem,
+  verbsStem,
+  grepsStem,
+  agentModelsStem,
+];
 
 function oneFile(files: readonly CatalogueFile[], stem: string): CatalogueFile {
   const found = files.filter((file) => file.stem === stem);
@@ -106,6 +116,12 @@ function grepRulesOf(
   return parseGrepRules(file.name, file.version, file.bytes.toString('utf8'), known);
 }
 
+/** P7-23, RF-639: the default model names of Claude Code and Codex, from their file. */
+function agentModelsOf(files: readonly CatalogueFile[]): AgentModelMaps {
+  const file = oneFile(files, agentModelsStem);
+  return parseAgentModels(file.name, file.bytes.toString('utf8'));
+}
+
 function sha256Of(files: readonly CatalogueFile[]): string {
   const hash = createHash('sha256');
   for (const { name, bytes } of files) hash.update(`${name}\n`).update(bytes);
@@ -139,5 +155,6 @@ export async function loadCatalogue(promptsFolder: string): Promise<Catalogue> {
     stack: stackOf(files),
     claimVerbs: claimVerbsOf(files),
     grepRules: grepRulesOf(files, entries),
+    agentModels: agentModelsOf(files),
   };
 }

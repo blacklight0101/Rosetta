@@ -18,9 +18,9 @@ import { useTempRoot } from '../../../support/temp-root.js';
 // RNF-004: prompts are versioned files; a run records the version and SHA-256 of each one it used.
 
 const readerPromptNames = [
-  'cards/card-format.v3.md',
+  'cards/card-format.v5.md',
   'cards/continue.v1.md',
-  'cards/repair.v4.md',
+  'cards/repair.v6.md',
   'reader/area.v12.md',
   'reader/read-first.v1.md',
   'reader/read-more.v1.md',

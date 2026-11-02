@@ -17,6 +17,7 @@ import type { ScannedSource } from '../ports/scan-results.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
 import type { RunEventPublisher } from '../runs/run-event-publisher.js';
+import type { OwnerAnswer } from '../verifier/answer-restated-claim.js';
 import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import { defaultEvidenceLimits } from '../verifier/cited-lines.js';
 import {
@@ -26,6 +27,8 @@ import {
   type Judgement,
 } from '../verifier/judge-claim.js';
 import type { VerifierPrompts } from '../verifier/verifier-prompts.js';
+import type { RerunPlan } from './answer-rerun.js';
+import { answersOfArea, ownerAnswerOf, sharedKey } from './owner-answer-claims.js';
 import { readerParallelism } from './reader-settings.js';
 import { CallTurn, OrderedPublisher, turnOf } from './call-turn.js';
 import { runPool } from './task-pool.js';
@@ -48,6 +51,8 @@ export interface ClaimJudgementParts {
   readonly awaits?: (claim: Claim) => boolean;
   /** RF-209, RF-423: told when the verifier's own cap refused a call, so a Deepen ends `CapReached`. */
   readonly onCapped?: () => void;
+  /** DEC-198: the answers the run gave its readers; a claim of their area that restates one is rejected. */
+  readonly ownerAnswers?: readonly OwnerAnswer[];
 }
 
 interface Pending {
@@ -137,6 +142,17 @@ function decidedWith(judgement: Extract<Judgement, { kind: 'judged' }>) {
   };
 }
 
+/** One claim judged with the answers its area was given (DEC-198), in its own span. */
+function judgeOne(
+  parts: ClaimJudgementParts,
+  each: Pending,
+  call: Pick<ClaimJudgeParts, 'halted' | 'turn'>,
+): Promise<Judgement> {
+  const owner = answersOfArea(parts.ownerAnswers, each.card.area);
+  const judge = { ...parts.judge, ...call, ownerAnswers: owner };
+  return judgeClaim(judge, each.claim, spanIdOf(parts.judge.call.traceId, each.index));
+}
+
 /** The cards with the verdict of every claim the step judged (RF-301, RF-302). */
 // RF-301, RF-1004
 export async function judgeClaims(
@@ -160,12 +176,11 @@ export async function judgeClaims(
     const mine = turnOf(turn, each.index);
     try {
       if (halted() !== undefined) return;
-      const key = JSON.stringify([each.claim.text, each.claim.citations]);
-      const spanId = spanIdOf(judge.call.traceId, each.index);
+      const key = sharedKey(parts.ownerAnswers, each.card.area, each.claim);
       const earlier = sent.get(key);
       // A repeated claim sends no call, so it gives its turn up before it waits for the first one.
       if (earlier !== undefined) mine.pass();
-      const asked = earlier ?? judgeClaim({ ...judge, halted, turn: mine }, each.claim, spanId);
+      const asked = earlier ?? judgeOne(parts, each, { halted, turn: mine });
       sent.set(key, asked);
       const judgement = await asked;
       if (judgement.kind !== 'judged') halt[judgement.kind] = true;
@@ -232,6 +247,8 @@ export interface JudgementContext {
   readonly nextCallId: () => string;
   readonly traceId: string;
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
+  /** DEC-198: the re-run with answers or the Deepen that gave answers to its readers. */
+  readonly rerun?: { readonly plan: Pick<RerunPlan, 'pending'> };
   readonly verifier: {
     readonly role: ClaimJudgeParts['role'];
     readonly prompts: VerifierPrompts;
@@ -267,5 +284,8 @@ export function judgementPartsOf(context: JudgementContext, clock: Clock): Claim
     },
     parallelism: readerParallelism(settings),
     ...{ events: execution.events, clock, model: verifier.role.model },
+    ...(context.rerun === undefined
+      ? {}
+      : { ownerAnswers: context.rerun.plan.pending.map(ownerAnswerOf) }),
   };
 }

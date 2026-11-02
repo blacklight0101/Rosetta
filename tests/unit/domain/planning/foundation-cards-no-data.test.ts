@@ -15,10 +15,6 @@ import { planTask } from '../../../support/task-card-fixtures.js';
 // card only. No card depends on a card that was dropped, and the ids stay in one sequence.
 
 const tables = targetModel().tables;
-const claims = [
-  { claimId: 'ENT-001.c1', text: 'A table.', citations: [], status: 'Supported' },
-] as const;
-const entity = { type: 'ENT', claims } as const;
 const dropped = [foundationTitles.access, foundationTitles.migration];
 
 function dataless(
@@ -30,23 +26,11 @@ function dataless(
 
 describe('hasData', () => {
   it('P6-27 a run with a table has data', () => {
-    expect(hasData([], tables)).toBe(true);
+    expect(hasData(tables)).toBe(true);
   });
 
-  it('P6-27 a run with an ENT card that holds a claim has data even before a table exists', () => {
-    expect(hasData([entity], [])).toBe(true);
-  });
-
-  it('P6-27 a run with no table and no ENT claim has none, whatever its other cards say', () => {
-    expect(
-      hasData(
-        [
-          { type: 'FEAT', claims },
-          { type: 'ENT', claims: [] },
-        ],
-        [],
-      ),
-    ).toBe(false);
+  it('P8-14 P6-27 a run with an ENT claim and no table has none: the migrations card needs a table', () => {
+    expect(hasData([])).toBe(false);
   });
 });
 
@@ -104,6 +88,41 @@ describe('withFoundationCards: a run with no data, the ids and the waits', () =>
   });
 });
 
+describe('withFoundationCards: a run with no data, the cut-over text', () => {
+  it('P7-17 says nothing of migrated data or row counts, for every strategy', () => {
+    for (const strategy of ['strangler-fig', 'parallel-change', 'rewrite'] as const) {
+      const cutOver = dataless(1, strategy).tasks.at(-1);
+      const text = JSON.stringify(cutOver);
+
+      expect(text).not.toMatch(/migrat|row count|data written|no data lost/i);
+    }
+  });
+
+  it('P7-17 keeps the migrated data and the row counts when the run has data', () => {
+    const cutOver = withFoundationCards(planOf(twoTasks(), 1), 'rewrite', tables).tasks.at(-1);
+
+    expect(JSON.stringify(cutOver)).toMatch(/row counts/);
+  });
+});
+
+describe('withFoundationCards: a run with no data, the notes', () => {
+  it('P7-17 the notes of a requirement follow the cards to their new ids', () => {
+    const content = {
+      ...planOf(twoTasks(), 1),
+      requirementNotes: [
+        { kind: 'added', task: 'T-001', requirement: 'REQ-001' },
+        { kind: 'unbacked', task: 'T-002', item: 'feature:F-007' },
+      ],
+    } as const;
+    const moved = withFoundationCards(content, 'rewrite', [], false);
+
+    expect(moved.requirementNotes).toEqual([
+      { kind: 'added', task: 'T-003', requirement: 'REQ-001' },
+      { kind: 'unbacked', task: 'T-004', item: 'feature:F-007' },
+    ]);
+  });
+});
+
 describe('withFoundationCards: a run with no data, the plan around the cards', () => {
   it('P6-27 a planner card that waited on another planner card keeps that wait, renumbered', () => {
     const tasks = withFoundationCards(
@@ -124,7 +143,7 @@ describe('withFoundationCards: a run with no data, the plan around the cards', (
     );
   });
 
-  it('P6-27 no phase is empty and the closing cards wait only for cards that exist', () => {
+  it('P6-27 the closing cards wait only for cards that exist and only the first and last phases hold cards', () => {
     const closed = withPhaseClosingCards(dataless(3)).tasks;
     const ids = new Set(closed.map((task) => task.id));
 

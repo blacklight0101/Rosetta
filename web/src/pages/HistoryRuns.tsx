@@ -5,8 +5,10 @@ import type { HistoryRun } from '../api/history-schemas.js';
 import { Button } from '../components/Button.js';
 import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
+import { RunEndBadge } from '../components/RunEndBadge.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
+import { queueText } from '../lib/live-run/queue-text.js';
 import { isResumable } from '../lib/live-run/resumable.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { secondsText } from './admin-format.js';
@@ -33,12 +35,17 @@ function StateBadge({ run }: { readonly run: HistoryRun }): JSX.Element {
   if (run.queueState === 'Ended' && ended !== undefined) {
     return (
       <>
-        <StatusBadge list="RunEndState" value={ended} />
+        <RunEndBadge endState={ended} unreadAreas={run.unreadAreas} />
         <FailedAreasNote count={run.failedAreas} />
       </>
     );
   }
-  return <StatusBadge list="RunQueueState" value={run.queueState} />;
+  return (
+    <>
+      <StatusBadge list="RunQueueState" value={run.queueState} />
+      {run.position === null ? null : <div class="rst-table__sub">{queueText(run.position)}</div>}
+    </>
+  );
 }
 
 function RunId({ run }: { readonly run: HistoryRun }): JSX.Element {

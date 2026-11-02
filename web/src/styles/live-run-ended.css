@@ -106,3 +106,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* P7-25: a section of the package checks keeps its lines and table rows. */
+.rst-plan-check {
+  white-space: pre-wrap;
+}

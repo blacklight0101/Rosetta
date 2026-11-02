@@ -25,7 +25,7 @@ describe('EstimatePlan: the coverage call', () => {
   it('RF-613 RF-627 counts the coverage call, with its own measured prompt', async () => {
     const { assumptions } = await estimateOf();
 
-    const system = (await readFile('prompts/planner/coverage.v1.md', 'utf8')).length;
+    const system = (await readFile('prompts/planner/coverage.v2.md', 'utf8')).length;
     expect(assumptions.calls).toBe(6);
     expect(assumptions.coveragePromptTokens).toBeGreaterThan(Math.ceil(system / 4));
   });

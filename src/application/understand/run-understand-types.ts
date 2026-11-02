@@ -36,5 +36,5 @@ export interface UnderstandRoles {
 
 /** P5-20: the roles with the run's budget events, whose spend by role the readers' room check reads. */
 export interface RolesWithBudget extends UnderstandRoles {
-  readonly budget: Pick<RunBudgetEvents, 'roleSpend'>;
+  readonly budget: Pick<RunBudgetEvents, 'roleSpend' | 'runSpend' | 'stoppedAtLine'>;
 }

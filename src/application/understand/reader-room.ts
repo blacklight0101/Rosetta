@@ -1,5 +1,10 @@
-import { roomVerdict, type RoomFacts, type Spend } from '../../domain/budget/claim-room.js';
-import { READER_SHARE_PERCENT, VERIFIER_SHARE_PERCENT } from '../../domain/budget/budget.js';
+import {
+  leavesOverviewRoom,
+  roomVerdict,
+  type RoomFacts,
+  type Spend,
+} from '../../domain/budget/claim-room.js';
+import { ApprovalPause } from '../../domain/budget/cap-stop.js';
 import type { Card } from '../../domain/cards/card.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -19,10 +24,19 @@ import { announceReadersStopped, type ReadersStop } from './readers-stopped.js';
 // with what the caps leave. Once it says no it says no for good: no task starts, a task that is
 // running ends at its next turn, and the run says once why.
 
-/** Where the check reads the spend by role, and where it speaks. */
+/** Where the check reads the spend by role and of the whole run, and where it speaks. */
 export interface ReaderRoomSources {
   readonly spend: (role: 'reader' | 'verifier') => Spend;
+  /** DEC-193: what every role of the run has spent, as the verifier's line counts it. */
+  readonly runSpend: () => Spend;
+  /** DEC-193: whether the role's calls were refused only at its reserve line of the run cap. */
+  readonly stoppedAtLine: (role: 'verifier') => boolean;
   readonly announce: (reason: ReadersStop, claims: number) => Promise<void>;
+  /**
+   * P8-03, RF-432: set when the run cap is the owner's approved amount. A stop of the readers then
+   * pauses the run and asks, as a refused call does, instead of ending it `CapReached`.
+   */
+  readonly pause?: () => void;
 }
 
 /** The claims waiting for the verifier, and those it has judged (a rule's verdict is no judgement). */
@@ -38,11 +52,11 @@ function claimCountsOf(cards: readonly Card[]): RoomFacts['claims'] {
   return { unjudged, judged };
 }
 
-function percentOf(value: bigint, percent: number): bigint {
-  return (value * BigInt(percent)) / 100n;
-}
-
-/** The caps the check holds the readers to: the run's, and the shares or role caps of the roles. */
+/**
+ * The caps the check holds the readers to: the run's, and a reader token cap of the project. Neither
+ * the readers nor the verifier have a fixed share (DEC-193); a verifier cap of the project is the
+ * owner's choice to cut judging short, not a reason to stop reading.
+ */
 function roomLimitsOf(settings: ProjectSettings, reader: RoleProvider): RoomFacts['limits'] {
   const { run } = settings.budget;
   const caps = reader.runCaps ?? {
@@ -53,9 +67,7 @@ function roomLimitsOf(settings: ProjectSettings, reader: RoleProvider): RoomFact
   return {
     runTokens: caps.tokens,
     runMicros: caps.micros,
-    readerTokens: readerCap ?? percentOf(caps.tokens, READER_SHARE_PERCENT),
-    // A verifier cap of the project is the owner's choice to cut judging short, not a reason to stop reading.
-    verifierTokens: percentOf(caps.tokens, VERIFIER_SHARE_PERCENT),
+    ...(readerCap === undefined ? {} : { readerTokens: readerCap }),
     callTokens: BigInt(reader.maxOutputTokens),
   };
 }
@@ -100,7 +112,7 @@ export class ReaderRoom {
     const counted = claimCountsOf(this.cards());
     const claims = { ...counted, unjudged: counted.unjudged + this.pending() };
     const facts = {
-      ...{ limits: this.limits, claims },
+      ...{ limits: this.limits, claims, run: sources.runSpend() },
       readers: sources.spend('reader'),
       verifier: sources.spend('verifier'),
     };
@@ -108,7 +120,21 @@ export class ReaderRoom {
     if (verdict === 'open') return true;
     this.stopped = verdict === 'judging' ? 'judging' : 'share';
     await sources.announce(this.stopped, claims.unjudged);
+    sources.pause?.();
     return false;
+  }
+
+  /** P7-26: whether the run token cap still has room for the overview after a merge call. */
+  leavesOverview(): boolean {
+    return leavesOverviewRoom(this.sources.runSpend(), {
+      tokens: this.limits.runTokens,
+      micros: this.limits.runMicros,
+    });
+  }
+
+  /** DEC-193: whether the verifier was stopped only at its line of the run cap, not by a cap of its own. */
+  verifierAtLine(): boolean {
+    return this.sources.stoppedAtLine('verifier');
   }
 
   /** The reader's provider, which ends a task at its next turn once the check has said no. */
@@ -138,30 +164,42 @@ export function endsWithoutRoomStops<T>(
     .map(([, end]) => end);
 }
 
+/** What the room check reads from the run's budget events. */
+export type RoomBudget = Pick<RunBudgetEvents, 'roleSpend' | 'runSpend' | 'stoppedAtLine'>;
+
 /** The parts of a session with the room check of the run, reading its spend by role (P5-20). */
 export function withRoom<
   P extends { readonly settings: ProjectSettings; readonly role: RoleProvider },
 >(
-  execution: Pick<RunExecution, 'events'>,
+  execution: Pick<RunExecution, 'events' | 'stop'>,
   parts: P,
-  budget: Pick<RunBudgetEvents, 'roleSpend'>,
+  budget: RoomBudget,
 ): P & { readonly room: ReaderRoom } {
   return { ...parts, room: readerRoomOf(execution, { ...parts, budget }) };
 }
 
 /** The room check of an understand run, reading the run's spend by role and speaking through its events. */
 function readerRoomOf(
-  execution: Pick<RunExecution, 'events'>,
+  execution: Pick<RunExecution, 'events' | 'stop'>,
   parts: {
-    readonly budget: Pick<RunBudgetEvents, 'roleSpend'>;
+    readonly budget: RoomBudget;
     readonly settings: ProjectSettings;
     readonly role: RoleProvider;
   },
 ): ReaderRoom {
   const sources = {
     spend: (role: 'reader' | 'verifier') => parts.budget.roleSpend(role),
+    runSpend: () => parts.budget.runSpend(),
+    stoppedAtLine: (role: 'verifier') => parts.budget.stoppedAtLine(role),
     announce: (reason: ReadersStop, claims: number) =>
       announceReadersStopped(execution, reason, claims),
+    ...(parts.role.runCaps?.approved === true
+      ? {
+          pause: () => {
+            execution.stop(new ApprovalPause());
+          },
+        }
+      : {}),
   };
   return new ReaderRoom(sources, roomLimitsOf(parts.settings, parts.role));
 }

@@ -18,6 +18,8 @@ export interface ResumeButtonProps {
   /** The word on the button; "Resume run" unless the page says it in its own words. */
   readonly label?: string;
   readonly onResumed: () => void;
+  /** P7-26: write the overview alone ("Write the overview"). */
+  readonly overviewOnly?: boolean;
 }
 
 // RF-006
@@ -28,7 +30,7 @@ export function ResumeButton(props: ResumeButtonProps): JSX.Element {
   const resume = (): void => {
     setBusy(true);
     setError(undefined);
-    void resumeRun(client, props.runId).then((result) => {
+    void resumeRun(client, props.runId, props.overviewOnly === true).then((result) => {
       setBusy(false);
       if (result.ok) props.onResumed();
       else setError(result.error);

@@ -2,10 +2,19 @@ import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
-import { isBriefOutOfDate } from '../../domain/planning/planning-brief.js';
+import { isBriefOutOfDate } from '../../domain/planning/brief-freshness.js';
+import { queuePositions } from '../../domain/runs/queue-rules.js';
 import type { Run } from '../../domain/runs/run.js';
-import type { Journey, JourneyHandoff, JourneyRun, JourneySource } from '../journey/journey.js';
+import type {
+  Journey,
+  JourneyBudget,
+  JourneyHandoff,
+  JourneyRun,
+  JourneySource,
+} from '../journey/journey.js';
 import { endCodeOf, planSourceKey } from '../journey/journey-lookup.js';
+import { journeyRemaining } from '../../domain/journey/journey-record.js';
+import type { JourneyRecords } from '../ports/journey-records.js';
 import type { AnswersFile } from '../ports/answers-file.js';
 import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
 import type { PriorCards } from '../ports/prior-cards.js';
@@ -28,13 +37,15 @@ import { waitsForAnswer } from './question-states.js';
 
 export interface GetJourneyDependencies {
   readonly projects: ProjectRepository;
-  readonly runs: Pick<RunIndex, 'list'>;
+  readonly runs: Pick<RunIndex, 'list' | 'listQueued'>;
   readonly manifests: Pick<RunManifestStore, 'read'>;
   readonly history: Pick<RunEventHistory, 'read' | 'lastSeq'>;
   readonly briefs: Pick<PlanningBriefStore, 'read'>;
   readonly cards: RunCards;
   readonly answers: Pick<AnswersFile, 'questionsOf'>;
   readonly priorCards: PriorCards;
+  /** RF-1021: the journey record of the project; without it no amount is reported. */
+  readonly journeys?: Pick<JourneyRecords, 'find'> | undefined;
 }
 
 export interface GetJourneyRequest {
@@ -45,7 +56,7 @@ export interface GetJourneyRequest {
 }
 
 /** A run that is not `Completed` asks no question and, for the journey, has no Deepen. */
-const NO_QUESTIONS = { openQuestions: 0, deepens: 0, isDeepen: false } as const;
+const NO_QUESTIONS = { openQuestions: 0, deepens: 0, isDeepen: false, deepening: false } as const;
 
 type NotFound = typeof ERROR_CODES.notFound;
 /** The understand run each plan run was written from, by the id of the plan run. */
@@ -113,7 +124,8 @@ export class GetJourney {
     const sources = await this.sourcesOfPlanRuns(list);
     const brief = await this.deps.briefs.read({ userId, projectId });
     const scan = list.find((run) => run.stage === 'scan' && isCompleted(run));
-    const base = { scanRunId: scan?.id ?? null, briefSaved: brief !== undefined };
+    const budget = await this.budgetOf(userId, projectId, list);
+    const base = { scanRunId: scan?.id ?? null, briefSaved: brief !== undefined, budget };
     const source = chooseSource(list, named, sources);
     if (source === undefined) return ok({ ...base, source: null, plan: null, handoff: null });
     const plan = list.find((run) => run.stage === 'plan' && sources.get(run.id) === source.runKey);
@@ -145,6 +157,23 @@ export class GetJourney {
     return null;
   }
 
+  /** RF-1021: what the owner approved for the journey and what is left of it. */
+  private async budgetOf(
+    userId: string,
+    projectId: string,
+    list: readonly Run[],
+  ): Promise<JourneyBudget | null> {
+    const record = await this.deps.journeys?.find(userId, projectId);
+    if (record === undefined) return null;
+    const left = journeyRemaining(record, list);
+    return {
+      approvedMicros: record.approved.costMicros,
+      remainingMicros: left.costMicros,
+      approvedTokens: record.approved.tokens,
+      remainingTokens: left.tokens,
+    };
+  }
+
   private async sourcesOfPlanRuns(list: readonly Run[]): Promise<PlanSources> {
     const plans = list.filter((run) => run.stage === 'plan');
     const keys = await Promise.all(
@@ -153,10 +182,18 @@ export class GetJourney {
     return new Map(plans.map((run, index) => [run.id, keys[index] ?? null]));
   }
 
+  /** EV-80: only a queued run has a place, counted over the server's queue. */
+  private async positionOf(run: Run): Promise<number | null> {
+    if (run.queueState !== 'Queued') return null;
+    return queuePositions(await this.deps.runs.listQueued()).get(run.id) ?? null;
+  }
+
   private async runFacts(run: Run): Promise<JourneyRun> {
     return {
       ...{ id: run.id, runKey: run.runKey, queueState: run.queueState, endState: run.endState },
       ...{ endedAt: run.endedAt, costMicros: run.totals.costMicros },
+      unreadAreas: run.unreadAreas,
+      position: await this.positionOf(run),
       errorCode: await endCodeOf(this.deps.history, run),
     };
   }
@@ -184,6 +221,7 @@ export class GetJourney {
       openQuestions: questions.filter(waitsForAnswer).length,
       deepens: family.deepens,
       isDeepen: family.isDeepen,
+      deepening: family.deepening,
     };
   }
 }

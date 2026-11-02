@@ -254,7 +254,10 @@ describe('StoreUpload a zip that holds no workbook', () => {
 
     expect(outcome.ok && 'accepted' in outcome.value).toBe(false);
     expect(outcome.ok && outcome.value).toMatchObject({ files: 7, snapshotHash: uploads.hash });
-    expect((await batches.current({ actor: amy, projectId: project.id })).ok).toBe(false);
+    expect(await batches.current({ actor: amy, projectId: project.id })).toMatchObject({
+      ok: true,
+      value: { phase: 'none' },
+    });
   });
 
   it('RF-159 forgets the outcome of an earlier zip, which no longer describes the source', async () => {
@@ -268,6 +271,9 @@ describe('StoreUpload a zip that holds no workbook', () => {
 
     await useCase.execute(request(project));
 
-    expect((await batches.current({ actor: amy, projectId: project.id })).ok).toBe(false);
+    expect(await batches.current({ actor: amy, projectId: project.id })).toMatchObject({
+      ok: true,
+      value: { phase: 'none' },
+    });
   });
 });

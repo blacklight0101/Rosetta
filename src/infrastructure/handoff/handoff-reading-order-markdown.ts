@@ -4,7 +4,8 @@ import { decisionFile, documentSet, handoffFiles } from './handoff-links.js';
 import { writesAgentFolder } from './handoff-agents-folder.js';
 
 // RF-620, RF-601, RF-640: the reading order of the README: AGENTS.md and orchestration.md first for
-// an AI-assisted build, then the documentation set, then the parts of RF-601, each linking its file.
+// an AI-assisted build, then the documentation set, then the parts of RF-601, each linking its file, then
+// the agent definitions when the `agents/` folder is written (P6-30).
 
 function decisionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const { decisions } = handoff.content;

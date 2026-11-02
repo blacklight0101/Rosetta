@@ -1,3 +1,6 @@
+import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
+import { noJourney } from '../../../support/journey-lookups.js';
+import { ALL_KEYS_SERVED } from '../../../support/web-role-keys.js';
 import { describe, expect, it } from 'vitest';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import { StartRun } from '../../../../src/application/use-cases/start-run.js';
@@ -20,7 +23,15 @@ async function setup(settings: ProjectSettings, options: { readonly brief?: bool
   await projects.insertOrFind(project);
   if (options.brief !== false)
     await briefs.saveEmpty({ userId: project.userId, projectId: project.id });
-  const startRun = new StartRun({ projects, runs: harness.runs, briefs, submit: harness.submit });
+  const startRun = new StartRun({
+    manifests: new MemoryRunManifestStore(),
+    journey: noJourney,
+    roleKeys: ALL_KEYS_SERVED,
+    projects,
+    runs: harness.runs,
+    briefs,
+    submit: harness.submit,
+  });
   return { harness, project, startRun };
 }
 

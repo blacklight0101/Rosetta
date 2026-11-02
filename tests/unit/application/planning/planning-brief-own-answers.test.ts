@@ -5,11 +5,9 @@ import {
 } from '../../../../src/application/planning/planning-brief-schema.js';
 import { briefDecisions } from '../../../../src/domain/planning/brief-decisions.js';
 import { defaultedQuestions } from '../../../../src/domain/planning/brief-questions.js';
-import {
-  briefProblems,
-  buildBrief,
-  sameBrief,
-} from '../../../../src/domain/planning/planning-brief.js';
+import { briefProblems } from '../../../../src/domain/planning/brief-problems.js';
+import { buildBrief } from '../../../../src/domain/planning/planning-brief.js';
+import { sameBrief } from '../../../../src/domain/planning/brief-freshness.js';
 import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 
 // RF-645, RF-605, DEC-178, data-model.md section 3.20: the brief keeps which option answered each

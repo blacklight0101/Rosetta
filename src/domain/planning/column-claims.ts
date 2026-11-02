@@ -10,7 +10,7 @@ const NAME = '[A-Za-z_][A-Za-z0-9_]{0,62}';
 
 const factPattern = new RegExp(
   [
-    String.raw`Column\s+(?:([A-Za-z0-9_[\]]{1,64})\.)?(${NAME}):\s*([A-Za-z][A-Za-z ]{0,38}(?:\(\d{1,5}(?:,\s?\d{1,3})?\))?),\s*(NOT NULL|NULL)`,
+    String.raw`Column\s+(?:([A-Za-z0-9_[\]]{1,64})\.)?(${NAME}):\s*([A-Za-z][A-Za-z ]{0,38}(?:\((?:\d{1,5}(?:,\s?\d{1,3})?|max)\))?),\s*(NOT NULL|NULL)`,
     String.raw`(?:,\s*default\s+('[^']{0,40}'|[^\s,;]{1,40}))?(,\s*primary key)?`,
     String.raw`(?:,\s*foreign key to\s+(${NAME})(?:\.(${NAME}))?)?`,
   ].join(''),

@@ -1,15 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { noClaimVerbs } from '../../../../src/domain/planning/claim-verbs.js';
 import { noGrepRules } from '../../../../src/domain/planning/grep-rules.js';
+import { noAgentModels } from '../../../../src/domain/planning/build-method.js';
 import { noStackData } from '../../../../src/domain/planning/stack-data.js';
 import type { Catalogue } from '../../../../src/domain/planning/catalogue.js';
-import {
-  briefProblems,
-  buildBrief,
-  isBriefOutOfDate,
-  sameBrief,
-  stackLayers,
-} from '../../../../src/domain/planning/planning-brief.js';
+import { briefProblems } from '../../../../src/domain/planning/brief-problems.js';
+import { isBriefOutOfDate, sameBrief } from '../../../../src/domain/planning/brief-freshness.js';
+import { buildBrief, stackLayers } from '../../../../src/domain/planning/planning-brief.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
 import { completeEntries, sampleEntry } from '../../../support/catalogue-fixtures.js';
 import { sampleRun } from '../../../support/run-fixtures.js';
@@ -31,6 +28,7 @@ const catalogue: Catalogue = {
   stack: noStackData,
   claimVerbs: noClaimVerbs,
   grepRules: noGrepRules,
+  agentModels: noAgentModels,
 };
 
 describe('buildBrief: no answers', () => {

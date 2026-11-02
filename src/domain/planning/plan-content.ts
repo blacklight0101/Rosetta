@@ -1,22 +1,20 @@
-import {
-  allocateIdentifiers,
-  dependenciesOf,
-  listedFiles,
-  type AllocatedIdentifier,
-} from './parallel-cards.js';
+import { allocateIdentifiers, dependenciesOf, type AllocatedIdentifier } from './parallel-cards.js';
 import type {
   DraftComponent,
   DraftDecision,
   DraftEntity,
   DraftRequirement,
   DraftRisk,
-  DraftTask,
   PlanDraft,
   UnreadableItem,
 } from './plan-draft.js';
-import { unknownPositions, type PhaseNote, type RequirementNote } from './requirement-notes.js';
+import type { PhaseNote, RequirementNote } from './requirement-notes.js';
 import { assembleJudgements, type ClaimJudgement } from './claim-judgement.js';
-import { draftFault, leftOutOf, noRequirement, type LeftOutCard } from './left-out-card.js';
+import { leftOutOf, type LeftOutCard } from './left-out-card.js';
+import { keptTasks } from './kept-tasks.js';
+import { sourceFaults } from './source-faults.js';
+import { supportedSources } from './source-ids.js';
+import { planNotes, taskRequirementNotes } from './task-requirements.js';
 import type { GuardKind, RiskClass } from './task-card-quality.js';
 import { assembleTechnical, type TechnicalContent } from './technical-content.js';
 
@@ -69,6 +67,12 @@ export interface PlanTask {
   readonly builds: readonly string[];
   /** P5-41: criteria (position, from 1) the planner says contradict a claim the card keeps. */
   readonly contradicts?: readonly Contradiction[];
+  /**
+   * P8-02, RF-607: under SDD a package card that named no requirement of the plan waits for its
+   * requirements to be taken from what it builds; its position in the plan answer, from 1. Set only
+   * between the assembly and the links of the cards (plan-links.ts), never in a package.
+   */
+  readonly derives?: number;
 }
 
 interface Contradiction {
@@ -104,6 +108,13 @@ export interface PlanAssembly {
   readonly leftOut: readonly LeftOutCard[];
   /** P3-126: the items of the other lists that could not be read, by list, position and field. */
   readonly unreadable: readonly UnreadableItem[];
+  /** P8-02: the positions (from 1) of the draft requirements left out for naming no supported card. */
+  readonly unsourced: readonly number[];
+  /**
+   * P8-02: under SDD, the positions (from 1) of the draft tasks whose requirement positions all name
+   * requirements that were left out, so they implement none of the plan's.
+   */
+  readonly orphaned: readonly number[];
   /** How many items the draft had that the package leaves out. */
   readonly dropped: {
     readonly requirements: number;
@@ -122,8 +133,9 @@ function unique<T>(items: readonly T[]): T[] {
   return [...new Set(items)];
 }
 
+/** P8-02: the supported cards of a `sources` list; a claim id counts as its card. */
 function knownSources(sources: readonly string[], supported: ReadonlySet<string>): string[] {
-  return unique(sources.filter((id) => supported.has(id)));
+  return supportedSources(sources, supported);
 }
 
 interface Requirements {
@@ -148,45 +160,16 @@ function requirementsOf(
   return { kept, idAt };
 }
 
-interface KeptTask {
-  readonly position: number;
-  readonly task: DraftTask;
-  readonly riskClass: RiskClass;
-  readonly requirements: string[];
-  readonly files: string[];
-}
-
-/** The draft tasks that are cards of the plan, and by position and field the ones that are not. */
-function keptTasks(
-  drafts: readonly DraftTask[],
-  phases: number,
-  idAt: ReadonlyMap<number, string>,
-  specified: boolean,
-): { readonly kept: KeptTask[]; readonly leftOut: LeftOutCard[] } {
-  const kept: KeptTask[] = [];
-  const leftOut: LeftOutCard[] = [];
-  drafts.forEach((task, index) => {
-    const position = index + 1;
-    const { riskClass } = task;
-    const fault = draftFault(task, phases);
-    const requirements = unique(task.requirements.flatMap((at) => idAt.get(at) ?? []));
-    const missing = specified && requirements.length === 0 ? noRequirement : undefined;
-    if (fault !== undefined || riskClass === undefined || missing !== undefined) {
-      const left = fault ?? missing;
-      if (left !== undefined) leftOut.push({ position, ...left });
-      return;
-    }
-    kept.push({ position, task, riskClass, requirements, files: listedFiles(task.files) });
-  });
-  return { kept, leftOut };
-}
-
 function tasksOf(
   draft: PlanDraft,
   idAt: ReadonlyMap<number, string>,
   specified: boolean,
-): { readonly tasks: PlanTask[]; readonly leftOut: LeftOutCard[] } {
-  const { kept, leftOut } = keptTasks(draft.tasks, draft.phases.length, idAt, specified);
+): {
+  readonly tasks: PlanTask[];
+  readonly leftOut: LeftOutCard[];
+  readonly notes: RequirementNote[];
+} {
+  const { kept, leftOut } = keptTasks(draft, idAt, specified);
   const identifiers = allocateIdentifiers(kept.map((each) => each.task.needs));
   const at = new Map(kept.map((each, index) => [each.position, index]));
   const dependencies = dependenciesOf(
@@ -195,7 +178,7 @@ function tasksOf(
       declared: task.dependsOn.flatMap((position) => at.get(position) ?? []),
     })),
   );
-  const tasks = kept.map(({ task, riskClass, requirements, files }, index) => {
+  const tasks = kept.map(({ task, riskClass, requirements, files, derives }, index) => {
     const { title, phase, acceptanceCriteria, invariant, adds, probes } = task;
     return {
       ...{ id: planId('T', index + 1), title, phase, requirements, acceptanceCriteria },
@@ -203,12 +186,14 @@ function tasksOf(
       identifiers: identifiers[index] ?? [],
       dependsOn: (dependencies[index] ?? []).map((on) => planId('T', on + 1)),
       builds: [],
+      ...(derives === undefined ? {} : { derives }),
       ...(task.contradicts === undefined || task.contradicts.length === 0
         ? {}
         : { contradicts: task.contradicts }),
     };
   });
-  return { tasks, leftOut };
+  const notes = taskRequirementNotes(kept, specified);
+  return { tasks, leftOut, notes };
 }
 
 function componentsOf(drafts: readonly DraftComponent[]): DraftComponent[] {
@@ -256,8 +241,8 @@ export function assemblePlan(
   const requirements = requirementsOf(draft.requirements, supported);
   const entities = entitiesOf(draft.entities, supported);
   const specified = options.specificationDriven === true;
-  const { tasks, leftOut } = tasksOf(draft, requirements.idAt, specified);
-  const notes = unknownPositions(draft.tasks, draft.requirements.length);
+  const { tasks, leftOut, notes: unbacked } = tasksOf(draft, requirements.idAt, specified);
+  const notes = planNotes(draft, unbacked);
   const withSources = <T extends { readonly sources: readonly string[] }>(item: T): T => ({
     ...item,
     sources: knownSources(item.sources, supported),
@@ -270,6 +255,7 @@ export function assemblePlan(
   return {
     leftOut: leftOutOf(draft, leftOut),
     unreadable: draft.unreadableItems ?? [],
+    ...sourceFaults(draft, requirements.idAt, specified),
     content: {
       summary: draft.summary,
       requirements: requirements.kept,

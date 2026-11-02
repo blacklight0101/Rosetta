@@ -40,6 +40,7 @@ const answersSchema = z.looseObject({
   questions: z.array(questionSchema),
   deepens: z.number().int().min(0).default(0),
   isDeepen: z.boolean().default(false),
+  deepening: z.boolean().default(false),
 });
 
 export type AnswersRead = z.output<typeof answersSchema>;

@@ -1,3 +1,5 @@
+import { noJourney } from './journey-lookups.js';
+import { ALL_KEYS_SERVED } from './web-role-keys.js';
 import type { UploadStore } from '../../src/application/ports/upload-store.js';
 import { noUploads } from './no-uploads.js';
 import { vi } from 'vitest';
@@ -227,13 +229,18 @@ function unconditionalChange(project: Project, settings: ProjectSettings): Setti
 }
 
 // RF-003
+/** The start run's own stores: a brief store and a key check that serves every role. */
+function startDeps() {
+  return { briefs: new MemoryBriefStore(), roleKeys: ALL_KEYS_SERVED, journey: noJourney };
+}
+
 export async function createScanRunHarness(
   options: ScanRunHarnessOptions,
 ): Promise<ScanRunHarness> {
   const fixture = fixtureFetcher(new FixedClock('2026-10-12T10:00:00.000Z'));
   const parts = await assemble(options, fixture);
   const { runs, project, projects, submitRun, queue, manifests, log, logger } = parts;
-  const startRun = new StartRun({ ...parts, briefs: new MemoryBriefStore(), submit: submitRun });
+  const startRun = new StartRun({ ...parts, ...startDeps(), submit: submitRun });
   const ended = waitUntilEnded(runs, log);
   const submit = async (runOptions: Readonly<Record<string, unknown>> = {}): Promise<Run> => {
     const submitted = await submitRun.execute({

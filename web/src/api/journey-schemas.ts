@@ -9,12 +9,16 @@ const journeyRun = z.object({
   id: z.string(),
   /** The folder name of the run. */
   runKey: z.string(),
-  queueState: z.enum(['Queued', 'Running', 'Ended']),
+  queueState: z.enum(['Queued', 'Running', 'AwaitingApproval', 'Ended']),
   endState: z.string().nullable(),
   endedAt: z.string().nullable(),
   costMicros: count,
   /** The `RST` code the run ended with, if any. */
   errorCode: z.string().nullable(),
+  /** P7-02: the planned areas no reader started. */
+  unreadAreas: count.optional(),
+  /** EV-80: the place of a queued run in the queue, counted from 1. */
+  position: z.number().int().positive().nullable().optional(),
 });
 
 export const journeySchema = z.object({
@@ -26,6 +30,8 @@ export const journeySchema = z.object({
       /** RF-646: the Deepens linked to the run's first understand run. */
       deepens: count.default(0),
       isDeepen: z.boolean().default(false),
+      /** P6-33: a Deepen of the run is queued or running. */
+      deepening: z.boolean().default(false),
     })
     .nullable(),
   scanRunId: z.string().nullable(),
@@ -35,6 +41,16 @@ export const journeySchema = z.object({
   handoff: z
     .object({ runId: z.string(), runKey: z.string(), outOfDate: z.boolean(), gaps: z.boolean() })
     .nullable(),
+  /** RF-1021, RF-435: the amount the owner approved for the journey and what is left of it. */
+  budget: z
+    .object({
+      approvedMicros: count,
+      remainingMicros: count,
+      approvedTokens: count,
+      remainingTokens: count,
+    })
+    .nullable()
+    .optional(),
 });
 
 export type JourneyFacts = z.output<typeof journeySchema>;

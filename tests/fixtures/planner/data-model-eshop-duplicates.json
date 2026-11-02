@@ -1,0 +1,363 @@
+{
+  "tables": [
+    {
+      "name": "catalog_brand",
+      "purpose": "Keeps the product brands.",
+      "sources": [
+        "ENT-001"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "Id"
+          },
+          "risk": ""
+        },
+        {
+          "name": "brand",
+          "type": "nvarchar(100)",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-001.c1",
+            "field": "Brand"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "catalog_type",
+      "purpose": "Keeps the product types.",
+      "sources": [
+        "ENT-002"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "Id"
+          },
+          "risk": ""
+        },
+        {
+          "name": "type",
+          "type": "nvarchar(100)",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-002.c1",
+            "field": "Type"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "catalog_item",
+      "purpose": "Keeps the products.",
+      "sources": [
+        "ENT-003"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "Id"
+          },
+          "risk": ""
+        },
+        {
+          "name": "name",
+          "type": "nvarchar(50)",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "Name"
+          },
+          "risk": ""
+        },
+        {
+          "name": "description",
+          "type": "varchar(200) or null",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "Description"
+          },
+          "risk": ""
+        },
+        {
+          "name": "price",
+          "type": "decimal(10,2)",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "Price"
+          },
+          "risk": ""
+        },
+        {
+          "name": "catalog_brand_id",
+          "type": "int",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-003.c1",
+            "field": "Brand foreign key"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [
+        {
+          "columns": [
+            "catalog_brand_id"
+          ],
+          "references": "catalog_brands",
+          "referencedColumns": [
+            "id"
+          ]
+        }
+      ],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "catalog_brands",
+      "purpose": "Keeps the brands the catalog service reads.",
+      "sources": [
+        "ENT-004"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-004.c1",
+            "field": "Brand"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "catalog_types",
+      "purpose": "Keeps the types the catalog service reads.",
+      "sources": [
+        "ENT-004"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-004.c1",
+            "field": "Type"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "catalog_items",
+      "purpose": "Keeps the items the catalog service reads.",
+      "sources": [
+        "ENT-004"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": {
+            "claim": "ENT-004.c1",
+            "field": "Item"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "sql_data_deployment_configuration",
+      "purpose": "Keeps the deployment configuration.",
+      "sources": [
+        "ENT-005"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "connection_string",
+          "type": "nvarchar(200)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-005.c1",
+            "field": "Connection string"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "catalog_database_context_registration",
+      "purpose": "Keeps the registration of the context.",
+      "sources": [
+        "ENT-006"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "lifetime",
+          "type": "nvarchar(20)",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-006.c1",
+            "field": "Lifetime"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "application_configuration_parameters",
+      "purpose": "Keeps the application parameters.",
+      "sources": [
+        "ENT-007"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "use_mock",
+          "type": "bit",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-007.c1",
+            "field": "Use mock"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    },
+    {
+      "name": "paginated_items_viewmodel",
+      "purpose": "Keeps a page of items.",
+      "sources": [
+        "ENT-008"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "legacy": null,
+          "risk": ""
+        },
+        {
+          "name": "page_size",
+          "type": "int",
+          "nullable": true,
+          "legacy": {
+            "claim": "ENT-008.c1",
+            "field": "Page size"
+          },
+          "risk": ""
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "uniqueKeys": [],
+      "foreignKeys": [],
+      "checks": [],
+      "indexes": []
+    }
+  ],
+  "dropped": []
+}

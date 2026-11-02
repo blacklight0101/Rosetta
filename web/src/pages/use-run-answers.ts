@@ -19,6 +19,8 @@ export type AnswersLoad =
       readonly deepens: number;
       /** RF-646: the run is itself a Deepen. */
       readonly isDeepen: boolean;
+      /** P6-33: a Deepen of the run is queued or running. */
+      readonly deepening: boolean;
     };
 
 export interface RunAnswersState {
@@ -63,7 +65,7 @@ export function useRunAnswers(runId: string, ended: boolean): RunAnswersState {
     setLoad((was) =>
       was.status === 'ready'
         ? { ...was, questions }
-        : { status: 'ready', questions, deepens: 0, isDeepen: false },
+        : { status: 'ready', questions, deepens: 0, isDeepen: false, deepening: false },
     );
   };
   return { load, apply };

@@ -52,9 +52,12 @@ export async function uploadFromNewProject(
 ): Promise<void> {
   await page.goto('/projects');
   await page.getByRole('tab', { name: 'Excel workbooks' }).click();
-  await uploadWorkbooks(page, files);
-  await page.getByRole('link', { name: 'Start a run' }).click();
-  await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
+  await page.getByLabel('Workbook files').setInputFiles([...files]);
+  await page.getByRole('button', { name: 'Upload workbooks' }).click();
+  // EV-87, P8-10: the stored workbooks open the project page by themselves.
+  await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible({
+    timeout: 60_000,
+  });
 }
 
 /** Opens the start page of the account's workbook project from the projects list. */

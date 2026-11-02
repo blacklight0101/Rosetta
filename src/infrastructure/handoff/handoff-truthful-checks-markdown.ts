@@ -4,9 +4,11 @@ import {
   requirementsBuiltByNoCard,
   sourceCardsWithNoRequirement,
 } from '../../domain/planning/coverage-checks.js';
+import { isArchitectureStyleId } from '../../domain/planning/catalogue.js';
 import { checkFlowStyle } from '../../domain/planning/flow-style.js';
 import { brokenRuleReason } from '../../domain/planning/style-rules.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { moduleCheckLines } from './handoff-module-checks-markdown.js';
 
 // RF-627, RF-608, P5-40: the checks of checks.md that count what the package claims beyond the
 // items: requirements no card lists, Must screens lost to the screen cap, source features no
@@ -54,7 +56,10 @@ function orphanLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
 }
 
 function flowLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  const { style } = handoff.brief.architecture;
+  // P8-09: the style the components are judged against, as the roles and the dependency check use it.
+  const style = isArchitectureStyleId(handoff.style.id)
+    ? handoff.style.id
+    : handoff.brief.architecture.style;
   const broken = checkFlowStyle(style, handoff.content.components, handoff.flows.flows);
   if (broken.length === 0) return [];
   return [
@@ -94,6 +99,7 @@ export function truthfulCheckLines(handoff: HandoffPackage, esc: MarkdownEscaper
     ...requirementLines(handoff, esc),
     ...screenLines(handoff, esc),
     ...orphanLines(handoff, esc),
+    ...moduleCheckLines(handoff, esc),
     ...flowLines(handoff, esc),
     ...phaseLines(handoff, esc),
   ];

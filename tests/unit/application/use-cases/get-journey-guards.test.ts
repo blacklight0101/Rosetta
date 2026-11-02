@@ -11,6 +11,7 @@ import {
   sourceKey,
 } from '../../../support/journey-setup.js';
 import { eventFor } from '../../../support/run-event-fixtures.js';
+import { sampleRun } from '../../../support/run-fixtures.js';
 
 // RF-615: the guards of the journey facts, each with the case that needs it: a plan run whose source
 // is gone, a source that is not an understand run, a package judged without a brief, a damaged
@@ -107,6 +108,30 @@ describe('GetJourney: what is not the journey own to hide', () => {
     const result = await journey.execute({ actor, projectId: project.id });
 
     expect(result.ok).toBe(true);
+  });
+});
+
+describe('GetJourney: the queue', () => {
+  it('RF-1108 EV-80 a queued run has its place in the server queue and a run that is not queued has none', async () => {
+    const { project, parts, seed, journey } = await setup();
+    await parts.runs.insert(sampleRun({ queueState: 'Queued', queuedAt: 1 }));
+    const queued = await seed({
+      brief: false,
+      run: { queueState: 'Queued', endState: null, endedAt: null, queuedAt: 2_000_000_000_000 },
+    });
+
+    const result = await journey.execute({ actor, projectId: project.id, runId: queued?.id });
+
+    expect(result).toMatchObject({ ok: true, value: { source: { position: 2 } } });
+  });
+
+  it('RF-1108 EV-80 an ended run has no place', async () => {
+    const { project, seed, journey } = await setup();
+    const ended = await seed({ brief: false });
+
+    const result = await journey.execute({ actor, projectId: project.id, runId: ended?.id });
+
+    expect(result).toMatchObject({ ok: true, value: { source: { position: null } } });
   });
 });
 

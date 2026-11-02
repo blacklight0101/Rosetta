@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type {
   DraftTask,
+  EntryNote,
   PlanDraft,
   UnreadableItem,
   UnreadableTask,
@@ -18,6 +19,8 @@ import {
   type PlanReading,
 } from './plan-reading.js';
 import { softText } from './soft-text.js';
+import { citingOf, readLists, type EntryMoves } from './list-entries.js';
+import { listedPosition, MAX_ITEMS, position } from './list-positions.js';
 import { searchJson } from '../cards/extract-json.js';
 import {
   integrationActions,
@@ -30,7 +33,6 @@ import {
 // positions it may use is decided by the domain (plan-content.ts), not here. A list the answer
 // leaves out is empty; an answer without requirements is no answer.
 
-const MAX_ITEMS = 200;
 const MAX_LIST = 50;
 const TITLE = 200;
 const TEXT = 2000;
@@ -43,22 +45,6 @@ const optionalText = z.string().trim().max(TEXT).default('');
 const controlText = softText(TEXT);
 const ids = z.array(z.string().max(40)).max(MAX_LIST).default([]);
 const texts = z.array(text).max(MAX_LIST);
-const position = z.number().int().min(1).max(MAX_ITEMS);
-// Q-54: a small model writes a position as an object (`{"position": 3}`, with extra keys at times);
-// the number is read. EV-01: `{"index": 3}` is read the same way. EV-30: a string of digits (`"12"`)
-// is read as that number. Any other string, an `id` or any other shape stays refused.
-const digits = z
-  .string()
-  .regex(/^[0-9]+$/)
-  .transform((text) => Number(text))
-  .pipe(position);
-// The gap call (Q-45) reads the numbers and objects, and still refuses a string (RF-627 test).
-const numberPosition = z.union([
-  position,
-  z.object({ position }).transform((each) => each.position),
-  z.object({ index: position }).transform((each) => each.index),
-]);
-const listedPosition = z.union([numberPosition, digits]);
 const path = z.string().trim().min(1).max(PATH);
 // RF-634: a need of a kind that does not exist is left out; it never makes the answer unusable.
 const need = z.object({ kind: z.enum(identifierKinds), purpose: title });
@@ -78,12 +64,16 @@ const control = z.object({
 const target = z.object({ name: title, target: text, sources: ids, decision });
 const environment = z.object({ name: title, purpose: text, decision });
 
-/** One task card (RF-601, RF-630) with the positions it reads: the planner's, or the gap call's (Q-45). */
-function cardWith(positions: z.ZodType<number>) {
+// P7-15: `requirements` and `dependsOn` are read entry by entry in readTasks (list-entries.ts), so a
+// bad entry never makes the card unreadable; each is a list of anything here.
+const entryList = z.array(z.unknown()).max(MAX_LIST).default([]);
+
+/** One task card (RF-601, RF-630): the planner's, or the gap call's (Q-45). */
+function cardWith() {
   return z.object({
     title,
     phase: position,
-    requirements: z.array(positions).max(MAX_LIST).default([]),
+    requirements: entryList,
     acceptanceCriteria: texts.min(1),
     invariant: optionalText,
     riskClass: z.enum(riskClasses).optional().catch(undefined),
@@ -95,20 +85,22 @@ function cardWith(positions: z.ZodType<number>) {
       .max(MAX_LIST)
       .transform((list) => list.flatMap((each) => (each === null ? [] : [each])))
       .default([]),
-    dependsOn: z.array(positions).max(MAX_LIST).default([]),
+    dependsOn: entryList,
   });
 }
 
 // P5-41: criteria the planner says contradict a claim the card keeps; each is read on its own in readTasks.
-const taskSchema = cardWith(listedPosition).extend({
+const taskSchema = cardWith().extend({
   contradicts: z.array(z.unknown()).max(MAX_LIST).optional(),
 });
-// P5-40: a gap card may also wait for a card already in the plan, named by its `T-` id.
+// P5-40: a gap card may also wait for a card already in the plan, named by its `T-` id. P7-14: each
+// entry is read on its own (digits as a position, as above); one that does not read is dropped.
 const cardId = z.string().regex(/^T-[0-9]{3,6}$/);
-export const gapTaskSchema = cardWith(numberPosition).extend({
+export const gapTaskSchema = cardWith().extend({
   dependsOn: z
-    .array(z.union([numberPosition, cardId]))
+    .array(z.union([listedPosition, cardId]).nullable().catch(null))
     .max(MAX_LIST)
+    .transform((list) => list.flatMap((each) => (each === null ? [] : [each])))
     .default([]),
 });
 
@@ -152,10 +144,6 @@ const answer = z.object({
 
 const UNREADABLE_REASON =
   'The card is not readable: a field is missing, of the wrong shape or out of its bounds.';
-// EV-30: a position in requirements or dependsOn that is not a number from 1 to 200.
-const POSITION_REASON =
-  'The card is not readable: a position in its requirements or dependsOn is not a number from 1 to 200.';
-const POSITION_FIELDS: readonly string[] = ['requirements', 'dependsOn'];
 
 // P3-82: a card that cannot be read holds its place with phase 0, which no plan has, so the domain
 // leaves it out and the positions of the other cards do not move.
@@ -175,36 +163,36 @@ const unreadablePlaceholder: DraftTask = {
 /** The cards that read, each at its position, and the ones that did not, by position and field. */
 function readTasks(
   list: readonly unknown[],
-  moved: Pick<Moves, 'requirement' | 'phase'>,
+  moved: Moves,
   lost: UnreadableItem[],
 ): {
   readonly tasks: DraftTask[];
   readonly unreadableTasks: UnreadableTask[];
+  readonly notes: EntryNote[];
 } {
   const unreadableTasks: UnreadableTask[] = [];
+  const notes: EntryNote[] = [];
   const tasks = list.map((each, index) => {
     const read = taskSchema.safeParse(each);
     if (read.success) {
-      const { requirements, phase, contradicts: raw, ...rest } = read.data;
+      const { phase, contradicts: raw, ...rest } = read.data;
       const contradicts = contradictionsOf(raw, index + 1, lost);
       // P3-126: the positions name the lists as the planner wrote them; items left out shift them.
-      const kept = requirements.flatMap((at) => moved.requirement(at) ?? []);
-      return { ...rest, requirements: kept, phase: moved.phase(phase), contradicts };
+      // P7-15: each entry is read on its own; the card is kept whatever the entries are.
+      const lists = readLists(index + 1, rest, moved, notes);
+      return { ...rest, ...lists, phase: moved.phase(phase), contradicts };
     }
     const issue = read.error.issues[0];
     const first = issue?.path[0];
     const field = typeof first === 'string' ? first : 'card';
-    // EV-30: a bad element of requirements or dependsOn is a position that is not a number.
-    const onPosition = POSITION_FIELDS.includes(field) && (issue?.path.length ?? 0) > 1;
-    const reason = onPosition ? POSITION_REASON : UNREADABLE_REASON;
-    unreadableTasks.push({ position: index + 1, field, reason });
+    unreadableTasks.push({ position: index + 1, field, reason: UNREADABLE_REASON });
     return unreadablePlaceholder;
   });
-  return { tasks, unreadableTasks };
+  return { tasks, unreadableTasks, notes };
 }
 
 /** P3-126: where an item that was kept moved, so the positions that name it still point at it. */
-interface Moves {
+interface Moves extends EntryMoves {
   readonly requirement: (position: number) => number | undefined;
   readonly phase: (position: number) => number;
 }
@@ -248,9 +236,10 @@ function draftOf(lists: z.infer<typeof answer>): PlanReading {
   const technical = technicalOf(lists.technical, decisions, lost);
   const moves = {
     requirement: requirements.at,
+    citing: citingOf(requirements.items),
     phase: (position: number) => phases.at(position) ?? 0,
   };
-  const { tasks, unreadableTasks } = readTasks(lists.tasks, moves, lost);
+  const { tasks, unreadableTasks, notes } = readTasks(lists.tasks, moves, lost);
   return {
     problems: [],
     draft: {
@@ -265,6 +254,7 @@ function draftOf(lists: z.infer<typeof answer>): PlanReading {
       technical,
       ...judgementDrafts(judgements.items, decisions.at),
       ...(unreadableTasks.length > 0 ? { unreadableTasks } : {}),
+      ...(notes.length > 0 ? { entryNotes: notes } : {}),
       ...(lost.length > 0 ? { unreadableItems: lost } : {}),
     },
   };

@@ -67,7 +67,7 @@ describe('BuildPlan: what the planner is sent', () => {
     ]) {
       expect(message).not.toContain(left);
     }
-    expect(request?.system).toBe(await readFile('prompts/planner/package.v10.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/package.v12.md', 'utf8'));
     expect(request?.context.role).toBe('planner');
   });
 
@@ -242,26 +242,27 @@ describe('BuildPlan: runs that cannot plan', () => {
   });
 
   it('RF-602 an answer whose requirements name no supported card ends Failed with RST-1803', async () => {
-    h = await harness(
-      recordingOf({
-        retried: [],
-        response: {
-          text: '{"requirements": [{"title": "Export", "statement": "Export a day.", "sources": ["FEAT-002"]}]}',
-          toolCalls: [],
-          usage: {
-            inputTokens: 10,
-            outputTokens: 10,
-            cachedInputTokens: 0,
-            usageSource: 'reported',
-          },
-          finishReason: 'stop',
+    // P8-02: the answer gets one repair round first, and the repair names no supported card either.
+    const unsupported = {
+      retried: [],
+      response: {
+        text: '{"requirements": [{"title": "Export", "statement": "Export a day.", "sources": ["FEAT-002"]}]}',
+        toolCalls: [],
+        usage: {
+          inputTokens: 10,
+          outputTokens: 10,
+          cachedInputTokens: 0,
+          usageSource: 'reported',
         },
-      }),
-    );
+        finishReason: 'stop',
+      },
+    } as const;
+    h = await harness(recordingOf(unsupported, unsupported));
     await seeded();
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
+    expect(h.providers.requests()).toHaveLength(2);
     expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1803' }));
     expect(await h.handoffOf(run)).toEqual({});
   });

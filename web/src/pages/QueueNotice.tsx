@@ -8,6 +8,7 @@ import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Link } from '../components/Link.js';
 import { StatusBadge } from '../components/StatusBadge.js';
+import { queueText } from '../lib/live-run/queue-text.js';
 
 // RF-1108, RF-1105, design-system.md section 14 (queue notice): one info callout for each project
 // whose latest run waits in the queue, with its position, the link to its live page and "Cancel
@@ -42,7 +43,7 @@ function Notice({ name, stage, runId, position, onCancelled }: NoticeProps): JSX
     >
       <p>
         <StatusBadge list="RunQueueState" value="Queued" /> Your {stage} run of{' '}
-        <span class="rst-mono">{name}</span> is queued, position {position}. It starts by itself
+        <span class="rst-mono">{name}</span> is queued, {queueText(position)}. It starts by itself
         when the server has a free slot; you can leave this page.
       </p>
       <p>

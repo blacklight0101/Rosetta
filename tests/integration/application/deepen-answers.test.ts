@@ -74,7 +74,7 @@ describe('RF-209 RF-241 a Deepen over an area with an answered question', () => 
 
     const record = await deepenOf(h, deep);
     expect(record.rounds[0]?.answersUsed).toEqual([`${run.runKey}/OQ-001`]);
-    expect((await h.manifestOf(deep)).promptVersions['reader/answers.v1.md']).toBeDefined();
+    expect((await h.manifestOf(deep)).promptVersions['reader/answers.v2.md']).toBeDefined();
   });
 
   it('RF-209 still judges a claim written with the help of an answer like any other claim (ADR-005)', async () => {

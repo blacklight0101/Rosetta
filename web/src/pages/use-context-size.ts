@@ -14,8 +14,8 @@ export interface ContextDraft {
   readonly text: string;
   readonly problem: string | undefined;
   readonly change: (text: string) => void;
-  /** Shows the saved value again after a save. */
-  readonly reset: (saved: ContextSize | undefined) => void;
+  /** Shows the saved value again after a save; with `sent`, only when the field still holds it. */
+  readonly reset: (saved: ContextSize | undefined, sent?: string) => void;
   /** The size to save; when no role uses Ollama the field is ignored (Auto). */
   readonly read: (active: boolean, limit?: ContextLimit) => ContextResult;
 }
@@ -31,8 +31,10 @@ export function useContextSize(saved: ContextSize | undefined): ContextDraft {
       setText(next);
       setProblem(undefined);
     },
-    reset: (value) => {
-      setText(contextDraftOf(value));
+    reset: (value, sent) => {
+      setText((current) =>
+        sent === undefined || current === sent ? contextDraftOf(value) : current,
+      );
       setProblem(undefined);
     },
     read: (active, limit) => {

@@ -97,7 +97,7 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     '',
     'A default keeps the legacy behaviour: a default that would change what users see today is not allowed, and a question that proposed one says so and takes the legacy behaviour instead.',
     '',
-    'A security question is the exception: its default is the secure option, never the legacy behaviour. The planner marks a claim as a security matter, and a question of the card that holds such a claim, and a keep-or-fix row about it, default to the secure option.',
+    'There are two exceptions. A security question defaults to the secure option, never the legacy behaviour: the planner marks a claim as a security matter, and a question of the card that holds such a claim, and a keep-or-fix row about it, default to the secure option. A keep-or-fix row about a likely defect that is not a security matter defaults to Fix, not to the legacy behaviour, because the owner can still choose Keep.',
     '',
     ...buildMethodQuestionLines(handoff, esc),
     '## Planning brief questions that took their default',

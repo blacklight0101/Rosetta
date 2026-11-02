@@ -29,9 +29,9 @@ async function setup(): Promise<Setup> {
   current = test;
   const amyUser = await addUser(test, { userName: 'amy' });
   const bobUser = await addUser(test, { userName: 'bob' });
-  const running = await test.runs.start(actorOf(amyUser.account));
-  const first = await test.runs.start(actorOf(amyUser.account));
-  const second = await test.runs.start(actorOf(amyUser.account));
+  const running = await test.runs.start(actorOf(amyUser.account), 'understand');
+  const first = await test.runs.start(actorOf(amyUser.account), 'understand');
+  const second = await test.runs.start(actorOf(amyUser.account), 'understand');
   return {
     ...{ test, running, first, second },
     amy: await signedInBrowser(test.server, amyUser),

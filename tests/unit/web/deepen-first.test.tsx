@@ -1,6 +1,8 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it } from 'vitest';
+import { json } from './fake-api.js';
 import { openEnded, question } from './ended-run-helpers.js';
+import { runPath } from './live-run-helpers.js';
 
 // RF-646, RF-1017, DEC-179: after an understand run that can be deepened, "Your turn" recommends Deepen
 // before answering and says answers given now will be used by it; the user is asked to answer after the
@@ -56,4 +58,25 @@ it('RF-646 keeps answering earlier possible from the Your questions tab', async 
   fireEvent.click(screen.getByRole('tab', { name: /Your questions/u }));
 
   expect(await screen.findAllByTestId('open-question')).toHaveLength(1);
+});
+
+it('RF-646 P6-19 says a Deepen is running while one is, and does not say to Deepen first', async () => {
+  await openEnded({
+    judged: 'Supported',
+    questions: [question(1), question(2)],
+    deepens: 0,
+    extra: {
+      [`GET ${runPath}/answers`]: json(200, {
+        questions: [question(1), question(2)],
+        deepens: 0,
+        deepening: true,
+      }),
+    },
+  });
+
+  const note = await within(turn()).findByTestId('deepen-running');
+
+  expect(note.textContent).toContain('A Deepen is running');
+  expect(within(turn()).queryByTestId('deepen-first')).toBeNull();
+  expect(turn().textContent).not.toContain('Deepen this run first');
 });

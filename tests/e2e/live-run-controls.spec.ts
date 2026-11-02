@@ -5,9 +5,9 @@ import { openScannedStartPage } from './support/cost-run.js';
 import {
   agentPanel,
   openRunTab,
+  openScanRun,
   openStartPage,
   runStatus,
-  startAndOpenLiveRun,
   startUnderstand,
   valueOf,
 } from './support/live-run-page.js';
@@ -37,9 +37,17 @@ const runMeter = (page: Page): Locator =>
 async function boxOf(
   locator: Locator,
 ): Promise<{ x: number; y: number; width: number; height: number }> {
-  const box = await locator.boundingBox();
-  if (box === null) throw new Error('The element has no box.');
-  return box;
+  // The box in page coordinates: a scroll between two reads must not count as a move.
+  await expect(locator).toBeVisible();
+  return locator.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: rect.x + window.scrollX,
+      y: rect.y + window.scrollY,
+      width: rect.width,
+      height: rect.height,
+    };
+  });
 }
 
 const pauseCount = (page: Page): Locator => page.getByTestId('pause-count');
@@ -56,33 +64,27 @@ test('RF-1002 the stepper of a scan run goes from the snapshot to the scan with 
   page,
 }) => {
   await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-
-  await startAndOpenLiveRun(page);
-
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await openScanRun(page);
   await expect(pipeline(page)).toBeVisible();
   await expect(step(page, 'Scan')).toContainText(/\d+ files, \d+ areas/u);
   await expect(step(page, 'Snapshot')).toContainText('done');
   await expect(step(page, 'Scan')).toContainText('done');
   await expect(step(page, 'Understand')).toContainText('waiting');
   await expect(step(page, 'Verify')).toContainText('waiting');
-  await expect(step(page, 'Report')).toContainText('waiting');
+  await expect(step(page, 'Report')).toHaveCount(0);
   await expect(pipeline(page).locator('[aria-current="step"]')).toHaveCount(0);
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
 });
 
-test('RF-1002 RF-504 the Report step of an ended run waits until the report is built from the page, turns done at once and is done on load', async ({
+test('RF-1002 RF-504 P8-11 the Report step of an ended run is absent until the report is built from the page, appears done at once and is done on load', async ({
   page,
 }) => {
   await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-  await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await openScanRun(page);
   const build = page.getByRole('button', { name: 'Build report' });
   await expect(build).toBeEnabled();
-  await expect(step(page, 'Report')).toContainText('waiting');
+  await expect(step(page, 'Report')).toHaveCount(0);
   // A reload would load the page again: the step must turn done on this same page.
   let loads = 0;
   page.on('load', () => {
@@ -130,7 +132,7 @@ test('RF-1002 RF-1004 the journey of an understand run reads while it runs and t
   await expect(step(page, 'Verify')).toContainText('7 of 7 citations checked, 5 judged');
   await expect(step(page, 'Verify')).not.toContainText(/later version|waiting for judgement/u);
   await expect(step(page, 'Verify')).toContainText('done');
-  await expect(step(page, 'Report')).toContainText('waiting');
+  await expect(step(page, 'Report')).toHaveCount(0);
   await expect(pipeline(page).locator('[aria-current="step"]')).toHaveCount(0);
   await transitionsDone(page);
   await expectNoSeriousViolations(page);

@@ -4,13 +4,19 @@ import {
   type CoverageDocuments,
   type CoverageItem,
 } from '../../domain/planning/plan-coverage.js';
+import { settleDerivedRequirements } from '../../domain/planning/derived-requirements.js';
+import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
 import { addGapTasks } from '../../domain/planning/plan-gap.js';
+import { sourcesWithModules, type ModuleReason } from '../../domain/planning/module-coverage.js';
 import { titlePhases } from '../../domain/planning/phase-titles.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { askPlannerWith, type PlannerCall } from './ask-planner.js';
 import { gapMessage } from './gap-message.js';
 import { parseGapAnswer, type GapAnswer, type GapProblem } from './gap-answer.js';
+import { moduleReasons } from './module-reasons.js';
 import { gapRepairMessage, type GapRepair } from './gap-repair-message.js';
+import { entryWarnings, gapLeftOutItems } from './gap-round-notes.js';
+import type { HandoffPackage } from './handoff-package.js';
 import {
   checkedPlan,
   coverageWarnings,
@@ -37,8 +43,12 @@ export interface PlannedLinks {
   readonly planned: PlannedCoverage;
   /** What to log: cards left out, an answer that could not be read, and the items no card builds. */
   readonly warnings: readonly string[];
+  /** P7-14: the cards the gap and repair answers left out, or kept with entries dropped, for checks.md. */
+  readonly leftOut: HandoffPackage['leftOut'];
   /** Why the extra call was not served; the plan is then the one the calls before it left. */
   readonly refusal?: RosettaError;
+  /** P8-06: why each module or the deployment material has no task card, for checks.md. */
+  readonly moduleReasons: readonly ModuleReason[];
 }
 
 export interface LinkCalls {
@@ -71,6 +81,11 @@ interface RoundOptions {
   readonly repair?: GapRepair;
 }
 
+/** P8-06: what a gap round asks for: the items no card builds, then the modules no card touches. */
+function gapItems(report: PlannedCoverage['report']): CoverageItem[] {
+  return [...report.uncovered, ...report.modules];
+}
+
 /** One call for the items still uncovered, its cards added to the plan; the repair lists problems. */
 async function gapRound(
   call: PlannerCall,
@@ -78,17 +93,20 @@ async function gapRound(
   options: RoundOptions,
 ): Promise<Round> {
   const { content, report } = planned;
-  const input = { items: report.uncovered, content };
+  // P8-06: the modules no card touches are asked for with the items no card builds.
+  const open = gapItems(report);
+  const input = { items: open, content };
   const { repair, specificationDriven, documents } = options;
   const message =
     repair === undefined
       ? gapMessage(input, call.tags)
       : gapRepairMessage(input, repair, call.tags);
-  const only = report.uncovered.length === 1 ? report.uncovered[0]?.id : undefined;
+  const only = open.length === 1 ? open[0]?.id : undefined;
   const answer = parseGapAnswer(await askPlannerWith(call, message), only);
   const positions = answer?.positions;
-  const taken = addGapTasks(content, answer?.drafts ?? [], report.uncovered, {
+  const taken = addGapTasks(content, answer?.drafts ?? [], open, {
     ...{ specificationDriven, ...(positions === undefined ? {} : { positions }) },
+    itemSources: sourcesWithModules(documents),
   });
   const grown = checkedPlan(taken.content, documents);
   const closed = { ...planned, content: grown, report: coverageOf(report.items, grown.tasks) };
@@ -110,11 +128,17 @@ function roundWarnings(round: Round, label: string, unreadable: string): string[
         ];
   return [
     ...ruled,
+    ...entryWarnings(label, round.answer.salvaged === true, round.answer.entries),
     ...round.problems.map(
       ({ position, field, reason }) =>
         `Task card at position ${String(position)} of the ${label} was left out: the field "${field}" ${reason}.`,
     ),
   ];
+}
+
+/** P7-14: the rows of checks.md for a round, under the answer's own area. */
+function roundLeftOut(round: Round, area: string): HandoffPackage['leftOut'] {
+  return gapLeftOutItems(area, round.problems, round.answer?.entries ?? []);
 }
 
 /**
@@ -137,17 +161,20 @@ async function planGap(
   calls: LinkCalls,
   covered: PlannedCoverage,
   documents: CoverageDocuments,
-): Promise<PlannedLinks> {
+): Promise<Gapped> {
   const { specificationDriven } = calls;
-  if (covered.report.uncovered.length === 0 || covered.content.phases.length === 0) {
-    return { planned: covered, warnings: [] };
+  if (gapItems(covered.report).length === 0 || covered.content.phases.length === 0) {
+    return { planned: covered, warnings: [], leftOut: [], problems: [] };
   }
   const first = await gapRound(calls.gap, covered, { specificationDriven, documents });
   const warnings = roundWarnings(first, 'gap answer', UNREADABLE_GAP);
+  const leftOut = roundLeftOut(first, 'Gap answer');
   // RF-627: once the first round covered every item there is nothing for a repair to build.
-  const open = first.planned.report.uncovered;
+  const open = gapItems(first.planned.report);
   const problems = open.length === 0 ? [] : repairable(first.problems, open);
-  if (problems.length === 0) return { planned: first.planned, warnings };
+  if (problems.length === 0) {
+    return { planned: first.planned, warnings, leftOut, problems: first.problems };
+  }
   const repair = { prompt: calls.repairPrompt, problems };
   try {
     const second = await gapRound(calls.gap, first.planned, {
@@ -156,10 +183,13 @@ async function planGap(
       repair,
     });
     const again = roundWarnings(second, 'gap repair answer', UNREADABLE_REPAIR);
-    return { planned: second.planned, warnings: [...warnings, ...again] };
+    const repaired = [...leftOut, ...roundLeftOut(second, 'Gap repair answer')];
+    const all = [...first.problems, ...second.problems];
+    const planned = second.planned;
+    return { planned, warnings: [...warnings, ...again], leftOut: repaired, problems: all };
   } catch (error) {
     if (calls.gap.signal.aborted || !(error instanceof RosettaError)) throw error;
-    return { planned: first.planned, warnings, refusal: error };
+    return { planned: first.planned, warnings, leftOut, refusal: error, problems: first.problems };
   }
 }
 
@@ -168,16 +198,60 @@ function titled(planned: PlannedCoverage): PlannedCoverage {
   return { ...planned, content: titlePhases(planned.content) };
 }
 
-// Q-45, Q-54, RF-627
+/** The links after the gap rounds, with every card those rounds left out (P8-06 reasons). */
+interface Gapped extends Omit<PlannedLinks, 'moduleReasons'> {
+  readonly problems: readonly GapProblem[];
+}
+
+interface Settled {
+  readonly covered: PlannedCoverage;
+  readonly warnings: readonly string[];
+  readonly leftOut: HandoffPackage['leftOut'];
+}
+
+/**
+ * P8-02, RF-607: once the cards are linked, a package card that named no requirement takes them
+ * from what it builds; one with nothing to derive is left out, logged and listed in checks.md.
+ */
+function settled(linked: PlannedCoverage, documents: CoverageDocuments): Settled {
+  const derived = settleDerivedRequirements(linked.content, documents);
+  if (derived.content === linked.content) return { covered: linked, warnings: [], leftOut: [] };
+  const { leftOut } = derived;
+  const { content } = derived;
+  const covered = { ...linked, content, report: coverageOf(linked.report.items, content.tasks) };
+  const rows = leftOut.map(({ position, field, reason }: LeftOutCard) => ({
+    ...{ area: 'Task cards', item: String(position), field, reason },
+  }));
+  const warnings = leftOut.map(
+    ({ position, field, reason }) =>
+      `Task card at position ${String(position)} of the plan answer was left out (the field "${field}"). ${reason}`,
+  );
+  return { covered, warnings, leftOut: rows };
+}
+
+// Q-45, Q-54, RF-627, P8-06
 export async function planLinks(calls: LinkCalls, input: CoverageInput): Promise<PlannedLinks> {
-  const covered = await planCoverage(calls.coverage, input);
+  const linked = await planCoverage(calls.coverage, input);
+  const { covered, warnings, leftOut } = settled(linked, input.documents);
+  const asked = covered.content.phases.length > 0;
+  const { modules } = input.documents;
   try {
-    const gap = await planGap(calls, covered, input.documents);
+    const { problems, ...gap } = await planGap(calls, covered, input.documents);
     const planned = titled(gap.planned);
-    return { ...gap, planned, warnings: [...gap.warnings, ...coverageWarnings(planned)] };
+    const rounds = { asked, refused: gap.refusal !== undefined, problems };
+    return {
+      ...gap,
+      planned,
+      warnings: [...warnings, ...gap.warnings, ...coverageWarnings(planned)],
+      leftOut: [...leftOut, ...gap.leftOut],
+      moduleReasons: moduleReasons(planned.report.modules, rounds, modules),
+    };
   } catch (error) {
     if (calls.gap.signal.aborted || !(error instanceof RosettaError)) throw error;
     const planned = titled(covered);
-    return { planned, warnings: coverageWarnings(planned), refusal: error };
+    const all = [...warnings, ...coverageWarnings(planned)];
+    const rounds = { asked, refused: true, problems: [] };
+    const reasons = moduleReasons(planned.report.modules, rounds, modules);
+    return { planned, warnings: all, leftOut, refusal: error, moduleReasons: reasons };
   }
 }

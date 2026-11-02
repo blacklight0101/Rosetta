@@ -55,4 +55,4 @@ export const estimate = (page: Page): Locator =>
   page.getByRole('region', { name: 'Plan estimate' });
 
 export const writeButton = (page: Page): Locator =>
-  page.getByRole('button', { name: /^Write the package/u });
+  page.getByRole('button', { name: /^Start the plan/u });

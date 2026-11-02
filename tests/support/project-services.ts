@@ -1,5 +1,7 @@
+import type { GitHubRefCheck } from '../../src/application/ports/github-ref-check.js';
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
+import { GetStackOffer } from '../../src/application/use-cases/get-stack-offer.js';
 import { GetPlanSource } from '../../src/application/use-cases/get-plan-source.js';
 import { EstimatePlan } from '../../src/application/estimate/estimate-plan.js';
 import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
@@ -75,6 +77,8 @@ export interface UploadParts {
   readonly store: UploadStore;
   readonly staging: WorkbookStaging;
   readonly limitBytes: number;
+  /** EV-70: what GitHub says about the ref of a new project; none by default. */
+  readonly refCheck?: GitHubRefCheck;
 }
 
 /** The planner's prompts for the links of the task cards and for the items no card builds. */
@@ -126,7 +130,10 @@ export function projectServices(
   const template = templateSettings;
   const { briefs, answers, answerFiles, keys } = files;
   return {
-    createProject: new CreateProject({ projects, serverSettings, template, ids, clock }),
+    createProject: new CreateProject({
+      ...{ projects, serverSettings, template, ids, clock },
+      ...(upload.refCheck === undefined ? {} : { refCheck: upload.refCheck }),
+    }),
     ...uploadServices(parts, runs, upload),
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
@@ -137,6 +144,10 @@ export function projectServices(
     ...briefServices({ projects, runs, briefs, clock }),
     catalogue: shippedCatalogue,
     getPlanSource: new GetPlanSource({ projects, runs, cards: new FileRunCards(answerFiles) }),
+    getStackOffer: new GetStackOffer({
+      ...{ projects, runs, stack: shippedCatalogue.stack },
+      scans: { open: () => Promise.reject(new Error('no scan in this fixture')) },
+    }),
     estimatePlan: new EstimatePlan({
       ...{ projects, runs, briefs, answers, users, serverSettings, usage, clock, keys },
       cards: new FileRunCards(answerFiles),

@@ -273,18 +273,3 @@ export function runAnswer(
     position,
   });
 }
-
-/** The fixture project after another session changed the reader model and the area token budget. */
-export function changedElsewhere(): Record<string, unknown> {
-  const settings = templateSettings();
-  return projectOf('p-1', 'octo/demo', {
-    settings: {
-      ...settings,
-      roles: {
-        ...settings.roles,
-        reader: { ...settings.roles.reader, model: 'changed-elsewhere' },
-      },
-      scan: { ...settings.scan, areaTokenBudget: 12_345 },
-    },
-  });
-}

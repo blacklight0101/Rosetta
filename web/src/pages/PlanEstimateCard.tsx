@@ -6,9 +6,10 @@ import { Link } from '../components/Link.js';
 import {
   capFigure,
   capName,
+  overCapText,
   overCaps,
+  runLineText,
   scenarioCost,
-  scenarioFigure,
   type Blocker,
 } from '../lib/plan-setup/estimate.js';
 import type { EstimateLoad } from './use-plan-estimate.js';
@@ -16,7 +17,7 @@ import { useWritePackage } from './use-write-package.js';
 
 // RF-613, RF-143, RF-427, design-system.md section 14 (Plan setup): the estimate of the planner
 // against the caps, what stops the run (no price, no key), a warning for a figure over a cap, and
-// "Write the package". The calls behind the figures are shown only when the estimate names them.
+// "Start the plan". The calls behind the figures are shown only when the estimate names them.
 
 export interface PlanEstimateCardProps {
   readonly projectId: string;
@@ -44,19 +45,15 @@ function CapRow({ cap }: { readonly cap: PlanCap }): JSX.Element {
   );
 }
 
+/** RF-613, P8-01: a figure over a cap never reads as fitting; the likely one first, then the high. */
 function warningsOf(estimate: PlanEstimate): readonly string[] {
-  const likely = overCaps(estimate, 'likely').map(
-    (cap) =>
-      `The likely estimate (${scenarioFigure(estimate, 'likely', cap)}) is over what is left of the ${capName(cap)}.`,
-  );
-  const names = new Set(overCaps(estimate, 'likely').map(capName));
-  const high = overCaps(estimate, 'high')
-    .filter((cap) => !names.has(capName(cap)))
-    .map(
-      (cap) =>
-        `The high estimate (${scenarioFigure(estimate, 'high', cap)}) could pass the ${capName(cap)} (${capFigure(cap, cap.limit)}).`,
-    );
-  return [...likely, ...high];
+  const likely = overCaps(estimate, 'likely');
+  const names = new Set(likely.map(capName));
+  const high = overCaps(estimate, 'high').filter((cap) => !names.has(capName(cap)));
+  return [
+    ...likely.map((cap) => overCapText(estimate, 'likely', cap)),
+    ...high.map((cap) => overCapText(estimate, 'high', cap)),
+  ];
 }
 
 /** P3-113: a prompt of the plan that cannot fit the planner's window even with the cards named by title only. */
@@ -76,6 +73,9 @@ function Figures({ estimate }: { readonly estimate: PlanEstimate }): JSX.Element
         {` (low ${scenarioCost(estimate, 'low')}, high ${scenarioCost(estimate, 'high')})`}
         {calls === undefined ? '' : ` for ${String(calls)} planner calls`}
       </p>
+      <p class="rst-plan-note" data-testid="plan-run-line">
+        {runLineText(estimate)}
+      </p>
       <table class="rst-plan-caps">
         <caption>Caps this run is checked against</caption>
         <tbody>
@@ -91,7 +91,7 @@ function Figures({ estimate }: { readonly estimate: PlanEstimate }): JSX.Element
       )}
       {warningsOf(estimate).map((text) => (
         <p key={text} class="rst-plan-warning">
-          {text} The run stops cleanly when it reaches a cap.
+          {text}
         </p>
       ))}
     </>
@@ -155,7 +155,7 @@ export function PlanEstimateCard(props: PlanEstimateCardProps): JSX.Element {
         {...(reason === undefined ? {} : { disabledReason: reason })}
         onClick={writing.write}
       >
-        {outOfDate ? 'Write the package again' : 'Write the package'}
+        {outOfDate ? 'Start the plan again' : 'Start the plan'}
       </Button>
     </section>
   );

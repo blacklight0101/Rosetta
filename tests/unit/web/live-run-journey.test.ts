@@ -115,6 +115,17 @@ it('RF-1015 keeps every step waiting while the run is queued', () => {
   expect(steps[0]?.detail).toBe('waiting in the queue');
 });
 
+it('RF-1108 EV-80 a queued run says its place and how many runs are ahead', () => {
+  const steps = journeyOf({
+    stage: 'understand',
+    phase: { kind: 'queued', position: 3 },
+    state: stateAfter(),
+    tiles: [],
+  });
+
+  expect(steps[0]?.detail).toBe('waiting in the queue, position 3, 2 runs ahead');
+});
+
 it('RF-1015 is on the map while the scan works and leaves the other steps later', () => {
   const state = stateAfter(ev(1, 'run.started', { ...startedData, stage: 'scan' }));
 

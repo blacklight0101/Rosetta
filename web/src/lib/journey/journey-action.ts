@@ -1,6 +1,7 @@
 import type { JourneySourceFacts } from '../../api/journey-schemas.js';
 import {
   deepenFirst,
+  deepenRunning,
   phaseOf,
   plannableAtCap,
   type Context,
@@ -34,11 +35,21 @@ export interface Next {
 
 const link = (label: string, href: string): JourneyLink => ({ kind: 'link', label, href });
 
+/** RF-432: a run that waits for approval is continued from its own page, which holds the approval. */
+function approvalOf(run: {
+  readonly id: string;
+  readonly queueState: string;
+}): JourneyAction | undefined {
+  return run.queueState === 'AwaitingApproval'
+    ? link('Review and continue', `/runs/${run.id}`)
+    : undefined;
+}
+
 function afterTheRun(c: Context, setUp: string): Next | undefined {
   const { source } = c;
   if (source === null) return undefined;
   const phase = phaseOf(source);
-  if (phase === 'working') return { action: undefined, here: 'understand' };
+  if (phase === 'working') return { action: approvalOf(source), here: 'understand' };
   if (phase === 'stopped') {
     const resume = { kind: 'resume', label: 'Resume this run', runId: source.id } as const;
     // P3-121: a run that stopped at a cap with Supported claims can be planned from; Resume stays
@@ -55,7 +66,7 @@ function afterTheRun(c: Context, setUp: string): Next | undefined {
   }
   if (source.supportedClaims === 0) {
     return {
-      action: link('Start a new run', `/projects/${c.projectId}/start`),
+      action: link('Start a new run', `/projects/${c.projectId}`),
       here: 'understand',
     };
   }
@@ -66,6 +77,8 @@ function afterTheRun(c: Context, setUp: string): Next | undefined {
 
 /** RF-646, DEC-179: Deepen first; the questions come after the last Deepen, or at once when the user skips it. */
 function questionsNext(c: Context, source: JourneySourceFacts, setUp: string): Next {
+  // P6-19: a Deepen is running; there is nothing to start, the questions come after it.
+  if (deepenRunning(c)) return { action: undefined, here: 'questions' };
   if (deepenFirst(c)) {
     return {
       action: { kind: 'deepen', label: 'Deepen this run first', href: `/runs/${source.id}` },
@@ -83,9 +96,9 @@ function questionsNext(c: Context, source: JourneySourceFacts, setUp: string): N
 
 function afterThePlan(c: Context, setUp: string): Next {
   const { plan, facts } = c;
-  if (plan === null) return { action: link('Review the estimate', setUp), here: 'estimate' };
+  if (plan === null) return { action: link('Start the plan', setUp), here: 'estimate' };
   const phase = phaseOf(plan);
-  if (phase === 'working') return { action: undefined, here: 'plan' };
+  if (phase === 'working') return { action: approvalOf(plan), here: 'plan' };
   if (phase === 'stopped') return { action: link('Try the plan again', setUp), here: 'plan' };
   if (facts.handoff?.outOfDate === true) {
     return { action: link('Review the new estimate', setUp), here: 'estimate' };
@@ -98,7 +111,7 @@ function afterThePlan(c: Context, setUp: string): Next {
 // RF-615
 export function nextOf(c: Context): Next {
   if (c.source === null || c.setUp === undefined) {
-    return { action: link('Start a run', `/projects/${c.projectId}/start`), here: 'scan' };
+    return { action: link('Start a run', `/projects/${c.projectId}`), here: 'scan' };
   }
   const early = afterTheRun(c, c.setUp);
   if (early !== undefined) return early;

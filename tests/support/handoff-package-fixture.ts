@@ -128,7 +128,8 @@ function excludedOf(text: string): ExcludedClaim {
 }
 
 /** The grep rules of the shipped catalogue, as a plan run carries them (P6-28). */
-const shippedGrepRules = (await loadCatalogue('prompts')).grepRules;
+const shippedCatalogueFiles = await loadCatalogue('prompts');
+const shippedGrepRules = shippedCatalogueFiles.grepRules;
 
 /** The package with this text in every model and repository field. */
 export function handoffOf(
@@ -173,6 +174,7 @@ export function handoffOf(
     prd,
     prdQuestions: prdQuestions(prd),
     grepRules: shippedGrepRules,
+    agentModels: shippedCatalogueFiles.agentModels,
     ...extra,
   };
 }

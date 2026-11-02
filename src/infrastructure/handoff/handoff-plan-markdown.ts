@@ -1,4 +1,4 @@
-import { tablesOfEntity } from './handoff-entity-tables.js';
+import { splitNotesOf, tablesOfEntity } from './handoff-entity-tables.js';
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { componentDiagram } from '../../domain/diagrams/component-diagram.js';
 import type { DraftEntity } from '../../domain/planning/plan-draft.js';
@@ -9,7 +9,7 @@ import type { TextMasker } from '../guards/secret-masker.js';
 import { decisionLink, handoffFiles, sourceLinks } from './handoff-links.js';
 import { checkReference } from '../../domain/planning/typed-answers.js';
 import { hasOwnAnswer, ownAnswerLines, referenceLine } from './handoff-own-answers-markdown.js';
-import { followsStyle } from './handoff-style-markdown.js';
+import { referenceKind, followsStyle } from './handoff-style-markdown.js';
 
 // RF-601, RF-602, RF-603, ADR-013: the planning documents of the hand-off package: requirements,
 // target architecture, decision records and entity mapping (the roadmap and the task cards are in
@@ -47,7 +47,7 @@ function followingSentence(handoff: HandoffPackage, esc: MarkdownEscaper): strin
   const broken = `See [the package checks](${handoffFiles.checks}) and [the risks](${handoffFiles.risks}).`;
   if (hasOwnAnswer(handoff, 'architecture')) {
     // DEC-184: the style is not chosen; Rosetta's dependency check only compares with it.
-    const compares = `Rosetta's automatic dependency check compares the components below with the ${title} style${linked}, the default style and ${checkReference('style')}, not the chosen style`;
+    const compares = `Rosetta's automatic dependency check compares the components below with the ${title} style${linked}, ${referenceKind(handoff)} and ${checkReference('style')}, not the chosen style`;
     return followsStyle(handoff)
       ? `${compares}; they keep its rule. ${check}`
       : `${compares}, and at least one dependency breaks its rule. ${broken} ${check}`;
@@ -144,10 +144,10 @@ export function decisionMarkdown(decision: PlanDecision, esc: MarkdownEscaper): 
 }
 
 /** The notes of the planner, then its own name for the target when that is not one of the tables. */
-function notesOf(entity: DraftEntity, tables: readonly string[]): string {
+function notesOf(entity: DraftEntity, tables: readonly string[], split: readonly string[]): string {
   const named = entity.target.trim();
   const same = tables.some((name) => name.toLowerCase() === named.toLowerCase());
-  return [entity.notes, named === '' || same ? '' : `The planner named it ${named}.`]
+  return [entity.notes, named === '' || same ? '' : `The planner named it ${named}.`, ...split]
     .filter((part) => part !== '')
     .join(' ');
 }
@@ -160,7 +160,7 @@ export function entityMappingMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     const tables = tablesOfEntity(entity, handoff.dataModel);
     const target =
       tables.length === 0 ? noTable : tables.map((name) => esc.inline(name)).join(', ');
-    return `| ${esc.inline(entity.legacy)} | ${target} | ${esc.inline(notesOf(entity, tables))} | ${sourceLinks(entity.sources)} |`;
+    return `| ${esc.inline(entity.legacy)} | ${target} | ${esc.inline(notesOf(entity, tables, splitNotesOf(entity, handoff.dataModel)))} | ${sourceLinks(entity.sources)} |`;
   });
   return [
     '# Entity mapping',

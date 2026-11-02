@@ -6,7 +6,9 @@ import {
   type PlanningBrief,
   type StackLayer,
 } from './planning-brief.js';
-import type { StackData } from './stack-data.js';
+import type { StackData, VagueWords } from './stack-data.js';
+import { matchingOptions, platformOptions } from './stack-offer.js';
+import { vagueMatch } from './vague-choice.js';
 import { typedAnswers } from './typed-answers.js';
 
 // P5-39, DEC-172, RF-609, RF-610, DEC-80: what the plan proposes where the brief leaves a choice open. The
@@ -69,24 +71,63 @@ function kindOf(brief: PlanningBrief, facts: LegacyFacts): Kind {
   };
 }
 
+/**
+ * P8-09: a vague answer for a layer the catalogue has no option for (or for a kept application) is
+ * still open: the layer is listed as proposed with the typed words, and the reason names what the
+ * scan found, so the owner is not told a technology was decided.
+ */
+function openLayer(own: StackChoiceOf, facts: LegacyFacts, kind: ApplicationKind): ProposedLayer {
+  const found =
+    facts.languages.length === 0
+      ? 'The scan found no language.'
+      : `The scan found ${facts.languages.join(', ')}.`;
+  const reason =
+    kind === 'keep'
+      ? 'The application is kept as it is, so the catalogue proposes no technology.'
+      : `The catalogue has no option for this layer of a ${kind} application.`;
+  return {
+    layer: own.layer,
+    choice: own.choice,
+    why: `You typed "${own.choice}", which names no technology. ${reason} ${found} Pick a technology in Plan setup.`,
+  };
+}
+
+type StackChoiceOf = PlanningBrief['stack'][number];
+
 function layersOf(
   brief: PlanningBrief,
   kind: ApplicationKind,
   facts: LegacyFacts,
   stack: StackData,
 ): ProposedLayer[] {
-  if (kind === 'keep') return [];
-  const answered = new Set(brief.stack.map((entry) => entry.layer));
+  // P7-30: a typed answer that names only a platform leaves its layer open, with the platform's options.
+  const typed = new Map(brief.stack.map((entry) => [entry.layer, entry]));
   return stackLayers.flatMap((layer) => {
-    if (answered.has(layer)) return [];
-    const option = stack.proposals.options.find(
-      (each) =>
-        each.kind === kind &&
-        each.layer === layer &&
-        (each.legacy.length === 0 || each.legacy.some((id) => facts.languages.includes(id))),
-    );
-    return option === undefined ? [] : [{ layer, choice: option.choice, why: option.why }];
+    const own = typed.get(layer);
+    const vague = own?.custom === true ? vagueMatch(stack, layer, own.choice) : undefined;
+    if (own !== undefined && vague === undefined) return [];
+    const found = kind === 'keep' ? undefined : optionOf(stack, { kind, layer, vague }, facts);
+    if (found === undefined) return own === undefined ? [] : [openLayer(own, facts, kind)];
+    const why =
+      own === undefined
+        ? found.why
+        : `You typed "${own.choice}", which names no technology. ${found.why}`;
+    return [{ layer, choice: found.choice, why }];
   });
+}
+
+/** The catalogue's first option for the layer: the platform's when the answer was vague, else the scan's. */
+function optionOf(
+  stack: StackData,
+  want: { kind: ApplicationKind; layer: StackLayer; vague: VagueWords | undefined },
+  facts: LegacyFacts,
+): { readonly choice: string; readonly why: string } | undefined {
+  const { kind, layer, vague } = want;
+  const options =
+    vague === undefined
+      ? []
+      : platformOptions(stack, { kind, layer, platform: vague, scanned: facts.languages });
+  return (options.length > 0 ? options : matchingOptions(stack, kind, layer, facts.languages))[0];
 }
 
 const noRoute =
@@ -138,11 +179,25 @@ export function proposeFor(
     custom: false,
     proposed: true as const,
   }));
-  const merged = [...brief.stack, ...proposed].sort(
+  const opened = new Set(layers.map((each) => each.layer));
+  const kept = brief.stack.filter((entry) => !opened.has(entry.layer));
+  const merged = [...kept, ...proposed].sort(
     (a, b) => stackLayers.indexOf(a.layer) - stackLayers.indexOf(b.layer),
   );
   return {
-    brief: { ...brief, application: where.kind, migration: fit.strategy, stack: merged },
+    brief: {
+      ...brief,
+      application: where.kind,
+      migration: fit.strategy,
+      stack: merged,
+      // P7-30: a layer opened by a platform-only answer is listed among the open questions.
+      defaulted: [
+        ...brief.defaulted,
+        ...[...opened]
+          .map((layer) => `stack.${layer}`)
+          .filter((id) => !brief.defaulted.includes(id)),
+      ],
+    },
     proposal: { ...where, layers, fit },
   };
 }

@@ -19,7 +19,7 @@ describe('the first message of a re-run reader', () => {
 
     const message = readerTaskMessage(prompts, 'AREA-BLOCK', 'ANSWERS-BLOCK');
 
-    expect(prompts.answers.name).toBe('reader/answers.v1.md');
+    expect(prompts.answers.name).toBe('reader/answers.v2.md');
     expect(message.indexOf('AREA-BLOCK')).toBeGreaterThan(-1);
     expect(message.indexOf('ANSWERS-BLOCK')).toBeGreaterThan(message.indexOf('AREA-BLOCK'));
   });
@@ -34,7 +34,7 @@ describe('the first message of a re-run reader', () => {
   it('RF-241 refuses an answers prompt that lost its placeholder', async () => {
     const folder = await mkdtemp(join(tmpdir(), 'rosetta-answers-prompt-'));
     await mkdir(join(folder, 'reader'));
-    await writeFile(join(folder, 'reader', 'answers.v1.md'), 'No placeholder here.\n');
+    await writeFile(join(folder, 'reader', 'answers.v2.md'), 'No placeholder here.\n');
 
     await expect(loadAnswersPrompt(folder)).rejects.toThrow(/placeholder/u);
   });

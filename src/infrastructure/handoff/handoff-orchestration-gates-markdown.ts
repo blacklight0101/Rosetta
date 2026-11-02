@@ -68,7 +68,8 @@ export const throttleSection: SectionWriter = (handoff) => {
 export const escalationSection: SectionWriter = (handoff) => [
   '## Escalation and stop conditions',
   '',
-  resolveBuildMethod(handoff.brief.buildMethod).models?.escalation === undefined
+  resolveBuildMethod(handoff.brief.buildMethod, handoff.agentModels).models?.escalation ===
+  undefined
     ? 'No escalation model is named: at the third failure of a card the owner decides what happens next, as the retry ladder says.'
     : "A card never gets the escalation model when the plan is made. The escalation model is used only at the third failure of a card, and only with the owner's approval in chat; the orchestrator records that approval on the card.",
   '',

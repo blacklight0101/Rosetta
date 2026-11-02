@@ -2,10 +2,12 @@ import type { Area } from '../../domain/code-map/area.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { RetryNote } from '../agent/retry-note.js';
 import type { UnreadRanges } from '../agent/unread-ranges-note.js';
+import { readingOrder } from './reader-order.js';
 
 // RF-200, DEC-15: the reader tasks of an understand run: one per area of the code map, or one per
-// area the start request named, in the code map's area order (so card ids follow it, RF-203), with
-// the areas of third-party code after all own code (P3-123, HB-01: a cap never starves own code).
+// area the start request named, in reading order (RF-210, DEC-195: own code first, then
+// tests, deployment, configuration, libraries; card ids follow it, RF-203), with the areas of
+// third-party code after all own code (P3-123, HB-01: a cap never starves own code).
 // A request that names no area reads the own code only when the project has library areas, which
 // is what the start page offers by default; a project of library areas only reads them all. A name
 // the code map does not have stops the run, and the refusal lists the valid names. Names are
@@ -41,14 +43,6 @@ function taskId(index: number): string {
   return `reader-${String(index + 1).padStart(3, '0')}`;
 }
 
-/** P3-123: own code in code-map order, then the library areas in code-map order. */
-function ownCodeFirst(areas: readonly Area[], library: ReadonlySet<string>): readonly Area[] {
-  return [
-    ...areas.filter((area) => !library.has(area.name)),
-    ...areas.filter((area) => library.has(area.name)),
-  ];
-}
-
 // RF-200, P3-123
 export function planReaderTasks(
   areas: readonly Area[],
@@ -62,6 +56,6 @@ export function planReaderTasks(
   const own = areas.filter((area) => !library.has(area.name));
   const byDefault = own.length > 0 ? own : areas;
   const chosen = named.size === 0 ? byDefault : areas.filter((area) => named.has(area.name));
-  const ordered = ownCodeFirst(chosen, library);
+  const ordered = readingOrder(chosen, library);
   return ok(ordered.map((area, index) => ({ agentTaskId: taskId(index), area })));
 }

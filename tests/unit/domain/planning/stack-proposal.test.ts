@@ -18,6 +18,12 @@ const web = legacyFactsOf({ files: webFormsFiles, sqlStatements: [] }, signals);
 const desktop = legacyFactsOf({ files: winFormsFiles, sqlStatements: oneStatement }, signals);
 const desktopNoDatabase = legacyFactsOf({ files: winFormsFiles, sqlStatements: [] }, signals);
 
+describe('legacyFactsOf: the extensions of the code map (P7-29)', () => {
+  it('DEC-203 lists every extension of the code map, lower case, sorted and once', () => {
+    expect(web.extensions).toEqual(['aspx', 'cs']);
+  });
+});
+
 describe('legacyFactsOf: the kind from the code map', () => {
   it('RF-609 a page file makes a web application, even beside designer files', () => {
     expect(web.detected?.kind).toBe('web');

@@ -7,6 +7,7 @@ import {
 } from '../../domain/planning/plan-coverage.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { probeStatesOutcome } from '../../domain/planning/task-card-quality.js';
+import { dataModelCheckLines, isDataModelCheck } from './handoff-data-model-checks-markdown.js';
 import { modelCheckLines } from './handoff-model-checks-markdown.js';
 import { keepOrFixOf } from './handoff-keep-or-fix.js';
 import { decisionLink } from './handoff-links.js';
@@ -145,8 +146,9 @@ function contradictionLines(handoff: HandoffPackage, esc: MarkdownEscaper): stri
 // or a name from the planner's answer and goes through the escaper; the field and the reason are the
 // plan's own words for the fault, never a sentence of the answer.
 function leftOutLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  if (handoff.leftOut.length === 0) return [];
-  const areas = [...new Set(handoff.leftOut.map((each) => each.area))];
+  const dropped = handoff.leftOut.filter((each) => !isDataModelCheck(each));
+  if (dropped.length === 0) return [];
+  const areas = [...new Set(dropped.map((each) => each.area))];
   return [
     '## Left out',
     '',
@@ -155,11 +157,11 @@ function leftOutLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     ...areas.flatMap((area) => [
       `### ${esc.inline(area)}`,
       '',
-      ...handoff.leftOut
+      ...dropped
         .filter((each) => each.area === area)
         .map(
           (each) =>
-            `- ${esc.inline(each.item)}: the field "${esc.inline(each.field)}". ${esc.inline(each.reason)}`,
+            `- ${esc.code(each.item)}: the field "${esc.inline(each.field)}". ${esc.inline(each.reason)}`,
         ),
       '',
     ]),
@@ -231,6 +233,7 @@ export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     ...contradictionLines(handoff, esc),
     ...probeOutcomeLines(handoff),
     ...copiedExampleLines(handoff, esc),
+    ...dataModelCheckLines(handoff, esc),
     ...leftOutLines(handoff, esc),
     ...meaningLines(handoff, esc),
   ];

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createRunHarness, userAmy, userBob } from '../../../support/run-harness.js';
+import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
+import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import type { Actor } from '../../../../src/domain/accounts/actor.js';
 
 // RF-1108: more running runs than the limit queue; the page shows the position; a run starts
@@ -53,8 +55,8 @@ describe('the run queue and one run per user', () => {
   it('RF-1108 keeps a user to one running run even when slots are free', async () => {
     const h = createRunHarness({ maxRunning: 3 });
 
-    const first = await h.start(userAmy);
-    const second = await h.start(userAmy);
+    const first = await h.start(userAmy, 'understand');
+    const second = await h.start(userAmy, 'understand');
 
     expect(h.executor.startedKeys).toEqual([first.runKey]);
     expect(await h.queue.positionOf(second.id)).toBe(1);
@@ -62,9 +64,9 @@ describe('the run queue and one run per user', () => {
 
   it('RF-1108 lets the next user go ahead of a user whose second run has to wait', async () => {
     const h = createRunHarness({ maxRunning: 2 });
-    const amyFirst = await h.start(userAmy);
-    const amySecond = await h.start(userAmy);
-    const bobRun = await h.start(userBob);
+    const amyFirst = await h.start(userAmy, 'understand');
+    const amySecond = await h.start(userAmy, 'understand');
+    const bobRun = await h.start(userBob, 'understand');
 
     expect(h.executor.startedKeys).toEqual([amyFirst.runKey, bobRun.runKey]);
     expect(await h.queue.positionOf(amySecond.id)).toBe(1);
@@ -72,8 +74,8 @@ describe('the run queue and one run per user', () => {
 
   it('RF-1108 starts the same user next run once the first one has ended', async () => {
     const h = createRunHarness({ maxRunning: 2 });
-    const first = await h.start(userAmy);
-    const second = await h.start(userAmy);
+    const first = await h.start(userAmy, 'understand');
+    const second = await h.start(userAmy, 'understand');
 
     h.executor.settle(first.id, { endState: 'Completed' });
     await h.ended(first);
@@ -81,5 +83,84 @@ describe('the run queue and one run per user', () => {
     await vi.waitFor(() => {
       expect(h.executor.startedKeys).toEqual([first.runKey, second.runKey]);
     });
+  });
+});
+
+describe('the run queue and the free scan', () => {
+  it('RF-1108 EV-91 starts a scan while a paid run of the same user is running', async () => {
+    const h = createRunHarness({ maxRunning: 2 });
+    const paid = await h.start(userAmy, 'understand');
+
+    const scan = await h.start(userAmy, 'scan');
+
+    expect(h.executor.startedKeys).toEqual([paid.runKey, scan.runKey]);
+    expect(await h.queue.positionOf(scan.id)).toBeUndefined();
+  });
+
+  it('RF-1108 EV-91 a running scan does not hold back the next paid run of the user', async () => {
+    const h = createRunHarness({ maxRunning: 2 });
+    const scan = await h.start(userAmy, 'scan');
+
+    const paid = await h.start(userAmy, 'understand');
+
+    expect(h.executor.startedKeys).toEqual([scan.runKey, paid.runKey]);
+  });
+
+  it('RF-1108 EV-91 still keeps a user to one running paid run', async () => {
+    const h = createRunHarness({ maxRunning: 3 });
+    const first = await h.start(userAmy, 'understand');
+    const second = await h.start(userAmy, 'understand');
+
+    expect(h.executor.startedKeys).toEqual([first.runKey]);
+    expect(await h.queue.positionOf(second.id)).toBe(1);
+  });
+});
+
+describe('the run queue owner-stop signal', () => {
+  it('P8-12 aborts the owner-stop signal on Stop even after a cap has aborted the run signal', async () => {
+    const h = createRunHarness({ maxRunning: 1 });
+    const run = await h.start(userAmy);
+    await vi.waitFor(() => {
+      expect(h.executor.started).toHaveLength(1);
+    });
+    const execution = h.executor.started[0];
+    execution?.stop(new RosettaError(ERROR_CODES.budgetCapReached));
+    const beforeStop = execution?.ownerStop?.aborted;
+
+    await h.queue.stop(userAmy.userId, run.id);
+
+    expect(beforeStop).toBe(false);
+    expect(execution?.ownerStop?.aborted).toBe(true);
+  });
+
+  it('P8-12 removes the owner-stop signal when the run ends', async () => {
+    const h = createRunHarness({ maxRunning: 1 });
+    const run = await h.start(userAmy);
+    await vi.waitFor(() => {
+      expect(h.executor.started).toHaveLength(1);
+    });
+    const stops = (h.queue as unknown as { ownerStops: Map<string, AbortController> }).ownerStops;
+    const during = stops.has(run.id);
+
+    h.executor.settle(run.id, { endState: 'Completed' });
+    await h.ended(run);
+
+    expect(during).toBe(true);
+    expect(stops.has(run.id)).toBe(false);
+  });
+
+  it('P8-12 aborts the owner-stop signal on shutdown', async () => {
+    const h = createRunHarness({ maxRunning: 1 });
+    await h.start(userAmy);
+    await vi.waitFor(() => {
+      expect(h.executor.started).toHaveLength(1);
+    });
+    const execution = h.executor.started[0];
+
+    const closing = h.queue.shutDown();
+    h.executor.settle(execution?.run.id ?? '', { endState: 'Interrupted' });
+    await closing;
+
+    expect(execution?.ownerStop?.aborted).toBe(true);
   });
 });

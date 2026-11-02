@@ -32,14 +32,15 @@ const LABELS: Readonly<Record<ModelSlot, string>> = {
 };
 
 const HELP: Readonly<Record<ModelSlot, string>> = {
-  smallest: 'Used for difficulty 1 to 5.',
-  middle: 'Used for difficulty 6 to 8 and to verify them.',
+  smallest: 'Used for difficulty 1 to 5, or 1 and 2 when it runs locally.',
+  middle: 'Used for difficulty 6 to 8 and to verify them; when it runs locally it takes no card.',
   largest: 'Used for difficulty 9 and 10 and to verify them.',
   escalation: 'Used only with your approval in chat; it never has a default.',
 };
 
-// P6-22, RF-641: a tier model can be marked as running locally; a local model builds only cards of
-// difficulty 1 and 2, so the package check lists a card above that. The escalation model has no flag.
+// P6-22, RF-641, P7-12: a tier model can be marked as running locally; a local model builds only cards
+// of difficulty 1 and 2, so the package gives the cards above that to the next tier. The escalation
+// model has no flag.
 function isTier(slot: ModelSlot): slot is Tier {
   return (TIERS as readonly string[]).includes(slot);
 }
@@ -71,7 +72,7 @@ function Models(props: PlanMethodModelsProps): JSX.Element | null {
                 kind="checkbox"
                 id={`build-local-${slot}`}
                 label={`Runs locally: ${slot} tier model`}
-                help="A local model builds only cards of difficulty 1 and 2; the package check lists a higher card on it."
+                help="A local model builds only cards of difficulty 1 and 2; the package gives the cards above that to the next tier."
                 checked={draft.local[slot]}
                 onChange={(checked) => {
                   change({ ...draft, local: { ...draft.local, [slot]: checked } });

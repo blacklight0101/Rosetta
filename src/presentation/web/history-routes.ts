@@ -39,7 +39,7 @@ function instantOrNull(value: number | null): string | null {
   return value === null ? null : formatInstant(value);
 }
 
-function runRow({ run, sizeBytes }: HistoryRun): Record<string, unknown> {
+function runRow({ run, sizeBytes, position }: HistoryRun): Record<string, unknown> {
   return {
     id: run.id,
     runId: run.runKey,
@@ -52,6 +52,8 @@ function runRow({ run, sizeBytes }: HistoryRun): Record<string, unknown> {
     endedAt: instantOrNull(run.endedAt),
     totals: run.totals,
     failedAreas: run.failedAreas,
+    unreadAreas: run.unreadAreas,
+    position,
     sizeBytes,
   };
 }

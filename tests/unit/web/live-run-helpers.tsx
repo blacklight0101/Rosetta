@@ -14,17 +14,28 @@ export const estimatePath = '/api/projects/p-1/estimate';
 
 interface RowOptions {
   readonly stage?: string;
-  readonly queueState?: 'Queued' | 'Running' | 'Ended';
+  readonly queueState?: 'Queued' | 'Running' | 'AwaitingApproval' | 'Ended';
   readonly endState?: string | null;
   readonly costMicros?: number;
   readonly reportBuilt?: boolean;
   readonly failedAreas?: number;
+  /** P8-11: the cloud consent the run recorded in its manifest. */
+  readonly cloudConsent?: boolean;
+  /** P8-11: the understand run a plan run was made from. */
+  readonly sourceRunId?: string | null;
+  readonly position?: number | null;
 }
+
+/** P8-11: the cloud consent and the source run the run row carries. */
+const recorded = (options: RowOptions) => ({
+  cloudConsent: options.cloudConsent ?? false,
+  sourceRunId: options.sourceRunId ?? null,
+});
 
 /** What `GET /api/runs/:runId` answers. */
 export function runRow(options: RowOptions = {}): Response {
   const { stage = 'understand', queueState = 'Running', endState = null } = options;
-  const { costMicros = 0, reportBuilt = false, failedAreas = 0 } = options;
+  const { costMicros = 0, reportBuilt = false, failedAreas = 0, position = null } = options;
   return json(200, {
     id: runUuid,
     projectId: 'p-1',
@@ -39,6 +50,8 @@ export function runRow(options: RowOptions = {}): Response {
     totals: { costMicros, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
     reportBuilt,
     failedAreas,
+    ...recorded(options),
+    position,
   });
 }
 

@@ -32,6 +32,8 @@ export interface ListedAnswers {
   readonly deepens: number;
   /** The run is itself a Deepen. */
   readonly isDeepen: boolean;
+  /** P6-33: a Deepen of the family is queued or running. */
+  readonly deepening: boolean;
 }
 
 export class ListAnswers {
@@ -55,7 +57,7 @@ export class ListAnswers {
     );
     const project = { userId: run.userId, projectId: run.projectId };
     await answers.keepMerge(project, mergeEditsOf(found.questions));
-    const { deepens, isDeepen } = found.family;
-    return ok({ questions: found.questions, deepens, isDeepen });
+    const { deepens, isDeepen, deepening } = found.family;
+    return ok({ questions: found.questions, deepens, isDeepen, deepening });
   }
 }

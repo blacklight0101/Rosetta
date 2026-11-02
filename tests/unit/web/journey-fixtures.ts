@@ -22,7 +22,7 @@ export function source(over: Partial<JourneySourceFacts> = {}): JourneySourceFac
     ...{ endState: 'Completed', endedAt: '2026-10-12T09:41:00.000Z', costMicros: 120_000 },
     ...{ errorCode: null, supportedClaims: 4, openQuestions: 0 },
     // A Deepen has been made of it, so its questions are asked (RF-646); a test of Deepen first sets 0.
-    ...{ deepens: 1, isDeepen: false },
+    ...{ deepens: 1, isDeepen: false, deepening: false },
     ...over,
   };
 }

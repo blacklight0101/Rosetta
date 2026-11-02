@@ -20,6 +20,7 @@ import {
   type PlanCatalogueServices,
 } from './plan-catalogue-routes.js';
 import { registerPlanSourceRoutes, type PlanSourceServices } from './plan-source-routes.js';
+import { registerStackOfferRoutes, type StackOfferServices } from './stack-offer-routes.js';
 import { registerPlanEstimateRoutes, type PlanEstimateServices } from './plan-estimate-routes.js';
 import {
   registerPlanningBriefRoutes,
@@ -52,6 +53,7 @@ export interface ProjectServices
     PlanningBriefServices,
     PlanEstimateServices,
     PlanSourceServices,
+    StackOfferServices,
     PlanCatalogueServices {
   readonly createProject: CreateProject;
   readonly listProjects: ListProjects;
@@ -252,6 +254,7 @@ export function registerProjectRoutes(server: FastifyInstance, services: Project
   registerPlanningBriefRoutes(server, services);
   registerPlanEstimateRoutes(server, services);
   registerPlanSourceRoutes(server, services);
+  registerStackOfferRoutes(server, services);
   registerPlanCatalogueRoutes(server, services);
   registerWorkspace(server, services);
 }

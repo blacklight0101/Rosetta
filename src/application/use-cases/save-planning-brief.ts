@@ -3,11 +3,10 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import type { FieldProblem } from '../../domain/errors/field-problems.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
+import { briefProblems } from '../../domain/planning/brief-problems.js';
+import { isBriefOutOfDate, sameBrief } from '../../domain/planning/brief-freshness.js';
 import {
-  briefProblems,
   buildBrief,
-  isBriefOutOfDate,
-  sameBrief,
   type BriefAnswers,
   type PlanningBrief,
 } from '../../domain/planning/planning-brief.js';
@@ -52,10 +51,9 @@ export class SavePlanningBrief {
   }): Promise<Result<PlanningBriefState, SaveBriefRefusal>> {
     const { projects, runs, briefs, catalogue, clock } = this.deps;
     const { userId } = request.actor;
-    if ((await projects.find(userId, request.projectId)) === undefined) {
-      return err({ code: ERROR_CODES.notFound });
-    }
-    const problems = briefProblems(request.answers, catalogue);
+    const found = await projects.find(userId, request.projectId);
+    if (found === undefined) return err({ code: ERROR_CODES.notFound });
+    const problems = briefProblems(request.answers, catalogue, found.sourceKind);
     if (problems.length > 0) {
       const fields = problems.map(({ field, reason }) => ({
         field,

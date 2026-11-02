@@ -46,6 +46,8 @@ export interface DeepenRecord {
   readonly parentRunKey: string;
   readonly maxRounds: number;
   readonly coveragePass: boolean;
+  /** P7-02: the areas the understand run planned, carried on from run to Deepen; absent before. */
+  readonly plannedAreas?: readonly string[] | undefined;
   /** Rounds that ran to their end. */
   readonly roundsDone: number;
   readonly stopReason: DeepenStopReason | null;
@@ -61,7 +63,10 @@ function measureSummaryOf(measures: UnderstandingMeasures): MeasureSummary {
 
 // RF-209
 export function newDeepenRecord(
-  parent: Pick<DeepenRecord, 'parentRunId' | 'parentRunKey' | 'maxRounds' | 'coveragePass'>,
+  parent: Pick<
+    DeepenRecord,
+    'parentRunId' | 'parentRunKey' | 'maxRounds' | 'coveragePass' | 'plannedAreas'
+  >,
   before: UnderstandingMeasures,
 ): DeepenRecord {
   return {
@@ -75,11 +80,48 @@ export function newDeepenRecord(
   };
 }
 
-/** The record with one more round; only a round that ran to its end counts as done. */
+/**
+ * The record with one more round; only a round that ran to its end counts as done. A round run
+ * again after a resume replaces the incomplete round of its number and keeps what that one had
+ * already judged, re-read, read, written and spent (DEC-197).
+ */
 // RF-209
 export function withRound(record: DeepenRecord, round: DeepenRound): DeepenRecord {
-  const rounds = [...record.rounds, round];
+  const cut = record.rounds.find((each) => each.round === round.round && !each.complete);
+  const rounds =
+    cut === undefined
+      ? [...record.rounds, round]
+      : record.rounds.map((each) => (each === cut ? mergedRound(cut, round) : each));
   return { ...record, rounds, roundsDone: rounds.filter((each) => each.complete).length };
+}
+
+function both<T>(earlier: readonly T[], later: readonly T[], key: (item: T) => string): T[] {
+  const seen = new Set(later.map(key));
+  return [...earlier.filter((item) => !seen.has(key(item))), ...later];
+}
+
+/** DEC-197: the incomplete round and the round that ran it again, as one round. */
+function mergedRound(cut: DeepenRound, again: DeepenRound): DeepenRound {
+  const same = (item: string): string => item;
+  return {
+    ...again,
+    judged: both(cut.judged, again.judged, same),
+    reread: both(cut.reread, again.reread, (each) => each.claimId),
+    failedAreas: both(cut.failedAreas, again.failedAreas, same),
+    filesRead: both(cut.filesRead, again.filesRead, same),
+    newClaims: both(cut.newClaims, again.newClaims, (each) => each.claimId),
+    answersUsed: both(cut.answersUsed, again.answersUsed, same),
+    tokens: cut.tokens + again.tokens,
+    costMicros: cut.costMicros + again.costMicros,
+  };
+}
+
+/**
+ * RF-209, DEC-197: the number of the round a Deepen runs next, from the complete rounds; after a
+ * resume the incomplete round runs again under its own number.
+ */
+export function nextRoundNumber(record: Pick<DeepenRecord, 'rounds'>): number {
+  return record.rounds.filter((round) => round.complete).length + 1;
 }
 
 /** RF-209: the rejected claims a round plan left out of scope, each listed once. */
@@ -127,6 +169,12 @@ export function retriedAreasIn(record: DeepenRecord): ReadonlySet<string> {
 }
 
 /** RF-209: only an understand run that ended `Completed` can be deepened (a Deepen run too, Q-L). */
-export function canDeepen(run: Pick<Run, 'stage' | 'endState'>): boolean {
-  return run.stage === 'understand' && run.endState === 'Completed';
+export function canDeepen(
+  run: Pick<Run, 'stage' | 'endState'> & { readonly unreadAreas?: number },
+): boolean {
+  if (run.stage !== 'understand') return false;
+  // P7-02, DEC-194: a capped run that left planned areas unread ("Partly read") can be deepened.
+  return (
+    run.endState === 'Completed' || (run.endState === 'CapReached' && (run.unreadAreas ?? 0) > 0)
+  );
 }

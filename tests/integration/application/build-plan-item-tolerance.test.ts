@@ -80,9 +80,9 @@ describe('BuildPlan: an item of the plan answer that does not read', () => {
     const checks = plain(files['checks.md']);
     expect(checks).toContain('## Left out');
     for (const item of [
-      'technical.security, position 1: the field "description"',
-      'technical.security, position 3: the field "description"',
-      'technical.environments, position 1: the field "purpose"',
+      '`technical.security, position 1`: the field "description"',
+      '`technical.security, position 3`: the field "description"',
+      '`technical.environments, position 1`: the field "purpose"',
     ]) {
       expect(checks).toContain(item);
     }
@@ -114,11 +114,11 @@ describe('BuildPlan: an answer with no requirement that reads', () => {
     const text = requests[1]?.messages.map((each) => each.content).join('\n') ?? '';
     expect(text).toContain('requirements, position 1: the field "statement"');
     expect(text).not.toContain(sentinel);
-    const repairPrompt = await readFile('prompts/planner/plan-repair.v1.md', 'utf8');
+    const repairPrompt = await readFile('prompts/planner/plan-repair.v2.md', 'utf8');
     expect(text).toContain(repairPrompt.trim().split('\n')[0]);
     expect(requests[1]?.system).toBe(requests[0]?.system);
     expect(plain((await h.handoffOf(run))['tasks.md'])).toContain('Orders');
-    expect((await h.manifestOf(run)).promptVersions).toHaveProperty('planner/plan-repair.v1.md');
+    expect((await h.manifestOf(run)).promptVersions).toHaveProperty('planner/plan-repair.v2.md');
   });
 
   it('P3-126 RST-1803 a repair that still has no requirement fails the run, with no third call', async () => {

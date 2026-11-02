@@ -98,7 +98,7 @@ it('RF-615 each step shows its cost', () => {
 it('RF-615 only the steps that have a page are links, and a locked step is not one', () => {
   strip('capped');
 
-  const links = within(journey()).getAllByRole('link');
+  const links = within(journey().querySelector('ol') ?? journey()).getAllByRole('link');
   expect(links.map((each) => each.textContent)).toEqual(['Understand']);
   expect(links[0]?.getAttribute('href')).toBe(`/runs/${sourceId}`);
 });
@@ -106,7 +106,7 @@ it('RF-615 only the steps that have a page are links, and a locked step is not o
 it('RF-615 on a written package every step but the scan links to its page', () => {
   strip('written');
 
-  const links = within(journey()).getAllByRole('link');
+  const links = within(journey().querySelector('ol') ?? journey()).getAllByRole('link');
   expect(links.map((each) => each.textContent)).toEqual([
     'Understand',
     'Questions',

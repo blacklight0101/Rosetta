@@ -1,20 +1,14 @@
 import type { JSX } from 'preact';
-import type { RunStageChoice } from '../api/runs.js';
 import { AreaPicker } from './AreaPicker.js';
 import { chosenOf, type AreaChoice } from './area-selection.js';
 import { LibraryChoiceNotice } from './LibraryChoiceNotice.js';
 
-// RF-1001, RF-200, RF-1018, design-system.md section 14 (Start run): the stage and, for an
-// understand run, the areas of the code map (AreaPicker.tsx). Verify is drawn as the artboard has it but cannot be
-// chosen: the server starts only a scan and an understand run in this release (RST-2305).
+// RF-1001, RF-200, RF-1018, RF-1022, design-system.md section 14: the areas of the code map
+// (AreaPicker.tsx). There is no stage choice: the journey is understand (DEC-204).
 
 export interface StageAreasProps {
-  readonly stage: RunStageChoice;
-  /** False while the project has no completed scan: only a scan can start. */
-  readonly understandAvailable: boolean;
   readonly areas: readonly AreaChoice[];
   readonly areasError: { readonly code: string; readonly message: string } | undefined;
-  readonly onStage: (stage: RunStageChoice) => void;
   readonly onArea: (name: string) => void;
   readonly onChoose: (names: readonly string[]) => void;
   /** RF-1018: library areas are chosen and the user said they are wanted. */
@@ -26,67 +20,6 @@ export interface StageAreasProps {
     readonly checked: boolean;
     readonly onChange: (checked: boolean) => void;
   };
-}
-
-function StageChoice(props: {
-  readonly id: string;
-  readonly label: string;
-  readonly checked: boolean;
-  readonly disabled?: boolean;
-  readonly onChange?: () => void;
-}): JSX.Element {
-  return (
-    <label class="rst-start__choice">
-      <input
-        type="radio"
-        name="stage"
-        id={props.id}
-        checked={props.checked}
-        disabled={props.disabled === true}
-        onChange={props.onChange}
-      />
-      {props.label}
-    </label>
-  );
-}
-
-function Stages(props: StageAreasProps): JSX.Element {
-  const { stage, understandAvailable, onStage } = props;
-  return (
-    <fieldset class="rst-start__group">
-      <legend>Stage</legend>
-      <div class="rst-start__choices">
-        <StageChoice
-          id="stage-scan"
-          label="Scan only"
-          checked={stage === 'scan'}
-          onChange={() => {
-            onStage('scan');
-          }}
-        />
-        <StageChoice
-          id="stage-understand"
-          label="Understand"
-          checked={stage === 'understand'}
-          disabled={!understandAvailable}
-          onChange={() => {
-            onStage('understand');
-          }}
-        />
-        <StageChoice
-          id="stage-verify"
-          label="Verify (not available yet)"
-          checked={false}
-          disabled
-        />
-      </div>
-      {understandAvailable ? null : (
-        <p class="rst-settings__note">
-          Run a scan first: the areas and the estimate of an understand run come from its code map.
-        </p>
-      )}
-    </fieldset>
-  );
 }
 
 function Areas(props: StageAreasProps): JSX.Element {
@@ -135,11 +68,10 @@ export function StageAreasSection(props: StageAreasProps): JSX.Element {
   return (
     <section class="rst-card rst-settings__section" aria-labelledby="stage-heading">
       <h2 id="stage-heading" class="rst-settings__heading">
-        Stage and areas
+        Areas
       </h2>
-      <Stages {...props} />
-      {props.stage === 'understand' ? <Rerun rerun={props.rerun} /> : null}
-      {props.stage === 'understand' ? <Areas {...props} /> : null}
+      <Rerun rerun={props.rerun} />
+      <Areas {...props} />
     </section>
   );
 }

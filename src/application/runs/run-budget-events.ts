@@ -117,8 +117,10 @@ function runShare(totals: SpendTotals, caps: readonly UsageCap[]): number {
     cap.kind === 'run-tokens'
       ? capWeightedTokens(totals) // DEC-168: cached input counts a tenth
       : totals.costMicros;
+  // DEC-193: a role's reserve line of the run cap is not a cap of the run.
   const shares = caps
     .filter((cap) => (cap.kind === 'run-cost' || cap.kind === 'run-tokens') && cap.limit > 0n)
+    .filter((cap) => cap.source !== 'reserve')
     .map((cap) => Number((used(cap) * 100n) / cap.limit));
   return Math.max(0, ...shares);
 }
@@ -150,6 +152,10 @@ export class RunBudgetEvents implements BudgetEvents {
 
   /** P5-20: the run's spend by role, kept with the totals so the readers' check reads no ledger. */
   private readonly roles = new Map<string, Spend>();
+
+  /** DEC-193: the roles refused at a reserve line, and those refused at a role cap of their own. */
+  private readonly atLine = new Set<string>();
+  private readonly ownCap = new Set<string>();
 
   constructor(parts: RunBudgetEventsParts) {
     for (const row of parts.rows ?? []) addToRole(this.roles, row);
@@ -186,6 +192,16 @@ export class RunBudgetEvents implements BudgetEvents {
     }
   }
 
+  /** DEC-193: the run's spend by every role, tokens as the caps count them (DEC-168). */
+  runSpend(): Spend {
+    return { tokens: capWeightedTokens(this.run), micros: this.run.costMicros };
+  }
+
+  /** DEC-193: whether the role's calls were refused at its reserve line and at no cap of its own. */
+  stoppedAtLine(role: string): boolean {
+    return this.atLine.has(role) && !this.ownCap.has(role);
+  }
+
   /** P5-20: what the role has spent in this run, earlier sessions included. */
   roleSpend(role: string): Spend {
     return this.roles.get(role) ?? { tokens: 0n, micros: 0n };
@@ -214,6 +230,8 @@ export class RunBudgetEvents implements BudgetEvents {
 
   // RF-422
   async capReached(breach: CapBreach): Promise<void> {
+    if (breach.role !== undefined)
+      (breach.source === 'reserve' ? this.atLine : this.ownCap).add(breach.role);
     if (breach.role === undefined) {
       if (this.capped) return;
       this.capped = true;

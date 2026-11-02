@@ -56,3 +56,10 @@ explicitly allowed (RF-427). `estimate` gives a low, likely and high forecast pe
 ## Notes
 
 - 2026-10-11 (review, DEC-59, DEC-107, DEC-112): there are no exit codes; a run stopped by a cap ends with the end state `CapReached`. Every call is recorded as a row of the `cost_ledger` table (DEC-65); caps also apply per user-day and server-month for server keys (DEC-64); the worst case is reserved in `cost_reservations` under an advisory lock and released when the ledger row is written; periods are UTC calendar days and months.
+- 2026-11-01 (ADR-026, DEC-196, card P7-05): a run started with an approved amount (RF-430) has that amount, not the
+  project's run caps, as its run line. A call that would pass it is still refused before it is made (the guard
+  fails closed), but the run pauses in the queue state `AwaitingApproval` instead of ending: its tasks stop and save
+  their work as at a cap, it releases its running slot and its owner answers "Continue (+N)" (the amount grows by N
+  and the run is queued again) or "Stop here" (it ends `CapReached` as before). The administrator's run cap, the
+  user-day, own-day and server-month caps and the role caps stay hard limits (DEC-112). A run without an approved
+  amount keeps the hard stop at its project caps (RF-432).

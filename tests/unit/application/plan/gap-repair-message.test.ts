@@ -17,7 +17,7 @@ const gaps: CoverageItem[] = [
 ];
 
 const prompt: PromptFile = {
-  ...{ name: 'planner/gap-repair.v2.md', version: 'v2', sha256: 'a'.repeat(64) },
+  ...{ name: 'planner/gap-repair.v4.md', version: 'v4', sha256: 'a'.repeat(64) },
   text: 'Some task cards could not be read. Write them again.\n',
 };
 

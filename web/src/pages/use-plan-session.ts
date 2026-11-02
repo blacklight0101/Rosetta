@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import type { BriefView, PlanEstimate } from '../api/plan-schemas.js';
 import type { Project } from '../api/project-schemas.js';
-import { chooseStyle } from '../lib/plan-setup/choices.js';
+import { acceptedStack, chooseStyle, keepProposed } from '../lib/plan-setup/choices.js';
 import { isAnswered, shownMethod, withAnswered, type Draft } from '../lib/plan-setup/draft.js';
 import {
   blockersOf,
@@ -47,6 +47,9 @@ export interface PlanSession extends PlanSetupState, PlanSetupActions {
 
 const OPTION_STEPS: readonly string[] = ['architecture', 'stack'];
 
+const changed = (before: Draft, after: Draft): Draft | undefined =>
+  after === before ? undefined : after;
+
 function shownChoice(setup: PlanSetupState, load: OptionsLoad): Draft | undefined {
   const { draft } = setup;
   if (setup.step === 'method') {
@@ -54,10 +57,29 @@ function shownChoice(setup: PlanSetupState, load: OptionsLoad): Draft | undefine
     return shown === draft ? undefined : withAnswered(shown, ['buildMethod']);
   }
   const options = load.status === 'ready' ? load.options : undefined;
+  if (setup.step === 'stack') {
+    // P7-29: a layer left unanswered takes the planner's recommended option once it is known.
+    const accepted = acceptedStack(draft, options);
+    return accepted === draft ? undefined : accepted;
+  }
   if (setup.step !== 'architecture' || options === undefined) return undefined;
   // A typed answer is kept as it is, not replaced by the recommended style (RF-645).
-  if (isAnswered(draft, 'architecture') || draft.chosen['architecture'] === TYPED) return undefined;
+  if (draft.chosen['architecture'] === TYPED) return changed(draft, keepProposed(draft, options));
+  if (isAnswered(draft, 'architecture')) return undefined;
   return chooseStyle(draft, options, options.architecture.recommended);
+}
+
+/** Saving takes the recommended option of each unanswered question the page showed (RF-645, P7-29). */
+function actionsOf(setup: PlanSetupState & PlanSetupActions, load: OptionsLoad) {
+  const options = load.status === 'ready' ? load.options : undefined;
+  return {
+    save: () => {
+      setup.saveAndContinue(shownChoice(setup, load));
+    },
+    useDefaults: () => {
+      setup.useDefaults(acceptedStack(setup.draft, options));
+    },
+  };
 }
 
 function stepReasonOf(
@@ -141,8 +163,6 @@ export function usePlanSession(
     askAgain: options.askAgain,
     stepReason: stepReasonOf(setup.finished, { cloud, given: consent, private: privateCode }),
     savedVersion,
-    save: () => {
-      setup.saveAndContinue(shownChoice(setup, options.load));
-    },
+    ...actionsOf(setup, options.load),
   };
 }

@@ -7,6 +7,7 @@ import { AdminUsersPage } from '../pages/AdminUsersPage.js';
 import { ChangePasswordPage } from '../pages/ChangePasswordPage.js';
 import { HistoryPage } from '../pages/HistoryPage.js';
 import { LiveRunPage } from '../pages/LiveRunPage.js';
+import { RedirectToProject } from '../pages/RedirectToProject.js';
 import { PlanSetupPage } from '../pages/PlanSetupPage.js';
 import { ProjectCostPage } from '../pages/ProjectCostPage.js';
 import { ProjectSettingsPage } from '../pages/ProjectSettingsPage.js';
@@ -52,12 +53,20 @@ export const routes: readonly RouteDefinition[] = [
     nav: { group: 'main', label: 'Projects', order: 10 },
   },
   {
-    path: '/projects/:projectId/start',
+    path: '/projects/:projectId',
     title: 'Start a run',
     access: 'user',
     chrome: 'shell',
     component: StartRunPage,
     nav: { group: 'project', label: 'Start a run', order: 10 },
+  },
+  // RF-1022: the old start-page address.
+  {
+    path: '/projects/:projectId/start',
+    title: 'Start a run',
+    access: 'user',
+    chrome: 'shell',
+    component: RedirectToProject,
   },
   {
     path: '/projects/:projectId/settings',

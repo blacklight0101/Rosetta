@@ -179,7 +179,7 @@ describe('the overview and hostile text', UNDERSTAND_TIMEOUT, () => {
     expect(run.endState).toBe('Completed');
     const overview = await overviewOf(h.runFolder(run));
     expect(overview.state).toBe('unavailable');
-    expect(overview.notice).toContain('could not be written');
+    expect(overview.notice).toContain('reached its cap');
     expect(await read(h.runFolder(run), 'spec.md')).toContain('## Overview');
   });
 });

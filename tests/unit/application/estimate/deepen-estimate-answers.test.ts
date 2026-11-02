@@ -26,6 +26,7 @@ const areas: readonly Area[] = [
     mapLevel: 'coarse',
     origin: 'folder',
   },
+  { name: 'web', files: ['web/a.cs'], estimatedTokens: 100, mapLevel: 'coarse', origin: 'folder' },
   { name: 'docs', files: [], estimatedTokens: 0, mapLevel: 'coarse', origin: 'folder' },
 ];
 
@@ -60,7 +61,7 @@ const oq = (id: string, area: string, state: 'Open' | 'Answered'): PriorCard => 
   ...{ question: `Question ${id}?`, questionState: state },
 });
 
-async function answersOf(asked: readonly AnsweredQuestion[], cards: readonly PriorCard[]) {
+async function planOf(asked: readonly AnsweredQuestion[], cards: readonly PriorCard[]) {
   const projects = new MemoryProjectRepository();
   const runs = new MemoryRunIndex();
   const settings = settingsFor({
@@ -91,16 +92,17 @@ async function answersOf(asked: readonly AnsweredQuestion[], cards: readonly Pri
     coveragePass: false,
   });
   if (!outcome.ok) throw new Error(`The estimate was refused with ${outcome.error}`);
-  return outcome.value.plan.answers;
+  return outcome.value;
 }
 
 describe('RF-209 the answers the estimate of a Deepen says it uses', () => {
   it('RF-209 counts the answered questions of the areas the first round reads', async () => {
     const asked = [answered('OQ-001'), answered('OQ-002')];
 
-    expect(await answersOf(asked, [oq('OQ-001', 'src', 'Open'), oq('OQ-002', 'src', 'Open')])).toBe(
-      2,
-    );
+    expect(
+      (await planOf(asked, [oq('OQ-001', 'src', 'Open'), oq('OQ-002', 'src', 'Open')])).plan
+        .answers,
+    ).toBe(2);
   });
 
   it('RF-209 leaves out a question of an area no task reads, and counts one already Answered', async () => {
@@ -111,10 +113,23 @@ describe('RF-209 the answers the estimate of a Deepen says it uses', () => {
       oq('OQ-003', 'src', 'Answered'),
     ];
 
-    expect(await answersOf(asked, cards)).toBe(2);
+    expect((await planOf(asked, cards)).plan.answers).toBe(2);
   });
 
   it('RF-209 counts none when the project has no answered question', async () => {
-    expect(await answersOf([], [])).toBe(0);
+    expect((await planOf([], [])).plan.answers).toBe(0);
+  });
+
+  it('DEC-198 counts the answer not used yet of an area with no re-read, and the task it adds', async () => {
+    const asked = [answered('OQ-001'), answered('OQ-004')];
+    const cards = [oq('OQ-001', 'src', 'Open'), oq('OQ-004', 'web', 'Open')];
+    const none = [oq('OQ-001', 'src', 'Open'), oq('OQ-004', 'web', 'Answered')];
+
+    const added = await planOf(asked, cards);
+    const used = await planOf(asked, none);
+
+    expect(added.plan.answers).toBe(2);
+    expect(used.plan.answers).toBe(1);
+    expect(added.round.high.inputTokens).toBeGreaterThan(used.round.high.inputTokens);
   });
 });

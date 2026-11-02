@@ -24,7 +24,7 @@ const card = {
 const unreadable = {
   ...card,
   title: 'The journey',
-  requirements: [{ id: 1 }],
+  requirements: { id: 1 },
   builds: ['flow:FLOW-001'],
 };
 const first = JSON.stringify({ tasks: [card, unreadable] });

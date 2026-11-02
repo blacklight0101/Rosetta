@@ -27,6 +27,7 @@ import { composeModels } from './compose-models.js';
 import { checkSchema } from './compose-migrations.js';
 import { serverKeyPresence } from './server-key-presence.js';
 import { composeProjects } from './compose-projects.js';
+import { ollamaHostOf } from './compose-understand.js';
 import { scheduledTasks, startScheduledTasks, type ScheduledParts } from './compose-schedule.js';
 import { composeRuns, runStartUpSteps, type RunComposition } from './compose-runs.js';
 import { composeKeySources } from './compose-start-caps.js';
@@ -152,9 +153,10 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     ...{ pool, logger, clock, masker, templatesFolder, promptsFolder },
     ...(parts.batchTimers?.clock === undefined ? {} : { batchClock: parts.batchTimers.clock }),
     ...{ dataDir: environment.dataDir, priceTable: auth.priceTable, models: auth.models },
-    uploadMaxMb: environment.uploadMaxMb,
-    workbook: environment,
+    ...{ uploadMaxMb: environment.uploadMaxMb, workbook: environment },
+    ...{ githubToken: environment.githubToken, fetch: doubles?.fetch },
     serverKeys: serverKeyPresence(environment, doubles !== undefined),
+    ollamaHost: ollamaHostOf(environment.ollamaUrl),
   });
   const server = buildServer({
     logger,

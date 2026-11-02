@@ -1,6 +1,7 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { queuePositions } from '../../domain/runs/queue-rules.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -16,6 +17,8 @@ export interface HistoryRun {
   readonly run: Run;
   /** The bytes the run folder holds; 0 when it has none (a run that never wrote one). */
   readonly sizeBytes: number;
+  /** EV-80: the place of a queued run in the server's queue, counted from 1; null for any other run. */
+  readonly position: number | null;
 }
 
 export interface RunHistory {
@@ -47,10 +50,11 @@ export class ListHistory {
     const { userId } = request.actor;
     const project = await projects.find(userId, request.projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
+    const positions = queuePositions(await runs.listQueued());
     const listed: HistoryRun[] = [];
     for (const run of await runs.list(userId, project.id)) {
       const sizeBytes = await folders.size({ userId, projectId: project.id, runKey: run.runKey });
-      listed.push({ run, sizeBytes });
+      listed.push({ run, sizeBytes, position: positions.get(run.id) ?? null });
     }
     const sizeBytes = await folders.size({ userId, projectId: project.id });
     return ok({ project, runs: listed, sizeBytes });

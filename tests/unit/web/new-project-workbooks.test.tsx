@@ -177,8 +177,12 @@ it('RF-150 the summary lists each workbook with its sheets, cells, formulas and 
   expect(summary.textContent).toContain('1 item left out');
   expect(text).toContain('Costs.xlsm: Macro module Module9 is locked and was not read.');
   expect(within(summary).getByRole('link', { name: 'Start a run' }).getAttribute('href')).toBe(
-    '/projects/p-9/start',
+    '/projects/p-9',
   );
+  // EV-87, P8-10: the stored workbooks open the project page, where the scan starts.
+  await waitFor(() => {
+    expect(window.location.pathname).toBe('/projects/p-9');
+  });
 });
 
 it('RF-150 pressing submit twice while the files go out starts one upload', async () => {

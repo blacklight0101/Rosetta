@@ -27,7 +27,7 @@ test('RF-002 a settings save made from an older version is refused with RST-1007
   context,
 }) => {
   await openScannedStartPage(page);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Project settings', level: 1 })).toBeVisible();
   const second = await context.newPage();
   await second.goto(page.url());
@@ -67,16 +67,17 @@ test('RF-113 the start page announces an outdated code map and holds an Understa
   });
   await openStartPage(page);
   await expect(page.getByText('The code map is out of date.')).toBeVisible();
-  const startButton = page.getByRole('button', { name: /^Start run/u });
-  await expect(page.getByLabel('Understand')).toBeChecked();
+  const startButton = page.getByRole('button', { name: /^Analyse/u });
   await expect(startButton).toBeDisabled();
   await page.getByLabel('Use the old code map for this run').check();
   await expect(startButton).toBeEnabled();
   await expectNoSeriousViolations(page);
+  const scanStarted = page.waitForResponse(
+    (response) => response.request().method() === 'POST' && response.url().endsWith('/runs'),
+  );
   await page.getByRole('button', { name: 'Scan again' }).click();
-  await expect(page.getByLabel('Scan only')).toBeChecked();
-  await expect(page.getByText('The code map is out of date.')).toHaveCount(0);
-  await expect(startButton).toBeEnabled();
+  // RF-160: Scan again starts the scan at once, on the same page.
+  expect((await scanStarted).ok()).toBe(true);
   await page.unroute('**/api/projects/*/estimate*');
 });
 
@@ -85,7 +86,7 @@ test('DEC-108 the warning names what is left of the day, not the whole cap', asy
 }, info) => {
   await leaveOnlyThisInTheDay(accountFor('start-run', info.project.name).userName, 1n, 1_000_000n);
   await openScannedStartPage(page);
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByRole('button', { name: 'Save settings' }).click();
@@ -98,7 +99,7 @@ test('DEC-108 the warning names what is left of the day, not the whole cap', asy
   const warning = page.getByTestId('cap-warning');
   await expect(warning).toContainText('daily cap today');
   await expect(warning).toContainText('$0.000001 left of $1.00');
-  await expect(page.getByRole('button', { name: /^Start run/u })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /^Analyse/u })).toBeEnabled();
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
 });

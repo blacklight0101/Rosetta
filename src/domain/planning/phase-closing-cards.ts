@@ -2,9 +2,9 @@ import { planId, type PlanContent, type PlanTask } from './plan-content.js';
 
 // P6-10, RF-630, RF-635, DEC-176: the cards that close a plan, written by code and never by the
 // planner, so the same plan always gets the same cards. A plan of two or more phases ends each
-// phase with a verification-matrix card (requirements to tests, measured targets, gaps turned into
-// follow-up cards), and a plan with a card of a risk class other than `none` gets one security
-// review card in its last phase. The cards take the ids after the last card of the plan.
+// phase that has cards with a verification-matrix card (requirements to tests, measured targets, gaps
+// turned into follow-up cards), and a plan with a card of a risk class other than `none` gets one
+// security review card in its last phase that has cards. The cards take the ids after the last card of the plan.
 
 type CardText = Pick<PlanTask, 'title' | 'invariant' | 'acceptanceCriteria'>;
 
@@ -70,7 +70,8 @@ function closing(text: CardText, fields: Pick<PlanTask, 'id' | 'phase' | 'depend
 /**
  * P6-10: the plan with a verification-matrix card at the end of each phase that has cards (a plan of
  * two or more phases) and, when a card has a risk class other than `none`, a security review card
- * in the last phase that waits for those cards. The last matrix card waits for the review. A plan
+ * in the last phase that has cards, waiting for those cards. The matrix card of that phase waits for
+ * the review. A plan
  * with no phase or no task is returned as it is. A planner card that has the title of one of these
  * cards is renamed, never taken for one.
  */

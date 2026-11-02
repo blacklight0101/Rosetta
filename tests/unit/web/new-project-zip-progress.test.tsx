@@ -231,3 +231,26 @@ it('RF-159 a resume read that answers after an upload began does not replace it 
   expect(screen.queryByRole('alert')).toBeNull();
   expect(screen.getByRole('progressbar', { name: 'Upload progress' })).not.toBeNull();
 });
+
+it('RF-159 shows Stopping... with Cancel disabled while the Cancel request of a zip waits', async () => {
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await accepted({
+    [`GET ${stateRoute}`]: states(at(rendering, 3000)),
+    [`DELETE ${stateRoute}`]: async () => {
+      await held;
+      return new Response(null, { status: 204 });
+    },
+  });
+  await screen.findByTestId('processing-detail');
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+
+  const stopping = await screen.findByRole('button', { name: /Stopping/u });
+  expect(stopping.hasAttribute('disabled')).toBe(true);
+  expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+  release();
+  expect((await screen.findByRole('alert')).textContent).toContain('Nothing was published');
+});

@@ -21,6 +21,11 @@ export interface RunExecution {
    */
   readonly signal: AbortSignal;
   /**
+   * P8-12: aborted only by the owner's Stop or a shutdown, never by a cap. A step that runs after a
+   * cap stop (the overview, RF-264) listens to this one, because `signal` is already aborted then.
+   */
+  readonly ownerStop?: AbortSignal | undefined;
+  /**
    * Aborts `signal` with the reason, stopping every task of the run; the budget guard calls it with
    * its refusal (RST-1600), after which the run ends `CapReached` whatever the executor returns.
    */
@@ -51,6 +56,8 @@ export interface RunOutcome {
   readonly errorCode?: ErrorCode;
   /** RF-208: areas of a `Completed` run that gave no usable card; shown with `run.ended`. */
   readonly failedAreas?: number;
+  /** P7-02: planned areas of a `CapReached` understand run that no reader started. */
+  readonly unreadAreas?: number;
 }
 
 export interface RunExecutor {

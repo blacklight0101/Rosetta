@@ -1,7 +1,7 @@
 // RF-612, RF-639, DEC-176 (Q-A, Q-B), data-model.md section 3.20: the build method on the page. The
 // person answers "agents or people", then the agent tool, then one model name per tier. A tier left
-// blank is not sent, so the server lists it as defaulted; the Claude Code aliases are only shown as
-// the default, never sent as if the person had named them.
+// blank is not sent, so the server lists it as defaulted; the model names of the tool (the Claude Code
+// aliases, the Codex names) are only shown as the default, never sent as if the person had named them.
 
 export type ToolKind = 'claude-code' | 'codex' | 'other';
 
@@ -53,24 +53,38 @@ const claudeCodeModels: Readonly<Record<Tier, string>> = {
   largest: 'opus',
 };
 
+/** The model names Codex is offered; the server keeps the same map (src/domain/planning/build-method.ts, P7-12). */
+const codexModels: Readonly<Record<Tier, string>> = {
+  smallest: 'gpt-5-mini',
+  middle: 'gpt-5-codex',
+  largest: 'gpt-5',
+};
+
+/** The models a tool is offered per tier; none for another tool. */
+function modelMap(kind: ToolKind | ''): Readonly<Record<Tier, string>> | undefined {
+  if (kind === 'claude-code') return claudeCodeModels;
+  return kind === 'codex' ? codexModels : undefined;
+}
+
 const EXAMPLE_WORD: Readonly<Record<Tier, string>> = {
   smallest: 'cheapest',
   middle: 'middle',
   largest: 'strongest',
 };
 
-/** The default shown for a tier: the Claude Code alias, or an example for a tool with none. */
+/** The default shown for a tier: the tool's model name, or an example for a tool with none. */
 export function modelExample(kind: ToolKind, slot: ModelSlot): string {
   if (slot === 'escalation') return 'only used with your approval in chat';
-  if (kind === 'claude-code') return claudeCodeModels[slot];
+  const offered = modelMap(kind)?.[slot];
+  if (offered !== undefined) return offered;
   return `the ${EXAMPLE_WORD[slot]} model of your plan`;
 }
 
-/** The model the package will use for a tier: the typed name, else the Claude Code alias. */
+/** The model the package will use for a tier: the typed name, else the tool's offered name. */
 function modelOf(draft: MethodDraft, tier: Tier): string | undefined {
   const typed = draft.models[tier].trim();
   if (typed !== '') return typed;
-  return draft.toolKind === 'claude-code' ? claudeCodeModels[tier] : undefined;
+  return modelMap(draft.toolKind)?.[tier];
 }
 
 export interface NamedTool {

@@ -181,20 +181,23 @@ describe('the default of a security question', () => {
     expect(line).toContain('Default: Keep the legacy behaviour exactly');
   });
 
-  it('P5-41 the rule for a default names the exception for a security question', () => {
+  it('P5-41, EV-66 the rule for a default names both exceptions: security and keep-or-fix', () => {
     const text = plain(filesOf([])['open-questions.md']);
 
     expect(text).toContain('A default keeps the legacy behaviour');
+    expect(text).toContain('two exceptions');
+    expect(text).toContain('A security question defaults to the secure option');
     expect(text).toContain(
-      'A security question is the exception: its default is the secure option',
+      'A keep-or-fix row about a likely defect that is not a security matter defaults to Fix',
     );
   });
 
-  it('P5-41 the build method states the same exception', () => {
+  it('P5-41, EV-66 the build method states the same two exceptions', () => {
     const text = plain(filesOf([])['AGENTS.md']);
 
     expect(text).toContain('the default keeps the legacy behaviour');
     expect(text).toContain('a security question defaults to the secure option');
+    expect(text).toContain('a keep-or-fix row that is not a security matter defaults to Fix');
   });
 });
 

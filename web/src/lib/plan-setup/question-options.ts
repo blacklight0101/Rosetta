@@ -1,4 +1,4 @@
-import type { Catalogue, PlanOptions } from '../../api/plan-schemas.js';
+import type { Catalogue, PlanOptions, StackOffer, Wording } from '../../api/plan-schemas.js';
 import { STEP_IDS, questionsOf, STACK_LAYERS, STYLE_GROUP } from './steps.js';
 
 // RF-645, RF-605, DEC-178: the options of every Plan setup question, the way Claude Code asks: at
@@ -24,6 +24,8 @@ export const OPTION_QUESTIONS: readonly string[] = STEP_IDS.flatMap((step) => qu
 export interface OptionSources {
   readonly catalogue: Catalogue;
   readonly options: PlanOptions | undefined;
+  /** P7-29: the catalogue's proposals of each layer; absent while they load or when they failed. */
+  readonly offer?: StackOffer | undefined;
 }
 
 /** The title with its "(Recommended)" mark. */
@@ -31,86 +33,14 @@ export function optionTitle(option: QuestionOption): string {
   return option.recommended ? `${option.title} (Recommended)` : option.title;
 }
 
-const open = (what: string): QuestionOption => ({
-  id: 'open',
-  title: 'Leave it open',
-  description: `Nothing is assumed about ${what}; the package lists it as an open question.`,
-  recommended: true,
-  value: '',
+/** P7-17: the fixed wording comes from the server, with the catalogue (one source with the package). */
+const fromWording = (option: Wording): QuestionOption => ({
+  id: option.id,
+  title: option.title,
+  description: option.description,
+  recommended: option.id === 'open',
+  value: option.value,
 });
-
-const pick = (id: string, title: string, description: string, value = title): QuestionOption => ({
-  id,
-  title,
-  description,
-  recommended: false,
-  value,
-});
-
-const CONTEXT: Readonly<Record<string, readonly QuestionOption[]>> = {
-  'context.teamSize': [
-    open('the team size'),
-    pick(
-      'solo',
-      'One person',
-      'The roadmap is sized for one builder, so phases are small and serial.',
-      '1',
-    ),
-    pick('small', 'A small team of 4', 'The roadmap lets about four people work in parallel.', '4'),
-    pick(
-      'large',
-      'A large team of 10',
-      'The roadmap runs several tracks at once, at more coordination cost.',
-      '10',
-    ),
-  ],
-  'context.experience': [
-    open('the team experience'),
-    pick(
-      'new',
-      'New to the target stack',
-      'The roadmap adds learning time and starts with small cards.',
-    ),
-    pick('mixed', 'Mixed experience', 'The roadmap pairs newer people with experienced ones.'),
-    pick('expert', 'Experienced with the target stack', 'The roadmap assumes no ramp-up time.'),
-  ],
-  'context.deadline': [
-    open('a deadline'),
-    pick('none', 'No fixed deadline', 'The roadmap orders phases by risk, with no date pressure.'),
-    pick('six-months', 'Within six months', 'The roadmap cuts scope to the essential flows first.'),
-    pick('one-year', 'Within a year', 'The roadmap has room for every phase, one after another.'),
-  ],
-  'context.keepIntegrations': [
-    open('integrations'),
-    pick(
-      'all',
-      'Every integration stays',
-      'Every integration the code shows is kept as it is.',
-      'Every current integration stays as it is',
-    ),
-    pick(
-      'none',
-      'No integration has to stay',
-      'Integrations may be redesigned with the new system.',
-      'No integration has to stay as it is',
-    ),
-  ],
-  'context.dataMigration': [
-    open('the data migration'),
-    pick(
-      'once',
-      'Move all data once, at cut-over',
-      'One migration at the end; simple, with a short freeze.',
-      'Move all the data once, at cut-over',
-    ),
-    pick(
-      'phased',
-      'Move data with each phase',
-      'Data moves with the part of the system that uses it; no freeze.',
-      'Move the data with each phase',
-    ),
-  ],
-};
 
 function principleOptions(catalogue: Catalogue): QuestionOption[] {
   const entries = catalogue.entries.filter((entry) => entry.group !== STYLE_GROUP);
@@ -139,49 +69,43 @@ function architectureOptions({ catalogue, options }: OptionSources): QuestionOpt
   });
 }
 
-function stackOptions(layer: string, options: PlanOptions | undefined): QuestionOption[] {
-  const offered = options?.stack.find((each) => each.layer === layer)?.options ?? [];
-  const proposals = offered.map((choice, index) => ({
-    id: index === 0 ? 'a' : 'b',
-    title: choice,
-    description:
-      index === 0
-        ? 'The closest to the legacy technology, so the smallest change for the team.'
-        : 'The other proposal for this layer, derived from the legacy stack.',
-    recommended: index === 0,
-  }));
-  return [
-    ...proposals,
-    {
-      id: 'keep-legacy',
-      title: 'Keep the legacy technology',
-      description: 'This layer stays as it is until the migration reaches it.',
-      recommended: false,
-    },
-  ];
+/** P7-10: the planner's description of the option; the generic line when it gave none. */
+function describedOption(said: string | undefined, index: number): string {
+  if (said !== undefined && said !== '') return said;
+  return index === 0
+    ? 'The closest to the legacy technology, so the smallest change for the team.'
+    : 'The other proposal for this layer, derived from the legacy stack.';
 }
 
-const METHOD: readonly QuestionOption[] = [
-  {
-    id: 'agents',
-    title: 'Agents will build',
-    description: 'The package adds the agent working method and the model of each task card.',
-    recommended: false,
-  },
-  {
-    id: 'people',
-    title: 'People will build',
-    description: 'The package is the plan and the specification, without the agent method.',
-    recommended: false,
-  },
-  {
-    id: 'both',
-    title: 'Agents build, people review each change',
-    description:
-      'Agents build every card and people review each change; the package is the same as for Agents will build.',
-    recommended: false,
-  },
-];
+/** P7-29: the two proposals of a layer: the planner's after the consent, else the catalogue's. */
+function proposalsOf(layer: string, sources: OptionSources): QuestionOption[] {
+  const found = sources.options?.stack.find((each) => each.layer === layer);
+  const offered = found?.options ?? [];
+  if (offered.length === 0) {
+    const catalogued = sources.offer?.layers.find((each) => each.layer === layer)?.proposals ?? [];
+    return catalogued.map((proposal, index) => ({
+      id: index === 0 ? 'a' : 'b',
+      title: proposal.choice,
+      description: proposal.why,
+      recommended: index === 0,
+    }));
+  }
+  return offered.map((choice, index) => ({
+    id: index === 0 ? 'a' : 'b',
+    title: choice,
+    description: describedOption(found?.descriptions?.[index], index),
+    recommended: index === 0,
+  }));
+}
+
+/** DEC-203: the catalogue says whether the layer may keep its legacy technology (yes while unknown). */
+function stackOptions(layer: string, sources: OptionSources): QuestionOption[] {
+  const keep = sources.offer?.layers.find((each) => each.layer === layer)?.keepLegacy ?? true;
+  return [
+    ...proposalsOf(layer, sources),
+    ...(keep ? [fromWording(sources.catalogue.wording.keepLegacy)] : []),
+  ];
+}
 
 const withDefaultFirst = (options: readonly QuestionOption[]): QuestionOption[] => [
   ...options.filter((option) => option.recommended),
@@ -190,7 +114,7 @@ const withDefaultFirst = (options: readonly QuestionOption[]): QuestionOption[] 
 
 /** The options of one question, the recommended one first (empty for an unknown question). */
 export function questionOptions(id: string, sources: OptionSources): QuestionOption[] {
-  const { catalogue, options } = sources;
+  const { catalogue } = sources;
   if (id === 'principles') return principleOptions(catalogue);
   if (id === 'architecture') return architectureOptions(sources);
   if (id === 'migration') {
@@ -201,8 +125,8 @@ export function questionOptions(id: string, sources: OptionSources): QuestionOpt
       recommended: index === 0,
     }));
   }
-  if (id === 'buildMethod') return [...METHOD];
+  if (id === 'buildMethod') return catalogue.wording.method.map(fromWording);
   const layer = STACK_LAYERS.find((each) => id === `stack.${each.id}`);
-  if (layer !== undefined) return withDefaultFirst(stackOptions(layer.id, options));
-  return withDefaultFirst(CONTEXT[id] ?? []);
+  if (layer !== undefined) return withDefaultFirst(stackOptions(layer.id, sources));
+  return withDefaultFirst((catalogue.wording.context[id] ?? []).map(fromWording));
 }

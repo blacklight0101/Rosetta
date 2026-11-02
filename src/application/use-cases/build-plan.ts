@@ -1,37 +1,27 @@
 import { usableCards } from '../../domain/planning/code-over-documentation.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
-import { ok } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { PlanAssembly } from '../../domain/planning/plan-content.js';
+import { workbookSetup } from '../../domain/planning/workbook-setup.js';
 import { methodPrinciples } from '../../domain/planning/task-method.js';
-import { recordManifestBrief } from '../../domain/runs/manifest-brief.js';
-import { recordManifestSourceRun } from '../../domain/runs/manifest-source-run.js';
-import {
-  recordManifestCatalogue,
-  recordManifestCodeMap,
-  recordPromptVersions,
-} from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
 import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
 import { readPlanAnswer } from '../plan/plan-answer.js';
 import { draftAfterRepair } from '../plan/plan-repair.js';
-import { checkedAssembly } from '../plan/plan-assembly.js';
+import { repairedAssembly } from '../plan/plan-assembly.js';
 import { planLinks } from '../plan/plan-links.js';
 import { windowOfRole } from '../plan/plan-window.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
 import { planDocuments } from '../plan/plan-documents.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
 import { planScanFacts } from '../plan/plan-scan-facts.js';
+import { planSourceModules } from '../plan/plan-source-modules.js';
 import type { PlanSecretDependencies } from '../plan/plan-secrets.js';
 import { planProposal } from '../plan/plan-proposal.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
-import {
-  loadPlanFiles,
-  planPromptVersions,
-  type PlanFiles,
-  type PlanPromptSources,
-} from '../plan/plan-prompts.js';
-import { handoffPackageOf, leftOutItems } from '../plan/plan-package.js';
+import { loadPlanFiles, type PlanFiles, type PlanPromptSources } from '../plan/plan-prompts.js';
+import { leftOutItems } from '../plan/plan-left-out.js';
+import { handoffPackageOf } from '../plan/plan-package.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
 import type { HandoffWriter } from '../ports/handoff-writer.js';
 import type { IdGenerator } from '../ports/id-generator.js';
@@ -40,8 +30,10 @@ import type { ScanResults } from '../ports/scan-results.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
-import { callIds } from '../runs/run-ids.js';
-import { resolvedSourceOf } from '../plan/resolved-source-of.js';
+import { planInputsText, recordPlanSources } from '../plan/plan-record.js';
+import { announcePlannerCall } from '../plan/plan-call-events.js';
+import { openAnswerBook, type PlannerAnswerDependencies } from '../plan/planner-answer-book.js';
+import { readUnderstandOptions } from '../understand/understand-options.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
 import { writeCostReport } from '../runs/run-cost-report.js';
 import { scopeOf } from '../runs/run-scope.js';
@@ -55,7 +47,12 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // the planner, packed to its window (P3-113). The cost report is written at every end.
 
 export interface BuildPlanDependencies
-  extends PlanInputDependencies, PlanPromptSources, PlanSecretDependencies, RunSinkDependencies {
+  extends
+    PlanInputDependencies,
+    PlanPromptSources,
+    PlanSecretDependencies,
+    RunSinkDependencies,
+    PlannerAnswerDependencies {
   readonly users: UserRepository;
   /** RF-632: the scan whose files the data shapes are measured from. */
   readonly scans: ScanResults;
@@ -86,6 +83,9 @@ const namesItsCause = new Set<ErrorCode>([
 ]);
 
 const failed = (errorCode: ErrorCode): RunOutcome => ({ endState: 'Failed', errorCode });
+/** RST-1803 after the one repair round of the sources (P8-02). */
+const NO_SUPPORTED_REQUIREMENT = 'The planner answer named no requirement with a supported card.';
+
 export class BuildPlan implements RunExecutor {
   private readonly deps: BuildPlanDependencies;
 
@@ -118,7 +118,7 @@ export class BuildPlan implements RunExecutor {
     const updates = new ManifestUpdates(this.deps.manifests, scopeOf(run));
     const files = await loadPlanFiles(this.deps, saved.value);
     const { catalogue, prompts } = files;
-    await this.record(execution, updates, { inputs: saved.value, files });
+    await recordPlanSources(this.deps, execution, updates, { inputs: saved.value, files });
     // P5-39: the plan is written from the saved brief with Rosetta's proposals for what it left open.
     const proposed = await planProposal(this.deps, saved.value, catalogue.stack);
     const inputs = { value: proposed.inputs };
@@ -129,26 +129,30 @@ export class BuildPlan implements RunExecutor {
     const { cards, brief, questions } = inputs.value;
     const supported = usableCards(cards, catalogue.claimVerbs).cards;
     const answered = questions.filter((question) => question.answer.trim() !== '');
+    const answers = await openAnswerBook(this.deps, run, planInputsText(inputs.value, files));
     const call = {
       ...{ run, planner, prompt: prompts.plan, agentTaskId: 'planner-package', updates, signal },
       continuePrompt: prompts.continue,
-      ...{ tags: () => this.deps.ids.dataBlockTag(), callId: callIds(run) },
-      window: windowOfRole(planner, inputs.value.project.settings),
+      onCallStarted: (id: string) => announcePlannerCall(execution.events, id),
+      ...{ tags: () => this.deps.ids.dataBlockTag(), callId: answers.callIds(run) },
+      ...{ window: windowOfRole(planner, inputs.value.project.settings), answers },
     };
-    const input = { cards: supported, brief, catalogue, answered };
+    const workbook =
+      inputs.value.project.sourceKind === 'workbook' ? { workbook: workbookSetup(brief) } : {};
+    const input = { cards: supported, brief, catalogue, answered, ...workbook };
     const output = await askPlanner(call, input);
     const draft = await draftAfterRepair(call, input, prompts.planRepair, readPlanAnswer(output));
     if (draft === undefined) {
       const message = 'The planner answer could not be read: no JSON object in it reads as a plan.';
       return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
     }
-    const assembly = await checkedAssembly(this.deps.logger, run, draft, {
+    const assembly = await repairedAssembly(this.deps.logger, run, draft, {
       supported: supported.map((card) => card.id),
       specificationDriven: brief.principles.includes(methodPrinciples.sdd),
+      repair: { call, input, prompt: prompts.planRepair },
     });
     if (assembly === undefined) {
-      const message = 'The planner answer named no requirement with a supported card.';
-      return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
+      return this.fail(run, ERROR_CODES.plannerAnswerInvalid, NO_SUPPORTED_REQUIREMENT);
     }
     return this.finish({
       ...{ run, call, input, assembly, files, proposal },
@@ -175,16 +179,22 @@ export class BuildPlan implements RunExecutor {
     };
     const gapping = { ...linking, prompt: prompts.gap, agentTaskId: 'planner-gap' };
     const specificationDriven = inputs.brief.principles.includes(methodPrinciples.sdd);
+    // P8-06: the modules of the scan are covered by the task cards like the documents' items.
+    const modules = await planSourceModules(deps, inputs, input.cards);
     const links = await planLinks(
       { coverage: linking, gap: gapping, repairPrompt: prompts.gapRepair, specificationDriven },
-      { content: assembly.content, documents },
+      { content: assembly.content, documents: { ...documents, modules } },
     );
     const covered = links.planned;
     for (const message of links.warnings) await warn(message);
     const facts = await planScanFacts(deps, inputs, prompts.secretRisk.text);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
-      ...{ ...documents, ...facts, examples, proposal },
-      leftOut: leftOutItems({ ...assembly, dataModelProblems: documents.dataModelProblems }),
+      ...{ ...documents, ...facts, examples, proposal, modules },
+      moduleReasons: links.moduleReasons,
+      leftOut: [
+        ...leftOutItems({ ...assembly, dataModelProblems: documents.dataModelProblems }),
+        ...links.leftOut,
+      ],
     });
     await this.deps.handoff.write(scopeOf(run), handoff);
     // Q-45: the extra call was refused or failed; the package of the first call stays as it is.
@@ -220,31 +230,6 @@ export class BuildPlan implements RunExecutor {
     });
   }
 
-  /** RNF-004: the brief, the catalogue, the prompts and the source the package comes from. */
-  private async record(
-    execution: RunExecution,
-    updates: ManifestUpdates,
-    used: {
-      readonly inputs: PlanInputs;
-      readonly files: PlanFiles;
-    },
-  ): Promise<void> {
-    const { inputs, files } = used;
-    const { version, sha256 } = files.catalogue;
-    const versions = planPromptVersions(files);
-    await updates.update((manifest) => recordManifestBrief(manifest, inputs.brief));
-    await updates.update((manifest) => recordManifestSourceRun(manifest, inputs.sourceRun.runKey));
-    await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));
-    await updates.update((manifest) => ok(recordPromptVersions(manifest, versions)));
-    const source = await this.deps.manifests.read(scopeOf(inputs.sourceRun));
-    // RF-130: an upload run has a snapshot and no commit.
-    const resolved = resolvedSourceOf(inputs.sourceRun, source);
-    if (resolved !== undefined) await execution.recordSource(resolved);
-    const codemapHash = source?.codemapHash ?? null;
-    if (codemapHash !== null)
-      await updates.update((manifest) => recordManifestCodeMap(manifest, codemapHash));
-  }
-
   /**
    * ADR-003, RF-143, RF-405: the planner's guarded provider from the factory only, or the code of
    * why it cannot be served (no key, unpriced model, no consent), logged before any call.
@@ -263,6 +248,8 @@ export class BuildPlan implements RunExecutor {
       settings: inputs.project.settings,
       roles: ['planner'],
       cloudConsent: manifest.options['cloudConsent'] === true,
+      // RF-432, RF-435, P8-01: the journey's remainder, or none (the project run caps stay hard).
+      approvedAmount: readUnderstandOptions(manifest.options).approvedAmount,
       sinks: await runProviderSinks(this.deps, execution, updates),
     });
     if (built.ok) return built.value.get('planner') ?? ERROR_CODES.providerUnavailable;

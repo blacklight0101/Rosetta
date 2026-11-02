@@ -55,11 +55,13 @@ test(
 
     await page.getByRole('button', { name: 'Create project' }).click();
 
+    // EV-87, P8-10: the new project opens its page by itself; the list shows it afterwards.
+    await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
+    await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
+    await page.goto('/projects');
     const row = page.getByRole('row').filter({ hasText: 'octo/demo' });
     await expect(row).toBeVisible();
     await expect(row).toContainText('default branch');
-    await expect(page.getByRole('status').filter({ hasText: 'Created octo/demo' })).toBeVisible();
-    await expect(page.getByLabel('GitHub repository URL')).toHaveValue('');
     await page.reload();
     await expect(page.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
     await expectNoSeriousViolations(page);
@@ -76,7 +78,7 @@ test('RF-010 creating the same address again opens the existing project', async 
 
   await page.getByRole('button', { name: 'Create project' }).click();
 
-  await expect(page).toHaveURL(/\/projects\/[^/]+\/start$/u);
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
   await expect(page.getByRole('heading', { name: 'Start a run' })).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(demoUrl);
   await page.goto('/projects');

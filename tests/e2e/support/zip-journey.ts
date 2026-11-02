@@ -58,9 +58,14 @@ export async function uploadFromNewProject(
 ): Promise<void> {
   await page.goto('/projects');
   await page.getByRole('tab', { name: 'Upload a zip' }).click();
-  await uploadZip(page, fileName, buffer);
-  await page.getByRole('link', { name: 'Start a run' }).click();
-  await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
+  await page
+    .getByLabel('Zip file')
+    .setInputFiles({ name: fileName, mimeType: 'application/zip', buffer });
+  await page.getByRole('button', { name: 'Upload zip' }).click();
+  // EV-87, P8-10: the stored zip opens the project page by itself.
+  await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible({
+    timeout: 60_000,
+  });
 }
 
 /** Opens the start page of the account's uploaded project from the projects list. */
@@ -125,11 +130,10 @@ export async function snapshotHashOfReport(page: Page): Promise<string> {
 
 /** RF-132: gives the reader role a cloud provider in Project settings and returns to the start page. */
 export async function giveReaderToOpenAi(page: Page): Promise<void> {
-  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByRole('link', { name: 'Project settings', exact: true }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
-  await page.getByRole('radio', { name: 'Understand', exact: true }).check();
 }

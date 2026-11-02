@@ -8,7 +8,13 @@ import {
   readFileQuestionRefusal,
 } from '../../domain/cards/open-question-reading.js';
 import { cardLimits } from './card-limits.js';
-import { MIN_SUGGESTED_ANSWERS } from '../../domain/cards/suggested-answer.js';
+import {
+  MIN_SUGGESTED_ANSWERS,
+  isOpenQuestion,
+  sameKindAnswerRefusal,
+  spacedWords,
+  startsWithYesOrNo,
+} from '../../domain/cards/suggested-answer.js';
 import { flowSchema, screenSchema, stepSchemaFields } from './flow-screen-schema.js';
 
 // RF-202, ADR-005: the strict shape of an agent's final answer. A card needs type, title, area,
@@ -32,15 +38,15 @@ export const agentClaimSchema = z.object({
 
 /** RF-645, DEC-178: one suggested answer; its citation is optional because the code may not support it. */
 const suggestedAnswerSchema = z.object({
-  answer: text(cardLimits.maxAnswerChars),
-  description: text(cardLimits.maxQuestionChars),
+  answer: text(cardLimits.maxAnswerChars).transform(spacedWords),
+  description: text(cardLimits.maxQuestionChars).transform(spacedWords),
   recommended: z.boolean().default(false),
   citations: z.array(citation).max(cardLimits.maxCitations).default([]),
 });
 
 const suggestedAnswersSchema = z.array(suggestedAnswerSchema).max(cardLimits.maxSuggestedAnswers);
 
-const suggestedAnswersNeeded = `An OQ card needs three suggested answers in suggestedAnswers: each with answer, description and recommended, exactly one marked recommended and listed first, and citations when the code supports the answer.`;
+const suggestedAnswersNeeded = `An OQ card needs at least three suggested answers in suggestedAnswers: each with answer, description and recommended, exactly one marked recommended and listed first, and citations when the code supports the answer.`;
 
 type DetailField = 'question' | 'whyItMatters' | 'flow' | 'screen';
 
@@ -117,6 +123,7 @@ function hasScreenClaims(value: ParsedCard): boolean {
 /** What is wrong with the list of suggested answers of an OQ card; empty when it is right. */
 function suggestedAnswerProblems(
   answers: z.output<typeof suggestedAnswersSchema> | undefined,
+  question: string | undefined,
 ): string[] {
   const problems: string[] = [];
   if (answers === undefined) return problems;
@@ -128,6 +135,13 @@ function suggestedAnswerProblems(
     problems.push('Exactly one suggested answer must have recommended true.');
   } else if (answers[0]?.recommended !== true) {
     problems.push('The recommended suggested answer must be listed first.');
+  }
+  if (
+    question !== undefined &&
+    isOpenQuestion(question) &&
+    answers.some((each) => startsWithYesOrNo(each.answer))
+  ) {
+    problems.push(sameKindAnswerRefusal);
   }
   return problems;
 }
@@ -157,7 +171,8 @@ export const agentCardSchema = cardShape
         });
       }
     }
-    const answers = value.type === 'OQ' ? suggestedAnswerProblems(value.suggestedAnswers) : [];
+    const answers =
+      value.type === 'OQ' ? suggestedAnswerProblems(value.suggestedAnswers, value.question) : [];
     for (const message of answers) {
       context.addIssue({ code: 'custom', path: ['suggestedAnswers'], message });
     }

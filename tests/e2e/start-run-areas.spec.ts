@@ -18,7 +18,7 @@ import { transitionsDone } from './support/transitions.js';
 // at desktop and phone widths. The estimate answer of the test server gets its areas replaced
 // (support/area-estimate.ts); the page, its CSS and the real server are the ones under test.
 
-const startButton = { name: /^Start run/u } as const;
+const startButton = { name: /^Analyse/u } as const;
 const widths = [1280, 360] as const;
 const group = { name: 'Areas from the code map' } as const;
 
@@ -173,9 +173,7 @@ test('RF-1018 choosing library areas shows what they add and Start waits for one
   await expectNoSeriousViolations(page);
 });
 
-test('RNF-010 long area names wrap inside the Stage and areas card at 1280 and 360 px', async ({
-  page,
-}) => {
+test('RNF-010 long area names wrap inside the Areas card at 1280 and 360 px', async ({ page }) => {
   const longPath = 'src/Services/Billing/Payments/Gateway/Providers/Adapters/Legacy/Mapping/Rules';
   const names = [
     `Scripts/${'VeryLongUnbrokenFolderName'.repeat(8)}`,

@@ -28,7 +28,7 @@ describe('EstimatePlan: the data model call', () => {
     const estimate = await estimateOf();
 
     const { assumptions, planner } = estimate;
-    const system = (await readFile('prompts/planner/data-model.v4.md', 'utf8')).length;
+    const system = (await readFile('prompts/planner/data-model.v5.md', 'utf8')).length;
     expect(assumptions.calls).toBe(6);
     expect(assumptions.dataModelPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
