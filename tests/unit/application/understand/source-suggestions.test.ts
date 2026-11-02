@@ -11,7 +11,7 @@ import { draftOf } from '../../../support/card-fixtures.js';
 const files: Record<string, readonly string[]> = {
   'Web.config': [
     '<configuration>',
-    '<add name="Shop" connectionString="Server=localhost;Database=Shop;Trusted=true" />',
+    '<add name="Shop" connectionString="Server=localhost;Database=Shop;Trusted_Connection=true" />',
   ],
   'Report.bas': ['Dim s', 'connectionString = "Server=" & Range("B1").Value'],
 };
@@ -49,7 +49,7 @@ describe('P8-08 the cited line is a suggestion, never a reason to drop the quest
 
     expect(drafts).toHaveLength(1);
     const [first, ...rest] = drafts[0]?.suggestedAnswers ?? [];
-    expect(first?.answer).toBe('Server=localhost;Database=Shop;Trusted=true');
+    expect(first?.answer).toBe('Server=localhost;Database=Shop;Trusted_Connection=true');
     expect(first?.recommended).toBe(true);
     expect(first?.citations).toEqual([{ path: 'Web.config', startLine: 2, endLine: 2 }]);
     expect(rest).toHaveLength(3);
@@ -68,5 +68,27 @@ describe('P8-08 the cited line is a suggestion, never a reason to drop the quest
     const asked = question('Which roles may cancel a paid order?', 'Web.config');
 
     expect((await withSourceSuggestions(reader, { drafts: [asked] })).drafts).toEqual([asked]);
+  });
+});
+
+describe('P8-08 the cap on suggested answers', () => {
+  it('RF-243 names the question when the line pushes the last agent answer out', async () => {
+    const asked = question('What is the connection string of the shop database?', 'Web.config');
+    const full = {
+      ...asked,
+      suggestedAnswers: Array.from({ length: 6 }, (_, index) => ({
+        ...{ answer: `Answer ${String(index)}`, description: 'd', citations: [] },
+        recommended: index === 0,
+      })),
+    };
+    const cut: string[] = [];
+
+    const { drafts } = await withSourceSuggestions(reader, { drafts: [full] }, (text) => {
+      cut.push(text);
+      return Promise.resolve();
+    });
+
+    expect(drafts[0]?.suggestedAnswers).toHaveLength(6);
+    expect(cut).toEqual(['What is the connection string of the shop database?']);
   });
 });

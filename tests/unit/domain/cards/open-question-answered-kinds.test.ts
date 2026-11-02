@@ -13,7 +13,8 @@ function lines(path: string, ...texts: string[]): CitedLine[] {
   return texts.map((text, index) => ({ path, line: index + 6, text }));
 }
 
-const config = '<add name="Shop" connectionString="Server=localhost;Database=Shop;Trusted=true" />';
+const config =
+  '<add name="Shop" connectionString="Server=localhost;Database=Shop;Trusted_Connection=true" />';
 const publish = '<PublishProfile>Release</PublishProfile> PublishProfile=Release';
 const macro = ['Attribute VB_Name = "modInvoice"', 'Public Sub InvoiceTotal()', 'End Sub'];
 
@@ -37,12 +38,13 @@ describe('P8-08 the line that holds a plain literal becomes a suggestion', () =>
       lines('Web.config', config),
     );
 
-    expect(found?.answer).toBe('Server=localhost;Database=Shop;Trusted=true');
+    expect(found?.answer).toBe('Server=localhost;Database=Shop;Trusted_Connection=true');
   });
 });
 
+const ask = 'What is the connection string of the shop database?';
+
 describe('P8-08 the question stays open and gets no suggestion', () => {
-  const ask = 'What is the connection string of the shop database?';
   it.each([
     ['a value built with &', 'connectionString = "Server=" & Range("B1").Value'],
     ['a value built with +', 'connectionString = "Server=" + host + ";Database=Shop"'],
@@ -53,6 +55,64 @@ describe('P8-08 the question stays open and gets no suggestion', () => {
     ['a secret in the value', 'connectionString = "Server=db;Database=Shop;Pwd=abc"'],
   ])('RF-243 gives %s no suggestion', (_name, text) => {
     expect(suggestionFromCitedLines(ask, lines('a.vb', text))).toBeUndefined();
+  });
+
+  it.each([
+    'Passwd',
+    'UserPassword',
+    'Pw',
+    'AccountKey',
+    'api_key',
+    'Sas',
+    'AuthToken',
+    'ClientSecret',
+  ])('RF-243 gives a connection string with the key %s no suggestion', (key) => {
+    const text = `connectionString = "Server=db;Database=Shop;${key}=abc123"`;
+
+    expect(suggestionFromCitedLines(ask, lines('a.vb', text))).toBeUndefined();
+  });
+});
+
+describe('P8-08 only safe keys and plain values are suggested', () => {
+  it('RF-243 gives Persist Security Info=true no suggestion and =false one', () => {
+    const line = (value: string) =>
+      lines(
+        'a.config',
+        `connectionString = "Server=db;Database=Shop;Persist Security Info=${value}"`,
+      );
+
+    expect(suggestionFromCitedLines(ask, line('true'))).toBeUndefined();
+    expect(suggestionFromCitedLines(ask, line('false'))?.line).toBe(6);
+  });
+
+  it('RF-243 suggests a string with only safe keys, whatever their case and spacing', () => {
+    const text =
+      'connectionString = "SERVER=db ; initial catalog = Shop;Trusted_Connection=True;User ID=shopapp;Encrypt=true"';
+
+    expect(suggestionFromCitedLines(ask, lines('a.config', text))?.answer).toContain('SERVER=db');
+  });
+});
+
+describe('P8-08 publish values are plain', () => {
+  it.each(['PublishUrl=https://deploy:s3cret@host.test/site', 'PublishUrl=ftp://user@host/site'])(
+    'RF-243 gives the publish value %s no suggestion',
+    (text) => {
+      expect(
+        suggestionFromCitedLines(
+          'What are the publish parameters of the web app?',
+          lines('p.pubxml', text),
+        ),
+      ).toBeUndefined();
+    },
+  );
+
+  it('RF-243 suggests a publish URL without user information', () => {
+    const found = suggestionFromCitedLines(
+      'What are the publish parameters of the web app?',
+      lines('p.pubxml', 'PublishUrl=https://host.test/site'),
+    );
+
+    expect(found?.answer).toBe('https://host.test/site');
   });
 
   it('RF-243 gives two connection strings no suggestion', () => {

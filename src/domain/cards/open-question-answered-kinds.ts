@@ -10,24 +10,59 @@ interface Kind {
   /** Matches the line and captures the plain literal value in group 1. */
   readonly holds: RegExp;
   readonly what: string;
+  /** Whether the captured value holds nothing but plain, safe content. */
+  readonly safe: (value: string) => boolean;
 }
 
 /** A value that is built or a placeholder, never a plain literal. */
 const notPlain =
-  /[&+$%<>{}()[\]]|\b(?:your|my|changeme|change_me|placeholder|example|xxx+|todo|tbd|null|nothing|empty)\w*\b|\bpass(?:word)?\s*=|\bpwd\s*=|\bsecret\b|\btoken\b|\bkey\s*=/iu;
+  /[&+$%<>{}()[\]@]|\b(?:your|my|changeme|change_me|placeholder|example|xxx+|todo|tbd|null|nothing|empty)\w*\b/iu;
+
+/** The keys of a connection string that hold no secret; any other key means no suggestion. */
+const safeKeys = new Set(
+  `server|data source|host|address|addr|network address|port|database|initial catalog
+   |integrated security|trusted_connection|encrypt|trustservercertificate|multipleactiveresultsets
+   |connect timeout|connection timeout|application name|provider|driver|persist security info
+   |user id|uid|user`
+    .split('|')
+    .map((key) => key.trim()),
+);
+
+/** True when every key of the connection string is a safe one (Persist Security Info only false). */
+function onlySafeKeys(value: string): boolean {
+  const parts = value.split(';').filter((part) => part.trim() !== '');
+  return (
+    parts.length > 0 &&
+    parts.every((part) => {
+      const at = part.indexOf('=');
+      if (at < 0) return false;
+      const key = part.slice(0, at).trim().toLowerCase();
+      const held = part
+        .slice(at + 1)
+        .trim()
+        .toLowerCase();
+      return safeKeys.has(key) && (key !== 'persist security info' || held === 'false');
+    })
+  );
+}
+
+/** A publish value is a plain word, path or URL without user information. */
+const plainValue = /^[\w./\\:-]+$/u;
 
 const connection: Kind = {
   asks: /^(?:what|which)\b.*\bconnection strings?\b/u,
   holds:
     /\bconnection\s?strings?\b["']?\s*[=:]\s*"([^"]*\b(?:server|data source|host)\s*=[^"]*)"(?!\s*[&+])/iu,
   what: 'connection string',
+  safe: onlySafeKeys,
 };
 
 const publish: Kind = {
   asks: /^(?:what|which)\b.*\bpublish(?:ing)?\s+(?:parameters?|settings?|options?|profile)\b|^(?:what|which)\b.*\bparameters?\b.*\bto publish\b/u,
   holds:
-    /\b(?:publishprofile|publishurl|webpublishmethod|msdeployserviceurl)\s*[=:]\s*"?([\w./\\:-]+)"?/iu,
+    /\b(?:publishprofile|publishurl|webpublishmethod|msdeployserviceurl)\s*[=:]\s*"?([^\s"'<>;,]+)/iu,
   what: 'publish parameter',
+  safe: (value) => plainValue.test(value),
 };
 
 const sourceAsk =
@@ -77,7 +112,7 @@ function literalOf(kind: Kind, cited: readonly CitedLine[]): SourceSuggestion | 
     return value === undefined || value === '' ? [] : [{ line, value }];
   });
   const only = found.length === 1 ? found[0] : undefined;
-  if (only === undefined || notPlain.test(only.value)) return undefined;
+  if (only === undefined || notPlain.test(only.value) || !kind.safe(only.value)) return undefined;
   const { line, value } = only;
   return {
     ...{ answer: value, path: line.path, line: line.line },

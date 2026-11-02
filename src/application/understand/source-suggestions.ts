@@ -41,6 +41,7 @@ async function suggestionOf(
 export async function withSourceSuggestions<T extends { readonly drafts: readonly CardDraft[] }>(
   reader: Pick<RepositoryReader, 'readLines'>,
   outcome: T,
+  onCut?: (question: string) => Promise<void>,
 ): Promise<T> {
   const drafts: CardDraft[] = [];
   for (const draft of outcome.drafts) {
@@ -51,6 +52,7 @@ export async function withSourceSuggestions<T extends { readonly drafts: readonl
     }
     const others = (draft.suggestedAnswers ?? []).map((each) => ({ ...each, recommended: false }));
     const kept = others.slice(0, cardLimits.maxSuggestedAnswers - 1);
+    if (others.length > kept.length) await onCut?.(draft.question ?? draft.title);
     drafts.push({ ...draft, suggestedAnswers: [suggestion, ...kept] });
   }
   return { ...outcome, drafts };

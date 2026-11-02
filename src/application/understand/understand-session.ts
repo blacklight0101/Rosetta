@@ -129,8 +129,9 @@ export class UnderstandSession {
       // RF-243, P5-02: a question the lines it cites already answer is not asked.
       const { reader } = this.parts.scanned;
       const answered = await withoutAnsweredQuestions(this.log, reader, task, asked);
-      // P8-08: a connection string, publish or source question stays and gets the line as a suggestion.
-      const quiet = await withSourceSuggestions(reader, answered);
+      const quiet = await withSourceSuggestions(reader, answered, (q) =>
+        this.log.suggestionCut(task, q),
+      );
       const outcome = await finishedDrafts(this.parts, task.agentTaskId, quiet);
       const failure = areaFailureOf(outcome);
       const cards = outcome.drafts;
