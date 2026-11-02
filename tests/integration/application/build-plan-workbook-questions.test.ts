@@ -103,7 +103,10 @@ it('P8-09 RF-649 RNF-003 a secret typed into the secrets-store answer is masked 
   const brief = JSON.stringify(await new FilePlanningBriefStore(h.s).read(ref));
   expect(brief).not.toContain(secret);
   expect(brief).toContain('[MASKED');
-  expect(JSON.stringify(h.providers.requests())).not.toContain(secret);
+  const sent = JSON.stringify(h.providers.requests());
+  expect(h.providers.requests().length).toBeGreaterThan(0);
+  expect(sent).toContain('workbookSetup');
+  expect(sent).not.toContain(secret);
   expect(Object.values(files).join(' ')).not.toContain(secret);
   expect(files['trd.md']).toContain('Secrets store: Keep it in a file');
 });

@@ -25,58 +25,89 @@ function shortTitle(title: string): string {
   return title.replace(/\s*\(.*\)\s*$/u, '').toLowerCase();
 }
 
-/** The words of a text, lower case, with every other character a separator (P8-09: whole words). */
+/** A word without a plain plural: "microservices" and "microservice" are one word. */
+function stem(word: string): string {
+  return word.length > 3 && word.endsWith('s') ? word.slice(0, -1) : word;
+}
+
+/**
+ * The words of a clause, lower case; an apostrophe is dropped ("don't" is "dont") and a hyphen stays
+ * inside its word, so "pre-layered" is one word that is not "layered" (P8-09: whole words).
+ */
 function wordsOf(text: string): string[] {
   return text
     .toLowerCase()
-    .split(/[^\p{L}\p{N}]+/u)
+    .replace(/['’]/gu, '')
+    .split(/[^\p{L}\p{N}-]+/u)
+    .map((word) => word.replace(/^-+|-+$/gu, ''))
     .filter((word) => word !== '');
 }
 
-/** The ways an owner names a style: the short title, the words of the parenthesis, a hyphenated id. */
+/** The clauses of a text: a sentence end, a comma, a semicolon or a "but" ends the reach of a negation. */
+function clausesOf(text: string): string[][] {
+  return text
+    .split(/[.,;:!?\n]+|\b(?:but|however|yet|although|though|whereas|while)\b/iu)
+    .map(wordsOf)
+    .filter((words) => words.length > 0);
+}
+
+/** Words other than the title an owner uses for one style ("layers" for layered). */
+const aliases: Readonly<Record<string, readonly string[]>> = { layered: ['layer'] };
+
+/** The ways an owner names a style: the short title, the words of the parenthesis, the id; each stemmed. */
 function namesOf(style: NamedStyle): string[][] {
   const inside = /\(([^)]*)\)\s*$/u.exec(style.title)?.[1] ?? '';
-  const names = [wordsOf(shortTitle(style.title)), wordsOf(inside), wordsOf(style.id)];
-  return names.filter((words, index) => words.length > 1 || (index === 0 && words.length === 1));
+  const spelled = [shortTitle(style.title), inside, style.id].flatMap((name) => [
+    wordsOf(name),
+    wordsOf(name.replaceAll('-', ' ')),
+  ]);
+  const own = spelled.filter((words, index) => index < 2 || words.length > 1);
+  const alias = (aliases[style.id] ?? []).map((word) => [word]);
+  return [...own, ...alias].filter((words) => words.length > 0).map((words) => words.map(stem));
 }
 
-const negators = new Set([
-  'not',
-  'no',
-  'non',
-  'never',
-  'without',
-  'avoid',
-  'avoiding',
-  't',
-  'neither',
-  'nor',
-]);
-const negatingPairs = new Set([
-  'instead of',
-  'rather than',
-  'not a',
-  'not an',
-  'not the',
-  'no more',
-]);
+const negators = new Set(
+  ['not', 'no', 'non', 'never', 'nothing', 'none', 'without', 'sin', 'ni', 'neither', 'nor'].concat(
+    ['dont', 'doesnt', 'didnt', 'isnt', 'arent', 'wasnt', 'werent', 'wont', 'cant', 'cannot'],
+    ['avoid', 'avoiding', 'avoided', 'replace', 'replaced', 'replacing', 'drop', 'dropped'],
+    ['dropping', 'abandon', 'abandoned', 'ditch', 'ditched', 'ditching', 'retire', 'retired'],
+  ),
+);
+const negatingBefore = ['away from', 'instead of', 'rather than'];
+const negatingAfter = ['no longer', 'anymore', 'any more', 'not anymore'];
 
-/** True when the words at `at` are the phrase, as whole words. */
+/** True when the words at `at` are the phrase, as whole (stemmed) words. */
 function phraseAt(words: readonly string[], at: number, phrase: readonly string[]): boolean {
-  return phrase.every((word, offset) => words[at + offset] === word);
+  return phrase.every((word, offset) => stem(words[at + offset] ?? '') === word);
 }
 
-/** "not layered", "without microservices", "instead of layered": the style is named to be refused. */
-function refusedAt(words: readonly string[], at: number): boolean {
-  const before = words[at - 1];
-  if (before !== undefined && negators.has(before)) return true;
-  const pair = `${words[at - 2] ?? ''} ${before ?? ''}`;
-  return negatingPairs.has(pair);
+const hasPhrase = (words: readonly string[], phrases: readonly string[]): boolean =>
+  phrases.some((phrase) => {
+    const parts = phrase.split(' ');
+    return words.some((_, at) => parts.every((part, offset) => words[at + offset] === part));
+  });
+
+/**
+ * "do not use layered", "isnt layered", "layered no longer", "moved away from layered": the clause that
+ * names the style negates or abandons it. When in doubt the style is refused: a wrong pick is worse
+ * than none.
+ */
+function refusedIn(words: readonly string[], at: number, length: number): boolean {
+  const before = words.slice(0, at);
+  const after = words.slice(at + length);
+  return (
+    before.some((word) => negators.has(word)) ||
+    hasPhrase(before, negatingBefore) ||
+    hasPhrase(after, negatingAfter)
+  );
 }
 
-function namedIn(words: readonly string[], style: NamedStyle): boolean {
-  return namesOf(style).some((phrase) =>
-    words.some((_, at) => phraseAt(words, at, phrase) && !refusedAt(words, at)),
+function namedIn(clauses: readonly (readonly string[])[], style: NamedStyle): boolean {
+  const names = namesOf(style);
+  return clauses.some((words) =>
+    names.some((phrase) =>
+      words.some((_, at) => phraseAt(words, at, phrase) && !refusedIn(words, at, phrase.length)),
+    ),
   );
 }
 
@@ -87,10 +118,10 @@ export function namedStyleId(
 ): ArchitectureStyleId | undefined {
   const own = typedAnswers(brief).architecture;
   if (own === undefined) return undefined;
-  const words = wordsOf(own);
+  const clauses = clausesOf(own);
   return [...styles]
     .sort((a, b) => shortTitle(b.title).length - shortTitle(a.title).length)
-    .find((style) => namedIn(words, style))?.id;
+    .find((style) => namedIn(clauses, style))?.id;
 }
 
 /**

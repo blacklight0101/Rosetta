@@ -45,6 +45,42 @@ describe('judgedStyleId with a typed architecture', () => {
   });
 });
 
+describe('judgedStyleId: refusals and spellings (P8-09)', () => {
+  it.each([
+    'we do not use layered',
+    "don't use layered",
+    'we dont want layered',
+    'isnt layered',
+    'nothing layered',
+    'sin layered',
+    'layered no longer',
+    'layered anymore',
+    'we moved away from layered',
+    'we replaced layered with cells',
+    'dropped layered last year',
+    'instead of layered',
+  ])('names no style in %j', (text) => {
+    expect(namedStyleId(briefFor(text), styles)).toBeUndefined();
+  });
+
+  it('still names a style in another clause, or when the negation is about something else', () => {
+    expect(namedStyleId(briefFor('not layered, event-driven'), styles)).toBe('event-driven');
+    expect(namedStyleId(briefFor("we don't like slow builds but use layered"), styles)).toBe(
+      'layered',
+    );
+    expect(namedStyleId(briefFor('layered with no shared kernel'), styles)).toBe('layered');
+  });
+
+  it('does not match inside a hyphen compound, and matches plurals and spellings', () => {
+    expect(namedStyleId(briefFor('a pre-layered design'), styles)).toBeUndefined();
+    expect(namedStyleId(briefFor('one microservice per team'), styles)).toBe('microservices');
+    expect(namedStyleId(briefFor('several microservices'), styles)).toBe('microservices');
+    expect(namedStyleId(briefFor('three layers'), styles)).toBe('layered');
+    expect(namedStyleId(briefFor('event driven'), styles)).toBe('event-driven');
+    expect(namedStyleId(briefFor('Event-driven'), styles)).toBe('event-driven');
+  });
+});
+
 describe('styleReferenceKind', () => {
   const layered = { id: 'layered', title: 'Layered (N-tier)' } as const;
   const hexagonal = { id: 'hexagonal', title: 'Hexagonal (ports and adapters)' } as const;
