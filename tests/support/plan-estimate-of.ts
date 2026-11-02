@@ -23,6 +23,7 @@ import {
 import { budgetTable } from './budget-harness.js';
 import { account } from './plan-run-seeds.js';
 import { shippedCatalogue } from './planning-brief-harness.js';
+import type { JourneyRecords } from '../../src/application/ports/journey-records.js';
 import type { Stores } from './understand-run-services.js';
 
 // RF-613: the plan estimate of a project as the plan page shows it before the run starts, built over
@@ -34,6 +35,7 @@ export async function planEstimateOf(
   s: Stores,
   project: Project,
   sourceRunId?: string,
+  journeys?: JourneyRecords,
 ): Promise<PlanEstimate> {
   const { writer, masker, clock, runs, projects, users } = s;
   const estimate = new EstimatePlan({
@@ -62,6 +64,7 @@ export async function planEstimateOf(
     coveragePrompt: () => loadCoveragePrompt('prompts'),
     gapPrompt: () => loadGapPrompt('prompts'),
     gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
+    journeys,
   });
   const request = { actor, projectId: project.id };
   const outcome = await estimate.execute(

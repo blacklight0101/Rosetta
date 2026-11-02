@@ -72,7 +72,7 @@ describe('plan estimate', () => {
     });
     await ready();
 
-    expect(screen.getByText(/could pass the Run cost cap/u)).not.toBeNull();
+    expect(screen.getByText(/does not fit the run cap/u)).not.toBeNull();
     expect(write().disabled).toBe(false);
   });
 });
@@ -198,5 +198,93 @@ describe('write the package with consent', () => {
 
     expect(screen.getByText(/package is out of date/u)).not.toBeNull();
     expect(screen.getByRole('button', { name: /^Start the plan again/u })).not.toBeNull();
+  });
+});
+
+// P8-01, EV-82: the plan estimate of the evaluation's Haiku eShop project, synthetic in its names:
+// 14 planner calls (the plan, the PRD, six data-model batches, flows, the API contract, the user
+// interface, coverage, the gap and its repair) under the project defaults of $0.50 per run.
+const evaluated = (runLine: 'journey' | 'project', approved: boolean) => ({
+  ...planEstimate,
+  planner: {
+    ...planEstimate.planner,
+    low: { inputTokens: 180_000, outputTokens: 40_000, costMicros: '210000' },
+    likely: { inputTokens: 260_000, outputTokens: 70_000, costMicros: '330000' },
+    high: { inputTokens: 520_000, outputTokens: 300_000, costMicros: '1720000' },
+  },
+  assumptions: { calls: 14 },
+  runLine,
+  caps: [
+    {
+      kind: 'run-cost',
+      unit: 'micros',
+      approved,
+      limit: approved ? '3100000' : '500000',
+      spent: '0',
+      remaining: approved ? '3100000' : '500000',
+      fits: { low: true, likely: true, high: approved },
+    },
+  ],
+  withinCaps: { low: true, likely: true, high: approved },
+});
+
+describe('plan estimate of the evaluated 14-call plan', () => {
+  it('RF-613 EV-82 a high figure over the project run cap reads "does not fit the run cap" with both figures', async () => {
+    renderPlan({
+      ...savedAnswers,
+      [`GET ${base}/plan-estimate`]: json(200, evaluated('project', false)),
+    });
+    await ready();
+
+    const card = screen.getByRole('region', { name: 'Plan estimate' });
+    expect(card.textContent).toContain('14 planner calls');
+    expect(card.textContent).toContain('$0.33 likely');
+    expect(card.textContent).toContain('low $0.21, high $1.72');
+    expect(card.textContent).toContain(
+      'The high estimate ($1.72) does not fit the run cap ($0.50 left)',
+    );
+    expect(card.textContent).not.toMatch(/\bfits\b/u);
+    expect(screen.getByTestId('plan-run-line').textContent).toContain('the project run caps apply');
+  });
+
+  it('RF-435 P8-01 a plan of a journey names the approved amount as its line, not the project run cap', async () => {
+    renderPlan({
+      ...savedAnswers,
+      [`GET ${base}/plan-estimate`]: json(200, evaluated('journey', true)),
+    });
+    await ready();
+
+    const card = screen.getByRole('region', { name: 'Plan estimate' });
+    expect(within(card).getByText('Approved amount left')).not.toBeNull();
+    expect(within(card).queryByText('Run cost cap')).toBeNull();
+    expect(screen.getByTestId('plan-run-line').textContent).toContain(
+      'under what is left of the amount you approved for the journey, not under the project run caps',
+    );
+    expect(card.textContent).not.toContain('does not fit');
+  });
+});
+
+describe('plan estimate of the evaluated plan under the journey amount', () => {
+  it('RF-432 P8-01 a high figure over what is left of the approved amount says the run pauses there', async () => {
+    const over = evaluated('journey', true);
+    const cap = over.caps[0];
+    if (cap === undefined) throw new Error('No cap.');
+    const capped = {
+      ...over,
+      caps: [
+        {
+          ...cap,
+          limit: '900000',
+          remaining: '900000',
+          fits: { low: true, likely: true, high: false },
+        },
+      ],
+    };
+    renderPlan({ ...savedAnswers, [`GET ${base}/plan-estimate`]: json(200, capped) });
+    await ready();
+
+    expect(screen.getByRole('region', { name: 'Plan estimate' }).textContent).toContain(
+      'The high estimate ($1.72) does not fit what is left of the approved amount ($0.90): the run pauses and asks before it passes it.',
+    );
   });
 });

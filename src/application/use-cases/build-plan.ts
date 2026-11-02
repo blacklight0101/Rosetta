@@ -1,17 +1,9 @@
 import { usableCards } from '../../domain/planning/code-over-documentation.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
-import { ok } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { PlanAssembly } from '../../domain/planning/plan-content.js';
 import { workbookSetup } from '../../domain/planning/workbook-setup.js';
 import { methodPrinciples } from '../../domain/planning/task-method.js';
-import { recordManifestBrief } from '../../domain/runs/manifest-brief.js';
-import { recordManifestSourceRun } from '../../domain/runs/manifest-source-run.js';
-import {
-  recordManifestCatalogue,
-  recordManifestCodeMap,
-  recordPromptVersions,
-} from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
 import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
 import { readPlanAnswer } from '../plan/plan-answer.js';
@@ -26,12 +18,7 @@ import { planScanFacts } from '../plan/plan-scan-facts.js';
 import type { PlanSecretDependencies } from '../plan/plan-secrets.js';
 import { planProposal } from '../plan/plan-proposal.js';
 import type { PlanProposal } from '../../domain/planning/stack-proposal.js';
-import {
-  loadPlanFiles,
-  planPromptVersions,
-  type PlanFiles,
-  type PlanPromptSources,
-} from '../plan/plan-prompts.js';
+import { loadPlanFiles, type PlanFiles, type PlanPromptSources } from '../plan/plan-prompts.js';
 import { leftOutItems } from '../plan/plan-left-out.js';
 import { handoffPackageOf } from '../plan/plan-package.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
@@ -42,9 +29,10 @@ import type { ScanResults } from '../ports/scan-results.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
+import { recordPlanSources } from '../plan/plan-record.js';
 import { announcePlannerCall } from '../plan/plan-call-events.js';
+import type { PlannerAnswerDependencies } from '../plan/planner-answer-book.js';
 import { callIds } from '../runs/run-ids.js';
-import { resolvedSourceOf } from '../plan/resolved-source-of.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
 import { writeCostReport } from '../runs/run-cost-report.js';
 import { scopeOf } from '../runs/run-scope.js';
@@ -58,7 +46,12 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // the planner, packed to its window (P3-113). The cost report is written at every end.
 
 export interface BuildPlanDependencies
-  extends PlanInputDependencies, PlanPromptSources, PlanSecretDependencies, RunSinkDependencies {
+  extends
+    PlanInputDependencies,
+    PlanPromptSources,
+    PlanSecretDependencies,
+    RunSinkDependencies,
+    PlannerAnswerDependencies {
   readonly users: UserRepository;
   /** RF-632: the scan whose files the data shapes are measured from. */
   readonly scans: ScanResults;
@@ -121,7 +114,7 @@ export class BuildPlan implements RunExecutor {
     const updates = new ManifestUpdates(this.deps.manifests, scopeOf(run));
     const files = await loadPlanFiles(this.deps, saved.value);
     const { catalogue, prompts } = files;
-    await this.record(execution, updates, { inputs: saved.value, files });
+    await recordPlanSources(this.deps, execution, updates, { inputs: saved.value, files });
     // P5-39: the plan is written from the saved brief with Rosetta's proposals for what it left open.
     const proposed = await planProposal(this.deps, saved.value, catalogue.stack);
     const inputs = { value: proposed.inputs };
@@ -227,31 +220,6 @@ export class BuildPlan implements RunExecutor {
       ...{ level: 'warn', logger: 'plan', runId: run.runKey, userId: run.userId },
       message,
     });
-  }
-
-  /** RNF-004: the brief, the catalogue, the prompts and the source the package comes from. */
-  private async record(
-    execution: RunExecution,
-    updates: ManifestUpdates,
-    used: {
-      readonly inputs: PlanInputs;
-      readonly files: PlanFiles;
-    },
-  ): Promise<void> {
-    const { inputs, files } = used;
-    const { version, sha256 } = files.catalogue;
-    const versions = planPromptVersions(files);
-    await updates.update((manifest) => recordManifestBrief(manifest, inputs.brief));
-    await updates.update((manifest) => recordManifestSourceRun(manifest, inputs.sourceRun.runKey));
-    await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));
-    await updates.update((manifest) => ok(recordPromptVersions(manifest, versions)));
-    const source = await this.deps.manifests.read(scopeOf(inputs.sourceRun));
-    // RF-130: an upload run has a snapshot and no commit.
-    const resolved = resolvedSourceOf(inputs.sourceRun, source);
-    if (resolved !== undefined) await execution.recordSource(resolved);
-    const codemapHash = source?.codemapHash ?? null;
-    if (codemapHash !== null)
-      await updates.update((manifest) => recordManifestCodeMap(manifest, codemapHash));
   }
 
   /**
