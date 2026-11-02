@@ -26,6 +26,8 @@ export interface PlanCapDependencies {
   readonly serverSettings: Pick<ServerSettings, 'caps'>;
   readonly usage: Pick<AccountUsage, 'userDay' | 'serverMonth'>;
   readonly clock: Clock;
+  /** P8-04, RF-433: the host of the Ollama server; an Ollama server that is not this machine is not local. */
+  readonly ollamaHost?: string | undefined;
 }
 
 function usd(totals: readonly CurrencyTotal[]): bigint {

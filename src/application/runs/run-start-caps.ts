@@ -19,6 +19,8 @@ export interface StartCapsDependencies {
   readonly users: Pick<UserRepository, 'findById'>;
   readonly serverSettings: Pick<ServerSettings, 'caps'>;
   readonly keys: KeySourceLookup;
+  /** P8-04, RF-433: the host of the Ollama server; one that is not this machine is not local. */
+  readonly ollamaHost?: string | undefined;
 }
 
 /** The model roles each stage calls; a stage not listed makes no model call. */

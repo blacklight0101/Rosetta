@@ -30,6 +30,8 @@ export interface RolePricing {
   readonly priceTable: PriceTable;
   /** Q-58: the models the shipped list marks as reasoning models; none when left out. */
   readonly reasoningModels?: ReasoningModels;
+  /** P8-04, RF-433: the host of the Ollama server; an Ollama server that is not this machine is not local. */
+  readonly ollamaHost?: string | undefined;
 }
 
 export interface RoleTokens {

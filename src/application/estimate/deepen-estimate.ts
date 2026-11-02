@@ -58,6 +58,8 @@ export interface DeepenEstimateDependencies {
   /** DEC-179: the answers of the project the Deepen gives to its readers. */
   readonly answers: Pick<AnswersFile, 'answeredQuestions'>;
   readonly priorCards: PriorCards;
+  /** P8-04, RF-433: the host of the Ollama server; an Ollama server that is not this machine is not local. */
+  readonly ollamaHost?: string | undefined;
 }
 
 export interface DeepenEstimateRequest {

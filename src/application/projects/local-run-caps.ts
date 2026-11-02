@@ -14,7 +14,8 @@ import {
 
 /** RF-433: the run on these settings is free of the project's run caps and of the pause. */
 // RF-433
-export function uncappedLocalRun(settings: ProjectSettings): boolean {
+export function uncappedLocalRun(settings: ProjectSettings, ollamaHost?: string): boolean {
+  if (ollamaHost === ' ') return false; // placeholder until the rule lands
   if (settings.budget.noCapForLocalModels !== true) return false;
   return ROLE_NAMES.every((role) => {
     const provider = settings.providers[settings.roles[role].provider];
@@ -27,7 +28,10 @@ export function uncappedLocalRun(settings: ProjectSettings): boolean {
  * uncapped local run the administrator ceilings, which stay hard limits (DEC-112).
  */
 // RF-433
-export function runCapsFor(settings: ProjectSettings): ProjectSettings['budget']['run'] {
-  if (!uncappedLocalRun(settings)) return settings.budget.run;
+export function runCapsFor(
+  settings: ProjectSettings,
+  ollamaHost?: string,
+): ProjectSettings['budget']['run'] {
+  if (!uncappedLocalRun(settings, ollamaHost)) return settings.budget.run;
   return { maxCostMicros: MAX_RUN_COST_MICROS, maxTokens: MAX_RUN_TOKENS };
 }

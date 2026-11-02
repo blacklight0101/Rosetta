@@ -19,6 +19,8 @@ export interface BudgetPricing {
   readonly table: PriceTable;
   readonly overrides: readonly Price[];
   readonly allowUnpriced: boolean;
+  /** P8-04, RF-433: the host of the Ollama server; one that is not this machine is priced like a cloud provider. */
+  readonly ollamaHost?: string | undefined;
 }
 
 export interface PricingQuery {
