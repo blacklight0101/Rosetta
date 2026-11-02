@@ -114,6 +114,24 @@ function cardLines(model: ReportModel, esc: MarkdownEscaper): string[] {
   ];
 }
 
+/** RF-243, RF-646, EV-57: each pair of questions that was merged, so a wrong merge can be seen. */
+function mergedQuestionLines(model: ReportModel, esc: MarkdownEscaper): string[] {
+  const pairs = model.mergedQuestions ?? [];
+  if (pairs.length === 0) return [];
+  return [
+    '',
+    '## Merged questions',
+    '',
+    'Each question below asked the same as an earlier one and was merged into it.',
+    '',
+    ...pairs.map(
+      (pair) =>
+        `- Kept ${esc.inline(pair.keptCardId)} (run ${esc.inline(pair.keptRunKey)}): ${esc.inline(pair.keptQuestion)}; ` +
+        `merged ${esc.inline(pair.mergedCardId)} (run ${esc.inline(pair.mergedRunKey)}): ${esc.inline(pair.mergedQuestion)}`,
+    ),
+  ];
+}
+
 /** RF-264: the report opens with the overview; its card links go up one folder. */
 function overviewLines(model: ReportModel, masker: TextMasker): string[] {
   if (model.overview === undefined) return [];
@@ -143,6 +161,7 @@ export function renderReportMarkdown(model: ReportModel, masker: TextMasker): st
     '## Cards',
     '',
     ...cardLines(model, esc),
+    ...mergedQuestionLines(model, esc),
   ];
   return `${masker.mask(lines.join('\n')).text}\n`;
 }
