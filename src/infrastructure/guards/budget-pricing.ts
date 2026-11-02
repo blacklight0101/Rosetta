@@ -1,10 +1,16 @@
 import type { ProviderKind } from '../../application/ports/llm-provider.js';
 import { costOf, worstCaseCost, type Price } from '../../domain/budget/price.js';
-import { lookupPrice, type KeySource, type PriceTable } from '../../domain/budget/price-table.js';
+import {
+  lookupPrice,
+  type KeySource,
+  type PriceQuery,
+  type PriceTable,
+} from '../../domain/budget/price-table.js';
 import type { WorstCase } from '../../domain/budget/usage-cap.js';
 import { microUsd } from '../../domain/budget/money.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { isRemoteOllama } from '../../application/providers/cloud-consent.js';
 import type { CallPricer } from '../providers/call-attempts.js';
 
 // RF-420, RF-427, DEC-107: how the budget guard prices a call before and after it is made, and the
@@ -19,6 +25,10 @@ export interface BudgetPricing {
   readonly table: PriceTable;
   readonly overrides: readonly Price[];
   readonly allowUnpriced: boolean;
+  /** P8-04, RF-433: the host of the Ollama server; one that is not this machine is priced like a cloud provider. */
+  readonly ollamaHost?: string | undefined;
+  /** RF-143: the run's consent; without it a remote Ollama is refused by the egress guard first (RST-1515). */
+  readonly cloudConsent?: boolean | undefined;
 }
 
 export interface PricingQuery {
@@ -52,21 +62,39 @@ export function incompleteOverrideMessage(
   return `The price override for model ${model} of provider kind ${query.kind} has no cache-write price, so it is ignored.`;
 }
 
-// RF-420, RF-427
-export function priceCall(pricing: BudgetPricing, query: PricingQuery, model: string): CallPrice {
-  const lookup = lookupPrice(pricing.table, pricing.overrides, {
+/** RF-433: the price query of a call; an Ollama server that is not this machine is not free. */
+function lookupQueryOf(pricing: BudgetPricing, query: PricingQuery, model: string): PriceQuery {
+  return {
     provider: query.kind,
     model,
     keySource: query.keySource,
-  });
+    remote: isRemoteOllama(query.kind, pricing.ollamaHost),
+  };
+}
+
+function unpricedMessage(pricing: BudgetPricing, query: PricingQuery, model: string): string {
+  if (isRemoteOllama(query.kind, pricing.ollamaHost)) {
+    return `The Ollama server is not on this machine, so the model ${model} is priced like a cloud model, and it has no price in the price table.`;
+  }
+  return `The model ${model} of provider kind ${query.kind} has no price in the price table.`;
+}
+
+// RF-420, RF-427
+export function priceCall(pricing: BudgetPricing, query: PricingQuery, model: string): CallPrice {
+  const lookup = lookupPrice(
+    pricing.table,
+    pricing.overrides,
+    lookupQueryOf(pricing, query, model),
+  );
   if (lookup.kind === 'priced') return { price: lookup.price, version: lookup.version };
-  if (query.keySource === 'user' && pricing.allowUnpriced) {
+  const awaitsConsent =
+    isRemoteOllama(query.kind, pricing.ollamaHost) && pricing.cloudConsent !== true;
+  if (awaitsConsent || (query.keySource === 'user' && pricing.allowUnpriced)) {
     return { price: undefined, version: pricing.table.version };
   }
   throw new RosettaError(
     ERROR_CODES.modelUnpriced,
-    incompleteOverrideMessage(pricing, query, model) ??
-      `The model ${model} of provider kind ${query.kind} has no price in the price table.`,
+    incompleteOverrideMessage(pricing, query, model) ?? unpricedMessage(pricing, query, model),
   );
 }
 
@@ -84,11 +112,11 @@ export function worstCaseOf(
 // RF-421
 export function pricerFor(pricing: BudgetPricing, query: PricingQuery): CallPricer {
   return ({ model, usage }) => {
-    const lookup = lookupPrice(pricing.table, pricing.overrides, {
-      provider: query.kind,
-      model,
-      keySource: query.keySource,
-    });
+    const lookup = lookupPrice(
+      pricing.table,
+      pricing.overrides,
+      lookupQueryOf(pricing, query, model),
+    );
     return lookup.kind === 'priced' ? costOf(lookup.price, usage) : microUsd(0n);
   };
 }

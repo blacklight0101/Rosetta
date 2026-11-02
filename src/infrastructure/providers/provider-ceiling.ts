@@ -1,3 +1,4 @@
+import { withinCeilings } from '../../application/runs/approved-journey.js';
 import type { ProviderSetRequest } from '../../application/ports/provider-set-factory.js';
 import type { UsageCap } from '../../domain/budget/usage-cap.js';
 
@@ -24,4 +25,18 @@ export function providerTestCeiling(cap: UsageCap): bigint {
   if (cap.kind === 'run-cost') return testCeiling.costMicros;
   if (cap.kind === 'run-tokens') return testCeiling.tokens;
   return cap.limit;
+}
+
+/** RF-432: the run's approved amount as cap inputs; none when the run recorded none. */
+export function approvedOf(request: ProviderSetRequest): {
+  readonly approved?: { readonly maxCostMicros: bigint; readonly maxTokens: bigint };
+} {
+  if (request.approvedAmount === undefined) return {};
+  const approvedAmount = withinCeilings(request.approvedAmount);
+  return {
+    approved: {
+      maxCostMicros: BigInt(approvedAmount.costMicros),
+      maxTokens: BigInt(approvedAmount.tokens),
+    },
+  };
 }

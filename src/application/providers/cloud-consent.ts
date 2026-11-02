@@ -37,3 +37,13 @@ export function needsCloudConsent(target: ConsentTarget): boolean {
       return true;
   }
 }
+
+/**
+ * RF-433, P8-04: whether a call to a provider of this kind is a call to a server that is not this
+ * machine and is not free: an Ollama server anywhere but this machine. With no Ollama address
+ * configured no call can be made, so the host counts as this machine, as in the consent rule above.
+ */
+// RF-433
+export function isRemoteOllama(kind: string, ollamaHost: string | undefined): boolean {
+  return kind === 'ollama' && !isThisMachine(ollamaHost ?? 'localhost');
+}
