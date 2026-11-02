@@ -7,7 +7,7 @@ import { overviewOf } from './run-summary.js';
 // RF-1002, RF-1004, design-system.md section 5 (pipeline stepper): the five steps of a run as the page
 // can tell them from the events and the run row. A stage the run does not include stays waiting, and
 // so does a step the run never reached; at most one step is current. The report is built from the page
-// of a finished run, never by the run, so its step waits until a report exists (RF-504, P1-130).
+// of a finished run, never by the run, so its step shows only once a report exists (RF-504, P1-130, P8-11).
 
 type StepName =
   | ('Snapshot' | 'Scan' | 'Understand' | 'Verify' | 'Report')
@@ -154,7 +154,8 @@ function planSteps(state: RunState, phase: RunPhase): readonly Step[] {
 // RF-1002, RF-1015
 export function stepperOf(run: StepperRun, state: RunState, phase: RunPhase): readonly Step[] {
   if (run.stage === 'plan') return planSteps(state, phase);
-  const report = step('Report', run.reportBuilt ? 'done' : 'waiting');
+  // P8-11 (EV-90): no report is requested until one is built, so there is no step that waits for it.
+  const report = run.reportBuilt ? [step('Report', 'done')] : [];
   if (phase.kind === 'queued') {
     return (['Snapshot', 'Scan', 'Understand', 'Verify'] as const)
       .map((name) => step(name, 'waiting'))
@@ -165,9 +166,9 @@ export function stepperOf(run: StepperRun, state: RunState, phase: RunPhase): re
       ...scanSteps(run, state, phase),
       step('Understand', 'waiting'),
       step('Verify', 'waiting'),
-      report,
+      ...report,
     ];
   }
   const earlier = (name: StepName): Step => step(name, 'done');
-  return [earlier('Snapshot'), earlier('Scan'), ...readerSteps(state, phase), report];
+  return [earlier('Snapshot'), earlier('Scan'), ...readerSteps(state, phase), ...report];
 }
