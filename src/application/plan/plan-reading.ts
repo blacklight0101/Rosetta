@@ -49,6 +49,8 @@ export interface PlanProblem {
   /** The item's position in the list, from 1; none for a fault of the whole list. */
   readonly position?: number;
   readonly field: string;
+  /** P8-02: why the item was left out, a sentence of this program; none for an unreadable item. */
+  readonly reason?: string;
 }
 
 export interface PlanReading {

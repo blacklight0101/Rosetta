@@ -18,7 +18,7 @@ export function placeOf({ list, position }: Pick<PlanProblem, 'list' | 'position
 }
 
 const problemLine = (problem: PlanProblem): string =>
-  `${placeOf(problem)}: the field "${problem.field}".`;
+  `${placeOf(problem)}: the field "${problem.field}".${problem.reason === undefined ? '' : ` ${problem.reason}`}`;
 
 /** The user message of the repair: the plan message, the repair prompt, then the problems. */
 // RF-202
@@ -31,8 +31,8 @@ function planRepairMessage(
 }
 
 /** The second reading of the answer, after one more call that names the failing paths. */
-// P3-126
-async function repairPlan(
+// P3-126, P8-02
+export async function repairPlan(
   call: PlannerCall,
   input: PlanMessageInput,
   repair: { readonly prompt: PromptFile; readonly problems: readonly PlanProblem[] },

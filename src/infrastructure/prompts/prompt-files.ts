@@ -92,7 +92,7 @@ export async function loadPlanOptionsPrompt(promptsFolder: string): Promise<Prom
 /** The planner's prompt for the hand-off package (RF-604), checked and hashed. */
 // RNF-004
 export function loadPlannerPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/package.v11.md');
+  return loadPromptFile(promptsFolder, 'planner/package.v12.md');
 }
 
 /**
@@ -179,7 +179,7 @@ export async function loadPlannerSecretRiskPrompt(promptsFolder: string): Promis
 /** The planner's prompt for the one repair attempt of the plan answer (P3-126), checked and hashed. */
 // RNF-004
 export function loadPlanRepairPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/plan-repair.v1.md');
+  return loadPromptFile(promptsFolder, 'planner/plan-repair.v2.md');
 }
 
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {
