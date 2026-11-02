@@ -197,7 +197,7 @@ its default instead of being invented. Sources RF-601..RF-613.
 flowchart TB
   A[Add a source: upload or GitHub address] --> B[Free scan starts by itself]
   B --> C[Project page: what was found and one estimate for the whole journey]
-  C --> D[Analyse: approve the worst case once]
+  C --> D[Analyse: approve the lower of worst case and ceilings once]
   D --> E[Understand and claim checking run, live page opens by itself]
   E --> F{Near the approved amount?}
   F -->|yes| G[Waiting for your approval: Continue +N or Stop here] --> E

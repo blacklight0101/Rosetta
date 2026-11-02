@@ -173,9 +173,19 @@ function approvedLines(
   approved: RunBudget | undefined,
 ): readonly UsageCap[] {
   if (approved === undefined) return keys;
+  // P8-03: an administrator or account cap no higher than the approved amount is the binding cap, a
+  // hard stop; the run pauses only at an approved amount that is under every such cap.
+  const scopeLowest = keys
+    .filter((cap) => isScope(cap.kind))
+    .reduce<bigint | undefined>(
+      (low, cap) => (low === undefined || cap.limit < low ? cap.limit : low),
+      undefined,
+    );
   return keys.map((cap) => {
+    const underScopes = scopeLowest === undefined || cap.limit < scopeLowest;
     const fromRun =
-      cap.kind === 'run-tokens' || (cap.kind === 'run-cost' && cap.source === 'project');
+      cap.kind === 'run-tokens' ||
+      (cap.kind === 'run-cost' && cap.source === 'project' && underScopes);
     return fromRun ? { ...cap, source: 'approved' } : cap;
   });
 }
@@ -210,9 +220,11 @@ function runCostOnServer(inputs: CapInputs): {
   readonly source: 'project' | 'administrator';
 } {
   const { run, server } = inputs;
+  // P8-03: an approved amount that only equals the administrator's run cap is that cap, a hard stop.
+  const tied = inputs.approved !== undefined && server.runMicros === run.maxCostMicros;
   return {
     micros: lower(run.maxCostMicros, server.runMicros),
-    source: server.runMicros < run.maxCostMicros ? 'administrator' : 'project',
+    source: server.runMicros < run.maxCostMicros || tied ? 'administrator' : 'project',
   };
 }
 

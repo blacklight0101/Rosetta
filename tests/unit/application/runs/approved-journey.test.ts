@@ -29,6 +29,19 @@ describe('RF-432 the approved amount at the start', () => {
     });
   });
 
+  it('RF-432 DEC-206 records the approvable figure, the lower of the worst case and the ceilings, not the worst case', () => {
+    const lowered = { ...journey, approvable: { tokens: 1_200_000, costMicros: 1_320_000 } };
+
+    expect(approvedJourneyOf({ tokens: 1_200_000, costMicros: 1_320_000 }, lowered)).toEqual({
+      ok: true,
+      value: lowered.approvable,
+    });
+    expect(approvedJourneyOf(journey.worstCase, lowered)).toEqual({
+      ok: false,
+      error: ERROR_CODES.approvalChanged,
+    });
+  });
+
   it('RF-432 refuses a shown figure that is not the server estimate, or no estimate (RST-2310)', () => {
     const refused = { ok: false, error: ERROR_CODES.approvalChanged };
 

@@ -33,6 +33,12 @@ its cost so far. The paused run releases its slot. The day, month and server cap
 passed (DEC-112); a run that reaches one of those ends `CapReached` as before. A run whose every role is local may
 have no token cap when the project setting of DEC-197 is on.
 
+The approved amount is the lower of the journey's worst case and the administrator ceilings (DEC-206, which replaces the
+unbounded worst-case approval of DEC-205): the pause is a line the run can reach, so the user's answer is asked for.
+A line that equals the administrator's run cap is that hard limit, not a pause, because Continue could add nothing.
+A step started while another step of the journey is queued or running gets what is left after that step's unused line
+(RF-435).
+
 ## Rationale
 
 - The owner's request is to approve an amount and not lose a run (DEC-196); option 1 keeps the work and asks.
@@ -59,4 +65,5 @@ have no token cap when the project setting of DEC-197 is on.
 
 - DEC-196, DEC-197; RF-006, RF-422, RF-430, RF-431, RF-432, RF-433, RF-1108.
 - ADR-007 (cost control): extended by this ADR when it is accepted.
-- Cards P7-04, P7-05, P7-06; evaluation of 2026-10-29, EV-44, EV-62.
+- DEC-205, DEC-206.
+- Cards P7-04, P7-05, P7-06, P8-03; evaluation of 2026-10-29, EV-44, EV-62.

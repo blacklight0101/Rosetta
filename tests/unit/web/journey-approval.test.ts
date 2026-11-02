@@ -3,6 +3,9 @@ import type { RunEstimate } from '../../../web/src/api/estimate-schemas.js';
 import {
   approvalText,
   approvedAmountOf,
+  basisMovedText,
+  ceilingNoteText,
+  likelyText,
   missingKeyProviders,
   worstCaseText,
 } from '../../../web/src/lib/journey-approval.js';
@@ -27,8 +30,15 @@ function estimateWith(roles: RunEstimate['roles']): RunEstimate {
       ...{ basis: 'assumptions', deepenRounds: 3 },
       likely: { tokens: 2_600_000, costMicros: '1200000' },
       worstCase: { tokens: 8_400_000, costMicros: '4100000' },
+      approvable: { tokens: 8_400_000, costMicros: '4100000' },
+      ceilingApplied: false,
     },
   };
+}
+
+function journeyOf(estimate: RunEstimate): NonNullable<RunEstimate['journey']> {
+  if (estimate.journey === undefined) throw new Error('No journey.');
+  return estimate.journey;
 }
 
 const gateInput = {
@@ -36,7 +46,7 @@ const gateInput = {
 };
 
 describe('RF-430 the approved figure on the start button', () => {
-  it('RF-430 DEC-205 approves the worst-case journey total in dollars for a priced estimate', () => {
+  it('RF-430 DEC-206 approves the journey figure in dollars for a priced estimate', () => {
     const estimate = estimateWith([role({})]);
 
     expect(approvalText(estimate)).toBe('$4.10');
@@ -76,5 +86,47 @@ describe('RF-431 the estimate shows a missing key', () => {
       keyMissing: 'OpenAI',
     });
     expect(gate.reason).toBe('The OpenAI key is missing: add your own key in Settings and keys.');
+  });
+});
+
+describe('RF-430 DEC-206 the approvable figure and the likely figure beside it', () => {
+  const lowered = (estimate: RunEstimate): RunEstimate => ({
+    ...estimate,
+    journey: {
+      ...journeyOf(estimate),
+      worstCase: { tokens: 375_900_000, costMicros: '314170000' },
+      approvable: { tokens: 50_000_000, costMicros: '4000000' },
+      ceilingApplied: true,
+    },
+  });
+
+  it('RF-430 DEC-206 the button approves the approvable figure, not the worst case above the ceilings', () => {
+    const estimate = lowered(estimateWith([role({})]));
+
+    expect(approvalText(estimate)).toBe('$4.00');
+    expect(approvedAmountOf(estimate)).toEqual({ tokens: 50_000_000, costMicros: 4_000_000 });
+    expect(likelyText(estimate)).toBe('$1.20');
+  });
+
+  it('RF-430 DEC-206 names the ceiling that lowered the figure, and says nothing when none did', () => {
+    const estimate = estimateWith([role({})]);
+
+    expect(ceilingNoteText(lowered(estimate))).toContain('$314.17');
+    expect(ceilingNoteText(lowered(estimate))).toContain('$4.00');
+    expect(ceilingNoteText(estimate)).toBeUndefined();
+  });
+
+  it('RF-430 DEC-206 says why the figure moved when the basis changed between two estimates', () => {
+    const before = estimateWith([role({})]);
+    const after = {
+      ...before,
+      journey: {
+        ...journeyOf(before),
+        basis: 'history' as const,
+      },
+    };
+
+    expect(basisMovedText(before, after)).toContain('measured');
+    expect(basisMovedText(before, before)).toBeUndefined();
   });
 });

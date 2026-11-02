@@ -1,5 +1,6 @@
 import { approvedJourneyOf, type JourneyLookup } from '../runs/approved-journey.js';
-import { stepAmountOf } from '../journey/journey-budget.js';
+import { withProjectLock } from '../journey/journey-lock.js';
+import { recordJourney, stepAmountChecked } from '../journey/journey-budget.js';
 import type { JourneyRecords } from '../ports/journey-records.js';
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -97,7 +98,8 @@ export type StartRunProblem =
   | typeof ERROR_CODES.projectNoSource
   | typeof ERROR_CODES.providerKeyMissing
   | typeof ERROR_CODES.requestInvalid
-  | typeof ERROR_CODES.approvalChanged;
+  | typeof ERROR_CODES.approvalChanged
+  | typeof ERROR_CODES.journeyAmountUsed;
 
 export class StartRun {
   private readonly deps: StartRunDependencies;
@@ -112,8 +114,9 @@ export class StartRun {
     const project = await this.deps.projects.find(actor.userId, projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
     if (!STARTABLE_STAGES.includes(stage)) return err(ERROR_CODES.runStageNotAvailable);
-    if (stage === 'understand') return this.understand(request, project);
-    if (stage === 'plan') return this.plan(request, project);
+    const lock = <T>(step: () => Promise<T>) => withProjectLock(project.id, step);
+    if (stage === 'understand') return lock(() => this.understand(request, project));
+    if (stage === 'plan') return lock(() => this.plan(request, project));
     // The scan settings of this moment are the run's: an edit while it waits does not change it.
     const options = { scanSettings: project.settings.scan };
     return this.submit({ actor, project, stage, options });
@@ -145,18 +148,13 @@ export class StartRun {
     project: Project,
   ): Promise<Result<SubmittedRun, StartRunProblem>> {
     // RST-1801: no run is created for a project whose owner has saved no brief.
-    const brief = await this.deps.briefs.read({
-      userId: request.actor.userId,
-      projectId: project.id,
-    });
+    const owner = { userId: request.actor.userId, projectId: project.id };
+    const brief = await this.deps.briefs.read(owner);
     if (brief === undefined) return err(ERROR_CODES.planBriefMissing);
     // RF-614, RST-1802, RF-1105: a named source run is checked before any run exists.
     const { actor, sourceRunId } = request;
-    if (sourceRunId !== undefined) {
-      const owner = { userId: actor.userId, projectId: project.id };
-      const source = await planSourceRun(this.deps.runs, owner, sourceRunId);
-      if (!source.ok) return err(source.error);
-    }
+    const problem = await this.sourceProblemOf(request, project);
+    if (problem !== undefined) return err(problem);
     const cloudConsent = request.cloudConsent === true;
     const roles: readonly AgentRole[] = ['planner'];
     if (!cloudConsent && rolesNeedCloudConsent(project.settings, this.deps.ollamaHost, roles)) {
@@ -168,12 +166,26 @@ export class StartRun {
     if (needsPrivate && request.privateCodeConfirmed !== true) {
       return err(ERROR_CODES.privateCodeNotConfirmed);
     }
+    const planLine = await this.planLineOf(request, project);
+    if (!planLine.ok) return err(planLine.error);
     const options = {
       ...{ cloudConsent, ...(needsPrivate ? { privateCodeConfirmed: true } : {}) },
       ...(sourceRunId === undefined ? {} : { sourceRunId }),
-      ...(await this.planLineOf(request, project)),
+      ...planLine.value,
     };
     return this.submit({ actor, project, stage: 'plan', options });
+  }
+
+  /** RF-614, RST-1802: why the named source run of a plan cannot be used; undefined when it can. */
+  private async sourceProblemOf(
+    request: StartRunRequest,
+    project: Project,
+  ): Promise<StartRunProblem | undefined> {
+    const { sourceRunId } = request;
+    if (sourceRunId === undefined) return undefined;
+    const owner = { userId: request.actor.userId, projectId: project.id };
+    const found = await planSourceRun(this.deps.runs, owner, sourceRunId);
+    return found.ok ? undefined : found.error;
   }
 
   /**
@@ -229,7 +241,9 @@ export class StartRun {
     const needsPrivate = rolesNeedPrivateConfirmation(project, ollamaHost);
     const approved = await this.approvedOf(request);
     if (!approved.ok) return err(approved.error);
-    const approvedAmount = approved.value ?? (await this.leftOf(request, project));
+    const line = await this.leftOf(request, project, approved.value);
+    if (!line.ok) return err(line.error);
+    const approvedAmount = line.value;
     const options = understandOptionsOf({
       ...request,
       cloudConsent: await this.consentOf(request),
@@ -250,7 +264,10 @@ export class StartRun {
       stage: 'understand',
       options: { ...options },
     });
-    if (submitted.ok) await this.recordJourney(request, project, approved.value, submitted.value);
+    const owner = { userId: actor.userId, projectId: project.id };
+    if (submitted.ok) {
+      await recordJourney(this.deps.journeys, owner, approved.value, submitted.value.run.queuedAt);
+    }
     return submitted;
   }
 
@@ -261,30 +278,23 @@ export class StartRun {
   private async planLineOf(
     request: StartRunRequest,
     project: Project,
-  ): Promise<{ readonly approvedAmount?: ApprovedAmount }> {
-    const approvedAmount = await this.leftOf(request, project);
-    return approvedAmount === undefined ? {} : { approvedAmount: { ...approvedAmount } };
+  ): Promise<
+    Result<{ readonly approvedAmount?: ApprovedAmount }, typeof ERROR_CODES.journeyAmountUsed>
+  > {
+    const left = await this.leftOf(request, project);
+    if (!left.ok) return left;
+    return ok(left.value === undefined ? {} : { approvedAmount: { ...left.value } });
   }
 
   /** RF-435: a step with no figure of its own runs under what is left of the journey's amount. */
-  private leftOf(request: StartRunRequest, project: Project): Promise<ApprovedAmount | undefined> {
-    const owner = { userId: request.actor.userId, projectId: project.id };
-    return stepAmountOf({ journeys: this.deps.journeys, runs: this.deps.runs }, owner);
-  }
-
-  /** RF-011, DEC-204: pressing Analyse (a start that showed its figure) records the journey. */
-  private async recordJourney(
+  private async leftOf(
     request: StartRunRequest,
     project: Project,
-    approved: ApprovedAmount | undefined,
-    started: SubmittedRun,
-  ): Promise<void> {
-    if (approved === undefined) return;
-    await this.deps.journeys?.save({
-      userId: request.actor.userId,
-      projectId: project.id,
-      approved: { tokens: approved.tokens, costMicros: approved.costMicros },
-      createdAt: started.run.queuedAt,
-    });
+    shown?: ApprovedAmount,
+  ): Promise<Result<ApprovedAmount | undefined, typeof ERROR_CODES.journeyAmountUsed>> {
+    if (shown !== undefined) return ok(shown);
+    const owner = { userId: request.actor.userId, projectId: project.id };
+    const { journeys, runs, manifests } = this.deps;
+    return stepAmountChecked({ journeys, runs, manifests }, owner);
   }
 }

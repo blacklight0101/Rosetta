@@ -74,7 +74,9 @@ export function CapSettings(props: SectionProps & { readonly roles: RoleCaps }):
         Caps
       </h2>
       <p class="rst-settings__note">
-        A run stops cleanly when it reaches either cap. Amounts are in US dollars.
+        These caps stop a run that is not part of a journey. A step of a journey runs under the
+        amount approved on Analyse, which replaces the run cap here; the administrator caps and the
+        day and month caps still stop a run for good. Amounts are in US dollars.
       </p>
       <CapNumbers {...props} />
       <ServerRunCapNote
