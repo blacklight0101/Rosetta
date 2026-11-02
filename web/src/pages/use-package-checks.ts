@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { getPackageChecks, type CheckSection } from '../api/package-checks.js';
+import { getPackageChecks, type PackageChecks } from '../api/package-checks.js';
 import { useApp } from '../app/app-context.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 
@@ -15,19 +15,19 @@ function packageWritten(ended: RunState['ended']): boolean {
 export function usePackageChecks(
   runId: string,
   ended: RunState['ended'],
-): readonly CheckSection[] | undefined {
+): PackageChecks | undefined {
   const { client } = useApp();
-  const [sections, setSections] = useState<readonly CheckSection[] | undefined>();
+  const [checks, setChecks] = useState<PackageChecks | undefined>();
   const written = packageWritten(ended);
   useEffect(() => {
     if (!written) return undefined;
     const abort = new AbortController();
     void getPackageChecks(client, runId, abort.signal).then((result) => {
-      if (!abort.signal.aborted && result.ok) setSections(result.value.sections);
+      if (!abort.signal.aborted && result.ok) setChecks(result.value);
     });
     return () => {
       abort.abort();
     };
   }, [client, runId, written]);
-  return sections;
+  return checks;
 }

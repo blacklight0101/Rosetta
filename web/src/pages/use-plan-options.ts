@@ -28,6 +28,15 @@ export interface OptionsRequest {
   readonly sourceRunId: string | undefined;
 }
 
+/** RST-1521 on Plan setup: the screen that fixes it is this one, not the start of a run (P8-11, EV-86). */
+const PRIVATE_CODE_NEXT_STEP =
+  'Tick the private code confirmation on this Plan setup page, then ask again; or switch the planner to a local Ollama model.';
+
+/** The failure of the options call, with the next step of this screen for the private code refusal. */
+function optionsFailure(error: ApiFailure): ApiFailure {
+  return error.code === 'RST-1521' ? { ...error, nextStep: PRIVATE_CODE_NEXT_STEP } : error;
+}
+
 // RF-608
 export function usePlanOptions(request: OptionsRequest): {
   readonly load: OptionsLoad;
@@ -50,7 +59,7 @@ export function usePlanOptions(request: OptionsRequest): {
       setLoad(
         result.ok
           ? { status: 'ready', options: result.value }
-          : { status: 'failed', error: result.error },
+          : { status: 'failed', error: optionsFailure(result.error) },
       );
     });
     return () => {
