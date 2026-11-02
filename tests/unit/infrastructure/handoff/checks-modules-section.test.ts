@@ -96,4 +96,24 @@ describe('checks.md: the paths not counted, capped', () => {
     expect(found).toContain('| infra/main.tf | It looks like deployment');
     expect(found).toContain('| deployment | A deploy folder with a package manifest and code');
   });
+
+  it('RF-601 lists 20 test projects and an "and N more" row, and the vendored ones apart', () => {
+    const tests = Array.from({ length: 31 }, (_, at) => ({
+      path: `Shop${String(at).padStart(2, '0')}.Tests`,
+      reason: 'test' as const,
+    }));
+    const notModules = [...tests, { path: 'vendor/x', reason: 'vendored' as const }];
+
+    const checks = plain(checksOf({ modules: { modules: [], overCap: [], notModules } }));
+
+    const found = checks.split(/^## /mu).find((part) => part.startsWith('Folders and files')) ?? '';
+    const rows = found
+      .split(/\n/u)
+      .filter((line) => line.startsWith('| ') && !line.startsWith('| Path'));
+    expect(rows).toHaveLength(22);
+    expect(found).toContain('| Shop19.Tests | A test project');
+    expect(found).not.toContain('Shop20.Tests');
+    expect(found).toContain('| and 11 more test projects | A test project');
+    expect(found).toContain('| vendor/x | Vendored third-party code');
+  });
 });
