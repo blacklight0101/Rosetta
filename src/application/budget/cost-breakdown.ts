@@ -122,7 +122,7 @@ function runLines(groups: readonly LedgerGroup[]): RunLine[] {
       ...lineOf(key, members),
       runId: members[0]?.runId ?? null,
       firstAt: new Date(firstOf(members)),
-      byRole: [],
+      byRole: linesBy(members, (group) => group.role),
     }))
     .sort(
       (left, right) =>

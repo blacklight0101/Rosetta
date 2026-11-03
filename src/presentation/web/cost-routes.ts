@@ -18,9 +18,11 @@ import { signedInOf } from './request-actor.js';
 //   ledger rows; `server` is the caps and the server-key spend of this UTC month for the
 //   administrator, null for anyone else.
 // - GET /api/projects/:id/cost: the totals of one of the user's projects and the breakdown by run
-//   (a null `runId` is the provider tests), stage, role, provider and model, and `providerTests`,
-//   the user's provider tests, which belong to no project and are outside the project totals (null
-//   when there are none); another user's id answers 404 like an unknown one.
+//   (a null `runId` is the calls of no run; each run line carries its own `byRole`, one line per
+//   role that made calls in the run and none for a role without calls), stage, role, provider and
+//   model, and `providerTests`, the user's provider tests, which belong to no project and are
+//   outside the project totals (null when there are none); another user's id answers 404 like an
+//   unknown one.
 
 export interface CostServices {
   readonly getProjectCost: GetProjectCost;
@@ -51,6 +53,7 @@ function breakdownView(breakdown: CostBreakdown): Record<string, unknown> {
       ...lineView(line),
       runId: line.runId,
       firstAt: line.firstAt.toISOString(),
+      byRole: line.byRole.map(lineView),
     })),
     byStage: breakdown.byStage.map(lineView),
     byRole: breakdown.byRole.map(lineView),
