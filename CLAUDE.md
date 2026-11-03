@@ -141,6 +141,16 @@ applied, and fixing it is part of applying the decision.
 
 <!-- STACK-RULES:END -->
 
+## Knowledge graph (graphify)
+
+- The graph lives in `graphify-out/` at the root of the main checkout and is never committed. Worktrees have none of
+  their own: pass `--graph <main checkout>/graphify-out/graph.json`.
+- Before searching wide for code, query the graph: `graphify query "<question>"`, `graphify path "A" "B"`,
+  `graphify explain "X"` or `graphify affected "X"`; then open the files it names. The graph finds things; the
+  sources of truth above still decide behaviour. When it finds nothing useful, search as usual.
+- The graph covers code. `graphify update .` in the main checkout refreshes it (no model calls); the orchestrator runs
+  it after each run of merges.
+
 ## Read-only paths
 
 - Snapshots under `<data>/sources/` (for example of `dotnet-architecture/eShopModernizing`): input for runs

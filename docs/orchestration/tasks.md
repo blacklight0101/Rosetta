@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 31      | 1         | 26         | 4         | 0                  | 4       | 22      | 5      | 6          | 0         |
-| **Total**                    | **521** | **119**   | **362**    | **40**    | **0**              | **230** | **266** | **25** | **268**    | **0**     |
+| P8 Evaluation fixes, round 2 | 33      | 1         | 27         | 5         | 0                  | 4       | 23      | 6      | 6          | 0         |
+| **Total**                    | **523** | **119**   | **363**    | **41**    | **0**              | **230** | **267** | **26** | **268**    | **0**     |
 
 ## Conventions for every card
 
@@ -7584,6 +7584,46 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Done when**: a PR's CI finishes in under 15 min wall clock when runners are free; a batch of three passed PRs merges in one queue run; no coverage is lost on develop; CI green.
 - **Refs**: RNF-001, RNF-005, ADR-025; owner request of 2026-11-02.; GitHub issue #1152
 
+### P8-19 - Live run page: calls in flight per role, and parallelism that follows the reader's provider
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P8-17
+- **Gate**: owner (asked for on 2026-11-02; the owner confirms the rule of part 2)
+- **Status**: Todo
+- **Evidence** (2026-11-02, P8-17 evaluation): (1) The live run page shows one panel per agent task (RF-1002), so with `agents.parallelism` 4 the owner saw "only 1 agent" while the verifier ran about 4 judgement calls at once (about 125 calls a minute, against about 35 at parallelism 1). Nothing on the page says how many calls a role runs at once or what the limit is. (2) `src/application/projects/default-settings.ts` (line 50) sets `agents.parallelism` to 1 when the server's default reader is Ollama. A project made that way and then switched to Haiku keeps 1, so cloud runs read one area at a time. All three P8-17 evaluation projects had parallelism 1.
+- **Reads**: `web/src/lib/live-run/run-state.ts` (`RunState`, `AgentPanelState`), `web/src/lib/live-run/reduce-run.ts`, `web/src/lib/live-run/agent-events.ts` (`onStarted` and the `agent.ended` handler), `web/src/lib/live-run/run-level-events.ts` (`onRunStarted`), `web/src/pages/AgentsGrid.tsx`, `web/src/pages/AgentsTab.tsx`, `src/domain/runs/run-event.ts`, `src/application/runs/run-lifecycle.ts` (the `run.started` event, line 79), `src/application/understand/claim-judgement.ts` (the verifier pool; `verify.claim.judged` is published only when a judgement ends), `src/application/understand/reader-settings.ts` (`readerParallelism`), `docs/data-model.md` section 3.9, `src/application/projects/default-settings.ts`, `src/application/use-cases/update-project-settings.ts` (where a provider change is saved, called by `PUT /api/projects/:id/settings` in `src/presentation/web/project-routes.ts`), `web/src/pages/LimitSettings.tsx` (`parallelismDefault`, `ParallelReaders`), `web/src/pages/project-settings-form.ts`.
+- **Do**: add the Givens to RF-1002 and RF-436 first; red tests first.
+  - Part 1, the page. Add a line per role above the agent panels: the calls in flight now and the limit, for example "Verifier · 4 at once (limit 4)" and "Reader · 2 at once (limit 4)". It starts at 0 and follows the events of the run, also after a reload of the page (the stored events are replayed). A role with nothing in flight shows "idle", it is not hidden. Text and a glyph carry the state, not colour alone (RF-1015).
+  - The reader count is the `agent.started` events that have no `agent.ended` yet. The verifier has no start event today (only `verify.claim.judged`, when a judgement ends), so add one event type, `verify.claim.started` with `{ claimId }`, emitted when a judgement call begins. List it in `docs/data-model.md` section 3.9 and in `RunEventType`. A stored run without it shows "0 at once" for the verifier and nothing else breaks (a reader ignores unknown types).
+  - The limit comes from `run.started`: add `parallelism` to its data, the value `readerParallelism` returns, so it is the clamped number the run really uses. A run stored without it shows the count and no limit.
+  - Part 2, the rule. When a project's settings are saved with the reader provider changed from a local one (kind `ollama`) to a hosted one, and `agents.parallelism` in the saved document is still 1 and is the value that was stored before the save, set it to the template default (4). Never overwrite a value the user chose: any other value, and a value changed in the same save, is kept as sent. A user who really wants 1 on a hosted provider sets it again after the switch. The reverse switch (hosted to local) changes nothing. The rule lives in `UpdateProjectSettings.execute`, not in the web form, so the API, the form and the evaluation tools agree. The answer of the save tells the page that it changed the value, and the page shows one plain line: "Parallel readers set from 1 to 4, because the reader is no longer a local model."
+  - The settings page says so: the help text of "Parallel readers" in `LimitSettings.tsx` states the rule in one short sentence (a local reader defaults to 1; when you switch to a hosted provider and the value is still 1, it becomes 4; a value you chose is never changed).
+  - `default-settings.ts` itself stays as it is.
+- **Delivers**: the event and `run.started` changes, the run-state and page changes, the use-case change, unit tests of the reducer and of the rule (local to hosted with 1, with 2, changed in the same save, hosted to local, no provider change), a web test of the line, and one end-to-end test with recorded events that shows "Verifier · 4 at once (limit 4)" during a judgement step.
+- **Done when**: on a run with parallelism 4 the page shows the verifier at up to 4 at once with the limit, and back to idle when the step ends; a project switched from Ollama to Haiku with parallelism 1 is saved with 4, one with 2 keeps 2; CI green.
+- **Refs**: RF-1002, RF-436, RF-1015, RF-301; ADR-012; owner request of 2026-11-02; P8-17.
+
+### P8-20 - Production deploys on time at 06:00, with every check done before
+
+- **Difficulty**: 9 (opus)
+- **Size**: L
+- **Depends on**: none
+- **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
+- **Status**: Todo
+- **Reads**: DEC-207, Q-63, ADR-024, ADR-025, RF-1304, `.github/workflows/release.yml` (the `image` job, and in `deploy` the steps "The ZAP baseline passed on this commit" and "This tree passed staging"), `.github/workflows/scheduled-release.yml` (the slots and the late-slot rule of P7-28), `.github/workflows/azure-provision.yml` and its tests, `docs/environments-and-delivery.md` (20, 101, 240, 333, 375), `docs/runbooks/deploy.md` (22, 173, 199, 217), `docs/adr/ADR-025-develop-branch-staging-and-scheduled-release.md` (58), `tests/integration/tooling/scheduled-release-workflow.test.ts`, `tests/integration/tooling/scheduled-release-boundaries.test.ts` (45), `tests/integration/docs/release-flow.test.ts` (57-62), `tests/integration/tooling/release-notify.test.ts`.
+- **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
+- **Do** (DEC-207):
+  - ADR-028 (Proposed, for the owner to accept) chooses the on-time trigger. Default: a Container Apps job in the existing environment (ADR-024) with a cron trigger at 04:00 and 05:00 UTC that goes on only in the 06 hour of Europe/Madrid (cron is in UTC; summer and winter time) and starts Release on `main` by `workflow_dispatch`, with a fine-grained token limited to this repository and Actions write, stored as a secret of the job; the job has no other access and reads no other secret. The ADR weighs at least a Logic App and deploying from Azure with a managed identity, and the token's rotation.
+  - Checks before the release hour: a workflow on every push to `main` (the release merge) builds, scans and pushes the image of the commit, confirms the ZAP baseline and the staging check for it (the two steps that move out of `deploy`), and records the result on the commit (a commit status such as `release/ready`). Its job has `contents: read`, `packages: write`, `statuses: write` and `issues: write` with the workflow token and no other token or secret. A failure comments on the "Production deploys" issue with the owner mentioned, like the RF-1304 notification, so it is seen before 06:00.
+  - Release at 06:00 does only the restore point, the migration, the image switch, the `/healthz` wait, the smoke test and the notification; it refuses a commit without a passing `release/ready` (the input `skip-staging-check` keeps its emergency meaning). A release merged so late that its checks have not passed by 06:00 does not deploy that morning: it deploys at 06:00 the next day, or at once when the owner runs Release by hand after its checks pass (DEC-207: only a commit whose checks passed deploys). A Release started by hand still deploys at once.
+  - `scheduled-release.yml` stays as a backup: its slots and the late-slot rule start Release only when the on-time trigger has not started one for the head commit; the once-per-commit rule is unchanged.
+  - `azure-provision.yml` creates the scheduler job (the owner runs it and supplies the token as a secret; the builder creates no cloud resource and changes no repository setting).
+  - RF-1304 gains the Given/When/Then for the 06:00 start and the checks before it; `docs/environments-and-delivery.md` (sections 1, 5, 6, 8 and 10), `docs/runbooks/deploy.md` (the workflow table, Release and image, Release to production, Deploy, and the scheduler's token rotation) and a dated ADR-025 amendment note (status `Amended`, its index row and the status Totals in `docs/adr/README.md`) say 06:00 Madrid with the checks before it.
+- **Delivers**: ADR-028; the checks workflow; `release.yml` and `scheduled-release.yml` changes; the scheduler job in `azure-provision.yml`; the documents above; tests for each workflow change (the checks gate, the refusal without `release/ready`, the backup rule, the Madrid-hour rule of the scheduler) and the updated wording tests.
+- **Done when**: a release merge has its `release/ready` result within an hour of the merge; a commit without it at 06:00 is not deployed and the next 06:00 run takes it (tested); on two mornings after the owner's provisioning, Release starts between 06:00 and 06:10 Madrid and the deploy passes its smoke test; a failing check before 06:00 notifies the owner and nothing deploys at 06:00; the backup slots start nothing when the on-time run has started; CI green.
+- **Refs**: RF-1304, Q-63, DEC-207, DEC-175, ADR-024, ADR-025, ADR-028, P7-28; owner request of 2026-11-03.; GitHub issue #1160
+
 ### P8-21 - Stack layers follow the chosen language and runtime
 
 - **Difficulty**: 8 (sonnet)
@@ -7627,12 +7667,12 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
-- **Depends on**: none
+- **Depends on**: P8-19
 - **Gate**: none
 - **Status**: Todo
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-03, UX-04 (EV-92 beyond the parallelism of P8-19): a new project takes Ollama for all four roles although the server shows "Ollama could not be reached. Type the model id."; switching a role to Anthropic leaves its model at "Choose a model", so four providers and four models are set one by one; the settings page has no "every role to ..." control (the start page only offers "Switch every role to Ollama"). Max output token fields read "Not set" while their slider shows a position, and large numbers have no separators (2000000).
 - **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `src/application/projects/default-settings.ts`, `src/application/use-cases/update-project-settings.ts`, `web/src/pages/ProjectSettingsForm.tsx`, `web/src/pages/ModelSettings.tsx`, `web/src/pages/ModelChoice.tsx`, `web/src/pages/provider-choices.ts`, `web/src/pages/model-lists.ts`, `web/src/pages/LimitSetting.tsx`, `web/src/pages/LimitSettings.tsx`, `web/src/pages/use-switch-to-ollama.ts`, `web/src/pages/project-settings-form.ts`, RF-436, RF-1104.
-- **Do**: start only after card P8-19 is built and merged (its card is in an open documentation pull request, so it cannot be named under Depends on yet); it changes the same use case and settings form; add the Givens to RF-436 first; red tests first.
+- **Do**: card P8-19 changes the same use case and settings form, so it goes first; add the Givens to RF-436 first; red tests first.
   - Settings page, top of the roles section: "Use for every role: [provider] [model] Apply", listing only providers the user can use (a key or a server key, or a reachable Ollama); Apply fills the four roles and leaves Save to the user.
   - Choosing a provider for a role selects that provider's recommended model for the role (the admin model list order, `agent-models.v1.yaml`), never an empty "Choose a model".
   - New projects keep taking their roles from the administrator's `defaultRoles` (DEC-106). When a default role names a provider the user cannot use now (an unreachable Ollama, a provider with no key), the settings page and the start page say so at the top, name the role, and offer the every-role control; no default is changed silently.

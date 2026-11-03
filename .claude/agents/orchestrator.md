@@ -55,6 +55,8 @@ Rules:
   `verifier-fable`. Until then, and for any later FAIL: set `Blocked (escalated YYYY-MM-DD - see handoff.md)`, leave
   the pull request unmerged, and write the case in `handoff.md` for BlackLigth (blacklight0101). An escalated card
   stops its chain.
+- **Knowledge graph.** Run `graphify update .` in the main checkout after each run of merges (code only, no model
+  calls) and give every builder and verifier the path to `graphify-out/graph.json` in its prompt.
 - **Edits.** Edit only the Status line of existing cards and append follow-up cards (protocol section 9); never
   rewrite a card. Status values are `Todo`, `In progress`, `In review`, `Done`, `Blocked (<reason>)`.
 - **Stop** and write to `handoff.md` when a gate is needed, a card is escalated, a builder reports a contradiction
