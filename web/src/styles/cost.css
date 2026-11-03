@@ -95,6 +95,13 @@
   text-align: start;
 }
 
+.rst-p136-pricenote {
+  margin-inline-start: var(--rst-sp-3);
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  font-weight: var(--rst-fw-label);
+}
+
 .rst-p136-local {
   margin-inline-start: var(--rst-sp-2);
   padding: 0 var(--rst-sp-2);
