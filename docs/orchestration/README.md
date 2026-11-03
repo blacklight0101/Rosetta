@@ -130,20 +130,22 @@ when **all** of these hold, and checks each one again right before the merge:
 
 1. CI is green on every required check (Windows and Linux; image and Compose jobs once they exist).
 2. The verifier's verdict is PASS with no BLOCKING or MAJOR finding, and it is posted on the pull request.
-3. The branch is up to date with `develop`. When `develop` moved, the orchestrator rebases the branch onto `develop`
-   (`git rebase origin/develop` in the card's worktree), pushes with `--force-with-lease` to the **task branch only**,
-   waits for CI again, and asks the same verifier to confirm the verdict when the rebase touched files of the card.
-4. The pull request does not change `CLAUDE.md`. A pull request that does gets the label `needs-owner`, the card is
-   set `Blocked (needs-owner - see #<pr>)`, and only the owner merges it. A task-card pull request that changes
-   `docs/spec/`, `docs/adr/`, `docs/decision-log.md` or `docs/rfc/` is merged under rules 1-3 like any other card
-   (DEC-199). Documentation pull requests outside a card (`docs/<topic>`) are `needs-owner`, except a
-   `docs/build-status` pull request that changes only Status lines, follow-up cards and the totals of `tasks.md` and
-   lines of `handoff.md`; it needs no verifier and is merged once CI is green.
+3. The branch merges into `develop` without a conflict, and its CI ran after the last change to the branch. Until
+   P8-34 is `Done`, the branch must also be up to date with `develop` (DEC-213). To catch up, the orchestrator
+   merges `develop` into the task branch (`git merge origin/develop` in the card's worktree; no rebase, no
+   force-push), pushes, waits for CI again, and asks the same verifier to confirm the verdict when the merge
+   touched files of the card. The CI run on `develop` after each merge must go green; a red `develop` stops every
+   merge until it is fixed.
+4. A task-card pull request that changes `CLAUDE.md`, `docs/spec/`, `docs/adr/`, `docs/decision-log.md` or
+   `docs/rfc/` is merged under rules 1-3 like any other card (DEC-199, DEC-212). Documentation pull requests
+   outside a card (`docs/<topic>`, `docs/build-status`), including ones that change `CLAUDE.md`, need no verifier
+   and are merged under rules 1, 3 and 5 (DEC-212). Releases into `main` stay the owner's.
 5. The merge is `gh pr merge <pr> --squash --delete-branch` with the pull request title as the squash title, and the
    command's exit code is 0. Never an admin override, never a bypass of the `develop` ruleset, never a push to `develop` or `main`.
 
 After each merge the orchestrator fast-forwards its local `develop` (`git pull --ff-only`) and confirms the card's
-issue is closed. Releases, tags and gates stay with the owner.
+issue is closed. Then it merges `develop` into every other open card branch at once (DEC-213) and sends a
+conflict to that card's builder (SendMessage) while it still has its context. Releases, tags and gates stay with the owner.
 
 **P1-01 exception.** CI does not exist until P1-01 delivers it, so rule 1 cannot hold for that card: the orchestrator
 merges P1-01 when the verifier's PASS includes `npm ci`, `npm run verify` and the CI workflow's steps run locally on
@@ -254,8 +256,10 @@ same ids and names as `handoff.md` (DEC-99). The orchestrator never opens a gate
 - Phases run in order (P1, P2, P3), but cards inside a phase run in parallel whenever their dependencies allow. A
   card of a later phase may start early only when every card it depends on is `Done` and the owner said so in
   `handoff.md`.
-- Two cards run at the same time only when their _Delivers_ paths are disjoint and they share no serialized resource
-  (section 1). Migration numbers are fixed per card in `docs/data-model.md` section 7 and tasks.md; the orchestrator
+- Two cards run at the same time only when the files they will edit are disjoint, judged from their _Reads_, _Do_
+  and _Delivers_, and they share no serialized resource (section 1). On the Phase 8 build two cards that both
+  edited `LiveRunView.tsx` without listing it conflicted. After each builder's first push, compare
+  `git diff --name-only origin/develop...` of the open branches and serialize any overlap (DEC-213). Migration numbers are fixed per card in `docs/data-model.md` section 7 and tasks.md; the orchestrator
   never reassigns them.
 - Keep at most four builders in flight at the same time (DEC-181), plus one API-billed verifier (DEC-128); agents already running finish and none is paused. One card has one verifier at a time.
 - When the owner asks to pause (usage limits), stop the running agents; their worktrees keep the work. On resume,
