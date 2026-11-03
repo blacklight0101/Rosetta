@@ -276,7 +276,7 @@ export function YourTurn(props: YourTurnProps): JSX.Element {
           writeOverview={writeOverviewOf(props, facts)}
         />
       ) : null}
-      <RunFacts facts={facts} costMicros={props.costMicros} deepen={state.deepen !== undefined} />
+      <RunFacts facts={facts} costMicros={props.costMicros} state={state} />
     </section>
   );
 }

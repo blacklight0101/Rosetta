@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import type { EndFacts } from '../lib/live-run/end-facts.js';
+import type { RunState } from '../lib/live-run/run-state.js';
 
 // RF-1015, RF-1017 (P8-27): the five figures of an ended understand run, each shown once and from the
 // one count of `endFactsOf`: Supported claims of those judged, Cards, Areas read, Cost and Tokens.
@@ -20,11 +21,18 @@ export function Fact(props: {
   );
 }
 
+/** The artboard says "2 partly read"; a run that read every area says "all read". */
+function areasDetail(unread: number, facts: EndFacts): string {
+  if (unread > 0) return `${String(unread)} partly read`;
+  return facts.areasRead === facts.areas ? 'all read' : `${String(facts.areasRead)} read`;
+}
+
 // RF-1015
 export function RunFacts(props: {
   readonly facts: EndFacts;
   readonly costMicros: number;
-  readonly deepen: boolean;
+  /** The run's state: a Deepen marks its cards, and the areas no reader started read "partly read". */
+  readonly state: RunState;
 }): JSX.Element {
   const { facts } = props;
   return (
@@ -37,9 +45,13 @@ export function RunFacts(props: {
       <Fact
         label="Cards"
         value={String(facts.cards)}
-        {...(props.deepen ? { detail: 'written by this Deepen' } : {})}
+        {...(props.state.deepen !== undefined ? { detail: 'written by this Deepen' } : {})}
       />
-      <Fact label="Areas read" value={`${String(facts.areasRead)} / ${String(facts.areas)}`} />
+      <Fact
+        label="Areas"
+        value={String(facts.areas)}
+        detail={areasDetail(props.state.ended?.unreadAreas ?? 0, facts)}
+      />
       <Fact label="Cost" value={costLabel(props.costMicros)} />
       <Fact label="Tokens" value={tokensLabel(facts.tokens)} />
     </ul>

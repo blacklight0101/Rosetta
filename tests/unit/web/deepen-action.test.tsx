@@ -41,7 +41,7 @@ const posts = (page: Pick<RenderedPage, 'calls'>, suffix: string) =>
 /** Waits until the page has folded the events of the run: its facts then show the areas read. */
 async function eventsApplied(): Promise<void> {
   await waitFor(() => {
-    expect(turn().textContent).toContain('1 / 1');
+    expect(turn().textContent).toContain('all read');
   });
 }
 

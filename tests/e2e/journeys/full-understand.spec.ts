@@ -17,6 +17,7 @@ import {
   valueOf,
 } from '../support/live-run-page.js';
 import { accountFor } from '../support/seed.js';
+import { expectDeepenRunPage } from '../support/run-page-figures.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
 import { inEveryView } from '../support/views.js';
@@ -233,8 +234,8 @@ test('RF-209 RF-231 a confirmed Deepen runs its rounds on the page and shows wha
   // The stop is the last of the Deepen events; the status of the page can lag the new run at first.
   await expect(progress.getByTestId('deepen-progress-stop')).toBeVisible({ timeout: 120_000 });
   await expect(runStatus(page)).toContainText('Completed', { timeout: 30_000 });
-  const changes = page.getByRole('table', { name: 'Before and after this Deepen' });
-  await expect(changes.getByTestId('change-coverage')).toBeVisible();
+  await expectDeepenRunPage(page);
+  await expect(page.getByTestId('change-coverage')).toBeVisible();
   // P3-62: the round lines read in plain words, the log counts from the start and names no micro-dollars.
   await expect(progress).not.toContainText(/(?<!\d)(?:0 unread files|1 files read|1 new claims)/u);
   await openRunTab(page, 'Activity');

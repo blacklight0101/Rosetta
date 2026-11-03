@@ -56,7 +56,7 @@ it('RF-1015 the Your turn panel shows the run facts', async () => {
   });
   expect(text('Cards')).toContain('1');
   expect(text('Supported claims')).toContain('of 0 judged');
-  expect(text('Areas read')).toContain('1 / 1');
+  expect(text('Areas')).toContain('all read');
 });
 
 it('RF-008 RF-504 the report and the downloads stay one click away on the ended page', async () => {
