@@ -30,6 +30,10 @@ async function buildReport(context: BrowserContext, project: string): Promise<vo
   expect(built.status()).toBe(200);
 }
 
+// P8-16: every test builds the report of the one pre-seeded `replay` run; built in parallel the
+// builds overwrite each other's files (RST-2006, or a half-written page). One after another they do not.
+test.describe.configure({ mode: 'serial' });
+
 test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('replay', info.project.name));
   await buildReport(context, info.project.name);

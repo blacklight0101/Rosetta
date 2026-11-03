@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Run page - Understand done</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#F4F6F6;color:#13201F;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans","Helvetica Neue",sans-serif;font-size:14px;line-height:1.45;font-variant-numeric:tabular-nums}
+a{color:#0E6B6B}a:hover{color:#0A5555}
+:focus-visible{outline:2px solid #1B5799;outline-offset:2px}
+.mono{font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;font-size:.92em}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid #D8DFDE;border-radius:6px;background:#FFFFFF;min-width:0}
+.opt--on{border-color:#0E6B6B;background:#DDEFEE;box-shadow:0 0 0 1px #0E6B6B}
+.opt input{margin:3px 0 0;accent-color:#0E6B6B}
+</style>
+</helmet>
+<div style="min-height:100%;display:flex;flex-direction:column">
+  <header style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:10px 24px;background:#FFFFFF;border-bottom:1px solid #D8DFDE">
+    <strong style="font-size:18px;font-weight:700;letter-spacing:-0.02em">Rosetta</strong>
+    <span style="flex-grow:1"></span>
+    <span style="display:inline-flex;gap:8px;align-items:center;padding:4px 12px;border:1px solid #D8DFDE;border-radius:999px;font-size:13px"><span style="color:#56645F">Your total</span><strong>$3.03</strong><span style="color:#56645F">21.3M tokens</span></span>
+    <span style="font-size:13px;color:#364644">P8 Eval Haiku</span>
+    <a href="#" style="font-size:13px">Sign out</a>
+  </header>
+  <div style="display:flex;flex-wrap:wrap;flex-grow:1">
+    <nav aria-label="Main" style="flex:1 1 200px;max-width:240px;padding:20px 16px;border-right:1px solid #D8DFDE;background:#FFFFFF;display:flex;flex-direction:column;gap:4px;font-size:13px">
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Projects</a>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Settings and keys</a>
+      <div style="margin-top:12px;padding:0 8px;font-size:12px;color:#56645F;font-weight:500">Project: P9 UI run Asset Manager</div>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Project</a>
+      <a href="#" aria-current="page" style="padding:6px 8px;text-decoration:none;color:#0E6B6B;background:#DDEFEE;border-radius:4px;font-weight:500">Understand run</a>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Plan setup</a>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">History</a>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Cost</a>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Project settings</a>
+    </nav>
+    <main style="flex:999 1 560px;min-width:0;padding:24px 32px 48px;display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+          <h1 style="margin:0;font-size:24px;font-weight:650;line-height:1.2">Understand, done</h1>
+          <span style="display:inline-flex;gap:6px;align-items:center;padding:2px 10px;border-radius:999px;background:#FBEBD2;color:#7A4A00;font-size:13px;font-weight:500"><span aria-hidden="true">!</span>Partly read: 16% of your code</span>
+        </div>
+        <p style="margin:0;color:#56645F;font-size:13px"><span class="mono">20261103-090851-understand</span> &#183; 2 min &#183; Anthropic Haiku 5.5 for every role</p>
+      </div>
+
+      <ol aria-label="Journey from code to package" style="margin:0;padding:6px;list-style:none;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:10px;font-size:12px">
+        <li style="padding:4px 8px;color:#1C6E37;font-weight:500">&#10003; Scan</li>
+        <li style="padding:4px 8px;color:#1C6E37;font-weight:500">&#10003; Understand</li>
+        <li aria-current="step" style="padding:4px 8px;border-radius:6px;background:#DDEFEE;color:#0E6B6B;font-weight:650">&#9679; Your turn</li>
+        <li style="padding:4px 8px;color:#56645F">Brief</li>
+        <li style="padding:4px 8px;color:#56645F">Estimate</li>
+        <li style="padding:4px 8px;color:#56645F">Plan</li>
+        <li style="padding:4px 8px;color:#56645F">Package</li>
+      </ol>
+
+      <section aria-labelledby="turn-h" style="display:flex;flex-direction:column;gap:14px;padding:24px;background:#FFFFFF;border:1px solid #0E6B6B;border-radius:10px;box-shadow:0 0 0 1px #0E6B6B">
+        <h2 id="turn-h" style="margin:0;font-size:20px;font-weight:650">Your turn: read the rest of the code</h2>
+        <p style="margin:0;color:#364644">The readers covered 8,702 of 52,749 tokens of your own code. A Deepen reads the 21 files never read and re-checks the 23 rejected claims. Answers you give before it are used by it.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center">
+          <button type="button" style="height:36px;padding:0 18px;border:1px solid #0E6B6B;border-radius:6px;background:#0E6B6B;color:#FFFFFF;font:inherit;font-weight:500;cursor:pointer">Deepen this run</button>
+          <span style="font-size:13px;color:#364644">Likely $0.0362 &#183; $3.96 left of $4.00 approved</span>
+        </div>
+        <p style="margin:0;font-size:13px;color:#56645F"><a href="#q-h">Answer the 3 questions first</a> &#183; <a href="#">Skip the Deepen and set up the plan</a></p>
+      </section>
+
+      <dl style="margin:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px">
+        <div style="padding:14px;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:6px"><dt style="font-size:12px;color:#56645F">Supported claims</dt><dd style="margin:4px 0 0;font-size:20px;font-weight:650">49 <span style="font-size:13px;font-weight:400;color:#56645F">of 72 judged</span></dd></div>
+        <div style="padding:14px;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:6px"><dt style="font-size:12px;color:#56645F">Cards</dt><dd style="margin:4px 0 0;font-size:20px;font-weight:650">14</dd></div>
+        <div style="padding:14px;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:6px"><dt style="font-size:12px;color:#56645F">Areas</dt><dd style="margin:4px 0 0;font-size:20px;font-weight:650">2 <span style="font-size:13px;font-weight:400;color:#7A4A00">partly read</span></dd></div>
+        <div style="padding:14px;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:6px"><dt style="font-size:12px;color:#56645F">Cost</dt><dd style="margin:4px 0 0;font-size:20px;font-weight:650">$0.0371</dd></div>
+        <div style="padding:14px;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:6px"><dt style="font-size:12px;color:#56645F">Tokens</dt><dd style="margin:4px 0 0;font-size:20px;font-weight:650">366,378</dd></div>
+      </dl>
+
+      <section aria-labelledby="q-h" style="display:flex;flex-direction:column;gap:14px;padding:20px 24px;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:10px">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:baseline">
+          <h2 id="q-h" style="margin:0;font-size:16px;font-weight:650">Questions from the understand</h2>
+          <span style="font-size:13px;color:#56645F">2 open &#183; 1 answered</span>
+        </div>
+        <fieldset style="margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:8px">
+          <legend style="padding:0 0 4px;font-weight:500"><span class="mono" style="color:#56645F">OQ-002</span> Is a snapshot on Report intended, or should the report be live?</legend>
+          <p style="margin:0 0 4px;font-size:13px;color:#56645F">Why the code cannot say: <span class="mono">Module1.bas:22-28</span> the macros clear Report and paste Inventory values into it.</p>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
+            <label class="opt opt--on"><input type="radio" name="oq2" checked="checked"><span><strong>A snapshot is intended, rerun on demand</strong><span style="font-weight:400;color:#0E6B6B"> (Recommended)</span><span style="display:block;font-size:13px;color:#364644">Users run a report when they need current figures.</span></span></label>
+            <label class="opt"><input type="radio" name="oq2"><span><strong>The report should always show live stock</strong><span style="display:block;font-size:13px;color:#364644">Compute the report from the stock data on each view.</span></span></label>
+            <label class="opt"><input type="radio" name="oq2"><span><strong>The copy is a workaround for an old layout</strong><span style="display:block;font-size:13px;color:#364644">Replace the copy with a query and confirm the layout.</span></span></label>
+            <label class="opt"><input type="radio" name="oq2"><span><strong>Type your own</strong><span style="display:block;font-size:13px;color:#364644">Another answer.</span></span></label>
+          </div>
+        </fieldset>
+        <fieldset style="margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:8px">
+          <legend style="padding:0 0 4px;font-weight:500"><span class="mono" style="color:#56645F">OQ-003</span> Was the Damaged filter on column 7 and the Txt_QtyUsable check removed on purpose?</legend>
+          <p style="margin:0 0 4px;font-size:13px;color:#56645F">Why the code cannot say: <span class="mono">Module1.bas:48-49</span> the Damaged macro filters column 9, with the column 7 filter commented out.</p>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
+            <label class="opt opt--on"><input type="radio" name="oq3" checked="checked"><span><strong>The changes were mistakes</strong><span style="font-weight:400;color:#0E6B6B"> (Recommended)</span><span style="display:block;font-size:13px;color:#364644">Apply the same filter pattern as the other reports.</span></span></label>
+            <label class="opt"><input type="radio" name="oq3"><span><strong>The Damaged filter was disabled deliberately</strong><span style="display:block;font-size:13px;color:#364644">Keep the current Damaged report without the column 7 filter.</span></span></label>
+            <label class="opt"><input type="radio" name="oq3"><span><strong>The usable check was left from an earlier form</strong><span style="display:block;font-size:13px;color:#364644">Confirm the usable check with the owner before copying it.</span></span></label>
+            <label class="opt"><input type="radio" name="oq3"><span><strong>Type your own</strong><span style="display:block;font-size:13px;color:#364644">Another answer.</span></span></label>
+          </div>
+        </fieldset>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding-top:6px;border-top:1px solid #D8DFDE">
+          <button type="button" style="height:32px;padding:0 16px;border:1px solid #0E6B6B;border-radius:6px;background:#0E6B6B;color:#FFFFFF;font:inherit;font-weight:500;cursor:pointer">Save answers (2)</button>
+          <button type="button" style="height:32px;padding:0 14px;border:1px solid #7A8987;border-radius:6px;background:#FFFFFF;color:#13201F;font:inherit;cursor:pointer">Accept the recommended answers</button>
+        </div>
+        <details>
+          <summary style="cursor:pointer;color:#364644">Answered (1)</summary>
+          <p style="margin:8px 0 0;font-size:13px;color:#364644"><span class="mono">OQ-001</span> Why are the named ranges AssetCategory, StoredBy, StoreRoom and Product_ID kept when no formula uses them? <strong>Your answer saved</strong> &#183; <a href="#">Change</a></p>
+        </details>
+      </section>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1280}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
