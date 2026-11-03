@@ -7,10 +7,9 @@ import { nextOf, type JourneyAction, type JourneyLink } from './journey-action.j
 import {
   deepenFirst,
   deepenRunning,
-  endText,
   lockReason,
   phaseOf,
-  workingText,
+  unfinishedStep,
   type Context,
   type JourneyExtras,
   type StepKey,
@@ -31,7 +30,9 @@ export type StepState =
   /** RF-1020: the questions were left on their defaults when the brief was saved. */
   | 'skipped'
   /** RF-627: the package was written but some items are built by no task card. */
-  | 'gaps';
+  | 'gaps'
+  /** P8-87, RF-006: the user pressed Stop; the run can be resumed, so it is not a failure. */
+  | 'stopped';
 
 /** A file or a download a step offers besides its page. */
 export interface StepLink {
@@ -89,12 +90,7 @@ const locked = (detail: string): Part => ({ state: 'locked', detail });
 function ofRun(run: JourneyRunFacts, completed: Part): Part {
   const phase = phaseOf(run);
   if (phase === 'completed') return completed;
-  if (phase === 'working' && run.queueState === 'AwaitingApproval') {
-    return { state: 'awaiting', detail: workingText(run), href: runPage(run) };
-  }
-  if (phase === 'working')
-    return { state: 'upcoming', detail: workingText(run), href: runPage(run) };
-  return { state: 'failed', detail: endText(run), href: runPage(run) };
+  return { ...unfinishedStep(run), href: runPage(run) };
 }
 
 function scanPart({ source, facts }: Context): Part {

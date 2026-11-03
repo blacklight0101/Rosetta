@@ -142,7 +142,7 @@ it('RF-208 a stopped run shows no failed-areas notice, because stopped tasks are
   connection.event(runEnded(3, 'Interrupted'));
 
   await waitFor(() => {
-    expect(screen.getByTestId('run-status').textContent).toContain('Interrupted');
+    expect(screen.getByTestId('run-status').textContent).toContain('Stopped by you');
   });
   expect(screen.queryByTestId('failed-areas')).toBeNull();
 });

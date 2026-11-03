@@ -59,7 +59,22 @@ export function endText(
   // P7-02: a capped run that left areas unread reads "Partly read".
   if (run.endState === 'CapReached' && (run.unreadAreas ?? 0) > 0) return `Partly read${code}`;
   if (run.endState === 'CapReached') return `Stopped at its cap${code}`;
-  return run.endState === 'Failed' ? `Failed${code}` : `Interrupted${code}`;
+  return `Failed${code}`;
+}
+
+/**
+ * The state and detail of a run that has not completed: working, waiting for approval, stopped by
+ * the user (P8-87: "Stopped by you" is the state word, the detail keeps only its code) or failed.
+ */
+export function unfinishedStep(
+  run: Pick<JourneyRunFacts, 'queueState' | 'position' | 'endState' | 'errorCode' | 'unreadAreas'>,
+): { readonly state: 'awaiting' | 'upcoming' | 'stopped' | 'failed'; readonly detail: string } {
+  if (phaseOf(run) === 'working') {
+    const state = run.queueState === 'AwaitingApproval' ? 'awaiting' : 'upcoming';
+    return { state, detail: workingText(run) };
+  }
+  if (run.endState === 'Interrupted') return { state: 'stopped', detail: run.errorCode ?? '' };
+  return { state: 'failed', detail: endText(run) };
 }
 
 /**
