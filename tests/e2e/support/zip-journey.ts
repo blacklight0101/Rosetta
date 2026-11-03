@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { buildZip, type ZipItem } from '../../support/zip-fixtures.js';
 import { expect } from './fixtures.js';
+import { openReplaceSource, showStartChoices } from './start-choices.js';
 import { chooseAreas, runScan } from './journey-pages.js';
 import { runStatus, startAndOpenLiveRun } from './live-run-page.js';
 import { chooseModel } from './choose-model.js';
@@ -41,6 +42,8 @@ export const secondVersion: ZipItem = {
 
 /** Chooses a zip in the form on the page and presses Upload zip; waits for what was kept. */
 export async function uploadZip(page: Page, fileName: string, buffer: Buffer): Promise<void> {
+  // P8-26: a project with a run keeps the upload under "Replace the source".
+  await openReplaceSource(page);
   await page
     .getByLabel('Zip file')
     .setInputFiles({ name: fileName, mimeType: 'application/zip', buffer });
@@ -72,7 +75,8 @@ export async function uploadFromNewProject(
 export async function openUploadedStart(page: Page, projectName: string): Promise<void> {
   await page.goto('/projects');
   await page.getByRole('link', { name: `Start run for ${projectName}` }).click();
-  await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await showStartChoices(page);
 }
 
 /** From the start page: a scan, then an understand run of the Catalog area; returns the run's path. */
@@ -136,4 +140,5 @@ export async function giveReaderToOpenAi(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
+  await showStartChoices(page);
 }

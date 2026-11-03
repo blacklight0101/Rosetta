@@ -33,6 +33,8 @@ export interface StartGate {
   readonly label: string;
   /** Why Start cannot be pressed; undefined when it can. */
   readonly reason: string | undefined;
+  /** P8-26: the id of the notice checkbox the reason points to; the bar offers to go to it. */
+  readonly notice?: string | undefined;
 }
 
 function understandReason(input: StartGateInput): string | undefined {
@@ -74,13 +76,15 @@ export function startGate(input: StartGateInput): StartGate {
   if (input.consentNeeded !== '' && !input.consentGiven) {
     return {
       label: `Analyse (confirm the ${input.consentNeeded} notice)`,
-      reason: `Confirm the ${input.consentNeeded} notice above to start the run`,
+      reason: `Confirm the ${input.consentNeeded} notice just above this bar to start the run`,
+      notice: 'cloud-consent',
     };
   }
   if (input.privateNeeded === true && input.privateGiven !== true) {
     return {
       label: 'Analyse (confirm the private code notice)',
-      reason: 'Confirm the private code notice above to start the run',
+      reason: 'Confirm the private code notice just above this bar to start the run',
+      notice: 'private-code-confirm',
     };
   }
   return approvalGate(input.approval);
