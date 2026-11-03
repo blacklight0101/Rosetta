@@ -19,6 +19,7 @@ describe('the stack files of the shipped catalogue', () => {
     expect(shipped.stack.rules.map((rule) => rule.id)).toEqual([
       'server-rendered-front-end-with-api-back-end',
       'api-back-end-without-contract',
+      'technology-of-another-platform',
     ]);
     expect(shipped.stack.technologies.length).toBeGreaterThan(10);
   });

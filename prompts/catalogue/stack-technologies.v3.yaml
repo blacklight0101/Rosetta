@@ -9,6 +9,7 @@ technologies:
       - dotnet
     traits: []
     description: A typed language and runtime with a large standard library; the usual target for ASP.NET Core.
+    platform: '.NET'
   - layer: language-runtime
     name: Java
     aliases:
@@ -16,6 +17,7 @@ technologies:
       - jvm
     traits: []
     description: A typed language on the JVM with a mature ecosystem for long-lived services.
+    platform: Java
   - layer: language-runtime
     name: TypeScript on Node.js
     aliases:
@@ -24,12 +26,14 @@ technologies:
       - node
     traits: []
     description: One typed language for server and browser code, run on Node.js.
+    platform: 'Node.js'
   - layer: language-runtime
     name: Python
     aliases:
       - python
     traits: []
     description: A dynamic language with a wide library set, strong for data and scripting work.
+    platform: Python
   - layer: backend-framework
     name: ASP.NET Core Minimal APIs
     aliases:
@@ -38,6 +42,7 @@ technologies:
     traits:
       - api-only
     description: Small HTTP endpoints without controllers; serves data, not pages.
+    platform: '.NET'
   - layer: backend-framework
     name: ASP.NET Core Web API
     aliases:
@@ -46,6 +51,7 @@ technologies:
     traits:
       - api-only
     description: Controller-based HTTP APIs with model binding and validation; serves data, not pages.
+    platform: '.NET'
   - layer: backend-framework
     name: FastAPI
     aliases:
@@ -53,6 +59,7 @@ technologies:
     traits:
       - api-only
     description: A Python framework for typed HTTP APIs with generated OpenAPI documents.
+    platform: Python
   - layer: backend-framework
     name: ASP.NET Core MVC
     aliases:
@@ -60,6 +67,7 @@ technologies:
       - aspnet core mvc
     traits: []
     description: Controllers and views in one application; serves pages and, when needed, data.
+    platform: '.NET'
   - layer: front-end
     name: Razor Pages
     aliases:
@@ -68,6 +76,7 @@ technologies:
     traits:
       - server-rendered
     description: Page-based views rendered on the server; no separate API is needed.
+    platform: '.NET'
   - layer: front-end
     name: Blazor Server
     aliases:
@@ -75,6 +84,7 @@ technologies:
     traits:
       - server-rendered
     description: Components rendered on the server and updated over a live connection.
+    platform: '.NET'
   - layer: front-end
     name: React
     aliases:
@@ -117,54 +127,63 @@ technologies:
       - efcore
     traits: []
     description: An object-relational mapper with migrations and change tracking.
+    platform: '.NET'
   - layer: data-access
     name: Dapper
     aliases:
       - dapper
     traits: []
     description: A thin mapper over plain SQL; full control of each query.
+    platform: '.NET'
   - layer: data-access
     name: ADO.NET
     aliases:
       - ado.net
     traits: []
     description: The low-level .NET database API; most code, no hidden behaviour.
+    platform: '.NET'
   - layer: data-access
     name: Prisma
     aliases:
       - prisma
     traits: []
     description: A typed database client for Node.js with schema migrations.
+    platform: 'Node.js'
   - layer: data-access
     name: Knex.js
     aliases:
       - knex
     traits: []
     description: A SQL query builder for Node.js; plain queries with little hidden behaviour.
+    platform: 'Node.js'
   - layer: testing
     name: xUnit
     aliases:
       - xunit
     traits: []
     description: A .NET test framework with constructor-per-test isolation.
+    platform: '.NET'
   - layer: testing
     name: NUnit
     aliases:
       - nunit
     traits: []
     description: A .NET test framework with attribute-driven, data-driven tests.
+    platform: '.NET'
   - layer: testing
     name: Vitest
     aliases:
       - vitest
     traits: []
     description: A fast test runner for TypeScript projects.
+    platform: 'Node.js'
   - layer: testing
     name: pytest
     aliases:
       - pytest
     traits: []
     description: A Python test runner with fixtures and plain assertions.
+    platform: Python
   - layer: hosting
     name: IIS
     aliases:
@@ -192,12 +211,14 @@ technologies:
       - fastify
     traits: []
     description: A Node.js web framework for HTTP services; serves pages or an API.
+    platform: 'Node.js'
   - layer: backend-framework
     name: ASP.NET Core Razor Pages
     aliases:
       - asp.net core razor pages
     traits: []
     description: Page-based ASP.NET Core application; serves pages and, when needed, data.
+    platform: '.NET'
   - layer: front-end
     name: Windows Forms on .NET
     aliases:
@@ -205,12 +226,14 @@ technologies:
       - winforms
     traits: []
     description: A desktop forms toolkit that runs on current .NET; the closest match to a legacy WinForms client.
+    platform: '.NET'
   - layer: front-end
     name: WPF
     aliases:
       - wpf
     traits: []
     description: A desktop toolkit with XAML views and data binding on current .NET.
+    platform: '.NET'
   - layer: hosting
     name: MSIX installer
     aliases:
@@ -218,3 +241,73 @@ technologies:
       - installer
     traits: []
     description: A signed Windows package that installs and updates a desktop client.
+  - layer: backend-framework
+    name: Spring Boot
+    aliases:
+      - spring boot
+      - spring
+    traits: []
+    description: The common JVM framework for web applications and APIs.
+    platform: Java
+  - layer: backend-framework
+    name: Django
+    aliases:
+      - django
+    traits: []
+    description: A full Python web framework with an admin site and an ORM; serves pages and, when needed, data.
+    platform: Python
+  - layer: front-end
+    name: Blazor
+    aliases:
+      - blazor
+    traits: []
+    description: Interactive components written in C#, run on the server or in the browser through WebAssembly.
+    platform: '.NET'
+  - layer: front-end
+    name: Thymeleaf
+    aliases:
+      - thymeleaf
+    traits:
+      - server-rendered
+    description: Server-rendered templates for Spring applications; no separate API is needed.
+    platform: Java
+  - layer: front-end
+    name: Django templates
+    aliases:
+      - django templates
+      - django template
+    traits:
+      - server-rendered
+    description: Server-rendered pages written as Django templates; no separate API is needed.
+    platform: Python
+  - layer: data-access
+    name: Spring Data JPA
+    aliases:
+      - spring data jpa
+      - spring data
+      - jpa
+    traits: []
+    description: Repositories over JPA and Hibernate for Spring applications.
+    platform: Java
+  - layer: data-access
+    name: MyBatis
+    aliases:
+      - mybatis
+    traits: []
+    description: SQL you write, mapped to Java objects; full control of each query.
+    platform: Java
+  - layer: data-access
+    name: SQLAlchemy
+    aliases:
+      - sqlalchemy
+    traits: []
+    description: The common Python ORM and SQL toolkit.
+    platform: Python
+  - layer: testing
+    name: JUnit 5
+    aliases:
+      - junit 5
+      - junit
+    traits: []
+    description: The standard JVM test framework.
+    platform: Java

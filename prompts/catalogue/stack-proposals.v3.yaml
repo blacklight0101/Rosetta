@@ -63,6 +63,16 @@ options:
     why: 'A typed Python framework for HTTP APIs, the nearest to the legacy language.'
   - kind: web
     layer: backend-framework
+    legacy: [java, jsp]
+    choice: 'Spring Boot'
+    why: 'The common JVM framework for web applications and APIs.'
+  - kind: web
+    layer: backend-framework
+    legacy: [python]
+    choice: 'Django'
+    why: 'A full Python web framework with an admin site and an ORM.'
+  - kind: web
+    layer: backend-framework
     legacy: [javascript]
     choice: 'Fastify'
     why: 'A Node.js framework, the nearest to a legacy JavaScript server.'
@@ -76,6 +86,31 @@ options:
     legacy: [csharp, vb, aspnet, razor]
     choice: 'Razor Pages'
     why: 'Server-rendered pages keep the page-per-screen shape of the legacy application.'
+  - kind: web
+    layer: front-end
+    legacy: [csharp, vb, aspnet, razor]
+    choice: 'Blazor'
+    why: 'Interactive components in C#, server or WebAssembly, for a screen that reacts without a page reload.'
+  - kind: web
+    layer: front-end
+    legacy: [java, jsp]
+    choice: 'Thymeleaf'
+    why: 'Server-rendered templates for Spring keep the page-per-screen shape.'
+  - kind: web
+    layer: front-end
+    legacy: [java, jsp]
+    choice: 'React'
+    why: 'A browser component library over an API served by the JVM back end.'
+  - kind: web
+    layer: front-end
+    legacy: [python]
+    choice: 'React'
+    why: 'A browser component library over a Python API.'
+  - kind: web
+    layer: front-end
+    legacy: [python]
+    choice: 'Django templates'
+    why: 'Server-rendered pages with Django, no separate API.'
   - kind: web
     layer: front-end
     legacy: [javascript]
@@ -108,6 +143,21 @@ options:
     why: 'Maps tables to classes and tracks changes, so new code needs less SQL.'
   - kind: web
     layer: data-access
+    legacy: [java, jsp]
+    choice: 'Spring Data JPA'
+    why: 'Repositories over JPA and Hibernate; little SQL to write.'
+  - kind: web
+    layer: data-access
+    legacy: [java, jsp]
+    choice: 'MyBatis'
+    why: 'SQL you write, mapped to objects; each legacy query stays visible.'
+  - kind: web
+    layer: data-access
+    legacy: [python]
+    choice: 'SQLAlchemy'
+    why: 'The common Python ORM and SQL toolkit.'
+  - kind: web
+    layer: data-access
     legacy: [javascript]
     choice: 'Prisma'
     why: 'A typed client for Node.js over SQL tables, with migrations.'
@@ -131,6 +181,11 @@ options:
     legacy: [python]
     choice: 'pytest'
     why: 'The usual test runner of Python.'
+  - kind: web
+    layer: testing
+    legacy: [java, jsp]
+    choice: 'JUnit 5'
+    why: 'The standard JVM test framework.'
   - kind: web
     layer: testing
     legacy: [javascript]
@@ -294,15 +349,20 @@ legacy:
 # vague: words a typed stack answer can consist of without naming a technology (P7-30, RF-609). A
 # platform (`languages` not empty) is offered the options of the layer whose `legacy` languages meet it;
 # a word of the empty-`languages` group ("default", "any") takes the options of the legacy languages the
-# scan found. A word that is an alias of a technology of the layer (".net" for the language) is specific.
+# scan found. A group with a `label` names a platform (DEC-208): a technology whose `platform` is that label belongs to it.
+# A word that is an alias of a technology of the layer (".net" for the language) is specific.
 vague:
-  - words: ['.net', 'dotnet', '.net core', 'asp.net', 'asp.net core']
+  - label: '.NET'
+    words: ['.net', 'dotnet', '.net core', 'asp.net', 'asp.net core']
     languages: [csharp, vb, aspnet, razor]
-  - words: ['java', 'jvm']
+  - label: 'Java'
+    words: ['java', 'jvm']
     languages: [java, jsp]
-  - words: ['python']
+  - label: 'Python'
+    words: ['python']
     languages: [python]
-  - words: ['node', 'nodejs', 'node.js', 'javascript']
+  - label: 'Node.js'
+    words: ['node', 'nodejs', 'node.js', 'javascript']
     languages: [javascript]
   - words: ['default', 'defaults', 'any', 'anything', 'whatever', 'standard', 'tbd', 'none', 'n/a']
     languages: []

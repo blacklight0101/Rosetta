@@ -40,7 +40,7 @@ describe('options with markup in their text', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Architecture' }));
     expect((await screen.findAllByText(hostile)).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: 'Stack' }));
-    expect((await screen.findAllByText(hostile)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(`${hostile} (Recommended)`)).length).toBeGreaterThan(0);
 
     expect(container.querySelector('img')).toBeNull();
     expect('pwned' in window).toBe(false);

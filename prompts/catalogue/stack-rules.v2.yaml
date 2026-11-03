@@ -29,3 +29,11 @@ rules:
     clash: The back end {backend-framework} only serves an API, yet the package has no API contract, so no operation is described for it.
     question: Which operations does the API of the back end serve, so that the package can hold a contract for them?
     answer: Keep the legacy behaviour exactly as the source cards describe it. The choices stay recorded as the owner made them until the owner answers.
+  # DEC-208: a layer answered with a technology of another platform than the language and runtime. The
+  # rule gives one clash for each such layer; the default is the platform's recommended technology.
+  - id: technology-of-another-platform
+    matches:
+      - on: platform
+    clash: '{technology} is a {platform} technology, yet the language and runtime chosen is {language}.'
+    question: 'Should {technology}, a {platform} technology, stay with {language}, or should the layer use a technology of {language}?'
+    answer: 'Use {recommended}, the recommended technology of {language} for this layer. The choice recorded stays as the owner made it until the owner answers.'

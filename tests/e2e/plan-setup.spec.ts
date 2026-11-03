@@ -108,6 +108,26 @@ test('RF-609 the stack step has two options for each of the seven layers and a f
   await expectNoSeriousViolations(page);
 });
 
+test('RF-609 DEC-208 the stack layers follow a language that is not the legacy one', async ({
+  page,
+}) => {
+  await openStartPage(page);
+  await openPlanSetup(page);
+  await openStep(page, 'Stack');
+
+  // The demo is .NET; typing Java as the language makes every layer below suggest the JVM ecosystem.
+  const language = page.getByRole('radiogroup', { name: 'Language and runtime' });
+  await language.getByRole('radio', { name: 'Type your own answer' }).check();
+  await page.getByLabel('Your answer for Language and runtime').fill('Java');
+
+  await expect(page.getByText('The layers below suggest technologies for Java.')).toBeVisible();
+  const backend = page.getByRole('radiogroup', { name: 'Back-end framework' });
+  await expect(backend.getByRole('radio', { name: 'Spring Boot (Recommended)' })).toBeVisible();
+  const testing = page.getByRole('radiogroup', { name: 'Testing' });
+  await expect(testing.getByRole('radio', { name: 'JUnit 5 (Recommended)' })).toBeVisible();
+  await expectNoSeriousViolations(page);
+});
+
 test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in What I recorded and can be edited', async ({
   page,
 }) => {

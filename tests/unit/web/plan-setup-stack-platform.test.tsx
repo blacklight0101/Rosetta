@@ -54,7 +54,7 @@ const tagged: Record<string, { name: string; aliases: string[]; platform: string
 };
 
 const legacyProposals: Record<string, string[]> = {
-  'language-runtime': ['TypeScript on Node.js', 'C# on .NET'],
+  'language-runtime': ['C# on .NET', 'Java'],
   'backend-framework': ['Fastify'],
   'front-end': ['React', 'Angular'],
   database: ['PostgreSQL'],
@@ -188,7 +188,7 @@ describe('the Stack step follows the language (DEC-208)', () => {
 
     expect(titles('Back-end framework')[0]).toBe('Fastify (Recommended)');
     expect(screen.getByRole('status').textContent).toMatch(/Pick a language first/u);
-    expect(screen.getByText('Suggested from the legacy code', { selector: 'span' })).toBeTruthy();
+    expect(screen.getAllByText('Suggested from the legacy code').length).toBeGreaterThan(0);
   });
 
   it('RF-609 picking C# on .NET changes the layers and says so in one line', () => {
@@ -219,7 +219,9 @@ describe('the Stack step follows the language (DEC-208)', () => {
     pickLanguage(/^C# on \.NET/u);
     expect(titles('Testing')[0]).toBe('xUnit (Recommended)');
   });
+});
 
+describe('the Stack step keeps what the owner answered (DEC-208)', () => {
   it('RF-609 a layer the owner answered is never changed and says it is the owner choice', () => {
     show({
       testing: { layer: 'testing', choice: 'Vitest', custom: false, offered: ['Vitest'] },
@@ -229,12 +231,9 @@ describe('the Stack step follows the language (DEC-208)', () => {
 
     const testing = within(group('Testing'));
     expect(testing.getByRole('radio', { name: /^Vitest/u })).toBeTruthy();
-    expect((testing.getByRole('radio', { name: /^Vitest/u }) as HTMLInputElement).checked).toBe(
-      true,
-    );
-    expect(
-      within(group('Testing').closest('section') as HTMLElement).getByText('Your choice, kept'),
-    ).toBeTruthy();
+    const radio = testing.getByRole<HTMLInputElement>('radio', { name: /^Vitest/u });
+    expect(radio.checked).toBe(true);
+    expect(group('Testing').closest('section')?.textContent).toContain('Your choice, kept');
   });
 
   it('RF-609 a layer answered with a technology of another platform shows one warning line', () => {

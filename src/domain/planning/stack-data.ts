@@ -25,7 +25,9 @@ export type RuleCondition =
       readonly trait: StackTrait;
       readonly present: boolean;
     }
-  | { readonly on: 'contract'; readonly present: boolean };
+  | { readonly on: 'contract'; readonly present: boolean }
+  /** DEC-208: a layer holds a technology of another platform than the language and runtime; one clash for each. */
+  | { readonly on: 'platform' };
 
 export interface StackRule {
   readonly id: string;

@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { failure, json } from './fake-api.js';
 import { cloudProject } from './plan-setup-fixtures.js';
-import { base, press, ready, renderPlan, saves } from './plan-setup-helpers.js';
+import { base, press, ready, renderPlan, saves, typeHosting } from './plan-setup-helpers.js';
 
 // RF-608, RF-609, RF-143: the architecture and stack steps ask the planner for two options each,
 // grounded in the code map and the verified cards; a cloud planner waits for the consent.
@@ -114,14 +114,7 @@ describe('stack step answers', () => {
     const database = screen.getByRole('radiogroup', { name: 'Database' });
 
     fireEvent.click(within(database).getByRole('radio', { name: /^database B/u }));
-    fireEvent.click(
-      within(screen.getByRole('radiogroup', { name: 'Hosting' })).getByRole('radio', {
-        name: 'Type your own answer',
-      }),
-    );
-    fireEvent.input(screen.getByLabelText('Your answer for Hosting'), {
-      target: { value: 'On-premises Kubernetes' },
-    });
+    typeHosting('On-premises Kubernetes');
     press('Save and continue');
 
     await screen.findByRole('heading', { name: /What should the roadmap know/u, level: 2 });
