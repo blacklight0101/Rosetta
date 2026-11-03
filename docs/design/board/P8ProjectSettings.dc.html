@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Project settings - roles</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#F4F6F6;color:#13201F;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans","Helvetica Neue",sans-serif;font-size:14px;line-height:1.45;font-variant-numeric:tabular-nums}
+a{color:#0E6B6B}a:hover{color:#0A5555}
+:focus-visible{outline:2px solid #1B5799;outline-offset:2px}
+select,input[type=number]{height:32px;padding:0 8px;border:1px solid #7A8987;border-radius:6px;background:#FFFFFF;color:#13201F;font:inherit}
+</style>
+</helmet>
+<div style="min-height:100%;display:flex;flex-direction:column">
+  <header style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:10px 24px;background:#FFFFFF;border-bottom:1px solid #D8DFDE">
+    <strong style="font-size:18px;font-weight:700;letter-spacing:-0.02em">Rosetta</strong>
+    <span style="flex-grow:1"></span>
+    <span style="display:inline-flex;gap:8px;align-items:center;padding:4px 12px;border:1px solid #D8DFDE;border-radius:999px;font-size:13px"><span style="color:#56645F">Your total</span><strong>$3.00</strong><span style="color:#56645F">21.0M tokens</span></span>
+    <span style="font-size:13px;color:#364644">P8 Eval Haiku</span>
+    <a href="#" style="font-size:13px">Sign out</a>
+  </header>
+  <div style="display:flex;flex-wrap:wrap;flex-grow:1">
+    <nav aria-label="Main" style="flex:1 1 200px;max-width:240px;padding:20px 16px;border-right:1px solid #D8DFDE;background:#FFFFFF;display:flex;flex-direction:column;gap:4px;font-size:13px">
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Projects</a>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Settings and keys</a>
+      <div style="margin-top:12px;padding:0 8px;font-size:12px;color:#56645F;font-weight:500">Project: P9 UI run Asset Manager</div>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Project</a>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">History</a>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Cost</a>
+      <a href="#" aria-current="page" style="padding:6px 8px;text-decoration:none;color:#0E6B6B;background:#DDEFEE;border-radius:4px;font-weight:500">Project settings</a>
+    </nav>
+    <main style="flex:999 1 560px;min-width:0;padding:24px 32px 48px;display:flex;flex-direction:column;gap:20px">
+      <h1 style="margin:0;font-size:24px;font-weight:650;line-height:1.2">Project settings</h1>
+
+      <div role="alert" style="display:flex;flex-direction:column;gap:12px;padding:16px 18px;border-radius:10px;background:#FBEBD2;color:#7A4A00">
+        <p style="margin:0;color:#13201F"><strong style="color:#7A4A00">Ollama cannot be reached.</strong> All four roles use it, so a run would fail at its first call. You have an Anthropic key.</p>
+        <form style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+          <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#13201F">Provider for every role<select><option>Anthropic</option><option>OpenAI</option><option>Ollama (not reachable)</option></select></label>
+          <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#13201F">Model<select><option>The recommended one per role</option><option>Claude Haiku 5.5</option><option>Claude Sonnet 5.5</option></select></label>
+          <button type="button" style="height:32px;padding:0 16px;border:1px solid #0E6B6B;border-radius:6px;background:#0E6B6B;color:#FFFFFF;font:inherit;font-weight:500;cursor:pointer">Apply to every role</button>
+        </form>
+      </div>
+
+      <section aria-labelledby="roles-h" style="display:flex;flex-direction:column;gap:12px;padding:20px 24px;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:10px">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:baseline">
+          <h2 id="roles-h" style="margin:0;font-size:16px;font-weight:650">Roles</h2>
+          <span style="font-size:13px;color:#56645F">Choosing a provider selects its recommended model; change it if you want another.</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="text-align:left;font-size:12px;color:#56645F;background:#EAEFEE"><th style="padding:8px">Role</th><th style="padding:8px">Provider</th><th style="padding:8px">Model</th><th style="padding:8px">State</th></tr></thead>
+          <tbody>
+            <tr style="border-top:1px solid #D8DFDE"><td style="padding:8px"><span style="display:inline-flex;gap:8px;align-items:center"><span aria-hidden="true" style="width:10px;height:10px;border-radius:999px;background:#0E6B6B"></span>Reader</span></td><td style="padding:8px"><select aria-label="Reader provider"><option>Ollama</option></select></td><td style="padding:8px"><select aria-label="Reader model"><option>qwen3:8b</option></select></td><td style="padding:8px;color:#A8211A;font-size:13px">&#10005; Not reachable</td></tr>
+            <tr style="border-top:1px solid #D8DFDE"><td style="padding:8px"><span style="display:inline-flex;gap:8px;align-items:center"><span aria-hidden="true" style="width:10px;height:10px;border-radius:999px;background:#6A48B8"></span>Verifier</span></td><td style="padding:8px"><select aria-label="Verifier provider"><option>Ollama</option></select></td><td style="padding:8px"><select aria-label="Verifier model"><option>qwen3:8b</option></select></td><td style="padding:8px;color:#A8211A;font-size:13px">&#10005; Not reachable</td></tr>
+            <tr style="border-top:1px solid #D8DFDE"><td style="padding:8px"><span style="display:inline-flex;gap:8px;align-items:center"><span aria-hidden="true" style="width:10px;height:10px;border-radius:999px;background:#B5520B"></span>Planner</span></td><td style="padding:8px"><select aria-label="Planner provider"><option>Anthropic</option></select></td><td style="padding:8px"><select aria-label="Planner model"><option>Claude Haiku 5.5 (recommended)</option></select></td><td style="padding:8px;color:#1C6E37;font-size:13px">&#10003; Key ready</td></tr>
+            <tr style="border-top:1px solid #D8DFDE"><td style="padding:8px"><span style="display:inline-flex;gap:8px;align-items:center"><span aria-hidden="true" style="width:10px;height:10px;border-radius:999px;background:#1B5799"></span>Summariser</span></td><td style="padding:8px"><select aria-label="Summariser provider"><option>Ollama</option></select></td><td style="padding:8px"><select aria-label="Summariser model"><option>qwen3:8b</option></select></td><td style="padding:8px;color:#A8211A;font-size:13px">&#10005; Not reachable</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section aria-labelledby="lim-h" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px;padding:20px 24px;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:10px">
+        <h2 id="lim-h" style="grid-column:1 / -1;margin:0;font-size:16px;font-weight:650">Limits</h2>
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-weight:500">Parallel readers</span>
+          <span style="display:flex;gap:12px;align-items:center"><input type="number" value="4" style="width:72px"><input type="range" min="1" max="8" value="4" aria-label="Parallel readers slider" style="flex-grow:1;accent-color:#0E6B6B"></span>
+          <span style="font-size:13px;color:#56645F">A local reader defaults to 1. Switching to a hosted provider while it is 1 sets 4; a value you chose is kept.</span>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-weight:500">Reader max output tokens</span>
+          <span style="display:flex;gap:12px;align-items:center"><input type="number" value="8192" style="width:96px"><input type="range" min="1024" max="32768" value="8192" aria-label="Reader max output slider" style="flex-grow:1;accent-color:#0E6B6B"></span>
+          <span style="font-size:13px;color:#56645F">8,192 is the default. The field and the slider always show the same value.</span>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-weight:500">Run token cap</span>
+          <span style="display:flex;gap:12px;align-items:center"><input type="number" value="2000000" style="width:120px"><span style="font-size:13px;color:#364644">2,000,000 tokens</span></span>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-weight:500">Run cost cap</span>
+          <span style="display:flex;gap:12px;align-items:center"><input type="number" value="0.50" step="0.01" style="width:96px"><span style="font-size:13px;color:#364644">Applies to a run outside the journey.</span></span>
+        </label>
+        <div style="grid-column:1 / -1;display:flex;justify-content:flex-end">
+          <button type="button" style="height:32px;padding:0 16px;border:1px solid #0E6B6B;border-radius:6px;background:#0E6B6B;color:#FFFFFF;font:inherit;font-weight:500;cursor:pointer">Save settings</button>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
