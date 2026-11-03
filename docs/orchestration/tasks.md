@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 107     | 5         | 90         | 12        | 0                  | 76      | 25      | 6      | 23         | 21        |
-| **Total**                    | **597** | **123**   | **426**    | **48**    | **0**              | **302** | **269** | **26** | **285**    | **21**    |
+| P8 Evaluation fixes, round 2 | 112     | 5         | 95         | 12        | 0                  | 81      | 25      | 6      | 28         | 21        |
+| **Total**                    | **602** | **123**   | **431**    | **48**    | **0**              | **307** | **269** | **26** | **290**    | **21**    |
 
 ## Conventions for every card
 
@@ -7653,7 +7653,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-21
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-02: the saved brief lists the stack under "What I recorded" (C# on .NET, ASP.NET Core 8, SQL Server 2022, Entity Framework Core 8, xUnit on .NET 8), yet on reload the Stack step selects no radio and fills no "Your own" box. `shownOption` matches only a saved choice whose name equals an offered option; any other saved name with `custom: false` shows nothing, so saving the step again silently replaces the brief with the defaults.
 - **Reads**: `docs/design/board/P8Stack.dc.html`, `web/src/pages/PlanStackStep.tsx` (`shownOption`, `LayerOptions`, the own-answer `Field`), `web/src/lib/plan-setup/draft.ts`, `web/src/lib/plan-setup/own-answers.ts`, `web/src/pages/use-plan-setup-load.ts`, `src/application/use-cases/` (the brief save that accepts the stack), RF-609, RF-645, RF-605.
 - **Do**: add a Given to RF-645 first: a saved choice is always shown on reload; red test first.
@@ -8683,7 +8683,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-26
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-06, UX-17, UX-19, EV-93, EV-94: a run stopped by the user ends "Interrupted" but the strip shows "Failed".
 - **Reads**: `docs/design/board/P8Project.dc.html`, `web/src/pages/JourneyStrip.tsx`, `web/src/lib/journey/journey-steps.ts`, `web/src/pages/HistoryRuns.tsx`, RF-1008, RF-1012.
 - **Do**: add the Givens first; red tests first.
@@ -8731,7 +8731,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-26
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-06, UX-17, UX-19, EV-93, EV-94: Cost "By run" names runs by UUID while History names them `20261102-183533-understand`, repeats "Price table 2026-10-21" on every row, and mixes 3 and 6 decimals ($3.113515 beside $0.237).
 - **Reads**: `docs/design/board/P8HistoryCost.dc.html`, `web/src/pages/ProjectCostPage.tsx`, `web/src/pages/CostTable.tsx`, the money formatter in `web/src/lib/`, `docs/design-system.md` (number formats, section 10), RF-006, RF-1020.
 - **Do**: add the Givens first; red tests first.
@@ -8762,7 +8762,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-23, EV-97, EV-76: the first understand of Asset Manager (2 areas, 52,749 first-party tokens) ended in 2 min with "2 / 2 Areas read" and "16% of first-party tokens read", leaving 21 files never read, so even a small project needs a Deepen before anything is usable.
 - **Reads**: `src/application/understand/` (the reader loop and its stop rule), the reader prompt in `prompts/` (what tells a reader it is done), RF-210 (readers take the app's own code first), RF-230 (coverage per area), RF-231 (honest understanding measures), RNF-004.
 - **Do**: measure first: from the recorded events of the run, why each reader stopped (turn limit, token budget, the model saying it is done) and what share of its area it read; write the numbers into the card's PR.
@@ -8933,7 +8933,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-21
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, P8-21 verifier round 2, finding 1): the end-to-end harness serves and scans only the .NET demo, so the P8-21 walk "pick C# on .NET on a non-.NET project" runs on the .NET demo, where the .NET offer would show without the feature.
 - **Reads**: `tests/e2e/support/serve.ts`, the end-to-end seed and accounts, RF-609, ADR-008.
 - **Do**: tests first.
@@ -9004,3 +9004,83 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the test changes only.
 - **Done when**: the Plan setup specs pass; the new case fails if the save waits for the options; CI green.
 - **Refs**: RF-605, RF-609, ADR-008; follow-up of P8-36; GitHub issue #1202
+
+### P8-108 - Follow-up: the cost route splits each run by role (P8-90)
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-90
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-90 verifier, #1204; DEC-217): the artboard `P8HistoryCost` draws Reader, Verifier, Planner and Summariser columns per run, but `RunLine` in `src/application/budget/cost-breakdown.ts` has only key, runId, firstAt and totals, and `byRole` has no run split.
+- **Reads**: `src/application/budget/cost-breakdown.ts`, the project cost route and its wire schema, `docs/design/board/P8HistoryCost.dc.html`, RF-426, RF-428, ADR-007.
+- **Do**: add the Givens first; red tests first.
+  - Add the cost per role to each run line of the cost breakdown and its route, scoped to the signed-in user like the rest of the route.
+  - A role with no calls in a run reads as none, not as zero cost; the role costs of a run add up to its total.
+- **Delivers**: the use case and route change with unit and integration tests.
+- **Done when**: each run line of the cost route carries its cost per role and they add up to its total; CI green.
+- **Refs**: RF-426, RF-428, ADR-007, DEC-217; follow-up of P8-90; GitHub issue #1207
+
+### P8-109 - Follow-up: Cost by run shows Kind, the roles and a project total (P8-90)
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-108, P8-89
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-90 verifier, #1204; DEC-217): the artboard `P8HistoryCost` draws Cost by run with Kind ("Deepen, 3 rounds"), the four role columns and a Project total row; P8-90 built none of them.
+- **Reads**: `docs/design/board/P8HistoryCost.dc.html`, `web/src/pages/ProjectCostPage.tsx`, `web/src/pages/CostTable.tsx`, the History kind wording of P8-89, RF-428, DEC-211.
+- **Do**: add the Givens first; red tests first.
+  - Build the Kind column with History's wording, the four role columns through `CostFigure`, and a Project total row from the page's totals, as drawn.
+  - Keep the table's accessible name, which end-to-end specs address.
+- **Delivers**: the page change with web tests.
+- **Done when**: Cost by run matches the artboard and its role columns add up to each run's total; CI green.
+- **Refs**: RF-428, DEC-211, DEC-217; follow-up of P8-90; GitHub issue #1208
+
+### P8-110 - Follow-up: exact zero and tiny amounts, and a tooltip all can reach (P8-90)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-90
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-90 verifier rounds 1 and 2, #1204; DEC-217): a zero and an amount below $0.00005 both read `$0.0000`; the exact figure is only a `title`, out of reach by keyboard and touch (`web/src/components/CostFigure.tsx:16`).
+- **Reads**: `web/src/lib/money.ts`, `web/src/components/CostFigure.tsx`, `tests/unit/web/money.test.ts`, the tooltip pattern of `docs/design-system.md`, RF-428, RNF-010, DEC-54.
+- **Do**: add the Givens first; red tests first.
+  - Exactly zero reads `$0.00`; a non-zero amount below $0.00005 reads `<$0.0001`, with the exact figure in the tooltip (RF-428, DEC-217).
+  - Make the exact figure reachable by keyboard and touch, using the design system's tooltip pattern.
+- **Delivers**: the formatter and component change with unit tests.
+- **Done when**: zero and tiny amounts read as DEC-217 says and the exact figure is reachable without a mouse; CI green.
+- **Refs**: RF-428, RNF-010, DEC-54, DEC-217; follow-up of P8-90; GitHub issue #1209
+
+### P8-111 - Follow-up: a run's end says why it was interrupted (P8-87)
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-87
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-87 verifier, #1205; DEC-217): a user Stop, a restart recovery (`run-queue.ts` `recoverOrphans`) and a cancelled queued run all end `Interrupted`, so all read "Stopped by you".
+- **Reads**: `src/application/runs/run-lifecycle.ts`, `run-queue.ts`, `docs/data-model.md`, `web/src/components/badge-specs.ts`, `web/src/lib/journey/journey-context.ts`, RF-006, RF-1008, RF-1020, ADR-016.
+- **Do**: add the Givens first; red tests first.
+  - Record the end reason (user stop, restart, cancelled while queued), with a new numbered migration if a column is needed, and update `docs/data-model.md`.
+  - Show a wording for each: "Stopped by you" only for a user stop; a run with no recorded reason keeps today's wording.
+- **Delivers**: the migration if needed, the server and page changes, and tests at each level.
+- **Done when**: a restart recovery and a queued cancel no longer read "Stopped by you"; CI green.
+- **Refs**: RF-006, RF-1008, RF-1020, ADR-016, DEC-217; follow-up of P8-87; GitHub issue #1210
+
+### P8-112 - Follow-up: a run at its cap never reads Failed on the strip (P8-87)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-87
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-87 builder and verifier, #1205; DEC-217): a `CapReached` run shows the strip word "Failed" with the detail "Stopped at its cap".
+- **Reads**: `web/src/lib/journey/journey-steps.ts`, `web/src/lib/journey/journey-context.ts`, `web/src/pages/JourneyStrip.tsx`, `web/src/styles/journey.css`, RF-1020.
+- **Do**: add the Givens first; red tests first.
+  - A run that reached its cap reads "Stopped at its cap" in the warn tone, never "Failed", and still offers its next step.
+  - Search `tests/e2e` for the old wording and update every assertion.
+- **Delivers**: the page change with web tests and the updated end-to-end specs.
+- **Done when**: a run at its cap never reads "Failed" on the strip; CI green.
+- **Refs**: RF-1020, DEC-217; follow-up of P8-87; GitHub issue #1211
