@@ -19,6 +19,8 @@ export interface TopBarMeter {
   readonly valueText: string;
   /** P5-07: tokens for a run on local models, micro-dollars otherwise. */
   readonly unit: MeterUnit;
+  /** P8-24: "$3.96 left of $4.00 approved", shown in place of the figures against the cap. */
+  readonly approvedText: string | undefined;
 }
 
 const WARN_FROM = 80;
@@ -36,7 +38,12 @@ const labelOf = (unit: MeterUnit, amount: number): string =>
   unit === 'tokens' ? `${tokensLabel(amount)} tokens` : costLabel(amount);
 
 // RF-1003
-export function topBarMeterOf(spent: number, cap: number, unit: MeterUnit = 'micros'): TopBarMeter {
+export function topBarMeterOf(
+  spent: number,
+  cap: number,
+  unit: MeterUnit = 'micros',
+  approvedText?: string,
+): TopBarMeter {
   const share = shareOf(spent, cap);
   const level = levelOf(spent, cap);
   const spentText = labelOf(unit, spent);
@@ -52,6 +59,7 @@ export function topBarMeterOf(spent: number, cap: number, unit: MeterUnit = 'mic
     cap: capText,
     note,
     unit,
+    approvedText,
     valueText: words === undefined ? valueText : `${valueText}, ${words}`,
   };
 }

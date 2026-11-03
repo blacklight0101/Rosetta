@@ -102,3 +102,28 @@ export function overCapTexts(estimate: DeepenEstimate): readonly string[] {
     ...(overCap.allRounds ? warningOf('all rounds', estimate.allRounds, estimate) : []),
   ];
 }
+
+// RF-209
+export function roundPlanText(estimate: DeepenEstimate): string {
+  return plural(estimate.plan.judge, 'claim');
+}
+
+/** The three figures of the panel (P8-24). */
+export interface DeepenFigures {
+  readonly first: string;
+  readonly all: string;
+  readonly allLabel: string;
+  readonly stops: string;
+  readonly note: string;
+}
+
+// RF-434
+export function deepenFiguresOf(estimate: DeepenEstimate): DeepenFigures {
+  const text = costs(estimate.round, estimate);
+  return { first: text, all: text, allLabel: '', stops: '', note: '' };
+}
+
+// RF-434
+export function confirmLineOf(estimate: DeepenEstimate): string {
+  return stopsAt(estimate);
+}

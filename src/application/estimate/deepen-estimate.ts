@@ -14,6 +14,7 @@ import { latestScan } from '../deepen/latest-scan.js';
 import type { ModelList } from '../models/model-list.js';
 import type { AnswersFile } from '../ports/answers-file.js';
 import type { PriorCards } from '../ports/prior-cards.js';
+import type { JourneyRecords } from '../ports/journey-records.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderKeyRepository } from '../ports/provider-key-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -53,6 +54,8 @@ export interface DeepenEstimateDependencies {
   /** P7-02: reads the run's manifest for the areas it planned; without it no area counts as unstarted. */
   readonly manifests?: Pick<RunManifestStore, 'read'>;
   readonly keys: Pick<ProviderKeyRepository, 'find'>;
+  /** RF-434, RF-435: the journey record; a project with one is held to what is left of its amount. */
+  readonly journeys?: Pick<JourneyRecords, 'find'> | undefined;
   readonly priceTable: PriceTable;
   /** The shipped model list: the context window and output limit of each model (Q-57). */
   readonly models: ModelList;
@@ -95,6 +98,15 @@ export interface DeepenEstimate {
    */
   readonly allRounds: ByScenario<EstimatePoint>;
   readonly cap: { readonly maxCostMicros: number; readonly maxTokens: number };
+  /** RF-434, P8-24: the approved amount of the project's journey; the cap is what is left of it. */
+  readonly journey?:
+    | {
+        readonly approvedMicros: number;
+        readonly remainingMicros: number;
+        readonly approvedTokens: number;
+        readonly remainingTokens: number;
+      }
+    | undefined;
   /** Whether the high figure passes the run cap. */
   readonly overCap: { readonly round: boolean; readonly allRounds: boolean };
 }

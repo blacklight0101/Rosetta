@@ -1,3 +1,4 @@
+import type { ApprovedView } from './approved-line.js';
 import type { CapsState } from './run-state.js';
 
 // RF-1003, P5-07: what the "This run" meter of the top bar reads from a run while it works. A run
@@ -11,9 +12,12 @@ export interface RunMeterReading {
   readonly spent: number;
   readonly cap: number;
   readonly unit: MeterUnit;
+  /** P8-24: the words of the approved amount left, when the run is a step of a journey. */
+  readonly approvedText?: string;
 }
 
 export interface RunMeterInput {
+  readonly approved?: ApprovedView | undefined;
   readonly caps: CapsState | undefined;
   readonly costMicros: number;
   readonly tokens: number;
