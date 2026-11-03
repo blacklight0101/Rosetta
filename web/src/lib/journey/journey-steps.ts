@@ -1,6 +1,7 @@
 import type { JourneyFacts, JourneyRunFacts } from '../../api/journey-schemas.js';
 import { runDownloadPath } from '../../api/runs.js';
 import { costLabel } from '../live-run/format.js';
+import { microsToCents } from '../usd.js';
 import { nextOf, type JourneyAction, type JourneyLink } from './journey-action.js';
 import {
   deepenFirst,
@@ -229,7 +230,7 @@ const parts: readonly (readonly [StepKey, string, (c: Context) => Part])[] = [
 function leftText(facts: JourneyFacts): string | undefined {
   const { budget } = facts;
   if (budget === null || budget === undefined) return undefined;
-  return `${costLabel(budget.remainingMicros)} left of ${costLabel(budget.approvedMicros)} approved`;
+  return `${microsToCents(budget.remainingMicros)} left of ${microsToCents(budget.approvedMicros)} approved`;
 }
 
 /** A step that is open and holds the next action is the current one. */

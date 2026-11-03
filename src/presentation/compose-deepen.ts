@@ -56,6 +56,7 @@ export function composeDeepen(parts: DeepenParts): DeepenServices {
       ...{ projects, runs, scans, priceTable: parts.priceTable, models: parts.models },
       ...{ taskResults, manifests },
       keys: new PgProviderKeyRepository(parts.pool),
+      journeys: new PgJourneyRecords(parts.pool), // RF-434: the estimate is held to the journey's amount
       answers: new FileAnswersFile({ writer: parts.writer, masker: parts.masker }),
       priorCards: new FilePriorCards(parts.writer),
       ollamaHost,

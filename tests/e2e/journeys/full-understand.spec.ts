@@ -191,10 +191,8 @@ test('RF-209 RF-231 the run shows its measures and offers Deepen with an estimat
   const turn = page.getByRole('region', { name: 'Your turn' });
   await turn.getByRole('button', { name: 'Deepen this run' }).click();
   await expect(turn.getByTestId('deepen-first-round')).toBeVisible();
-  await expect(turn.getByTestId('deepen-all-rounds')).toContainText(
-    'a working ceiling, not a maximum',
-  );
-  await expect(turn.getByTestId('deepen-all-rounds')).toContainText('is what stops the run');
+  await expect(turn.getByTestId('deepen-all-rounds')).toContainText('Up to');
+  await expect(turn.getByTestId('deepen-stops')).toContainText(/left of/u);
 
   await transitionsDone(page);
   await expectNoSeriousViolations(page);

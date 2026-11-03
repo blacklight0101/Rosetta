@@ -16,9 +16,12 @@ import { EndedBody } from './EndedBody.js';
 import { RunJourneys, WorkingJourney } from './JourneyPlacement.js';
 import { PauseUpdates } from './PauseUpdates.js';
 import { RunAnswerControls } from './ApprovalControl.js';
+import type { ApprovedView } from '../lib/live-run/approved-line.js';
+import { ApprovedViewContext } from './approved-view-context.js';
 import { RunStatusBar } from './RunStatusBar.js';
 import { RunningBody } from './RunningBody.js';
 import { usePauseUpdates } from './use-pause-updates.js';
+import { useApprovedView } from './use-approved-view.js';
 import { useRunEstimate } from './use-run-estimate.js';
 import type { RunStream } from './use-run-stream.js';
 
@@ -60,18 +63,35 @@ function tokensOf(state: RunState): number {
  */
 // RF-1003
 function meterOf(
-  state: RunState,
-  run: RunRow,
-  phase: RunPhase,
-  local: boolean,
+  page: { readonly state: RunState; readonly run: RunRow; readonly phase: RunPhase },
+  approved: ApprovedView | undefined,
 ): RunMeterReading | undefined {
+  const { state, run, phase } = page;
   if (phase.kind !== 'running') return undefined;
   return runMeterReadingOf({
+    approved,
     caps: state.caps,
     costMicros: costOf(state, run),
     tokens: tokensOf(state),
-    local,
+    local: runIsLocal(state),
   });
+}
+
+/** P8-24: the approved amount of the run's journey; the top bar meter reads it too. */
+function useApproved(page: {
+  readonly state: RunState;
+  readonly run: RunRow;
+  readonly phase: RunPhase;
+}): ApprovedView | undefined {
+  const { state, run, phase } = page;
+  const approved = useApprovedView({
+    projectId: run.projectId,
+    refresh: phase.kind === 'ended' ? phase.endState : phase.kind,
+    spent: { micros: costOf(state, run), tokens: tokensOf(state) },
+    local: runIsLocal(state),
+  });
+  usePublishRunMeter(meterOf(page, approved));
+  return approved;
 }
 
 function useStop(runId: string): {
@@ -108,36 +128,28 @@ function Connection({ stream }: { readonly stream: RunStream }): JSX.Element | n
 }
 
 // RF-1002, RF-1015
-export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps): JSX.Element {
-  const { state } = stream;
-  const view = usePauseUpdates(state);
-  const stop = useStop(run.id);
-  const planned = state.agents.some((agent) => agent.state !== 'Planned');
-  const stage = state.stage ?? run.stage;
-  const estimate = useRunEstimate(
-    run.projectId,
-    stage,
-    planned ? state.agents.map((agent) => agent.area) : [],
-  );
-  usePublishRunMeter(meterOf(state, run, phase, runIsLocal(state)));
+export function LiveRunView(props: LiveRunViewProps): JSX.Element {
+  const { run, stream, phase } = props;
+  const approved = useApproved({ state: stream.state, run, phase });
   return (
-    <div class="rst-live">
-      <RunStatusBar
-        title={runTitleOf({ stage, phase, state })}
-        {...{ phase, projectId: run.projectId, runKey: run.runId }}
-        failedAreas={state.ended?.failedAreas ?? run.failedAreas}
-        unreadAreas={state.ended?.unreadAreas ?? run.unreadAreas}
-        {...{ stopping: stop.stopping, busy: stop.busy, stopError: stop.error, onStop: stop.stop }}
-        updatesNote={view.note}
-        resume={<RunAnswerControls {...{ phase, onResumed, runId: run.id, stage }} />}
-        controls={
-          view.paused || phase.kind === 'running' ? (
-            <PauseUpdates paused={view.paused} waiting={view.waiting} onToggle={view.toggle} />
-          ) : null
-        }
-      />
-      <Connection stream={stream} />
-      <RunJourneys {...{ run, stage, phase, onResumed }} />
+    <ApprovedViewContext.Provider value={approved}>
+      <LiveRunContent {...props} />
+    </ApprovedViewContext.Provider>
+  );
+}
+
+function PageBody(props: {
+  readonly run: RunRow;
+  readonly state: RunState;
+  readonly phase: RunPhase;
+  readonly stage: string;
+  readonly estimate: ReturnType<typeof useRunEstimate>;
+  readonly onResumed: () => void;
+  readonly view: ReturnType<typeof usePauseUpdates>;
+}): JSX.Element {
+  const { run, state, phase, stage, estimate, onResumed, view } = props;
+  return (
+    <>
       {phase.kind === 'ended' ? (
         <EndedBody
           {...{ run, state, phase, stage, estimate, onResumed }}
@@ -153,6 +165,45 @@ export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps)
           source={sourceOf(state, run)}
         />
       )}
+    </>
+  );
+}
+
+function LiveRunContent({ run, stream, phase, onResumed }: LiveRunViewProps): JSX.Element {
+  const { state } = stream;
+  const view = usePauseUpdates(state);
+  const stop = useStop(run.id);
+  const planned = state.agents.some((agent) => agent.state !== 'Planned');
+  const stage = state.stage ?? run.stage;
+  const estimate = useRunEstimate(
+    run.projectId,
+    stage,
+    planned ? state.agents.map((agent) => agent.area) : [],
+  );
+  return (
+    <div class="rst-live">
+      <RunStatusBar
+        title={runTitleOf({ stage, phase, state })}
+        {...{ phase, projectId: run.projectId, runKey: run.runId }}
+        failedAreas={state.ended?.failedAreas ?? run.failedAreas}
+        unreadAreas={state.ended?.unreadAreas ?? run.unreadAreas}
+        {...{
+          stopping: stop.stopping,
+          busy: stop.busy,
+          stopError: stop.error,
+          onStop: stop.stop,
+        }}
+        updatesNote={view.note}
+        resume={<RunAnswerControls {...{ phase, onResumed, runId: run.id, stage }} />}
+        controls={
+          view.paused || phase.kind === 'running' ? (
+            <PauseUpdates paused={view.paused} waiting={view.waiting} onToggle={view.toggle} />
+          ) : null
+        }
+      />
+      <Connection stream={stream} />
+      <RunJourneys {...{ run, stage, phase, onResumed }} />
+      <PageBody {...{ run, state, phase, stage, estimate, onResumed, view }} />
       <WorkingJourney {...{ run, stage, phase, onResumed }} />
     </div>
   );

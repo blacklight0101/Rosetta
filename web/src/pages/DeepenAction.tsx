@@ -6,7 +6,7 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { cloudRoles } from '../lib/estimate-math.js';
 import type { DeepenEstimate } from '../api/understanding.js';
-import { allRoundsText, firstRoundText } from '../lib/understanding/deepen-estimate-text.js';
+import { confirmLineOf } from '../lib/understanding/deepen-estimate-text.js';
 import { CloudNotice } from './CloudNotice.js';
 import { DeepenEstimateView } from './DeepenEstimateView.js';
 import {
@@ -62,8 +62,7 @@ function Question(props: {
       onConfirm={props.onConfirm}
       onCancel={props.onCancel}
     >
-      <p>{firstRoundText(props.estimate)}</p>
-      <p>{allRoundsText(props.estimate)}</p>
+      <p>{confirmLineOf(props.estimate)}</p>
     </ConfirmDialog>
   );
 }

@@ -38,3 +38,9 @@ export function microsToDollars(micros: string): string {
   const trimmed = fraction.replace(/0+$/u, '').padEnd(2, '0');
   return `${whole}.${trimmed}`;
 }
+
+/** Micro-dollars to whole cents, rounded down so what is left is never overstated: `3962940` is `$3.96`. */
+export function microsToCents(micros: number): string {
+  const cents = Math.floor(Math.max(0, micros) / 10_000);
+  return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}

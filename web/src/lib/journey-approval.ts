@@ -67,3 +67,17 @@ export function basisMovedText(before: RunEstimate, after: RunEstimate): string 
     ? 'The figures changed: they now come from the measured totals of earlier runs of this model, not from the fixed assumptions.'
     : 'The figures changed: they now come from the fixed assumptions, because no earlier run of this model is counted.';
 }
+
+/** DEC-210: says so when the likely total is above the approvable one; undefined when it is not. */
+// RF-434
+export function likelyAboveText(estimate: RunEstimate): string | undefined {
+  const { journey } = estimate;
+  if (journey === undefined) return undefined;
+  const local = isLocalEstimate(estimate);
+  const above = local
+    ? journey.likely.tokens > journey.approvable.tokens
+    : BigInt(journey.likely.costMicros) > BigInt(journey.approvable.costMicros);
+  return above
+    ? `likely above what can be approved (likely ${figureText(estimate, journey.likely)})`
+    : undefined;
+}
