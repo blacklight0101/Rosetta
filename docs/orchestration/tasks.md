@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 18      | 1         | 14         | 3         | 0                  | 2       | 12      | 4      | 6          | 0         |
-| **Total**                    | **508** | **119**   | **350**    | **39**    | **0**              | **228** | **256** | **24** | **268**    | **0**     |
+| P8 Evaluation fixes, round 2 | 31      | 1         | 26         | 4         | 0                  | 4       | 22      | 5      | 6          | 0         |
+| **Total**                    | **521** | **119**   | **362**    | **40**    | **0**              | **230** | **266** | **25** | **268**    | **0**     |
 
 ## Conventions for every card
 
@@ -7583,3 +7583,247 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the workflow changes, the RNF-001 and workflow tests updated, a short note in `docs/runbooks/` with before/after numbers; any ruleset or merge-queue setting is written as a step for the owner (the builder does not change repository settings).
 - **Done when**: a PR's CI finishes in under 15 min wall clock when runners are free; a batch of three passed PRs merges in one queue run; no coverage is lost on develop; CI green.
 - **Refs**: RNF-001, RNF-005, ADR-025; owner request of 2026-11-02.; GitHub issue #1152
+
+### P8-21 - Stack layers follow the chosen language and runtime
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: L
+- **Depends on**: none
+- **Gate**: owner (DEC-208, decided on 2026-11-03; the owner tries the Stack step with C# on .NET)
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-01: on the Excel/VBA Asset Manager project, picking "C# on .NET" for Language and runtime changed nothing below it: Back-end framework offered only "Fastify (Recommended) A small Node.js framework", Testing only "Vitest ... for TypeScript", Database only PostgreSQL, and Data access said "The catalogue has no option for this layer", while the step promises "Two proposals per layer". The offer is computed once from the legacy languages (`stackOfferFor`), and its `vague` groups already carry the per-platform proposals that only a typed ".net" uses today.
+- **Reads**: `docs/design/board/P8Stack.dc.html`, `src/domain/planning/stack-offer.ts` (`stackOfferFor`, `platformOptions`, `matchingOptions`), `src/domain/planning/vague-choice.ts`, `src/application/use-cases/get-stack-offer.ts`, `prompts/catalogue/stack-proposals.v2.yaml` (`options`, `vague`), `prompts/catalogue/stack-technologies.v2.yaml`, `prompts/catalogue/stack-rules.v1.yaml` and the code that applies it (`src/domain/planning/`), `web/src/pages/PlanStackStep.tsx` (`platformChoices`, `LayerRow`, `LayerOptions`), `web/src/pages/PlanChoice.tsx`, `web/src/pages/PlanOwnChoice.tsx`, `web/src/styles/plan-setup.css`, `docs/design-system.md` section 14, `web/src/lib/plan-setup/choices.ts`, `web/src/lib/plan-setup/steps.ts` (the step text), `web/src/api/plan-schemas.ts` (`StackOffer`), RF-609, RF-645, DEC-172, DEC-178, DEC-208.
+- **Do**: add the DEC-208 Given of RF-609 as tests first (red), then:
+  - The offer names, for each technology of the language and runtime layer, the platform it belongs to (the `vague` group whose words name it: C# on .NET -> the .NET group, Java -> the JVM group, TypeScript on Node.js -> the Node group, Python -> the Python group), and per layer the proposals of each platform for the kind (the existing `platformOptions`, which already falls back to the scanned languages for an empty platform).
+  - Plan setup: when the owner picks or types a language and runtime that has a platform, every layer below that the owner has not answered shows that platform's proposals (recommended first) in place of the legacy-derived ones; picking another language changes them again; a layer the owner picked or typed is never changed; a language with no platform, and no pick, keep the legacy proposals. One line under the language says so: "The layers below suggest technologies for C# on .NET."
+  - A layer the owner answered with a technology of another platform than the chosen language (a Node.js framework or a TypeScript test runner with C# on .NET; the platform comes from the same `vague` groups) shows one line on the layer, "Fastify is a Node.js technology; the language is C# on .NET", when the step is saved; the owner's choice is kept (the package's clash rules of `stack-rules.v1.yaml` are unchanged). The walk saved "C# on .NET + Fastify + Vitest" with only "Brief saved".
+  - Platform clash in the package: the walk's package records ADR-004 "C# on .NET" and ADR-005 "Fastify" (a Node.js framework) with Vitest for testing, and no file of the package names a clash, because `stack-rules.v1.yaml` has only two rules (server-rendered front end with an API back end, API back end without a contract). Add a rule in a new `stack-rules.v2.yaml`: a layer whose technology belongs to a platform other than the language's is a clash, handled as RF-609 already says (a `checks.md` section, one open question whose default is the platform's recommended technology for that layer, the README line), so the package never asks for a .NET language with a Node.js framework in silence.
+  - Same look as the questions (owner, 2026-11-03): each layer's options are option cards rendered with `PlanChoice` (the `rst-plan-opt` card with title, "(Recommended)" and the one-line description, selected state as in Questions, Architecture and Method), and the own answer uses `PlanOwnChoice`, instead of the step's own `rst-plan-layer__option` radios; Stack is today the only Plan setup step that does not use them. The layer name is the card group's heading.
+  - The step text in `steps.ts` says the proposals follow the language once it is chosen; no claim of "two proposals" for a layer that has fewer (say "up to two").
+  - Catalogue (new versions `stack-proposals.v3.yaml` and `stack-technologies.v3.yaml`, recorded in the catalogue SHA-256 as usual, RNF-004): fill the gaps so every platform has at least one proposal for each layer of the web kind: Java (Spring Boot; Thymeleaf or React; PostgreSQL; Spring Data JPA or MyBatis; JUnit 5; Docker containers), Python (FastAPI or Django; React or Django templates; PostgreSQL; SQLAlchemy; pytest; Docker containers), .NET (add Blazor for the front end; NUnit and Azure App Service are there already), each with a one-line `why`; new technologies get a row in `stack-technologies` with layer, aliases, traits and description. A unit test walks the catalogue and fails when a platform lacks a layer of the web kind (desktop and service stay .NET only, as today).
+  - Build to the artboard `docs/design/board/P8Stack.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the offer and catalogue changes, the Stack step change (option cards and the follow-the-language rule), unit tests of the offer (each platform, no platform, kind service and desktop) and of the step reducer (answered layer kept, language changed twice), a web test of the Stack step, and an end-to-end step that picks C# on .NET on a non-.NET project and sees ASP.NET Core Razor Pages, SQL Server, Dapper and xUnit offered.
+- **Done when**: on a project whose legacy code is not .NET, picking C# on .NET makes Back-end framework, Front end, Database, Data access, Testing and Hosting offer .NET technologies recommended first, a package written from "C# on .NET + Fastify" has the clash in `checks.md` and `open-questions.md`, a layer answered before is unchanged, and Java and Python do the same with their ecosystems; CI green.
+- **Refs**: RF-609, RF-645, DEC-208, DEC-172, DEC-178, ADR-018; UX-01; owner request of 2026-11-03.; GitHub issue #1162
+
+### P8-22 - Plan setup shows the stack the brief saved
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-21
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-02: the saved brief lists the stack under "What I recorded" (C# on .NET, ASP.NET Core 8, SQL Server 2022, Entity Framework Core 8, xUnit on .NET 8), yet on reload the Stack step selects no radio and fills no "Your own" box. `shownOption` matches only a saved choice whose name equals an offered option; any other saved name with `custom: false` shows nothing, so saving the step again silently replaces the brief with the defaults.
+- **Reads**: `docs/design/board/P8Stack.dc.html`, `web/src/pages/PlanStackStep.tsx` (`shownOption`, `LayerOptions`, the own-answer `Field`), `web/src/lib/plan-setup/draft.ts`, `web/src/lib/plan-setup/own-answers.ts`, `web/src/pages/use-plan-setup-load.ts`, `src/application/use-cases/` (the brief save that accepts the stack), RF-609, RF-645, RF-605.
+- **Do**: add a Given to RF-645 first: a saved choice is always shown on reload; red test first.
+  - A saved layer whose choice is not among the offered options is shown as the "Your own" answer with its text filled, whatever its `custom` flag; one that is offered selects its radio. The same applies to every Plan setup question that has an own answer.
+  - The brief save keeps `custom` true for a name that is not offered, so the stored brief and the page agree.
+  - Build to the artboard `docs/design/board/P8Stack.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the component and save changes and their unit and web tests (offered choice, not-offered choice with `custom` false, typed choice).
+- **Done when**: reloading Plan setup on a brief saved with five stack layers shows each of them chosen or typed, and saving without a change stores the same brief; CI green.
+- **Refs**: RF-609, RF-645, RF-605, ADR-018; UX-02.; GitHub issue #1163
+
+### P8-23 - Project settings: one switch for every role, a model with the provider, and fields that show their value
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-03, UX-04 (EV-92 beyond the parallelism of P8-19): a new project takes Ollama for all four roles although the server shows "Ollama could not be reached. Type the model id."; switching a role to Anthropic leaves its model at "Choose a model", so four providers and four models are set one by one; the settings page has no "every role to ..." control (the start page only offers "Switch every role to Ollama"). Max output token fields read "Not set" while their slider shows a position, and large numbers have no separators (2000000).
+- **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `src/application/projects/default-settings.ts`, `src/application/use-cases/update-project-settings.ts`, `web/src/pages/ProjectSettingsForm.tsx`, `web/src/pages/ModelSettings.tsx`, `web/src/pages/ModelChoice.tsx`, `web/src/pages/provider-choices.ts`, `web/src/pages/model-lists.ts`, `web/src/pages/LimitSetting.tsx`, `web/src/pages/LimitSettings.tsx`, `web/src/pages/use-switch-to-ollama.ts`, `web/src/pages/project-settings-form.ts`, RF-436, RF-1104.
+- **Do**: start only after card P8-19 is built and merged (its card is in an open documentation pull request, so it cannot be named under Depends on yet); it changes the same use case and settings form; add the Givens to RF-436 first; red tests first.
+  - Settings page, top of the roles section: "Use for every role: [provider] [model] Apply", listing only providers the user can use (a key or a server key, or a reachable Ollama); Apply fills the four roles and leaves Save to the user.
+  - Choosing a provider for a role selects that provider's recommended model for the role (the admin model list order, `agent-models.v1.yaml`), never an empty "Choose a model".
+  - New projects keep taking their roles from the administrator's `defaultRoles` (DEC-106). When a default role names a provider the user cannot use now (an unreachable Ollama, a provider with no key), the settings page and the start page say so at the top, name the role, and offer the every-role control; no default is changed silently.
+  - Number fields: the field shows the value the slider shows (the built-in default, marked "default"), and numbers are written with thousands separators in labels and help text.
+  - Build to the artboard `docs/design/board/P8ProjectSettings.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the default rule, the form changes, unit tests (the warning with Ollama unreachable, with no key, with every role usable), web tests of the every-role control and of the model chosen with the provider.
+- **Done when**: a new project whose default roles use an unreachable Ollama shows the warning and, with one Apply, gets Anthropic with its recommended models; one Apply sets all four roles; no max-output field reads "Not set" next to a slider at a value; CI green.
+- **Refs**: RF-436, RF-1104, DEC-106, DEC-117, DEC-204, ADR-007, ADR-027; UX-03, UX-04, EV-92.; GitHub issue #1164
+
+### P8-24 - One amount on every run page: the approved amount, and an estimate that does not move
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none (DEC-210 answered Q-65)
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-21, UX-27, UX-28, EV-85, EV-96: during a run approved at $4.00 the header meter says "This run $0.00 of $0.50", the spend panel "cap $0.50" and "0 of 2,000,000 tokens"; the Deepen panel says "The run cap of $0.50 is what stops the run" and warns twice that the high figure could pass $0.50 and 2,000,000 tokens, while the journey card says "$3.96294 left of $4.00 approved". "Start Deepen" then opens "Start this Deepen?", which repeats both estimate paragraphs word for word. Yesterday the eShop likely ($4.085) was above the approvable ($4.00), and the Invoice figures moved between reads.
+- **Reads**: `docs/design/board/P8Run.dc.html` and `docs/design/board/P8Deepen.dc.html`, `web/src/components/TopbarRunMeter.tsx`, `web/src/pages/RunMeter.tsx`, `web/src/pages/SpendPanel.tsx`, `web/src/pages/DeepenEstimateView.tsx`, `web/src/pages/DeepenAction.tsx`, `web/src/pages/StartConfirmDialog.tsx`, `web/src/pages/EstimateSection.tsx`, `web/src/lib/deepen-choice.ts`, `src/application/` (the journey estimate and the approved amount of DEC-205/DEC-206), RF-424, RF-434, RF-1003, RF-209, DEC-205, DEC-206.
+- **Do**: add the Givens to RF-1003 and RF-434 first; red tests first.
+  - A run of a journey shows one amount everywhere: the approved amount left ("$3.96 left of $4.00 approved") in the header meter, the spend panel and the Deepen panel; the project run cap and the token cap appear only where they bind (a run outside a journey, or a cap lower than the approval), in one sentence.
+  - The Deepen panel says what stops the Deepen with the same amount, and shows the high-figure warning once, against the amount that applies.
+  - The confirmation dialog of Deepen shows one line (the likely cost and the amount left), not the panel's paragraphs again; the consent boxes stay in the panel only.
+  - DEC-210: when the likely figure is above the approvable one, the estimate shows the approvable figure with "likely above what can be approved (likely $4.09)", and Analyse says the run will pause and ask at the approved amount. The approved amount of a journey does not change between two reads with the same inputs (test with the stored estimate).
+  - Build to the artboards `docs/design/board/P8Run.dc.html` and `docs/design/board/P8Deepen.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the page and estimate changes with unit and web tests, and an end-to-end check of the live page with a recorded journey run.
+- **Done when**: no page of a journey run shows $0.50 when the approval is $4.00; the Deepen dialog has no repeated paragraph; an estimate whose likely is above the approvable shows the DEC-210 line; CI green.
+- **Refs**: RF-424, RF-434, RF-1003, RF-209, DEC-205, DEC-206, DEC-210, Q-65, ADR-007, ADR-027; UX-21, UX-27, UX-28, EV-85, EV-96.; GitHub issue #1165
+
+### P8-25 - Consents asked once per project, in the place they are needed
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P8-23, P8-24
+- **Gate**: none (DEC-209 answered Q-64)
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: the Anthropic consent was asked on the start page, again in the Deepen panel and again in Plan setup on the same project and day. On a zip project the Deepen panel shows only the Anthropic box; "Start Deepen" and "Confirm and start" then fail with HTTP 400 and "RST-1521 ... the run lacks the second confirmation for private code", and only then does the private-code box appear (`use-deepen.ts` sets `privateAsked` from the refusal). Plan setup puts "Switch every role to Ollama" beside the consent and "Start the plan" at the bottom of a page of about 5,400 px.
+- **Reads**: `docs/design/board/P8Deepen.dc.html`, `web/src/pages/DeepenAction.tsx` (`PrivateAsked`), `web/src/pages/use-deepen.ts`, `web/src/pages/use-private-code.ts`, `web/src/pages/PrivateCodeNotice.tsx`, `web/src/pages/CloudNotice.tsx`, `web/src/pages/PlanConsentNotice.tsx`, `web/src/pages/PlanSetupPage.tsx`, `web/src/pages/use-switch-to-ollama.ts`, `web/src/pages/start-gate.ts`, the run-start and Deepen routes that check `privateCodeConfirmed` (RST-1521), RF-143, RF-605, RF-209, Q-64, ADR-006.
+- **Do**: add the Givens to RF-143 and RF-209 first (DEC-209); red tests first.
+  - Private code: the Deepen panel and Plan setup show the private-code box from the start when the project's source is a zip or workbooks (the project knows its source kind), so no start is refused for a box that was not shown.
+  - DEC-209: a consent given on a project lasts 30 days, and is asked again sooner only when a role's provider changes or the user withdraws it; each run still records the consent it ran under (RF-142). While it holds, pages show one line, "You agreed on <date> to send masked excerpts of your code to Anthropic. Withdraw", instead of the boxes.
+  - Plan setup: "Switch every role to Ollama" moves to the roles summary, away from the consent and the start button; the start button and the estimate stay in view (a sticky footer like the start page), so the user does not scroll 5,000 px to start.
+  - Build to the artboard `docs/design/board/P8Deepen.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the stored consent (a new table `project_consent` with project, providers, kinds, given and withdrawn times, its numbered migration and its `docs/data-model.md` section), the page changes, unit and web tests, and an end-to-end test on a zip project: start, Deepen and plan with one consent.
+- **Done when**: a zip project runs understand, Deepen and plan with the consent given once and no RST-1521 refusal; changing a role's provider asks again; CI green.
+- **Refs**: RF-143, RF-142, RF-605, RF-209, DEC-209, Q-64, ADR-006, ADR-016; UX-16, UX-27, UX-29, EV-86, EV-98.; GitHub issue #1166
+
+### P8-26 - The project page after the journey, and the live run linked from it
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P8-24
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-07, UX-08, UX-09, UX-10, EV-99: after the whole journey ("Package: Current step") the project page is still titled "Start a run" and shows the zip upload form, with the sticky estimate bar covering "Upload zip". The bar says "Confirm the Anthropic notice above" while the notice is below it. The strip says "No open questions" while an unlabeled checkbox row says "Re-run with answers (1 answered question waiting ...)". Model and area names break mid-word ("claude-haiku-\n5-5"), and the estimate is one dense paragraph. While a run is live the page shows "Running now" with no link to the run.
+- **Reads**: `docs/design/board/P8Project.dc.html`, `web/src/pages/StartRunPage.tsx`, `web/src/pages/StartRunForm.tsx`, `web/src/pages/ZipUploadForm.tsx`, `web/src/pages/UploadSourceSection.tsx`, `web/src/pages/EstimateSection.tsx`, `web/src/pages/JourneyStrip.tsx`, `web/src/pages/JourneyPanel.tsx`, `web/src/lib/journey/journey-steps.ts`, `web/src/pages/StageAreasSection.tsx`, `docs/design-system.md`, RF-011, RF-1020, RF-1021, RF-1022.
+- **Do**: add the Givens to RF-1021 and RF-1022 first; red tests first.
+  - The page title follows the journey: "Start a run" before the first run, then the project name with the current step ("Package ready", "Questions waiting"); the upload of a new version moves into a collapsed "Replace the source" section once a run exists, and no sticky bar covers a control (the bar reserves its height at the bottom of the page).
+  - Messages that point to a control say where it is in the order of the page ("below"), or the control moves next to the button it unlocks.
+  - The "answered questions waiting" choice is a labelled control in the Questions step of the strip, and the strip counts the same questions.
+  - Model and area names wrap only at separators (CSS `overflow-wrap: anywhere` off, `word-break: keep-all` or a wider cell); the estimate becomes three short lines (likely, approved, what stops it), consistent with P8-24.
+  - A live run makes its strip step a link to the run page.
+  - Build to the artboard `docs/design/board/P8Project.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the page changes, web tests per point, and updated end-to-end snapshots of the project page in its three states.
+- **Done when**: the finished project page shows the package state with no upload form in view and nothing covered; a live run is one click from the project page; CI green.
+- **Refs**: RF-011, RF-1020, RF-1021, RF-1022, RF-1001, DEC-204, ADR-012, ADR-027; UX-07..UX-10, EV-99.; GitHub issue #1167
+
+### P8-27 - Run page: fits the kind of run, one count per figure, project menu kept
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-11..UX-14, UX-22, UX-26: a finished scan run is titled "Live run" and shows Evidence 0, Agents 0, "Run meter $0.00 of $0.50", Understand and Verify as empty circles, "Build report", "Download zip" and a disabled "Download hand-off zip". One page says "188 Supported claims" in the journey and "212 of 285" in the overview, and "11 Cards" beside a Deepen that "started from 17 cards". "Every question has a saved answer (1)" sits beside the tab "Your questions 0". The stats grid has an empty grey cell, and the disabled hand-off button gives no reason. A reader is started for "(root)" with 0 files, in a tile narrower than its text. A run page opened by its address shows "Project: Open a project to see its pages" in the side menu.
+- **Reads**: `docs/design/board/P8Run.dc.html`, `web/src/pages/LiveRunPage.tsx`, `web/src/pages/LiveRunView.tsx`, `web/src/pages/EndedBody.tsx`, `web/src/pages/RunOverview.tsx`, `web/src/pages/RunMeasures.tsx`, `web/src/pages/YourTurn.tsx`, `web/src/pages/RunDownloads.tsx`, `web/src/pages/CoverageMap.tsx`, `web/src/pages/AgentsGrid.tsx`, `web/src/app/navigation.ts`, `web/src/lib/journey/journey-context.ts`, the reader planner `src/application/understand/planned-areas.ts`, RF-1015, RF-1017, RF-1020, RF-1002, RF-1008, RF-155, RF-231.
+- **Do**: add the Givens to RF-1015 and RF-1017 first; red tests first.
+  - The title says the run and its state ("Scan, done", "Understand, running", "Deepen round 2, done"), not "Live run" after it ended. A scan run shows the code map and its downloads only; panels and downloads that cannot apply to the run kind are not rendered, and a disabled button says why in visible text.
+  - Each figure has one source: the journey, the overview, the Deepen table and the side panel read the same counts (supported claims and cards of the run shown, with "of the journey" when it is the journey total), and the question count of "Your turn" and of the tab agree.
+  - The stats grid has no empty cell at any width.
+  - An area with 0 files to read gets no reader task; the area tile fits its text.
+  - The side menu of a run page shows the pages of the run's project.
+  - "Open the package" on a finished plan run does something visible: it scrolls to and focuses the package section with its downloads and the `checks.md` summary (today the click leaves the page as it is, and the side menu loses the project).
+  - Build to the artboard `docs/design/board/P8Run.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the page and planner changes with unit and web tests, and end-to-end checks of a scan run page and of a Deepen run page.
+- **Done when**: a scan run page shows no understand panel; every count on a run page agrees with the others; a run opened by its address keeps its project menu; CI green.
+- **Refs**: RF-1015, RF-1017, RF-1020, RF-1002, RF-1008, RF-155, RF-231, ADR-012; UX-11..UX-14, UX-22, UX-26.; GitHub issue #1168
+
+### P8-28 - Your turn offers one next step, and questions are answered in one pass
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P8-25, P8-27
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-24, UX-25: after the understand, "Your turn" offers three paths at once: "Deepen this run", "Do not Deepen: answer the questions now" and a full-width primary "Set up the plan". The Questions card reads "3 open questions, asked after the last Deepen" before any Deepen ran. "Your questions" lists OQ-003, OQ-002, OQ-001 (newest first), an answered question stays at the top of "Open questions", each answer needs its own Save, and there is no "accept the recommended answers" (Plan setup has one).
+- **Reads**: `docs/design/board/P8Run.dc.html`, `web/src/pages/YourTurn.tsx`, `web/src/pages/DeepenAction.tsx`, `web/src/pages/PlanNext.tsx`, `web/src/pages/RunAnswers.tsx`, `web/src/pages/AnswerChoices.tsx`, `web/src/pages/use-answer-save.ts`, `web/src/pages/use-skip-deepen.ts`, `web/src/lib/journey/journey-action.ts`, RF-1007, RF-1017, RF-1021, RF-647.
+- **Do**: add the Givens to RF-1021 and RF-1007 first; red tests first.
+  - Your turn shows the journey's next step as the one primary button (Deepen while coverage is below the bar, else Set up the plan), and the other paths as secondary links under it.
+  - The Questions text says "asked after the last Deepen" only after a Deepen ran; before, "asked by the understand".
+  - Questions are listed in id order, unanswered first; an answered question moves to "Answered" at once.
+  - One "Save answers" saves every changed answer, and "Accept the recommended answers" fills the unanswered ones with their defaults, as in Plan setup (RF-647).
+  - Build to the artboard `docs/design/board/P8Run.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the page changes with web tests and an end-to-end test that answers three questions in one save.
+- **Done when**: after an understand the page has one primary action; three answers are saved with one click; CI green.
+- **Refs**: RF-1007, RF-1017, RF-1021, RF-647, DEC-178, DEC-179, ADR-012; UX-24, UX-25.; GitHub issue #1169
+
+### P8-29 - Run states, times, names and money: one rule each
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P8-26
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-06, UX-17, UX-19, EV-93, EV-94: a run stopped by the user ends "Interrupted" but the strip shows "Failed"; a resumed run's start time is reset, so History shows 13.8 min for a 66 min run; History lists a Deepen with stage "understand" and Commit "none" for a zip project, with the coverage line running under the Tokens column and a red Delete on every row; Cost "By run" names runs by UUID while History names them `20261102-183533-understand`, repeats "Price table 2026-10-21" on every row, and mixes 3 and 6 decimals ($3.113515 beside $0.237).
+- **Reads**: `docs/design/board/P8HistoryCost.dc.html` and `docs/design/board/P8Project.dc.html`, `web/src/pages/JourneyStrip.tsx`, `web/src/lib/journey/journey-steps.ts`, `web/src/pages/HistoryPage.tsx`, `web/src/pages/HistoryRuns.tsx`, `web/src/pages/ProjectRunsTable.tsx`, `web/src/pages/ProjectCostPage.tsx`, `web/src/pages/CostTable.tsx`, the money formatter in `web/src/lib/`, `src/application/runs/run-lifecycle.ts` (resume), `docs/design-system.md` (number formats), RF-006, RF-426, RF-428, RF-1008, RF-1012, RF-1020.
+- **Do**: add the Givens first; red tests first.
+  - A run stopped by the user shows "Stopped by you" in the strip, History and the run page.
+  - A resumed run keeps its first start; History shows the running time (the sum of its active spans) and the wall time.
+  - History names the stage of a Deepen "Deepen" (with its round), shows Commit only for a GitHub source, keeps each value in its column, and puts Delete in a row menu with its confirmation.
+  - Cost names runs as History does, shows the price table once per table, and every money amount follows the rule `docs/design-system.md` section 10 already states (DEC-54: four decimals below $1, two above, so $3.11 and $0.2370), through one formatter used by every page, with the exact figure in a tooltip.
+  - Build to the artboards `docs/design/board/P8HistoryCost.dc.html` and `docs/design/board/P8Project.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the changes with unit tests of the formatter and of the resumed time, and web tests of History and Cost.
+- **Done when**: a stopped run never reads "Failed"; a 66 min resumed run shows 66 min of running time; Cost and History name runs alike; no page mixes 3 and 6 decimals; CI green.
+- **Refs**: RF-006, RF-426, RF-428, RF-1008, RF-1012, RF-1020, DEC-54, ADR-007, ADR-012; UX-06, UX-17, UX-19, EV-93, EV-94.; GitHub issue #1170
+
+### P8-30 - Understand: an area counts as read only when its files are, and app code is read first
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-23, EV-97, EV-76: the first understand of Asset Manager (2 areas, 52,749 first-party tokens) ended in 2 min with "2 / 2 Areas read" and "16% of first-party tokens read", leaving 21 files never read, so even a small project needs a Deepen before anything is usable. On eShop, readers are planned in ordinal alphabetical order ((root), ACI, Docs, Setup, VM before the app folders), so a run that stops early misses app code.
+- **Reads**: `docs/design/board/P8Run.dc.html`, `src/application/understand/` (area planning, `reader-settings.ts`, the reader loop and its stop rule), the reader prompt in `prompts/` (what tells a reader it is done), `web/src/pages/UnderstandingSummary.tsx`, `web/src/lib/understanding/measure-text.ts`, RF-210 (readers take the app's own code first), RF-230 (coverage per area), RF-231 (honest understanding measures), RF-1005; P7-03 (Done) made RF-210, so the eShop order is a regression of it.
+- **Do**: measure first: from the recorded events of the run, why each reader stopped (turn limit, token budget, the model saying it is done) and what share of its area it read; write the numbers into the card's PR.
+  - Then: a reader whose area still has unread first-party files within the run's budget continues with them (the same turn as the Deepen coverage pass, inside the understand), and an area is reported "read" only above the coverage bar; below it, "partly read (16%)".
+  - Readers are planned app code first: areas with entry points and the largest first-party token counts before deployment, docs and setup folders (the P7-03 intent), with a test on a fixture with those folder names.
+  - Prompt changes get a new prompt version file (RNF-004).
+  - Build to the artboard `docs/design/board/P8Run.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the measurement note, the reader and planner changes, a new prompt version if needed, unit tests with the fake provider, and the summary wording.
+- **Done when**: with the recorded responses of a small app the understand reads its first-party files above the bar or says "partly read"; the planned order puts app folders first; CI green.
+- **Refs**: RF-210, RF-230, RF-231, RF-1005, RNF-004, ADR-005, ADR-007; UX-23, EV-76, EV-97.; GitHub issue #1171
+
+### P8-31 - Plan: a second gap round before RST-1806, and plain words for RST-1521
+
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P8-25
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (P8-17 evaluation, 2026-11-02, re-checked 2026-11-03): EV-95, EV-79, EV-86: the plan from the 371-card eShop Deepen failed RST-1806 once (FLOW-002/009/010/012 unbuilt, REQ-017 with no card) after the gap round of P8-06 had run, and completed on the retry from the same inputs; the failed try cost $0.607. `POST plan-options` without the private-code confirmation answers RST-1521 "Start the run again and tick the private code confirmation", which points the user to the wrong place.
+- **Reads**: `src/application/plan/plan-links.ts` (`planGap`, the gap round and gap repair of P8-06), `src/application/plan/gap-repair-message.ts`, `src/application/plan/plan-repair.ts`, the planner prompt `prompts/planner/package.v12.md`, the recorded eShop failure (the four unbuilt flows and what the first gap round returned), `docs/conventions.md` (RST-1806, RST-1521), RF-604, RF-627, RF-602.
+- **Do**: add the Givens to RF-627 first; red tests first, with recorded responses where the first gap round leaves items unbuilt.
+  - Find from the recorded eShop failure why the first gap round left the four flows open (no card proposed, a card that did not name the flow, or a parse problem) and fix that cause.
+  - When items are still unbuilt after the first gap round and it had no unreadable answer, run one more gap round with only those items; fail with RST-1806 only after it. Every round is metered like any call, and the run records how many gap rounds ran.
+  - The plan page and `checks.md` say "Every item is built by at least one task card" right above "Requirements built by no card: REQ-010, REQ-011, REQ-014" (2026-11-03 walk). Name what the first sentence covers (features, tables, operations, journeys and screens), and when requirements are left unbuilt say so in the summary line, for example "Every item is built; 3 requirements are built by no card".
+  - RST-1521 says where to confirm, in the words of P8-25 (with a stored consent the box is not shown, so the message names the project's consent line): "Give the private code confirmation for this project, then try again."
+- **Delivers**: the cause fix, the second round, the message change, unit and integration tests with recorded responses.
+- **Done when**: a recorded plan whose first gap round leaves four flows unbuilt completes after the second round; a plan with items still open after it fails RST-1806 as today; CI green.
+- **Refs**: RF-604, RF-627, RF-602, RF-007, ADR-005, ADR-007, ADR-018; P8-06; EV-79, EV-86, EV-95.; GitHub issue #1172
+
+### P8-32 - Projects list, header, journey strip and landing: layout fixes
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P8-29
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-05, UX-15, UX-18, UX-20: the project name is not a link, and each row has a primary "Start run" button that only opens the project page (8 identical primary buttons); scratch projects can be deleted only at the bottom of History; names are in monospace with an automatic "(zip, 2 Nov 2026)" suffix, and Last run shows the date only. The journey strip (7 cards in a 5 + 2 grid) is repeated in full on every page. At 1280 px the live run meter pushes the user name, Sign out and System to a second header line. The landing "Six stages" timeline puts the sixth step alone on a second row.
+- **Reads**: `docs/design/board/P8Projects.dc.html`, `web/src/pages/ProjectsPage.tsx`, `web/src/pages/DeleteProjectSection.tsx`, `web/src/pages/JourneyStrip.tsx`, `web/src/components/TopbarRunMeter.tsx`, the app header component, the landing page in `web/`, `docs/design-system.md`, RF-010, RF-1010, RF-1012, RF-1020, RF-1200.
+- **Do**: add the Givens first; red tests first.
+  - Projects: the name is the link to the project; the row action says what it does ("Open"), as a secondary button; a row menu offers Delete with its confirmation; names use the body font; the suffix becomes a source badge; Last run shows date and time.
+  - Journey strip: one compact row of seven steps (icon, name, state) that expands to the detail cards on request, on every page but the project page, where it stays expanded.
+  - Header: the run meter fits in the header at 1280 px and 1024 px (shorter text, or it moves under the title), never wrapping the account links.
+  - Landing: the six stages lay out as 6, 3 + 3 or 2 + 2 + 2, never 5 + 1.
+  - Build to the artboard `docs/design/board/P8Projects.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the layout changes, web tests, and end-to-end screenshots at 1280 px and 390 px of the projects list, a run page and the landing.
+- **Done when**: no row of the projects list has a primary button; the header is one line at 1280 px during a run; the landing timeline has no lone step; CI green.
+- **Refs**: RF-010, RF-1010, RF-1012, RF-1020, RF-1200, ADR-012; UX-05, UX-15, UX-18, UX-20.; GitHub issue #1173
+
+### P8-33 - End-to-end test of the pause at the approved amount
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-24, P8-29
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): EV-84 (P8-17 evaluation, item 5 of its follow-ups): the pause-and-ask at the approved amount was never reached in an evaluation, because the approved amount is always well above the spend, Under DEC-206 the approved amount is the lower of the worst case and the run cap, so a project run cap below the spend makes the pause reachable without new behaviour.
+- **Reads**: RF-434, RF-435, DEC-205, DEC-206, the approval control (`web/src/pages/ApprovalControl.tsx`, `web/src/pages/PauseUpdates.tsx`, `web/src/pages/use-pause-updates.ts`), the end-to-end specs of the live run, the fake provider with recorded responses.
+- **Do**: no new behaviour; tests only.
+  - An end-to-end test with the fake provider sets the project run cap below the recorded run's spend, approves the offered amount, sees the run pause with the question, chooses Continue (+N), and sees it complete; a second test chooses Stop and sees "Stopped by you".
+- **Delivers**: the two end-to-end tests.
+- **Done when**: the pause is exercised by CI on every run of the end-to-end suite; CI green.
+- **Refs**: RF-434, RF-435, DEC-205, DEC-206, ADR-007, ADR-008; EV-84.; GitHub issue #1174
