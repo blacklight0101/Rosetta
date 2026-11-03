@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import { useRef, useState } from 'preact/hooks';
+import { useCallback, useRef, useState } from 'preact/hooks';
 import type { HistoryRun } from '../api/history-schemas.js';
 import type { Project } from '../api/project-schemas.js';
 import type { JourneyView } from '../lib/journey/journey-steps.js';
@@ -66,17 +66,42 @@ function SourceSection({ form }: { readonly form: StartForm }): JSX.Element {
   );
 }
 
+/**
+ * A folded section that opens by itself when `auto` says so and keeps what the user chose: the same
+ * element stays in place when `auto` changes, so a section the user opened does not close under them.
+ */
+interface Fold {
+  readonly open: boolean;
+  readonly onToggle: (e: Event) => void;
+}
+
+function useFold(auto: boolean): Fold {
+  const [chosen, setChosen] = useState<boolean | undefined>();
+  return {
+    open: chosen ?? auto,
+    onToggle: (event) => {
+      if (event.currentTarget instanceof HTMLDetailsElement) setChosen(event.currentTarget.open);
+    },
+  };
+}
+
 /** P8-26: once a run exists a new version of an upload is made from a collapsed section. */
 function Source(props: {
   readonly form: StartForm;
   readonly started: boolean;
   readonly open: boolean;
 }): JSX.Element {
-  const { form, started, open } = props;
+  const { form, started } = props;
   const kind = form.project.sourceKind;
+  const fold = useFold(props.open);
   if (!started || kind === 'github') return <SourceSection form={form} />;
   return (
-    <details class="rst-card rst-p826-fold" open={open} data-testid="replace-source">
+    <details
+      class="rst-card rst-p826-fold"
+      open={fold.open}
+      onToggle={fold.onToggle}
+      data-testid="replace-source"
+    >
       <summary>Replace the source</summary>
       <p class="rst-settings__note">{replaceLeads[kind]}</p>
       <SourceSection form={form} />
@@ -124,37 +149,69 @@ function AfterJourney(props: {
   );
 }
 
-// RF-1001
-export function StartRunForm({ project }: { readonly project: Project }): JSX.Element {
-  const form = useStartForm(project);
-  const [view, setView] = useState<JourneyView | undefined>();
-  const { state } = useHistory(project.id);
-  const runs = state.status === 'ready' ? state.history.runs : [];
-  const ref = useRef<HTMLDivElement>(null);
-  useRefusalFocus(ref, form.actions.attempts);
+/** The source, the scan and what starts a run: shown once the journey is read. */
+function BelowStrip(props: {
+  readonly form: StartForm;
+  readonly view: JourneyView | undefined;
+}): JSX.Element {
+  const { form, view } = props;
   // RF-160: until the scan has finished (or while a replaced source is scanned again) only it shows.
   const scanning = form.scan.state.kind === 'starting' || form.scan.state.kind === 'scanning';
   const onlyScan = form.choice.estimate.status === 'none' || scanning;
   const started = hasRun(view);
-  const heading = headingOf(project.name, view);
+  // Held here, which stays in place while the scan hides the choices, so what the user opened stays open.
+  const choices = useFold(startsHere(view));
   return (
-    <div class="rst-start" ref={ref}>
-      <ProjectHeading heading={heading} project={form.project} started={started} />
-      {started ? null : <p class="rst-settings__lead">{leads[form.project.sourceKind]}</p>}
-      <ProjectJourney form={form} liveRunId={liveRunOf(runs)} onView={setView} />
-      {view !== undefined && started ? <AfterJourney view={view} runs={runs} /> : null}
+    <>
       <Source form={form} started={started} open={onlyScan} />
       {onlyScan || form.scan.state.kind === 'failed' ? <ScanSection form={form} /> : null}
-      {onlyScan ? null : <Choices form={form} open={startsHere(view)} />}
+      {onlyScan ? null : <Choices form={form} started={started} fold={choices} />}
+    </>
+  );
+}
+
+// RF-1001
+export function StartRunForm({ project }: { readonly project: Project }): JSX.Element {
+  const form = useStartForm(project);
+  // P8-26: until the journey is read (or failed to be) the page shows only its title and the strip, so
+  // the upload and the areas do not appear and then fold away.
+  const [read, setRead] = useState<{ readonly view: JourneyView | undefined } | undefined>();
+  const view = read?.view;
+  const { state } = useHistory(project.id);
+  const runs = state.status === 'ready' ? state.history.runs : [];
+  const ref = useRef<HTMLDivElement>(null);
+  useRefusalFocus(ref, form.actions.attempts);
+  const onView = useCallback((next: JourneyView | undefined): void => {
+    setRead({ view: next });
+  }, []);
+  const started = hasRun(view);
+  const heading = headingOf(project.name, view);
+  return (
+    <div class="rst-start" ref={ref} data-journey={read === undefined ? 'pending' : 'read'}>
+      <ProjectHeading heading={heading} project={form.project} started={started} />
+      {started ? null : <p class="rst-settings__lead">{leads[form.project.sourceKind]}</p>}
+      <ProjectJourney form={form} liveRunId={liveRunOf(runs)} onView={onView} />
+      {view !== undefined && started ? <AfterJourney view={view} runs={runs} /> : null}
+      {read === undefined ? null : <BelowStrip form={form} view={view} />}
     </div>
   );
 }
 
-/** The areas, estimate and Analyse: open while the journey starts, folded once there is a run. */
-function Choices(props: { readonly form: StartForm; readonly open: boolean }): JSX.Element {
-  if (props.open) return <StartChoices form={props.form} />;
+/** The areas, estimate and Analyse: inline before the first run; once there is a run, a fold that is open while the journey starts again. */
+function Choices(props: {
+  readonly form: StartForm;
+  readonly started: boolean;
+  readonly fold: Fold;
+}): JSX.Element {
+  const { fold } = props;
+  if (!props.started) return <StartChoices form={props.form} />;
   return (
-    <details class="rst-card rst-p826-fold" data-testid="start-another">
+    <details
+      class="rst-card rst-p826-fold"
+      open={fold.open}
+      onToggle={fold.onToggle}
+      data-testid="start-another"
+    >
       <summary>Start another run</summary>
       <StartChoices form={props.form} />
     </details>

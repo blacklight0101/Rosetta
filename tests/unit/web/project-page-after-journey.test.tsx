@@ -120,9 +120,11 @@ it('RF-1021 RF-1022 the areas and Analyse are folded under "Start another run" o
 
 it('RF-1021 a run with nothing to plan from keeps the areas and Analyse open', async () => {
   open('noClaims');
-  await screen.findByRole('button', { name: /^Analyse/u });
 
-  expect(screen.queryByTestId('start-another')).toBeNull();
+  const fold = await screen.findByTestId('start-another');
+
+  expect(fold.hasAttribute('open')).toBe(true);
+  expect(within(fold).getByRole('button', { name: /^Analyse/u })).toBeTruthy();
 });
 
 it('RF-1020 RF-1021 a live Deepen makes its strip step a link to the run and says so in the title', async () => {

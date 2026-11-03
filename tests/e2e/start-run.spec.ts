@@ -6,6 +6,7 @@ import { runStatus } from './support/live-run-page.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 import { chooseModel } from './support/choose-model.js';
+import { showStartChoices } from './support/start-choices.js';
 import { openStartPage, projectIdOf } from './support/start-run-page.js';
 
 // RF-1001, RF-143, RF-425, RF-1108, DEC-108, P1-34: the start page of a project, driven against
@@ -111,6 +112,7 @@ test('RF-143 a cloud reader needs the consent before Start and the notice names 
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
+  await showStartChoices(page);
 
   const notice = page.getByRole('region', { name: 'Code will leave this machine' });
   await expect(notice).toContainText('OpenAI');

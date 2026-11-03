@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from './fixtures.js';
+import { revealAreas, showStartChoices } from './start-choices.js';
 
 // RF-1002, RF-1003, RF-1004, P1-35: what the live run journeys do on the start page and on the live
 // page, so the specs read as steps. The repository is `octo/webforms` (serve.ts), the C# fixture whose
@@ -52,8 +53,10 @@ export async function openStartOf(page: Page, url: string): Promise<void> {
 export async function openStartPage(page: Page): Promise<void> {
   await page.goto('/projects');
   await openStartOf(page, webformsUrl);
-  await expect(startHeadingOf(page)).toBeVisible();
+  // P8-26: a project with a run is titled with its name, not "Start a run".
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(webformsUrl);
+  await showStartChoices(page);
 }
 
 /** The area checkboxes of the start page. */
@@ -64,6 +67,7 @@ function areasOf(page: Page): Locator {
 /** Chooses which areas an understand run reads: only the ones named. */
 async function chooseAreas(page: Page, names: readonly string[]): Promise<void> {
   const areas = areasOf(page);
+  await revealAreas(page);
   await expect(areas.locator('label').first()).toBeVisible();
   for (const label of await areas.locator('label').allTextContents()) {
     const name = label.trim();
@@ -100,6 +104,7 @@ export async function startAndOpenLiveRun(page: Page): Promise<string> {
  * the areas are listed, then opens the live page of the scan run through the History page.
  */
 export async function openScanRun(page: Page): Promise<void> {
+  await revealAreas(page);
   await expect(areasOf(page).locator('label').first()).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId('scan-running')).toHaveCount(0, { timeout: 60_000 });
   await page.getByRole('navigation').getByRole('link', { name: 'History' }).click();

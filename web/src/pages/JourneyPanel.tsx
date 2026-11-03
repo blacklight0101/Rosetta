@@ -1,9 +1,10 @@
 import type { JSX } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import { navigate } from '../app/router.js';
 import { journeyOf, type JourneyView } from '../lib/journey/journey-steps.js';
 import { JourneyStrip, type JourneyStripProps, type RerunChoice } from './JourneyStrip.js';
 import { useJourney } from './use-journey.js';
+import { useReportView } from './use-report-view.js';
 import { useSkipDeepen } from './use-skip-deepen.js';
 
 // RF-615, RF-1015: the journey strip of a page: reads the facts of the run the page is about
@@ -29,7 +30,7 @@ export interface JourneyPanelProps {
   readonly deepenInPlace?: boolean | undefined;
   /** RF-1021: draws the questions and plan setup in place (the project page); told when the brief is saved. */
   readonly setupInPlace?: ((onSaved: () => void) => JSX.Element) | undefined;
-  /** P8-26: told the view each time it is drawn, so the page can title itself after the step. */
+  /** P8-26: told the view once it is read (none when it cannot be), so the page can title itself after the step. */
   readonly onView?: ((view: JourneyView | undefined) => void) | undefined;
   /** P8-26 (RF-1020): the queued or running run of the project; the step that waits links to it. */
   readonly liveRunId?: string | undefined;
@@ -57,17 +58,12 @@ export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
   const skip = useSkipDeepen(
     runId ?? (load.status === 'ready' ? load.facts.source?.id : undefined),
   );
-  const { onView, liveRunId } = props;
+  const { liveRunId } = props;
   const answered = props.rerun?.answered;
-  const facts = load.status === 'ready' ? load.facts : undefined;
-  useEffect(() => {
-    if (onView === undefined) return;
-    onView(
-      facts === undefined
-        ? undefined
-        : journeyOf(facts, projectId, skip.skipped, { liveRunId, answered }),
-    );
-  }, [onView, facts, projectId, skip.skipped, liveRunId, answered]);
+  useReportView({
+    ...{ onView: props.onView, load, projectId, liveRunId, answered },
+    skipped: skip.skipped,
+  });
   if (load.status === 'loading') return null;
   if (load.status === 'failed') {
     return <p class="rst-road-note">{`The journey could not be read (${load.error.code}).`}</p>;
