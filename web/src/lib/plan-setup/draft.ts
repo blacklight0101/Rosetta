@@ -18,7 +18,7 @@ import { CONTEXT_FIELDS, STACK_LAYERS, STEP_IDS, questionsOf, type ContextField 
 // and the package reports it as an open question. A text field is kept as typed.
 
 export const MAX_TEXT = 500;
-export const MAX_CHOICE = 200;
+const MAX_CHOICE = 200;
 const MAX_INTEGRATIONS = 20;
 const MAX_TEAM = 10_000;
 

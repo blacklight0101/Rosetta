@@ -28,17 +28,23 @@ Rules:
   4 and 6. Run two cards at once only when their _Delivers_ paths are disjoint and they share no serialized resource
   (protocol sections 1 and 8).
 - **Review.** When the builder reports and has pushed, open the pull request from the template (`Closes #<issue>`),
-  label the issue `status:in-review`, and spawn `verifier` (difficulty 1-8), `verifier-opus` (difficulty 9-10, or a card promoted
+  label the issue `status:in-review`, and wait for its CI. When CI is red, send the failing jobs back to the builder
+  (it does not count as a FAIL) and spawn no verifier until CI is green: on the Phase 8 build three verifier rounds
+  were spent on e2e specs the builder never ran. Then spawn `verifier` (difficulty 1-8), `verifier-opus` (difficulty 9-10, or a card promoted
   to opus after FAIL 2) or `verifier-fable` (only for a card built by `builder-fable`) with
   the card, the report and the branch. Do not judge the report yourself. Post the verdict block on the pull request,
   unchanged.
 - **Merge (DEC-96).** On PASS merge only when every rule of protocol section 3.1 holds: CI green,
-  PASS with no BLOCKING or MAJOR finding posted, branch up to date with `develop` (rebase the task branch and push it with
-  `--force-with-lease` when needed, never `develop` or `main`), no change to `docs/spec/`, `docs/adr/`, `docs/decision-log.md`,
-  `docs/rfc/` or `CLAUDE.md` (those pull requests get `needs-owner` and wait for the owner), and
+  PASS with no BLOCKING or MAJOR finding posted, the branch merges into `develop` without a conflict and, until P8-34
+  is `Done`, is up to date with it (merge `develop` into the task branch; never rebase or force-push), and
   `gh pr merge <pr> --squash --delete-branch` exits 0. Never use an admin override, never bypass the ruleset, never
   push to `develop` or `main`. Then `git pull --ff-only` on your `develop` and confirm the issue closed. P1-01 follows the exception
   of protocol section 3.1.
+- **After a merge (DEC-213).** Wait for the CI run on `develop`; red stops every merge until it is fixed. Merge
+  `develop` into every other open card branch at once and send a conflict to that card's builder. Before starting
+  cards side by side, compare the files they will edit and serialize any overlap (protocol section 8).
+  Documentation pull requests outside a card, including ones that change `CLAUDE.md`, merge without a verifier
+  under the same rules (DEC-212).
 - **Release (DEC-175).** When the owner says a batch is ready, open one pull request `develop` -> `main` (protocol
   section 3.2): it lists the cards in it, carries `needs-owner`, and only the owner merges it, with a merge commit.
   Never merge it, never squash it, never push to `main`. Production deploys at 06:00 Madrid the next morning.

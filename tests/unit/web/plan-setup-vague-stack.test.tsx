@@ -22,6 +22,8 @@ const offer = {
   layers: layers.map((layer) => ({
     layer,
     proposals: [],
+    technologies: [],
+    platforms: [],
     keepLegacy: true,
     vague:
       layer === 'front-end'

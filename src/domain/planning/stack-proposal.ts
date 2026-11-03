@@ -8,6 +8,7 @@ import {
 } from './planning-brief.js';
 import type { StackData, VagueWords } from './stack-data.js';
 import { matchingOptions, platformOptions } from './stack-offer.js';
+import { languagePlatform } from './stack-platform.js';
 import { vagueMatch } from './vague-choice.js';
 import { typedAnswers } from './typed-answers.js';
 
@@ -102,11 +103,14 @@ function layersOf(
 ): ProposedLayer[] {
   // P7-30: a typed answer that names only a platform leaves its layer open, with the platform's options.
   const typed = new Map(brief.stack.map((entry) => [entry.layer, entry]));
+  // DEC-208: the language the owner chose decides the platform of every open layer.
+  const chosen = languagePlatform(brief, stack)?.group;
   return stackLayers.flatMap((layer) => {
     const own = typed.get(layer);
     const vague = own?.custom === true ? vagueMatch(stack, layer, own.choice) : undefined;
     if (own !== undefined && vague === undefined) return [];
-    const found = kind === 'keep' ? undefined : optionOf(stack, { kind, layer, vague }, facts);
+    const found =
+      kind === 'keep' ? undefined : optionOf(stack, { kind, layer, vague: vague ?? chosen }, facts);
     if (found === undefined) return own === undefined ? [] : [openLayer(own, facts, kind)];
     const why =
       own === undefined
@@ -116,7 +120,7 @@ function layersOf(
   });
 }
 
-/** The catalogue's first option for the layer: the platform's when the answer was vague, else the scan's. */
+/** The catalogue's first option for the layer: the platform's (a vague answer, or the language chosen), else the scan's. */
 function optionOf(
   stack: StackData,
   want: { kind: ApplicationKind; layer: StackLayer; vague: VagueWords | undefined },
