@@ -2,6 +2,7 @@ import type { JourneyFacts, JourneyRunFacts } from '../../api/journey-schemas.js
 import { runDownloadPath } from '../../api/runs.js';
 import { costLabel } from '../live-run/format.js';
 import { microsToCents } from '../usd.js';
+import { approvedLineOf, approvedViewOf, type ApprovedView } from '../live-run/approved-line.js';
 import { nextOf, type JourneyAction, type JourneyLink } from './journey-action.js';
 import {
   deepenFirst,
@@ -11,6 +12,7 @@ import {
   phaseOf,
   workingText,
   type Context,
+  type JourneyExtras,
   type StepKey,
 } from './journey-context.js';
 
@@ -53,7 +55,7 @@ export interface JourneyStep {
 }
 
 export type { JourneyAction, JourneyLink } from './journey-action.js';
-export type { StepKey } from './journey-context.js';
+export type { JourneyExtras, StepKey } from './journey-context.js';
 
 export interface JourneyView {
   readonly projectId: string;
@@ -65,6 +67,10 @@ export interface JourneyView {
   readonly totalCostMicros: number;
   /** RF-1021: what is left of the amount approved for the journey; none without a journey record. */
   readonly left: string | undefined;
+  /** P8-26: the approved amount as a figure with the spend against it; none without a journey record. */
+  readonly approved: ApprovedView | undefined;
+  /** P8-26: the facts the view was made from, for the sections of the project page. */
+  readonly facts: JourneyFacts;
 }
 
 type Draft = Omit<JourneyStep, 'here'>;
@@ -105,7 +111,11 @@ function understandPart({ source }: Context): Part {
   return ofRun(source, { state: 'done', detail, href: runPage(source) });
 }
 
-function questionsPart({ source, facts, skippedDeepen: skipped }: Context): Part {
+/** P8-26: a live run makes the step that waits for it a link to its run page. */
+const liveHref = (liveRunId: string | undefined, fallback: string): string =>
+  liveRunId === undefined ? fallback : `/runs/${liveRunId}`;
+
+function questionsBase({ source, facts, skippedDeepen: skipped, liveRunId }: Context): Part {
   if (source === null) return locked('Needs an understand run');
   const phase = phaseOf(source);
   if (phase === 'working') return locked('Comes after the run finishes');
@@ -127,13 +137,29 @@ function questionsPart({ source, facts, skippedDeepen: skipped }: Context): Part
   // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by it.
   if (deepenRunning({ source, skippedDeepen: skipped })) {
     const detail = `${plural(open, 'open question')}, asked after the Deepen that is running`;
-    return { state: 'upcoming', detail, href };
+    // P8-26: a live Deepen makes this step a link to its run page.
+    return {
+      state: 'upcoming',
+      detail,
+      href: liveHref(liveRunId, href),
+    };
   }
   if (deepenFirst({ source, skippedDeepen: skipped })) {
     const detail = `${plural(open, 'open question')}, asked after the last Deepen: answers given now will be used by it`;
     return { state: 'upcoming', detail, href };
   }
   return { state: 'upcoming', detail: plural(open, 'open question'), href };
+}
+
+/** RF-241, P8-26: the strip counts the questions with an answer too, and never says none are open while one waits. */
+function questionsPart(c: Context): Part {
+  const part = questionsBase(c);
+  const answered = c.answered ?? 0;
+  if (answered === 0) return part;
+  if (part.detail === 'No open questions') {
+    return { ...part, detail: `${plural(answered, 'answered question')} waiting for a re-run` };
+  }
+  return { ...part, detail: `${part.detail} (${String(answered)} answered)` };
 }
 
 function briefPart(c: Context): Part {
@@ -241,10 +267,11 @@ export function journeyOf(
   projectId: string,
   /** RF-646: the user chose not to Deepen the source run. */
   skippedDeepen = false,
+  extras: JourneyExtras = {},
 ): JourneyView {
   const { source, plan } = facts;
   const setUp = source === null ? undefined : `/projects/${projectId}/plan-setup?run=${source.id}`;
-  const context: Context = { facts, projectId, source, plan, setUp, skippedDeepen };
+  const context: Context = { facts, projectId, source, plan, setUp, skippedDeepen, ...extras };
   const next = nextOf(context);
   const costs = costsOf(context);
   const steps = parts.map(([key, title, partOf]): JourneyStep => {
@@ -264,5 +291,7 @@ export function journeyOf(
     secondary: next.secondary,
     totalCostMicros: spent,
     left: leftText(facts),
+    approved: approvedViewOf(approvedLineOf(facts.budget), 'micros'),
+    facts,
   };
 }

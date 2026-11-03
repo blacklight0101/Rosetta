@@ -1,8 +1,8 @@
 import type { JSX } from 'preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { navigate } from '../app/router.js';
-import { journeyOf } from '../lib/journey/journey-steps.js';
-import { JourneyStrip, type JourneyStripProps } from './JourneyStrip.js';
+import { journeyOf, type JourneyView } from '../lib/journey/journey-steps.js';
+import { JourneyStrip, type JourneyStripProps, type RerunChoice } from './JourneyStrip.js';
 import { useJourney } from './use-journey.js';
 import { useSkipDeepen } from './use-skip-deepen.js';
 
@@ -29,6 +29,12 @@ export interface JourneyPanelProps {
   readonly deepenInPlace?: boolean | undefined;
   /** RF-1021: draws the questions and plan setup in place (the project page); told when the brief is saved. */
   readonly setupInPlace?: ((onSaved: () => void) => JSX.Element) | undefined;
+  /** P8-26: told the view each time it is drawn, so the page can title itself after the step. */
+  readonly onView?: ((view: JourneyView | undefined) => void) | undefined;
+  /** P8-26 (RF-1020): the queued or running run of the project; the step that waits links to it. */
+  readonly liveRunId?: string | undefined;
+  /** RF-241, P8-26: the choice to re-run with the answers that wait, held by the Questions step. */
+  readonly rerun?: RerunChoice | undefined;
 }
 
 /** RF-1021: what the project page does in place: Deepen, skipping it, and the questions and plan setup. */
@@ -51,11 +57,22 @@ export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
   const skip = useSkipDeepen(
     runId ?? (load.status === 'ready' ? load.facts.source?.id : undefined),
   );
+  const { onView, liveRunId } = props;
+  const answered = props.rerun?.answered;
+  const facts = load.status === 'ready' ? load.facts : undefined;
+  useEffect(() => {
+    if (onView === undefined) return;
+    onView(
+      facts === undefined
+        ? undefined
+        : journeyOf(facts, projectId, skip.skipped, { liveRunId, answered }),
+    );
+  }, [onView, facts, projectId, skip.skipped, liveRunId, answered]);
   if (load.status === 'loading') return null;
   if (load.status === 'failed') {
     return <p class="rst-road-note">{`The journey could not be read (${load.error.code}).`}</p>;
   }
-  const view = journeyOf(load.facts, projectId, skip.skipped);
+  const view = journeyOf(load.facts, projectId, skip.skipped, { liveRunId, answered });
   const source = load.facts.source;
   const inPlace = inPlaceOf(props, source?.id, {
     skip: () => {
@@ -68,6 +85,7 @@ export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
   return (
     <JourneyStrip
       view={view}
+      rerun={props.rerun}
       onAnswer={props.onAnswer}
       onDeepen={props.onDeepen}
       pagePath={props.pagePath}

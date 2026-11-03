@@ -21,8 +21,17 @@ import { ResumeButton } from './ResumeButton.js';
 // The step that holds the next action is marked `aria-current="step"` and says so in text. One next
 // action sits under the list. All the styles are under `.rst-road`.
 
+/** RF-241, P8-26: the choice to re-run with the answers that wait, held by the Questions step. */
+export interface RerunChoice {
+  readonly answered: number;
+  readonly checked: boolean;
+  readonly onChange: (checked: boolean) => void;
+}
+
 export interface JourneyStripProps {
   readonly view: JourneyView;
+  /** RF-241: the labelled choice to re-run with the answered questions; none when nothing waits. */
+  readonly rerun?: RerunChoice | undefined;
   /** RF-006: called once the server has queued the understand run again. */
   readonly onResumed: () => void;
   /** Opens the questions where the page can show them; any other page opens the run. */
@@ -77,7 +86,28 @@ function StepLinks({ links }: { readonly links: readonly StepLink[] }): JSX.Elem
   );
 }
 
-function StepItem({ step }: { readonly step: JourneyStep }): JSX.Element {
+/** RF-241, P8-26: re-run the areas of the answered questions with the answers, in the Questions step. */
+function RerunControl({ rerun }: { readonly rerun: RerunChoice }): JSX.Element {
+  const noun = rerun.answered === 1 ? 'question' : 'questions';
+  return (
+    <label class="rst-road__rerun">
+      <input
+        type="checkbox"
+        checked={rerun.checked}
+        onChange={(event) => {
+          rerun.onChange(event.currentTarget.checked);
+        }}
+      />
+      {`Re-run with my ${String(rerun.answered)} answered ${noun} (areas no longer in the code map are skipped)`}
+    </label>
+  );
+}
+
+function StepItem(props: {
+  readonly step: JourneyStep;
+  readonly rerun: RerunChoice | undefined;
+}): JSX.Element {
+  const { step, rerun } = props;
   const { state } = step;
   return (
     <li
@@ -96,6 +126,9 @@ function StepItem({ step }: { readonly step: JourneyStep }): JSX.Element {
       <span class="rst-road__detail">{step.detail}</span>{' '}
       <span class="rst-road__cost">{step.cost}</span>
       <StepLinks links={step.links} />
+      {step.key === 'questions' && rerun !== undefined && rerun.answered > 0 ? (
+        <RerunControl rerun={rerun} />
+      ) : null}
     </li>
   );
 }
@@ -180,7 +213,7 @@ export function JourneyStrip(props: JourneyStripProps): JSX.Element {
       </h2>
       <ol class="rst-road__steps">
         {view.steps.map((step) => (
-          <StepItem key={step.key} step={step} />
+          <StepItem key={step.key} step={step} rerun={props.rerun} />
         ))}
       </ol>
       <div class="rst-road__foot">
