@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deepen panel and confirmation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#F4F6F6;color:#13201F;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans","Helvetica Neue",sans-serif;font-size:14px;line-height:1.45;font-variant-numeric:tabular-nums}
+a{color:#0E6B6B}a:hover{color:#0A5555}
+:focus-visible{outline:2px solid #1B5799;outline-offset:2px}
+.mono{font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;font-size:.92em}
+</style>
+</helmet>
+<div style="min-height:100%;padding:32px;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+  <section aria-labelledby="dp-h" style="flex:3 1 560px;min-width:0;display:flex;flex-direction:column;gap:18px;padding:24px;background:#FFFFFF;border:1px solid #0E6B6B;border-radius:10px;box-shadow:0 0 0 1px #0E6B6B">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <h2 id="dp-h" style="margin:0;font-size:20px;font-weight:650">Deepen this run</h2>
+      <p style="margin:0;color:#364644">Reads the 21 files never read (44,047 tokens) and re-checks the 23 rejected claims. Uses the 1 answer you gave.</p>
+    </div>
+
+    <fieldset style="margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:8px">
+      <legend style="padding:0 0 6px;font-weight:500">Rounds at most</legend>
+      <div role="radiogroup" aria-label="Rounds at most" style="display:inline-flex;border:1px solid #7A8987;border-radius:6px;overflow:hidden;align-self:flex-start">
+        <label style="display:flex;align-items:center;justify-content:center;width:44px;height:32px;cursor:pointer"><input type="radio" name="rounds" style="position:absolute;opacity:0">1</label>
+        <label style="display:flex;align-items:center;justify-content:center;width:44px;height:32px;border-left:1px solid #D8DFDE;cursor:pointer"><input type="radio" name="rounds" style="position:absolute;opacity:0">2</label>
+        <label style="display:flex;align-items:center;justify-content:center;width:44px;height:32px;border-left:1px solid #D8DFDE;background:#0E6B6B;color:#FFFFFF;font-weight:500;cursor:pointer"><input type="radio" name="rounds" checked="checked" style="position:absolute;opacity:0">3</label>
+        <label style="display:flex;align-items:center;justify-content:center;width:44px;height:32px;border-left:1px solid #D8DFDE;cursor:pointer"><input type="radio" name="rounds" style="position:absolute;opacity:0">4</label>
+        <label style="display:flex;align-items:center;justify-content:center;width:44px;height:32px;border-left:1px solid #D8DFDE;cursor:pointer"><input type="radio" name="rounds" style="position:absolute;opacity:0">5</label>
+      </div>
+      <span style="font-size:13px;color:#56645F">It stops earlier when a round adds nothing.</span>
+    </fieldset>
+
+    <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer">
+      <input type="checkbox" checked="checked" style="margin:3px 0 0;accent-color:#0E6B6B">
+      <span><span style="font-weight:500">Also read files never read</span><span style="display:block;font-size:13px;color:#56645F">A coverage pass over the 21 files, the largest first.</span></span>
+    </label>
+
+    <dl style="margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+      <div style="padding:12px 14px;background:#EAEFEE;border-radius:6px"><dt style="font-size:12px;color:#56645F">First round</dt><dd style="margin:4px 0 0;font-size:16px;font-weight:650">likely $0.0362</dd></div>
+      <div style="padding:12px 14px;background:#EAEFEE;border-radius:6px"><dt style="font-size:12px;color:#56645F">Up to 3 rounds</dt><dd style="margin:4px 0 0;font-size:16px;font-weight:650">likely $0.1086</dd></div>
+      <div style="padding:12px 14px;background:#EAEFEE;border-radius:6px"><dt style="font-size:12px;color:#56645F">What stops it</dt><dd style="margin:4px 0 0;font-size:16px;font-weight:650">$3.96 left of $4.00</dd></div>
+    </dl>
+    <p style="margin:0;font-size:13px;color:#56645F">If a round would pass the approved amount, the run pauses and asks you before it spends more.</p>
+
+    <div role="note" style="display:flex;flex-wrap:wrap;gap:8px 12px;align-items:baseline;padding:10px 14px;border-radius:6px;background:#E2F2E7;color:#1C6E37;font-size:13px">
+      <span aria-hidden="true" style="font-weight:700">&#10003;</span>
+      <span style="flex:1 1 360px;color:#13201F">You agreed on 3 Nov 2026 to send masked excerpts of your own code from this project to Anthropic. It lasts until 3 Dec 2026, or until a role's provider changes.</span>
+      <a href="#">Withdraw</a>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <button type="button" style="height:36px;padding:0 18px;border:1px solid #0E6B6B;border-radius:6px;background:#0E6B6B;color:#FFFFFF;font:inherit;font-weight:500;cursor:pointer">Start Deepen</button>
+      <button type="button" style="height:36px;padding:0 14px;border:1px solid #7A8987;border-radius:6px;background:#FFFFFF;color:#13201F;font:inherit;cursor:pointer">Not now</button>
+    </div>
+  </section>
+
+  <div style="flex:2 1 380px;min-width:0;display:flex;flex-direction:column;gap:24px">
+    <div role="dialog" aria-modal="true" aria-labelledby="cd-h" style="display:flex;flex-direction:column;gap:14px;padding:24px;background:#FFFFFF;border-radius:10px;box-shadow:0 12px 32px rgba(16,32,31,0.18)">
+      <h2 id="cd-h" style="margin:0;font-size:18px;font-weight:650">Start this Deepen?</h2>
+      <p style="margin:0;color:#364644">Up to 3 rounds, likely $0.1086. It stops at the $3.96 left of your $4.00 approval.</p>
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button type="button" style="height:32px;padding:0 14px;border:1px solid #7A8987;border-radius:6px;background:#FFFFFF;color:#13201F;font:inherit;cursor:pointer">Cancel</button>
+        <button type="button" style="height:32px;padding:0 16px;border:1px solid #0E6B6B;border-radius:6px;background:#0E6B6B;color:#FFFFFF;font:inherit;font-weight:500;cursor:pointer">Confirm and start</button>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;padding:20px;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:10px">
+      <h3 style="margin:0;font-size:14px;font-weight:650">First time on an uploaded project</h3>
+      <p style="margin:0;font-size:13px;color:#364644">Both boxes show before the first start, so no start is refused.</p>
+      <label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid #D8DFDE;border-radius:6px;cursor:pointer">
+        <input type="checkbox" style="margin:3px 0 0;accent-color:#0E6B6B">
+        <span style="font-size:13px">I understand that masked excerpts are sent to Anthropic for this project.</span>
+      </label>
+      <label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid #D8DFDE;border-radius:6px;cursor:pointer">
+        <input type="checkbox" style="margin:3px 0 0;accent-color:#0E6B6B">
+        <span style="font-size:13px">I understand that my own code from this uploaded project is sent, and I may share it.</span>
+      </label>
+      <span style="font-size:12px;color:#56645F">Kept for 30 days on this project; asked again if a provider changes.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":960}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
