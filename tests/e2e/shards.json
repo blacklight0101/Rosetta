@@ -11,7 +11,6 @@
     "tests/e2e/live-run.spec.ts",
     "tests/e2e/plan-setup.spec.ts",
     "tests/e2e/plan-setup-own-answer.spec.ts",
-    "tests/e2e/plan-setup-stack.spec.ts",
     "tests/e2e/plan-setup-typed-architecture.spec.ts",
     "tests/e2e/project-settings.spec.ts",
     "tests/e2e/projects.spec.ts",
@@ -78,6 +77,7 @@
     "tests/e2e/projects-upload.spec.ts",
     "tests/e2e/projects-workbooks.spec.ts",
     "tests/e2e/projects-workbooks-progress.spec.ts",
-    "tests/e2e/projects-zip-workbooks-progress.spec.ts"
+    "tests/e2e/projects-zip-workbooks-progress.spec.ts",
+    "tests/e2e/plan-setup-stack.spec.ts"
   ]
 }
