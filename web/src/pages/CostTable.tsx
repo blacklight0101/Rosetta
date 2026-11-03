@@ -1,12 +1,14 @@
 import type { ComponentChildren, JSX } from 'preact';
 import type { UsageTotals } from '../api/cost-schemas.js';
 import { tokensLabel } from '../lib/live-run/format.js';
-import { totalCostText } from '../lib/cost-text.js';
+import { priceTableText } from '../lib/money.js';
+import { CostFigure } from '../components/CostFigure.js';
 import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-428, design-system.md section 5 (table): one breakdown of a project's cost page. Each line
 // keeps the cost fixed when its calls were made and names the price table versions they used; a
-// local model is marked and costs zero.
+// local model is marked and costs zero. The price table is named once above the rows when every row
+// used the same version, and in a column of its own only when the versions differ.
 
 export interface CostRow {
   readonly key: string;
@@ -22,7 +24,8 @@ export interface CostTableProps {
   readonly rows: readonly CostRow[];
 }
 
-function Row({ row }: { readonly row: CostRow }): JSX.Element {
+function Row(props: { readonly row: CostRow; readonly perRow: boolean }): JSX.Element {
+  const { row, perRow } = props;
   const { totals } = row;
   return (
     <tr>
@@ -43,21 +46,38 @@ function Row({ row }: { readonly row: CostRow }): JSX.Element {
         {tokensLabel(totals.cachedInputTokens)}
       </td>
       <td data-label="Cost" class="rst-table__num">
-        {totalCostText(totals)}
+        <CostFigure totals={totals} />
       </td>
-      <td data-label="Price table" class="rst-mono">
-        {totals.priceTableVersions.join(', ')}
-      </td>
+      {perRow ? (
+        <td data-label="Price table" class="rst-mono">
+          {totals.priceTableVersions.map(priceTableText).join(', ')}
+        </td>
+      ) : null}
     </tr>
   );
 }
 
+const versionsOf = (rows: readonly CostRow[]): string[] => [
+  ...new Set(rows.flatMap((row) => row.totals.priceTableVersions)),
+];
+
 // RF-428
 export function CostTable({ caption, firstColumn, rows }: CostTableProps): JSX.Element {
+  const versions = versionsOf(rows);
+  const [only] = versions;
+  const perRow = versions.length > 1;
+  const captionId = `rst-cost-${caption.toLowerCase().replaceAll(' ', '-')}`;
   return (
     <ScrollRegion label={`Cost ${caption.toLowerCase()} table`}>
-      <table class="rst-table rst-table--stack rst-p136-table">
-        <caption class="rst-p136-caption">{caption}</caption>
+      <table class="rst-table rst-table--stack rst-p136-table" aria-labelledby={captionId}>
+        <caption class="rst-p136-caption">
+          <span id={captionId}>{caption}</span>
+          {only !== undefined && !perRow ? (
+            <span class="rst-p136-pricenote">
+              {`Prices of ${priceTableText(only)}, for every row below`}
+            </span>
+          ) : null}
+        </caption>
         <thead>
           <tr>
             <th scope="col">{firstColumn}</th>
@@ -76,12 +96,12 @@ export function CostTable({ caption, firstColumn, rows }: CostTableProps): JSX.E
             <th scope="col" class="rst-table__num">
               Cost
             </th>
-            <th scope="col">Price table</th>
+            {perRow ? <th scope="col">Price table</th> : null}
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <Row key={row.key} row={row} />
+            <Row key={row.key} row={row} perRow={perRow} />
           ))}
         </tbody>
       </table>
