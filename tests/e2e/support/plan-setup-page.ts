@@ -56,3 +56,16 @@ export const estimate = (page: Page): Locator =>
 
 export const writeButton = (page: Page): Locator =>
   page.getByRole('button', { name: /^Start the plan/u });
+
+/** Holds the planner's options request until the returned function is called, then fails it. */
+export async function holdPlanOptions(page: Page): Promise<() => void> {
+  let release = (): void => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/plan-options', async (route) => {
+    await held;
+    await route.abort();
+  });
+  return release;
+}
