@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 32      | 1         | 27         | 4         | 0                  | 4       | 23      | 5      | 6          | 0         |
-| **Total**                    | **522** | **119**   | **363**    | **40**    | **0**              | **230** | **267** | **25** | **268**    | **0**     |
+| P8 Evaluation fixes, round 2 | 33      | 1         | 27         | 5         | 0                  | 4       | 23      | 6      | 6          | 0         |
+| **Total**                    | **523** | **119**   | **363**    | **41**    | **0**              | **230** | **267** | **26** | **268**    | **0**     |
 
 ## Conventions for every card
 
@@ -7603,6 +7603,26 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the event and `run.started` changes, the run-state and page changes, the use-case change, unit tests of the reducer and of the rule (local to hosted with 1, with 2, changed in the same save, hosted to local, no provider change), a web test of the line, and one end-to-end test with recorded events that shows "Verifier · 4 at once (limit 4)" during a judgement step.
 - **Done when**: on a run with parallelism 4 the page shows the verifier at up to 4 at once with the limit, and back to idle when the step ends; a project switched from Ollama to Haiku with parallelism 1 is saved with 4, one with 2 keeps 2; CI green.
 - **Refs**: RF-1002, RF-436, RF-1015, RF-301; ADR-012; owner request of 2026-11-02; P8-17.
+
+### P8-20 - Production deploys on time at 06:00, with every check done before
+
+- **Difficulty**: 9 (opus)
+- **Size**: L
+- **Depends on**: none
+- **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
+- **Status**: Todo
+- **Reads**: DEC-207, Q-63, ADR-024, ADR-025, RF-1304, `.github/workflows/release.yml` (the `image` job, and in `deploy` the steps "The ZAP baseline passed on this commit" and "This tree passed staging"), `.github/workflows/scheduled-release.yml` (the slots and the late-slot rule of P7-28), `.github/workflows/azure-provision.yml` and its tests, `docs/environments-and-delivery.md` (20, 101, 240, 333, 375), `docs/runbooks/deploy.md` (22, 173, 199, 217), `docs/adr/ADR-025-develop-branch-staging-and-scheduled-release.md` (58), `tests/integration/tooling/scheduled-release-workflow.test.ts`, `tests/integration/tooling/scheduled-release-boundaries.test.ts` (45), `tests/integration/docs/release-flow.test.ts` (57-62), `tests/integration/tooling/release-notify.test.ts`.
+- **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
+- **Do** (DEC-207):
+  - ADR-028 (Proposed, for the owner to accept) chooses the on-time trigger. Default: a Container Apps job in the existing environment (ADR-024) with a cron trigger at 04:00 and 05:00 UTC that goes on only in the 06 hour of Europe/Madrid (cron is in UTC; summer and winter time) and starts Release on `main` by `workflow_dispatch`, with a fine-grained token limited to this repository and Actions write, stored as a secret of the job; the job has no other access and reads no other secret. The ADR weighs at least a Logic App and deploying from Azure with a managed identity, and the token's rotation.
+  - Checks before the release hour: a workflow on every push to `main` (the release merge) builds, scans and pushes the image of the commit, confirms the ZAP baseline and the staging check for it (the two steps that move out of `deploy`), and records the result on the commit (a commit status such as `release/ready`). Its job has `contents: read`, `packages: write`, `statuses: write` and `issues: write` with the workflow token and no other token or secret. A failure comments on the "Production deploys" issue with the owner mentioned, like the RF-1304 notification, so it is seen before 06:00.
+  - Release at 06:00 does only the restore point, the migration, the image switch, the `/healthz` wait, the smoke test and the notification; it refuses a commit without a passing `release/ready` (the input `skip-staging-check` keeps its emergency meaning). A release merged so late that its checks have not passed by 06:00 does not deploy that morning: it deploys at 06:00 the next day, or at once when the owner runs Release by hand after its checks pass (DEC-207: only a commit whose checks passed deploys). A Release started by hand still deploys at once.
+  - `scheduled-release.yml` stays as a backup: its slots and the late-slot rule start Release only when the on-time trigger has not started one for the head commit; the once-per-commit rule is unchanged.
+  - `azure-provision.yml` creates the scheduler job (the owner runs it and supplies the token as a secret; the builder creates no cloud resource and changes no repository setting).
+  - RF-1304 gains the Given/When/Then for the 06:00 start and the checks before it; `docs/environments-and-delivery.md` (sections 1, 5, 6, 8 and 10), `docs/runbooks/deploy.md` (the workflow table, Release and image, Release to production, Deploy, and the scheduler's token rotation) and a dated ADR-025 amendment note (status `Amended`, its index row and the status Totals in `docs/adr/README.md`) say 06:00 Madrid with the checks before it.
+- **Delivers**: ADR-028; the checks workflow; `release.yml` and `scheduled-release.yml` changes; the scheduler job in `azure-provision.yml`; the documents above; tests for each workflow change (the checks gate, the refusal without `release/ready`, the backup rule, the Madrid-hour rule of the scheduler) and the updated wording tests.
+- **Done when**: a release merge has its `release/ready` result within an hour of the merge; a commit without it at 06:00 is not deployed and the next 06:00 run takes it (tested); on two mornings after the owner's provisioning, Release starts between 06:00 and 06:10 Madrid and the deploy passes its smoke test; a failing check before 06:00 notifies the owner and nothing deploys at 06:00; the backup slots start nothing when the on-time run has started; CI green.
+- **Refs**: RF-1304, Q-63, DEC-207, DEC-175, ADR-024, ADR-025, ADR-028, P7-28; owner request of 2026-11-03.; GitHub issue #1160
 
 ### P8-21 - Stack layers follow the chosen language and runtime
 
