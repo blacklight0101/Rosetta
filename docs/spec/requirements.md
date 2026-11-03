@@ -1070,7 +1070,7 @@ As a developer I want the tokens and cost of every run on a project added up so 
 - Given a table on the cost page, when the page shows the price table version, then the version is named once above the table, and in a column only when the table's rows used different versions (P8-90, UX-19).
 - Given any money amount on the cost page, when it is shown, then it follows DEC-54 (four decimals below $1, two from $1) and carries the exact figure in a tooltip (P8-90, EV-94).
   Verification: unit tests on the ledger totals; integration test with an interrupted run; web tests of the cost page for the last three scenarios.
-  Changed 2026-11-03 by card P8-90: the cost page names runs as History does, names the price table version once per table and writes every amount by DEC-54 with the exact figure in a tooltip (scenarios added; how a zero or an amount below $0.00005 reads is an open owner question).
+  Changed 2026-11-03 by card P8-90: the cost page names runs as History does, names the price table version once per table and writes every amount by DEC-54 with the exact figure in a tooltip (scenarios added). Changed 2026-11-03 by DEC-217: exactly zero reads `$0.00` and a non-zero amount below $0.00005 reads `<$0.0001`, with the exact figure in the tooltip (card P8-110).
 
 **RF-429 Keep a share of the cap for verifying and for the summary** - R1 - Should - Source EV-27 (evaluation pass 2), P3-111, P5-18, P5-20, DEC-166, DEC-170 - ADR-007
 As a developer I want a run that reaches its token cap during the readers to still verify what they wrote so that its claims can be planned.

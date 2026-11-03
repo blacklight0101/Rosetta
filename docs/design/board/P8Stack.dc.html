@@ -136,14 +136,14 @@ class Component extends DCLogic {
       const list = cat[id];
       const pick = picks[id] ?? saved[id];
       const opts = list.map(([t, d], i) => ({ title: t, desc: d, rec: i === 0 ? ' (Recommended)' : '' }));
-      if (pick && !pick.own && !opts.some((o) => o.title === pick.title)) opts.push({ title: pick.title, desc: 'Your earlier choice, kept.', rec: '' });
-      opts.push({ title: pick && pick.own ? pick.title : 'Type your own', desc: pick && pick.own ? 'Your own answer, saved in the brief.' : 'A technology the list does not have.', rec: '', own: true });
-      const chosen = pick ? (pick.own ? opts.length - 1 : opts.findIndex((o) => o.title === pick.title)) : (list.length ? 0 : -1);
+      const own = !!pick && (pick.own || !opts.some((o) => o.title === pick.title));
+      opts.push({ title: own ? pick.title : 'Type your own', desc: own ? 'Your own answer, saved in the brief.' : 'A technology the list does not have.', rec: '', own: true });
+      const chosen = pick ? (own ? opts.length - 1 : opts.findIndex((o) => o.title === pick.title)) : (list.length ? 0 : -1);
       const options = opts.map((o, i) => ({ ...o, selected: i === chosen, cls: i === chosen ? 'opt opt--on' : 'opt', pick: () => this.setState({ picks: { ...this.state.picks, [id]: { title: o.title, own: !!o.own } } }) }));
       const chosenTitle = chosen >= 0 ? opts[chosen].title : null;
       const plat = chosenTitle ? platformOf[chosenTitle] : undefined;
       const warn = !!(lang && plat && plat !== lang);
-      const state = pick ? (pick.own ? 'Your own answer' : 'Your choice, kept') : (list.length ? (lang ? 'Suggested for ' + names[lang] : 'Suggested from the legacy code') : 'No suggestion: type your own');
+      const state = pick ? (own ? 'Your own answer' : 'Your choice, kept') : (list.length ? (lang ? 'Suggested for ' + names[lang] : 'Suggested from the legacy code') : 'No suggestion: type your own');
       return { id, name, options, state, warn, warnText: warn ? chosenTitle + ' is a ' + names[plat] + ' technology, and the language is ' + names[lang] + '. Keep it only if that is intended; the package will list it as a clash.' : '' };
     });
     return {

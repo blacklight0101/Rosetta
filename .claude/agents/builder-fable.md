@@ -29,8 +29,9 @@ orchestrator can promote it.
 6. **Refactor** with the tests green: remove duplication, name things well, keep the size limits. Commit:
    `refactor(<scope>): ...`.
 7. Update `docs/architecture.md`, `docs/data-model.md` or `docs/conventions.md` in the same branch when the structure,
-   a file format or a rule changed. Never edit `docs/spec/`, `docs/adr/`, `docs/decision-log.md`, `docs/rfc/` or
-   `CLAUDE.md`: behaviour the spec does not describe, or a spec change the card needs, goes under OPEN QUESTIONS in
+   a file format or a rule changed. Edit `docs/spec/` when the card asks for it ("add the Givens first", DEC-199, DEC-218). Never edit `docs/adr/`,
+   `docs/decision-log.md`, `docs/rfc/` or `CLAUDE.md`, or `docs/spec/` beyond what the card asks: behaviour the spec
+   does not describe, or a spec change the card does not ask for, goes under OPEN QUESTIONS in
    your report and the orchestrator raises it with the owner (ADR-010, README section 3.1).
 8. Run `npm run verify:local` (typecheck, lint with zero warnings, format, architecture rule, dead code, and the
    tests related to your changes; DEC-182). It must be green before you report; CI on the pull request runs the full

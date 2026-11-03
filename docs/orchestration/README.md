@@ -101,7 +101,8 @@ part of a card waits, the rest runs: `Todo; <part> Blocked (G-nn)`.
 4. **The builder reports** and pushes its branch. The orchestrator does not judge the report. It opens the pull
    request from the template (card, requirement, ADR and DEC ids, difficulty and builder, `Closes #<issue>`), labels the
    issue `status:in-review` and waits for CI. Red CI goes back to the builder (it is not a FAIL) and no verifier starts
-   until CI is green. Then it spawns the verifier for the card's difficulty with the card, the report and the branch.
+   until CI is green, except when the only red jobs are a carded develop-level failure, where the verifier may start
+   while they re-run and the merge still waits for green (DEC-218). Then it spawns the verifier for the card's difficulty with the card, the report and the branch.
 5. **The verifier returns** PASS or FAIL (section 5). The orchestrator posts the verdict block on the pull request
    as a comment, unchanged.
    - PASS: merge under section 3.1, then record the card as `Done`, its `handoff.md` line and every MINOR finding as
@@ -146,8 +147,8 @@ when **all** of these hold, and checks each one again right before the merge:
 
 After each merge the orchestrator fast-forwards its local `develop` (`git pull --ff-only`) and confirms the card's
 issue is closed. Then it checks every other open card branch with `git merge-tree --write-tree origin/develop <branch>`
-and merges `develop` into a branch only when that reports a conflict or the merged change touched the branch's files
-(DEC-213 as changed by DEC-215: each merge starts a CI run, and being behind is no longer a reason since P8-34); a
+and merges `develop` into a branch only when that reports a conflict or the merged change touched the branch's code
+files (a clean merge in a document needs no CI run; DEC-213 as changed by DEC-215 and DEC-218: each merge starts a CI run, and being behind is no longer a reason since P8-34); a
 conflict goes to a fresh fixer with the card and the branch (DEC-214). Releases, tags and gates stay with the owner.
 
 **P1-01 exception.** CI does not exist until P1-01 delivers it, so rule 1 cannot hold for that card: the orchestrator
@@ -192,14 +193,17 @@ emergency skip are in `docs/runbooks/deploy.md`, section Release to production.
   `docs/architecture.md` in the same branch; every schema or file-format change updates `docs/data-model.md`.
 - Before pushing, run the end-to-end specs of every page you changed as one background command against your own
   throwaway PostgreSQL: `docker run -d --rm --name <card-id>-e2e-pg -e POSTGRES_PASSWORD=<any> -p <free port>:5432 postgres:17`,
-  then `npm run build:web` once in the worktree (its `dist/` is not linked), then `ROSETTA_TEST_DATABASE_URL=postgres://postgres:<any>@127.0.0.1:<port>/postgres ROSETTA_E2E_PORT=<free port> node scripts/run-e2e.mjs <specs>`,
+  then `ROSETTA_TEST_DATABASE_URL=postgres://postgres:<any>@127.0.0.1:<port>/postgres ROSETTA_E2E_PORT=<free port> node scripts/run-e2e.mjs <specs>`,
   and `docker stop` the container afterwards. Never use or touch the containers `rosetta-app-*`, `rosetta-db-*`,
   `rosetta-eval-*` or `rosetta-latest-*`, and never read `.env` (DEC-215).
 - Run `npm run verify:local` before reporting and paste its last lines and exit code; CI on the pull request runs
   the full `npm run verify` (DEC-182). Tests run without external systems (fakes,
   recordings, a disposable PostgreSQL).
-- Do not touch `docs/spec`, `docs/rfc`, `docs/adr` or `docs/decision-log.md` unless the card says so; such a change
-  makes the pull request `needs-owner` (section 3.1).
+- Do not touch `docs/rfc`, `docs/adr` or `docs/decision-log.md` unless the card says so. Edit `docs/spec` when the card
+  asks for it ("add the Givens first"): a verified card pull request that changes the spec is merged by the
+  orchestrator (section 3.1, DEC-199, DEC-218).
+- Other agents share the machine: run the tests you touched with `--maxWorkers=2` and leave the full suite to CI; if
+  the vitest step of `npm run verify:local` times out, report the static gates and the touched tests (DEC-218).
 - Commit on your branch only (cut from `develop`). Never merge and never push to `develop` or `main`.
 - Report in the format of section 6. Be exact about what was not done.
 

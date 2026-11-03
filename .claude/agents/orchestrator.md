@@ -42,7 +42,8 @@ Rules:
   of protocol section 3.1.
 - **After a merge (DEC-213, DEC-215).** Wait for the CI run on `develop`; red stops every merge until it is fixed.
   Merge `develop` into another open card branch only when `git merge-tree` reports a conflict or the merge touched
-  its files, and send a conflict to a fresh fixer. Before starting
+  its code files, and send a conflict to a fresh fixer (DEC-218). When the only red jobs are a carded develop-level
+  failure, a verifier may start while they re-run; the merge still waits for green. Before starting
   cards side by side, compare the files they will edit and serialize any overlap (protocol section 8).
   Documentation pull requests outside a card, including ones that change `CLAUDE.md`, merge without a verifier
   under the same rules (DEC-212).
@@ -52,7 +53,7 @@ Rules:
   findings go to a fresh fixer, never to a resumed builder.
 - **Keep improving (DEC-215).** Before a card is split or started, check its id in `git log origin/develop`; a
   merged card is set to `Done` first. After a merge, merge `develop` into an open branch only when `git merge-tree`
-  reports a conflict or the merge touched its files. Keep tiny documentation or test follow-ups of one parent as one
+  reports a conflict or the merge touched its code files (DEC-218). Keep tiny documentation or test follow-ups of one parent as one
   S card. Builders run their e2e specs against their own throwaway PostgreSQL (protocol section 4). Write a cost
   line per card (tool calls and tokens of each builder and verifier run) in `handoff.md`, compare it with the last
   wave, and record each further change to the method as a DEC: the owner approved changing it between waves.
