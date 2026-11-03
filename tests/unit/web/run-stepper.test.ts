@@ -83,21 +83,11 @@ it('RF-1002 a queued run has every step waiting', () => {
 });
 
 it('RF-1002 a scan that has started works on the snapshot, then on the scan', () => {
-  expect(words('scan', [started('scan')])).toEqual([
-    'Snapshot:current',
-    'Scan:waiting',
-    'Understand:waiting',
-    'Verify:waiting',
-  ]);
-  expect(words('scan', [started('scan'), resolved])).toEqual([
-    'Snapshot:done',
-    'Scan:current',
-    'Understand:waiting',
-    'Verify:waiting',
-  ]);
+  expect(words('scan', [started('scan')])).toEqual(['Snapshot:current', 'Scan:waiting']);
+  expect(words('scan', [started('scan'), resolved])).toEqual(['Snapshot:done', 'Scan:current']);
 });
 
-it('RF-1002 a finished scan shows its files and areas and leaves the other stages waiting', () => {
+it('RF-1002 a finished scan shows its files and areas and no step of understand or verify', () => {
   const events = [started('scan'), resolved, scanned, runEnded(5, 'Completed')];
   const state = stateAfter(...events);
   const runRow = row('scan', 'Ended');
@@ -107,8 +97,6 @@ it('RF-1002 a finished scan shows its files and areas and leaves the other stage
   expect(steps.map((step) => `${step.name}:${step.status}`)).toEqual([
     'Snapshot:done',
     'Scan:done',
-    'Understand:waiting',
-    'Verify:waiting',
   ]);
   expect(steps[1]?.detail).toBe('36 files, 4 areas');
 });

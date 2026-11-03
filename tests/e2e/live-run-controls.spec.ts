@@ -60,7 +60,7 @@ async function waitingEvents(page: Page): Promise<number> {
   return Number(/(\d+) events? waiting/u.exec(shown ?? '')?.[1] ?? 0);
 }
 
-test('RF-1002 the stepper of a scan run goes from the snapshot to the scan with its files and areas and leaves the other stages waiting', async ({
+test('RF-1002 RF-1015 the stepper of a scan run goes from the snapshot to the scan with its files and areas and has no understand or verify step', async ({
   page,
 }) => {
   await openStartPage(page);
@@ -69,8 +69,10 @@ test('RF-1002 the stepper of a scan run goes from the snapshot to the scan with 
   await expect(step(page, 'Scan')).toContainText(/\d+ files, \d+ areas/u);
   await expect(step(page, 'Snapshot')).toContainText('done');
   await expect(step(page, 'Scan')).toContainText('done');
-  await expect(step(page, 'Understand')).toContainText('waiting');
-  await expect(step(page, 'Verify')).toContainText('waiting');
+  // P8-27: a scan has no understand or verify step to show as an empty circle.
+  await expect(pipeline(page).getByRole('listitem')).toHaveCount(2);
+  await expect(step(page, 'Understand')).toHaveCount(0);
+  await expect(step(page, 'Verify')).toHaveCount(0);
   await expect(step(page, 'Report')).toHaveCount(0);
   await expect(pipeline(page).locator('[aria-current="step"]')).toHaveCount(0);
   await transitionsDone(page);
@@ -80,8 +82,12 @@ test('RF-1002 the stepper of a scan run goes from the snapshot to the scan with 
 test('RF-1002 RF-504 P8-11 the Report step of an ended run is absent until the report is built from the page, appears done at once and is done on load', async ({
   page,
 }) => {
+  // P8-27 (RF-1015): a scan has no report, so the report is built from an ended understand run.
+  test.setTimeout(120_000);
   await openStartPage(page);
   await openScanRun(page);
+  await startUnderstand(page, ['Catalog']);
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
   const build = page.getByRole('button', { name: 'Build report' });
   await expect(build).toBeEnabled();
   await expect(step(page, 'Report')).toHaveCount(0);

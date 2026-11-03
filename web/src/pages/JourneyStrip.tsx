@@ -29,6 +29,9 @@ export interface JourneyStripProps {
   readonly onAnswer?: (() => void) | undefined;
   /** RF-646: opens the Deepen of the run where the page holds it; any other page opens the run. */
   readonly onDeepen?: (() => void) | undefined;
+  /** P8-27: the path of the package's own run page, where "Open the package" focuses the package in place. */
+  readonly packageHere?: string | undefined;
+  readonly onPackage?: (() => boolean) | undefined;
   /** The path of the page that holds the strip: a second action that opens this page is left out. */
   readonly pagePath?: string | undefined;
   /** RF-1021: the understand run whose Deepen the page offers in place; none opens the run. */
@@ -106,6 +109,7 @@ function Action(props: {
   readonly onResumed: () => void;
   readonly onAnswer: (() => void) | undefined;
   readonly onDeepen?: (() => void) | undefined;
+  readonly inPlace?: (() => boolean) | undefined;
 }): JSX.Element | null {
   const { action, onAnswer, onDeepen } = props;
   if (action === undefined) return null;
@@ -122,7 +126,7 @@ function Action(props: {
       variant={props.variant ?? 'primary'}
       onClick={() => {
         if (answersHere) onAnswer();
-        else navigate(action.href);
+        else if (props.inPlace?.() !== true) navigate(action.href);
       }}
     >
       {action.label}
@@ -140,6 +144,15 @@ function secondaryOf(view: JourneyView, pagePath: string | undefined): JourneyLi
 function setsUp(action: JourneyAction | undefined): boolean {
   if (action?.kind === 'answer') return true;
   return action?.kind === 'link' && action.href.includes('/plan-setup');
+}
+
+/** P8-27: "Open the package" of the run the page is about focuses its package section in place. */
+function inPlaceOf(
+  action: JourneyAction | undefined,
+  props: JourneyStripProps,
+): (() => boolean) | undefined {
+  const here = action?.kind === 'link' && action.href === props.packageHere;
+  return here ? props.onPackage : undefined;
 }
 
 /** RF-1021: the next step in place. Deepen shows what it would read; any other action is a button. */
@@ -166,6 +179,7 @@ function Next(props: JourneyStripProps): JSX.Element {
       onResumed={props.onResumed}
       onAnswer={props.onAnswer}
       onDeepen={props.onDeepen}
+      inPlace={inPlaceOf(action, props)}
     />
   );
 }

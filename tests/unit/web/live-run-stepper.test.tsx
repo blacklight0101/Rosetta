@@ -49,7 +49,7 @@ it('RF-1002 P8-11 a finished run has no report step and no step current', async 
   expect(pipeline().querySelectorAll('[aria-current]')).toHaveLength(0);
 });
 
-it('RF-1002 a scan run shows the files and areas scanned and leaves Understand waiting', async () => {
+it('RF-1002 a scan run shows the files and areas scanned and no Understand step', async () => {
   const { stream } = renderLive({});
   const connection = await stream.connection();
 
@@ -63,7 +63,7 @@ it('RF-1002 a scan run shows the files and areas scanned and leaves Understand w
   await waitFor(() => {
     expect(step('Scan').textContent).toContain('36 files, 4 areas');
   });
-  expect(step('Understand').textContent).toContain('waiting');
+  expect(screen.queryByText('Understand')).toBeNull();
 });
 
 /** The page of an understand run that has ended, its run row as `row` answers it. */

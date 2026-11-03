@@ -46,7 +46,9 @@ test('RF-1020 RF-1021 from a finished understand to a downloaded package without
   expect(page.url()).toBe(projectPage);
 
   await writeButton(page).click();
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible({
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible({
     timeout: 30_000,
   });
   await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });

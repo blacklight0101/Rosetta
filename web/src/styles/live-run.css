@@ -26,14 +26,10 @@
 }
 
 .rst-live-head__key {
+  /* P8-27: the folder name is a line of its own under the title (artboard P8Run). */
+  flex-basis: 100%;
   color: var(--rst-ink-soft);
   overflow-wrap: anywhere;
-}
-
-.rst-live-head__stage {
-  color: var(--rst-ink-muted);
-  font-size: var(--rst-fs-sm);
-  text-transform: capitalize;
 }
 
 .rst-live-head__state {
@@ -437,4 +433,17 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* P8-27: a download that waits says why in visible text, under its button. */
+.rst-live-download {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--rst-sp-1);
+}
+
+.rst-live-download__why {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
 }

@@ -15,7 +15,9 @@ export async function tokensOf(pill: Locator): Promise<number> {
 /** Presses Start and follows the notice to the live page. */
 async function startAndFollow(page: Page): Promise<void> {
   await pressStart(page);
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible();
 }
 
 /** Opens the start page of the account's project, after a scan when it has no code map yet. */

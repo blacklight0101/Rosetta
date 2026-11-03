@@ -10,6 +10,7 @@ import { ResumeButton } from './ResumeButton.js';
 import type { OverviewLoad } from './use-run-overview.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 import { DeepenAction } from './DeepenAction.js';
+import { Fact, RunFacts } from './RunFacts.js';
 import type { AnswersLoad } from './use-run-answers.js';
 import { useSkipDeepen, type SkipDeepen } from './use-skip-deepen.js';
 
@@ -54,9 +55,10 @@ function NoneWaiting(props: { readonly answers: AnswersLoadReady['questions'] })
   if (saved === 0) {
     return <p>This run has no questions for you. Its report and downloads are below.</p>;
   }
+  // P8-27: the tab counts the questions that wait (none here), so the panel says the same first.
   return (
     <p>
-      {`Every question has a saved answer (${String(saved)}). The next run uses your answers; set up the plan to go on.`}
+      {`No question waits for you; ${String(saved)} ${saved === 1 ? 'has' : 'have'} a saved answer. The next run uses ${saved === 1 ? 'it' : 'them'}; set up the plan to go on.`}
     </p>
   );
 }
@@ -188,15 +190,6 @@ function Next(props: YourTurnProps & { readonly skip: SkipDeepen }): JSX.Element
   );
 }
 
-function Fact(props: { readonly label: string; readonly value: string }): JSX.Element {
-  return (
-    <li class="rst-p170-fact">
-      <b>{props.value}</b>
-      <span>{props.label}</span>
-    </li>
-  );
-}
-
 /** Questions are open when the answers are read and at least one waits. */
 function questionsOpen(answers: AnswersLoad): boolean {
   return answers.status === 'ready' && answers.questions.some(waitsForAnswer);
@@ -283,16 +276,7 @@ export function YourTurn(props: YourTurnProps): JSX.Element {
           writeOverview={writeOverviewOf(props, facts)}
         />
       ) : null}
-      <ul class="rst-p170-facts" aria-label="Run facts">
-        <Fact label="Cards" value={String(facts.cards)} />
-        <Fact
-          label="Citations passed"
-          value={`${String(facts.citationsPassed)} / ${String(facts.claims)}`}
-        />
-        <Fact label="Areas read" value={`${String(facts.areasRead)} / ${String(facts.areas)}`} />
-        <Fact label="Cost" value={costLabel(props.costMicros)} />
-        <Fact label="Tokens" value={tokensLabel(facts.tokens)} />
-      </ul>
+      <RunFacts facts={facts} costMicros={props.costMicros} state={state} />
     </section>
   );
 }

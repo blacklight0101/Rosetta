@@ -81,7 +81,9 @@ test('RF-1001 RF-1002 RF-504 RF-506 from sign-in to the Markdown report, the rep
 
   await openProjectStart(page, repositories.webforms);
   const scan = await runScan(page);
-  await expect(page.getByText('This run has no agents')).toBeVisible();
+  // P8-27 (RF-1015): the page of a scan shows its code map, not the panels of an understand run.
+  await expect(page.getByRole('heading', { name: 'Scan, done', level: 1 })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Code map' })).toBeVisible();
   await expectNoSeriousViolations(page);
 
   await openProjectStart(page, repositories.webforms);
