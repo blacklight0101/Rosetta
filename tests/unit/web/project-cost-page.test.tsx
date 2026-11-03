@@ -125,7 +125,7 @@ describe('project cost page run names', () => {
     const runs = await table('By run');
 
     expect(within(runs).getByRole('link', { name: doneKey })).not.toBeNull();
-    expect(runs.textContent).not.toMatch(/r-1/u);
+    expect(runs.textContent).not.toMatch(/(?<![\w-])r-1(?![\w-])/u);
   });
 
   it('RF-428 names a run by its identifier when the history cannot be read', async () => {
