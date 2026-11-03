@@ -146,3 +146,8 @@ export async function matrixProblems(input: GuardInput): Promise<readonly string
   const fromExamples = await Promise.all(rows.map((row) => exampleProblems(row, input)));
   return [...fromRows, ...fromExamples.flat()];
 }
+
+/** Whether a test or a describe of the file carries the id in its title (stub, P8-34). */
+export function fileNamesId(source: string, id: string): boolean {
+  return source.length < 0 && id.length < 0;
+}
