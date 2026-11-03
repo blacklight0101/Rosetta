@@ -100,7 +100,8 @@ part of a card waits, the rest runs: `Todo; <part> Blocked (G-nn)`.
    report format (section 6). One card per builder, one builder per card, each in its own worktree.
 4. **The builder reports** and pushes its branch. The orchestrator does not judge the report. It opens the pull
    request from the template (card, requirement, ADR and DEC ids, difficulty and builder, `Closes #<issue>`), labels the
-   issue `status:in-review` and spawns the verifier for the card's difficulty with the card, the report and the branch.
+   issue `status:in-review` and waits for CI. Red CI goes back to the builder (it is not a FAIL) and no verifier starts
+   until CI is green. Then it spawns the verifier for the card's difficulty with the card, the report and the branch.
 5. **The verifier returns** PASS or FAIL (section 5). The orchestrator posts the verdict block on the pull request
    as a comment, unchanged.
    - PASS: merge under section 3.1, then record the card as `Done`, its `handoff.md` line and every MINOR finding as
