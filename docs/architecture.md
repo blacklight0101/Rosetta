@@ -531,7 +531,7 @@ sequenceDiagram
       L->>T: validated arguments (zod)
       T-->>L: result or error result
     else final answer
-      L->>L: refuse it when no file of the area was read (RF-206), or once when less than half of its first-party tokens were (Q-50)
+      L->>L: refuse it when no file of the area was read (RF-206), or, up to three times while its reads grow, when less than half of its first-party tokens were (Q-50)
       L->>L: parse cards (zod), keep the valid ones, then one continuation for a cut answer and up to two repairs for the rest
     end
   end
