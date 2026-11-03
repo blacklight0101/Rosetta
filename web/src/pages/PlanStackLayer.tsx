@@ -28,17 +28,25 @@ export interface LayerProps {
   readonly hint?: string | undefined;
 }
 
+/** RF-645, P8-22: a saved choice that is none of the options is the own answer, whatever its flag. */
+function isOwn(picked: StackChoice | undefined, options: readonly QuestionOption[]): boolean {
+  if (picked === undefined) return false;
+  return picked.custom || !options.some((option) => option.title === picked.choice);
+}
+
 /** RF-645: the option shown as chosen, read from the saved choice so an older brief shows it too. */
 function shownOption(picked: StackChoice | undefined, options: readonly QuestionOption[]): string {
   if (picked === undefined) return '';
-  if (picked.custom) return TYPED;
+  if (isOwn(picked, options)) return TYPED;
   return options.find((option) => option.title === picked.choice)?.id ?? '';
 }
 
 /** What the layer says about where its suggestions come from, or whose answer it holds. */
 function stateOf(props: LayerProps): string {
   const picked = props.draft.stack[props.layer.id];
-  if (picked !== undefined) return picked.custom ? 'Your own answer' : 'Your choice, kept';
+  if (picked !== undefined) {
+    return isOwn(picked, props.options) ? 'Your own answer' : 'Your choice, kept';
+  }
   const suggested = props.options.some((option) => option.recommended);
   if (!suggested) return 'No suggestion: type your own';
   return props.language === undefined
@@ -96,25 +104,12 @@ function PlatformHint(props: LayerProps): JSX.Element | null {
   );
 }
 
-/** DEC-208: an answer the layer now suggests no option for stays on the page as its own card. */
-function withKept(options: readonly QuestionOption[], picked: StackChoice | undefined) {
-  if (picked === undefined || picked.custom) return options;
-  if (options.some((option) => option.title === picked.choice)) return options;
-  const kept = {
-    id: 'kept',
-    title: picked.choice,
-    description: 'Your earlier choice, kept.',
-    recommended: false,
-  };
-  return [...options, kept];
-}
-
 function Cards(props: LayerProps): JSX.Element {
   const { layer, offered, draft, change, problem } = props;
   const question = `stack.${layer.id}`;
   const group = `stack-${layer.id}`;
   const picked = draft.stack[layer.id];
-  const options = withKept(props.options, picked);
+  const { options } = props;
   const shown = draft.chosen[question] === TYPED ? TYPED : shownOption(picked, options);
   return (
     <div
@@ -146,7 +141,7 @@ function Cards(props: LayerProps): JSX.Element {
         problem={problem}
         own={{
           checked: shown === TYPED,
-          text: picked?.custom === true ? picked.choice : '',
+          text: isOwn(picked, options) ? (picked?.choice ?? '') : '',
           pick: () => withAnswered(chosen(draft, question, TYPED), [question]),
           type: (text) => typeLayer(draft, layer.id, text, offered),
         }}
