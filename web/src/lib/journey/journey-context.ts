@@ -21,6 +21,18 @@ export interface Context {
   readonly setUp: string | undefined;
   /** RF-646: the user chose not to Deepen the source run. */
   readonly skippedDeepen: boolean;
+  /** P8-26 (RF-1020): the queued or running run of the project, when the page knows it. */
+  readonly liveRunId?: string | undefined;
+  /** P8-26 (RF-241): the questions with an answer that wait for a re-run; none when not known. */
+  readonly answered?: number | undefined;
+}
+
+/** What a page knows beyond the facts of the server (P8-26). */
+export interface JourneyExtras {
+  /** The queued or running run of the project; the step that waits for it links to it. */
+  readonly liveRunId?: string | undefined;
+  /** RF-241: the questions with an answer that wait for a re-run. */
+  readonly answered?: number | undefined;
 }
 
 export type RunPhase = 'working' | 'completed' | 'stopped';
