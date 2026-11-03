@@ -8,8 +8,9 @@ import {
   platformClashLine,
   platformProposals,
 } from '../../../web/src/lib/plan-setup/stack-platform.js';
+import type { OptionsLoad } from '../../../web/src/pages/use-plan-options.js';
 import { PlanStackStep } from '../../../web/src/pages/PlanStackStep.js';
-import { catalogue, unsavedBrief } from './plan-setup-fixtures.js';
+import { catalogue, planOptions, unsavedBrief } from './plan-setup-fixtures.js';
 
 // RF-609, RF-645, DEC-208, DEC-211 (P8-21): the Stack step follows the language and runtime chosen,
 // with the option cards of the other steps.
@@ -80,7 +81,11 @@ const offer = {
   })),
 } as unknown as StackOffer;
 
-function Harness(props: { readonly start: Draft; readonly seen: Draft[] }) {
+function Harness(props: {
+  readonly start: Draft;
+  readonly seen: Draft[];
+  readonly load?: OptionsLoad;
+}) {
   const [draft, setDraft] = useState(props.start);
   props.seen.push(draft);
   return (
@@ -89,7 +94,7 @@ function Harness(props: { readonly start: Draft; readonly seen: Draft[] }) {
       catalogue={catalogue}
       change={setDraft}
       problems={{}}
-      load={{ status: 'idle' }}
+      load={props.load ?? { status: 'idle' }}
       offer={offer}
       waitingForConsent={false}
       askAgain={() => undefined}
@@ -273,5 +278,20 @@ describe('the Stack step text', () => {
     expect(STEP_TEXT.stack.why).toContain('up to two');
     expect(STEP_TEXT.stack.why).not.toContain('Two proposals per layer');
     expect(STEP_TEXT.stack.why).toContain('language');
+  });
+});
+
+describe('the Stack step with the planner options loaded (DEC-208)', () => {
+  it('RF-609 the proposals of the chosen platform win over the planner options of the legacy code', () => {
+    const load: OptionsLoad = { status: 'ready', options: planOptions };
+    render(<Harness start={draftOf(unsavedBrief.brief)} seen={[]} load={load} />);
+    expect(titles('Back-end framework')[0]).not.toContain('ASP.NET');
+    const language = within(group('Language and runtime'));
+    fireEvent.click(language.getByRole('radio', { name: 'Type your own answer' }));
+    fireEvent.input(language.getByLabelText('Your answer for Language and runtime'), {
+      target: { value: 'C# on .NET' },
+    });
+
+    expect(titles('Back-end framework')[0]).toBe('ASP.NET Core Razor Pages (Recommended)');
   });
 });
