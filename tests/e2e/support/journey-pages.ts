@@ -33,7 +33,8 @@ export async function runScan(page: Page): Promise<string> {
 export async function chooseAreas(page: Page, names: readonly string[] | 'all'): Promise<void> {
   const areas = page.getByRole('group', { name: 'Areas from the code map' });
   await revealAreas(page);
-  await expect(areas.locator('label').first()).toBeVisible();
+  // The page lists them once its estimate is read; the first run of a replaced source may still be scanning.
+  await expect(areas.locator('label').first()).toBeVisible({ timeout: 60_000 });
   for (const label of await areas.locator('label').allTextContents()) {
     const name = label.trim();
     await areas
