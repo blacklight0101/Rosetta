@@ -207,9 +207,9 @@ ${retryNoteMessage(retryNote, (source, text) => tools.renderBlock(source, text))
 
   /**
    * RF-206: a final answer before any file of the area was read is not accepted. The agent is told
-   * which files it has not read and keeps its turns to read them. Q-50: so is, once, an answer
-   * after less than half of the area's first-party tokens were read, with the files still unread;
-   * Q-55: unless the conversation has no room for another read and answer, when it is taken as is.
+   * which files it has not read and keeps its turns to read them. Q-50: so is, again (up to three
+   * times while its reads grew), an answer after less than half of the area's first-party tokens,
+   * with files unread; Q-55: unless the conversation has no room for another read and answer.
    */
   private async refuseUnread(answered: AnswerText): Promise<boolean> {
     const { prompts, tools, settings } = this.request;
