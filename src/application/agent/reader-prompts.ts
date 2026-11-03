@@ -34,7 +34,7 @@ export interface ReaderPrompts {
   /** `reader/read-first.v<n>.md`: refuses an answer given before any file of the area was read (RF-206). */
   readonly readFirst: PromptFile;
 
-  /** `reader/read-more.v<n>.md`: refuses once an answer given after reading little of the area (Q-50). */
+  /** `reader/read-more.v<n>.md`: refuses an answer given after reading little of the area, up to three times (Q-50, P8-92). */
   readonly readMore: PromptFile;
 }
 
