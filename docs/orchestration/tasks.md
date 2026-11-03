@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 105     | 5         | 88         | 12        | 0                  | 74      | 25      | 6      | 21         | 21        |
-| **Total**                    | **595** | **123**   | **424**    | **48**    | **0**              | **300** | **269** | **26** | **283**    | **21**    |
+| P8 Evaluation fixes, round 2 | 106     | 5         | 89         | 12        | 0                  | 75      | 25      | 6      | 22         | 21        |
+| **Total**                    | **596** | **123**   | **425**    | **48**    | **0**              | **301** | **269** | **26** | **284**    | **21**    |
 
 ## Conventions for every card
 
@@ -8972,3 +8972,19 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the test changes only (no source change except a fix the new checks call for, named in the pull request).
 - **Done when**: both checks fail on the broken behaviour and pass on `develop`; CI green.
 - **Refs**: RF-241, RF-1021, RF-1022, ADR-008; follow-up of P8-26; GitHub issue #1192
+
+### P8-106 - Follow-up: the workbook replace journey waits for the folded areas (P8-26)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-26
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, CI of #1193 and #1197, both after P8-26 merged): `tests/e2e/journeys/workbook-project.spec.ts:137` ("RF-150 RF-156 workbooks replaced between two runs give a second report that names the new hash") failed in shard 3/3 on two unrelated branches. On #1193, `chooseAreas` (`tests/e2e/support/journey-pages.ts:36`) found no label in the group "Areas from the code map" within 5 s; on #1197 a click timed out after 240 s. A re-run passed on #1193. P8-26 folded the source under "Replace the source" and the areas under "Start another run".
+- **Reads**: `tests/e2e/journeys/workbook-project.spec.ts`, `tests/e2e/support/workbook-journey.ts`, `tests/e2e/support/journey-pages.ts` (`revealAreas`, `chooseAreas`), `web/src/pages/StartRunForm.tsx`, `web/src/pages/StartChoices.tsx`, RF-150, RF-156, RF-1021, ADR-008.
+- **Do**:
+  - Reproduce the failure first: the spec run alone and in its shard, repeated (`--repeat-each`), with the cause named (a fold that closes again after the source is replaced, areas read before the new scan ends, or a click on a control that is not in view).
+  - Make the journey helpers wait for the state the page reaches after a replaced source (the fold open and the new code map's areas listed) instead of a fixed timeout; change the page only when the reproduction shows a page defect, and name it in the pull request.
+- **Delivers**: the reproduction and the test fix (or the page fix it calls for).
+- **Done when**: the spec passes 20 repeats in its shard locally; CI green.
+- **Refs**: RF-150, RF-156, RF-1021, ADR-008; follow-up of P8-26; GitHub issue #1201
