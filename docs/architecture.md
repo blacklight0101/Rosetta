@@ -1136,7 +1136,9 @@ client router can draw it.
 first sign-in password change, project to Markdown report, replay and zip, administrator and cap, a repository without
 a language pack, two users). They sign in through the sign-in page and use the pages the way a person does; only the
 accounts are seeded (`seed.ts`, kinds `journey-*`). The test server's fake GitHub also knows `octo/ledger`, the COBOL
-fixture, for the language-without-pack journey (RF-112).
+fixture, for the language-without-pack journey (RF-112), and `octo/inventory`, a small Python project that is not
+.NET (`tests/fixtures/repos/python-inventory/`, scanned like `octo/demo`), with its own account kind `plan-non-dotnet`,
+for the Plan setup walks that must tell the legacy stack from a chosen platform (RF-609, P8-103).
 
 **Release 1 journeys (P3-12).** `journeys/handoff-package.spec.ts` runs flows 1 and 7 end to end: from the address of
 `octo/webforms` through scan, understand, a planning brief saved in Plan setup and the plan run to the hand-off zip

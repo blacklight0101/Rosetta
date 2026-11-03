@@ -155,3 +155,20 @@ describe('universal scan of a stack with no language pack', () => {
     expect(scan.sqlStatements).toEqual([]);
   });
 });
+
+describe('universal scan of the Python fixture', () => {
+  it('RF-101 reads a project that is not .NET as Python, with no C# anywhere', async () => {
+    const { scan } = await scanTree(fixtureRoot('python-inventory'));
+
+    expect(scan.files.map((file) => [file.path, file.language, file.artefactKinds])).toEqual([
+      ['inventory/__init__.py', 'python', []],
+      ['inventory/db.py', 'python', []],
+      ['inventory/stock.py', 'python', []],
+      ['main.py', 'python', ['entry-point']],
+      ['requirements.txt', 'text', ['manifest']],
+      ['sql/schema.sql', 'sql', ['database-script']],
+      ['tests/test_stock.py', 'python', []],
+    ]);
+    expect(scan.files.some((file) => file.language === 'csharp')).toBe(false);
+  });
+});
