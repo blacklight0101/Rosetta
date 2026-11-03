@@ -70,7 +70,7 @@ export function basisMovedText(before: RunEstimate, after: RunEstimate): string 
 
 /** DEC-210: says so when the likely total is above the approvable one; undefined when it is not. */
 // RF-434
-export function likelyAboveText(estimate: RunEstimate): string | undefined {
+function likelyAboveText(estimate: RunEstimate): string | undefined {
   const { journey } = estimate;
   if (journey === undefined) return undefined;
   const local = isLocalEstimate(estimate);

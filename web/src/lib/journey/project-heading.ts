@@ -7,7 +7,7 @@ import type { JourneyStep, JourneyView } from './journey-steps.js';
 
 export type HeadingTone = 'ok' | 'warn' | 'info' | 'danger';
 
-export interface HeadingStatus {
+interface HeadingStatus {
   readonly text: string;
   readonly tone: HeadingTone;
   /** The run page of a live run; the status is then a link. */
