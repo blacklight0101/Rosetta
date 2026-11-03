@@ -1,10 +1,12 @@
 import type { JSX } from 'preact';
+import { useContext } from 'preact/hooks';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import { capTokensNote, tokenFiguresOf } from '../lib/live-run/cap-tokens.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import type { CapsState, RunState } from '../lib/live-run/run-state.js';
 import { roleTotalsOf, shareOf, type RoleTotals } from '../lib/live-run/run-summary.js';
 import { microsToDollars } from '../lib/usd.js';
+import { ApprovedViewContext } from './approved-view-context.js';
 import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1003, RF-424, design-system.md section 14 (live run): the run meter: tokens and cost per role
@@ -25,6 +27,7 @@ function Bar(props: {
   readonly label: string;
   readonly share: number;
   readonly text: string;
+  readonly name?: string;
 }): JSX.Element {
   return (
     <div class="rst-live-meter__item">
@@ -35,7 +38,7 @@ function Bar(props: {
       <div
         class="rst-cap-meter"
         role="meter"
-        aria-label={`Run ${props.label.toLowerCase()} against cap`}
+        aria-label={props.name ?? `Run ${props.label.toLowerCase()} against cap`}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={props.share}
@@ -210,14 +213,26 @@ function RoleTable(props: { readonly state: RunState; readonly costMicros: numbe
 export function RunMeter({ state, costMicros, estimate }: RunMeterProps): JSX.Element {
   const figures = tokenFiguresOf(state);
   const tokens = figures.raw;
+  const approved = useContext(ApprovedViewContext);
   const note =
-    state.caps === undefined
+    state.caps === undefined || approved !== undefined
       ? undefined
       : capTokensNote(figures, state.caps.maxTokens, tokensLabel);
   return (
     <section class="rst-live-meter rst-card" aria-label="Run meter">
       <h2 class="rst-live-section__title">Run meter</h2>
-      <Bars caps={state.caps} tokens={figures.toward} costMicros={costMicros} />
+      {approved === undefined ? (
+        <Bars caps={state.caps} tokens={figures.toward} costMicros={costMicros} />
+      ) : (
+        <div class="rst-live-meter__bars">
+          <Bar
+            label="Approved amount"
+            share={shareOf(approved.spent, approved.cap)}
+            text={approved.text}
+            name="Approved amount used"
+          />
+        </div>
+      )}
       {note === undefined ? null : (
         <p class="rst-settings__note" data-testid="cap-tokens-note">
           {note}

@@ -256,14 +256,15 @@ test(
 
     const group = page.getByTestId('topbar-run-meter');
     await expect(group).toBeVisible({ timeout: 30_000 });
-    await expect(group).toContainText('This run');
-    // P5-07: the e2e project reads on Ollama, so the meter counts tokens against the token cap.
-    await expect(group).toContainText(/[\d,]+ tokens of [\d,]+ tokens/u);
+    // P8-24: the run is a step of a journey, so the meter shows the approved amount left, not a cap.
+    // P5-07: the e2e project reads on Ollama, so the amount is counted in tokens.
+    await expect(group).toContainText(/[\d,]+ tokens left of [\d,]+ approved/u);
+    await expect(group).not.toContainText('This run');
     await expect(group).not.toContainText('$');
     await expect(runMeter(page)).toHaveAttribute('aria-valuenow', /^\d+$/u);
     await expect(runMeter(page)).toHaveAttribute(
       'aria-valuetext',
-      /^[\d,]+ tokens of [\d,]+ tokens \(\d+%\)/u,
+      /^[\d,]+ tokens left of [\d,]+ approved \(\d+%\)/u,
     );
     await expect(page.getByTestId('header-totals')).toBeVisible();
     const meterBox = await boxOf(group);

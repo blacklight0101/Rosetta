@@ -14,6 +14,9 @@ orchestrator can promote it.
 1. Read `CLAUDE.md`, the task card, every document in its Reads list, every requirement id in Refs
    (`docs/spec/requirements.md`, with its Given/When/Then), every ADR in Refs, `docs/architecture.md` and
    `docs/conventions.md`. Derive behaviour only from the documents.
+   - Find code with the knowledge graph before searching wide: `graphify query "<question>" --graph
+     <main checkout>/graphify-out/graph.json` (also `graphify path`, `graphify explain`), then open the files it
+     names. The graph locates code; the documents still define behaviour.
 2. **Spec first (ADR-010).** If the card needs behaviour the requirements do not describe, or two documents
    disagree, stop and report it under OPEN QUESTIONS; never invent the behaviour.
 3. Work on the branch the orchestrator created (`task/<card-id>-<slug>`, cut from `develop`, DEC-175); never

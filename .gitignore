@@ -34,3 +34,4 @@ npm-debug.log*
 eval-out/
 test-results/
 playwright-report/
+graphify-out/

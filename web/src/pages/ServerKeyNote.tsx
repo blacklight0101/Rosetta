@@ -7,6 +7,7 @@ import {
   approvalText,
   basisMovedText,
   ceilingNoteText,
+  likelyAboveText,
   likelyText,
   missingKeyProviders,
 } from '../lib/journey-approval.js';
@@ -69,6 +70,7 @@ function JourneyNote({ estimate }: { readonly estimate: RunEstimate }): JSX.Elem
   const { journey } = estimate;
   const likely = likelyText(estimate);
   const approve = approvalText(estimate);
+  const above = likelyAboveText(estimate);
   const moved = useBasisMoved(estimate);
   if (journey === undefined || likely === undefined || approve === undefined) return null;
   const basis =
@@ -77,7 +79,7 @@ function JourneyNote({ estimate }: { readonly estimate: RunEstimate }): JSX.Elem
       : 'From fixed assumptions: no earlier run of this model yet.';
   return (
     <p class="rst-settings__note" data-testid="journey-total">
-      {`The whole journey (understand with claim checking, ${String(journey.deepenRounds)} Deepen rounds and the plan): likely ${likely}. Analyse approves ${approve}: the run asks before it goes past it. ${ceilingNoteText(estimate) ?? ''} ${basis} ${moved ?? ''} ${CAP_SENTENCE}`}
+      {`The whole journey (understand with claim checking, ${String(journey.deepenRounds)} Deepen rounds and the plan): ${above === undefined ? `likely ${likely}` : `${approve} (${above})`}. Analyse approves ${approve}: ${above === undefined ? 'the run asks before it goes past it' : 'the run will pause and ask at the approved amount'}. ${ceilingNoteText(estimate) ?? ''} ${basis} ${moved ?? ''} ${CAP_SENTENCE}`}
     </p>
   );
 }
