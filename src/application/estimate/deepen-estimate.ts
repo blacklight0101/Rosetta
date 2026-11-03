@@ -3,6 +3,7 @@ import type { PriceTable } from '../../domain/budget/price-table.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
 import { canDeepen } from '../../domain/deepen/deepen-record.js';
 import { planRound, type RoundPlan } from '../../domain/deepen/round-plan.js';
+import { journeyRemaining } from '../../domain/journey/journey-record.js';
 import { DEEPEN_ROUNDS, isAllowedRoundLimit } from '../../domain/deepen/stop-rule.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
@@ -15,6 +16,7 @@ import type { ModelList } from '../models/model-list.js';
 import type { AnswersFile } from '../ports/answers-file.js';
 import type { PriorCards } from '../ports/prior-cards.js';
 import type { JourneyRecords } from '../ports/journey-records.js';
+import type { ProjectSettings } from '../projects/project-settings.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderKeyRepository } from '../ports/provider-key-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -208,7 +210,7 @@ export class EstimateDeepen {
     // A working ceiling, not a proven maximum (see the comment at the top of the file).
     const allRounds = times(round, maxRounds);
     // RF-433, P8-04: the cap the guard holds the run to, the ceiling for an uncapped local run.
-    const cap = runCapsFor(project.settings, this.deps.ollamaHost);
+    const { cap, journey } = await this.capOf(run, project.settings);
     return ok({
       ...{
         priceTableVersion: this.deps.priceTable.version,
@@ -216,8 +218,42 @@ export class EstimateDeepen {
       },
       ...{ maxRounds, coveragePass, plan: planSummary(plan, answers), roles, round, allRounds },
       cap: { maxCostMicros: cap.maxCostMicros, maxTokens: cap.maxTokens },
+      ...(journey === undefined ? {} : { journey }),
       overCap: { round: overCap(round.high, cap), allRounds: overCap(allRounds.high, cap) },
     });
+  }
+
+  /**
+   * RF-434, RF-435: the cap the guard holds the run to: what is left of the approved amount for a
+   * project with a journey, else the project's run cap.
+   */
+  private async capOf(
+    run: Run,
+    settings: ProjectSettings,
+  ): Promise<{
+    readonly cap: DeepenEstimate['cap'];
+    readonly journey: DeepenEstimate['journey'];
+  }> {
+    const caps = runCapsFor(settings, this.deps.ollamaHost);
+    const journey = await this.journeyOf(run);
+    if (journey === undefined) return { cap: caps, journey };
+    return {
+      cap: { maxCostMicros: journey.remainingMicros, maxTokens: journey.remainingTokens },
+      journey,
+    };
+  }
+
+  /** RF-434: the approved amount of the project's journey and what is left of it; none without one. */
+  private async journeyOf(run: Run): Promise<NonNullable<DeepenEstimate['journey']> | undefined> {
+    const record = await this.deps.journeys?.find(run.userId, run.projectId);
+    if (record === undefined) return undefined;
+    const left = journeyRemaining(record, await this.deps.runs.list(run.userId, run.projectId));
+    return {
+      approvedMicros: record.approved.costMicros,
+      remainingMicros: left.costMicros,
+      approvedTokens: record.approved.tokens,
+      remainingTokens: left.tokens,
+    };
   }
 
   /**

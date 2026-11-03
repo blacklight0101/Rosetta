@@ -51,7 +51,7 @@ export function topBarMeterOf(
   const words = { ok: undefined, warn: 'approaching the cap', danger: 'at the cap' }[level];
   const note =
     words === undefined ? undefined : `${words.charAt(0).toUpperCase()}${words.slice(1)}`;
-  const valueText = `${spentText} of ${capText} (${String(share)}%)`;
+  const valueText = `${approvedText ?? `${spentText} of ${capText}`} (${String(share)}%)`;
   return {
     share,
     level,

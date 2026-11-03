@@ -81,7 +81,6 @@ describe('RF-1003 the header meter, the spend panel and the run meter', () => {
     const text = screen.getByTestId('topbar-run-meter').textContent;
     expect(text).toContain('$3.96 left of $4.00 approved');
     expect(text).not.toContain('$0.50');
-    expect(text).not.toContain(' of $4.00 ');
   });
 });
 

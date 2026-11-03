@@ -26,7 +26,12 @@ export interface RunMeterInput {
 
 // RF-1003, P5-07
 export function runMeterReadingOf(input: RunMeterInput): RunMeterReading | undefined {
-  const { caps, costMicros, tokens, local } = input;
+  const { caps, costMicros, tokens, local, approved } = input;
+  // P8-24: a run of a journey is measured against the approved amount, which replaces its run cap.
+  if (approved !== undefined) {
+    const { spent, cap, unit } = approved;
+    return cap > 0 ? { spent, cap, unit, approvedText: approved.text } : undefined;
+  }
   if (caps === undefined) return undefined;
   if (local) {
     return caps.maxTokens > 0 ? { spent: tokens, cap: caps.maxTokens, unit: 'tokens' } : undefined;
