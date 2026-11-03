@@ -58,12 +58,12 @@ test('RF-615 RF-006 an understand run that was stopped locks the plan steps and 
   await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
 
   await expect(journey(page)).toBeVisible();
   await expect(journey(page).getByRole('listitem')).toHaveCount(7);
-  await expect(stepOf(page, 'Understand')).toContainText('Failed');
-  await expect(stepOf(page, 'Understand')).toContainText('Interrupted');
+  await expect(stepOf(page, 'Understand')).not.toContainText('Failed');
+  await expect(stepOf(page, 'Understand')).toContainText('Stopped by you');
   await expect(stepOf(page, 'Understand')).toContainText('Current step');
   await expect(stepOf(page, 'Understand')).toHaveAttribute('aria-current', 'step');
   for (const title of ['Brief', 'Estimate', 'Plan', 'Package']) {

@@ -32,7 +32,7 @@ async function startRunning(page: Page): Promise<void> {
 
 async function stopRun(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
 }
 
 test(

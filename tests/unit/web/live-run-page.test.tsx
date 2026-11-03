@@ -161,7 +161,7 @@ it('RF-1003 Stop asks for the stop with the run id, says it is stopping, and the
   expect(await screen.findByText(/Stopping/u)).toBeTruthy();
   connection.event(runEnded(2, 'Interrupted'));
   await waitFor(() => {
-    expect(screen.getByTestId('run-status').textContent).toContain('Interrupted');
+    expect(screen.getByTestId('run-status').textContent).toContain('Stopped by you');
   });
   expect(screen.queryByRole('button', { name: 'Stop run' })).toBeNull();
 });

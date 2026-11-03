@@ -219,7 +219,7 @@ test('RF-1003 Stop ends a run that is working, keeps the cards that were found a
 
   await page.getByRole('button', { name: 'Stop run' }).click();
 
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
   await expect(page.getByRole('button', { name: 'Stop run' })).toHaveCount(0);
   await expect(page.getByRole('tablist', { name: 'Results' })).toBeVisible();
   await openRunTab(page, 'Evidence');
@@ -246,7 +246,7 @@ test('RF-1006 a page opened on a run under way replays what happened and goes on
   await openRunTab(page, 'Activity');
   await expect(page.getByRole('log', { name: 'Event log' })).toContainText('run.started');
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
   await openRunTab(page, 'Evidence');
   await expect(agentPanel(page, 'Controllers')).not.toContainText('Running');
 });

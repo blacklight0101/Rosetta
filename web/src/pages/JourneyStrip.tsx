@@ -61,6 +61,7 @@ const words: Readonly<Record<StepState, string>> = {
   gaps: 'With gaps',
   awaiting: 'Waiting for approval',
   skipped: 'Skipped',
+  stopped: 'Stopped by you',
 };
 
 const glyphs: Readonly<Record<StepState, GlyphName>> = {
@@ -73,6 +74,7 @@ const glyphs: Readonly<Record<StepState, GlyphName>> = {
   gaps: 'warning-triangle',
   awaiting: 'pause-bars',
   skipped: 'dashed-circle',
+  stopped: 'pause-bars',
 };
 
 /** RF-627: the files and downloads of a step, plain links because they leave the app. */
