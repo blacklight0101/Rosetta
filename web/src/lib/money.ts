@@ -1,9 +1,11 @@
 import { microsToDollars } from './usd.js';
 
-// RF-428, RF-1020, DEC-54, design-system.md section 10: the one way a money amount is written.
-// Four decimals below $1 and two above, thousands separators, rounded half up on the digits (never
-// through a float); the exact figure goes in a tooltip. An amount that rounds up to a dollar is
-// written as a dollar amount, so $0.99996 reads `$1.00`, never `$1.0000`.
+// RF-428, RF-1020, DEC-54, DEC-217, design-system.md section 10: the one way a money amount is
+// written. Four decimals below $1 and two above, thousands separators, rounded half up on the digits
+// (never through a float); the exact figure goes in a tooltip. An amount that rounds up to a dollar
+// is written as a dollar amount, so $0.99996 reads `$1.00`, never `$1.0000`. Exactly zero reads
+// `$0.00` and a non-zero amount below $0.00005 reads `<$0.0001`, so a cost never reads as zero by
+// rounding.
 
 const hundredth = 10_000n;
 const tenThousandth = 100n;
@@ -21,7 +23,9 @@ export interface Money {
 export function formatMoney(micros: string): Money {
   const value = BigInt(micros);
   const exact = `$${microsToDollars(micros)}`;
+  if (value === 0n) return { text: '$0.00', exact };
   const fractions = halfUp(value, tenThousandth);
+  if (fractions === 0n) return { text: '<$0.0001', exact };
   if (fractions < fourDecimalsMax) {
     return { text: `$0.${fractions.toString().padStart(4, '0')}`, exact };
   }
