@@ -20,6 +20,7 @@ const endWords: Readonly<Record<string, string>> = {
   Completed: 'done',
   CapReached: 'stopped at its cap',
   Failed: 'failed',
+  Interrupted: 'stopped by you',
 };
 
 function kindOf(input: RunTitleInput): string {

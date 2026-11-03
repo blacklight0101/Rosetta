@@ -48,6 +48,8 @@ it('RF-615 lists the seven steps in order', () => {
 it.each([
   ['written', 'Package', 'Done'],
   ['capped', 'Understand', 'Failed'],
+  ['stoppedByYou', 'Understand', 'Stopped by you'],
+  ['planStoppedByYou', 'Plan', 'Stopped by you'],
   ['capped', 'Brief', 'Locked'],
   ['estimate', 'Plan', 'Not yet'],
   ['estimate', 'Estimate', 'Current'],

@@ -80,9 +80,9 @@ test('RF-1012 disables Delete while a run is in progress, with the reason, until
   await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
   await openHistory(page);
-  await expect(runRow(page, '-understand')).toContainText('Interrupted');
+  await expect(runRow(page, '-understand')).toContainText('Stopped by you');
   await expect(
     runRow(page, '-understand').getByRole('button', { name: /^Delete:/u }),
   ).toBeEnabled();

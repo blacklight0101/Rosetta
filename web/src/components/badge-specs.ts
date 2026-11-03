@@ -92,7 +92,7 @@ export const badgeSpecs: SpecTable = {
     Completed: badge('Completed', 'ok', 'solid', 'check'),
     CapReached: badge('Cap reached', 'warn', 'solid', 'square'),
     Failed: badge('Failed', 'danger', 'solid', 'exclamation'),
-    Interrupted: badge('Interrupted', 'neutral', 'solid', 'pause-bars'),
+    Interrupted: badge('Stopped by you', 'neutral', 'solid', 'pause-bars'),
   },
   RunPartlyRead: { PartlyRead: badge('Partly read', 'warn', 'solid', 'square') },
   RunQueueState: {

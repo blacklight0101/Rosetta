@@ -46,7 +46,7 @@ describe('runTitleOf', () => {
   it.each([
     ['CapReached', 'Understand, stopped at its cap'],
     ['Failed', 'Understand, failed'],
-    ['Interrupted', 'Understand, stopped'],
+    ['Interrupted', 'Understand, stopped by you'],
   ])('RF-1015 says how a run that ended %s ended', (endState, title) => {
     const phase: RunPhase = { kind: 'ended', endState };
 

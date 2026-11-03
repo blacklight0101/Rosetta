@@ -25,7 +25,7 @@ test(
     const other = await context.newPage();
     await other.goto(held);
     await other.getByRole('button', { name: 'Stop run' }).click();
-    await expect(runStatus(other)).toContainText('Interrupted', { timeout: 30_000 });
+    await expect(runStatus(other)).toContainText('Stopped by you', { timeout: 30_000 });
     await other.close();
 
     await expect(runStatus(page)).not.toContainText('Queued', { timeout: 30_000 });
