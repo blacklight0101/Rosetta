@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 36      | 1         | 30         | 5         | 0                  | 5       | 25      | 6      | 9          | 0         |
-| **Total**                    | **526** | **119**   | **366**    | **41**    | **0**              | **231** | **269** | **26** | **271**    | **0**     |
+| P8 Evaluation fixes, round 2 | 104     | 5         | 87         | 12        | 0                  | 73      | 25      | 6      | 20         | 14        |
+| **Total**                    | **594** | **123**   | **423**    | **48**    | **0**              | **299** | **269** | **26** | **282**    | **14**    |
 
 ## Conventions for every card
 
@@ -7527,7 +7527,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-37..P8-40)
 - **Reads**: `docs/verification/r1-matrix.md` (rows for RF-601, RF-604, RF-609, RF-610, RF-623, RF-645, RF-648..RF-650, RF-264, RF-1015 and RF-1020; the duplicated RF-601 and RF-604 rows; section 1 counts; the line "Requirements without any test" at 23), `docs/spec/requirements.md` (RF-160, RF-264, RF-609 and the traceability matrix; the Build method bullets near line 1509 for P7-17; RF-1022), `docs/architecture.md` (the catalogue data files near 246; the catalogue route shape near 348; the card-format and repair versions near 604-606; "Write the package"), `docs/hand-in/video-script.md` (95), `docs/design/board/StartRun.dc.html` (the Run cap field), `docs/decision-log.md` (DEC-202 and the P7-30/P7-21 decisions awaiting the owner), `tests/integration/docs/r1-matrix.test.ts`. Evidence (verifier notes): P7-23 `docs/architecture.md` does not list `agent-models` among the catalogue data files; P7-17 the catalogue route shape lacks `wording` and the text near line 1509 of `docs/spec/requirements.md` still says only "Windows Authentication" is no platform; P7-33 the r1-matrix summary counts were not updated for the new R1 requirements and RF-1022 is ambiguous on whether the start page still exists or only redirects; P7-34 the r1-matrix status rows 342, 361, 362, 374 and 375 read Todo for P7-34; P7-21, P7-30, P7-31, P7-32 matrix rows not updated (RF-609, RF-623, RF-645, RF-648..RF-650 have `-` and 0/0/0); P7-36 `docs/architecture.md` and `docs/hand-in/video-script.md` still say "Write the package"; P7-37 `StartRun.dc.html` still shows the Run cap field; RF-601 and RF-604 appear twice in the coverage table.
 - **Do**: no code; run `npx vitest run tests/integration/docs` after each file.
   - Add or correct each row and sentence above; each fix cites the card that made the change.
@@ -7542,7 +7542,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-01, P8-03, P8-05, P8-10, P8-11
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-41..P8-45)
 - **Reads**: `tests/e2e/journeys/admin-and-cap.spec.ts` (the "By model" assertion), `tests/e2e/start-run.spec.ts` (75, 155-187: the cap restore, the stage radio, the RF-1001 flake on shard 3/3), `tests/e2e/plan-setup.spec.ts` (154), `tests/e2e/support/handoff-journey.ts` (`expectPlanFigures` 57), `tests/integration/presentation/web/run-start-stage-api.test.ts` (33-70), `tests/unit/web/` (the settings form and the server-refusal test), `tests/integration/tooling/scheduled-release-workflow.test.ts`, `tests/integration/application/build-plan-proposed-stack.test.ts` (101-126), `tests/unit/web/plan-setup-deployment-lib.test.ts` (102), `tests/integration/infrastructure/prompts/catalogue-grep-rules.test.ts` (76), the P7-32 and P7-31 tests. Evidence (verifier notes): P7-05 the "By model" assertion only checks rows exist (assert `gpt-5-nano`); P7-37 `run-start-stage-api.test.ts:33-70` passes before the fix, `start-run.spec.ts:155-176` restores the project cap and threshold only on success (hard-coded 2.00 and 0.25; use try/finally), the server-refusal-next-to-settings-field case is e2e only, and no e2e asserts the stage radio is absent from the start page; P7-36 `plan-setup.spec.ts:154` has no seeded open questions, so the three-question one-click case is covered by the unit test only; P7-30 `build-plan-proposed-stack.test.ts:101-126` does not assert the API-contract effect; P7-17 `plan-setup-deployment-lib.test.ts:102` has no red test and `catalogue-grep-rules.test.ts:76` holds a raw U+200B (use `​`); the e2e flake of RF-1001 (`start-run.spec.ts:187`) failed once on shard 3/3 and passed on rerun (possibly shared state with another spec).
 - **Do**: red tests first where a test must fail before a fix; find the shared state behind the flake.
   - Make every test above fail on the old behaviour or assert the stronger fact; restore settings in `finally`; seed the open questions in the plan-setup spec; replace the raw character.
@@ -7556,7 +7556,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: L
 - **Depends on**: P7-35, P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14, P8-15, P8-16
 - **Gate**: owner
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-46..P8-49)
 - **Reads**: the evaluation of 2026-11-02 (findings EV-82..EV-91 and the re-checked findings with their repros), `docs/verification/`, RNF-006, RNF-012.
 - **Do**:
   - Run Asset Manager, Invoice Generator and eShopModernizing end to end (scan, understand, Deepen, answers, plan) on a local Ollama model and on Haiku, one test user per provider, with the default caps and pause-and-ask, driving the web for the Plan setup save of a typed architecture (EV-73) as well as the API.
@@ -7573,7 +7573,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-17
 - **Gate**: owner (asked for on 2026-11-02; changes CI and branch protection)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-50..P8-55)
 - **Evidence** (2026-11-02, Phase 8): about 5 merges took over 3 hours. One CI run is 17 jobs; the longest job takes 11 min (tests windows-latest), e2e shards 7-8 min, yet a run took 25-40 min wall clock because jobs waited for runners: each push to an open PR starts a full run, superseded runs held runners, and the orchestrator's merge script updated each PR from develop and waited for a fresh full run before merging (the rulesets do not require an up-to-date branch), so merges were strictly serial (~30 min each). On 2026-11-02 the script switched to merging a PR at once when GitHub reports it clean. A flaky e2e spec (`live-run-controls.spec.ts`, fixed in #1146) cost about five extra full runs.
 - **Do**: measure first (queue time vs job time per run over the last 50 runs, with `gh run view --json jobs`), then pick and apply the changes that cut wall time without losing coverage, each with the number it saves:
   - A merge queue (GitHub merge queue on develop, `merge_group` trigger) instead of "update branch, wait, merge": PRs batch, and the full suite runs once per batch.
@@ -7591,7 +7591,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-17
 - **Gate**: owner (asked for on 2026-11-02; the owner confirms the rule of part 2)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-56..P8-61)
 - **Evidence** (2026-11-02, P8-17 evaluation): (1) The live run page shows one panel per agent task (RF-1002), so with `agents.parallelism` 4 the owner saw "only 1 agent" while the verifier ran about 4 judgement calls at once (about 125 calls a minute, against about 35 at parallelism 1). Nothing on the page says how many calls a role runs at once or what the limit is. (2) `src/application/projects/default-settings.ts` (line 50) sets `agents.parallelism` to 1 when the server's default reader is Ollama. A project made that way and then switched to Haiku keeps 1, so cloud runs read one area at a time. All three P8-17 evaluation projects had parallelism 1.
 - **Reads**: `web/src/lib/live-run/run-state.ts` (`RunState`, `AgentPanelState`), `web/src/lib/live-run/reduce-run.ts`, `web/src/lib/live-run/agent-events.ts` (`onStarted` and the `agent.ended` handler), `web/src/lib/live-run/run-level-events.ts` (`onRunStarted`), `web/src/pages/AgentsGrid.tsx`, `web/src/pages/AgentsTab.tsx`, `src/domain/runs/run-event.ts`, `src/application/runs/run-lifecycle.ts` (the `run.started` event, line 79), `src/application/understand/claim-judgement.ts` (the verifier pool; `verify.claim.judged` is published only when a judgement ends), `src/application/understand/reader-settings.ts` (`readerParallelism`), `docs/data-model.md` section 3.9, `src/application/projects/default-settings.ts`, `src/application/use-cases/update-project-settings.ts` (where a provider change is saved, called by `PUT /api/projects/:id/settings` in `src/presentation/web/project-routes.ts`), `web/src/pages/LimitSettings.tsx` (`parallelismDefault`, `ParallelReaders`), `web/src/pages/project-settings-form.ts`.
 - **Do**: add the Givens to RF-1002 and RF-436 first; red tests first.
@@ -7611,7 +7611,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: L
 - **Depends on**: none
 - **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-62..P8-71)
 - **Reads**: DEC-207, Q-63, ADR-024, ADR-025, RF-1304, `.github/workflows/release.yml` (the `image` job, and in `deploy` the steps "The ZAP baseline passed on this commit" and "This tree passed staging"), `.github/workflows/scheduled-release.yml` (the slots and the late-slot rule of P7-28), `.github/workflows/azure-provision.yml` and its tests, `docs/environments-and-delivery.md` (20, 101, 240, 333, 375), `docs/runbooks/deploy.md` (22, 173, 199, 217), `docs/adr/ADR-025-develop-branch-staging-and-scheduled-release.md` (58), `tests/integration/tooling/scheduled-release-workflow.test.ts`, `tests/integration/tooling/scheduled-release-boundaries.test.ts` (45), `tests/integration/docs/release-flow.test.ts` (57-62), `tests/integration/tooling/release-notify.test.ts`.
 - **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
 - **Do** (DEC-207):
@@ -7670,7 +7670,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-19
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-72..P8-76)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-03, UX-04 (EV-92 beyond the parallelism of P8-19): a new project takes Ollama for all four roles although the server shows "Ollama could not be reached. Type the model id."; switching a role to Anthropic leaves its model at "Choose a model", so four providers and four models are set one by one; the settings page has no "every role to ..." control (the start page only offers "Switch every role to Ollama"). Max output token fields read "Not set" while their slider shows a position, and large numbers have no separators (2000000).
 - **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `src/application/projects/default-settings.ts`, `src/application/use-cases/update-project-settings.ts`, `web/src/pages/ProjectSettingsForm.tsx`, `web/src/pages/ModelSettings.tsx`, `web/src/pages/ModelChoice.tsx`, `web/src/pages/provider-choices.ts`, `web/src/pages/model-lists.ts`, `web/src/pages/LimitSetting.tsx`, `web/src/pages/LimitSettings.tsx`, `web/src/pages/use-switch-to-ollama.ts`, `web/src/pages/project-settings-form.ts`, RF-436, RF-1104.
 - **Do**: card P8-19 changes the same use case and settings form, so it goes first; add the Givens to RF-436 first; red tests first.
@@ -7708,7 +7708,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-23, P8-24
 - **Gate**: none (DEC-209 answered Q-64)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-77..P8-83)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: the Anthropic consent was asked on the start page, again in the Deepen panel and again in Plan setup on the same project and day. On a zip project the Deepen panel shows only the Anthropic box; "Start Deepen" and "Confirm and start" then fail with HTTP 400 and "RST-1521 ... the run lacks the second confirmation for private code", and only then does the private-code box appear (`use-deepen.ts` sets `privateAsked` from the refusal). Plan setup puts "Switch every role to Ollama" beside the consent and "Start the plan" at the bottom of a page of about 5,400 px.
 - **Reads**: `docs/design/board/P8Deepen.dc.html`, `web/src/pages/DeepenAction.tsx` (`PrivateAsked`), `web/src/pages/use-deepen.ts`, `web/src/pages/use-private-code.ts`, `web/src/pages/PrivateCodeNotice.tsx`, `web/src/pages/CloudNotice.tsx`, `web/src/pages/PlanConsentNotice.tsx`, `web/src/pages/PlanSetupPage.tsx`, `web/src/pages/use-switch-to-ollama.ts`, `web/src/pages/start-gate.ts`, the run-start and Deepen routes that check `privateCodeConfirmed` (RST-1521), RF-143, RF-605, RF-209, Q-64, ADR-006.
 - **Do**: add the Givens to RF-143 and RF-209 first (DEC-209); red tests first.
@@ -7767,7 +7767,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-25, P8-27
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-84..P8-86)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-24, UX-25: after the understand, "Your turn" offers three paths at once: "Deepen this run", "Do not Deepen: answer the questions now" and a full-width primary "Set up the plan". The Questions card reads "3 open questions, asked after the last Deepen" before any Deepen ran. "Your questions" lists OQ-003, OQ-002, OQ-001 (newest first), an answered question stays at the top of "Open questions", each answer needs its own Save, and there is no "accept the recommended answers" (Plan setup has one).
 - **Reads**: `docs/design/board/P8Run.dc.html`, `web/src/pages/YourTurn.tsx`, `web/src/pages/DeepenAction.tsx`, `web/src/pages/PlanNext.tsx`, `web/src/pages/RunAnswers.tsx`, `web/src/pages/AnswerChoices.tsx`, `web/src/pages/use-answer-save.ts`, `web/src/pages/use-skip-deepen.ts`, `web/src/lib/journey/journey-action.ts`, RF-1007, RF-1017, RF-1021, RF-647.
 - **Do**: add the Givens to RF-1021 and RF-1007 first; red tests first.
@@ -7786,7 +7786,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-26
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-87..P8-91)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-06, UX-17, UX-19, EV-93, EV-94: a run stopped by the user ends "Interrupted" but the strip shows "Failed"; a resumed run's start time is reset, so History shows 13.8 min for a 66 min run; History lists a Deepen with stage "understand" and Commit "none" for a zip project, with the coverage line running under the Tokens column and a red Delete on every row; Cost "By run" names runs by UUID while History names them `20261102-183533-understand`, repeats "Price table 2026-10-21" on every row, and mixes 3 and 6 decimals ($3.113515 beside $0.237).
 - **Reads**: `docs/design/board/P8HistoryCost.dc.html` and `docs/design/board/P8Project.dc.html`, `web/src/pages/JourneyStrip.tsx`, `web/src/lib/journey/journey-steps.ts`, `web/src/pages/HistoryPage.tsx`, `web/src/pages/HistoryRuns.tsx`, `web/src/pages/ProjectRunsTable.tsx`, `web/src/pages/ProjectCostPage.tsx`, `web/src/pages/CostTable.tsx`, the money formatter in `web/src/lib/`, `src/application/runs/run-lifecycle.ts` (resume), `docs/design-system.md` (number formats), RF-006, RF-426, RF-428, RF-1008, RF-1012, RF-1020.
 - **Do**: add the Givens first; red tests first.
@@ -7805,7 +7805,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-92..P8-94)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-23, EV-97, EV-76: the first understand of Asset Manager (2 areas, 52,749 first-party tokens) ended in 2 min with "2 / 2 Areas read" and "16% of first-party tokens read", leaving 21 files never read, so even a small project needs a Deepen before anything is usable. On eShop, readers are planned in ordinal alphabetical order ((root), ACI, Docs, Setup, VM before the app folders), so a run that stops early misses app code.
 - **Reads**: `docs/design/board/P8Run.dc.html`, `src/application/understand/` (area planning, `reader-settings.ts`, the reader loop and its stop rule), the reader prompt in `prompts/` (what tells a reader it is done), `web/src/pages/UnderstandingSummary.tsx`, `web/src/lib/understanding/measure-text.ts`, RF-210 (readers take the app's own code first), RF-230 (coverage per area), RF-231 (honest understanding measures), RF-1005; P7-03 (Done) made RF-210, so the eShop order is a regression of it.
 - **Do**: measure first: from the recorded events of the run, why each reader stopped (turn limit, token budget, the model saying it is done) and what share of its area it read; write the numbers into the card's PR.
@@ -7823,7 +7823,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-25
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-95..P8-98)
 - **Evidence** (P8-17 evaluation, 2026-11-02, re-checked 2026-11-03): EV-95, EV-79, EV-86: the plan from the 371-card eShop Deepen failed RST-1806 once (FLOW-002/009/010/012 unbuilt, REQ-017 with no card) after the gap round of P8-06 had run, and completed on the retry from the same inputs; the failed try cost $0.607. `POST plan-options` without the private-code confirmation answers RST-1521 "Start the run again and tick the private code confirmation", which points the user to the wrong place.
 - **Reads**: `src/application/plan/plan-links.ts` (`planGap`, the gap round and gap repair of P8-06), `src/application/plan/gap-repair-message.ts`, `src/application/plan/plan-repair.ts`, the planner prompt `prompts/planner/package.v12.md`, the recorded eShop failure (the four unbuilt flows and what the first gap round returned), `docs/conventions.md` (RST-1806, RST-1521), RF-604, RF-627, RF-602.
 - **Do**: add the Givens to RF-627 first; red tests first, with recorded responses where the first gap round leaves items unbuilt.
@@ -7841,7 +7841,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-29
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-99..P8-102)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-05, UX-15, UX-18, UX-20: the project name is not a link, and each row has a primary "Start run" button that only opens the project page (8 identical primary buttons); scratch projects can be deleted only at the bottom of History; names are in monospace with an automatic "(zip, 2 Nov 2026)" suffix, and Last run shows the date only. The journey strip (7 cards in a 5 + 2 grid) is repeated in full on every page. At 1280 px the live run meter pushes the user name, Sign out and System to a second header line. The landing "Six stages" timeline puts the sixth step alone on a second row.
 - **Reads**: `docs/design/board/P8Projects.dc.html`, `web/src/pages/ProjectsPage.tsx`, `web/src/pages/DeleteProjectSection.tsx`, `web/src/pages/JourneyStrip.tsx`, `web/src/components/TopbarRunMeter.tsx`, the app header component, the landing page in `web/`, `docs/design-system.md`, RF-010, RF-1010, RF-1012, RF-1020, RF-1200.
 - **Do**: add the Givens first; red tests first.
@@ -7892,7 +7892,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-21
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-103..P8-104)
 - **Evidence** (2026-11-03, P8-21 verifier round 2, finding 1): the end-to-end harness serves and scans only the .NET demo, so the P8-21 walk "pick C# on .NET on a non-.NET project" runs on the .NET demo, where the .NET offer would show without the feature.
 - **Reads**: `tests/e2e/support/serve.ts`, the end-to-end seed and accounts, `tests/e2e/plan-setup-stack.spec.ts`, RF-609, DEC-208, ADR-008.
 - **Do**: tests first.
@@ -7917,3 +7917,1042 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the reproduction, the isolation fix.
 - **Done when**: the Plan setup specs pass in any order and any shard; CI green.
 - **Refs**: RF-609, RF-613, ADR-008; GitHub issue #1183
+
+### P8-37 - Follow-up: r1-matrix rows and status rows for P7-21, P7-30, P7-31, P7-32 and P7-34
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14
+- **Gate**: owner (Phase 8 held)
+- **Status**: Todo
+- **Reads**: `docs/verification/r1-matrix.md` (rows for RF-264, RF-609, RF-610, RF-623, RF-645, RF-648..RF-650, RF-1015 and RF-1020; the status rows 342, 361, 362, 374 and 375), `docs/spec/requirements.md` (RF-160, RF-264, RF-609 and the traceability matrix), `docs/decision-log.md` (DEC-202 and the P7-30/P7-21 decisions awaiting the owner), `tests/integration/docs/r1-matrix.test.ts`. Evidence (verifier notes): P7-34 the r1-matrix status rows 342, 361, 362, 374 and 375 read Todo for P7-34; P7-21, P7-30, P7-31, P7-32 matrix rows not updated (RF-609, RF-623, RF-645, RF-648..RF-650 have `-` and 0/0/0).
+- **Do**: no code; run `npx vitest run tests/integration/docs` after each file.
+  - Add or correct each row and sentence above; each fix cites the card that made the change.
+- **Delivers**: the document edits.
+- **Done when**: each note above is closed in the file it names; the documentation tests pass; CI green.
+- **Refs**: RNF-005; P7-21, P7-30, P7-31, P7-32, P7-34 verifier notes; split from P8-15 (DEC-214).
+
+### P8-38 - Follow-up: r1-matrix duplicated rows and summary counts
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14, P8-37
+- **Gate**: owner (Phase 8 held)
+- **Status**: Todo
+- **Reads**: `docs/verification/r1-matrix.md` (the duplicated RF-601 and RF-604 rows; section 1 counts; the line "Requirements without any test" at 23), `tests/integration/docs/r1-matrix.test.ts`. Evidence (verifier notes): P7-33 the r1-matrix summary counts were not updated for the new R1 requirements; RF-601 and RF-604 appear twice in the coverage table.
+- **Do**: no code; run `npx vitest run tests/integration/docs` after each file.
+  - Add or correct the summary counts above; each fix cites the card that made the change.
+  - Remove the duplicated rows by merging their counts, never renumbering an id.
+- **Delivers**: the document edits.
+- **Done when**: each note above is closed in the file it names; the documentation tests pass; CI green.
+- **Refs**: RNF-005; P7-33 verifier note; split from P8-15 (DEC-214).
+
+### P8-39 - Follow-up: architecture and video-script text from P7-17, P7-23 and P7-36
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14
+- **Gate**: owner (Phase 8 held)
+- **Status**: Todo
+- **Reads**: `docs/architecture.md` (the catalogue data files near 246; the catalogue route shape near 348; the card-format and repair versions near 604-606; "Write the package"), `docs/hand-in/video-script.md` (95). Evidence (verifier notes): P7-23 `docs/architecture.md` does not list `agent-models` among the catalogue data files; P7-17 the catalogue route shape lacks `wording`; P7-36 `docs/architecture.md` and `docs/hand-in/video-script.md` still say "Write the package".
+- **Do**: no code; run `npx vitest run tests/integration/docs` after each file.
+  - Add or correct each sentence above; each fix cites the card that made the change.
+- **Delivers**: the document edits.
+- **Done when**: each note above is closed in the file it names; the documentation tests pass; CI green.
+- **Refs**: RNF-005; P7-17, P7-23, P7-36 verifier notes; split from P8-15 (DEC-214).
+
+### P8-40 - Follow-up: requirements text and start-run artboard from P7-17, P7-33 and P7-37
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14, P8-37
+- **Gate**: owner (Phase 8 held)
+- **Status**: Todo
+- **Reads**: `docs/spec/requirements.md` (the Build method bullets near line 1509 for P7-17; RF-1022), `docs/design/board/StartRun.dc.html` (the Run cap field). Evidence (verifier notes): P7-17 the text near line 1509 of `docs/spec/requirements.md` still says only "Windows Authentication" is no platform; P7-33 RF-1022 is ambiguous on whether the start page still exists or only redirects; P7-37 `StartRun.dc.html` still shows the Run cap field.
+- **Do**: no code; run `npx vitest run tests/integration/docs` after each file.
+  - Add or correct each sentence above; each fix cites the card that made the change.
+- **Delivers**: the document edits.
+- **Done when**: each note above is closed in the file it names; the documentation tests pass; CI green.
+- **Refs**: RNF-005; P7-17, P7-33, P7-37 verifier notes; split from P8-15 (DEC-214).
+
+### P8-41 - Follow-up: "By model" and open-question end-to-end checks that assert the fact (P7-05, P7-36)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-01, P8-03, P8-05, P8-10, P8-11
+- **Gate**: owner (Phase 8 held)
+- **Status**: Todo
+- **Reads**: `tests/e2e/journeys/admin-and-cap.spec.ts` (the "By model" assertion), `tests/e2e/plan-setup.spec.ts` (154), `tests/e2e/support/handoff-journey.ts` (`expectPlanFigures` 57). Evidence (verifier notes): P7-05 the "By model" assertion only checks rows exist (assert `gpt-5-nano`); P7-36 `plan-setup.spec.ts:154` has no seeded open questions, so the three-question one-click case is covered by the unit test only.
+- **Do**: red tests first where a test must fail before a fix.
+  - Make each test above fail on the old behaviour or assert the stronger fact; seed the open questions in the plan-setup spec.
+- **Delivers**: the test changes only (no source change except a testability hook, named in the pull request).
+- **Done when**: each listed test fails when its fix is reverted and passes now; CI green.
+- **Refs**: RNF-005, ADR-008, ADR-010; P7-05, P7-36 verifier notes; split from P8-16 (DEC-214).
+
+### P8-42 - Follow-up: run-start stage API test and server-refusal test that fail without the fix (P7-37)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-01, P8-03, P8-05, P8-10, P8-11
+- **Gate**: owner (Phase 8 held)
+- **Status**: Todo
+- **Reads**: `tests/integration/presentation/web/run-start-stage-api.test.ts` (33-70), `tests/unit/web/` (the settings form and the server-refusal test). Evidence (verifier notes): P7-37 `run-start-stage-api.test.ts:33-70` passes before the fix, and the server-refusal-next-to-settings-field case is e2e only.
+- **Do**: red tests first where a test must fail before a fix.
+  - Make each test above fail on the old behaviour or assert the stronger fact.
+- **Delivers**: the test changes only (no source change except a testability hook, named in the pull request).
+- **Done when**: each listed test fails when its fix is reverted and passes now; CI green.
+- **Refs**: RNF-005, ADR-008, ADR-010; P7-37 verifier note; split from P8-16 (DEC-214).
+
+### P8-43 - Follow-up: start-run spec restores the cap in finally and asserts the stage radio is absent (P7-37)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-01, P8-03, P8-05, P8-10, P8-11
+- **Gate**: owner (Phase 8 held)
+- **Status**: Todo
+- **Reads**: `tests/e2e/start-run.spec.ts` (75, 155-176: the cap restore, the stage radio). Evidence (verifier notes): P7-37 `start-run.spec.ts:155-176` restores the project cap and threshold only on success (hard-coded 2.00 and 0.25; use try/finally), and no e2e asserts the stage radio is absent from the start page.
+- **Do**: red tests first where a test must fail before a fix.
+  - Make each test above fail on the old behaviour or assert the stronger fact; restore settings in `finally`.
+- **Delivers**: the test changes only (no source change except a testability hook, named in the pull request).
+- **Done when**: each listed test fails when its fix is reverted and passes now; CI green.
+- **Refs**: RNF-005, ADR-008, ADR-010; P7-37 verifier note; split from P8-16 (DEC-214).
+
+### P8-44 - Follow-up: the RF-1001 start-run flake on shard 3/3 (P7-35)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-01, P8-03, P8-05, P8-10, P8-11, P8-43
+- **Gate**: owner (Phase 8 held)
+- **Status**: Todo
+- **Reads**: `tests/e2e/start-run.spec.ts` (187: the RF-1001 flake on shard 3/3). Evidence (verifier notes): the e2e flake of RF-1001 (`start-run.spec.ts:187`) failed once on shard 3/3 and passed on rerun (possibly shared state with another spec).
+- **Do**: find the shared state behind the flake.
+- **Delivers**: the test changes only (no source change except a testability hook, named in the pull request).
+- **Done when**: the flake does not appear in 20 reruns of shard 3/3; CI green.
+- **Refs**: RNF-005, ADR-008, ADR-010; P7-35 verifier notes; split from P8-16 (DEC-214).
+
+### P8-45 - Follow-up: tests of the proposed stack, deployment lib and catalogue rules that fail without the fix (P7-17, P7-30)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-01, P8-03, P8-05, P8-10, P8-11
+- **Gate**: owner (Phase 8 held)
+- **Status**: Todo
+- **Reads**: `tests/integration/application/build-plan-proposed-stack.test.ts` (101-126), `tests/unit/web/plan-setup-deployment-lib.test.ts` (102), `tests/integration/infrastructure/prompts/catalogue-grep-rules.test.ts` (76), `tests/integration/tooling/scheduled-release-workflow.test.ts`, the P7-32 and P7-31 tests. Evidence (verifier notes): P7-30 `build-plan-proposed-stack.test.ts:101-126` does not assert the API-contract effect; P7-17 `plan-setup-deployment-lib.test.ts:102` has no red test and `catalogue-grep-rules.test.ts:76` holds a raw U+200B (use `​`).
+- **Do**: red tests first where a test must fail before a fix.
+  - Make each test above fail on the old behaviour or assert the stronger fact; replace the raw character.
+- **Delivers**: the test changes only (no source change except a testability hook, named in the pull request).
+- **Done when**: each listed test fails when its fix is reverted and passes now; CI green.
+- **Refs**: RNF-005, ADR-008, ADR-010; P7-17, P7-30 verifier notes; split from P8-16 (DEC-214).
+
+### P8-46 - Re-run the evaluation on Asset Manager after Phase 8
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: P7-35, P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14, P8-38, P8-39, P8-40, P8-41, P8-42, P8-44, P8-45
+- **Gate**: owner
+- **Status**: Todo
+- **Reads**: the evaluation of 2026-11-02 (findings EV-82..EV-91 and the re-checked findings with their repros), `docs/verification/`, RNF-006, RNF-012.
+- **Do**:
+  - Run Asset Manager end to end (scan, understand, Deepen, answers, plan) on a local Ollama model and on Haiku, one test user per provider, with the default caps and pause-and-ask, driving the web for the Plan setup save of a typed architecture (EV-73) as well as the API.
+  - Run the repro of each finding of the evaluation of 2026-11-02 that this app's run can show, and keep the file:line evidence for the compare card.
+- **Delivers**: the run's evidence for the evaluation report.
+- **Done when**: the run has finished on both providers and the owner has read its results in the report.
+- **Refs**: RNF-006, RNF-012; evaluation of 2026-11-02 (P7-19); split from P8-17 (DEC-214).
+
+### P8-47 - Re-run the evaluation on Invoice Generator after Phase 8
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: P7-35, P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14, P8-38, P8-39, P8-40, P8-41, P8-42, P8-44, P8-45
+- **Gate**: owner
+- **Status**: Todo
+- **Reads**: the evaluation of 2026-11-02 (findings EV-82..EV-91 and the re-checked findings with their repros), `docs/verification/`, RNF-006, RNF-012.
+- **Do**:
+  - Run Invoice Generator end to end (scan, understand, Deepen, answers, plan) on a local Ollama model and on Haiku, one test user per provider, with the default caps and pause-and-ask.
+  - Run the repro of each finding of the evaluation of 2026-11-02 that this app's run can show, and keep the file:line evidence for the compare card. EV-84 must show a pause with an approved amount near the real spend, continued by +N and stopped.
+- **Delivers**: the run's evidence for the evaluation report.
+- **Done when**: the run has finished on both providers and the owner has read its results in the report.
+- **Refs**: RNF-006, RNF-012; evaluation of 2026-11-02 (P7-19); split from P8-17 (DEC-214).
+
+### P8-48 - Re-run the evaluation on eShopModernizing after Phase 8
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: P7-35, P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14, P8-38, P8-39, P8-40, P8-41, P8-42, P8-44, P8-45
+- **Gate**: owner
+- **Status**: Todo
+- **Reads**: the evaluation of 2026-11-02 (findings EV-82..EV-91 and the re-checked findings with their repros), `docs/verification/`, RNF-006, RNF-012.
+- **Do**:
+  - Run eShopModernizing end to end (scan, understand, Deepen, answers, plan) on a local Ollama model and on Haiku, one test user per provider, with the default caps and pause-and-ask.
+  - Run the repro of each finding of the evaluation of 2026-11-02 that this app's run can show, and keep the file:line evidence for the compare card. EV-82 must be re-run with the default project caps on the 371-card Deepen.
+- **Delivers**: the run's evidence for the evaluation report.
+- **Done when**: the run has finished on both providers and the owner has read its results in the report.
+- **Refs**: RNF-006, RNF-012; evaluation of 2026-11-02 (P7-19); split from P8-17 (DEC-214).
+
+### P8-49 - Compare the three evaluation runs and measure the plans after Phase 8
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: P8-46, P8-47, P8-48
+- **Gate**: owner
+- **Status**: Todo
+- **Reads**: the evaluation of 2026-11-02 (findings EV-82..EV-91 and the re-checked findings with their repros), `docs/verification/`, RNF-006, RNF-012.
+- **Do**:
+  - Report each finding of the evaluation of 2026-11-02 as fixed, better or still present, with the file:line evidence of the three runs.
+  - Compare time, tokens, cost and coverage with the 2026-11-02 runs; new findings take the next free EV ids.
+  - Measure again, per plan, the items each task card builds and the spread of Size and Difficulty, and the modules with a task card for eShop (EV-32).
+- **Delivers**: the evaluation report and the follow-up cards it calls for.
+- **Done when**: the owner has read the report.
+- **Refs**: RNF-006, RNF-012; evaluation of 2026-11-02 (P7-19); split from P8-17 (DEC-214).
+
+### P8-50 - CI throughput: measure queue time against job time and pick the changes
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-49
+- **Gate**: owner (asked for on 2026-11-02; changes CI and branch protection)
+- **Status**: Todo
+- **Evidence** (2026-11-02, Phase 8): about 5 merges took over 3 hours. One CI run is 17 jobs; the longest job takes 11 min (tests windows-latest), e2e shards 7-8 min, yet a run took 25-40 min wall clock because jobs waited for runners: each push to an open PR starts a full run, superseded runs held runners, and the orchestrator's merge script updated each PR from develop and waited for a fresh full run before merging (the rulesets do not require an up-to-date branch), so merges were strictly serial (~30 min each). On 2026-11-02 the script switched to merging a PR at once when GitHub reports it clean. A flaky e2e spec (`live-run-controls.spec.ts`, fixed in #1146) cost about five extra full runs.
+- **Reads**: `.github/workflows/ci.yml` (the jobs and the `changes` job), `docs/runbooks/`.
+- **Do**: measure first (queue time vs job time per run over the last 50 runs, with `gh run view --json jobs`), then pick the changes that cut wall time without losing coverage, each with the number it saves:
+  - Write the measurement and the picks (merge queue, lighter PR runs, cancel on new push, flaky retry, caches) as a short note in `docs/runbooks/` with the before numbers; no workflow changes in this card.
+- **Delivers**: the short note in `docs/runbooks/` with the before numbers and the picked changes, each with the number it saves.
+- **Done when**: the note holds queue time and job time for the last 50 runs and the saving expected from each change.
+- **Refs**: RNF-001, RNF-005, ADR-025; owner request of 2026-11-02; split from P8-18 (DEC-214); GitHub issue #1152
+
+### P8-51 - CI throughput: a merge queue on develop
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: P8-50
+- **Gate**: owner (asked for on 2026-11-02; changes CI and branch protection)
+- **Status**: Todo
+- **Evidence** (2026-11-02, Phase 8): about 5 merges took over 3 hours. One CI run is 17 jobs; the longest job takes 11 min (tests windows-latest), e2e shards 7-8 min, yet a run took 25-40 min wall clock because jobs waited for runners: each push to an open PR starts a full run, superseded runs held runners, and the orchestrator's merge script updated each PR from develop and waited for a fresh full run before merging (the rulesets do not require an up-to-date branch), so merges were strictly serial (~30 min each). On 2026-11-02 the script switched to merging a PR at once when GitHub reports it clean.
+- **Reads**: `.github/workflows/ci.yml` (the `changes` job), `tests/integration/tooling/workflows.test.ts`, `tests/integration/tooling/workflow-jobs.test.ts`, `docs/runbooks/`.
+- **Do**: tests first, then:
+  - A merge queue (GitHub merge queue on develop, `merge_group` trigger) instead of "update branch, wait, merge": PRs batch, and the full suite runs once per batch.
+- **Delivers**: the workflow change, the RNF-001 and workflow tests updated, the number it saves added to the note in `docs/runbooks/`; the merge-queue and ruleset setting is written as a step for the owner (the builder does not change repository settings).
+- **Done when**: a batch of three passed PRs merges in one queue run; no coverage is lost on develop; CI green.
+- **Refs**: RNF-001, RNF-005, ADR-025; owner request of 2026-11-02; split from P8-18 (DEC-214); GitHub issue #1152
+
+### P8-52 - CI throughput: lighter PR runs
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: P8-51
+- **Gate**: owner (asked for on 2026-11-02; changes CI and branch protection)
+- **Status**: Todo
+- **Evidence** (2026-11-02, Phase 8): One CI run is 17 jobs; the longest job takes 11 min (tests windows-latest), e2e shards 7-8 min, yet a run took 25-40 min wall clock.
+- **Reads**: `.github/workflows/ci.yml` (the `changes` job), `tests/integration/tooling/workflow-docs-only.test.ts`, `tests/integration/tooling/zap-baseline-job.test.ts`, `tests/integration/tooling/workflow-jobs.test.ts`, `docs/runbooks/`.
+- **Do**: tests first, then:
+  - Lighter PR runs: Windows test shards, ZAP and compose smoke on the merge queue and develop only; path filters so a docs-only PR skips the test and e2e jobs (the `changes` job already exists).
+- **Delivers**: the workflow change, the RNF-001 and workflow tests updated, the number it saves added to the note in `docs/runbooks/`.
+- **Done when**: no coverage is lost on develop; CI green.
+- **Refs**: RNF-001, RNF-005, ADR-025; owner request of 2026-11-02; split from P8-18 (DEC-214); GitHub issue #1152
+
+### P8-53 - CI throughput: cancel a PR's superseded run
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-52
+- **Gate**: owner (asked for on 2026-11-02; changes CI and branch protection)
+- **Status**: Todo
+- **Evidence** (2026-11-02, Phase 8): each push to an open PR starts a full run, superseded runs held runners.
+- **Reads**: `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `.github/workflows/scheduled-release.yml`, `.github/workflows/staging.yml`, `.github/workflows/azure-provision.yml`, `tests/integration/tooling/workflows.test.ts`, `docs/runbooks/`.
+- **Do**: tests first, then:
+  - Cancel a PR's in-progress run on a new push (keep RNF-001's queued list for release, scheduled release, staging and provision).
+- **Delivers**: the workflow change, the RNF-001 and workflow tests updated, the number it saves added to the note in `docs/runbooks/`.
+- **Done when**: no coverage is lost on develop; CI green.
+- **Refs**: RNF-001, RNF-005, ADR-025; owner request of 2026-11-02; split from P8-18 (DEC-214); GitHub issue #1152
+
+### P8-54 - CI throughput: retry a flaky e2e test once and report it
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-53
+- **Gate**: owner (asked for on 2026-11-02; changes CI and branch protection)
+- **Status**: Todo
+- **Evidence** (2026-11-02, Phase 8): A flaky e2e spec (`live-run-controls.spec.ts`, fixed in #1146) cost about five extra full runs.
+- **Reads**: `.github/workflows/ci.yml`, `playwright.config.ts`, `tests/integration/tooling/workflows.test.ts`, `docs/runbooks/`.
+- **Do**: tests first, then:
+  - Flaky tests: retry an e2e test once in CI and report a test that passed on retry as flaky (a summary line), so one flake does not cost a full run.
+- **Delivers**: the workflow change, the RNF-001 and workflow tests updated, the number it saves added to the note in `docs/runbooks/`.
+- **Done when**: no coverage is lost on develop; CI green.
+- **Refs**: RNF-001, RNF-005, ADR-025; owner request of 2026-11-02; split from P8-18 (DEC-214); GitHub issue #1152
+
+### P8-55 - CI throughput: caches, and the after numbers
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-54
+- **Gate**: owner (asked for on 2026-11-02; changes CI and branch protection)
+- **Status**: Todo
+- **Evidence** (2026-11-02, Phase 8): One CI run is 17 jobs; the longest job takes 11 min (tests windows-latest), e2e shards 7-8 min, yet a run took 25-40 min wall clock.
+- **Reads**: `.github/workflows/ci.yml`, `tests/integration/tooling/workflows.test.ts`, `docs/runbooks/`.
+- **Do**: tests first, then:
+  - Caches: Playwright browsers, the built web bundle and the image layers, if they are not cached yet.
+  - Measure again after all the changes of this group and add the after numbers to the note in `docs/runbooks/`.
+- **Delivers**: the workflow change, the RNF-001 and workflow tests updated, the number it saves and the before/after numbers in the note in `docs/runbooks/`.
+- **Done when**: a PR's CI finishes in under 15 min wall clock when runners are free; no coverage is lost on develop; CI green.
+- **Refs**: RNF-001, RNF-005, ADR-025; owner request of 2026-11-02; split from P8-18 (DEC-214); GitHub issue #1152
+
+### P8-56 - Parallelism follows the reader's provider: the rule in UpdateProjectSettings
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-49
+- **Gate**: owner (asked for on 2026-11-02; the owner confirms the rule of part 2)
+- **Status**: Todo
+- **Evidence** (2026-11-02, P8-17 evaluation): (2) `src/application/projects/default-settings.ts` (line 50) sets `agents.parallelism` to 1 when the server's default reader is Ollama. A project made that way and then switched to Haiku keeps 1, so cloud runs read one area at a time. All three P8-17 evaluation projects had parallelism 1
+- **Reads**: `src/application/projects/default-settings.ts`, `src/application/use-cases/update-project-settings.ts` (where a provider change is saved, called by `PUT /api/projects/:id/settings` in `src/presentation/web/project-routes.ts`), RF-436.
+- **Do**: add the Givens to RF-436 first; red tests first.
+  - Part 2, the rule. When a project's settings are saved with the reader provider changed from a local one (kind `ollama`) to a hosted one, and `agents.parallelism` in the saved document is still 1 and is the value that was stored before the save, set it to the template default (4). Never overwrite a value the user chose: any other value, and a value changed in the same save, is kept as sent. A user who really wants 1 on a hosted provider sets it again after the switch. The reverse switch (hosted to local) changes nothing. The rule lives in `UpdateProjectSettings.execute`, not in the web form, so the API, the form and the evaluation tools agree. The answer of the save tells the page that it changed the value.
+  - `default-settings.ts` itself stays as it is.
+- **Delivers**: the use-case change and unit tests of the rule (local to hosted with 1, with 2, changed in the same save, hosted to local, no provider change).
+- **Done when**: a project switched from Ollama to Haiku with parallelism 1 is saved with 4, one with 2 keeps 2; CI green.
+- **Refs**: RF-436, RF-301; ADR-012; owner request of 2026-11-02; P8-17; split from P8-19 (DEC-214).
+
+### P8-57 - Parallelism follows the reader's provider: the page line and the help text
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-49, P8-56
+- **Gate**: owner (asked for on 2026-11-02; the owner confirms the rule of part 2)
+- **Status**: Todo
+- **Evidence** (2026-11-02, P8-17 evaluation): (2) `src/application/projects/default-settings.ts` (line 50) sets `agents.parallelism` to 1 when the server's default reader is Ollama. A project made that way and then switched to Haiku keeps 1, so cloud runs read one area at a time. All three P8-17 evaluation projects had parallelism 1
+- **Reads**: `web/src/pages/LimitSettings.tsx` (`parallelismDefault`, `ParallelReaders`), `web/src/pages/project-settings-form.ts`, `src/application/use-cases/update-project-settings.ts` (the answer of the save), RF-436.
+- **Do**: red tests first.
+  - Part 2, the page. The page shows one plain line when the answer of the save says the value was changed: "Parallel readers set from 1 to 4, because the reader is no longer a local model."
+  - The settings page says so: the help text of "Parallel readers" in `LimitSettings.tsx` states the rule in one short sentence (a local reader defaults to 1; when you switch to a hosted provider and the value is still 1, it becomes 4; a value you chose is never changed).
+- **Delivers**: the page and help-text changes and a web test of the line.
+- **Done when**: after a switch from Ollama to Haiku with parallelism 1 the page shows the line; CI green.
+- **Refs**: RF-436, RF-301; ADR-012; owner request of 2026-11-02; P8-17; split from P8-19 (DEC-214).
+
+### P8-58 - Live run page: the verify.claim.started event
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-49
+- **Gate**: owner (asked for on 2026-11-02; the owner confirms the rule of part 2)
+- **Status**: Todo
+- **Evidence** (2026-11-02, P8-17 evaluation): (1) The live run page shows one panel per agent task (RF-1002), so with `agents.parallelism` 4 the owner saw "only 1 agent" while the verifier ran about 4 judgement calls at once (about 125 calls a minute, against about 35 at parallelism 1). Nothing on the page says how many calls a role runs at once or what the limit is
+- **Reads**: `src/domain/runs/run-event.ts`, `src/application/understand/claim-judgement.ts` (the verifier pool; `verify.claim.judged` is published only when a judgement ends), `docs/data-model.md` section 3.9.
+- **Do**: red tests first.
+  - The verifier has no start event today (only `verify.claim.judged`, when a judgement ends), so add one event type, `verify.claim.started` with `{ claimId }`, emitted when a judgement call begins. List it in `docs/data-model.md` section 3.9 and in `RunEventType`. A stored run without it shows "0 at once" for the verifier and nothing else breaks (a reader ignores unknown types).
+- **Delivers**: the event type, its emission in the verifier pool and a unit test.
+- **Done when**: a judgement call publishes `verify.claim.started` when it begins; CI green.
+- **Refs**: RF-1002, RF-1015, RF-301; ADR-012; owner request of 2026-11-02; P8-17; split from P8-19 (DEC-214).
+
+### P8-59 - Live run page: the limit in run.started
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-49, P8-58
+- **Gate**: owner (asked for on 2026-11-02; the owner confirms the rule of part 2)
+- **Status**: Todo
+- **Evidence** (2026-11-02, P8-17 evaluation): (1) The live run page shows one panel per agent task (RF-1002), so with `agents.parallelism` 4 the owner saw "only 1 agent" while the verifier ran about 4 judgement calls at once (about 125 calls a minute, against about 35 at parallelism 1). Nothing on the page says how many calls a role runs at once or what the limit is
+- **Reads**: `src/domain/runs/run-event.ts`, `src/application/runs/run-lifecycle.ts` (the `run.started` event, line 79), `src/application/understand/reader-settings.ts` (`readerParallelism`).
+- **Do**: red tests first.
+  - The limit comes from `run.started`: add `parallelism` to its data, the value `readerParallelism` returns, so it is the clamped number the run really uses. A run stored without it shows the count and no limit.
+- **Delivers**: the `run.started` change and a unit test.
+- **Done when**: `run.started` carries the parallelism the run really uses; CI green.
+- **Refs**: RF-1002, RF-301; ADR-012; owner request of 2026-11-02; P8-17; split from P8-19 (DEC-214).
+
+### P8-60 - Live run page: calls in flight per role in the run state
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-49, P8-59, P8-56
+- **Gate**: owner (asked for on 2026-11-02; the owner confirms the rule of part 2)
+- **Status**: Todo
+- **Evidence** (2026-11-02, P8-17 evaluation): (1) The live run page shows one panel per agent task (RF-1002), so with `agents.parallelism` 4 the owner saw "only 1 agent" while the verifier ran about 4 judgement calls at once (about 125 calls a minute, against about 35 at parallelism 1). Nothing on the page says how many calls a role runs at once or what the limit is
+- **Reads**: `web/src/lib/live-run/run-state.ts` (`RunState`, `AgentPanelState`), `web/src/lib/live-run/reduce-run.ts`, `web/src/lib/live-run/agent-events.ts` (`onStarted` and the `agent.ended` handler), `web/src/lib/live-run/run-level-events.ts` (`onRunStarted`), `src/domain/runs/run-event.ts`, RF-1002.
+- **Do**: add the Givens to RF-1002 first; red tests first.
+  - Part 1, the state. It starts at 0 and follows the events of the run, also after a reload of the page (the stored events are replayed). The reader count is the `agent.started` events that have no `agent.ended` yet; the verifier count is the `verify.claim.started` events without a `verify.claim.judged`; the limit comes from `run.started`.
+- **Delivers**: the run-state and reducer changes and unit tests of the reducer.
+- **Done when**: on a run with parallelism 4 the state counts the verifier at up to 4 at once with the limit, and back to 0 when the step ends; CI green.
+- **Refs**: RF-1002, RF-1015, RF-301; ADR-012; owner request of 2026-11-02; P8-17; split from P8-19 (DEC-214).
+
+### P8-61 - Live run page: a line per role above the agent panels
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-49, P8-60
+- **Gate**: owner (asked for on 2026-11-02; the owner confirms the rule of part 2)
+- **Status**: Todo
+- **Evidence** (2026-11-02, P8-17 evaluation): (1) The live run page shows one panel per agent task (RF-1002), so with `agents.parallelism` 4 the owner saw "only 1 agent" while the verifier ran about 4 judgement calls at once (about 125 calls a minute, against about 35 at parallelism 1). Nothing on the page says how many calls a role runs at once or what the limit is
+- **Reads**: `web/src/pages/AgentsGrid.tsx`, `web/src/pages/AgentsTab.tsx`, `web/src/lib/live-run/run-state.ts`, RF-1002, RF-1015.
+- **Do**: red tests first.
+  - Part 1, the page. Add a line per role above the agent panels: the calls in flight now and the limit, for example "Verifier · 4 at once (limit 4)" and "Reader · 2 at once (limit 4)". A role with nothing in flight shows "idle", it is not hidden. Text and a glyph carry the state, not colour alone (RF-1015).
+- **Delivers**: the page change, a web test of the line, and one end-to-end test with recorded events that shows "Verifier · 4 at once (limit 4)" during a judgement step.
+- **Done when**: on a run with parallelism 4 the page shows the verifier at up to 4 at once with the limit, and back to idle when the step ends; CI green.
+- **Refs**: RF-1002, RF-1015; ADR-012; owner request of 2026-11-02; P8-17; split from P8-19 (DEC-214).
+
+### P8-62 - Production deploys at 06:00: ADR-028 (Proposed), the ADR-025 amendment and RF-1304
+
+- **Difficulty**: 9 (opus)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
+- **Status**: Todo
+- **Reads**: DEC-207, Q-63, ADR-024, ADR-025, RF-1304, `docs/adr/ADR-025-develop-branch-staging-and-scheduled-release.md` (58), `docs/adr/README.md`, `tests/integration/docs/release-flow.test.ts` (57-62).
+- **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
+- **Do** (DEC-207):
+  - ADR-028 (Proposed, for the owner to accept) chooses the on-time trigger. Default: a Container Apps job in the existing environment (ADR-024) with a cron trigger at 04:00 and 05:00 UTC that goes on only in the 06 hour of Europe/Madrid (cron is in UTC; summer and winter time) and starts Release on `main` by `workflow_dispatch`, with a fine-grained token limited to this repository and Actions write, stored as a secret of the job; the job has no other access and reads no other secret. The ADR weighs at least a Logic App and deploying from Azure with a managed identity, and the token's rotation.
+  - RF-1304 gains the Given/When/Then for the 06:00 start and the checks before it; a dated ADR-025 amendment note (status `Amended`, its index row and the status Totals in `docs/adr/README.md`) says 06:00 Madrid with the checks before it.
+- **Delivers**: ADR-028, the ADR-025 amendment, the RF-1304 Given/When/Then and the updated wording tests.
+- **Done when**: ADR-028 is Proposed and indexed, ADR-025 reads Amended, the documentation tests pass; CI green.
+- **Refs**: RF-1304, Q-63, DEC-207, DEC-175, ADR-024, ADR-025, ADR-028, P7-28; owner request of 2026-11-03; split from P8-20 (DEC-214); GitHub issue #1160
+
+### P8-63 - Production deploys at 06:00: the checks workflow builds, scans and pushes the image
+
+- **Difficulty**: 9 (opus)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
+- **Status**: Todo
+- **Reads**: DEC-207, ADR-024, ADR-025, RF-1304, `.github/workflows/release.yml` (the `image` job).
+- **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
+- **Do** (DEC-207): tests first, then:
+  - Checks before the release hour: a workflow on every push to `main` (the release merge) builds, scans and pushes the image of the commit. Its job has `contents: read`, `packages: write`, `statuses: write` and `issues: write` with the workflow token and no other token or secret.
+- **Delivers**: the checks workflow with the image build, scan and push, and its tests.
+- **Done when**: a release merge has its image built, scanned and pushed by the checks workflow; CI green.
+- **Refs**: RF-1304, DEC-207, DEC-175, ADR-024, ADR-025; owner request of 2026-11-03; split from P8-20 (DEC-214); GitHub issue #1160
+
+### P8-64 - Production deploys at 06:00: the ZAP and staging checks and the release/ready status
+
+- **Difficulty**: 9 (opus)
+- **Size**: S
+- **Depends on**: P8-63
+- **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
+- **Status**: Todo
+- **Reads**: DEC-207, ADR-025, RF-1304, `.github/workflows/release.yml` (in `deploy` the steps "The ZAP baseline passed on this commit" and "This tree passed staging").
+- **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
+- **Do** (DEC-207): tests first, then:
+  - In the checks workflow of the release merge: confirm the ZAP baseline and the staging check for the commit (the two steps that move out of `deploy`), and record the result on the commit (a commit status such as `release/ready`).
+- **Delivers**: the ZAP and staging confirmation and the `release/ready` status in the checks workflow, with tests.
+- **Done when**: a release merge has its `release/ready` result within an hour of the merge; CI green.
+- **Refs**: RF-1304, DEC-207, DEC-175, ADR-025; owner request of 2026-11-03; split from P8-20 (DEC-214); GitHub issue #1160
+
+### P8-65 - Production deploys at 06:00: a failing check notifies the owner
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-64
+- **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
+- **Status**: Todo
+- **Reads**: DEC-207, RF-1304, `tests/integration/tooling/release-notify.test.ts`.
+- **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
+- **Do** (DEC-207): tests first, then:
+  - A failure of the checks comments on the "Production deploys" issue with the owner mentioned, like the RF-1304 notification, so it is seen before 06:00.
+- **Delivers**: the failure comment in the checks workflow, with tests.
+- **Done when**: a failing check before 06:00 notifies the owner; CI green.
+- **Refs**: RF-1304, DEC-207, DEC-175; owner request of 2026-11-03; split from P8-20 (DEC-214); GitHub issue #1160
+
+### P8-66 - Production deploys at 06:00: Release deploys only a commit with release/ready
+
+- **Difficulty**: 9 (opus)
+- **Size**: S
+- **Depends on**: P8-65
+- **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
+- **Status**: Todo
+- **Reads**: DEC-207, ADR-025, RF-1304, `.github/workflows/release.yml`, `tests/integration/tooling/scheduled-release-workflow.test.ts`, `tests/integration/tooling/release-notify.test.ts`.
+- **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
+- **Do** (DEC-207): tests first, then:
+  - Release at 06:00 does only the restore point, the migration, the image switch, the `/healthz` wait, the smoke test and the notification; it refuses a commit without a passing `release/ready` (the input `skip-staging-check` keeps its emergency meaning). A release merged so late that its checks have not passed by 06:00 does not deploy that morning: it deploys at 06:00 the next day, or at once when the owner runs Release by hand after its checks pass (DEC-207: only a commit whose checks passed deploys). A Release started by hand still deploys at once.
+- **Delivers**: the `release.yml` changes and tests for the refusal without `release/ready`.
+- **Done when**: a commit without `release/ready` at 06:00 is not deployed and the next 06:00 run takes it (tested); a failing check before 06:00 means nothing deploys at 06:00; CI green.
+- **Refs**: RF-1304, Q-63, DEC-207, DEC-175, ADR-025, P7-28; owner request of 2026-11-03; split from P8-20 (DEC-214); GitHub issue #1160
+
+### P8-67 - Production deploys at 06:00: the scheduled release stays as a backup
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: P8-66
+- **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
+- **Status**: Todo
+- **Reads**: DEC-207, ADR-025, `.github/workflows/scheduled-release.yml` (the slots and the late-slot rule of P7-28), `tests/integration/tooling/scheduled-release-workflow.test.ts`, `tests/integration/tooling/scheduled-release-boundaries.test.ts` (45).
+- **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
+- **Do** (DEC-207): tests first, then:
+  - `scheduled-release.yml` stays as a backup: its slots and the late-slot rule start Release only when the on-time trigger has not started one for the head commit; the once-per-commit rule is unchanged.
+- **Delivers**: the `scheduled-release.yml` change and tests for the backup rule.
+- **Done when**: the backup slots start nothing when the on-time run has started; CI green.
+- **Refs**: RF-1304, DEC-207, DEC-175, ADR-025, P7-28; owner request of 2026-11-03; split from P8-20 (DEC-214); GitHub issue #1160
+
+### P8-68 - Production deploys at 06:00: the scheduler job in azure-provision.yml
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: P8-62, P8-67
+- **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
+- **Status**: Todo
+- **Reads**: DEC-207, Q-63, ADR-024, ADR-028, `.github/workflows/azure-provision.yml` and its tests (`tests/integration/tooling/azure-provision-*.test.ts`).
+- **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
+- **Do** (DEC-207): tests first, then:
+  - `azure-provision.yml` creates the scheduler job with its cron trigger at 04:00 and 05:00 UTC and the token as a secret of the job (the owner runs it and supplies the token as a secret; the builder creates no cloud resource and changes no repository setting).
+- **Delivers**: the scheduler job in `azure-provision.yml` and the provisioning tests.
+- **Done when**: the provisioning workflow defines the scheduler job with the secret and no other access; CI green.
+- **Refs**: RF-1304, Q-63, DEC-207, ADR-024, ADR-028; owner request of 2026-11-03; split from P8-20 (DEC-214); GitHub issue #1160
+
+### P8-69 - Production deploys at 06:00: the Madrid-hour rule and the Release start
+
+- **Difficulty**: 9 (opus)
+- **Size**: S
+- **Depends on**: P8-68
+- **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
+- **Status**: Todo
+- **Reads**: DEC-207, Q-63, ADR-024, ADR-028, `.github/workflows/azure-provision.yml` and its tests (`tests/integration/tooling/azure-provision-*.test.ts`).
+- **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
+- **Do** (DEC-207): tests first, then:
+  - The scheduler job goes on only in the 06 hour of Europe/Madrid (cron is in UTC; summer and winter time) and starts Release on `main` by `workflow_dispatch` with the token; the job reads no other secret.
+- **Delivers**: the Madrid-hour rule and the Release start of the scheduler job, with tests of the Madrid-hour rule.
+- **Done when**: on two mornings after the owner's provisioning, Release starts between 06:00 and 06:10 Madrid and the deploy passes its smoke test; CI green.
+- **Refs**: RF-1304, Q-63, DEC-207, DEC-175, ADR-024, ADR-028, P7-28; owner request of 2026-11-03; split from P8-20 (DEC-214); GitHub issue #1160
+
+### P8-70 - Production deploys at 06:00: environments-and-delivery.md says 06:00 with the checks before
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-69
+- **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
+- **Status**: Todo
+- **Reads**: DEC-207, ADR-025, `docs/environments-and-delivery.md` (20, 101, 240, 333, 375).
+- **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
+- **Do** (DEC-207):
+  - `docs/environments-and-delivery.md` (sections 1, 5, 6, 8 and 10) says 06:00 Madrid with the checks before it.
+- **Delivers**: the document edits and the updated wording tests.
+- **Done when**: the document says 06:00 Madrid with the checks before it, and the documentation tests pass; CI green.
+- **Refs**: RF-1304, DEC-207, DEC-175, ADR-025; owner request of 2026-11-03; split from P8-20 (DEC-214); GitHub issue #1160
+
+### P8-71 - Production deploys at 06:00: the deploy runbook
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-69
+- **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
+- **Status**: Todo
+- **Reads**: DEC-207, ADR-025, `docs/runbooks/deploy.md` (22, 173, 199, 217).
+- **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
+- **Do** (DEC-207):
+  - `docs/runbooks/deploy.md` (the workflow table, Release and image, Release to production, Deploy, and the scheduler's token rotation) says 06:00 Madrid with the checks before it.
+- **Delivers**: the document edits and the updated wording tests.
+- **Done when**: the runbook says 06:00 Madrid with the checks before it, and the documentation tests pass; CI green.
+- **Refs**: RF-1304, DEC-207, DEC-175, ADR-025; owner request of 2026-11-03; split from P8-20 (DEC-214); GitHub issue #1160
+
+### P8-72 - Project settings: a role's model is chosen with its provider
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-57
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-03, UX-04 (EV-92 beyond the parallelism of P8-19): switching a role to Anthropic leaves its model at "Choose a model", so four providers and four models are set one by one.
+- **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `web/src/pages/ModelSettings.tsx`, `web/src/pages/ModelChoice.tsx`, `web/src/pages/provider-choices.ts`, `web/src/pages/model-lists.ts`, `web/src/pages/project-settings-form.ts`, RF-436.
+- **Do**: P8-19 (see Depends on) changes the same use case and settings form, so it goes first; add the Givens to RF-436 first; red tests first.
+  - Choosing a provider for a role selects that provider's recommended model for the role (the admin model list order, `agent-models.v1.yaml`), never an empty "Choose a model".
+  - Build to the artboard `docs/design/board/P8ProjectSettings.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the form changes and web tests of the model chosen with the provider.
+- **Done when**: choosing Anthropic for a role gives its recommended model, never "Choose a model"; CI green.
+- **Refs**: RF-436, DEC-117, ADR-007, ADR-027; UX-03, UX-04, EV-92; split from P8-23 (DEC-214); GitHub issue #1164
+
+### P8-73 - Project settings: "Use for every role" control
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-57, P8-72
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-03, UX-04 (EV-92 beyond the parallelism of P8-19): the settings page has no "every role to ..." control (the start page only offers "Switch every role to Ollama").
+- **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `web/src/pages/ProjectSettingsForm.tsx`, `web/src/pages/provider-choices.ts`, `web/src/pages/use-switch-to-ollama.ts`, `web/src/pages/project-settings-form.ts`, RF-436.
+- **Do**: P8-19 (see Depends on) changes the same use case and settings form, so it goes first; add the Givens to RF-436 first; red tests first.
+  - Settings page, top of the roles section: "Use for every role: [provider] [model] Apply", listing only providers the user can use (a key or a server key, or a reachable Ollama); Apply fills the four roles and leaves Save to the user.
+  - Build to the artboard `docs/design/board/P8ProjectSettings.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the form changes and web tests of the every-role control.
+- **Done when**: one Apply sets all four roles; CI green.
+- **Refs**: RF-436, RF-1104, DEC-117, ADR-007, ADR-027; UX-03, UX-04, EV-92; split from P8-23 (DEC-214); GitHub issue #1164
+
+### P8-74 - Project settings: the settings page warns when a default role cannot be used
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-57, P8-73
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-03, UX-04 (EV-92 beyond the parallelism of P8-19): a new project takes Ollama for all four roles although the server shows "Ollama could not be reached. Type the model id.".
+- **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `src/application/projects/default-settings.ts`, `src/application/use-cases/update-project-settings.ts`, `web/src/pages/ProjectSettingsForm.tsx`, `web/src/pages/project-settings-form.ts`, RF-436, RF-1104.
+- **Do**: P8-19 (see Depends on) changes the same use case and settings form, so it goes first; add the Givens to RF-436 first; red tests first.
+  - New projects keep taking their roles from the administrator's `defaultRoles` (DEC-106). When a default role names a provider the user cannot use now (an unreachable Ollama, a provider with no key), the settings page says so at the top, names the role, and offers the every-role control; no default is changed silently.
+  - Build to the artboard `docs/design/board/P8ProjectSettings.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the default rule and unit tests (the warning with Ollama unreachable, with no key, with every role usable), and the settings-page warning.
+- **Done when**: a new project whose default roles use an unreachable Ollama shows the warning on the settings page and, with one Apply, gets Anthropic with its recommended models; CI green.
+- **Refs**: RF-436, RF-1104, DEC-106, DEC-117, DEC-204, ADR-007, ADR-027; UX-03, UX-04, EV-92; split from P8-23 (DEC-214); GitHub issue #1164
+
+### P8-75 - Project settings: the start page warns when a default role cannot be used
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-57, P8-74
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-03, UX-04 (EV-92 beyond the parallelism of P8-19): a new project takes Ollama for all four roles although the server shows "Ollama could not be reached. Type the model id.".
+- **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `web/src/pages/StartRunPage.tsx`, `web/src/pages/use-switch-to-ollama.ts`, `src/application/projects/default-settings.ts`, RF-436, RF-1104.
+- **Do**: P8-19 (see Depends on) changes the same use case and settings form, so it goes first; red tests first.
+  - When a default role names a provider the user cannot use now (an unreachable Ollama, a provider with no key), the start page says so at the top, names the role, and offers the every-role control; no default is changed silently.
+  - Build to the artboard `docs/design/board/P8ProjectSettings.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the start-page warning and web tests (with Ollama unreachable, with no key, with every role usable).
+- **Done when**: a new project whose default roles use an unreachable Ollama shows the warning on the start page; CI green.
+- **Refs**: RF-436, RF-1104, DEC-106, DEC-117, DEC-204, ADR-007, ADR-027; UX-03, UX-04, EV-92; split from P8-23 (DEC-214); GitHub issue #1164
+
+### P8-76 - Project settings: number fields show their value, with thousands separators
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-57, P8-75
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-03, UX-04 (EV-92 beyond the parallelism of P8-19): Max output token fields read "Not set" while their slider shows a position, and large numbers have no separators (2000000).
+- **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `web/src/pages/LimitSetting.tsx`, `web/src/pages/LimitSettings.tsx`, `web/src/pages/project-settings-form.ts`, RF-436, RF-1104.
+- **Do**: P8-19 (see Depends on) changes the same settings form, so it goes first; add the Givens to RF-436 first; red tests first.
+  - Number fields: the field shows the value the slider shows (the built-in default, marked "default"), and numbers are written with thousands separators in labels and help text.
+  - Build to the artboard `docs/design/board/P8ProjectSettings.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the form changes and web tests of the number fields.
+- **Done when**: no max-output field reads "Not set" next to a slider at a value; CI green.
+- **Refs**: RF-436, RF-1104, DEC-117, ADR-007, ADR-027; UX-03, UX-04, EV-92; split from P8-23 (DEC-214); GitHub issue #1164
+
+### P8-77 - Consents: the project_consent table and its migration
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-24, P8-76
+- **Gate**: none (DEC-209 answered Q-64)
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29: the Anthropic consent was asked on the start page, again in the Deepen panel and again in Plan setup on the same project and day.
+- **Reads**: `docs/data-model.md` (section 7, the migration numbers), RF-143, RF-142, ADR-006, ADR-016.
+- **Do**: add the Givens to RF-143 first (DEC-209); red tests first.
+  - The stored consent: a new table `project_consent` with project, providers, kinds, given and withdrawn times, its numbered migration (`db/migrations/`, the number fixed in `docs/data-model.md` section 7) and its `docs/data-model.md` section, with its repository.
+- **Delivers**: the table, its numbered migration, its `docs/data-model.md` section and the repository with integration tests.
+- **Done when**: the consent of a project is stored with its providers, kinds, given and withdrawn times; CI green.
+- **Refs**: RF-143, RF-142, DEC-209, Q-64, ADR-006, ADR-016; UX-29; split from P8-25 (DEC-214); GitHub issue #1166
+
+### P8-78 - Consents: a consent lasts 30 days and is asked again on a provider change
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-24, P8-76, P8-77
+- **Gate**: none (DEC-209 answered Q-64)
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: the Anthropic consent was asked on the start page, again in the Deepen panel and again in Plan setup on the same project and day.
+- **Reads**: `src/application/use-cases/` (start-run and the Deepen start), the run-start and Deepen routes that check `privateCodeConfirmed` (RST-1521), `web/src/pages/start-gate.ts`, RF-143, RF-142, RF-605, RF-209, ADR-006.
+- **Do**: add the Givens to RF-143 and RF-209 first (DEC-209); red tests first.
+  - DEC-209: a consent given on a project lasts 30 days, and is asked again sooner only when a role's provider changes or the user withdraws it; each run still records the consent it ran under (RF-142).
+- **Delivers**: the consent use cases (give, withdraw, valid or not) and the check in the start routes, with unit and integration tests.
+- **Done when**: changing a role's provider asks again (tested); a consent within 30 days is not asked again; CI green.
+- **Refs**: RF-143, RF-142, RF-605, RF-209, DEC-209, Q-64, ADR-006, ADR-016; UX-16, UX-27, UX-29, EV-86, EV-98; split from P8-25 (DEC-214); GitHub issue #1166
+
+### P8-79 - Consents: the Deepen panel shows the private-code box from the start
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-24, P8-76
+- **Gate**: none (DEC-209 answered Q-64)
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: On a zip project the Deepen panel shows only the Anthropic box; "Start Deepen" and "Confirm and start" then fail with HTTP 400 and "RST-1521 ... the run lacks the second confirmation for private code", and only then does the private-code box appear (`use-deepen.ts` sets `privateAsked` from the refusal).
+- **Reads**: `docs/design/board/P8Deepen.dc.html`, `web/src/pages/DeepenAction.tsx` (`PrivateAsked`), `web/src/pages/use-deepen.ts`, `web/src/pages/use-private-code.ts`, `web/src/pages/PrivateCodeNotice.tsx`, RF-143, RF-209, ADR-006.
+- **Do**: add the Givens to RF-143 and RF-209 first (DEC-209); red tests first.
+  - Private code: the Deepen panel shows the private-code box from the start when the project's source is a zip or workbooks (the project knows its source kind), so no start is refused for a box that was not shown.
+  - Build to the artboard `docs/design/board/P8Deepen.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the Deepen panel changes with unit and web tests.
+- **Done when**: a zip project's Deepen panel shows the private-code box before the start and no start is refused with RST-1521; CI green.
+- **Refs**: RF-143, RF-209, DEC-209, Q-64, ADR-006; UX-16, UX-27, UX-29, EV-86, EV-98; split from P8-25 (DEC-214); GitHub issue #1166
+
+### P8-80 - Consents: Plan setup shows the private-code box from the start
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-24, P8-76
+- **Gate**: none (DEC-209 answered Q-64)
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: On a zip project the Deepen panel shows only the Anthropic box; "Start Deepen" and "Confirm and start" then fail with HTTP 400 and "RST-1521 ... the run lacks the second confirmation for private code", and only then does the private-code box appear (`use-deepen.ts` sets `privateAsked` from the refusal).
+- **Reads**: `docs/design/board/P8Deepen.dc.html`, `web/src/pages/PlanConsentNotice.tsx`, `web/src/pages/PlanSetupPage.tsx`, `web/src/pages/PrivateCodeNotice.tsx`, `web/src/pages/use-private-code.ts`, RF-143, RF-605, ADR-006.
+- **Do**: add the Givens to RF-143 first (DEC-209); red tests first.
+  - Private code: Plan setup shows the private-code box from the start when the project's source is a zip or workbooks (the project knows its source kind), so no start is refused for a box that was not shown.
+  - Build to the artboard `docs/design/board/P8Deepen.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the Plan setup changes with unit and web tests.
+- **Done when**: a zip project's Plan setup shows the private-code box before the start and no start is refused with RST-1521; CI green.
+- **Refs**: RF-143, RF-605, DEC-209, Q-64, ADR-006; UX-16, UX-27, UX-29, EV-86, EV-98; split from P8-25 (DEC-214); GitHub issue #1166
+
+### P8-81 - Consents: pages show one consent line while the consent holds
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-24, P8-76, P8-78, P8-79, P8-80
+- **Gate**: none (DEC-209 answered Q-64)
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: the Anthropic consent was asked on the start page, again in the Deepen panel and again in Plan setup on the same project and day.
+- **Reads**: `docs/design/board/P8Deepen.dc.html`, `web/src/pages/DeepenAction.tsx`, `web/src/pages/CloudNotice.tsx`, `web/src/pages/PrivateCodeNotice.tsx`, `web/src/pages/PlanConsentNotice.tsx`, `web/src/pages/PlanSetupPage.tsx`, RF-143, RF-209, ADR-006.
+- **Do**: add the Givens to RF-143 and RF-209 first (DEC-209); red tests first.
+  - While a consent holds, pages show one line, "You agreed on <date> to send masked excerpts of your code to Anthropic. Withdraw", instead of the boxes.
+  - Build to the artboard `docs/design/board/P8Deepen.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the page changes with unit and web tests.
+- **Done when**: with a consent on the project, the start page, the Deepen panel and Plan setup show the one line and no boxes; CI green.
+- **Refs**: RF-143, RF-142, RF-209, DEC-209, Q-64, ADR-006; UX-16, UX-27, UX-29, EV-86, EV-98; split from P8-25 (DEC-214); GitHub issue #1166
+
+### P8-82 - Consents: Plan setup moves the Ollama switch and keeps the start button in view
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-24, P8-76, P8-80
+- **Gate**: none (DEC-209 answered Q-64)
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: Plan setup puts "Switch every role to Ollama" beside the consent and "Start the plan" at the bottom of a page of about 5,400 px.
+- **Reads**: `docs/design/board/P8Deepen.dc.html`, `web/src/pages/PlanSetupPage.tsx`, `web/src/pages/use-switch-to-ollama.ts`, RF-605.
+- **Do**: red tests first.
+  - Plan setup: "Switch every role to Ollama" moves to the roles summary, away from the consent and the start button; the start button and the estimate stay in view (a sticky footer like the start page), so the user does not scroll 5,000 px to start.
+  - Build to the artboard `docs/design/board/P8Deepen.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the Plan setup layout changes with web tests.
+- **Done when**: the Ollama switch sits in the roles summary and the start button and the estimate stay in view; CI green.
+- **Refs**: RF-605, DEC-209, ADR-006; UX-16, UX-27, UX-29, EV-86, EV-98; split from P8-25 (DEC-214); GitHub issue #1166
+
+### P8-83 - Consents: an end-to-end test of one consent on a zip project
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-24, P8-76, P8-77, P8-78, P8-81, P8-82
+- **Gate**: none (DEC-209 answered Q-64)
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: the Anthropic consent was asked on the start page, again in the Deepen panel and again in Plan setup on the same project and day.
+- **Reads**: `docs/design/board/P8Deepen.dc.html`, the end-to-end specs of the Deepen and Plan setup pages, RF-143, RF-142, RF-209, RF-605.
+- **Do**: red test first.
+  - An end-to-end test on a zip project: start, Deepen and plan with one consent.
+- **Delivers**: the end-to-end test.
+- **Done when**: a zip project runs understand, Deepen and plan with the consent given once and no RST-1521 refusal; CI green.
+- **Refs**: RF-143, RF-142, RF-605, RF-209, DEC-209, Q-64, ADR-006, ADR-016; UX-16, UX-27, UX-29, EV-86, EV-98; split from P8-25 (DEC-214); GitHub issue #1166
+
+### P8-84 - Your turn offers one primary next step
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-27, P8-83
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-24, UX-25: after the understand, "Your turn" offers three paths at once: "Deepen this run", "Do not Deepen: answer the questions now" and a full-width primary "Set up the plan".
+- **Reads**: `docs/design/board/P8Run.dc.html`, `web/src/pages/YourTurn.tsx`, `web/src/pages/DeepenAction.tsx`, `web/src/pages/PlanNext.tsx`, `web/src/pages/use-skip-deepen.ts`, `web/src/lib/journey/journey-action.ts`, RF-1021, RF-1017.
+- **Do**: add the Givens to RF-1021 first; red tests first.
+  - Your turn shows the journey's next step as the one primary button (Deepen while coverage is below the bar, else Set up the plan), and the other paths as secondary links under it.
+  - Build to the artboard `docs/design/board/P8Run.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the page changes with web tests.
+- **Done when**: after an understand the page has one primary action; CI green.
+- **Refs**: RF-1017, RF-1021, DEC-178, DEC-179, ADR-012; UX-24, UX-25; split from P8-28 (DEC-214); GitHub issue #1169
+
+### P8-85 - Your turn: question text and order, and an answered question moves to Answered
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-27, P8-83
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-24, UX-25: The Questions card reads "3 open questions, asked after the last Deepen" before any Deepen ran. "Your questions" lists OQ-003, OQ-002, OQ-001 (newest first), an answered question stays at the top of "Open questions".
+- **Reads**: `docs/design/board/P8Run.dc.html`, `web/src/pages/RunAnswers.tsx`, `web/src/pages/AnswerChoices.tsx`, RF-1007, RF-1021.
+- **Do**: add the Givens to RF-1007 first; red tests first.
+  - The Questions text says "asked after the last Deepen" only after a Deepen ran; before, "asked by the understand".
+  - Questions are listed in id order, unanswered first; an answered question moves to "Answered" at once.
+  - Build to the artboard `docs/design/board/P8Run.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the page changes with web tests.
+- **Done when**: the Questions text follows whether a Deepen ran and an answered question moves to "Answered" at once; CI green.
+- **Refs**: RF-1007, RF-1021, DEC-178, DEC-179, ADR-012; UX-24, UX-25; split from P8-28 (DEC-214); GitHub issue #1169
+
+### P8-86 - Your turn: one Save answers and Accept the recommended answers
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-27, P8-83, P8-85
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-24, UX-25: each answer needs its own Save, and there is no "accept the recommended answers" (Plan setup has one).
+- **Reads**: `docs/design/board/P8Run.dc.html`, `web/src/pages/RunAnswers.tsx`, `web/src/pages/AnswerChoices.tsx`, `web/src/pages/use-answer-save.ts`, RF-1007, RF-647.
+- **Do**: add the Givens to RF-1007 first; red tests first.
+  - One "Save answers" saves every changed answer, and "Accept the recommended answers" fills the unanswered ones with their defaults, as in Plan setup (RF-647).
+  - Build to the artboard `docs/design/board/P8Run.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the page changes with web tests and an end-to-end test that answers three questions in one save.
+- **Done when**: three answers are saved with one click; CI green.
+- **Refs**: RF-1007, RF-647, DEC-178, DEC-179, ADR-012; UX-24, UX-25; split from P8-28 (DEC-214); GitHub issue #1169
+
+### P8-87 - Run states: a run stopped by the user reads "Stopped by you"
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-26
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-06, UX-17, UX-19, EV-93, EV-94: a run stopped by the user ends "Interrupted" but the strip shows "Failed".
+- **Reads**: `docs/design/board/P8Project.dc.html`, `web/src/pages/JourneyStrip.tsx`, `web/src/lib/journey/journey-steps.ts`, `web/src/pages/HistoryRuns.tsx`, RF-1008, RF-1012.
+- **Do**: add the Givens first; red tests first.
+  - A run stopped by the user shows "Stopped by you" in the strip, History and the run page.
+  - Build to the artboard `docs/design/board/P8Project.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the changes with web tests.
+- **Done when**: a stopped run never reads "Failed"; CI green.
+- **Refs**: RF-006, RF-426, RF-428, RF-1008, RF-1012, RF-1020, ADR-007, ADR-012; UX-06, EV-93; split from P8-29 (DEC-214); GitHub issue #1170
+
+### P8-88 - Run times: a resumed run keeps its first start, and History shows running and wall time
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-26, P8-87
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-06, UX-17, UX-19, EV-93, EV-94: a resumed run's start time is reset, so History shows 13.8 min for a 66 min run.
+- **Reads**: `docs/design/board/P8HistoryCost.dc.html`, `src/application/runs/run-lifecycle.ts` (resume), `web/src/pages/HistoryPage.tsx`, `web/src/pages/HistoryRuns.tsx`, RF-426, RF-428.
+- **Do**: add the Givens first; red tests first.
+  - A resumed run keeps its first start; History shows the running time (the sum of its active spans) and the wall time.
+  - Build to the artboard `docs/design/board/P8HistoryCost.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the change with unit tests of the resumed time and a web test of History.
+- **Done when**: a 66 min resumed run shows 66 min of running time; CI green.
+- **Refs**: RF-006, RF-426, RF-428, ADR-007, ADR-012; UX-17, EV-93; split from P8-29 (DEC-214); GitHub issue #1170
+
+### P8-89 - History: stage name, Commit column, columns and a row menu for Delete
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-26, P8-88
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-06, UX-17, UX-19, EV-93, EV-94: History lists a Deepen with stage "understand" and Commit "none" for a zip project, with the coverage line running under the Tokens column and a red Delete on every row.
+- **Reads**: `docs/design/board/P8HistoryCost.dc.html`, `web/src/pages/HistoryPage.tsx`, `web/src/pages/HistoryRuns.tsx`, `web/src/pages/ProjectRunsTable.tsx`, RF-428, RF-1012.
+- **Do**: add the Givens first; red tests first.
+  - History names the stage of a Deepen "Deepen" (with its round), shows Commit only for a GitHub source, keeps each value in its column, and puts Delete in a row menu with its confirmation.
+  - Build to the artboard `docs/design/board/P8HistoryCost.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the History changes with web tests.
+- **Done when**: History names a Deepen "Deepen", shows no Commit for a zip project and has Delete in a row menu; CI green.
+- **Refs**: RF-428, RF-1012, ADR-007, ADR-012; UX-19, EV-94; split from P8-29 (DEC-214); GitHub issue #1170
+
+### P8-90 - Money and Cost: one formatter, run names as in History, the price table once
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-26
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-06, UX-17, UX-19, EV-93, EV-94: Cost "By run" names runs by UUID while History names them `20261102-183533-understand`, repeats "Price table 2026-10-21" on every row, and mixes 3 and 6 decimals ($3.113515 beside $0.237).
+- **Reads**: `docs/design/board/P8HistoryCost.dc.html`, `web/src/pages/ProjectCostPage.tsx`, `web/src/pages/CostTable.tsx`, the money formatter in `web/src/lib/`, `docs/design-system.md` (number formats, section 10), RF-006, RF-1020.
+- **Do**: add the Givens first; red tests first.
+  - Cost names runs as History does, shows the price table once per table, and every money amount follows the rule `docs/design-system.md` section 10 already states (DEC-54: four decimals below $1, two above, so $3.11 and $0.2370), through one formatter, with the exact figure in a tooltip.
+  - Build to the artboard `docs/design/board/P8HistoryCost.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the formatter and the Cost changes with unit tests of the formatter and a web test of Cost.
+- **Done when**: Cost and History name runs alike; the Cost page does not mix 3 and 6 decimals; CI green.
+- **Refs**: RF-006, RF-1012, RF-1020, DEC-54, ADR-007, ADR-012; UX-19, EV-94; split from P8-29 (DEC-214); GitHub issue #1170
+
+### P8-91 - Money: every other page uses the one formatter
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-26, P8-90, P8-89, P8-87
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-06, UX-17, UX-19, EV-93, EV-94: Cost "By run" names runs by UUID while History names them `20261102-183533-understand`, repeats "Price table 2026-10-21" on every row, and mixes 3 and 6 decimals ($3.113515 beside $0.237).
+- **Reads**: `docs/design/board/P8HistoryCost.dc.html`, `web/src/pages/HistoryRuns.tsx`, `web/src/components/TopbarRunMeter.tsx`, the money formatter in `web/src/lib/`, `docs/design-system.md` (number formats, section 10), RF-006, RF-1020.
+- **Do**: red tests first.
+  - Every money amount on every other page follows the rule `docs/design-system.md` section 10 already states (DEC-54: four decimals below $1, two above), through the one formatter, with the exact figure in a tooltip.
+- **Delivers**: the page changes with web tests.
+- **Done when**: no page mixes 3 and 6 decimals; CI green.
+- **Refs**: RF-006, RF-1020, DEC-54, ADR-007, ADR-012; UX-19, EV-94; split from P8-29 (DEC-214); GitHub issue #1170
+
+### P8-92 - Understand: a reader continues with unread first-party files
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-23, EV-97, EV-76: the first understand of Asset Manager (2 areas, 52,749 first-party tokens) ended in 2 min with "2 / 2 Areas read" and "16% of first-party tokens read", leaving 21 files never read, so even a small project needs a Deepen before anything is usable.
+- **Reads**: `src/application/understand/` (the reader loop and its stop rule), the reader prompt in `prompts/` (what tells a reader it is done), RF-210 (readers take the app's own code first), RF-230 (coverage per area), RF-231 (honest understanding measures), RNF-004.
+- **Do**: measure first: from the recorded events of the run, why each reader stopped (turn limit, token budget, the model saying it is done) and what share of its area it read; write the numbers into the card's PR.
+  - Then: a reader whose area still has unread first-party files within the run's budget continues with them (the same turn as the Deepen coverage pass, inside the understand).
+  - Prompt changes get a new prompt version file (RNF-004).
+- **Delivers**: the measurement note, the reader change, a new prompt version if needed, and unit tests with the fake provider.
+- **Done when**: with the recorded responses of a small app the understand reads its first-party files above the bar; CI green.
+- **Refs**: RF-210, RF-230, RF-231, RNF-004, ADR-005, ADR-007; UX-23, EV-76, EV-97; split from P8-30 (DEC-214); GitHub issue #1171
+
+### P8-93 - Understand: an area counts as read only above the coverage bar
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-92
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-23, EV-97, EV-76: the first understand of Asset Manager (2 areas, 52,749 first-party tokens) ended in 2 min with "2 / 2 Areas read" and "16% of first-party tokens read", leaving 21 files never read, so even a small project needs a Deepen before anything is usable.
+- **Reads**: `docs/design/board/P8Run.dc.html`, `web/src/pages/UnderstandingSummary.tsx`, `web/src/lib/understanding/measure-text.ts`, `src/application/understand/`, RF-230, RF-231, RF-1005.
+- **Do**: red tests first.
+  - An area is reported "read" only above the coverage bar; below it, "partly read (16%)".
+  - Build to the artboard `docs/design/board/P8Run.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the summary wording and unit tests with the fake provider.
+- **Done when**: with the recorded responses of a small app the understand says "partly read" for an area below the bar; CI green.
+- **Refs**: RF-230, RF-231, RF-1005, ADR-005, ADR-007; UX-23, EV-97; split from P8-30 (DEC-214); GitHub issue #1171
+
+### P8-94 - Understand: readers are planned app code first
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-23, EV-97, EV-76: On eShop, readers are planned in ordinal alphabetical order ((root), ACI, Docs, Setup, VM before the app folders), so a run that stops early misses app code.
+- **Reads**: `src/application/understand/` (area planning, `reader-settings.ts`), RF-210 (readers take the app's own code first; P7-03 (Done) made RF-210, so the eShop order is a regression of it), RF-1005.
+- **Do**: red tests first.
+  - Readers are planned app code first: areas with entry points and the largest first-party token counts before deployment, docs and setup folders (the P7-03 intent), with a test on a fixture with those folder names.
+- **Delivers**: the planner change and a unit test on a fixture with those folder names.
+- **Done when**: the planned order puts app folders first; CI green.
+- **Refs**: RF-210, RF-1005, ADR-005, ADR-007; UX-23, EV-76; split from P8-30 (DEC-214); GitHub issue #1171
+
+### P8-95 - Plan: find and fix why the first gap round leaves flows unbuilt
+
+- **Difficulty**: 9 (opus)
+- **Size**: S
+- **Depends on**: P8-83
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (P8-17 evaluation, 2026-11-02, re-checked 2026-11-03): EV-95, EV-79, EV-86: the plan from the 371-card eShop Deepen failed RST-1806 once (FLOW-002/009/010/012 unbuilt, REQ-017 with no card) after the gap round of P8-06 had run, and completed on the retry from the same inputs; the failed try cost $0.607.
+- **Reads**: `src/application/plan/plan-links.ts` (`planGap`, the gap round and gap repair of P8-06), `src/application/plan/gap-repair-message.ts`, `src/application/plan/plan-repair.ts`, the planner prompt `prompts/planner/package.v12.md`, the recorded eShop failure (the four unbuilt flows and what the first gap round returned), RF-604, RF-627.
+- **Do**: add the Givens to RF-627 first; red tests first, with recorded responses where the first gap round leaves items unbuilt.
+  - Find from the recorded eShop failure why the first gap round left the four flows open (no card proposed, a card that did not name the flow, or a parse problem) and fix that cause.
+- **Delivers**: the cause fix, with unit and integration tests with recorded responses.
+- **Done when**: a recorded plan whose first gap round leaves four flows unbuilt because of that cause now builds them; CI green.
+- **Refs**: RF-604, RF-627, RF-602, ADR-005, ADR-007, ADR-018; P8-06; EV-79, EV-95; split from P8-31 (DEC-214); GitHub issue #1172
+
+### P8-96 - Plan: a second gap round before RST-1806
+
+- **Difficulty**: 9 (opus)
+- **Size**: S
+- **Depends on**: P8-83, P8-95
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (P8-17 evaluation, 2026-11-02, re-checked 2026-11-03): EV-95, EV-79, EV-86: the plan from the 371-card eShop Deepen failed RST-1806 once (FLOW-002/009/010/012 unbuilt, REQ-017 with no card) after the gap round of P8-06 had run, and completed on the retry from the same inputs; the failed try cost $0.607.
+- **Reads**: `src/application/plan/plan-links.ts` (`planGap`, the gap round and gap repair of P8-06), `src/application/plan/plan-repair.ts`, `docs/conventions.md` (RST-1806), RF-604, RF-627, RF-007.
+- **Do**: red tests first, with recorded responses where the first gap round leaves items unbuilt.
+  - When items are still unbuilt after the first gap round and it had no unreadable answer, run one more gap round with only those items; fail with RST-1806 only after it. Every round is metered like any call, and the run records how many gap rounds ran.
+- **Delivers**: the second round, with unit and integration tests with recorded responses.
+- **Done when**: a recorded plan whose first gap round leaves four flows unbuilt completes after the second round; a plan with items still open after it fails RST-1806 as today; CI green.
+- **Refs**: RF-604, RF-627, RF-602, RF-007, ADR-005, ADR-007, ADR-018; P8-06; EV-79, EV-95; split from P8-31 (DEC-214); GitHub issue #1172
+
+### P8-97 - Plan: plain words for the summary line when requirements are unbuilt
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-83
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (P8-17 evaluation, 2026-11-02, re-checked 2026-11-03): EV-95, EV-79, EV-86: the plan from the 371-card eShop Deepen failed RST-1806 once (FLOW-002/009/010/012 unbuilt, REQ-017 with no card) after the gap round of P8-06 had run, and completed on the retry from the same inputs; the failed try cost $0.607.
+- **Reads**: `src/infrastructure/handoff/handoff-checks-markdown.ts`, `src/infrastructure/handoff/handoff-truthful-checks-markdown.ts`, the plan page, RF-604, RF-627.
+- **Do**: add the Givens to RF-627 first; red tests first.
+  - The plan page and `checks.md` say "Every item is built by at least one task card" right above "Requirements built by no card: REQ-010, REQ-011, REQ-014" (2026-11-03 walk). Name what the first sentence covers (features, tables, operations, journeys and screens), and when requirements are left unbuilt say so in the summary line, for example "Every item is built; 3 requirements are built by no card".
+- **Delivers**: the wording change in the plan page and `checks.md`, with unit tests.
+- **Done when**: a plan with requirements built by no card shows a summary line that says so; CI green.
+- **Refs**: RF-604, RF-627, ADR-007, ADR-018; EV-95; split from P8-31 (DEC-214); GitHub issue #1172
+
+### P8-98 - Plan: RST-1521 says where to confirm
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-83
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (P8-17 evaluation, 2026-11-02, re-checked 2026-11-03): `POST plan-options` without the private-code confirmation answers RST-1521 "Start the run again and tick the private code confirmation", which points the user to the wrong place.
+- **Reads**: `docs/conventions.md` (RST-1521), `src/domain/errors/descriptions.ts`, `src/domain/errors/codes.ts`, `src/presentation/web/run-routes.ts`, RF-627.
+- **Do**: red tests first.
+  - RST-1521 says where to confirm, in the words of P8-25 (with a stored consent the box is not shown, so the message names the project's consent line): "Give the private code confirmation for this project, then try again."
+- **Delivers**: the message change, with unit and integration tests.
+- **Done when**: `POST plan-options` without the private-code confirmation answers RST-1521 with that message; CI green.
+- **Refs**: RF-627, ADR-005, ADR-007; P8-25; EV-86; split from P8-31 (DEC-214); GitHub issue #1172
+
+### P8-99 - Projects list: name link, Open, row menu, source badge, date and time
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-91
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-05, UX-15, UX-18, UX-20: the project name is not a link, and each row has a primary "Start run" button that only opens the project page (8 identical primary buttons); scratch projects can be deleted only at the bottom of History; names are in monospace with an automatic "(zip, 2 Nov 2026)" suffix, and Last run shows the date only.
+- **Reads**: `docs/design/board/P8Projects.dc.html`, `web/src/pages/ProjectsPage.tsx`, `web/src/pages/DeleteProjectSection.tsx`, `docs/design-system.md`, RF-010, RF-1020.
+- **Do**: add the Givens first; red tests first.
+  - Projects: the name is the link to the project; the row action says what it does ("Open"), as a secondary button; a row menu offers Delete with its confirmation; names use the body font; the suffix becomes a source badge; Last run shows date and time.
+  - Build to the artboard `docs/design/board/P8Projects.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the layout changes, web tests, and end-to-end screenshots at 1280 px and 390 px of the projects list.
+- **Done when**: no row of the projects list has a primary button; CI green.
+- **Refs**: RF-010, RF-1020, ADR-012; UX-05; split from P8-32 (DEC-214); GitHub issue #1173
+
+### P8-100 - Journey strip: one compact row that expands
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-91
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-05, UX-15, UX-18, UX-20: The journey strip (7 cards in a 5 + 2 grid) is repeated in full on every page.
+- **Reads**: `docs/design/board/P8Projects.dc.html`, `web/src/pages/JourneyStrip.tsx`, `docs/design-system.md`, RF-1010, RF-1012.
+- **Do**: add the Givens first; red tests first.
+  - Journey strip: one compact row of seven steps (icon, name, state) that expands to the detail cards on request, on every page but the project page, where it stays expanded.
+  - Build to the artboard `docs/design/board/P8Projects.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the layout changes and web tests.
+- **Done when**: the strip is one compact row on every page but the project page; CI green.
+- **Refs**: RF-1010, RF-1012, ADR-012; UX-15; split from P8-32 (DEC-214); GitHub issue #1173
+
+### P8-101 - Header: the run meter fits in one line at 1280 px and 1024 px
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-91
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-05, UX-15, UX-18, UX-20: At 1280 px the live run meter pushes the user name, Sign out and System to a second header line.
+- **Reads**: `docs/design/board/P8Projects.dc.html`, `web/src/components/TopbarRunMeter.tsx`, `web/src/components/Header.tsx`, `docs/design-system.md`, RF-1012.
+- **Do**: add the Givens first; red tests first.
+  - Header: the run meter fits in the header at 1280 px and 1024 px (shorter text, or it moves under the title), never wrapping the account links.
+  - Build to the artboard `docs/design/board/P8Projects.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the layout changes, web tests, and end-to-end screenshots at 1280 px and 390 px of a run page.
+- **Done when**: the header is one line at 1280 px during a run; CI green.
+- **Refs**: RF-1012, ADR-012; UX-18; split from P8-32 (DEC-214); GitHub issue #1173
+
+### P8-102 - Landing: the six stages never lay out 5 + 1
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-91
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-05, UX-15, UX-18, UX-20: The landing "Six stages" timeline puts the sixth step alone on a second row.
+- **Reads**: `docs/design/board/P8Projects.dc.html`, the landing page in `web/`, `docs/design-system.md`, RF-1200.
+- **Do**: add the Givens first; red tests first.
+  - Landing: the six stages lay out as 6, 3 + 3 or 2 + 2 + 2, never 5 + 1.
+  - Build to the artboard `docs/design/board/P8Projects.dc.html` (Phase 8 UI proposal, approved by DEC-211; design-system.md section 14): layout, order, wording and states as drawn; a change from it is agreed with the owner first. Values in square brackets on an artboard are placeholders for real data.
+- **Delivers**: the layout changes, web tests, and end-to-end screenshots at 1280 px and 390 px of the landing.
+- **Done when**: the landing timeline has no lone step; CI green.
+- **Refs**: RF-1200, ADR-012; UX-20; split from P8-32 (DEC-214); GitHub issue #1173
+
+### P8-103 - Follow-up: a small non-.NET project in the end-to-end seed
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-21
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-21 verifier round 2, finding 1): the end-to-end harness serves and scans only the .NET demo, so the P8-21 walk "pick C# on .NET on a non-.NET project" runs on the .NET demo, where the .NET offer would show without the feature.
+- **Reads**: `tests/e2e/support/serve.ts`, the end-to-end seed and accounts, RF-609, ADR-008.
+- **Do**: tests first.
+  - Add a small non-.NET project to the end-to-end seed (a few JavaScript or Python files written for the tests; nothing from the owner's employer), scanned like the .NET demo, with its own account.
+- **Delivers**: the seed project and its account.
+- **Done when**: the seed project is scanned like the .NET demo and has its own account; CI green.
+- **Refs**: RF-609, DEC-208, ADR-008; split from P8-35 (DEC-214); GitHub issue #1182
+
+### P8-104 - Follow-up: the C# on .NET walk runs on the non-.NET project
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-21, P8-103
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-21 verifier round 2, finding 1): the end-to-end harness serves and scans only the .NET demo, so the P8-21 walk "pick C# on .NET on a non-.NET project" runs on the .NET demo, where the .NET offer would show without the feature.
+- **Reads**: `tests/e2e/plan-setup-stack.spec.ts`, the end-to-end seed and accounts, RF-609, DEC-208, ADR-008.
+- **Do**: tests first.
+  - Point the C# on .NET walk of `plan-setup-stack.spec.ts` at it: the layers change from the project's own stack to ASP.NET Core Razor Pages, SQL Server, Dapper and xUnit, and the package proposes them.
+- **Delivers**: the updated spec.
+- **Done when**: the P8-21 walk runs on a project that is not .NET; CI green.
+- **Refs**: RF-609, DEC-208, ADR-008; split from P8-35 (DEC-214); GitHub issue #1182
