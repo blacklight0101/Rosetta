@@ -28,7 +28,9 @@ Rules:
   4 and 6. Run two cards at once only when their _Delivers_ paths are disjoint and they share no serialized resource
   (protocol sections 1 and 8).
 - **Review.** When the builder reports and has pushed, open the pull request from the template (`Closes #<issue>`),
-  label the issue `status:in-review`, and spawn `verifier` (difficulty 1-8), `verifier-opus` (difficulty 9-10, or a card promoted
+  label the issue `status:in-review`, and wait for its CI. When CI is red, send the failing jobs back to the builder
+  (it does not count as a FAIL) and spawn no verifier until CI is green: on the Phase 8 build three verifier rounds
+  were spent on e2e specs the builder never ran. Then spawn `verifier` (difficulty 1-8), `verifier-opus` (difficulty 9-10, or a card promoted
   to opus after FAIL 2) or `verifier-fable` (only for a card built by `builder-fable`) with
   the card, the report and the branch. Do not judge the report yourself. Post the verdict block on the pull request,
   unchanged.
