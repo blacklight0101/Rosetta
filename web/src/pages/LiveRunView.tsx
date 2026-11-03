@@ -9,6 +9,7 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import { runMeterReadingOf } from '../lib/live-run/run-meter-reading.js';
 import { runIsLocal } from '../lib/live-run/run-local.js';
+import { runTitleOf } from '../lib/live-run/run-title.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { roleTotalsOf } from '../lib/live-run/run-summary.js';
 import { EndedBody } from './EndedBody.js';
@@ -122,7 +123,8 @@ export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps)
   return (
     <div class="rst-live">
       <RunStatusBar
-        {...{ phase, stage, projectId: run.projectId, runKey: run.runId }}
+        title={runTitleOf({ stage, phase, state })}
+        {...{ phase, projectId: run.projectId, runKey: run.runId }}
         failedAreas={state.ended?.failedAreas ?? run.failedAreas}
         unreadAreas={state.ended?.unreadAreas ?? run.unreadAreas}
         {...{ stopping: stop.stopping, busy: stop.busy, stopError: stop.error, onStop: stop.stop }}

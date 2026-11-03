@@ -24,7 +24,9 @@ test('RF-1015 P8-11 the plan run page shows the plan steps through to the writte
   await expect(writeButton(page)).toBeEnabled();
   await writeButton(page).click();
 
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible({
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible({
     timeout: 30_000,
   });
   const steps = page.getByRole('list', { name: 'Pipeline' });

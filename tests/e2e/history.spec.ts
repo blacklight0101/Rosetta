@@ -51,7 +51,9 @@ test('RF-1008 lists a finished run with its stage, commit, state and links, and 
   ]);
   expect(download.suggestedFilename()).toMatch(/-scan\.zip$/u);
   await row.getByRole('link', { name: /^View run /u }).click();
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible();
 });
 
 test('RF-1012 disables Delete while a run is in progress, with the reason, until it is stopped', async ({

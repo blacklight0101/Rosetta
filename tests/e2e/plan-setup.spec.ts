@@ -234,7 +234,9 @@ test('RF-604 Start the plan starts the plan run and opens its live page', async 
 
   await writeButton(page).click();
 
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible();
   await expect(page).toHaveURL(/\/runs\/[0-9a-f-]{36}$/u);
 });
 

@@ -61,6 +61,11 @@
   background: var(--rst-surface);
 }
 
+/* P8-27: the last figure of an odd list takes the whole row, so the list has no empty cell. */
+.rst-p170-fact:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
 .rst-p170-fact b {
   font-size: 1.125rem;
   font-weight: var(--rst-fw-head);
@@ -110,4 +115,35 @@
 /* P7-25: a section of the package checks keeps its lines and table rows. */
 .rst-plan-check {
   white-space: pre-wrap;
+}
+
+/* P8-27: the code map of a scan run is a list of its areas. */
+.rst-p827-map {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  min-inline-size: 0;
+}
+
+.rst-p827-areas {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rst-p827-area {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--rst-sp-1) var(--rst-sp-4);
+  padding: var(--rst-sp-2) 0;
+  border-block-start: 1px solid var(--rst-rule);
+  overflow-wrap: anywhere;
+}
+
+.rst-p827-area__meta {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-sm);
 }

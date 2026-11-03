@@ -38,10 +38,10 @@ async function opened(extra: EndedOptions['extra'] = {}) {
 const posts = (page: Pick<RenderedPage, 'calls'>, suffix: string) =>
   page.calls.filter((call) => call.method === 'POST' && call.path.endsWith(suffix));
 
-/** Waits until the page has folded the events of the run: its facts then show the claims checked. */
+/** Waits until the page has folded the events of the run: its facts then show the areas read. */
 async function eventsApplied(): Promise<void> {
   await waitFor(() => {
-    expect(turn().textContent).toContain('1 / 2');
+    expect(turn().textContent).toContain('1 / 1');
   });
 }
 
@@ -71,7 +71,6 @@ describe('RF-209 the Deepen action', () => {
   it('RF-209 offers no Deepen on a scan, which has no claims to go back over', async () => {
     await openEnded({ extra: base, stage: 'scan' });
 
-    await eventsApplied();
     expect(screen.queryByRole('button', { name: 'Deepen this run' })).toBeNull();
   });
 

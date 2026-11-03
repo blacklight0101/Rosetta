@@ -15,8 +15,9 @@ import type { RunPhase } from '../lib/live-run/run-phase.js';
 // cancelled; after the request the page says it is stopping until the run's own end arrives.
 
 export interface RunStatusBarProps {
+  /** P8-27: the run and its state, for example `Scan, done` (runTitleOf). */
+  readonly title: string;
   readonly runKey: string;
-  readonly stage: string;
   readonly projectId: string;
   readonly phase: RunPhase;
   /** RF-208: the areas of the run that gave no usable card, shown next to an ended state. */
@@ -77,9 +78,8 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
     <>
       <div class="rst-live-head">
         <div class="rst-live-head__title">
-          <h1 class="rst-page__title">Live run</h1>
+          <h1 class="rst-page__title">{props.title}</h1>
           <span class="rst-mono rst-live-head__key">{props.runKey}</span>
-          <span class="rst-live-head__stage">{props.stage}</span>
           <Link href={`/projects/${encodeURIComponent(props.projectId)}`}>Start page</Link>
         </div>
         <span role="status" data-testid="run-status" class="rst-live-head__state">

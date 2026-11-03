@@ -55,7 +55,7 @@ it('RF-1015 the Your turn panel shows the run facts', async () => {
     expect(text('Cost')).toContain('$0.0041');
   });
   expect(text('Cards')).toContain('1');
-  expect(text('Citations passed')).toContain('1 / 2');
+  expect(text('Supported claims')).toContain('of 0 judged');
   expect(text('Areas read')).toContain('1 / 1');
 });
 

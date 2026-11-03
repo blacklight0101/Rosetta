@@ -76,8 +76,10 @@ it('RF-1015 the figures of the run are five and each one is shown once', async (
     .map((each) => each.querySelector('span')?.textContent);
   expect(labels).toEqual(['Supported claims', 'Cards', 'Areas read', 'Cost', 'Tokens']);
   const supported = within(facts).getByText('Supported claims').closest('li');
+  await waitFor(() => {
+    expect(supported?.textContent).toContain('of 1 judged');
+  });
   expect(supported?.textContent).toContain('1');
-  expect(supported?.textContent).toContain('of 1 judged');
   expect(screen.queryByText('Citations passed')).toBeNull();
 });
 

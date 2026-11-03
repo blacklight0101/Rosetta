@@ -78,7 +78,10 @@ async function chooseAreas(page: Page, names: readonly string[]): Promise<void> 
 export async function pressStart(page: Page): Promise<void> {
   await page.getByRole('button', startButton).click();
   const question = page.getByRole('dialog', { name: 'Start this run?' });
-  const live = page.getByRole('heading', { name: 'Live run', level: 1 });
+  const live = page.getByRole('heading', {
+    name: /^(Scan|Understand|Deepen|Plan|Run)\b/u,
+    level: 1,
+  });
   await expect(question.or(live)).toBeVisible();
   if (await question.isVisible()) {
     await page.getByRole('button', { name: 'Confirm and start' }).click();
@@ -91,7 +94,9 @@ export async function pressStart(page: Page): Promise<void> {
  */
 export async function startAndOpenLiveRun(page: Page): Promise<string> {
   await pressStart(page);
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible();
   return new URL(page.url()).pathname;
 }
 
@@ -107,7 +112,9 @@ export async function openScanRun(page: Page): Promise<void> {
     .getByRole('link', { name: /^View run .*-scan$/u })
     .first()
     .click();
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible();
   await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
 }
 

@@ -110,14 +110,17 @@ describe('journeyOf: the understand run (2)', () => {
   it('RF-615 a completed run is done and says how many Supported claims it holds', () => {
     const view = journeyOf(roadSigns['estimate'] ?? facts(), projectId);
 
-    expect(step(view, 'understand')).toMatchObject({ state: 'done', detail: '4 Supported claims' });
+    expect(step(view, 'understand')).toMatchObject({
+      state: 'done',
+      detail: '4 Supported claims of the journey',
+    });
     expect(step(view, 'scan')).toMatchObject({ state: 'done', detail: 'Code map ready' });
   });
 
   it('RF-615 one Supported claim is not plural', () => {
     const view = journeyOf(facts({ source: source({ supportedClaims: 1 }) }), projectId);
 
-    expect(step(view, 'understand').detail).toBe('1 Supported claim');
+    expect(step(view, 'understand').detail).toBe('1 Supported claim of the journey');
   });
 
   it('RF-615 the scan step links to the scan run when the project has one', () => {
@@ -285,14 +288,12 @@ describe('journeyOf: the defaults (DEC-154)', () => {
 
   it('RF-615 with no open question the only action is Set up the plan', () => {
     const view = journeyOf(facts({ briefSaved: false }), projectId);
-
     expect(view.action).toMatchObject({ label: 'Set up the plan', href: setUp });
     expect(view.secondary).toBeUndefined();
   });
 
   it('RF-615 every question having a saved answer finishes the questions step', () => {
     const view = journeyOf(facts({ briefSaved: false }), projectId);
-
     expect(step(view, 'questions')).toMatchObject({ state: 'done', here: false });
     expect(step(view, 'brief')).toMatchObject({ state: 'current', here: true });
   });
