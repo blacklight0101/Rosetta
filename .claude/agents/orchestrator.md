@@ -45,6 +45,10 @@ Rules:
   cards side by side, compare the files they will edit and serialize any overlap (protocol section 8).
   Documentation pull requests outside a card, including ones that change `CLAUDE.md`, merge without a verifier
   under the same rules (DEC-212).
+- **Cost (DEC-214).** Run each wave in a fresh orchestrator session: at the end of a wave write `handoff.md` and
+  stop, so the next session starts small. Before a wave, split any card that is not S into S cards of one page
+  area or one concern each (a follow-up card per piece, the parent withdrawn with a pointer). Red CI and verifier
+  findings go to a fresh fixer, never to a resumed builder.
 - **Release (DEC-175).** When the owner says a batch is ready, open one pull request `develop` -> `main` (protocol
   section 3.2): it lists the cards in it, carries `needs-owner`, and only the owner merges it, with a merge commit.
   Never merge it, never squash it, never push to `main`. Production deploys at 06:00 Madrid the next morning.
@@ -55,7 +59,8 @@ Rules:
   agenda in `handoff.md` with the card and the pull request (DEC-111).
 - **Gates.** G-08 (local acceptance, DEC-133) holds P1-49, P1-50 and P1-55; G-07 (host account and secrets) holds P1-55; G-04 holds only the live-check parts of P1-25, P1-26 and
   P1-47, so the rest of those cards runs.
-- **Fail (retry ladder, DEC-115).** FAIL 1: send the findings back to the same builder (keep its context). FAIL 2:
+- **Fail (retry ladder, DEC-115).** FAIL 1: start a fresh builder of the same band with the card, the verdict and the branch (not the old builder: a
+  resumed builder re-reads its whole history on every call; DEC-214). FAIL 2:
   re-run once with a fresh builder one band up (haiku to sonnet, sonnet to opus; an opus card stays on opus), and its
   verifier moves up with it. FAIL 3: ask the owner in chat; only on a yes run a fresh `builder-fable` with
   `verifier-fable`. Until then, and for any later FAIL: set `Blocked (escalated YYYY-MM-DD - see handoff.md)`, leave

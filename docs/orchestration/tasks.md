@@ -29,6 +29,7 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
   `verifier-opus` for 9-10; `verifier-fable` only for work of a fable builder (DEC-41, DEC-115).
 - **Size**: agent working time, not developer days (DEC-102): S at most about 1 hour, M about 2-3 hours, L about 4-6
   hours, each before verification. Nothing larger; split it.
+  From Phase 8 on, a card a builder takes is S (DEC-214): a UI card covers one page area or one concern; an M or L card is split before its wave starts.
 - **Status**: `Todo` | `In progress` | `In review` | `Done` | `Blocked (<reason>)` (README section 3). A part of a card
   can wait while the rest runs: `Todo; <part> Blocked (G-nn)`.
 - **Common Reads** for every card, not repeated on the cards: `CLAUDE.md`, `docs/architecture.md`,
@@ -7630,7 +7631,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: L
 - **Depends on**: none
 - **Gate**: owner (DEC-208, decided on 2026-11-03; the owner tries the Stack step with C# on .NET)
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-01: on the Excel/VBA Asset Manager project, picking "C# on .NET" for Language and runtime changed nothing below it: Back-end framework offered only "Fastify (Recommended) A small Node.js framework", Testing only "Vitest ... for TypeScript", Database only PostgreSQL, and Data access said "The catalogue has no option for this layer", while the step promises "Two proposals per layer". The offer is computed once from the legacy languages (`stackOfferFor`), and its `vague` groups already carry the per-platform proposals that only a typed ".net" uses today.
 - **Reads**: `docs/design/board/P8Stack.dc.html`, `src/domain/planning/stack-offer.ts` (`stackOfferFor`, `platformOptions`, `matchingOptions`), `src/domain/planning/vague-choice.ts`, `src/application/use-cases/get-stack-offer.ts`, `prompts/catalogue/stack-proposals.v2.yaml` (`options`, `vague`), `prompts/catalogue/stack-technologies.v2.yaml`, `prompts/catalogue/stack-rules.v1.yaml` and the code that applies it (`src/domain/planning/`), `web/src/pages/PlanStackStep.tsx` (`platformChoices`, `LayerRow`, `LayerOptions`), `web/src/pages/PlanChoice.tsx`, `web/src/pages/PlanOwnChoice.tsx`, `web/src/styles/plan-setup.css`, `docs/design-system.md` section 14, `web/src/lib/plan-setup/choices.ts`, `web/src/lib/plan-setup/steps.ts` (the step text), `web/src/api/plan-schemas.ts` (`StackOffer`), RF-609, RF-645, DEC-172, DEC-178, DEC-208.
 - **Do**: add the DEC-208 Given of RF-609 as tests first (red), then:
@@ -7745,7 +7746,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-11..UX-14, UX-22, UX-26: a finished scan run is titled "Live run" and shows Evidence 0, Agents 0, "Run meter $0.00 of $0.50", Understand and Verify as empty circles, "Build report", "Download zip" and a disabled "Download hand-off zip". One page says "188 Supported claims" in the journey and "212 of 285" in the overview, and "11 Cards" beside a Deepen that "started from 17 cards". "Every question has a saved answer (1)" sits beside the tab "Your questions 0". The stats grid has an empty grey cell, and the disabled hand-off button gives no reason. A reader is started for "(root)" with 0 files, in a tile narrower than its text. A run page opened by its address shows "Project: Open a project to see its pages" in the side menu.
 - **Reads**: `docs/design/board/P8Run.dc.html`, `web/src/pages/LiveRunPage.tsx`, `web/src/pages/LiveRunView.tsx`, `web/src/pages/EndedBody.tsx`, `web/src/pages/RunOverview.tsx`, `web/src/pages/RunMeasures.tsx`, `web/src/pages/YourTurn.tsx`, `web/src/pages/RunDownloads.tsx`, `web/src/pages/CoverageMap.tsx`, `web/src/pages/AgentsGrid.tsx`, `web/src/app/navigation.ts`, `web/src/lib/journey/journey-context.ts`, the reader planner `src/application/understand/planned-areas.ts`, RF-1015, RF-1017, RF-1020, RF-1002, RF-1008, RF-155, RF-231.
 - **Do**: add the Givens to RF-1015 and RF-1017 first; red tests first.
@@ -7874,7 +7875,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, Phase 8 wave 1): P8-21, P8-24 and P8-27 each came back red on `tests/integration/docs/r1-matrix.test.ts` because an edit to a test file moved the `path:line` examples of `docs/verification/r1-matrix.md`, and parallel pull requests re-pointed the same anchors and conflicted (DEC-213).
 - **Reads**: `tests/support/r1-matrix-guard.ts`, `tests/integration/docs/r1-matrix.test.ts`, `tests/integration/docs/release-notes.test.ts`, `docs/verification/r1-matrix.md` (the Example column and the paragraph that explains it), `docs/verification/m1-matrix.md`, `docs/verification/p2-matrix.md`, RNF-005.
 - **Do**: tests first.

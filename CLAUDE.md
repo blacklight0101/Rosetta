@@ -145,9 +145,9 @@ applied, and fixing it is part of applying the decision.
 
 - The graph lives in `graphify-out/` at the root of the main checkout and is never committed. Worktrees have none of
   their own: pass `--graph <main checkout>/graphify-out/graph.json`.
-- Before searching wide for code, query the graph: `graphify query "<question>"`, `graphify path "A" "B"`,
-  `graphify explain "X"` or `graphify affected "X"`; then open the files it names. The graph finds things; the
-  sources of truth above still decide behaviour. When it finds nothing useful, search as usual.
+- The graph is optional (DEC-214): `graphify explain "X"` or `graphify affected "X"` can list the callers of a
+  symbol that exists on `develop`. On the Phase 8 build it helped once in about eight queries, so search directly
+  when it does not.
 - The graph covers code. `graphify update .` in the main checkout refreshes it (no model calls); the orchestrator runs
   it after each run of merges.
 
