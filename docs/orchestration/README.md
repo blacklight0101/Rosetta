@@ -192,7 +192,7 @@ emergency skip are in `docs/runbooks/deploy.md`, section Release to production.
   `docs/architecture.md` in the same branch; every schema or file-format change updates `docs/data-model.md`.
 - Before pushing, run the end-to-end specs of every page you changed as one background command against your own
   throwaway PostgreSQL: `docker run -d --rm --name <card-id>-e2e-pg -e POSTGRES_PASSWORD=<any> -p <free port>:5432 postgres:17`,
-  then `ROSETTA_TEST_DATABASE_URL=postgres://postgres:<any>@127.0.0.1:<port>/postgres ROSETTA_E2E_PORT=<free port> node scripts/run-e2e.mjs <specs>`,
+  then `npm run build:web` once in the worktree (its `dist/` is not linked), then `ROSETTA_TEST_DATABASE_URL=postgres://postgres:<any>@127.0.0.1:<port>/postgres ROSETTA_E2E_PORT=<free port> node scripts/run-e2e.mjs <specs>`,
   and `docker stop` the container afterwards. Never use or touch the containers `rosetta-app-*`, `rosetta-db-*`,
   `rosetta-eval-*` or `rosetta-latest-*`, and never read `.env` (DEC-215).
 - Run `npm run verify:local` before reporting and paste its last lines and exit code; CI on the pull request runs

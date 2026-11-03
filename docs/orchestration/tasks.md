@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 106     | 5         | 89         | 12        | 0                  | 75      | 25      | 6      | 22         | 21        |
-| **Total**                    | **596** | **123**   | **425**    | **48**    | **0**              | **301** | **269** | **26** | **284**    | **21**    |
+| P8 Evaluation fixes, round 2 | 107     | 5         | 90         | 12        | 0                  | 76      | 25      | 6      | 23         | 21        |
+| **Total**                    | **597** | **123**   | **426**    | **48**    | **0**              | **302** | **269** | **26** | **285**    | **21**    |
 
 ## Conventions for every card
 
@@ -7908,7 +7908,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-21
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, P8-21 CI and verifier round 2, finding 2): `tests/e2e/plan-setup.spec.ts` (the recorded-lines test) saw "7 of 7 layers" where it expects "1 of 7" while `plan-setup-stack.spec.ts` shared its shard and the `plan` account; moving that spec to shard 3 made CI green, and the verifier could not reproduce the failure. The cause is not found.
 - **Reads**: `tests/e2e/plan-setup*.spec.ts`, `tests/e2e/shards.json`, the end-to-end accounts and projects, the Plan setup brief storage, ADR-008.
 - **Do**:
@@ -8988,3 +8988,19 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the reproduction and the test fix (or the page fix it calls for).
 - **Done when**: the spec passes 20 repeats in its shard locally; CI green.
 - **Refs**: RF-150, RF-156, RF-1021, ADR-008; follow-up of P8-26; GitHub issue #1201
+
+### P8-107 - Follow-up: the held plan options are released, and a negative case (P8-36)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-36
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-36 verifier round 1, #1194, findings 1 and 2): `holdPlanOptions` in `tests/e2e/support/plan-setup-page.ts` aborts the held `plan-options` request after the save instead of letting it through, so the rest of the recorded-lines test runs with failed options; and no committed test fails on the old order (the reproduction was an uncommitted 3 s wait).
+- **Reads**: `tests/e2e/support/plan-setup-page.ts`, `tests/e2e/plan-setup.spec.ts`, `tests/e2e/plan-setup-stack-defaults.spec.ts`, `web/src/pages/use-plan-session.ts`, RF-605, RF-609, ADR-008.
+- **Do**:
+  - Let the held request through after the save (`route.continue()`), and assert the later steps of the recorded-lines test still see the options.
+  - Add a deterministic case: options held, the save made, then released; the recorded line names only the typed layer.
+- **Delivers**: the test changes only.
+- **Done when**: the Plan setup specs pass; the new case fails if the save waits for the options; CI green.
+- **Refs**: RF-605, RF-609, ADR-008; follow-up of P8-36; GitHub issue #1202
