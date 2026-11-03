@@ -234,11 +234,35 @@ describe('the Stack step keeps what the owner answered (DEC-208)', () => {
 
     pickLanguage(/^C# on \.NET/u);
 
-    const testing = within(group('Testing'));
-    expect(testing.getByRole('radio', { name: /^Vitest/u })).toBeTruthy();
-    const radio = testing.getByRole<HTMLInputElement>('radio', { name: /^Vitest/u });
-    expect(radio.checked).toBe(true);
-    expect(group('Testing').closest('section')?.textContent).toContain('Your choice, kept');
+    const own = within(group('Testing')).getByRole<HTMLInputElement>('radio', {
+      name: /^Type your own answer/u,
+    });
+    expect(own.checked).toBe(true);
+    expect(within(group('Testing')).getByDisplayValue('Vitest')).toBeTruthy();
+  });
+
+  it('RF-645 a saved choice that is not offered is shown as the own answer with its text', () => {
+    show({
+      database: { layer: 'database', choice: 'SQL Server 2022', custom: false },
+      testing: { layer: 'testing', choice: 'xUnit', custom: false },
+    });
+    pickLanguage(/^C# on \.NET/u);
+
+    const database = within(group('Database'));
+    expect(
+      database.getByRole<HTMLInputElement>('radio', { name: /^Type your own answer/u }).checked,
+    ).toBe(true);
+    expect(database.getByDisplayValue('SQL Server 2022')).toBeTruthy();
+    const testing = within(group('Testing')).getByRole<HTMLInputElement>('radio', {
+      name: /^xUnit/u,
+    });
+    expect(testing.checked).toBe(true);
+  });
+
+  it('RF-645 a saved choice that is not offered is shown before any language is chosen', () => {
+    show({ database: { layer: 'database', choice: 'Oracle 19c', custom: false } });
+
+    expect(within(group('Database')).getByDisplayValue('Oracle 19c')).toBeTruthy();
   });
 
   it('RF-609 a layer answered with a technology of another platform shows one warning line', () => {
