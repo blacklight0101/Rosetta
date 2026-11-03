@@ -80,7 +80,7 @@ export const STEP_TEXT: Readonly<Record<StepId, { readonly title: string; readon
     },
     stack: {
       title: 'Which technology for each layer?',
-      why: 'Two proposals per layer, derived from the legacy stack (the first stays closest to it), keeping the legacy technology, or your own. Each layer you choose becomes an ADR, and task cards use these technologies.',
+      why: 'Choose the language and runtime first: once you have, the layers below suggest up to two technologies of that language, recommended first; until then they suggest from the legacy stack. You can also keep the legacy technology or type your own. Each layer you choose becomes an ADR, and task cards use these technologies.',
     },
     context: {
       title: 'What should the roadmap know about your team and constraints?',

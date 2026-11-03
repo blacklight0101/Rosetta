@@ -16,6 +16,8 @@ const offer: StackOffer = {
       ],
       keepLegacy: true,
       vague: [],
+      technologies: [],
+      platforms: [],
     },
     {
       layer: 'hosting',
@@ -25,8 +27,17 @@ const offer: StackOffer = {
       ],
       keepLegacy: false,
       vague: [],
+      technologies: [],
+      platforms: [],
     },
-    { layer: 'testing', proposals: [], keepLegacy: true, vague: [] },
+    {
+      layer: 'testing',
+      proposals: [],
+      keepLegacy: true,
+      vague: [],
+      technologies: [],
+      platforms: [],
+    },
   ],
 };
 

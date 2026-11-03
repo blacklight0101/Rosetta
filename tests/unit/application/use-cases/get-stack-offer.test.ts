@@ -37,6 +37,14 @@ describe('GetStackOffer', () => {
     expect(result.ok && result.value[0]?.proposals).toHaveLength(2);
   });
 
+  it('RF-609 DEC-208 offers a workbook the .NET proposals once C# on .NET is chosen', async () => {
+    const { project, offer } = await setup('workbook');
+    const result = await offer.execute({ actor, projectId: project.id });
+    const database = result.ok ? result.value.find((each) => each.layer === 'database') : undefined;
+    const dotnet = database?.platforms.find((each) => each.platform === '.NET');
+    expect(dotnet?.proposals[0]?.choice).toBe('SQL Server');
+  });
+
   it('RF-609 lists no proposal when there is no readable scan', async () => {
     const { project, offer } = await setup('github');
     const result = await offer.execute({ actor, projectId: project.id });
