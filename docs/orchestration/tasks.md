@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 18      | 1         | 14         | 3         | 0                  | 2       | 12      | 4      | 6          | 0         |
-| **Total**                    | **508** | **119**   | **350**    | **39**    | **0**              | **228** | **256** | **24** | **268**    | **0**     |
+| P8 Evaluation fixes, round 2 | 19      | 2         | 14         | 3         | 0                  | 3       | 12      | 4      | 6          | 0         |
+| **Total**                    | **509** | **120**   | **350**    | **39**    | **0**              | **229** | **256** | **24** | **268**    | **0**     |
 
 ## Conventions for every card
 
@@ -7583,3 +7583,19 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the workflow changes, the RNF-001 and workflow tests updated, a short note in `docs/runbooks/` with before/after numbers; any ruleset or merge-queue setting is written as a step for the owner (the builder does not change repository settings).
 - **Done when**: a PR's CI finishes in under 15 min wall clock when runners are free; a batch of three passed PRs merges in one queue run; no coverage is lost on develop; CI green.
 - **Refs**: RNF-001, RNF-005, ADR-025; owner request of 2026-11-02.; GitHub issue #1152
+
+### P8-20 - The morning release arrives hours late: say so, or start it on time
+
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (Q-63 picks the option; the card follows the answer, the default until then)
+- **Status**: Todo
+- **Evidence** (2026-11-03): `scheduled-release.yml` has four slots (04:07, 05:07, 05:37, 06:07 UTC), but GitHub started them 5 to 9 hours late on every day from 2026-10-28 to 2026-11-02 except 2026-10-30 (first start 05:10 UTC). The other first starts were between 10:17 and 12:13 UTC (`gh run list --workflow scheduled-release.yml`). The late-slot rule of P7-28 still deploys a commit merged before 06:00 Madrid, so nothing is skipped, but production updates around midday to mid-afternoon Madrid, not at 06:07 as `docs/environments-and-delivery.md` and `docs/runbooks/deploy.md` say. On 2026-11-03 release #1120 (merged 21:55 Madrid the evening before) was deployed by running Release by hand at 09:07 Madrid, before any slot had started.
+- **Do** (default of Q-63, accept the delay):
+  - `docs/environments-and-delivery.md` (sections 1, 8 and 10) and `docs/runbooks/deploy.md`: replace "deploys at 06:07 Madrid" with "the morning after a release merge, from 06:07 Madrid and usually by early afternoon, because GitHub delays scheduled workflows", with the measured delays and the way to deploy at once (run Release on `main`).
+  - The comment at the top of `scheduled-release.yml` says the same; no change to its logic.
+  - If Q-63 is answered with an on-time scheduler instead: stop, re-rate the card (sonnet or above, size M) and write the ADR first; the builder does not create cloud resources or change repository settings.
+- **Delivers**: the two documents and the workflow comment above; the docs tests that pin these sentences updated.
+- **Done when**: no document promises a deploy at 06:07; the runbook names the usual delay and how to deploy at once; `scheduled-release-workflow.test.ts` and the docs tests pass; CI green.
+- **Refs**: RF-1304, Q-63, DEC-175, ADR-025, P7-28; owner request of 2026-11-03.; GitHub issue #1160
