@@ -131,7 +131,7 @@ it('RF-143 names the cloud provider and keeps Start off until the consent is giv
   expect(notice?.textContent).toContain('OpenAI');
   expect(notice?.textContent).toContain('reader');
   expect(start().disabled).toBe(true);
-  expect(start().title).toBe('Confirm the OpenAI notice above to start the run');
+  expect(start().title).toBe('Confirm the OpenAI notice just above this bar to start the run');
   expect(start().textContent).toBe('Analyse (confirm the OpenAI notice)');
 
   fireEvent.click(input(consentLabel));

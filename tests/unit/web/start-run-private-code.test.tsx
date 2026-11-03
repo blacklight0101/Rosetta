@@ -98,7 +98,7 @@ it('RF-132 ticking only the private-code box leaves Start off because the cloud 
   fireEvent.click(input(privateLabel));
 
   expect(start().disabled).toBe(true);
-  expect(start().title).toBe('Confirm the OpenAI notice above to start the run');
+  expect(start().title).toBe('Confirm the OpenAI notice just above this bar to start the run');
 });
 
 it('RF-132 the request carries both confirmations', async () => {

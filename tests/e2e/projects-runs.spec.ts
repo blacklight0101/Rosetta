@@ -96,5 +96,5 @@ test('RF-430 the start button names the figure the user approves', async ({ page
   await expect(page.getByRole('button', { name: /^Analyse · approve /u })).toBeVisible({
     timeout: 15_000,
   });
-  await expect(page.getByTestId('journey-total')).toContainText('Analyse approves');
+  await expect(page.getByTestId('journey-total')).toContainText('What stops it');
 });
