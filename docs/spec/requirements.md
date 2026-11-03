@@ -1069,7 +1069,10 @@ As a developer I want the tokens and cost of every run on a project added up so 
 - Given a run in a breakdown on the cost page, when the page shows it, then the run is named as the History page names it, and by its run id when History cannot be read or no longer lists the run (P8-90, UX-19).
 - Given a table on the cost page, when the page shows the price table version, then the version is named once above the table, and in a column only when the table's rows used different versions (P8-90, UX-19).
 - Given any money amount on the cost page, when it is shown, then it follows DEC-54 (four decimals below $1, two from $1) and carries the exact figure in a tooltip (P8-90, EV-94).
-  Verification: unit tests on the ledger totals; integration test with an interrupted run; web tests of the cost page for the last three scenarios.
+- Given a money amount of exactly zero, when it is shown, then it reads `$0.00`, never `$0.0000` (DEC-217, P8-110).
+- Given a money amount above zero and below $0.00005, when it is shown, then it reads `<$0.0001` and the tooltip carries the exact figure, so it never reads as zero (DEC-217, P8-110).
+- Given an amount with an exact figure in its tooltip, when I reach it by keyboard (Tab) or touch (tap) instead of the mouse, then the exact figure is shown and is read out with the amount, and Escape closes it (RNF-010, P8-110).
+  Verification: unit tests on the ledger totals; integration test with an interrupted run; web tests of the cost page for the last six scenarios.
   Changed 2026-11-03 by card P8-90: the cost page names runs as History does, names the price table version once per table and writes every amount by DEC-54 with the exact figure in a tooltip (scenarios added). Changed 2026-11-03 by DEC-217: exactly zero reads `$0.00` and a non-zero amount below $0.00005 reads `<$0.0001`, with the exact figure in the tooltip (card P8-110).
 
 **RF-429 Keep a share of the cap for verifying and for the summary** - R1 - Should - Source EV-27 (evaluation pass 2), P3-111, P5-18, P5-20, DEC-166, DEC-170 - ADR-007
