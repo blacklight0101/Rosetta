@@ -119,7 +119,7 @@ describe('project cost page lines', () => {
 });
 
 describe('project cost page run names', () => {
-  it('RF-428 names a run as the history page does and not by its identifier', async () => {
+  it('RF-428 given a run in a breakdown, names it as the History page names it and not by its identifier', async () => {
     renderCost();
 
     const runs = await table('By run');
@@ -128,17 +128,26 @@ describe('project cost page run names', () => {
     expect(runs.textContent).not.toMatch(/(?<![\w-])r-1(?![\w-])/u);
   });
 
-  it('RF-428 names a run by its identifier when the history cannot be read', async () => {
+  it('RF-428 given a run in a breakdown, names it by its run id when History cannot be read', async () => {
     renderCost(json(200, projectCost), failure(500, 'RST-9000'));
 
     const runs = await table('By run');
 
     expect(within(runs).getByRole('link', { name: 'r-1' }).getAttribute('href')).toBe('/runs/r-1');
   });
+
+  it('RF-428 given a run History no longer lists, names it by its run id', async () => {
+    renderCost(json(200, projectCost), json(200, { ...history, runs: [] }));
+
+    const runs = await table('By run');
+
+    expect(within(runs).getByRole('link', { name: 'r-1' }).getAttribute('href')).toBe('/runs/r-1');
+    expect(runs.textContent).not.toContain(doneKey);
+  });
 });
 
 describe('project cost page price table', () => {
-  it('RF-428 names the price table once for a table and not on every row', async () => {
+  it('RF-428 given a table, names the price table version once above it and not on every row', async () => {
     const second = { ...projectCost.byRun[0], key: 'r-2', runId: 'r-2' };
     renderCost(json(200, { ...projectCost, byRun: [...projectCost.byRun, second] }));
 
@@ -149,7 +158,7 @@ describe('project cost page price table', () => {
     expect(screen.getAllByText('Prices of 11 Oct 2026, for every row below')).toHaveLength(6);
   });
 
-  it('RF-428 keeps a price table column when the rows of a table used different versions', async () => {
+  it('RF-428 given a table, shows the price table in a column only when its rows used different versions', async () => {
     const older = usageTotals({ priceTableVersions: ['2026-10-05'] });
     const rows = [projectCost.byStage[0], { key: 'verify', local: false, totals: older }];
     renderCost(json(200, { ...projectCost, byStage: rows }));
@@ -163,7 +172,7 @@ describe('project cost page price table', () => {
 });
 
 describe('project cost page money', () => {
-  it('RF-428 DEC-54 writes four decimals below a dollar and two above, with the exact figure in a tooltip', async () => {
+  it('RF-428 given any money amount, writes it by DEC-54 with the exact figure in a tooltip', async () => {
     const lines = (...micros: string[]) =>
       micros.map((each, at) => ({
         ...{ key: `n-${String(at)}`, runId: null, firstAt: '', local: false },
@@ -178,7 +187,7 @@ describe('project cost page money', () => {
     expect(runs.textContent).not.toContain('$3.113515');
   });
 
-  it('RF-428 writes the project total through the same formatter', async () => {
+  it('RF-428 given any money amount, writes the project total through the same formatter', async () => {
     renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
 
     const totals = await screen.findByRole('region', { name: 'Project totals' });

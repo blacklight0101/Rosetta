@@ -18,14 +18,14 @@ describe('money formatter', () => {
     expect(formatMoney(micros)).toEqual({ text, exact });
   });
 
-  it('RF-428 rounds half up and never shows four decimals for an amount that rounds to a dollar', () => {
+  it('RF-428 given any money amount, rounds half up and never shows four decimals for an amount that rounds to a dollar', () => {
     expect(formatMoney('123450').text).toBe('$0.1235');
     expect(formatMoney('123449').text).toBe('$0.1234');
     expect(formatMoney('999960').text).toBe('$1.00');
     expect(formatMoney('1005000').text).toBe('$1.01');
   });
 
-  it('RF-428 names a date price table version as a day, month and year, and keeps any other text', () => {
+  it('RF-428 given a price table version, names a date version as a day, month and year, and keeps any other text', () => {
     expect(priceTableText('2026-10-21')).toBe('21 Oct 2026');
     expect(priceTableText('2026-10-05')).toBe('5 Oct 2026');
     expect(priceTableText('v2')).toBe('v2');
