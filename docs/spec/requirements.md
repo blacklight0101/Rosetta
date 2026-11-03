@@ -1767,6 +1767,7 @@ As a developer I want to answer `OQ` cards in the page so that the loop is visua
 As a developer I want the page to list past runs and open their reports and zip downloads so that everything is in one place.
 
 - Given previous runs in the output folder, when I open the history, then each run shows its source, commit, stage, state, cost and links to its report and zip (RF-008).
+- Given a run that I stopped with Stop, when it is listed in the history, on its run page or in the journey strip, then it reads "Stopped by you" and never "Failed" or "Interrupted" (P8-87).
   Verification: end-to-end test.
 
 **RF-1009 Protect every request** - R1 (M1) - Must - Source DEC-46, DEC-62, DEC-69 - ADR-013, ADR-015, ADR-017
@@ -1880,6 +1881,7 @@ As a user I want to see where I am in the journey and what each step cost so tha
 
 - Given the project page or any run page of a project with a journey, when it opens, then the journey strip shows each step with its state (waiting, running, waiting for approval, done, skipped, failed) and its cost, the current step is marked, and each step is a link to its page.
 - Given the strip, when it is used with the keyboard or a screen reader, then it is an ordered list, the current step has `aria-current="step"`, and every state is carried by a word and a glyph as well as colour.
+- Given an understand or plan run that I stopped with Stop, when the strip shows its step, then the step's state word is "Stopped by you", not "Failed", and the project title reads "Understand stopped by you" or "Plan stopped by you" (P8-87).
   Verification: component and web tests of the strip states; an accessibility check.
 
 **RF-1021 The page offers the next step in place** - R1 - Must - Source DEC-179, DEC-204 - ADR-012, ADR-027

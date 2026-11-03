@@ -40,6 +40,23 @@ it('RF-1020 RF-1021 a live understand run is titled as running and links to the 
   expect(heading.status?.href).toBe(`/runs/${source().id}`);
 });
 
+it('RF-1020 RF-006 a run the user stopped is a "stopped" step, never failed, and offers Resume', () => {
+  const view = viewOf('stoppedByYou');
+  const understand = view.steps.find((each) => each.key === 'understand');
+
+  expect(understand).toMatchObject({ state: 'stopped', detail: '', here: true });
+  expect(view.action).toMatchObject({ kind: 'resume', runId: source().id });
+});
+
+it('RF-1020 a run the user stopped is titled "stopped by you", not failed', () => {
+  expect(headingOf('OrderDesk', viewOf('stoppedByYou')).status?.text).toBe(
+    'Understand stopped by you',
+  );
+  expect(headingOf('OrderDesk', viewOf('planStoppedByYou')).status?.text).toBe(
+    'Plan stopped by you',
+  );
+});
+
 it('RF-1020 a running Deepen makes the Questions step and the title link to its run', () => {
   const deepening = facts({
     source: source({ openQuestions: 2, deepening: true }),
