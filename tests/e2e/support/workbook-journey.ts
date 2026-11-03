@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { buildZip } from '../../support/zip-fixtures.js';
 import { expect } from './fixtures.js';
+import { openReplaceSource, showStartChoices } from './start-choices.js';
 import { downloadedRunFiles } from './full-run-pages.js';
 import { chooseAreas, runScan } from './journey-pages.js';
 import { runStatus, startAndOpenLiveRun } from './live-run-page.js';
@@ -39,6 +40,7 @@ export async function journeyWorkbooks(retailRate?: number): Promise<readonly Wo
 
 /** Chooses the files in the form on the page and presses Upload workbooks; waits for what was read. */
 export async function uploadWorkbooks(page: Page, files: readonly WorkbookFile[]): Promise<void> {
+  await openReplaceSource(page);
   await page.getByLabel('Workbook files').setInputFiles([...files]);
   await page.getByRole('button', { name: 'Upload workbooks' }).click();
   const read = `${String(files.length)} workbooks read`;
@@ -64,7 +66,8 @@ export async function uploadFromNewProject(
 export async function openWorkbookStart(page: Page, projectName: string): Promise<void> {
   await page.goto('/projects');
   await page.getByRole('link', { name: `Start run for ${projectName}` }).click();
-  await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await showStartChoices(page);
 }
 
 /** From the start page: a scan, then an understand run of the named areas; returns the run's path. */

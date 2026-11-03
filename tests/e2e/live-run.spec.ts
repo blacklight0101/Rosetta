@@ -18,6 +18,7 @@ import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 import { chooseModel } from './support/choose-model.js';
+import { showStartChoices } from './support/start-choices.js';
 
 // RF-1002, RF-1003, RF-424, RF-1004, RF-301, DEC-103, RF-1006, RF-008, RF-1108, RF-1105, P1-35: the live run page,
 // driven by real runs of the test server. The model double replays the recorded understand run of the C# fixture
@@ -284,6 +285,7 @@ test('RF-1108 RF-431 RST-2302 a role without a usable key shows Key missing, whe
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
+  await showStartChoices(page);
   await page.getByLabel('I understand; send masked excerpts to Anthropic for this run').check();
 
   // RF-431 (P7-04): the estimate says the key is missing and Start stays disabled, so no run is

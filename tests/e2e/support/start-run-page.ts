@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect } from './fixtures.js';
+import { showStartChoices } from './start-choices.js';
 
 // RF-1001, P8-16: the start page of the demo project, shared by the start-run specs (moved out of
 // start-run.spec.ts, which is at the file size limit).
@@ -20,8 +21,10 @@ export async function openStartPage(page: Page): Promise<void> {
   } else {
     await link.click();
   }
-  await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
+  // P8-26: a project with a run is titled with its name, not "Start a run".
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(demoUrl);
+  await showStartChoices(page);
 }
 
 export function projectIdOf(page: Page): string {
