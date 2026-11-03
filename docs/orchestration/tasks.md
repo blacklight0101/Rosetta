@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 33      | 1         | 27         | 5         | 0                  | 4       | 23      | 6      | 6          | 0         |
-| **Total**                    | **523** | **119**   | **363**    | **41**    | **0**              | **230** | **267** | **26** | **268**    | **0**     |
+| P8 Evaluation fixes, round 2 | 36      | 1         | 30         | 5         | 0                  | 5       | 25      | 6      | 9          | 0         |
+| **Total**                    | **526** | **119**   | **366**    | **41**    | **0**              | **231** | **269** | **26** | **271**    | **0**     |
 
 ## Conventions for every card
 
@@ -7688,7 +7688,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none (DEC-210 answered Q-65)
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-21, UX-27, UX-28, EV-85, EV-96: during a run approved at $4.00 the header meter says "This run $0.00 of $0.50", the spend panel "cap $0.50" and "0 of 2,000,000 tokens"; the Deepen panel says "The run cap of $0.50 is what stops the run" and warns twice that the high figure could pass $0.50 and 2,000,000 tokens, while the journey card says "$3.96294 left of $4.00 approved". "Start Deepen" then opens "Start this Deepen?", which repeats both estimate paragraphs word for word. Yesterday the eShop likely ($4.085) was above the approvable ($4.00), and the Invoice figures moved between reads.
 - **Reads**: `docs/design/board/P8Run.dc.html` and `docs/design/board/P8Deepen.dc.html`, `web/src/components/TopbarRunMeter.tsx`, `web/src/pages/RunMeter.tsx`, `web/src/pages/SpendPanel.tsx`, `web/src/pages/DeepenEstimateView.tsx`, `web/src/pages/DeepenAction.tsx`, `web/src/pages/StartConfirmDialog.tsx`, `web/src/pages/EstimateSection.tsx`, `web/src/lib/deepen-choice.ts`, `src/application/` (the journey estimate and the approved amount of DEC-205/DEC-206), RF-424, RF-434, RF-1003, RF-209, DEC-205, DEC-206.
 - **Do**: add the Givens to RF-1003 and RF-434 first; red tests first.
@@ -7867,3 +7867,52 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the two end-to-end tests.
 - **Done when**: the pause is exercised by CI on every run of the end-to-end suite; CI green.
 - **Refs**: RF-434, RF-435, DEC-205, DEC-206, ADR-007, ADR-008; EV-84.; GitHub issue #1174
+
+### P8-34 - Follow-up: verification matrix examples name a test, not a line
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, Phase 8 wave 1): P8-21, P8-24 and P8-27 each came back red on `tests/integration/docs/r1-matrix.test.ts` because an edit to a test file moved the `path:line` examples of `docs/verification/r1-matrix.md`, and parallel pull requests re-pointed the same anchors and conflicted (DEC-213).
+- **Reads**: `tests/support/r1-matrix-guard.ts`, `tests/integration/docs/r1-matrix.test.ts`, `tests/integration/docs/release-notes.test.ts`, `docs/verification/r1-matrix.md` (the Example column and the paragraph that explains it), `docs/verification/m1-matrix.md`, `docs/verification/p2-matrix.md`, RNF-005.
+- **Do**: tests first.
+  - The Example cell of `r1-matrix.md` names a test file without a line (`tests/e2e/live-run.spec.ts`); the guard (`exampleProblems`) checks that the file exists and that a test or a describe title in it names the row's id, anywhere in the file. A cell that still carries `:N` is a guard problem ("an example names a file, not a line").
+  - Convert every Example cell of `r1-matrix.md`, keeping the file each one names, and say in the matrix's explanatory paragraph that examples name files so that test edits do not move them.
+  - `m1-matrix.md` and `p2-matrix.md` are dated records of a reviewed commit and no test guards their anchors: leave the anchors as they are and add one line to each saying that line numbers refer to the reviewed commit.
+- **Delivers**: the guard change with its tests, the converted `r1-matrix.md`, the notes in `m1-matrix.md` and `p2-matrix.md`.
+- **Done when**: an edit that moves lines of a test file can no longer fail `r1-matrix.test.ts`; CI green.
+- **Refs**: RNF-005, RF-601, DEC-213; GitHub issue #1181
+
+### P8-35 - Follow-up: a non-.NET project for the end-to-end tests
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P8-21
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-21 verifier round 2, finding 1): the end-to-end harness serves and scans only the .NET demo, so the P8-21 walk "pick C# on .NET on a non-.NET project" runs on the .NET demo, where the .NET offer would show without the feature.
+- **Reads**: `tests/e2e/support/serve.ts`, the end-to-end seed and accounts, `tests/e2e/plan-setup-stack.spec.ts`, RF-609, DEC-208, ADR-008.
+- **Do**: tests first.
+  - Add a small non-.NET project to the end-to-end seed (a few JavaScript or Python files written for the tests; nothing from the owner's employer), scanned like the .NET demo, with its own account.
+  - Point the C# on .NET walk of `plan-setup-stack.spec.ts` at it: the layers change from the project's own stack to ASP.NET Core Razor Pages, SQL Server, Dapper and xUnit, and the package proposes them.
+- **Delivers**: the seed project, its account, the updated spec.
+- **Done when**: the P8-21 walk runs on a project that is not .NET; CI green.
+- **Refs**: RF-609, DEC-208, ADR-008; GitHub issue #1182
+
+### P8-36 - Follow-up: find the shared state behind the Plan setup recorded-lines flake
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-21
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-21 CI and verifier round 2, finding 2): `tests/e2e/plan-setup.spec.ts` (the recorded-lines test) saw "7 of 7 layers" where it expects "1 of 7" while `plan-setup-stack.spec.ts` shared its shard and the `plan` account; moving that spec to shard 3 made CI green, and the verifier could not reproduce the failure. The cause is not found.
+- **Reads**: `tests/e2e/plan-setup*.spec.ts`, `tests/e2e/shards.json`, the end-to-end accounts and projects, the Plan setup brief storage, ADR-008.
+- **Do**:
+  - Find which spec writes the state the recorded-lines test reads (a saved brief, an answered layer, a run of the shared project), with a failing reproduction first (the specs of shard 1 in CI order with `plan-setup-stack.spec.ts` added back).
+  - Give each Plan setup spec that writes the brief its own account or project, or reset the brief in a fixture, so no spec depends on another's order; move `plan-setup-stack.spec.ts` back only if shard balance asks for it.
+- **Delivers**: the reproduction, the isolation fix.
+- **Done when**: the Plan setup specs pass in any order and any shard; CI green.
+- **Refs**: RF-609, RF-613, ADR-008; GitHub issue #1183

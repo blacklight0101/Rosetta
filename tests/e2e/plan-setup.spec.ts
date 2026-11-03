@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { expect, test } from './support/fixtures.js';
 import { openHistory, runRow } from './support/history-page.js';
@@ -34,6 +35,12 @@ test.beforeEach(async ({ context }, info) => {
   account = credentials.userName;
   await signInAs(context, credentials);
 });
+
+async function answerHosting(page: Page, text: string): Promise<void> {
+  const hosting = page.getByRole('radiogroup', { name: 'Hosting' });
+  await hosting.getByRole('radio', { name: 'Type your own answer' }).check();
+  await page.getByLabel('Your answer for Hosting').fill(text);
+}
 
 test('RF-605 after an understand run Plan setup asks six groups of questions, each with a default and a reason', async ({
   page,
@@ -92,7 +99,11 @@ test('RF-609 the stack step has two options for each of the seven layers and a f
   // the database layer is not end of life and still has the two proposals, keep and your own.
   await expect(layers.first().getByRole('radio')).toHaveCount(3, { timeout: 20_000 });
   await expect(layers.nth(3).getByRole('radio')).toHaveCount(4);
-  await expect(page.getByLabel('Your own for Hosting')).toBeVisible();
+  await expect(
+    page
+      .getByRole('radiogroup', { name: 'Hosting' })
+      .getByRole('radio', { name: 'Type your own answer' }),
+  ).toBeVisible();
   await layers.nth(3).getByRole('radio').last().check();
   await expectNoSeriousViolations(page);
 });
@@ -106,7 +117,7 @@ test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in
   await page.getByRole('radio', { name: /^Parallel Change/u }).check();
   await page.getByRole('button', { name: 'Save and continue' }).click();
   await expect(stepPill(page, 'Stack')).toHaveAttribute('aria-current', 'step');
-  await page.getByLabel('Your own for Hosting').fill('On-premises Kubernetes');
+  await answerHosting(page, 'On-premises Kubernetes');
   await page.getByRole('button', { name: 'Save and continue' }).click();
   await page.getByLabel('Team size', { exact: true }).fill('6');
   // P6-26 (RF-611, DEC-189): the hosted question has no recommended answer and works by keyboard.

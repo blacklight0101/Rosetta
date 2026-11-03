@@ -114,26 +114,27 @@ const startsGroup = /^\s*(?:describe|test\.describe)(?:\.\w+)*\(/u;
 /** The title of the test or group that starts at a line: the line and the two after it. */
 const titleAt = (lines: readonly string[], at: number): string => lines.slice(at, at + 3).join(' ');
 
-/** Whether the line sits inside a test whose name, or whose describe title, carries the id. */
-export function lineNamesId(source: string, line: number, id: string): boolean {
+/** Whether a test or a describe of the file carries the id in its title (P8-34: a file, not a line). */
+export function fileNamesId(source: string, id: string): boolean {
   const lines = source.split('\n');
-  const before = lines.slice(0, line);
-  const test = before.findLastIndex((text) => startsTest.test(text));
-  if (test >= 0 && namesId(titleAt(lines, test), id)) return true;
-  const group = before.findLastIndex((text) => startsGroup.test(text));
-  return group >= 0 && namesId(titleAt(lines, group), id);
+  return lines.some(
+    (text, at) =>
+      (startsTest.test(text) || startsGroup.test(text)) && namesId(titleAt(lines, at), id),
+  );
 }
 
 async function exampleProblems(row: MatrixRow, input: GuardInput): Promise<string[]> {
   if (row.example === '-') return [];
-  const [path = '', line = ''] = row.example.replaceAll('`', '').split(':');
-  const source = await input.readFile(path);
-  if (source === undefined) return [`${row.id}: the example file ${path} does not exist`];
-  const at = Number(line);
-  if (!Number.isInteger(at) || at < 1) return [`${row.id}: the example has no line number`];
-  return lineNamesId(source, at, row.id)
+  const example = row.example.replaceAll('`', '');
+  if (/:\d+$/u.test(example))
+    return [
+      `${row.id}: the example ${example} has a line number; an example names a file, not a line`,
+    ];
+  const source = await input.readFile(example);
+  if (source === undefined) return [`${row.id}: the example file ${example} does not exist`];
+  return fileNamesId(source, row.id)
     ? []
-    : [`${row.id}: ${path}:${line} is not inside a test that names ${row.id}`];
+    : [`${row.id}: ${example} has no test or describe that names ${row.id}`];
 }
 
 /** Everything wrong with the matrix: counts, priorities, cards that do not exist, examples. */
