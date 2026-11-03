@@ -29,4 +29,10 @@ describe('buildBrief: the custom flag of a stack choice', () => {
 
     expect(entry?.custom).toBe(false);
   });
+
+  it('RF-645 treats an empty list of offered options as no record, so the choice stays a pick', () => {
+    const [entry] = stackOf('SQL Server 2022', { custom: false, offered: [] });
+
+    expect(entry).toMatchObject({ choice: 'SQL Server 2022', custom: false });
+  });
 });
