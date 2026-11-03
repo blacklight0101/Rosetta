@@ -1,6 +1,6 @@
 import type { JSX } from 'preact';
-import type { PlanOptions, StackOffer } from '../api/plan-schemas.js';
-import { languageOf, platformProposals } from '../lib/plan-setup/stack-platform.js';
+import type { StackOffer } from '../api/plan-schemas.js';
+import { languageOf } from '../lib/plan-setup/stack-platform.js';
 import { questionOptions } from '../lib/plan-setup/question-options.js';
 import { STACK_LAYERS } from '../lib/plan-setup/steps.js';
 import { PlanOptionsNotice } from './PlanOptionsNotice.js';
@@ -22,20 +22,6 @@ export interface StackProps extends StepProps {
 
 const LANGUAGE_HINT =
   'Choose this first: the layers below suggest technologies of the language you pick.';
-
-/** The proposals shown for the layer, the recommended first: the platform's, else the planner's, else the catalogue's. */
-function offeredOf(
-  options: PlanOptions | undefined,
-  offer: StackOffer | undefined,
-  layer: string,
-  platform: string | undefined,
-): readonly string[] {
-  const byPlatform = platformProposals(offer, layer, platform);
-  if (byPlatform !== undefined) return byPlatform.map((each) => each.choice);
-  const planned = options?.stack.find((each) => each.layer === layer)?.options ?? [];
-  if (planned.length > 0) return planned;
-  return offer?.layers.find((each) => each.layer === layer)?.proposals.map((p) => p.choice) ?? [];
-}
 
 function hintOf(offer: StackOffer | undefined): string {
   const language = offer?.layers.find((each) => each.layer === 'language-runtime');
@@ -59,23 +45,27 @@ export function PlanStackStep(props: StackProps): JSX.Element {
   const language = languageOf(props.offer, draft);
   const below = (id: string): string | undefined =>
     id === 'language-runtime' ? undefined : language?.platform;
-  const layers = STACK_LAYERS.map((layer) => (
-    <PlanStackLayer
-      key={layer.id}
-      layer={layer}
-      options={questionOptions(`stack.${layer.id}`, {
-        ...{ catalogue: props.catalogue, options, offer: props.offer },
-        platform: below(layer.id),
-      })}
-      offered={offeredOf(options, props.offer, layer.id, below(layer.id))}
-      draft={draft}
-      change={change}
-      problem={problems[`stack.${layer.id}`]}
-      offer={props.offer}
-      language={language?.name}
-      hint={layer.id === 'language-runtime' ? hintOf(props.offer) : undefined}
-    />
-  ));
+  const layers = STACK_LAYERS.map((layer) => {
+    const shown = questionOptions(`stack.${layer.id}`, {
+      ...{ catalogue: props.catalogue, options, offer: props.offer },
+      platform: below(layer.id),
+    });
+    return (
+      <PlanStackLayer
+        key={layer.id}
+        layer={layer}
+        options={shown}
+        // RF-645, P8-22: every card shown is an option, the "Keep the legacy technology" one too.
+        offered={shown.map((option) => option.title)}
+        draft={draft}
+        change={change}
+        problem={problems[`stack.${layer.id}`]}
+        offer={props.offer}
+        language={language?.name}
+        hint={layer.id === 'language-runtime' ? hintOf(props.offer) : undefined}
+      />
+    );
+  });
   return (
     <PlanStepCard
       step="stack"

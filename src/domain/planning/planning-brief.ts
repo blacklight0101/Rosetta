@@ -53,9 +53,14 @@ interface StackChoice {
   readonly proposed?: true | undefined;
 }
 
-/** RF-645, P8-22: a choice that is not among the options the page listed for the layer is the owner's own. */
+/**
+ * RF-645, P8-22: a choice that is not among the options the page listed for the layer is the owner's
+ * own. An empty list says nothing was recorded, like an absent one.
+ */
 function ownIfNotOffered(entry: StackChoice): StackChoice {
-  const own = !entry.custom && entry.offered !== undefined && !entry.offered.includes(entry.choice);
+  const { offered } = entry;
+  const own =
+    !entry.custom && offered !== undefined && offered.length > 0 && !offered.includes(entry.choice);
   return own ? { ...entry, custom: true } : entry;
 }
 
