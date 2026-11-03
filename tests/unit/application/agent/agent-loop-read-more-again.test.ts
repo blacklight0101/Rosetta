@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { runAgentTask } from '../../../../src/application/agent/agent-loop.js';
 import type { AgentToolSet } from '../../../../src/application/agent/agent-tool-set.js';
+import type { Citation } from '../../../../src/domain/cards/citation.js';
+import { readShare } from '../../../../src/domain/cards/read-share.js';
 import type { FileEntry } from '../../../../src/domain/code-map/file-entry.js';
 import { shippingCards } from '../../../support/agent-fixtures.js';
 import { loopSetup, textTurn, toolTurn, type Call } from '../../../support/agent-loop-harness.js';
@@ -17,7 +19,7 @@ function pathOf(args: unknown): string {
   return parsed.success ? parsed.data.path : '';
 }
 
-function toolsOver(files: readonly FileEntry[]): AgentToolSet {
+function toolsOver(files: readonly FileEntry[], reads: Citation[] = []): AgentToolSet {
   return {
     definitions: [],
     areaOverview: () => 'overview',
@@ -29,6 +31,7 @@ function toolsOver(files: readonly FileEntry[]): AgentToolSet {
       const path = pathOf(call.arguments);
       const file = files.find((each) => each.path === path);
       const excerpts = file === undefined ? [] : [{ path, startLine: 1, endLine: file.lines }];
+      reads.push(...excerpts);
       return Promise.resolve({ content: `read ${path}`, excerpts });
     },
   };
@@ -76,7 +79,12 @@ describe('P8-92 a reader that read some and answers again with unread files left
 
     const result = await t.run();
 
+    expect(result.state).toBe('Done');
     expect(result.turns).toBe(5);
+    expect(t.fake.requests).toHaveLength(5);
+    const asks = result.messages.filter((m) => m.role === 'user' && /\d+%/u.test(m.content));
+    expect(asks).toHaveLength(2);
+    expect(result.drafts.map((draft) => draft.title)).toEqual(['Free shipping over 50']);
   });
 });
 
@@ -118,5 +126,38 @@ describe('P8-92 the limits of the ask', () => {
     const result = await t.run();
 
     expect(result.turns).toBe(4);
+  });
+});
+
+describe('P8-92 a small app whose reader first answers below the bar', () => {
+  const app = [
+    entry('src/Orders/OrderService.cs', 400),
+    entry('src/Orders/Pricing.cs', 300),
+    entry('src/Orders/Stock.cs', 200),
+    entry('src/Orders/Util.cs', 100),
+  ];
+
+  it('RF-210 RF-230 is asked again and the area ends at or above 50% of its first-party tokens', async () => {
+    const reads: Citation[] = [];
+    const setup = loopSetup(
+      [
+        toolTurn([read('src/Orders/Util.cs')]),
+        textTurn(shippingCards),
+        toolTurn([read('src/Orders/OrderService.cs'), read('src/Orders/Stock.cs')]),
+        textTurn(shippingCards),
+      ],
+      { maxTurns: 8 },
+    );
+
+    const result = await runAgentTask({
+      ...setup.request(setup.fake),
+      tools: toolsOver(app, reads),
+    });
+
+    expect(readShare(app, reads.slice(0, 1)).share).toBeLessThan(0.5);
+    expect(setup.fake.requests[2]?.messages.at(-1)?.content).toContain('10%');
+    expect(readShare(app, reads).share).toBeGreaterThanOrEqual(0.5);
+    expect(result.state).toBe('Done');
+    expect(setup.fake.requests).toHaveLength(4);
   });
 });
