@@ -162,12 +162,8 @@ export function stepperOf(run: StepperRun, state: RunState, phase: RunPhase): re
       .concat(report);
   }
   if (run.stage === 'scan') {
-    return [
-      ...scanSteps(run, state, phase),
-      step('Understand', 'waiting'),
-      step('Verify', 'waiting'),
-      ...report,
-    ];
+    // P8-27: a scan has no understand or verify step to show as an empty circle.
+    return [...scanSteps(run, state, phase), ...report];
   }
   const earlier = (name: StepName): Step => step(name, 'done');
   return [earlier('Snapshot'), earlier('Scan'), ...readerSteps(state, phase), ...report];

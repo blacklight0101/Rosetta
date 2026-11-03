@@ -119,6 +119,8 @@ export async function openEnded(options: EndedOptions = {}): Promise<LiveRun> {
   });
   const connection = await page.stream.connection();
   for (const event of eventsOf(options)) connection.event(event);
-  await screen.findByRole('tablist', { name: 'Results' });
+  // P8-27: a scan page has its code map and no tabs.
+  if (options.stage === 'scan') await screen.findByRole('region', { name: 'Code map' });
+  else await screen.findByRole('tablist', { name: 'Results' });
   return page;
 }

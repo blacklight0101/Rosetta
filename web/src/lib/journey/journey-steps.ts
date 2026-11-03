@@ -107,7 +107,9 @@ function understandPart({ source }: Context): Part {
   if (source === null) return locked('Needs a run: start one');
   const claims = source.supportedClaims;
   const detail =
-    claims === 0 ? 'No Supported claim to plan from' : plural(claims, 'Supported claim');
+    claims === 0
+      ? 'No Supported claim to plan from'
+      : `${plural(claims, 'Supported claim')} of the journey`;
   return ofRun(source, { state: 'done', detail, href: runPage(source) });
 }
 

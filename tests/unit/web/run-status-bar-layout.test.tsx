@@ -9,7 +9,8 @@ import { RunStatusBar } from '../../../web/src/pages/RunStatusBar.js';
 const bar = (phase: RunPhase) =>
   render(
     <RunStatusBar
-      {...{ phase, runKey: '20261012-100000-understand', stage: 'understand', projectId: 'p-1' }}
+      {...{ phase, title: 'Understand, running', projectId: 'p-1' }}
+      runKey="20261012-100000-understand"
       {...{ stopping: false, busy: false, stopError: undefined, onStop: () => undefined }}
     />,
   );
@@ -25,18 +26,17 @@ describe('RF-1002 the head of the run page', () => {
       bar(phase);
 
       const link = screen.getByRole('link', { name: 'Start page' });
-      const title = screen.getByRole('heading', { name: 'Live run' });
+      const title = screen.getByRole('heading', { name: 'Understand, running' });
       expect(link.getAttribute('href')).toBe('/projects/p-1');
       expect(link.parentElement).toBe(title.parentElement);
       expect(link.closest('.rst-live-pause-actions')).toBeNull();
     },
   );
 
-  it('RF-1002 keeps the run key and the stage in the same title group', () => {
+  it('RF-1002 keeps the run key in the same title group', () => {
     bar({ kind: 'running' });
 
-    const title = screen.getByRole('heading', { name: 'Live run' });
+    const title = screen.getByRole('heading', { name: 'Understand, running' });
     expect(title.parentElement?.textContent).toContain('20261012-100000-understand');
-    expect(title.parentElement?.textContent).toContain('understand');
   });
 });

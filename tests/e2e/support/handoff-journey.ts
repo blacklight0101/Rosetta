@@ -38,7 +38,9 @@ export async function writeAndDownload(page: Page): Promise<Readonly<Record<stri
   await expect(writeButton(page)).toBeEnabled();
   await writeButton(page).click();
   // The start request queues the run and may wait behind other accounts' runs on a loaded machine.
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible({
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible({
     timeout: 30_000,
   });
   await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });

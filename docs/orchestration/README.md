@@ -72,7 +72,7 @@ stateDiagram-v2
     Todo --> InProgress: dependencies Done and gates open
     InProgress --> InReview: builder reports, pull request opened
     InReview --> Done: verifier PASS, CI green, merged
-    InReview --> InProgress: FAIL 1 (same builder), FAIL 2 (fresh builder one band up) or FAIL 3 (fable, owner-approved)
+    InReview --> InProgress: FAIL 1 (fresh builder, same band), FAIL 2 (fresh builder one band up) or FAIL 3 (fable, owner-approved)
     InReview --> Blocked: FAIL 3 awaiting the owner, or any later FAIL (escalated)
     Todo --> Blocked: gate closed or open question without a safe default
     Blocked --> Todo: owner opens the gate or resolves the escalation
@@ -108,7 +108,8 @@ part of a card waits, the rest runs: `Todo; <part> Blocked (G-nn)`.
      a follow-up card (section 9) in the next `docs/build-status` pull request. Checks only the owner can make are
      listed by the verifier as "owner check pending"; they do not block the merge, and the orchestrator copies them to
      the owner's agenda in `handoff.md` (DEC-111).
-   - FAIL 1: send the findings back to the **same** builder (context intact) for a second round.
+   - FAIL 1: start a **fresh** builder of the same band with the card, the verdict and the branch for a second
+     round (DEC-214); a resumed builder re-reads its whole history on every call.
    - FAIL 2: re-run the card once with a fresh builder one band up (haiku to sonnet, sonnet to opus; an opus card
      stays on opus; never down). The verifier moves up with the builder (`verifier-opus` after a promotion to opus).
      The card's difficulty line is not edited; the pull request notes the promotion (DEC-115).

@@ -24,6 +24,10 @@ export interface JourneyPanelProps {
   readonly onAnswer?: (() => void) | undefined;
   /** RF-646: focuses the Deepen of the run where the page holds it. */
   readonly onDeepen?: (() => void) | undefined;
+  /** P8-27: the path of the package's own run page; "Open the package" there calls `onPackage`. */
+  readonly packageHere?: string | undefined;
+  /** P8-27: scrolls to and focuses the package section of the page. */
+  readonly onPackage?: (() => boolean) | undefined;
   /** The path of the page the strip is on (Plan setup), so no action links to the page itself. */
   readonly pagePath?: string | undefined;
   /** RF-1021: the page offers the Deepen of the source run in place (the project page). */
@@ -84,6 +88,8 @@ export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
       rerun={props.rerun}
       onAnswer={props.onAnswer}
       onDeepen={props.onDeepen}
+      packageHere={props.packageHere}
+      onPackage={props.onPackage}
       pagePath={props.pagePath}
       {...inPlace}
       onResumed={

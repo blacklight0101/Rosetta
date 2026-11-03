@@ -56,7 +56,7 @@ test(
     await expectPageInView(page);
 
     await openScanRun(page);
-    await expect(page.getByText('This run has no agents')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Code map' })).toBeVisible();
     await expectPageInView(page);
   },
 );

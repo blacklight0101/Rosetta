@@ -277,7 +277,9 @@ test('RF-1001 a run cap below the confirm threshold is refused in the settings; 
 
   // The run holds one of the server's run slots: stop it (or cancel it, when queued) and wait until
   // it has ended, so no other test's run waits behind it. The live page opened by itself (RF-1019).
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible();
   const endOfRun = page.getByRole('button', { name: /^(Stop run|Cancel queued run)$/u });
   if (await endOfRun.isVisible()) await endOfRun.click();
   await expect(endOfRun).toHaveCount(0, { timeout: 60_000 });

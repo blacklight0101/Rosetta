@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
 import type { RunRow } from '../api/run-schemas.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
+import { focusPackage } from './focus-package.js';
 import { JourneyPanel } from './JourneyPanel.js';
 
 // RF-615, RF-1015: where the journey strip sits on the page of a run. An understand run that has
@@ -54,6 +55,8 @@ function PlanJourney(props: RunJourneyProps): JSX.Element | null {
     <JourneyPanel
       {...{ projectId: run.projectId, runId: run.id, onResumed: props.onResumed }}
       refresh={phaseKey(phase)}
+      packageHere={`/runs/${run.id}`}
+      onPackage={focusPackage}
     />
   );
 }

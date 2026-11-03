@@ -38,10 +38,12 @@ test('RF-1002 a scan run opens from the start notice, ends complete and offers i
 }) => {
   await openStartPage(page);
   await openScanRun(page);
-  await expect(page.getByText('This run has no agents')).toBeVisible();
-  await openRunTab(page, 'Activity');
-  await expect(page.getByRole('log', { name: 'Event log' })).toContainText('scan.completed');
-  await expect(page.getByRole('button', { name: 'Download hand-off zip' })).toBeDisabled();
+  // P8-27: a scan page is titled by its kind and state, shows its code map and its zip, and nothing of understand.
+  await expect(page.getByRole('heading', { name: 'Scan, done', level: 1 })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Code map' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Your turn' })).toHaveCount(0);
+  await expect(page.getByRole('tablist')).toHaveCount(0);
+  await expect(page.getByText('Download hand-off zip')).toHaveCount(0);
   await expectNoSeriousViolations(page);
   const [download] = await Promise.all([
     page.waitForEvent('download'),

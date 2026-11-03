@@ -14,9 +14,8 @@ orchestrator can promote it.
 1. Read `CLAUDE.md`, the task card, every document in its Reads list, every requirement id in Refs
    (`docs/spec/requirements.md`, with its Given/When/Then), every ADR in Refs, `docs/architecture.md` and
    `docs/conventions.md`. Derive behaviour only from the documents.
-   - Find code with the knowledge graph before searching wide: `graphify query "<question>" --graph
-     <main checkout>/graphify-out/graph.json` (also `graphify path`, `graphify explain`), then open the files it
-     names. The graph locates code; the documents still define behaviour.
+   - The knowledge graph is optional: `graphify explain "<Symbol>" --graph <main checkout>/graphify-out/graph.json`
+     may find callers of a symbol that exists on `develop`; for anything else, search directly (DEC-214).
 2. **Spec first (ADR-010).** If the card needs behaviour the requirements do not describe, or two documents
    disagree, stop and report it under OPEN QUESTIONS; never invent the behaviour.
 3. Work on the branch the orchestrator created (`task/<card-id>-<slug>`, cut from `develop`, DEC-175); never
@@ -37,9 +36,10 @@ orchestrator can promote it.
    tests related to your changes; DEC-182). It must be green before you report; CI on the pull request runs the full
    `npm run verify` and decides the merge.
    Before you report a change to what a page shows or to a test file, search all of `tests/e2e` for assertions on
-   the text, headings and figures you changed and update every one, and re-point any `path:line` anchor in
-   `docs/verification/` that your edits moved; run the e2e specs of every page you changed for every project, not only
-   the specs you edited.
+   the text, headings and figures you changed and update every one; run the e2e specs of every page you changed,
+   not only the specs you edited, as one background command per set of specs (never a polling loop), and leave
+   the full suite to CI. Budget about 120 tool calls: when a card needs more, stop, push what you have and report
+   under OPEN QUESTIONS so the orchestrator can split the card (DEC-214).
    In a worktree, link `node_modules` to the main checkout's and never run
    `npm install`, `npm ci` or `npm uninstall` through that link: it rewrites the folder every agent uses. Never weaken a gate to pass: no new `eslint-disable` without a
    `-- reason`, no lowered threshold, no `.skip`, no `@ts-expect-error` without a reason.
