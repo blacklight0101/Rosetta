@@ -8794,7 +8794,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (owner question - see handoff.md; the card conflicts with RF-210 and DEC-195)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-23, EV-97, EV-76: On eShop, readers are planned in ordinal alphabetical order ((root), ACI, Docs, Setup, VM before the app folders), so a run that stops early misses app code.
 - **Reads**: `src/application/understand/` (area planning, `reader-settings.ts`), RF-210 (readers take the app's own code first; P7-03 (Done) made RF-210, so the eShop order is a regression of it), RF-1005.
 - **Do**: red tests first.
