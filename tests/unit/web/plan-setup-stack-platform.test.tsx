@@ -234,11 +234,11 @@ describe('the Stack step keeps what the owner answered (DEC-208)', () => {
 
     pickLanguage(/^C# on \.NET/u);
 
-    const testing = within(group('Testing'));
-    expect(testing.getByRole('radio', { name: /^Vitest/u })).toBeTruthy();
-    const radio = testing.getByRole<HTMLInputElement>('radio', { name: /^Vitest/u });
-    expect(radio.checked).toBe(true);
-    expect(group('Testing').closest('section')?.textContent).toContain('Your choice, kept');
+    const own = within(group('Testing')).getByRole<HTMLInputElement>('radio', {
+      name: /^Type your own answer/u,
+    });
+    expect(own.checked).toBe(true);
+    expect(within(group('Testing')).getByDisplayValue('Vitest')).toBeTruthy();
   });
 
   it('RF-609 a layer answered with a technology of another platform shows one warning line', () => {

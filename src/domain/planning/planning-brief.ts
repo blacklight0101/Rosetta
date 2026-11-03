@@ -53,6 +53,17 @@ interface StackChoice {
   readonly proposed?: true | undefined;
 }
 
+/**
+ * RF-645, P8-22: a choice that is not among the options the page listed for the layer is the owner's
+ * own. An empty list says nothing was recorded, like an absent one.
+ */
+function ownIfNotOffered(entry: StackChoice): StackChoice {
+  const { offered } = entry;
+  const own =
+    !entry.custom && offered !== undefined && offered.length > 0 && !offered.includes(entry.choice);
+  return own ? { ...entry, custom: true } : entry;
+}
+
 /** RF-643: how the new application is run. */
 export const deployments = ['hosted', 'not-hosted'] as const;
 type Deployment = (typeof deployments)[number];
@@ -210,7 +221,9 @@ export function buildBrief(answers: BriefAnswers, catalogue: Catalogue): Unsaved
     architecture: architectureOf(answers.architecture),
     migration: answers.migration ?? migrationStrategies[0],
     ...(answers.application === undefined ? {} : { application: answers.application }),
-    stack: [...(answers.stack ?? [])].sort((a, b) => layerOrder(a.layer) - layerOrder(b.layer)),
+    stack: [...(answers.stack ?? [])]
+      .map(ownIfNotOffered)
+      .sort((a, b) => layerOrder(a.layer) - layerOrder(b.layer)),
     context: contextOf(answers.context),
     buildMethod: resolveBuildMethod(answers.buildMethod, catalogue.agentModels),
     defaulted: defaultedQuestions(answers),
