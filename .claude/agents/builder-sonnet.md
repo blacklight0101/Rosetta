@@ -35,7 +35,12 @@ orchestrator can promote it.
    your report and the orchestrator raises it with the owner (ADR-010, README section 3.1).
 8. Run `npm run verify:local` (typecheck, lint with zero warnings, format, architecture rule, dead code, and the
    tests related to your changes; DEC-182). It must be green before you report; CI on the pull request runs the full
-   `npm run verify` and decides the merge. In a worktree, link `node_modules` to the main checkout's and never run
+   `npm run verify` and decides the merge.
+   Before you report a change to what a page shows or to a test file, search all of `tests/e2e` for assertions on
+   the text, headings and figures you changed and update every one, and re-point any `path:line` anchor in
+   `docs/verification/` that your edits moved; run the e2e specs of every page you changed for every project, not only
+   the specs you edited.
+   In a worktree, link `node_modules` to the main checkout's and never run
    `npm install`, `npm ci` or `npm uninstall` through that link: it rewrites the folder every agent uses. Never weaken a gate to pass: no new `eslint-disable` without a
    `-- reason`, no lowered threshold, no `.skip`, no `@ts-expect-error` without a reason.
 9. Push the branch; the orchestrator opens the pull request. Commit messages follow Conventional Commits and end
