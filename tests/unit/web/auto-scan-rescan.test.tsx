@@ -99,3 +99,19 @@ it('RF-160 P8-10 a replaced source starts one new scan when the last scan has en
   });
   expect(posts(calls)[0]).toMatchObject({ body: { stage: 'scan' } });
 });
+
+it('RF-160 P8-106 a replaced source reads as scanning at once, before the history answers', async () => {
+  renderPage(<Probe />, {
+    [`GET ${historyPath}`]: historyOf(scanRun('Ended', 'Completed')),
+    [`POST ${runsPath}`]: json(202, scanRun('Queued', null)),
+  });
+  await waitFor(() => {
+    expect(screen.getByTestId('state').textContent).toBe('idle');
+  });
+
+  fireEvent.click(screen.getByRole('button', { name: 'Replace source' }));
+
+  // The page hides the old areas and Analyse by this state: while it read idle, Analyse could start a
+  // run on the code map of the source that was replaced (P8-106).
+  expect(screen.getByTestId('state').textContent).toBe('starting');
+});
