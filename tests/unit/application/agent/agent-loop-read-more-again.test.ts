@@ -105,7 +105,7 @@ describe('P8-92 the limits of the ask', () => {
     expect(result.state).toBe('Done');
     expect(result.turns).toBe(8);
     expect(t.fake.requests).toHaveLength(8);
-    expect(t.fake.requests[7]?.messages.at(-1)?.content).toContain('30%');
+    expect(t.fake.requests[6]?.messages.at(-1)?.content).toContain('30%');
   });
 
   it('RF-210 stops asking when too few turns are left to read and answer again', async () => {

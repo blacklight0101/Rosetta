@@ -74,12 +74,13 @@ describe('P3-78 an answer after reading little of the area', () => {
       textTurn(shippingCards),
       toolTurn([read('wb/Sheet1/formulas.md')]),
       textTurn(shippingCards),
+      textTurn(shippingCards),
     ]);
 
     const result = await t.run();
 
     expect(result.state).toBe('Done');
-    expect(result.turns).toBe(4);
+    expect(result.turns).toBe(5);
     const told = t.fake.requests[2]?.messages.at(-1);
     expect(told?.role).toBe('user');
     const text = told?.content ?? '';

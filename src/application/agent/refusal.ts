@@ -5,7 +5,7 @@ import { readFirstMessage, readMoreMessage, type ReaderPrompts } from './reader-
 
 // RF-206, Q-50, Q-55: whether a reader's final answer is refused, and what it is told. An answer
 // before any read is refused (RF-206). An answer after less than half of the area was read is
-// refused once (Q-50), but only while the conversation has room for another read and a new answer;
+// refused again while it keeps reading, at most three times (Q-50, P8-92), but only while the conversation has room for another read and a new answer;
 // without room it is accepted as it is (Q-55).
 
 export interface Refusal {
@@ -38,7 +38,7 @@ export async function refusalFor(input: RefusalInput): Promise<Refusal | undefin
     await input.note({ outcome: 'accepted', reason: 'no-room' });
     return undefined;
   }
-  gate.askedToReadMore();
+  gate.askedToReadMore(more);
   const message = readMoreMessage(prompts, {
     ...more,
     filesBlock: block(more.files),
