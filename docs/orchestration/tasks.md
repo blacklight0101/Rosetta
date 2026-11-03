@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 104     | 5         | 87         | 12        | 0                  | 73      | 25      | 6      | 20         | 14        |
-| **Total**                    | **594** | **123**   | **423**    | **48**    | **0**              | **299** | **269** | **26** | **282**    | **14**    |
+| P8 Evaluation fixes, round 2 | 107     | 5         | 90         | 12        | 0                  | 76      | 25      | 6      | 23         | 21        |
+| **Total**                    | **597** | **123**   | **426**    | **48**    | **0**              | **302** | **269** | **26** | **285**    | **21**    |
 
 ## Conventions for every card
 
@@ -7527,7 +7527,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14
 - **Gate**: owner (Phase 8 held)
-- **Status**: Blocked (withdrawn 2026-11-03 - see P8-37..P8-40)
+- **Status**: Done
 - **Reads**: `docs/verification/r1-matrix.md` (rows for RF-601, RF-604, RF-609, RF-610, RF-623, RF-645, RF-648..RF-650, RF-264, RF-1015 and RF-1020; the duplicated RF-601 and RF-604 rows; section 1 counts; the line "Requirements without any test" at 23), `docs/spec/requirements.md` (RF-160, RF-264, RF-609 and the traceability matrix; the Build method bullets near line 1509 for P7-17; RF-1022), `docs/architecture.md` (the catalogue data files near 246; the catalogue route shape near 348; the card-format and repair versions near 604-606; "Write the package"), `docs/hand-in/video-script.md` (95), `docs/design/board/StartRun.dc.html` (the Run cap field), `docs/decision-log.md` (DEC-202 and the P7-30/P7-21 decisions awaiting the owner), `tests/integration/docs/r1-matrix.test.ts`. Evidence (verifier notes): P7-23 `docs/architecture.md` does not list `agent-models` among the catalogue data files; P7-17 the catalogue route shape lacks `wording` and the text near line 1509 of `docs/spec/requirements.md` still says only "Windows Authentication" is no platform; P7-33 the r1-matrix summary counts were not updated for the new R1 requirements and RF-1022 is ambiguous on whether the start page still exists or only redirects; P7-34 the r1-matrix status rows 342, 361, 362, 374 and 375 read Todo for P7-34; P7-21, P7-30, P7-31, P7-32 matrix rows not updated (RF-609, RF-623, RF-645, RF-648..RF-650 have `-` and 0/0/0); P7-36 `docs/architecture.md` and `docs/hand-in/video-script.md` still say "Write the package"; P7-37 `StartRun.dc.html` still shows the Run cap field; RF-601 and RF-604 appear twice in the coverage table.
 - **Do**: no code; run `npx vitest run tests/integration/docs` after each file.
   - Add or correct each row and sentence above; each fix cites the card that made the change.
@@ -7542,7 +7542,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-01, P8-03, P8-05, P8-10, P8-11
 - **Gate**: owner (Phase 8 held)
-- **Status**: Blocked (withdrawn 2026-11-03 - see P8-41..P8-45)
+- **Status**: Done
 - **Reads**: `tests/e2e/journeys/admin-and-cap.spec.ts` (the "By model" assertion), `tests/e2e/start-run.spec.ts` (75, 155-187: the cap restore, the stage radio, the RF-1001 flake on shard 3/3), `tests/e2e/plan-setup.spec.ts` (154), `tests/e2e/support/handoff-journey.ts` (`expectPlanFigures` 57), `tests/integration/presentation/web/run-start-stage-api.test.ts` (33-70), `tests/unit/web/` (the settings form and the server-refusal test), `tests/integration/tooling/scheduled-release-workflow.test.ts`, `tests/integration/application/build-plan-proposed-stack.test.ts` (101-126), `tests/unit/web/plan-setup-deployment-lib.test.ts` (102), `tests/integration/infrastructure/prompts/catalogue-grep-rules.test.ts` (76), the P7-32 and P7-31 tests. Evidence (verifier notes): P7-05 the "By model" assertion only checks rows exist (assert `gpt-5-nano`); P7-37 `run-start-stage-api.test.ts:33-70` passes before the fix, `start-run.spec.ts:155-176` restores the project cap and threshold only on success (hard-coded 2.00 and 0.25; use try/finally), the server-refusal-next-to-settings-field case is e2e only, and no e2e asserts the stage radio is absent from the start page; P7-36 `plan-setup.spec.ts:154` has no seeded open questions, so the three-question one-click case is covered by the unit test only; P7-30 `build-plan-proposed-stack.test.ts:101-126` does not assert the API-contract effect; P7-17 `plan-setup-deployment-lib.test.ts:102` has no red test and `catalogue-grep-rules.test.ts:76` holds a raw U+200B (use `​`); the e2e flake of RF-1001 (`start-run.spec.ts:187`) failed once on shard 3/3 and passed on rerun (possibly shared state with another spec).
 - **Do**: red tests first where a test must fail before a fix; find the shared state behind the flake.
   - Make every test above fail on the old behaviour or assert the stronger fact; restore settings in `finally`; seed the open questions in the plan-setup spec; replace the raw character.
@@ -7726,7 +7726,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-24
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-07, UX-08, UX-09, UX-10, EV-99: after the whole journey ("Package: Current step") the project page is still titled "Start a run" and shows the zip upload form, with the sticky estimate bar covering "Upload zip". The bar says "Confirm the Anthropic notice above" while the notice is below it. The strip says "No open questions" while an unlabeled checkbox row says "Re-run with answers (1 answered question waiting ...)". Model and area names break mid-word ("claude-haiku-\n5-5"), and the estimate is one dense paragraph. While a run is live the page shows "Running now" with no link to the run.
 - **Reads**: `docs/design/board/P8Project.dc.html`, `web/src/pages/StartRunPage.tsx`, `web/src/pages/StartRunForm.tsx`, `web/src/pages/ZipUploadForm.tsx`, `web/src/pages/UploadSourceSection.tsx`, `web/src/pages/EstimateSection.tsx`, `web/src/pages/JourneyStrip.tsx`, `web/src/pages/JourneyPanel.tsx`, `web/src/lib/journey/journey-steps.ts`, `web/src/pages/StageAreasSection.tsx`, `docs/design-system.md`, RF-011, RF-1020, RF-1021, RF-1022.
 - **Do**: add the Givens to RF-1021 and RF-1022 first; red tests first.
@@ -7908,7 +7908,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-21
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, P8-21 CI and verifier round 2, finding 2): `tests/e2e/plan-setup.spec.ts` (the recorded-lines test) saw "7 of 7 layers" where it expects "1 of 7" while `plan-setup-stack.spec.ts` shared its shard and the `plan` account; moving that spec to shard 3 made CI green, and the verifier could not reproduce the failure. The cause is not found.
 - **Reads**: `tests/e2e/plan-setup*.spec.ts`, `tests/e2e/shards.json`, the end-to-end accounts and projects, the Plan setup brief storage, ADR-008.
 - **Do**:
@@ -7924,7 +7924,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-15)
 - **Reads**: `docs/verification/r1-matrix.md` (rows for RF-264, RF-609, RF-610, RF-623, RF-645, RF-648..RF-650, RF-1015 and RF-1020; the status rows 342, 361, 362, 374 and 375), `docs/spec/requirements.md` (RF-160, RF-264, RF-609 and the traceability matrix), `docs/decision-log.md` (DEC-202 and the P7-30/P7-21 decisions awaiting the owner), `tests/integration/docs/r1-matrix.test.ts`. Evidence (verifier notes): P7-34 the r1-matrix status rows 342, 361, 362, 374 and 375 read Todo for P7-34; P7-21, P7-30, P7-31, P7-32 matrix rows not updated (RF-609, RF-623, RF-645, RF-648..RF-650 have `-` and 0/0/0).
 - **Do**: no code; run `npx vitest run tests/integration/docs` after each file.
   - Add or correct each row and sentence above; each fix cites the card that made the change.
@@ -7938,7 +7938,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14, P8-37
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-15)
 - **Reads**: `docs/verification/r1-matrix.md` (the duplicated RF-601 and RF-604 rows; section 1 counts; the line "Requirements without any test" at 23), `tests/integration/docs/r1-matrix.test.ts`. Evidence (verifier notes): P7-33 the r1-matrix summary counts were not updated for the new R1 requirements; RF-601 and RF-604 appear twice in the coverage table.
 - **Do**: no code; run `npx vitest run tests/integration/docs` after each file.
   - Add or correct the summary counts above; each fix cites the card that made the change.
@@ -7953,7 +7953,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-15)
 - **Reads**: `docs/architecture.md` (the catalogue data files near 246; the catalogue route shape near 348; the card-format and repair versions near 604-606; "Write the package"), `docs/hand-in/video-script.md` (95). Evidence (verifier notes): P7-23 `docs/architecture.md` does not list `agent-models` among the catalogue data files; P7-17 the catalogue route shape lacks `wording`; P7-36 `docs/architecture.md` and `docs/hand-in/video-script.md` still say "Write the package".
 - **Do**: no code; run `npx vitest run tests/integration/docs` after each file.
   - Add or correct each sentence above; each fix cites the card that made the change.
@@ -7967,7 +7967,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14, P8-37
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-15)
 - **Reads**: `docs/spec/requirements.md` (the Build method bullets near line 1509 for P7-17; RF-1022), `docs/design/board/StartRun.dc.html` (the Run cap field). Evidence (verifier notes): P7-17 the text near line 1509 of `docs/spec/requirements.md` still says only "Windows Authentication" is no platform; P7-33 RF-1022 is ambiguous on whether the start page still exists or only redirects; P7-37 `StartRun.dc.html` still shows the Run cap field.
 - **Do**: no code; run `npx vitest run tests/integration/docs` after each file.
   - Add or correct each sentence above; each fix cites the card that made the change.
@@ -7981,7 +7981,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-01, P8-03, P8-05, P8-10, P8-11
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-16)
 - **Reads**: `tests/e2e/journeys/admin-and-cap.spec.ts` (the "By model" assertion), `tests/e2e/plan-setup.spec.ts` (154), `tests/e2e/support/handoff-journey.ts` (`expectPlanFigures` 57). Evidence (verifier notes): P7-05 the "By model" assertion only checks rows exist (assert `gpt-5-nano`); P7-36 `plan-setup.spec.ts:154` has no seeded open questions, so the three-question one-click case is covered by the unit test only.
 - **Do**: red tests first where a test must fail before a fix.
   - Make each test above fail on the old behaviour or assert the stronger fact; seed the open questions in the plan-setup spec.
@@ -7995,7 +7995,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-01, P8-03, P8-05, P8-10, P8-11
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-16)
 - **Reads**: `tests/integration/presentation/web/run-start-stage-api.test.ts` (33-70), `tests/unit/web/` (the settings form and the server-refusal test). Evidence (verifier notes): P7-37 `run-start-stage-api.test.ts:33-70` passes before the fix, and the server-refusal-next-to-settings-field case is e2e only.
 - **Do**: red tests first where a test must fail before a fix.
   - Make each test above fail on the old behaviour or assert the stronger fact.
@@ -8009,7 +8009,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-01, P8-03, P8-05, P8-10, P8-11
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-16)
 - **Reads**: `tests/e2e/start-run.spec.ts` (75, 155-176: the cap restore, the stage radio). Evidence (verifier notes): P7-37 `start-run.spec.ts:155-176` restores the project cap and threshold only on success (hard-coded 2.00 and 0.25; use try/finally), and no e2e asserts the stage radio is absent from the start page.
 - **Do**: red tests first where a test must fail before a fix.
   - Make each test above fail on the old behaviour or assert the stronger fact; restore settings in `finally`.
@@ -8023,7 +8023,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-01, P8-03, P8-05, P8-10, P8-11, P8-43
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-16)
 - **Reads**: `tests/e2e/start-run.spec.ts` (187: the RF-1001 flake on shard 3/3). Evidence (verifier notes): the e2e flake of RF-1001 (`start-run.spec.ts:187`) failed once on shard 3/3 and passed on rerun (possibly shared state with another spec).
 - **Do**: find the shared state behind the flake.
 - **Delivers**: the test changes only (no source change except a testability hook, named in the pull request).
@@ -8036,7 +8036,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-01, P8-03, P8-05, P8-10, P8-11
 - **Gate**: owner (Phase 8 held)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-03 - see P8-16)
 - **Reads**: `tests/integration/application/build-plan-proposed-stack.test.ts` (101-126), `tests/unit/web/plan-setup-deployment-lib.test.ts` (102), `tests/integration/infrastructure/prompts/catalogue-grep-rules.test.ts` (76), `tests/integration/tooling/scheduled-release-workflow.test.ts`, the P7-32 and P7-31 tests. Evidence (verifier notes): P7-30 `build-plan-proposed-stack.test.ts:101-126` does not assert the API-contract effect; P7-17 `plan-setup-deployment-lib.test.ts:102` has no red test and `catalogue-grep-rules.test.ts:76` holds a raw U+200B (use `​`).
 - **Do**: red tests first where a test must fail before a fix.
   - Make each test above fail on the old behaviour or assert the stronger fact; replace the raw character.
@@ -8956,3 +8956,51 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the updated spec.
 - **Done when**: the P8-21 walk runs on a project that is not .NET; CI green.
 - **Refs**: RF-609, DEC-208, ADR-008; split from P8-35 (DEC-214); GitHub issue #1182
+
+### P8-105 - Follow-up: the project page tests catch a zero count and a covered control (P8-26)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-26
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-26 verifier round 1, #1187, findings 1 and 2): changing the zero guard of `questionsPart` in `web/src/lib/journey/journey-steps.ts` (`if (answered === 0) return part`) so a project with no answered questions reads "0 answered questions waiting for a re-run" failed no test; `tests/unit/web/project-page-details.test.tsx:98-114` checks the no-mid-name wrap and the summary bar reserve by regexes over the CSS source, and the reserve is a fixed 8rem plus a spacing token, so a taller bar covering a control is not caught.
+- **Reads**: `web/src/lib/journey/journey-steps.ts`, `tests/unit/web/project-heading.test.ts`, `tests/unit/web/project-page-details.test.tsx`, `tests/e2e/project-page-states.spec.ts`, `web/src/styles/project-page.css`, RF-241, RF-1021, RF-1022, ADR-008.
+- **Do**:
+  - Add a test that renders the strip with no answered questions and asserts it reads "No open questions" with no count of answered questions; check that it fails with the zero guard removed.
+  - Replace the CSS-source assertions with an end-to-end check at 1280x800 and 360x780 that the last control of the "Start another run" fold, scrolled into view, is not covered by the summary bar (bounding boxes), and that a long project name does not break inside a word.
+- **Delivers**: the test changes only (no source change except a fix the new checks call for, named in the pull request).
+- **Done when**: both checks fail on the broken behaviour and pass on `develop`; CI green.
+- **Refs**: RF-241, RF-1021, RF-1022, ADR-008; follow-up of P8-26; GitHub issue #1192
+
+### P8-106 - Follow-up: the workbook replace journey waits for the folded areas (P8-26)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-26
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, CI of #1193 and #1197, both after P8-26 merged): `tests/e2e/journeys/workbook-project.spec.ts:137` ("RF-150 RF-156 workbooks replaced between two runs give a second report that names the new hash") failed in shard 3/3 on two unrelated branches. On #1193, `chooseAreas` (`tests/e2e/support/journey-pages.ts:36`) found no label in the group "Areas from the code map" within 5 s; on #1197 a click timed out after 240 s. A re-run passed on #1193. P8-26 folded the source under "Replace the source" and the areas under "Start another run".
+- **Reads**: `tests/e2e/journeys/workbook-project.spec.ts`, `tests/e2e/support/workbook-journey.ts`, `tests/e2e/support/journey-pages.ts` (`revealAreas`, `chooseAreas`), `web/src/pages/StartRunForm.tsx`, `web/src/pages/StartChoices.tsx`, RF-150, RF-156, RF-1021, ADR-008.
+- **Do**:
+  - Reproduce the failure first: the spec run alone and in its shard, repeated (`--repeat-each`), with the cause named (a fold that closes again after the source is replaced, areas read before the new scan ends, or a click on a control that is not in view).
+  - Make the journey helpers wait for the state the page reaches after a replaced source (the fold open and the new code map's areas listed) instead of a fixed timeout; change the page only when the reproduction shows a page defect, and name it in the pull request.
+- **Delivers**: the reproduction and the test fix (or the page fix it calls for).
+- **Done when**: the spec passes 20 repeats in its shard locally; CI green.
+- **Refs**: RF-150, RF-156, RF-1021, ADR-008; follow-up of P8-26; GitHub issue #1201
+
+### P8-107 - Follow-up: the held plan options are released, and a negative case (P8-36)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-36
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-36 verifier round 1, #1194, findings 1 and 2): `holdPlanOptions` in `tests/e2e/support/plan-setup-page.ts` aborts the held `plan-options` request after the save instead of letting it through, so the rest of the recorded-lines test runs with failed options; and no committed test fails on the old order (the reproduction was an uncommitted 3 s wait).
+- **Reads**: `tests/e2e/support/plan-setup-page.ts`, `tests/e2e/plan-setup.spec.ts`, `tests/e2e/plan-setup-stack-defaults.spec.ts`, `web/src/pages/use-plan-session.ts`, RF-605, RF-609, ADR-008.
+- **Do**:
+  - Let the held request through after the save (`route.continue()`), and assert the later steps of the recorded-lines test still see the options.
+  - Add a deterministic case: options held, the save made, then released; the recorded line names only the typed layer.
+- **Delivers**: the test changes only.
+- **Done when**: the Plan setup specs pass; the new case fails if the save waits for the options; CI green.
+- **Refs**: RF-605, RF-609, ADR-008; follow-up of P8-36; GitHub issue #1202

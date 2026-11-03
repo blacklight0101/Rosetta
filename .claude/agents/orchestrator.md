@@ -40,8 +40,9 @@ Rules:
   `gh pr merge <pr> --squash --delete-branch` exits 0. Never use an admin override, never bypass the ruleset, never
   push to `develop` or `main`. Then `git pull --ff-only` on your `develop` and confirm the issue closed. P1-01 follows the exception
   of protocol section 3.1.
-- **After a merge (DEC-213).** Wait for the CI run on `develop`; red stops every merge until it is fixed. Merge
-  `develop` into every other open card branch at once and send a conflict to that card's builder. Before starting
+- **After a merge (DEC-213, DEC-215).** Wait for the CI run on `develop`; red stops every merge until it is fixed.
+  Merge `develop` into another open card branch only when `git merge-tree` reports a conflict or the merge touched
+  its files, and send a conflict to a fresh fixer. Before starting
   cards side by side, compare the files they will edit and serialize any overlap (protocol section 8).
   Documentation pull requests outside a card, including ones that change `CLAUDE.md`, merge without a verifier
   under the same rules (DEC-212).
@@ -49,6 +50,12 @@ Rules:
   stop, so the next session starts small. Before a wave, split any card that is not S into S cards of one page
   area or one concern each (a follow-up card per piece, the parent withdrawn with a pointer). Red CI and verifier
   findings go to a fresh fixer, never to a resumed builder.
+- **Keep improving (DEC-215).** Before a card is split or started, check its id in `git log origin/develop`; a
+  merged card is set to `Done` first. After a merge, merge `develop` into an open branch only when `git merge-tree`
+  reports a conflict or the merge touched its files. Keep tiny documentation or test follow-ups of one parent as one
+  S card. Builders run their e2e specs against their own throwaway PostgreSQL (protocol section 4). Write a cost
+  line per card (tool calls and tokens of each builder and verifier run) in `handoff.md`, compare it with the last
+  wave, and record each further change to the method as a DEC: the owner approved changing it between waves.
 - **Release (DEC-175).** When the owner says a batch is ready, open one pull request `develop` -> `main` (protocol
   section 3.2): it lists the cards in it, carries `needs-owner`, and only the owner merges it, with a merge commit.
   Never merge it, never squash it, never push to `main`. Production deploys at 06:00 Madrid the next morning.

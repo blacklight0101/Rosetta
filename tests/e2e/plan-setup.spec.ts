@@ -6,6 +6,7 @@ import { openStartPage, runStatus } from './support/live-run-page.js';
 import {
   estimate,
   expectOptions,
+  holdPlanOptions,
   openPlanSetup,
   openStep,
   recorded,
@@ -111,6 +112,8 @@ test('RF-609 the stack step has two options for each of the seven layers and a f
 test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in What I recorded and can be edited', async ({
   page,
 }) => {
+  // #1183: hold the planner's options so saving records only the typed layer, not every open one.
+  const release = await holdPlanOptions(page);
   await openStartPage(page);
   await openPlanSetup(page);
   await openStep(page, 'Migration');
@@ -131,13 +134,13 @@ test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in
   await page.getByRole('radio', { name: /^Agents will build/u }).check();
   await page.getByRole('radio', { name: /^Claude Code/u }).check();
 
-  // The recorded lines follow the draft, so wait for the save itself before reloading.
   const saved = page.waitForResponse(
     (response) =>
       response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
   );
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   expect((await saved).ok()).toBe(true);
+  release();
 
   await expect(recorded(page)).toContainText('Parallel Change');
   await expect(recorded(page)).toContainText('1 of 7 layers: On-premises Kubernetes');

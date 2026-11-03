@@ -145,8 +145,10 @@ when **all** of these hold, and checks each one again right before the merge:
    command's exit code is 0. Never an admin override, never a bypass of the `develop` ruleset, never a push to `develop` or `main`.
 
 After each merge the orchestrator fast-forwards its local `develop` (`git pull --ff-only`) and confirms the card's
-issue is closed. Then it merges `develop` into every other open card branch at once (DEC-213) and sends a
-conflict to that card's builder (SendMessage) while it still has its context. Releases, tags and gates stay with the owner.
+issue is closed. Then it checks every other open card branch with `git merge-tree --write-tree origin/develop <branch>`
+and merges `develop` into a branch only when that reports a conflict or the merged change touched the branch's files
+(DEC-213 as changed by DEC-215: each merge starts a CI run, and being behind is no longer a reason since P8-34); a
+conflict goes to a fresh fixer with the card and the branch (DEC-214). Releases, tags and gates stay with the owner.
 
 **P1-01 exception.** CI does not exist until P1-01 delivers it, so rule 1 cannot hold for that card: the orchestrator
 merges P1-01 when the verifier's PASS includes `npm ci`, `npm run verify` and the CI workflow's steps run locally on
@@ -188,6 +190,11 @@ emergency skip are in `docs/runbooks/deploy.md`, section Release to production.
   card does not ask for.
 - Every new behaviour cites its requirement id at the implementing type (section 1). Every structural change updates
   `docs/architecture.md` in the same branch; every schema or file-format change updates `docs/data-model.md`.
+- Before pushing, run the end-to-end specs of every page you changed as one background command against your own
+  throwaway PostgreSQL: `docker run -d --rm --name <card-id>-e2e-pg -e POSTGRES_PASSWORD=<any> -p <free port>:5432 postgres:17`,
+  then `npm run build:web` once in the worktree (its `dist/` is not linked), then `ROSETTA_TEST_DATABASE_URL=postgres://postgres:<any>@127.0.0.1:<port>/postgres ROSETTA_E2E_PORT=<free port> node scripts/run-e2e.mjs <specs>`,
+  and `docker stop` the container afterwards. Never use or touch the containers `rosetta-app-*`, `rosetta-db-*`,
+  `rosetta-eval-*` or `rosetta-latest-*`, and never read `.env` (DEC-215).
 - Run `npm run verify:local` before reporting and paste its last lines and exit code; CI on the pull request runs
   the full `npm run verify` (DEC-182). Tests run without external systems (fakes,
   recordings, a disposable PostgreSQL).
@@ -260,7 +267,8 @@ same ids and names as `handoff.md` (DEC-99). The orchestrator never opens a gate
 - Two cards run at the same time only when the files they will edit are disjoint, judged from their _Reads_, _Do_
   and _Delivers_, and they share no serialized resource (section 1). On the Phase 8 build two cards that both
   edited `LiveRunView.tsx` without listing it conflicted. After each builder's first push, compare
-  `git diff --name-only origin/develop...` of the open branches and serialize any overlap (DEC-213). Migration numbers are fixed per card in `docs/data-model.md` section 7 and tasks.md; the orchestrator
+  `git diff --name-only origin/develop...` of the open branches and serialize any overlap (DEC-213). When a card is
+  split, chain its siblings only where they edit the same file (DEC-215). Migration numbers are fixed per card in `docs/data-model.md` section 7 and tasks.md; the orchestrator
   never reassigns them.
 - Keep at most four builders in flight at the same time (DEC-181), plus one API-billed verifier (DEC-128); agents already running finish and none is paused. One card has one verifier at a time.
 - When the owner asks to pause (usage limits), stop the running agents; their worktrees keep the work. On resume,
