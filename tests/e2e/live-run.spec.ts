@@ -78,8 +78,9 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   await expect(root).toContainText('OQ-001');
   await expectMeterFromUsage(page, finishedRun, areas);
   const meter = page.getByRole('region', { name: 'Run meter' });
-  await expect(meter.getByRole('meter', { name: 'Run tokens against cap' })).toBeVisible();
-  await expect(meter.getByRole('meter', { name: 'Run cost against cap' })).toBeVisible();
+  // P8-24: a run of a journey has one bar, the approved amount used, and no run cap.
+  await expect(meter.getByRole('meter', { name: 'Approved amount used' })).toBeVisible();
+  await expect(meter).not.toContainText('against cap');
   await expect(meter).toContainText('Estimate');
   await openRunTab(page, 'Activity');
   const log = page.getByRole('log', { name: 'Event log' });

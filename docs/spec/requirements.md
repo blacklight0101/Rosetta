@@ -1135,6 +1135,8 @@ As a user I want one estimate for the whole journey and one button so that I app
 - Given a scanned project, when the project page opens, then it shows one estimate for the journey (understand, claim checking, one Deepen round, the plan) with a likely and a worst-case figure in tokens and, for priced roles, dollars (RF-430), and one button, Analyse.
 - Given the estimate, when I press Analyse, then the journey records the approvable figure, the lower of the worst-case total and the administrator ceilings, as its approved amount (DEC-206, which replaces DEC-205's unbounded worst case; the request confirms the shown figure within 2%, RST-2310) and the understand run starts; the button says that pressing it approves that figure, and the start page states the likely figure beside it.
 - Given a project that already has a journey, when I press Analyse again, then the page says that this starts a new approval: the earlier amount no longer applies and the journey's spend counts from zero (P8-03).
+- Given the estimate whose likely figure is above the approvable figure (DEC-210, Q-65), when it is shown, then it shows the approvable figure with "likely above what can be approved (likely $4.09)" and says that the run will pause and ask at the approved amount; the approved amount of a journey does not change between two reads of the estimate with the same inputs (P8-24, EV-96).
+- Given a project with a journey, when the Deepen panel of one of its runs shows its estimate, then it shows three figures, the first round, up to N rounds and what stops it, where what stops it is what is left of the approved amount ("$3.96 left of $4.00"), the high-figure warning is shown once and against that amount, and the question before the start is one line (the likely cost and the amount left) that does not repeat the panel; a Deepen of a project without a journey names its run cap instead (P8-24, UX-28).
 - Given a role without a usable key (RF-431), when the estimate is shown, then it says so and Analyse is refused with RST-2302 before any run is queued.
   Verification: unit tests of the journey estimate; integration tests of the start request; an end-to-end test of the button.
 
@@ -1723,6 +1725,7 @@ As a developer I want to see every agent the run spawns and what it is doing so 
 As a developer I want the cost meter in the page so that I can stop a run that costs too much.
 
 - Given a running run, when calls complete, then the page shows tokens and cost per role and in total, the cap as a bar, and the estimate for comparison; a Stop button cancels the run cleanly (RF-422 semantics).
+- Given a run that is a step of a journey with an approved amount (RF-434, DEC-205, DEC-206), when its page shows the header meter, the spend panel and the run meter, then each shows the one amount, what is left of the approved amount ("$3.96 left of $4.00 approved", in tokens for a journey on local models), counted live with the run's spend, and none shows the project run cap or the project token cap, which the approved amount replaces (RF-435); a run outside a journey keeps showing its run cap (P8-24, UX-21, UX-27, EV-85).
   Verification: end-to-end test with recorded events and the fake provider.
 
 **RF-1004 Live verification view** - R1 (M1) - Should - Source DEC-51, DEC-46 - ADR-005, ADR-012

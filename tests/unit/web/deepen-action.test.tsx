@@ -92,26 +92,47 @@ describe('RF-209 the Deepen action', () => {
 });
 
 describe('RF-209 the estimate of a Deepen', () => {
-  it('RF-209 shows the first round and all rounds, all rounds as a working ceiling', async () => {
+  it('RF-209 RF-434 shows what the first round does and the three figures, each once', async () => {
     await opened();
 
-    const first = screen.getByTestId('deepen-first-round').textContent;
-    expect(first).toContain('likely $0.40');
-    expect(first).toContain('judges 10 claims');
-    expect(first).toContain('re-reads 40 rejected claims');
-    const all = screen.getByTestId('deepen-all-rounds').textContent;
-    expect(all).toContain('Up to 3 rounds');
-    expect(all).toContain('likely $1.20');
-    expect(all).toContain('a working ceiling, not a maximum');
-    expect(all).toContain('The run cap of $2.00 is what stops the run');
+    const plan = screen.getByTestId('deepen-plan').textContent;
+    expect(plan).toContain('judges 10 claims');
+    expect(plan).toContain('re-reads 40 rejected claims');
+    expect(screen.getByTestId('deepen-first-round').textContent).toBe('First roundlikely $0.40');
+    expect(screen.getByTestId('deepen-all-rounds').textContent).toBe('Up to 3 roundslikely $1.20');
+    expect(screen.getByTestId('deepen-stops').textContent).toBe('What stops it$2.00 run cap');
   });
 
-  it('RF-209 warns, with a glyph, that all rounds may pass the run cap', async () => {
+  it('RF-209 RF-434 warns, with a glyph and once, that all rounds may pass the run cap', async () => {
     await opened();
 
-    const warning = screen.getByTestId('deepen-over-cap');
-    expect(warning.textContent).toContain('could pass the run cap');
-    expect(warning.querySelector('svg')).not.toBeNull();
+    const warnings = screen.getAllByTestId('deepen-over-cap');
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]?.textContent).toContain('could pass the run cap');
+    expect(warnings[0]?.querySelector('svg')).not.toBeNull();
+  });
+});
+
+describe('RF-434 the estimate of a Deepen of a journey', () => {
+  it('RF-434 DEC-206 P8-24 a Deepen of a journey says what stops it with the approved amount left, once', async () => {
+    await opened({
+      [estimatePath]: deepenEstimate({
+        journey: {
+          approvedMicros: 4_000_000,
+          remainingMicros: 3_962_940,
+          approvedTokens: 4_000_000,
+          remainingTokens: 3_900_000,
+        },
+        cap: { maxCostMicros: 3_962_940, maxTokens: 3_900_000 },
+        overCap: { round: false, allRounds: false },
+      }),
+    });
+
+    expect(screen.getByTestId('deepen-stops').textContent).toBe('What stops it$3.96 left of $4.00');
+    const panel = screen.getByRole('region', { name: 'Deepen this run' }).textContent;
+    expect(panel).toContain('the run pauses and asks you before it spends more');
+    expect(panel).not.toContain('run cap');
+    expect(screen.queryByTestId('deepen-over-cap')).toBeNull();
   });
 
   it('RF-209 asks again for the estimate when the round limit or the coverage pass changes', async () => {
@@ -148,6 +169,13 @@ describe('RF-209 starting a Deepen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start Deepen' }));
     const dialog = await screen.findByRole('dialog', { name: 'Start this Deepen?' });
     expect(posts(page, '/deepen')).toEqual([]);
+    // RF-434: one line, not the paragraphs of the panel again.
+    expect(dialog.querySelectorAll('p')).toHaveLength(1);
+    expect(dialog.textContent).toContain(
+      'Up to 3 rounds, likely $1.20. It stops at the run cap of $2.00.',
+    );
+    expect(dialog.textContent).not.toContain('judges 10 claims');
+    expect(dialog.textContent).not.toContain('could pass');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm and start' }));
 
     await waitFor(() => {

@@ -3,7 +3,8 @@ import type { TopBarMeter } from '../lib/live-run/top-bar-meter.js';
 
 // RF-1003, RF-1010, DEC-49, design-system.md section 5 (header totals, cost meter): the "This run"
 // meter of the top bar: the cost so far against the run's cap, as figures, a bar and the share. From
-// 80% it warns and from 95% it is in danger, and says so in words.
+// 80% it warns and from 95% it is in danger, and says so in words. A run of a journey shows the one
+// amount instead, what is left of the approved amount (P8-24).
 
 // RF-1003
 export function TopbarRunMeter({ meter }: { readonly meter: TopBarMeter }): JSX.Element {
@@ -15,10 +16,19 @@ export function TopbarRunMeter({ meter }: { readonly meter: TopBarMeter }): JSX.
       data-testid="topbar-run-meter"
       data-level={meter.level}
     >
-      <span class="rst-topbar-runmeter-label">This run</span>
-      <span class="rst-topbar-runmeter-figures">
-        <strong>{meter.spent}</strong> <span class="rst-topbar-runmeter-label">of {meter.cap}</span>
-      </span>
+      {meter.approvedText === undefined ? (
+        <>
+          <span class="rst-topbar-runmeter-label">This run</span>
+          <span class="rst-topbar-runmeter-figures">
+            <strong>{meter.spent}</strong>{' '}
+            <span class="rst-topbar-runmeter-label">of {meter.cap}</span>
+          </span>
+        </>
+      ) : (
+        <span class="rst-topbar-runmeter-figures">
+          <strong>{meter.approvedText}</strong>
+        </span>
+      )}
       <div
         class="rst-topbar-runmeter-bar"
         role="meter"
