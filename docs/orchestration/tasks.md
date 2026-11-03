@@ -29,6 +29,7 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
   `verifier-opus` for 9-10; `verifier-fable` only for work of a fable builder (DEC-41, DEC-115).
 - **Size**: agent working time, not developer days (DEC-102): S at most about 1 hour, M about 2-3 hours, L about 4-6
   hours, each before verification. Nothing larger; split it.
+  From Phase 8 on, a card a builder takes is S (DEC-214): a UI card covers one page area or one concern; an M or L card is split before its wave starts.
 - **Status**: `Todo` | `In progress` | `In review` | `Done` | `Blocked (<reason>)` (README section 3). A part of a card
   can wait while the rest runs: `Todo; <part> Blocked (G-nn)`.
 - **Common Reads** for every card, not repeated on the cards: `CLAUDE.md`, `docs/architecture.md`,
