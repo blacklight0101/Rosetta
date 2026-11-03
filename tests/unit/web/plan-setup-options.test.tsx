@@ -100,7 +100,7 @@ describe('stack step', () => {
     const layer = screen.getByRole('radiogroup', { name: 'Database' });
     expect(within(layer).getByRole('radio', { name: /^database A/u })).not.toBeNull();
     expect(within(layer).getByRole('radio', { name: /^database B/u })).not.toBeNull();
-    expect(within(layer).getByLabelText('Your own for Database')).not.toBeNull();
+    expect(within(layer).getByRole('radio', { name: 'Type your own answer' })).not.toBeNull();
     expect(screen.getAllByRole('radiogroup')).toHaveLength(7);
   });
 });
@@ -114,7 +114,12 @@ describe('stack step answers', () => {
     const database = screen.getByRole('radiogroup', { name: 'Database' });
 
     fireEvent.click(within(database).getByRole('radio', { name: /^database B/u }));
-    fireEvent.input(screen.getByLabelText('Your own for Hosting'), {
+    fireEvent.click(
+      within(screen.getByRole('radiogroup', { name: 'Hosting' })).getByRole('radio', {
+        name: 'Type your own answer',
+      }),
+    );
+    fireEvent.input(screen.getByLabelText('Your answer for Hosting'), {
       target: { value: 'On-premises Kubernetes' },
     });
     press('Save and continue');
@@ -139,6 +144,6 @@ describe('stack step answers', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Stack' }));
 
     expect(await screen.findByTestId('error-banner')).not.toBeNull();
-    expect(screen.getByLabelText('Your own for Database')).not.toBeNull();
+    expect(screen.getByRole('radiogroup', { name: 'Database' })).not.toBeNull();
   });
 });

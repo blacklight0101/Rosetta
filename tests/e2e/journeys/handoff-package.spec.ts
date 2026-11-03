@@ -34,7 +34,11 @@ test('RF-604 RF-610 RF-611 from a GitHub URL to a downloaded hand-off package th
   await openStep(page, 'Migration');
   await page.getByRole('radio', { name: /^Parallel Change/u }).check();
   await page.getByRole('button', { name: 'Save and continue' }).click();
-  await page.getByLabel('Your own for Hosting').fill('On-premises Kubernetes');
+  await page
+    .getByRole('radiogroup', { name: 'Hosting' })
+    .getByRole('radio', { name: 'Type your own answer' })
+    .check();
+  await page.getByLabel('Your answer for Hosting').fill('On-premises Kubernetes');
   await page.getByRole('button', { name: 'Save and continue' }).click();
   await page.getByRole('button', { name: 'Save and continue' }).click();
   await page.getByRole('radio', { name: /^Agents will build/u }).check();

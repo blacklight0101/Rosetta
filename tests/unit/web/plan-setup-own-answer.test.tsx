@@ -168,7 +168,14 @@ describe('the stack question', () => {
     await screen.findByRole('radio', { name: /^database A/u });
 
     fireEvent.click(within(layer()).getByRole('radio', { name: /^database B/u }));
-    fireEvent.input(screen.getByLabelText('Your own for Hosting'), { target: { value: 'Azure' } });
+    fireEvent.click(
+      within(screen.getByRole('radiogroup', { name: 'Hosting' })).getByRole('radio', {
+        name: 'Type your own answer',
+      }),
+    );
+    fireEvent.input(screen.getByLabelText('Your answer for Hosting'), {
+      target: { value: 'Azure' },
+    });
     press('Save and continue');
 
     await saved(page);

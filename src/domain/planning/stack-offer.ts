@@ -23,6 +23,17 @@ export interface LayerOffer {
   readonly proposals: readonly OfferedProposal[];
   readonly keepLegacy: boolean;
   /** P7-30: for each group of vague words, the layer's options for that platform, the recommended first. */
+  /** DEC-208: the technologies of the layer that belong to a platform. */
+  readonly technologies: readonly {
+    readonly name: string;
+    readonly aliases: readonly string[];
+    readonly platform: string;
+  }[];
+  /** DEC-208: for each platform, the layer's proposals for it, the recommended first. */
+  readonly platforms: readonly {
+    readonly platform: string;
+    readonly proposals: readonly OfferedProposal[];
+  }[];
   readonly vague: readonly {
     readonly words: readonly string[];
     readonly proposals: readonly OfferedProposal[];
@@ -101,6 +112,8 @@ export function stackOfferFor(input: OfferInput, stack: StackData): LayerOffer[]
     proposals: matchingOptions(stack, kind, layer, languages)
       .slice(0, MAX_PROPOSALS)
       .map((each) => ({ choice: each.choice, why: each.why })),
+    technologies: [],
+    platforms: [],
     keepLegacy: !workbook && !endOfLife(stack, layer, input),
     vague: stack.proposals.vague
       .map((each) => ({

@@ -50,7 +50,12 @@ describe('the workbook questions', () => {
     renderPlan(asWorkbook);
     await ready();
     fireEvent.click(screen.getByRole('button', { name: 'Stack' }));
-    fireEvent.input(await screen.findByLabelText('Your own for Hosting'), {
+    fireEvent.click(
+      within(await screen.findByRole('radiogroup', { name: 'Hosting' })).getByRole('radio', {
+        name: 'Type your own answer',
+      }),
+    );
+    fireEvent.input(screen.getByLabelText('Your answer for Hosting'), {
       target: { value: 'IIS on Windows Server' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Project context' }));
