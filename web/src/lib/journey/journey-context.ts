@@ -44,7 +44,7 @@ export function phaseOf(run: RunState): RunPhase {
   return run.endState === 'Completed' ? 'completed' : 'stopped';
 }
 
-export const workingText = (run: Pick<JourneyRunFacts, 'queueState' | 'position'>): string => {
+const workingText = (run: Pick<JourneyRunFacts, 'queueState' | 'position'>): string => {
   if (run.queueState === 'AwaitingApproval')
     return 'Paused near the approved amount: it waits for you';
   if (run.queueState !== 'Queued') return 'Running now';
