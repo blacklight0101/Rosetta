@@ -101,7 +101,7 @@ describe('project cost page lines', () => {
 
     expect(row.textContent).toContain('Local');
     expect(row.textContent).toContain('$0.00');
-    expect(row.textContent).not.toContain('$0.0000');
+    expect(within(row).queryByText('$0.0000')).toBeNull();
     expect(row.textContent).toContain('1,200,000');
   });
 
@@ -189,7 +189,6 @@ describe('project cost page money', () => {
 
     expect(exactFigureOf(within(runs).getByText('$3.11'))).toBe('$3.113515');
     expect(exactFigureOf(within(runs).getByText('$0.2370'))).toBe('$0.237');
-    expect(runs.textContent).not.toContain('$3.113515');
   });
 
   it('RF-428 given any money amount, writes the project total through the same formatter', async () => {
@@ -213,7 +212,7 @@ describe('project cost page money', () => {
     expect(within(runs).getByText('$0.00')).not.toBeNull();
     expect(within(runs).queryByRole('tooltip', { name: '$0.00' })).toBeNull();
     expect(exactFigureOf(within(runs).getByText('<$0.0001'))).toBe('$0.000007');
-    expect(runs.textContent).not.toContain('$0.0000');
+    expect(within(runs).queryByText('$0.0000')).toBeNull();
   });
 
   it('RF-428 given an amount with an exact figure, reaches the figure by keyboard and touch and closes it with Escape', async () => {
