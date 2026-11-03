@@ -74,6 +74,10 @@ export const roadSigns: Readonly<Record<string, JourneyFacts>> = {
     source: source({ endState: 'CapReached', errorCode: 'RST-1403', supportedClaims: 3 }),
     briefSaved: false,
   }),
+  /** P8-87: the user pressed Stop on the understand run. */
+  stoppedByYou: facts({ source: source({ endState: 'Interrupted', supportedClaims: 0 }) }),
+  /** P8-87: the user pressed Stop on the plan run. */
+  planStoppedByYou: facts({ plan: planRun({ endState: 'Interrupted' }) }),
   noClaims: facts({ source: source({ supportedClaims: 0 }) }),
   asking: facts({ source: source({ openQuestions: 2 }), briefSaved: false }),
   noBrief: facts({ briefSaved: false }),

@@ -135,7 +135,6 @@ describe('journeyOf: an understand run that stopped', () => {
   it.each([
     ['CapReached', 'RST-1403', 'Stopped at its cap (RST-1403)'],
     ['Failed', 'RST-1203', 'Failed (RST-1203)'],
-    ['Interrupted', null, 'Interrupted'],
   ] as const)(
     'RF-615 RF-006 a run that ended %s fails the step and offers Resume',
     (end, code, text) => {

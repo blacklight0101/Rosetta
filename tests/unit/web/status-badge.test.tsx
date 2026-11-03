@@ -92,7 +92,11 @@ it('RNF-010 follows the tone and weight table of design-system section 6', () =>
   expect(badgeSpecs.AgentTaskState.Running).toMatchObject({ tone: 'info', weight: 'solid' });
   expect(badgeSpecs.AgentTaskState.StoppedByCap).toMatchObject({ tone: 'warn', weight: 'solid' });
   expect(badgeSpecs.RunEndState.CapReached).toMatchObject({ tone: 'warn', weight: 'solid' });
-  expect(badgeSpecs.RunEndState.Interrupted).toMatchObject({ tone: 'neutral', weight: 'solid' });
+  expect(badgeSpecs.RunEndState.Interrupted).toMatchObject({
+    label: 'Stopped by you',
+    tone: 'neutral',
+    weight: 'solid',
+  });
   expect(badgeSpecs.OpenQuestionState.Open).toMatchObject({ tone: 'warn', weight: 'tint' });
   expect(badgeSpecs.CallStatus.failed).toMatchObject({ tone: 'danger', weight: 'solid' });
   expect(badgeSpecs.CallStatus['refused-by-cap']).toMatchObject({ tone: 'warn', weight: 'solid' });

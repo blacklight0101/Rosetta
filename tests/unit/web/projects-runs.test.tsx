@@ -120,7 +120,7 @@ it('RF-1108 Cancel queued run stops the run by its id with the CSRF token and re
     csrf: 'csrf-0',
     body: undefined,
   });
-  expect(within(await rowOf('octo/demo')).getByText('Interrupted')).not.toBeNull();
+  expect(within(await rowOf('octo/demo')).getByText('Stopped by you')).not.toBeNull();
   expect(calls.filter((call) => call.path === '/api/projects/overview')).toHaveLength(2);
 });
 

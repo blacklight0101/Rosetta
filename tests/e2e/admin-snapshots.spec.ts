@@ -67,5 +67,5 @@ test('RF-1012 disables Delete for the snapshot that a run in progress uses, with
 
   await page.goto(live);
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
 });

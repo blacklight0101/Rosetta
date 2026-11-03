@@ -186,7 +186,7 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
   await openRunTab(page, 'Activity');
   await expect(log.getByRole('listitem').first()).toContainText('run.ended');
   await expectNoSeriousViolations(page);
@@ -220,7 +220,7 @@ test('RF-1002 pressing Pause updates and Resume moves neither the button nor the
   expect(await boxOf(page.getByRole('button', { name: 'Pause updates' }))).toEqual(before.button);
   expect(await boxOf(agentPanel(page, 'Controllers'))).toEqual(before.panel);
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
 });
 
 test('RF-1003 Stop run ends a run whose updates are paused, and Resume then shows how it ended', async ({
@@ -238,7 +238,7 @@ test('RF-1003 Stop run ends a run whose updates are paused, and Resume then show
   // the poll that stopped the run before Controllers started, once Catalog took two calls).
   await page.getByRole('button', { name: 'Stop run' }).click();
 
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
   await expect.poll(() => waitingEvents(page), { timeout: 30_000 }).toBeGreaterThan(0);
   await openRunTab(page, 'Evidence');
   expect(await agentPanel(page, 'Controllers').textContent()).toBe(held);
@@ -286,7 +286,7 @@ test(
 
     await page.getByRole('button', { name: 'Stop run' }).click();
 
-    await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+    await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
     await expect(group).toHaveCount(0);
     await expect(page.getByTestId('header-totals')).toBeVisible();
     await expectNoSeriousViolations(page);

@@ -87,7 +87,7 @@ describe('a reader that answers at turn 1 and the budget', UNDERSTAND_TIMEOUT, (
 });
 
 describe('a reader that answers after reading little of its area', UNDERSTAND_TIMEOUT, () => {
-  it('RF-206 is refused once with the unread file, reads it and its second answer is accepted', async () => {
+  it('RF-206 is refused with the unread file, reads it and its next answer is accepted', async () => {
     const h = await started('understand-read-more.json');
 
     const run = await h.understand({ areas: ['Catalog'] });
@@ -113,6 +113,6 @@ describe('a reader that answers after reading little of its area', UNDERSTAND_TI
     const manifest = await h.manifestOf(run);
     expect(manifest.totals.calls).toBe(4);
     expect(h.providers.ledger.entries).toHaveLength(4);
-    expect(manifest.promptVersions['reader/read-more.v1.md']?.version).toBe('v1');
+    expect(manifest.promptVersions['reader/read-more.v2.md']?.version).toBe('v2');
   });
 });

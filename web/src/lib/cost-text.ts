@@ -20,12 +20,16 @@ export const zeroTotals: UsageTotals = {
 export const tokensText = (totals: UsageTotals): string =>
   tokensLabel(totals.inputTokens + totals.outputTokens);
 
+/** `2 calls unknown`: how the calls whose cost the ledger does not know are named. */
+export const unknownCallsText = (calls: number): string =>
+  `${String(calls)} ${calls === 1 ? 'call' : 'calls'} unknown`;
+
 /** The known cost per currency, then the calls whose cost is unknown. */
 export function totalCostText(totals: UsageTotals): string {
   const known = costText(totals.cost);
   const unknown = totals.unknownCostCalls;
   if (unknown === 0) return known;
-  return `${known} + ${String(unknown)} ${unknown === 1 ? 'call' : 'calls'} unknown`;
+  return `${known} + ${unknownCallsText(unknown)}`;
 }
 
 /** `in 1,200 · out 80 · cached 1,024`. */
