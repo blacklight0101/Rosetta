@@ -1892,6 +1892,11 @@ As a user I want the page to offer the next step when a step ends so that I do n
 - Given a project with an approved journey amount (RF-435), when the strip is shown, then it says what is left of that amount, for example "$0.60 left of $1.00 approved"; a project with no journey record shows no amount.
 - Given the project page, a scan run page and an understand run page that is still working, when they open, then each shows the strip (RF-1020); Deepen is offered on the project page with its estimate shown at once and starts only on the click and the confirmation (DEC-204).
 - Given a finished understand, when I go on, then Deepen, the questions, the plan setup and the plan are each reached from the page they follow, with no visit to another page.
+- Given a project that has a run, when its page opens, then the page is titled with the project name and the current step of the journey ("Package ready", "Questions waiting"), and "Start a run" is the title only before the first run (P8-26, DEC-211).
+- Given a project with a written package, when its page opens, then it shows the package state (the hand-off package with its downloads, the journey cost against the approved amount, the questions left on their defaults, the runs of the project) and no upload form; a new version of the source is uploaded from a collapsed "Replace the source" section, and the summary bar never covers a control: the page reserves its height at the bottom.
+- Given a message that points to a control (the cloud notice or the private code notice that unlocks Analyse), when it is shown, then it says where the control is in the order of the page and offers to go to it.
+- Given questions with an answer that wait for a re-run, when the project page is shown, then the choice to re-run with them is a labelled control in the Questions step of the strip, and the strip counts the same questions (it never says "No open questions" while an answered question waits).
+- Given a run of the project that is queued or running, when the project page is shown, then the strip step that waits for it is a link to that run's page, and the title says that a run is live.
   Verification: web tests of the panel for each state; an end-to-end test from a finished understand to a downloaded package.
 
 **RF-1022 The start page has no stage and no caps** - R1 - Must - Source DEC-204 - ADR-012, ADR-027
@@ -1900,6 +1905,9 @@ As a user I want a start page without technical choices so that I do not decide 
 - Given the start page, when it opens, then it holds no stage choice and no per-run caps, models or parallelism; they are removed, not hidden behind an option (DEC-204).
 - Given the old start-page address, when I open it, then I am redirected to the project page. The start page itself is removed and this redirect is all that remains of it (P7-37, P8-15 closing the P7-33 note).
 - Given the areas, when the journey is estimated, then the project's own code is read as in RF-1018, and the choice of areas stays on the project page before Analyse.
+- Given the estimate of the start page, when it is shown, then the journey figures are three short lines in the words of the Deepen panel (RF-434): "Likely", "Approved" (what Analyse approves, with "likely above what can be approved" when DEC-210 applies) and "What stops it"; the explanatory sentences are collapsed under them (P8-26).
+- Given a model or an area name in the estimate or the areas list, when the line wraps, then it breaks only at its separators (" / ", "/"), never inside a name (P8-26).
+- Given a project that has a run whose journey does not start again, when its page is shown, then the areas, the estimate and Analyse are under a collapsed "Start another run"; they are open when the journey has to start (no run, or a run with nothing to plan from).
   Verification: web tests of the page and the redirect; an end-to-end test of the journey from the project page.
 
 ### 5.10 Accounts, sessions, keys and administration (RF-1100..RF-1199)

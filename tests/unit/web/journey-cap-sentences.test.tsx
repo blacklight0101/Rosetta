@@ -50,7 +50,7 @@ it('RF-435 EV-85 the start page has one cap sentence for a journey step and none
   const total = screen.getByTestId('journey-total').textContent;
   expect(total).toContain('replaces the project run cap');
   expect(total).toContain('Pressing Analyse again later starts a new approval');
-  expect(total).toContain('Analyse approves $4.00');
+  expect(screen.getByTestId('journey-approved').textContent).toContain('$4.00');
   expect(total).toContain('$314.17');
   expect(document.body.textContent).not.toContain('The run stops before any call that could pass');
   expect(document.body.textContent).not.toContain('Starting approves the worst case');
@@ -100,8 +100,9 @@ it('RF-434 DEC-210 a likely figure above what can be approved shows the approvab
 
   const total = screen.getByTestId('journey-total').textContent;
   expect(total).toContain('$4.00 (likely above what can be approved (likely $4.085))');
-  expect(total).toContain(
-    'Analyse approves $4.00: the run will pause and ask at the approved amount',
+  expect(screen.getByTestId('journey-approved').textContent).toContain('$4.00');
+  expect(screen.getByTestId('journey-stops').textContent).toContain(
+    'the run will pause and ask at the approved amount',
   );
   expect(total).not.toContain('likely $4.085.');
 });

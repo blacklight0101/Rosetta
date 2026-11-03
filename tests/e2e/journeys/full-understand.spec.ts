@@ -141,8 +141,9 @@ test('RF-240 RF-241 RF-1007 the owner answers the open question and the area run
   await expectJourneyMovedOn(page, question);
 
   await page.getByRole('link', { name: 'Start page' }).click();
-  const rerun = page.getByRole('checkbox', { name: 'Re-run with answers', exact: false });
-  await rerun.check();
+  await page.getByRole('checkbox', { name: /Re-run with my/u }).check();
+  // P8-26: with a run behind it the page folds the areas and Analyse under "Start another run".
+  await page.getByText('Start another run').click();
   await startAndOpenLiveRun(page);
 
   await expect(runStatus(page)).toContainText('Completed', { timeout: 120_000 });
