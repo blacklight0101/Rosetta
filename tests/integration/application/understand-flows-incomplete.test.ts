@@ -65,14 +65,14 @@ describe('an understand run with a rejected flow step', UNDERSTAND_TIMEOUT, () =
 
     expect(coverage).toMatchObject({
       areas: [
-        { area: '(root)', surface: { flowCards: 1, incompleteFlows: 1 } },
+        { area: 'Orders', surface: { flowCards: 1, incompleteFlows: 1 } },
         { area: 'Catalog', surface: { flowCards: 1, incompleteFlows: 0 } },
-        { area: 'Orders', surface: { flowCards: 1, incompleteFlows: 0 } },
+        { area: '(root)', surface: { flowCards: 1, incompleteFlows: 0 } },
         { area: 'Services', surface: { flowCards: 0, incompleteFlows: 0 } },
       ],
     });
     expect(await text('coverage.md')).toContain(
-      '- (root): 1 flow card (1 incomplete); 1 screen card',
+      '- Orders: 1 flow card (1 incomplete); 2 screen cards',
     );
   });
 });
@@ -98,9 +98,9 @@ describe('an understand run whose verifier is stopped by its cap', UNDERSTAND_TI
       const coverage = await readJson(join(folder, 'coverage.json'));
       expect(coverage).toMatchObject({
         areas: [
-          { area: '(root)', surface: { flowCards: 1, incompleteFlows: 0 } },
+          { area: 'Orders', surface: { flowCards: 1, incompleteFlows: 0 } },
           { area: 'Catalog', surface: { incompleteFlows: 0 } },
-          { area: 'Orders', surface: { incompleteFlows: 0 } },
+          { area: '(root)', surface: { incompleteFlows: 0 } },
           { area: 'Services', surface: { incompleteFlows: 0 } },
         ],
       });
@@ -132,15 +132,16 @@ describe('an understand run the user stops during the judgement step', UNDERSTAN
       const coverage = await readJson(join(folder, 'coverage.json'));
       expect(coverage).toMatchObject({
         areas: [
-          { area: '(root)', surface: { flowCards: 1, incompleteFlows: 0 } },
+          { area: 'Orders', surface: { flowCards: 1, incompleteFlows: 0 } },
           { area: 'Catalog', surface: { flowCards: 1 } },
-          { area: 'Orders', surface: { flowCards: 1 } },
+          { area: '(root)', surface: { flowCards: 1 } },
           { area: 'Services', surface: { flowCards: 0 } },
         ],
       });
       const flow = await readFile(join(folder, 'cards', 'FLOW', 'FLOW-001.md'), 'utf8');
       expect(flow.match(/status: .*/g)).toEqual([
         'status: "Supported"',
+        'status: "Proposed"',
         'status: "Proposed"',
         'status: "Proposed"',
       ]);
