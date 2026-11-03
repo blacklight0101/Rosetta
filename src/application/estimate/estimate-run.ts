@@ -7,6 +7,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Run } from '../../domain/runs/run.js';
 import { CURRENT_SCANNER_VERSION, type CodeMap } from '../../domain/code-map/code-map.js';
 import { marksOf } from '../../domain/code-map/area-surface.js';
+import { readingPriorityOf } from '../../domain/code-map/reading-priority.js';
 import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderKeyRepository } from '../ports/provider-key-repository.js';
@@ -14,6 +15,7 @@ import type { RunIndex } from '../ports/run-index.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { Project } from '../projects/project.js';
 import { plannedAreas } from '../understand/planned-areas.js';
+import { readingOrder } from '../understand/reader-order.js';
 import { planReaderTasks } from '../understand/reader-tasks.js';
 import {
   MERGE_ANSWER_TOKENS,
@@ -188,10 +190,11 @@ export class EstimateRun {
     const { codeMap, workbookFolders } = scanned;
     const planned = plannedAreas(scanned);
     const thirdParty = thirdPartyAreaNames(codeMap);
-    const tasks = planReaderTasks(planned, request.areas, thirdParty);
+    const priority = readingPriorityOf(planned, codeMap); // RF-210, DEC-216
+    const tasks = planReaderTasks(planned, request.areas, thirdParty, priority);
     if (!tasks.ok) return err(ERROR_CODES.areaUnknown);
     const areas = tasks.value.map((task) => task.area);
-    const offered = offeredFor(planned, areas, request.areas, thirdParty);
+    const offered = offeredFor(readingOrder(planned, thirdParty, priority), areas, request.areas);
     const assumptions = assumptionsOf(project.settings, this.deps.models);
     const marks = new Map(areas.map((area) => [area.name, marksOf(area, codeMap)]));
     const workbooks = workbookAreaNames(areas, workbookFolders);
