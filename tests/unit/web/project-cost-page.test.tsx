@@ -198,7 +198,9 @@ describe('project cost page money', () => {
 
     expect(exactFigureOf(within(totals).getByText('$3.11'))).toBe('$3.113515');
   });
+});
 
+describe('project cost page zero, tiny amounts and the tooltip', () => {
   it('RF-428 given a zero and a tiny amount, writes `$0.00` and `<$0.0001` with the exact figure of the tiny one', async () => {
     const lines = (...micros: string[]) =>
       micros.map((each, at) => ({
