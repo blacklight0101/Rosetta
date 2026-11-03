@@ -169,7 +169,9 @@ describe('the guard of the release 1 verification matrix', () => {
 
 describe('the guard of the release 1 verification matrix on rows and examples', () => {
   it('RNF-005 fails an example that still carries a line number', async () => {
-    const bad = withRow('RF-003', (line) => line.replace(/(pg-run-index\.test\.ts):\d+/u, '$1:45'));
+    const bad = withRow('RF-003', (line) =>
+      line.replace('pg-run-index.test.ts', 'pg-run-index.test.ts:45'),
+    );
 
     expect(mentions(await matrixProblems(input(bad)), 'names a file, not a line')).toBe(1);
   });
