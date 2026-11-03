@@ -1,16 +1,38 @@
 import type { Locator, Page } from '@playwright/test';
 import { startCatalogRun, openScannedStartPage } from './cost-run.js';
 import { expect } from './fixtures.js';
-import { runStatus } from './live-run-page.js';
+import { openStartOf, pressStart, runStatus } from './live-run-page.js';
+import { revealAreas, showStartChoices } from './start-choices.js';
 
 // RF-605, RF-608, RF-609, RF-613: what the Plan setup specs do on the project's pages, so the specs
-// read as steps. The project is `octo/webforms` (serve.ts) and its recorded understand run.
+// read as steps. The project is `octo/webforms` (serve.ts) and its recorded understand run, or
+// `octo/inventory`, the Python project (P8-103, P8-104).
+
+const inventoryUrl = 'https://github.com/octo/inventory';
 
 /** Scans and understands the Catalog area of the account's project, then waits for the run. */
 export async function understandCatalog(page: Page): Promise<void> {
   await openScannedStartPage(page);
   await startCatalogRun(page);
   await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+}
+
+/**
+ * Scans and understands the account's Python project `octo/inventory` (a project that is not .NET),
+ * then waits for the run and opens the project's start page again.
+ */
+export async function understandInventory(page: Page): Promise<void> {
+  await page.goto('/projects');
+  await openStartOf(page, inventoryUrl);
+  await showStartChoices(page);
+  await revealAreas(page);
+  const areas = page.getByRole('group', { name: 'Areas from the code map' });
+  await expect(areas.locator('label').first()).toBeVisible({ timeout: 60_000 });
+  await pressStart(page);
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await page.goto('/projects');
+  await openStartOf(page, inventoryUrl);
+  await showStartChoices(page);
 }
 
 /** Opens Plan setup from the project's navigation (the start page is open). */
