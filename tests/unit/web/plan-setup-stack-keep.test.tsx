@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { briefViewSchema } from '../../../web/src/api/plan-schemas.js';
 import { answersOf, draftOf, type Draft } from '../../../web/src/lib/plan-setup/draft.js';
 import { PlanStackStep } from '../../../web/src/pages/PlanStackStep.js';
+import { parseBriefAnswers } from '../../../src/application/planning/planning-brief-schema.js';
 import { buildBrief } from '../../../src/domain/planning/planning-brief.js';
 import { shippedCatalogue } from '../../support/planning-brief-harness.js';
 import { catalogue, planOptions, unsavedBrief } from './plan-setup-fixtures.js';
@@ -12,6 +13,13 @@ import { catalogue, planOptions, unsavedBrief } from './plan-setup-fixtures.js';
 // answered with it is stored as a pick, and the stored brief reloads with its radio selected.
 
 const KEEP = /^Keep the legacy technology/u;
+/** The body of a save as the server reads it. */
+const sent = (body: unknown): NonNullable<ReturnType<typeof parseBriefAnswers>> => {
+  const parsed = parseBriefAnswers(body);
+  if (parsed === undefined) throw new Error('the save body was refused');
+  return parsed;
+};
+
 const group = (name: string): HTMLElement => screen.getByRole('radiogroup', { name });
 const keepRadio = (name: string): HTMLInputElement =>
   within(group(name)).getByRole<HTMLInputElement>('radio', { name: KEEP });
@@ -50,7 +58,7 @@ describe('the Stack step: the Keep the legacy technology card', () => {
     expect(last).toBeDefined();
     first.unmount();
 
-    const stored = buildBrief(answersOf(last ?? emptyDraft()), shippedCatalogue);
+    const stored = buildBrief(sent(answersOf(last ?? emptyDraft())), shippedCatalogue);
     const entry = stored.stack.find((each) => each.layer === 'database');
     expect(entry).toMatchObject({ choice: 'Keep the legacy technology', custom: false });
 

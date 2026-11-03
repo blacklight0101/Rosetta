@@ -3,12 +3,20 @@ import { describe, expect, it } from 'vitest';
 import { briefViewSchema } from '../../../web/src/api/plan-schemas.js';
 import { answersOf, draftOf, type Draft } from '../../../web/src/lib/plan-setup/draft.js';
 import { PlanStackStep } from '../../../web/src/pages/PlanStackStep.js';
+import { parseBriefAnswers } from '../../../src/application/planning/planning-brief-schema.js';
 import { buildBrief } from '../../../src/domain/planning/planning-brief.js';
 import { shippedCatalogue } from '../../support/planning-brief-harness.js';
 import { catalogue, planOptions, unsavedBrief } from './plan-setup-fixtures.js';
 
 // RF-645, RF-609 (P8-22, UX-02): a saved stack choice is always shown on reload: an offered one selects
 // its radio, any other is the "Your own" answer with its text filled, whatever its `custom` flag.
+
+/** The body of a save as the server reads it. */
+const sent = (body: unknown): NonNullable<ReturnType<typeof parseBriefAnswers>> => {
+  const parsed = parseBriefAnswers(body);
+  if (parsed === undefined) throw new Error('the save body was refused');
+  return parsed;
+};
 
 function show(stack: Draft['stack']): void {
   render(
@@ -84,7 +92,7 @@ describe('saving a saved stack without a change', () => {
       brief: { ...first, savedAt: '2026-10-12T09:00:00.000Z' },
     });
 
-    const again = buildBrief(answersOf(draftOf(saved.brief)), shippedCatalogue);
+    const again = buildBrief(sent(answersOf(draftOf(saved.brief))), shippedCatalogue);
 
     expect(again.stack).toEqual(first.stack);
     expect(first.stack).toHaveLength(5);
