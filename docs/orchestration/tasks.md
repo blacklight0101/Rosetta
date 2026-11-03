@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 104     | 5         | 87         | 12        | 0                  | 73      | 25      | 6      | 20         | 21        |
-| **Total**                    | **594** | **123**   | **423**    | **48**    | **0**              | **299** | **269** | **26** | **282**    | **21**    |
+| P8 Evaluation fixes, round 2 | 105     | 5         | 88         | 12        | 0                  | 74      | 25      | 6      | 21         | 21        |
+| **Total**                    | **595** | **123**   | **424**    | **48**    | **0**              | **300** | **269** | **26** | **283**    | **21**    |
 
 ## Conventions for every card
 
@@ -7726,7 +7726,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-24
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-07, UX-08, UX-09, UX-10, EV-99: after the whole journey ("Package: Current step") the project page is still titled "Start a run" and shows the zip upload form, with the sticky estimate bar covering "Upload zip". The bar says "Confirm the Anthropic notice above" while the notice is below it. The strip says "No open questions" while an unlabeled checkbox row says "Re-run with answers (1 answered question waiting ...)". Model and area names break mid-word ("claude-haiku-\n5-5"), and the estimate is one dense paragraph. While a run is live the page shows "Running now" with no link to the run.
 - **Reads**: `docs/design/board/P8Project.dc.html`, `web/src/pages/StartRunPage.tsx`, `web/src/pages/StartRunForm.tsx`, `web/src/pages/ZipUploadForm.tsx`, `web/src/pages/UploadSourceSection.tsx`, `web/src/pages/EstimateSection.tsx`, `web/src/pages/JourneyStrip.tsx`, `web/src/pages/JourneyPanel.tsx`, `web/src/lib/journey/journey-steps.ts`, `web/src/pages/StageAreasSection.tsx`, `docs/design-system.md`, RF-011, RF-1020, RF-1021, RF-1022.
 - **Do**: add the Givens to RF-1021 and RF-1022 first; red tests first.
@@ -8956,3 +8956,19 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the updated spec.
 - **Done when**: the P8-21 walk runs on a project that is not .NET; CI green.
 - **Refs**: RF-609, DEC-208, ADR-008; split from P8-35 (DEC-214); GitHub issue #1182
+
+### P8-105 - Follow-up: the project page tests catch a zero count and a covered control (P8-26)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-26
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-03, P8-26 verifier round 1, #1187, findings 1 and 2): changing the zero guard of `questionsPart` in `web/src/lib/journey/journey-steps.ts` (`if (answered === 0) return part`) so a project with no answered questions reads "0 answered questions waiting for a re-run" failed no test; `tests/unit/web/project-page-details.test.tsx:98-114` checks the no-mid-name wrap and the summary bar reserve by regexes over the CSS source, and the reserve is a fixed 8rem plus a spacing token, so a taller bar covering a control is not caught.
+- **Reads**: `web/src/lib/journey/journey-steps.ts`, `tests/unit/web/project-heading.test.ts`, `tests/unit/web/project-page-details.test.tsx`, `tests/e2e/project-page-states.spec.ts`, `web/src/styles/project-page.css`, RF-241, RF-1021, RF-1022, ADR-008.
+- **Do**:
+  - Add a test that renders the strip with no answered questions and asserts it reads "No open questions" with no count of answered questions; check that it fails with the zero guard removed.
+  - Replace the CSS-source assertions with an end-to-end check at 1280x800 and 360x780 that the last control of the "Start another run" fold, scrolled into view, is not covered by the summary bar (bounding boxes), and that a long project name does not break inside a word.
+- **Delivers**: the test changes only (no source change except a fix the new checks call for, named in the pull request).
+- **Done when**: both checks fail on the broken behaviour and pass on `develop`; CI green.
+- **Refs**: RF-241, RF-1021, RF-1022, ADR-008; follow-up of P8-26; GitHub issue #1192
