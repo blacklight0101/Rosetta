@@ -26,14 +26,16 @@ function briefOf(frontEnd: string | null, backEnd: string | null): PlanningBrief
 
 describe('stackClashes: the rule table', () => {
   it('RF-609 is versioned and every rule has an id, a clash text, a question and a legacy-keeping default', () => {
-    expect(stack.rulesVersion).toBe(1);
+    expect(stack.rulesVersion).toBe(2);
     expect(stack.rules.length).toBeGreaterThanOrEqual(2);
     expect(new Set(stack.rules.map((rule) => rule.id)).size).toBe(stack.rules.length);
     for (const rule of stack.rules) {
       expect(rule.matches.length).toBeGreaterThan(0);
       expect(rule.clash).not.toBe('');
       expect(rule.question).not.toBe('');
-      expect(rule.answer.startsWith(keepLegacyDefault)).toBe(true);
+      expect(
+        rule.answer.startsWith(keepLegacyDefault) || rule.answer.includes('{recommended}'),
+      ).toBe(true);
     }
   });
 });

@@ -5,6 +5,7 @@ import { loadRecording } from '../../../src/infrastructure/providers/fake/record
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { plain, seededApiPlan } from '../../support/api-plan-harness.js';
 import {
+  javascriptFiles,
   oneStatement,
   ProposalScans,
   webFormsFiles,
@@ -129,6 +130,27 @@ describe('BuildPlan: layers answered with only a platform', () => {
       .find((text) => text.includes('"frontEnd"'));
     expect(contractCall).toContain('"frontEnd": "Razor Pages"');
     expect(contractCall).not.toContain('"frontEnd": ".net"');
+  });
+});
+
+describe('BuildPlan: a language chosen on a project of another language (DEC-208)', () => {
+  it('RF-609 DEC-208 proposes the open layers from the chosen platform, not from the legacy code', async () => {
+    const h = await seededApiPlan(dataDir, {
+      brief: { stack: [{ layer: 'language-runtime', choice: 'C# on .NET', custom: false }] },
+      harness: { scans: new ProposalScans(javascriptFiles) },
+    });
+    await h.seedScan();
+
+    const files = await h.handoffOf(await h.plan());
+
+    const records = decisionsOf(files).filter((text) => text.includes('Technology for the'));
+    const backend = records.find((text) => text.includes('back-end framework layer'));
+    expect(backend).toContain('ASP.NET Core Razor Pages');
+    const all = records.join(' ');
+    expect(all).not.toContain('Fastify');
+    expect(all).not.toContain('Vitest');
+    const questions = plain(files['open-questions.md']);
+    expect(questions).toContain('Proposed by Rosetta, not chosen by the owner: xUnit');
   });
 });
 

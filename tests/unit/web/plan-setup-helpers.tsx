@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/preact';
+import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { expect } from 'vitest';
 import { PlanSetupPage } from '../../../web/src/pages/PlanSetupPage.js';
 import { json, renderPage, type Answer, type RenderedPage } from './fake-api.js';
@@ -50,3 +50,10 @@ export const saves = (page: RenderedPage): unknown[] =>
 export const stepName = (): string | null =>
   screen.getByRole('navigation', { name: 'Steps' }).querySelector('[aria-current="step"]')
     ?.textContent ?? null;
+
+/** P8-21: answers the Hosting layer of the Stack step with your own text. */
+export function typeHosting(text: string): void {
+  const hosting = screen.getByRole('radiogroup', { name: 'Hosting' });
+  fireEvent.click(within(hosting).getByRole('radio', { name: 'Type your own answer' }));
+  fireEvent.input(screen.getByLabelText('Your answer for Hosting'), { target: { value: text } });
+}
