@@ -1,0 +1,33 @@
+import { describe, expect, it } from 'vitest';
+import { formatMoney, priceTableText } from '../../../web/src/lib/money.js';
+
+// RF-428, RF-1020, DEC-54, design-system.md section 10: one formatter for every money amount, four
+// decimals below $1 and two above, with the exact figure kept for the tooltip.
+
+describe('money formatter', () => {
+  it.each([
+    ['237000', '$0.2370', '$0.237'],
+    ['3113515', '$3.11', '$3.113515'],
+    ['37100', '$0.0371', '$0.0371'],
+    ['0', '$0.0000', '$0.00'],
+    ['7', '$0.0000', '$0.000007'],
+    ['3880000', '$3.88', '$3.88'],
+    ['1000000', '$1.00', '$1.00'],
+    ['1234567890', '$1,234.57', '$1234.56789'],
+  ])('RF-428 writes %s micro-dollars as %s with the exact figure %s', (micros, text, exact) => {
+    expect(formatMoney(micros)).toEqual({ text, exact });
+  });
+
+  it('RF-428 rounds half up and never shows four decimals for an amount that rounds to a dollar', () => {
+    expect(formatMoney('123450').text).toBe('$0.1235');
+    expect(formatMoney('123449').text).toBe('$0.1234');
+    expect(formatMoney('999960').text).toBe('$1.00');
+    expect(formatMoney('1005000').text).toBe('$1.01');
+  });
+
+  it('RF-428 names a date price table version as a day, month and year, and keeps any other text', () => {
+    expect(priceTableText('2026-10-21')).toBe('21 Oct 2026');
+    expect(priceTableText('2026-10-05')).toBe('5 Oct 2026');
+    expect(priceTableText('v2')).toBe('v2');
+  });
+});
