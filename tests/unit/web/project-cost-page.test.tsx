@@ -23,6 +23,12 @@ const costOf = (micros: string) => usageTotals({ cost: [{ currency: 'USD', costM
 const exactFigureOf = (amount: HTMLElement) =>
   document.getElementById(amount.getAttribute('aria-describedby') ?? '')?.textContent;
 
+/** The wrapper of an amount and its exact figure, which carries `data-dismissed`. */
+function wrapOf(amount: HTMLElement): HTMLElement {
+  if (amount.parentElement === null) throw new Error('the amount has no wrapper');
+  return amount.parentElement;
+}
+
 const table = (name: string) => screen.findByRole('table', { name });
 
 describe('project cost page', () => {
@@ -217,7 +223,9 @@ describe('project cost page zero, tiny amounts and the tooltip', () => {
     expect(exactFigureOf(within(runs).getByText('<$0.0001'))).toBe('$0.000007');
     expect(within(runs).queryByText('$0.0000')).toBeNull();
   });
+});
 
+describe('project cost page tooltip by keyboard, touch and pointer', () => {
   it('RF-428 given an amount with an exact figure, reaches the figure by keyboard and touch and closes it with Escape', async () => {
     renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
     const totals = await screen.findByRole('region', { name: 'Project totals' });
@@ -241,12 +249,14 @@ describe('project cost page zero, tiny amounts and the tooltip', () => {
     expect(amount.contains(tip)).toBe(false);
     expect(amount.parentElement?.contains(tip)).toBe(true);
   });
+});
 
+describe('project cost page tooltip closed with Escape', () => {
   it('RF-428 given an amount with an exact figure under the pointer, Escape closes it while the amount keeps focus, and it opens again on the next hover', async () => {
     renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
     const totals = await screen.findByRole('region', { name: 'Project totals' });
     const amount = within(totals).getByText('$3.11');
-    const wrap = amount.parentElement as HTMLElement;
+    const wrap = wrapOf(amount);
     amount.focus();
     fireEvent.mouseEnter(wrap);
 
@@ -256,7 +266,7 @@ describe('project cost page zero, tiny amounts and the tooltip', () => {
     expect(document.activeElement).toBe(amount);
     fireEvent.mouseLeave(wrap);
     expect(wrap.hasAttribute('data-dismissed')).toBe(true);
-    act(() => {
+    await act(() => {
       amount.blur();
     });
     expect(wrap.hasAttribute('data-dismissed')).toBe(false);
@@ -266,7 +276,7 @@ describe('project cost page zero, tiny amounts and the tooltip', () => {
     renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
     const totals = await screen.findByRole('region', { name: 'Project totals' });
     const amount = within(totals).getByText('$3.11');
-    const wrap = amount.parentElement as HTMLElement;
+    const wrap = wrapOf(amount);
     fireEvent.mouseEnter(wrap);
     fireEvent.keyDown(amount, { key: 'Escape' });
 
