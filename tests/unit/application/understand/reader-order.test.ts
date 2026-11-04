@@ -87,7 +87,7 @@ describe('RF-210 reader order folder names', () => {
 });
 
 describe('RF-210 reader order ties', () => {
-  it('RF-210 keeps the code map order within a kind, whatever the sizes', () => {
+  it('RF-210 keeps the code map order within a kind when no priority is given', () => {
     const sized = [area('b', 10), area('a', 900), area('c', 50)];
 
     expect(names(sized, ['a', 'b', 'c'])).toEqual(['b', 'a', 'c']);

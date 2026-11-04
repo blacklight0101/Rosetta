@@ -45,7 +45,7 @@ async function cardsOf(request: { areas?: string[] }): Promise<readonly string[]
 
 describe('an eShop-shaped run with library areas', UNDERSTAND_TIMEOUT, () => {
   it('RF-200 without an area list reads the own code only', async () => {
-    expect(await cardsOf({})).toEqual(['FEAT-001 eShopLegacy', 'FEAT-002 eShopModernizedMVC']);
+    expect(await cardsOf({})).toEqual(['FEAT-001 eShopModernizedMVC', 'FEAT-002 eShopLegacy']);
   });
 
   it('RF-200 RF-203 RF-243 reads own code first, ids follow, and a library card that only says so is not written', async () => {
@@ -53,8 +53,8 @@ describe('an eShop-shaped run with library areas', UNDERSTAND_TIMEOUT, () => {
 
     // The Content and Scripts answers only describe library code, so no card is written for them.
     expect(await cardsOf({ areas })).toEqual([
-      'FEAT-001 eShopLegacy',
-      'FEAT-002 eShopModernizedMVC',
+      'FEAT-001 eShopModernizedMVC',
+      'FEAT-002 eShopLegacy',
     ]);
   });
 });

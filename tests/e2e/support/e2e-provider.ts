@@ -32,8 +32,8 @@ const WEBFORMS_SCRIPT = {
   '(root)': [0, 1],
   Catalog: [2, 3],
   Controllers: [4, 5],
-  Database: [6, 7],
-  Services: [8, 9, 10],
+  Services: [6, 7, 8],
+  Database: [9, 10],
 } as const;
 
 /** The recorded calls that answer each area of `understand-consolidate.json`, in turn order. */
@@ -41,8 +41,8 @@ const MERGING_SCRIPT = {
   '(root)': [0, 1],
   Catalog: [2, 3],
   Controllers: [4, 5],
-  Database: [6, 7],
-  Services: [8, 9],
+  Services: [6, 7],
+  Database: [8, 9],
 } as const;
 
 /** The first user message of a call, or an empty text. */
@@ -56,8 +56,8 @@ const VERDICT_SCRIPT: Readonly<Record<string, number>> = {
   'verifier-FEAT-001.c1': 0,
   'verifier-OQ-001.c1': 1,
   'verifier-BR-001.c1': 2,
-  'verifier-ENT-001.c1': 3,
-  'verifier-BR-002.c1': 4,
+  'verifier-BR-002.c1': 3,
+  'verifier-ENT-001.c1': 4,
 };
 
 /** The first recorded answer of a call, or undefined when it is a failure or there is none. */

@@ -29,8 +29,8 @@ describe('an understand run on the C# fixture: tasks', () => {
       task(1, '(root)', 2, 2),
       task(2, 'Catalog', 2, 1),
       task(3, 'Controllers', 2, 0),
-      task(4, 'Database', 2, 1),
-      task(5, 'Services', 3, 1),
+      task(4, 'Services', 3, 1),
+      task(5, 'Database', 2, 1),
     ]);
     // The recording has no answer for the summariser's two calls: the merge of the two BR cards of
     // two areas (RF-250) and the overview of the cards that passed (RF-264).

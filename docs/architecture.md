@@ -617,7 +617,7 @@ sequenceDiagram
   test and spec files never do) (`marksOf`, `src/domain/code-map/area-surface.ts`; derived from the scan, so the code map file does not
   change). `loadReaderPrompts` also reads `prompts/cards/flows.v1.md` and `prompts/cards/screens.v2.md` (v2 adds that the route, roles, fields and links are claims, P3-29); a reader task
   (`readerPromptsFor`) gets them after the card format only for the kinds its area is marked for, so an area of plain
-  libraries gets the very same prompts and costs nothing extra. The run manifest lists a fragment only when some task
+  libraries gets the very same prompts and costs nothing extra. The same marks order the reader tasks (RF-210, DEC-216): `readingPriorityOf` (`src/domain/code-map/reading-priority.ts`) gives each area its entry-point flag and first-party token count, and `readingOrder` (`src/application/understand/reader-order.ts`) puts, inside own code, areas with an entry point first, then the larger count, then the code map's order; `planTasks` and the estimate compute it from the code map, so the estimate order and the reader card ids follow it. The run manifest lists a fragment only when some task
   used it. The fragments tell the agent to leave a step's `target` out (card ids are numbered after its answer), to
   write a suspected path as an `OQ` card and never to write Mermaid. When a task ends, its coverage gets `surface`
   (the marks and the number of `FLOW` and `SCRN` cards, `coverage.json`), and `coverage.md` has a `## Flows and
