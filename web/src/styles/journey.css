@@ -76,6 +76,7 @@
 
 .rst-road__step--awaiting .rst-road__state,
 .rst-road__step--stopped .rst-road__state,
+.rst-road__step--capped .rst-road__state,
 .rst-road__step--out-of-date .rst-road__state,
 .rst-road__step--gaps .rst-road__state {
   background: var(--rst-warn-bg);
