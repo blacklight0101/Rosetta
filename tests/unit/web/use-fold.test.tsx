@@ -41,7 +41,7 @@ const browserFiresToggle = (): void => {
 
 /** The user clicks the summary: the element flips, then the browser fires `toggle`. */
 const userToggles = (open: boolean): void => {
-  act(() => {
+  void act(() => {
     fold().open = open;
     browserFiresToggle();
   });
