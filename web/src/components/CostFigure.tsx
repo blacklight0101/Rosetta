@@ -1,12 +1,14 @@
 import type { ComponentChildren, JSX } from 'preact';
-import { useId } from 'preact/hooks';
+import { useId, useState } from 'preact/hooks';
 import type { UsageTotals } from '../api/cost-schemas.js';
 import { unknownCallsText } from '../lib/cost-text.js';
 import { formatMoney } from '../lib/money.js';
 
 // RF-428, RNF-010, DEC-54, DEC-217: a cost on the cost page, written by the one money formatter, each
 // amount with its exact figure in a tooltip. The amount takes focus (Tab, or a tap), which shows the
-// figure beside it and has a screen reader read it with the amount; Escape closes it. Dollars read
+// figure beside it and has a screen reader read it with the amount; Escape closes it even while the pointer
+// rests on it (WCAG 1.4.13), until the pointer leaves or the focus moves. The figure sits beside the focusable
+// amount, not inside it, so the amount's name is the amount alone. Dollars read
 // `$3.11`; any other currency by its code. A cost the ledger does not know is named after the known
 // one, never shown as zero (RF-427).
 
@@ -15,6 +17,7 @@ const inCurrency = (money: string, currency: string): string =>
 
 function Amount(props: { readonly currency: string; readonly micros: string }): JSX.Element {
   const tipId = useId();
+  const [dismissed, setDismissed] = useState(false);
   const { text, exact } = formatMoney(props.micros);
   const shown = inCurrency(text, props.currency);
   const full = inCurrency(exact, props.currency);
@@ -22,13 +25,27 @@ function Amount(props: { readonly currency: string; readonly micros: string }): 
   return (
     <span
       class="rst-p136-amount"
-      tabIndex={0}
-      aria-describedby={tipId}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') event.currentTarget.blur();
+      data-dismissed={dismissed ? '' : undefined}
+      onMouseLeave={(event) => {
+        if (!event.currentTarget.contains(document.activeElement)) setDismissed(false);
       }}
     >
-      {shown}
+      <span
+        class="rst-p136-amount__value"
+        tabIndex={0}
+        aria-describedby={tipId}
+        onFocus={() => {
+          setDismissed(false);
+        }}
+        onBlur={() => {
+          setDismissed(false);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') setDismissed(true);
+        }}
+      >
+        {shown}
+      </span>
       <span id={tipId} role="tooltip" class="rst-p136-amount__exact">
         {full}
       </span>

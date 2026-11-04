@@ -97,8 +97,8 @@
 
 /* An amount and its exact figure (RF-428, DEC-217): the figure shows next to the amount, in the flow so a
    table's scroll region never clips it, while the pointer or the keyboard focus (a tap focuses it) is on
-   it; Escape blurs the amount. */
-.rst-p136-amount {
+   it; Escape closes it at once, even while the pointer rests on it (data-dismissed, WCAG 1.4.13). */
+.rst-p136-amount__value {
   border-block-end: 1px dotted var(--rst-ink-soft);
   cursor: help;
 }
@@ -113,8 +113,8 @@
   white-space: nowrap;
 }
 
-.rst-p136-amount:hover .rst-p136-amount__exact,
-.rst-p136-amount:focus .rst-p136-amount__exact {
+.rst-p136-amount:not([data-dismissed]):hover .rst-p136-amount__exact,
+.rst-p136-amount:not([data-dismissed]):focus-within .rst-p136-amount__exact {
   display: inline;
 }
 
