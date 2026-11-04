@@ -144,3 +144,15 @@ it('RF-1020 RF-1021 a live Deepen makes its strip step a link to the run and say
   const step = screen.getByRole('link', { name: 'Questions' });
   expect(step.getAttribute('href')).toBe('/runs/live-deepen');
 });
+
+it('RF-1020 P8-100 the project page keeps the journey strip expanded and offers no button to fold it', async () => {
+  open('written');
+  await screen.findByText('Package ready');
+
+  const journey = await screen.findByRole('region', { name: 'Journey from code to package' });
+
+  expect(within(journey).queryByRole('button', { name: /step details/u })).toBeNull();
+  const bodies = Array.from(journey.querySelectorAll<HTMLElement>('.rst-road__body'));
+  expect(bodies).toHaveLength(7);
+  for (const each of bodies) expect(each.hidden).toBe(false);
+});
