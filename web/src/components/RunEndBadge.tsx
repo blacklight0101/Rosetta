@@ -18,6 +18,11 @@ export interface RunEndBadgeProps {
   readonly partlyReadAreas?: number | undefined;
   /** P8-93: the share of the first-party tokens the run read (0 to 1), when the page knows it. */
   readonly readShare?: number | null | undefined;
+  /**
+   * P8-130: in a table the badge is the word and the share goes on the line under it, so the State
+   * column keeps the width of its other states; the run page keeps the one-line badge.
+   */
+  readonly shareBelow?: boolean | undefined;
 }
 
 /** A run is partly read when its cap left areas unread, or the coverage puts an area under the bar. */
@@ -29,18 +34,30 @@ function isPartlyRead(props: RunEndBadgeProps): boolean {
   );
 }
 
-/** The artboard's "Partly read: 16% of your code"; the share is left out until it is known. */
-function shareSuffix(share: number | null | undefined): string | undefined {
-  return share === undefined || share === null ? undefined : `: ${percentText(share)} of your code`;
+/** The artboard's "16% of your code"; none until the share is known. */
+function shareText(share: number | null | undefined): string | undefined {
+  return share === undefined || share === null ? undefined : `${percentText(share)} of your code`;
 }
 
+/** The "Partly read" badge: the share after the word, or under the badge in a table (P8-130). */
+function PartlyReadBadge(props: RunEndBadgeProps): JSX.Element {
+  const share = shareText(props.readShare);
+  if (share === undefined) return <StatusBadge list="RunPartlyRead" value="PartlyRead" />;
+  if (props.shareBelow !== true) {
+    return <StatusBadge list="RunPartlyRead" value="PartlyRead" suffix={`: ${share}`} />;
+  }
+  return (
+    <>
+      <StatusBadge list="RunPartlyRead" value="PartlyRead" />
+      <div class="rst-table__sub">{share}</div>
+    </>
+  );
+}
+
+// RF-230
 export function RunEndBadge(props: RunEndBadgeProps): JSX.Element {
   const { endState, endReason } = props;
-  if (isPartlyRead(props)) {
-    return (
-      <StatusBadge list="RunPartlyRead" value="PartlyRead" suffix={shareSuffix(props.readShare)} />
-    );
-  }
+  if (isPartlyRead(props)) return <PartlyReadBadge {...props} />;
   if (endState === 'Interrupted' && (endReason === 'Restart' || endReason === 'QueueCancel')) {
     return <StatusBadge list="RunInterruptedBy" value={endReason} />;
   }

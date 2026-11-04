@@ -46,6 +46,7 @@ function StateBadge({ run }: { readonly run: HistoryRun }): JSX.Element {
           unreadAreas={run.unreadAreas}
           partlyReadAreas={run.partlyReadAreas}
           readShare={run.readShare}
+          shareBelow
         />
         <FailedAreasNote count={run.failedAreas} />
       </>
