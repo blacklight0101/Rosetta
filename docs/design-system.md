@@ -196,33 +196,54 @@ component in every state and both themes; the end-to-end suite screenshots it. T
 `/dev/gallery` route, so the address is not a literal 404 there: a visitor without a session is redirected to sign-in,
 and a signed-in user gets the application shell, which draws its not-found page with status 200 (RF-1009).
 
+### 5.1 Tooltip (RF-428, RNF-010, DEC-217, P8-118)
+
+The one Tooltip is the exact figure of a cost amount, built by `CostFigure` (`web/src/components/CostFigure.tsx`) with the
+classes `rst-p136-amount`, `rst-p136-amount__value` and `rst-p136-amount__exact` in `web/src/styles/cost.css`. It exists
+only when the exact figure differs from the shown amount; otherwise the amount is plain text.
+
+- **Trigger:** the shown amount, a `span` with `tabindex="0"`, a dotted underline in `ink-soft` and the help cursor. The
+  tip is a sibling `span` with `role="tooltip"` beside it, not inside it, so the trigger's name is the amount alone; the
+  trigger points at the tip with `aria-describedby`, so a screen reader reads the exact figure after the amount.
+- **Opening:** pointer hover, keyboard focus (Tab) and touch (a tap focuses the trigger) show the tip. It sits in the
+  flow beside the amount, in the mono font at `fs-xs` in `ink-muted`, with `sp-2` of space before it, on one line
+  (`white-space: nowrap`); it is never positioned absolutely or in a layer, so the scroll region of a table cannot clip it.
+- **Keyboard:** Tab reaches the trigger and shows the tip; Escape closes it while the trigger keeps focus, even while the
+  pointer rests on it (WCAG 1.4.13).
+- **Dismissal:** Escape, moving the pointer away when the focus is elsewhere, or moving the focus away. The tip opens
+  again the next time the pointer enters or the focus returns.
+- **Tokens:** `ink-soft`, `ink-muted`, `fs-xs`, `sp-2`, `fw-body` and the mono family; it has no colour of its own, so it
+  follows both themes.
+
 ## 6. Status badges
 
 The state lists are canonical in [architecture](architecture.md) section 5; this table adds only their presentation.
 
-| State                                                        | Tone                                            | Weight | Glyph                 | Meaning for the user                                                |
-| ------------------------------------------------------------ | ----------------------------------------------- | ------ | --------------------- | ------------------------------------------------------------------- |
-| Claim `Proposed`                                             | neutral                                         | tint   | open circle           | an agent made the claim; not checked yet                            |
-| Claim `CitationInvalid`                                      | danger                                          | tint   | broken link           | the cited file or lines do not exist                                |
-| Claim `Supported`                                            | ok                                              | solid  | check                 | the verifier agrees with the evidence                               |
-| Claim `Rejected`                                             | danger                                          | solid  | cross                 | the evidence does not support the claim; kept, with the reason      |
-| Claim `Unverified`                                           | warn                                            | tint   | question mark         | not checked because the run stopped; resume to check                |
-| Agent `Planned`                                              | neutral                                         | tint   | dashed circle         | waiting to start                                                    |
-| Agent `Running`                                              | info                                            | solid  | live dot              | working now                                                         |
-| Agent `Done`                                                 | ok                                              | tint   | check                 | finished normally                                                   |
-| Agent `TurnLimitReached`                                     | warn                                            | tint   | clock                 | stopped at the turn limit; cards so far are kept                    |
-| Agent `InvalidOutput`                                        | danger                                          | tint   | brackets              | the model's answer held no valid card after its repairs             |
-| Agent `Failed`                                               | danger                                          | solid  | exclamation           | stopped by an error                                                 |
-| Agent `StoppedByCap`                                         | warn                                            | solid  | square                | stopped because the budget cap was reached                          |
-| Run `Completed`                                              | ok                                              | solid  | check                 |                                                                     |
-| Run `CapReached`                                             | warn                                            | solid  | square                | raise the cap and resume to finish                                  |
-| Run `CapReached` with unread areas ("Partly read", DEC-194)  | warn                                            | solid  | square                | planned areas were never started; Deepen or resume reads them       |
-| Run `Failed`                                                 | danger                                          | solid  | exclamation           | see the log and the error code                                      |
-| Run `Interrupted` ("Stopped by you", P8-87)                  | neutral                                         | solid  | pause bars            | stopped by the developer; never shown as failed                     |
-| Run `AwaitingApproval` ("Waiting for your approval", RF-432) | warn                                            | tint   | pause bars            | the run reached the amount you approved; Continue (+N) or Stop here |
-| Question `Open` / `Answered`                                 | warn tint / ok tint                             |        | question mark / check |                                                                     |
-| Question `Answer saved` (DEC-154)                            | info tint                                       |        | check                 | an answer is in answers.md and no run has read it yet               |
-| Call `ok` / `retried` / `failed` / `refused-by-cap`          | ok tint / warn tint / danger solid / warn solid |        | HTTP code or glyph    | provider call status (RF-408)                                       |
+| State                                                             | Tone                                            | Weight | Glyph                 | Meaning for the user                                                 |
+| ----------------------------------------------------------------- | ----------------------------------------------- | ------ | --------------------- | -------------------------------------------------------------------- |
+| Claim `Proposed`                                                  | neutral                                         | tint   | open circle           | an agent made the claim; not checked yet                             |
+| Claim `CitationInvalid`                                           | danger                                          | tint   | broken link           | the cited file or lines do not exist                                 |
+| Claim `Supported`                                                 | ok                                              | solid  | check                 | the verifier agrees with the evidence                                |
+| Claim `Rejected`                                                  | danger                                          | solid  | cross                 | the evidence does not support the claim; kept, with the reason       |
+| Claim `Unverified`                                                | warn                                            | tint   | question mark         | not checked because the run stopped; resume to check                 |
+| Agent `Planned`                                                   | neutral                                         | tint   | dashed circle         | waiting to start                                                     |
+| Agent `Running`                                                   | info                                            | solid  | live dot              | working now                                                          |
+| Agent `Done`                                                      | ok                                              | tint   | check                 | finished normally                                                    |
+| Agent `TurnLimitReached`                                          | warn                                            | tint   | clock                 | stopped at the turn limit; cards so far are kept                     |
+| Agent `InvalidOutput`                                             | danger                                          | tint   | brackets              | the model's answer held no valid card after its repairs              |
+| Agent `Failed`                                                    | danger                                          | solid  | exclamation           | stopped by an error                                                  |
+| Agent `StoppedByCap`                                              | warn                                            | solid  | square                | stopped because the budget cap was reached                           |
+| Run `Completed`                                                   | ok                                              | solid  | check                 |                                                                      |
+| Run `CapReached`                                                  | warn                                            | solid  | square                | raise the cap and resume to finish                                   |
+| Run `CapReached` with unread areas ("Partly read", DEC-194)       | warn                                            | solid  | square                | planned areas were never started; Deepen or resume reads them        |
+| Run `Failed`                                                      | danger                                          | solid  | exclamation           | see the log and the error code                                       |
+| Run `Interrupted` ("Stopped by you", P8-87)                       | neutral                                         | solid  | pause bars            | stopped by the developer; never shown as failed                      |
+| Run `Interrupted` by a restart ("Stopped by a restart", P8-111)   | neutral                                         | solid  | pause bars            | the server restarted under the run; resume it; never shown as failed |
+| Run `Interrupted` while queued ("Cancelled while queued", P8-111) | neutral                                         | solid  | pause bars            | cancelled before it started; never shown as failed                   |
+| Run `AwaitingApproval` ("Waiting for your approval", RF-432)      | warn                                            | tint   | pause bars            | the run reached the amount you approved; Continue (+N) or Stop here  |
+| Question `Open` / `Answered`                                      | warn tint / ok tint                             |        | question mark / check |                                                                      |
+| Question `Answer saved` (DEC-154)                                 | info tint                                       |        | check                 | an answer is in answers.md and no run has read it yet                |
+| Call `ok` / `retried` / `failed` / `refused-by-cap`               | ok tint / warn tint / danger solid / warn solid |        | HTTP code or glyph    | provider call status (RF-408)                                        |
 
 ## 7. Patterns
 

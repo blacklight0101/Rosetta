@@ -130,6 +130,12 @@ function sumOfRoles(lines: readonly BreakdownLine[]): Map<string, bigint> {
   return sums;
 }
 
+/** Calls and the three token counts of the lines added up (RF-428: nothing of a role is left out). */
+function countsOf(lines: readonly BreakdownLine[]): Record<string, number> {
+  const keys = ['calls', 'inputTokens', 'outputTokens', 'cachedInputTokens'] as const;
+  return Object.fromEntries(keys.map((key) => [key, sumOf(lines.map((line) => line.totals[key]))]));
+}
+
 describe('breakdownOf by role within a run', () => {
   it('RF-428 gives each run line one line per role with calls, in code-unit order', () => {
     const { byRun } = breakdownOf([...runA, runB]);
@@ -163,7 +169,7 @@ describe('breakdownOf by role within a run', () => {
       ['EUR', 9n],
       ['USD', 2_400n],
     ]);
-    expect(sumOf(run?.byRole.map((line) => line.totals.calls) ?? [])).toBe(run?.totals.calls);
+    expect(countsOf(run?.byRole ?? [])).toEqual(countsOf(run ? [run] : []));
   });
 
   it('RF-428 reads a role whose calls are all unpriced as unknown cost, not as zero', () => {

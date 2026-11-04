@@ -50,9 +50,9 @@ describe('an understand run over a workbook snapshot', () => {
 
   it('RF-231 two workbooks plan the (root) task that reads dependencies.md', async () => {
     expect(await plannedNames(['Loan.xlsx', 'Rates.xlsx'])).toEqual([
-      '(root)',
-      'Loan.xlsx',
       'Rates.xlsx',
+      'Loan.xlsx',
+      '(root)',
     ]);
   }, 120_000);
 });

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "Written by hand for this repository; no real provider was called. The verifier answers Supported to every claim of the webforms-shop run (understand-flows-screens.json) except the second and the fourth claim it judges: the second step of the first flow and the first claim of the first screen, which it rejects (P2-20).",
+  "description": "Written by hand for this repository; no real provider was called. The verifier answers Supported to every claim of the webforms-shop run (understand-flows-screens.json) except the second and the fifth claim it judges: the second step of the first flow (four steps, in reading order the Orders flow) and the first claim of the first screen, which it rejects (P2-20).",
   "calls": [
     {
       "attempts": [
@@ -63,25 +63,6 @@
       "attempts": [
         {
           "response": {
-            "text": "Reason: The cited lines do not do what the step says.\nVerdict: Rejected",
-            "toolCalls": [],
-            "usage": {
-              "inputTokens": 420,
-              "outputTokens": 40,
-              "cachedInputTokens": 0,
-              "usageSource": "reported"
-            },
-            "finishReason": "stop",
-            "requestId": "fake-verifier-4",
-            "modelVersion": "fake-judge-2026-10-01"
-          }
-        }
-      ]
-    },
-    {
-      "attempts": [
-        {
-          "response": {
             "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
             "toolCalls": [],
             "usage": {
@@ -92,6 +73,25 @@
             },
             "finishReason": "stop",
             "requestId": "fake-verifier-5",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines do not do what the step says.\nVerdict: Rejected",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-4",
             "modelVersion": "fake-judge-2026-10-01"
           }
         }

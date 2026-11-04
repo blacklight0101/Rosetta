@@ -49,6 +49,7 @@ function runRow({ run, sizeBytes, position, deepenRounds }: HistoryRun): Record<
     stage: run.stage,
     queueState: run.queueState,
     endState: run.endState,
+    endReason: run.endReason,
     commitSha: run.commitSha,
     queuedAt: formatInstant(run.queuedAt),
     startedAt: instantOrNull(run.startedAt),

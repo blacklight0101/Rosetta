@@ -74,7 +74,7 @@ test('RF-250 RF-262 the cards two areas wrote about one entity and one rule are 
   }
   const entity = files['cards/ENT/ENT-001.md'] ?? '';
   expect(entity).toMatch(/mergedFrom:\n\s+- "ENT-001"\n\s+- "ENT-002"/u);
-  expect(entity).toMatch(/mergedAreas:\n\s+- "Database"\n\s+- "Services"/u);
+  expect(entity).toMatch(/mergedAreas:\n\s+- "Services"\n\s+- "Database"/u);
   expect(Object.keys(files).filter((name) => name.startsWith('cards/ENT/'))).toEqual([
     'cards/ENT/ENT-001.md',
   ]);

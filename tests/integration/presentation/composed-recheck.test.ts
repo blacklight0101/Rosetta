@@ -191,6 +191,7 @@ async function queueRun(setup: Setup, owner: Awaited<ReturnType<typeof uploadPro
     totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
     failedAreas: 0,
     unreadAreas: 0,
+    endReason: null,
   };
   await new PgRunIndex(setup.pool).insert(run);
   const accepted = acceptedManifest({

@@ -47,7 +47,9 @@ it('RF-615 lists the seven steps in order', () => {
 
 it.each([
   ['written', 'Package', 'Done'],
-  ['capped', 'Understand', 'Failed'],
+  ['capped', 'Understand', 'Stopped at its cap'],
+  ['cappedPartly', 'Understand', 'Stopped at its cap'],
+  ['planCapped', 'Plan', 'Stopped at its cap'],
   ['stoppedByYou', 'Understand', 'Stopped by you'],
   ['planStoppedByYou', 'Plan', 'Stopped by you'],
   ['capped', 'Brief', 'Locked'],
@@ -66,6 +68,23 @@ it('RF-615 every step has a glyph that assistive technology skips', () => {
   for (const each of within(journey()).getAllByRole('listitem')) {
     expect(each.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
   }
+});
+
+it('RF-1020 P8-112 a run at its cap never reads Failed, is in the warn tone and keeps its next step', () => {
+  strip('cappedPartly');
+
+  const understand = item('Understand');
+  expect(understand.textContent).not.toContain('Failed');
+  expect(understand.getAttribute('data-state')).toBe('capped');
+  expect(understand.querySelector('.rst-road__detail')?.textContent).toBe('Partly read (RST-1403)');
+  expect(journey().textContent).toContain('Start the plan');
+});
+
+it('RF-1020 P8-112 a run at its cap with nothing to plan from still offers Resume', () => {
+  strip('capped');
+
+  expect(item('Understand').textContent).not.toContain('Failed');
+  expect(journey().textContent).toContain('Resume this run');
 });
 
 it('RF-615 the current step is marked by text and aria-current, not by colour alone', () => {

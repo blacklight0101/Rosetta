@@ -89,7 +89,9 @@ it('RF-615 RF-006 a stopped understand run shows Resume in the strip, which resu
       `POST ${runPath}/resume`,
     );
   });
-  expect(strip().textContent).toContain('Stopped at its cap (RST-1403)');
+  expect(strip().textContent).toContain('Stopped at its cap');
+  expect(strip().textContent).toContain('RST-1403');
+  expect(strip().textContent).not.toContain('Failed');
 });
 
 it('RF-615 the page of a run that is still running shows no strip and asks for no facts', async () => {

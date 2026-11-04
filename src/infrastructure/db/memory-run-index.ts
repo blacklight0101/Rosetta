@@ -14,6 +14,7 @@ import {
   reopenRun,
   startRun,
   type AreaCounts,
+  type RunEndDetail,
   type Run,
   type RunTotals,
 } from '../../domain/runs/run.js';
@@ -109,10 +110,10 @@ export class MemoryRunIndex implements RunIndex {
     runId: string,
     endState: RunEndState,
     at: EpochMs,
-    counts: AreaCounts = {},
+    detail: RunEndDetail = {},
   ): Promise<Run | undefined> {
     const run = this.runs.get(runId);
-    const ended = run === undefined ? undefined : endRun(run, endState, at, counts);
+    const ended = run === undefined ? undefined : endRun(run, endState, at, detail);
     return Promise.resolve(this.keep(ended));
   }
 

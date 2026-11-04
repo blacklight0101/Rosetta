@@ -49,9 +49,9 @@ describe('an understand run over the WebForms shop: cards', () => {
     expect(run.endState).toBe('Completed');
     const flows = cards.filter((card) => card.type === 'FLOW');
     expect(flows.map((card) => card.title)).toEqual([
-      'Browse the catalogue',
-      'Add an item to the basket',
       'Place an order',
+      'Add an item to the basket',
+      'Browse the catalogue',
     ]);
     expect(flows.map((card) => card.id)).toEqual(['FLOW-001', 'FLOW-002', 'FLOW-003']);
     for (const flow of flows) {
@@ -82,10 +82,10 @@ describe('an understand run over the WebForms shop: screens and questions', () =
 
     const screens = cards.filter((card) => card.type === 'SCRN');
     expect(screens.map((card) => card.screen?.route)).toEqual([
-      '/Default.aspx',
-      '/Catalog/Details.aspx',
       '/Orders/Checkout.aspx',
       '/Orders/Confirm.aspx',
+      '/Catalog/Details.aspx',
+      '/Default.aspx',
     ]);
     const checkout = byTitle(cards, 'Checkout')?.screen;
     const email = checkout?.fields.find((field) => field.name === 'EmailBox');
@@ -154,16 +154,16 @@ describe('an understand run over the WebForms shop: coverage', () => {
     expect(coverage).toMatchObject({
       areas: [
         {
-          area: '(root)',
-          surface: { flowsMarked: true, screensMarked: true, flowCards: 1, screenCards: 1 },
+          area: 'Orders',
+          surface: { flowsMarked: true, screensMarked: true, flowCards: 1, screenCards: 2 },
         },
         {
           area: 'Catalog',
           surface: { flowsMarked: true, screensMarked: true, flowCards: 1, screenCards: 1 },
         },
         {
-          area: 'Orders',
-          surface: { flowsMarked: true, screensMarked: true, flowCards: 1, screenCards: 2 },
+          area: '(root)',
+          surface: { flowsMarked: true, screensMarked: true, flowCards: 1, screenCards: 1 },
         },
         {
           area: 'Services',

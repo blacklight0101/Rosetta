@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { endReasonField } from './end-reason.js';
 
 // RF-1008, RF-1012: the wire shapes of the history and snapshot routes (history-routes.ts). `id` is
 // the run's UUID that the report, zip and delete routes take; `runId` is its folder name, which is
@@ -12,6 +13,8 @@ const historyRunSchema = z.object({
   stage: z.string(),
   queueState: z.enum(['Queued', 'Running', 'Ended']),
   endState: z.string().nullable(),
+  /** P8-111: why an `Interrupted` run ended. */
+  endReason: endReasonField,
   commitSha: z.string().nullable(),
   queuedAt: z.string(),
   startedAt: z.string().nullable(),

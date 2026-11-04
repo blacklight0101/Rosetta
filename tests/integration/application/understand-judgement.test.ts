@@ -61,8 +61,8 @@ describe('an understand run: judgement', () => {
       ['FEAT-001.c1', 'Supported'],
       ['OQ-001.c1', 'Supported'],
       ['BR-001.c1', 'Supported'],
-      ['ENT-001.c1', 'Supported'],
       ['BR-002.c1', 'Rejected'],
+      ['ENT-001.c1', 'Supported'],
     ]);
     expect(judged.every((event) => typeof event.data['reason'] === 'string')).toBe(true);
     const lastCheck = events.findLastIndex((event) => event.type === 'verify.citation.checked');
@@ -110,8 +110,8 @@ describe('an understand run: judgement and egress', () => {
       ['verifier-FEAT-001.c1', [{ path: 'Default.aspx.cs', startLine: 5, endLine: 14 }]],
       ['verifier-OQ-001.c1', [{ path: 'Default.aspx.cs', startLine: 7, endLine: 13 }]],
       ['verifier-BR-001.c1', [{ path: 'Catalog/Details.aspx.cs', startLine: 2, endLine: 10 }]],
-      ['verifier-ENT-001.c1', [{ path: 'Database/schema.sql', startLine: 1, endLine: 9 }]],
       ['verifier-BR-002.c1', [{ path: 'Services/CatalogService.cs', startLine: 9, endLine: 15 }]],
+      ['verifier-ENT-001.c1', [{ path: 'Database/schema.sql', startLine: 1, endLine: 9 }]],
     ]);
     expect(h.providers.verifierRequests().map((request) => request.tools)).toEqual([
       [],

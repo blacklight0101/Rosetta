@@ -1,3 +1,4 @@
+import { interruptedPhrase } from '../interrupted-word.js';
 import type { RunPhase } from './run-phase.js';
 import type { RunState } from './run-state.js';
 
@@ -20,7 +21,6 @@ const endWords: Readonly<Record<string, string>> = {
   Completed: 'done',
   CapReached: 'stopped at its cap',
   Failed: 'failed',
-  Interrupted: 'stopped by you',
 };
 
 function kindOf(input: RunTitleInput): string {
@@ -40,6 +40,8 @@ function stateOf(phase: RunPhase): string {
     case 'awaiting':
       return 'waiting for approval';
     case 'ended':
+      // P8-111: an interrupted run is worded by why it ended.
+      if (phase.endState === 'Interrupted') return interruptedPhrase(phase.endReason);
       return endWords[phase.endState] ?? 'stopped';
   }
 }

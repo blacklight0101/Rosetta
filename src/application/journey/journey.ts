@@ -1,5 +1,5 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
-import type { RunEndState, RunQueueState } from '../../domain/runs/run-states.js';
+import type { RunEndReason, RunEndState, RunQueueState } from '../../domain/runs/run-states.js';
 
 // RF-615, RF-614, DEC-142, DEC-143: the facts the journey strip is drawn from, derived and never
 // stored. They come from the run index, the manifests, the saved brief and the end of each run's
@@ -12,6 +12,8 @@ export interface JourneyRun {
   readonly runKey: string;
   readonly queueState: RunQueueState;
   readonly endState: RunEndState | null;
+  /** P8-111: why an `Interrupted` run ended; null for any other run and for one with no recorded reason. */
+  readonly endReason?: RunEndReason | null;
   readonly endedAt: EpochMs | null;
   readonly costMicros: number;
   /** The `RST` code the run ended with; null when it ended without one or has not ended. */

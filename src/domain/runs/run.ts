@@ -1,6 +1,6 @@
 import type { EpochMs } from '../accounts/user.js';
 import { err, ok, type Result } from '../errors/result.js';
-import type { RunEndState, RunQueueState, RunStage } from './run-states.js';
+import type { RunEndReason, RunEndState, RunQueueState, RunStage } from './run-states.js';
 
 // Architecture section 5 (`Run`, `RunQueueState`), data-model.md section 4 (`runs`), RF-003,
 // RF-1108: a run is one stage of one project. It is queued, then running, then ended; the end
@@ -43,12 +43,19 @@ export interface Run {
   readonly failedAreas: number;
   /** P7-02: the planned areas of an understand run that no reader started (shown as "Partly read"); 0 for any other run. */
   readonly unreadAreas: number;
+  /** P8-111: why a run that ended `Interrupted` ended; null for any other run and for one with no recorded reason. */
+  readonly endReason: RunEndReason | null;
 }
 
 /** RF-208, P7-02: the area counts an understand run ends with. */
 export interface AreaCounts {
   readonly failedAreas?: number;
   readonly unreadAreas?: number;
+}
+
+/** What a run records besides its end state when it ends: the area counts and, if interrupted, why (P8-111). */
+export interface RunEndDetail extends AreaCounts {
+  readonly endReason?: RunEndReason;
 }
 
 export type StartProblem = 'not-queued';
@@ -69,25 +76,27 @@ export function startRun(run: Run, at: EpochMs): Result<Run, StartProblem> {
   return ok({ ...run, queueState: 'Running', startedAt: run.startedAt ?? at, spanStartedAt: at });
 }
 
+function endProblemOf(run: Run, endState: RunEndState): EndProblem | undefined {
+  if (run.queueState === 'Ended') return 'already-ended';
+  if (run.queueState === 'Queued' && endState !== 'Interrupted') {
+    return 'queued-run-can-only-be-interrupted';
+  }
+  // RF-432: Stop here ends a paused run `CapReached`; a cancel or a removal ends it `Interrupted`.
+  const stopsOnly = endState !== 'CapReached' && endState !== 'Interrupted';
+  return run.queueState === 'AwaitingApproval' && stopsOnly
+    ? 'awaiting-run-can-only-be-stopped'
+    : undefined;
+}
+
 // RF-003, RF-1108
 export function endRun(
   run: Run,
   endState: RunEndState,
   at: EpochMs,
-  counts: AreaCounts = {},
+  detail: RunEndDetail = {},
 ): Result<Run, EndProblem> {
-  if (run.queueState === 'Ended') return err('already-ended');
-  if (run.queueState === 'Queued' && endState !== 'Interrupted') {
-    return err('queued-run-can-only-be-interrupted');
-  }
-  // RF-432: Stop here ends a paused run `CapReached`; a cancel or a removal ends it `Interrupted`.
-  if (
-    run.queueState === 'AwaitingApproval' &&
-    endState !== 'CapReached' &&
-    endState !== 'Interrupted'
-  ) {
-    return err('awaiting-run-can-only-be-stopped');
-  }
+  const problem = endProblemOf(run, endState);
+  if (problem !== undefined) return err(problem);
   return ok({
     ...run,
     queueState: 'Ended',
@@ -95,8 +104,10 @@ export function endRun(
     endedAt: at,
     spanStartedAt: null,
     activeMs: activeAt(run, at),
-    failedAreas: counts.failedAreas ?? 0,
-    unreadAreas: counts.unreadAreas ?? 0,
+    failedAreas: detail.failedAreas ?? 0,
+    unreadAreas: detail.unreadAreas ?? 0,
+    // P8-111: only an interrupted run has a reason.
+    endReason: endState === 'Interrupted' ? (detail.endReason ?? null) : null,
   });
 }
 
@@ -152,6 +163,7 @@ export function reopenRun(
     endState: null,
     failedAreas: 0,
     unreadAreas: 0,
+    endReason: null,
     queuedAt: at,
     endedAt: null,
   });

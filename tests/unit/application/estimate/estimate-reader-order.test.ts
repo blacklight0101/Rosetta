@@ -8,8 +8,9 @@ import {
 import { settingsFor } from '../../../support/provider-factory-harness.js';
 import { userAmy } from '../../../support/run-harness.js';
 
-// RF-210 (P7-03, DEC-195): the estimate lists the areas in the order the readers take them, so the
-// areas a capped run reaches are the first ones listed.
+// RF-210 (P7-03, DEC-195, P8-94, DEC-216): the estimate lists the areas in the order the readers take
+// them, so the areas a capped run reaches are the first ones listed: own code with an entry point
+// first, then by first-party tokens (largest first), then deployment and the rest.
 
 const local = settingsFor({
   reader: { provider: 'ollama', model: 'gemma4:e4b' },
@@ -23,9 +24,16 @@ const areas = [
   areaOf('eShopModernizedWebForms', 90_000),
 ];
 
-async function listed(requested?: readonly string[]): Promise<readonly string[]> {
+async function listed(
+  requested?: readonly string[],
+  entryPoints: readonly string[] = [],
+): Promise<readonly string[]> {
   const files = areas.flatMap((each) =>
-    each.files.map((path) => entry(path, each.estimatedTokens)),
+    each.files.map((path) =>
+      entry(path, each.estimatedTokens, {
+        artefactKinds: entryPoints.includes(each.name) ? ['controller'] : [],
+      }),
+    ),
   );
   const harness = createEstimateHarness(areas, files);
   const project = await projectWithScan(harness, userAmy.userId, local);
@@ -38,10 +46,10 @@ async function listed(requested?: readonly string[]): Promise<readonly string[]>
 }
 
 describe('RF-210 estimate order', () => {
-  it('RF-210 lists the app areas, in code-map order, before the deployment areas', async () => {
+  it('RF-210 lists the app areas, largest first, before the deployment areas', async () => {
     expect(await listed()).toEqual([
-      'eShopModernizedMVC',
       'eShopModernizedWebForms',
+      'eShopModernizedMVC',
       '.kube',
       'Docker',
       'Kubernetes',
@@ -51,6 +59,16 @@ describe('RF-210 estimate order', () => {
   it('RF-210 lists a named subset in the same order as the run reads it', async () => {
     expect(await listed(['Docker', 'eShopModernizedMVC', 'Kubernetes'])).toEqual([
       'eShopModernizedMVC',
+      'Docker',
+      'Kubernetes',
+    ]);
+  });
+
+  it('RF-210 lists an app area with an entry point before a larger one with none', async () => {
+    expect(await listed(undefined, ['eShopModernizedMVC'])).toEqual([
+      'eShopModernizedMVC',
+      'eShopModernizedWebForms',
+      '.kube',
       'Docker',
       'Kubernetes',
     ]);

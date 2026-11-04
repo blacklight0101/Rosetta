@@ -1,3 +1,5 @@
+import type { EndReason } from '../../api/end-reason.js';
+
 // RF-1002, RF-1003, RF-1004: what the live run page knows about a run, built from its events by
 // `reduce-run.ts`. Nothing here is HTML: every text is shown as text.
 
@@ -119,6 +121,8 @@ interface ScanState {
 interface EndedState {
   readonly endState: string;
   readonly errorCode: string | undefined;
+  /** P8-111: why an `Interrupted` run ended; undefined for a run that does not say. */
+  readonly endReason: EndReason | null | undefined;
   readonly costMicros: number | undefined;
   /** RF-208: how many areas gave no usable card; undefined for a run that does not say. */
   readonly failedAreas: number | undefined;

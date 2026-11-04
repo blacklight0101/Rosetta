@@ -28,10 +28,10 @@ describe('verifier judgement', () => {
       ['FEAT-001.c1', 'Supported'],
       ['OQ-001.c1', 'Supported'],
       ['BR-001.c1', 'Supported'],
-      ['ENT-001.c1', 'Supported'],
       ['BR-002.c1', 'Rejected'],
+      ['ENT-001.c1', 'Supported'],
     ]);
-    expect(claims.at(-1)?.verdict).toEqual({
+    expect(claims.find((claim) => claim.claimId === 'BR-002.c1')?.verdict).toEqual({
       step: 'judgement',
       reason:
         'Line 12 only assigns the UPDATE text to a variable that List returns; nothing in the lines runs it.',
@@ -42,13 +42,13 @@ describe('verifier judgement', () => {
       ['verify.claim.judged', 'reader-001', 'Supported'],
       ['verify.claim.judged', 'reader-001', 'Supported'],
       ['verify.claim.judged', 'reader-002', 'Supported'],
-      ['verify.claim.judged', 'reader-003', 'Supported'],
-      ['verify.claim.judged', 'reader-004', 'Rejected'],
+      ['verify.claim.judged', 'reader-003', 'Rejected'],
+      ['verify.claim.judged', 'reader-004', 'Supported'],
     ]);
-    expect(h.events[4]?.data).toEqual({
+    expect(h.events[3]?.data).toEqual({
       claimId: 'BR-002.c1',
       status: 'Rejected',
-      reason: claims.at(-1)?.verdict?.reason,
+      reason: claims.find((claim) => claim.claimId === 'BR-002.c1')?.verdict?.reason,
     });
   });
 });
@@ -61,7 +61,7 @@ describe('verifier judgement: what the verifier sees', () => {
 
     await judgeClaims(fixtureCards(), h.step());
 
-    const request = h.requests()[4];
+    const request = h.requests()[3];
     expect(request?.context).toMatchObject({ role: 'verifier', agentTaskId: 'verifier-BR-002.c1' });
     expect(request?.system).toBe(h.prompts.system.text);
     expect(request?.tools).toEqual([]);

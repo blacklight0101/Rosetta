@@ -47,6 +47,7 @@ describe('GET /api/projects/:id/history runs', () => {
         sizeBytes: 5,
         failedAreas: 0,
         unreadAreas: 0,
+        endReason: null,
         position: null,
         deepenRounds: null,
         ...{ runningMs: 0, wallMs: 0 },

@@ -1,5 +1,6 @@
 import type { Area } from '../../domain/code-map/area.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
+import { readingPriorityOf, type ReadingPriority } from '../../domain/code-map/reading-priority.js';
 import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
 import { ok, type Result } from '../../domain/errors/result.js';
 import type { ProjectRef } from '../ports/answers-file.js';
@@ -25,6 +26,15 @@ export interface TaskPlan {
   readonly rerun?: Rerun;
 }
 
+/** RF-210, DEC-216: the library areas and the entry points and sizes come from the code map. */
+function readingInputs(
+  areas: readonly Area[],
+  codeMap: CodeMap | undefined,
+): { readonly library: ReadonlySet<string>; readonly priority?: ReadingPriority } {
+  if (codeMap === undefined) return { library: new Set() };
+  return { library: thirdPartyAreaNames(codeMap), priority: readingPriorityOf(areas, codeMap) };
+}
+
 export async function planTasks(input: {
   readonly areas: readonly Area[];
   /** P3-123: its third-party areas are read after own code, and not by default. */
@@ -34,8 +44,8 @@ export async function planTasks(input: {
   readonly rerun: RerunDependencies;
 }): Promise<Result<TaskPlan, UnknownAreas>> {
   const { areas, options, project } = input;
-  const library = input.scanned ? thirdPartyAreaNames(input.scanned.codeMap) : new Set<string>();
-  const tasks = planReaderTasks(areas, options.areas, library);
+  const { library, priority } = readingInputs(areas, input.scanned?.codeMap);
+  const tasks = planReaderTasks(areas, options.areas, library, priority);
   if (tasks.ok && options.deepen !== undefined) {
     // RF-209, DEC-179: an answer is given again to the readers of its area, however often it was used.
     const names = areas.map((area) => area.name);
@@ -52,7 +62,8 @@ export async function planTasks(input: {
   );
   const wanted = areasToRun(plan, options.areas);
   const chosen = onlyAreas(plan, wanted);
-  const planned = wanted.length === 0 ? undefined : planReaderTasks(areas, wanted, library);
+  const planned =
+    wanted.length === 0 ? undefined : planReaderTasks(areas, wanted, library, priority);
   const list = planned?.ok === true ? planned.value : [];
   return ok({ tasks: withAnswersOf(list, chosen), rerun: { deps: input.rerun, plan: chosen } });
 }

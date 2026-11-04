@@ -89,6 +89,16 @@ const badgeRows: readonly { name: string; badges: readonly BadgeChoice[] }[] = [
     name: 'RunQueueState',
     badges: stateLists.RunQueueState.map((value) => ({ list: 'RunQueueState', value }) as const),
   },
+  {
+    name: 'RunPartlyRead',
+    badges: stateLists.RunPartlyRead.map((value) => ({ list: 'RunPartlyRead', value }) as const),
+  },
+  {
+    name: 'RunInterruptedBy',
+    badges: stateLists.RunInterruptedBy.map(
+      (value) => ({ list: 'RunInterruptedBy', value }) as const,
+    ),
+  },
   { name: 'Role', badges: stateLists.Role.map((value) => ({ list: 'Role', value }) as const) },
   {
     name: 'AccountState',

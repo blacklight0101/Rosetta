@@ -50,16 +50,16 @@ describe('the documentation set journey: it fails when a document is marked Inco
     const made = current();
     const notice =
       '<p class="box"><strong>Incomplete.</strong> The planner answer was cut off.</p>';
-    const page = made.documents['ux/wireframes/SCRN-003.html'] ?? '';
+    const page = made.documents['ux/wireframes/SCRN-001.html'] ?? '';
     const marked = page.replace('<body>', `<body>${nl}${notice}`);
 
     const problems = setProblems({
       ...made,
-      documents: { ...made.documents, 'ux/wireframes/SCRN-003.html': marked },
+      documents: { ...made.documents, 'ux/wireframes/SCRN-001.html': marked },
     });
 
     expect(marked).not.toBe(page);
-    expect(problems).toEqual(['handoff/ux/wireframes/SCRN-003.html is marked Incomplete.']);
+    expect(problems).toEqual(['handoff/ux/wireframes/SCRN-001.html is marked Incomplete.']);
   });
 
   it('P3-33 a document marked Incomplete is a problem, whether it is Markdown or YAML', () => {
@@ -141,10 +141,10 @@ describe('the documentation set journey: it fails when the report is not whole',
 
     const problems = setProblems({
       ...made,
-      documents: without(made.documents, 'ux/wireframes/SCRN-003.html'),
+      documents: without(made.documents, 'ux/wireframes/SCRN-001.html'),
     });
 
-    expect(problems).toEqual(['handoff/ux/wireframes/SCRN-003.html is missing.']);
+    expect(problems).toEqual(['handoff/ux/wireframes/SCRN-001.html is missing.']);
   });
 });
 

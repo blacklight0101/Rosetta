@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "Written by hand for this repository; no real provider was called. The verifier of the three runs of the webforms-shop evaluation (understand-shop-model.json, P2-23) answers Supported to every claim except the second and the fourth it judges: the second step of the first flow and the first claim of the first screen, which it rejects, so the first repetition scores lower than the others.",
+  "description": "Written by hand for this repository; no real provider was called. The verifier of the three runs of the webforms-shop evaluation (understand-shop-model.json, P2-23) answers Supported to every claim except the 24th and the 26th recorded answers: the second step of the flow 'Browse the catalogue' and the first claim of the screen 'Catalogue list' (the readers take the Orders and Catalog areas before the root, RF-210, so those claims come after the claims of the other cards, and the verifier asks for them in batches; the golden measures stay as they were), which it rejects, so the first repetition scores lower than the others.",
   "calls": [
     {
       "attempts": [
@@ -25,7 +25,7 @@
       "attempts": [
         {
           "response": {
-            "text": "Reason: The cited lines do not do what the step says.\nVerdict: Rejected",
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
             "toolCalls": [],
             "usage": {
               "inputTokens": 420,
@@ -34,7 +34,7 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-verifier-2",
+            "requestId": "fake-verifier-27",
             "modelVersion": "fake-judge-2026-10-01"
           }
         }
@@ -63,7 +63,7 @@
       "attempts": [
         {
           "response": {
-            "text": "Reason: The cited lines do not do what the step says.\nVerdict: Rejected",
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
             "toolCalls": [],
             "usage": {
               "inputTokens": 420,
@@ -72,7 +72,7 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-verifier-4",
+            "requestId": "fake-verifier-29",
             "modelVersion": "fake-judge-2026-10-01"
           }
         }
@@ -443,7 +443,7 @@
       "attempts": [
         {
           "response": {
-            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "text": "Reason: The cited lines do not do what the step says.\nVerdict: Rejected",
             "toolCalls": [],
             "usage": {
               "inputTokens": 420,
@@ -452,7 +452,7 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-verifier-24",
+            "requestId": "fake-verifier-2",
             "modelVersion": "fake-judge-2026-10-01"
           }
         }
@@ -481,7 +481,7 @@
       "attempts": [
         {
           "response": {
-            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "text": "Reason: The cited lines do not do what the step says.\nVerdict: Rejected",
             "toolCalls": [],
             "usage": {
               "inputTokens": 420,
@@ -490,7 +490,7 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-verifier-26",
+            "requestId": "fake-verifier-4",
             "modelVersion": "fake-judge-2026-10-01"
           }
         }
@@ -509,7 +509,7 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-verifier-27",
+            "requestId": "fake-verifier-24",
             "modelVersion": "fake-judge-2026-10-01"
           }
         }
@@ -547,7 +547,7 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-verifier-29",
+            "requestId": "fake-verifier-26",
             "modelVersion": "fake-judge-2026-10-01"
           }
         }
