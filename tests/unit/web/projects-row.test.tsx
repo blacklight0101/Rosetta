@@ -146,9 +146,9 @@ it('RF-1012 Delete project in the row menu asks the confirmation, then removes t
   fireEvent.click(within(dialog).getByRole('button', { name: 'Delete project' }));
 
   await waitFor(() => {
-    expect(calls.some((call) => call.method === 'DELETE' && call.path === '/api/projects/p-1')).toBe(
-      true,
-    );
+    expect(
+      calls.some((call) => call.method === 'DELETE' && call.path === '/api/projects/p-1'),
+    ).toBe(true);
   });
   await waitFor(() => {
     expect(screen.queryByRole('link', { name: 'octo/webforms', exact: true })).toBeNull();
