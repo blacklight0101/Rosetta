@@ -49,7 +49,7 @@ function sectionOf(
 export function ProjectSettingsForm({ project }: { readonly project: Project }): JSX.Element {
   const drafting = useSettingsDraft(project.settings);
   const { lists, limit } = useRoleModels(drafting.draft);
-  const saving = useSettingsSave(project, drafting.draft, limit);
+  const saving = useSettingsSave(project, drafting, limit);
   const formRef = useRef<HTMLFormElement>(null);
   useHashScroll();
   useRefusalFocus(formRef, saving.refusal);
@@ -87,9 +87,10 @@ export function ProjectSettingsForm({ project }: { readonly project: Project }):
           Save settings
         </Button>
       </div>
-      <p class="rst-settings__note" role="status">
-        {saving.message}
-      </p>
+      <div role="status">
+        <p class="rst-settings__note">{saving.message}</p>
+        {saving.notice === '' ? null : <p class="rst-settings__note">{saving.notice}</p>}
+      </div>
     </form>
   );
 }
