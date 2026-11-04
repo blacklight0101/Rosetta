@@ -30,3 +30,16 @@ export async function saveHostedReaderWithOneParallelReader(page: Page): Promise
   await page.reload();
   await expect(readers).toHaveValue('1');
 }
+
+/**
+ * P8-132: on Project settings with the reader provider already changed to a hosted one in the form:
+ * saves that and keeps the four parallel readers the rule makes of it, for a journey that proves the
+ * cap at four readers (the readers' room counts the calls in flight, RF-429).
+ */
+export async function saveHostedReaderWithFourParallelReaders(page: Page): Promise<void> {
+  const readers = page.getByLabel('Parallel readers', { exact: true });
+  await saveAndWaitForAnswer(page);
+  await expect(page.getByText('Settings saved.')).toBeVisible();
+  await page.reload();
+  await expect(readers).toHaveValue('4');
+}

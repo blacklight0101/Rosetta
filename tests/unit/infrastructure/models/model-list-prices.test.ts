@@ -4,15 +4,15 @@ import { lookupPrice } from '../../../../src/domain/budget/price-table.js';
 import { loadPriceTable } from '../../../../src/infrastructure/budget/price-file.js';
 import { loadModelList } from '../../../../src/infrastructure/models/model-list-file.js';
 
-// RF-405, Q-56: the shipped model list is dated 2026-10-21, holds the current OpenAI flagships and
+// RF-405, Q-56: the shipped model list is dated 2026-11-04, holds the current OpenAI flagships and
 // the cheap models, and every model on it has a price in the shipped price table.
 
 const shipped = fileURLToPath(new URL('../../../../prices/models.yaml', import.meta.url));
 const prices = fileURLToPath(new URL('../../../../prices/default-prices.yaml', import.meta.url));
 
 describe('the shipped model list and its prices', () => {
-  it('RF-405, Q-56 the shipped list is dated 2026-10-21', async () => {
-    expect((await loadModelList(shipped)).version).toBe('2026-10-21');
+  it('RF-405, Q-56 the shipped list is dated 2026-11-04', async () => {
+    expect((await loadModelList(shipped)).version).toBe('2026-11-04');
   });
 
   it('RF-405, Q-56 every model of the shipped list has a price in the price table', async () => {

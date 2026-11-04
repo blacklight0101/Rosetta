@@ -11,7 +11,10 @@ import { microUsd } from '../../domain/budget/money.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { isRemoteOllama } from '../../application/providers/cloud-consent.js';
+import type { Spend } from '../../domain/budget/claim-room.js';
+import type { LlmRequest } from '../../application/ports/llm-provider.js';
 import type { CallPricer } from '../providers/call-attempts.js';
+import { estimateInputTokens } from '../providers/usage-estimate.js';
 
 // RF-420, RF-427, DEC-107: how the budget guard prices a call before and after it is made, and the
 // same prices for the call log of ObservedProvider (so a call has one cost in the ledger and in
@@ -106,6 +109,28 @@ export function worstCaseOf(
 ): WorstCase {
   const micros = price === undefined ? 0n : worstCaseCost(price, bound).micros;
   return { micros, tokens: BigInt(bound.promptTokens) + BigInt(bound.maxOutputTokens) };
+}
+
+/**
+ * The worst case the budget guard reserves for a request: its prompt, estimated at four characters
+ * per token, plus its output limit, priced. A request with no output limit counts none; the guard
+ * refuses it before it reserves anything.
+ */
+// RF-422, P8-132
+function worstCaseOfRequest(price: Price | undefined, request: LlmRequest): WorstCase {
+  const maxOutputTokens = request.maxOutputTokens ?? 0;
+  return worstCaseOf(price, { promptTokens: estimateInputTokens(request), maxOutputTokens });
+}
+
+/**
+ * P8-132, RF-429: the worst case of each call of a role, as the guard reserves it, for the readers'
+ * room to count the calls in flight. A model the guard cannot price is refused here as there.
+ */
+export function worstCaseOfCalls(
+  pricing: BudgetPricing,
+  query: PricingQuery,
+): (request: LlmRequest) => Spend {
+  return (request) => worstCaseOfRequest(priceCall(pricing, query, request.model).price, request);
 }
 
 /** The pricer of ObservedProvider for one provider of a run: the guard's prices, 0 when none. */
