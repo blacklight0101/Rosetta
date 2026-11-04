@@ -117,7 +117,7 @@ export function worstCaseOf(
  * refuses it before it reserves anything.
  */
 // RF-422, P8-132
-export function worstCaseOfRequest(price: Price | undefined, request: LlmRequest): WorstCase {
+function worstCaseOfRequest(price: Price | undefined, request: LlmRequest): WorstCase {
   const maxOutputTokens = request.maxOutputTokens ?? 0;
   return worstCaseOf(price, { promptTokens: estimateInputTokens(request), maxOutputTokens });
 }
