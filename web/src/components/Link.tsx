@@ -10,6 +10,8 @@ export interface LinkProps {
   readonly href: string;
   readonly children: ComponentChildren;
   readonly class?: string;
+  /** The accessible name when the visible words are not all of it (a run id: "View run <id>"). */
+  readonly ariaLabel?: string;
   readonly current?: boolean;
 }
 
@@ -23,6 +25,7 @@ export function Link(props: LinkProps): JSX.Element {
     <a
       href={props.href}
       class={props.class}
+      aria-label={props.ariaLabel}
       aria-current={props.current === true ? 'page' : undefined}
       onClick={(event) => {
         if (!isPlainClick(event) || !isPageOfThisApp(props.href)) return;

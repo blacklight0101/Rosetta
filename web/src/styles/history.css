@@ -90,3 +90,122 @@ dialog.rst-p140-dialog::backdrop {
   justify-content: flex-end;
   gap: var(--rst-sp-3);
 }
+
+/* P8-89: the row menu ("More actions") and the box inside the actions cell that holds it, History artboard. The flex is on a box inside the cell, never on the td, which would leave the table layout and lose the row separator. */
+
+.rst-p140-row-actions {
+  display: flex;
+  gap: var(--rst-sp-2);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.rst-menu__button {
+  inline-size: 2rem;
+  block-size: 2rem;
+  border: 1px solid transparent;
+  border-radius: var(--rst-radius-md);
+  background: transparent;
+  color: var(--rst-ink-soft);
+  font: inherit;
+  font-size: var(--rst-fs-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rst-menu__button:hover,
+.rst-menu__button[aria-expanded='true'] {
+  border-color: var(--rst-rule);
+  background: var(--rst-surface-raised);
+}
+
+.rst-menu__panel {
+  position: fixed;
+  z-index: var(--rst-z-menu);
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 11rem;
+  max-inline-size: calc(100vw - var(--rst-sp-4) * 2);
+  padding: var(--rst-sp-1);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-raised);
+  box-shadow: var(--rst-shadow-2);
+}
+
+.rst-menu__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  border: 0;
+  border-radius: var(--rst-radius-sm);
+  background: transparent;
+  color: var(--rst-ink);
+  font: inherit;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rst-menu__item:hover {
+  background: var(--rst-surface-2);
+}
+
+.rst-menu__item--danger {
+  color: var(--rst-danger-ink);
+}
+
+.rst-menu__item[aria-disabled='true'] {
+  color: var(--rst-ink-soft);
+  cursor: not-allowed;
+}
+
+.rst-menu__reason {
+  font-size: var(--rst-fs-sm);
+  color: var(--rst-ink-soft);
+}
+
+/* P8-89: a run name never wraps at its hyphens, so the whole link can be hit (the click point is its centre) */
+
+.rst-p140-run-name {
+  white-space: nowrap;
+}
+
+/* P8-89: the Coverage value and its tooltip line, the overlay Tooltip of design-system.md section 5.1: out of the flow, so the table does not move, and fixed like the row menu panel, so its scrolling box does not clip it. useOverlayTip sets left and top. */
+
+.rst-p889-coverage__value {
+  border-block-end: 1px dotted var(--rst-ink-soft);
+  cursor: help;
+}
+
+.rst-p889-coverage__line {
+  position: fixed;
+  z-index: var(--rst-z-menu);
+  display: none;
+  inline-size: max-content;
+  max-inline-size: min(28rem, calc(100vw - var(--rst-sp-4) * 2));
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-raised);
+  box-shadow: var(--rst-shadow-2);
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  font-weight: var(--rst-fw-body);
+  text-align: start;
+  white-space: normal;
+}
+
+/* The pointer crosses the gap between the value and the tooltip without leaving either (WCAG 1.4.13) */
+
+.rst-p889-coverage__line::before {
+  position: absolute;
+  z-index: -1;
+  content: '';
+  inset: calc(var(--rst-sp-1) * -1 - 1px) 0;
+}
+
+.rst-p889-coverage[data-open]:not([data-dismissed]) .rst-p889-coverage__line {
+  display: block;
+}

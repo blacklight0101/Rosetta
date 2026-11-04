@@ -5,6 +5,7 @@ import {
   confirmation,
   openHistory,
   projectFolderOf,
+  rowMenuItem,
   runRow,
   runsTable,
 } from './support/history-page.js';
@@ -41,13 +42,13 @@ test('RF-1008 lists a finished run with its stage, commit, state and links, and 
 
   const row = runRow(page, '-scan');
   await expect(row).toContainText('Completed');
-  await expect(row).toContainText('scan');
+  await expect(row).toContainText('Scan');
   await expect(row.getByRole('cell').nth(2)).toHaveText(/^[0-9a-f]{7}$/u);
   await expect(row.getByRole('link', { name: /^View run /u })).toBeVisible();
   await expectNoSeriousViolations(page);
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    row.getByRole('link', { name: /^Zip of run/u }).click(),
+    rowMenuItem(row, 'Zip').then(async (zip) => zip.click()),
   ]);
   expect(download.suggestedFilename()).toMatch(/-scan\.zip$/u);
   await row.getByRole('link', { name: /^View run /u }).click();
@@ -69,8 +70,8 @@ test('RF-1012 disables Delete while a run is in progress, with the reason, until
 
   const row = runRow(page, '-understand');
   await expect(row).toContainText(/Queued|Running/u);
-  const delete1 = row.getByRole('button', { name: /^Delete \((queued|running)\)/u });
-  await expect(delete1).toBeDisabled();
+  const delete1 = await rowMenuItem(row, 'Delete');
+  await expect(delete1).toHaveAttribute('aria-disabled', 'true');
   await expect(delete1).toHaveAttribute('title', 'Stop the run before deleting it');
   await expect(page.getByRole('button', { name: 'Delete project' })).toBeDisabled();
   await transitionsDone(page);
@@ -83,9 +84,10 @@ test('RF-1012 disables Delete while a run is in progress, with the reason, until
   await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
   await openHistory(page);
   await expect(runRow(page, '-understand')).toContainText('Stopped by you');
-  await expect(
-    runRow(page, '-understand').getByRole('button', { name: /^Delete:/u }),
-  ).toBeEnabled();
+  await expect(await rowMenuItem(runRow(page, '-understand'), 'Delete')).not.toHaveAttribute(
+    'aria-disabled',
+    'true',
+  );
 });
 
 test('RF-1012 DEC-55 deleting a run asks first, frees its folder and leaves the totals and the cost page alone', async ({
@@ -105,7 +107,7 @@ test('RF-1012 DEC-55 deleting a run asks first, frees its folder and leaves the 
   await openHistory(page);
 
   const row = runRow(page, '-understand');
-  await row.getByRole('button', { name: /^Delete:/u }).click();
+  await (await rowMenuItem(row, 'Delete')).click();
   const dialog = confirmation(page);
   await expect(dialog).toContainText(/projects\/[0-9a-f-]{36}\/runs\//u);
   await expect(dialog).toContainText(/\d+(\.\d)? (B|kB|MB)/u);
@@ -115,7 +117,7 @@ test('RF-1012 DEC-55 deleting a run asks first, frees its folder and leaves the 
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
   await expect(row).toBeVisible();
-  await row.getByRole('button', { name: /^Delete:/u }).click();
+  await (await rowMenuItem(row, 'Delete')).click();
   await dialog.getByRole('button', { name: 'Delete run' }).click();
 
   await expect(runRow(page, '-understand')).toHaveCount(0);
