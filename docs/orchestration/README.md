@@ -143,7 +143,8 @@ when **all** of these hold, and checks each one again right before the merge:
    outside a card (`docs/<topic>`, `docs/build-status`), including ones that change `CLAUDE.md`, need no verifier
    and are merged under rules 1, 3 and 5 (DEC-212). Releases into `main` stay the owner's.
 5. The merge is `gh pr merge <pr> --squash --delete-branch` with the pull request title as the squash title, and the
-   command's exit code is 0. Never an admin override, never a bypass of the `develop` ruleset, never a push to `develop` or `main`.
+   command's exit code is 0; the orchestrator removes the card's worktree first, because the local branch delete
+   otherwise makes the command exit 1 (DEC-219). Never an admin override, never a bypass of the `develop` ruleset, never a push to `develop` or `main`.
 
 After each merge the orchestrator fast-forwards its local `develop` (`git pull --ff-only`) and confirms the card's
 issue is closed. Then it checks every other open card branch with `git merge-tree --write-tree origin/develop <branch>`
