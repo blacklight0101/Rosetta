@@ -18,6 +18,7 @@ import type { ProjectSettings } from '../projects/project-settings.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
 import type { RunEventPublisher } from '../runs/run-event-publisher.js';
 import type { OwnerAnswer } from '../verifier/answer-restated-claim.js';
+import { callHooksOf } from '../verifier/call-events.js';
 import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import { defaultEvidenceLimits } from '../verifier/cited-lines.js';
 import {
@@ -150,12 +151,10 @@ function judgeOne(
   call: Pick<ClaimJudgeParts, 'halted' | 'turn'>,
 ): Promise<Judgement> {
   const owner = answersOfArea(parts.ownerAnswers, each.card.area);
-  const { claimId } = each.claim;
-  // P8-58, RF-1002: the call's start, so the live page counts the calls the verifier runs at once.
-  const onCallStarted = async (): Promise<void> => {
-    await parts.events.emit('verify.claim.started', { claimId }, each.card.agentTaskId);
-  };
-  const judge = { ...parts.judge, ...call, ownerAnswers: owner, onCallStarted };
+  // P8-58, RF-1002: the start and the end of the claim's calls, so the live page counts the calls
+  // the verifier really has in flight (starts without an end).
+  const hooks = callHooksOf(parts.events, each.claim, each.card.agentTaskId);
+  const judge = { ...parts.judge, ...call, ownerAnswers: owner, ...hooks };
   return judgeClaim(judge, each.claim, spanIdOf(parts.judge.call.traceId, each.index));
 }
 

@@ -16,6 +16,7 @@ import {
   type EvidenceLimits,
   type SkipLookup,
 } from './cited-lines.js';
+import { withCallEvents, type CallEventHooks } from './call-events.js';
 import { restatedAnswerReason, type OwnerAnswer } from './answer-restated-claim.js';
 import { earlierClaimReason } from './earlier-claim.js';
 import { maskedSourceReason } from './masked-source-claim.js';
@@ -57,7 +58,7 @@ interface JudgementCall {
   readonly signal: AbortSignal;
 }
 
-export interface ClaimJudgeParts {
+export interface ClaimJudgeParts extends CallEventHooks {
   /** The guarded provider of the `verifier` role and its settings. */
   readonly role: Pick<RoleProvider, 'provider' | 'model' | 'maxOutputTokens' | 'temperature'>;
   readonly prompts: VerifierPrompts;
@@ -78,8 +79,6 @@ export interface ClaimJudgeParts {
   readonly onAnswer?: (response: LlmResponse) => Promise<void>;
   /** P5-15: told by the step that a cap or a stop ended it, so a claim still waiting sends no call. */
   readonly halted?: () => 'stopped' | 'capped' | undefined;
-  /** P8-58: told when the claim's first call is about to be sent, so the run log shows it began. */
-  readonly onCallStarted?: (claim: JudgedClaim) => Promise<void>;
   /** P5-15: orders the first call of parallel judgements; `pass` is told once that call is sent. */
   readonly turn?: { readonly wait: () => Promise<void>; readonly pass: () => void };
 }
@@ -177,15 +176,6 @@ async function ask(
   }
 }
 
-/**
- * P8-58: tells the step the claim's first call begins, unless the step has ended and none is sent.
- * The event is queued at once and the caller awaits it after sending, so its write holds no call back.
- */
-function announceCall(parts: ClaimJudgeParts, claim: JudgedClaim): Promise<void> {
-  if (parts.halted?.() !== undefined) return Promise.resolve();
-  return parts.onCallStarted?.(claim) ?? Promise.resolve();
-}
-
 /** P5-34, P3-122, P5-31: the claims the cited lines settle by a rule cost no call. */
 function ruleJudgement(
   parts: ClaimJudgeParts,
@@ -236,9 +226,18 @@ export async function judgeClaim(
   ];
   // P5-15: the first call of each claim is sent in claim order.
   await parts.turn?.wait();
-  const announced = announceCall(parts, claim);
+  // P8-58: the claim's calls sit between its start and its end in the run log.
+  return withCallEvents(parts, claim, () => judgeByModel(parts, claim, parentSpanId, asked));
+}
+
+/** The claim's calls: the first, and the one retry or re-ask its answer may need (RF-301). */
+async function judgeByModel(
+  parts: ClaimJudgeParts,
+  claim: JudgedClaim,
+  parentSpanId: string,
+  asked: readonly LlmMessage[],
+): Promise<Judgement> {
   const first = await ask(parts, requestOf(parts, claim, parentSpanId, asked));
-  await announced;
   if (!first.ok) return first.error;
   const verdict = parseVerdictAnswer(first.value);
   const reask = (messages: readonly LlmMessage[]) =>
