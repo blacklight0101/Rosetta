@@ -46,7 +46,7 @@ test('RF-1008 a completed scan shows as its position in the journey, the last ru
   await openProjects(page);
 
   const row = projectRow(page);
-  await expect(row.getByRole('cell').nth(2)).toContainText('Scan done');
+  await expect(row.getByRole('cell').nth(2)).toContainText('Start a run');
   await expect(row).not.toContainText('scan ·');
   await expect(row).not.toContainText('Completed');
   await expect(row.getByRole('cell').nth(3)).toHaveText(/^\d{1,2} [A-Z][a-z]{2}, \d{2}:\d{2}$/u);

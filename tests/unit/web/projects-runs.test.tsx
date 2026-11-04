@@ -61,7 +61,7 @@ it('RF-1008 shows the position, the last run and the cost of each project, in th
   expect(headers).toEqual(['Project', 'Source', 'Where it is', 'Last run', 'Cost', 'Actions']);
   expect(row.textContent).toContain('12 Oct, 09:31');
   expect(row.textContent).not.toContain('scan ·');
-  expect(within(row).getByText('Scan done')).not.toBeNull();
+  expect(within(row).getByText('Start a run')).not.toBeNull();
   expect(within(row).queryByText('Completed')).toBeNull();
   expect(within(row).queryByText('1,284,903')).toBeNull();
   expect(within(row).getByText('$3.47')).not.toBeNull();

@@ -115,8 +115,8 @@ test('RF-010 RF-1012 a row has the name link, a source badge, Open and a menu wh
     'Cost',
     'Actions',
   ]);
-  // The scan has ended, so the position is Scan done; "Scan not started" is pinned in the unit tests.
-  await expect(row.getByRole('cell').nth(2)).toHaveText('Scan done');
+  // Only a scan has ended, so the row says what the project page says; "Scan not started" is in the unit tests.
+  await expect(row.getByRole('cell').nth(2)).toHaveText('Start a run');
   // P8-99 screenshots of the list at 1280 px and at 390 px, attached to the test report.
   for (const [name, width, height] of [
     ['projects-list-1280', 1280, 800],

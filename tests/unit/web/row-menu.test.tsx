@@ -144,3 +144,73 @@ it('RNF-010 a resize that changes the viewport closes the menu', () => {
 
   expect(screen.queryByRole('menu')).toBeNull();
 });
+
+it('RNF-010 focusing an item never scrolls the page under the menu', () => {
+  const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+
+  fireEvent.click(renderMenu());
+  expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
+
+  focus.mockClear();
+  fireEvent.keyDown(panel(), { key: 'ArrowDown' });
+  expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Delete project…' }));
+  expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
+});
+
+type Held = readonly [EventTarget, string, unknown, boolean];
+
+const captureOf = (options: unknown): boolean => {
+  if (typeof options === 'object' && options !== null && 'capture' in options) {
+    return options.capture === true;
+  }
+  return options === true;
+};
+
+/** Follows what the document and the window hold, as an element would be removed: same listener, same capture. */
+function watchListeners(): () => string[] {
+  const held: Held[] = [];
+  for (const target of [document, window]) {
+    const add = target.addEventListener.bind(target);
+    const remove = target.removeEventListener.bind(target);
+    vi.spyOn(target, 'addEventListener').mockImplementation((type, listener, options) => {
+      held.push([target, type, listener, captureOf(options)]);
+      add(type, listener, options);
+    });
+    vi.spyOn(target, 'removeEventListener').mockImplementation((type, listener, options) => {
+      const removed: Held = [target, type, listener, captureOf(options)];
+      const at = held.findIndex((one) => one.every((part, index) => part === removed[index]));
+      if (at >= 0) held.splice(at, 1);
+      remove(type, listener, options);
+    });
+  }
+  return () =>
+    held
+      .filter(([, type]) => ['keydown', 'mousedown', 'resize', 'scroll'].includes(type))
+      .map(([target, type]) => `${target === window ? 'window' : 'document'} ${type}`)
+      .sort();
+}
+
+const closeWays: readonly (readonly [string, (trigger: HTMLElement) => void])[] = [
+  ['Escape', () => fireEvent.keyDown(document.body, { key: 'Escape' })],
+  ['a click elsewhere', () => fireEvent.mouseDown(screen.getByLabelText('Elsewhere'))],
+  ['its button', (trigger) => fireEvent.click(trigger)],
+  ['Tab', () => fireEvent.keyDown(panel(), { key: 'Tab' })],
+  ['leaving the page', () => cleanup()],
+];
+
+it.each(closeWays)('RNF-010 closing the menu by %s leaves no listener behind', (_way, closeIt) => {
+  const held = watchListeners();
+  const trigger = renderMenu();
+
+  fireEvent.click(trigger);
+  expect(held()).toEqual([
+    'document keydown',
+    'document mousedown',
+    'window resize',
+    'window scroll',
+  ]);
+
+  closeIt(trigger);
+
+  expect(held()).toEqual([]);
+});

@@ -35,7 +35,7 @@ async function positionOf(lastRun: Record<string, unknown> | null): Promise<stri
 const positions = [
   ['no run', null, 'Scan not started'],
   ['a running scan', ended('scan', { queueState: 'Running', endState: null }), 'Scan running'],
-  ['a finished scan', ended('scan'), 'Scan done'],
+  ['a project with only a finished scan', ended('scan'), 'Start a run'],
   [
     'a queued understand run',
     ended('understand', { queueState: 'Queued', endState: null }),
@@ -45,6 +45,11 @@ const positions = [
     'a running understand run',
     ended('understand', { queueState: 'Running', endState: null }),
     'Understand running',
+  ],
+  [
+    'an understand run paused for approval',
+    ended('understand', { queueState: 'AwaitingApproval', endState: null, endedAt: null }),
+    'Paused for approval',
   ],
   ['a finished understand run', ended('understand'), 'Understand done'],
   ['a running plan run', ended('plan', { queueState: 'Running', endState: null }), 'Plan running'],
@@ -94,6 +99,32 @@ describe('RF-010 where it is: the position of the project in the journey', () =>
 
     expect(text).toContain('Understand queued');
     expect(text).toContain('position 2, 1 run ahead');
+  });
+});
+
+describe('RF-432 a run paused for approval in the projects list', () => {
+  it('RF-432 one paused run leaves the whole list readable, with its time under Last run', async () => {
+    const paused = ended('understand', {
+      queueState: 'AwaitingApproval',
+      endState: null,
+      endedAt: null,
+    });
+    renderPage(<ProjectsPage />, {
+      [overviewPath]: json(200, {
+        projects: [
+          overviewRow(demo, { runs: 1, lastRun: paused }),
+          overviewRow(projectOf('p-2', 'acme/shop')),
+        ],
+        truncated: false,
+      }),
+    });
+    const link = await screen.findByRole('link', { name: 'octo/demo', exact: true });
+
+    expect(screen.getByRole('link', { name: 'acme/shop', exact: true })).not.toBeNull();
+    expect(whereCell(link).textContent).toContain('Paused for approval');
+    expect(link.closest('tr')?.querySelector('td[data-label="Last run"]')?.textContent).toBe(
+      '12 Oct, 09:30',
+    );
   });
 });
 
