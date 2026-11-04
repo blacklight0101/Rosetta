@@ -152,8 +152,9 @@ function judgeOne(
   const owner = answersOfArea(parts.ownerAnswers, each.card.area);
   const { claimId } = each.claim;
   // P8-58, RF-1002: the call's start, so the live page counts the calls the verifier runs at once.
-  const onCallStarted = () =>
-    parts.events.emit('verify.claim.started', { claimId }, each.card.agentTaskId);
+  const onCallStarted = async (): Promise<void> => {
+    await parts.events.emit('verify.claim.started', { claimId }, each.card.agentTaskId);
+  };
   const judge = { ...parts.judge, ...call, ownerAnswers: owner, onCallStarted };
   return judgeClaim(judge, each.claim, spanIdOf(parts.judge.call.traceId, each.index));
 }
