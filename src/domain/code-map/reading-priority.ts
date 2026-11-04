@@ -8,7 +8,7 @@ import { isThirdPartyFile } from './third-party.js';
 // one without, and a larger first-party token count before a smaller one. Vendored libraries and
 // minified bundles inside a mixed area do not count as its size.
 
-export interface AreaPriority {
+interface AreaPriority {
   readonly entryPoint: boolean;
   readonly firstPartyTokens: number;
 }
