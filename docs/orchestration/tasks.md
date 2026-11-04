@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 119     | 5         | 102        | 12        | 0                  | 88      | 25      | 6      | 35         | 21        |
-| **Total**                    | **609** | **123**   | **438**    | **48**    | **0**              | **314** | **269** | **26** | **297**    | **21**    |
+| P8 Evaluation fixes, round 2 | 126     | 5         | 109        | 12        | 0                  | 95      | 25      | 6      | 42         | 22        |
+| **Total**                    | **616** | **123**   | **445**    | **48**    | **0**              | **321** | **269** | **26** | **304**    | **22**    |
 
 ## Conventions for every card
 
@@ -8699,7 +8699,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-26, P8-87
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-06, UX-17, UX-19, EV-93, EV-94: a resumed run's start time is reset, so History shows 13.8 min for a 66 min run.
 - **Reads**: `docs/design/board/P8HistoryCost.dc.html`, `src/application/runs/run-lifecycle.ts` (resume), `web/src/pages/HistoryPage.tsx`, `web/src/pages/HistoryRuns.tsx`, RF-426, RF-428.
 - **Do**: add the Givens first; red tests first.
@@ -8794,7 +8794,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-23, EV-97, EV-76: On eShop, readers are planned in ordinal alphabetical order ((root), ACI, Docs, Setup, VM before the app folders), so a run that stops early misses app code.
 - **Reads**: `src/application/understand/` (area planning, `reader-settings.ts`), RF-210 (readers take the app's own code first; P7-03 (Done) made RF-210, so the eShop order is a regression of it), RF-1005.
 - **Do**: red tests first.
@@ -8963,7 +8963,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-26
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, P8-26 verifier round 1, #1187, findings 1 and 2): changing the zero guard of `questionsPart` in `web/src/lib/journey/journey-steps.ts` (`if (answered === 0) return part`) so a project with no answered questions reads "0 answered questions waiting for a re-run" failed no test; `tests/unit/web/project-page-details.test.tsx:98-114` checks the no-mid-name wrap and the summary bar reserve by regexes over the CSS source, and the reserve is a fixed 8rem plus a spacing token, so a taller bar covering a control is not caught.
 - **Reads**: `web/src/lib/journey/journey-steps.ts`, `tests/unit/web/project-heading.test.ts`, `tests/unit/web/project-page-details.test.tsx`, `tests/e2e/project-page-states.spec.ts`, `web/src/styles/project-page.css`, RF-241, RF-1021, RF-1022, ADR-008.
 - **Do**:
@@ -8979,7 +8979,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-26
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, CI of #1193 and #1197, both after P8-26 merged): `tests/e2e/journeys/workbook-project.spec.ts:137` ("RF-150 RF-156 workbooks replaced between two runs give a second report that names the new hash") failed in shard 3/3 on two unrelated branches. On #1193, `chooseAreas` (`tests/e2e/support/journey-pages.ts:36`) found no label in the group "Areas from the code map" within 5 s; on #1197 a click timed out after 240 s. A re-run passed on #1193. P8-26 folded the source under "Replace the source" and the areas under "Start another run".
 - **Reads**: `tests/e2e/journeys/workbook-project.spec.ts`, `tests/e2e/support/workbook-journey.ts`, `tests/e2e/support/journey-pages.ts` (`revealAreas`, `chooseAreas`), `web/src/pages/StartRunForm.tsx`, `web/src/pages/StartChoices.tsx`, RF-150, RF-156, RF-1021, ADR-008.
 - **Do**:
@@ -8995,7 +8995,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-36
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, P8-36 verifier round 1, #1194, findings 1 and 2): `holdPlanOptions` in `tests/e2e/support/plan-setup-page.ts` aborts the held `plan-options` request after the save instead of letting it through, so the rest of the recorded-lines test runs with failed options; and no committed test fails on the old order (the reproduction was an uncommitted 3 s wait).
 - **Reads**: `tests/e2e/support/plan-setup-page.ts`, `tests/e2e/plan-setup.spec.ts`, `tests/e2e/plan-setup-stack-defaults.spec.ts`, `web/src/pages/use-plan-session.ts`, RF-605, RF-609, ADR-008.
 - **Do**:
@@ -9059,7 +9059,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-87
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, P8-87 verifier, #1205; DEC-217): a user Stop, a restart recovery (`run-queue.ts` `recoverOrphans`) and a cancelled queued run all end `Interrupted`, so all read "Stopped by you".
 - **Reads**: `src/application/runs/run-lifecycle.ts`, `run-queue.ts`, `docs/data-model.md`, `web/src/components/badge-specs.ts`, `web/src/lib/journey/journey-context.ts`, RF-006, RF-1008, RF-1020, ADR-016.
 - **Do**: add the Givens first; red tests first.
@@ -9075,7 +9075,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-87
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, P8-87 builder and verifier, #1205; DEC-217): a `CapReached` run shows the strip word "Failed" with the detail "Stopped at its cap".
 - **Reads**: `web/src/lib/journey/journey-steps.ts`, `web/src/lib/journey/journey-context.ts`, `web/src/pages/JourneyStrip.tsx`, `web/src/styles/journey.css`, RF-1020.
 - **Do**: add the Givens first; red tests first.
@@ -9091,7 +9091,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-106
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-04 - see P8-106)
 - **Evidence** (2026-11-04, P8-106 fixer, #1206): the project page posts `{"stage":"scan"}` on every load, even when the project has completed scans, and it hides the start choices for a moment on every visit (`web/src/pages/use-auto-scan.ts:66`).
 - **Reads**: `web/src/pages/use-auto-scan.ts`, `web/src/pages/StartRunForm.tsx`, `web/src/api/history.ts`, `tests/e2e/project-page-states.spec.ts`, RF-160, RF-1001, ADR-027.
 - **Do**:
@@ -9123,7 +9123,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-94
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-04, P8-94 builder, #1216): the recordings `planner-shop.json`, `planner-shop-coverage.json` and the overview text in `understand-shop-journey.json` still cite card ids by the old order; the recordings depend on the order the cards are read in.
 - **Reads**: `tests/recordings/fake/planner-shop.json`, `tests/recordings/fake/planner-shop-coverage.json`, `tests/recordings/fake/understand-shop-journey.json`, the tests and end-to-end specs that replay them, RF-210, DEC-216, ADR-008.
 - **Do**:
@@ -9139,7 +9139,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-108
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-04, P8-108 verifier, #1213): `tests/unit/application/budget/cost-breakdown.test.ts:150-163` sums cost and calls but not tokens, and no web test pins `byRole` in the wire schema (`web/src/api/cost-schemas.ts:35-45`; P8-109 may add one).
 - **Reads**: `tests/unit/application/budget/cost-breakdown.test.ts`, `web/src/api/cost-schemas.ts`, `tests/unit/web/`, RF-426, RF-428, ADR-007.
 - **Do**:
@@ -9171,7 +9171,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-110
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-04, P8-110 verifier, #1214): `docs/design-system.md` documents no Tooltip component although `CostFigure` builds one; at 360 px table captions wrap one letter per line (present before P8-110).
 - **Reads**: `docs/design-system.md`, `web/src/components/CostFigure.tsx`, `web/src/styles/`, the table caption styles, RNF-010, DEC-217.
 - **Do**:
@@ -9187,7 +9187,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-104
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (see P8-120)
 - **Evidence** (2026-11-04, P8-104 verifier, #1215): the walk of `tests/e2e/plan-setup-stack.spec.ts` stops at the Stack step; the package the plan produces is not walked, so "the package proposes them" is not checked.
 - **Reads**: `tests/e2e/plan-setup-stack.spec.ts`, the end-to-end seed and accounts, RF-609, DEC-208, ADR-008.
 - **Do**:
@@ -9196,3 +9196,119 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the updated spec.
 - **Done when**: the walk reaches the package and asserts the chosen stack; CI green.
 - **Refs**: RF-609, DEC-208, ADR-008; follow-up of P8-104; GitHub issue #1224
+
+### P8-120 - Follow-up: a reader and planner recording for the Python inventory project (P8-119)
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-104
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-119 builder): the end-to-end provider has no reader or planner recording for `tests/fixtures/repos/python-inventory`, so its understand run has no cards and Start the plan stays disabled with RST-1802. The walk of P8-119 cannot reach the package without them.
+- **Reads**: `tests/e2e/support/e2e-provider.ts`, `tests/fixtures/repos/python-inventory/`, the existing reader and planner recordings the provider routes to, `tests/e2e/plan-setup-stack.spec.ts`, RF-609, RF-1005.
+- **Do**: red test first.
+  - Add reader and planner recordings for the Python inventory project that cite its real files, with routing in `tests/e2e/support/e2e-provider.ts`; recordings of other projects stay unchanged.
+  - An end-to-end check: the understand run of that project ends with cards and Start the plan is enabled.
+- **Delivers**: the recordings, the routing and the check.
+- **Done when**: Start the plan is enabled for the Python project in the end-to-end stack, and the card P8-119 can start; CI green.
+- **Refs**: RF-609, RF-1005, ADR-005; follow-up of P8-119; GitHub issue #1236
+
+### P8-121 - Follow-up: the start-page helper says what the page does, and an e2e pin (P8-106, P8-113)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-106
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, the withdrawn P8-113 and the P8-106 verifier, #1206): a reload after a completed scan makes no POST (P8-113 was not reproducible on 386e9fdd7), yet the comments in `tests/e2e/support/start-choices.ts` say the page scans by itself on every load. `start-choices.ts:47` waits with `waitForTimeout(1_000)`. The page fix of P8-106 has no end-to-end pin; `project-page-states.spec.ts:45` holds `**/history` and could give one.
+- **Reads**: `tests/e2e/support/start-choices.ts`, `tests/e2e/project-page-states.spec.ts`, `web/src/pages/use-auto-scan.ts`, the card P8-113.
+- **Do**: red test first.
+  - The comments in `start-choices.ts` say when the page scans: no scan in the history, a replaced source, or Scan again.
+  - Replace the fixed wait with a wait on what the page shows, keeping the repeat count of P8-106 green (20 runs of both replace journeys).
+  - An end-to-end test with the technique of `project-page-states.spec.ts:45` fails when the P8-106 page fix is removed.
+- **Delivers**: the helper, its comments and the test.
+- **Done when**: the new test fails without the page fix; no fixed wait remains in the helper; CI green.
+- **Refs**: RF-157; follow-up of P8-106 and P8-113; GitHub issue #1237
+
+### P8-122 - Follow-up: a restart is not running time, and a late Stop leaves nothing behind (P8-88, P8-111)
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-111
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-88 verifier #1217, P8-111 verifier #1234): orphan recovery counts the time the server was down as running (`src/application/runs/run-queue.ts:132`). A Stop during the end write leaves a stale `userStops` entry (`run-queue.ts:123`, reproduced by the verifier).
+- **Reads**: `src/application/runs/run-queue.ts`, the unit tests of the queue, `docs/data-model.md` on the running time, the cards P8-88 and P8-111.
+- **Do**: red tests first.
+  - Orphan recovery adds to the running time only what ran up to the last sign of life, not the downtime.
+  - The `userStops` entry of a run is removed when the run ends, whichever way it ends.
+- **Delivers**: the fix and its unit tests.
+- **Done when**: both tests fail before the fix and pass after it; CI green.
+- **Refs**: follow-up of P8-88 and P8-111; GitHub issue #1238
+
+### P8-123 - Follow-up: a run end reason needs an end state, and the run-time notes (P8-88, P8-111)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-111
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-88 verifier #1217, P8-111 verifier #1234): the CHECK of migration 0022 lets a NULL `end_state` carry a reason (`docs/data-model.md:1073`; `IS NOT DISTINCT FROM` closes it). The backfill cases of migration 0021 are not named in its header or in `data-model.md`, and the wall-time note at `docs/spec/requirements.md:1780` does not say what the running time now measures.
+- **Reads**: migrations 0021 and 0022, `docs/data-model.md`, `docs/spec/requirements.md`, the rule on changing merged migrations in `docs/conventions.md`.
+- **Do**: red test first.
+  - A new numbered migration replaces the CHECK so that a reason without an end state is refused; an integration test proves it.
+  - `data-model.md` names the 0021 backfill cases and the new CHECK; the header of 0021 changes only if the conventions allow editing a merged migration.
+  - The wall-time note in `requirements.md` says what is measured.
+- **Delivers**: the migration, its test and the two documents.
+- **Done when**: the insert with a NULL end state and a reason is refused; CI green.
+- **Refs**: follow-up of P8-88 and P8-111; GitHub issue #1239
+
+### P8-124 - Follow-up: the reading order on a rerun and without a scan (P8-94)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-94
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-94 verifier #1216): the priority of a rerun subset is untested (`task-plan.ts:65-66`); `surfaceOf` costs areas times files (`reading-priority.ts:25-33`); `planTasks` without `scanned` has no priority (`task-plan.ts:29-35`).
+- **Reads**: `task-plan.ts` and `reading-priority.ts`, their tests, DEC-216, RF-231.
+- **Do**: red tests first.
+  - A rerun of a subset of areas keeps the app-first order.
+  - `planTasks` without `scanned`: a test pins what it does, and the code gives the same order as a scan with no surface data.
+  - `surfaceOf` looks files up by area once, so its cost grows with files, not areas times files; behaviour unchanged.
+- **Delivers**: the tests and the small changes.
+- **Done when**: the new tests pass and the recordings stay unchanged; CI green.
+- **Refs**: RF-231, DEC-216; follow-up of P8-94; GitHub issue #1240
+
+### P8-125 - Follow-up: the strip's warn step is tested, and admin-and-cap asserts it (P8-112)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-112
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-112 verifier #1226): the glyph and warn colour of a run at its cap are untested (`JourneyStrip.tsx:79`, `journey.css:79`), and the `admin-and-cap` end-to-end test never asserts the strip step.
+- **Reads**: `JourneyStrip.tsx`, `journey.css`, the strip's tests, the `admin-and-cap` spec, the card P8-112.
+- **Do**: tests first.
+  - A unit test pins the glyph of the warn step; an end-to-end assertion pins its computed colour token.
+  - `admin-and-cap` asserts the strip step at the cap.
+  - Check that each new assertion fails when the code it covers is changed.
+- **Delivers**: the tests.
+- **Done when**: the new assertions fail on a changed glyph, colour or step; CI green.
+- **Refs**: follow-up of P8-112; GitHub issue #1241
+
+### P8-126 - Follow-up: small test gaps of wave 3 (P8-105, P8-107, P8-115, P8-116)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-105, P8-107, P8-115, P8-116
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, verifiers of #1228, #1227, #1231, #1230): the model-cell rule alone (`pages.css:745`) fails at one viewport only (`project-page-states.spec.ts:249-276`); the new case repeats the save wait (`plan-setup-stack-defaults.spec.ts:43-61`) with a short timeout on the saved wait; no test pins the rejected claims of `verifier-shop-journey.json` beyond SCRN-001.c7; the "renamed" test overlaps "no byRole" (`project-cost-schema.test.ts:32-39`); `countsOf` passes vacuously when the run is undefined (`cost-breakdown.test.ts:172`).
+- **Reads**: the files named in the evidence and the four cards.
+- **Do**:
+  - Each gap above gets its smallest fix: the assertion runs at both viewports, the save wait moves to one helper with the normal timeout, the rejected claims are pinned, the overlapping test goes, `countsOf` fails on an undefined run.
+  - Check that the changed assertions fail when the code they cover is changed.
+- **Delivers**: the changed tests only; no product code.
+- **Done when**: every gap above is closed; CI green.
+- **Refs**: follow-up of P8-105, P8-107, P8-115 and P8-116; GitHub issue #1242
