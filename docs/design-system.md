@@ -257,7 +257,7 @@ arrow, warning triangle, play, step back, step forward.
 
 English only (DEC-45). Sentence case for titles, labels and buttons. Buttons start with a verb ("Start run",
 "Delete run"). Numbers with thousands separators; costs in USD with `$`, four decimals below $1 and two above
-(DEC-54; DEC-217: exactly zero reads `$0.00`, a non-zero amount below $0.00005 reads `<$0.0001`); tokens abbreviated with `k` and `M` only in compact places, exact in tables. Times in 24-hour format, local
+(DEC-54; DEC-217: exactly zero reads `$0.00`, a non-zero amount below $0.00005 reads `<$0.0001`); an amount whose exact figure differs carries it in a tooltip that opens on hover, on keyboard focus and on tap, is read with the amount and closes with Escape; tokens abbreviated with `k` and `M` only in compact places, exact in tables. Times in 24-hour format, local
 time zone in the UI, UTC in files. Ids, paths and model names in the mono font, never translated or shortened in
 the middle. Errors say what happened, what to do, and the code.
 

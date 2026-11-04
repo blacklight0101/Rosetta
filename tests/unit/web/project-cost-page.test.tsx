@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/preact';
+import { act, fireEvent, screen, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { ProjectCostPage } from '../../../web/src/pages/ProjectCostPage.js';
 import { projectCost, usageTotals } from './cost-fixtures.js';
@@ -18,6 +18,16 @@ function renderCost(answer = json(200, projectCost), runs = json(200, history)) 
 }
 
 const costOf = (micros: string) => usageTotals({ cost: [{ currency: 'USD', costMicros: micros }] });
+
+/** The exact figure an amount offers in its tooltip, found through the amount's aria-describedby. */
+const exactFigureOf = (amount: HTMLElement) =>
+  document.getElementById(amount.getAttribute('aria-describedby') ?? '')?.textContent;
+
+/** The wrapper of an amount and its exact figure, which carries `data-dismissed`. */
+function wrapOf(amount: HTMLElement): HTMLElement {
+  if (amount.parentElement === null) throw new Error('the amount has no wrapper');
+  return amount.parentElement;
+}
 
 const table = (name: string) => screen.findByRole('table', { name });
 
@@ -56,8 +66,8 @@ describe('project cost page', () => {
 
     const row = within(tests).getByRole('row', { name: /Provider tests/u });
     expect(within(row).queryByRole('link')).toBeNull();
-    expect(row.textContent).toContain('$0.0000');
-    expect(within(row).getByText('$0.0000').getAttribute('title')).toBe('$0.000007');
+    expect(row.textContent).toContain('<$0.0001');
+    expect(exactFigureOf(within(row).getByText('<$0.0001'))).toBe('$0.000007');
     expect(screen.getByText(/not part of this project's totals/u)).not.toBeNull();
     expect(within(await table('By run')).queryByText('Provider tests')).toBeNull();
   });
@@ -97,7 +107,8 @@ describe('project cost page lines', () => {
     const row = within(await table('By model')).getByRole('row', { name: /gemma4:e4b/u });
 
     expect(row.textContent).toContain('Local');
-    expect(row.textContent).toContain('$0.0000');
+    expect(row.textContent).toContain('$0.00');
+    expect(within(row).queryByText('$0.0000')).toBeNull();
     expect(row.textContent).toContain('1,200,000');
   });
 
@@ -183,9 +194,8 @@ describe('project cost page money', () => {
 
     const runs = await table('By run');
 
-    expect(within(runs).getByText('$3.11').getAttribute('title')).toBe('$3.113515');
-    expect(within(runs).getByText('$0.2370').getAttribute('title')).toBe('$0.237');
-    expect(runs.textContent).not.toContain('$3.113515');
+    expect(exactFigureOf(within(runs).getByText('$3.11'))).toBe('$3.113515');
+    expect(exactFigureOf(within(runs).getByText('$0.2370'))).toBe('$0.237');
   });
 
   it('RF-428 given any money amount, writes the project total through the same formatter', async () => {
@@ -193,6 +203,85 @@ describe('project cost page money', () => {
 
     const totals = await screen.findByRole('region', { name: 'Project totals' });
 
-    expect(within(totals).getByText('$3.11').getAttribute('title')).toBe('$3.113515');
+    expect(exactFigureOf(within(totals).getByText('$3.11'))).toBe('$3.113515');
+  });
+});
+
+describe('project cost page zero, tiny amounts and the tooltip', () => {
+  it('RF-428 given a zero and a tiny amount, writes `$0.00` and `<$0.0001` with the exact figure of the tiny one', async () => {
+    const lines = (...micros: string[]) =>
+      micros.map((each, at) => ({
+        ...{ key: `n-${String(at)}`, runId: null, firstAt: '', local: false, byRole: [] },
+        totals: costOf(each),
+      }));
+    renderCost(json(200, { ...projectCost, byRun: lines('0', '7') }));
+
+    const runs = await table('By run');
+
+    expect(within(runs).getByText('$0.00')).not.toBeNull();
+    expect(within(runs).queryByRole('tooltip', { name: '$0.00' })).toBeNull();
+    expect(exactFigureOf(within(runs).getByText('<$0.0001'))).toBe('$0.000007');
+    expect(within(runs).queryByText('$0.0000')).toBeNull();
+  });
+});
+
+describe('project cost page tooltip by keyboard, touch and pointer', () => {
+  it('RF-428 given an amount with an exact figure, reaches the figure by keyboard and touch and closes it with Escape', async () => {
+    renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
+    const totals = await screen.findByRole('region', { name: 'Project totals' });
+    const amount = within(totals).getByText('$3.11');
+
+    expect(amount.getAttribute('tabindex')).toBe('0');
+    const tip = document.getElementById(amount.getAttribute('aria-describedby') ?? '');
+    expect(tip?.getAttribute('role')).toBe('tooltip');
+    expect(tip?.textContent).toBe('$3.113515');
+    amount.focus();
+    expect(document.activeElement).toBe(amount);
+  });
+
+  it('RF-428 given an amount with an exact figure, the amount alone is its name and the figure is a sibling', async () => {
+    renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
+    const totals = await screen.findByRole('region', { name: 'Project totals' });
+    const amount = within(totals).getByText('$3.11');
+    const tip = document.getElementById(amount.getAttribute('aria-describedby') ?? '');
+
+    expect(amount.textContent).toBe('$3.11');
+    expect(amount.contains(tip)).toBe(false);
+    expect(amount.parentElement?.contains(tip)).toBe(true);
+  });
+});
+
+describe('project cost page tooltip closed with Escape', () => {
+  it('RF-428 given an amount with an exact figure under the pointer, Escape closes it while the amount keeps focus, and it opens again on the next hover', async () => {
+    renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
+    const totals = await screen.findByRole('region', { name: 'Project totals' });
+    const amount = within(totals).getByText('$3.11');
+    const wrap = wrapOf(amount);
+    amount.focus();
+    fireEvent.mouseEnter(wrap);
+
+    fireEvent.keyDown(amount, { key: 'Escape' });
+
+    expect(wrap.hasAttribute('data-dismissed')).toBe(true);
+    expect(document.activeElement).toBe(amount);
+    fireEvent.mouseLeave(wrap);
+    expect(wrap.hasAttribute('data-dismissed')).toBe(true);
+    await act(() => {
+      amount.blur();
+    });
+    expect(wrap.hasAttribute('data-dismissed')).toBe(false);
+  });
+
+  it('RF-428 given an amount closed with Escape under the pointer, leaving the pointer opens it again for the next hover', async () => {
+    renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
+    const totals = await screen.findByRole('region', { name: 'Project totals' });
+    const amount = within(totals).getByText('$3.11');
+    const wrap = wrapOf(amount);
+    fireEvent.mouseEnter(wrap);
+    fireEvent.keyDown(amount, { key: 'Escape' });
+
+    expect(wrap.hasAttribute('data-dismissed')).toBe(true);
+    fireEvent.mouseLeave(wrap);
+    expect(wrap.hasAttribute('data-dismissed')).toBe(false);
   });
 });

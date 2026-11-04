@@ -95,6 +95,29 @@
   text-align: start;
 }
 
+/* An amount and its exact figure (RF-428, DEC-217): the figure shows next to the amount, in the flow so a
+   table's scroll region never clips it, while the pointer or the keyboard focus (a tap focuses it) is on
+   it; Escape closes it at once, even while the pointer rests on it (data-dismissed, WCAG 1.4.13). */
+.rst-p136-amount__value {
+  border-block-end: 1px dotted var(--rst-ink-soft);
+  cursor: help;
+}
+
+.rst-p136-amount__exact {
+  display: none;
+  margin-inline-start: var(--rst-sp-2);
+  color: var(--rst-ink-muted);
+  font-family: var(--rst-mono);
+  font-size: var(--rst-fs-xs);
+  font-weight: var(--rst-fw-body);
+  white-space: nowrap;
+}
+
+.rst-p136-amount:not([data-dismissed]):hover .rst-p136-amount__exact,
+.rst-p136-amount:not([data-dismissed]):focus-within .rst-p136-amount__exact {
+  display: inline;
+}
+
 .rst-p136-pricenote {
   margin-inline-start: var(--rst-sp-3);
   color: var(--rst-ink-muted);
