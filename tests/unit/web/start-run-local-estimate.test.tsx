@@ -75,10 +75,10 @@ it('RF-425 a priced reader keeps dollars in the table and in the cap sentence', 
   await ready();
 
   const reader = within(table()).getByRole('row', { name: /reader/u });
-  expect(within(reader).getByText('$0.39')).not.toBeNull();
+  expect(within(reader).getByText('$0.3900')).not.toBeNull();
   expect(within(reader).getByText('22,000 tokens')).not.toBeNull();
   const text = describedText(meter());
-  expect(text).toContain('Likely $0.41 is 82% of the cap');
+  expect(text).toContain('Likely $0.4100 is 82% of the cap');
   expect(text).not.toContain('token cap');
 });
 
@@ -87,14 +87,14 @@ it('RF-425 a mix shows each role in its unit and the total in both', async () =>
   await ready();
 
   const reader = within(table()).getByRole('row', { name: /reader/u });
-  expect(within(reader).getByText('$0.39')).not.toBeNull();
+  expect(within(reader).getByText('$0.3900')).not.toBeNull();
   const verifier = within(table()).getByRole('row', { name: /verifier/u });
   expect(within(verifier).getAllByText(/ tokens$/u)).toHaveLength(3);
   expect(verifier.textContent).not.toContain('$');
   const total = within(table()).getByRole('row', { name: /Total/u });
-  expect(within(total).getByText('$0.39')).not.toBeNull();
+  expect(within(total).getByText('$0.3900')).not.toBeNull();
   expect(within(total).getByText('44,000 tokens')).not.toBeNull();
-  expect(describedText(meter())).toContain('Likely $0.39 is 78% of the cap');
+  expect(describedText(meter())).toContain('Likely $0.3900 is 78% of the cap');
 });
 
 it('RF-425 the assumptions read 2 areas for two', async () => {

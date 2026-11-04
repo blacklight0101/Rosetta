@@ -21,6 +21,6 @@ it('RF-423 the log line of a role cap names the role and the cap', () => {
 
 it('RF-422 the log line of a run cap names only the cap', () => {
   expect(logText(capEvent({ scope: 'run-cost', capMicros: 9 }), '')).toBe(
-    'The run cap of $0.000009 in the project settings was reached. Raise it in the project settings to run further.',
+    'The run cap of <$0.0001 in the project settings was reached. Raise it in the project settings to run further.',
   );
 });

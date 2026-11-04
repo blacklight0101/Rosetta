@@ -37,7 +37,7 @@ function type(label: string, value: string): void {
 }
 
 const costNotice =
-  'Reader cost cap of $1.00 is above the run cost cap of $0.50, so the run cap always stops first.';
+  'Reader cost cap of $1.00 is above the run cost cap of $0.5000, so the run cap always stops first.';
 const tokenNotice =
   'Reader token cap of 3,000,000 is above the run token cap of 2,000,000, so the run cap always stops first.';
 
@@ -72,7 +72,7 @@ it('RF-423 the notice follows the run cap as it is typed', async () => {
   type('Run cost cap (USD)', '0.25');
   expect(
     screen.getByText(
-      'Reader cost cap of $1.00 is above the run cost cap of $0.25, so the run cap always stops first.',
+      'Reader cost cap of $1.00 is above the run cost cap of $0.2500, so the run cap always stops first.',
     ),
   ).not.toBeNull();
 });

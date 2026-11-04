@@ -81,7 +81,7 @@ describe('RF-427 the plan estimate with a priced model', () => {
     renderPlan(answers('anthropic', { zero: false, caps: [costCap(true), tokenCap(true)] }));
     await ready();
 
-    expect(card().textContent).toContain('$0.18 likely (low $0.09, high $0.40)');
+    expect(card().textContent).toContain('$0.1800 likely (low $0.0900, high $0.4000)');
   });
 
   it('RF-427 warns in dollars when the high figure could pass the cost cap', async () => {
@@ -89,7 +89,7 @@ describe('RF-427 the plan estimate with a priced model', () => {
     await ready();
 
     expect(card().textContent).toContain(
-      'The high estimate ($0.40) does not fit the run cap ($2.00 left)',
+      'The high estimate ($0.4000) does not fit the run cap ($2.00 left)',
     );
   });
 
@@ -100,7 +100,7 @@ describe('RF-427 the plan estimate with a priced model', () => {
     expect(card().textContent).toContain(
       'The high estimate (90,000 tokens) does not fit the run token cap (100,000 tokens left)',
     );
-    expect(card().textContent).not.toContain('($0.40) does not fit the run token cap');
+    expect(card().textContent).not.toContain('($0.4000) does not fit the run token cap');
   });
 });
 

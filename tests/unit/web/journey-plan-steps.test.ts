@@ -34,7 +34,7 @@ describe('journeyOf: the plan run', () => {
     const view = journeyOf(roadSigns['failed'] ?? facts(), projectId);
 
     expect(step(view, 'plan')).toMatchObject({
-      ...{ state: 'failed', detail: 'Failed (RST-1803)', cost: '$0.031', here: true },
+      ...{ state: 'failed', detail: 'Failed (RST-1803)', cost: '$0.0310', here: true },
     });
     expect(step(view, 'package')).toMatchObject({
       state: 'locked',

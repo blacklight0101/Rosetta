@@ -31,7 +31,7 @@ const above = {
 
 it('RF-1022 the journey figures are three short lines: likely, approved and what stops it', () => {
   expect(estimateLinesOf(base)).toEqual({
-    likely: '$0.40',
+    likely: '$0.4000',
     approved: '$1.20',
     stops: 'the run pauses and asks before it goes past the approved amount',
   });
@@ -48,7 +48,7 @@ it('RF-1022 the estimate draws the three lines and collapses the explanation', (
   render(<ServerKeyNote estimate={base} />);
 
   const total = screen.getByTestId('journey-total');
-  expect(within(total).getByText('Likely').closest('div')?.textContent).toContain('$0.40');
+  expect(within(total).getByText('Likely').closest('div')?.textContent).toContain('$0.4000');
   expect(within(total).getByText('Approved').closest('div')?.textContent).toContain('$1.20');
   expect(within(total).getByText('What stops it')).toBeTruthy();
   const more = total.querySelector('details');

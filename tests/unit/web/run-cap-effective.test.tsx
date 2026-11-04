@@ -36,7 +36,7 @@ it('RF-1106 the start page names the administrator run cap for a server-key esti
   render(<ServerRunCapNote serverKeys administrator={500_000n} typed={5_000_000n} where="start" />);
 
   expect(screen.getByTestId('server-run-cap-note').textContent).toContain(
-    "the run cap is $0.50, the administrator's run cap",
+    "the run cap is $0.5000, the administrator's run cap",
   );
   expect(screen.getByTestId('server-run-cap-note').textContent).toContain('$5.00');
 });
@@ -51,7 +51,7 @@ it('RF-1106 the project settings name the administrator run cap, lower than the 
     />,
   );
 
-  expect(screen.getByTestId('server-run-cap-note').textContent).toContain('$0.50');
+  expect(screen.getByTestId('server-run-cap-note').textContent).toContain('$0.5000');
   expect(screen.getByTestId('server-run-cap-note').textContent).toContain('Only the administrator');
 });
 
