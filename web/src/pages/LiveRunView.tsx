@@ -186,11 +186,15 @@ function partlyReadOf(read: AreaReadState, understanding: UnderstandingLoad): Pa
 
 /** P8-93: what the coverage and the summary of the run say, read once for the head and the body. */
 function useReading(
-  props: Pick<LiveRunViewProps, 'run' | 'phase'> & { readonly state: RunState },
+  props: Pick<LiveRunViewProps, 'run' | 'phase'> & {
+    readonly state: RunState;
+    /** The state the panels show: the one frozen by Pause updates, which freezes the coverage too. */
+    readonly shown: RunState;
+  },
   stage: string,
 ): { readonly read: AreaReadState; readonly understanding: UnderstandingLoad } {
   const { run, phase, state } = props;
-  const read = useAreaRead(run, stage, state);
+  const read = useAreaRead(run, stage, props.shown);
   const asks =
     phase.kind === 'ended' && stage === 'understand' && state.ended?.errorCode === undefined;
   return { read, understanding: useUnderstanding(run.id, asks) };
@@ -202,7 +206,7 @@ function LiveRunContent({ run, stream, phase, onResumed }: LiveRunViewProps): JS
   const stop = useStop(run.id);
   const planned = state.agents.some((agent) => agent.state !== 'Planned');
   const stage = state.stage ?? run.stage;
-  const { read, understanding } = useReading({ run, phase, state }, stage);
+  const { read, understanding } = useReading({ run, phase, state, shown: view.shown }, stage);
   const estimate = useRunEstimate(
     run.projectId,
     stage,
